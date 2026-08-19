@@ -7,6 +7,7 @@ import { patrones } from '@/rutas'
 import { ProveedorAvisos } from '@/ui/Avisos'
 import { Armazon } from './Armazon'
 import { Privada } from './Privada'
+import { Salvavidas } from './Salvavidas'
 import { ProveedorSesion } from './Sesion'
 import { ProveedorTema } from './Tema'
 
@@ -51,93 +52,95 @@ const datos = new QueryClient({
 
 export function App() {
   return (
-    <QueryClientProvider client={datos}>
-      <ProveedorTema>
-        <ProveedorSesion>
-          <ProveedorAvisos>
-            <BrowserRouter>
-              <Routes>
-                <Route element={<Armazon />}>
-                  {/* Publico */}
-                  <Route path={patrones.vacantes} element={<Vacantes />} />
-                  <Route path={patrones.vacante} element={<Vacante />} />
-                  <Route path={patrones.ingresar} element={<Ingresar />} />
-                  <Route path={patrones.registro} element={<Registro />} />
+    <Salvavidas>
+      <QueryClientProvider client={datos}>
+        <ProveedorTema>
+          <ProveedorSesion>
+            <ProveedorAvisos>
+              <BrowserRouter>
+                <Routes>
+                  <Route element={<Armazon />}>
+                    {/* Publico */}
+                    <Route path={patrones.vacantes} element={<Vacantes />} />
+                    <Route path={patrones.vacante} element={<Vacante />} />
+                    <Route path={patrones.ingresar} element={<Ingresar />} />
+                    <Route path={patrones.registro} element={<Registro />} />
 
-                  {/* Con cuenta */}
-                  <Route
-                    path={patrones.postular}
-                    element={
-                      <Privada>
-                        <Postular />
-                      </Privada>
-                    }
-                  />
-                  <Route
-                    path={patrones.procesos}
-                    element={
-                      <Privada>
-                        <Procesos />
-                      </Privada>
-                    }
-                  />
-                  <Route
-                    path={patrones.proceso}
-                    element={
-                      <Privada>
-                        <Proceso />
-                      </Privada>
-                    }
-                  />
-                  <Route
-                    path={patrones.evaluacion}
-                    element={
-                      <Privada>
-                        <Evaluacion />
-                      </Privada>
-                    }
-                  />
-                  <Route
-                    path={patrones.prueba}
-                    element={
-                      <Privada>
-                        <Prueba />
-                      </Privada>
-                    }
-                  />
-                  <Route
-                    path={patrones.simulacion}
-                    element={
-                      <Privada>
-                        <Simulacion />
-                      </Privada>
-                    }
-                  />
-                  <Route
-                    path={patrones.decision}
-                    element={
-                      <Privada>
-                        <Decision />
-                      </Privada>
-                    }
-                  />
-                  <Route
-                    path={patrones.privacidad}
-                    element={
-                      <Privada>
-                        <Privacidad />
-                      </Privada>
-                    }
-                  />
+                    {/* Con cuenta */}
+                    <Route
+                      path={patrones.postular}
+                      element={
+                        <Privada>
+                          <Postular />
+                        </Privada>
+                      }
+                    />
+                    <Route
+                      path={patrones.procesos}
+                      element={
+                        <Privada>
+                          <Procesos />
+                        </Privada>
+                      }
+                    />
+                    <Route
+                      path={patrones.proceso}
+                      element={
+                        <Privada>
+                          <Proceso />
+                        </Privada>
+                      }
+                    />
+                    <Route
+                      path={patrones.evaluacion}
+                      element={
+                        <Privada>
+                          <Evaluacion />
+                        </Privada>
+                      }
+                    />
+                    <Route
+                      path={patrones.prueba}
+                      element={
+                        <Privada>
+                          <Prueba />
+                        </Privada>
+                      }
+                    />
+                    <Route
+                      path={patrones.simulacion}
+                      element={
+                        <Privada>
+                          <Simulacion />
+                        </Privada>
+                      }
+                    />
+                    <Route
+                      path={patrones.decision}
+                      element={
+                        <Privada>
+                          <Decision />
+                        </Privada>
+                      }
+                    />
+                    <Route
+                      path={patrones.privacidad}
+                      element={
+                        <Privada>
+                          <Privacidad />
+                        </Privada>
+                      }
+                    />
 
-                  {/* Cualquier otra cosa, a la portada */}
-                  <Route path="*" element={<Navigate to={patrones.vacantes} replace />} />
-                </Route>
-              </Routes>
-            </BrowserRouter>
-          </ProveedorAvisos>
-        </ProveedorSesion>
-      </ProveedorTema>
-    </QueryClientProvider>
+                    {/* Cualquier otra cosa, a la portada */}
+                    <Route path="*" element={<Navigate to={patrones.vacantes} replace />} />
+                  </Route>
+                </Routes>
+              </BrowserRouter>
+            </ProveedorAvisos>
+          </ProveedorSesion>
+        </ProveedorTema>
+      </QueryClientProvider>
+    </Salvavidas>
   )
 }
