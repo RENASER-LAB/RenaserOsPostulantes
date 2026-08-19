@@ -74,6 +74,31 @@ antes de que el backend tuviera su modelo de estados definitivo.
 
 Qué cambió y por qué está en [docs/01-ANALISIS-PORTAL.md](docs/01-ANALISIS-PORTAL.md).
 
+## Desplegado: Vercel por delante, Render por detrás
+
+En local, Vite reenvía `/api` al backend. Ese reenvío **solo existe en desarrollo**: en la
+build de producción, `fetch('/api/...')` pegaría contra el dominio de Vercel, donde no hay
+nada. Por eso está [vercel.json](vercel.json), que hace lo mismo en producción.
+
+Antes de desplegar hay que **cambiar `CAMBIAME.onrender.com` por la URL real del backend**.
+
+Las dos reglas del archivo:
+
+- **`/api/*` → Render.** El navegador solo habla con el dominio de Vercel, y Vercel reenvía
+  por detrás. Como para el navegador todo es el mismo origen, **no hace falta CORS en el
+  backend** — que no lo tiene: `ConfiguracionSeguridad.java` no configura ninguno. Si el
+  portal llamase a Render directamente, el navegador bloquearía todas las peticiones.
+- **Todo lo demás → `index.html`.** Las rutas son reales, no con almohadilla, así que entrar
+  directo a `/procesos` o a `/vacantes/4` tiene que servir el index y dejar que el enrutador
+  decida. Las reescrituras se aplican después de buscar el archivo, así que los ficheros de
+  `dist` se sirven igual.
+
+⚠️ **El plan gratuito de Render duerme el servicio.** Tras unos 15 minutos sin tráfico, la
+primera petición tarda cerca de un minuto en despertarlo. El portal reintenta dos veces y se
+rinde mucho antes, así que un candidato que llegue al portal dormido verá la tarjeta de error
+en vez de las vacantes. Hay que resolverlo antes de enseñárselo a nadie: plan de pago, o algo
+que mantenga el servicio despierto.
+
 ## Lo que falta
 
 - **La pantalla de decisión ámbar.** El estado `DECISION_TURNO_CANDIDATO` existe en el
