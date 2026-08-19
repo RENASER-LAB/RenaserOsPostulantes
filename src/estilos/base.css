@@ -509,6 +509,10 @@ button { cursor: pointer }
 .save-state { display: flex; align-items: center; gap: 7px; color: var(--good); font-size: 10px; font-weight: 700 }
 .save-state i { width: 7px; height: 7px; border-radius: 50%; background: var(--good) }
 
+/* Hay algo escrito que aun no ha llegado al servidor. */
+.save-state.pendiente { color: var(--warn) }
+.save-state.pendiente i { background: var(--warn) }
+
 .question { font-size: 22px; letter-spacing: -.03em; line-height: 1.35; margin: 8px 0 24px }
 
 .choice {

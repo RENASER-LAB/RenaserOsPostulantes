@@ -57,12 +57,21 @@ export function Evaluacion() {
   const preguntas = useMemo(() => consulta.data?.preguntas ?? [], [consulta.data])
   const pregunta = preguntas[indice]
 
+  // Lo escrito que todavia no ha llegado al servidor. Vive en una referencia
+  // ademas de en el estado, para poder mandarlo al vuelo cuando el candidato
+  // cambia de pregunta o entrega: es justo ahi donde antes se perdia.
+  const pendiente = useRef<{ preguntaId: number; texto: string } | null>(null)
+  const temporizador = useRef<number | undefined>(undefined)
+
   // Al cambiar de pregunta se recarga el borrador y se reinicia el cronometro
   // que mide cuanto se tarda en responderla.
+  //
+  // Depende solo del id, no del texto guardado: si dependiera de las dos cosas,
+  // una recarga en segundo plano pisaria lo que el candidato esta escribiendo.
   useEffect(() => {
     setBorrador(pregunta?.respuestaTexto ?? '')
     abiertaEn.current = Date.now()
-  }, [pregunta?.id, pregunta?.respuestaTexto])
+  }, [pregunta?.id])
 
   const guardar = useMutation({
     mutationFn: (datos: { preguntaId: number; opcionId?: number; texto?: string }) =>
@@ -100,26 +109,52 @@ export function Evaluacion() {
     },
   })
 
+  const guardarTexto = guardar.mutate
+
+  /** Manda ya lo que este pendiente, sin esperar al temporizador. */
+  const guardarPendiente = useCallback(() => {
+    window.clearTimeout(temporizador.current)
+    const aMandar = pendiente.current
+    if (!aMandar) return
+    pendiente.current = null
+    guardarTexto(aMandar)
+  }, [guardarTexto])
+
   // Las respuestas de texto se guardan solas cuando el candidato deja de
   // escribir, no en cada tecla.
-  const guardarTexto = guardar.mutate
+  //
+  // Antes este efecto cancelaba el envio en su limpieza, y como depende de la
+  // pregunta, cambiar de pregunta lo cancelaba: quien escribia y pulsaba
+  // «Siguiente» antes de que saltara el temporizador perdia la respuesta sin
+  // enterarse. Ahora lo pendiente queda anotado y se manda igualmente.
   useEffect(() => {
     if (!pregunta || pregunta.opciones?.length) return
-    if (borrador === (pregunta.respuestaTexto ?? '')) return
 
-    const id = window.setTimeout(
-      () => guardarTexto({ preguntaId: pregunta.id, texto: borrador }),
-      ESPERA_ANTES_DE_GUARDAR,
-    )
-    return () => window.clearTimeout(id)
-  }, [borrador, pregunta, guardarTexto])
+    if (borrador === (pregunta.respuestaTexto ?? '')) {
+      pendiente.current = null
+      return
+    }
+
+    pendiente.current = { preguntaId: pregunta.id, texto: borrador }
+    window.clearTimeout(temporizador.current)
+    temporizador.current = window.setTimeout(guardarPendiente, ESPERA_ANTES_DE_GUARDAR)
+  }, [borrador, pregunta, guardarPendiente])
+
+  // Al salir de la pantalla —volver al panel, cerrar la pestaña— lo que quede
+  // sin mandar se manda.
+  useEffect(() => {
+    return () => {
+      guardarPendiente()
+    }
+  }, [guardarPendiente])
 
   const irA = useCallback(
     (siguiente: number) => {
+      guardarPendiente()
       setIndice(Math.max(0, Math.min(preguntas.length - 1, siguiente)))
       setError(null)
     },
-    [preguntas.length],
+    [preguntas.length, guardarPendiente],
   )
 
   if (consulta.isPending) return <Cargando que="Abriendo tu evaluación…" />
@@ -194,6 +229,14 @@ export function Evaluacion() {
   const esUltima = indice === preguntas.length - 1
   const restante = segundosHasta(evaluacion.venceEn)
 
+  // Lo que el candidato tiene escrito y todavia no coincide con lo que hay en
+  // el servidor. El indicador lo dice tal cual: antes ponia «Respuesta
+  // guardada» siempre, incluso cuando no se habia guardado nada.
+  const sinGuardar =
+    !guardando &&
+    !pregunta.opciones?.length &&
+    borrador !== (pregunta.respuestaTexto ?? '')
+
   return (
     <>
       <Link className="back" to={rutas.proceso(uuid)}>
@@ -215,9 +258,11 @@ export function Evaluacion() {
               <i style={{ width: `${porcentaje}%` }} />
             </div>
           </div>
-          <div className="save-state">
+          <div className={`save-state${sinGuardar ? ' pendiente' : ''}`}>
             <i />
-            <span>{guardando ? 'Guardando…' : 'Respuesta guardada'}</span>
+            <span>
+              {guardando ? 'Guardando…' : sinGuardar ? 'Sin guardar' : 'Respuesta guardada'}
+            </span>
           </div>
         </div>
 
@@ -282,7 +327,12 @@ export function Evaluacion() {
               {esUltima ? (
                 <button
                   className="btn primary large"
-                  onClick={() => setConfirmarEntrega(true)}
+                  onClick={() => {
+                    // Lo ultimo escrito se manda antes de abrir el modal: si no,
+                    // la respuesta de la ultima pregunta se quedaba fuera.
+                    guardarPendiente()
+                    setConfirmarEntrega(true)
+                  }}
                 >
                   Entregar evaluación
                 </button>
