@@ -27,13 +27,25 @@ const datos = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 30_000,
+
       // Insistir con un 401 o un 404 no arregla nada: o no hay sesion, o no es
       // suyo. Los demas fallos si se reintentan.
       retry: (intentos, causa) =>
         causa instanceof ErrorApi && (causa.esSesionCaida || causa.esAjeno)
           ? false
           : intentos < 2,
+
+      // Al leer se intenta siempre. Por defecto la libreria deja la peticion
+      // «en pausa» cuando cree que no hay red, y la pantalla se queda girando
+      // sin decir nada; `api/cliente.ts` ya convierte un fallo de conexion en
+      // un error con su mensaje, y eso se puede enseñar.
+      networkMode: 'always',
     },
+
+    // Al escribir es al reves, y por eso se deja el comportamiento de fabrica:
+    // si no hay red, la libreria espera y reintenta sola cuando vuelve. Para el
+    // guardado automatico de una respuesta a media evaluacion, que se guarde
+    // tarde es mejor que fallar y perderla.
   },
 })
 

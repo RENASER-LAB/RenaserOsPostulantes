@@ -124,18 +124,24 @@ export async function pedir<T>(ruta: string, opciones: Opciones = {}): Promise<T
 
   anotarHoraDelServidor(respuesta.headers.get('Date'))
 
-  if (respuesta.status === 204 || respuesta.headers.get('Content-Length') === '0') {
-    return undefined as T
-  }
-
-  const esJson = respuesta.headers.get('Content-Type')?.includes('application/json') ?? false
-  const leido: unknown = esJson
-    ? await respuesta.json().catch(() => null)
-    : await respuesta.text().catch(() => null)
+  // Muchas rutas del portal devuelven 204 sin cuerpo, y un error tambien puede
+  // venir vacio. El estado manda: primero se mira si fallo, y solo despues si
+  // hay algo que leer. Al reves, un 500 sin cuerpo se colaba como exito.
+  const sinCuerpo =
+    respuesta.status === 204 || respuesta.headers.get('Content-Length') === '0'
 
   if (!respuesta.ok) {
+    const leido = sinCuerpo ? null : await leerCuerpo(respuesta)
     throw new ErrorApi(respuesta.status, mensajeDe(respuesta.status, leido), leido)
   }
 
-  return leido as T
+  if (sinCuerpo) return undefined as T
+  return (await leerCuerpo(respuesta)) as T
+}
+
+async function leerCuerpo(respuesta: Response): Promise<unknown> {
+  const esJson = respuesta.headers.get('Content-Type')?.includes('application/json') ?? false
+  return esJson
+    ? await respuesta.json().catch(() => null)
+    : await respuesta.text().catch(() => null)
 }
