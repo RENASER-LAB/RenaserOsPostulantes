@@ -1,0 +1,27 @@
+{
+  "name": "renaser-portal-postulantes",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Portal del candidato de RENASER OS: postular, responder la evaluacion, hacer la prueba y seguir el proceso",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.62.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-router-dom": "^7.1.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.0",
+    "@types/node": "^22.10.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^5.0.4",
+    "typescript": "~5.9.0",
+    "vite": "^7.1.9"
+  }
+}
