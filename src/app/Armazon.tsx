@@ -44,6 +44,7 @@ export function Armazon() {
             </NavLink>
             <button
               className="iconbtn"
+              type="button"
               onClick={alternar}
               aria-label={tema === 'light' ? 'Usar tema oscuro' : 'Usar tema claro'}
             >
