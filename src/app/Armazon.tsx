@@ -13,7 +13,15 @@ import { useTema } from './Tema'
 
 function ArribaAlCambiarDePagina() {
   const { pathname } = useLocation()
-  useEffect(() => window.scrollTo(0, 0), [pathname])
+
+  // Ojo con el cuerpo entre llaves: si se escribe `useEffect(() => window.
+  // scrollTo(0, 0), ...)`, el efecto devuelve lo que devuelva `scrollTo`, y
+  // React se lo queda como funcion de limpieza. Al desmontar intenta llamarlo
+  // y revienta con «destroy is not a function», tumbando la pagina entera.
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [pathname])
+
   return null
 }
 

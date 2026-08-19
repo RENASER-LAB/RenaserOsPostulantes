@@ -25,7 +25,11 @@ export function ProveedorAvisos({ children }: { children: ReactNode }) {
     temporizador.current = window.setTimeout(() => setMensaje(null), DURACION)
   }, [])
 
-  useEffect(() => () => window.clearTimeout(temporizador.current), [])
+  // Aqui el efecto si devuelve una funcion, y es a proposito: es la limpieza
+  // que corta el temporizador si el portal se desmonta con un aviso en pantalla.
+  useEffect(() => {
+    return () => window.clearTimeout(temporizador.current)
+  }, [])
 
   const valor = useMemo(() => avisar, [avisar])
 
