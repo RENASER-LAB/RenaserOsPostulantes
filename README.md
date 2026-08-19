@@ -25,6 +25,15 @@ solo habla con Vite y no hay CORS que configurar. Si el backend está en otro pu
 API_URL=http://localhost:8081 npm run dev
 ```
 
+O de forma fija, en un `.env.local` que no se versiona:
+
+```bash
+echo "API_URL=https://ai-agents-spring-ai.onrender.com" > .env.local
+```
+
+Apuntarlo a Render sirve para probar en local contra el backend desplegado, que es
+exactamente lo que hace `vercel.json` en producción.
+
 Otros comandos:
 
 ```bash

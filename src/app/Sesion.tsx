@@ -7,8 +7,16 @@
  * el portal saluda sin nombre en vez de inventarselo.
  */
 
-import { createContext, use, useCallback, useMemo, useState, type ReactNode } from 'react'
-import { borrarToken, guardarToken, leerToken } from '@/api/cliente'
+import {
+  createContext,
+  use,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react'
+import { alCaerLaSesion, borrarToken, guardarToken, leerToken } from '@/api/cliente'
 import { crearCuenta, ingresar } from '@/api/portal'
 import type { CrearCuenta, Login } from '@/api/tipos'
 
@@ -43,6 +51,14 @@ function guardarNombre(nombre: string): void {
   }
 }
 
+function olvidarNombre(): void {
+  try {
+    localStorage.removeItem(CLAVE_NOMBRE)
+  } catch {
+    /* almacenamiento bloqueado */
+  }
+}
+
 export function ProveedorSesion({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(() => leerToken())
   const [nombre, setNombre] = useState<string | null>(() => leerNombre())
@@ -66,13 +82,19 @@ export function ProveedorSesion({ children }: { children: ReactNode }) {
 
   const salir = useCallback(() => {
     borrarToken()
-    try {
-      localStorage.removeItem(CLAVE_NOMBRE)
-    } catch {
-      /* almacenamiento bloqueado */
-    }
+    olvidarNombre()
     setToken(null)
     setNombre(null)
+  }, [])
+
+  // Si el cliente descubre que el token ya no vale, la sesion se cierra sola y
+  // el portal vuelve a enseñar «Ingresar».
+  useEffect(() => {
+    return alCaerLaSesion(() => {
+      olvidarNombre()
+      setToken(null)
+      setNombre(null)
+    })
   }, [])
 
   const valor = useMemo<Sesion>(

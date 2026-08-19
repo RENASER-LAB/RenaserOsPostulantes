@@ -39,6 +39,25 @@ export function borrarToken(): void {
   }
 }
 
+// ---------- Cuando el token deja de valer ----------
+
+/**
+ * Un token puede morir sin que el portal se entere: caduca, o lo emitio otro
+ * backend. Si no se hace nada, el candidato se queda con una pantalla de error
+ * y un boton de reintentar que va a fallar siempre, sin forma de volver a
+ * entrar. Aqui se avisa una sola vez y la sesion se cierra sola.
+ */
+type Escucha = () => void
+
+const escuchas = new Set<Escucha>()
+
+export function alCaerLaSesion(escucha: Escucha): () => void {
+  escuchas.add(escucha)
+  return () => {
+    escuchas.delete(escucha)
+  }
+}
+
 // ---------- Los errores ----------
 
 export class ErrorApi extends Error {
@@ -132,6 +151,15 @@ export async function pedir<T>(ruta: string, opciones: Opciones = {}): Promise<T
 
   if (!respuesta.ok) {
     const leido = sinCuerpo ? null : await leerCuerpo(respuesta)
+
+    // El token que teniamos no vale. Se tira aqui, en cuanto se sabe, para que
+    // el portal vuelva a enseñar «Ingresar» en vez de dejar al candidato dando
+    // vueltas contra una pantalla de error.
+    if (respuesta.status === 401 && token) {
+      borrarToken()
+      for (const escucha of escuchas) escucha()
+    }
+
     throw new ErrorApi(respuesta.status, mensajeDe(respuesta.status, leido), leido)
   }
 
