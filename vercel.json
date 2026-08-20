@@ -3,7 +3,7 @@
   "rewrites": [
     {
       "source": "/api/:ruta*",
-      "destination": "https://ai-agents-spring-ai.onrender.com/api/:ruta*"
+      "destination": "https://18-204-177-210.nip.io/api/:ruta*"
     },
     {
       "source": "/((?!api/).*)",
