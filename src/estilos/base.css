@@ -647,6 +647,45 @@ a { color: inherit; text-decoration: none }
 .unexpected p { font-size: 12.5px; color: var(--muted); line-height: 1.55; margin: 0 }
 .desktop-warning { display: none }
 
+/* El aviso de que el plazo acabo. Va antes que nada y ocupa el ancho entero:
+   si se lee despues de intentar guardar, llega tarde. */
+.tiempo-agotado { margin-bottom: 16px }
+
+/* Lo ya recibido de un entregable, debajo de su nombre. */
+.entregable-recibido { margin: 10px 0 0 }
+
+/* ---------- Texto que escribio una persona en la base ---------- */
+
+/*
+ * Un enunciado, unos materiales o unas herramientas permitidas llegan como
+ * texto plano con sus saltos de linea. Sin `pre-wrap` el navegador los colapsa
+ * y tres parrafos se leen como uno solo. La separacion entre parrafos la da el
+ * margen, no el salto: ver `ui/TextoPlano`.
+ */
+.texto-largo {
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  font-size: 14.5px;
+  line-height: 1.7;
+  color: var(--muted);
+  margin: 0 0 12px;
+}
+.texto-largo:last-child { margin-bottom: 0 }
+
+/*
+ * Un enlace dentro de ese texto. No usa `.link` porque `.link` mide 11,5px
+ * fijos y dentro de un parrafo se veria como una nota al pie. Y `anywhere`
+ * porque una direccion firmada de Supabase mide cientos de caracteres: sin
+ * poder partirse por donde sea, empuja la tarjeta fuera de la pantalla.
+ */
+.enlace-texto {
+  color: var(--acento);
+  border-bottom: 1px solid currentColor;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.enlace-texto:hover { color: var(--acento-suave) }
+
 /* ---------- Simulacion ---------- */
 /* ---------- Estado y resultado ---------- */
 

@@ -1,0 +1,204 @@
+/*
+ * Los formatos del banco v3.
+ *
+ * Va aparte de `base.css` porque solo lo usa la pantalla de evaluacion, pero
+ * usa sus mismas piezas: `.choice`, `.field`, `.iconbtn`, `.hint` y los colores
+ * de `variables.css`. Aqui no hay ni un color escrito a mano, asi que el tema
+ * claro y el oscuro salen solos.
+ *
+ * Todo lo que se toca mide al menos 40px de alto, como el resto del portal:
+ * estos examenes se responden desde el telefono.
+ */
+
+/* ---------- Lo comun ---------- */
+
+/* La linea que explica como se responde este formato. */
+.ef4-guia {
+  margin: 0 0 14px;
+  line-height: 1.55;
+}
+
+/* ---------- EF-4 · eleccion forzada ---------- */
+
+.ef4-fila {
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  padding: 14px;
+  margin: 9px 0;
+  background: var(--surface);
+}
+.ef4-texto {
+  display: block;
+  font-size: 13px;
+  line-height: 1.45;
+  margin-bottom: 11px;
+}
+.ef4-marcas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.ef4-marca {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 13px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  font-size: 12px;
+  color: var(--muted);
+  cursor: pointer;
+}
+.ef4-marca:hover {
+  border-color: var(--line2);
+}
+/* Marcada: se nota sin necesidad de leerla. */
+.ef4-marca:has(input:checked) {
+  border-color: var(--ink);
+  color: var(--ink);
+  font-weight: 700;
+}
+
+/* ---------- SJT-R · calificar cada opcion ---------- */
+
+.escala-fila {
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  padding: 14px;
+  margin: 9px 0;
+  background: var(--surface);
+}
+.escala-texto {
+  display: block;
+  font-size: 13px;
+  line-height: 1.45;
+  margin-bottom: 11px;
+}
+.escala {
+  display: flex;
+  gap: 7px;
+}
+.escala-punto {
+  flex: 1;
+  min-height: 44px;
+  cursor: pointer;
+}
+/* El radio sigue ahi para el teclado y el lector de pantalla; lo que se ve es
+   el numero, que en un telefono se puede tocar.
+   Se esconde recortandolo a un pixel y no con `opacity: 0` sobre un cuadro de
+   0x0: un elemento sin tamaño el navegador lo saca del arbol de accesibilidad,
+   y entonces quien usa lector de pantalla se queda sin poder calificar. */
+.escala-punto input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  clip-path: inset(50%);
+  overflow: hidden;
+  white-space: nowrap;
+}
+.escala-punto span {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.escala-punto:hover span {
+  border-color: var(--line2);
+}
+.escala-punto input:checked + span {
+  background: var(--inv);
+  border-color: var(--inv);
+  color: var(--invink);
+}
+.escala-punto input:focus-visible + span {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}
+.escala-leyenda {
+  margin: 12px 0 0;
+  font-size: 11.5px;
+}
+
+/* ---------- SEC · ordenar los pasos ---------- */
+
+.pasos-lista {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 14px;
+}
+.paso {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  padding: 11px 12px;
+  margin: 9px 0;
+  background: var(--surface);
+}
+.paso-orden {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--surface2);
+  font-size: 12px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.paso-texto {
+  flex: 1;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.paso-botones {
+  flex: none;
+  display: flex;
+  gap: 6px;
+}
+.paso-botones .iconbtn {
+  font-size: 15px;
+}
+
+/* ---------- CD · caso descompuesto ---------- */
+
+.campos-caso .field {
+  margin-bottom: 13px;
+}
+.campos-caso .field:last-child {
+  margin-bottom: 0;
+}
+
+/* ---------- Telefono ---------- */
+
+@media (max-width: 680px) {
+  .ef4-marca {
+    flex: 1;
+    justify-content: center;
+  }
+  .escala {
+    gap: 5px;
+  }
+  .escala-punto span {
+    font-size: 13px;
+  }
+  /* El paso no se parte en varias lineas: el numero, el texto y las flechas
+     tienen que leerse como una sola fila o se pierde de que paso son. Lo que
+     cede es el aire, no la estructura ni el tamaño de lo que se toca. */
+  .paso {
+    gap: 9px;
+    padding: 10px;
+  }
+}
