@@ -241,6 +241,15 @@ export function Evaluacion() {
       return
     }
 
+    // Un `V` a medias no se manda, igual que los formatos con detalle: son
+    // varios datos en una sola cadena, y mandarla con la mitad dejaria guardada
+    // una respuesta incompleta que despues nadie sabria distinguir de una
+    // entera. Se queda en la pantalla hasta que el candidato la termina.
+    if (queFalta(pregunta, undefined, borrador.texto) !== null) {
+      if (cola.current.delete(pregunta.id)) refrescarCola()
+      return
+    }
+
     cola.current.set(pregunta.id, { texto: borrador.texto })
     refrescarCola()
     window.clearTimeout(temporizador.current)
@@ -425,7 +434,9 @@ export function Evaluacion() {
   // servidor tenga guardado. Esto es lo que hace que al recargar la pagina la
   // pregunta vuelva a salir respondida.
   const detalleDeEsta = detalles[pregunta.id] ?? normalizarDetalle(pregunta.respuestaDetalle)
-  const falta = modo === 'DETALLE' ? queFalta(pregunta, detalleDeEsta) : null
+  // Vale para cualquier formato: los que no llevan detalle ni son `V` devuelven
+  // nulo, asi que no hace falta preguntar antes de que tipo es la pregunta.
+  const falta = queFalta(pregunta, detalleDeEsta, texto)
 
   const estaVacia =
     modo === 'DETALLE'

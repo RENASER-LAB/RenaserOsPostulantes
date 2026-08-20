@@ -21,15 +21,20 @@
  * La forma de lo que se manda esta en `bancoV3.ts`, no aqui.
  */
 
+import type { ReactNode } from 'react'
 import type { DetalleRespuesta, OpcionCandidato, PreguntaEvaluacion } from '@/api/tipos'
 import { MAXIMO_DEL_TEXTO } from './Evaluacion'
 import {
+  armarTextoV,
   camposDeCaso,
   esDatoCorto,
+  leerValoresV,
   modoDeRespuesta,
   moverPaso,
   ordenVisible,
   queFalta,
+  soloCantidad,
+  subcamposDeV,
 } from './bancoV3'
 import './formatos-v3.css'
 
@@ -51,14 +56,35 @@ export function RespuestaDeLaPregunta(props: Props) {
   const modo = modoDeRespuesta(pregunta)
 
   if (modo === 'OPCION') return <OpcionUnica {...props} />
-  if (modo === 'TEXTO') return <Escrito {...props} />
+  if (modo === 'TEXTO') {
+    // Un `V` no es una pregunta suelta: son varios datos en un mismo enunciado,
+    // y se pintan por separado. Los demas textos siguen siendo un cuadro.
+    if (!esDatoCorto(pregunta.tipo)) return <Escrito {...props} />
+    return <ConAviso {...props} falta={queFalta(pregunta, undefined, props.texto)}>
+      <DatoPorPartes {...props} />
+    </ConAviso>
+  }
 
-  const falta = queFalta(pregunta, props.detalle)
+  return (
+    <ConAviso {...props} falta={queFalta(pregunta, props.detalle)}>
+      <PorFormato {...props} />
+    </ConAviso>
+  )
+}
+
+/**
+ * El formato, y debajo lo que le falta para poder mandarse.
+ *
+ * Lo que falta se dice siempre, no solo al intentar entregar: si el candidato
+ * se entera al final, ya no se acuerda de esta pregunta.
+ */
+function ConAviso({
+  falta,
+  children,
+}: Props & { falta: string | null; children: ReactNode }) {
   return (
     <>
-      <PorFormato {...props} />
-      {/* Lo que falta se dice siempre, no solo al intentar entregar: si el
-          candidato se entera al final, ya no se acuerda de esta pregunta. */}
+      {children}
       {falta ? (
         <div className="hint hint-pendiente">{falta}</div>
       ) : (
@@ -108,43 +134,99 @@ function OpcionUnica({ pregunta, opcionElegida, onOpcion }: Props) {
   )
 }
 
-/**
- * Las abiertas y los items `V`.
- *
- * Un `V` pide un dato suelto —casi siempre un numero—, asi que va en una linea
- * y no en un cuadro grande: en el telefono, un cuadro de seis lineas para
- * escribir «14» invita a contar una historia que nadie va a leer.
- */
-function Escrito({ pregunta, texto, onTexto }: Props) {
-  const corto = esDatoCorto(pregunta.tipo)
+/** Las preguntas abiertas del banco viejo: un relato, en un cuadro grande. */
+function Escrito({ texto, onTexto }: Props) {
   return (
     <div className="field">
       <label htmlFor="respuesta">Tu respuesta</label>
-      {corto ? (
-        <input
-          id="respuesta"
-          type="text"
-          inputMode="text"
-          value={texto}
-          onChange={(e) => onTexto(e.target.value)}
-          placeholder="El dato que se te pide"
-        />
-      ) : (
-        <textarea
-          id="respuesta"
-          value={texto}
-          maxLength={MAXIMO_DEL_TEXTO}
-          onChange={(e) => onTexto(e.target.value)}
-          placeholder="Describe el contexto, qué hiciste, qué resultado obtuviste y qué aprendiste."
-        />
-      )}
+      <textarea
+        id="respuesta"
+        value={texto}
+        maxLength={MAXIMO_DEL_TEXTO}
+        onChange={(e) => onTexto(e.target.value)}
+        placeholder="Describe el contexto, qué hiciste, qué resultado obtuviste y qué aprendiste."
+      />
       <div className="hint">
-        {corto
-          ? 'Escribe solo el dato, sin explicarlo. Se guarda solo cuando dejas de escribir.'
-          : texto.length > MAXIMO_DEL_TEXTO * 0.9
-            ? `Se guarda sola cuando dejas de escribir. Llevas ${texto.length.toLocaleString('es-PE')} caracteres de ${MAXIMO_DEL_TEXTO.toLocaleString('es-PE')}: pasado ese punto el servidor no la acepta.`
-            : 'Se guarda sola cuando dejas de escribir.'}
+        {texto.length > MAXIMO_DEL_TEXTO * 0.9
+          ? `Se guarda sola cuando dejas de escribir. Llevas ${texto.length.toLocaleString('es-PE')} caracteres de ${MAXIMO_DEL_TEXTO.toLocaleString('es-PE')}: pasado ese punto el servidor no la acepta.`
+          : 'Se guarda sola cuando dejas de escribir.'}
       </div>
+    </div>
+  )
+}
+
+// ---------- V · varios datos en un mismo enunciado ----------
+
+/**
+ * Un item `V`, partido en los datos que de verdad pide.
+ *
+ * Antes esto era **un solo cuadro de texto** para todo el enunciado, y de ahi
+ * venia la queja: «pides numero pero puedes poner nombre». En «Años haciendo
+ * este trabajo: ___ · En cuantas empresas: ___» cabia cualquier cosa, nadie
+ * avisaba de nada, y la respuesta llegaba al puntaje como una frase suelta que
+ * su tabla de tramos no podia leer.
+ *
+ * Ahora cada dato tiene su campo y su etiqueta, y **el campo solo acepta lo que
+ * se le pide**: los que piden una cantidad no dejan escribir letras, y los que
+ * ofrecen opciones son un desplegable —mas rapido en el telefono, y ahi no se
+ * puede escribir nada raro—.
+ *
+ * Lo que se manda no cambia: sigue siendo el campo `texto` de siempre, con los
+ * datos juntos y cada uno con su etiqueta delante.
+ */
+function DatoPorPartes({ pregunta, texto, onTexto }: Props) {
+  const subcampos = subcamposDeV(pregunta)
+  const valores = leerValoresV(subcampos, texto)
+
+  const cambiar = (clave: string, valor: string) =>
+    onTexto(armarTextoV(subcampos, { ...valores, [clave]: valor }))
+
+  return (
+    <div className="dato-partes">
+      <p className="small ef4-guia">
+        Llena cada dato en su casilla. Son datos sueltos: aquí no hay que explicar nada.
+      </p>
+      {subcampos.map((sub) => {
+        const id = `dato-${pregunta.id}-${sub.clave}`
+        const valor = valores[sub.clave] ?? ''
+        return (
+          <div className="field" key={sub.clave}>
+            <label htmlFor={id}>{sub.etiqueta}</label>
+            {sub.clase === 'LISTA' ? (
+              <select id={id} value={valor} onChange={(e) => cambiar(sub.clave, e.target.value)}>
+                <option value="">Elige una…</option>
+                {sub.opciones.map((opcion) => (
+                  <option value={opcion} key={opcion}>
+                    {opcion}
+                  </option>
+                ))}
+              </select>
+            ) : sub.clase === 'NUMERO' ? (
+              /* `inputMode` saca el teclado numerico en el telefono, pero no
+                 impide teclear letras en un ordenador: por eso lo que llega se
+                 filtra igual. Las dos cosas hacen falta. */
+              <input
+                id={id}
+                type="text"
+                inputMode="numeric"
+                autoComplete="off"
+                value={valor}
+                placeholder="Solo el número"
+                onChange={(e) => cambiar(sub.clave, soloCantidad(e.target.value))}
+              />
+            ) : (
+              <input
+                id={id}
+                type="text"
+                autoComplete="off"
+                maxLength={sub.maximo ?? undefined}
+                value={valor}
+                onChange={(e) => cambiar(sub.clave, e.target.value)}
+              />
+            )}
+          </div>
+        )
+      })}
     </div>
   )
 }

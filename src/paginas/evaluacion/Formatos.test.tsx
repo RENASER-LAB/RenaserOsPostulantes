@@ -205,11 +205,11 @@ describe('CD', () => {
   it('espera a que estén todos los campos', async () => {
     await montar(pregunta('CD', { casosPedidos: 2 }))
 
-    fireEvent.change(screen.getByLabelText('Dato 1'), { target: { value: '120 horas' } })
+    fireEvent.change(screen.getByLabelText('Campo 1 de 2'), { target: { value: '120 horas' } })
     expect(enviado).toHaveLength(0)
     expect(screen.getByText(/Te falta un campo por llenar/)).toBeTruthy()
 
-    fireEvent.change(screen.getByLabelText('Dato 2'), { target: { value: '3 personas' } })
+    fireEvent.change(screen.getByLabelText('Campo 2 de 2'), { target: { value: '3 personas' } })
 
     // Los campos de escribir esperan a que pare la mano, como el resto del
     // portal, asi que este tarda mas que los de marcar.
@@ -218,16 +218,152 @@ describe('CD', () => {
       { timeout: 3000 },
     )
   })
+
+  it('cuando el backend manda «casosPedidos», pinta esos campos', async () => {
+    // O03 en la base real pide 6. Antes el portal no tenia de donde sacarlo.
+    await montar(pregunta('CD', { casosPedidos: 6, enunciado: 'Tu tarea principal.' }))
+    expect(screen.getByLabelText('Campo 1 de 6')).toBeTruthy()
+    expect(screen.getByLabelText('Campo 6 de 6')).toBeTruthy()
+  })
+
+  it('si «casosPedidos» no llega, se saca del «(N campos)» del enunciado', async () => {
+    // El escalon que no depende del servidor: el numero esta en el texto que el
+    // candidato ya esta leyendo.
+    await montar(pregunta('CD', { enunciado: 'Un problema con un compañero. (4 campos)' }))
+    expect(screen.getByLabelText('Campo 1 de 4')).toBeTruthy()
+    expect(screen.getByLabelText('Campo 4 de 4')).toBeTruthy()
+    expect(screen.queryByLabelText('Campo 5 de 4')).toBeNull()
+  })
 })
 
-describe('V', () => {
-  it('se responde con un dato suelto y va en «texto»', async () => {
-    await montar(pregunta('V'))
+// ---------- V ----------
 
-    fireEvent.change(screen.getByLabelText('Tu respuesta'), { target: { value: '14' } })
+/** O01 tal como esta hoy en la base, pero entero. Tres datos en un enunciado. */
+const V_EXPERIENCIA =
+  'Años haciendo este trabajo: ___ · En cuántas empresas: ___ ·'
+  + ' Nombre exacto de tu último puesto: (texto ≤ 40 car.)'
 
-    await waitFor(() => expect(enviado[0]?.texto).toBe('14'), { timeout: 3000 })
-    expect(enviado[0]?.detalle).toBeUndefined()
+describe('V · el enunciado se parte en los datos que pide', () => {
+  it('cada dato tiene su casilla y su etiqueta, no un cuadro para todo', async () => {
+    // Esta es la queja que abrio todo: un solo cuadro de texto para tres datos
+    // distintos, donde «Años» aceptaba cualquier cosa.
+    await montar(pregunta('V', { enunciado: V_EXPERIENCIA }))
+
+    expect(screen.getByLabelText('Años haciendo este trabajo')).toBeTruthy()
+    expect(screen.getByLabelText('En cuántas empresas')).toBeTruthy()
+    expect(screen.getByLabelText('Nombre exacto de tu último puesto')).toBeTruthy()
+    // El cuadro unico de antes ya no existe.
+    expect(screen.queryByLabelText('Tu respuesta')).toBeNull()
+  })
+
+  it('el que pide una cantidad no deja escribir letras', async () => {
+    await montar(pregunta('V', { enunciado: V_EXPERIENCIA }))
+
+    const anos = screen.getByLabelText('Años haciendo este trabajo') as HTMLInputElement
+    fireEvent.change(anos, { target: { value: 'Ricardo' } })
+    expect(anos.value).toBe('')
+
+    fireEvent.change(anos, { target: { value: '5 años' } })
+    expect(anos.value).toBe('5')
+
+    // El teclado del telefono tiene que salir con numeros, no con letras.
+    expect(anos.getAttribute('inputMode')).toBe('numeric')
+  })
+
+  it('el que pide texto sigue aceptando texto', async () => {
+    await montar(pregunta('V', { enunciado: V_EXPERIENCIA }))
+
+    const puesto = screen.getByLabelText('Nombre exacto de tu último puesto') as HTMLInputElement
+    fireEvent.change(puesto, { target: { value: 'Operario de planta' } })
+    expect(puesto.value).toBe('Operario de planta')
+    // «(texto ≤ 40 car.)» es un tope de verdad, no un adorno del enunciado.
+    expect(puesto.maxLength).toBe(40)
+  })
+
+  it('las opciones entre paréntesis son un desplegable, no un texto libre', async () => {
+    // O32. Una lista se elige, y en el telefono eso es mas rapido que escribir
+    // «esporádica» con tilde y sin erratas.
+    await montar(
+      pregunta('V', {
+        enunciado:
+          'Actividad física: (nunca / esporádica / 1–2 por semana / 3–4 / diaria)'
+          + ' · Años sosteniéndola: ___',
+      }),
+    )
+
+    const lista = screen.getByLabelText('Actividad física') as HTMLSelectElement
+    expect(lista.tagName).toBe('SELECT')
+    expect([...lista.options].map((o) => o.value)).toEqual([
+      '', 'nunca', 'esporádica', '1–2 por semana', '3–4', 'diaria',
+    ])
+    expect(screen.getByLabelText('Años sosteniéndola')).toBeTruthy()
+  })
+
+  it('no se manda a medias, y al completarlo va todo junto en «texto»', async () => {
+    await montar(pregunta('V', { enunciado: V_EXPERIENCIA }))
+
+    fireEvent.change(screen.getByLabelText('Años haciendo este trabajo'), {
+      target: { value: '5' },
+    })
+    fireEvent.change(screen.getByLabelText('En cuántas empresas'), { target: { value: '2' } })
+    expect(screen.getByText(/Te falta un dato por llenar/)).toBeTruthy()
+    expect(enviado).toHaveLength(0)
+
+    fireEvent.change(screen.getByLabelText('Nombre exacto de tu último puesto'), {
+      target: { value: 'Operario de planta' },
+    })
+
+    // El contrato no cambia: sigue viajando en `texto`, con la etiqueta de cada
+    // dato delante para que quien lo lea despues sepa que contesto a que.
+    await waitFor(
+      () =>
+        expect(enviado[enviado.length - 1]?.texto).toBe(
+          'Años haciendo este trabajo: 5 · En cuántas empresas: 2'
+          + ' · Nombre exacto de tu último puesto: Operario de planta',
+        ),
+      { timeout: 3000 },
+    )
+    expect(enviado[enviado.length - 1]?.detalle).toBeUndefined()
+  })
+
+  it('al volver a entrar, cada dato vuelve a su casilla', async () => {
+    await montar(
+      pregunta('V', {
+        enunciado: V_EXPERIENCIA,
+        respuestaTexto:
+          'Años haciendo este trabajo: 5 · En cuántas empresas: 2'
+          + ' · Nombre exacto de tu último puesto: Operario de planta',
+      }),
+    )
+
+    expect((screen.getByLabelText('Años haciendo este trabajo') as HTMLInputElement).value)
+      .toBe('5')
+    expect((screen.getByLabelText('En cuántas empresas') as HTMLInputElement).value).toBe('2')
+    expect((screen.getByLabelText('Nombre exacto de tu último puesto') as HTMLInputElement).value)
+      .toBe('Operario de planta')
+    expect(screen.getByText('Respuesta guardada')).toBeTruthy()
+    // Repintar no es responder otra vez.
+    expect(enviado).toHaveLength(0)
+  })
+
+  it('un trozo cortado a media frase no bloquea la entrega', async () => {
+    // En la base hay enunciados truncados —«... · Nombre exacto de»—. Ese trozo
+    // no se puede contestar, asi que se pide pero no se exige: si se exigiera,
+    // el candidato se quedaria sin poder entregar por algo que no es suyo.
+    await montar(
+      pregunta('V', {
+        enunciado: 'Años haciendo este trabajo: ___ · Nombre exacto de',
+      }),
+    )
+
+    fireEvent.change(screen.getByLabelText('Años haciendo este trabajo'), {
+      target: { value: '5' },
+    })
+
+    await waitFor(
+      () => expect(enviado[enviado.length - 1]?.texto).toBe('Años haciendo este trabajo: 5'),
+      { timeout: 3000 },
+    )
   })
 })
 

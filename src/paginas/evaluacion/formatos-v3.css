@@ -181,9 +181,33 @@
   margin-bottom: 0;
 }
 
+/* ---------- V · varios datos en un mismo enunciado ---------- */
+
+/* Mismo aire que los campos de un CD: por dentro los dos son lo mismo —una
+   lista de datos sueltos— y verlos distintos haria pensar que se responden de
+   otra forma. */
+.dato-partes .field {
+  margin-bottom: 13px;
+}
+.dato-partes .field:last-child {
+  margin-bottom: 0;
+}
+
+/* Un dato suelto es corto —«14», «3 empresas»— y un campo de ancho completo
+   invita a escribir un parrafo justo donde no cabe. En el telefono vuelve a
+   ocupar todo, que ahi el ancho ya es el que es. */
+.dato-partes .field input,
+.dato-partes .field select {
+  max-width: 320px;
+}
+
 /* ---------- Telefono ---------- */
 
 @media (max-width: 680px) {
+  .dato-partes .field input,
+  .dato-partes .field select {
+    max-width: none;
+  }
   .ef4-marca {
     flex: 1;
     justify-content: center;
