@@ -181,8 +181,14 @@ export async function pedir<T>(ruta: string, opciones: Opciones = {}): Promise<T
 }
 
 async function leerCuerpo(respuesta: Response): Promise<unknown> {
-  const esJson = respuesta.headers.get('Content-Type')?.includes('application/json') ?? false
-  return esJson
+  // Ojo con el tipo: Spring manda los errores como `application/problem+json`,
+  // no como `application/json`. Buscando la cadena entera, TODO error del
+  // backend se leia como texto plano y su explicacion se perdia: el candidato
+  // acababa viendo «No se pudo completar la operación» viniera lo que viniera
+  // —«La respuesta es demasiado larga», «El plazo ya pasó»— y no habia forma de
+  // saber que estaba mal.
+  const tipo = respuesta.headers.get('Content-Type') ?? ''
+  return tipo.includes('json')
     ? await respuesta.json().catch(() => null)
     : await respuesta.text().catch(() => null)
 }

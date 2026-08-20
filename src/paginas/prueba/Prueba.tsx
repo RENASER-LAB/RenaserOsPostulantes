@@ -34,6 +34,8 @@ import { Modal } from '@/ui/Modal'
 import { Cargando, Fallo } from '@/ui/Mensajes'
 
 const ESPERA_ANTES_DE_GUARDAR = 1000
+/** El mismo `@Size` del backend que en la evaluacion. */
+const MAXIMO_DEL_TEXTO = 20_000
 /** Cada cuanto se vuelve a intentar lo que no llego al servidor. */
 const ESPERA_ANTES_DE_REINTENTAR = 5000
 const CADA_20_SEGUNDOS = 20_000
@@ -226,6 +228,7 @@ function PreguntaPrueba({
       <textarea
         id={`pregunta-${pregunta.id}`}
         value={texto}
+        maxLength={MAXIMO_DEL_TEXTO}
         onChange={(e) => setTexto(e.target.value)}
       />
       <div className={`hint${estado === 'pendiente' ? ' hint-pendiente' : ''}`}>{pista}</div>

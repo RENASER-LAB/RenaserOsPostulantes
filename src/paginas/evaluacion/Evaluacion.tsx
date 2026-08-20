@@ -37,6 +37,12 @@ import { Modal } from '@/ui/Modal'
 import { Cargando, Fallo } from '@/ui/Mensajes'
 
 const ESPERA_ANTES_DE_GUARDAR = 800
+/**
+ * Lo que el backend acepta como maximo en una respuesta escrita: el `@Size` del
+ * record `Responder`. Si se pasa, el guardado rebota con un 400 y la respuesta
+ * no llega, asi que aqui se corta antes y se avisa al acercarse.
+ */
+const MAXIMO_DEL_TEXTO = 20_000
 /** Cada cuanto se vuelve a intentar lo que no llego al servidor. */
 const ESPERA_ANTES_DE_REINTENTAR = 5000
 
@@ -447,10 +453,15 @@ export function Evaluacion() {
               <textarea
                 id="respuesta"
                 value={texto}
+                maxLength={MAXIMO_DEL_TEXTO}
                 onChange={(e) => setBorrador({ preguntaId: pregunta.id, texto: e.target.value })}
                 placeholder="Describe el contexto, qué hiciste, qué resultado obtuviste y qué aprendiste."
               />
-              <div className="hint">Se guarda sola cuando dejas de escribir.</div>
+              <div className="hint">
+                {texto.length > MAXIMO_DEL_TEXTO * 0.9
+                  ? `Se guarda sola cuando dejas de escribir. Llevas ${texto.length.toLocaleString('es-PE')} caracteres de ${MAXIMO_DEL_TEXTO.toLocaleString('es-PE')}: pasado ese punto el servidor no la acepta.`
+                  : 'Se guarda sola cuando dejas de escribir.'}
+              </div>
             </div>
           )}
 
