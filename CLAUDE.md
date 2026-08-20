@@ -211,7 +211,7 @@ acción pendiente con el historial correcto.
 
 | Qué | Estado |
 |---|---|
-| **Render devuelve 500 en todo** | Ya contesta —en 1,1s—, pero `/api/vacantes`, `/api/vacantes/{id}` y hasta `/actuator/health` responden 500. La instancia arranca y la aplicación no. Sin esto no hay forma de validar nada contra datos reales |
+| ~~Render no responde~~ | **Resuelto.** Contesta bien y sirve las vacantes reales. Ojo con una trampa al comprobarlo a mano: la base es `/api/v1/portal`, no `/api`. Pedir `/api/vacantes` devuelve 500, y parece que el backend esté caído cuando no lo está |
 | **La corrección de la evaluación sin validar** | El commit `5ceb552` compila y pasa el tipado, pero no se pudo probar contra una evaluación real porque Render cayó a mitad |
 | **Pantalla de decisión ámbar** | `DECISION_TURNO_CANDIDATO` existe en el backend pero **no hay ruta** para pedir ni enviar la evidencia adicional. La pantalla explica la situación, sin formulario |
 | **Saber cómo se llama el candidato** | El backend solo devuelve `{ token, usuarioId }` al entrar. El nombre se guarda al crear la cuenta; quien entre desde otro navegador verá el portal sin su nombre |
