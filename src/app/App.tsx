@@ -14,6 +14,7 @@ import { ProveedorTema } from './Tema'
 import { Vacantes } from '@/paginas/vacantes/Vacantes'
 import { Vacante } from '@/paginas/vacantes/Vacante'
 import { Ingresar } from '@/paginas/cuenta/Ingresar'
+import { Acceso } from '@/paginas/cuenta/Acceso'
 import { Registro } from '@/paginas/cuenta/Registro'
 import { Postular } from '@/paginas/postular/Postular'
 import { Procesos } from '@/paginas/procesos/Procesos'
@@ -64,6 +65,8 @@ export function App() {
                     <Route path={patrones.vacantes} element={<Vacantes />} />
                     <Route path={patrones.vacante} element={<Vacante />} />
                     <Route path={patrones.ingresar} element={<Ingresar />} />
+                    {/* La entrada por el enlace del correo: sin contrasena. */}
+                    <Route path={patrones.acceso} element={<Acceso />} />
                     <Route path={patrones.registro} element={<Registro />} />
 
                     {/* Con cuenta */}

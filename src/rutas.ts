@@ -11,6 +11,7 @@ export const patrones = {
   vacante: '/vacantes/:vacanteId',
   postular: '/vacantes/:vacanteId/postular',
   ingresar: '/ingresar',
+  acceso: '/acceso',
   registro: '/registro',
   procesos: '/procesos',
   proceso: '/procesos/:uuid',
@@ -26,6 +27,8 @@ export const rutas = {
   vacante: (vacanteId: number | string) => `/vacantes/${vacanteId}`,
   postular: (vacanteId: number | string) => `/vacantes/${vacanteId}/postular`,
   ingresar: () => '/ingresar',
+  /** La entrada sin contrasena. El token va en la query, no en el camino. */
+  acceso: (token: string) => `/acceso?token=${encodeURIComponent(token)}`,
   /** El registro recuerda a que vacante se estaba postulando, para volver despues. */
   registro: (vacanteId?: number | string) =>
     vacanteId === undefined ? '/registro' : `/registro?vacante=${vacanteId}`,

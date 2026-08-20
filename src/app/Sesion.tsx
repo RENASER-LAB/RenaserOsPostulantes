@@ -17,7 +17,7 @@ import {
   type ReactNode,
 } from 'react'
 import { alCaerLaSesion, borrarToken, guardarToken, leerToken } from '@/api/cliente'
-import { crearCuenta, ingresar } from '@/api/portal'
+import { accederConEnlace, crearCuenta, ingresar } from '@/api/portal'
 import type { CrearCuenta, Login } from '@/api/tipos'
 
 const CLAVE_NOMBRE = 'renaser_portal_nombre'
@@ -29,6 +29,8 @@ interface Sesion {
   saludo: string | null
   hayCuenta: boolean
   entrar: (datos: Login) => Promise<void>
+  /** Entrar con el enlace del correo, sin contrasena. */
+  entrarConEnlace: (token: string) => Promise<void>
   registrar: (datos: CrearCuenta) => Promise<void>
   salir: () => void
 }
@@ -69,6 +71,14 @@ export function ProveedorSesion({ children }: { children: ReactNode }) {
     setToken(sesion.token)
   }, [])
 
+  // El nombre no se toca: quien entra por enlace no lo trae, y borrar el que
+  // hubiera dejaria sin saludo a quien ya se habia registrado en este navegador.
+  const entrarConEnlace = useCallback(async (token: string) => {
+    const sesion = await accederConEnlace(token)
+    guardarToken(sesion.token)
+    setToken(sesion.token)
+  }, [])
+
   const registrar = useCallback(async (datos: CrearCuenta) => {
     await crearCuenta(datos)
     // El backend no devuelve sesion al crear la cuenta: hay que entrar despues.
@@ -104,10 +114,11 @@ export function ProveedorSesion({ children }: { children: ReactNode }) {
       saludo: nombre?.trim().split(/\s+/)[0] ?? null,
       hayCuenta: token !== null,
       entrar,
+      entrarConEnlace,
       registrar,
       salir,
     }),
-    [token, nombre, entrar, registrar, salir],
+    [token, nombre, entrar, entrarConEnlace, registrar, salir],
   )
 
   return <Contexto value={valor}>{children}</Contexto>
