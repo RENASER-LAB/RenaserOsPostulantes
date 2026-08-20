@@ -6,6 +6,9 @@ el estado del proceso.
 
 El panel del equipo de Talento **no** está aquí: vive en el repositorio del backend.
 
+Si vas a retomar el trabajo, empieza por [CLAUDE.md](CLAUDE.md): tiene el contexto completo —
+con qué habla el portal, qué se decidió y por qué, y qué está a medias.
+
 ## Levantarlo
 
 Necesitas el backend de Spring corriendo en el 8080.

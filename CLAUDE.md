@@ -1,0 +1,197 @@
+# Portal del candidato · contexto de trabajo
+
+Última actualización: 2026-08-20 · commit `5ceb552`
+
+Este archivo es para retomar el trabajo sin tener que reconstruir nada. Cuenta qué es este
+proyecto, con qué habla, qué se decidió y por qué, y qué está a medias.
+
+---
+
+## Qué es esto
+
+La cara que ve **quien postula** a una vacante de Renaser: elegir oportunidad, postular,
+responder la evaluación, hacer la prueba del puesto, elegir fecha de simulación y seguir el
+estado del proceso.
+
+**Qué NO es.** El panel del equipo de Talento no está aquí. Vive en el repositorio del
+backend, en `frontend/`, y es otra aplicación (React sin TypeScript, sin enrutador).
+
+---
+
+## Con qué habla
+
+| Pieza | Dónde |
+|---|---|
+| Este portal | `github.com/RENASER-LAB/RenaserOsPostulantes` · desplegado en Vercel |
+| Backend | `github.com/RENASER-LAB/ai-agents--spring-ai` · Spring Boot, Java 25 |
+| Backend desplegado | `https://ai-agents-spring-ai.onrender.com` |
+| Base de datos | Supabase en la nube |
+
+⚠️ **La base de datos es la de producción, y es la misma en local y en Render.** El
+`docker-compose.yml` del backend levanta un Postgres local, pero `application-secrets.yaml`
+apunta la conexión a Supabase, así que ese contenedor no se usa para los datos (RabbitMQ sí).
+Registrarse o postular desde el portal —también en local— **escribe junto a candidatos
+reales**.
+
+---
+
+## Levantarlo en un equipo nuevo
+
+Hace falta Node **20.19 o superior**. Con 20.17 compila pero Vite avisa en cada arranque.
+
+```bash
+npm install
+```
+
+El portal llama a `/api`, y Vite lo reenvía al backend. Por defecto va a
+`http://localhost:8080`. Para trabajar contra Render sin levantar nada más, crea un
+`.env.local` — **no está en el repositorio, hay que recrearlo**:
+
+```bash
+echo "API_URL=https://ai-agents-spring-ai.onrender.com" > .env.local
+```
+
+```bash
+npm run dev
+```
+
+Queda en `http://localhost:5174`.
+
+Si prefieres el backend en casa, borra `.env.local` y en el repositorio del backend:
+
+```bash
+docker compose up -d
+```
+
+```bash
+./mvnw spring-boot:run
+```
+
+Tarda unos 40 segundos en arrancar. El README del backend pide Ollama, pero **está
+desactualizado**: la configuración real usa DeepSeek y Google GenAI en la nube, y no hay
+ninguna referencia a Ollama en los YAML.
+
+---
+
+## Las tres piezas que sostienen el resto
+
+**`src/dominio/estados.ts`** — el corazón. El backend manda un estado con nombre
+(`PRUEBA_TURNO_CANDIDATO`, `PERFIL_CALIFICANDO`…) y este archivo traduce cada uno de los 18 a
+lo que ve el candidato: etapa de la barra, título, ayuda y botón. Ninguna pantalla sabe qué
+estados existen: se lo pregunta a la tabla. Si el backend añade un estado, se toca aquí y en
+ningún otro sitio.
+
+La regla que lo ordena: si el estado acaba en `TURNO_CANDIDATO` hay botón; si acaba en
+`CALIFICANDO`, `POR_HABILITAR` o `POR_CONFIRMAR`, solo se informa y se espera.
+
+**`src/dominio/reloj.ts`** — la hora la manda el servidor. El cronómetro de la prueba no
+cuenta hacia atrás desde un número: recalcula cuánto falta hasta la hora de vencimiento del
+backend, descontando el desfase entre relojes (se saca de la cabecera `Date` de cada
+respuesta). Cambiar la hora del equipo no lo mueve.
+
+**`src/api/cliente.ts`** — la única puerta al backend. Pone el token, convierte los errores
+HTTP en algo que la pantalla pueda enseñar, apunta la hora del servidor, y cierra la sesión
+sola cuando un 401 revela que el token ya no vale.
+
+---
+
+## Decisiones tomadas
+
+| Qué | Decisión | Por qué |
+|---|---|---|
+| Lenguaje | TypeScript | 18 estados y DTOs grandes; rompe la consistencia con el panel de criba, que es JS plano |
+| Alcance | Solo el portal del candidato | El panel del equipo sigue en el repositorio del backend |
+| Rutas | Reales, no con almohadilla | Necesitan que el servidor devuelva el index; lo hace `vercel.json` |
+| Evaluación | **Sí se puede volver atrás** y corregir | El backend manda todas las preguntas y acepta guardarlas en cualquier orden |
+| Producción | Reescritura en Vercel, no llamada directa | El backend **no configura CORS por ningún lado**; reenviando por Vercel no hace falta |
+
+Sobre lo último: no añadas CORS al backend. Con la reescritura no se necesita, y añadirlo
+abriría el backend a otros orígenes sin motivo.
+
+---
+
+## Qué se corrigió del mockup
+
+El diseño salió de `ai-agents--spring-ai/docs/mockups/portal-candidato.html`. Los colores, la
+escala de espacios, los cortes de pantalla y los componentes se copiaron tal cual. La lógica
+no, porque el mockup se escribió antes de que el backend fijara su modelo de estados.
+
+El detalle completo está en [docs/01-ANALISIS-PORTAL.md](docs/01-ANALISIS-PORTAL.md). Lo
+esencial:
+
+- Las etapas son **Perfil Integral · Prueba · Simulación · Validación · Decisión**. El mockup
+  enseñaba CV · Evaluación · Prueba · Simulación · Validación.
+- Son 18 estados con nombre, no un número del 0 al 5.
+- Crear cuenta pide nombre y apellidos por separado, y son **dos consentimientos** distintos.
+- Postular confirma los **requisitos objetivos** de la vacante.
+- Los entregables de la prueba son una lista, y la prueba también trae preguntas.
+- El detalle de la postulación pinta el historial de verdad.
+- **No se enseña el grupo de prioridad**: es clasificación interna del equipo.
+
+---
+
+## Trampas que ya costaron un fallo
+
+No las reintroduzcas.
+
+**`useEffect` con cuerpo corto.** `useEffect(() => window.scrollTo(0, 0), [ruta])` devuelve lo
+que devuelva `scrollTo`, y React se lo queda como función de limpieza. Al desmontar intenta
+llamarlo y lanza `destroy is not a function`, que se lleva el árbol entero: página en negro.
+Siempre cuerpo entre llaves salvo que devuelvas limpieza a propósito.
+
+**Cancelar el guardado con retardo en la limpieza.** El efecto que guardaba el texto de la
+evaluación cancelaba el envío al desmontarse, y como dependía de la pregunta, cambiar de
+pregunta lo cancelaba. Quien escribía y pulsaba «Siguiente» rápido perdía la respuesta. Lo
+pendiente se anota en una referencia y se manda al cambiar de pregunta, al entregar y al
+salir.
+
+**Indicadores que mienten.** Ese mismo sitio ponía «Respuesta guardada» siempre, porque era
+texto fijo. Si un indicador dice que algo está a salvo, tiene que salir de comparar con lo
+que hay en el servidor.
+
+**Mirar el cuerpo antes que el estado.** El cliente devolvía `undefined` cuando no había
+cuerpo, *antes* de comprobar si la respuesta había fallado; un 500 vacío se colaba como
+éxito. Primero el estado, después el cuerpo.
+
+**`<button>` sin `type`.** Por defecto es de envío. Dentro de un formulario, lo envía.
+
+---
+
+## Cómo se escribe aquí
+
+- **Todo en español**, incluidos los nombres del código, como en el backend. Sin eñes ni
+  tildes en identificadores: el backend usa `contrasena`, no `contraseña`.
+- Carpetas por funcionalidad, no por tipo de archivo.
+- Los comentarios explican **por qué**, no qué. Si un comentario describe lo que ya se lee en
+  la línea siguiente, sobra.
+- Las rutas del portal viven todas en `src/rutas.ts`. No escribir direcciones sueltas.
+- Los tipos de `src/api/tipos.ts` copian los `record` de Java uno a uno. Si cambia allá,
+  cambia aquí.
+
+---
+
+## Dónde estamos
+
+Nueve commits. El recorrido de postulación está probado de punta a punta contra el backend
+real: registro, subida de CV, confirmación de requisitos, envío (201) y el panel mostrando la
+acción pendiente con el historial correcto.
+
+### Pendiente
+
+| Qué | Estado |
+|---|---|
+| **Render no responde** | Dos intentos de 120 y 90 segundos sin contestar. Antes iba en 0,48s. Sin esto no hay ni producción ni forma de validar |
+| **La corrección de la evaluación sin validar** | El commit `5ceb552` compila y pasa el tipado, pero no se pudo probar contra una evaluación real porque Render cayó a mitad |
+| **Pantalla de decisión ámbar** | `DECISION_TURNO_CANDIDATO` existe en el backend pero **no hay ruta** para pedir ni enviar la evidencia adicional. La pantalla explica la situación, sin formulario |
+| **Saber cómo se llama el candidato** | El backend solo devuelve `{ token, usuarioId }` al entrar. El nombre se guarda al crear la cuenta; quien entre desde otro navegador verá el portal sin su nombre |
+| **Render duerme** | Si es plan gratuito, la primera visita tras un rato tarda cerca de un minuto y el portal se rinde antes. Sin comprobar |
+| **Cuenta de prueba** | `prueba.portal.qa.20260819@example.com` quedó como **candidata activa** en la base real, postulada a Ingeniero/a de Infraestructura (`f7a53fcc-11eb-4369-be96-bee577bdea85`). Aparece en el panel del equipo junto a candidatos de verdad |
+| **Vercel escribe en producción** | El portal desplegado usa la misma base real. Quien tenga el enlace puede registrarse y postular |
+
+### Lo primero al retomar
+
+1. Mirar los logs de Render y levantarlo.
+2. Validar la corrección de la evaluación: escribir una respuesta, pulsar «Siguiente» de
+   inmediato, y comprobar que el contador de respondidas sube.
+3. Comprobar si hay evaluaciones ya entregadas con menos respuestas de las que deberían —
+   las que se perdieron **no se recuperan**, nunca llegaron al servidor.
