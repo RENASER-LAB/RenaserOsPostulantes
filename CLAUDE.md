@@ -201,6 +201,17 @@ texto fijo. Si un indicador dice que algo está a salvo, tiene que salir de comp
 que hay en el servidor. Y una pregunta en blanco no está «guardada»: está **sin responder**,
 que es otra cosa.
 
+**Creer que el backend habla `application/json`.** No: Spring devuelve sus errores como
+`application/problem+json`. El cliente comprobaba el tipo con `includes('application/json')`,
+que sobre `application/problem+json` da falso, así que **todos** los errores se leían con
+`.text()` y su explicación se perdía. Daba igual lo que dijera el servidor —«La respuesta es
+demasiado larga», «El plazo ya pasó»—: en pantalla siempre salía «No se pudo completar la
+operación». Meses sin poder diagnosticar nada. Se comprueba con `includes('json')`.
+
+**Límites del backend que el portal no conoce.** El texto de una respuesta tiene un
+`@Size(max = 20_000)` en el `record Responder`. Si el portal deja escribir más, el guardado
+rebota y la respuesta no llega. Cuando el backend ponga un límite, ponlo también en el campo.
+
 **Mirar el cuerpo antes que el estado.** El cliente devolvía `undefined` cuando no había
 cuerpo, *antes* de comprobar si la respuesta había fallado; un 500 vacío se colaba como
 éxito. Primero el estado, después el cuerpo.
