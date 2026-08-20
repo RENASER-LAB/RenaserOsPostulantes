@@ -17,9 +17,10 @@ import { afterEach, describe, expect, it, vi, beforeEach } from 'vitest'
 import { cleanup, render, screen, waitFor, fireEvent } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
-import type { EvaluacionCandidato } from '@/api/tipos'
+import type { EvaluacionCandidato, PreguntaEvaluacion } from '@/api/tipos'
 import { ProveedorAvisos } from '@/ui/Avisos'
 import { Evaluacion } from './Evaluacion'
+import { estadoDePregunta, siguienteIncompleta } from './bancoV3'
 
 // ---------- El servidor de mentira ----------
 
@@ -116,6 +117,15 @@ function responder(texto: string) {
 }
 
 const siguiente = () => fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }))
+
+/** Abre el mapa de preguntas desde la barra de arriba. */
+const abrirMapa = () => fireEvent.click(screen.getByRole('button', { name: `Ver las ${TOTAL}` }))
+
+/** El numero del mapa, buscado por lo que dice de el un lector de pantalla. */
+const numeroDelMapa = (n: number) => screen.getByRole('button', { name: new RegExp(`^Pregunta ${n},`) })
+
+/** El boton de volver, si es que hay algun salto que deshacer. */
+const botonVolver = () => screen.queryByRole('button', { name: /^Volver a la/ })
 
 // Sin `globals`, la libreria no limpia sola entre pruebas y los arboles se
 // van apilando: la segunda prueba encontraria dos de cada cosa.
@@ -247,5 +257,141 @@ describe('la evaluacion no pierde respuestas', () => {
 
     responder('Algo escrito.')
     await waitFor(() => expect(screen.getByText('Respuesta guardada')).toBeTruthy())
+  })
+})
+
+/**
+ * Moverse por el examen.
+ *
+ * Sale de una queja de alguien que ya lo habia hecho entero: se salto una
+ * pregunta, el aviso lo mando de la 50 a la 10, y para volver a donde estaba no
+ * habia mas remedio que pulsar «Siguiente» cuarenta veces. Con una pregunta por
+ * pantalla y sin vista de conjunto, un hueco es un hueco a ciegas.
+ */
+describe('moverse por el examen sin perderse', () => {
+  it('el mapa dice como está cada pregunta, y sin depender del color', async () => {
+    await empezar()
+    responder('Uno.')
+
+    abrirMapa()
+
+    // El nombre accesible lleva el estado escrito; en pantalla, ademas del
+    // color, cada uno tiene su forma y su simbolo.
+    expect(
+      screen.getByRole('button', { name: 'Pregunta 1, respondida, es la que estás viendo' }),
+    ).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Pregunta 2, sin responder' })).toBeTruthy()
+  })
+
+  it('el mapa se cierra con Escape', async () => {
+    await empezar()
+    abrirMapa()
+    expect(numeroDelMapa(1)).toBeTruthy()
+
+    fireEvent.keyDown(document, { key: 'Escape' })
+
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: /^Pregunta 1,/ })).toBeNull(),
+    )
+  })
+
+  it('«siguiente sin responder» da la vuelta al llegar al final', async () => {
+    await empezar()
+    responder('Uno.')
+    siguiente() // la 2 es de opciones y se queda sin responder
+    siguiente()
+    responder('Tres.')
+    siguiente() // ya en la ultima
+
+    responder('Cuatro.')
+    // El unico hueco que queda esta detras: en la 2.
+    await screen.findByText('Te falta 1 por terminar.')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Siguiente sin responder' }))
+
+    await waitFor(() => expect(screen.getByText(/Pregunta 2 de 4/)).toBeTruthy())
+  })
+
+  it('el «volver» aparece solo tras un salto, y se olvida al navegar a mano', async () => {
+    await empezar()
+    siguiente()
+    siguiente()
+
+    // Moverse de una en una no deja nada que deshacer.
+    expect(botonVolver()).toBeNull()
+
+    abrirMapa()
+    fireEvent.click(numeroDelMapa(1))
+    await waitFor(() => expect(screen.getByText(/Pregunta 1 de 4/)).toBeTruthy())
+
+    // Esto es lo que faltaba: el camino de vuelta a donde se estaba.
+    expect(screen.getByRole('button', { name: 'Volver a la 3' })).toBeTruthy()
+
+    siguiente()
+
+    // Al seguir a mano, la 3 ya no es «de donde venia»: el boton seria un
+    // fantasma que lleva a un sitio cualquiera.
+    await waitFor(() => expect(botonVolver()).toBeNull())
+  })
+
+  it('«ir al final» no aparece mientras falte alguna', async () => {
+    await empezar()
+    expect(screen.queryByRole('button', { name: 'Ir al final' })).toBeNull()
+
+    responder('Uno.')
+    siguiente()
+    fireEvent.click(await screen.findByRole('radio', { name: /Preguntar antes de empezar/ }))
+    await waitFor(() => expect(opcionesGuardadas.get(2)).toBe(21))
+    siguiente()
+    responder('Tres.')
+    siguiente()
+    responder('Cuatro.')
+    await screen.findByText('Ya están las 4.')
+
+    // Desde la ultima no hace falta; desde cualquier otra, si.
+    abrirMapa()
+    fireEvent.click(numeroDelMapa(1))
+    await waitFor(() => expect(screen.getByText(/Pregunta 1 de 4/)).toBeTruthy())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ir al final' }))
+    await waitFor(() => expect(screen.getByText(/Pregunta 4 de 4/)).toBeTruthy())
+  })
+})
+
+// ---------- Las cuentas del mapa, sin pintar nada ----------
+
+/** Un item `V` de dos datos: el unico formato que se puede dejar a medias. */
+function preguntaV(respuestaTexto: string | null): PreguntaEvaluacion {
+  return {
+    id: 99,
+    posicion: 1,
+    tipo: 'V',
+    enunciado: 'Años haciendo este trabajo: ___ · Personas a tu cargo: ___',
+    situacion: null,
+    opciones: null,
+    respuestaTexto,
+    respuestaOpcionId: null,
+  }
+}
+
+describe('el estado de cada pregunta', () => {
+  it('separa la empezada a medias de la que está en blanco', () => {
+    expect(estadoDePregunta(preguntaV(null))).toBe('vacia')
+    // Media respuesta no se guarda, asi que contarla como respondida seria
+    // prometer una entrega que el servidor va a rechazar.
+    expect(estadoDePregunta(preguntaV('Años haciendo este trabajo: 12'))).toBe('a-medias')
+    expect(
+      estadoDePregunta(preguntaV('Años haciendo este trabajo: 12 · Personas a tu cargo: 3')),
+    ).toBe('lista')
+  })
+
+  it('el siguiente hueco da la vuelta y nunca es el que ya se está mirando', () => {
+    const conHuecoEnLa2 = ['lista', 'vacia', 'lista', 'lista'] as const
+
+    expect(siguienteIncompleta([...conHuecoEnLa2], 3)).toBe(1)
+    expect(siguienteIncompleta([...conHuecoEnLa2], 0)).toBe(1)
+    // El unico hueco es el de delante: no hay «siguiente» al que mandar a nadie.
+    expect(siguienteIncompleta(['lista', 'a-medias'], 1)).toBe(-1)
+    expect(siguienteIncompleta(['lista', 'lista'], 0)).toBe(-1)
   })
 })

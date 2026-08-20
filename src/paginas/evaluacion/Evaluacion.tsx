@@ -12,6 +12,15 @@
  * Se sigue enseñando una pregunta por pantalla: leer sesenta preguntas de
  * corrido cansa y empuja a responder por responder.
  *
+ * **Pero una por pantalla deja al candidato sin vista de conjunto**, y eso costo
+ * una queja de alguien que ya habia hecho el examen entero: se salto una, el
+ * aviso lo mando de la 50 a la 10, y para volver no habia mas remedio que pulsar
+ * «Siguiente» cuarenta veces. De ahi salen las cuatro cosas de esta pantalla que
+ * no responden preguntas: el mapa con todas las preguntas y su estado, la linea
+ * que dice cuantas faltan, «Siguiente sin responder» —que va tapando huecos y da
+ * la vuelta al llegar al final— y el «Volver a la 50», que aparece solo despues
+ * de un salto y se olvida en cuanto se navega a mano.
+ *
  * **Cada formato se responde a su manera.** El banco v3 trae ocho, y solo dos
  * caben en «marca una opción» o «escribe un texto»: los otros seis mandan
  * varias cosas a la vez en un campo `detalle`. Lo que dibuja cada uno esta en
@@ -45,9 +54,12 @@ import { RespuestaDeLaPregunta } from './Formatos'
 import {
   detalleParaEnviar,
   estaCompleto,
+  estadoDePregunta,
   modoDeRespuesta,
   normalizarDetalle,
   queFalta,
+  siguienteIncompleta,
+  type EstadoDePregunta,
 } from './bancoV3'
 
 const ESPERA_ANTES_DE_GUARDAR = 800
@@ -70,18 +82,24 @@ interface Pendiente {
   detalle?: DetalleRespuesta
 }
 
+/** Como se dice cada estado en el mapa, para quien lo oye en vez de verlo. */
+const COMO_SE_DICE: Record<EstadoDePregunta, string> = {
+  lista: 'respondida',
+  'a-medias': 'sin terminar',
+  vacia: 'sin responder',
+}
+
 /**
- * Si la pregunta ya tiene respuesta.
+ * La marca de cada estado en el numero del mapa.
  *
- * `detalleLocal` es lo que el candidato lleva puesto en esta sesion, que puede
- * ir por delante de lo que sabe el servidor. Solo cuenta si el formato esta
- * entero: media respuesta no es una respuesta, y ademas no se ha mandado.
+ * Existe porque el color no basta: hay gente que no distingue el ambar del
+ * gris. La forma del recuadro ya cambia (relleno, borde grueso, borde de
+ * puntos) y encima va este simbolo, asi que se puede leer de tres maneras.
  */
-function estaRespondida(p: PreguntaEvaluacion, detalleLocal?: DetalleRespuesta): boolean {
-  if (modoDeRespuesta(p) === 'DETALLE') {
-    return estaCompleto(p, detalleLocal ?? normalizarDetalle(p.respuestaDetalle))
-  }
-  return p.respuestaOpcionId !== null || (p.respuestaTexto ?? '').trim() !== ''
+const MARCA: Record<EstadoDePregunta, string> = {
+  lista: '✓',
+  'a-medias': '!',
+  vacia: '',
 }
 
 export function Evaluacion() {
@@ -110,7 +128,13 @@ export function Evaluacion() {
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [confirmarEntrega, setConfirmarEntrega] = useState(false)
+  const [mapaAbierto, setMapaAbierto] = useState(false)
+  // De donde se venia al dar un salto, para poder deshacerlo. Es la queja que
+  // arranco todo esto: saltar de la 50 a la 10 y no tener forma de volver, mas
+  // que pulsar «Siguiente» cuarenta veces.
+  const [volverA, setVolverA] = useState<number | null>(null)
   const abiertaEn = useRef<number>(Date.now())
+  const botonMapa = useRef<HTMLButtonElement>(null)
 
   const consulta = useQuery({
     queryKey: ['evaluacion', uuid],
@@ -326,6 +350,58 @@ export function Evaluacion() {
     [preguntas.length, mandarPendientes],
   )
 
+  /**
+   * Anterior y Siguiente: moverse de una en una.
+   *
+   * Borra la vuelta a proposito. Si alguien salto a la 10 y desde ahi siguio
+   * avanzando a mano, el «Volver a la 50» ya no dice nada cierto: dejo de ser
+   * el sitio del que venia y se vuelve un boton fantasma.
+   */
+  const navegarA = useCallback(
+    (siguiente: number) => {
+      irA(siguiente)
+      setVolverA(null)
+    },
+    [irA],
+  )
+
+  /**
+   * Un salto: ir a una pregunta lejos y poder deshacerlo.
+   *
+   * Se recuerda **el primer** salto, no el ultimo. Asi se pueden ir tapando
+   * huecos uno tras otro —de la 10 a la 12, de la 12 a la 27— sin perder el
+   * camino de vuelta a la 50, que es de donde se salio de verdad.
+   */
+  const saltarA = useCallback(
+    (destino: number) => {
+      if (destino === indice) return
+      // Volver al sitio del que se venia cierra el viaje: el boton ya sobra.
+      setVolverA((deDonde) => (destino === deDonde ? null : (deDonde ?? indice)))
+      irA(destino)
+    },
+    [irA, indice],
+  )
+
+  const volver = useCallback(() => {
+    if (volverA === null) return
+    irA(volverA)
+    setVolverA(null)
+  }, [irA, volverA])
+
+  // El mapa se cierra con Escape, y el foco vuelve al boton que lo abrio: si se
+  // quedara suelto, quien navega con el teclado tendria que recorrer la pagina
+  // entera para volver a donde estaba.
+  useEffect(() => {
+    if (!mapaAbierto) return
+    function alPulsar(e: KeyboardEvent) {
+      if (e.key !== 'Escape') return
+      setMapaAbierto(false)
+      botonMapa.current?.focus()
+    }
+    document.addEventListener('keydown', alPulsar)
+    return () => document.removeEventListener('keydown', alPulsar)
+  }, [mapaAbierto])
+
   if (consulta.isPending) return <Cargando que="Abriendo tu evaluación…" />
   if (consulta.isError) {
     return <Fallo error={consulta.error} reintentar={() => void consulta.refetch()} />
@@ -413,15 +489,6 @@ export function Evaluacion() {
   // pasa es que faltan preguntas por venir.
   const faltanPreguntas = evaluacion.total > preguntas.length
 
-  const respondidas = preguntas.filter((p) => estaRespondida(p, detalles[p.id])).length
-  const primeraSinResponder = preguntas.findIndex(
-    (p) => !estaRespondida(p, detalles[p.id]),
-  )
-  const porcentaje = evaluacion.total === 0 ? 0 : (respondidas / evaluacion.total) * 100
-  const faltan = evaluacion.total - respondidas
-  const esUltima = indice === preguntas.length - 1
-  const restante = segundosHasta(evaluacion.venceEn)
-
   const texto = borrador.preguntaId === pregunta.id ? borrador.texto : (pregunta.respuestaTexto ?? '')
   const pendienteDeEsta = sinConfirmar.find((p) => p.id === pregunta.id)?.valor
   const esteSinConfirmar = pendienteDeEsta !== undefined
@@ -429,7 +496,28 @@ export function Evaluacion() {
   // guardado rechazado dejaba el radio sin marcar y parecia que no se podia
   // elegir nada.
   const opcionElegida = pendienteDeEsta?.opcionId ?? pregunta.respuestaOpcionId
-  const modo = modoDeRespuesta(pregunta)
+
+  // El estado de las preguntas, todas de una vez. De aqui salen el mapa, el
+  // contador y el indicador de arriba: al venir del mismo sitio no pueden
+  // contradecirse, que era la otra mitad de la queja —el contador decia que
+  // faltaba una y no habia forma de saber cual—.
+  const estados = preguntas.map((p) =>
+    estadoDePregunta(p, {
+      detalle: detalles[p.id],
+      // De la pregunta abierta manda lo que se esta escribiendo ahora mismo;
+      // de las demas, lo ultimo que se intento guardar.
+      texto: p.id === pregunta.id ? texto : (sinConfirmar.find((s) => s.id === p.id)?.valor.texto ?? p.respuestaTexto),
+      opcionId: sinConfirmar.find((s) => s.id === p.id)?.valor.opcionId ?? p.respuestaOpcionId,
+    }),
+  )
+
+  const respondidas = estados.filter((e) => e === 'lista').length
+  const primeraSinResponder = estados.findIndex((e) => e !== 'lista')
+  const proximaIncompleta = siguienteIncompleta(estados, indice)
+  const porcentaje = evaluacion.total === 0 ? 0 : (respondidas / evaluacion.total) * 100
+  const faltan = evaluacion.total - respondidas
+  const esUltima = indice === preguntas.length - 1
+  const restante = segundosHasta(evaluacion.venceEn)
   // Manda lo que lleva puesto el candidato; si no ha tocado nada, lo que el
   // servidor tenga guardado. Esto es lo que hace que al recargar la pagina la
   // pregunta vuelva a salir respondida.
@@ -438,12 +526,7 @@ export function Evaluacion() {
   // nulo, asi que no hace falta preguntar antes de que tipo es la pregunta.
   const falta = queFalta(pregunta, detalleDeEsta, texto)
 
-  const estaVacia =
-    modo === 'DETALLE'
-      ? detalleDeEsta === undefined
-      : modo === 'OPCION'
-        ? opcionElegida === null || opcionElegida === undefined
-        : texto.trim() === '' && !estaRespondida(pregunta)
+  const estaVacia = estados[indice] === 'vacia'
 
   // El indicador dice lo que hay, no lo que gustaria. «Respuesta guardada» solo
   // cuando lo escrito coincide con lo que el servidor confirmo, y «sin
@@ -485,6 +568,104 @@ export function Evaluacion() {
             <span>{indicador.texto}</span>
           </div>
         </div>
+
+        {/* La linea de servicio: cuantas faltan y como llegar a ellas.
+            Es una linea y no un aviso a proposito. Esto se mira de reojo cada
+            pocos minutos durante una hora larga; un cartel que empuje el
+            enunciado hacia abajo cada vez acaba estorbando mas que ayudando. */}
+        <div className="exam-barra">
+          <button
+            className="btn mini"
+            type="button"
+            ref={botonMapa}
+            aria-expanded={mapaAbierto}
+            aria-controls="mapa-preguntas"
+            onClick={() => setMapaAbierto((abierto) => !abierto)}
+          >
+            {mapaAbierto ? 'Cerrar el mapa' : `Ver las ${preguntas.length}`}
+          </button>
+
+          <span className="exam-barra-texto">
+            {faltan <= 0
+              ? `Ya están las ${evaluacion.total}.`
+              : faltan === 1
+                ? 'Te falta 1 por terminar.'
+                : `Te faltan ${faltan} por terminar.`}
+          </span>
+
+          {proximaIncompleta >= 0 && (
+            <button className="btn mini" type="button" onClick={() => saltarA(proximaIncompleta)}>
+              Siguiente sin responder
+            </button>
+          )}
+
+          {/* Solo cuando de verdad no falta ninguna: el boton lleva a la
+              pantalla desde la que se entrega, y mandar ahi a alguien que aun
+              tiene huecos es mandarlo a un boton que no le va a funcionar. */}
+          {faltan <= 0 && !esUltima && (
+            <button
+              className="btn mini"
+              type="button"
+              onClick={() => saltarA(preguntas.length - 1)}
+            >
+              Ir al final
+            </button>
+          )}
+
+          {volverA !== null && (
+            <button className="btn mini" type="button" onClick={volver}>
+              Volver a la {volverA + 1}
+            </button>
+          )}
+        </div>
+
+        {/* El mapa. Todo el examen de un vistazo: que falta, que quedo a medias
+            y un toque para ir a cualquiera de ellas. */}
+        {mapaAbierto && (
+          <div className="mapa" id="mapa-preguntas">
+            <ol className="mapa-rejilla">
+              {estados.map((estado, i) => (
+                <li key={preguntas[i]?.id ?? i}>
+                  <button
+                    type="button"
+                    className={`mapa-num mapa-estado ${estado}${i === indice ? ' aqui' : ''}`}
+                    aria-current={i === indice ? 'true' : undefined}
+                    aria-label={
+                      `Pregunta ${i + 1}, ${COMO_SE_DICE[estado]}` +
+                      (i === indice ? ', es la que estás viendo' : '')
+                    }
+                    onClick={() => {
+                      setMapaAbierto(false)
+                      saltarA(i)
+                    }}
+                  >
+                    <span>{i + 1}</span>
+                    <i aria-hidden="true">{MARCA[estado]}</i>
+                  </button>
+                </li>
+              ))}
+            </ol>
+
+            <ul className="mapa-leyenda">
+              <li>
+                <i className="mapa-muestra mapa-estado lista" aria-hidden="true">
+                  ✓
+                </i>
+                Respondida
+              </li>
+              <li>
+                <i className="mapa-muestra mapa-estado a-medias" aria-hidden="true">
+                  !
+                </i>
+                Sin terminar
+              </li>
+              <li>
+                <i className="mapa-muestra mapa-estado vacia" aria-hidden="true" />
+                Sin responder
+              </li>
+            </ul>
+          </div>
+        )}
 
         {/* La red de seguridad: mientras algo no haya llegado, se dice, se sigue
             intentando y se puede forzar a mano. Antes esto se perdia callado. */}
@@ -561,7 +742,11 @@ export function Evaluacion() {
               Cada respuesta se guarda sola. Nada se envía hasta que entregues.
             </div>
             <div className="row" style={{ gap: 8 }}>
-              <button className="btn" onClick={() => irA(indice - 1)} disabled={indice === 0}>
+              <button
+                className="btn"
+                onClick={() => navegarA(indice - 1)}
+                disabled={indice === 0}
+              >
                 Anterior
               </button>
               {esUltima ? (
@@ -577,7 +762,7 @@ export function Evaluacion() {
                   Entregar evaluación
                 </button>
               ) : (
-                <button className="btn primary large" onClick={() => irA(indice + 1)}>
+                <button className="btn primary large" onClick={() => navegarA(indice + 1)}>
                   Siguiente
                 </button>
               )}
@@ -644,7 +829,8 @@ export function Evaluacion() {
                 type="button"
                 onClick={() => {
                   setConfirmarEntrega(false)
-                  irA(primeraSinResponder)
+                  // Un salto, no una navegacion: desde ahi se puede volver.
+                  saltarA(primeraSinResponder)
                 }}
               >
                 Ir a la primera sin responder

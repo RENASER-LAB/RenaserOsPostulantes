@@ -579,6 +579,83 @@ export function detalleParaEnviar(
   }
 }
 
+// ---------- El mapa de preguntas ----------
+
+/**
+ * Los tres estados en los que puede estar una pregunta del examen.
+ *
+ *   - `lista`: respondida y entera. Se puede entregar asi.
+ *   - `a-medias`: hay algo puesto, pero al formato le falta una parte. **No
+ *     esta guardada**: lo incompleto no se manda (ver `queFalta`), asi que
+ *     contarla como respondida seria mentir.
+ *   - `vacia`: no se ha tocado.
+ *
+ * Distinguir «a medias» de «vacia» es justo lo que le faltaba al candidato: sin
+ * eso, una pregunta que creyo haber contestado se ve igual que una que ni
+ * abrio, y solo se entera al final, cuando el contador no cuadra.
+ */
+export type EstadoDePregunta = 'lista' | 'a-medias' | 'vacia'
+
+/**
+ * Lo que hay puesto en una pregunta ahora mismo.
+ *
+ * Va aparte de la pregunta porque lo del candidato puede ir por delante de lo
+ * que sabe el servidor: un detalle a medio armar, un texto sin guardar todavia,
+ * una opcion recien marcada que aun viaja. Todo eso cuenta para el mapa.
+ */
+export interface LoPuesto {
+  detalle?: DetalleRespuesta
+  texto?: string | null
+  opcionId?: number | null
+}
+
+/**
+ * En que estado esta una pregunta.
+ *
+ * Sirve para las tres cosas a la vez: el numero del mapa, el contador de «te
+ * faltan N» y el indicador de la pregunta abierta. Que salga de un solo sitio
+ * es lo que evita que el mapa diga una cosa y el contador otra.
+ */
+export function estadoDePregunta(
+  pregunta: PreguntaEvaluacion,
+  puesto: LoPuesto = {},
+): EstadoDePregunta {
+  if (modoDeRespuesta(pregunta) === 'DETALLE') {
+    const detalle = puesto.detalle ?? normalizarDetalle(pregunta.respuestaDetalle)
+    if (estaCompleto(pregunta, detalle)) return 'lista'
+    return detalle === undefined ? 'vacia' : 'a-medias'
+  }
+
+  // Una opcion marcada no puede quedarse a medias: o esta o no esta.
+  const opcion = puesto.opcionId ?? pregunta.respuestaOpcionId
+  if (opcion !== null && opcion !== undefined) return 'lista'
+
+  const escrito = (puesto.texto ?? pregunta.respuestaTexto ?? '').trim()
+  if (escrito === '') return 'vacia'
+  // Los `V` son los unicos que se pueden escribir a medias: su enunciado pide
+  // varios datos y `queFalta` dice cuantos quedan.
+  return queFalta(pregunta, undefined, escrito) === null ? 'lista' : 'a-medias'
+}
+
+/**
+ * La siguiente pregunta que no esta lista, contando **a partir** de la que se
+ * mira y dando la vuelta al llegar al final. `-1` si no queda ninguna otra.
+ *
+ * La vuelta importa: quien se salto la 10 y esta en la 50 espera que «siguiente
+ * sin responder» lo lleve a la 10, no que le diga que ya no hay nada.
+ *
+ * Nunca devuelve la propia `desde`: un boton que lleva a donde ya estas no
+ * sirve de nada, y ademas haria creer que quedan huecos cuando el unico es el
+ * que se tiene delante.
+ */
+export function siguienteIncompleta(estados: EstadoDePregunta[], desde: number): number {
+  for (let salto = 1; salto < estados.length; salto++) {
+    const i = (desde + salto + estados.length) % estados.length
+    if (estados[i] !== 'lista') return i
+  }
+  return -1
+}
+
 // ---------- Utilidades de los componentes ----------
 
 /**

@@ -584,6 +584,136 @@ a { color: inherit; text-decoration: none }
 .save-state.vacia { color: var(--muted2) }
 .save-state.vacia i { background: var(--muted2) }
 
+/* ---------- La barra de servicio del examen ---------- */
+
+/* Cuantas faltan y las tres formas de moverse: el mapa, el siguiente hueco y la
+   vuelta. Una linea, no un aviso: se mira de reojo durante una hora larga y un
+   cartel que empuje el enunciado hacia abajo acabaria estorbando. */
+.exam-barra {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: -6px 0 16px;
+}
+/* Empuja los botones a la derecha y se lleva el hueco sobrante, asi que la
+   barra no cambia de forma cuando aparece o desaparece uno. */
+.exam-barra-texto { flex: 1; min-width: 110px; font-size: 11.5px; color: var(--muted) }
+.btn.mini { padding: 9px 13px; font-size: 11.5px }
+
+/* ---------- El mapa de preguntas ---------- */
+
+.mapa {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.mapa-rejilla {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  /* 44px es lo minimo que se acierta con el pulgar; caben las columnas que
+     quepan, que en un telefono son seis y en un portatil quince. */
+  grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+  gap: 8px;
+  /* Ciento noventa numeros no caben en una pantalla. La lista se desplaza por
+     dentro para que la leyenda y el boton de cerrar no se vayan de la vista. */
+  max-height: 46vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  /* El hueco donde cabe el anillo del «estás aquí». Sin el, al desplazarse la
+     lista se recorta sola por los bordes y el numero de la primera columna
+     pierde medio anillo. El margen negativo lo devuelve a su sitio, asi que no
+     se nota mas que en que ya no corta. */
+  padding: 5px;
+  margin: -5px -5px 0;
+}
+.mapa-num {
+  position: relative;
+  width: 100%;
+  min-height: 44px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line2);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  transition: .15s var(--ease);
+}
+/* El mismo gesto que los botones. No se toca el borde ni el color porque los
+   dos ya estan diciendo el estado, y taparlos al pasar por encima confundiria. */
+.mapa-num:hover { transform: translateY(-1px) }
+/* La marca del estado, arriba a la derecha, sin quitarle sitio al numero. */
+.mapa-num i {
+  position: absolute;
+  top: 3px;
+  right: 5px;
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 800;
+  line-height: 1;
+}
+
+/*
+ * Los tres estados.
+ *
+ * Cada uno cambia de forma ademas de color: relleno, borde grueso o borde de
+ * puntos, y encima su simbolo. Quien no distingue el ambar del gris sigue
+ * viendo tres cosas distintas.
+ */
+.mapa-estado.lista {
+  background: var(--inv);
+  border-color: var(--inv);
+  color: var(--invink);
+}
+.mapa-estado.a-medias {
+  border: 2px solid var(--warn);
+  color: var(--warn);
+}
+/* El borde de puntos es la pista que hay que ver, asi que se pinta con el
+   mismo gris del numero y no con el de las lineas: en tema oscuro, un borde de
+   `--line2` se pierde contra el fondo y el hueco deja de notarse. */
+.mapa-estado.vacia {
+  border-style: dashed;
+  border-color: var(--muted2);
+  color: var(--muted2);
+}
+
+/* Donde esta ahora. El anillo va por fuera y con el fondo de por medio, para
+   que no se confunda con el borde grueso de «sin terminar». */
+.mapa-num.aqui { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--muted) }
+
+.mapa-leyenda {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin: 14px 0 0;
+  padding: 14px 0 0;
+  border-top: 1px solid var(--line);
+  font-size: 11.5px;
+  color: var(--muted);
+}
+.mapa-leyenda li { display: flex; align-items: center; gap: 8px }
+.mapa-muestra {
+  flex: none;
+  width: 21px;
+  height: 21px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line2);
+  border-radius: 7px;
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 800;
+}
+
 .question { font-size: 24px; letter-spacing: -.03em; line-height: 1.35; margin: 8px 0 24px }
 
 .choice {
@@ -981,6 +1111,15 @@ a { color: inherit; text-decoration: none }
 }
 
 @media (max-width: 680px) {
+  /* Menos aire alrededor para que la cuadricula no baje de seis columnas: a
+     375px eso deja cada numero en unos 46px, por encima de los 44 que hacen
+     falta para acertarle con el pulgar. */
+  .mapa { padding: 13px; border-radius: 16px }
+  .mapa-rejilla { gap: 7px }
+  /* En el telefono la barra cae en dos lineas: arriba el mapa y el recuento,
+     abajo los saltos. Cada boton entero, ninguno partido. */
+  .exam-barra .btn { flex: none }
+
   .vacio { padding: 48px 18px }
   .tramo { gap: 12px }
   .tramo-hora { width: 46px; font-size: 12px }
