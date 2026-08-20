@@ -30,6 +30,15 @@ export const crearCuenta = (datos: CrearCuenta) =>
 export const ingresar = (datos: Login) =>
   pedir<Sesion>('/auth/login', { metodo: 'POST', cuerpo: datos, sinToken: true })
 
+/**
+ * Canjea el token del enlace que llego por correo por una sesion.
+ *
+ * Va sin token propio porque quien lo llama todavia no tiene ninguno: el del
+ * enlace ES la credencial.
+ */
+export const accederConEnlace = (token: string) =>
+  pedir<Sesion>('/auth/acceso', { metodo: 'POST', cuerpo: { token }, sinToken: true })
+
 // ---------- Postulaciones ----------
 
 /** Va como multipart porque lleva el CV. El navegador pone la cabecera. */
