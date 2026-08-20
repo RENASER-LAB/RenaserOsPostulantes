@@ -22,6 +22,27 @@ const QUE_PASA_EN: Record<string, string> = {
   DECISION: 'Una persona toma la decisión final',
 }
 
+/**
+ * El backend manda estos campos como un texto con saltos de linea, uno por
+ * punto. Pintarlo tal cual daba un parrafo largo donde deberia haber una lista.
+ */
+function Puntos({ texto }: { texto: string }) {
+  const lineas = texto
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean)
+
+  if (lineas.length < 2) return <p>{texto}</p>
+
+  return (
+    <ul>
+      {lineas.map((linea) => (
+        <li key={linea}>{linea}</li>
+      ))}
+    </ul>
+  )
+}
+
 export function Vacante() {
   const { vacanteId = '' } = useParams()
   const { hayCuenta } = useSesion()
@@ -69,14 +90,14 @@ export function Vacante() {
             {v.responsabilidades && (
               <>
                 <h2>Lo que harás</h2>
-                <p>{v.responsabilidades}</p>
+                <Puntos texto={v.responsabilidades} />
               </>
             )}
 
             {v.requisitos && (
               <>
                 <h2>Lo que necesitamos</h2>
-                <p>{v.requisitos}</p>
+                <Puntos texto={v.requisitos} />
               </>
             )}
 
@@ -115,7 +136,33 @@ export function Vacante() {
         </article>
 
         <aside className="sticky">
-          <div className="card">
+          {/* Los datos duros primero: es lo que se mira antes de decidir. */}
+          <div className="card ficha">
+            <div className="row">
+              <span>Modalidad</span>
+              <b>{v.modalidad ?? 'Por definir'}</b>
+            </div>
+            <div className="divider" />
+            <div className="row">
+              <span>Ubicación</span>
+              <b>{v.ubicacion ?? 'Por definir'}</b>
+            </div>
+            <div className="divider" />
+            <div className="row">
+              <span>Jornada</span>
+              <b>{v.horario ?? 'Por definir'}</b>
+            </div>
+            <Link className="btn primary large" to={destinoAlPostular}>
+              Postular
+            </Link>
+            <span className="small ficha-pie">
+              {hayCuenta
+                ? 'Confirmarás los requisitos indispensables antes de enviar.'
+                : 'Necesitarás una cuenta. Se crea en un minuto.'}
+            </span>
+          </div>
+
+          <div className="card" style={{ marginTop: 16 }}>
             <div className="label">Proceso de selección</div>
             <div className="stage-list" style={{ marginTop: 14 }}>
               {ETAPAS.map((etapa, i) => (
@@ -128,13 +175,6 @@ export function Vacante() {
                 </div>
               ))}
             </div>
-            <Link
-              className="btn primary large"
-              to={destinoAlPostular}
-              style={{ width: '100%', marginTop: 18 }}
-            >
-              Postular
-            </Link>
           </div>
         </aside>
       </div>

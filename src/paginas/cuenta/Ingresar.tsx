@@ -11,6 +11,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useSesion } from '@/app/Sesion'
 import { rutas } from '@/rutas'
 import { useAviso } from '@/ui/Avisos'
+import { Marca } from '@/ui/Marca'
 
 export function Ingresar() {
   const { entrar } = useSesion()
@@ -49,9 +50,9 @@ export function Ingresar() {
 
   return (
     <>
-      <div className="pagehead">
+      <div className="pagehead centrado">
         <div>
-          <div className="eyebrow">Acceso</div>
+          <Marca tamano={46} acento />
           <h1>Ingresa a tu cuenta.</h1>
           <p>Desde aquí ves el estado de todas tus postulaciones.</p>
         </div>

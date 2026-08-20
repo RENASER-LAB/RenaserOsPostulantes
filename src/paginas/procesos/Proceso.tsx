@@ -34,7 +34,12 @@ function Historial({ pasos }: { pasos: PasoHistorial[] }) {
   return (
     <div className="timeline">
       {pasos.map((paso, i) => (
-        <div className="event" key={`${paso.ocurridaEn}-${i}`}>
+        // El ultimo es donde esta ahora la postulacion, y por eso lleva el punto
+        // champagne: es el mismo momento que marca la barra de pasos.
+        <div
+          className={`event${i === pasos.length - 1 ? ' actual' : ''}`}
+          key={`${paso.ocurridaEn}-${i}`}
+        >
           <b>{momentoDe(paso.estadoNuevo).titulo}</b>
           <p>
             {formatearFechaCorta(paso.ocurridaEn)} ·{' '}
@@ -90,17 +95,32 @@ export function Proceso() {
         <div>
           <div className="eyebrow">{resumen.estadoNombre}</div>
           <h1>{resumen.vacante}</h1>
-          <p>{momento.ayuda}</p>
         </div>
-        {leTocaAlCandidato(resumen.estado) && momento.accion && (
+      </div>
+
+      {leTocaAlCandidato(resumen.estado) && momento.accion ? (
+        <section className="next-step-panel">
+          <div>
+            <span className="eyebrow">Te toca a ti</span>
+            <h2>{momento.titulo}</h2>
+            <p>{momento.ayuda}</p>
+          </div>
           <Link className="btn primary large" to={momento.accion.destino(resumen.uuid)}>
             {momento.accion.etiqueta}
           </Link>
-        )}
-      </div>
+        </section>
+      ) : (
+        !final && (
+          <section className="card waiting-panel">
+            <span className="eyebrow">En curso</span>
+            <h2>{momento.titulo}</h2>
+            <p>{momento.ayuda}</p>
+          </section>
+        )
+      )}
 
       <div className="card">
-        <div className="label">{momento.titulo}</div>
+        <div className="label">Tu recorrido</div>
         <div style={{ marginTop: 16 }}>
           <BarraPasos
             completados={tramosCompletados(resumen.estado)}

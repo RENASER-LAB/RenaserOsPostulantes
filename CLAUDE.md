@@ -1,6 +1,6 @@
 # Portal del candidato · contexto de trabajo
 
-Última actualización: 2026-08-20 · commit `5ceb552`
+Última actualización: 2026-08-20 · rediseño de EX aplicado
 
 Este archivo es para retomar el trabajo sin tener que reconstruir nada. Cuenta qué es este
 proyecto, con qué habla, qué se decidió y por qué, y qué está a medias.
@@ -110,6 +110,37 @@ abriría el backend a otros orígenes sin motivo.
 
 ---
 
+## La cara de EX
+
+Desde el 2026-08-20 el portal se llama **EX** por decisión de gerencia. Solo cambió la cara:
+las rutas, los estados y la lógica son los mismos.
+
+El diseño completo —las 20 pantallas de escritorio, el sistema y la versión móvil, que queda
+guardada para más adelante— está en un lienzo aparte. La marca sale del estudio
+`EX_Estudio_Estrategico_Darren_V3_Excelencia_Talento.html`.
+
+| Pieza | Dónde |
+|---|---|
+| Paleta y temas | [src/estilos/variables.css](src/estilos/variables.css) |
+| Logotipo | [src/ui/Marca.tsx](src/ui/Marca.tsx) |
+| Todo lo demás | [src/estilos/base.css](src/estilos/base.css) |
+
+Cuatro cosas que sostienen el resto:
+
+**El champagne significa algo.** `--acento` marca el turno del candidato —el borde del panel
+de siguiente paso— y el paso en el que está —la barra de cinco tramos y la de la evaluación.
+Nada más. Si empieza a aparecer en botones, titulares o iconos, deja de leerse como «esto es
+tuyo».
+
+**El oscuro es el tema de la marca.** `index.html` abre en oscuro y `Tema.tsx` ya no hereda
+la preferencia del sistema: sin elección previa, oscuro. El claro sigue completo.
+
+**El champagne del tema claro es otro.** El `#d9b86c` de la marca se queda en 3,9:1 sobre el
+fondo hueso; en claro se usa `#816220`, que llega a 5,1:1. No unificar los dos valores.
+
+**La tipografía es Archivo**, servida desde Google Fonts en `index.html`. Si algún día el
+portal tiene que funcionar sin red externa, hay que empaquetarla.
+
 ## Qué se corrigió del mockup
 
 El diseño salió de `ai-agents--spring-ai/docs/mockups/portal-candidato.html`. Los colores, la
@@ -180,7 +211,7 @@ acción pendiente con el historial correcto.
 
 | Qué | Estado |
 |---|---|
-| **Render no responde** | Dos intentos de 120 y 90 segundos sin contestar. Antes iba en 0,48s. Sin esto no hay ni producción ni forma de validar |
+| **Render devuelve 500 en todo** | Ya contesta —en 1,1s—, pero `/api/vacantes`, `/api/vacantes/{id}` y hasta `/actuator/health` responden 500. La instancia arranca y la aplicación no. Sin esto no hay forma de validar nada contra datos reales |
 | **La corrección de la evaluación sin validar** | El commit `5ceb552` compila y pasa el tipado, pero no se pudo probar contra una evaluación real porque Render cayó a mitad |
 | **Pantalla de decisión ámbar** | `DECISION_TURNO_CANDIDATO` existe en el backend pero **no hay ruta** para pedir ni enviar la evidencia adicional. La pantalla explica la situación, sin formulario |
 | **Saber cómo se llama el candidato** | El backend solo devuelve `{ token, usuarioId }` al entrar. El nombre se guarda al crear la cuenta; quien entre desde otro navegador verá el portal sin su nombre |

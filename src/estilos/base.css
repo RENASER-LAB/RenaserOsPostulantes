@@ -1,12 +1,19 @@
 /*
- * Los estilos del mockup `portal-candidato.html`, expandidos y ordenados por
- * seccion. El diseño no cambia: lo unico que se hizo fue separarlo en bloques
- * legibles y fundir los ajustes que el mockup tenia sueltos al final.
+ * La hoja de estilos del portal, ordenada por seccion.
  *
- * Una correccion sobre el mockup: donde el mockup escribia `#111` y `#fff` a
- * mano (el panel negro, el boton principal, la tarjeta del cronometro) aqui se
- * usan `--inv` e `--invink`. Con `#111` fijo, en tema oscuro esos paneles
- * quedaban casi del color del fondo y se perdian.
+ * La estructura viene del mockup `portal-candidato.html`; los valores —color,
+ * tipografia, escala y el papel del champagne— vienen del rediseño de EX, que
+ * es la referencia visual desde 2026-08-20. Ver el apartado «La cara de EX» de
+ * CLAUDE.md.
+ *
+ * Dos reglas que conviene no deshacer:
+ *
+ *   - Donde el mockup escribia `#111` y `#fff` a mano (el boton principal, la
+ *     tarjeta del cronometro) aqui se usan `--inv` e `--invink`. Con `#111`
+ *     fijo, en tema oscuro esos paneles quedaban casi del color del fondo.
+ *   - El champagne (`--acento`) solo marca dos cosas: el turno del candidato
+ *     y el paso en el que esta. Si empieza a aparecer en botones y titulares,
+ *     deja de significar nada.
  */
 
 @import './variables.css';
@@ -22,14 +29,17 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--ink);
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
-    "Segoe UI", Inter, Arial, sans-serif;
+  font-family: Archivo, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: 15px;
   -webkit-font-smoothing: antialiased;
 }
 
 button, input, textarea, select { font: inherit; color: inherit }
 button { cursor: pointer }
+
+/* Sin esto los enlaces salen azules —y morados una vez visitados— porque el
+   portal casi nunca les pone color: se lo toman del navegador. */
+a { color: inherit; text-decoration: none }
 
 ::selection { background: var(--ink); color: var(--surface) }
 :focus-visible { outline: 2px solid var(--ink); outline-offset: 3px }
@@ -59,28 +69,35 @@ button { cursor: pointer }
   gap: 20px;
 }
 
-.brand { display: flex; align-items: center; gap: 11px; cursor: pointer }
+.brand { display: flex; align-items: center; gap: 12px; cursor: pointer }
 
-.brandmark {
-  width: 34px;
-  height: 34px;
-  border: 1.2px solid var(--ink);
-  border-radius: 11px;
-  display: grid;
-  place-items: center;
-  font-size: 11px;
-  font-weight: 850;
+/* El wordmark. La hormiga se coloca sobre la X y escala con las letras, por eso
+   sus medidas van en `em` y el tamaño se pasa como `font-size`. */
+.marca { position: relative; display: inline-block; line-height: 1; color: var(--ink) }
+.marca-letras { display: block; font-size: 1em; font-weight: 900; letter-spacing: -.075em }
+.marca-hormiga {
+  position: absolute;
+  top: -.1em;
+  right: -.13em;
+  width: .44em;
+  height: .44em;
 }
 
-.brandname { font-size: 14px; font-weight: 820; letter-spacing: .12em }
-.brandsub { display: block; color: var(--muted); font-size: 9px; margin-top: 2px }
+.brandsub {
+  display: block;
+  color: var(--muted2);
+  font-size: 9.5px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  font-weight: 620;
+}
 
 .nav { display: flex; align-items: center; gap: 8px }
 
 .navlink {
   border: 0;
   background: transparent;
-  font-size: 11px;
+  font-size: 12.5px;
   font-weight: 720;
   color: var(--muted);
   padding: 8px 10px;
@@ -94,15 +111,17 @@ button { cursor: pointer }
   border-top: 1px solid var(--line);
   padding: 25px 24px;
   color: var(--muted);
-  font-size: 9.5px;
+  font-size: 11px;
 }
 .footer-inner {
   max-width: 1180px;
   margin: auto;
   display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: 20px;
 }
+.footer-marca { display: flex; align-items: center; gap: 12px }
 
 /* Alto minimo para que se pueda tocar con el dedo */
 .navlink, .btn, .iconbtn { min-height: 40px }
@@ -119,28 +138,32 @@ button { cursor: pointer }
 
 .eyebrow, .label {
   text-transform: uppercase;
-  letter-spacing: .11em;
-  color: var(--muted);
-  font-size: 9px;
+  letter-spacing: .14em;
+  color: var(--muted2);
+  font-size: 10.5px;
   font-weight: 820;
 }
 
 .hero h1, .pagehead h1 {
-  font-size: 48px;
+  font-size: 56px;
   line-height: 1.02;
-  letter-spacing: -.052em;
+  letter-spacing: -.038em;
   margin: 10px 0 14px;
   font-weight: 780;
 }
 .hero h1 { max-width: 720px; margin-top: 0; text-wrap: balance }
 
 .hero p, .pagehead p {
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.65;
   color: var(--muted);
   margin: 0;
   max-width: 670px;
 }
+
+.hero .eyebrow { display: block; margin-bottom: 16px }
+/* El unico adorno de la portada, y por eso puede llevar el champagne. */
+.regla { display: block; width: 78px; height: 2px; background: var(--acento); margin: 24px 0 }
 
 .hero-card {
   border: 1px solid var(--line);
@@ -148,33 +171,34 @@ button { cursor: pointer }
   border-radius: 18px;
   padding: 20px;
 }
-.hero-card b { font-size: 13px }
-.hero-card p { font-size: 11px; color: var(--muted); line-height: 1.55; margin: 8px 0 0 }
+.hero-card b { font-size: 15px }
+.hero-card p { font-size: 12.5px; color: var(--muted); line-height: 1.55; margin: 5px 0 0 }
 
-/* La lista numerada del "que puedes esperar" */
-.hero-card ol { padding: 0; margin: 14px 0 0; list-style: none; counter-reset: flow }
+/* La lista numerada del "que puedes esperar": una etapa por linea. */
+.hero-card ol { padding: 0; margin: 16px 0 0; list-style: none; counter-reset: flow }
 .hero-card li {
   counter-increment: flow;
   display: grid;
-  grid-template-columns: 24px 1fr;
-  gap: 10px;
+  grid-template-columns: 28px 1fr;
+  gap: 13px;
   align-items: start;
-  padding: 9px 0;
+  padding: 11px 0;
   border-top: 1px solid var(--line);
 }
 .hero-card li::before {
   content: counter(flow);
   display: grid;
   place-items: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 7px;
-  background: var(--ink);
-  color: var(--surface);
-  font-size: 9px;
+  width: 27px;
+  height: 27px;
+  border-radius: 999px;
+  border: 1px solid var(--line2);
+  color: var(--muted);
+  font-size: 11.5px;
   font-weight: 800;
 }
-.hero-card li span { font-size: 10.5px; line-height: 1.45; color: var(--muted) }
+.hero-card li b { display: block; font-size: 13.5px; margin-bottom: 3px }
+.hero-card li span { display: block; font-size: 12px; line-height: 1.5; color: var(--muted) }
 
 .pagehead {
   display: flex;
@@ -183,16 +207,22 @@ button { cursor: pointer }
   gap: 24px;
   margin-bottom: 30px;
 }
-.pagehead h1 { font-size: 36px; margin-top: 0 }
-.pagehead p { font-size: 12.5px }
+.pagehead h1 { font-size: 40px; margin-top: 0 }
+.pagehead p { font-size: 13.5px }
 
-.greeting { display: block; color: var(--muted); font-size: 11px; margin-bottom: 8px }
+/* El acceso: la marca preside y el formulario queda debajo, estrecho. */
+.pagehead.centrado { justify-content: center; text-align: center; margin-bottom: 26px }
+.pagehead.centrado .marca { margin: 10px auto 20px }
+.pagehead.centrado p { margin: 0 auto }
+.pagehead.centrado + .form-card { max-width: 460px }
+
+.greeting { display: block; color: var(--muted); font-size: 12.5px; margin-bottom: 8px }
 
 .back {
   border: 0;
   background: none;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12.5px;
   font-weight: 750;
   padding: 0;
   margin-bottom: 20px;
@@ -208,8 +238,8 @@ button { cursor: pointer }
   gap: 18px;
   margin: 34px 0 13px;
 }
-.sectionhead h2 { font-size: 17px; letter-spacing: -.025em; margin: 0 }
-.sectionhead p { font-size: 10px; color: var(--muted); margin: 4px 0 0 }
+.sectionhead h2 { font-size: 19px; letter-spacing: -.025em; margin: 0 }
+.sectionhead p { font-size: 11.5px; color: var(--muted); margin: 4px 0 0 }
 
 /* ---------- Botones y enlaces ---------- */
 
@@ -218,7 +248,7 @@ button { cursor: pointer }
   background: var(--surface);
   border-radius: 999px;
   padding: 10px 15px;
-  font-size: 11px;
+  font-size: 12.5px;
   font-weight: 700;
   transition: .15s var(--ease);
   text-decoration: none;
@@ -232,16 +262,17 @@ button { cursor: pointer }
 
 .btn.primary { background: var(--inv); color: var(--invink); border-color: var(--inv) }
 .btn.danger { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 35%, var(--line)) }
-.btn.large { padding: 13px 20px; font-size: 12px }
+.btn.large { padding: 15px 24px; font-size: 14px; border-radius: 14px }
 
 .iconbtn { width: 39px; height: 39px; padding: 0; display: grid; place-items: center }
 
 .link {
   border: 0;
   background: none;
+  color: var(--acento);
   border-bottom: 1px solid currentColor;
   padding: 3px 0;
-  font-size: 10px;
+  font-size: 11.5px;
   font-weight: 780;
   text-decoration: none;
 }
@@ -280,7 +311,7 @@ button { cursor: pointer }
   background: var(--surface2);
   border-radius: 999px;
   padding: 5px 9px;
-  font-size: 9px;
+  font-size: 10.5px;
   font-weight: 780;
   white-space: nowrap;
 }
@@ -298,8 +329,8 @@ button { cursor: pointer }
   border: 1px solid var(--line);
   border-radius: 16px;
 }
-.callout b { font-size: 12px }
-.callout p { font-size: 10.5px; color: var(--muted); line-height: 1.55; margin: 5px 0 0 }
+.callout b { font-size: 13px }
+.callout p { font-size: 12px; color: var(--muted); line-height: 1.55; margin: 5px 0 0 }
 .callout.warn {
   border-color: color-mix(in srgb, var(--warn) 30%, var(--line));
   background: color-mix(in srgb, var(--warn) 6%, var(--surface));
@@ -311,24 +342,51 @@ button { cursor: pointer }
 
 /* ---------- Tarjeta de vacante ---------- */
 
-.job.action { border-radius: 16px }
+.job {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 24px;
+  height: 100%;
+}
 .job.action:focus-visible { outline-offset: 4px }
-.job h2 { font-size: 18px; letter-spacing: -.025em; margin: 18px 0 8px }
-.job p, .small { color: var(--muted); font-size: 11px; line-height: 1.55 }
+.job h2 { font-size: 21px; letter-spacing: -.035em; font-weight: 800; margin: 0 }
+/* El proposito empuja el pie al fondo, para que las tarjetas de una fila lo
+   alineen aunque los textos midan distinto. */
+.job p { flex: 1 }
+.job p, .small { color: var(--muted); font-size: 13px; line-height: 1.6 }
 .job-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-top: 20px;
+  margin-top: 7px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink);
 }
+.flecha { width: 16px; height: 16px; flex: none }
+.card.action:hover .flecha { transform: translateX(2px) }
+.flecha { transition: transform .16s var(--ease) }
 
 /* ---------- Ficha de vacante ---------- */
 
-.detail-layout { display: grid; grid-template-columns: 1fr 340px; gap: 28px; align-items: start }
-.detail h2 { font-size: 18px; margin: 30px 0 10px }
-.detail p, .detail li { font-size: 12px; line-height: 1.7; color: var(--muted) }
-.detail ul { padding-left: 18px }
+.detail-layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 36px; align-items: start }
+
+.ficha { display: flex; flex-direction: column; gap: 0 }
+.ficha .row { font-size: 13px; color: var(--muted) }
+.ficha .row b { font-size: 13px; color: var(--ink) }
+.ficha .btn { width: 100%; margin-top: 20px }
+.ficha-pie { display: block; text-align: center; margin-top: 12px; font-size: 11.5px }
+.detail h2 { font-size: 21px; letter-spacing: -.03em; font-weight: 800; margin: 34px 0 12px }
+.detail p, .detail li { font-size: 14.5px; line-height: 1.7; color: var(--muted) }
+.detail ul { padding-left: 0; margin: 0; list-style: none }
+.detail li { position: relative; padding-left: 20px; margin-bottom: 9px }
+/* La viñeta es lo bastante pequeña para que el champagne no compita con el
+   panel de accion. */
+.detail li::before { content: "·"; position: absolute; left: 6px; color: var(--acento); font-weight: 800 }
 
 .sticky { position: sticky; top: 96px }
 
@@ -351,11 +409,11 @@ button { cursor: pointer }
   color: var(--invink);
   display: grid;
   place-items: center;
-  font-size: 9px;
+  font-size: 10.5px;
   font-weight: 850;
 }
-.stage b { font-size: 11px }
-.stage span { display: block; color: var(--muted); font-size: 9.5px; margin-top: 3px; line-height: 1.4 }
+.stage b { font-size: 12.5px }
+.stage span { display: block; color: var(--muted); font-size: 11px; margin-top: 3px; line-height: 1.4 }
 
 /* ---------- Formularios ---------- */
 
@@ -365,7 +423,7 @@ button { cursor: pointer }
 
 .field label {
   display: block;
-  font-size: 9px;
+  font-size: 10.5px;
   text-transform: uppercase;
   letter-spacing: .09em;
   color: var(--muted);
@@ -376,16 +434,16 @@ button { cursor: pointer }
   width: 100%;
   border: 1px solid var(--line);
   background: var(--surface);
-  border-radius: 13px;
-  padding: 12px 13px;
-  font-size: 12px;
+  border-radius: 14px;
+  padding: 15px 16px;
+  font-size: 14px;
   outline: 0;
 }
-.field textarea { min-height: 100px; resize: vertical }
+.field textarea { min-height: 130px; resize: vertical; line-height: 1.6 }
 .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--ink) }
 
-.hint { font-size: 9.5px; color: var(--muted); margin-top: 6px; line-height: 1.45 }
-.error { font-size: 10px; color: var(--bad); margin-top: 7px }
+.hint { font-size: 11px; color: var(--muted); margin-top: 6px; line-height: 1.45 }
+.error { font-size: 11.5px; color: var(--bad); margin-top: 7px }
 
 .consent {
   display: flex;
@@ -397,8 +455,17 @@ button { cursor: pointer }
   background: var(--surface2);
 }
 .consent input { margin-top: 2px }
-.consent b { font-size: 11px }
-.consent p { font-size: 10px; color: var(--muted); line-height: 1.55; margin: 5px 0 0 }
+/* El consentimiento vive dentro de un `.field`, y ahi los `label` van en
+   versalitas. Aqui no: es una frase, no el nombre de una casilla. */
+.consent label {
+  display: inline;
+  font-size: inherit;
+  letter-spacing: normal;
+  text-transform: none;
+  color: inherit;
+}
+.consent b { font-size: 13px }
+.consent p { font-size: 11.5px; color: var(--muted); line-height: 1.55; margin: 5px 0 0 }
 
 .upload {
   border: 1px dashed var(--line2);
@@ -408,8 +475,8 @@ button { cursor: pointer }
   background: var(--surface2);
 }
 .upload input { display: none }
-.upload b { display: block; font-size: 12px }
-.upload span { display: block; font-size: 10px; color: var(--muted); margin: 6px 0 13px }
+.upload b { display: block; font-size: 13px }
+.upload span { display: block; font-size: 11.5px; color: var(--muted); margin: 6px 0 13px }
 
 /* ---------- Panel de procesos ---------- */
 
@@ -418,18 +485,21 @@ button { cursor: pointer }
   grid-template-columns: minmax(0, 1.4fr) auto;
   gap: 28px;
   align-items: center;
-  background: var(--inv);
-  color: var(--invink);
-  border-radius: 20px;
-  padding: 24px 26px;
+  background: var(--surface);
+  /* El borde champagne es la senal de «te toca a ti». Es el unico sitio de la
+     pantalla donde el acento puede rellenar algo. */
+  border: 1px solid var(--acento);
+  border-radius: var(--radius);
+  padding: 26px 28px;
   margin-bottom: 32px;
 }
-.next-step-panel h2 { font-size: 23px; letter-spacing: -.035em; margin: 0 0 7px }
+.next-step-panel .eyebrow, .waiting-panel .eyebrow { display: block }
+.next-step-panel h2 { font-size: 28px; letter-spacing: -.04em; margin: 10px 0 8px }
 .next-step-panel p {
   max-width: 68ch;
-  color: color-mix(in srgb, var(--invink) 72%, transparent);
-  font-size: 11px;
-  line-height: 1.55;
+  color: var(--muted);
+  font-size: 13.5px;
+  line-height: 1.6;
   margin: 0;
 }
 .next-step-meta {
@@ -438,37 +508,40 @@ button { cursor: pointer }
   align-items: center;
   flex-wrap: wrap;
   margin-top: 15px;
-  color: color-mix(in srgb, var(--invink) 72%, transparent);
-  font-size: 9.5px;
+  color: var(--muted2);
+  font-size: 12.5px;
 }
-.next-step-panel .btn {
-  background: var(--invink);
-  color: var(--inv);
-  border-color: var(--invink);
-  min-width: 160px;
-}
+.next-step-panel .btn { min-width: 160px }
 
-.process-list { display: flex; flex-direction: column; gap: 10px }
-.process-card { padding: 19px 20px; border-radius: 16px }
-.process-card .application h2 { font-size: 15px }
-.process-card .steps { margin: 17px 0 10px }
-.process-card .next-action { margin-top: 14px; padding-top: 14px }
+.process-list { display: flex; flex-direction: column; gap: 14px }
+.process-card { padding: 26px 28px }
+/* Le toca al candidato: el mismo borde champagne que el panel de arriba. */
+.process-card.turno { border-color: var(--acento) }
+.process-card .steps { margin: 18px 0 0 }
+.process-card .step-labels { margin-top: 9px }
 
-.application { display: grid; grid-template-columns: 1fr auto; gap: 20px; align-items: center }
-.application h2 { font-size: 16px; margin: 0 0 6px }
-.application p { font-size: 10.5px; color: var(--muted); margin: 0 }
+.application { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 36px; align-items: center }
+.application h2 { font-size: 21px; letter-spacing: -.035em; font-weight: 800; margin: 7px 0 0 }
+.application p { font-size: 13px; color: var(--muted); margin: 0 }
+
+.process-estado { display: flex; flex-direction: column; align-items: flex-start; gap: 13px }
+.process-estado b { display: block; font-size: 15px; margin-bottom: 5px }
+.process-estado span { font-size: 12.5px; line-height: 1.55; color: var(--muted) }
+.process-estado .btn { width: 100% }
 
 .steps { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 20px 0 }
 .step { height: 7px; background: var(--surface3); border-radius: 99px }
-.step.done, .step.current { background: var(--ink) }
-.step.current { box-shadow: 0 0 0 3px color-mix(in srgb, var(--ink) 10%, transparent) }
+.step.done { background: var(--ink) }
+/* El paso en el que esta la persona: la otra cosa que marca el champagne. */
+.step.current { background: var(--acento) }
+.step.current { box-shadow: 0 0 0 3px color-mix(in srgb, var(--acento) 18%, transparent) }
 
 .step-labels {
   display: flex;
   justify-content: space-between;
   gap: 8px;
   color: var(--muted);
-  font-size: 8.5px;
+  font-size: 10px;
 }
 
 .next-action {
@@ -480,8 +553,8 @@ button { cursor: pointer }
   justify-content: space-between;
   gap: 16px;
 }
-.next-action b { font-size: 11px }
-.next-action span { display: block; font-size: 9.5px; color: var(--muted); margin-top: 4px }
+.next-action b { font-size: 12.5px }
+.next-action span { display: block; font-size: 11px; color: var(--muted); margin-top: 4px }
 
 .privacy-panel { margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--line) }
 .privacy-panel .card { padding: 18px 20px }
@@ -496,7 +569,7 @@ button { cursor: pointer }
   gap: 14px;
   margin-bottom: 20px;
 }
-.progress-meta { font-size: 10px; color: var(--muted) }
+.progress-meta { font-size: 11.5px; color: var(--muted) }
 .progress {
   height: 8px;
   background: var(--surface3);
@@ -504,16 +577,16 @@ button { cursor: pointer }
   overflow: hidden;
   margin-top: 8px;
 }
-.progress i { display: block; height: 100%; background: var(--ink); border-radius: 99px; transition: width .3s }
+.progress i { display: block; height: 100%; background: var(--acento); border-radius: 99px; transition: width .3s }
 
-.save-state { display: flex; align-items: center; gap: 7px; color: var(--good); font-size: 10px; font-weight: 700 }
+.save-state { display: flex; align-items: center; gap: 7px; color: var(--good); font-size: 11.5px; font-weight: 700 }
 .save-state i { width: 7px; height: 7px; border-radius: 50%; background: var(--good) }
 
 /* Hay algo escrito que aun no ha llegado al servidor. */
 .save-state.pendiente { color: var(--warn) }
 .save-state.pendiente i { background: var(--warn) }
 
-.question { font-size: 22px; letter-spacing: -.03em; line-height: 1.35; margin: 8px 0 24px }
+.question { font-size: 24px; letter-spacing: -.03em; line-height: 1.35; margin: 8px 0 24px }
 
 .choice {
   display: flex;
@@ -528,7 +601,7 @@ button { cursor: pointer }
 }
 .choice:hover { border-color: var(--line2) }
 .choice input { margin-top: 2px }
-.choice span { font-size: 12px; line-height: 1.45 }
+.choice span { font-size: 13px; line-height: 1.45 }
 
 .exam-foot {
   display: flex;
@@ -544,20 +617,20 @@ button { cursor: pointer }
 
 .timer-card { background: var(--inv); color: var(--invink); border-radius: 24px; padding: 24px }
 .timer-label {
-  font-size: 9px;
+  font-size: 10.5px;
   text-transform: uppercase;
   letter-spacing: .12em;
   color: color-mix(in srgb, var(--invink) 66%, transparent);
 }
 .timer {
   font-variant-numeric: tabular-nums;
-  font-size: 48px;
+  font-size: 56px;
   font-weight: 760;
   letter-spacing: -.045em;
   margin: 8px 0;
 }
 .timer-card p {
-  font-size: 10px;
+  font-size: 11.5px;
   color: color-mix(in srgb, var(--invink) 66%, transparent);
   line-height: 1.5;
   margin: 0;
@@ -572,10 +645,10 @@ button { cursor: pointer }
   padding: 18px;
   margin: 18px 0;
 }
-.unexpected h3 { font-size: 14px; margin: 0 0 6px }
-.unexpected p { font-size: 11px; color: var(--muted); line-height: 1.55; margin: 0 }
+.unexpected h3 { font-size: 15px; margin: 0 0 6px }
+.unexpected p { font-size: 12.5px; color: var(--muted); line-height: 1.55; margin: 0 }
 .change-timer {
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 780;
   margin-top: 14px;
   color: var(--warn);
@@ -596,13 +669,13 @@ button { cursor: pointer }
 }
 .date-option.selected { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink) }
 .date-option input { margin-right: 8px }
-.date-option b { font-size: 12px }
-.date-option span { display: block; color: var(--muted); font-size: 10px; margin: 7px 0 0 24px }
+.date-option b { font-size: 13px }
+.date-option span { display: block; color: var(--muted); font-size: 11.5px; margin: 7px 0 0 24px }
 
 .phase-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 7px }
 .phase { border: 1px solid var(--line); border-radius: 14px; padding: 13px; background: var(--surface) }
-.phase b { font-size: 11px }
-.phase span { display: block; color: var(--muted); font-size: 9px; margin-top: 4px }
+.phase b { font-size: 12.5px }
+.phase span { display: block; color: var(--muted); font-size: 10.5px; margin-top: 4px }
 .phase.current { background: var(--inv); color: var(--invink); border-color: var(--inv) }
 .phase.current span { color: color-mix(in srgb, var(--invink) 66%, transparent) }
 
@@ -615,29 +688,38 @@ button { cursor: pointer }
   background: var(--surface2);
   display: grid;
   place-items: center;
-  font-size: 24px;
+  font-size: 26px;
   margin-bottom: 20px;
 }
 
 .center-card { max-width: 700px; margin: 50px auto; text-align: left }
-.center-card h1 { font-size: 32px; letter-spacing: -.04em; margin: 0 0 12px }
-.center-card > p { color: var(--muted); font-size: 12px; line-height: 1.65 }
+.center-card h1 { font-size: 34px; letter-spacing: -.04em; margin: 0 0 12px }
+.center-card > p { color: var(--muted); font-size: 13px; line-height: 1.65 }
 
-.timeline { margin-top: 26px; padding-left: 20px; border-left: 1px solid var(--line) }
-.event { position: relative; padding: 0 0 20px 14px }
+.timeline { margin-top: 4px; padding-left: 22px; border-left: 1px solid var(--line) }
+.event { position: relative; padding: 0 0 22px 14px }
+.event:last-child { padding-bottom: 0 }
 .event::before {
   content: "";
   position: absolute;
-  left: -24px;
-  top: 2px;
-  width: 7px;
-  height: 7px;
+  left: -26px;
+  top: 3px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
-  background: var(--surface);
-  border: 2px solid var(--ink);
+  background: var(--line2);
 }
-.event b { font-size: 11px }
-.event p { font-size: 9.5px; color: var(--muted); margin: 4px 0 0 }
+/* Donde esta ahora: el mismo champagne que el paso actual de la barra. */
+.event.actual::before { background: var(--acento) }
+.event b { font-size: 14px }
+.event.actual b { color: var(--ink) }
+.event:not(.actual) b { color: var(--muted) }
+.event p { font-size: 11.5px; color: var(--muted2); margin: 4px 0 0 }
+
+/* El gemelo en calma del panel de «te toca a ti»: informa y no pide nada. */
+.waiting-panel { padding: 26px 28px; margin-bottom: 32px }
+.waiting-panel h2 { font-size: 24px; letter-spacing: -.035em; margin: 10px 0 8px }
+.waiting-panel p { font-size: 13.5px; line-height: 1.6; color: var(--muted); margin: 0; max-width: 68ch }
 
 /* ---------- Modal, fondo y aviso flotante ---------- */
 
@@ -671,7 +753,7 @@ button { cursor: pointer }
 .modal-head { border-bottom: 1px solid var(--line) }
 .modal-foot { border-top: 1px solid var(--line); justify-content: flex-end; gap: 8px }
 .modal-body { padding: 19px; max-height: 68vh; overflow: auto }
-.modal h2 { font-size: 16px; margin: 0 }
+.modal h2 { font-size: 17px; margin: 0 }
 
 .toast {
   position: fixed;
@@ -682,7 +764,7 @@ button { cursor: pointer }
   color: var(--invink);
   border-radius: 12px;
   padding: 12px 15px;
-  font-size: 10px;
+  font-size: 11.5px;
   font-weight: 720;
   opacity: 0;
   transform: translateY(10px);
@@ -716,8 +798,8 @@ button { cursor: pointer }
   .main { padding: 24px 15px 76px }
 
   .hero { margin: 0 0 34px; gap: 20px }
-  .hero h1, .pagehead h1 { font-size: 36px; line-height: 1.06 }
-  .hero p { font-size: 13px }
+  .hero h1, .pagehead h1 { font-size: 40px; line-height: 1.06 }
+  .hero p { font-size: 14px }
   .pagehead { align-items: flex-start; flex-direction: column }
 
   .g3, .g2 { grid-template-columns: 1fr }
@@ -733,11 +815,11 @@ button { cursor: pointer }
   .process-card .application .btn { width: 100% }
   .application { grid-template-columns: 1fr }
   .steps { gap: 4px }
-  .step-labels { font-size: 8px }
+  .step-labels { font-size: 9.5px }
   .step-labels span:nth-child(even) { display: none }
 
   .next-action, .exam-foot { align-items: flex-start; flex-direction: column }
-  .question { font-size: 19px }
+  .question { font-size: 21px }
   .timer { font-size: 42px }
   .phase-grid { grid-template-columns: repeat(2, 1fr) }
 

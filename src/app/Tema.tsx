@@ -7,7 +7,9 @@
 
 import { createContext, use, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 
-const CLAVE = 'renaser_portal_tema'
+// Clave nueva a proposito: con el rediseno el tema por defecto cambio a oscuro,
+// y quien tuviera 'light' guardado de antes se quedaba en el portal viejo.
+const CLAVE = 'ex_portal_tema'
 
 export type Tema = 'light' | 'dark'
 
@@ -25,8 +27,9 @@ function temaInicial(): Tema {
   } catch {
     /* almacenamiento bloqueado */
   }
-  // Sin eleccion previa se respeta lo que pide el sistema.
-  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  // Sin eleccion previa manda la marca: EX es oscuro. El claro esta ahi para
+  // quien lo prefiera, pero no se hereda del sistema.
+  return 'dark'
 }
 
 export function ProveedorTema({ children }: { children: ReactNode }) {

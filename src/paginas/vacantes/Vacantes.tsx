@@ -4,28 +4,48 @@ import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { listarVacantes } from '@/api/portal'
 import type { VacantePublica } from '@/api/tipos'
-import { TOTAL_ETAPAS } from '@/dominio/estados'
+import { ETAPAS } from '@/dominio/estados'
 import { rutas } from '@/rutas'
 import { Cargando, Fallo } from '@/ui/Mensajes'
 
-const QUE_ESPERAR = [
-  'Postulas con tu CV y evidencia de trabajo.',
-  'Respondes una evaluación y una prueba del puesto.',
-  'Siempre ves tu etapa y tu siguiente acción.',
-]
+/**
+ * Una linea por etapa, en el mismo orden que la barra de pasos. Los nombres no
+ * se escriben aqui: salen de `dominio/estados.ts`, que es quien manda.
+ */
+const QUE_ESPERAR: Record<string, string> = {
+  PERFIL: 'Tu currículum y una evaluación escrita.',
+  PRUEBA: 'Un reto real del puesto, con tiempo medido.',
+  SIMULACION: 'Una sesión grupal de dos horas.',
+  VALIDACION: 'Un periodo corto trabajando de verdad.',
+  DECISION: 'La conversación final.',
+}
+
+function Flecha() {
+  return (
+    <svg viewBox="0 0 24 24" className="flecha" aria-hidden="true">
+      <path
+        d="M9 5.5 15.5 12 9 18.5"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+      />
+    </svg>
+  )
+}
 
 function TarjetaVacante({ vacante }: { vacante: VacantePublica }) {
+  const meta = [vacante.modalidad, vacante.ubicacion].filter(Boolean).join(' · ')
+
   return (
     <Link className="card job action" to={rutas.vacante(vacante.id)}>
-      <div className="row">
-        {vacante.modalidad && <span className="tag info">{vacante.modalidad}</span>}
-        {vacante.ubicacion && <span className="small">{vacante.ubicacion}</span>}
-      </div>
+      <span className="label">{meta || 'Convocatoria abierta'}</span>
       <h2>{vacante.titulo}</h2>
       <p>{vacante.proposito ?? vacante.descripcion}</p>
       <div className="job-footer">
-        <span className="small">Proceso de {TOTAL_ETAPAS} etapas</span>
-        <span className="link">Ver vacante</span>
+        <span>Ver vacante</span>
+        <Flecha />
       </div>
     </Link>
   )
@@ -38,18 +58,29 @@ export function Vacantes() {
     <>
       <section className="hero">
         <div>
-          <h1>Encuentra tu próxima oportunidad en Renaser.</h1>
+          <span className="eyebrow">Excelencia que se reconoce</span>
+          <h1>
+            Tu talento.
+            <br />
+            Tu oportunidad.
+          </h1>
+          <span className="regla" />
           <p>
-            Buscamos personas que conviertan problemas en resultados. Aquí podrás conocer
-            cada vacante y demostrar cómo trabajas, más allá de tu CV.
+            Encuentra tu próxima oportunidad en Renaser. Cada etapa deja evidencia de lo
+            que sabes hacer, no de lo que dice tu currículum.
           </p>
         </div>
+
         <aside className="hero-card">
           <b>Qué puedes esperar del proceso</b>
+          <p>Cinco etapas. Siempre sabes en cuál estás.</p>
           <ol>
-            {QUE_ESPERAR.map((paso) => (
-              <li key={paso}>
-                <span>{paso}</span>
+            {ETAPAS.map((etapa) => (
+              <li key={etapa.clave}>
+                <div>
+                  <b>{etapa.etiqueta}</b>
+                  <span>{QUE_ESPERAR[etapa.clave]}</span>
+                </div>
               </li>
             ))}
           </ol>
@@ -61,10 +92,9 @@ export function Vacantes() {
           <h2>Vacantes abiertas</h2>
           <p>Elige una oportunidad para conocer el proceso y postular.</p>
         </div>
-        {consulta.data && (
-          <span className="tag info">
-            {consulta.data.length}{' '}
-            {consulta.data.length === 1 ? 'oportunidad' : 'oportunidades'}
+        {consulta.data && consulta.data.length > 0 && (
+          <span className="small">
+            {consulta.data.length} {consulta.data.length === 1 ? 'abierta' : 'abiertas'}
           </span>
         )}
       </div>

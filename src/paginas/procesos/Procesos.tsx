@@ -38,46 +38,39 @@ function TarjetaProceso({ p }: { p: MiPostulacion }) {
   const completados = tramosCompletados(p.estado)
   const actual = momento.etapa && !final ? indiceDeEtapa(momento.etapa) : null
 
+  const leToca = leTocaAlCandidato(p.estado)
+  const etapa = momento.etapa ? ETAPAS[indiceDeEtapa(momento.etapa)]?.etiqueta : 'En curso'
+
   return (
-    <article className="card process-card">
+    <article className={`card process-card${leToca ? ' turno' : ''}`}>
       <div className="application">
         <div>
-          <div className="row" style={{ justifyContent: 'flex-start' }}>
-            <span className={`tag ${tonoDe(p.estado)}`}>{resumenDe(p.estado)}</span>
-            <span className="small">{p.estadoNombre}</span>
+          <span className="label">
+            {final ? p.estadoNombre : `${etapa} · ${describirAntiguedad(p.diasSinCambio)}`}
+          </span>
+          <h2>{p.vacante}</h2>
+          {/* Una postulacion cerrada no pinta barra: ya no hay etapa en curso. */}
+          {!final && <BarraPasos completados={completados} actual={actual} />}
+        </div>
+
+        <div className="process-estado">
+          {final && <span className={`tag ${tonoDe(p.estado)}`}>{resumenDe(p.estado)}</span>}
+          <div>
+            {/* En las cerradas el resumen ya va en la etiqueta: repetirlo debajo
+                era decir dos veces lo mismo. */}
+            {!final && <b>{momento.titulo}</b>}
+            <span>{momento.ayuda}</span>
           </div>
-          <h2 style={{ marginTop: 13 }}>{p.vacante}</h2>
-          <p>
-            {final
-              ? 'Este proceso terminó.'
-              : `${momento.etapa ? ETAPAS[indiceDeEtapa(momento.etapa)]?.etiqueta : 'En curso'} · ${describirAntiguedad(p.diasSinCambio)}`}
-          </p>
+          {momento.accion ? (
+            <Link className="btn primary" to={momento.accion.destino(p.uuid)}>
+              {momento.accion.etiqueta}
+            </Link>
+          ) : (
+            <Link className="link" to={rutas.proceso(p.uuid)}>
+              Ver detalle
+            </Link>
+          )}
         </div>
-
-        {momento.accion ? (
-          <Link
-            className={`btn ${leTocaAlCandidato(p.estado) ? 'primary' : ''}`}
-            to={momento.accion.destino(p.uuid)}
-          >
-            {momento.accion.etiqueta}
-          </Link>
-        ) : (
-          <Link className="btn" to={rutas.proceso(p.uuid)}>
-            Ver detalle
-          </Link>
-        )}
-      </div>
-
-      <BarraPasos completados={completados} actual={actual} />
-
-      <div className="next-action">
-        <div>
-          <b>{momento.titulo}</b>
-          <span>{momento.ayuda}</span>
-        </div>
-        <Link className="link" to={rutas.proceso(p.uuid)}>
-          Ver detalle
-        </Link>
       </div>
     </article>
   )
@@ -138,7 +131,7 @@ export function Procesos() {
               <span>{describirAntiguedad(siguiente.diasSinCambio)}</span>
             </div>
           </div>
-          <Link className="btn large" to={momentoSiguiente.accion.destino(siguiente.uuid)}>
+          <Link className="btn primary large" to={momentoSiguiente.accion.destino(siguiente.uuid)}>
             {momentoSiguiente.accion.etiqueta}
           </Link>
         </section>

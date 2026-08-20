@@ -10,6 +10,7 @@ import { useEffect } from 'react'
 import { rutas } from '@/rutas'
 import { useSesion } from './Sesion'
 import { useTema } from './Tema'
+import { Marca } from '@/ui/Marca'
 
 function ArribaAlCambiarDePagina() {
   const { pathname } = useLocation()
@@ -36,11 +37,8 @@ export function Armazon() {
       <header className="header">
         <div className="header-inner">
           <Link className="brand" to={rutas.vacantes()}>
-            <div className="brandmark">R</div>
-            <div>
-              <div className="brandname">RENASER</div>
-              <span className="brandsub">Oportunidades profesionales</span>
-            </div>
+            <Marca />
+            <span className="brandsub">un producto de Renaser</span>
           </Link>
 
           <nav className="nav">
@@ -77,7 +75,10 @@ export function Armazon() {
 
       <footer className="footer">
         <div className="footer-inner">
-          <span>© 2026 Renaser Consulting · Portal de empleo</span>
+          <span className="footer-marca">
+            <Marca tamano={15} acento />
+            © 2026 Renaser Consulting · Portal de empleo
+          </span>
           <span>Privacidad · Tratamiento de datos · Ayuda</span>
         </div>
       </footer>
