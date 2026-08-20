@@ -321,6 +321,7 @@ export function Evaluacion() {
   const faltanPreguntas = evaluacion.total > preguntas.length
 
   const respondidas = preguntas.filter(estaRespondida).length
+  const primeraSinResponder = preguntas.findIndex((p) => !estaRespondida(p))
   const porcentaje = evaluacion.total === 0 ? 0 : (respondidas / evaluacion.total) * 100
   const faltan = evaluacion.total - respondidas
   const esUltima = indice === preguntas.length - 1
@@ -504,8 +505,9 @@ export function Evaluacion() {
             <button
               className="btn primary"
               onClick={() => entrega.mutate()}
-              // Entregar con algo sin guardar es entregar sin esa respuesta.
-              disabled={entrega.isPending || sinConfirmar.length > 0}
+              // Entregar con algo sin guardar es entregar sin esa respuesta, y
+              // el backend ademas rechaza la entrega si falta alguna.
+              disabled={entrega.isPending || sinConfirmar.length > 0 || faltan > 0}
             >
               {entrega.isPending ? 'Entregando…' : 'Entregar'}
             </button>
@@ -527,12 +529,29 @@ export function Evaluacion() {
             </button>
           </div>
         ) : faltan > 0 ? (
-          <div className="callout warn">
-            <b>Te faltan {faltan} preguntas por responder</b>
+          <div className="callout bad">
+            <b>
+              {faltan === 1
+                ? 'Falta 1 pregunta por responder'
+                : `Faltan ${faltan} preguntas por responder`}
+            </b>
             <p>
-              Puedes entregar igualmente, pero lo que quede en blanco cuenta como sin
-              responder.
+              No se puede entregar una evaluación incompleta: el servidor la rechaza
+              hasta que estén todas. Si alguna no se deja guardar, escríbenos antes de
+              que venza el plazo.
             </p>
+            {primeraSinResponder >= 0 && (
+              <button
+                className="link"
+                type="button"
+                onClick={() => {
+                  setConfirmarEntrega(false)
+                  irA(primeraSinResponder)
+                }}
+              >
+                Ir a la primera sin responder
+              </button>
+            )}
           </div>
         ) : (
           <div className="callout good">

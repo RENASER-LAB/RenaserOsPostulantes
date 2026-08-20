@@ -213,6 +213,25 @@ describe('la evaluacion no pierde respuestas', () => {
     expect(await screen.findByText(/sin guardar/)).toBeTruthy()
   })
 
+  it('no deja entregar con preguntas en blanco, porque el servidor la rechaza', async () => {
+    await empezar()
+
+    // Solo se responde la primera; quedan tres en blanco.
+    responder('Primera respuesta.')
+    siguiente()
+    siguiente()
+    siguiente()
+    fireEvent.click(screen.getByRole('button', { name: /Entregar evaluación/ }))
+
+    const entregar = await screen.findByRole('button', { name: 'Entregar' })
+    expect((entregar as HTMLButtonElement).disabled).toBe(true)
+    expect(screen.getByText(/Faltan 3 preguntas por responder/)).toBeTruthy()
+
+    // Y desde ahi se puede saltar a la que falta, en vez de buscarla a mano.
+    fireEvent.click(screen.getByRole('button', { name: /Ir a la primera sin responder/ }))
+    await waitFor(() => expect(screen.getByText(/Pregunta 2 de 4/)).toBeTruthy())
+  })
+
   it('avisa cuando el servidor manda menos preguntas de las que dice tener', async () => {
     // El caso de «no puedo pasar de la 16»: el candidato se queda sin
     // «Siguiente» a mitad y la barra no llega al final.

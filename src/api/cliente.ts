@@ -85,16 +85,26 @@ export class ErrorApi extends Error {
   }
 }
 
-/** Lo que Spring devuelve en un error de validacion, en la medida en que se pueda leer. */
+/**
+ * Lo que Spring devuelve en un error, en la medida en que se pueda leer.
+ *
+ * `errors` llega como un objeto —campo: mensaje—, no como una lista: el backend
+ * lo arma con un `Map` en `GlobalControllerAdvice`. Leerlo como lista reventaba
+ * al construir el mensaje y el candidato acababa viendo un error del navegador
+ * en vez de lo que el servidor le estaba diciendo.
+ */
 interface CuerpoDeError {
   message?: string
   detail?: string
-  errors?: { defaultMessage?: string }[]
+  errors?: Record<string, string> | { defaultMessage?: string }[]
 }
 
 function mensajeDe(estado: number, cuerpo: unknown): string {
   const c = cuerpo as CuerpoDeError | null
-  const deValidacion = c?.errors?.find((e) => e.defaultMessage)?.defaultMessage
+  const errores = c?.errors
+  const deValidacion = Array.isArray(errores)
+    ? errores.find((e) => e.defaultMessage)?.defaultMessage
+    : Object.values(errores ?? {}).find((m) => typeof m === 'string' && m.trim() !== '')
   if (deValidacion) return deValidacion
   if (c?.detail) return c.detail
   if (c?.message) return c.message
