@@ -12,6 +12,12 @@
  * Se sigue enseñando una pregunta por pantalla: leer sesenta preguntas de
  * corrido cansa y empuja a responder por responder.
  *
+ * **Cada formato se responde a su manera.** El banco v3 trae ocho, y solo dos
+ * caben en «marca una opción» o «escribe un texto»: los otros seis mandan
+ * varias cosas a la vez en un campo `detalle`. Lo que dibuja cada uno esta en
+ * `Formatos.tsx` y la forma de lo que se manda en `bancoV3.ts`. Esta pantalla
+ * solo sabe que hay puesto y cuando se puede mandar.
+ *
  * Sobre las respuestas que se perdian: ya no basta con mandar lo pendiente al
  * cambiar de pregunta. Un guardado puede fallar —red, un 500 del backend— y
  * antes eso se perdia sin rastro: lo pendiente se borraba al mandarlo, el error
@@ -29,24 +35,46 @@ import {
   responderEvaluacion,
   verEvaluacion,
 } from '@/api/evaluacion'
-import type { PreguntaEvaluacion } from '@/api/tipos'
+import type { DetalleRespuesta, PreguntaEvaluacion } from '@/api/tipos'
 import { formatearTiempo, segundosHasta } from '@/dominio/reloj'
 import { rutas } from '@/rutas'
 import { useAviso } from '@/ui/Avisos'
 import { Modal } from '@/ui/Modal'
 import { Cargando, Fallo } from '@/ui/Mensajes'
+import { RespuestaDeLaPregunta } from './Formatos'
+import {
+  detalleParaEnviar,
+  estaCompleto,
+  modoDeRespuesta,
+  normalizarDetalle,
+  queFalta,
+} from './bancoV3'
 
 const ESPERA_ANTES_DE_GUARDAR = 800
 /** Cada cuanto se vuelve a intentar lo que no llego al servidor. */
 const ESPERA_ANTES_DE_REINTENTAR = 5000
 
-/** Lo que falta por confirmar de una pregunta: o el texto, o la opcion. */
+/**
+ * Lo que falta por confirmar de una pregunta: el texto, la opcion, o el detalle
+ * de los formatos del banco v3 —que llevan varias cosas a la vez—.
+ */
 interface Pendiente {
   texto?: string
   opcionId?: number
+  detalle?: DetalleRespuesta
 }
 
-function estaRespondida(p: PreguntaEvaluacion): boolean {
+/**
+ * Si la pregunta ya tiene respuesta.
+ *
+ * `detalleLocal` es lo que el candidato lleva puesto en esta sesion, que puede
+ * ir por delante de lo que sabe el servidor. Solo cuenta si el formato esta
+ * entero: media respuesta no es una respuesta, y ademas no se ha mandado.
+ */
+function estaRespondida(p: PreguntaEvaluacion, detalleLocal?: DetalleRespuesta): boolean {
+  if (modoDeRespuesta(p) === 'DETALLE') {
+    return estaCompleto(p, detalleLocal ?? normalizarDetalle(p.respuestaDetalle))
+  }
   return p.respuestaOpcionId !== null || (p.respuestaTexto ?? '').trim() !== ''
 }
 
@@ -65,6 +93,14 @@ export function Evaluacion() {
     preguntaId: 0,
     texto: '',
   })
+  // Lo que el candidato lleva construido en los formatos de detalle, por
+  // pregunta. Vive aparte del borrador de texto porque no es una cadena: un
+  // SJT-R son cinco notas y un SEC es una lista, y se van armando a pedazos.
+  //
+  // Empieza vacio y no se rellena al cargar: lo ya respondido se lee de la
+  // propia pregunta (`respuestaDetalle`), asi que al recargar la pagina se
+  // repinta solo y esto solo guarda lo que se toca en esta sesion.
+  const [detalles, setDetalles] = useState<Record<number, DetalleRespuesta>>({})
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [confirmarEntrega, setConfirmarEntrega] = useState(false)
@@ -113,10 +149,16 @@ export function Evaluacion() {
   }, [pregunta?.id])
 
   const guardar = useMutation({
-    mutationFn: (datos: { preguntaId: number; opcionId?: number; texto?: string }) =>
+    mutationFn: (datos: {
+      preguntaId: number
+      opcionId?: number
+      texto?: string
+      detalle?: DetalleRespuesta
+    }) =>
       responderEvaluacion(uuid, datos.preguntaId, {
         opcionId: datos.opcionId,
         texto: datos.texto,
+        detalle: datos.detalle,
         segundos: Math.round((Date.now() - abiertaEn.current) / 1000),
       }),
     onMutate: () => {
@@ -135,7 +177,11 @@ export function Evaluacion() {
       const esLoMismo =
         enCola !== undefined &&
         enCola.texto === datos.texto &&
-        enCola.opcionId === datos.opcionId
+        enCola.opcionId === datos.opcionId &&
+        // Comparar el detalle por identidad basta: cada cambio crea un objeto
+        // nuevo, asi que si el candidato lo toco mientras la peticion viajaba,
+        // el de la cola ya no es este y se vuelve a mandar.
+        enCola.detalle === datos.detalle
       if (esLoMismo) {
         cola.current.delete(datos.preguntaId)
         refrescarCola()
@@ -180,7 +226,7 @@ export function Evaluacion() {
   // Las respuestas de texto se guardan solas cuando el candidato deja de
   // escribir, no en cada tecla.
   useEffect(() => {
-    if (!pregunta || pregunta.opciones?.length) return
+    if (!pregunta || modoDeRespuesta(pregunta) !== 'TEXTO') return
     // Todavia no se ha recargado el borrador: lo que hay es de otra pregunta.
     if (borrador.preguntaId !== pregunta.id) return
 
@@ -222,6 +268,38 @@ export function Evaluacion() {
       guardarTexto({ preguntaId, opcionId })
     },
     [guardarTexto, refrescarCola],
+  )
+
+  /**
+   * Los formatos del banco v3, que se responden a pedazos.
+   *
+   * La regla es que **no se manda nada a medias**: el backend comprueba la
+   * forma del detalle contra el tipo de la pregunta y rechaza lo incompleto con
+   * un 400, que en pantalla seria un error sin explicacion y sin arreglo. Asi
+   * que mientras falte algo, lo puesto se queda en la pantalla —se ve, no se
+   * pierde— y solo entra en la cola cuando el formato esta entero.
+   *
+   * Si estaba completo y el candidato lo deja a medias otra vez, lo ya guardado
+   * en el servidor se queda como estaba: no hay forma de «desguardar», y borrar
+   * una respuesta buena porque alguien esta reordenando seria peor.
+   */
+  const cambiarDetalle = useCallback(
+    (preguntaDelDetalle: PreguntaEvaluacion, valor: DetalleRespuesta) => {
+      setDetalles((previos) => ({ ...previos, [preguntaDelDetalle.id]: valor }))
+      if (!estaCompleto(preguntaDelDetalle, valor)) return
+
+      const listo = detalleParaEnviar(preguntaDelDetalle, valor)
+      cola.current.set(preguntaDelDetalle.id, { detalle: listo })
+      refrescarCola()
+      // Los de escribir esperan a que pare la mano; los de marcar salen ya.
+      if (preguntaDelDetalle.tipo === 'CD') {
+        window.clearTimeout(temporizador.current)
+        temporizador.current = window.setTimeout(mandarPendientes, ESPERA_ANTES_DE_GUARDAR)
+      } else {
+        guardarTexto({ preguntaId: preguntaDelDetalle.id, detalle: listo })
+      }
+    },
+    [guardarTexto, mandarPendientes, refrescarCola],
   )
 
   const irA = useCallback(
@@ -320,7 +398,7 @@ export function Evaluacion() {
   // pasa es que faltan preguntas por venir.
   const faltanPreguntas = evaluacion.total > preguntas.length
 
-  const respondidas = preguntas.filter(estaRespondida).length
+  const respondidas = preguntas.filter((p) => estaRespondida(p, detalles[p.id])).length
   const porcentaje = evaluacion.total === 0 ? 0 : (respondidas / evaluacion.total) * 100
   const faltan = evaluacion.total - respondidas
   const esUltima = indice === preguntas.length - 1
@@ -333,17 +411,33 @@ export function Evaluacion() {
   // guardado rechazado dejaba el radio sin marcar y parecia que no se podia
   // elegir nada.
   const opcionElegida = pendienteDeEsta?.opcionId ?? pregunta.respuestaOpcionId
-  const estaVacia = !pregunta.opciones?.length && texto.trim() === '' && !estaRespondida(pregunta)
+  const modo = modoDeRespuesta(pregunta)
+  // Manda lo que lleva puesto el candidato; si no ha tocado nada, lo que el
+  // servidor tenga guardado. Esto es lo que hace que al recargar la pagina la
+  // pregunta vuelva a salir respondida.
+  const detalleDeEsta = detalles[pregunta.id] ?? normalizarDetalle(pregunta.respuestaDetalle)
+  const falta = modo === 'DETALLE' ? queFalta(pregunta, detalleDeEsta) : null
+
+  const estaVacia =
+    modo === 'DETALLE'
+      ? detalleDeEsta === undefined
+      : modo === 'OPCION'
+        ? opcionElegida === null || opcionElegida === undefined
+        : texto.trim() === '' && !estaRespondida(pregunta)
 
   // El indicador dice lo que hay, no lo que gustaria. «Respuesta guardada» solo
-  // cuando lo escrito coincide con lo que el servidor confirmo.
+  // cuando lo escrito coincide con lo que el servidor confirmo, y «sin
+  // terminar» cuando hay algo puesto pero al formato le falta una parte: eso no
+  // se manda, asi que decir «guardada» seria mentira.
   const indicador = guardando
     ? { texto: 'Guardando…', clase: ' pendiente' }
     : esteSinConfirmar
       ? { texto: 'Sin guardar', clase: ' pendiente' }
       : estaVacia
         ? { texto: 'Sin responder', clase: ' vacia' }
-        : { texto: 'Respuesta guardada', clase: '' }
+        : falta !== null
+          ? { texto: 'Sin terminar', clase: ' pendiente' }
+          : { texto: 'Respuesta guardada', clase: '' }
 
   return (
     <>
@@ -425,33 +519,18 @@ export function Evaluacion() {
 
           <h1 className="question">{pregunta.enunciado}</h1>
 
-          {pregunta.opciones?.length ? (
-            pregunta.opciones.map((opcion) => (
-              <label className="choice" key={opcion.id}>
-                <input
-                  type="radio"
-                  name={`pregunta-${pregunta.id}`}
-                  checked={opcionElegida === opcion.id}
-                  onChange={() => elegirOpcion(pregunta.id, opcion.id)}
-                />
-                <span>
-                  {opcion.letra ? `${opcion.letra}. ` : ''}
-                  {opcion.texto}
-                </span>
-              </label>
-            ))
-          ) : (
-            <div className="field">
-              <label htmlFor="respuesta">Tu respuesta</label>
-              <textarea
-                id="respuesta"
-                value={texto}
-                onChange={(e) => setBorrador({ preguntaId: pregunta.id, texto: e.target.value })}
-                placeholder="Describe el contexto, qué hiciste, qué resultado obtuviste y qué aprendiste."
-              />
-              <div className="hint">Se guarda sola cuando dejas de escribir.</div>
-            </div>
-          )}
+          {/* Cada formato del banco v3 se responde de una manera distinta, y la
+              suya vive en `Formatos.tsx`. Aqui solo se le dice que hay puesto y
+              a donde avisar cuando cambie. */}
+          <RespuestaDeLaPregunta
+            pregunta={pregunta}
+            detalle={detalleDeEsta}
+            opcionElegida={opcionElegida ?? null}
+            texto={texto}
+            onDetalle={(valor) => cambiarDetalle(pregunta, valor)}
+            onOpcion={(opcionId) => elegirOpcion(pregunta.id, opcionId)}
+            onTexto={(nuevo) => setBorrador({ preguntaId: pregunta.id, texto: nuevo })}
+          />
 
           {error && <div className="error">{error}</div>}
 

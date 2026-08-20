@@ -117,10 +117,46 @@ export interface OpcionCandidato {
   texto: string
 }
 
+/**
+ * El detalle de una respuesta del banco v3.
+ *
+ * Es un objeto suelto —en la base viaja como `jsonb`— y **cada formato usa solo
+ * sus claves**: un `EF-4` manda `mas` y `menos`, un `SEC` manda `orden`, y
+ * ninguno manda las del otro. Por eso estan todas opcionales aqui en vez de ser
+ * seis tipos distintos: lo que decide cual toca es `pregunta.tipo`, y de armar
+ * el envio se encarga `paginas/evaluacion/bancoV3.ts`.
+ *
+ * La forma exacta la comprueba el backend en `ValidadorDetalleV3`; si no
+ * cuadra, responde 400.
+ */
+export interface DetalleRespuesta {
+  /** EF-4: la opcion que mas se parece al candidato. */
+  mas?: number
+  /** EF-4: la que menos. Tiene que ser distinta de `mas`. */
+  menos?: number
+  /** SJT-R: id de opcion (como cadena) contra su nota, del 1 al 5. */
+  calificaciones?: Record<string, number>
+  /** SEC: los ids de todas las opciones, en el orden que eligio. */
+  orden?: number[]
+  /** INV y DE: los ids que marco. Vacio significa «ninguna», y es respuesta. */
+  marcadas?: number[]
+  /** CD: numero de campo (como cadena) contra lo que escribio. */
+  campos?: Record<string, string>
+}
+
+/** CD: un campo del caso, con la etiqueta que ve el candidato. */
+export interface CampoCasoCandidato {
+  orden: number
+  etiqueta: string
+}
+
 export interface PreguntaEvaluacion {
   id: number
   posicion: number
-  /** `OPCION_MULTIPLE` o abierta. El tipo exacto lo define la plantilla. */
+  /**
+   * El formato del item. Los ocho del banco v3 —`EF-4`, `SJT-R`, `SEC`, `INV`,
+   * `DE`, `CD`, `V`, `PC`— mas `OPCION_MULTIPLE` y las abiertas del banco viejo.
+   */
   tipo: string
   enunciado: string
   /** El contexto del caso. Puede no haberlo. */
@@ -128,6 +164,18 @@ export interface PreguntaEvaluacion {
   opciones: OpcionCandidato[] | null
   respuestaTexto: string | null
   respuestaOpcionId: number | null
+  /**
+   * Lo respondido en los formatos que necesitan detalle, para poder repintarlo
+   * al volver. Un examen de 190 preguntas no se hace de una sentada.
+   *
+   * Opcional a proposito: el backend todavia no lo devuelve en todas partes, y
+   * sin el la pantalla tiene que seguir funcionando —solo que sin recordar—.
+   */
+  respuestaDetalle?: DetalleRespuesta | null
+  /** CD: los campos del caso. Opcional mientras el backend no los mande. */
+  campos?: CampoCasoCandidato[] | null
+  /** CD: cuantos campos pide el caso, cuando no vienen sus etiquetas. */
+  casosPedidos?: number | null
 }
 
 export interface EvaluacionCandidato {
@@ -142,10 +190,15 @@ export interface EvaluacionCandidato {
   preguntas: PreguntaEvaluacion[]
 }
 
-/** Una de las dos: `opcionId` para las de opcion, `texto` para las abiertas. */
+/**
+ * Una de las tres: `opcionId` para las de opcion unica (`PC`), `texto` para las
+ * abiertas y los datos sueltos (`V`), y `detalle` para los seis formatos del
+ * banco v3 que necesitan mandar mas de un valor.
+ */
 export interface ResponderEvaluacion {
   opcionId?: number
   texto?: string
+  detalle?: DetalleRespuesta
   /** Cuanto tardo. Sirve para detectar prisas, no para penalizar. */
   segundos?: number
 }
