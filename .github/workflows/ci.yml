@@ -1,0 +1,37 @@
+# Verificacion de cada cambio.
+#
+# Aqui no se despliega nada: de eso ya se encarga Vercel al llegar a `main`.
+# Esto solo comprueba que lo que llega compila, pasa el tipado y no rompe las
+# pruebas de la evaluacion, que es donde ya se perdieron respuestas dos veces.
+#
+# Node 22 porque Vite 7 pide 20.19 o superior.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Tipado
+        run: npm run typecheck
+
+      - name: Pruebas
+        run: npm test
+
+      - name: Compilar
+        run: npx vite build

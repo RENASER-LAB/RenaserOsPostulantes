@@ -40,6 +40,12 @@ const ESPERA_ANTES_DE_GUARDAR = 800
 /** Cada cuanto se vuelve a intentar lo que no llego al servidor. */
 const ESPERA_ANTES_DE_REINTENTAR = 5000
 
+/** Lo que falta por confirmar de una pregunta: o el texto, o la opcion. */
+interface Pendiente {
+  texto?: string
+  opcionId?: number
+}
+
 function estaRespondida(p: PreguntaEvaluacion): boolean {
   return p.respuestaOpcionId !== null || (p.respuestaTexto ?? '').trim() !== ''
 }
@@ -51,7 +57,14 @@ export function Evaluacion() {
   const cache = useQueryClient()
 
   const [indice, setIndice] = useState(0)
-  const [borrador, setBorrador] = useState('')
+  // El borrador va atado a su pregunta. Al pasar de una a otra hay un instante
+  // en que React ya pinta la pregunta nueva pero el borrador sigue siendo el de
+  // la anterior; sin el id, ese texto entraba en la cola a nombre de la
+  // pregunta equivocada y podia acabar guardado en ella.
+  const [borrador, setBorrador] = useState<{ preguntaId: number; texto: string }>({
+    preguntaId: 0,
+    texto: '',
+  })
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [confirmarEntrega, setConfirmarEntrega] = useState(false)
@@ -70,13 +83,17 @@ export function Evaluacion() {
   // referencia para poder mandarlo al vuelo desde cualquier sitio, y ademas se
   // copia a estado para poder pintarlo: sin eso, el candidato no tiene forma de
   // saber que algo no llego.
-  const cola = useRef<Map<number, string>>(new Map())
-  const [sinConfirmar, setSinConfirmar] = useState<number[]>([])
+  const cola = useRef<Map<number, Pendiente>>(new Map())
+  // Espejo en estado de la cola, para poder pintarla. Guarda el valor y no solo
+  // el id porque la opcion elegida se enseña desde aqui hasta que el servidor
+  // la confirma: si no, marcar un radio no se veia hasta que la peticion volvia,
+  // y si fallaba no se veia nunca.
+  const [sinConfirmar, setSinConfirmar] = useState<{ id: number; valor: Pendiente }[]>([])
   const temporizador = useRef<number | undefined>(undefined)
   const enVuelo = useRef(0)
 
   const refrescarCola = useCallback(() => {
-    setSinConfirmar([...cola.current.keys()])
+    setSinConfirmar([...cola.current].map(([id, valor]) => ({ id, valor })))
   }, [])
 
   // Al cambiar de pregunta se recarga el borrador y se reinicia el cronometro
@@ -88,7 +105,10 @@ export function Evaluacion() {
     if (!pregunta) return
     // Si esa pregunta tiene algo sin confirmar, manda lo del candidato, no lo
     // que el servidor cree: lo suyo es mas reciente.
-    setBorrador(cola.current.get(pregunta.id) ?? pregunta.respuestaTexto ?? '')
+    setBorrador({
+      preguntaId: pregunta.id,
+      texto: cola.current.get(pregunta.id)?.texto ?? pregunta.respuestaTexto ?? '',
+    })
     abiertaEn.current = Date.now()
   }, [pregunta?.id])
 
@@ -111,7 +131,12 @@ export function Evaluacion() {
       // Solo se da por guardado lo que de verdad se mando. Si el candidato
       // siguio escribiendo mientras la peticion viajaba, lo nuevo sigue en la
       // cola y se mandara despues.
-      if (datos.texto !== undefined && cola.current.get(datos.preguntaId) === datos.texto) {
+      const enCola = cola.current.get(datos.preguntaId)
+      const esLoMismo =
+        enCola !== undefined &&
+        enCola.texto === datos.texto &&
+        enCola.opcionId === datos.opcionId
+      if (esLoMismo) {
         cola.current.delete(datos.preguntaId)
         refrescarCola()
       }
@@ -147,8 +172,8 @@ export function Evaluacion() {
   /** Manda ya todo lo que no ha confirmado el servidor, sin esperar. */
   const mandarPendientes = useCallback(() => {
     window.clearTimeout(temporizador.current)
-    for (const [preguntaId, texto] of cola.current) {
-      guardarTexto({ preguntaId, texto })
+    for (const [preguntaId, valor] of cola.current) {
+      guardarTexto({ preguntaId, ...valor })
     }
   }, [guardarTexto])
 
@@ -156,13 +181,15 @@ export function Evaluacion() {
   // escribir, no en cada tecla.
   useEffect(() => {
     if (!pregunta || pregunta.opciones?.length) return
+    // Todavia no se ha recargado el borrador: lo que hay es de otra pregunta.
+    if (borrador.preguntaId !== pregunta.id) return
 
-    if (borrador === (pregunta.respuestaTexto ?? '')) {
+    if (borrador.texto === (pregunta.respuestaTexto ?? '')) {
       if (cola.current.delete(pregunta.id)) refrescarCola()
       return
     }
 
-    cola.current.set(pregunta.id, borrador)
+    cola.current.set(pregunta.id, { texto: borrador.texto })
     refrescarCola()
     window.clearTimeout(temporizador.current)
     temporizador.current = window.setTimeout(mandarPendientes, ESPERA_ANTES_DE_GUARDAR)
@@ -183,6 +210,19 @@ export function Evaluacion() {
       mandarPendientes()
     }
   }, [mandarPendientes])
+
+  /**
+   * Las opciones no esperan al temporizador: se manda al momento. Pero pasan por
+   * la cola igual que el texto, para que un rechazo no se pierda y se reintente.
+   */
+  const elegirOpcion = useCallback(
+    (preguntaId: number, opcionId: number) => {
+      cola.current.set(preguntaId, { opcionId })
+      refrescarCola()
+      guardarTexto({ preguntaId, opcionId })
+    },
+    [guardarTexto, refrescarCola],
+  )
 
   const irA = useCallback(
     (siguiente: number) => {
@@ -265,9 +305,14 @@ export function Evaluacion() {
   const esUltima = indice === preguntas.length - 1
   const restante = segundosHasta(evaluacion.venceEn)
 
-  const esteSinConfirmar = sinConfirmar.includes(pregunta.id)
-  const estaVacia =
-    !pregunta.opciones?.length && borrador.trim() === '' && !estaRespondida(pregunta)
+  const texto = borrador.preguntaId === pregunta.id ? borrador.texto : (pregunta.respuestaTexto ?? '')
+  const pendienteDeEsta = sinConfirmar.find((p) => p.id === pregunta.id)?.valor
+  const esteSinConfirmar = pendienteDeEsta !== undefined
+  // Lo que el candidato eligio manda sobre lo que el servidor sepa: si no, un
+  // guardado rechazado dejaba el radio sin marcar y parecia que no se podia
+  // elegir nada.
+  const opcionElegida = pendienteDeEsta?.opcionId ?? pregunta.respuestaOpcionId
+  const estaVacia = !pregunta.opciones?.length && texto.trim() === '' && !estaRespondida(pregunta)
 
   // El indicador dice lo que hay, no lo que gustaria. «Respuesta guardada» solo
   // cuando lo escrito coincide con lo que el servidor confirmo.
@@ -349,8 +394,8 @@ export function Evaluacion() {
                 <input
                   type="radio"
                   name={`pregunta-${pregunta.id}`}
-                  checked={pregunta.respuestaOpcionId === opcion.id}
-                  onChange={() => guardar.mutate({ preguntaId: pregunta.id, opcionId: opcion.id })}
+                  checked={opcionElegida === opcion.id}
+                  onChange={() => elegirOpcion(pregunta.id, opcion.id)}
                 />
                 <span>
                   {opcion.letra ? `${opcion.letra}. ` : ''}
@@ -363,8 +408,8 @@ export function Evaluacion() {
               <label htmlFor="respuesta">Tu respuesta</label>
               <textarea
                 id="respuesta"
-                value={borrador}
-                onChange={(e) => setBorrador(e.target.value)}
+                value={texto}
+                onChange={(e) => setBorrador({ preguntaId: pregunta.id, texto: e.target.value })}
                 placeholder="Describe el contexto, qué hiciste, qué resultado obtuviste y qué aprendiste."
               />
               <div className="hint">Se guarda sola cuando dejas de escribir.</div>

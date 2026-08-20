@@ -103,7 +103,10 @@ function mensajeDe(estado: number, cuerpo: unknown): string {
   if (estado === 403 || estado === 404) return 'No encontramos eso, o no es tuyo.'
   if (estado === 413) return 'El archivo pesa demasiado.'
   if (estado >= 500) return 'El sistema tuvo un problema. Inténtalo de nuevo en un momento.'
-  return 'No se pudo completar la operación.'
+  // El codigo va dentro a proposito: cuando el backend rechaza algo sin decir
+  // por que —un 400 pelado—, sin el numero no hay manera de distinguir si el
+  // problema es el dato que se manda, la sesion o el estado de la postulacion.
+  return `No se pudo completar la operación (error ${estado}).`
 }
 
 // ---------- La peticion ----------
