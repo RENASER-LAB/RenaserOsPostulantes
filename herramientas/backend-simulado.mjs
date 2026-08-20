@@ -107,6 +107,37 @@ const evaluaciones = new Map()
 const pruebas = new Map()
 const inscripciones = new Map()
 
+/**
+ * Modo «red mala»: hace fallar uno de cada N guardados de respuesta.
+ *
+ * Se enciende con POST /_fallos/5 y se apaga con POST /_fallos/0. Sirve para
+ * ver que hace el portal cuando un guardado no llega, que es justo lo que no se
+ * puede provocar a mano.
+ */
+let fallaUnoDeCada = 0
+let guardadosVistos = 0
+
+/**
+ * Preguntas de relleno hasta llegar a veinte, que es el tamaño con el que se
+ * vio el fallo de las respuestas perdidas.
+ */
+function relleno(desde, hasta) {
+  const preguntas = []
+  for (let i = desde; i <= hasta; i++) {
+    preguntas.push({
+      id: i,
+      posicion: i,
+      tipo: 'ABIERTA',
+      enunciado: `Pregunta ${i}: cuenta una situación en la que tuviste que decidir con información incompleta.`,
+      situacion: null,
+      opciones: null,
+      respuestaTexto: null,
+      respuestaOpcionId: null,
+    })
+  }
+  return preguntas
+}
+
 function evaluacionDe(uuid) {
   if (!evaluaciones.has(uuid)) {
     evaluaciones.set(uuid, {
@@ -116,7 +147,7 @@ function evaluacionDe(uuid) {
       iniciadaEn: null,
       terminadaEn: null,
       minutosObjetivo: 45,
-      total: 4,
+      total: 20,
       respondidas: 0,
       preguntas: [
         {
@@ -147,6 +178,7 @@ function evaluacionDe(uuid) {
           situacion: 'Tienes que entregar el viernes y no llegas a todo.',
           opciones: null, respuestaTexto: null, respuestaOpcionId: null,
         },
+        ...relleno(5, 20),
       ],
     })
   }
@@ -226,6 +258,13 @@ const servidor = createServer(async (req, res) => {
 
   console.log(`${metodo} ${ruta}`)
 
+  // Control del modo «red mala»
+  if (partes[0] === '_fallos') {
+    fallaUnoDeCada = Number(partes[1] ?? 0) || 0
+    guardadosVistos = 0
+    return responder(res, 200, { fallaUnoDeCada })
+  }
+
   // Vacantes y textos publicos
   if (ruta === '/vacantes' && metodo === 'GET') return responder(res, 200, VACANTES)
   if (partes[0] === 'vacantes' && partes[1] && metodo === 'GET') {
@@ -264,6 +303,11 @@ const servidor = createServer(async (req, res) => {
       return responder(res, 200, ev)
     }
     if (partes[2] === 'respuestas' && partes[3]) {
+      guardadosVistos++
+      if (fallaUnoDeCada > 0 && guardadosVistos % fallaUnoDeCada === 0) {
+        console.log(`  ↑ este se cae a proposito (1 de cada ${fallaUnoDeCada})`)
+        return responder(res, 500, { mensaje: 'Fallo simulado' })
+      }
       const pregunta = ev.preguntas.find((p) => String(p.id) === partes[3])
       if (pregunta) {
         pregunta.respuestaTexto = cuerpo?.texto ?? pregunta.respuestaTexto
@@ -292,6 +336,11 @@ const servidor = createServer(async (req, res) => {
       return responder(res, 200, pr)
     }
     if (partes[2] === 'respuestas' && partes[3]) {
+      guardadosVistos++
+      if (fallaUnoDeCada > 0 && guardadosVistos % fallaUnoDeCada === 0) {
+        console.log(`  ↑ este se cae a proposito (1 de cada ${fallaUnoDeCada})`)
+        return responder(res, 500, { mensaje: 'Fallo simulado' })
+      }
       const pregunta = pr.preguntas.find((p) => String(p.id) === partes[3])
       if (pregunta) pregunta.respuestaTexto = cuerpo?.texto ?? null
       return responder(res, 200)

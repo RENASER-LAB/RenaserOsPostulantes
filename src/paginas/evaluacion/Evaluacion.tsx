@@ -11,6 +11,13 @@
  *
  * Se sigue enseñando una pregunta por pantalla: leer sesenta preguntas de
  * corrido cansa y empuja a responder por responder.
+ *
+ * Sobre las respuestas que se perdian: ya no basta con mandar lo pendiente al
+ * cambiar de pregunta. Un guardado puede fallar —red, un 500 del backend— y
+ * antes eso se perdia sin rastro: lo pendiente se borraba al mandarlo, el error
+ * se limpiaba al pasar de pregunta y nadie reintentaba. El candidato llegaba al
+ * final con «16 de 20 respondidas» y sin forma de saber cuales faltaban. Ahora
+ * lo escrito no sale de la cola hasta que el servidor lo confirma.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -30,6 +37,8 @@ import { Modal } from '@/ui/Modal'
 import { Cargando, Fallo } from '@/ui/Mensajes'
 
 const ESPERA_ANTES_DE_GUARDAR = 800
+/** Cada cuanto se vuelve a intentar lo que no llego al servidor. */
+const ESPERA_ANTES_DE_REINTENTAR = 5000
 
 function estaRespondida(p: PreguntaEvaluacion): boolean {
   return p.respuestaOpcionId !== null || (p.respuestaTexto ?? '').trim() !== ''
@@ -57,11 +66,18 @@ export function Evaluacion() {
   const preguntas = useMemo(() => consulta.data?.preguntas ?? [], [consulta.data])
   const pregunta = preguntas[indice]
 
-  // Lo escrito que todavia no ha llegado al servidor. Vive en una referencia
-  // ademas de en el estado, para poder mandarlo al vuelo cuando el candidato
-  // cambia de pregunta o entrega: es justo ahi donde antes se perdia.
-  const pendiente = useRef<{ preguntaId: number; texto: string } | null>(null)
+  // Lo escrito que todavia no ha confirmado el servidor, por pregunta. Es una
+  // referencia para poder mandarlo al vuelo desde cualquier sitio, y ademas se
+  // copia a estado para poder pintarlo: sin eso, el candidato no tiene forma de
+  // saber que algo no llego.
+  const cola = useRef<Map<number, string>>(new Map())
+  const [sinConfirmar, setSinConfirmar] = useState<number[]>([])
   const temporizador = useRef<number | undefined>(undefined)
+  const enVuelo = useRef(0)
+
+  const refrescarCola = useCallback(() => {
+    setSinConfirmar([...cola.current.keys()])
+  }, [])
 
   // Al cambiar de pregunta se recarga el borrador y se reinicia el cronometro
   // que mide cuanto se tarda en responderla.
@@ -69,7 +85,10 @@ export function Evaluacion() {
   // Depende solo del id, no del texto guardado: si dependiera de las dos cosas,
   // una recarga en segundo plano pisaria lo que el candidato esta escribiendo.
   useEffect(() => {
-    setBorrador(pregunta?.respuestaTexto ?? '')
+    if (!pregunta) return
+    // Si esa pregunta tiene algo sin confirmar, manda lo del candidato, no lo
+    // que el servidor cree: lo suyo es mas reciente.
+    setBorrador(cola.current.get(pregunta.id) ?? pregunta.respuestaTexto ?? '')
     abiertaEn.current = Date.now()
   }, [pregunta?.id])
 
@@ -80,13 +99,27 @@ export function Evaluacion() {
         texto: datos.texto,
         segundos: Math.round((Date.now() - abiertaEn.current) / 1000),
       }),
-    onMutate: () => setGuardando(true),
-    onSettled: () => setGuardando(false),
-    onSuccess: async () => {
+    onMutate: () => {
+      enVuelo.current += 1
+      setGuardando(true)
+    },
+    onSettled: () => {
+      enVuelo.current -= 1
+      if (enVuelo.current <= 0) setGuardando(false)
+    },
+    onSuccess: async (_resultado, datos) => {
+      // Solo se da por guardado lo que de verdad se mando. Si el candidato
+      // siguio escribiendo mientras la peticion viajaba, lo nuevo sigue en la
+      // cola y se mandara despues.
+      if (datos.texto !== undefined && cola.current.get(datos.preguntaId) === datos.texto) {
+        cola.current.delete(datos.preguntaId)
+        refrescarCola()
+      }
       setError(null)
       await cache.invalidateQueries({ queryKey: ['evaluacion', uuid] })
     },
     onError: (causa) => {
+      // No se toca la cola: si no llego, se vuelve a intentar.
       setError(causa instanceof Error ? causa.message : 'No pudimos guardar tu respuesta.')
     },
   })
@@ -111,50 +144,53 @@ export function Evaluacion() {
 
   const guardarTexto = guardar.mutate
 
-  /** Manda ya lo que este pendiente, sin esperar al temporizador. */
-  const guardarPendiente = useCallback(() => {
+  /** Manda ya todo lo que no ha confirmado el servidor, sin esperar. */
+  const mandarPendientes = useCallback(() => {
     window.clearTimeout(temporizador.current)
-    const aMandar = pendiente.current
-    if (!aMandar) return
-    pendiente.current = null
-    guardarTexto(aMandar)
+    for (const [preguntaId, texto] of cola.current) {
+      guardarTexto({ preguntaId, texto })
+    }
   }, [guardarTexto])
 
   // Las respuestas de texto se guardan solas cuando el candidato deja de
   // escribir, no en cada tecla.
-  //
-  // Antes este efecto cancelaba el envio en su limpieza, y como depende de la
-  // pregunta, cambiar de pregunta lo cancelaba: quien escribia y pulsaba
-  // «Siguiente» antes de que saltara el temporizador perdia la respuesta sin
-  // enterarse. Ahora lo pendiente queda anotado y se manda igualmente.
   useEffect(() => {
     if (!pregunta || pregunta.opciones?.length) return
 
     if (borrador === (pregunta.respuestaTexto ?? '')) {
-      pendiente.current = null
+      if (cola.current.delete(pregunta.id)) refrescarCola()
       return
     }
 
-    pendiente.current = { preguntaId: pregunta.id, texto: borrador }
+    cola.current.set(pregunta.id, borrador)
+    refrescarCola()
     window.clearTimeout(temporizador.current)
-    temporizador.current = window.setTimeout(guardarPendiente, ESPERA_ANTES_DE_GUARDAR)
-  }, [borrador, pregunta, guardarPendiente])
+    temporizador.current = window.setTimeout(mandarPendientes, ESPERA_ANTES_DE_GUARDAR)
+  }, [borrador, pregunta, mandarPendientes, refrescarCola])
+
+  // Mientras quede algo sin confirmar se sigue intentando solo. Un fallo de red
+  // de un momento no deberia costarle una respuesta a nadie.
+  useEffect(() => {
+    if (sinConfirmar.length === 0) return
+    const reloj = window.setInterval(mandarPendientes, ESPERA_ANTES_DE_REINTENTAR)
+    return () => window.clearInterval(reloj)
+  }, [sinConfirmar.length, mandarPendientes])
 
   // Al salir de la pantalla —volver al panel, cerrar la pestaña— lo que quede
   // sin mandar se manda.
   useEffect(() => {
     return () => {
-      guardarPendiente()
+      mandarPendientes()
     }
-  }, [guardarPendiente])
+  }, [mandarPendientes])
 
   const irA = useCallback(
     (siguiente: number) => {
-      guardarPendiente()
+      mandarPendientes()
       setIndice(Math.max(0, Math.min(preguntas.length - 1, siguiente)))
       setError(null)
     },
-    [preguntas.length, guardarPendiente],
+    [preguntas.length, mandarPendientes],
   )
 
   if (consulta.isPending) return <Cargando que="Abriendo tu evaluación…" />
@@ -229,13 +265,19 @@ export function Evaluacion() {
   const esUltima = indice === preguntas.length - 1
   const restante = segundosHasta(evaluacion.venceEn)
 
-  // Lo que el candidato tiene escrito y todavia no coincide con lo que hay en
-  // el servidor. El indicador lo dice tal cual: antes ponia «Respuesta
-  // guardada» siempre, incluso cuando no se habia guardado nada.
-  const sinGuardar =
-    !guardando &&
-    !pregunta.opciones?.length &&
-    borrador !== (pregunta.respuestaTexto ?? '')
+  const esteSinConfirmar = sinConfirmar.includes(pregunta.id)
+  const estaVacia =
+    !pregunta.opciones?.length && borrador.trim() === '' && !estaRespondida(pregunta)
+
+  // El indicador dice lo que hay, no lo que gustaria. «Respuesta guardada» solo
+  // cuando lo escrito coincide con lo que el servidor confirmo.
+  const indicador = guardando
+    ? { texto: 'Guardando…', clase: ' pendiente' }
+    : esteSinConfirmar
+      ? { texto: 'Sin guardar', clase: ' pendiente' }
+      : estaVacia
+        ? { texto: 'Sin responder', clase: ' vacia' }
+        : { texto: 'Respuesta guardada', clase: '' }
 
   return (
     <>
@@ -258,13 +300,30 @@ export function Evaluacion() {
               <i style={{ width: `${porcentaje}%` }} />
             </div>
           </div>
-          <div className={`save-state${sinGuardar ? ' pendiente' : ''}`}>
+          <div className={`save-state${indicador.clase}`}>
             <i />
-            <span>
-              {guardando ? 'Guardando…' : sinGuardar ? 'Sin guardar' : 'Respuesta guardada'}
-            </span>
+            <span>{indicador.texto}</span>
           </div>
         </div>
+
+        {/* La red de seguridad: mientras algo no haya llegado, se dice, se sigue
+            intentando y se puede forzar a mano. Antes esto se perdia callado. */}
+        {sinConfirmar.length > 0 && (
+          <div className="callout warn" style={{ marginBottom: 14 }}>
+            <b>
+              {sinConfirmar.length === 1
+                ? 'Hay 1 respuesta sin guardar'
+                : `Hay ${sinConfirmar.length} respuestas sin guardar`}
+            </b>
+            <p>
+              Seguimos intentándolo solos. No cierres esta página hasta que lo consigamos:
+              lo que no llegue al servidor no se entrega.
+            </p>
+            <button className="link" type="button" onClick={mandarPendientes}>
+              Reintentar ahora
+            </button>
+          </div>
+        )}
 
         {restante !== null && restante < 3600 && (
           <div className="callout warn" style={{ marginBottom: 14 }}>
@@ -330,7 +389,7 @@ export function Evaluacion() {
                   onClick={() => {
                     // Lo ultimo escrito se manda antes de abrir el modal: si no,
                     // la respuesta de la ultima pregunta se quedaba fuera.
-                    guardarPendiente()
+                    mandarPendientes()
                     setConfirmarEntrega(true)
                   }}
                 >
@@ -363,14 +422,29 @@ export function Evaluacion() {
             <button
               className="btn primary"
               onClick={() => entrega.mutate()}
-              disabled={entrega.isPending}
+              // Entregar con algo sin guardar es entregar sin esa respuesta.
+              disabled={entrega.isPending || sinConfirmar.length > 0}
             >
               {entrega.isPending ? 'Entregando…' : 'Entregar'}
             </button>
           </>
         }
       >
-        {faltan > 0 ? (
+        {sinConfirmar.length > 0 ? (
+          <div className="callout bad">
+            <b>
+              Espera: {sinConfirmar.length === 1 ? 'una respuesta' : `${sinConfirmar.length} respuestas`} aún no
+              {sinConfirmar.length === 1 ? ' ha llegado' : ' han llegado'} al servidor
+            </b>
+            <p>
+              Estamos reintentándolo. Si entregas ahora se quedarían fuera. En cuanto se
+              guarden, este aviso desaparece y podrás entregar.
+            </p>
+            <button className="link" type="button" onClick={mandarPendientes}>
+              Reintentar ahora
+            </button>
+          </div>
+        ) : faltan > 0 ? (
           <div className="callout warn">
             <b>Te faltan {faltan} preguntas por responder</b>
             <p>

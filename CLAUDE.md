@@ -176,9 +176,21 @@ pregunta lo cancelaba. Quien escribía y pulsaba «Siguiente» rápido perdía l
 pendiente se anota en una referencia y se manda al cambiar de pregunta, al entregar y al
 salir.
 
+**Dar por guardado lo que solo se ha enviado.** Esa corrección no bastó: lo pendiente se
+borraba al mandarlo, así que un guardado que fallaba —un 500, una red que parpadea— se
+perdía igual, y el error se limpiaba solo al pasar de pregunta. El candidato llegaba al
+final con «16 de 20 respondidas» sin saber cuáles faltaban. **Lo escrito no sale de la cola
+hasta que el servidor lo confirma**, se reintenta solo cada cinco segundos, se dice cuántas
+respuestas están sin guardar y no se deja entregar mientras quede alguna. Vale igual para
+la evaluación y para la prueba.
+
+Para reproducirlo: `POST /api/v1/portal/_fallos/5` en el backend simulado hace caer uno de
+cada cinco guardados. Con eso salía el «16 de 20» exacto; con el arreglo llegan las veinte.
+
 **Indicadores que mienten.** Ese mismo sitio ponía «Respuesta guardada» siempre, porque era
 texto fijo. Si un indicador dice que algo está a salvo, tiene que salir de comparar con lo
-que hay en el servidor.
+que hay en el servidor. Y una pregunta en blanco no está «guardada»: está **sin responder**,
+que es otra cosa.
 
 **Mirar el cuerpo antes que el estado.** El cliente devolvía `undefined` cuando no había
 cuerpo, *antes* de comprobar si la respuesta había fallado; un 500 vacío se colaba como
@@ -212,7 +224,7 @@ acción pendiente con el historial correcto.
 | Qué | Estado |
 |---|---|
 | ~~Render no responde~~ | **Resuelto.** Contesta bien y sirve las vacantes reales. Ojo con una trampa al comprobarlo a mano: la base es `/api/v1/portal`, no `/api`. Pedir `/api/vacantes` devuelve 500, y parece que el backend esté caído cuando no lo está |
-| **La corrección de la evaluación sin validar** | El commit `5ceb552` compila y pasa el tipado, pero no se pudo probar contra una evaluación real porque Render cayó a mitad |
+| ~~La corrección de la evaluación sin validar~~ | **Validada.** Con uno de cada cinco guardados cayendo, antes se perdían cuatro de veinte respuestas; ahora llegan las veinte. Lo mismo comprobado en la prueba del puesto |
 | **Pantalla de decisión ámbar** | `DECISION_TURNO_CANDIDATO` existe en el backend pero **no hay ruta** para pedir ni enviar la evidencia adicional. La pantalla explica la situación, sin formulario |
 | **Saber cómo se llama el candidato** | El backend solo devuelve `{ token, usuarioId }` al entrar. El nombre se guarda al crear la cuenta; quien entre desde otro navegador verá el portal sin su nombre |
 | **Render duerme** | Si es plan gratuito, la primera visita tras un rato tarda cerca de un minuto y el portal se rinde antes. Sin comprobar |

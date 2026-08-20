@@ -34,6 +34,8 @@ import { Modal } from '@/ui/Modal'
 import { Cargando, Fallo } from '@/ui/Mensajes'
 
 const ESPERA_ANTES_DE_GUARDAR = 1000
+/** Cada cuanto se vuelve a intentar lo que no llego al servidor. */
+const ESPERA_ANTES_DE_REINTENTAR = 5000
 const CADA_20_SEGUNDOS = 20_000
 
 // ---------- Un entregable ----------
@@ -134,28 +136,89 @@ function Entregable({
 
 // ---------- Una pregunta de la prueba ----------
 
+/**
+ * Una pregunta de la prueba, con el mismo trato que las de la evaluacion: lo
+ * escrito no se da por guardado hasta que el servidor lo confirma.
+ *
+ * Antes este efecto cancelaba el envio en su limpieza. Al entregar la prueba el
+ * componente se desmonta, asi que lo ultimo escrito se cancelaba justo cuando
+ * mas falta hacia. Y si el guardado fallaba, nadie reintentaba ni lo decia.
+ */
 function PreguntaPrueba({
   uuid,
   pregunta,
+  onPendiente,
 }: {
   uuid: string
   pregunta: { id: number; enunciado: string; respuestaTexto: string | null }
+  onPendiente: (preguntaId: number, pendiente: boolean) => void
 }) {
   const [texto, setTexto] = useState(pregunta.respuestaTexto ?? '')
-  const [guardado, setGuardado] = useState(true)
+  const [estado, setEstado] = useState<'limpio' | 'guardando' | 'pendiente'>('limpio')
+  const pendiente = useRef<string | null>(null)
+  const temporizador = useRef<number | undefined>(undefined)
 
   const guardar = useMutation({
     mutationFn: (valor: string) => responderPrueba(uuid, pregunta.id, valor),
-    onSuccess: () => setGuardado(true),
+    onMutate: () => setEstado('guardando'),
+    onSuccess: (_resultado, valor) => {
+      // Si siguio escribiendo mientras viajaba, lo nuevo sigue pendiente.
+      if (pendiente.current === valor) {
+        pendiente.current = null
+        setEstado('limpio')
+      }
+    },
+    onError: () => setEstado('pendiente'),
   })
 
   const guardarTexto = guardar.mutate
+
+  const mandarPendiente = useCallback(() => {
+    window.clearTimeout(temporizador.current)
+    if (pendiente.current === null) return
+    guardarTexto(pendiente.current)
+  }, [guardarTexto])
+
   useEffect(() => {
-    if (texto === (pregunta.respuestaTexto ?? '')) return
-    setGuardado(false)
-    const id = window.setTimeout(() => guardarTexto(texto), ESPERA_ANTES_DE_GUARDAR)
-    return () => window.clearTimeout(id)
-  }, [texto, pregunta.respuestaTexto, guardarTexto])
+    if (texto === (pregunta.respuestaTexto ?? '')) {
+      pendiente.current = null
+      setEstado('limpio')
+      return
+    }
+    pendiente.current = texto
+    setEstado('pendiente')
+    window.clearTimeout(temporizador.current)
+    temporizador.current = window.setTimeout(mandarPendiente, ESPERA_ANTES_DE_GUARDAR)
+  }, [texto, pregunta.respuestaTexto, mandarPendiente])
+
+  // Mientras quede algo sin confirmar se sigue intentando solo.
+  useEffect(() => {
+    if (estado !== 'pendiente') return
+    const reloj = window.setInterval(mandarPendiente, ESPERA_ANTES_DE_REINTENTAR)
+    return () => window.clearInterval(reloj)
+  }, [estado, mandarPendiente])
+
+  // Al desmontarse se manda lo que quede, no se cancela.
+  useEffect(() => {
+    return () => {
+      mandarPendiente()
+    }
+  }, [mandarPendiente])
+
+  // El padre necesita saberlo para no dejar entregar sin esta respuesta.
+  useEffect(() => {
+    onPendiente(pregunta.id, estado !== 'limpio')
+    return () => onPendiente(pregunta.id, false)
+  }, [estado, pregunta.id, onPendiente])
+
+  const pista =
+    estado === 'guardando'
+      ? 'Guardando…'
+      : estado === 'pendiente'
+        ? 'Sin guardar. Seguimos intentándolo.'
+        : texto.trim() === ''
+          ? 'Sin responder.'
+          : 'Guardado.'
 
   return (
     <div className="field full">
@@ -165,7 +228,7 @@ function PreguntaPrueba({
         value={texto}
         onChange={(e) => setTexto(e.target.value)}
       />
-      <div className="hint">{guardado ? 'Guardado.' : 'Guardando…'}</div>
+      <div className={`hint${estado === 'pendiente' ? ' hint-pendiente' : ''}`}>{pista}</div>
     </div>
   )
 }
@@ -180,6 +243,17 @@ export function Prueba() {
 
   const [confirmarInicio, setConfirmarInicio] = useState(false)
   const [confirmarEntrega, setConfirmarEntrega] = useState(false)
+  // Que respuestas no ha confirmado el servidor. Entregar con alguna pendiente
+  // es entregar sin ella.
+  const [sinGuardar, setSinGuardar] = useState<number[]>([])
+
+  const marcarPendiente = useCallback((preguntaId: number, pendiente: boolean) => {
+    setSinGuardar((antes) => {
+      const estaba = antes.includes(preguntaId)
+      if (pendiente === estaba) return antes
+      return pendiente ? [...antes, preguntaId] : antes.filter((id) => id !== preguntaId)
+    })
+  }, [])
 
   const consulta = useQuery({
     queryKey: ['prueba', uuid],
@@ -351,7 +425,7 @@ export function Prueba() {
                   </div>
                   <div className="formgrid">
                     {prueba.preguntas.map((p) => (
-                      <PreguntaPrueba key={p.id} uuid={uuid} pregunta={p} />
+                      <PreguntaPrueba key={p.id} uuid={uuid} pregunta={p} onPendiente={marcarPendiente} />
                     ))}
                   </div>
                 </>
@@ -442,16 +516,31 @@ export function Prueba() {
             <button
               className="btn primary"
               onClick={() => entrega.mutate()}
-              disabled={entrega.isPending}
+              // Entregar con algo sin guardar es entregar sin esa respuesta.
+              disabled={entrega.isPending || sinGuardar.length > 0}
             >
               {entrega.isPending ? 'Entregando…' : 'Entregar'}
             </button>
           </>
         }
       >
-        <p className="small">
-          Después de entregar no podrás modificar archivos, enlaces ni respuestas.
-        </p>
+        {sinGuardar.length > 0 ? (
+          <div className="callout bad">
+            <b>
+              {sinGuardar.length === 1
+                ? 'Una respuesta aún no ha llegado al servidor'
+                : `${sinGuardar.length} respuestas aún no han llegado al servidor`}
+            </b>
+            <p>
+              Estamos reintentándolo. Si entregas ahora se quedarían fuera. En cuanto se
+              guarden podrás entregar.
+            </p>
+          </div>
+        ) : (
+          <p className="small">
+            Después de entregar no podrás modificar archivos, enlaces ni respuestas.
+          </p>
+        )}
         {entrega.isError && (
           <div className="error">
             {entrega.error instanceof Error ? entrega.error.message : 'No pudimos entregar.'}
