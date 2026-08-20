@@ -1,6 +1,6 @@
 # Portal del candidato · contexto de trabajo
 
-Última actualización: 2026-08-20 · rediseño de EX aplicado
+Última actualización: 2026-08-20 · rediseño de EX aplicado y backend movido a AWS
 
 Este archivo es para retomar el trabajo sin tener que reconstruir nada. Cuenta qué es este
 proyecto, con qué habla, qué se decidió y por qué, y qué está a medias.
@@ -24,10 +24,19 @@ backend, en `frontend/`, y es otra aplicación (React sin TypeScript, sin enruta
 |---|---|
 | Este portal | `github.com/RENASER-LAB/RenaserOsPostulantes` · desplegado en Vercel |
 | Backend | `github.com/RENASER-LAB/ai-agents--spring-ai` · Spring Boot, Java 25 |
-| Backend desplegado | `https://ai-agents-spring-ai.onrender.com` |
+| Backend desplegado | `https://18-204-177-210.nip.io` · EC2 en AWS, con IP fija |
 | Base de datos | Supabase en la nube |
 
-⚠️ **La base de datos es la de producción, y es la misma en local y en Render.** El
+La dirección del backend es una IP con `nip.io`, que resuelve cualquier `IP.nip.io` a esa IP
+y por eso permite sacar un certificado de Let's Encrypt sin dominio registrado. El HTTPS es
+real y se renueva solo. **Es provisional**: cuando Renaser tenga dominio propio se cambia la
+línea de `vercel.json` y ya. Si `nip.io` se cayera, el portal se quedaría sin backend.
+
+Render quedó atrás en el commit `089e8df`. No vuelvas a apuntar ahí: los endpoints nuevos
+—entre ellos `POST /portal/auth/acceso`, el que canjea el enlace del correo— solo existen en
+AWS.
+
+⚠️ **La base de datos es la de producción, y es la misma en local y en AWS.** El
 `docker-compose.yml` del backend levanta un Postgres local, pero `application-secrets.yaml`
 apunta la conexión a Supabase, así que ese contenedor no se usa para los datos (RabbitMQ sí).
 Registrarse o postular desde el portal —también en local— **escribe junto a candidatos
@@ -44,11 +53,11 @@ npm install
 ```
 
 El portal llama a `/api`, y Vite lo reenvía al backend. Por defecto va a
-`http://localhost:8080`. Para trabajar contra Render sin levantar nada más, crea un
-`.env.local` — **no está en el repositorio, hay que recrearlo**:
+`http://localhost:8080`. Para trabajar contra el backend desplegado sin levantar nada más,
+crea un `.env.local` — **no está en el repositorio, hay que recrearlo**:
 
 ```bash
-echo "API_URL=https://ai-agents-spring-ai.onrender.com" > .env.local
+echo "API_URL=https://18-204-177-210.nip.io" > .env.local
 ```
 
 ```bash
@@ -215,26 +224,33 @@ cuerpo, *antes* de comprobar si la respuesta había fallado; un 500 vacío se co
 
 ## Dónde estamos
 
-Nueve commits. El recorrido de postulación está probado de punta a punta contra el backend
-real: registro, subida de CV, confirmación de requisitos, envío (201) y el panel mostrando la
-acción pendiente con el historial correcto.
+El recorrido de postulación está probado de punta a punta contra el backend real: registro,
+subida de CV, confirmación de requisitos, envío (201) y el panel mostrando la acción
+pendiente con el historial correcto.
+
+Encima de eso hay tres cosas nuevas de agosto: la cara de EX, ocho pruebas automáticas sobre
+la evaluación con su CI en GitHub Actions, y el salto de Render a AWS que trajo el acceso por
+enlace del correo (`/acceso`, PR #1).
 
 ### Pendiente
 
 | Qué | Estado |
 |---|---|
-| ~~Render no responde~~ | **Resuelto.** Contesta bien y sirve las vacantes reales. Ojo con una trampa al comprobarlo a mano: la base es `/api/v1/portal`, no `/api`. Pedir `/api/vacantes` devuelve 500, y parece que el backend esté caído cuando no lo está |
+| ~~El backend no responde~~ | **Resuelto.** El de AWS contesta en algo más de un segundo y sirve las vacantes reales. Ojo con una trampa al comprobarlo a mano: la base es `/api/v1/portal`, no `/api`. Pedir `/api/vacantes` devuelve 500, y parece que el backend esté caído cuando no lo está |
 | ~~La corrección de la evaluación sin validar~~ | **Validada.** Con uno de cada cinco guardados cayendo, antes se perdían cuatro de veinte respuestas; ahora llegan las veinte. Lo mismo comprobado en la prueba del puesto |
 | **Pantalla de decisión ámbar** | `DECISION_TURNO_CANDIDATO` existe en el backend pero **no hay ruta** para pedir ni enviar la evidencia adicional. La pantalla explica la situación, sin formulario |
 | **Saber cómo se llama el candidato** | El backend solo devuelve `{ token, usuarioId }` al entrar. El nombre se guarda al crear la cuenta; quien entre desde otro navegador verá el portal sin su nombre |
-| **Render duerme** | Si es plan gratuito, la primera visita tras un rato tarda cerca de un minuto y el portal se rinde antes. Sin comprobar |
+| **La dirección del backend es prestada** | `nip.io` es un servicio de terceros y la IP va escrita a mano en `vercel.json`. Mientras no haya dominio propio, el portal depende de las dos cosas |
 | **Cuenta de prueba** | `prueba.portal.qa.20260819@example.com` quedó como **candidata activa** en la base real, postulada a Ingeniero/a de Infraestructura (`f7a53fcc-11eb-4369-be96-bee577bdea85`). Aparece en el panel del equipo junto a candidatos de verdad |
 | **Vercel escribe en producción** | El portal desplegado usa la misma base real. Quien tenga el enlace puede registrarse y postular |
 
 ### Lo primero al retomar
 
-1. Mirar los logs de Render y levantarlo.
-2. Validar la corrección de la evaluación: escribir una respuesta, pulsar «Siguiente» de
-   inmediato, y comprobar que el contador de respondidas sube.
+1. Mirar los logs de la instancia de AWS si algo falla del lado del backend.
+2. Cerrar lo de «estancado en la 16 de 20»: el backend no acepta entregar una evaluación
+   incompleta —`ServicioEvaluacionImpl.entregar` lanza si faltan respuestas— y su
+   `GlobalControllerAdvice` no maneja `IllegalArgumentException`, así que el motivo real sale
+   como un 500 genérico. Falta saber **por qué** no se guardan esas respuestas: los logs de
+   AWS lo dicen, la pantalla no puede.
 3. Comprobar si hay evaluaciones ya entregadas con menos respuestas de las que deberían —
    las que se perdieron **no se recuperan**, nunca llegaron al servidor.
