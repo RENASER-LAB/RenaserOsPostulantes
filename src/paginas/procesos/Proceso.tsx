@@ -130,7 +130,8 @@ export function Proceso() {
       </div>
 
       {resumen.estado === 'CERRADA' && (
-        <div className="callout" style={{ marginTop: 18 }}>
+        <div className="cierre">
+          <span className="tag info">Cerrada</span>
           <b>Esta postulación está cerrada</b>
           <p>
             Ya no recibirás avisos de esta vacante. Cerrar la postulación no elimina tus
@@ -140,7 +141,8 @@ export function Proceso() {
       )}
 
       {resumen.estado === 'NO_CONTINUA' && (
-        <div className="callout" style={{ marginTop: 18 }}>
+        <div className="cierre">
+          <span className="tag bad">No continúa</span>
           <b>Gracias por participar</b>
           <p>
             En esta oportunidad no continúas en el proceso. Agradecemos el tiempo y la
@@ -151,7 +153,8 @@ export function Proceso() {
       )}
 
       {resumen.estado === 'CONTRATADO' && (
-        <div className="callout good" style={{ marginTop: 18 }}>
+        <div className="cierre">
+          <span className="tag good">Contratado</span>
           <b>Te damos la bienvenida</b>
           <p>Nos pondremos en contacto contigo para los siguientes pasos.</p>
         </div>

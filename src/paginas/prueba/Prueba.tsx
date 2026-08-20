@@ -302,8 +302,12 @@ export function Prueba() {
 
       <div className="pagehead">
         <div>
-          <div className="eyebrow">Prueba del puesto</div>
-          <h1>{prueba.modalidad ?? 'Demuestra cómo trabajas'}</h1>
+          <div className="eyebrow">
+            {['Prueba del puesto', prueba.modalidad].filter(Boolean).join(' · ')}
+          </div>
+          {/* La modalidad no es un titular: es un dato. El titular dice que se
+              espera de la persona. */}
+          <h1>Demuestra cómo trabajas.</h1>
           <p>
             {prueba.estadoIntento === 'EN_CURSO'
               ? 'El cronómetro está corriendo y no se detiene al cerrar esta página.'
@@ -320,17 +324,24 @@ export function Prueba() {
       </div>
 
       {prueba.estadoIntento === 'ENTREGADA' && (
-        <div className="card center-card">
-          <div className="status-icon">✓</div>
-          <div className="eyebrow">Prueba entregada</div>
-          <h1>Ya está en revisión.</h1>
-          <p>
-            Estamos calificando tu entregable y la explicación de tus decisiones. Te
-            avisaremos cuando haya novedades.
-          </p>
-          <Link className="btn primary" to={rutas.proceso(uuid)} style={{ marginTop: 20 }}>
-            Volver a mi proceso
-          </Link>
+        <div className="medida-lectura">
+          <div className="cierre">
+            <span className="tag good">Entregada</span>
+            <b>Prueba entregada</b>
+            <p>
+              Estamos calificando tu entregable y la explicación de tus decisiones. Te
+              avisaremos cuando haya novedades.
+            </p>
+            <div className="row entregada-datos">
+              <span className="small">
+                Entregables: {prueba.entregables.filter((e) => e.entregado).length} de{' '}
+                {prueba.entregables.length}
+              </span>
+              <Link className="btn" to={rutas.proceso(uuid)}>
+                Volver a mi proceso
+              </Link>
+            </div>
+          </div>
         </div>
       )}
 

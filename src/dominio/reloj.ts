@@ -78,3 +78,25 @@ export function describirAntiguedad(dias: number): string {
   if (dias === 1) return '1 día sin cambios'
   return `${dias} días sin cambios`
 }
+
+/**
+ * La fecha partida en piezas, para pintarla como en el diseño: el dia en
+ * grande, el mes debajo y la hora aparte.
+ */
+export function partesDeFecha(fecha: FechaIso): { dia: string; mes: string; hora: string } {
+  const d = new Date(fecha)
+  return {
+    dia: String(d.getDate()).padStart(2, '0'),
+    mes: d.toLocaleDateString('es-PE', { month: 'long' }),
+    hora: d.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: false }),
+  }
+}
+
+/**
+ * La hora de un tramo de la simulacion. El backend los da en minutos desde el
+ * inicio, y en pantalla se leen mejor como horas de reloj.
+ */
+export function horaDelTramo(inicioSesion: FechaIso, minutos: number): string {
+  const d = new Date(new Date(inicioSesion).getTime() + minutos * 60_000)
+  return d.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: false })
+}

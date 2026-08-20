@@ -2,6 +2,7 @@
 
 import { Link } from 'react-router-dom'
 import { rutas } from '@/rutas'
+import { Marca } from './Marca'
 
 export function Cargando({ que = 'Cargando…' }: { que?: string }) {
   return (
@@ -37,7 +38,9 @@ export function Fallo({ error, reintentar }: { error: unknown; reintentar?: () =
 export function AccesoNecesario() {
   return (
     <div className="card center-card">
-      <div className="status-icon">R</div>
+      <span className="vacio-marca" aria-hidden="true">
+        <Marca tamano={30} acento />
+      </span>
       <div className="eyebrow">Acceso necesario</div>
       <h1>Ingresa para ver tu proceso.</h1>
       <p>

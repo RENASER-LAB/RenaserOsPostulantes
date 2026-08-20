@@ -13,10 +13,11 @@ import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { inscribirse, miSesion, sesionesDisponibles } from '@/api/simulacion'
 import { ErrorApi } from '@/api/cliente'
-import { formatearFechaLarga } from '@/dominio/reloj'
+import { formatearFechaLarga, horaDelTramo, partesDeFecha } from '@/dominio/reloj'
 import { rutas } from '@/rutas'
 import { useAviso } from '@/ui/Avisos'
 import { Cargando, Fallo } from '@/ui/Mensajes'
+import { Vacio } from '@/ui/Vacio'
 
 export function Simulacion() {
   const { uuid = '' } = useParams()
@@ -106,11 +107,15 @@ export function Simulacion() {
                 <p>Cada momento tiene una duración definida.</p>
               </div>
             </div>
-            <div className="phase-grid">
-              {s.tramos.map((t, i) => (
-                <div className={`phase${i === 0 ? ' current' : ''}`} key={t.codigo}>
-                  <b>{t.nombre}</b>
-                  <span>{t.minutoFin - t.minutoInicio} min</span>
+            {/* La hora de reloj se lee mejor que «minuto 15». */}
+            <div className="agenda card">
+              {s.tramos.map((t) => (
+                <div className="tramo" key={t.codigo}>
+                  <span className="tramo-hora">{horaDelTramo(s.fechaHora, t.minutoInicio)}</span>
+                  <div>
+                    <b>{t.nombre}</b>
+                    <span>{t.minutoFin - t.minutoInicio} minutos</span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -162,43 +167,50 @@ export function Simulacion() {
 
       {disponibles.data &&
         (disponibles.data.length === 0 ? (
-          <div className="callout warn">
-            <b>Todavía no hay fechas con cupo</b>
-            <p>
-              En cuanto se publique una sesión para tu vacante te avisaremos y aparecerá
-              aquí.
-            </p>
-          </div>
+          <Vacio titulo="Todavía no hay fechas con cupo">
+            En cuanto se publique una sesión para tu vacante te avisaremos y aparecerá
+            aquí.
+          </Vacio>
         ) : (
-          <div className="card form-card">
-            <div className="stack">
-              {disponibles.data.map((s) => (
-                <label
-                  className={`date-option${elegida === s.id ? ' selected' : ''}`}
-                  key={s.id}
-                >
-                  <input
-                    type="radio"
-                    name="fecha"
-                    checked={elegida === s.id}
-                    onChange={() => {
-                      setElegida(s.id)
-                      setError(null)
-                    }}
-                  />
-                  <b>{formatearFechaLarga(s.fechaHora)}</b>
-                  <span>
-                    {[s.lugar, s.modalidad].filter(Boolean).join(' · ')} · {s.duracionMinutos}{' '}
-                    min · {s.plazasLibres}{' '}
-                    {s.plazasLibres === 1 ? 'plaza libre' : 'plazas libres'}
-                  </span>
-                </label>
-              ))}
+          <>
+            {/* El dia en grande: es lo que se compara al elegir entre fechas. */}
+            <div className="grid g3">
+              {disponibles.data.map((s) => {
+                const cuando = partesDeFecha(s.fechaHora)
+                return (
+                  <label className={`fecha${elegida === s.id ? ' elegida' : ''}`} key={s.id}>
+                    <input
+                      type="radio"
+                      name="fecha"
+                      checked={elegida === s.id}
+                      onChange={() => {
+                        setElegida(s.id)
+                        setError(null)
+                      }}
+                    />
+                    <div className="fecha-dia">
+                      <b>{cuando.dia}</b>
+                      <span>{cuando.mes}</span>
+                    </div>
+                    <div className="fecha-detalle">
+                      <b>{cuando.hora}</b>
+                      <span>
+                        {s.duracionMinutos} min ·{' '}
+                        {[s.lugar, s.modalidad].filter(Boolean).join(' · ')}
+                      </span>
+                      <span>
+                        {s.plazasLibres}{' '}
+                        {s.plazasLibres === 1 ? 'cupo libre' : 'cupos libres'}
+                      </span>
+                    </div>
+                  </label>
+                )
+              })}
             </div>
 
             {error && <div className="error">{error}</div>}
 
-            <div className="row" style={{ marginTop: 20 }}>
+            <div className="row confirmar-fecha">
               <span className="small">
                 Recibirás un correo con la confirmación, no con las preguntas.
               </span>
@@ -216,7 +228,7 @@ export function Simulacion() {
                 {inscripcionNueva.isPending ? 'Confirmando…' : 'Confirmar asistencia'}
               </button>
             </div>
-          </div>
+          </>
         ))}
     </>
   )

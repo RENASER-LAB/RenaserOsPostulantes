@@ -7,6 +7,7 @@ import type { VacantePublica } from '@/api/tipos'
 import { ETAPAS } from '@/dominio/estados'
 import { rutas } from '@/rutas'
 import { Cargando, Fallo } from '@/ui/Mensajes'
+import { Vacio } from '@/ui/Vacio'
 
 /**
  * Una linea por etapa, en el mismo orden que la barra de pasos. Los nombres no
@@ -106,10 +107,9 @@ export function Vacantes() {
 
       {consulta.data &&
         (consulta.data.length === 0 ? (
-          <div className="callout">
-            <b>Ahora mismo no hay vacantes abiertas</b>
-            <p>Vuelve más adelante: publicamos nuevas convocatorias con frecuencia.</p>
-          </div>
+          <Vacio titulo="Ahora mismo no hay vacantes abiertas">
+            Vuelve más adelante: publicamos nuevas convocatorias con frecuencia.
+          </Vacio>
         ) : (
           <div className="grid g3">
             {consulta.data.map((v) => (

@@ -24,6 +24,8 @@ import { Evaluacion } from './Evaluacion'
 // ---------- El servidor de mentira ----------
 
 const TOTAL = 4
+/** Lo que el servidor dice tener, que no siempre es lo que manda. */
+let totalDeclarado: number
 
 /** Lo que el servidor tiene guardado de verdad. */
 let guardadas: Map<number, string>
@@ -44,7 +46,7 @@ function evaluacionActual(iniciada: boolean): EvaluacionCandidato {
     iniciadaEn: iniciada ? '2026-08-20T10:00:00Z' : null,
     terminadaEn: null,
     minutosObjetivo: 45,
-    total: TOTAL,
+    total: totalDeclarado,
     respondidas: guardadas.size,
     preguntas: Array.from({ length: TOTAL }, (_, i) => ({
       id: i + 1,
@@ -121,6 +123,7 @@ afterEach(cleanup)
 
 beforeEach(() => {
   guardadas = new Map()
+  totalDeclarado = TOTAL
   opcionesGuardadas = new Map()
   fallanUnaVez = new Set()
   fallanSiempre = new Set()
@@ -208,6 +211,15 @@ describe('la evaluacion no pierde respuestas', () => {
     // y parecia que la pregunta no dejaba elegir.
     await waitFor(() => expect((opcion as HTMLInputElement).checked).toBe(true))
     expect(await screen.findByText(/sin guardar/)).toBeTruthy()
+  })
+
+  it('avisa cuando el servidor manda menos preguntas de las que dice tener', async () => {
+    // El caso de «no puedo pasar de la 16»: el candidato se queda sin
+    // «Siguiente» a mitad y la barra no llega al final.
+    totalDeclarado = 50
+    await empezar()
+
+    expect(screen.getByText(/llegaron 4 de las 50/)).toBeTruthy()
   })
 
   it('el indicador no dice «guardada» en una pregunta en blanco', async () => {

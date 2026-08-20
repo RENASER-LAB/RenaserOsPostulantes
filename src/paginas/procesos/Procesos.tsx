@@ -29,6 +29,7 @@ import { describirAntiguedad } from '@/dominio/reloj'
 import { rutas } from '@/rutas'
 import { BarraPasos } from '@/ui/BarraPasos'
 import { Cargando, Fallo } from '@/ui/Mensajes'
+import { Vacio } from '@/ui/Vacio'
 
 const CADA_15_SEGUNDOS = 15_000
 
@@ -145,13 +146,17 @@ export function Procesos() {
       </div>
 
       {procesos.length === 0 ? (
-        <div className="callout">
-          <b>Todavía no has postulado</b>
-          <p>
-            Cuando envíes una postulación aparecerá aquí, con su etapa y lo que te toca
-            hacer.
-          </p>
-        </div>
+        <Vacio
+          titulo="Todavía no has postulado"
+          accion={
+            <Link className="btn large" to={rutas.vacantes()}>
+              Ver vacantes abiertas
+            </Link>
+          }
+        >
+          Cuando envíes una postulación aparecerá aquí, con su etapa y lo que te toca
+          hacer.
+        </Vacio>
       ) : (
         <div className="process-list">
           {procesos.map((p) => (

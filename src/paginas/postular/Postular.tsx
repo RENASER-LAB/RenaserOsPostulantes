@@ -103,7 +103,9 @@ export function Postular() {
         </div>
       </div>
 
-      <form className="card form-card" onSubmit={enviar} noValidate>
+      <form onSubmit={enviar} noValidate>
+        <div className="detail-layout">
+          <div className="card form-card postular-campos">
         <div className="upload">
           <input
             ref={campoArchivo}
@@ -184,12 +186,43 @@ export function Postular() {
         )}
 
         {error && <div className="error">{error}</div>}
+          </div>
 
-        <div className="row" style={{ marginTop: 20 }}>
-          <span className="small">Podrás retirar tu postulación desde tu panel.</span>
-          <button className="btn primary large" type="submit" disabled={envio.isPending}>
-            {envio.isPending ? 'Enviando…' : 'Enviar postulación'}
-          </button>
+          {/* La ficha repite a que se postula y cuenta lo que falta: el boton
+              vive aqui, pero sigue enviando el formulario de al lado. */}
+          <aside className="sticky">
+            <div className="card ficha">
+              <div>
+                <span className="label">Vas a postular a</span>
+                <b className="ficha-puesto">{v.titulo}</b>
+                <span className="small">
+                  {[v.modalidad, v.ubicacion].filter(Boolean).join(' · ')}
+                </span>
+              </div>
+              <div className="divider" />
+              <div className="row">
+                <span>Currículum</span>
+                <b>{cv ? 'Listo' : 'Falta'}</b>
+              </div>
+              {requisitos.length > 0 && (
+                <>
+                  <div className="divider" />
+                  <div className="row">
+                    <span>Requisitos confirmados</span>
+                    <b>
+                      {confirmados.length} de {requisitos.length}
+                    </b>
+                  </div>
+                </>
+              )}
+              <button className="btn primary large" type="submit" disabled={envio.isPending}>
+                {envio.isPending ? 'Enviando…' : 'Enviar postulación'}
+              </button>
+              <span className="small ficha-pie">
+                Podrás retirar tu postulación desde tu panel.
+              </span>
+            </div>
+          </aside>
         </div>
       </form>
     </>

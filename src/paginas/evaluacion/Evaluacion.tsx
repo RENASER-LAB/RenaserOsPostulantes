@@ -257,22 +257,37 @@ export function Evaluacion() {
             </p>
           </div>
         </div>
-        <div className="card form-card">
-          <div className="callout">
-            <b>Antes de empezar</b>
-            <p>
-              No hay respuestas correctas escritas de antemano. Nos interesa cómo trabajas
-              y cómo explicas tus decisiones.
-            </p>
-          </div>
-          {evaluacion.minutosObjetivo && (
-            <div className="callout" style={{ marginTop: 12 }}>
-              <b>Tiempo estimado: {evaluacion.minutosObjetivo} minutos</b>
-              <p>Es una referencia, no un límite. Tómate el tiempo que necesites.</p>
+        <div className="medida-lectura">
+          <div className="grid g3">
+            <div className="callout">
+              <b>No hay respuestas de manual</b>
+              <p>Nos interesa cómo trabajas y cómo explicas tus decisiones.</p>
             </div>
-          )}
-          <div className="row" style={{ marginTop: 20 }}>
-            <span className="small">Podrás corregir cualquier respuesta antes de entregar.</span>
+            <div className="callout">
+              <b>Puedes corregir antes de entregar</b>
+              <p>Vuelve atrás las veces que quieras.</p>
+            </div>
+            <div className="callout">
+              <b>Si se corta tu conexión</b>
+              <p>Continúas desde la última respuesta guardada.</p>
+            </div>
+          </div>
+
+          <div className="card resumen-evaluacion">
+            <div className="resumen-cifras">
+              {evaluacion.minutosObjetivo && (
+                <div>
+                  <span className="small">Duración de referencia</span>
+                  <b>{evaluacion.minutosObjetivo} minutos</b>
+                  <span className="small">Es una referencia, no un límite.</span>
+                </div>
+              )}
+              <div>
+                <span className="small">Preguntas</span>
+                <b>{evaluacion.total}</b>
+                <span className="small">Una por pantalla.</span>
+              </div>
+            </div>
             <button
               className="btn primary large"
               onClick={() => inicio.mutate()}
@@ -298,6 +313,12 @@ export function Evaluacion() {
       </div>
     )
   }
+
+  // El backend dice cuantas preguntas tiene la evaluacion y aparte manda la
+  // lista. Si manda menos, el candidato se queda sin «Siguiente» a mitad y la
+  // barra no llega nunca al final: parece que el portal se atasco cuando lo que
+  // pasa es que faltan preguntas por venir.
+  const faltanPreguntas = evaluacion.total > preguntas.length
 
   const respondidas = preguntas.filter(estaRespondida).length
   const porcentaje = evaluacion.total === 0 ? 0 : (respondidas / evaluacion.total) * 100
@@ -366,6 +387,22 @@ export function Evaluacion() {
             </p>
             <button className="link" type="button" onClick={mandarPendientes}>
               Reintentar ahora
+            </button>
+          </div>
+        )}
+
+        {faltanPreguntas && (
+          <div className="callout warn" style={{ marginBottom: 14 }}>
+            <b>
+              Faltan preguntas por cargar: llegaron {preguntas.length} de las{' '}
+              {evaluacion.total}
+            </b>
+            <p>
+              No es cosa tuya. Vuelve a cargar la evaluación; si sigue igual, avísanos
+              antes de entregar: lo que no llega no se puede responder.
+            </p>
+            <button className="link" type="button" onClick={() => void consulta.refetch()}>
+              Volver a cargar
             </button>
           </div>
         )}

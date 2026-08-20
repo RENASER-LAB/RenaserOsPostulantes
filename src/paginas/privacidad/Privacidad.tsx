@@ -63,7 +63,7 @@ export function Privacidad() {
   const activas = consulta.data?.filter((p) => !esFinal(p.estado)) ?? []
 
   return (
-    <>
+    <div className="medida-lectura">
       <Link className="back" to={rutas.procesos()}>
         ← Volver a mis procesos
       </Link>
@@ -103,7 +103,7 @@ export function Privacidad() {
             {activas.map((p) => (
               <div className="row" key={p.uuid}>
                 <div>
-                  <b style={{ fontSize: 12 }}>{p.vacante}</b>
+                  <b>{p.vacante}</b>
                   <p className="small" style={{ margin: '4px 0 0' }}>
                     {p.estadoNombre}
                   </p>
@@ -131,7 +131,7 @@ export function Privacidad() {
       <div className="card">
         <div className="row">
           <div>
-            <b style={{ fontSize: 12 }}>Retirar el consentimiento de futuros contactos</b>
+            <b>Retirar el consentimiento de futuros contactos</b>
             <p className="small" style={{ margin: '5px 0 0' }}>
               Si lo retiras, tu perfil deja de considerarse para otras vacantes. Los
               procesos que tengas abiertos continúan igual.
@@ -157,7 +157,7 @@ export function Privacidad() {
       <div className="card">
         <div className="row">
           <div>
-            <b style={{ fontSize: 12 }}>Solicitar la eliminación de mis datos</b>
+            <b>Solicitar la eliminación de mis datos</b>
             <p className="small" style={{ margin: '5px 0 0' }}>
               Se eliminarán tus datos personales y tus respuestas de texto libre. El
               registro de auditoría se conserva sin datos que te identifiquen, porque la
@@ -213,6 +213,6 @@ export function Privacidad() {
           </div>
         )}
       </Modal>
-    </>
+    </div>
   )
 }
