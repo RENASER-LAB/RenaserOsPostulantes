@@ -526,13 +526,6 @@ export function Prueba() {
               </>
             )}
 
-            <div className="callout warn">
-              <b>Puede aparecer un cambio inesperado</b>
-              <p>
-                A mitad de la prueba puede cambiar una condición del problema. Tendrás
-                tiempo adicional para adaptar tu solución.
-              </p>
-            </div>
           </article>
 
           <aside className="timer-card">
@@ -551,12 +544,12 @@ export function Prueba() {
             ) : prueba.venceEn ? (
               <>
                 <div className="timer-label">Tienes hasta</div>
-                <div className="timer fecha">{formatearFechaLarga(prueba.venceEn)}</div>
+                <div className="timer-fecha">{formatearFechaLarga(prueba.venceEn)}</div>
               </>
             ) : (
               <>
                 <div className="timer-label">Plazo</div>
-                <div className="timer fecha">Empieza a contar cuando la abras</div>
+                <div className="timer-fecha">Empieza a contar cuando la abras</div>
               </>
             )}
             <p>
