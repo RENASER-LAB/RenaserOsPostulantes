@@ -30,7 +30,7 @@ import {
   verPrueba,
 } from '@/api/prueba'
 import type { EntregableRequerido, FechaIso, MiPrueba } from '@/api/tipos'
-import { segundosHasta } from '@/dominio/reloj'
+import { formatearFechaLarga, segundosHasta } from '@/dominio/reloj'
 import { rutas } from '@/rutas'
 import { useAviso } from '@/ui/Avisos'
 import { Cronometro } from '@/ui/Cronometro'
@@ -536,10 +536,29 @@ export function Prueba() {
           </article>
 
           <aside className="timer-card">
-            <div className="timer-label">Duración total</div>
-            <div className="timer">
-              {prueba.duracionMinutos ? `${String(prueba.duracionMinutos).padStart(2, '0')}:00` : '--:--'}
-            </div>
+            {/* Dos plazos distintos, y decirlos igual confunde. Una prueba
+                cronometrada da minutos desde que empiezas; una de plazo abierto
+                cierra un dia y una hora concretos, que el servidor ya sabe antes
+                de que entres. Poner «--:--» cuando no hay cronometro no informaba
+                de nada: parecia que faltaba un dato. */}
+            {prueba.duracionMinutos ? (
+              <>
+                <div className="timer-label">Duración total</div>
+                <div className="timer">
+                  {`${String(prueba.duracionMinutos).padStart(2, '0')}:00`}
+                </div>
+              </>
+            ) : prueba.venceEn ? (
+              <>
+                <div className="timer-label">Tienes hasta</div>
+                <div className="timer fecha">{formatearFechaLarga(prueba.venceEn)}</div>
+              </>
+            ) : (
+              <>
+                <div className="timer-label">Plazo</div>
+                <div className="timer fecha">Empieza a contar cuando la abras</div>
+              </>
+            )}
             <p>
               Una vez iniciada, la prueba no puede pausarse. Si el tiempo termina, se
               entregará lo que hayas guardado.

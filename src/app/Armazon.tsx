@@ -9,7 +9,6 @@ import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
 import { rutas } from '@/rutas'
 import { useSesion } from './Sesion'
-import { useTema } from './Tema'
 import { Marca } from '@/ui/Marca'
 
 function ArribaAlCambiarDePagina() {
@@ -28,7 +27,6 @@ function ArribaAlCambiarDePagina() {
 
 export function Armazon() {
   const { hayCuenta, saludo } = useSesion()
-  const { tema, alternar } = useTema()
 
   return (
     <div className="shell">
@@ -48,14 +46,6 @@ export function Armazon() {
             <NavLink className="navlink" to={rutas.procesos()}>
               Mis procesos
             </NavLink>
-            <button
-              className="iconbtn"
-              type="button"
-              onClick={alternar}
-              aria-label={tema === 'light' ? 'Usar tema oscuro' : 'Usar tema claro'}
-            >
-              {tema === 'light' ? '◐' : '☀'}
-            </button>
             {hayCuenta ? (
               <Link className="btn" to={rutas.privacidad()}>
                 {saludo ?? 'Mi cuenta'}

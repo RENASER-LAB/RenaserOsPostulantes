@@ -1,60 +1,30 @@
 /**
- * Claro y oscuro.
+ * El portal es claro, y solo claro.
  *
- * El tema es un atributo en la etiqueta <html>. Ninguna regla de CSS necesita
- * saber cual esta puesto: `variables.css` redefine los colores y ya.
+ * Hubo un interruptor de claro/oscuro y se quito. El oscuro no estaba terminado
+ * —habia texto del color del fondo, como el boton de empezar la prueba— y un
+ * candidato que se topa con eso no reporta un fallo: se va. Mientras no este
+ * cuidado de verdad, es mejor no ofrecerlo.
+ *
+ * El atributo se sigue poniendo en <html> porque `variables.css` mira `data-theme`
+ * para redefinir los colores: dejandolo fijo en «light», las reglas del oscuro no
+ * llegan a aplicar. No hay ninguna `prefers-color-scheme` en la hoja, asi que el
+ * sistema operativo del candidato tampoco lo cambia por su cuenta.
  */
 
-import { createContext, use, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
-
-// Clave nueva a proposito: con el rediseno el tema por defecto cambio a oscuro,
-// y quien tuviera 'light' guardado de antes se quedaba en el portal viejo.
-const CLAVE = 'ex_portal_tema'
-
-export type Tema = 'light' | 'dark'
-
-interface ControlTema {
-  tema: Tema
-  alternar: () => void
-}
-
-const Contexto = createContext<ControlTema | null>(null)
-
-function temaInicial(): Tema {
-  try {
-    const guardado = localStorage.getItem(CLAVE)
-    if (guardado === 'light' || guardado === 'dark') return guardado
-  } catch {
-    /* almacenamiento bloqueado */
-  }
-  // Sin eleccion previa manda la marca: EX es oscuro. El claro esta ahi para
-  // quien lo prefiera, pero no se hereda del sistema.
-  return 'dark'
-}
+import { useEffect, type ReactNode } from 'react'
 
 export function ProveedorTema({ children }: { children: ReactNode }) {
-  const [tema, setTema] = useState<Tema>(temaInicial)
-
   useEffect(() => {
-    document.documentElement.dataset.theme = tema
+    document.documentElement.dataset.theme = 'light'
     try {
-      localStorage.setItem(CLAVE, tema)
+      // Quien tuviera 'dark' guardado del portal anterior seguiria en oscuro sin
+      // ninguna forma de salir, porque el interruptor ya no existe.
+      localStorage.removeItem('ex_portal_tema')
     } catch {
       /* almacenamiento bloqueado */
     }
-  }, [tema])
-
-  const alternar = useCallback(() => {
-    setTema((t) => (t === 'light' ? 'dark' : 'light'))
   }, [])
 
-  const valor = useMemo(() => ({ tema, alternar }), [tema, alternar])
-
-  return <Contexto value={valor}>{children}</Contexto>
-}
-
-export function useTema(): ControlTema {
-  const control = use(Contexto)
-  if (!control) throw new Error('useTema necesita estar dentro de <ProveedorTema>')
-  return control
+  return <>{children}</>
 }
