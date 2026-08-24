@@ -89,6 +89,7 @@ typography:
 rounded:
   none: "0"
 measure:
+  ancho: "68rem"
   medida: "47ch"
   medida-corta: "42ch"
 spacing:
@@ -304,10 +305,28 @@ la que rompe a un lector de pantalla: la frase deja de leerse de una pieza.
 
 ## Layout
 
-Una sola columna centrada, con la medida elegida por lo que hay que leer, no por rejilla:
-**34rem** para un formulario, **44rem** para la mayoría de las pantallas, **48–62rem** cuando
-hay una columna lateral. Las pantallas de dos columnas usan `grid` con una lateral fija de
-19rem y colapsan a una sola.
+**El portal mide `--ancho` (68rem) en escritorio, y ese ancho es para componer, no para leer.**
+La prosa de dentro sigue cortada por `--medida`, así que ensancharlo no alarga una sola línea:
+lo que hace es dar sitio para poner cosas al lado de otras. Antes el portal ocupaba 760 px en
+una pantalla de 1920 —dos tercios vacíos— y parecía hecho para el teléfono.
+
+**No todas las pantallas lo usan.** Entrar, crear cuenta, la contraseña olvidada y postular se
+quedan en 34–44rem: son formularios, y un formulario ancho se lee peor. Privacidad se queda en
+48rem. Lo usan las que tienen algo que componer: la portada, la ficha, el hub, el detalle, el
+examen, la prueba, la decisión y la validación.
+
+**Lo que el ancho compra, pantalla por pantalla:**
+
+- La portada pone las **cinco etapas en horizontal**. Son una secuencia, y leerlas de izquierda
+  a derecha dice «esto va en camino» mejor que la misma lista apilada.
+- Cada vacante usa las dos mitades: el puesto y para qué existe a la izquierda; dónde, en qué
+  modalidad y la entrada al puesto a la derecha.
+- La ficha pone «Lo que harás» y «Lo que buscamos» en paralelo, que es como se comparan.
+- El examen abre su **mapa al lado**, no encima: la pregunta ya no se mueve al abrirlo.
+
+**El corte está en 900 px** para las composiciones de dos y cinco columnas, y en **1100 px**
+para el mapa del examen, que necesita más sitio. Por debajo, todo vuelve a una columna: en un
+teléfono es lo único que funciona.
 
 El ritmo sale de ocho escalones —4, 8, 12, 16, 24, 32, 48 y 72 px— y de una sola regla: se
 agrupa apretando y se separa con holgura. Sobre un título va más aire que debajo.

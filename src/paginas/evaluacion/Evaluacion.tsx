@@ -650,180 +650,194 @@ export function Evaluacion() {
 
       {/* El mapa. Todo el examen de un vistazo: que falta, que quedo a medias
           y un toque para ir a cualquiera de ellas. */}
-      {mapaAbierto && (
-        <div className={estilos.mapa} id="mapa-preguntas">
-          <ol className={estilos.rejilla} role="list">
-            {estados.map((estado, i) => (
-              <li key={preguntas[i]?.id ?? i}>
-                <button
-                  type="button"
-                  className={`${estilos.casilla} ${estilos[CLASE_ESTADO[estado]]}${
-                    i === indice ? ` ${estilos.aqui}` : ''
-                  }`}
-                  aria-current={i === indice ? 'true' : undefined}
-                  aria-label={
-                    `Pregunta ${i + 1}, ${COMO_SE_DICE[estado]}` +
-                    (i === indice ? ', es la que estás viendo' : '')
-                  }
-                  onClick={() => {
-                    setMapaAbierto(false)
-                    saltarA(i)
-                  }}
-                >
-                  {i + 1}
-                </button>
-              </li>
-            ))}
-          </ol>
-
-          <ul className={estilos.leyenda} role="list">
-            <li className={estilos.entradaLeyenda}>
-              <i className={`${estilos.muestra} ${estilos.lista}`} aria-hidden="true" />
-              Respondida
-            </li>
-            <li className={estilos.entradaLeyenda}>
-              <i className={`${estilos.muestra} ${estilos.aMedias}`} aria-hidden="true" />
-              Sin terminar
-            </li>
-            <li className={estilos.entradaLeyenda}>
-              <i className={estilos.muestra} aria-hidden="true" />
-              Sin responder
-            </li>
-          </ul>
-        </div>
-      )}
-
-      {/* La red de seguridad: mientras algo no haya llegado, se dice, se sigue
-          intentando y se puede forzar a mano. Antes esto se perdia callado. */}
       {/*
-        Con `error`, no solo con la cola llena.
+        El mapa y la pregunta, uno al lado del otro en escritorio.
 
-        La cola se llena en cuanto el candidato termina de responder y se vacia
-        un segundo despues, cuando el servidor confirma. Colgar el aviso de la
-        cola lo hacia aparecer y desaparecer en **cada una de las 55 preguntas**,
-        empujando la pagina hacia abajo cada vez, para avisar de algo que no
-        estaba pasando: el guardado normal iba bien.
+        Abierto empujaba la pregunta fuera de la vista, que es justo lo
+        contrario de para que sirve: ver donde estas sin perder donde estabas.
+        Con la columna, se abre en el hueco que sobraba a la derecha y la
+        pregunta no se mueve. Por debajo de 1100 px vuelve a ir encima, que en
+        un telefono es lo unico que cabe.
 
-        `error` solo tiene valor cuando un guardado **fallo de verdad** y aun no
-        se ha recuperado —`onSuccess` lo pone a nulo—, que es exactamente cuando
-        este aviso tiene algo que decir. Lo que NO cambia es el candado de la
-        entrega: ese sigue mirando la cola, porque entregar con algo sin
-        confirmar es entregar sin esa respuesta.
+        La columna es `auto`: con el mapa cerrado se encoge a cero y la
+        pregunta ocupa el ancho entero.
       */}
-      {sinConfirmar.length > 0 && error !== null && (
-        <p className={`${estilos.aviso} ${estilos.malo}`} role="status">
-          <span>
-            <b>
-              {sinConfirmar.length === 1
-                ? 'Hay 1 respuesta sin guardar.'
-                : `Hay ${sinConfirmar.length} respuestas sin guardar.`}
-            </b>{' '}
-            Seguimos intentándolo solos. No cierres esta página hasta que lo consigamos: lo
-            que no llegue al servidor no se entrega.{' '}
-            <button className={estilos.enlaceAviso} type="button" onClick={mandarPendientes}>
-              Reintentar ahora
-            </button>
-          </span>
-        </p>
-      )}
+      <div className={estilos.conMapa}>
+        {mapaAbierto && (
+          <div className={estilos.mapa} id="mapa-preguntas">
+            <ol className={estilos.rejilla} role="list">
+              {estados.map((estado, i) => (
+                <li key={preguntas[i]?.id ?? i}>
+                  <button
+                    type="button"
+                    className={`${estilos.casilla} ${estilos[CLASE_ESTADO[estado]]}${
+                      i === indice ? ` ${estilos.aqui}` : ''
+                    }`}
+                    aria-current={i === indice ? 'true' : undefined}
+                    aria-label={
+                      `Pregunta ${i + 1}, ${COMO_SE_DICE[estado]}` +
+                      (i === indice ? ', es la que estás viendo' : '')
+                    }
+                    onClick={() => {
+                      setMapaAbierto(false)
+                      saltarA(i)
+                    }}
+                  >
+                    {i + 1}
+                  </button>
+                </li>
+              ))}
+            </ol>
 
-      {faltanPreguntas && (
-        <p className={`${estilos.aviso} ${estilos.malo}`} role="status">
-          <span>
-            <b>
-              Faltan preguntas por cargar: llegaron {preguntas.length} de las{' '}
-              {evaluacion.total}.
-            </b>{' '}
-            No es cosa tuya. Vuelve a cargar la evaluación; si sigue igual, avísanos antes de
-            entregar: lo que no llega no se puede responder.{' '}
-            <button
-              className={estilos.enlaceAviso}
-              type="button"
-              onClick={() => void consulta.refetch()}
-            >
-              Volver a cargar
-            </button>
-          </span>
-        </p>
-      )}
+            <ul className={estilos.leyenda} role="list">
+              <li className={estilos.entradaLeyenda}>
+                <i className={`${estilos.muestra} ${estilos.lista}`} aria-hidden="true" />
+                Respondida
+              </li>
+              <li className={estilos.entradaLeyenda}>
+                <i className={`${estilos.muestra} ${estilos.aMedias}`} aria-hidden="true" />
+                Sin terminar
+              </li>
+              <li className={estilos.entradaLeyenda}>
+                <i className={estilos.muestra} aria-hidden="true" />
+                Sin responder
+              </li>
+            </ul>
+          </div>
+        )}
 
-      {restante !== null && restante < 3600 && (
-        <p className={estilos.aviso}>
-          <span>
-            <b>Queda poco plazo: {formatearTiempo(restante)}</b>. Cuando se acabe, se
-            entregará lo que tengas respondido.
-          </span>
-        </p>
-      )}
+        {/* La red de seguridad: mientras algo no haya llegado, se dice, se sigue
+            intentando y se puede forzar a mano. Antes esto se perdia callado. */}
+        {/*
+          Con `error`, no solo con la cola llena.
 
-      <article className={estilos.pregunta}>
-        {pregunta.situacion && <p className={estilos.situacion}>{pregunta.situacion}</p>}
+          La cola se llena en cuanto el candidato termina de responder y se vacia
+          un segundo despues, cuando el servidor confirma. Colgar el aviso de la
+          cola lo hacia aparecer y desaparecer en **cada una de las 55 preguntas**,
+          empujando la pagina hacia abajo cada vez, para avisar de algo que no
+          estaba pasando: el guardado normal iba bien.
 
-        <h1 className={estilos.enunciado}>{pregunta.enunciado}</h1>
-
-        {/* Cada formato del banco v3 se responde de una manera distinta, y la
-            suya vive en `Formatos.tsx`. Aqui solo se le dice que hay puesto y
-            a donde avisar cuando cambie. */}
-        <div className={estilos.respuesta}>
-          <RespuestaDeLaPregunta
-            pregunta={pregunta}
-            detalle={detalleDeEsta}
-            opcionElegida={opcionElegida ?? null}
-            texto={texto}
-            onDetalle={(valor) => cambiarDetalle(pregunta, valor)}
-            onOpcion={(opcionId) => elegirOpcion(pregunta.id, opcionId)}
-            onTexto={(nuevo) => setBorrador({ preguntaId: pregunta.id, texto: nuevo })}
-          />
-        </div>
-
-        {error && (
-          <p className={`${estilos.aviso} ${estilos.malo}`} role="alert">
-            <span>{error}</span>
+          `error` solo tiene valor cuando un guardado **fallo de verdad** y aun no
+          se ha recuperado —`onSuccess` lo pone a nulo—, que es exactamente cuando
+          este aviso tiene algo que decir. Lo que NO cambia es el candado de la
+          entrega: ese sigue mirando la cola, porque entregar con algo sin
+          confirmar es entregar sin esa respuesta.
+        */}
+        {sinConfirmar.length > 0 && error !== null && (
+          <p className={`${estilos.aviso} ${estilos.malo}`} role="status">
+            <span>
+              <b>
+                {sinConfirmar.length === 1
+                  ? 'Hay 1 respuesta sin guardar.'
+                  : `Hay ${sinConfirmar.length} respuestas sin guardar.`}
+              </b>{' '}
+              Seguimos intentándolo solos. No cierres esta página hasta que lo consigamos: lo
+              que no llegue al servidor no se entrega.{' '}
+              <button className={estilos.enlaceAviso} type="button" onClick={mandarPendientes}>
+                Reintentar ahora
+              </button>
+            </span>
           </p>
         )}
 
-        <div className={estilos.pie}>
-          <span
-            className={`${estilos.estadoRespuesta}${
-              indicador.pendiente ? ` ${estilos.pendiente}` : ''
-            }`}
-          >
-            {indicador.texto}
-          </span>
-          <div className={estilos.pasos}>
-            <button
-              type="button"
-              className={estilos.anterior}
-              onClick={() => navegarA(indice - 1)}
-              disabled={indice === 0}
-            >
-              Anterior
-            </button>
-            {esUltima ? (
+        {faltanPreguntas && (
+          <p className={`${estilos.aviso} ${estilos.malo}`} role="status">
+            <span>
+              <b>
+                Faltan preguntas por cargar: llegaron {preguntas.length} de las{' '}
+                {evaluacion.total}.
+              </b>{' '}
+              No es cosa tuya. Vuelve a cargar la evaluación; si sigue igual, avísanos antes de
+              entregar: lo que no llega no se puede responder.{' '}
               <button
+                className={estilos.enlaceAviso}
                 type="button"
-                className={estilos.siguiente}
-                onClick={() => {
-                  // Lo ultimo escrito se manda antes de abrir el modal: si no,
-                  // la respuesta de la ultima pregunta se quedaba fuera.
-                  mandarPendientes()
-                  setConfirmarEntrega(true)
-                }}
+                onClick={() => void consulta.refetch()}
               >
-                Entregar evaluación
+                Volver a cargar
               </button>
-            ) : (
-              <button
-                type="button"
-                className={estilos.siguiente}
-                onClick={() => navegarA(indice + 1)}
-              >
-                Siguiente
-              </button>
-            )}
+            </span>
+          </p>
+        )}
+
+        {restante !== null && restante < 3600 && (
+          <p className={estilos.aviso}>
+            <span>
+              <b>Queda poco plazo: {formatearTiempo(restante)}</b>. Cuando se acabe, se
+              entregará lo que tengas respondido.
+            </span>
+          </p>
+        )}
+
+        <article className={estilos.pregunta}>
+          {pregunta.situacion && <p className={estilos.situacion}>{pregunta.situacion}</p>}
+
+          <h1 className={estilos.enunciado}>{pregunta.enunciado}</h1>
+
+          {/* Cada formato del banco v3 se responde de una manera distinta, y la
+              suya vive en `Formatos.tsx`. Aqui solo se le dice que hay puesto y
+              a donde avisar cuando cambie. */}
+          <div className={estilos.respuesta}>
+            <RespuestaDeLaPregunta
+              pregunta={pregunta}
+              detalle={detalleDeEsta}
+              opcionElegida={opcionElegida ?? null}
+              texto={texto}
+              onDetalle={(valor) => cambiarDetalle(pregunta, valor)}
+              onOpcion={(opcionId) => elegirOpcion(pregunta.id, opcionId)}
+              onTexto={(nuevo) => setBorrador({ preguntaId: pregunta.id, texto: nuevo })}
+            />
           </div>
-        </div>
-      </article>
+
+          {error && (
+            <p className={`${estilos.aviso} ${estilos.malo}`} role="alert">
+              <span>{error}</span>
+            </p>
+          )}
+
+          <div className={estilos.pie}>
+            <span
+              className={`${estilos.estadoRespuesta}${
+                indicador.pendiente ? ` ${estilos.pendiente}` : ''
+              }`}
+            >
+              {indicador.texto}
+            </span>
+            <div className={estilos.pasos}>
+              <button
+                type="button"
+                className={estilos.anterior}
+                onClick={() => navegarA(indice - 1)}
+                disabled={indice === 0}
+              >
+                Anterior
+              </button>
+              {esUltima ? (
+                <button
+                  type="button"
+                  className={estilos.siguiente}
+                  onClick={() => {
+                    // Lo ultimo escrito se manda antes de abrir el modal: si no,
+                    // la respuesta de la ultima pregunta se quedaba fuera.
+                    mandarPendientes()
+                    setConfirmarEntrega(true)
+                  }}
+                >
+                  Entregar evaluación
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className={estilos.siguiente}
+                  onClick={() => navegarA(indice + 1)}
+                >
+                  Siguiente
+                </button>
+              )}
+            </div>
+          </div>
+        </article>
+      </div>
 
       <Modal
         abierto={confirmarEntrega}

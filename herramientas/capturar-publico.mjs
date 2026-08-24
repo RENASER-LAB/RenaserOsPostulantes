@@ -56,7 +56,9 @@ const PANTALLAS = [
   { nombre: 'clave', ruta: '/clave' },
 ]
 
-for (const t of [{ nombre: 'escritorio', width: 1280, height: 900 }, { nombre: 'movil', width: 375, height: 812 }]) {
+for (const t of [{ nombre: 'ancho', width: 1920, height: 1000 },
+  { nombre: 'escritorio', width: 1280, height: 900 },
+  { nombre: 'movil', width: 375, height: 812 }]) {
   for (const pantalla of PANTALLAS) {
     const contexto = await navegador.newContext({
       viewport: { width: t.width, height: t.height }, locale: 'es-PE',

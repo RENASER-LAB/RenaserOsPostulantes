@@ -7,7 +7,7 @@
  */
 
 .pagina {
-  max-width: 760px;
+  max-width: var(--ancho);
   margin: 0 auto;
   padding: var(--e7) var(--e5) var(--e8);
 }
@@ -100,6 +100,56 @@
   max-width: var(--medida);
 }
 
+/*
+ * En escritorio, el recorrido se lee de izquierda a derecha.
+ *
+ * Son cinco etapas en orden, y una secuencia puesta en horizontal dice «esto va
+ * en camino» mejor que la misma lista apilada — que es justo lo que el mundo de
+ * esta pantalla quiere decir. Apilada tambien dejaba dos tercios de la pantalla
+ * vacios a la derecha.
+ *
+ * El corte esta en 900 px y no en 640: con cinco columnas y una tablet, cada
+ * una se queda en 150 px y los nombres se parten. Por debajo vuelve a la
+ * columna, que en un telefono es lo unico que funciona.
+ */
+@media (min-width: 900px) {
+  .etapas {
+    grid-template-columns: repeat(5, 1fr);
+    column-gap: var(--e4);
+  }
+
+  .etapa {
+    display: block;
+    grid-column: auto;
+  }
+
+  .marca {
+    justify-content: flex-start;
+    padding-top: 0;
+    padding-bottom: var(--e3);
+  }
+
+  /* El riel se tumba: va de esta marca a la siguiente, a la altura del cuadro. */
+  .marca::after {
+    top: 4px;
+    bottom: auto;
+    left: 15px;
+    right: calc(var(--e4) * -1);
+    width: auto;
+    height: 1px;
+  }
+
+  .textoEtapa {
+    padding-bottom: 0;
+  }
+
+  .queEsEtapa {
+    /* Aqui manda la columna, no la medida de lectura: son cinco etiquetas
+       cortas, no prosa. */
+    max-width: none;
+  }
+}
+
 /* ---------- Las vacantes ---------- */
 
 .seccionVacantes {
@@ -178,6 +228,52 @@
   margin-top: var(--e3);
   font-size: var(--t-apoyo);
   font-weight: 600;
+}
+
+/*
+ * En escritorio, cada vacante usa las dos mitades.
+ *
+ * A la izquierda lo que se lee —el puesto y para que existe—; a la derecha lo
+ * que se compara de un vistazo entre varias vacantes —donde y en que
+ * modalidad— y la entrada al puesto. Apilado, todo caia a la izquierda y la
+ * mitad derecha de la pantalla se quedaba en blanco.
+ *
+ * El texto sigue cortado por `--medida`: ensanchar la columna no alarga la
+ * linea, solo deja sitio al lado.
+ */
+@media (min-width: 900px) {
+  .enlaceVacante {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'titulo donde'
+      'resumen ver';
+    column-gap: var(--e7);
+    align-items: start;
+  }
+
+  .tituloVacante {
+    grid-area: titulo;
+  }
+
+  .donde {
+    grid-area: donde;
+    margin-top: 0;
+    text-align: right;
+    /* A la altura del titulo, no de su primera linea. */
+    padding-top: 0.4em;
+  }
+
+  .queSeHace {
+    grid-area: resumen;
+  }
+
+  .ver {
+    grid-area: ver;
+    justify-self: end;
+    align-self: end;
+    white-space: nowrap;
+  }
 }
 
 /* ---------- Estados ---------- */

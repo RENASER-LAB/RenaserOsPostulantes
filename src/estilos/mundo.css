@@ -84,6 +84,20 @@
   --t-portada: clamp(28px, 4.4vw, 40px); /* el titular */
 
   /*
+   * El ancho del portal en escritorio.
+   *
+   * `--ancho` no es una medida de lectura: es el hueco donde componer. La prosa
+   * de dentro sigue cortada por `--medida`, asi que ensanchar esto no alarga
+   * una sola linea — lo que hace es dar sitio para poner cosas al lado de otras
+   * en vez de una debajo de otra. A 1920 el portal ocupaba 760 px, dos tercios
+   * de pantalla vacios, y parecia hecho para el telefono.
+   *
+   * Las pantallas que NO lo usan son las que no ganan nada con el: entrar,
+   * crear cuenta y postular son formularios, y un formulario ancho se lee peor.
+   */
+  --ancho: 68rem;
+
+  /*
    * La medida de la linea.
    *
    * En `ch`, que es el ancho del «0». En Libre Franklin el cero es ancho, asi

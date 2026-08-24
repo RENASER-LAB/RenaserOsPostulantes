@@ -9,7 +9,7 @@
  */
 
 .pagina {
-  max-width: 62rem;
+  max-width: var(--ancho);
   margin: 0 auto;
   padding: var(--e4) var(--e5) var(--e8);
 }

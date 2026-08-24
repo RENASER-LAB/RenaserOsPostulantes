@@ -69,7 +69,9 @@ const AL_FORMATO = { examen: 0, mapa: 0, sjt: 1, sec: 2, ef: 3, ef4: 3 }
 await mkdir('capturas', { recursive: true })
 const navegador = await chromium.launch({ channel: 'chrome' })
 
-for (const t of [{ nombre: 'escritorio', width: 1280, height: 900 }, { nombre: 'movil', width: 375, height: 812 }]) {
+for (const t of [{ nombre: 'ancho', width: 1920, height: 1000 },
+  { nombre: 'escritorio', width: 1280, height: 900 },
+  { nombre: 'movil', width: 375, height: 812 }]) {
   const contexto = await navegador.newContext({
     viewport: { width: t.width, height: t.height }, locale: 'es-PE',
     storageState: { cookies: [], origins: [{ origin: PORTAL, localStorage: [{ name: 'renaser_portal_token', value: 'captura' }] }] },
