@@ -1,0 +1,516 @@
+/*
+ * La evaluación.
+ *
+ * Entre 50 y 85 preguntas segun el nivel, en orden fijo, que nadie responde de
+ * una sentada. Todo aqui existe por un fallo real que ya ocurrio:
+ *
+ *   - **El mapa** existe porque alguien se salto una pregunta, el aviso lo mando
+ *     de la 50 a la 10, y para volver no habia mas remedio que pulsar
+ *     «Siguiente» cuarenta veces.
+ *   - **El estado de cada pregunta se lee en la FORMA** —relleno, contorno,
+ *     borde grueso— antes que en el color, y ademas se dice con palabras.
+ *   - **Lo que no ha llegado al servidor se dice**, y no se deja entregar
+ *     mientras quede algo sin guardar. Un indicador que dice «guardada» sin
+ *     comprobarlo es peor que ninguno.
+ *
+ * El acento indigo NO se usa para «respondida»: aqui significaria dos cosas a
+ * la vez. Marca solo donde estas.
+ */
+
+.pagina {
+  max-width: 62rem;
+  margin: 0 auto;
+  padding: var(--e4) var(--e5) var(--e8);
+}
+
+.volver {
+  composes: volver from '../../estilos/piezas.module.css';
+}
+
+/* ---------- La barra de avance, siempre a la vista ---------- */
+
+.avance {
+  position: sticky;
+  top: var(--alto-cabecera);
+  z-index: 5;
+  background: var(--papel);
+  border-bottom: 1px solid var(--regla);
+  padding: var(--e3) 0;
+  margin-bottom: var(--e5);
+}
+
+.cifras {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--e2) var(--e4);
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+}
+
+/* Donde estas manda sobre cuantas llevas: es lo que se mira de reojo. */
+.donde {
+  color: var(--tinta);
+  font-weight: 600;
+}
+
+.riel {
+  display: flex;
+  height: 6px;
+  margin-top: var(--e2);
+  background: var(--hundido2);
+}
+
+.recorrido {
+  background: var(--tinta);
+}
+
+/* ---------- Los mandos: mapa, saltos ---------- */
+
+.mandos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e3);
+  margin-top: var(--e3);
+}
+
+.mando {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--e4);
+  background: var(--papel);
+  border: 1px solid var(--borde-control);
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mando:hover {
+  border-color: var(--tinta);
+}
+
+.mando[aria-expanded='true'] {
+  background: var(--tinta);
+  border-color: var(--tinta);
+  color: var(--papel);
+}
+
+.faltan {
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+  margin-left: auto;
+}
+
+/* ---------- El mapa de preguntas ---------- */
+
+.mapa {
+  margin-top: var(--e4);
+  border: 1px solid var(--regla2);
+  background: var(--hundido);
+  padding: var(--e4);
+}
+
+.rejilla {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+  gap: var(--e2);
+}
+
+.casilla {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  background: var(--papel);
+  border: 1px solid var(--regla2);
+  font-size: var(--t-apoyo);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.casilla:hover {
+  border-color: var(--tinta);
+}
+
+/* Respondida: relleno macizo. La forma lo dice antes que el color. */
+.casilla.lista {
+  background: var(--tinta);
+  border-color: var(--tinta);
+  color: var(--papel);
+}
+
+/* A medias: media caja rellena, para distinguirla de la vacía sin usar color. */
+.casilla.aMedias {
+  background: linear-gradient(to top, var(--tinta) 50%, var(--papel) 50%);
+  border-color: var(--tinta);
+  color: var(--tinta);
+  font-weight: 600;
+}
+
+/* Sin guardar: borde grueso de aviso. */
+.casilla.sinGuardar {
+  border: 2px solid var(--mal);
+  color: var(--mal);
+  font-weight: 700;
+}
+
+/* Donde estás: el único acento del examen. */
+.casilla.aqui {
+  outline: 2px solid var(--acento);
+  outline-offset: -2px;
+  border-color: var(--acento);
+}
+
+.leyenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e3) var(--e5);
+  margin-top: var(--e4);
+  padding-top: var(--e3);
+  border-top: 1px solid var(--regla2);
+  font-size: var(--t-menor);
+  color: var(--tinta2);
+}
+
+.entradaLeyenda {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+}
+
+.muestra {
+  width: 15px;
+  height: 15px;
+  flex: none;
+  background: var(--papel);
+  border: 1px solid var(--regla2);
+}
+
+.muestra.lista {
+  background: var(--tinta);
+  border-color: var(--tinta);
+}
+
+.muestra.aMedias {
+  background: linear-gradient(to top, var(--tinta) 50%, var(--papel) 50%);
+  border-color: var(--tinta);
+}
+
+.muestra.sinGuardar {
+  border: 2px solid var(--mal);
+}
+
+/* ---------- La pregunta ---------- */
+
+.pregunta {
+  border: 1px solid var(--regla);
+  padding: var(--e6);
+}
+
+.cual {
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+  font-variant-numeric: tabular-nums;
+}
+
+.situacion {
+  margin-top: var(--e4);
+  border-left: 1px solid var(--regla2);
+  padding-left: var(--e4);
+  font-size: var(--t-base);
+  line-height: 1.6;
+  color: var(--tinta2);
+  max-width: var(--medida);
+  white-space: pre-line;
+}
+
+.enunciado {
+  font-size: var(--t-destacado);
+  line-height: 1.35;
+  letter-spacing: -0.018em;
+  font-weight: 600;
+  margin-top: var(--e4);
+  max-width: var(--medida);
+  text-wrap: pretty;
+}
+
+.respuesta {
+  margin-top: var(--e5);
+}
+
+/* ---------- El pie de la pregunta ---------- */
+
+.pie {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e4);
+  margin-top: var(--e6);
+  padding-top: var(--e4);
+  border-top: 1px solid var(--regla);
+}
+
+.estadoRespuesta {
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+}
+
+.estadoRespuesta.pendiente {
+  color: var(--mal);
+  font-weight: 600;
+}
+
+.pasos {
+  display: flex;
+  gap: var(--e3);
+}
+
+/*
+ * Los dos no son la misma pieza aunque vayan juntos: «Siguiente» es el camino
+ * y va relleno, «Anterior» es la vuelta y va con contorno. Ninguno lleva el
+ * acento — dentro del examen, el acento seria ruido: aqui TODO es su turno.
+ */
+.anterior {
+  composes: secundario from '../../estilos/piezas.module.css';
+}
+
+.siguiente {
+  composes: solido from '../../estilos/piezas.module.css';
+}
+
+/* ---------- Avisos ---------- */
+
+.aviso {
+  display: flex;
+  gap: var(--e3);
+  margin-top: var(--e4);
+  border: 1px solid var(--regla2);
+  background: var(--hundido);
+  padding: var(--e4);
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+}
+
+.aviso::before {
+  content: '';
+  flex: none;
+  width: 3px;
+  background: var(--regla2);
+}
+
+.aviso.malo {
+  border-color: var(--mal-regla);
+  background: var(--mal-papel);
+  color: var(--mal);
+}
+
+.aviso.malo::before {
+  background: var(--mal);
+}
+
+.enlaceAviso {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 0.22em;
+}
+
+/* ---------- Entregar ---------- */
+
+.entrega {
+  margin-top: var(--e6);
+  padding-top: var(--e5);
+  border-top: 1px solid var(--regla);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e4);
+}
+
+.entregaTexto {
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+  max-width: var(--medida-corta);
+}
+
+.entregar {
+  composes: acentoGrande from '../../estilos/piezas.module.css';
+}
+
+/* ---------- La portada del examen ---------- */
+
+.portada {
+  max-width: 40rem;
+}
+
+.presentacion {
+  font-size: var(--t-entradilla);
+  line-height: 1.6;
+  color: var(--tinta2);
+  margin-top: var(--e4);
+  max-width: var(--medida);
+}
+
+.datos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e6);
+  margin-top: var(--e6);
+  padding: var(--e5) 0;
+  border-top: 1px solid var(--regla);
+  border-bottom: 1px solid var(--regla);
+}
+
+.dato {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e1);
+}
+
+.cifra {
+  font-size: var(--t-cifra);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.queEs {
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+}
+
+.saber {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e4);
+  margin-top: var(--e6);
+}
+
+.empezar {
+  composes: acentoGrande from '../../estilos/piezas.module.css';
+  margin-top: var(--e6);
+  align-self: flex-start;
+}
+
+/* ---------- Estados de la página ---------- */
+
+.marco {
+  margin-top: var(--e6);
+  border: 1px solid var(--regla);
+  padding: var(--e6);
+}
+
+.marcoTexto {
+  font-size: var(--t-prosa);
+  line-height: 1.55;
+  color: var(--tinta2);
+  margin-top: var(--e3);
+  max-width: var(--medida-corta);
+}
+
+.reintentar {
+  composes: secundario from '../../estilos/piezas.module.css';
+  margin-top: var(--e5);
+}
+
+.barra {
+  height: 12px;
+  background: var(--hundido2);
+  margin-top: var(--e3);
+}
+
+.barraCorta {
+  width: 42%;
+}
+
+.barraMedia {
+  width: 68%;
+}
+
+.soloLectores {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------- El aviso de entrega ---------- */
+
+.confirmacion {
+  width: min(32rem, calc(100vw - 2rem));
+  padding: var(--e6);
+  border: 1px solid var(--tinta);
+  background: var(--papel);
+  color: var(--tinta);
+}
+
+.confirmacion::backdrop {
+  background: rgb(28 28 30 / 0.4);
+}
+
+.confirmacionTitulo {
+  margin: 0;
+}
+
+.confirmacionTexto {
+  font-size: var(--t-prosa);
+  line-height: 1.55;
+  color: var(--tinta2);
+  margin-top: var(--e3);
+}
+
+.confirmacionBotones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e3);
+  margin-top: var(--e6);
+}
+
+.seguir {
+  composes: secundario from '../../estilos/piezas.module.css';
+}
+
+.confirmarEntrega {
+  composes: acentoMenor from '../../estilos/piezas.module.css';
+}
+
+@media (max-width: 760px) {
+  .pagina {
+    padding: var(--e3) var(--e4) var(--e7);
+  }
+
+  .pregunta {
+    padding: var(--e5) var(--e4);
+  }
+
+
+  .pasos {
+    width: 100%;
+  }
+
+  .anterior,
+  .siguiente {
+    flex: 1;
+  }
+
+  .faltan {
+    margin-left: 0;
+    width: 100%;
+  }
+}

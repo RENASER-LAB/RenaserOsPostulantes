@@ -1,237 +1,243 @@
 /**
  * Crear cuenta.
  *
- * Dos cosas que el mockup hacia mal y aqui se corrigen:
- *   - el backend pide nombre y apellidos por separado,
- *   - son dos consentimientos distintos, no uno. Aceptar el proceso es
- *     obligatorio; entrar al Radar de Talento es opcional y se puede retirar
- *     despues sin tocar la postulacion.
+ * Dos cosas que no son negociables aquí:
+ *
+ *   - **Son dos consentimientos distintos.** Aceptar el tratamiento de datos
+ *     para este proceso es obligatorio; querer avisos de futuras vacantes es
+ *     aparte y opcional, y se retira por otra ruta. Juntarlos en una sola
+ *     casilla sería pedir un permiso que nadie dio.
+ *   - **El texto legal va a crecer.** Los textos vigentes todavía no nombran a
+ *     las empresas que procesan los datos, y tienen que hacerlo antes del primer
+ *     candidato real. Por eso el bloque los sirve del backend y les da su propio
+ *     espacio con scroll, en vez de resumirlos aquí.
+ *
+ * El registro recuerda a qué vacante se estaba postulando: quien llega desde una
+ * ficha sigue con su postulación al terminar, no vuelve a la portada a buscarla.
  */
 
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
+import { z } from 'zod'
 import { textosConsentimiento } from '@/api/portal'
 import { useSesion } from '@/app/Sesion'
 import { rutas } from '@/rutas'
-import { useAviso } from '@/ui/Avisos'
-import { Modal } from '@/ui/Modal'
+import { Campo, Consentimiento } from '@/ui/campos/Campo'
+import estilos from './Cuenta.module.css'
+
+const Datos = z
+  .object({
+    nombre: z.string().trim().min(1, 'Escribe tu nombre.'),
+    apellidos: z.string().trim().min(1, 'Escribe tus apellidos.'),
+    correo: z
+      .string()
+      .min(1, 'Escribe tu correo.')
+      .email('Esto no parece un correo. Revisa que tenga arroba y dominio.'),
+    // El mismo mínimo que exige el backend: si aquí fuera menor, el envío
+    // rebotaría con un error que la pantalla no supo prevenir.
+    contrasena: z.string().min(8, 'La contraseña necesita al menos 8 caracteres.'),
+    repetir: z.string().min(1, 'Repite la contraseña.'),
+    aceptaProceso: z.literal(true, {
+      message: 'Sin este permiso no podemos evaluar tu candidatura.',
+    }),
+    aceptaFuturosContactos: z.boolean(),
+  })
+  .refine((d) => d.contrasena === d.repetir, {
+    message: 'Las dos contraseñas no coinciden.',
+    path: ['repetir'],
+  })
+
+type Campos = z.infer<typeof Datos>
+type Errores = Partial<Record<keyof Campos, string>>
+
+const VACIO = {
+  nombre: '',
+  apellidos: '',
+  correo: '',
+  contrasena: '',
+  repetir: '',
+  aceptaProceso: false,
+  aceptaFuturosContactos: false,
+}
 
 export function Registro() {
   const { registrar } = useSesion()
   const navegar = useNavigate()
-  const avisar = useAviso()
-  const [parametros] = useSearchParams()
-  const vacanteId = parametros.get('vacante')
+  const [params] = useSearchParams()
+  const vacante = params.get('vacante')
 
-  const [nombre, setNombre] = useState('')
-  const [apellidos, setApellidos] = useState('')
-  const [correo, setCorreo] = useState('')
-  const [contrasena, setContrasena] = useState('')
-  const [repetida, setRepetida] = useState('')
-  const [aceptaProceso, setAceptaProceso] = useState(false)
-  const [aceptaFuturos, setAceptaFuturos] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [valores, setValores] = useState(VACIO)
+  const [errores, setErrores] = useState<Errores>({})
+  const [fallo, setFallo] = useState<string | null>(null)
   const [enviando, setEnviando] = useState(false)
-  const [verPolitica, setVerPolitica] = useState(false)
+  const cuantosFaltan = Object.keys(errores).length
 
-  const politica = useQuery({
-    queryKey: ['consentimientos'],
-    queryFn: textosConsentimiento,
-    enabled: verPolitica,
-  })
+  // Los textos legales vigentes los sirve el backend, y son públicos.
+  const textos = useQuery({ queryKey: ['consentimientos'], queryFn: textosConsentimiento })
+  const legales = Array.isArray(textos.data) ? textos.data : []
+  const legalDe = (tipo: string) =>
+    legales.find((t) => t.tipo?.toUpperCase().includes(tipo))?.texto
 
-  function validar(): string | null {
-    if (!nombre.trim() || !apellidos.trim()) return 'Escribe tu nombre y tus apellidos.'
-    if (!correo.includes('@')) return 'Escribe un correo válido.'
-    if (contrasena.length < 8) return 'La contraseña necesita al menos 8 caracteres.'
-    if (contrasena !== repetida) return 'Las dos contraseñas no coinciden.'
-    if (!aceptaProceso) return 'Necesitamos tu consentimiento para evaluar la postulación.'
-    return null
+  function cambiar<C extends keyof typeof VACIO>(campo: C, valor: (typeof VACIO)[C]) {
+    setValores((v) => ({ ...v, [campo]: valor }))
   }
 
-  async function enviar(e: FormEvent) {
-    e.preventDefault()
-    const fallo = validar()
-    setError(fallo)
-    if (fallo) return
+  async function enviar(evento: FormEvent) {
+    evento.preventDefault()
+    setFallo(null)
 
+    const revision = Datos.safeParse(valores)
+    if (!revision.success) {
+      const nuevos: Errores = {}
+      for (const problema of revision.error.issues) {
+        const campo = problema.path[0] as keyof Campos
+        nuevos[campo] ??= problema.message
+      }
+      setErrores(nuevos)
+      // El primer campo con problema recibe el foco: si no, en un formulario
+      // largo el error queda fuera de la pantalla y parece que no pasó nada.
+      requestAnimationFrame(() => {
+        const primero = document.querySelector<HTMLElement>('[aria-invalid="true"]')
+        primero?.focus()
+      })
+      return
+    }
+
+    setErrores({})
     setEnviando(true)
     try {
       await registrar({
-        nombre: nombre.trim(),
-        apellidos: apellidos.trim(),
-        correo: correo.trim(),
-        contrasena,
+        nombre: revision.data.nombre,
+        apellidos: revision.data.apellidos,
+        correo: revision.data.correo,
+        contrasena: revision.data.contrasena,
         aceptaProceso: true,
-        aceptaFuturosContactos: aceptaFuturos,
+        aceptaFuturosContactos: revision.data.aceptaFuturosContactos,
       })
-      avisar('Cuenta creada.')
-      navegar(vacanteId ? rutas.postular(vacanteId) : rutas.procesos(), { replace: true })
+      navegar(vacante ? rutas.postular(vacante) : rutas.procesos())
     } catch (causa) {
-      setError(causa instanceof Error ? causa.message : 'No pudimos crear la cuenta.')
+      setFallo(
+        causa instanceof Error
+          ? causa.message
+          : 'No pudimos crear tu cuenta. Vuelve a intentarlo en un momento.',
+      )
     } finally {
       setEnviando(false)
     }
   }
 
   return (
-    <>
-      {vacanteId && (
-        <Link className="back" to={rutas.vacante(vacanteId)}>
-          ← Volver a la vacante
+    <div className={`${estilos.pagina} ${estilos.paginaAncha}`}>
+      {vacante && (
+        <Link className={estilos.volver} to={rutas.vacante(vacante)}>
+          ← Volver al puesto
         </Link>
       )}
 
-      <div className="pagehead">
-        <div>
-          <div className="eyebrow">Crear cuenta</div>
-          <h1>Empieza tu postulación.</h1>
-          <p>
-            Tu cuenta te permitirá guardar avances y consultar el estado de todas tus
-            postulaciones.
+      <h1>Crea tu cuenta.</h1>
+      <p className={estilos.bajada}>
+        {vacante
+          ? 'Al terminar seguimos con tu postulación, justo donde la dejaste.'
+          : 'Con ella podrás postular y seguir el estado de tu proceso.'}
+      </p>
+
+      <form className={estilos.formulario} onSubmit={enviar} noValidate>
+        {/* Cuantos faltan, antes de que empiece a buscarlos por su cuenta. */}
+        <p aria-live="polite" className={cuantosFaltan > 0 ? estilos.resumenErrores : estilos.oculto}>
+          {cuantosFaltan > 0 &&
+            (cuantosFaltan === 1
+              ? 'Falta un dato por revisar. Te lo marcamos abajo.'
+              : `Faltan ${cuantosFaltan} datos por revisar. Te los marcamos abajo.`)}
+        </p>
+
+        <div className={estilos.pareja}>
+          <Campo
+            etiqueta="Nombre"
+            autoComplete="given-name"
+            value={valores.nombre}
+            onChange={(e) => cambiar('nombre', e.target.value)}
+            error={errores.nombre}
+          />
+          <Campo
+            etiqueta="Apellidos"
+            autoComplete="family-name"
+            value={valores.apellidos}
+            onChange={(e) => cambiar('apellidos', e.target.value)}
+            error={errores.apellidos}
+          />
+        </div>
+
+        <Campo
+          etiqueta="Correo"
+          type="email"
+          autoComplete="email"
+          ayuda="Aquí te escribiremos cuando tu proceso avance."
+          value={valores.correo}
+          onChange={(e) => cambiar('correo', e.target.value)}
+          error={errores.correo}
+        />
+
+        <div className={estilos.pareja}>
+          <Campo
+            etiqueta="Contraseña"
+            type="password"
+            autoComplete="new-password"
+            ayuda="Al menos 8 caracteres."
+            value={valores.contrasena}
+            onChange={(e) => cambiar('contrasena', e.target.value)}
+            error={errores.contrasena}
+          />
+          <Campo
+            etiqueta="Repite la contraseña"
+            type="password"
+            autoComplete="new-password"
+            value={valores.repetir}
+            onChange={(e) => cambiar('repetir', e.target.value)}
+            error={errores.repetir}
+          />
+        </div>
+
+        <div className={estilos.bloque}>
+          <h2 className={estilos.tituloBloque}>Antes de seguir, dos permisos</h2>
+
+          <Consentimiento
+            titulo="Tratamiento de mis datos para este proceso"
+            obligatorio
+            explicacion="Para evaluar tu candidatura, tu currículum y tus respuestas se procesan con servicios de terceros."
+            legal={legalDe('PROCESO')}
+            marcado={valores.aceptaProceso}
+            checked={valores.aceptaProceso}
+            onChange={(e) => cambiar('aceptaProceso', e.target.checked)}
+            error={errores.aceptaProceso}
+          />
+
+          <Consentimiento
+            titulo="Quiero que me avisen de futuras vacantes"
+            explicacion="Es un permiso aparte y puedes retirarlo cuando quieras. Si no lo marcas, tu postulación sigue igual de válida."
+            legal={legalDe('FUTUROS')}
+            marcado={valores.aceptaFuturosContactos}
+            checked={valores.aceptaFuturosContactos}
+            onChange={(e) => cambiar('aceptaFuturosContactos', e.target.checked)}
+          />
+        </div>
+
+        {fallo && (
+          <p className={estilos.falloEnvio} role="alert">
+            {fallo}
           </p>
-        </div>
-      </div>
+        )}
 
-      <form className="card form-card" onSubmit={enviar} noValidate>
-        <div className="formgrid">
-          <div className="field">
-            <label htmlFor="nombre">Nombre</label>
-            <input
-              id="nombre"
-              autoComplete="given-name"
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
-            />
-          </div>
-          <div className="field">
-            <label htmlFor="apellidos">Apellidos</label>
-            <input
-              id="apellidos"
-              autoComplete="family-name"
-              value={apellidos}
-              onChange={(e) => setApellidos(e.target.value)}
-            />
-          </div>
-          <div className="field full">
-            <label htmlFor="correo-nuevo">Correo</label>
-            <input
-              id="correo-nuevo"
-              type="email"
-              autoComplete="email"
-              value={correo}
-              onChange={(e) => setCorreo(e.target.value)}
-            />
-          </div>
-          <div className="field">
-            <label htmlFor="clave">Contraseña</label>
-            <input
-              id="clave"
-              type="password"
-              autoComplete="new-password"
-              value={contrasena}
-              onChange={(e) => setContrasena(e.target.value)}
-            />
-            <div className="hint">Usa al menos 8 caracteres.</div>
-          </div>
-          <div className="field">
-            <label htmlFor="clave2">Repite la contraseña</label>
-            <input
-              id="clave2"
-              type="password"
-              autoComplete="new-password"
-              value={repetida}
-              onChange={(e) => setRepetida(e.target.value)}
-            />
-          </div>
-
-          <div className="field full">
-            <div className="stack">
-              <div className="consent">
-                <input
-                  id="acepta-proceso"
-                  type="checkbox"
-                  checked={aceptaProceso}
-                  onChange={(e) => setAceptaProceso(e.target.checked)}
-                />
-                <div>
-                  <b>
-                    <label htmlFor="acepta-proceso">
-                      Acepto el tratamiento de mis datos personales
-                    </label>
-                  </b>
-                  <p>
-                    Mis datos se usarán para evaluar esta postulación. Entiendo que una
-                    inteligencia artificial participa en la evaluación y que mis datos
-                    pueden almacenarse fuera del Perú.
-                  </p>
-                  <button
-                    className="link"
-                    type="button"
-                    onClick={() => setVerPolitica(true)}
-                  >
-                    Leer política completa
-                  </button>
-                </div>
-              </div>
-
-              <div className="consent">
-                <input
-                  id="acepta-futuros"
-                  type="checkbox"
-                  checked={aceptaFuturos}
-                  onChange={(e) => setAceptaFuturos(e.target.checked)}
-                />
-                <div>
-                  <b>
-                    <label htmlFor="acepta-futuros">
-                      Quiero que me consideren para futuras convocatorias
-                    </label>
-                  </b>
-                  <p>
-                    Opcional. Si no continúas en esta vacante, tu perfil puede tenerse en
-                    cuenta para otras. Puedes retirarlo cuando quieras sin que afecte a
-                    esta postulación.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {error && <div className="error">{error}</div>}
-          </div>
-        </div>
-
-        <div className="row" style={{ marginTop: 20 }}>
-          <span className="small">
-            ¿Ya tienes cuenta? <Link className="link" to={rutas.ingresar()}>Ingresa aquí</Link>
-          </span>
-          <button className="btn primary large" type="submit" disabled={enviando}>
-            {enviando ? 'Creando…' : 'Crear cuenta y continuar'}
-          </button>
-        </div>
+        <button type="submit" className={estilos.enviar} disabled={enviando}>
+          {enviando ? 'Creando tu cuenta…' : 'Crear cuenta y seguir'}
+        </button>
       </form>
 
-      <Modal
-        abierto={verPolitica}
-        titulo="Tratamiento de datos"
-        onCerrar={() => setVerPolitica(false)}
-      >
-        {politica.isPending && <p className="small">Cargando el texto vigente…</p>}
-        {politica.isError && (
-          <p className="small">No pudimos cargar el texto. Inténtalo de nuevo.</p>
-        )}
-        <div className="stack">
-          {politica.data?.map((t) => (
-            <div className="callout" key={`${t.tipo}-${t.version}`}>
-              <b>
-                {t.tipo} · versión {t.version}
-              </b>
-              <p style={{ whiteSpace: 'pre-wrap' }}>{t.texto}</p>
-            </div>
-          ))}
-        </div>
-      </Modal>
-    </>
+      <p className={estilos.pie}>
+        ¿Ya tienes cuenta?{' '}
+        <Link to={vacante ? rutas.ingresar(vacante) : rutas.ingresar()}>Entra aquí</Link>
+        .
+      </p>
+    </div>
   )
 }

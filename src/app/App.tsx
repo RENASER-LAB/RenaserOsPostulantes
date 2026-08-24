@@ -9,19 +9,20 @@ import { Armazon } from './Armazon'
 import { Privada } from './Privada'
 import { Salvavidas } from './Salvavidas'
 import { ProveedorSesion } from './Sesion'
-import { ProveedorTema } from './Tema'
 
 import { Vacantes } from '@/paginas/vacantes/Vacantes'
 import { Vacante } from '@/paginas/vacantes/Vacante'
 import { Ingresar } from '@/paginas/cuenta/Ingresar'
 import { Acceso } from '@/paginas/cuenta/Acceso'
 import { Registro } from '@/paginas/cuenta/Registro'
+import { Clave } from '@/paginas/cuenta/Clave'
 import { Postular } from '@/paginas/postular/Postular'
 import { Procesos } from '@/paginas/procesos/Procesos'
 import { Proceso } from '@/paginas/procesos/Proceso'
 import { Evaluacion } from '@/paginas/evaluacion/Evaluacion'
 import { Prueba } from '@/paginas/prueba/Prueba'
 import { Simulacion } from '@/paginas/simulacion/Simulacion'
+import { Validacion } from '@/paginas/validacion/Validacion'
 import { Decision } from '@/paginas/decision/Decision'
 import { Privacidad } from '@/paginas/privacidad/Privacidad'
 
@@ -55,7 +56,6 @@ export function App() {
   return (
     <Salvavidas>
       <QueryClientProvider client={datos}>
-        <ProveedorTema>
           <ProveedorSesion>
             <ProveedorAvisos>
               <BrowserRouter>
@@ -68,6 +68,7 @@ export function App() {
                     {/* La entrada por el enlace del correo: sin contrasena. */}
                     <Route path={patrones.acceso} element={<Acceso />} />
                     <Route path={patrones.registro} element={<Registro />} />
+                    <Route path={patrones.clave} element={<Clave />} />
 
                     {/* Con cuenta */}
                     <Route
@@ -118,6 +119,16 @@ export function App() {
                         </Privada>
                       }
                     />
+                    {/* Existe y funciona, pero todavia no se enlaza desde
+                        ningun sitio: ver el comentario de `Validacion.tsx`. */}
+                    <Route
+                      path={patrones.validacion}
+                      element={
+                        <Privada>
+                          <Validacion />
+                        </Privada>
+                      }
+                    />
                     <Route
                       path={patrones.decision}
                       element={
@@ -142,7 +153,6 @@ export function App() {
               </BrowserRouter>
             </ProveedorAvisos>
           </ProveedorSesion>
-        </ProveedorTema>
       </QueryClientProvider>
     </Salvavidas>
   )

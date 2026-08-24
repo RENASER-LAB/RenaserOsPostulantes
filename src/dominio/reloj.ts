@@ -51,7 +51,14 @@ export function formatearTiempo(segundos: number): string {
   return [horas, minutos, resto].map((n) => String(n).padStart(2, '0')).join(':')
 }
 
-/** `viernes, 22 de agosto · 09:00` */
+/**
+ * `viernes, 22 de agosto · 09:00`
+ *
+ * En reloj de 24 horas, como el resto del portal. Con el formato de fabrica de
+ * `es-PE` sale «09:00 a. m.», que en movil parte la linea entre la «a.» y la
+ * «m.» y ademas no case con las horas de la agenda de la simulacion, que si
+ * son de 24. Una sola forma de decir una hora.
+ */
 export function formatearFechaLarga(fecha: FechaIso): string {
   const d = new Date(fecha)
   const dia = d.toLocaleDateString('es-PE', {
@@ -59,7 +66,11 @@ export function formatearFechaLarga(fecha: FechaIso): string {
     day: 'numeric',
     month: 'long',
   })
-  const hora = d.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })
+  const hora = d.toLocaleTimeString('es-PE', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  })
   return `${dia} · ${hora}`
 }
 
@@ -99,4 +110,19 @@ export function partesDeFecha(fecha: FechaIso): { dia: string; mes: string; hora
 export function horaDelTramo(inicioSesion: FechaIso, minutos: number): string {
   const d = new Date(new Date(inicioSesion).getTime() + minutos * 60_000)
   return d.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: false })
+}
+
+/**
+ * Cuantos dias enteros quedan hasta una fecha, contra el reloj del servidor.
+ *
+ * Devuelve el texto listo para leer porque «1 dia» y «12 dias» no se dicen
+ * igual, y el cero tiene su propia frase: «hoy» es mas claro que «0 dias».
+ */
+export function diasHasta(fecha: FechaIso | null | undefined): string {
+  const segundos = segundosHasta(fecha)
+  if (segundos === null) return 'sin plazo'
+  if (segundos <= 0) return 'vencida'
+  const dias = Math.floor(segundos / 86_400)
+  if (dias === 0) return 'hoy'
+  return dias === 1 ? '1 día' : `${dias} días`
 }

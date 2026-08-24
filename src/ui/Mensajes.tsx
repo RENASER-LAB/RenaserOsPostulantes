@@ -1,14 +1,18 @@
-/** Las pantallas de relleno: cargando, algo falló, y no hay nada que enseñar. */
+/** Las pantallas de relleno: cargando, algo falló, y hace falta cuenta. */
 
 import { Link } from 'react-router-dom'
 import { rutas } from '@/rutas'
 import { Marca } from './Marca'
+import estilos from './Estados.module.css'
 
 export function Cargando({ que = 'Cargando…' }: { que?: string }) {
   return (
-    <div className="card center-card" aria-busy="true">
-      <div className="status-icon">…</div>
-      <p>{que}</p>
+    <div className={estilos.marco} aria-busy="true">
+      <p className={estilos.texto} style={{ marginTop: 0 }}>
+        {que}
+      </p>
+      <div className={`${estilos.barra} ${estilos.barraLarga}`} />
+      <div className={`${estilos.barra} ${estilos.barraCorta}`} />
     </div>
   )
 }
@@ -17,15 +21,13 @@ export function Fallo({ error, reintentar }: { error: unknown; reintentar?: () =
   const mensaje =
     error instanceof Error ? error.message : 'No se pudo completar la operación.'
   return (
-    <div className="card center-card">
-      <div className="status-icon">!</div>
-      <div className="eyebrow">Algo salió mal</div>
-      <h1>No pudimos cargar esto.</h1>
-      <p>{mensaje}</p>
+    <div className={estilos.marco}>
+      <span className={estilos.eti}>Algo salió mal</span>
+      <h1 className={estilos.titulo}>No pudimos cargar esto.</h1>
+      <p className={estilos.texto}>{mensaje}</p>
       {reintentar && (
-        <div className="row" style={{ marginTop: 22 }}>
-          <span />
-          <button className="btn primary" onClick={reintentar}>
+        <div className={estilos.botones}>
+          <button className={estilos.secundario} type="button" onClick={reintentar}>
             Intentar de nuevo
           </button>
         </div>
@@ -37,23 +39,21 @@ export function Fallo({ error, reintentar }: { error: unknown; reintentar?: () =
 /** Lo que ve quien intenta abrir una pantalla privada sin cuenta. */
 export function AccesoNecesario() {
   return (
-    <div className="card center-card">
-      <span className="vacio-marca" aria-hidden="true">
-        <Marca tamano={30} acento />
+    <div className={estilos.marco}>
+      <span className={estilos.hormiga} aria-hidden="true">
+        <Marca tamano={30} />
       </span>
-      <div className="eyebrow">Acceso necesario</div>
-      <h1>Ingresa para ver tu proceso.</h1>
-      <p>
+      <span className={estilos.eti}>Acceso necesario</span>
+      <h1 className={estilos.titulo}>Ingresa para ver tu proceso.</h1>
+      <p className={estilos.texto}>
         Las evaluaciones y el estado de las postulaciones solo están disponibles dentro
         de tu cuenta.
       </p>
-      <div className="row" style={{ marginTop: 22 }}>
-        <Link className="link" to={rutas.vacantes()}>
-          Ver vacantes
-        </Link>
-        <Link className="btn primary large" to={rutas.ingresar()}>
+      <div className={estilos.botones}>
+        <Link className={estilos.principal} to={rutas.ingresar()}>
           Ingresar
         </Link>
+        <Link to={rutas.vacantes()}>Ver vacantes</Link>
       </div>
     </div>
   )

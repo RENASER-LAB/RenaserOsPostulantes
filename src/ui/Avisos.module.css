@@ -1,0 +1,40 @@
+/*
+ * El aviso flotante: «postulación retirada», «asistencia confirmada».
+ *
+ * Va en tinta sobre papel invertido y sin radio, como una etiqueta pegada. No
+ * lleva el acento: no es algo que haya que hacer, es algo que ya pasó.
+ */
+
+.aviso {
+  position: fixed;
+  right: var(--e5);
+  bottom: var(--e5);
+  z-index: 110;
+  max-width: min(24rem, calc(100vw - 2 * var(--e5)));
+  background: var(--tinta);
+  color: var(--papel);
+  padding: var(--e3) var(--e4);
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  line-height: 1.4;
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
+  transition:
+    opacity 180ms var(--salida),
+    transform 180ms var(--salida);
+}
+
+.aviso.visible {
+  opacity: 1;
+  transform: none;
+}
+
+@media (max-width: 640px) {
+  .aviso {
+    right: var(--e4);
+    left: var(--e4);
+    bottom: var(--e4);
+    max-width: none;
+  }
+}

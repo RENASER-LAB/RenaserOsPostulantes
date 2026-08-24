@@ -1,0 +1,362 @@
+/*
+ * La simulacion de trabajo, en sus dos momentos.
+ *
+ * Son la misma ruta y nunca se ven a la vez: o hay que elegir fecha, o ya hay
+ * una elegida. Y solo el primero lleva acento — cuando la fecha ya esta, no
+ * queda nada que hacer hasta el dia, y pintarlo de indigo diria lo contrario.
+ */
+
+/* 44rem, la misma medida que `Estados.module.css`: si no, el recuadro de «no
+   hay fechas» queda ocho pixeles metido respecto al titular de encima. */
+.pagina {
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: var(--e5) var(--e5) var(--e8);
+}
+
+.volver {
+  composes: volver from '../../estilos/piezas.module.css';
+}
+
+.encabezado {
+  margin-top: var(--e4);
+}
+
+
+.bajada {
+  font-size: var(--t-base);
+  line-height: 1.55;
+  color: var(--tinta2);
+  margin-top: var(--e3);
+  max-width: var(--medida);
+}
+
+/* ---------- Momento 1 · elegir fecha ---------- */
+
+.fechas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+  margin-top: var(--e6);
+}
+
+/*
+ * Cada fecha es un radio, no un boton de «Elegir».
+ *
+ * El maquetado tenia un boton por fila, pero la inscripcion no se deshace desde
+ * el portal —el backend contesta «ya elegiste una fecha, avisale al equipo»— y
+ * un solo clic no puede ser lo que cierra algo irreversible. Se marca, se lee
+ * lo marcado, y se confirma aparte.
+ */
+.fecha {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e4);
+  border: 1px solid var(--regla2);
+  background: var(--papel);
+  padding: var(--e4) var(--e5);
+  cursor: pointer;
+}
+
+.fecha:hover {
+  border-color: var(--tinta2);
+}
+
+/* Elegida: contorno grueso y papel del acento. Es «te toca a ti» resuelto. */
+.fecha.elegida {
+  border: 2px solid var(--acento);
+  background: var(--acento-papel);
+  padding: calc(var(--e4) - 1px) calc(var(--e5) - 1px);
+}
+
+.fecha:has(.radio:focus-visible) {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}
+
+/* Sin plazas no se puede marcar. El backend ya las filtra; esto cubre el caso
+   raro de que alguien recorte el cupo con gente ya inscrita. */
+.fecha.llena {
+  border-color: var(--regla);
+  background: var(--hundido);
+  color: var(--tinta3);
+  cursor: default;
+}
+
+.radio {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* La marca cambia de forma, no solo de color: hueca, rellena, tachada. */
+.marca {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--borde-control);
+  background: var(--papel);
+}
+
+.fecha.elegida .marca {
+  border: 2px solid var(--acento);
+  background: var(--acento);
+  box-shadow: inset 0 0 0 3px var(--papel);
+}
+
+.fecha.llena .marca {
+  border-style: dashed;
+  background: var(--hundido2);
+}
+
+.cuando {
+  flex: 1 1 16rem;
+  min-width: 0;
+}
+
+.dia {
+  display: block;
+  font-size: var(--t-base);
+  font-weight: 600;
+  letter-spacing: -0.012em;
+}
+
+.donde {
+  display: block;
+  margin-top: var(--e1);
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+}
+
+/*
+ * Las plazas NO llevan acento: son cuantas quedan, no «te toca a ti». Si se
+ * pintan de indigo, el candidato deja de poder fiarse del color para saber
+ * donde esta su accion.
+ */
+.plazas {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 var(--e3);
+  border: 1px solid var(--regla2);
+  background: var(--papel);
+  font-size: var(--t-menor);
+  font-weight: 600;
+  color: var(--tinta2);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Una sola plaza no es un adorno: cambia la decision de cuanto esperar. */
+.plazas.ultima {
+  border-color: var(--duda);
+  color: var(--duda);
+}
+
+.seLlenan {
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+  margin-top: var(--e4);
+  max-width: var(--medida);
+}
+
+.confirmar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e4);
+  margin-top: var(--e6);
+  border-top: 1px solid var(--regla);
+  padding-top: var(--e5);
+}
+
+.enviar {
+  composes: acentoGrande from '../../estilos/piezas.module.css';
+}
+
+.porCorreo {
+  flex: 1 1 18rem;
+  font-size: var(--t-apoyo);
+  line-height: 1.5;
+  color: var(--tinta2);
+}
+
+.fallo {
+  display: flex;
+  gap: var(--e3);
+  margin-top: var(--e4);
+  border: 1px solid var(--mal-regla);
+  background: var(--mal-papel);
+  padding: var(--e4);
+  font-size: var(--t-prosa);
+  line-height: 1.5;
+  color: var(--mal);
+}
+
+.fallo::before {
+  content: '';
+  flex: none;
+  width: 3px;
+  background: var(--mal);
+}
+
+/* ---------- Momento 2 · la fecha ya elegida ---------- */
+
+.confirmada {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--e3) var(--e4);
+  margin-top: var(--e6);
+  border: 1px solid var(--regla);
+  padding: var(--e5);
+}
+
+.cuandoGrande {
+  flex: 1 1 20rem;
+  font-size: var(--t-destacado);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  font-weight: 600;
+  margin: 0;
+  min-width: 0;
+}
+
+/*
+ * Verde porque el sistema ya usa el verde para «hecho», y esto lo esta. El
+ * circulo relleno lo dice tambien sin color.
+ */
+.asistira {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  min-height: 28px;
+  padding: 0 var(--e3);
+  border: 1px solid var(--bien);
+  font-size: var(--t-menor);
+  font-weight: 600;
+  color: var(--bien);
+}
+
+.asistira::before {
+  content: '';
+  width: 9px;
+  height: 9px;
+  background: var(--bien);
+}
+
+.detalleSesion {
+  flex: 1 1 100%;
+  font-size: var(--t-prosa);
+  color: var(--tinta2);
+}
+
+.bloque {
+  margin-top: var(--e5);
+  border: 1px solid var(--regla);
+  padding: var(--e5);
+}
+
+.bloque.hundido {
+  background: var(--hundido);
+}
+
+.tituloBloque {
+  margin: 0 0 var(--e3);
+}
+
+.textoBloque {
+  font-size: var(--t-prosa);
+  line-height: 1.6;
+  color: var(--tinta2);
+  max-width: var(--medida);
+}
+
+.enlaceSesion {
+  display: inline-block;
+  margin-top: var(--e2);
+  font-size: var(--t-prosa);
+  overflow-wrap: anywhere;
+}
+
+/* ---------- La agenda de la sesión ---------- */
+
+/*
+ * En horas de reloj y no en «minuto 15»: lo que el candidato necesita saber es
+ * a que hora estara haciendo cada cosa.
+ */
+.agenda {
+  display: flex;
+  flex-direction: column;
+  margin-top: var(--e3);
+}
+
+.tramo {
+  display: flex;
+  gap: var(--e4);
+  padding: var(--e3) 0;
+  border-top: 1px solid var(--regla);
+}
+
+.tramo:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.hora {
+  flex: none;
+  width: 4rem;
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.queHay {
+  flex: 1;
+  font-size: var(--t-prosa);
+  line-height: 1.45;
+  min-width: 0;
+}
+
+.duracion {
+  display: block;
+  font-size: var(--t-menor);
+  color: var(--tinta3);
+}
+
+.preguntar {
+  font-size: var(--t-prosa);
+  line-height: 1.6;
+  color: var(--tinta2);
+  margin-top: var(--e5);
+  border-left: 2px solid var(--regla2);
+  padding-left: var(--e4);
+  max-width: var(--medida);
+}
+
+@media (max-width: 640px) {
+  .pagina {
+    padding: var(--e4) var(--e4) var(--e7);
+  }
+
+  .fecha {
+    padding: var(--e4);
+  }
+
+  .fecha.elegida {
+    padding: calc(var(--e4) - 1px);
+  }
+
+  .enviar {
+    width: 100%;
+  }
+
+  .bloque,
+  .confirmada {
+    padding: var(--e4);
+  }
+}

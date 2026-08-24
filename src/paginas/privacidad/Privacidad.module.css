@@ -1,0 +1,353 @@
+/*
+ * Privacidad y control.
+ *
+ * Tres acciones que se parecen y no son lo mismo, y el mockup las metia a las
+ * tres en un solo modal. Aqui van separadas, cada una con lo que hace escrito
+ * al lado, y la que borra de verdad se distingue **antes** de leerla: es la
+ * unica con el contorno rojo a dos pixeles.
+ *
+ * Aqui no hay acento. En esta pantalla nadie espera nada del candidato: es el
+ * quien decide si quiere hacer algo, y el indigo diria lo contrario.
+ */
+
+.pagina {
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: var(--e5) var(--e5) var(--e8);
+}
+
+.volver {
+  composes: volver from '../../estilos/piezas.module.css';
+}
+
+.encabezado {
+  margin-top: var(--e4);
+}
+
+
+.bajada {
+  font-size: var(--t-base);
+  line-height: 1.55;
+  color: var(--tinta2);
+  margin-top: var(--e3);
+  max-width: var(--medida);
+}
+
+/* ---------- Las tres acciones ---------- */
+
+.acciones {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e4);
+  margin-top: var(--e6);
+}
+
+.accion {
+  border: 1px solid var(--regla);
+  padding: var(--e5);
+}
+
+/* La que borra. Dos pixeles y papel propio: se ve antes de leerse. */
+.accion.borra {
+  border: 2px solid var(--mal);
+  background: var(--mal-papel);
+  padding: calc(var(--e5) - 1px);
+}
+
+.tituloAccion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e3);
+}
+
+.tituloAccion h2 {
+  margin: 0;
+}
+
+.accion.borra h2 {
+  color: var(--mal);
+}
+
+/* A qué afecta cada una. Es la diferencia que se confunde, y va en la etiqueta. */
+.alcance {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 var(--e2);
+  border: 1px solid var(--regla2);
+  font-size: var(--t-micro);
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--tinta2);
+}
+
+.alcance.roja {
+  border-color: var(--mal);
+  color: var(--mal);
+  background: var(--papel);
+}
+
+.texto {
+  font-size: var(--t-prosa);
+  line-height: 1.6;
+  color: var(--tinta2);
+  margin-top: var(--e3);
+  max-width: var(--medida);
+}
+
+.accion.borra .texto {
+  color: var(--tinta);
+}
+
+.letraChica {
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+  margin-top: var(--e3);
+  max-width: var(--medida);
+}
+
+/* ---------- La lista de postulaciones que se pueden retirar ---------- */
+
+.postulaciones {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+  margin-top: var(--e4);
+}
+
+.postulacion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e3) var(--e4);
+  border: 1px solid var(--regla2);
+  padding: var(--e3) var(--e4);
+}
+
+.cual {
+  flex: 1 1 16rem;
+  min-width: 0;
+}
+
+.nombreVacante {
+  display: block;
+  font-size: var(--t-prosa);
+  font-weight: 600;
+}
+
+.enQueVa {
+  display: block;
+  margin-top: var(--e1);
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+}
+
+.ninguna {
+  font-size: var(--t-prosa);
+  color: var(--tinta2);
+  margin-top: var(--e4);
+}
+
+/* ---------- Botones ---------- */
+
+.retirar {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 var(--e4);
+  background: var(--papel);
+  border: 1px solid var(--mal);
+  color: var(--mal);
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.retirar:hover:not(:disabled) {
+  background: var(--mal-papel);
+}
+
+.retirar:disabled {
+  border-color: var(--regla2);
+  color: var(--tinta3);
+  cursor: default;
+}
+
+.secundario {
+  composes: secundario from '../../estilos/piezas.module.css';
+  margin-top: var(--e4);
+}
+
+.peligroso {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 var(--e5);
+  margin-top: var(--e5);
+  background: var(--mal);
+  color: var(--tinta-invertida);
+  border: 1px solid var(--mal);
+  font-size: var(--t-prosa);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.peligroso:hover:not(:disabled) {
+  background: var(--mal-pulsado);
+  border-color: var(--mal-pulsado);
+}
+
+/* ---------- Errores y pie ---------- */
+
+.fallo {
+  display: flex;
+  gap: var(--e3);
+  margin-top: var(--e4);
+  border: 1px solid var(--mal-regla);
+  background: var(--papel);
+  padding: var(--e3) var(--e4);
+  font-size: var(--t-apoyo);
+  line-height: 1.5;
+  color: var(--mal);
+}
+
+.fallo::before {
+  content: '';
+  flex: none;
+  width: 3px;
+  background: var(--mal);
+}
+
+.pie {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  margin-top: var(--e6);
+  border-top: 1px solid var(--regla);
+  padding-top: var(--e4);
+}
+
+.salir {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  background: none;
+  border: 0;
+  padding: 0;
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: var(--regla2);
+  text-underline-offset: 0.22em;
+}
+
+.salir:hover {
+  color: var(--tinta);
+}
+
+/* ---------- Dentro de los avisos ---------- */
+
+.avisoTexto {
+  font-size: var(--t-prosa);
+  line-height: 1.6;
+  color: var(--tinta2);
+}
+
+.avisoTexto + .avisoTexto {
+  margin-top: var(--e3);
+}
+
+.consecuencia {
+  display: flex;
+  gap: var(--e3);
+  margin-bottom: var(--e4);
+  border: 1px solid var(--mal);
+  background: var(--mal-papel);
+  padding: var(--e4);
+  font-size: var(--t-prosa);
+  line-height: 1.55;
+  color: var(--mal);
+}
+
+.consecuencia::before {
+  content: '';
+  flex: none;
+  width: 3px;
+  background: var(--mal);
+}
+
+.motivo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+  margin-top: var(--e5);
+}
+
+.etiquetaMotivo {
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+}
+
+.escrito {
+  width: 100%;
+  min-height: 6rem;
+  padding: var(--e3);
+  background: var(--papel);
+  color: var(--tinta);
+  border: 1px solid var(--borde-control);
+  font: inherit;
+  font-size: var(--t-base);
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.cancelar {
+  composes: secundario from '../../estilos/piezas.module.css';
+}
+
+.confirmarPeligro {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 var(--e5);
+  background: var(--mal);
+  color: var(--tinta-invertida);
+  border: 1px solid var(--mal);
+  font-size: var(--t-prosa);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.confirmarPeligro:disabled {
+  background: var(--hundido2);
+  border-color: var(--regla2);
+  color: var(--tinta3);
+  cursor: default;
+}
+
+@media (max-width: 640px) {
+  .pagina {
+    padding: var(--e4) var(--e4) var(--e7);
+  }
+
+  .accion {
+    padding: var(--e4);
+  }
+
+  .accion.borra {
+    padding: calc(var(--e4) - 1px);
+  }
+
+  .retirar,
+  .secundario,
+  .peligroso {
+    width: 100%;
+  }
+}

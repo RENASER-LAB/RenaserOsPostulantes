@@ -20,6 +20,7 @@ import { useSesion } from '@/app/Sesion'
 import { leTocaAlCandidato } from '@/dominio/estados'
 import { rutas } from '@/rutas'
 import { Marca } from '@/ui/Marca'
+import estilos from './Cuenta.module.css'
 
 /**
  * A donde mandar a alguien que acaba de entrar por el enlace.
@@ -83,36 +84,33 @@ export function Acceso() {
 
   if (!error) {
     return (
-      <div className="pagehead centrado">
-        <div>
-          <Marca tamano={46} acento />
+      <div className={estilos.pagina}>
+        <div className={estilos.entrada} aria-busy="true">
+          <span className={estilos.marcaEntrada} aria-hidden="true">
+            <Marca tamano={40} />
+          </span>
           <h1>Entrando…</h1>
-          <p>Un momento, estamos abriendo tu proceso.</p>
+          <p className={estilos.bajada}>Un momento, estamos abriendo tu proceso.</p>
         </div>
       </div>
     )
   }
 
   return (
-    <>
-      <div className="pagehead centrado">
-        <div>
-          <Marca tamano={46} acento />
-          <h1>No pudimos abrir tu enlace.</h1>
-          <p>{error}</p>
-        </div>
-      </div>
+    <div className={estilos.pagina}>
+      <div className={estilos.entrada}>
+        <span className={estilos.marcaEntrada} aria-hidden="true">
+          <Marca tamano={40} />
+        </span>
+        <h1>No pudimos abrir tu enlace.</h1>
+        <p className={estilos.bajada}>{error}</p>
 
-      <div className="card form-card">
-        <p className="small">
-          Si tienes contraseña, puedes{' '}
-          <Link className="link" to={rutas.ingresar()}>
-            entrar con tu correo
-          </Link>
-          . Si no, escríbenos respondiendo al correo que recibiste y te mandamos
-          un enlace nuevo.
+        <p className={estilos.aparte}>
+          Si tienes contraseña, puedes <Link to={rutas.ingresar()}>entrar con tu correo</Link>.
+          Si no, escríbenos respondiendo al correo que recibiste y te mandamos un enlace
+          nuevo.
         </p>
       </div>
-    </>
+    </div>
   )
 }

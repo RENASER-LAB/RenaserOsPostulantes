@@ -1,0 +1,191 @@
+/*
+ * La ficha de una vacante.
+ *
+ * Los requisitos indispensables llevan el acento porque son lo unico que decide
+ * el sistema solo: no confirmarlos cierra la postulacion en el acto. Es «esto
+ * depende de ti» en su forma mas literal.
+ */
+
+.pagina {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: var(--e5) var(--e5) var(--e8);
+}
+
+.volver {
+  composes: volver from '../../estilos/piezas.module.css';
+}
+
+.encabezado {
+  margin-top: var(--e4);
+}
+
+.donde {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e2) var(--e4);
+  margin-top: var(--e3);
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+}
+
+.dato {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+}
+
+.dato::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  background: var(--regla2);
+}
+
+.bloque {
+  margin-top: var(--e7);
+}
+
+.tituloBloque {
+  margin-bottom: var(--e3);
+}
+
+.texto {
+  font-size: var(--t-base);
+  line-height: 1.6;
+  color: var(--tinta2);
+  max-width: var(--medida);
+  white-space: pre-line;
+}
+
+.puntos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+  max-width: var(--medida);
+}
+
+.punto {
+  display: grid;
+  grid-template-columns: 5px 1fr;
+  column-gap: var(--e3);
+  font-size: var(--t-base);
+  line-height: 1.55;
+  color: var(--tinta2);
+}
+
+.punto::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  margin-top: 0.55em;
+  background: var(--regla2);
+}
+
+/* ---------- Requisitos indispensables ---------- */
+
+.requisitos {
+  margin-top: var(--e7);
+  border: 1px solid var(--acento-regla);
+  background: var(--acento-papel);
+  padding: var(--e5);
+}
+
+.avisoRequisitos {
+  font-size: var(--t-prosa);
+  line-height: 1.55;
+  color: var(--tinta);
+  margin-top: var(--e2);
+  max-width: var(--medida);
+}
+
+.listaRequisitos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+  margin-top: var(--e4);
+}
+
+.requisito {
+  display: grid;
+  grid-template-columns: 7px 1fr;
+  column-gap: var(--e3);
+  font-size: var(--t-prosa);
+  line-height: 1.5;
+  color: var(--tinta);
+}
+
+.requisito::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  margin-top: 0.5em;
+  background: var(--acento);
+}
+
+/* ---------- Postular ---------- */
+
+.postular {
+  margin-top: var(--e7);
+  border-top: 1px solid var(--regla);
+  padding-top: var(--e5);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e4);
+}
+
+.boton {
+  composes: acentoGrande from '../../estilos/piezas.module.css';
+}
+
+.aclaracion {
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+  max-width: 40ch;
+}
+
+/* ---------- Estados ---------- */
+
+.marco {
+  margin-top: var(--e6);
+  border: 1px solid var(--regla);
+  padding: var(--e6);
+}
+
+.marcoTexto {
+  font-size: var(--t-prosa);
+  line-height: 1.55;
+  color: var(--tinta2);
+  margin-top: var(--e3);
+  max-width: var(--medida-corta);
+}
+
+.reintentar {
+  composes: secundario from '../../estilos/piezas.module.css';
+  margin-top: var(--e5);
+}
+
+.barra {
+  height: 12px;
+  background: var(--hundido2);
+  margin-top: var(--e3);
+}
+
+.barraCorta {
+  width: 42%;
+}
+
+.barraMedia {
+  width: 68%;
+}
+
+@media (max-width: 640px) {
+  .pagina {
+    padding: var(--e4) var(--e4) var(--e7);
+  }
+
+  .boton {
+    width: 100%;
+  }
+}

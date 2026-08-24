@@ -1,98 +1,145 @@
 /**
- * Ingresar.
+ * Entrar.
  *
- * En el mockup era un modal. Aqui es una pantalla con su direccion propia,
- * porque hay que poder mandar a alguien aqui desde un correo o desde una
- * pantalla privada que le pidio la sesion.
+ * **Hay dos caminos y los dos son normales**, no uno principal y una excepción:
+ *
+ *   - Correo y contraseña, para quien se registró en el portal.
+ *   - **El enlace del correo, sin contraseña**, para quien llegó por una carpeta
+ *     de currículums y no tiene cuenta que recordar. Es la vía de toda una tanda
+ *     de candidatos, así que aparece en la pantalla, no escondida en un pie.
+ *
+ * Del segundo camino no hay formulario que enseñar: el enlace se canjea solo al
+ * abrirlo. Lo que se puede hacer aquí es decirle dónde buscarlo.
  */
 
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { z } from 'zod'
 import { useSesion } from '@/app/Sesion'
 import { rutas } from '@/rutas'
-import { useAviso } from '@/ui/Avisos'
-import { Marca } from '@/ui/Marca'
+import { Campo } from '@/ui/campos/Campo'
+import estilos from './Cuenta.module.css'
+
+const Datos = z.object({
+  correo: z.string().min(1, 'Escribe tu correo.').email('Esto no parece un correo.'),
+  contrasena: z.string().min(1, 'Escribe tu contraseña.'),
+})
 
 export function Ingresar() {
   const { entrar } = useSesion()
   const navegar = useNavigate()
-  const avisar = useAviso()
-  const [parametros] = useSearchParams()
+  const [params] = useSearchParams()
+  const vacante = params.get('vacante')
 
   const [correo, setCorreo] = useState('')
   const [contrasena, setContrasena] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [enviando, setEnviando] = useState(false)
+  const [errores, setErrores] = useState<{ correo?: string; contrasena?: string }>({})
+  const [fallo, setFallo] = useState<string | null>(null)
+  const [entrando, setEntrando] = useState(false)
 
-  // Si llegamos aqui desde una pantalla privada, volvemos a ella al entrar.
-  const volverA = parametros.get('volverA') ?? rutas.procesos()
+  async function enviar(evento: FormEvent) {
+    evento.preventDefault()
+    setFallo(null)
 
-  async function enviar(e: FormEvent) {
-    e.preventDefault()
-    setError(null)
-
-    if (!correo.includes('@') || contrasena.length === 0) {
-      setError('Escribe tu correo y tu contraseña.')
+    const revision = Datos.safeParse({ correo, contrasena })
+    if (!revision.success) {
+      const nuevos: { correo?: string; contrasena?: string } = {}
+      for (const problema of revision.error.issues) {
+        const campo = problema.path[0]
+        if (campo === 'correo' || campo === 'contrasena') nuevos[campo] ??= problema.message
+      }
+      setErrores(nuevos)
+      // El primer campo con problema recibe el foco: si no, en un formulario
+      // largo el error queda fuera de la pantalla y parece que no pasó nada.
+      requestAnimationFrame(() => {
+        const primero = document.querySelector<HTMLElement>('[aria-invalid="true"]')
+        primero?.focus()
+      })
       return
     }
 
-    setEnviando(true)
+    setErrores({})
+    setEntrando(true)
     try {
-      await entrar({ correo: correo.trim(), contrasena })
-      avisar('Bienvenido de vuelta.')
-      navegar(volverA, { replace: true })
-    } catch (fallo) {
-      setError(fallo instanceof Error ? fallo.message : 'No pudimos entrar.')
+      await entrar(revision.data)
+      // Si venía de una vacante, se sigue con su postulación en vez de dejarlo
+      // en la portada buscándola otra vez.
+      navegar(vacante ? rutas.postular(vacante) : rutas.procesos())
+    } catch (causa) {
+      setFallo(
+        causa instanceof Error
+          ? causa.message
+          : 'No pudimos entrar. Vuelve a intentarlo en un momento.',
+      )
     } finally {
-      setEnviando(false)
+      setEntrando(false)
     }
   }
 
   return (
-    <>
-      <div className="pagehead centrado">
-        <div>
-          <Marca tamano={46} acento />
-          <h1>Ingresa a tu cuenta.</h1>
-          <p>Desde aquí ves el estado de todas tus postulaciones.</p>
-        </div>
-      </div>
+    <div className={estilos.pagina}>
+      <h1>Entra a tu proceso.</h1>
+      <p className={estilos.bajada}>
+        Hay dos formas de entrar, según cómo llegó tu candidatura hasta nosotros.
+      </p>
 
-      <form className="card form-card" onSubmit={enviar} noValidate>
-        <div className="formgrid">
-          <div className="field full">
-            <label htmlFor="correo">Correo</label>
-            <input
-              id="correo"
+      <div className={estilos.caminos}>
+        <section className={estilos.camino}>
+          <h2 className={estilos.tituloCamino}>Con tu correo y contraseña</h2>
+          <p className={estilos.queEs}>Si creaste tu cuenta en este portal.</p>
+
+          <form className={estilos.formulario} onSubmit={enviar} noValidate>
+            <Campo
+              etiqueta="Correo"
               type="email"
               autoComplete="email"
               value={correo}
               onChange={(e) => setCorreo(e.target.value)}
+              error={errores.correo}
             />
-          </div>
-          <div className="field full">
-            <label htmlFor="contrasena">Contraseña</label>
-            <input
-              id="contrasena"
+            <Campo
+              etiqueta="Contraseña"
               type="password"
               autoComplete="current-password"
               value={contrasena}
               onChange={(e) => setContrasena(e.target.value)}
+              error={errores.contrasena}
             />
+
+            {fallo && (
+              <p className={estilos.falloEnvio} role="alert">
+                {fallo}
+              </p>
+            )}
+
+            <button type="submit" className={estilos.enviar} disabled={entrando}>
+              {entrando ? 'Entrando…' : 'Entrar'}
+            </button>
+          </form>
+          <p className={estilos.olvidada}>
+            <Link to={rutas.clave()}>¿Olvidaste tu contraseña?</Link>
+          </p>
+        </section>
+
+        <section className={estilos.camino}>
+          <h2 className={estilos.tituloCamino}>Con el enlace que te enviamos</h2>
+          <p className={estilos.queEs}>
+            Si tu currículum nos llegó por otra vía, <b>no tienes contraseña</b> y no hace
+            falta que crees una: el correo que te mandamos trae un enlace que te mete
+            directo.
+          </p>
+          <div className={estilos.pista}>
+            Búscalo por el asunto <span className={estilos.asunto}>«Tu postulación
+            avanza»</span> o <span className={estilos.asunto}>«Tu prueba está
+            disponible»</span>. Dentro está el botón para entrar.
           </div>
-        </div>
+        </section>
+      </div>
 
-        {error && <div className="error">{error}</div>}
-
-        <div className="row" style={{ marginTop: 20 }}>
-          <span className="small">
-            ¿Todavía no tienes cuenta? <Link className="link" to={rutas.registro()}>Créala aquí</Link>
-          </span>
-          <button className="btn primary large" type="submit" disabled={enviando}>
-            {enviando ? 'Entrando…' : 'Entrar'}
-          </button>
-        </div>
-      </form>
-    </>
+      <p className={estilos.pie}>
+        ¿Todavía no tienes cuenta?{' '}
+        <Link to={vacante ? rutas.registro(vacante) : rutas.registro()}>Créala aquí</Link>.
+      </p>
+    </div>
   )
 }

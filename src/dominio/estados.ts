@@ -291,6 +291,135 @@ export function tramosCompletados(estado: string, etapaDeCorte?: Etapa): number 
   return etapa === undefined || etapa === null ? 0 : indiceDeEtapa(etapa)
 }
 
+// ---------- El recorrido, hito por hito ----------
+
+/**
+ * En que punto esta cada una de las cinco etapas.
+ *
+ * `cumplida` no es lo mismo que «pasada y apagada»: el portal la sigue
+ * enseñando con el mismo peso, porque lo que el candidato ya demostro es suyo.
+ * `cortada` es la etapa donde se detuvo una postulacion que no continua.
+ */
+export type PasoDelRecorrido = 'cumplida' | 'en_curso' | 'pendiente' | 'cortada'
+
+export interface Hito {
+  clave: Etapa
+  etiqueta: string
+  paso: PasoDelRecorrido
+}
+
+/**
+ * Las cinco etapas con su estado, para pintar la linea de hitos.
+ *
+ * Se calcula desde el estado y nada mas: la lista de postulaciones no trae
+ * historial —eso solo llega en el detalle— asi que aqui no hay fechas por
+ * etapa y no se inventan.
+ *
+ * `etapaDeCorte` la puede pasar quien conozca el historial; sin ella, una
+ * postulacion cerrada no sabe donde se detuvo y se pinta entera pendiente,
+ * que es preferible a señalar una etapa equivocada.
+ */
+export function recorridoDe(estado: string, etapaDeCorte?: Etapa): Hito[] {
+  const contratado = estado === 'CONTRATADO'
+  const cortado = estado === 'NO_CONTINUA' || estado === 'CERRADA'
+  const actual = momentoDe(estado).etapa ?? etapaDeCorte ?? null
+  const indiceActual = actual === null ? -1 : indiceDeEtapa(actual)
+
+  return ETAPAS.map((etapa, i) => {
+    let paso: PasoDelRecorrido
+    if (contratado) paso = 'cumplida'
+    else if (i < indiceActual) paso = 'cumplida'
+    else if (i === indiceActual) paso = cortado ? 'cortada' : 'en_curso'
+    else paso = 'pendiente'
+    return { clave: etapa.clave, etiqueta: etapa.etiqueta, paso }
+  })
+}
+
+// ---------- El historial se cuenta en pasado ----------
+
+/**
+ * Como se nombra un cambio de estado cuando ya ocurrio.
+ *
+ * Los titulos de `MOMENTOS` estan escritos para el estado ACTUAL y en presente
+ * —«Tienes una evaluacion pendiente»—, asi que leidos en un registro de hace
+ * tres semanas suenan a que sigue pendiente. Aqui cada estado se nombra como el
+ * hecho que fue.
+ */
+const COMO_OCURRIO: Record<EstadoPostulacion, string> = {
+  POSTULADA: 'Enviaste tu postulación',
+  PERFIL_TURNO_CANDIDATO: 'Se habilitó tu evaluación',
+  PERFIL_CALIFICANDO: 'Entregaste tu evaluación',
+  PERFIL_POR_CONFIRMAR: 'Tu perfil pasó a revisión del equipo',
+  PRUEBA_TURNO_CANDIDATO: 'Se habilitó tu prueba del puesto',
+  PRUEBA_CALIFICANDO: 'Entregaste tu prueba',
+  PRUEBA_POR_CONFIRMAR: 'Tu prueba pasó a revisión del equipo',
+  SIMULACION_POR_HABILITAR: 'Pasaste a la etapa de simulación',
+  SIMULACION_TURNO_CANDIDATO: 'Se abrieron fechas para tu simulación',
+  SIMULACION_POR_CONFIRMAR: 'Tu simulación pasó a revisión del equipo',
+  VALIDACION_POR_HABILITAR: 'Pasaste a la etapa de validación',
+  VALIDACION_TURNO_CANDIDATO: 'Empezó tu periodo de validación',
+  VALIDACION_POR_CONFIRMAR: 'Terminó tu periodo de validación',
+  DECISION_TURNO_CANDIDATO: 'Se te pidió una evidencia adicional',
+  DECISION_POR_CONFIRMAR: 'Tu proceso pasó a la decisión final',
+  CONTRATADO: 'Te contrataron',
+  NO_CONTINUA: 'El proceso terminó sin continuar',
+  CERRADA: 'La postulación se cerró',
+}
+
+/** El nombre de un cambio en el registro. En pasado, no en presente. */
+export function comoOcurrio(estado: string): string {
+  return COMO_OCURRIO[estado as EstadoPostulacion] ?? 'Tu postulación cambió de estado'
+}
+
+// ---------- Lo que el historial sabe y la lista no ----------
+
+/**
+ * Un cambio de estado, con lo minimo que hace falta para leerlo.
+ *
+ * Se declara aqui en vez de importar el tipo de la API para que el dominio no
+ * dependa de la forma exacta del contrato: cualquier cosa con estas dos claves
+ * sirve.
+ */
+export interface CambioDeEstado {
+  estadoNuevo: string
+  ocurridaEn: string
+}
+
+/**
+ * Cuando se alcanzo cada etapa, leido del historial.
+ *
+ * La lista de postulaciones no trae historial, asi que alli el recorrido va sin
+ * fechas. Aqui si las hay, y son las de verdad: la primera vez que la
+ * postulacion entro en cada etapa.
+ */
+export function fechasDelRecorrido(
+  historial: CambioDeEstado[],
+): Partial<Record<Etapa, string>> {
+  const fechas: Partial<Record<Etapa, string>> = {}
+  for (const paso of historial) {
+    const etapa = momentoDe(paso.estadoNuevo).etapa
+    // La primera entrada manda: volver a una etapa no reescribe cuando llegó.
+    if (etapa !== null && fechas[etapa] === undefined) fechas[etapa] = paso.ocurridaEn
+  }
+  return fechas
+}
+
+/**
+ * En que etapa se detuvo una postulacion que ya termino.
+ *
+ * Los tres estados finales no dicen donde se cayo la persona, asi que hay que
+ * mirar hacia atras: la ultima etapa por la que paso. Sin esto, el recorrido de
+ * una postulacion cerrada se pinta entero vacio, y quien hizo la evaluacion y la
+ * prueba ve, el dia que le dicen que no, un expediente en blanco.
+ */
+export function etapaDeCorteDe(historial: CambioDeEstado[]): Etapa | undefined {
+  for (let i = historial.length - 1; i >= 0; i--) {
+    const etapa = momentoDe(historial[i]!.estadoNuevo).etapa
+    if (etapa !== null) return etapa
+  }
+  return undefined
+}
+
 /** El color de la etiqueta de estado en la tarjeta de proceso. */
 export function tonoDe(estado: string): 'good' | 'warn' | 'bad' | 'info' {
   if (estado === 'CONTRATADO') return 'good'

@@ -1,17 +1,21 @@
 /**
- * El caso ambar: se pide una evidencia adicional antes de decidir.
+ * El caso ambar: se pide una evidencia mas antes de decidir.
  *
- * ⚠️ Esta pantalla esta a medias, y a proposito.
+ * ⚠️ **El formulario esta completo y esta apagado, a proposito.**
  *
- * El estado `DECISION_TURNO_CANDIDATO` existe en el backend, pero **no hay
- * ninguna ruta en `/api/v1/portal` para mandar esa evidencia**: no existe ni
- * para leer que se esta pidiendo, ni para subir la respuesta. Ver el analisis
- * en `docs/01-ANALISIS-PORTAL.md`.
+ * `DECISION_TURNO_CANDIDATO` existe en el backend, pero en `/api/v1/portal` no
+ * hay ninguna ruta para esto: ni para leer que se esta pidiendo, ni para mandar
+ * la respuesta, ni para saber por que ronda va. Se maqueto entero para poder
+ * juzgarlo y para dejar escrito que hay que pedir:
  *
- * Mientras no exista, esta pantalla explica la situacion en vez de fingir un
- * formulario que no llegaria a ninguna parte. En cuanto el backend abra la
- * ruta, aqui van: el texto de la duda concreta, el campo de evidencia y el
- * contador de rondas (el tope son 2).
+ *   GET  /decision/{uuid}          → { duda, ronda, maxRondas, escritoPor }
+ *   POST /decision/{uuid}/respuesta → multipart: texto + adjunto opcional
+ *
+ * Mientras no existan, la pantalla NO finge. Los campos van deshabilitados, se
+ * dice por que antes de que nadie escriba, y la accion que si funciona —el
+ * correo del equipo— es la que se lleva el acento. Dejarlos escribibles para
+ * fallar al pulsar seria la version peor: se pierde lo escrito, y lo que se
+ * aprende es que la pantalla miente.
  */
 
 import { Link, useParams } from 'react-router-dom'
@@ -19,20 +23,14 @@ import { useQuery } from '@tanstack/react-query'
 import { verPostulacion } from '@/api/portal'
 import { rutas } from '@/rutas'
 import { Cargando, Fallo } from '@/ui/Mensajes'
+import estilos from './Decision.module.css'
 
-const COMO_SIGUE = [
-  {
-    titulo: 'Te escribirá una persona del equipo',
-    texto: 'Te dirá exactamente qué necesita y por qué. No hay nada que subir desde aquí.',
-  },
-  {
-    titulo: 'Responde cuando puedas',
-    texto: 'Tómate el tiempo de preparar lo que te pidan. Esto no caduca en horas.',
-  },
-  {
-    titulo: 'Después viene la decisión',
-    texto: 'Con esa evidencia, el responsable cierra el proceso en un sentido o en otro.',
-  },
+const CORREO = 'talento@renaser.pe'
+
+const QUE_PASA_DESPUES = [
+  'El equipo lee lo que mandes.',
+  'Si con eso basta, cierran la decisión.',
+  'Si queda algo, te preguntan una vez más — y solo una.',
 ]
 
 export function Decision() {
@@ -49,57 +47,121 @@ export function Decision() {
     return <Fallo error={consulta.error} reintentar={() => void consulta.refetch()} />
   }
 
+  const vacante = consulta.data.resumen.vacante
+  const asunto = encodeURIComponent(`Evidencia adicional · ${vacante}`)
+
   return (
-    <>
-      <Link className="back" to={rutas.proceso(uuid)}>
+    <div className={estilos.pagina}>
+      <Link className={estilos.volver} to={rutas.proceso(uuid)}>
         ← Volver a mi proceso
       </Link>
 
-      {/* Ambar, no rojo: el proceso sigue abierto y eso tiene que leerse antes
-          que cualquier otra cosa. */}
-      <section className="decision-panel">
-        <span className="eyebrow">Decisión · evidencia adicional</span>
-        <h1>Queremos resolver una duda antes de decidir.</h1>
-        <p>
-          Tu candidatura para <b>{consulta.data.resumen.vacante}</b> llegó al final del
-          proceso. El equipo necesita ver una cosa más antes de la conversación final: no
-          es un rechazo, es lo contrario.
+      {/* Acento: aqui la espera es del candidato, y este panel es su accion. */}
+      <section className={estilos.cabeza}>
+        <span className={estilos.eti}>Decisión · te pedimos una cosa más</span>
+        <h1 className={estilos.titulo}>Queremos resolver una duda antes de decidir.</h1>
+        <p className={estilos.explicacion}>
+          Llegaste al final del proceso para <b>{vacante}</b>. Antes de cerrarlo hay un
+          punto que queremos ver mejor. <b>No es un rechazo</b>: si no nos interesaras, no
+          te lo pediríamos.
         </p>
+        <a className={estilos.escribir} href={`mailto:${CORREO}?subject=${asunto}`}>
+          Escribirle al equipo
+        </a>
       </section>
 
-      <div className="detail-layout">
-        <div>
-          <div className="sectionhead" style={{ marginTop: 0 }}>
-            <div>
-              <h2>Cómo sigue</h2>
-            </div>
-          </div>
-          <div className="grid g3">
-            {COMO_SIGUE.map((paso) => (
-              <div className="callout" key={paso.titulo}>
-                <b>{paso.titulo}</b>
-                <p>{paso.texto}</p>
+      <div className={estilos.reparto}>
+        <div className={estilos.columna}>
+          <section className={estilos.bloque}>
+            <h2 className={estilos.tituloBloque}>Lo que necesitamos ver</h2>
+            <p className={estilos.texto}>
+              La duda concreta te la escribe por correo el equipo que llevó tu proceso,
+              con sus palabras y diciendo por qué. No la redacta un sistema.
+            </p>
+            <p className={estilos.texto}>
+              Si no te ha llegado o no la encuentras, escríbenos y te la repetimos.
+            </p>
+            <a className={estilos.correo} href={`mailto:${CORREO}?subject=${asunto}`}>
+              {CORREO}
+            </a>
+          </section>
+
+          <section className={estilos.bloque}>
+            <h2 className={estilos.tituloBloque}>Tu respuesta</h2>
+
+            <p className={estilos.todaviaNo}>
+              Todavía no puedes mandarla desde el portal: estamos terminando esta parte.
+              Por ahora respóndenos por correo y queda igual de registrada.
+            </p>
+
+            {/*
+              `fieldset` deshabilitado: apaga todo lo de dentro con un atributo,
+              y el lector de pantalla lo anuncia como grupo inactivo en lugar de
+              leer campos que no se pueden usar.
+            */}
+            <fieldset className={estilos.formulario} disabled>
+              <div className={estilos.grupo}>
+                <label className={estilos.etiqueta} htmlFor="respuesta">
+                  Cuéntalo con tus palabras
+                </label>
+                <textarea
+                  className={estilos.escrito}
+                  id="respuesta"
+                  placeholder="Qué hiciste, a quién acudiste y cómo terminó."
+                />
+                <span className={estilos.pista}>Sin límite de palabras.</span>
               </div>
-            ))}
-          </div>
+
+              <div className={estilos.grupo}>
+                <span className={estilos.etiqueta}>Adjunta algo, si ayuda (opcional)</span>
+                <div className={estilos.adjuntar}>
+                  <span className={estilos.adjuntarTexto}>
+                    Un documento, una captura, un enlace.
+                  </span>
+                  <span className={estilos.botones}>
+                    <button className={estilos.boton} type="button">
+                      Subir archivo
+                    </button>
+                    <button className={estilos.boton} type="button">
+                      Pegar enlace
+                    </button>
+                  </span>
+                </div>
+              </div>
+            </fieldset>
+
+            <div className={estilos.envio}>
+              <span className={estilos.ronda}>
+                Como mucho te pediremos una respuesta más después de esta.
+              </span>
+              <span className={estilos.enviar} aria-disabled="true">
+                Enviar respuesta
+              </span>
+            </div>
+          </section>
         </div>
 
-        <aside className="sticky">
-          <div className="card">
-            <div className="label">Si tienes dudas</div>
-            <p className="small" style={{ margin: '8px 0 14px' }}>
-              Escríbenos y te contamos en qué punto está tu proceso.
+        <aside className={estilos.columna}>
+          <section className={`${estilos.bloque} ${estilos.hundido}`}>
+            <h2 className={estilos.tituloBloque}>Qué pasa después</h2>
+            <ol className={estilos.pasos}>
+              {QUE_PASA_DESPUES.map((paso, i) => (
+                <li className={estilos.paso} key={paso}>
+                  <b className={estilos.numeroPaso}>{i + 1}.</b>
+                  {paso}
+                </li>
+              ))}
+            </ol>
+          </section>
+
+          <section className={estilos.bloque}>
+            <h2 className={estilos.tituloBloque}>Sin prisa</h2>
+            <p className={estilos.texto}>
+              Esto no caduca en horas. Tómate el tiempo de prepararlo bien.
             </p>
-            <a className="link" href="mailto:talento@renaser.pe">
-              talento@renaser.pe
-            </a>
-            <div className="divider" />
-            <Link className="btn" to={rutas.proceso(uuid)} style={{ width: '100%' }}>
-              Ver el detalle de mi proceso
-            </Link>
-          </div>
+          </section>
         </aside>
       </div>
-    </>
+    </div>
   )
 }

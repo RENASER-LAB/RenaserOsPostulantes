@@ -1,0 +1,222 @@
+/*
+ * La portada: que es este proceso y que vacantes hay abiertas.
+ *
+ * Es la unica pantalla del portal en modo Persuade: quien llega todavia no ha
+ * postulado y tiene que decidir si le merece la pena. Aun asi el mundo es el
+ * mismo — el proceso se dibuja como recorrido, no como cinco tarjetas iguales.
+ */
+
+.pagina {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: var(--e7) var(--e5) var(--e8);
+}
+
+.entrada {
+  max-width: 34ch;
+}
+
+.bajada {
+  font-size: var(--t-entradilla);
+  line-height: 1.5;
+  color: var(--tinta2);
+  margin-top: var(--e4);
+  max-width: var(--medida);
+}
+
+/* ---------- El proceso, como recorrido ---------- */
+
+.proceso {
+  margin-top: var(--e7);
+  border-top: 1px solid var(--regla);
+  padding-top: var(--e5);
+}
+
+.tituloProceso {
+  margin-bottom: var(--e5);
+}
+
+.etapas {
+  display: grid;
+  grid-template-columns: 15px 1fr;
+  column-gap: var(--e4);
+}
+
+.etapa {
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-column: 1 / -1;
+}
+
+.marca {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  padding-top: 5px;
+}
+
+.marca::before {
+  content: '';
+  width: 9px;
+  height: 9px;
+  border: 1px solid var(--tinta3);
+  flex: none;
+}
+
+.marca::after {
+  content: '';
+  position: absolute;
+  top: 16px;
+  bottom: -4px;
+  width: 1px;
+  background: var(--regla);
+}
+
+.etapa:last-child .marca::after {
+  display: none;
+}
+
+.textoEtapa {
+  padding-bottom: var(--e5);
+  min-width: 0;
+}
+
+.etapa:last-child .textoEtapa {
+  padding-bottom: 0;
+}
+
+.nombreEtapa {
+  font-size: var(--t-prosa);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.queEsEtapa {
+  font-size: var(--t-apoyo);
+  line-height: 1.5;
+  color: var(--tinta2);
+  margin-top: 2px;
+  max-width: var(--medida);
+}
+
+/* ---------- Las vacantes ---------- */
+
+.seccionVacantes {
+  margin-top: var(--e7);
+  border-top: 1px solid var(--regla);
+  padding-top: var(--e5);
+}
+
+.cabeceraVacantes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--e2) var(--e4);
+  margin-bottom: var(--e5);
+}
+
+.cuantas {
+  font-size: var(--t-apoyo);
+  color: var(--tinta3);
+}
+
+.lista {
+  display: flex;
+  flex-direction: column;
+}
+
+/*
+ * Una vacante es una fila, no una tarjeta: con cuatro puestos, cuatro cajas
+ * iguales son mas ruido que informacion. La regla separa; el titulo manda.
+ */
+.vacante {
+  border-top: 1px solid var(--regla);
+}
+
+.vacante:first-child {
+  border-top: none;
+}
+
+.enlaceVacante {
+  display: block;
+  padding: var(--e5) 0;
+  text-decoration: none;
+  color: var(--tinta);
+}
+
+.enlaceVacante:hover .tituloVacante {
+  text-decoration: underline;
+  text-decoration-color: var(--regla2);
+  text-underline-offset: 0.18em;
+}
+
+.tituloVacante {
+  font-size: var(--t-destacado);
+  letter-spacing: -0.022em;
+  margin: 0;
+}
+
+.donde {
+  display: block;
+  margin-top: var(--e2);
+  font-size: var(--t-apoyo);
+  color: var(--tinta3);
+}
+
+.queSeHace {
+  font-size: var(--t-prosa);
+  line-height: 1.5;
+  color: var(--tinta2);
+  margin-top: var(--e3);
+  max-width: var(--medida);
+}
+
+.ver {
+  display: inline-block;
+  margin-top: var(--e3);
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+}
+
+/* ---------- Estados ---------- */
+
+.marco {
+  border: 1px solid var(--regla);
+  padding: var(--e6);
+}
+
+.marcoTexto {
+  font-size: var(--t-prosa);
+  line-height: 1.55;
+  color: var(--tinta2);
+  margin-top: var(--e3);
+  max-width: var(--medida-corta);
+}
+
+.reintentar {
+  composes: secundario from '../../estilos/piezas.module.css';
+  margin-top: var(--e5);
+}
+
+.barra {
+  height: 12px;
+  background: var(--hundido2);
+  margin-top: var(--e3);
+}
+
+.barraCorta {
+  width: 42%;
+}
+
+.barraMedia {
+  width: 68%;
+}
+
+@media (max-width: 640px) {
+  .pagina {
+    padding: var(--e6) var(--e4) var(--e7);
+  }
+
+}

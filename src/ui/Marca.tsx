@@ -4,21 +4,21 @@
  * Es una palabra —EX— con la hormiga metida dentro de la X. La hormiga no sale
  * de ahi: no se anima, no camina y no aparece suelta como mascota.
  *
- * `acento` la pinta en champagne, y solo se usa en el pie. En la cabecera va
- * monocroma, que es la que aguanta los 24 px sin convertirse en una mancha.
+ * Va monocroma siempre. Se probo pintarla del acento en las pantallas donde
+ * sale sola y no puede ser: el indigo significa «te toca a ti» y ahi no toca
+ * nada. Donde hace de marca de agua la pinta gris quien la usa.
  */
 
 interface Props {
   /** Alto de las letras, en pixeles. La hormiga escala con ellas. */
   tamano?: number
-  acento?: boolean
 }
 
-export function Marca({ tamano = 24, acento = false }: Props) {
+export function Marca({ tamano = 24 }: Props) {
   return (
     <span className="marca" style={{ fontSize: `${tamano}px` }}>
       <span className="marca-letras">EX</span>
-      <svg className="marca-hormiga" viewBox="0 0 24 24" aria-hidden="true" style={acento ? { color: 'var(--acento)' } : undefined}>
+      <svg className="marca-hormiga" viewBox="0 0 24 24" aria-hidden="true">
         <path
           d="M10.3 5.4 8 2.9M13.7 5.4 16 2.9M9.5 10 6 8M9.4 12.2 5.6 12.7M9.8 14.2 6.4 16.6M14.5 10 18 8M14.6 12.2 18.4 12.7M14.2 14.2 17.6 16.6"
           stroke="currentColor"

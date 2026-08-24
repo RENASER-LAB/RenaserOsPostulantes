@@ -1,4 +1,4 @@
-/** El aviso flotante de abajo a la derecha. Dura 2,5 segundos, como en el mockup. */
+/** El aviso flotante de abajo a la derecha. Dura 2,5 segundos. */
 
 import {
   createContext,
@@ -10,6 +10,7 @@ import {
   useState,
   type ReactNode,
 } from 'react'
+import estilos from './Avisos.module.css'
 
 const DURACION = 2500
 
@@ -36,7 +37,11 @@ export function ProveedorAvisos({ children }: { children: ReactNode }) {
   return (
     <Contexto value={valor}>
       {children}
-      <div className={`toast${mensaje ? ' show' : ''}`} role="status" aria-live="polite">
+      <div
+        className={`${estilos.aviso}${mensaje ? ` ${estilos.visible}` : ''}`}
+        role="status"
+        aria-live="polite"
+      >
         {mensaje}
       </div>
     </Contexto>

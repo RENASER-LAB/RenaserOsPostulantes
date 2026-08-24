@@ -1,36 +1,55 @@
 /**
- * El formulario de postulacion: CV, enlaces y el resultado del que se siente
- * orgulloso.
+ * Postular.
  *
- * Lo que el mockup no tenia: los requisitos indispensables de la vacante. El
- * backend los manda y el candidato tiene que confirmarlos, porque son lo unico
- * que puede detener una postulacion sin que intervenga una persona.
+ * **Aquí vive el único descarte automático de todo el sistema.** El backend
+ * comprueba los requisitos indispensables que el candidato confirma, y cualquiera
+ * activo sin confirmar cierra la postulación en el acto, con la regla exacta
+ * escrita en su historial. No hay vuelta atrás ni segunda oportunidad en esa
+ * vacante.
+ *
+ * De ahí salen las tres decisiones de esta pantalla:
+ *
+ *   - **Los requisitos son preguntas de sí o no, no casillas.** Una casilla se
+ *     marca sin leer; una pregunta hay que contestarla. Y no se puede enviar
+ *     dejando alguna sin responder.
+ *   - **Responder «no» no bloquea el envío: lo explica.** Impedirlo sería
+ *     decidir por él. Lo que hace la pantalla es decir en voz alta lo que va a
+ *     pasar y dejar que elija con esa información.
+ *   - **El currículum se valida antes de salir** —formato y tamaño— porque un
+ *     rebote del servidor después de subir 10 MB es la peor forma de enterarse.
  */
 
-import { useRef, useState, type FormEvent } from 'react'
+import { useRef, useState, type DragEvent, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { postular, verVacante } from '@/api/portal'
+import type { RequisitoPublico } from '@/api/tipos'
 import { rutas } from '@/rutas'
-import { useAviso } from '@/ui/Avisos'
-import { Cargando, Fallo } from '@/ui/Mensajes'
+import { AreaTexto, Campo } from '@/ui/campos/Campo'
+import estilos from './Postular.module.css'
 
+/** El mismo tope que aplica el backend: pasarlo devuelve 413. */
 const MAXIMO_CV = 10 * 1024 * 1024
+const FORMATOS = ['.pdf', '.doc', '.docx']
+
+type Respuesta = 'si' | 'no'
 
 export function Postular() {
   const { vacanteId = '' } = useParams()
   const navegar = useNavigate()
-  const avisar = useAviso()
   const cache = useQueryClient()
   const campoArchivo = useRef<HTMLInputElement>(null)
+  const dialogo = useRef<HTMLDialogElement>(null)
 
   const [cv, setCv] = useState<File | null>(null)
+  const [encima, setEncima] = useState(false)
   const [resultado, setResultado] = useState('')
   const [portafolio, setPortafolio] = useState('')
   const [linkedin, setLinkedin] = useState('')
   const [github, setGithub] = useState('')
-  const [confirmados, setConfirmados] = useState<number[]>([])
-  const [error, setError] = useState<string | null>(null)
+  const [respuestas, setRespuestas] = useState<Record<number, Respuesta>>({})
+  const [errores, setErrores] = useState<{ cv?: string; resultado?: string; requisitos?: string }>({})
+  const [fallo, setFallo] = useState<string | null>(null)
 
   const vacante = useQuery({
     queryKey: ['vacante', vacanteId],
@@ -42,189 +61,398 @@ export function Postular() {
     mutationFn: postular,
     onSuccess: async () => {
       await cache.invalidateQueries({ queryKey: ['postulaciones'] })
-      avisar('Postulación recibida. Te avisaremos cuando avance.')
-      navegar(rutas.procesos(), { replace: true })
+      navegar(rutas.procesos())
     },
-    onError: (causa) => {
-      setError(causa instanceof Error ? causa.message : 'No pudimos enviar la postulación.')
-    },
+    onError: (causa) =>
+      setFallo(
+        causa instanceof Error
+          ? causa.message
+          : 'No pudimos enviar tu postulación. Vuelve a intentarlo.',
+      ),
   })
 
-  if (vacante.isPending) return <Cargando que="Preparando el formulario…" />
-  if (vacante.isError) {
-    return <Fallo error={vacante.error} reintentar={() => void vacante.refetch()} />
-  }
-
-  // Se copia a una constante para que el cierre de `enviar` la vea sin dudas.
-  const v = vacante.data
-  const requisitos = v.requisitosObjetivos
-  const faltanRequisitos = requisitos.length > 0 && confirmados.length !== requisitos.length
-
-  function alternarRequisito(id: number) {
-    setConfirmados((previos) =>
-      previos.includes(id) ? previos.filter((x) => x !== id) : [...previos, id],
+  if (vacante.isPending) {
+    return (
+      <div className={estilos.pagina}>
+        <div className={estilos.marco} aria-busy="true">
+          <h1>Cargando el puesto…</h1>
+          <div className={estilos.barra} />
+          <div className={`${estilos.barra} ${estilos.barraMedia}`} />
+          <div className={`${estilos.barra} ${estilos.barraCorta}`} />
+        </div>
+      </div>
     )
   }
 
-  function enviar(e: FormEvent) {
-    e.preventDefault()
-    setError(null)
+  if (vacante.isError) {
+    return (
+      <div className={estilos.pagina}>
+        <Link className={estilos.volver} to={rutas.vacantes()}>
+          ← Volver a las vacantes
+        </Link>
+        <div className={estilos.marco}>
+          <h1>No pudimos cargar este puesto.</h1>
+          <p className={estilos.marcoTexto}>
+            {vacante.error instanceof Error
+              ? vacante.error.message
+              : 'No pudimos conectar con el servidor.'}
+          </p>
+          <button
+            type="button"
+            className={estilos.reintentar}
+            onClick={() => void vacante.refetch()}
+          >
+            Intentar de nuevo
+          </button>
+        </div>
+      </div>
+    )
+  }
 
-    if (!cv) return setError('Selecciona tu CV para continuar.')
-    if (cv.size > MAXIMO_CV) return setError('El CV no puede pesar más de 10 MB.')
-    if (!resultado.trim()) return setError('Cuéntanos al menos un resultado del que te sientas orgulloso.')
-    if (faltanRequisitos) return setError('Confirma todos los requisitos indispensables.')
+  const v = vacante.data
+  const requisitos: RequisitoPublico[] = Array.isArray(v.requisitosObjetivos)
+    ? v.requisitosObjetivos
+    : []
+  const sinResponder = requisitos.filter((r) => respuestas[r.id] === undefined)
+  const noCumple = requisitos.filter((r) => respuestas[r.id] === 'no')
 
+  function elegirArchivo(archivo: File | undefined) {
+    setErrores((e) => ({ ...e, cv: undefined }))
+    if (!archivo) return
+
+    const extension = archivo.name.slice(archivo.name.lastIndexOf('.')).toLowerCase()
+    if (!FORMATOS.includes(extension)) {
+      setErrores((e) => ({
+        ...e,
+        cv: `«${archivo.name}» no es un PDF ni un Word. Convierte tu currículum a PDF y vuelve a intentarlo.`,
+      }))
+      return
+    }
+    if (archivo.size > MAXIMO_CV) {
+      setErrores((e) => ({
+        ...e,
+        cv: `Tu archivo pesa ${pesoLegible(archivo.size)} y el máximo son 10 MB. Guárdalo como PDF comprimido o quita las imágenes más pesadas.`,
+      }))
+      return
+    }
+    setCv(archivo)
+  }
+
+  function soltar(evento: DragEvent) {
+    evento.preventDefault()
+    setEncima(false)
+    elegirArchivo(evento.dataTransfer.files[0])
+  }
+
+  /** Lo que falta por rellenar. Vacío significa que se puede enviar. */
+  function revisar() {
+    const nuevos: typeof errores = {}
+    if (!cv) nuevos.cv = 'Adjunta tu currículum para continuar.'
+    if (!resultado.trim()) {
+      nuevos.resultado = 'Cuéntanos un resultado del que te sientas orgulloso.'
+    }
+    if (sinResponder.length > 0) {
+      nuevos.requisitos =
+        sinResponder.length === 1
+          ? 'Falta responder un requisito.'
+          : `Faltan ${sinResponder.length} requisitos por responder.`
+    }
+    return nuevos
+  }
+
+  function enviar(evento: FormEvent) {
+    evento.preventDefault()
+    setFallo(null)
+
+    const nuevos = revisar()
+    setErrores(nuevos)
+    if (Object.keys(nuevos).length > 0) {
+      requestAnimationFrame(() => {
+        document.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus()
+      })
+      return
+    }
+
+    // Si dijo que no cumple alguno, la postulación se va a cerrar sola. No se
+    // le impide enviarla —eso sería decidir por él— pero no puede pasar sin
+    // saberlo.
+    if (noCumple.length > 0) {
+      dialogo.current?.showModal()
+      return
+    }
+
+    mandar()
+  }
+
+  function mandar() {
+    dialogo.current?.close()
     envio.mutate({
       vacanteId: v.id,
-      cv,
+      cv: cv!,
       resultadoOrgulloso: resultado.trim(),
       portafolio: portafolio.trim() || undefined,
       linkedin: linkedin.trim() || undefined,
       github: github.trim() || undefined,
-      requisitosConfirmados: confirmados,
+      requisitosConfirmados: requisitos
+        .filter((r) => respuestas[r.id] === 'si')
+        .map((r) => r.id),
     })
   }
 
   return (
-    <>
-      <Link className="back" to={rutas.vacante(vacanteId)}>
-        ← Volver a la vacante
+    <div className={estilos.pagina}>
+      <Link className={estilos.volver} to={rutas.vacante(v.id)}>
+        ← Volver al puesto
       </Link>
 
-      <div className="pagehead">
-        <div>
-          <div className="eyebrow">Postulación</div>
-          <h1>{v.titulo}</h1>
-          <p>
-            Comparte tu experiencia y evidencia. Podrás revisar esta información antes de
-            enviarla.
-          </p>
-        </div>
+      <div className={estilos.encabezado}>
+        <h1>Postula a este puesto.</h1>
+        <span className={estilos.puesto}>{v.titulo}</span>
       </div>
 
-      <form onSubmit={enviar} noValidate>
-        <div className="detail-layout">
-          <div className="card form-card postular-campos">
-        <div className="upload">
+      <form className={estilos.formulario} onSubmit={enviar} noValidate>
+        <section className={estilos.bloque}>
+          <h2 className={estilos.tituloBloque}>Tu currículum</h2>
+
+          {cv ? (
+            <div className={estilos.elegido}>
+              <span className={estilos.marcaElegido} aria-hidden="true" />
+              <span className={estilos.nombreArchivo}>{cv.name}</span>
+              <span className={estilos.pesoArchivo}>{pesoLegible(cv.size)}</span>
+              <button type="button" className={estilos.quitar} onClick={() => setCv(null)}>
+                Cambiar
+              </button>
+            </div>
+          ) : (
+            <div
+              className={`${estilos.zona}${encima ? ` ${estilos.encima}` : ''}${
+                errores.cv ? ` ${estilos.conError}` : ''
+              }`}
+              onDragOver={(e) => {
+                e.preventDefault()
+                setEncima(true)
+              }}
+              onDragLeave={() => setEncima(false)}
+              onDrop={soltar}
+            >
+              <span className={estilos.zonaTexto}>
+                Arrastra tu currículum aquí
+                <span className={estilos.zonaDetalle}>PDF o Word · hasta 10 MB</span>
+              </span>
+              <button
+                type="button"
+                className={estilos.elegir}
+                onClick={() => campoArchivo.current?.click()}
+                aria-invalid={errores.cv ? true : undefined}
+                aria-describedby={errores.cv ? 'error-cv' : undefined}
+              >
+                Buscar en mi equipo
+              </button>
+            </div>
+          )}
+
           <input
             ref={campoArchivo}
+            className={estilos.oculto}
             type="file"
-            accept=".pdf,.doc,.docx"
-            onChange={(e) => setCv(e.target.files?.[0] ?? null)}
+            accept={FORMATOS.join(',')}
+            tabIndex={-1}
+            onChange={(e) => elegirArchivo(e.target.files?.[0])}
           />
-          <b>{cv ? cv.name : 'Sube tu CV'}</b>
-          <span>PDF o Word · máximo 10 MB</span>
-          <button className="btn" type="button" onClick={() => campoArchivo.current?.click()}>
-            {cv ? 'Cambiar archivo' : 'Seleccionar archivo'}
-          </button>
-        </div>
 
-        <div className="formgrid" style={{ marginTop: 18 }}>
-          <div className="field full">
-            <label htmlFor="portafolio">Portafolio o sitio personal</label>
-            <input
-              id="portafolio"
+          {errores.cv && (
+            <p className={estilos.resumenErrores} id="error-cv" role="alert">
+              {errores.cv}
+            </p>
+          )}
+
+          <p className={estilos.anonimo}>
+            Antes de que ningún sistema lo lea, tapamos tu edad, sexo y estado civil.
+            Guardamos las dos versiones para poder demostrar que se hizo.
+          </p>
+        </section>
+
+        <section className={estilos.bloque}>
+          <h2 className={estilos.tituloBloque}>Un resultado del que te sientas orgulloso</h2>
+          <AreaTexto
+            etiqueta="Cuéntalo con tus palabras"
+            ayuda="Algo que hiciste y salió bien. Qué había antes, qué hiciste tú, y cómo quedó."
+            value={resultado}
+            onChange={(e) => setResultado(e.target.value)}
+            error={errores.resultado}
+          />
+        </section>
+
+        <section className={estilos.bloque}>
+          <h2 className={estilos.tituloBloque}>Enlaces</h2>
+          <p className={estilos.explicacion}>
+            Opcionales. Si tienes algo publicado que muestre cómo trabajas, ayuda.
+          </p>
+          <div className={estilos.enlaces}>
+            <Campo
+              etiqueta="Portafolio"
+              type="url"
+              inputMode="url"
               placeholder="https://"
               value={portafolio}
               onChange={(e) => setPortafolio(e.target.value)}
             />
-          </div>
-          <div className="field">
-            <label htmlFor="linkedin">LinkedIn</label>
-            <input
-              id="linkedin"
-              placeholder="https://linkedin.com/in/..."
+            <Campo
+              etiqueta="LinkedIn"
+              type="url"
+              inputMode="url"
+              placeholder="https://"
               value={linkedin}
               onChange={(e) => setLinkedin(e.target.value)}
             />
-          </div>
-          <div className="field">
-            <label htmlFor="github">GitHub u otro proyecto</label>
-            <input
-              id="github"
+            <Campo
+              etiqueta="GitHub u otro"
+              type="url"
+              inputMode="url"
               placeholder="https://"
               value={github}
               onChange={(e) => setGithub(e.target.value)}
             />
           </div>
-          <div className="field full">
-            <label htmlFor="resultado">Resultado del que te sientas orgulloso</label>
-            <textarea
-              id="resultado"
-              placeholder="Cuéntanos qué cambió gracias a tu trabajo y cómo lo comprobaste."
-              value={resultado}
-              onChange={(e) => setResultado(e.target.value)}
-            />
-          </div>
-        </div>
+        </section>
 
         {requisitos.length > 0 && (
-          <>
-            <div className="sectionhead">
-              <div>
-                <h2>Requisitos indispensables</h2>
-                <p>Confirma cada uno. Es lo único que puede detener una postulación solo.</p>
-              </div>
-            </div>
-            <div className="stack">
+          <section className={estilos.requisitos}>
+            <h2>Requisitos indispensables</h2>
+            <p className={estilos.avisoRequisitos}>
+              Léelos con calma y responde con sinceridad.{' '}
+              <b>Es lo único que el sistema decide solo</b>: si no cumples alguno, tu
+              postulación se cierra al enviarla y no podrás volver a postular a este puesto.
+            </p>
+
+            <div className={estilos.listaRequisitos}>
               {requisitos.map((r) => (
-                <label className="consent" key={r.id}>
-                  <input
-                    type="checkbox"
-                    checked={confirmados.includes(r.id)}
-                    onChange={() => alternarRequisito(r.id)}
-                  />
-                  <div>
-                    <b>{r.descripcion}</b>
-                    <p>Confirmo que cumplo este requisito.</p>
-                  </div>
-                </label>
+                <Requisito
+                  key={r.id}
+                  requisito={r}
+                  respuesta={respuestas[r.id]}
+                  invalido={errores.requisitos !== undefined && respuestas[r.id] === undefined}
+                  onResponder={(valor) => {
+                    setRespuestas((v) => ({ ...v, [r.id]: valor }))
+                    setErrores((e) => ({ ...e, requisitos: undefined }))
+                  }}
+                />
               ))}
             </div>
-          </>
+
+            {errores.requisitos && (
+              <p className={estilos.faltaResponder} role="alert">
+                {errores.requisitos}
+              </p>
+            )}
+
+            {noCumple.length > 0 && (
+              <p className={estilos.consecuencia}>
+                <span>
+                  Dijiste que no cumples {noCumple.length === 1 ? 'uno' : noCumple.length} de
+                  los requisitos. Puedes enviar la postulación igual, pero{' '}
+                  <b>se cerrará automáticamente</b> y no podrás volver a postular a este
+                  puesto. Si crees que te equivocaste al responder, cámbialo antes de enviar.
+                </span>
+              </p>
+            )}
+          </section>
         )}
 
-        {error && <div className="error">{error}</div>}
-          </div>
-
-          {/* La ficha repite a que se postula y cuenta lo que falta: el boton
-              vive aqui, pero sigue enviando el formulario de al lado. */}
-          <aside className="sticky">
-            <div className="card ficha">
-              <div>
-                <span className="label">Vas a postular a</span>
-                <b className="ficha-puesto">{v.titulo}</b>
-                <span className="small">
-                  {[v.modalidad, v.ubicacion].filter(Boolean).join(' · ')}
-                </span>
-              </div>
-              <div className="divider" />
-              <div className="row">
-                <span>Currículum</span>
-                <b>{cv ? 'Listo' : 'Falta'}</b>
-              </div>
-              {requisitos.length > 0 && (
-                <>
-                  <div className="divider" />
-                  <div className="row">
-                    <span>Requisitos confirmados</span>
-                    <b>
-                      {confirmados.length} de {requisitos.length}
-                    </b>
-                  </div>
-                </>
-              )}
-              <button className="btn primary large" type="submit" disabled={envio.isPending}>
-                {envio.isPending ? 'Enviando…' : 'Enviar postulación'}
-              </button>
-              <span className="small ficha-pie">
-                Podrás retirar tu postulación desde tu panel.
-              </span>
-            </div>
-          </aside>
+        <div className={estilos.envio}>
+          {fallo && (
+            <p className={estilos.resumenErrores} role="alert">
+              {fallo}
+            </p>
+          )}
+          <button type="submit" className={estilos.enviar} disabled={envio.isPending}>
+            {envio.isPending ? 'Enviando…' : 'Enviar mi postulación'}
+          </button>
         </div>
       </form>
-    </>
+
+      <dialog ref={dialogo} className={estilos.aviso} aria-labelledby="titulo-aviso">
+        <h2 className={estilos.avisoTitulo} id="titulo-aviso">
+          Esta postulación se va a cerrar
+        </h2>
+        <p className={estilos.avisoTexto}>
+          Respondiste que no cumples {noCumple.length === 1 ? 'este requisito' : 'estos requisitos'}:
+        </p>
+        <ul className={estilos.avisoLista} role="list">
+          {noCumple.map((r) => (
+            <li key={r.id}>{r.descripcion}</li>
+          ))}
+        </ul>
+        <p className={estilos.avisoTexto}>
+          Son condición para el puesto, así que al enviarla se cerrará de inmediato y{' '}
+          <b>no podrás volver a postular a esta vacante</b>. Tu currículum y tus datos se
+          guardan igual.
+        </p>
+        <div className={estilos.avisoBotones}>
+          <button
+            type="button"
+            className={estilos.volverAtras}
+            onClick={() => dialogo.current?.close()}
+          >
+            Volver y revisar
+          </button>
+          <button
+            type="button"
+            className={estilos.enviarIgual}
+            onClick={mandar}
+            disabled={envio.isPending}
+          >
+            Enviarla de todos modos
+          </button>
+        </div>
+      </dialog>
+    </div>
   )
+}
+
+function Requisito({
+  requisito,
+  respuesta,
+  invalido,
+  onResponder,
+}: {
+  requisito: RequisitoPublico
+  respuesta: Respuesta | undefined
+  invalido: boolean
+  onResponder: (valor: Respuesta) => void
+}) {
+  const nombre = `requisito-${requisito.id}`
+
+  return (
+    <fieldset
+      className={`${estilos.requisito}${respuesta === 'no' ? ` ${estilos.respondidoNo}` : ''}`}
+    >
+      <legend className={estilos.textoRequisito}>{requisito.descripcion}</legend>
+      <div className={estilos.siNo}>
+        {(['si', 'no'] as const).map((valor) => (
+          <label
+            key={valor}
+            className={`${estilos.opcion}${respuesta === valor ? ` ${estilos.elegida}` : ''}`}
+          >
+            <input
+              className={estilos.radio}
+              type="radio"
+              name={nombre}
+              value={valor}
+              checked={respuesta === valor}
+              onChange={() => onResponder(valor)}
+              aria-invalid={invalido ? true : undefined}
+            />
+            {valor === 'si' ? 'Sí' : 'No'}
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  )
+}
+
+function pesoLegible(bytes: number): string {
+  const mb = bytes / (1024 * 1024)
+  if (mb >= 1) return `${mb.toFixed(1).replace('.', ',')} MB`
+  return `${Math.max(1, Math.round(bytes / 1024))} KB`
 }

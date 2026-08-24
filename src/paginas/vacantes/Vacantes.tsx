@@ -1,4 +1,13 @@
-/** La portada: que es el proceso y que vacantes hay abiertas. */
+/**
+ * La portada: qué es este proceso y qué vacantes hay abiertas.
+ *
+ * Es la única pantalla en modo Persuade —quien llega todavía no ha postulado y
+ * tiene que decidir si le merece la pena— pero el mundo no cambia: el proceso se
+ * dibuja como recorrido, igual que dentro del portal. Lo que ve antes de entrar
+ * es lo mismo que verá después.
+ *
+ * Se ve sin cuenta. `GET /vacantes` es público.
+ */
 
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
@@ -6,117 +15,120 @@ import { listarVacantes } from '@/api/portal'
 import type { VacantePublica } from '@/api/tipos'
 import { ETAPAS } from '@/dominio/estados'
 import { rutas } from '@/rutas'
-import { Cargando, Fallo } from '@/ui/Mensajes'
-import { Vacio } from '@/ui/Vacio'
+import estilos from './Vacantes.module.css'
 
-/**
- * Una linea por etapa, en el mismo orden que la barra de pasos. Los nombres no
- * se escriben aqui: salen de `dominio/estados.ts`, que es quien manda.
- */
-const QUE_ESPERAR: Record<string, string> = {
-  PERFIL: 'Tu currículum y una evaluación escrita.',
-  PRUEBA: 'Un reto real del puesto, con tiempo medido.',
-  SIMULACION: 'Una sesión grupal de dos horas.',
-  VALIDACION: 'Un periodo corto trabajando de verdad.',
-  DECISION: 'La conversación final.',
-}
-
-function Flecha() {
-  return (
-    <svg viewBox="0 0 24 24" className="flecha" aria-hidden="true">
-      <path
-        d="M9 5.5 15.5 12 9 18.5"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
-      />
-    </svg>
-  )
-}
-
-function TarjetaVacante({ vacante }: { vacante: VacantePublica }) {
-  const meta = [vacante.modalidad, vacante.ubicacion].filter(Boolean).join(' · ')
-
-  return (
-    <Link className="card job action" to={rutas.vacante(vacante.id)}>
-      <span className="label">{meta || 'Convocatoria abierta'}</span>
-      <h2>{vacante.titulo}</h2>
-      <p>{vacante.proposito ?? vacante.descripcion}</p>
-      <div className="job-footer">
-        <span>Ver vacante</span>
-        <Flecha />
-      </div>
-    </Link>
-  )
+/** Qué hace el candidato en cada etapa. Es texto de producto, no dato. */
+const QUE_ES: Record<string, string> = {
+  PERFIL: 'Subes tu currículum y respondes una evaluación escrita sobre cómo trabajas.',
+  PRUEBA: 'Un encargo real del puesto, con el tiempo medido.',
+  SIMULACION: 'Una sesión de trabajo con el equipo, en una fecha que eliges tú.',
+  VALIDACION: 'Un periodo corto trabajando de verdad, con acuerdo y responsable.',
+  DECISION: 'Una persona decide, mirando todo el recorrido.',
 }
 
 export function Vacantes() {
   const consulta = useQuery({ queryKey: ['vacantes'], queryFn: listarVacantes })
+  // Lo que llegue por la red no puede dar por hecho que tiene la forma
+  // prometida: un cuerpo que no sea lista reventaba la pantalla entera.
+  const vacantes = Array.isArray(consulta.data) ? consulta.data : []
 
   return (
-    <>
-      <section className="hero">
-        <div>
-          <span className="eyebrow">Excelencia que se reconoce</span>
-          <h1>
-            Tu talento.
-            <br />
-            Tu oportunidad.
-          </h1>
-          <span className="regla" />
-          <p>
-            Encuentra tu próxima oportunidad en Renaser. Cada etapa deja evidencia de lo
-            que sabes hacer, no de lo que dice tu currículum.
-          </p>
-        </div>
+    <div className={estilos.pagina}>
+      <h1 className={estilos.entrada}>Aquí no se decide por un currículum.</h1>
+      <p className={estilos.bajada}>
+        El proceso son cinco etapas, y en todas se mira cómo trabajas. Tu currículum entra,
+        pero por diseño no descarta a nadie.
+      </p>
 
-        <aside className="hero-card">
-          <b>Qué puedes esperar del proceso</b>
-          <p>Cinco etapas. Siempre sabes en cuál estás.</p>
-          <ol>
-            {ETAPAS.map((etapa) => (
-              <li key={etapa.clave}>
-                <div>
-                  <b>{etapa.etiqueta}</b>
-                  <span>{QUE_ESPERAR[etapa.clave]}</span>
-                </div>
-              </li>
-            ))}
-          </ol>
-        </aside>
+      <section className={estilos.proceso}>
+        <h2 className={estilos.tituloProceso}>Lo que te espera</h2>
+        <ol className={estilos.etapas} role="list">
+          {ETAPAS.map((etapa) => (
+            <li className={estilos.etapa} key={etapa.clave}>
+              <div className={estilos.marca} aria-hidden="true" />
+              <div className={estilos.textoEtapa}>
+                <p className={estilos.nombreEtapa}>{etapa.etiqueta}</p>
+                <p className={estilos.queEsEtapa}>{QUE_ES[etapa.clave]}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
       </section>
 
-      <div className="sectionhead">
-        <div>
+      <section className={estilos.seccionVacantes}>
+        <div className={estilos.cabeceraVacantes}>
           <h2>Vacantes abiertas</h2>
-          <p>Elige una oportunidad para conocer el proceso y postular.</p>
+          {vacantes.length > 0 && (
+            <span className={estilos.cuantas}>
+              {vacantes.length} {vacantes.length === 1 ? 'puesto' : 'puestos'}
+            </span>
+          )}
         </div>
-        {consulta.data && consulta.data.length > 0 && (
-          <span className="small">
-            {consulta.data.length} {consulta.data.length === 1 ? 'abierta' : 'abiertas'}
-          </span>
+
+        {consulta.isPending && (
+          <div className={estilos.marco} aria-busy="true">
+            <h3>Buscando vacantes…</h3>
+            <div className={estilos.barra} />
+            <div className={`${estilos.barra} ${estilos.barraMedia}`} />
+            <div className={`${estilos.barra} ${estilos.barraCorta}`} />
+          </div>
         )}
-      </div>
 
-      {consulta.isPending && <Cargando que="Buscando vacantes…" />}
-      {consulta.isError && (
-        <Fallo error={consulta.error} reintentar={() => void consulta.refetch()} />
-      )}
+        {consulta.isError && (
+          <div className={estilos.marco}>
+            <h3>No pudimos cargar las vacantes.</h3>
+            <p className={estilos.marcoTexto}>
+              {consulta.error instanceof Error
+                ? consulta.error.message
+                : 'No pudimos conectar con el servidor.'}
+            </p>
+            <button
+              type="button"
+              className={estilos.reintentar}
+              onClick={() => void consulta.refetch()}
+            >
+              Intentar de nuevo
+            </button>
+          </div>
+        )}
 
-      {consulta.data &&
-        (consulta.data.length === 0 ? (
-          <Vacio titulo="Ahora mismo no hay vacantes abiertas">
-            Vuelve más adelante: publicamos nuevas convocatorias con frecuencia.
-          </Vacio>
-        ) : (
-          <div className="grid g3">
-            {consulta.data.map((v) => (
-              <TarjetaVacante key={v.id} vacante={v} />
+        {!consulta.isPending && !consulta.isError && vacantes.length === 0 && (
+          <div className={estilos.marco}>
+            <h3>Ahora mismo no hay vacantes abiertas.</h3>
+            <p className={estilos.marcoTexto}>
+              Publicamos convocatorias nuevas con frecuencia. Vuelve por aquí en unos días.
+            </p>
+          </div>
+        )}
+
+        {vacantes.length > 0 && (
+          <div className={estilos.lista}>
+            {vacantes.map((v) => (
+              <Vacante key={v.id} vacante={v} />
             ))}
           </div>
-        ))}
-    </>
+        )}
+      </section>
+    </div>
+  )
+}
+
+function Vacante({ vacante }: { vacante: VacantePublica }) {
+  const donde = [vacante.modalidad, vacante.ubicacion, vacante.horario]
+    .filter(Boolean)
+    .join(' · ')
+  // Casi todos los campos de la vacante pueden venir vacios, asi que se elige
+  // el primero que traiga algo en vez de dar por hecho ninguno.
+  const resumen = vacante.proposito ?? vacante.descripcion
+
+  return (
+    <article className={estilos.vacante}>
+      <Link className={estilos.enlaceVacante} to={rutas.vacante(vacante.id)}>
+        <h3 className={estilos.tituloVacante}>{vacante.titulo}</h3>
+        {donde && <span className={estilos.donde}>{donde}</span>}
+        {resumen && <p className={estilos.queSeHace}>{resumen}</p>}
+        <span className={estilos.ver}>Ver el puesto y postular →</span>
+      </Link>
+    </article>
   )
 }

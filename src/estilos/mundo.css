@@ -1,0 +1,297 @@
+/*
+ * El mundo visual del portal: «El seguimiento».
+ *
+ * Tu postulacion es algo que va en camino, con hitos cumplidos y fechados y un
+ * siguiente hito siempre nombrado. Lo que separa esto de un rastreo de paquete
+ * cualquiera: **lo cumplido no se apaga**. Cada etapa cerrada se sigue leyendo
+ * con el mismo peso, porque el producto trata de acumular evidencia.
+ *
+ * Tres reglas que sostienen el resto y que no se negocian por comodidad:
+ *
+ *   1. El acento indigo significa UNA cosa: «te toca a ti». El hito abierto y
+ *      su accion. Si aparece en un boton secundario, deja de leerse.
+ *   2. El estado se lee en la FORMA antes que en el color —relleno, contorno,
+ *      discontinuo, tachado— para que quien no distingue colores lea el mismo
+ *      recorrido.
+ *   3. Cero radios y las reglas a un pixel exacto. Los estados son marcas
+ *      impresas, no cromo con sombra.
+ *
+ * Ver `docs/04-BRIEF-MIS-PROCESOS.md`.
+ */
+
+:root {
+  /* Superficies, de mas al fondo a mas al frente */
+  --papel: #ffffff;
+  --hundido: #f5f5f7;
+  --hundido2: #ebebef;
+
+  /* Tinta */
+  --tinta: #1c1c1e;
+  --tinta2: #48484d;
+  /* No bajar de aqui: con #77777d el texto pequeño se queda en 4,45:1 sobre
+     papel y no llega al minimo de 4,5. */
+  --tinta3: #6e6e77;
+
+  /* Reglas. La fina divide; la marcada cierra un bloque */
+  --regla: #e3e3e8;
+  --regla2: #c7c7d0;
+  /* Los controles piden mas contraste que una caja: 3:1 sobre papel */
+  --borde-control: #8a8a99;
+
+  /* La tinta que va ENCIMA de un relleno, no la del papel. Se parecen —el
+     papel tambien es blanco— pero no son lo mismo: si un dia el papel deja de
+     ser blanco puro, el texto de los botones no tiene por que moverse. */
+  --tinta-invertida: #ffffff;
+  --tinta-pulsado: #000000;
+
+  /* El acento. Una sola cosa: «te toca a ti» */
+  --acento: #4338ca;
+  --acento-pulsado: #312ba0;
+  --acento-papel: #f1f0fe;
+  --acento-regla: #c5c2f4;
+
+  /* El semaforo del sistema. Cada uno ya significa algo fijo */
+  --bien: #0f7a3d;
+  --duda: #8a5a00;
+  --duda-papel: #fdf6e6;
+  /* Sobre `--duda-papel`, el propio `--duda` se queda en 4,1:1. Este llega a
+     8,3:1 y sigue leyendose como el mismo ambar. */
+  --duda-tinta: #6b4700;
+  --mal: #b3261e;
+  --mal-pulsado: #8e1e17;
+  --mal-papel: #fdecea;
+  --mal-regla: #f2c0bc;
+
+  /*
+   * La escala tipografica.
+   *
+   * No estaba, y por eso cada hoja se inventaba su tamaño: trece valores
+   * distintos en veinte hojas. Estos diez son los que quedan, y cada uno tiene
+   * un trabajo, no un tamaño.
+   *
+   * Los dos `clamp` sustituyen a cuatro reglas de `@media` que solo bajaban un
+   * numero: 21→19 y 22→20 en el destacado, y 30→26 en la cifra.
+   */
+  --t-micro: 12px;      /* versalitas y etiquetas */
+  --t-menor: 13px;      /* pies, unidades, pistas */
+  --t-apoyo: 14px;      /* el texto secundario de la interfaz */
+  --t-prosa: 15px;      /* la prosa que explica */
+  --t-base: 16px;       /* el cuerpo, y los campos: por debajo iOS hace zoom */
+  --t-entradilla: 17px; /* la entradilla, y el titulo del hito abierto */
+  --t-titulo: 19px;     /* el titulo de un bloque */
+  --t-destacado: clamp(19px, 2vw, 22px); /* lo mayor de una pantalla */
+  --t-cifra: clamp(26px, 5vw, 30px);     /* el cronometro y las cifras */
+  --t-portada: clamp(28px, 4.4vw, 40px); /* el titular */
+
+  /*
+   * La medida de la linea.
+   *
+   * En `ch`, que es el ancho del «0». En Libre Franklin el cero es ancho, asi
+   * que 62ch compraban 91-96 caracteres por linea: muy por encima del suelo de
+   * 65-75 con el que se lee comodo. Medido en el navegador, no calculado.
+   */
+  --medida: 47ch;       /* la prosa corriente */
+  --medida-corta: 42ch; /* dentro de un bloque de apoyo */
+
+  /* Espacios */
+  --e1: 4px;
+  --e2: 8px;
+  --e3: 12px;
+  --e4: 16px;
+  --e5: 24px;
+  --e6: 32px;
+  --e7: 48px;
+  --e8: 72px;
+
+  /* Lo que mide la cabecera fija. Lo consume la barra de avance del examen,
+     que se pega justo debajo. */
+  --alto-cabecera: 61px;
+
+  /* El movimiento: salida exponencial desde algo que ya se ve */
+  --salida: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--papel);
+  color: var(--tinta);
+  font-family: 'Libre Franklin', system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3,
+p,
+figure,
+ul,
+ol {
+  margin: 0;
+}
+
+/*
+ * `list-style: none` hace que Safari y VoiceOver descarten la semantica de
+ * lista. Donde la lista SIGNIFICA algo —el recorrido de cinco etapas— hay que
+ * devolversela con `role="list"` en el elemento.
+ */
+ul,
+ol {
+  padding: 0;
+  list-style: none;
+}
+
+/* El tamaño y el peso hacen la jerarquia. Ningun recuadro la fabrica. */
+h1 {
+  font-size: var(--t-portada);
+  line-height: 1.12;
+  letter-spacing: -0.028em;
+  font-weight: 600;
+  text-wrap: balance;
+}
+
+h2 {
+  font-size: var(--t-titulo);
+  line-height: 1.25;
+  letter-spacing: -0.018em;
+  font-weight: 600;
+  text-wrap: balance;
+}
+
+h3 {
+  font-size: var(--t-base);
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  font-weight: 600;
+}
+
+/*
+ * Los enlaces NO llevan el acento.
+ *
+ * El indigo significa una sola cosa —«te toca a ti»— y con seis enlaces de ese
+ * color rodeando un boton del mismo color, el candidato deja de poder confiar
+ * en el color y tiene que leerlo todo. El subrayado ya identifica un enlace;
+ * el color no hacia falta.
+ */
+a {
+  color: var(--tinta);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.22em;
+  text-decoration-color: var(--regla2);
+}
+
+a:hover {
+  color: var(--tinta);
+  text-decoration-color: currentColor;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+/*
+ * Las superficies que no dibujamos tambien son del diseño: sin esto llegan con
+ * los valores de fabrica del navegador, que no pertenecen a ningun sistema.
+ */
+::selection {
+  background: var(--acento-papel);
+  color: var(--acento-pulsado);
+}
+
+:root {
+  accent-color: var(--acento);
+  caret-color: var(--acento);
+  scrollbar-color: var(--regla2) transparent;
+  scrollbar-width: thin;
+}
+
+:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}
+
+/*
+ * Fuera de la vista, dentro del arbol de accesibilidad.
+ *
+ * Global y no un modulo porque lo usan piezas que no tienen hoja propia —el
+ * cronometro— y porque estaba copiado en cuatro sitios. `display: none` no
+ * sirve: esconderia el texto tambien del lector de pantalla, que es justo a
+ * quien va dirigido.
+ */
+.solo-lectores {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Fechas, cuentas y plazos se alinean en columna: son datos, no prosa. */
+time,
+[data-cifra] {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/*
+ * El logotipo de EX, lo unico que sobrevive del portal anterior: la palabra con
+ * la hormiga metida dentro de la X.
+ *
+ * Se redefine aqui porque la hoja vieja la dejaba en .44em —a 22px eso son
+ * nueve pixeles y la hormiga desaparecia, que es justo lo que no puede pasarle
+ * a la unica pieza de marca que hay—. Va centrada sobre la X y ocupando su
+ * hueco, no colgando de la esquina.
+ */
+.marca {
+  position: relative;
+  display: inline-block;
+  line-height: 1;
+  color: var(--tinta);
+  /* Sitio para que la hormiga no quede recortada por el borde de la caja. */
+  padding: 0.16em 0.1em 0 0;
+}
+
+.marca-letras {
+  display: block;
+  font-size: 1em;
+  font-weight: 800;
+  letter-spacing: -0.06em;
+}
+
+.marca-hormiga {
+  position: absolute;
+  /* Posada en el vertice superior derecho de la X, solapandola apenas. Encima
+     del trazo se perderia —hormiga y letra van del mismo negro— y del todo
+     fuera dejaria de ser «la hormiga dentro de la X». */
+  top: -0.14em;
+  right: -0.04em;
+  width: 0.5em;
+  height: 0.5em;
+}

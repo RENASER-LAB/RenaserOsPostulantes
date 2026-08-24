@@ -1,0 +1,92 @@
+/*
+ * El modal compartido: lo usan la entrega de la evaluación, la de la prueba y
+ * la solicitud de borrado.
+ *
+ * Aquí no hay radios ni sombra de cromo: lo que separa el modal del fondo es
+ * que el fondo se apaga y el modal es papel con una regla alrededor. La única
+ * sombra es la mínima que evita que la regla se confunda con la del fondo.
+ */
+
+.fondo {
+  position: fixed;
+  inset: 0;
+  background: rgb(28 28 30 / 0.4);
+  z-index: 80;
+}
+
+.caja {
+  position: fixed;
+  z-index: 90;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(38rem, calc(100vw - 2rem));
+  max-height: min(88vh, 52rem);
+  display: flex;
+  flex-direction: column;
+  background: var(--papel);
+  border: 1px solid var(--tinta);
+  box-shadow: 0 18px 48px rgb(28 28 30 / 0.18);
+}
+
+.cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e4);
+  padding: var(--e4) var(--e5);
+  border-bottom: 1px solid var(--regla);
+}
+
+.titulo {
+  margin: 0;
+}
+
+.cerrar {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin-right: calc(var(--e3) * -1);
+  background: none;
+  border: 0;
+  font-size: var(--t-destacado);
+  line-height: 1;
+  color: var(--tinta2);
+  cursor: pointer;
+}
+
+.cerrar:hover {
+  color: var(--tinta);
+}
+
+.cuerpo {
+  padding: var(--e5);
+  overflow: auto;
+}
+
+.pie {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--e3);
+  padding: var(--e4) var(--e5);
+  border-top: 1px solid var(--regla);
+}
+
+.cerrarPie {
+  composes: secundario from '../estilos/piezas.module.css';
+}
+
+@media (max-width: 640px) {
+  .cabecera,
+  .pie {
+    padding: var(--e4);
+  }
+
+  .cuerpo {
+    padding: var(--e4);
+  }
+}

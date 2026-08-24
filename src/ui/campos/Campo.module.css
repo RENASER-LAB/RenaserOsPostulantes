@@ -1,0 +1,186 @@
+/*
+ * Los campos de formulario del portal.
+ *
+ * Un error se dice donde ocurre y en palabras: nombra el problema y como se
+ * arregla, nunca «campo invalido». Y el estado de error se lee en el borde ANTES
+ * que en el color, para quien no distingue el rojo.
+ */
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+}
+
+.etiqueta {
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  letter-spacing: -0.006em;
+}
+
+.ayuda {
+  font-size: var(--t-menor);
+  color: var(--tinta2);
+}
+
+.entrada {
+  min-height: 48px;
+  padding: 0 var(--e3);
+  background: var(--papel);
+  color: var(--tinta);
+  border: 1px solid var(--borde-control);
+  font: inherit;
+  font-size: var(--t-base); /* Menos de 16px y iOS hace zoom al enfocar. */
+}
+
+.entrada:hover {
+  border-color: var(--tinta2);
+}
+
+/* El error engorda el borde: la forma lo dice antes que el color. */
+.entrada[aria-invalid='true'] {
+  border-width: 2px;
+  border-color: var(--mal);
+}
+
+.error {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--e2);
+  font-size: var(--t-menor);
+  color: var(--mal);
+}
+
+.error::before {
+  content: '';
+  flex: none;
+  width: 3px;
+  align-self: stretch;
+  background: var(--mal);
+}
+
+/* ---------- Consentimientos ---------- */
+
+.consentimiento {
+  display: flex;
+  gap: var(--e3);
+  align-items: flex-start;
+  border: 1px solid var(--regla);
+  background: var(--papel);
+  padding: var(--e4);
+}
+
+.consentimiento.marcado {
+  border-color: var(--tinta);
+}
+
+.consentimiento.invalido {
+  border-width: 2px;
+  border-color: var(--mal);
+}
+
+.casilla {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin: 2px 0 0;
+  accent-color: var(--acento);
+}
+
+.cuerpoConsentimiento {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+  min-width: 0;
+}
+
+.tituloConsentimiento {
+  font-size: var(--t-prosa);
+  font-weight: 600;
+  letter-spacing: -0.008em;
+  cursor: pointer;
+}
+
+.obligatorio {
+  font-size: var(--t-menor);
+  font-weight: 400;
+  color: var(--tinta2);
+}
+
+.textoConsentimiento {
+  font-size: var(--t-apoyo);
+  line-height: 1.5;
+  color: var(--tinta2);
+  max-width: var(--medida);
+}
+
+/* El texto legal completo, plegado. Va a crecer: todavia no nombra a las
+   empresas que procesan los datos y tiene que hacerlo. */
+.legal {
+  margin-top: var(--e2);
+}
+
+.legalResumen {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: var(--t-menor);
+  color: var(--tinta2);
+  cursor: pointer;
+  list-style: none;
+  text-decoration: underline;
+  text-decoration-color: var(--regla2);
+  text-underline-offset: 0.22em;
+}
+
+.legalResumen::-webkit-details-marker {
+  display: none;
+}
+
+.legalTexto {
+  margin-top: var(--e2);
+  padding: var(--e3);
+  border: 1px solid var(--regla);
+  background: var(--hundido);
+  font-size: var(--t-menor);
+  line-height: 1.55;
+  color: var(--tinta2);
+  max-height: 15rem;
+  overflow-y: auto;
+  white-space: pre-line;
+}
+
+/* ---------- Área de texto ---------- */
+
+.area {
+  min-height: 9rem;
+  padding: var(--e3);
+  background: var(--papel);
+  color: var(--tinta);
+  border: 1px solid var(--borde-control);
+  font: inherit;
+  font-size: var(--t-base);
+  line-height: 1.55;
+  resize: vertical;
+}
+
+.area:hover {
+  border-color: var(--tinta2);
+}
+
+.area[aria-invalid='true'] {
+  border-width: 2px;
+  border-color: var(--mal);
+}
+
+.cuenta {
+  font-size: var(--t-menor);
+  color: var(--tinta3);
+  align-self: flex-end;
+  font-variant-numeric: tabular-nums;
+}
+
+.cuenta.pasado {
+  color: var(--mal);
+  font-weight: 600;
+}

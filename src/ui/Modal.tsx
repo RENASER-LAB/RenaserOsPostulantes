@@ -1,11 +1,12 @@
 /**
- * El modal del mockup: cabecera con titulo, cuerpo y pie con botones.
+ * El modal compartido: cabecera con titulo, cuerpo y pie con botones.
  *
  * Se cierra con Escape, tocando el fondo o con la aspa. Mientras esta abierto
  * el fondo no hace scroll y el foco no se escapa fuera.
  */
 
 import { useEffect, useRef, type ReactNode } from 'react'
+import estilos from './Modal.module.css'
 
 interface Props {
   abierto: boolean
@@ -62,24 +63,24 @@ export function Modal({ abierto, titulo, onCerrar, children, pie }: Props) {
 
   return (
     <>
-      <div className="overlay show" onClick={onCerrar} />
+      <div className={estilos.fondo} onClick={onCerrar} />
       <section
-        className="modal"
+        className={estilos.caja}
         role="dialog"
         aria-modal="true"
         aria-labelledby="titulo-modal"
         ref={caja}
       >
-        <div className="modal-head">
-          <h2 id="titulo-modal">{titulo}</h2>
-          <button className="iconbtn" onClick={onCerrar} aria-label="Cerrar">
+        <div className={estilos.cabecera}>
+          <h2 className={estilos.titulo} id="titulo-modal">{titulo}</h2>
+          <button className={estilos.cerrar} type="button" onClick={onCerrar} aria-label="Cerrar">
             ×
           </button>
         </div>
-        <div className="modal-body">{children}</div>
-        <div className="modal-foot">
+        <div className={estilos.cuerpo}>{children}</div>
+        <div className={estilos.pie}>
           {pie ?? (
-            <button className="btn" onClick={onCerrar}>
+            <button className={estilos.cerrarPie} type="button" onClick={onCerrar}>
               Cerrar
             </button>
           )}

@@ -1,0 +1,218 @@
+/*
+ * La validacion practica: el periodo en el que el candidato ya esta trabajando.
+ *
+ * Es la unica etapa en la que la espera es del candidato durante dias, no
+ * minutos, asi que el panel de arriba lleva acento y todo lo demas se aparta.
+ */
+
+.pagina {
+  max-width: 62rem;
+  margin: 0 auto;
+  padding: var(--e5) var(--e5) var(--e8);
+}
+
+.volver {
+  composes: volver from '../../estilos/piezas.module.css';
+}
+
+.encabezado {
+  margin-top: var(--e4);
+}
+
+.eti {
+  display: block;
+  font-size: var(--t-micro);
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--tinta3);
+  margin-bottom: var(--e3);
+}
+
+.bajada {
+  font-size: var(--t-base);
+  line-height: 1.55;
+  color: var(--tinta2);
+  margin-top: var(--e3);
+  max-width: var(--medida);
+}
+
+.reparto {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 19rem;
+  align-items: start;
+  gap: var(--e5);
+  margin-top: var(--e6);
+}
+
+.columna {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e5);
+  min-width: 0;
+}
+
+/* ---------- El periodo ---------- */
+
+.periodo {
+  border: 1px solid var(--acento-regla);
+  background: var(--acento-papel);
+  padding: var(--e5);
+}
+
+.etiAcento {
+  display: block;
+  font-size: var(--t-micro);
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--acento-pulsado);
+  margin-bottom: var(--e3);
+}
+
+.desde {
+  margin: 0;
+  font-size: var(--t-destacado);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  font-weight: 600;
+}
+
+.sinPlazo {
+  font-size: var(--t-prosa);
+  line-height: 1.6;
+  color: var(--tinta);
+  margin-top: var(--e3);
+  max-width: var(--medida);
+}
+
+/* ---------- Bloques ---------- */
+
+.bloque {
+  border: 1px solid var(--regla);
+  padding: var(--e5);
+}
+
+.bloque.hundido {
+  background: var(--hundido);
+}
+
+.tituloBloque {
+  margin: 0 0 var(--e3);
+}
+
+.texto {
+  font-size: var(--t-prosa);
+  line-height: 1.6;
+  color: var(--tinta2);
+  max-width: var(--medida);
+}
+
+.texto + .texto {
+  margin-top: var(--e3);
+}
+
+/* ---------- Lo que se mira ---------- */
+
+.medidas {
+  display: flex;
+  flex-direction: column;
+  margin-top: var(--e4);
+}
+
+.medida {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--e2) var(--e4);
+  padding: var(--e4) 0;
+  border-top: 1px solid var(--regla);
+}
+
+.medida:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.queSeMira {
+  flex: 1 1 20rem;
+  min-width: 0;
+}
+
+.nombreMedida {
+  display: block;
+  font-size: var(--t-prosa);
+  font-weight: 600;
+}
+
+.comoSeMide {
+  display: block;
+  margin-top: var(--e1);
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+}
+
+/*
+ * «Automático» y «Una persona» no son colores del semaforo: son quien mide. La
+ * diferencia se lee en el trazo del contorno, no en el tono.
+ */
+.quien {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 var(--e3);
+  border: 1px solid var(--regla2);
+  font-size: var(--t-micro);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--tinta2);
+}
+
+.quien.persona {
+  border-style: dashed;
+  border-color: var(--borde-control);
+  color: var(--tinta);
+}
+
+/* ---------- Lo que el portal todavía no sabe ---------- */
+
+/*
+ * Se dice en vez de inventarse. Un nombre de responsable puesto a ojo o una
+ * cuenta de dias sacada de la nada valen menos que el hueco declarado.
+ */
+.falta {
+  display: flex;
+  gap: var(--e3);
+  border: 1px solid var(--regla2);
+  background: var(--hundido);
+  padding: var(--e4);
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+}
+
+.falta::before {
+  content: '';
+  flex: none;
+  width: 3px;
+  background: var(--regla2);
+}
+
+@media (max-width: 900px) {
+  .reparto {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .pagina {
+    padding: var(--e4) var(--e4) var(--e7);
+  }
+
+  .periodo,
+  .bloque {
+    padding: var(--e4);
+  }
+}

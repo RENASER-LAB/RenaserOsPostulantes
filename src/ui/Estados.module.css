@@ -1,0 +1,151 @@
+/*
+ * Las pantallas de relleno: cargando, algo falló, hace falta cuenta, y no hay
+ * nada que enseñar.
+ *
+ * Van juntas en una hoja porque son la misma forma —un bloque con regla, un
+ * titular y una explicación— y separarlas solo duplicaba las medidas. Es el
+ * mismo motivo por el que `Cuenta.module.css` lo comparten entrar y registrarse.
+ *
+ * Ninguna lleva el acento: no hay nada que hacer en ellas salvo, a veces, un
+ * botón, y ese sí lo lleva.
+ */
+
+.marco {
+  max-width: 44rem;
+  margin: var(--e7) auto;
+  border: 1px solid var(--regla);
+  padding: var(--e6);
+}
+
+.eti {
+  display: block;
+  font-size: var(--t-micro);
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--tinta3);
+  margin-bottom: var(--e3);
+}
+
+.titulo {
+  margin: 0;
+}
+
+.texto {
+  font-size: var(--t-prosa);
+  line-height: 1.6;
+  color: var(--tinta2);
+  margin-top: var(--e3);
+  max-width: var(--medida);
+}
+
+.botones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e4);
+  margin-top: var(--e5);
+}
+
+/* ---------- Cargando ---------- */
+
+/*
+ * Barras en vez de un girador: dicen que lo que viene es texto y cuánto ocupa,
+ * así el bloque no da un salto al llegar los datos.
+ */
+.barra {
+  height: 12px;
+  background: var(--hundido2);
+  margin-top: var(--e3);
+}
+
+.barraLarga {
+  width: 72%;
+}
+
+.barraCorta {
+  width: 44%;
+}
+
+/* ---------- Botones ---------- */
+
+.principal {
+  composes: acentoMenor from '../estilos/piezas.module.css';
+}
+
+.secundario {
+  composes: secundario from '../estilos/piezas.module.css';
+}
+
+.secundario:hover {
+  color: var(--tinta);
+}
+
+/* ---------- Nada que enseñar ---------- */
+
+/*
+ * La hormiga en gris hace de marca de agua. Es el único sitio del portal donde
+ * sale sola, y por eso va del color de las reglas y nunca del acento.
+ *
+ * El color va sobre `.marca`, no sobre este envoltorio: `mundo.css` se lo
+ * declara al propio elemento —`.marca { color: var(--tinta) }`— y una tinta
+ * declarada no se hereda de nadie. Puesto aquí arriba, la hormiga salía negra.
+ */
+.hormiga {
+  display: block;
+  margin-bottom: var(--e4);
+}
+
+.hormiga :global(.marca) {
+  color: var(--regla2);
+}
+
+.tituloVacio {
+  display: block;
+  font-size: var(--t-entradilla);
+  font-weight: 600;
+  letter-spacing: -0.014em;
+}
+
+@media (max-width: 640px) {
+  .marco {
+    margin: var(--e5) auto;
+    padding: var(--e5);
+  }
+
+  .principal,
+  .secundario {
+    width: 100%;
+  }
+}
+
+/* ---------- El detalle tecnico del salvavidas ---------- */
+
+/*
+ * Solo lo lee quien va a contarlo, asi que va apartado y en menor. Pero va: sin
+ * el mensaje real no hay forma de diagnosticar nada desde el otro lado.
+ */
+.detalle {
+  margin-top: var(--e5);
+  border: 1px solid var(--regla);
+  background: var(--hundido);
+  padding: var(--e4);
+}
+
+.tituloDetalle {
+  display: block;
+  font-size: var(--t-micro);
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--tinta3);
+}
+
+.mensajeDetalle {
+  margin-top: var(--e2);
+  font-size: var(--t-apoyo);
+  line-height: 1.5;
+  color: var(--tinta2);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

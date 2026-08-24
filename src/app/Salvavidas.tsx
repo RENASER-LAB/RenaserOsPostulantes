@@ -11,6 +11,7 @@
  */
 
 import { Component, type ErrorInfo, type ReactNode } from 'react'
+import estilos from '@/ui/Estados.module.css'
 
 interface Props {
   children: ReactNode
@@ -38,32 +39,29 @@ export class Salvavidas extends Component<Props, Estado> {
     if (!error) return this.props.children
 
     return (
-      <div className="shell">
-        <main className="main">
-          <div className="card center-card">
-            <div className="status-icon">!</div>
-            <div className="eyebrow">Error inesperado</div>
-            <h1>Algo se rompió en esta pantalla.</h1>
-            <p>
-              No es culpa tuya y no has perdido nada: lo que hayas respondido
-              está guardado. Vuelve a cargar la página para continuar.
-            </p>
+      <div className={estilos.marco}>
+        <span className={estilos.eti}>Error inesperado</span>
+        <h1 className={estilos.titulo}>Algo se rompió en esta pantalla.</h1>
+        <p className={estilos.texto}>
+          No es culpa tuya y no has perdido nada: lo que hayas respondido está
+          guardado. Vuelve a cargar la página para continuar.
+        </p>
 
-            <div className="callout" style={{ marginTop: 22 }}>
-              <b>Detalle técnico</b>
-              <p style={{ whiteSpace: 'pre-wrap' }}>{error.message}</p>
-            </div>
+        <div className={estilos.detalle}>
+          <b className={estilos.tituloDetalle}>Detalle técnico</b>
+          <p className={estilos.mensajeDetalle}>{error.message}</p>
+        </div>
 
-            <div className="row" style={{ marginTop: 22 }}>
-              <a className="link" href="/">
-                Ir al inicio
-              </a>
-              <button className="btn primary large" onClick={() => location.reload()}>
-                Recargar la página
-              </button>
-            </div>
-          </div>
-        </main>
+        <div className={estilos.botones}>
+          <button
+            className={estilos.principal}
+            type="button"
+            onClick={() => location.reload()}
+          >
+            Recargar la página
+          </button>
+          <a href="/">Ir al inicio</a>
+        </div>
       </div>
     )
   }

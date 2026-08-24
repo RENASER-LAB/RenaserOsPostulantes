@@ -1,0 +1,41 @@
+/*
+ * Texto que llega del backend con sus saltos de linea, y con direcciones
+ * escritas dentro.
+ */
+
+.parrafo {
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  font-size: var(--t-base);
+  line-height: 1.65;
+  color: var(--tinta2);
+  margin: 0 0 var(--e3);
+  max-width: var(--medida);
+}
+
+.parrafo:last-child {
+  margin-bottom: 0;
+}
+
+/*
+ * Un enlace dentro de ese texto.
+ *
+ * NO lleva el acento: el indigo significa «te toca a ti» y aqui es solo una
+ * direccion. Se distingue por el subrayado y el peso, que es lo que hace falta.
+ *
+ * `anywhere` porque una direccion firmada mide cientos de caracteres: sin poder
+ * partirse por donde sea, empuja la caja fuera de la pantalla.
+ */
+.enlace {
+  color: var(--tinta);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: var(--regla2);
+  text-underline-offset: 0.2em;
+  overflow-wrap: anywhere;
+}
+
+.enlace:hover {
+  color: var(--tinta);
+  text-decoration-color: currentColor;
+}

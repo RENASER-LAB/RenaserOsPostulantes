@@ -16,6 +16,8 @@
  * que un `javascript:` escrito a mano tampoco se vuelve enlace.
  */
 
+import estilos from './TextoPlano.module.css'
+
 /**
  * Las direcciones del texto. Solo `http` y `https`, y se cortan en el primer
  * espacio o en los caracteres que nunca forman parte de una direccion escrita
@@ -62,7 +64,7 @@ function Enlace({ direccion, queEs }: { direccion: string; queEs: string }) {
   const esPdf = /\.pdf(\?|#|$)/i.test(direccion)
   return (
     <a
-      className="enlace-texto"
+      className={estilos.enlace}
       href={direccion}
       target="_blank"
       rel="noopener noreferrer"
@@ -84,7 +86,7 @@ interface Props {
   className?: string
 }
 
-export function TextoPlano({ texto, queEs = 'el documento', className = 'texto-largo' }: Props) {
+export function TextoPlano({ texto, queEs = 'el documento', className }: Props) {
   /*
    * Dos formas de respetar los saltos de linea, y aqui se usan las dos:
    *
@@ -92,7 +94,7 @@ export function TextoPlano({ texto, queEs = 'el documento', className = 'texto-l
    *     verdad y herede el aire que el portal les da. Un solo bloque con
    *     `pre-wrap` tambien respeta los saltos, pero separa dos parrafos igual
    *     que dos lineas seguidas, y entonces no se ve donde acaba una idea.
-   *   - `pre-wrap` dentro de cada parrafo (lo pone `.texto-largo`), para que los
+   *   - `pre-wrap` dentro de cada parrafo (lo pone la hoja del componente), para que los
    *     saltos sueltos sigan ahi. Quien escribe una lista con guiones, uno por
    *     linea, no esta escribiendo un parrafo por guion.
    */
@@ -106,7 +108,7 @@ export function TextoPlano({ texto, queEs = 'el documento', className = 'texto-l
   return (
     <>
       {parrafos.map((parrafo, i) => (
-        <p className={className} key={i}>
+        <p className={className ?? estilos.parrafo} key={i}>
           {partirPorDirecciones(parrafo).map((trozo, j) =>
             trozo.enlace ? (
               <Enlace key={j} direccion={trozo.valor} queEs={queEs} />

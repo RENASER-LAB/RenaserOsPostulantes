@@ -1,0 +1,161 @@
+/*
+ * Las piezas que se repiten, en un solo sitio.
+ *
+ * No son clases que se escriban en el JSX: se **componen** desde la hoja de
+ * cada pantalla con `composes`, de modo que el marcado no cambia y cada
+ * pantalla conserva su nombre propio —`.entregar` sigue llamandose entregar—
+ * mientras comparte la forma. Un boton que se llama por lo que hace se lee; uno
+ * que se llama `.botonSecundario` obliga a mirar el JSX para saber que hace.
+ *
+ *   .entregar {
+ *     composes: acentoGrande from '../../estilos/piezas.module.css';
+ *     align-self: flex-start;   ← lo que es de esta pantalla, se queda aqui
+ *   }
+ *
+ * Ruta relativa y no el alias `@`: dentro de `composes` el alias no es fiable
+ * entre versiones de Vite.
+ *
+ * **Aqui solo va la apariencia.** Los margenes, el `align-self`, los anchos y
+ * cualquier cosa que dependa de donde esta el boton son del sitio, no de la
+ * pieza, y quedarse con ellos aqui haria imposible reusarla.
+ *
+ * Lo que NO esta aqui, y es a proposito: el antetitulo en versalitas que hay en
+ * siete pantallas. Es un patron que el suelo de calidad de `impeccable` veta, y
+ * meterlo al sistema seria justamente consagrarlo. Se queda local hasta que
+ * `critique` decida si se va.
+ */
+
+/* ---------- La accion del acento ---------- */
+
+/*
+ * El indigo significa una sola cosa, «te toca a ti», asi que estas dos son las
+ * unicas piezas que lo llevan. La grande es la accion principal de una pantalla
+ * —entregar, postular, empezar la prueba—; la menor es la misma accion cuando
+ * vive dentro de un hito o de un aviso y no puede pesar mas que su contenedor.
+ */
+.acentoGrande {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 var(--e6);
+  background: var(--acento);
+  color: var(--tinta-invertida);
+  border: 1px solid var(--acento);
+  font-size: var(--t-base);
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 140ms var(--salida);
+}
+
+.acentoMenor {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 var(--e5);
+  background: var(--acento);
+  color: var(--tinta-invertida);
+  border: 1px solid var(--acento);
+  font-size: var(--t-prosa);
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 140ms var(--salida);
+}
+
+.acentoGrande:hover:not(:disabled),
+.acentoMenor:hover:not(:disabled) {
+  background: var(--acento-pulsado);
+  border-color: var(--acento-pulsado);
+  /* Declarado y no heredado: en un `<a>`, la regla global de enlaces le
+     devolveria la tinta del papel al pasar por encima. */
+  color: var(--tinta-invertida);
+}
+
+.acentoGrande:disabled,
+.acentoMenor:disabled {
+  background: var(--hundido2);
+  border-color: var(--regla2);
+  color: var(--tinta3);
+  cursor: default;
+}
+
+/* ---------- La accion que no es la principal ---------- */
+
+/*
+ * Papel con contorno. El contorno es `--borde-control` y no `--regla2` porque
+ * un control pide 3:1 contra el fondo y una caja no.
+ */
+.secundario {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 var(--e5);
+  background: var(--papel);
+  border: 1px solid var(--borde-control);
+  font-size: var(--t-prosa);
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color 140ms var(--salida);
+}
+
+.secundario:hover:not(:disabled) {
+  border-color: var(--tinta);
+}
+
+.secundario:disabled {
+  /* El fondo tambien, como en `.acentoGrande:disabled`. Sin el, un boton
+     apagado sobre papel blanco sigue pareciendo pulsable. */
+  background: var(--hundido2);
+  border-color: var(--regla2);
+  color: var(--tinta3);
+  cursor: default;
+}
+
+/* ---------- La accion firme que no es «te toca a ti» ---------- */
+
+/*
+ * Rellena de tinta. Es para cuando algo tiene que pesar mas que un contorno y
+ * el acento estaria mintiendo: la salida segura de un aviso, o el boton de una
+ * pantalla vacia, donde no hay ningun proceso esperando al candidato.
+ */
+.solido {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 var(--e5);
+  background: var(--tinta);
+  color: var(--papel);
+  border: 1px solid var(--tinta);
+  font-size: var(--t-prosa);
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 140ms var(--salida);
+}
+
+.solido:hover:not(:disabled) {
+  background: var(--tinta-pulsado);
+  border-color: var(--tinta-pulsado);
+  color: var(--papel);
+}
+
+/* ---------- Volver ---------- */
+
+/*
+ * El enlace de vuelta que abre casi todas las pantallas. Los 44 px no son por
+ * el texto, que mide catorce: son el area que hace falta para acertarle con el
+ * pulgar.
+ */
+.volver {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+}
