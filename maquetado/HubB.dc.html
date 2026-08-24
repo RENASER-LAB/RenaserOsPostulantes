@@ -1,0 +1,175 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&display=swap');
+*{box-sizing:border-box}
+body{margin:0;font-family:Archivo,system-ui,sans-serif;background:#EDEDF0;color:#1C1C1E;font-size:15px;line-height:1.45}
+a{color:#4338CA;text-decoration:none}a:hover{color:#312BA0}
+.marco{width:1180px;background:#FFFFFF;border:1.5px solid #1C1C1E;display:flex;flex-direction:column;min-height:100%}
+.cab{display:flex;justify-content:space-between;align-items:center;padding:14px 28px;border-bottom:1.5px solid #1C1C1E;gap:24px}
+.marca{display:flex;align-items:center;gap:2px;font-weight:700;font-size:22px;letter-spacing:-.02em}
+.hormiga{width:17px;height:17px;margin-left:-3px}
+.nav{display:flex;gap:22px;align-items:center;font-size:14px;color:#6B6B70}
+.nav b{color:#1C1C1E}
+.chip{border:1.5px solid #1C1C1E;padding:6px 14px;font-size:13px;font-weight:600}
+.cuerpo{padding:28px;display:flex;flex-direction:column;gap:22px;flex-grow:1}
+h1{font-size:28px;margin:0;letter-spacing:-.02em;font-weight:700}
+h2{font-size:19px;margin:0;font-weight:600}
+h3{font-size:15px;margin:0;font-weight:600}
+p{margin:0;color:#48484D}
+.caja{border:1.5px solid #C4C4CE;background:#fff;padding:20px}
+.caja.toca{border:2px solid #4338CA;background:#F1F0FE}
+.caja.gris{background:#F0F0F4;border-style:dashed}
+.eti{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#77777D;font-weight:600}
+.eti.oro{color:#4338CA}
+.btn{display:inline-flex;align-items:center;justify-content:center;border:1.5px solid #1C1C1E;background:#fff;padding:11px 20px;font-size:14px;font-weight:600;min-height:44px}
+.btn.pri{background:#1C1C1E;color:#FFFFFF}
+.btn.oro{background:#4338CA;border-color:#4338CA;color:#fff}
+.linea{height:9px;background:#E6E6EB}
+.linea.corta{width:55%}.linea.media{width:78%}
+.fila{display:flex;gap:14px;align-items:center}
+.col{display:flex;flex-direction:column;gap:10px}
+.small{font-size:13px;color:#6B6B70}
+.tag{display:inline-flex;border:1.5px solid #C4C4CE;padding:3px 10px;font-size:12px;font-weight:600;color:#48484D;background:#F0F0F4}
+.tag.oro{border-color:#4338CA;color:#4338CA;background:#F1F0FE}
+.nota{border-left:3px solid #4338CA;padding:8px 0 8px 12px;font-size:12.5px;color:#3730A3;background:#F1F0FE}
+  </style>
+</helmet>
+<div class="marco">
+  <div class="cab">
+    <div class="marca">EX<svg class="hormiga" viewBox="0 0 24 24"><path d="M10.3 5.4 8 2.9M13.7 5.4 16 2.9M9.5 10 6 8M9.4 12.2 5.6 12.7M9.8 14.2 6.4 16.6M14.5 10 18 8M14.6 12.2 18.4 12.7M14.2 14.2 17.6 16.6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" fill="none"></path><ellipse cx="12" cy="6.1" rx="2.1" ry="1.9" fill="currentColor"></ellipse><ellipse cx="12" cy="10.4" rx="1.6" ry="2" fill="currentColor"></ellipse><ellipse cx="12" cy="16" rx="2.5" ry="3.3" fill="currentColor"></ellipse></svg></div>
+    <div class="nav"><span>Vacantes</span><b>Mis procesos</b><span class="chip">Mi cuenta</span></div>
+  </div>
+
+  <div class="cuerpo">
+    <div class="col" style="gap:5px">
+      <h1>Mis procesos</h1>
+      <p>Cada postulación con su camino completo, y dónde estás dentro de él.</p>
+    </div>
+
+    <div class="caja toca" style="padding:24px">
+      <div class="fila" style="justify-content:space-between;margin-bottom:20px">
+        <h2 style="font-size:22px">Analista de Datos</h2>
+        <span class="tag oro">Te toca a ti</span>
+      </div>
+
+      <div class="fila" style="gap:0;align-items:stretch;margin-bottom:20px">
+        <div class="col" style="flex-grow:1;gap:7px">
+          <div style="height:7px;background:#4338CA"></div>
+          <span class="eti oro">1 · Perfil</span>
+          <span class="small" style="color:#4338CA;font-weight:600">Aquí estás</span>
+        </div>
+        <div class="col" style="flex-grow:1;gap:7px;padding-left:12px">
+          <div style="height:7px;background:#E6E6EB"></div>
+          <span class="eti">2 · Prueba</span>
+        </div>
+        <div class="col" style="flex-grow:1;gap:7px;padding-left:12px">
+          <div style="height:7px;background:#E6E6EB"></div>
+          <span class="eti">3 · Simulación</span>
+        </div>
+        <div class="col" style="flex-grow:1;gap:7px;padding-left:12px">
+          <div style="height:7px;background:#E6E6EB"></div>
+          <span class="eti">4 · Validación</span>
+        </div>
+        <div class="col" style="flex-grow:1;gap:7px;padding-left:12px">
+          <div style="height:7px;background:#E6E6EB"></div>
+          <span class="eti">5 · Decisión</span>
+        </div>
+      </div>
+
+      <div class="fila" style="justify-content:space-between;gap:36px;background:#F6F5FF;border:1.5px solid #C5C2F4;padding:18px">
+        <div class="col" style="gap:7px;flex-grow:1">
+          <h3 style="font-size:17px">Responde tu evaluación</h3>
+          <p class="small">55 preguntas, se guardan solas. Llevas 18. Después de entregarla la
+          calificamos y el equipo confirma si pasas a la prueba.</p>
+        </div>
+        <div class="col" style="gap:8px;width:210px">
+          <span class="btn oro" style="width:100%">Continuar evaluación</span>
+          <span class="small" style="text-align:center">Quedan 9 días</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="caja" style="padding:24px">
+      <div class="fila" style="justify-content:space-between;margin-bottom:18px">
+        <h2 style="font-size:22px">Coordinador de Proyectos</h2>
+        <span class="tag">En revisión del equipo</span>
+      </div>
+      <div class="fila" style="gap:0;align-items:stretch;margin-bottom:18px">
+        <div class="col" style="flex-grow:1;gap:7px">
+          <div style="height:7px;background:#1C1C1E"></div><span class="eti">1 · Perfil</span>
+        </div>
+        <div class="col" style="flex-grow:1;gap:7px;padding-left:12px">
+          <div style="height:7px;background:#8E8E93"></div>
+          <span class="eti" style="color:#1C1C1E">2 · Prueba</span>
+          <span class="small">Aquí estás</span>
+        </div>
+        <div class="col" style="flex-grow:1;gap:7px;padding-left:12px">
+          <div style="height:7px;background:#E6E6EB"></div><span class="eti">3 · Simulación</span>
+        </div>
+        <div class="col" style="flex-grow:1;gap:7px;padding-left:12px">
+          <div style="height:7px;background:#E6E6EB"></div><span class="eti">4 · Validación</span>
+        </div>
+        <div class="col" style="flex-grow:1;gap:7px;padding-left:12px">
+          <div style="height:7px;background:#E6E6EB"></div><span class="eti">5 · Decisión</span>
+        </div>
+      </div>
+      <div class="fila" style="justify-content:space-between;gap:36px">
+        <p class="small" style="flex-grow:1">Entregaste la prueba y ya está calificada. Falta que una
+        persona del equipo confirme si continúas. <b>No tienes que hacer nada.</b></p>
+        <a href="#" class="small">Ver el recorrido completo</a>
+      </div>
+    </div>
+
+    <div class="caja" style="padding:24px">
+      <div class="fila" style="justify-content:space-between;margin-bottom:18px">
+        <h2 style="font-size:22px">Administrador</h2>
+        <span class="tag">Revisando tu currículum</span>
+      </div>
+      <div class="fila" style="gap:0;align-items:stretch;margin-bottom:18px">
+        <div class="col" style="flex-grow:1;gap:7px">
+          <div style="height:7px;background:#8E8E93"></div>
+          <span class="eti" style="color:#1C1C1E">1 · Perfil</span>
+          <span class="small">Aquí estás</span>
+        </div>
+        <div class="col" style="flex-grow:1;gap:7px;padding-left:12px">
+          <div style="height:7px;background:#E6E6EB"></div><span class="eti">2 · Prueba</span>
+        </div>
+        <div class="col" style="flex-grow:1;gap:7px;padding-left:12px">
+          <div style="height:7px;background:#E6E6EB"></div><span class="eti">3 · Simulación</span>
+        </div>
+        <div class="col" style="flex-grow:1;gap:7px;padding-left:12px">
+          <div style="height:7px;background:#E6E6EB"></div><span class="eti">4 · Validación</span>
+        </div>
+        <div class="col" style="flex-grow:1;gap:7px;padding-left:12px">
+          <div style="height:7px;background:#E6E6EB"></div><span class="eti">5 · Decisión</span>
+        </div>
+      </div>
+      <div class="fila" style="justify-content:space-between;gap:36px">
+        <p class="small" style="flex-grow:1">En esta vacante no hay evaluación escrita: el equipo lee
+        tu currículum y, si avanzas, tu única prueba es la del puesto. Te avisamos con un enlace.</p>
+        <a href="#" class="small">Ver el recorrido completo</a>
+      </div>
+    </div>
+
+    <div class="fila" style="justify-content:space-between;border-top:1.5px solid #E6E6EB;padding-top:16px">
+      <a href="#" class="small">1 proceso terminado · Ingeniero de Infraestructura</a>
+      <a href="#" class="small">Privacidad y control</a>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

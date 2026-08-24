@@ -1,225 +1,299 @@
 /**
- * El detalle de una postulacion: donde esta, que le toca, y como llego hasta
- * aqui.
+ * El detalle de una postulacion.
  *
- * El mockup dibujaba una linea de tiempo inventada. Esta es la de verdad: el
- * backend guarda cada cambio de estado con quien lo hizo y cuando, y lo manda
- * en `historial`.
+ * Es la unica pantalla donde el recorrido lleva fechas: `GET /postulaciones`
+ * devuelve solo el estado, y el historial completo llega nada mas aqui. De ahi
+ * salen dos cosas que en «Mis procesos» no se pueden saber:
+ *
+ *   - **Cuando se alcanzo cada etapa**, que es lo que convierte el recorrido en
+ *     un seguimiento de verdad y no en una lista de pasos.
+ *   - **Donde se detuvo una postulacion terminada.** Los tres estados finales no
+ *     dicen en que etapa se cayo la persona; el historial si. Sin eso, quien
+ *     hizo la evaluacion y la prueba ve, el dia que le dicen que no, un
+ *     recorrido en blanco.
+ *
+ * El historial es real, no una linea de tiempo de adorno: el backend guarda cada
+ * cambio con su fecha y con si lo movio una persona o el sistema.
  */
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { retirarPostulacion, verPostulacion } from '@/api/portal'
 import type { PasoHistorial } from '@/api/tipos'
 import {
+  comoOcurrio,
   esFinal,
   estaCalificando,
-  indiceDeEtapa,
-  leTocaAlCandidato,
-  momentoDe,
-  tramosCompletados,
+  etapaDeCorteDe,
+  fechasDelRecorrido,
 } from '@/dominio/estados'
-import { formatearFechaCorta } from '@/dominio/reloj'
+import { formatearFechaCorta, formatearFechaLarga } from '@/dominio/reloj'
 import { rutas } from '@/rutas'
-import { useAviso } from '@/ui/Avisos'
-import { BarraPasos } from '@/ui/BarraPasos'
-import { Modal } from '@/ui/Modal'
-import { Cargando, Fallo } from '@/ui/Mensajes'
+import { Seguimiento } from './Seguimiento'
+import estilos from './Proceso.module.css'
 
 const CADA_15_SEGUNDOS = 15_000
 
-function Historial({ pasos }: { pasos: PasoHistorial[] }) {
-  if (pasos.length === 0) return null
-  return (
-    <div className="timeline">
-      {pasos.map((paso, i) => (
-        // El ultimo es donde esta ahora la postulacion, y por eso lleva el punto
-        // champagne: es el mismo momento que marca la barra de pasos.
-        <div
-          className={`event${i === pasos.length - 1 ? ' actual' : ''}`}
-          key={`${paso.ocurridaEn}-${i}`}
-        >
-          <b>{momentoDe(paso.estadoNuevo).titulo}</b>
-          <p>
-            {formatearFechaCorta(paso.ocurridaEn)} ·{' '}
-            {paso.fueElSistema ? 'registrado por el sistema' : 'registrado por una persona'}
-          </p>
-        </div>
-      ))}
-    </div>
-  )
+/** Lo que se le dice a quien llega a una postulacion ya terminada. */
+const COMO_TERMINO: Record<string, { titulo: string; texto: string }> = {
+  CONTRATADO: {
+    titulo: 'Te damos la bienvenida',
+    texto: 'El proceso terminó y te contratamos. Nos pondremos en contacto contigo.',
+  },
+  NO_CONTINUA: {
+    titulo: 'Gracias por participar',
+    texto:
+      'En esta oportunidad no continúas en el proceso. Agradecemos el tiempo y el trabajo que compartiste. Para participar en otra vacante tendrás que postular de nuevo.',
+  },
+  CERRADA: {
+    titulo: 'Esta postulación está cerrada',
+    texto:
+      'Terminó sin llegar a una decisión y ya no recibirás avisos de esta vacante. Cerrarla no elimina tus datos: eso se pide por separado.',
+  },
 }
 
 export function Proceso() {
   const { uuid = '' } = useParams()
-  const avisar = useAviso()
   const cache = useQueryClient()
-  const [confirmarRetiro, setConfirmarRetiro] = useState(false)
 
   const consulta = useQuery({
     queryKey: ['postulacion', uuid],
     queryFn: () => verPostulacion(uuid),
     enabled: uuid !== '',
     refetchInterval: (q) =>
-      q.state.data && estaCalificando(q.state.data.resumen.estado) ? CADA_15_SEGUNDOS : false,
+      q.state.data?.resumen && estaCalificando(q.state.data.resumen.estado)
+        ? CADA_15_SEGUNDOS
+        : false,
   })
 
   const retiro = useMutation({
     mutationFn: () => retirarPostulacion(uuid),
     onSuccess: async () => {
-      setConfirmarRetiro(false)
       await cache.invalidateQueries({ queryKey: ['postulacion', uuid] })
       await cache.invalidateQueries({ queryKey: ['postulaciones'] })
-      avisar('Postulación retirada. Ya no recibirás avisos.')
     },
   })
 
-  if (consulta.isPending) return <Cargando que="Cargando tu proceso…" />
+  if (consulta.isPending) {
+    return (
+      <div className={estilos.pagina}>
+        <div className={estilos.marco} aria-busy="true">
+          <h1>Cargando tu proceso…</h1>
+          <div className={estilos.barra} />
+          <div className={`${estilos.barra} ${estilos.barraMedia}`} />
+          <div className={`${estilos.barra} ${estilos.barraCorta}`} />
+        </div>
+      </div>
+    )
+  }
+
   if (consulta.isError) {
-    return <Fallo error={consulta.error} reintentar={() => void consulta.refetch()} />
+    const causa =
+      consulta.error instanceof Error
+        ? consulta.error.message
+        : 'No pudimos conectar con el servidor.'
+    return (
+      <div className={estilos.pagina}>
+        <Link className={estilos.volver} to={rutas.procesos()}>
+          ← Volver a mis procesos
+        </Link>
+        <div className={estilos.marco}>
+          <h1>No pudimos cargar esta postulación.</h1>
+          <p className={estilos.marcoTexto}>
+            {causa} Tu postulación está a salvo: esto es un problema para mostrarla, no
+            para conservarla.
+          </p>
+          <button
+            type="button"
+            className={estilos.reintentar}
+            onClick={() => void consulta.refetch()}
+          >
+            Intentar de nuevo
+          </button>
+        </div>
+      </div>
+    )
   }
 
   const { resumen, historial } = consulta.data
-  const momento = momentoDe(resumen.estado)
   const final = esFinal(resumen.estado)
-  const puedeRetirarse = !final
+  const termino = COMO_TERMINO[resumen.estado]
+
+  const pasos = Array.isArray(historial) ? historial : []
+  const fechas = fechasDelRecorrido(pasos)
+  // Solo hace falta en las terminadas: en las vivas, el propio estado dice la
+  // etapa.
+  const etapaDeCorte = final ? etapaDeCorteDe(pasos) : undefined
 
   return (
-    <>
-      <Link className="back" to={rutas.procesos()}>
+    <div className={estilos.pagina}>
+      <Link className={estilos.volver} to={rutas.procesos()}>
         ← Volver a mis procesos
       </Link>
 
-      <div className="pagehead">
-        <div>
-          <div className="eyebrow">{resumen.estadoNombre}</div>
-          <h1>{resumen.vacante}</h1>
-        </div>
+      <div className={estilos.encabezado}>
+        <h1>{resumen.vacante}</h1>
+        <span className={estilos.desde}>
+          Postulaste el{' '}
+          <time dateTime={resumen.creadoEn}>{formatearFechaCorta(resumen.creadoEn)}</time>
+        </span>
       </div>
 
-      {leTocaAlCandidato(resumen.estado) && momento.accion ? (
-        <section className="next-step-panel">
-          <div>
-            <span className="eyebrow">Te toca a ti</span>
-            <h2>{momento.titulo}</h2>
-            <p>{momento.ayuda}</p>
-          </div>
-          <Link className="btn primary large" to={momento.accion.destino(resumen.uuid)}>
-            {momento.accion.etiqueta}
-          </Link>
+      {/*
+        Solo cuando el proceso termino.
+        Mientras esta vivo, `Seguimiento` ya pinta el titulo, la ayuda y la
+        accion dentro del hito abierto —que es la tesis de la direccion: la
+        accion vive dentro del hito, no en un boton suelto—, asi que este panel
+        los repetia. En escritorio salian dos paneles indigo identicos con dos
+        botones «Abrir prueba»; en movil, a pantalla y media de distancia, el
+        segundo se leia como si fuera otra cosa. Duplicar el arranque de una
+        prueba cronometrada e irreversible es el peor sitio para hacerlo.
+
+        Terminado no hay hito abierto que aloje el cierre, y por eso aqui si.
+      */}
+      {final && termino && (
+        <section className={estilos.estadoActual}>
+          <h2 className={estilos.estadoTitulo}>{termino.titulo}</h2>
+          <p className={estilos.estadoAyuda}>{termino.texto}</p>
         </section>
-      ) : (
-        !final && (
-          <section className="card waiting-panel">
-            <span className="eyebrow">En curso</span>
-            <h2>{momento.titulo}</h2>
-            <p>{momento.ayuda}</p>
-          </section>
-        )
       )}
 
-      <div className="card">
-        <div className="label">Tu recorrido</div>
-        <div style={{ marginTop: 16 }}>
-          <BarraPasos
-            completados={tramosCompletados(resumen.estado)}
-            actual={momento.etapa && !final ? indiceDeEtapa(momento.etapa) : null}
-          />
-        </div>
-      </div>
+      <section className={estilos.seccion}>
+        <h2 className={estilos.tituloSeccion}>Tu recorrido</h2>
+        <p className={estilos.entradilla}>
+          Las cinco etapas del proceso, con la fecha en que llegaste a cada una.
+        </p>
+        <Seguimiento postulacion={resumen} fechas={fechas} etapaDeCorte={etapaDeCorte} />
+      </section>
 
-      {resumen.estado === 'CERRADA' && (
-        <div className="cierre">
-          <span className="tag info">Cerrada</span>
-          <b>Esta postulación está cerrada</b>
-          <p>
-            Ya no recibirás avisos de esta vacante. Cerrar la postulación no elimina tus
-            datos: eso se pide por separado.
-          </p>
-        </div>
-      )}
-
-      {resumen.estado === 'NO_CONTINUA' && (
-        <div className="cierre">
-          <span className="tag bad">No continúa</span>
-          <b>Gracias por participar</b>
-          <p>
-            En esta oportunidad no continúas en el proceso. Agradecemos el tiempo y la
-            dedicación que compartiste. Para participar en otra vacante tendrás que
-            postular nuevamente.
-          </p>
-        </div>
-      )}
-
-      {resumen.estado === 'CONTRATADO' && (
-        <div className="cierre">
-          <span className="tag good">Contratado</span>
-          <b>Te damos la bienvenida</b>
-          <p>Nos pondremos en contacto contigo para los siguientes pasos.</p>
-        </div>
-      )}
-
-      <div className="sectionhead">
-        <div>
-          <h2>Cómo llegaste hasta aquí</h2>
-          <p>Cada cambio de tu postulación, con su fecha.</p>
-        </div>
-      </div>
-      <div className="card">
-        <Historial pasos={historial} />
-        {historial.length === 0 && (
-          <p className="small">Todavía no hay movimientos que mostrar.</p>
-        )}
-      </div>
-
-      <div className="row" style={{ marginTop: 26 }}>
-        <Link className="btn" to={rutas.vacantes()}>
-          Ver otras vacantes
-        </Link>
-        {puedeRetirarse ? (
-          <button className="btn danger" onClick={() => setConfirmarRetiro(true)}>
-            Retirar postulación
-          </button>
+      <section className={estilos.seccion}>
+        <h2 className={estilos.tituloSeccion}>Cómo llegaste hasta aquí</h2>
+        <p className={estilos.entradilla}>
+          Cada cambio de tu postulación, con su fecha. Sale del registro del sistema, no es una línea de tiempo de adorno.
+        </p>
+        {pasos.length === 0 ? (
+          <p className={estilos.sinRegistro}>Todavía no hay movimientos que mostrar.</p>
         ) : (
-          <Link className="link" to={rutas.privacidad()}>
-            Gestionar mis datos
-          </Link>
+          <ol className={estilos.registro} role="list">
+            {pasos.map((paso, i) => (
+              <Cambio key={`${paso.ocurridaEn}-${i}`} paso={paso} />
+            ))}
+          </ol>
         )}
-      </div>
+      </section>
 
-      <Modal
-        abierto={confirmarRetiro}
-        titulo="Retirar postulación"
-        onCerrar={() => setConfirmarRetiro(false)}
-        pie={
-          <>
-            <button className="btn" onClick={() => setConfirmarRetiro(false)}>
-              Seguir en el proceso
-            </button>
-            <button
-              className="btn danger"
-              onClick={() => retiro.mutate()}
-              disabled={retiro.isPending}
-            >
-              {retiro.isPending ? 'Retirando…' : 'Sí, retirarme'}
-            </button>
-          </>
-        }
+      {!final && (
+        <Retirada
+          vacante={resumen.vacante}
+          retirando={retiro.isPending}
+          error={retiro.isError ? retiro.error : null}
+          onRetirar={() => retiro.mutate()}
+        />
+      )}
+    </div>
+  )
+}
+
+function Cambio({ paso }: { paso: PasoHistorial }) {
+  return (
+    <li className={estilos.cambio}>
+      <div className={estilos.punto} aria-hidden="true" />
+      <div className={estilos.textoCambio}>
+        <p className={estilos.queParso}>{comoOcurrio(paso.estadoNuevo)}</p>
+        <p className={estilos.cuando}>
+          <time dateTime={paso.ocurridaEn}>{formatearFechaLarga(paso.ocurridaEn)}</time> ·{' '}
+          {paso.fueElSistema ? 'registrado por el sistema' : 'registrado por una persona'}
+        </p>
+      </div>
+    </li>
+  )
+}
+
+/**
+ * Retirarse, con su confirmacion.
+ *
+ * Usa el `dialog` nativo: el foco atrapado dentro, la tecla de escape y el papel
+ * de fondo ya vienen resueltos por el navegador. Un modal a mano habria que
+ * volver a resolverlos, y es donde se rompe la accesibilidad.
+ */
+function Retirada({
+  vacante,
+  retirando,
+  error,
+  onRetirar,
+}: {
+  vacante: string
+  retirando: boolean
+  error: unknown
+  onRetirar: () => void
+}) {
+  const [abierto, setAbierto] = useState(false)
+  const dialogo = useRef<HTMLDialogElement>(null)
+
+  useEffect(() => {
+    const el = dialogo.current
+    if (!el) return
+    if (abierto && !el.open) el.showModal()
+    if (!abierto && el.open) el.close()
+  }, [abierto])
+
+  return (
+    <>
+      <section className={estilos.retirada}>
+        <p className={estilos.retiradaTexto}>
+          Si ya no te interesa este puesto puedes retirarte. Retirarte <b>no elimina tus
+          datos</b>: eso se pide por separado desde Privacidad.
+        </p>
+        <button
+          type="button"
+          className={estilos.botonRetirar}
+          onClick={() => setAbierto(true)}
+        >
+          Retirar mi postulación
+        </button>
+      </section>
+
+      <dialog
+        ref={dialogo}
+        className={estilos.aviso}
+        aria-labelledby="titulo-retiro"
+        onClose={() => setAbierto(false)}
       >
-        <div className="callout warn">
-          <b>Dejarás de recibir avisos de esta vacante</b>
-          <p>
-            No se puede deshacer: para volver tendrías que postular de nuevo. Retirarte no
-            elimina tus datos, eso se pide aparte desde Privacidad.
+        <h2 className={estilos.avisoTitulo} id="titulo-retiro">
+          ¿Retirarte de {vacante}?
+        </h2>
+        <p className={estilos.avisoTexto}>
+          Dejarás de recibir avisos de esta vacante y{' '}
+          <b>no se puede deshacer</b>: para volver tendrías que postular de nuevo.
+        </p>
+
+        {error !== null && (
+          <p className={estilos.fallo}>
+            {error instanceof Error
+              ? error.message
+              : 'No pudimos retirar tu postulación. Vuelve a intentarlo.'}
           </p>
-        </div>
-        {retiro.isError && (
-          <div className="error">
-            {retiro.error instanceof Error ? retiro.error.message : 'No pudimos retirarla.'}
-          </div>
         )}
-      </Modal>
+
+        <div className={estilos.avisoBotones}>
+          <button
+            type="button"
+            className={estilos.seguir}
+            onClick={() => setAbierto(false)}
+          >
+            Seguir en el proceso
+          </button>
+          <button
+            type="button"
+            className={estilos.confirmarRetiro}
+            onClick={onRetirar}
+            disabled={retirando}
+          >
+            {retirando ? 'Retirando…' : 'Sí, retirarme'}
+          </button>
+        </div>
+      </dialog>
     </>
   )
 }

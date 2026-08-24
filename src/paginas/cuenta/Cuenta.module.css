@@ -1,0 +1,217 @@
+/*
+ * Entrar y crear cuenta.
+ *
+ * Comparten hoja porque comparten forma: una columna estrecha, un formulario, y
+ * ninguna decoracion que distraiga de escribir.
+ */
+
+.pagina {
+  max-width: 34rem;
+  margin: 0 auto;
+  padding: var(--e7) var(--e5) var(--e8);
+}
+
+.paginaAncha {
+  max-width: 44rem;
+}
+
+.volver {
+  composes: volver from '../../estilos/piezas.module.css';
+  margin-bottom: var(--e3);
+}
+
+.bajada {
+  font-size: var(--t-base);
+  line-height: 1.55;
+  color: var(--tinta2);
+  margin-top: var(--e3);
+  max-width: var(--medida-corta);
+}
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e5);
+  margin-top: var(--e6);
+}
+
+.pareja {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--e4);
+  align-items: end;
+}
+
+.bloque {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e4);
+  padding-top: var(--e5);
+  border-top: 1px solid var(--regla);
+}
+
+.tituloBloque {
+  margin: 0;
+}
+
+.enviar {
+  composes: acentoGrande from '../../estilos/piezas.module.css';
+}
+
+/* El fallo del envio, arriba del boton y no como aviso flotante: si desaparece
+   solo, quien lee despacio no llega a enterarse. */
+.falloEnvio {
+  display: flex;
+  gap: var(--e3);
+  border: 1px solid var(--mal-regla);
+  background: var(--mal-papel);
+  padding: var(--e4);
+  font-size: var(--t-apoyo);
+  line-height: 1.5;
+  color: var(--mal);
+}
+
+.falloEnvio::before {
+  content: '';
+  flex: none;
+  width: 3px;
+  background: var(--mal);
+}
+
+.pie {
+  margin-top: var(--e6);
+  padding-top: var(--e5);
+  border-top: 1px solid var(--regla);
+  font-size: var(--t-prosa);
+  color: var(--tinta2);
+}
+
+/* ---------- Los dos caminos de entrada ---------- */
+
+.caminos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e6);
+  margin-top: var(--e6);
+}
+
+.camino {
+  border: 1px solid var(--regla);
+  padding: var(--e5);
+}
+
+.tituloCamino {
+  margin: 0 0 var(--e2);
+}
+
+.queEs {
+  font-size: var(--t-prosa);
+  line-height: 1.55;
+  color: var(--tinta2);
+  max-width: var(--medida-corta);
+}
+
+.pista {
+  margin-top: var(--e4);
+  border: 1px solid var(--regla);
+  background: var(--hundido);
+  padding: var(--e4);
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+}
+
+.asunto {
+  color: var(--tinta);
+  font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .pagina {
+    padding: var(--e5) var(--e4) var(--e7);
+  }
+
+  .pareja {
+    grid-template-columns: 1fr;
+  }
+
+  .enviar {
+    width: 100%;
+  }
+}
+
+/*
+ * Cuantos datos faltan, antes de que empiece a buscarlos.
+ *
+ * Con seis errores repartidos por un formulario largo, quien usa lector de
+ * pantalla no tiene forma de saber cuantos hay ni donde. Esto lo dice y el foco
+ * salta al primero.
+ */
+.resumenErrores {
+  display: flex;
+  gap: var(--e3);
+  border: 1px solid var(--mal-regla);
+  background: var(--mal-papel);
+  padding: var(--e4);
+  font-size: var(--t-prosa);
+  line-height: 1.5;
+  color: var(--mal);
+}
+
+.resumenErrores::before {
+  content: '';
+  flex: none;
+  width: 3px;
+  background: var(--mal);
+}
+
+/* El hueco del resumen cuando no hay errores: la region viva tiene que existir
+   antes de tener contenido, o el lector no anuncia el cambio. */
+.oculto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------- Entrar por el enlace del correo ---------- */
+
+/*
+ * Aqui no hay formulario que mirar, asi que la marca hace de ancla mientras se
+ * canjea el token y la pagina esta, por un momento, casi vacia.
+ */
+.entrada {
+  margin-top: var(--e7);
+}
+
+.marcaEntrada {
+  display: block;
+  color: var(--tinta);
+  margin-bottom: var(--e5);
+}
+
+.aparte {
+  margin-top: var(--e6);
+  border-top: 1px solid var(--regla);
+  padding-top: var(--e5);
+  font-size: var(--t-prosa);
+  line-height: 1.6;
+  color: var(--tinta2);
+  max-width: var(--medida);
+}
+
+/*
+ * La salida de quien no puede entrar.
+ *
+ * Va dentro del camino de la contraseña y no al pie de la pagina: quien la
+ * necesita esta mirando ese formulario, no el resto de la pantalla.
+ */
+.olvidada {
+  margin-top: var(--e4);
+  font-size: var(--t-apoyo);
+}

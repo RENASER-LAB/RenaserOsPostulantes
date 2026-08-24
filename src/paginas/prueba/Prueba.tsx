@@ -35,8 +35,8 @@ import { rutas } from '@/rutas'
 import { useAviso } from '@/ui/Avisos'
 import { Cronometro } from '@/ui/Cronometro'
 import { Modal } from '@/ui/Modal'
-import { Cargando, Fallo } from '@/ui/Mensajes'
 import { TextoPlano } from '@/ui/TextoPlano'
+import estilos from './Prueba.module.css'
 
 const ESPERA_ANTES_DE_GUARDAR = 1000
 /** El mismo `@Size` del backend que en la evaluacion. */
@@ -124,7 +124,6 @@ function Entregable({
   // candidato sin ninguna forma de entregar.
   const aceptaArchivo = entregable.formato !== 'ENLACE'
   const aceptaEnlace = entregable.formato !== 'ARCHIVO'
-  const soloUno = aceptaArchivo !== aceptaEnlace
 
   const archivo = useMutation({
     mutationFn: (f: File) => subirArchivo(uuid, entregable.id, f),
@@ -148,23 +147,30 @@ function Entregable({
   })
 
   return (
-    <div className="card" style={{ padding: 18 }}>
-      <div className="row">
+    <div
+      className={`${estilos.entregable}${
+        entregable.entregado || ultimoEnvio !== null ? ` ${estilos.recibido}` : ''
+      }`}
+    >
+      <div className={estilos.cabeceraEntregable}>
         <div>
-          <b style={{ fontSize: 12 }}>{entregable.nombre}</b>
+          <p className={estilos.nombreEntregable}>
+            {entregable.nombre}{' '}
+            <span className={estilos.obligatorio}>
+              {entregable.esObligatorio ? '· obligatorio' : '· opcional'}
+            </span>
+          </p>
           {entregable.detalle && (
-            <p className="small" style={{ margin: '5px 0 0' }}>
-              {entregable.detalle}
-            </p>
+            <p className={estilos.detalleEntregable}>{entregable.detalle}</p>
           )}
         </div>
-        <span className={`tag ${entregable.entregado ? 'good' : entregable.esObligatorio ? 'warn' : 'info'}`}>
-          {entregable.entregado ? 'Entregado' : entregable.esObligatorio ? 'Obligatorio' : 'Opcional'}
-        </span>
+        {(entregable.entregado || ultimoEnvio !== null) && (
+          <span className={estilos.marcaRecibido}>Entregado</span>
+        )}
       </div>
 
       {(ultimoEnvio !== null || entregable.entregado) && (
-        <p className="small entregable-recibido">
+        <p className={estilos.detalleEntregable}>
           {ultimoEnvio ? (
             <>
               Recibimos <b>{ultimoEnvio}</b>.
@@ -176,59 +182,63 @@ function Entregable({
         </p>
       )}
 
-      <div className="formgrid" style={{ marginTop: 14 }}>
+      <span className={estilos.comoSeEntrega}>{comoSeEntrega(entregable.formato)}</span>
+
+      <div className={estilos.formasDeEntregar}>
         {aceptaEnlace && (
-          <div className={soloUno ? 'field full' : 'field'}>
-            <label htmlFor={`enlace-${entregable.id}`}>Enlace</label>
+          <>
+            <label className={estilos.oculto} htmlFor={`enlace-${entregable.id}`}>
+              Enlace
+            </label>
             <input
               id={`enlace-${entregable.id}`}
+              className={estilos.campoEnlace}
+              type="url"
+              inputMode="url"
               placeholder="https://"
               value={enlace}
               disabled={bloqueado}
               onChange={(e) => setEnlace(e.target.value)}
             />
-          </div>
+            <button
+              className={estilos.subir}
+              type="button"
+              onClick={() => url.mutate(enlace.trim())}
+              disabled={bloqueado || !enlace.trim() || url.isPending}
+            >
+              {url.isPending ? 'Guardando…' : 'Guardar enlace'}
+            </button>
+          </>
         )}
         {aceptaArchivo && (
-          <div className={soloUno ? 'field full' : 'field'}>
-            <label>Archivo</label>
+          <>
             <input
               ref={campoArchivo}
               type="file"
-              style={{ display: 'none' }}
+              className={estilos.oculto}
+              tabIndex={-1}
               onChange={(e) => {
                 const f = e.target.files?.[0]
                 if (f) archivo.mutate(f)
               }}
             />
             <button
-              className="btn"
+              className={estilos.subir}
               type="button"
-              style={{ width: '100%' }}
               onClick={() => campoArchivo.current?.click()}
               disabled={bloqueado || archivo.isPending}
             >
               {archivo.isPending ? 'Subiendo…' : 'Seleccionar archivo'}
             </button>
-          </div>
+          </>
         )}
       </div>
 
-      <div className="row" style={{ marginTop: 12 }}>
-        <span className="small">{comoSeEntrega(entregable.formato)}</span>
-        {aceptaEnlace && (
-          <button
-            className="btn"
-            type="button"
-            onClick={() => url.mutate(enlace.trim())}
-            disabled={bloqueado || !enlace.trim() || url.isPending}
-          >
-            {url.isPending ? 'Guardando…' : 'Guardar enlace'}
-          </button>
-        )}
-      </div>
-
-      {error && <div className="error">{error}</div>}
+      {error && (
+        <p className={`${estilos.aviso} ${estilos.malo}`} role="alert">
+          <span>{error}</span>
+        </p>
+      )}
     </div>
   )
 }
@@ -321,10 +331,16 @@ function PreguntaPrueba({
     return () => onPendiente(pregunta.id, false)
   }, [estado, pregunta.id, onPendiente])
 
+  // Con el tiempo agotado, «limpio» significa que no quedo nada en la cola —no
+  // que hubiera algo que guardar—. Sin comprobar el texto, una pregunta que
+  // nunca se contesto decia que se habia guardado, en el peor minuto posible y
+  // rompiendo la regla del indicador honesto justo donde mas duele.
   const pista = bloqueado
-    ? estado === 'limpio'
-      ? 'Guardado antes de que terminara el tiempo.'
-      : 'No llegó a guardarse antes de que terminara el tiempo.'
+    ? estado !== 'limpio'
+      ? 'No llegó a guardarse antes de que terminara el tiempo.'
+      : texto.trim() === ''
+        ? 'Se quedó sin responder.'
+        : 'Guardado antes de que terminara el tiempo.'
     : estado === 'guardando'
       ? 'Guardando…'
       : estado === 'pendiente'
@@ -334,22 +350,29 @@ function PreguntaPrueba({
           : 'Guardado.'
 
   return (
-    <div className="field full">
-      <label htmlFor={`pregunta-${pregunta.id}`}>{pregunta.enunciado}</label>
+    <div className={estilos.pregunta}>
+      <label className={estilos.enunciado} htmlFor={`pregunta-${pregunta.id}`}>
+        {pregunta.enunciado}
+      </label>
       {/* `readOnly` y no `disabled`: un campo deshabilitado se pinta en gris y
           deja de poderse seleccionar, y lo que escribio sigue siendo suyo
           aunque ya no pueda cambiarlo. */}
       <textarea
         id={`pregunta-${pregunta.id}`}
+        className={estilos.respuesta}
         value={texto}
         maxLength={MAXIMO_DEL_TEXTO}
         readOnly={bloqueado}
         aria-disabled={bloqueado}
         onChange={(e) => setTexto(e.target.value)}
       />
-      <div className={`hint${!bloqueado && estado === 'pendiente' ? ' hint-pendiente' : ''}`}>
+      <span
+        className={`${estilos.estadoRespuesta}${
+          !bloqueado && estado === 'pendiente' ? ` ${estilos.pendiente}` : ''
+        }`}
+      >
         {pista}
-      </div>
+      </span>
     </div>
   )
 }
@@ -425,291 +448,351 @@ export function Prueba() {
     },
   })
 
-  if (consulta.isPending) return <Cargando que="Abriendo la prueba…" />
+  if (consulta.isPending) {
+    return (
+      <div className={estilos.pagina}>
+        <div className={estilos.marco} aria-busy="true">
+          <h1>Abriendo la prueba…</h1>
+          <div className={estilos.barra} />
+          <div className={`${estilos.barra} ${estilos.barraMedia}`} />
+          <div className={`${estilos.barra} ${estilos.barraCorta}`} />
+        </div>
+      </div>
+    )
+  }
+
   if (consulta.isError) {
-    return <Fallo error={consulta.error} reintentar={() => void consulta.refetch()} />
+    return (
+      <div className={estilos.pagina}>
+        <Link className={estilos.volver} to={rutas.proceso(uuid)}>
+          ← Volver a mi proceso
+        </Link>
+        <div className={estilos.marco}>
+          <h1>No pudimos abrir la prueba.</h1>
+          <p className={estilos.marcoTexto}>
+            {consulta.error instanceof Error
+              ? consulta.error.message
+              : 'No pudimos conectar con el servidor.'}{' '}
+            Lo que ya hayas guardado sigue ahí.
+          </p>
+          <button
+            type="button"
+            className={estilos.reintentar}
+            onClick={() => void consulta.refetch()}
+          >
+            Intentar de nuevo
+          </button>
+        </div>
+      </div>
+    )
   }
 
   const prueba: MiPrueba = consulta.data
+  // Una prueba sin entregables es un cuestionario: lo que no tiene contenido no
+  // se pinta, en vez de dejar secciones vacias esperando algo que no viene.
+  const hayEntregables = prueba.entregables.length > 0
+  const faltanObligatorios = prueba.entregables.filter(
+    (e) => e.esObligatorio && !e.entregado,
+  ).length
 
   return (
-    <>
-      <Link className="back" to={rutas.proceso(uuid)}>
+    <div className={estilos.pagina}>
+      <Link className={estilos.volver} to={rutas.proceso(uuid)}>
         ← Volver a mi proceso
       </Link>
 
-      <div className="pagehead">
-        <div>
-          <div className="eyebrow">
-            {['Prueba del puesto', prueba.modalidad].filter(Boolean).join(' · ')}
-          </div>
-          {/* La modalidad no es un titular: es un dato. El titular dice que se
-              espera de la persona. */}
-          <h1>{tiempoAgotado ? 'Se acabó el tiempo.' : 'Demuestra cómo trabajas.'}</h1>
-          <p>
-            {tiempoAgotado
-              ? 'Guardamos todo lo que llegó dentro del plazo. Ya no se puede editar nada.'
-              : prueba.estadoIntento === 'EN_CURSO'
-                ? 'El cronómetro está corriendo y no se detiene al cerrar esta página.'
-                : prueba.estadoIntento === 'ENTREGADA'
-                  ? 'Ya entregaste esta prueba.'
-                  : 'Lee todo antes de empezar. El tiempo comenzará únicamente cuando confirmes.'}
-          </p>
-        </div>
-      </div>
-
-      <div className="desktop-warning callout warn">
-        <b>Recomendamos usar una computadora</b>
-        <p>La prueba requiere consultar instrucciones y cargar entregables.</p>
-      </div>
-
+      {/* ---------- Ya entregada ---------- */}
       {prueba.estadoIntento === 'ENTREGADA' && (
-        <div className="medida-lectura">
-          <div className="cierre">
-            <span className="tag good">Entregada</span>
-            <b>Prueba entregada</b>
-            <p>
-              Estamos calificando tu entregable y la explicación de tus decisiones. Te
-              avisaremos cuando haya novedades.
-            </p>
-            <div className="row entregada-datos">
-              <span className="small">
-                Entregables: {prueba.entregables.filter((e) => e.entregado).length} de{' '}
-                {prueba.entregables.length}
-              </span>
-              <Link className="btn" to={rutas.proceso(uuid)}>
-                Volver a mi proceso
-              </Link>
-            </div>
-          </div>
+        <div className={estilos.cerrada}>
+          <h1>Prueba entregada.</h1>
+          <p className={estilos.cerradaTexto}>
+            Estamos calificando tu trabajo y la explicación de tus decisiones. Te
+            escribiremos cuando haya novedades.
+            {hayEntregables &&
+              ` Recibimos ${prueba.entregables.filter((e) => e.entregado).length} de ${prueba.entregables.length} entregables.`}
+          </p>
+          <Link className={estilos.volverAlProceso} to={rutas.proceso(uuid)}>
+            Volver a mi proceso
+          </Link>
         </div>
       )}
 
+      {/* ---------- Antes de empezar ---------- */}
       {prueba.estadoIntento === 'PENDIENTE' && (
-        <div className="detail-layout">
-          <article className="card detail">
-            <h2 style={{ marginTop: 0 }}>El reto</h2>
-            {prueba.enunciado ? (
-              <TextoPlano texto={prueba.enunciado} queEs="el enunciado de la prueba" />
-            ) : (
-              <p>Recibirás el enunciado al empezar.</p>
-            )}
+        <>
+          <h1>{hayEntregables ? 'Demuestra cómo trabajas.' : 'Tu prueba del puesto.'}</h1>
+          <p className={estilos.texto} style={{ marginTop: 'var(--e3)' }}>
+            Lee todo antes de empezar. <b>El tiempo empieza a contar cuando confirmes</b>, no
+            antes.
+          </p>
 
-            {prueba.materiales && (
-              <>
-                <h2>Materiales</h2>
-                <TextoPlano texto={prueba.materiales} queEs="el material de apoyo" />
-              </>
-            )}
+          <div className={estilos.columnas} style={{ marginTop: 'var(--e6)' }}>
+            <div>
+              <section className={estilos.bloque}>
+                <h2 className={estilos.tituloBloque}>
+                  {hayEntregables ? 'El encargo' : 'De qué va'}
+                </h2>
+                {prueba.enunciado ? (
+                  <TextoPlano texto={prueba.enunciado} queEs="el enunciado de la prueba" />
+                ) : (
+                  <p className={estilos.texto}>Recibirás el enunciado al empezar.</p>
+                )}
+              </section>
 
-            {prueba.herramientasPermitidas && (
-              <>
-                <h2>Herramientas permitidas</h2>
-                <TextoPlano texto={prueba.herramientasPermitidas} queEs="el documento" />
-              </>
-            )}
-
-            {prueba.entregables.length > 0 && (
-              <>
-                <h2>Lo que tendrás que entregar</h2>
-                <ul>
-                  {prueba.entregables.map((e) => (
-                    <li key={e.id}>
-                      {e.nombre}
-                      {e.esObligatorio ? '' : ' (opcional)'}
-                      {/* Saberlo antes de empezar evita descubrirlo con el
-                          reloj corriendo. */}
-                      <span className="small"> · {comoSeEntrega(e.formato).toLowerCase()}</span>
-                    </li>
-                  ))}
-                </ul>
-              </>
-            )}
-
-          </article>
-
-          <aside className="timer-card">
-            {/* Dos plazos distintos, y decirlos igual confunde. Una prueba
-                cronometrada da minutos desde que empiezas; una de plazo abierto
-                cierra un dia y una hora concretos, que el servidor ya sabe antes
-                de que entres. Poner «--:--» cuando no hay cronometro no informaba
-                de nada: parecia que faltaba un dato. */}
-            {prueba.duracionMinutos ? (
-              <>
-                <div className="timer-label">Duración total</div>
-                <div className="timer">
-                  {`${String(prueba.duracionMinutos).padStart(2, '0')}:00`}
-                </div>
-              </>
-            ) : prueba.venceEn ? (
-              <>
-                <div className="timer-label">Tienes hasta</div>
-                <div className="timer-fecha">{formatearFechaLarga(prueba.venceEn)}</div>
-              </>
-            ) : (
-              <>
-                <div className="timer-label">Plazo</div>
-                <div className="timer-fecha">Empieza a contar cuando la abras</div>
-              </>
-            )}
-            <p>
-              Una vez iniciada, la prueba no puede pausarse. Si el tiempo termina, se
-              entregará lo que hayas guardado.
-            </p>
-            <button
-              className="btn large"
-              style={{ width: '100%', marginTop: 20 }}
-              onClick={() => setConfirmarInicio(true)}
-            >
-              Empezar prueba
-            </button>
-          </aside>
-        </div>
-      )}
-
-      {prueba.estadoIntento === 'EN_CURSO' && (
-        <div className="challenge-layout">
-          <article>
-            {tiempoAgotado && (
-              <div className="callout bad tiempo-agotado" role="alert">
-                <b>Terminó el plazo de esta prueba</b>
-                <p>
-                  Ya no se puede escribir ni subir nada: el servidor no lo admitiría.
-                  Quedó guardado todo lo que llegó a tiempo, y en unos segundos la prueba
-                  se entregará sola con eso. No cierres la página: se actualizará aquí
-                  mismo.
-                </p>
-              </div>
-            )}
-
-            <div className="card detail">
-              <div className="label">Instrucciones</div>
-              {/* El enunciado ya no va en un `h2`: son varios parrafos y suele
-                  llevar dentro el enlace al PDF de la prueba. */}
-              <div style={{ marginTop: 12 }}>
-                <TextoPlano texto={prueba.enunciado ?? ''} queEs="el enunciado de la prueba" />
-              </div>
-
-              {/* Durante la prueba tambien hacen falta: el enlace al PDF puede
-                  estar en cualquiera de los tres campos, no solo en el reto. */}
               {prueba.materiales && (
-                <>
-                  <h2>Materiales</h2>
+                <section className={estilos.bloque}>
+                  <h2 className={estilos.tituloBloque}>Materiales</h2>
                   <TextoPlano texto={prueba.materiales} queEs="el material de apoyo" />
-                </>
+                </section>
               )}
 
               {prueba.herramientasPermitidas && (
-                <>
-                  <h2>Herramientas permitidas</h2>
+                <section className={estilos.bloque}>
+                  <h2 className={estilos.tituloBloque}>Herramientas permitidas</h2>
                   <TextoPlano texto={prueba.herramientasPermitidas} queEs="el documento" />
-                </>
+                </section>
               )}
 
-              {prueba.cambioTexto && (
-                <div className="unexpected">
-                  <div className="label warn">Cambio inesperado</div>
-                  <h3>{prueba.cambioTexto}</h3>
-                  <p>
-                    Adapta tu propuesta sin perder lo que ya registraste. Explica qué
-                    decisión tomaste y por qué.
-                  </p>
-                </div>
-              )}
-
-              {prueba.preguntas.length > 0 && (
-                <>
-                  <div className="sectionhead">
-                    <div>
-                      <h2>Tus respuestas</h2>
-                      <p>
-                        {tiempoAgotado
-                          ? 'Así quedaron. Ya no se pueden cambiar.'
-                          : 'Se guardan solas mientras escribes.'}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="formgrid">
-                    {prueba.preguntas.map((p) => (
-                      <PreguntaPrueba
-                        key={p.id}
-                        uuid={uuid}
-                        pregunta={p}
-                        bloqueado={tiempoAgotado}
-                        onPendiente={marcarPendiente}
-                      />
-                    ))}
-                  </div>
-                </>
-              )}
-
-              {prueba.entregables.length > 0 && (
-                <>
-                  <div className="sectionhead">
-                    <div>
-                      <h2>Entregables</h2>
-                      <p>
-                        {tiempoAgotado
-                          ? 'Ya no se admiten envíos.'
-                          : 'Cada uno indica si se entrega como archivo o como enlace.'}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="stack">
+              {hayEntregables && (
+                <section className={estilos.bloque}>
+                  <h2 className={estilos.tituloBloque}>Lo que tendrás que entregar</h2>
+                  {/* Saberlo antes de empezar evita descubrirlo con el reloj
+                      corriendo. */}
+                  <div className={estilos.entregables}>
                     {prueba.entregables.map((e) => (
-                      <Entregable
-                        key={e.id}
-                        uuid={uuid}
-                        entregable={e}
-                        bloqueado={tiempoAgotado}
-                        alSubir={refrescar}
-                      />
+                      <div className={estilos.entregable} key={e.id}>
+                        <p className={estilos.nombreEntregable}>
+                          {e.nombre}{' '}
+                          <span className={estilos.obligatorio}>
+                            {e.esObligatorio ? '· obligatorio' : '· opcional'}
+                          </span>
+                        </p>
+                        {e.detalle && (
+                          <p className={estilos.detalleEntregable}>{e.detalle}</p>
+                        )}
+                        <span className={estilos.comoSeEntrega}>
+                          {comoSeEntrega(e.formato)}
+                        </span>
+                      </div>
                     ))}
                   </div>
-                </>
+                </section>
               )}
+            </div>
 
-              <div className="row" style={{ marginTop: 18 }}>
-                {tiempoAgotado ? (
-                  <span className="small">
-                    No tienes que hacer nada más: la entrega se cierra sola con lo que ya
-                    estaba guardado.
-                  </span>
+            <aside className={estilos.lateral}>
+              {/* Dos plazos distintos, y decirlos igual confunde. Una prueba
+                  cronometrada da minutos desde que empiezas; una de plazo abierto
+                  cierra un dia y una hora concretos, que el servidor ya sabe antes
+                  de que entres. */}
+              <div className={estilos.datoLateral}>
+                {prueba.duracionMinutos ? (
+                  <>
+                    <span className={estilos.etiquetaLateral}>Duración</span>
+                    <span className={estilos.valorLateral}>
+                      {prueba.duracionMinutos} minutos desde que empieces
+                    </span>
+                  </>
+                ) : prueba.venceEn ? (
+                  <>
+                    <span className={estilos.etiquetaLateral}>Tienes hasta</span>
+                    <span className={estilos.valorLateral}>
+                      {formatearFechaLarga(prueba.venceEn)}
+                    </span>
+                  </>
                 ) : (
                   <>
-                    <span className="small">
-                      Usar IA está permitido. Evaluamos si entiendes y verificas tu trabajo.
+                    <span className={estilos.etiquetaLateral}>Plazo</span>
+                    <span className={estilos.valorLateral}>
+                      Empieza a contar cuando la abras
                     </span>
-                    <button className="btn primary" onClick={() => setConfirmarEntrega(true)}>
-                      Entregar prueba
-                    </button>
                   </>
                 )}
               </div>
-            </div>
-          </article>
 
-          <aside>
-            <div className="timer-card">
-              {tiempoAgotado ? (
-                <>
-                  <div className="timer-label">Tiempo agotado</div>
-                  <div className="timer">00:00:00</div>
-                  <p>Estamos cerrando tu prueba con lo que guardaste dentro del plazo.</p>
-                </>
-              ) : (
-                <>
-                  <div className="timer-label">Tiempo real restante</div>
-                  <Cronometro venceEn={prueba.venceEn} alAgotarse={refrescar} />
-                  <p>
-                    Este cronómetro lo lleva el servidor: sigue corriendo aunque cierres la
-                    página.
-                  </p>
-                </>
+              {prueba.modalidad && (
+                <div className={estilos.datoLateral}>
+                  <span className={estilos.etiquetaLateral}>Modalidad</span>
+                  <span className={estilos.valorLateral}>{prueba.modalidad}</span>
+                </div>
               )}
+
+              <div className={estilos.datoLateral}>
+                <span className={estilos.etiquetaLateral}>Qué hay que hacer</span>
+                <span className={estilos.valorLateral}>
+                  {prueba.preguntas.length > 0 &&
+                    `${prueba.preguntas.length} ${prueba.preguntas.length === 1 ? 'pregunta' : 'preguntas'}`}
+                  {prueba.preguntas.length > 0 && hayEntregables && ' · '}
+                  {hayEntregables &&
+                    `${prueba.entregables.length} ${prueba.entregables.length === 1 ? 'entregable' : 'entregables'}`}
+                </span>
+              </div>
+
+              <p className={estilos.aviso} style={{ marginBottom: 0 }}>
+                <span>
+                  Una vez empezada no se puede pausar. Si el tiempo termina, se entrega lo
+                  que hayas guardado.
+                </span>
+              </p>
+
+              <button
+                type="button"
+                className={estilos.empezar}
+                style={{ width: '100%', marginTop: 'var(--e4)' }}
+                onClick={() => setConfirmarInicio(true)}
+              >
+                Empezar prueba
+              </button>
+            </aside>
+          </div>
+        </>
+      )}
+
+      {/* ---------- En curso ---------- */}
+      {prueba.estadoIntento === 'EN_CURSO' && (
+        <>
+          <div className={estilos.reloj}>
+            <span className={estilos.queEs}>
+              {tiempoAgotado ? 'Se acabó el tiempo' : 'Tiempo restante'}
+            </span>
+            {tiempoAgotado ? (
+              <span className={`${estilos.tiempo} ${estilos.poco}`}>00:00:00</span>
+            ) : (
+              <div className={estilos.cuentaAtras}>
+                <Cronometro
+                  venceEn={prueba.venceEn}
+                  alAgotarse={refrescar}
+                  className={estilos.tiempo}
+                  classNamePoco={estilos.poco}
+                />
+                {prueba.venceEn && (
+                  <span className={estilos.hasta}>
+                    hasta {formatearFechaLarga(prueba.venceEn)}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+
+          {tiempoAgotado && (
+            <p className={`${estilos.aviso} ${estilos.malo}`} role="alert">
+              <span>
+                <b>Terminó el plazo de esta prueba</b>. Ya no se puede escribir ni subir
+                nada: el servidor no lo admitiría. Quedó guardado todo lo que llegó a
+                tiempo, y en unos segundos se entregará sola con eso. No cierres la página.
+              </span>
+            </p>
+          )}
+
+          {/* El cambio no llega hasta que el servidor decide enseñarlo: si se
+              supiera de antemano, se aprenderia el patron. */}
+          {prueba.cambioTexto && (
+            <div className={estilos.cambio} role="status">
+              <div>
+                <p className={estilos.tituloCambio}>Cambio en el encargo</p>
+                <p className={estilos.textoCambio}>{prueba.cambioTexto}</p>
+                <p className={estilos.detalleEntregable}>
+                  Adapta tu propuesta sin perder lo que ya registraste, y explica qué
+                  decidiste y por qué.
+                </p>
+              </div>
             </div>
-          </aside>
-        </div>
+          )}
+
+          <section className={estilos.bloque}>
+            <h2 className={estilos.tituloBloque}>
+              {hayEntregables ? 'El encargo' : 'De qué va'}
+            </h2>
+            <TextoPlano texto={prueba.enunciado ?? ''} queEs="el enunciado de la prueba" />
+          </section>
+
+          {/* Durante la prueba tambien hacen falta: el enlace al PDF puede estar
+              en cualquiera de los tres campos, no solo en el reto. */}
+          {prueba.materiales && (
+            <section className={estilos.bloque}>
+              <h2 className={estilos.tituloBloque}>Materiales</h2>
+              <TextoPlano texto={prueba.materiales} queEs="el material de apoyo" />
+            </section>
+          )}
+
+          {prueba.herramientasPermitidas && (
+            <section className={estilos.bloque}>
+              <h2 className={estilos.tituloBloque}>Herramientas permitidas</h2>
+              <TextoPlano texto={prueba.herramientasPermitidas} queEs="el documento" />
+            </section>
+          )}
+
+          {prueba.preguntas.length > 0 && (
+            <section className={estilos.bloque}>
+              <h2 className={estilos.tituloBloque}>
+                {hayEntregables ? 'Tus respuestas' : 'Las preguntas'}
+              </h2>
+              <p className={estilos.texto} style={{ marginBottom: 'var(--e4)' }}>
+                {tiempoAgotado
+                  ? 'Así quedaron. Ya no se pueden cambiar.'
+                  : 'Se guardan solas mientras escribes.'}
+              </p>
+              <div className={estilos.preguntas}>
+                {prueba.preguntas.map((p) => (
+                  <PreguntaPrueba
+                    key={p.id}
+                    uuid={uuid}
+                    pregunta={p}
+                    bloqueado={tiempoAgotado}
+                    onPendiente={marcarPendiente}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {hayEntregables && (
+            <section className={estilos.bloque}>
+              <h2 className={estilos.tituloBloque}>Entregables</h2>
+              <p className={estilos.texto} style={{ marginBottom: 'var(--e4)' }}>
+                {tiempoAgotado
+                  ? 'Ya no se admiten envíos.'
+                  : 'Cada uno indica si se entrega como archivo o como enlace.'}
+              </p>
+              <div className={estilos.entregables}>
+                {prueba.entregables.map((e) => (
+                  <Entregable
+                    key={e.id}
+                    uuid={uuid}
+                    entregable={e}
+                    bloqueado={tiempoAgotado}
+                    alSubir={refrescar}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+
+          <div className={estilos.entrega}>
+            {tiempoAgotado ? (
+              <p className={estilos.queFalta}>
+                No tienes que hacer nada más: la entrega se cierra sola con lo que ya estaba
+                guardado.
+              </p>
+            ) : (
+              <>
+                <p className={estilos.queFalta}>
+                  Usar IA está permitido. Lo que se mira es si entiendes y verificas tu
+                  trabajo.
+                  {faltanObligatorios > 0 &&
+                    ` Te ${faltanObligatorios === 1 ? 'falta 1 entregable obligatorio' : `faltan ${faltanObligatorios} entregables obligatorios`}.`}
+                </p>
+                <button
+                  type="button"
+                  className={estilos.entregar}
+                  onClick={() => setConfirmarEntrega(true)}
+                >
+                  Entregar prueba
+                </button>
+              </>
+            )}
+          </div>
+        </>
       )}
 
       <Modal
@@ -718,11 +801,12 @@ export function Prueba() {
         onCerrar={() => setConfirmarInicio(false)}
         pie={
           <>
-            <button className="btn" onClick={() => setConfirmarInicio(false)}>
+            <button type="button" className={estilos.cancelar} onClick={() => setConfirmarInicio(false)}>
               Aún no
             </button>
             <button
-              className="btn primary"
+              type="button"
+              className={estilos.confirmar}
               onClick={() => inicio.mutate()}
               disabled={inicio.isPending}
             >
@@ -731,17 +815,18 @@ export function Prueba() {
           </>
         }
       >
-        <div className="callout warn">
-          <b>El tiempo no se detendrá</b>
-          <p>
-            Si cierras el navegador, el cronómetro seguirá corriendo. Al terminar, se
-            entregará lo que hayas guardado.
-          </p>
-        </div>
+        <p className={`${estilos.aviso} ${estilos.serio}`}>
+          <span>
+            <b>El tiempo no se detendrá</b>. Si cierras el navegador, el cronómetro sigue
+            corriendo. Al terminar se entrega lo que hayas guardado.
+          </span>
+        </p>
         {inicio.isError && (
-          <div className="error">
-            {inicio.error instanceof Error ? inicio.error.message : 'No pudimos abrirla.'}
-          </div>
+          <p className={`${estilos.aviso} ${estilos.malo}`} role="alert">
+            <span>
+              {inicio.error instanceof Error ? inicio.error.message : 'No pudimos abrirla.'}
+            </span>
+          </p>
         )}
       </Modal>
 
@@ -751,11 +836,12 @@ export function Prueba() {
         onCerrar={() => setConfirmarEntrega(false)}
         pie={
           <>
-            <button className="btn" onClick={() => setConfirmarEntrega(false)}>
+            <button type="button" className={estilos.cancelar} onClick={() => setConfirmarEntrega(false)}>
               Seguir revisando
             </button>
             <button
-              className="btn primary"
+              type="button"
+              className={estilos.confirmar}
               onClick={() => entrega.mutate()}
               // Entregar con algo sin guardar es entregar sin esa respuesta.
               disabled={entrega.isPending || sinGuardar.length > 0}
@@ -766,28 +852,30 @@ export function Prueba() {
         }
       >
         {sinGuardar.length > 0 ? (
-          <div className="callout bad">
-            <b>
-              {sinGuardar.length === 1
-                ? 'Una respuesta aún no ha llegado al servidor'
-                : `${sinGuardar.length} respuestas aún no han llegado al servidor`}
-            </b>
-            <p>
+          <p className={`${estilos.aviso} ${estilos.malo}`}>
+            <span>
+              <b>
+                {sinGuardar.length === 1
+                  ? 'Una respuesta aún no ha llegado al servidor.'
+                  : `${sinGuardar.length} respuestas aún no han llegado al servidor.`}
+              </b>{' '}
               Estamos reintentándolo. Si entregas ahora se quedarían fuera. En cuanto se
               guarden podrás entregar.
-            </p>
-          </div>
+            </span>
+          </p>
         ) : (
-          <p className="small">
+          <p className={estilos.confirmacionTexto}>
             Después de entregar no podrás modificar archivos, enlaces ni respuestas.
           </p>
         )}
         {entrega.isError && (
-          <div className="error">
-            {entrega.error instanceof Error ? entrega.error.message : 'No pudimos entregar.'}
-          </div>
+          <p className={`${estilos.aviso} ${estilos.malo}`} role="alert">
+            <span>
+              {entrega.error instanceof Error ? entrega.error.message : 'No pudimos entregar.'}
+            </span>
+          </p>
         )}
       </Modal>
-    </>
+    </div>
   )
 }

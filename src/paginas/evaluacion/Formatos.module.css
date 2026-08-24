@@ -1,0 +1,408 @@
+/*
+ * Las ocho formas de responder del banco v3.
+ *
+ * Solo dos son «marca una opcion» o «escribe un texto». Las otras seis mandan
+ * varios valores a la vez, y cada una necesita su propia forma de decirse.
+ *
+ * Regla comun a todas: **lo elegido se lee en el relleno, no en el color**. El
+ * indigo aqui significaria «te toca a ti» y ya lo dice el sitio donde estas, asi
+ * que las opciones marcadas van en tinta.
+ */
+
+.guia {
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+  margin-bottom: var(--e4);
+  max-width: var(--medida);
+}
+
+/* Lo que falta para dar la pregunta por respondida. */
+.pendiente {
+  display: flex;
+  gap: var(--e3);
+  margin-top: var(--e4);
+  border: 1px solid var(--regla2);
+  background: var(--hundido);
+  padding: var(--e3) var(--e4);
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+}
+
+.pendiente::before {
+  content: '';
+  flex: none;
+  width: 3px;
+  background: var(--regla2);
+}
+
+/* ---------- Opción única (PC) y marcar varias (INV, DE) ---------- */
+
+.opciones {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+}
+
+.opcion {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--e3);
+  border: 1px solid var(--regla2);
+  background: var(--papel);
+  padding: var(--e4);
+  font-size: var(--t-base);
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.opcion:hover {
+  border-color: var(--tinta2);
+}
+
+/* Elegida: borde grueso y marca rellena. Dos señales de forma, cero de color. */
+.opcion.elegida {
+  border: 2px solid var(--tinta);
+  padding: calc(var(--e4) - 1px);
+}
+
+.control {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.marca {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  border: 1px solid var(--borde-control);
+  background: var(--papel);
+}
+
+.opcion.elegida .marca {
+  border-color: var(--tinta);
+  background: var(--tinta);
+}
+
+.opcion:has(.control:focus-visible) {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}
+
+.letra {
+  flex: none;
+  font-weight: 600;
+  color: var(--tinta2);
+  font-variant-numeric: tabular-nums;
+}
+
+.textoOpcion {
+  min-width: 0;
+}
+
+/* ---------- Escribir (abiertas) ---------- */
+
+.escrito {
+  width: 100%;
+  min-height: 10rem;
+  padding: var(--e4);
+  background: var(--papel);
+  color: var(--tinta);
+  border: 1px solid var(--borde-control);
+  font: inherit;
+  font-size: var(--t-base);
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.cuenta {
+  display: block;
+  margin-top: var(--e2);
+  font-size: var(--t-menor);
+  color: var(--tinta3);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- V · varios datos en un mismo enunciado ---------- */
+
+.partes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e4);
+}
+
+.parte {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+}
+
+.etiquetaParte {
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+}
+
+.campoParte {
+  min-height: 48px;
+  padding: 0 var(--e3);
+  background: var(--papel);
+  color: var(--tinta);
+  border: 1px solid var(--borde-control);
+  font: inherit;
+  font-size: var(--t-base);
+}
+
+/* ---------- EF-4 · la que más y la que menos ---------- */
+
+.ef4 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+}
+
+.filaEf4 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e3) var(--e4);
+  border: 1px solid var(--regla2);
+  background: var(--papel);
+  padding: var(--e4);
+}
+
+.textoEf4 {
+  flex: 1 1 18rem;
+  font-size: var(--t-base);
+  line-height: 1.5;
+  min-width: 0;
+}
+
+.marcasEf4 {
+  display: flex;
+  gap: var(--e2);
+  flex: none;
+}
+
+.marcaEf4 {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 5rem;
+  min-height: 44px;
+  padding: 0 var(--e3);
+  border: 1px solid var(--borde-control);
+  background: var(--papel);
+  font-size: var(--t-menor);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.marcaEf4.puesta {
+  background: var(--tinta);
+  border-color: var(--tinta);
+  color: var(--papel);
+}
+
+.marcaEf4:has(.control:focus-visible) {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}
+
+/* ---------- SJT-R · calificar cada opción del 1 al 5 ---------- */
+
+.escala {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+}
+
+.bloqueEscala {
+  border: 1px solid var(--regla2);
+  background: var(--papel);
+  padding: var(--e4);
+}
+
+.textoEscala {
+  font-size: var(--t-base);
+  line-height: 1.5;
+  margin-bottom: var(--e3);
+}
+
+.puntos {
+  display: flex;
+  gap: var(--e2);
+}
+
+.punto {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid var(--borde-control);
+  background: var(--papel);
+  font-size: var(--t-prosa);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.punto.puesto {
+  background: var(--tinta);
+  border-color: var(--tinta);
+  color: var(--papel);
+}
+
+.punto:has(.control:focus-visible) {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}
+
+.leyendaEscala {
+  display: flex;
+  justify-content: space-between;
+  margin-top: var(--e2);
+  font-size: var(--t-menor);
+  color: var(--tinta3);
+}
+
+/* ---------- SEC · ordenar los pasos ---------- */
+
+.pasos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+}
+
+.paso {
+  display: flex;
+  align-items: center;
+  gap: var(--e3);
+  border: 1px solid var(--regla2);
+  background: var(--papel);
+  padding: var(--e3) var(--e4);
+}
+
+/* Mientras se arrastra: se levanta del papel. */
+.paso.arrastrando {
+  border-color: var(--tinta);
+  box-shadow: 0 6px 16px rgb(28 28 30 / 0.14);
+  position: relative;
+  z-index: 2;
+}
+
+.asa {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  min-height: 44px;
+  background: none;
+  border: 0;
+  color: var(--tinta3);
+  cursor: grab;
+  touch-action: none;
+}
+
+.asa:hover {
+  color: var(--tinta);
+}
+
+.asa:active {
+  cursor: grabbing;
+}
+
+.numeroPaso {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: var(--tinta);
+  color: var(--papel);
+  font-size: var(--t-apoyo);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.textoPaso {
+  flex: 1;
+  font-size: var(--t-prosa);
+  line-height: 1.5;
+  min-width: 0;
+}
+
+.flechas {
+  flex: none;
+  display: flex;
+  gap: var(--e1);
+}
+
+.flecha {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: var(--papel);
+  border: 1px solid var(--regla2);
+  font-size: var(--t-prosa);
+  cursor: pointer;
+}
+
+.flecha:hover:not(:disabled) {
+  border-color: var(--tinta);
+}
+
+.flecha:disabled {
+  color: var(--regla2);
+  cursor: default;
+}
+
+.confirmarOrden {
+  composes: secundario from '../../estilos/piezas.module.css';
+  margin-top: var(--e3);
+  align-self: flex-start;
+}
+
+/* ---------- CD · caso descompuesto ---------- */
+
+.campos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: var(--e4);
+}
+
+@media (max-width: 640px) {
+  .campos {
+    grid-template-columns: 1fr;
+  }
+
+  .marcasEf4 {
+    width: 100%;
+  }
+
+  .marcaEf4 {
+    flex: 1;
+  }
+
+  .paso {
+    flex-wrap: wrap;
+  }
+
+  .textoPaso {
+    flex: 1 1 100%;
+    order: 3;
+  }
+}

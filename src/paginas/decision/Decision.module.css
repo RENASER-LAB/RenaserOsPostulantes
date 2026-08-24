@@ -1,0 +1,294 @@
+/*
+ * El caso ambar: se pide una evidencia mas antes de decidir.
+ *
+ * Es de los pocos sitios del portal donde el acento esta justificado en un
+ * panel entero: el estado es `DECISION_TURNO_CANDIDATO` y la espera es del
+ * candidato. Lo que NO lleva acento es el formulario, porque hoy no envia.
+ */
+
+.pagina {
+  max-width: 62rem;
+  margin: 0 auto;
+  padding: var(--e5) var(--e5) var(--e8);
+}
+
+.volver {
+  composes: volver from '../../estilos/piezas.module.css';
+}
+
+/* ---------- El panel de arriba: por qué estás aquí ---------- */
+
+.cabeza {
+  margin-top: var(--e4);
+  border: 1px solid var(--acento-regla);
+  background: var(--acento-papel);
+  padding: var(--e6);
+}
+
+.eti {
+  display: block;
+  font-size: var(--t-micro);
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--acento-pulsado);
+  margin-bottom: var(--e3);
+}
+
+.titulo {
+  margin: 0;
+  max-width: 22ch;
+}
+
+.explicacion {
+  font-size: var(--t-base);
+  line-height: 1.55;
+  color: var(--tinta);
+  margin-top: var(--e4);
+  max-width: var(--medida);
+}
+
+.escribir {
+  composes: acentoGrande from '../../estilos/piezas.module.css';
+  margin-top: var(--e5);
+}
+
+/* ---------- El reparto en dos columnas ---------- */
+
+.reparto {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 19rem;
+  align-items: start;
+  gap: var(--e5);
+  margin-top: var(--e5);
+}
+
+.columna {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e5);
+  min-width: 0;
+}
+
+.bloque {
+  border: 1px solid var(--regla);
+  padding: var(--e5);
+}
+
+.bloque.hundido {
+  background: var(--hundido);
+}
+
+.tituloBloque {
+  margin: 0 0 var(--e3);
+}
+
+.texto {
+  font-size: var(--t-prosa);
+  line-height: 1.6;
+  color: var(--tinta2);
+  max-width: var(--medida);
+}
+
+.texto + .texto {
+  margin-top: var(--e3);
+}
+
+.pasos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+  margin-top: var(--e3);
+}
+
+.paso {
+  display: flex;
+  gap: var(--e3);
+  font-size: var(--t-apoyo);
+  line-height: 1.5;
+  color: var(--tinta2);
+}
+
+.numeroPaso {
+  flex: none;
+  width: 1.4rem;
+  font-weight: 700;
+  color: var(--tinta);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- El formulario, que todavía no envía ---------- */
+
+/*
+ * Va entero y va apagado, y eso se dice antes de que nadie escriba nada.
+ * Dejarlo escribible y fallar al pulsar seria la version peor: se pierde lo
+ * escrito y se aprende que la pantalla miente.
+ */
+.todaviaNo {
+  display: flex;
+  gap: var(--e3);
+  border: 1px solid var(--duda);
+  background: var(--duda-papel);
+  padding: var(--e4);
+  margin-bottom: var(--e5);
+  font-size: var(--t-prosa);
+  line-height: 1.55;
+  color: var(--duda-tinta);
+}
+
+.todaviaNo::before {
+  content: '';
+  flex: none;
+  width: 3px;
+  background: var(--duda);
+}
+
+.formulario {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+
+.grupo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+}
+
+.grupo + .grupo {
+  margin-top: var(--e5);
+}
+
+.etiqueta {
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+}
+
+.pista {
+  font-size: var(--t-menor);
+  color: var(--tinta3);
+}
+
+.escrito {
+  width: 100%;
+  min-height: 10rem;
+  padding: var(--e4);
+  background: var(--papel);
+  color: var(--tinta);
+  border: 1px solid var(--borde-control);
+  font: inherit;
+  font-size: var(--t-base);
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.escrito:disabled {
+  background: var(--hundido);
+  color: var(--tinta3);
+}
+
+.adjuntar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e4);
+  border: 1px dashed var(--borde-control);
+  background: var(--hundido);
+  padding: var(--e5);
+}
+
+.adjuntarTexto {
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+}
+
+.boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 var(--e4);
+  background: var(--papel);
+  border: 1px solid var(--borde-control);
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.boton:disabled {
+  border-color: var(--regla2);
+  color: var(--tinta3);
+  cursor: default;
+}
+
+.botones {
+  display: flex;
+  gap: var(--e2);
+}
+
+.envio {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e4);
+  margin-top: var(--e5);
+  border-top: 1px solid var(--regla);
+  padding-top: var(--e4);
+}
+
+.ronda {
+  flex: 1 1 18rem;
+  font-size: var(--t-apoyo);
+  line-height: 1.5;
+  color: var(--tinta2);
+}
+
+.enviar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 var(--e6);
+  background: var(--hundido2);
+  color: var(--tinta3);
+  border: 1px solid var(--regla2);
+  font-size: var(--t-base);
+  font-weight: 600;
+  cursor: default;
+}
+
+.correo {
+  display: inline-block;
+  margin-top: var(--e3);
+  font-size: var(--t-prosa);
+}
+
+@media (max-width: 900px) {
+  .reparto {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .pagina {
+    padding: var(--e4) var(--e4) var(--e7);
+  }
+
+  .cabeza,
+  .bloque {
+    padding: var(--e4);
+  }
+
+  .escribir,
+  .enviar {
+    width: 100%;
+  }
+
+  .botones,
+  .boton {
+    width: 100%;
+  }
+}

@@ -1,0 +1,32 @@
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&display=swap');
+*{box-sizing:border-box}
+body{margin:0;font-family:Archivo,system-ui,sans-serif;background:#EDEDF0;color:#1C1C1E;font-size:15px;line-height:1.45}
+a{color:#4338CA;text-decoration:none}a:hover{color:#312BA0}
+.marco{width:1180px;background:#FFFFFF;border:1.5px solid #1C1C1E;display:flex;flex-direction:column;min-height:100%}
+.cab{display:flex;justify-content:space-between;align-items:center;padding:14px 28px;border-bottom:1.5px solid #1C1C1E;gap:24px}
+.marca{display:flex;align-items:center;gap:2px;font-weight:700;font-size:22px;letter-spacing:-.02em}
+.hormiga{width:17px;height:17px;margin-left:-3px}
+.nav{display:flex;gap:22px;align-items:center;font-size:14px;color:#6B6B70}
+.nav b{color:#1C1C1E}
+.chip{border:1.5px solid #1C1C1E;padding:6px 14px;font-size:13px;font-weight:600}
+.cuerpo{padding:28px;display:flex;flex-direction:column;gap:22px;flex-grow:1}
+h1{font-size:28px;margin:0;letter-spacing:-.02em;font-weight:700}
+h2{font-size:19px;margin:0;font-weight:600}
+h3{font-size:15px;margin:0;font-weight:600}
+p{margin:0;color:#48484D}
+.caja{border:1.5px solid #C4C4CE;background:#fff;padding:20px}
+.caja.toca{border:2px solid #4338CA;background:#F1F0FE}
+.caja.gris{background:#F0F0F4;border-style:dashed}
+.eti{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#77777D;font-weight:600}
+.eti.oro{color:#4338CA}
+.btn{display:inline-flex;align-items:center;justify-content:center;border:1.5px solid #1C1C1E;background:#fff;padding:11px 20px;font-size:14px;font-weight:600;min-height:44px}
+.btn.pri{background:#1C1C1E;color:#FFFFFF}
+.btn.oro{background:#4338CA;border-color:#4338CA;color:#fff}
+.linea{height:9px;background:#E6E6EB}
+.linea.corta{width:55%}.linea.media{width:78%}
+.fila{display:flex;gap:14px;align-items:center}
+.col{display:flex;flex-direction:column;gap:10px}
+.small{font-size:13px;color:#6B6B70}
+.tag{display:inline-flex;border:1.5px solid #C4C4CE;padding:3px 10px;font-size:12px;font-weight:600;color:#48484D;background:#F0F0F4}
+.tag.oro{border-color:#4338CA;color:#4338CA;background:#F1F0FE}
+.nota{border-left:3px solid #4338CA;padding:8px 0 8px 12px;font-size:12.5px;color:#3730A3;background:#F1F0FE}

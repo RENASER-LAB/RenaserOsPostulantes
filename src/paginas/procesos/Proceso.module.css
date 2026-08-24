@@ -1,0 +1,318 @@
+/*
+ * El detalle de una postulacion.
+ *
+ * Es la unica pantalla del portal donde el recorrido lleva fechas: el historial
+ * solo llega aqui. Por eso la linea de hitos es lo que manda, y el registro
+ * completo va debajo para quien quiera el detalle exacto.
+ */
+
+.pagina {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: var(--e5) var(--e5) var(--e8);
+}
+
+.volver {
+  composes: volver from '../../estilos/piezas.module.css';
+}
+
+.encabezado {
+  margin-top: var(--e4);
+}
+
+.desde {
+  display: block;
+  margin-top: var(--e2);
+  font-size: var(--t-apoyo);
+  color: var(--tinta3);
+}
+
+/* ---------- El estado, arriba del todo ---------- */
+
+.estadoActual {
+  margin-top: var(--e6);
+  border: 1px solid var(--regla);
+  background: var(--hundido);
+  padding: var(--e5);
+}
+
+.estadoActual.turno {
+  border: 1px solid var(--acento-regla);
+  background: var(--acento-papel);
+}
+
+.estadoTitulo {
+  font-size: var(--t-titulo);
+  letter-spacing: -0.018em;
+  margin: 0;
+}
+
+.estadoAyuda {
+  font-size: var(--t-prosa);
+  line-height: 1.5;
+  color: var(--tinta2);
+  margin-top: var(--e2);
+  max-width: var(--medida);
+}
+
+.accion {
+  composes: acentoMenor from '../../estilos/piezas.module.css';
+  margin-top: var(--e4);
+}
+
+/* ---------- Bloques de la pagina ---------- */
+
+.seccion {
+  margin-top: var(--e7);
+}
+
+.tituloSeccion {
+  margin-bottom: var(--e2);
+}
+
+.entradilla {
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+  max-width: var(--medida);
+  margin-bottom: var(--e5);
+}
+
+/* ---------- El registro completo ---------- */
+
+.registro {
+  display: flex;
+  flex-direction: column;
+}
+
+.cambio {
+  display: grid;
+  grid-template-columns: 9px 1fr;
+  column-gap: var(--e4);
+}
+
+.punto {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  padding-top: 6px;
+}
+
+.punto::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  background: var(--regla2);
+  flex: none;
+}
+
+.punto::after {
+  content: '';
+  position: absolute;
+  top: 15px;
+  bottom: -4px;
+  width: 1px;
+  background: var(--regla);
+}
+
+.cambio:last-child .punto::after {
+  display: none;
+}
+
+/* El ultimo cambio es donde esta la postulacion ahora. */
+.cambio:last-child .punto::before {
+  background: var(--tinta);
+  width: 9px;
+  height: 9px;
+}
+
+.textoCambio {
+  padding-bottom: var(--e5);
+  min-width: 0;
+}
+
+.cambio:last-child .textoCambio {
+  padding-bottom: 0;
+}
+
+.queParso {
+  font-size: var(--t-prosa);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.cuando {
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+  margin-top: 2px;
+}
+
+.sinRegistro {
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+}
+
+/* ---------- Retirarse ---------- */
+
+.retirada {
+  margin-top: var(--e8);
+  padding-top: var(--e5);
+  border-top: 1px solid var(--regla);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e4);
+}
+
+.retiradaTexto {
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+  max-width: var(--medida-corta);
+}
+
+.botonRetirar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 var(--e5);
+  background: var(--papel);
+  color: var(--mal);
+  border: 1px solid var(--mal-regla);
+  font-size: var(--t-prosa);
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 140ms var(--salida);
+}
+
+.botonRetirar:hover {
+  border-color: var(--mal);
+}
+
+/* ---------- El aviso de confirmacion ---------- */
+
+/* `dialog` nativo: el foco atrapado, la tecla de escape y el papel de fondo ya
+   vienen resueltos por el navegador, sin dependencias ni estado propio. */
+.aviso {
+  width: min(30rem, calc(100vw - 2rem));
+  padding: var(--e6);
+  border: 1px solid var(--tinta);
+  background: var(--papel);
+  color: var(--tinta);
+}
+
+.aviso::backdrop {
+  background: rgb(28 28 30 / 0.4);
+}
+
+.avisoTitulo {
+  margin: 0;
+}
+
+.avisoTexto {
+  font-size: var(--t-prosa);
+  line-height: 1.5;
+  color: var(--tinta2);
+  margin-top: var(--e3);
+}
+
+.avisoBotones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e3);
+  margin-top: var(--e6);
+}
+
+.seguir {
+  composes: solido from '../../estilos/piezas.module.css';
+}
+
+.confirmarRetiro {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 var(--e5);
+  background: var(--papel);
+  color: var(--mal);
+  border: 1px solid var(--mal-regla);
+  font-size: var(--t-prosa);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.confirmarRetiro:hover:not(:disabled) {
+  border-color: var(--mal);
+}
+
+.confirmarRetiro:disabled {
+  color: var(--tinta3);
+  cursor: default;
+}
+
+.fallo {
+  margin-top: var(--e4);
+  border: 1px solid var(--mal-regla);
+  background: var(--mal-papel);
+  padding: var(--e3) var(--e4);
+  font-size: var(--t-apoyo);
+  color: var(--mal);
+}
+
+/* ---------- Cargando y fallo de la pagina ---------- */
+
+.marco {
+  margin-top: var(--e6);
+  border: 1px solid var(--regla);
+  padding: var(--e6);
+}
+
+.marcoTexto {
+  font-size: var(--t-prosa);
+  line-height: 1.55;
+  color: var(--tinta2);
+  margin-top: var(--e3);
+  max-width: var(--medida-corta);
+}
+
+.reintentar {
+  composes: secundario from '../../estilos/piezas.module.css';
+  margin-top: var(--e5);
+}
+
+.barra {
+  height: 12px;
+  background: var(--hundido2);
+  margin-top: var(--e3);
+}
+
+.barraCorta {
+  width: 42%;
+}
+
+.barraMedia {
+  width: 68%;
+}
+
+.soloLectores {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 640px) {
+  .pagina {
+    padding: var(--e4) var(--e4) var(--e7);
+  }
+
+  .retirada {
+    align-items: flex-start;
+  }
+}

@@ -3,11 +3,13 @@
  *
  * Se usa donde antes habia un recuadro de una linea: sin vacantes abiertas y
  * sin postulaciones. La hormiga en gris hace de marca de agua; es el unico
- * sitio donde sale sola, y por eso va del color de las lineas y no en champagne.
+ * sitio donde sale sola, y por eso va del color de las lineas y nunca del
+ * acento, que aqui significaria que hay algo que hacer.
  */
 
 import type { ReactNode } from 'react'
 import { Marca } from './Marca'
+import estilos from './Estados.module.css'
 
 interface Props {
   titulo: string
@@ -18,13 +20,13 @@ interface Props {
 
 export function Vacio({ titulo, children, accion }: Props) {
   return (
-    <div className="card vacio">
-      <span className="vacio-marca" aria-hidden="true">
+    <div className={estilos.marco}>
+      <span className={estilos.hormiga} aria-hidden="true">
         <Marca tamano={30} />
       </span>
-      <b>{titulo}</b>
-      <p>{children}</p>
-      {accion}
+      <b className={estilos.tituloVacio}>{titulo}</b>
+      <p className={estilos.texto}>{children}</p>
+      {accion && <div className={estilos.botones}>{accion}</div>}
     </div>
   )
 }

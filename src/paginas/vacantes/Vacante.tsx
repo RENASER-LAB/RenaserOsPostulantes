@@ -1,47 +1,25 @@
 /**
- * La ficha de una vacante y el proceso que le espera al candidato.
+ * La ficha de una vacante.
  *
- * Las cinco etapas salen de `dominio/estados.ts`. El mockup las tenia escritas
- * a mano y por eso enseñaba las de la version vieja.
+ * Se ve sin cuenta: `GET /vacantes/{id}` es publico. Postular si la pide, y por
+ * eso el boton lleva a crear cuenta cuando no la hay, recordando a que vacante
+ * se estaba postulando.
+ *
+ * **Los requisitos indispensables llevan el acento.** Son lo unico que decide el
+ * sistema solo: al postular hay que confirmarlos uno por uno, y dejar alguno sin
+ * marcar cierra la postulacion en el acto. Enseñarlos aqui, antes de empezar, es
+ * lo que evita que alguien llegue al final y se lleve el golpe.
+ *
+ * Casi todos los campos del backend son texto libre y pueden venir vacios: la
+ * pantalla se arma con lo que haya.
  */
 
 import { useQuery } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
 import { verVacante } from '@/api/portal'
-import { ETAPAS } from '@/dominio/estados'
-import { rutas } from '@/rutas'
 import { useSesion } from '@/app/Sesion'
-import { Cargando, Fallo } from '@/ui/Mensajes'
-
-/** Que hace el candidato en cada etapa. Es texto de producto, no datos. */
-const QUE_PASA_EN: Record<string, string> = {
-  PERFIL: 'Sube tu CV y responde la evaluación',
-  PRUEBA: 'Demuestra el trabajo con tiempo medido',
-  SIMULACION: 'Trabaja en una sesión grupal',
-  VALIDACION: 'Evidencia durante el periodo acordado',
-  DECISION: 'Una persona toma la decisión final',
-}
-
-/**
- * El backend manda estos campos como un texto con saltos de linea, uno por
- * punto. Pintarlo tal cual daba un parrafo largo donde deberia haber una lista.
- */
-function Puntos({ texto }: { texto: string }) {
-  const lineas = texto
-    .split('\n')
-    .map((l) => l.trim())
-    .filter(Boolean)
-
-  if (lineas.length < 2) return <p>{texto}</p>
-
-  return (
-    <ul>
-      {lineas.map((linea) => (
-        <li key={linea}>{linea}</li>
-      ))}
-    </ul>
-  )
-}
+import { rutas } from '@/rutas'
+import estilos from './Vacante.module.css'
 
 export function Vacante() {
   const { vacanteId = '' } = useParams()
@@ -53,131 +31,148 @@ export function Vacante() {
     enabled: vacanteId !== '',
   })
 
-  if (consulta.isPending) return <Cargando que="Abriendo la vacante…" />
+  if (consulta.isPending) {
+    return (
+      <div className={estilos.pagina}>
+        <div className={estilos.marco} aria-busy="true">
+          <h1>Cargando el puesto…</h1>
+          <div className={estilos.barra} />
+          <div className={`${estilos.barra} ${estilos.barraMedia}`} />
+          <div className={`${estilos.barra} ${estilos.barraCorta}`} />
+        </div>
+      </div>
+    )
+  }
+
   if (consulta.isError) {
-    return <Fallo error={consulta.error} reintentar={() => void consulta.refetch()} />
+    return (
+      <div className={estilos.pagina}>
+        <Link className={estilos.volver} to={rutas.vacantes()}>
+          ← Volver a las vacantes
+        </Link>
+        <div className={estilos.marco}>
+          <h1>No pudimos cargar este puesto.</h1>
+          <p className={estilos.marcoTexto}>
+            {consulta.error instanceof Error
+              ? consulta.error.message
+              : 'No pudimos conectar con el servidor.'}
+          </p>
+          <button
+            type="button"
+            className={estilos.reintentar}
+            onClick={() => void consulta.refetch()}
+          >
+            Intentar de nuevo
+          </button>
+        </div>
+      </div>
+    )
   }
 
   const v = consulta.data
-  const destinoAlPostular = hayCuenta ? rutas.postular(v.id) : rutas.registro(v.id)
+  const requisitos = Array.isArray(v.requisitosObjetivos) ? v.requisitosObjetivos : []
+  const datos = [v.modalidad, v.ubicacion, v.horario, v.compensacionPublica].filter(Boolean)
 
   return (
-    <>
-      <Link className="back" to={rutas.vacantes()}>
-        ← Volver a vacantes
+    <div className={estilos.pagina}>
+      <Link className={estilos.volver} to={rutas.vacantes()}>
+        ← Volver a las vacantes
       </Link>
 
-      <div className="pagehead">
-        <div>
-          <div className="eyebrow">
-            {[v.modalidad, v.ubicacion].filter(Boolean).join(' · ')}
+      <div className={estilos.encabezado}>
+        <h1>{v.titulo}</h1>
+        {datos.length > 0 && (
+          <div className={estilos.donde}>
+            {datos.map((d) => (
+              <span className={estilos.dato} key={d}>
+                {d}
+              </span>
+            ))}
           </div>
-          <h1>{v.titulo}</h1>
-          <p>{v.proposito ?? v.descripcion}</p>
-        </div>
+        )}
       </div>
 
-      <div className="detail-layout">
-        <article className="detail">
-          <div className="card">
-            {v.descripcion && (
-              <>
-                <h2 style={{ marginTop: 0 }}>El resultado que esperamos</h2>
-                <p>{v.descripcion}</p>
-              </>
-            )}
+      {v.proposito && (
+        <section className={estilos.bloque}>
+          <h2 className={estilos.tituloBloque}>El resultado que esperamos</h2>
+          <p className={estilos.texto}>{v.proposito}</p>
+        </section>
+      )}
 
-            {v.responsabilidades && (
-              <>
-                <h2>Lo que harás</h2>
-                <Puntos texto={v.responsabilidades} />
-              </>
-            )}
+      {v.descripcion && !v.proposito && (
+        <section className={estilos.bloque}>
+          <h2 className={estilos.tituloBloque}>Sobre el puesto</h2>
+          <p className={estilos.texto}>{v.descripcion}</p>
+        </section>
+      )}
 
-            {v.requisitos && (
-              <>
-                <h2>Lo que necesitamos</h2>
-                <Puntos texto={v.requisitos} />
-              </>
-            )}
+      {v.responsabilidades && (
+        <section className={estilos.bloque}>
+          <h2 className={estilos.tituloBloque}>Lo que harás</h2>
+          <Puntos texto={v.responsabilidades} />
+        </section>
+      )}
 
-            {v.requisitosObjetivos.length > 0 && (
-              <>
-                <h2>Requisitos indispensables</h2>
-                <p>
-                  Son las únicas condiciones que pueden detener una postulación de forma
-                  automática. Te pediremos que las confirmes al postular.
-                </p>
-                <ul>
-                  {v.requisitosObjetivos.map((r) => (
-                    <li key={r.id}>{r.descripcion}</li>
-                  ))}
-                </ul>
-              </>
-            )}
+      {v.requisitos && (
+        <section className={estilos.bloque}>
+          <h2 className={estilos.tituloBloque}>Lo que buscamos</h2>
+          <Puntos texto={v.requisitos} />
+        </section>
+      )}
 
-            {(v.horario ?? v.compensacionPublica) && (
-              <>
-                <h2>Condiciones</h2>
-                <ul>
-                  {v.horario && <li>{v.horario}</li>}
-                  {v.compensacionPublica && <li>{v.compensacionPublica}</li>}
-                </ul>
-              </>
-            )}
+      {requisitos.length > 0 && (
+        <section className={estilos.requisitos}>
+          <h2>Requisitos indispensables</h2>
+          <p className={estilos.avisoRequisitos}>
+            Estos son condición para el puesto. Al postular te pediremos que confirmes cada
+            uno, y <b>no cumplir alguno cierra la postulación</b>. Léelos antes de empezar.
+          </p>
+          <ul className={estilos.listaRequisitos} role="list">
+            {requisitos.map((r) => (
+              <li className={estilos.requisito} key={r.id}>
+                {r.descripcion}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
-            <h2>Cómo evaluamos</h2>
-            <p>
-              Una inteligencia artificial participa en algunas calificaciones y explica su
-              criterio. Nadie queda fuera de forma automática salvo por un requisito
-              indispensable, y las decisiones sensibles las revisa una persona.
-            </p>
-          </div>
-        </article>
-
-        <aside className="sticky">
-          {/* Los datos duros primero: es lo que se mira antes de decidir. */}
-          <div className="card ficha">
-            <div className="row">
-              <span>Modalidad</span>
-              <b>{v.modalidad ?? 'Por definir'}</b>
-            </div>
-            <div className="divider" />
-            <div className="row">
-              <span>Ubicación</span>
-              <b>{v.ubicacion ?? 'Por definir'}</b>
-            </div>
-            <div className="divider" />
-            <div className="row">
-              <span>Jornada</span>
-              <b>{v.horario ?? 'Por definir'}</b>
-            </div>
-            <Link className="btn primary large" to={destinoAlPostular}>
-              Postular
-            </Link>
-            <span className="small ficha-pie">
-              {hayCuenta
-                ? 'Confirmarás los requisitos indispensables antes de enviar.'
-                : 'Necesitarás una cuenta. Se crea en un minuto.'}
-            </span>
-          </div>
-
-          <div className="card" style={{ marginTop: 16 }}>
-            <div className="label">Proceso de selección</div>
-            <div className="stage-list" style={{ marginTop: 14 }}>
-              {ETAPAS.map((etapa, i) => (
-                <div className="stage" key={etapa.clave}>
-                  <div className="stage-num">{i + 1}</div>
-                  <div>
-                    <b>{etapa.etiqueta}</b>
-                    <span>{QUE_PASA_EN[etapa.clave]}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </aside>
+      <div className={estilos.postular}>
+        <Link
+          className={estilos.boton}
+          to={hayCuenta ? rutas.postular(v.id) : rutas.registro(v.id)}
+        >
+          Postular a este puesto
+        </Link>
+        <p className={estilos.aclaracion}>
+          {hayCuenta
+            ? 'Te pediremos tu currículum y un resultado del que te sientas orgulloso.'
+            : 'Si aún no tienes cuenta, la creas en el siguiente paso y seguimos con tu postulación.'}
+        </p>
       </div>
-    </>
+    </div>
+  )
+}
+
+/**
+ * El backend manda estos campos como un texto con saltos de linea, uno por
+ * punto. Pintarlo tal cual daba un parrafo largo donde deberia haber una lista.
+ */
+function Puntos({ texto }: { texto: string }) {
+  const lineas = texto
+    .split('\n')
+    .map((l) => l.trim().replace(/^[-•*]\s*/, ''))
+    .filter(Boolean)
+
+  if (lineas.length < 2) return <p className={estilos.texto}>{texto}</p>
+
+  return (
+    <ul className={estilos.puntos} role="list">
+      {lineas.map((linea, i) => (
+        <li className={estilos.punto} key={`${i}-${linea.slice(0, 20)}`}>
+          {linea}
+        </li>
+      ))}
+    </ul>
   )
 }

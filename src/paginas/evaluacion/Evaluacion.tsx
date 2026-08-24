@@ -45,12 +45,12 @@ import {
   verEvaluacion,
 } from '@/api/evaluacion'
 import type { DetalleRespuesta, PreguntaEvaluacion } from '@/api/tipos'
-import { formatearTiempo, segundosHasta } from '@/dominio/reloj'
+import { diasHasta, formatearTiempo, segundosHasta } from '@/dominio/reloj'
 import { rutas } from '@/rutas'
 import { useAviso } from '@/ui/Avisos'
 import { Modal } from '@/ui/Modal'
-import { Cargando, Fallo } from '@/ui/Mensajes'
 import { RespuestaDeLaPregunta } from './Formatos'
+import estilos from './Evaluacion.module.css'
 import {
   detalleParaEnviar,
   estaCompleto,
@@ -96,10 +96,11 @@ const COMO_SE_DICE: Record<EstadoDePregunta, string> = {
  * gris. La forma del recuadro ya cambia (relleno, borde grueso, borde de
  * puntos) y encima va este simbolo, asi que se puede leer de tres maneras.
  */
-const MARCA: Record<EstadoDePregunta, string> = {
-  lista: '✓',
-  'a-medias': '!',
-  vacia: '',
+/** La clase de la casilla en el mapa. La forma dice el estado, no un glifo. */
+const CLASE_ESTADO: Record<EstadoDePregunta, 'lista' | 'aMedias' | 'casilla'> = {
+  lista: 'lista',
+  'a-medias': 'aMedias',
+  vacia: 'casilla',
 }
 
 export function Evaluacion() {
@@ -402,9 +403,43 @@ export function Evaluacion() {
     return () => document.removeEventListener('keydown', alPulsar)
   }, [mapaAbierto])
 
-  if (consulta.isPending) return <Cargando que="Abriendo tu evaluación…" />
+  if (consulta.isPending) {
+    return (
+      <div className={estilos.pagina}>
+        <div className={estilos.marco} aria-busy="true">
+          <h1>Abriendo tu evaluación…</h1>
+          <div className={estilos.barra} />
+          <div className={`${estilos.barra} ${estilos.barraMedia}`} />
+          <div className={`${estilos.barra} ${estilos.barraCorta}`} />
+        </div>
+      </div>
+    )
+  }
+
   if (consulta.isError) {
-    return <Fallo error={consulta.error} reintentar={() => void consulta.refetch()} />
+    return (
+      <div className={estilos.pagina}>
+        <Link className={estilos.volver} to={rutas.proceso(uuid)}>
+          ← Volver a mi proceso
+        </Link>
+        <div className={estilos.marco}>
+          <h1>No pudimos abrir tu evaluación.</h1>
+          <p className={estilos.marcoTexto}>
+            {consulta.error instanceof Error
+              ? consulta.error.message
+              : 'No pudimos conectar con el servidor.'}{' '}
+            Lo que ya hayas respondido está guardado.
+          </p>
+          <button
+            type="button"
+            className={estilos.reintentar}
+            onClick={() => void consulta.refetch()}
+          >
+            Intentar de nuevo
+          </button>
+        </div>
+      </div>
+    )
   }
 
   const evaluacion = consulta.data
@@ -412,73 +447,70 @@ export function Evaluacion() {
   // Todavia no ha empezado: se enseña el aviso y el boton que arranca el plazo.
   if (evaluacion.iniciadaEn === null) {
     return (
-      <>
-        <Link className="back" to={rutas.proceso(uuid)}>
+      <div className={estilos.pagina}>
+        <Link className={estilos.volver} to={rutas.proceso(uuid)}>
           ← Volver a mi proceso
         </Link>
-        <div className="pagehead">
-          <div>
-            <div className="eyebrow">Perfil Integral</div>
-            <h1>Tu evaluación está lista.</h1>
-            <p>
-              Son {evaluacion.total} preguntas. Puedes salir y volver: lo respondido se
-              guarda solo.
-            </p>
-          </div>
-        </div>
-        <div className="medida-lectura">
-          <div className="grid g3">
-            <div className="callout">
-              <b>No hay respuestas de manual</b>
-              <p>Nos interesa cómo trabajas y cómo explicas tus decisiones.</p>
+
+        <div className={estilos.portada}>
+          <h1>Tu evaluación está lista.</h1>
+          <p className={estilos.presentacion}>
+            Son preguntas sobre cómo trabajas, no sobre lo que memorizaste. No hay respuestas
+            de manual, y nadie las responde de una sentada.
+          </p>
+
+          <div className={estilos.datos}>
+            <div className={estilos.dato}>
+              <span className={estilos.cifra}>{evaluacion.total}</span>
+              <span className={estilos.queEs}>preguntas, una por pantalla</span>
             </div>
-            <div className="callout">
-              <b>Puedes corregir antes de entregar</b>
-              <p>Vuelve atrás las veces que quieras.</p>
-            </div>
-            <div className="callout">
-              <b>Si se corta tu conexión</b>
-              <p>Continúas desde la última respuesta guardada.</p>
-            </div>
+            {evaluacion.minutosObjetivo !== null && (
+              <div className={estilos.dato}>
+                <span className={estilos.cifra}>{evaluacion.minutosObjetivo} min</span>
+                <span className={estilos.queEs}>de referencia, no es un límite</span>
+              </div>
+            )}
+            {evaluacion.venceEn !== null && (
+              <div className={estilos.dato}>
+                <span className={estilos.cifra}>{diasHasta(evaluacion.venceEn)}</span>
+                <span className={estilos.queEs}>para entregarla</span>
+              </div>
+            )}
           </div>
 
-          <div className="card resumen-evaluacion">
-            <div className="resumen-cifras">
-              {evaluacion.minutosObjetivo && (
-                <div>
-                  <span className="small">Duración de referencia</span>
-                  <b>{evaluacion.minutosObjetivo} minutos</b>
-                  <span className="small">Es una referencia, no un límite.</span>
-                </div>
-              )}
-              <div>
-                <span className="small">Preguntas</span>
-                <b>{evaluacion.total}</b>
-                <span className="small">Una por pantalla.</span>
-              </div>
-            </div>
-            <button
-              className="btn primary large"
-              onClick={() => inicio.mutate()}
-              disabled={inicio.isPending}
-            >
-              {inicio.isPending ? 'Abriendo…' : 'Empezar evaluación'}
-            </button>
+          <div className={estilos.saber}>
+            <p className={estilos.presentacion}>
+              <b>Puedes salir y volver las veces que quieras</b>. Cada respuesta se guarda
+              sola, y puedes corregir cualquiera antes de entregar.
+            </p>
+            <p className={estilos.presentacion}>
+              Si se corta tu conexión, continúas desde la última respuesta guardada.
+            </p>
           </div>
+
+          <button
+            type="button"
+            className={estilos.empezar}
+            onClick={() => inicio.mutate()}
+            disabled={inicio.isPending}
+          >
+            {inicio.isPending ? 'Abriendo…' : 'Empezar evaluación'}
+          </button>
         </div>
-      </>
+      </div>
     )
   }
 
   if (!pregunta) {
     return (
-      <div className="card center-card">
-        <div className="status-icon">✓</div>
-        <h1>No hay preguntas pendientes.</h1>
-        <p>Tu evaluación no tiene preguntas que mostrar.</p>
-        <Link className="btn primary" to={rutas.proceso(uuid)}>
-          Volver a mi proceso
-        </Link>
+      <div className={estilos.pagina}>
+        <div className={estilos.marco}>
+          <h1>No hay preguntas pendientes.</h1>
+          <p className={estilos.marcoTexto}>Tu evaluación no tiene preguntas que mostrar.</p>
+          <Link className={estilos.reintentar} to={rutas.proceso(uuid)}>
+            Volver a mi proceso
+          </Link>
+        </div>
       </div>
     )
   }
@@ -533,49 +565,41 @@ export function Evaluacion() {
   // terminar» cuando hay algo puesto pero al formato le falta una parte: eso no
   // se manda, asi que decir «guardada» seria mentira.
   const indicador = guardando
-    ? { texto: 'Guardando…', clase: ' pendiente' }
+    ? { texto: 'Guardando…', pendiente: true }
     : esteSinConfirmar
-      ? { texto: 'Sin guardar', clase: ' pendiente' }
+      ? { texto: 'Sin guardar', pendiente: true }
       : estaVacia
-        ? { texto: 'Sin responder', clase: ' vacia' }
+        ? { texto: 'Sin responder', pendiente: false }
         : falta !== null
-          ? { texto: 'Sin terminar', clase: ' pendiente' }
-          : { texto: 'Respuesta guardada', clase: '' }
+          ? { texto: 'Sin terminar', pendiente: true }
+          : { texto: 'Respuesta guardada', pendiente: false }
 
   return (
-    <>
-      <Link className="back" to={rutas.proceso(uuid)}>
+    <div className={estilos.pagina}>
+      <Link className={estilos.volver} to={rutas.proceso(uuid)}>
         ← Volver a mi proceso
       </Link>
 
-      <div className="exam-shell">
-        <div className="exam-top">
-          <div style={{ flex: 1 }}>
-            <div className="row">
-              <span className="progress-meta">
-                Pregunta {indice + 1} de {preguntas.length}
-              </span>
-              <span className="progress-meta">
-                {respondidas} de {evaluacion.total} respondidas
-              </span>
-            </div>
-            <div className="progress">
-              <i style={{ width: `${porcentaje}%` }} />
-            </div>
-          </div>
-          <div className={`save-state${indicador.clase}`}>
-            <i />
-            <span>{indicador.texto}</span>
-          </div>
+      <div className={estilos.avance}>
+        <div className={estilos.cifras}>
+          <span className={estilos.donde}>
+            Pregunta {indice + 1} de {preguntas.length}
+          </span>
+          <span>
+            {respondidas} de {evaluacion.total} respondidas
+          </span>
+        </div>
+        <div className={estilos.riel}>
+          <div className={estilos.recorrido} style={{ width: `${porcentaje}%` }} />
         </div>
 
         {/* La linea de servicio: cuantas faltan y como llegar a ellas.
             Es una linea y no un aviso a proposito. Esto se mira de reojo cada
             pocos minutos durante una hora larga; un cartel que empuje el
             enunciado hacia abajo cada vez acaba estorbando mas que ayudando. */}
-        <div className="exam-barra">
+        <div className={estilos.mandos}>
           <button
-            className="btn mini"
+            className={estilos.mando}
             type="button"
             ref={botonMapa}
             aria-expanded={mapaAbierto}
@@ -585,16 +609,12 @@ export function Evaluacion() {
             {mapaAbierto ? 'Cerrar el mapa' : `Ver las ${preguntas.length}`}
           </button>
 
-          <span className="exam-barra-texto">
-            {faltan <= 0
-              ? `Ya están las ${evaluacion.total}.`
-              : faltan === 1
-                ? 'Te falta 1 por terminar.'
-                : `Te faltan ${faltan} por terminar.`}
-          </span>
-
           {proximaIncompleta >= 0 && (
-            <button className="btn mini" type="button" onClick={() => saltarA(proximaIncompleta)}>
+            <button
+              className={estilos.mando}
+              type="button"
+              onClick={() => saltarA(proximaIncompleta)}
+            >
               Siguiente sin responder
             </button>
           )}
@@ -604,7 +624,7 @@ export function Evaluacion() {
               tiene huecos es mandarlo a un boton que no le va a funcionar. */}
           {faltan <= 0 && !esUltima && (
             <button
-              className="btn mini"
+              className={estilos.mando}
               type="button"
               onClick={() => saltarA(preguntas.length - 1)}
             >
@@ -613,116 +633,138 @@ export function Evaluacion() {
           )}
 
           {volverA !== null && (
-            <button className="btn mini" type="button" onClick={volver}>
+            <button className={estilos.mando} type="button" onClick={volver}>
               Volver a la {volverA + 1}
             </button>
           )}
+
+          <span className={estilos.faltan}>
+            {faltan <= 0
+              ? `Ya están las ${evaluacion.total}.`
+              : faltan === 1
+                ? 'Te falta 1 por terminar.'
+                : `Te faltan ${faltan} por terminar.`}
+          </span>
         </div>
+      </div>
 
-        {/* El mapa. Todo el examen de un vistazo: que falta, que quedo a medias
-            y un toque para ir a cualquiera de ellas. */}
-        {mapaAbierto && (
-          <div className="mapa" id="mapa-preguntas">
-            <ol className="mapa-rejilla">
-              {estados.map((estado, i) => (
-                <li key={preguntas[i]?.id ?? i}>
-                  <button
-                    type="button"
-                    className={`mapa-num mapa-estado ${estado}${i === indice ? ' aqui' : ''}`}
-                    aria-current={i === indice ? 'true' : undefined}
-                    aria-label={
-                      `Pregunta ${i + 1}, ${COMO_SE_DICE[estado]}` +
-                      (i === indice ? ', es la que estás viendo' : '')
-                    }
-                    onClick={() => {
-                      setMapaAbierto(false)
-                      saltarA(i)
-                    }}
-                  >
-                    <span>{i + 1}</span>
-                    <i aria-hidden="true">{MARCA[estado]}</i>
-                  </button>
-                </li>
-              ))}
-            </ol>
+      {/* El mapa. Todo el examen de un vistazo: que falta, que quedo a medias
+          y un toque para ir a cualquiera de ellas. */}
+      {mapaAbierto && (
+        <div className={estilos.mapa} id="mapa-preguntas">
+          <ol className={estilos.rejilla} role="list">
+            {estados.map((estado, i) => (
+              <li key={preguntas[i]?.id ?? i}>
+                <button
+                  type="button"
+                  className={`${estilos.casilla} ${estilos[CLASE_ESTADO[estado]]}${
+                    i === indice ? ` ${estilos.aqui}` : ''
+                  }`}
+                  aria-current={i === indice ? 'true' : undefined}
+                  aria-label={
+                    `Pregunta ${i + 1}, ${COMO_SE_DICE[estado]}` +
+                    (i === indice ? ', es la que estás viendo' : '')
+                  }
+                  onClick={() => {
+                    setMapaAbierto(false)
+                    saltarA(i)
+                  }}
+                >
+                  {i + 1}
+                </button>
+              </li>
+            ))}
+          </ol>
 
-            <ul className="mapa-leyenda">
-              <li>
-                <i className="mapa-muestra mapa-estado lista" aria-hidden="true">
-                  ✓
-                </i>
-                Respondida
-              </li>
-              <li>
-                <i className="mapa-muestra mapa-estado a-medias" aria-hidden="true">
-                  !
-                </i>
-                Sin terminar
-              </li>
-              <li>
-                <i className="mapa-muestra mapa-estado vacia" aria-hidden="true" />
-                Sin responder
-              </li>
-            </ul>
-          </div>
-        )}
+          <ul className={estilos.leyenda} role="list">
+            <li className={estilos.entradaLeyenda}>
+              <i className={`${estilos.muestra} ${estilos.lista}`} aria-hidden="true" />
+              Respondida
+            </li>
+            <li className={estilos.entradaLeyenda}>
+              <i className={`${estilos.muestra} ${estilos.aMedias}`} aria-hidden="true" />
+              Sin terminar
+            </li>
+            <li className={estilos.entradaLeyenda}>
+              <i className={estilos.muestra} aria-hidden="true" />
+              Sin responder
+            </li>
+          </ul>
+        </div>
+      )}
 
-        {/* La red de seguridad: mientras algo no haya llegado, se dice, se sigue
-            intentando y se puede forzar a mano. Antes esto se perdia callado. */}
-        {sinConfirmar.length > 0 && (
-          <div className="callout warn" style={{ marginBottom: 14 }}>
+      {/* La red de seguridad: mientras algo no haya llegado, se dice, se sigue
+          intentando y se puede forzar a mano. Antes esto se perdia callado. */}
+      {/*
+        Con `error`, no solo con la cola llena.
+
+        La cola se llena en cuanto el candidato termina de responder y se vacia
+        un segundo despues, cuando el servidor confirma. Colgar el aviso de la
+        cola lo hacia aparecer y desaparecer en **cada una de las 55 preguntas**,
+        empujando la pagina hacia abajo cada vez, para avisar de algo que no
+        estaba pasando: el guardado normal iba bien.
+
+        `error` solo tiene valor cuando un guardado **fallo de verdad** y aun no
+        se ha recuperado —`onSuccess` lo pone a nulo—, que es exactamente cuando
+        este aviso tiene algo que decir. Lo que NO cambia es el candado de la
+        entrega: ese sigue mirando la cola, porque entregar con algo sin
+        confirmar es entregar sin esa respuesta.
+      */}
+      {sinConfirmar.length > 0 && error !== null && (
+        <p className={`${estilos.aviso} ${estilos.malo}`} role="status">
+          <span>
             <b>
               {sinConfirmar.length === 1
-                ? 'Hay 1 respuesta sin guardar'
-                : `Hay ${sinConfirmar.length} respuestas sin guardar`}
-            </b>
-            <p>
-              Seguimos intentándolo solos. No cierres esta página hasta que lo consigamos:
-              lo que no llegue al servidor no se entrega.
-            </p>
-            <button className="link" type="button" onClick={mandarPendientes}>
+                ? 'Hay 1 respuesta sin guardar.'
+                : `Hay ${sinConfirmar.length} respuestas sin guardar.`}
+            </b>{' '}
+            Seguimos intentándolo solos. No cierres esta página hasta que lo consigamos: lo
+            que no llegue al servidor no se entrega.{' '}
+            <button className={estilos.enlaceAviso} type="button" onClick={mandarPendientes}>
               Reintentar ahora
             </button>
-          </div>
-        )}
+          </span>
+        </p>
+      )}
 
-        {faltanPreguntas && (
-          <div className="callout warn" style={{ marginBottom: 14 }}>
+      {faltanPreguntas && (
+        <p className={`${estilos.aviso} ${estilos.malo}`} role="status">
+          <span>
             <b>
               Faltan preguntas por cargar: llegaron {preguntas.length} de las{' '}
-              {evaluacion.total}
-            </b>
-            <p>
-              No es cosa tuya. Vuelve a cargar la evaluación; si sigue igual, avísanos
-              antes de entregar: lo que no llega no se puede responder.
-            </p>
-            <button className="link" type="button" onClick={() => void consulta.refetch()}>
+              {evaluacion.total}.
+            </b>{' '}
+            No es cosa tuya. Vuelve a cargar la evaluación; si sigue igual, avísanos antes de
+            entregar: lo que no llega no se puede responder.{' '}
+            <button
+              className={estilos.enlaceAviso}
+              type="button"
+              onClick={() => void consulta.refetch()}
+            >
               Volver a cargar
             </button>
-          </div>
-        )}
+          </span>
+        </p>
+      )}
 
-        {restante !== null && restante < 3600 && (
-          <div className="callout warn" style={{ marginBottom: 14 }}>
-            <b>Queda poco plazo: {formatearTiempo(restante)}</b>
-            <p>Cuando se acabe, se entregará lo que tengas respondido.</p>
-          </div>
-        )}
+      {restante !== null && restante < 3600 && (
+        <p className={estilos.aviso}>
+          <span>
+            <b>Queda poco plazo: {formatearTiempo(restante)}</b>. Cuando se acabe, se
+            entregará lo que tengas respondido.
+          </span>
+        </p>
+      )}
 
-        <article className="card">
-          <div className="label">Evaluación Integral</div>
-          {pregunta.situacion && (
-            <div className="callout" style={{ marginTop: 14 }}>
-              <b>La situación</b>
-              <p>{pregunta.situacion}</p>
-            </div>
-          )}
+      <article className={estilos.pregunta}>
+        {pregunta.situacion && <p className={estilos.situacion}>{pregunta.situacion}</p>}
 
-          <h1 className="question">{pregunta.enunciado}</h1>
+        <h1 className={estilos.enunciado}>{pregunta.enunciado}</h1>
 
-          {/* Cada formato del banco v3 se responde de una manera distinta, y la
-              suya vive en `Formatos.tsx`. Aqui solo se le dice que hay puesto y
-              a donde avisar cuando cambie. */}
+        {/* Cada formato del banco v3 se responde de una manera distinta, y la
+            suya vive en `Formatos.tsx`. Aqui solo se le dice que hay puesto y
+            a donde avisar cuando cambie. */}
+        <div className={estilos.respuesta}>
           <RespuestaDeLaPregunta
             pregunta={pregunta}
             detalle={detalleDeEsta}
@@ -732,49 +774,56 @@ export function Evaluacion() {
             onOpcion={(opcionId) => elegirOpcion(pregunta.id, opcionId)}
             onTexto={(nuevo) => setBorrador({ preguntaId: pregunta.id, texto: nuevo })}
           />
-
-          {error && <div className="error">{error}</div>}
-
-          <div className="exam-foot">
-            <div className="small">
-              <b>Puedes volver atrás y corregir.</b>
-              <br />
-              Cada respuesta se guarda sola. Nada se envía hasta que entregues.
-            </div>
-            <div className="row" style={{ gap: 8 }}>
-              <button
-                className="btn"
-                onClick={() => navegarA(indice - 1)}
-                disabled={indice === 0}
-              >
-                Anterior
-              </button>
-              {esUltima ? (
-                <button
-                  className="btn primary large"
-                  onClick={() => {
-                    // Lo ultimo escrito se manda antes de abrir el modal: si no,
-                    // la respuesta de la ultima pregunta se quedaba fuera.
-                    mandarPendientes()
-                    setConfirmarEntrega(true)
-                  }}
-                >
-                  Entregar evaluación
-                </button>
-              ) : (
-                <button className="btn primary large" onClick={() => navegarA(indice + 1)}>
-                  Siguiente
-                </button>
-              )}
-            </div>
-          </div>
-        </article>
-
-        <div className="callout" style={{ marginTop: 14 }}>
-          <b>Si se corta tu conexión</b>
-          <p>Podrás volver a entrar y continuar desde la última respuesta guardada.</p>
         </div>
-      </div>
+
+        {error && (
+          <p className={`${estilos.aviso} ${estilos.malo}`} role="alert">
+            <span>{error}</span>
+          </p>
+        )}
+
+        <div className={estilos.pie}>
+          <span
+            className={`${estilos.estadoRespuesta}${
+              indicador.pendiente ? ` ${estilos.pendiente}` : ''
+            }`}
+          >
+            {indicador.texto}
+          </span>
+          <div className={estilos.pasos}>
+            <button
+              type="button"
+              className={estilos.anterior}
+              onClick={() => navegarA(indice - 1)}
+              disabled={indice === 0}
+            >
+              Anterior
+            </button>
+            {esUltima ? (
+              <button
+                type="button"
+                className={estilos.siguiente}
+                onClick={() => {
+                  // Lo ultimo escrito se manda antes de abrir el modal: si no,
+                  // la respuesta de la ultima pregunta se quedaba fuera.
+                  mandarPendientes()
+                  setConfirmarEntrega(true)
+                }}
+              >
+                Entregar evaluación
+              </button>
+            ) : (
+              <button
+                type="button"
+                className={estilos.siguiente}
+                onClick={() => navegarA(indice + 1)}
+              >
+                Siguiente
+              </button>
+            )}
+          </div>
+        </div>
+      </article>
 
       <Modal
         abierto={confirmarEntrega}
@@ -782,11 +831,12 @@ export function Evaluacion() {
         onCerrar={() => setConfirmarEntrega(false)}
         pie={
           <>
-            <button className="btn" onClick={() => setConfirmarEntrega(false)}>
+            <button type="button" className={estilos.seguir} onClick={() => setConfirmarEntrega(false)}>
               Seguir revisando
             </button>
             <button
-              className="btn primary"
+              type="button"
+              className={estilos.confirmarEntrega}
               onClick={() => entrega.mutate()}
               // Entregar con algo sin guardar es entregar sin esa respuesta, y
               // el backend ademas rechaza la entrega si falta alguna.
@@ -798,57 +848,61 @@ export function Evaluacion() {
         }
       >
         {sinConfirmar.length > 0 ? (
-          <div className="callout bad">
-            <b>
-              Espera: {sinConfirmar.length === 1 ? 'una respuesta' : `${sinConfirmar.length} respuestas`} aún no
-              {sinConfirmar.length === 1 ? ' ha llegado' : ' han llegado'} al servidor
-            </b>
-            <p>
+          <p className={`${estilos.aviso} ${estilos.malo}`}>
+            <span>
+              <b>
+                Espera: {sinConfirmar.length === 1 ? 'una respuesta' : `${sinConfirmar.length} respuestas`} aún no
+                {sinConfirmar.length === 1 ? ' ha llegado' : ' han llegado'} al servidor.
+              </b>{' '}
               Estamos reintentándolo. Si entregas ahora se quedarían fuera. En cuanto se
-              guarden, este aviso desaparece y podrás entregar.
-            </p>
-            <button className="link" type="button" onClick={mandarPendientes}>
-              Reintentar ahora
-            </button>
-          </div>
-        ) : faltan > 0 ? (
-          <div className="callout bad">
-            <b>
-              {faltan === 1
-                ? 'Falta 1 pregunta por responder'
-                : `Faltan ${faltan} preguntas por responder`}
-            </b>
-            <p>
-              No se puede entregar una evaluación incompleta: el servidor la rechaza
-              hasta que estén todas. Si alguna no se deja guardar, escríbenos antes de
-              que venza el plazo.
-            </p>
-            {primeraSinResponder >= 0 && (
-              <button
-                className="link"
-                type="button"
-                onClick={() => {
-                  setConfirmarEntrega(false)
-                  // Un salto, no una navegacion: desde ahi se puede volver.
-                  saltarA(primeraSinResponder)
-                }}
-              >
-                Ir a la primera sin responder
+              guarden, este aviso desaparece y podrás entregar.{' '}
+              <button className={estilos.enlaceAviso} type="button" onClick={mandarPendientes}>
+                Reintentar ahora
               </button>
-            )}
-          </div>
+            </span>
+          </p>
+        ) : faltan > 0 ? (
+          <p className={`${estilos.aviso} ${estilos.malo}`}>
+            <span>
+              <b>
+                {faltan === 1
+                  ? 'Falta 1 pregunta por responder.'
+                  : `Faltan ${faltan} preguntas por responder.`}
+              </b>{' '}
+              No se puede entregar una evaluación incompleta: el servidor la rechaza hasta
+              que estén todas. Si alguna no se deja guardar, escríbenos antes de que venza el
+              plazo.{' '}
+              {primeraSinResponder >= 0 && (
+                <button
+                  className={estilos.enlaceAviso}
+                  type="button"
+                  onClick={() => {
+                    setConfirmarEntrega(false)
+                    // Un salto, no una navegacion: desde ahi se puede volver.
+                    saltarA(primeraSinResponder)
+                  }}
+                >
+                  Ir a la primera sin responder
+                </button>
+              )}
+            </span>
+          </p>
         ) : (
-          <div className="callout good">
-            <b>Respondiste las {evaluacion.total} preguntas</b>
-            <p>Después de entregar ya no podrás modificar tus respuestas.</p>
-          </div>
+          <p className={estilos.aviso}>
+            <span>
+              <b>Respondiste las {evaluacion.total} preguntas</b>. Después de entregar ya no
+              podrás modificar tus respuestas.
+            </span>
+          </p>
         )}
         {entrega.isError && (
-          <div className="error">
-            {entrega.error instanceof Error ? entrega.error.message : 'No pudimos entregar.'}
-          </div>
+          <p className={`${estilos.aviso} ${estilos.malo}`} role="alert">
+            <span>
+              {entrega.error instanceof Error ? entrega.error.message : 'No pudimos entregar.'}
+            </span>
+          </p>
         )}
       </Modal>
-    </>
+    </div>
   )
 }

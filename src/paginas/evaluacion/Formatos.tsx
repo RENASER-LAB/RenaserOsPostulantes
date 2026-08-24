@@ -10,6 +10,8 @@
  *
  *   - **Los pasos de un SEC se mueven con botones, no arrastrando.** Arrastrar
  *     va mal en un telefono, y desde el telefono responde casi todo el mundo.
+ *     (`Formatos.module.css` conserva `.asa` y `.arrastrando` de un intento de
+ *     arrastre que no se llego a cablear: son CSS muerto.)
  *   - **Nada se manda a medias.** Media respuesta la rechaza el backend, y el
  *     candidato veria un error que no puede arreglar. Mientras falte algo se
  *     dice en una linea, con letra ambar, y no sale nada hacia el servidor.
@@ -36,7 +38,7 @@ import {
   soloCantidad,
   subcamposDeV,
 } from './bancoV3'
-import './formatos-v3.css'
+import estilos from './Formatos.module.css'
 
 interface Props {
   pregunta: PreguntaEvaluacion
@@ -86,9 +88,9 @@ function ConAviso({
     <>
       {children}
       {falta ? (
-        <div className="hint hint-pendiente">{falta}</div>
+        <div className={estilos.pendiente}>{falta}</div>
       ) : (
-        <div className="hint">Se guarda sola en cuanto la completas.</div>
+        <div className={estilos.pendiente}>Se guarda sola en cuanto la completas.</div>
       )}
     </>
   )
@@ -119,17 +121,27 @@ function PorFormato(props: Props) {
 function OpcionUnica({ pregunta, opcionElegida, onOpcion }: Props) {
   return (
     <>
-      {(pregunta.opciones ?? []).map((opcion) => (
-        <label className="choice" key={opcion.id}>
-          <input
-            type="radio"
-            name={`pregunta-${pregunta.id}`}
-            checked={opcionElegida === opcion.id}
-            onChange={() => onOpcion(opcion.id)}
-          />
-          <span>{conLetra(opcion)}</span>
-        </label>
-      ))}
+      <div className={estilos.opciones}>
+        {(pregunta.opciones ?? []).map((opcion) => (
+          <label
+            className={`${estilos.opcion}${opcionElegida === opcion.id ? ` ${estilos.elegida}` : ''}`}
+            key={opcion.id}
+          >
+            <input
+              className={estilos.control}
+              type="radio"
+              name={`pregunta-${pregunta.id}`}
+              checked={opcionElegida === opcion.id}
+              onChange={() => onOpcion(opcion.id)}
+            />
+            <span className={estilos.marca} aria-hidden="true" />
+            {/* De una pieza: partir «a.» del texto deja el nombre accesible
+                como «a.Aviso antes de mover nada», sin el espacio. Es la misma
+                trampa que ya rompió cuatro pruebas con «Pregunta 2 de 4». */}
+            <span className={estilos.textoOpcion}>{conLetra(opcion)}</span>
+          </label>
+        ))}
+      </div>
     </>
   )
 }
@@ -137,16 +149,19 @@ function OpcionUnica({ pregunta, opcionElegida, onOpcion }: Props) {
 /** Las preguntas abiertas del banco viejo: un relato, en un cuadro grande. */
 function Escrito({ texto, onTexto }: Props) {
   return (
-    <div className="field">
-      <label htmlFor="respuesta">Tu respuesta</label>
+    <div className={estilos.parte}>
+      <label className={estilos.etiquetaParte} htmlFor="respuesta">
+        Tu respuesta
+      </label>
       <textarea
+        className={estilos.escrito}
         id="respuesta"
         value={texto}
         maxLength={MAXIMO_DEL_TEXTO}
         onChange={(e) => onTexto(e.target.value)}
         placeholder="Describe el contexto, qué hiciste, qué resultado obtuviste y qué aprendiste."
       />
-      <div className="hint">
+      <div className={estilos.cuenta}>
         {texto.length > MAXIMO_DEL_TEXTO * 0.9
           ? `Se guarda sola cuando dejas de escribir. Llevas ${texto.length.toLocaleString('es-PE')} caracteres de ${MAXIMO_DEL_TEXTO.toLocaleString('es-PE')}: pasado ese punto el servidor no la acepta.`
           : 'Se guarda sola cuando dejas de escribir.'}
@@ -182,18 +197,25 @@ function DatoPorPartes({ pregunta, texto, onTexto }: Props) {
     onTexto(armarTextoV(subcampos, { ...valores, [clave]: valor }))
 
   return (
-    <div className="dato-partes">
-      <p className="small ef4-guia">
+    <div className={estilos.partes}>
+      <p className={estilos.guia}>
         Llena cada dato en su casilla. Son datos sueltos: aquí no hay que explicar nada.
       </p>
       {subcampos.map((sub) => {
         const id = `dato-${pregunta.id}-${sub.clave}`
         const valor = valores[sub.clave] ?? ''
         return (
-          <div className="field" key={sub.clave}>
-            <label htmlFor={id}>{sub.etiqueta}</label>
+          <div className={estilos.parte} key={sub.clave}>
+            <label className={estilos.etiquetaParte} htmlFor={id}>
+              {sub.etiqueta}
+            </label>
             {sub.clase === 'LISTA' ? (
-              <select id={id} value={valor} onChange={(e) => cambiar(sub.clave, e.target.value)}>
+              <select
+                className={estilos.campoParte}
+                id={id}
+                value={valor}
+                onChange={(e) => cambiar(sub.clave, e.target.value)}
+              >
                 <option value="">Elige una…</option>
                 {sub.opciones.map((opcion) => (
                   <option value={opcion} key={opcion}>
@@ -206,6 +228,7 @@ function DatoPorPartes({ pregunta, texto, onTexto }: Props) {
                  impide teclear letras en un ordenador: por eso lo que llega se
                  filtra igual. Las dos cosas hacen falta. */
               <input
+                className={estilos.campoParte}
                 id={id}
                 type="text"
                 inputMode="numeric"
@@ -216,6 +239,7 @@ function DatoPorPartes({ pregunta, texto, onTexto }: Props) {
               />
             ) : (
               <input
+                className={estilos.campoParte}
                 id={id}
                 type="text"
                 autoComplete="off"
@@ -246,38 +270,44 @@ function EleccionForzada({ pregunta, detalle, onDetalle }: Props) {
     onDetalle({ ...detalle, menos: id, mas: mas === id ? undefined : mas })
 
   return (
-    <div className="ef4">
-      <p className="small ef4-guia">
+    <div className={estilos.ef4}>
+      <p className={estilos.guia}>
         De estas cuatro, marca la que <b>más</b> se parece a ti y la que <b>menos</b>. No hay
         una buena: todas describen formas de trabajar.
       </p>
       {(pregunta.opciones ?? []).map((opcion) => (
-        <div className="ef4-fila" key={opcion.id}>
-          <span className="ef4-texto">{conLetra(opcion)}</span>
-          <div className="ef4-marcas">
+        <div className={estilos.filaEf4} key={opcion.id}>
+          <span className={estilos.textoEf4}>{conLetra(opcion)}</span>
+          <div className={estilos.marcasEf4}>
             {/* El `aria-label` repite el texto de la opcion porque, si no,
                 quien usa lector de pantalla oye cuatro veces «La que más» sin
                 saber de cual. Empieza igual que lo que se ve, que es lo que
                 pide la regla de accesibilidad. */}
-            <label className="ef4-marca">
+            <label
+              className={`${estilos.marcaEf4}${mas === opcion.id ? ` ${estilos.puesta}` : ''}`}
+            >
               <input
+                className={estilos.control}
                 type="radio"
                 name={`mas-${pregunta.id}`}
                 aria-label={`La que más: ${opcion.texto}`}
                 checked={mas === opcion.id}
                 onChange={() => marcarMas(opcion.id)}
               />
-              <span>La que más</span>
+              La que más
             </label>
-            <label className="ef4-marca">
+            <label
+              className={`${estilos.marcaEf4}${menos === opcion.id ? ` ${estilos.puesta}` : ''}`}
+            >
               <input
+                className={estilos.control}
                 type="radio"
                 name={`menos-${pregunta.id}`}
                 aria-label={`La que menos: ${opcion.texto}`}
                 checked={menos === opcion.id}
                 onChange={() => marcarMenos(opcion.id)}
               />
-              <span>La que menos</span>
+              La que menos
             </label>
           </div>
         </div>
@@ -304,31 +334,35 @@ function ConEscala({ pregunta, detalle, onDetalle }: Props) {
     onDetalle({ ...detalle, calificaciones: { ...notas, [String(opcionId)]: nota } })
 
   return (
-    <div className="escala-bloque">
-      <p className="small ef4-guia">
+    <div className={estilos.escala}>
+      <p className={estilos.guia}>
         Califica <b>cada una</b> de las respuestas posibles, del 1 al 5. Varias pueden tener la
         misma nota.
       </p>
       {(pregunta.opciones ?? []).map((opcion) => (
-        <div className="escala-fila" key={opcion.id}>
-          <span className="escala-texto">{conLetra(opcion)}</span>
-          <div className="escala" role="group" aria-label={`Calificación de ${opcion.texto}`}>
+        <div className={estilos.bloqueEscala} key={opcion.id}>
+          <span className={estilos.textoEscala}>{conLetra(opcion)}</span>
+          <div className={estilos.puntos} role="group" aria-label={`Calificación de ${opcion.texto}`}>
             {ESCALA.map((punto) => (
-              <label className="escala-punto" key={punto.valor}>
+              <label
+                className={`${estilos.punto}${notas[String(opcion.id)] === punto.valor ? ` ${estilos.puesto}` : ''}`}
+                key={punto.valor}
+              >
                 <input
+                  className={estilos.control}
                   type="radio"
                   name={`escala-${pregunta.id}-${opcion.id}`}
                   checked={notas[String(opcion.id)] === punto.valor}
                   onChange={() => calificar(opcion.id, punto.valor)}
                   aria-label={`${punto.valor}, ${punto.que}`}
                 />
-                <span>{punto.valor}</span>
+                {punto.valor}
               </label>
             ))}
           </div>
         </div>
       ))}
-      <p className="small escala-leyenda">
+      <p className={estilos.leyendaEscala}>
         1 · nada apropiada &nbsp;—&nbsp; 5 · lo mejor que se puede hacer
       </p>
     </div>
@@ -346,23 +380,23 @@ function Ordenar({ pregunta, detalle, onDetalle }: Props) {
     onDetalle({ ...detalle, orden: moverPaso(orden, desde, hacia) })
 
   return (
-    <div className="pasos">
-      <p className="small ef4-guia">
+    <div className={estilos.partes}>
+      <p className={estilos.guia}>
         Deja los pasos en el orden en que los harías: el primero arriba. Muévelos con las
         flechas.
       </p>
-      <ol className="pasos-lista">
+      <ol className={estilos.pasos}>
         {orden.map((id, i) => {
           const opcion = porId.get(id)
           if (!opcion) return null
           return (
-            <li className="paso" key={id}>
-              <span className="paso-orden">{i + 1}</span>
-              <span className="paso-texto">{opcion.texto}</span>
-              <span className="paso-botones">
+            <li className={estilos.paso} key={id}>
+              <span className={estilos.numeroPaso}>{i + 1}</span>
+              <span className={estilos.textoPaso}>{opcion.texto}</span>
+              <span className={estilos.flechas}>
                 <button
                   type="button"
-                  className="iconbtn"
+                  className={estilos.flecha}
                   aria-label={`Subir: ${opcion.texto}`}
                   disabled={i === 0}
                   onClick={() => mover(i, i - 1)}
@@ -371,7 +405,7 @@ function Ordenar({ pregunta, detalle, onDetalle }: Props) {
                 </button>
                 <button
                   type="button"
-                  className="iconbtn"
+                  className={estilos.flecha}
                   aria-label={`Bajar: ${opcion.texto}`}
                   disabled={i === orden.length - 1}
                   onClick={() => mover(i, i + 1)}
@@ -390,7 +424,7 @@ function Ordenar({ pregunta, detalle, onDetalle }: Props) {
       {sinTocar && (
         <button
           type="button"
-          className="btn"
+          className={estilos.confirmarOrden}
           onClick={() => onDetalle({ ...detalle, orden })}
         >
           Este orden es el mío
@@ -422,31 +456,42 @@ function MarcarVarias({
   }
 
   return (
-    <div className="marcar">
-      <p className="small ef4-guia">
+    <div>
+      <p className={estilos.guia}>
         Marca todas las que correspondan. Puedes marcar varias, o ninguna.
       </p>
-      {(pregunta.opciones ?? []).map((opcion) => (
-        <label className="choice" key={opcion.id}>
+      <div className={estilos.opciones}>
+        {(pregunta.opciones ?? []).map((opcion) => {
+          const puesta = (marcadas ?? []).includes(opcion.id)
+          return (
+            <label
+              className={`${estilos.opcion}${puesta ? ` ${estilos.elegida}` : ''}`}
+              key={opcion.id}
+            >
+              <input
+                className={estilos.control}
+                type="checkbox"
+                checked={puesta}
+                onChange={() => alternar(opcion.id)}
+              />
+              <span className={estilos.marca} aria-hidden="true" />
+              <span className={estilos.textoOpcion}>{conLetra(opcion)}</span>
+            </label>
+          )
+        })}
+        <label className={`${estilos.opcion}${ninguna ? ` ${estilos.elegida}` : ''}`}>
           <input
+            className={estilos.control}
             type="checkbox"
-            checked={(marcadas ?? []).includes(opcion.id)}
-            onChange={() => alternar(opcion.id)}
+            checked={ninguna}
+            onChange={() =>
+              onDetalle({ ...detalle, marcadas: ninguna ? undefined : [] })
+            }
           />
-          <span>{conLetra(opcion)}</span>
+          <span className={estilos.marca} aria-hidden="true" />
+          <span className={estilos.textoOpcion}>{etiquetaNinguna}</span>
         </label>
-      ))}
-      <div className="divider" />
-      <label className="choice">
-        <input
-          type="checkbox"
-          checked={ninguna}
-          onChange={() =>
-            onDetalle({ ...detalle, marcadas: ninguna ? undefined : [] })
-          }
-        />
-        <span>{etiquetaNinguna}</span>
-      </label>
+      </div>
     </div>
   )
 }
@@ -461,22 +506,30 @@ function CasoDescompuesto({ pregunta, detalle, onDetalle }: Props) {
     onDetalle({ ...detalle, campos: { ...puestos, [clave]: valor } })
 
   return (
-    <div className="campos-caso">
-      <p className="small ef4-guia">
+    <div>
+      <p className={estilos.guia}>
         Llena todos los campos. Van sueltos a propósito: aquí no se juzga cómo lo cuentas,
         sino los datos.
       </p>
-      {campos.map((campo) => (
-        <div className="field" key={campo.clave}>
-          <label htmlFor={`campo-${pregunta.id}-${campo.clave}`}>{campo.etiqueta}</label>
-          <input
-            id={`campo-${pregunta.id}-${campo.clave}`}
-            type="text"
-            value={puestos[campo.clave] ?? ''}
-            onChange={(e) => escribir(campo.clave, e.target.value)}
-          />
-        </div>
-      ))}
+      <div className={estilos.campos}>
+        {campos.map((campo) => (
+          <div className={estilos.parte} key={campo.clave}>
+            <label
+              className={estilos.etiquetaParte}
+              htmlFor={`campo-${pregunta.id}-${campo.clave}`}
+            >
+              {campo.etiqueta}
+            </label>
+            <input
+              className={estilos.campoParte}
+              id={`campo-${pregunta.id}-${campo.clave}`}
+              type="text"
+              value={puestos[campo.clave] ?? ''}
+              onChange={(e) => escribir(campo.clave, e.target.value)}
+            />
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
