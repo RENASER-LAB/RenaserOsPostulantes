@@ -106,19 +106,23 @@ export function Vacante() {
         </section>
       )}
 
-      {v.responsabilidades && (
-        <section className={estilos.bloque}>
-          <h2 className={estilos.tituloBloque}>Lo que harás</h2>
-          <Puntos texto={v.responsabilidades} />
-        </section>
-      )}
+      {/* Dos listas paralelas: en escritorio van al lado, no una debajo de otra.
+          Si solo llega una, ocupa el ancho entero ella sola. */}
+      <div className={estilos.dosListas}>
+        {v.responsabilidades && (
+          <section className={estilos.bloque}>
+            <h2 className={estilos.tituloBloque}>Lo que harás</h2>
+            <Puntos texto={v.responsabilidades} />
+          </section>
+        )}
 
-      {v.requisitos && (
-        <section className={estilos.bloque}>
-          <h2 className={estilos.tituloBloque}>Lo que buscamos</h2>
-          <Puntos texto={v.requisitos} />
-        </section>
-      )}
+        {v.requisitos && (
+          <section className={estilos.bloque}>
+            <h2 className={estilos.tituloBloque}>Lo que buscamos</h2>
+            <Puntos texto={v.requisitos} />
+          </section>
+        )}
+      </div>
 
       {requisitos.length > 0 && (
         <section className={estilos.requisitos}>
