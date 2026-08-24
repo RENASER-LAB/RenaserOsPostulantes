@@ -1,0 +1,120 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&display=swap');
+*{box-sizing:border-box}
+body{margin:0;font-family:Archivo,system-ui,sans-serif;background:#EDEDF0;color:#1C1C1E;font-size:15px;line-height:1.45}
+a{color:#4338CA;text-decoration:none}a:hover{color:#312BA0}
+.marco{width:1180px;background:#FFFFFF;border:1.5px solid #1C1C1E;display:flex;flex-direction:column;min-height:100%}
+.cab{display:flex;justify-content:space-between;align-items:center;padding:14px 28px;border-bottom:1.5px solid #1C1C1E;gap:24px}
+.marca{display:flex;align-items:center;gap:2px;font-weight:700;font-size:22px;letter-spacing:-.02em}
+.hormiga{width:17px;height:17px;margin-left:-3px}
+.nav{display:flex;gap:22px;align-items:center;font-size:14px;color:#6B6B70}
+.nav b{color:#1C1C1E}
+.chip{border:1.5px solid #1C1C1E;padding:6px 14px;font-size:13px;font-weight:600}
+.cuerpo{padding:28px;display:flex;flex-direction:column;gap:22px;flex-grow:1}
+h1{font-size:28px;margin:0;letter-spacing:-.02em;font-weight:700}
+h2{font-size:19px;margin:0;font-weight:600}
+h3{font-size:15px;margin:0;font-weight:600}
+p{margin:0;color:#48484D}
+.caja{border:1.5px solid #C4C4CE;background:#fff;padding:20px}
+.caja.toca{border:2px solid #4338CA;background:#F1F0FE}
+.caja.gris{background:#F0F0F4;border-style:dashed}
+.eti{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#77777D;font-weight:600}
+.eti.oro{color:#4338CA}
+.btn{display:inline-flex;align-items:center;justify-content:center;border:1.5px solid #1C1C1E;background:#fff;padding:11px 20px;font-size:14px;font-weight:600;min-height:44px}
+.btn.pri{background:#1C1C1E;color:#FFFFFF}
+.btn.oro{background:#4338CA;border-color:#4338CA;color:#fff}
+.linea{height:9px;background:#E6E6EB}
+.linea.corta{width:55%}.linea.media{width:78%}
+.fila{display:flex;gap:14px;align-items:center}
+.col{display:flex;flex-direction:column;gap:10px}
+.small{font-size:13px;color:#6B6B70}
+.tag{display:inline-flex;border:1.5px solid #C4C4CE;padding:3px 10px;font-size:12px;font-weight:600;color:#48484D;background:#F0F0F4}
+.tag.oro{border-color:#4338CA;color:#4338CA;background:#F1F0FE}
+.nota{border-left:3px solid #4338CA;padding:8px 0 8px 12px;font-size:12.5px;color:#3730A3;background:#F1F0FE}
+  </style>
+</helmet>
+<div class="marco" style="width:600px">
+  <div class="cab">
+    <div class="marca">EX<svg class="hormiga" viewBox="0 0 24 24"><path d="M10.3 5.4 8 2.9M13.7 5.4 16 2.9M9.5 10 6 8M9.4 12.2 5.6 12.7M9.8 14.2 6.4 16.6M14.5 10 18 8M14.6 12.2 18.4 12.7M14.2 14.2 17.6 16.6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" fill="none"></path><ellipse cx="12" cy="6.1" rx="2.1" ry="1.9" fill="currentColor"></ellipse><ellipse cx="12" cy="10.4" rx="1.6" ry="2" fill="currentColor"></ellipse><ellipse cx="12" cy="16" rx="2.5" ry="3.3" fill="currentColor"></ellipse></svg></div>
+    <span class="eti">Maquetado · v2</span>
+  </div>
+
+  <div class="cuerpo" style="gap:26px">
+    <div class="col" style="gap:8px">
+      <span class="eti">Portal del candidato</span>
+      <h1>El recorrido, decidido.</h1>
+      <p style="font-size:15px">Esto sigue siendo maquetado: estructura, textos y botones. Los
+      bloques grises son contenido real que existe en el backend, dibujado como barra para no
+      distraer con relleno.</p>
+    </div>
+
+    <div class="caja" style="padding:18px">
+      <span class="eti">Lo que se eligió</span>
+      <div class="col" style="gap:13px;margin-top:13px">
+        <div class="fila" style="gap:13px;align-items:flex-start">
+          <span class="tag oro" style="flex-shrink:0">B</span>
+          <div class="col" style="gap:3px;flex-grow:1">
+            <b style="font-size:14px">Mis procesos · el recorrido</b>
+            <span class="small">Cada postulación con su camino de cinco etapas y un punto donde
+            estás. La acción vive dentro de la etapa.</span>
+          </div>
+        </div>
+        <div class="fila" style="gap:13px;align-items:flex-start">
+          <span class="tag oro" style="flex-shrink:0">A</span>
+          <div class="col" style="gap:3px;flex-grow:1">
+            <b style="font-size:14px">Evaluación · una pregunta por pantalla, con mapa</b>
+            <span class="small">El mapa lateral evita el problema conocido: saltarse una pregunta
+            y no poder volver sin pulsar cuarenta veces.</span>
+          </div>
+        </div>
+        <div class="fila" style="gap:13px;align-items:flex-start">
+          <span class="tag oro" style="flex-shrink:0">A</span>
+          <div class="col" style="gap:3px;flex-grow:1">
+            <b style="font-size:14px">Sin nada que hacer · la espera no ocupa sitio</b>
+            <span class="small">Se dice claro que no hay nada pendiente y se ofrece algo útil
+            mientras tanto.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="caja gris" style="padding:16px">
+      <span class="eti">Cómo leer este lienzo</span>
+      <div class="col" style="gap:9px;margin-top:11px">
+        <p class="small"><b>Esta página</b> — las tres pantallas elegidas, más el estudio de color
+        que hay a la derecha.</p>
+        <p class="small"><b>Página «El recorrido»</b> — las doce pantallas restantes, en el orden
+        en que las vive el candidato.</p>
+      </div>
+    </div>
+
+    <div class="col" style="gap:11px">
+      <h2>Lo que cambió en esta versión</h2>
+      <p class="small">El fondo de la página es <b>blanco</b>. El gris que rodea cada pantalla es
+      el lienzo, no la página: un papel blanco necesita un suelo que no lo sea para leerse como
+      papel.</p>
+      <p class="small">El acento pasó de champagne a <b>índigo</b>. El porqué está en el estudio
+      de color, aquí al lado.</p>
+    </div>
+
+    <div class="nota">Del portal actual solo se conserva el nombre <b>EX</b> y su logotipo, la
+    palabra con la hormiga dentro de la X.</div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

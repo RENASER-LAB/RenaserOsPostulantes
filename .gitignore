@@ -21,3 +21,13 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 .env.local
+
+# Las capturas de revision son de usar y tirar
+capturas/
+
+# El artefacto publicado del maquetado: 2,3 MB generados. La fuente son los
+# `maquetado/*.body.html`, que sí van al repositorio.
+portal-candidato-ex.html
+
+# Registro de sesión de impeccable, no es del proyecto
+.impeccable/questions/

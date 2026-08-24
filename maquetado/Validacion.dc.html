@@ -1,0 +1,146 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&display=swap');
+*{box-sizing:border-box}
+body{margin:0;font-family:Archivo,system-ui,sans-serif;background:#EDEDF0;color:#1C1C1E;font-size:15px;line-height:1.45}
+a{color:#4338CA;text-decoration:none}a:hover{color:#312BA0}
+.marco{width:1180px;background:#FFFFFF;border:1.5px solid #1C1C1E;display:flex;flex-direction:column;min-height:100%}
+.cab{display:flex;justify-content:space-between;align-items:center;padding:14px 28px;border-bottom:1.5px solid #1C1C1E;gap:24px}
+.marca{display:flex;align-items:center;gap:2px;font-weight:700;font-size:22px;letter-spacing:-.02em}
+.hormiga{width:17px;height:17px;margin-left:-3px}
+.nav{display:flex;gap:22px;align-items:center;font-size:14px;color:#6B6B70}
+.nav b{color:#1C1C1E}
+.chip{border:1.5px solid #1C1C1E;padding:6px 14px;font-size:13px;font-weight:600}
+.cuerpo{padding:28px;display:flex;flex-direction:column;gap:22px;flex-grow:1}
+h1{font-size:28px;margin:0;letter-spacing:-.02em;font-weight:700}
+h2{font-size:19px;margin:0;font-weight:600}
+h3{font-size:15px;margin:0;font-weight:600}
+p{margin:0;color:#48484D}
+.caja{border:1.5px solid #C4C4CE;background:#fff;padding:20px}
+.caja.toca{border:2px solid #4338CA;background:#F1F0FE}
+.caja.gris{background:#F0F0F4;border-style:dashed}
+.eti{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#77777D;font-weight:600}
+.eti.oro{color:#4338CA}
+.btn{display:inline-flex;align-items:center;justify-content:center;border:1.5px solid #1C1C1E;background:#fff;padding:11px 20px;font-size:14px;font-weight:600;min-height:44px}
+.btn.pri{background:#1C1C1E;color:#FFFFFF}
+.btn.oro{background:#4338CA;border-color:#4338CA;color:#fff}
+.linea{height:9px;background:#E6E6EB}
+.linea.corta{width:55%}.linea.media{width:78%}
+.fila{display:flex;gap:14px;align-items:center}
+.col{display:flex;flex-direction:column;gap:10px}
+.small{font-size:13px;color:#6B6B70}
+.tag{display:inline-flex;border:1.5px solid #C4C4CE;padding:3px 10px;font-size:12px;font-weight:600;color:#48484D;background:#F0F0F4}
+.tag.oro{border-color:#4338CA;color:#4338CA;background:#F1F0FE}
+.nota{border-left:3px solid #4338CA;padding:8px 0 8px 12px;font-size:12.5px;color:#3730A3;background:#F1F0FE}
+  </style>
+</helmet>
+<div class="marco">
+  <div class="cab">
+    <div class="marca">EX<svg class="hormiga" viewBox="0 0 24 24"><path d="M10.3 5.4 8 2.9M13.7 5.4 16 2.9M9.5 10 6 8M9.4 12.2 5.6 12.7M9.8 14.2 6.4 16.6M14.5 10 18 8M14.6 12.2 18.4 12.7M14.2 14.2 17.6 16.6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" fill="none"></path><ellipse cx="12" cy="6.1" rx="2.1" ry="1.9" fill="currentColor"></ellipse><ellipse cx="12" cy="10.4" rx="1.6" ry="2" fill="currentColor"></ellipse><ellipse cx="12" cy="16" rx="2.5" ry="3.3" fill="currentColor"></ellipse></svg></div>
+    <div class="nav"><span>Vacantes</span><span>Mis procesos</span><span class="chip">Ingresar</span></div>
+  </div>
+  <div class="cuerpo" style="gap:22px">
+    <a href="#" class="small">← Volver a mis procesos</a>
+    <div class="col" style="gap:6px">
+      <span class="eti">Validación práctica · en curso</span>
+      <h1>Estás trabajando con nosotros.</h1>
+      <p>Analista de Datos · empezaste el 18 de agosto</p>
+    </div>
+
+    <div class="fila" style="gap:22px;align-items:flex-start">
+      <div class="col" style="gap:18px;flex-grow:1">
+        <div class="caja toca" style="padding:24px">
+          <div class="fila" style="justify-content:space-between;align-items:flex-start;gap:30px">
+            <div class="col" style="gap:9px;flex-grow:1">
+              <span class="eti oro">Tu periodo</span>
+              <h2 style="font-size:22px">Día 6 de 15</h2>
+              <p class="small">Termina el <b>viernes 5 de septiembre</b>. Después el responsable de
+              área completa lo que falte y se toma la decisión.</p>
+            </div>
+          </div>
+          <div class="fila" style="gap:0;margin-top:18px">
+            <div style="height:11px;background:#4338CA;width:40%"></div>
+            <div style="height:11px;background:#DCDCE6;flex-grow:1"></div>
+          </div>
+        </div>
+
+        <div class="caja" style="padding:22px">
+          <h2 style="margin-bottom:8px">Lo que estamos mirando</h2>
+          <p class="small" style="margin-bottom:15px">No hay sorpresas: esto es lo mismo que se te
+          dijo al empezar.</p>
+          <div class="col" style="gap:13px">
+            <div class="fila" style="gap:14px;align-items:flex-start;border-bottom:1.5px solid #E6E6EB;padding-bottom:13px">
+              <div class="col" style="gap:3px;flex-grow:1">
+                <b style="font-size:14px">Que lo comprometido se entregue</b>
+                <span class="small">Se registra solo, desde las tareas del sistema interno.</span>
+              </div>
+              <span class="tag">Automático</span>
+            </div>
+            <div class="fila" style="gap:14px;align-items:flex-start;border-bottom:1.5px solid #E6E6EB;padding-bottom:13px">
+              <div class="col" style="gap:3px;flex-grow:1">
+                <b style="font-size:14px">Cuánto tienes que rehacer</b>
+                <span class="small">Se registra solo.</span>
+              </div>
+              <span class="tag">Automático</span>
+            </div>
+            <div class="fila" style="gap:14px;align-items:flex-start;border-bottom:1.5px solid #E6E6EB;padding-bottom:13px">
+              <div class="col" style="gap:3px;flex-grow:1">
+                <b style="font-size:14px">Si avisas de un bloqueo a tiempo</b>
+                <span class="small">Se registra solo.</span>
+              </div>
+              <span class="tag">Automático</span>
+            </div>
+            <div class="fila" style="gap:14px;align-items:flex-start">
+              <div class="col" style="gap:3px;flex-grow:1">
+                <b style="font-size:14px">Cómo trabajas con el equipo</b>
+                <span class="small">Lo escribe tu responsable al final del periodo.</span>
+              </div>
+              <span class="tag">Una persona</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col" style="width:310px;gap:14px">
+        <div class="caja" style="padding:20px">
+          <span class="eti">Tu responsable</span>
+          <b style="display:block;margin-top:8px;font-size:15px">[NOMBRE DEL RESPONSABLE]</b>
+          <span class="small">[Área]</span>
+          <p class="small" style="margin-top:12px">Si algo te bloquea, díselo en cuanto pase.
+          Avisar pronto cuenta a favor, no en contra.</p>
+        </div>
+        <div class="caja gris" style="padding:20px;border-style:solid">
+          <span class="eti">Tu vinculación</span>
+          <b style="display:block;margin-top:8px;font-size:14px">[FIGURA CONTRACTUAL]</b>
+          <p class="small" style="margin-top:9px;font-size:12px">Pendiente de que Renaser confirme
+          cómo se llama y bajo qué condiciones.</p>
+        </div>
+        <div class="caja" style="padding:20px">
+          <span class="eti">Después de esto</span>
+          <p class="small" style="margin-top:9px">Queda la decisión final. La toma una persona,
+          mirando todo el recorrido — no solo estos 15 días.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="nota">⚠️ El backend <b>no expone nada</b> de la validación al portal: ni los días, ni
+    el responsable, ni las métricas. Maquetado completo a propósito, para saber qué hay que pedirle.
+    Los datos en corchetes son los que Renaser todavía no ha definido.</div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
