@@ -1,10 +1,17 @@
 /*
  * El armazon del panel.
  *
- * El mismo mundo que el portal —papel, tinta, cero radios— con una sola
- * diferencia deliberada: la cabecera va sobre fondo hundido y dice «Panel del
- * equipo». Quien tenga las dos pestañas abiertas sabe cual es cual de un
- * vistazo, sin inventar otra paleta.
+ * El mismo mundo que el portal —«El canto»: bruma, nube, Mulish, pildoras— y
+ * ninguna paleta inventada. Lo que cambia es la DENSIDAD y el aire, porque el
+ * publico es otro: el portal lo abre alguien nervioso cada tres dias, y esto lo
+ * habita el equipo de Talento la jornada entera. El canto irisado a sangre que
+ * abre «Mis procesos» aqui no entra: doscientos pixeles de atmosfera son un
+ * regalo en una pantalla que se visita, y un estorbo en una herramienta.
+ *
+ * De todo el mundo se queda **un filete del espectro** cruzando la cabecera.
+ * Es la firma de la casa reducida a lo que cabe en una herramienta, y ademas
+ * distingue las dos pestañas de un vistazo: el portal lleva la nube entera,
+ * el panel solo su canto.
  */
 
 .armazon {
@@ -14,11 +21,27 @@
 }
 
 .cabecera {
-  border-bottom: 1px solid var(--regla);
-  background: var(--hundido);
   position: sticky;
   top: 0;
   z-index: 10;
+  background: rgb(255 255 255 / 0.82);
+  backdrop-filter: blur(18px) saturate(1.4);
+  border-bottom: 1px solid rgb(203 210 220 / 0.6);
+}
+
+/* Donde el navegador no empaña, se cierra el fondo. */
+@supports not (backdrop-filter: blur(1px)) {
+  .cabecera {
+    background: var(--nube);
+  }
+}
+
+/* El filete del espectro: la firma de la casa, a dos pixeles. */
+.cabecera::before {
+  content: '';
+  display: block;
+  height: 2px;
+  background: var(--canto);
 }
 
 .cabeceraDentro {
@@ -46,10 +69,15 @@
   text-decoration: none;
 }
 
+/*
+ * «Panel del equipo», en versalitas junto a la marca. No es un antetitulo
+ * encima de un titular —eso el suelo de calidad lo veta— sino la etiqueta que
+ * dice de que producto es esta pestaña.
+ */
 .quienEs {
-  font-size: var(--t-menor);
-  font-weight: 600;
-  letter-spacing: 0.04em;
+  font-size: var(--t-micro);
+  font-weight: 700;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--tinta2);
   border-left: 1px solid var(--regla2);
@@ -59,7 +87,7 @@
 .navegacion {
   display: flex;
   align-items: center;
-  gap: var(--e5);
+  gap: var(--e2);
   font-size: var(--t-apoyo);
 }
 
@@ -67,23 +95,34 @@
   display: inline-flex;
   align-items: center;
   min-height: 44px;
+  padding: 0 var(--e3);
+  border-radius: var(--radio-control);
   color: var(--tinta2);
   text-decoration: none;
-  border-bottom: 1px solid transparent;
+  transition:
+    background 160ms var(--salida),
+    color 160ms var(--salida);
 }
 
 .enlace:hover {
   color: var(--tinta);
   text-decoration: none;
-  border-bottom-color: var(--regla2);
+  background: rgb(35 43 54 / 0.05);
 }
 
-/* La pestaña activa se marca con la regla y el peso, no con el acento: el
-   acento del mundo significa «te toca a ti» y aqui todo le toca al equipo. */
+/*
+ * La pestaña activa se marca con el peso y un fondo de bruma gris, no con el
+ * violeta: aqui el violeta ya lo llevan los botones de accion, y darselo
+ * tambien a la navegacion lo dejaria sin decir nada.
+ */
 .enlaceActivo {
   color: var(--tinta);
-  font-weight: 600;
-  border-bottom-color: var(--tinta);
+  font-weight: 700;
+  background: rgb(35 43 54 / 0.06);
+}
+
+.enlaceActivo:hover {
+  background: rgb(35 43 54 / 0.09);
 }
 
 .salir {
@@ -117,5 +156,13 @@
 
   .quienEs {
     display: none;
+  }
+
+  .navegacion {
+    gap: var(--e1);
+  }
+
+  .enlace {
+    padding: 0 var(--e2);
   }
 }

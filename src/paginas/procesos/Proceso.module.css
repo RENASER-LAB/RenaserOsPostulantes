@@ -32,13 +32,14 @@
 .estadoActual {
   margin-top: var(--e6);
   border: 1px solid var(--regla);
-  background: var(--hundido);
+  background: var(--nube-hundida);
   padding: var(--e5);
+  border-radius: var(--radio);
 }
 
 .estadoActual.turno {
-  border: 1px solid var(--acento-regla);
-  background: var(--acento-papel);
+  border: 1px solid var(--activo-regla);
+  background: var(--activo-bruma);
 }
 
 .estadoTitulo {
@@ -177,13 +178,14 @@
   justify-content: center;
   min-height: 44px;
   padding: 0 var(--e5);
-  background: var(--papel);
+  background: var(--nube);
   color: var(--mal);
   border: 1px solid var(--mal-regla);
   font-size: var(--t-prosa);
   font-weight: 600;
   cursor: pointer;
   transition: border-color 140ms var(--salida);
+  border-radius: var(--radio);
 }
 
 .botonRetirar:hover {
@@ -197,13 +199,15 @@
 .aviso {
   width: min(30rem, calc(100vw - 2rem));
   padding: var(--e6);
-  border: 1px solid var(--tinta);
-  background: var(--papel);
+  border: 1px solid var(--regla);
+  background: var(--nube);
   color: var(--tinta);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra-aviso);
 }
 
 .aviso::backdrop {
-  background: rgb(28 28 30 / 0.4);
+  background: rgb(35 43 54 / 0.4);
 }
 
 .avisoTitulo {
@@ -234,12 +238,13 @@
   justify-content: center;
   min-height: 44px;
   padding: 0 var(--e5);
-  background: var(--papel);
+  background: var(--nube);
   color: var(--mal);
   border: 1px solid var(--mal-regla);
   font-size: var(--t-prosa);
   font-weight: 600;
   cursor: pointer;
+  border-radius: var(--radio);
 }
 
 .confirmarRetiro:hover:not(:disabled) {
@@ -254,10 +259,11 @@
 .fallo {
   margin-top: var(--e4);
   border: 1px solid var(--mal-regla);
-  background: var(--mal-papel);
+  background: var(--mal-bruma);
   padding: var(--e3) var(--e4);
   font-size: var(--t-apoyo);
   color: var(--mal);
+  border-radius: var(--radio);
 }
 
 /* ---------- Cargando y fallo de la pagina ---------- */
@@ -266,6 +272,7 @@
   margin-top: var(--e6);
   border: 1px solid var(--regla);
   padding: var(--e6);
+  border-radius: var(--radio);
 }
 
 .marcoTexto {
@@ -283,7 +290,7 @@
 
 .barra {
   height: 12px;
-  background: var(--hundido2);
+  background: var(--nube-honda);
   margin-top: var(--e3);
 }
 

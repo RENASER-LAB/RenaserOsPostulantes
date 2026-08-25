@@ -52,12 +52,13 @@
   display: flex;
   gap: var(--e3);
   border: 1px solid var(--mal-regla);
-  background: var(--mal-papel);
+  background: var(--mal-bruma);
   padding: var(--e3) var(--e4);
   font-size: var(--t-prosa);
   line-height: 1.5;
   color: var(--mal);
   margin: var(--e3) 0;
+  border-radius: var(--radio-menor);
 }
 
 .avisoMalo::before {
@@ -90,6 +91,7 @@
   border: 1px solid var(--regla2);
   padding: var(--e2) var(--e3);
   font-size: var(--t-apoyo);
+  border-radius: var(--radio-control);
 }
 
 .cuantos {
@@ -122,8 +124,9 @@
 }
 
 .celdaDetalle {
-  background: var(--hundido);
+  background: var(--nube-hundida);
   padding: var(--e5) !important;
+  border-radius: var(--radio);
 }
 
 .detalle {
@@ -235,11 +238,12 @@
   flex: 1 1 18rem;
   min-height: 44px;
   padding: 0 var(--e3);
-  background: var(--papel);
+  background: var(--nube);
   color: var(--tinta);
   border: 1px solid var(--borde-control);
   font: inherit;
   font-size: var(--t-base);
+  border-radius: var(--radio-menor);
 }
 
 .avanzar {
@@ -279,6 +283,7 @@
   border: 1px solid var(--regla2);
   padding: var(--e3) var(--e4);
   font-size: var(--t-apoyo);
+  border-radius: var(--radio-menor);
 }
 
 .sinRequisitos {
@@ -332,11 +337,12 @@
 .eleccion {
   min-height: 44px;
   padding: 0 var(--e3);
-  background: var(--papel);
+  background-color: var(--nube);
   color: var(--tinta);
   border: 1px solid var(--borde-control);
   font: inherit;
   font-size: var(--t-base);
+  border-radius: var(--radio-menor);
 }
 
 .configuracion {

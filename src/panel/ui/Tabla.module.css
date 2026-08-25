@@ -2,14 +2,24 @@
  * La tabla del panel.
  *
  * El panel es la unica parte del producto con tablas de verdad: filas que se
- * comparan entre si. El mundo manda igual: reglas a un pixel, cero radios, y
- * los numeros en columna con `tabular-nums`.
+ * comparan entre si. El mundo manda igual —superficie de nube sobre el cielo,
+ * reglas a un pixel, esquinas redondeadas— y los numeros van en columna con
+ * `tabular-nums`.
  */
 
 .envoltura {
   /* La tabla puede ser mas ancha que la pantalla: que ruede ella, no la pagina. */
   overflow-x: auto;
+  background: var(--nube);
   border: 1px solid var(--regla);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra-nube);
+  /*
+   * Sin esto, la fila de cabecera —que tiene fondo propio— se sale por las
+   * esquinas redondeadas y las descuadra. `clip-path` y no `overflow: hidden`
+   * porque la envoltura ya rueda en horizontal y `hidden` mataria ese scroll.
+   */
+  clip-path: inset(0 round var(--radio));
 }
 
 .tabla {
@@ -25,7 +35,7 @@
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--tinta3);
-  background: var(--hundido);
+  background: var(--nube-hundida);
   padding: var(--e3) var(--e4);
   border-bottom: 1px solid var(--regla2);
   white-space: nowrap;
@@ -42,7 +52,7 @@
 }
 
 .tabla tbody tr:hover {
-  background: var(--hundido);
+  background: var(--nube-hundida);
 }
 
 /* Una fila que abre algo al pulsarla. */
@@ -53,6 +63,30 @@
 .cifra {
   font-variant-numeric: tabular-nums;
   text-align: right;
+}
+
+/*
+ * La columna de acciones, pegada al canto derecho.
+ *
+ * Una tabla de siete columnas no cabe en 1040 px y la envoltura rueda; sin
+ * fijar esto, «Cancelar» se quedaba fuera de la vista y la fila parecia rota.
+ * Una accion que borra no puede depender de que alguien descubra que hay
+ * scroll. El fondo es obligatorio: sin el, el contenido de debajo se ve pasar.
+ */
+.acciones {
+  position: sticky;
+  right: 0;
+  background: var(--nube);
+  /* La regla de la izquierda dice que hay mas tabla debajo de esta columna. */
+  box-shadow: inset 1px 0 0 var(--regla);
+}
+
+.tabla thead .acciones {
+  background: var(--nube-hundida);
+}
+
+.tabla tbody tr:hover .acciones {
+  background: var(--nube-hundida);
 }
 
 .vacia {

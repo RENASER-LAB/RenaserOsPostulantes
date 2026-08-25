@@ -9,12 +9,14 @@
  * Se ve sin cuenta. `GET /vacantes` es público.
  */
 
+import type { CSSProperties } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { listarVacantes } from '@/api/portal'
 import type { VacantePublica } from '@/api/tipos'
 import { ETAPAS } from '@/dominio/estados'
 import { rutas } from '@/rutas'
+import { Canto } from '@/ui/Canto'
 import estilos from './Vacantes.module.css'
 
 /** Qué hace el candidato en cada etapa. Es texto de producto, no dato. */
@@ -34,7 +36,14 @@ export function Vacantes() {
 
   return (
     <div className={estilos.pagina}>
-      <h1 className={estilos.entrada}>Aquí no se decide por un currículum.</h1>
+      {/*
+        Otra semilla y menos luz que en «Mis procesos», y no por variar: alli la
+        banda esta formada porque hay un proceso en marcha, y aqui todavia no ha
+        empezado nada. Es la misma luz formandose.
+      */}
+      <Canto semilla={7} intensidad={0.6} />
+
+      <h1 className={estilos.entrada}>Tu próximo trabajo puede empezar aquí.</h1>
       <p className={estilos.bajada}>
         El proceso son cinco etapas, y en todas se mira cómo trabajas. Tu currículum entra,
         pero por diseño no descarta a nadie.
@@ -43,8 +52,13 @@ export function Vacantes() {
       <section className={estilos.proceso}>
         <h2 className={estilos.tituloProceso}>Lo que te espera</h2>
         <ol className={estilos.etapas} role="list">
-          {ETAPAS.map((etapa) => (
-            <li className={estilos.etapa} key={etapa.clave}>
+          {ETAPAS.map((etapa, indice) => (
+            <li
+              className={estilos.etapa}
+              key={etapa.clave}
+              style={{ '--i': indice } as CSSProperties}
+            >
+              {/* La rebanada del espectro que le toca a esta etapa por su sitio. */}
               <div className={estilos.marca} aria-hidden="true" />
               <div className={estilos.textoEtapa}>
                 <p className={estilos.nombreEtapa}>{etapa.etiqueta}</p>

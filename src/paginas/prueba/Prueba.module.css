@@ -32,7 +32,7 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--e3) var(--e5);
-  background: var(--papel);
+  background: var(--nube);
   border-bottom: 2px solid var(--tinta);
   padding: var(--e3) 0;
   margin-bottom: var(--e5);
@@ -78,9 +78,10 @@
   display: flex;
   gap: var(--e4);
   border: 2px solid var(--tinta);
-  background: var(--papel);
+  background: var(--nube);
   padding: var(--e5);
   margin-bottom: var(--e5);
+  border-radius: var(--radio);
 }
 
 .cambio::before {
@@ -135,6 +136,7 @@
   top: calc(var(--alto-cabecera) + var(--e5));
   border: 1px solid var(--regla);
   padding: var(--e5);
+  border-radius: var(--radio);
 }
 
 .datoLateral {
@@ -170,12 +172,13 @@
      texto a 460 se reproduce el mismo hueco que se queria quitar. */
   max-width: var(--medida);
   border: 1px solid var(--regla2);
-  background: var(--hundido);
+  background: var(--nube-hundida);
   padding: var(--e4);
   font-size: var(--t-prosa);
   line-height: 1.55;
   color: var(--tinta2);
   margin-bottom: var(--e5);
+  border-radius: var(--radio);
 }
 
 .aviso::before {
@@ -188,7 +191,7 @@
 .aviso.serio {
   border-color: var(--tinta);
   color: var(--tinta);
-  background: var(--papel);
+  background: var(--nube);
 }
 
 .aviso.serio::before {
@@ -197,7 +200,7 @@
 
 .aviso.malo {
   border-color: var(--mal-regla);
-  background: var(--mal-papel);
+  background: var(--mal-bruma);
   color: var(--mal);
 }
 
@@ -220,6 +223,7 @@
 .pregunta {
   border: 1px solid var(--regla);
   padding: var(--e5);
+  border-radius: var(--radio);
 }
 
 .enunciado {
@@ -235,17 +239,18 @@
   width: 100%;
   min-height: 8rem;
   padding: var(--e3);
-  background: var(--papel);
+  background: var(--nube);
   color: var(--tinta);
   border: 1px solid var(--borde-control);
   font: inherit;
   font-size: var(--t-base);
   line-height: 1.6;
   resize: vertical;
+  border-radius: var(--radio-menor);
 }
 
 .respuesta:disabled {
-  background: var(--hundido);
+  background: var(--nube-hundida);
   color: var(--tinta2);
 }
 
@@ -272,6 +277,7 @@
 .entregable {
   border: 1px solid var(--regla2);
   padding: var(--e5);
+  border-radius: var(--radio);
 }
 
 /* Ya entregado: borde en tinta y marca rellena, no solo un color. */
@@ -345,17 +351,18 @@
   flex: 1 1 18rem;
   min-height: 44px;
   padding: 0 var(--e3);
-  background: var(--papel);
+  background: var(--nube);
   color: var(--tinta);
   border: 1px solid var(--borde-control);
   font: inherit;
   font-size: var(--t-base);
+  border-radius: var(--radio-menor);
 }
 
 /* Con el tiempo agotado el campo sigue en pantalla y no admite nada. Si se
    queda blanco parece que acepta, y quien acaba de perder el plazo lo intenta. */
 .campoEnlace:disabled {
-  background: var(--hundido2);
+  background: var(--nube-honda);
   border-color: var(--regla2);
   color: var(--tinta3);
   cursor: default;
@@ -400,9 +407,10 @@
 
 .cerrada {
   border: 1px solid var(--regla);
-  background: var(--hundido);
+  background: var(--nube-hundida);
   padding: var(--e6);
   margin-top: var(--e5);
+  border-radius: var(--radio);
 }
 
 .cerradaTexto {
@@ -429,6 +437,7 @@
   margin-top: var(--e6);
   border: 1px solid var(--regla);
   padding: var(--e6);
+  border-radius: var(--radio);
 }
 
 .marcoTexto {
@@ -446,7 +455,7 @@
 
 .barra {
   height: 12px;
-  background: var(--hundido2);
+  background: var(--nube-honda);
   margin-top: var(--e3);
 }
 
@@ -463,9 +472,11 @@
 .confirmacion {
   width: min(32rem, calc(100vw - 2rem));
   padding: var(--e6);
-  border: 1px solid var(--tinta);
-  background: var(--papel);
+  border: 1px solid var(--regla);
+  background: var(--nube);
   color: var(--tinta);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra-aviso);
 }
 
 .confirmacionTexto {

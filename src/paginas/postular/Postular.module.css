@@ -63,23 +63,24 @@
   justify-content: space-between;
   gap: var(--e4);
   border: 1px dashed var(--borde-control);
-  background: var(--hundido);
+  background: var(--nube-hundida);
   padding: var(--e5);
+  border-radius: var(--radio-menor);
 }
 
 /* Mientras se arrastra encima: la forma cambia, no solo el color. */
 .zona.encima {
   border-style: solid;
   border-width: 2px;
-  border-color: var(--acento);
-  background: var(--acento-papel);
+  border-color: var(--activo);
+  background: var(--activo-bruma);
 }
 
 .zona.conError {
   border-style: solid;
   border-width: 2px;
   border-color: var(--mal);
-  background: var(--mal-papel);
+  background: var(--mal-bruma);
 }
 
 .zonaTexto {
@@ -118,8 +119,9 @@
   align-items: center;
   gap: var(--e3);
   border: 1px solid var(--tinta);
-  background: var(--papel);
+  background: var(--nube);
   padding: var(--e4);
+  border-radius: var(--radio);
 }
 
 .marcaElegido {
@@ -180,9 +182,10 @@
 /* ---------- Requisitos: el descarte automático ---------- */
 
 .requisitos {
-  border: 1px solid var(--acento-regla);
-  background: var(--acento-papel);
+  border: 1px solid var(--activo-regla);
+  background: var(--activo-bruma);
   padding: var(--e5);
+  border-radius: var(--radio);
 }
 
 .avisoRequisitos {
@@ -201,11 +204,12 @@
 }
 
 .requisito {
-  background: var(--papel);
+  background: var(--nube);
   border: 1px solid var(--regla2);
   padding: var(--e4);
   margin: 0;
   min-width: 0;
+  border-radius: var(--radio);
 }
 
 /* Cierra el float del legend. */
@@ -252,21 +256,22 @@
   min-height: 44px;
   padding: 0 var(--e4);
   border: 1px solid var(--borde-control);
-  background: var(--papel);
+  background: var(--nube);
   font-size: var(--t-prosa);
   font-weight: 600;
   cursor: pointer;
+  border-radius: var(--radio-menor);
 }
 
 /* La elegida se rellena: la forma dice cual es antes que el color. */
 .opcion.elegida {
   background: var(--tinta);
   border-color: var(--tinta);
-  color: var(--papel);
+  color: var(--nube);
 }
 
 .opcion:has(input:focus-visible) {
-  outline: 2px solid var(--acento);
+  outline: 2px solid var(--activo);
   outline-offset: 2px;
 }
 
@@ -282,11 +287,12 @@
   gap: var(--e3);
   margin-top: var(--e5);
   border: 1px solid var(--duda);
-  background: var(--duda-papel);
+  background: var(--duda-bruma);
   padding: var(--e4);
   font-size: var(--t-prosa);
   line-height: 1.55;
   color: var(--duda-tinta);
+  border-radius: var(--radio);
 }
 
 .consecuencia::before {
@@ -319,11 +325,12 @@
   display: flex;
   gap: var(--e3);
   border: 1px solid var(--mal-regla);
-  background: var(--mal-papel);
+  background: var(--mal-bruma);
   padding: var(--e4);
   font-size: var(--t-prosa);
   line-height: 1.5;
   color: var(--mal);
+  border-radius: var(--radio);
 }
 
 .resumenErrores::before {
@@ -339,12 +346,13 @@
   width: min(32rem, calc(100vw - 2rem));
   padding: var(--e6);
   border: 1px solid var(--duda);
-  background: var(--papel);
+  background: var(--nube);
   color: var(--tinta);
+  border-radius: var(--radio);
 }
 
 .aviso::backdrop {
-  background: rgb(28 28 30 / 0.4);
+  background: rgb(35 43 54 / 0.4);
 }
 
 .avisoTitulo {
@@ -396,6 +404,7 @@
   margin-top: var(--e6);
   border: 1px solid var(--regla);
   padding: var(--e6);
+  border-radius: var(--radio);
 }
 
 .marcoTexto {
@@ -413,7 +422,7 @@
 
 .barra {
   height: 12px;
-  background: var(--hundido2);
+  background: var(--nube-honda);
   margin-top: var(--e3);
 }
 

@@ -26,11 +26,12 @@
 .entrada {
   min-height: 48px;
   padding: 0 var(--e3);
-  background: var(--papel);
+  background: var(--nube);
   color: var(--tinta);
   border: 1px solid var(--borde-control);
   font: inherit;
   font-size: var(--t-base); /* Menos de 16px y iOS hace zoom al enfocar. */
+  border-radius: var(--radio-menor);
 }
 
 .entrada:hover {
@@ -57,6 +58,7 @@
   width: 3px;
   align-self: stretch;
   background: var(--mal);
+  border-radius: var(--radio-control);
 }
 
 /* ---------- Consentimientos ---------- */
@@ -66,8 +68,9 @@
   gap: var(--e3);
   align-items: flex-start;
   border: 1px solid var(--regla);
-  background: var(--papel);
+  background: var(--nube);
   padding: var(--e4);
+  border-radius: var(--radio);
 }
 
 .consentimiento.marcado {
@@ -84,7 +87,8 @@
   width: 20px;
   height: 20px;
   margin: 2px 0 0;
-  accent-color: var(--acento);
+  accent-color: var(--activo);
+  border-radius: var(--radio-marca);
 }
 
 .cuerpoConsentimiento {
@@ -141,13 +145,14 @@
   margin-top: var(--e2);
   padding: var(--e3);
   border: 1px solid var(--regla);
-  background: var(--hundido);
+  background: var(--nube-hundida);
   font-size: var(--t-menor);
   line-height: 1.55;
   color: var(--tinta2);
   max-height: 15rem;
   overflow-y: auto;
   white-space: pre-line;
+  border-radius: var(--radio-menor);
 }
 
 /* ---------- Área de texto ---------- */
@@ -155,13 +160,14 @@
 .area {
   min-height: 9rem;
   padding: var(--e3);
-  background: var(--papel);
+  background: var(--nube);
   color: var(--tinta);
   border: 1px solid var(--borde-control);
   font: inherit;
   font-size: var(--t-base);
   line-height: 1.55;
   resize: vertical;
+  border-radius: var(--radio-menor);
 }
 
 .area:hover {

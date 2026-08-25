@@ -31,3 +31,8 @@ portal-candidato-ex.html
 
 # Registro de sesión de impeccable, no es del proyecto
 .impeccable/questions/
+
+# Estado de sesion del modo live de impeccable, y los tableros de calidad que
+# se descargan para mirar. Ninguno es del proyecto.
+.impeccable/live/
+.impeccable/worlds/

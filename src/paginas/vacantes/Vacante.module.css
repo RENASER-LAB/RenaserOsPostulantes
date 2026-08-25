@@ -86,9 +86,10 @@
 
 .requisitos {
   margin-top: var(--e7);
-  border: 1px solid var(--acento-regla);
-  background: var(--acento-papel);
+  border: 1px solid var(--activo-regla);
+  background: var(--activo-bruma);
   padding: var(--e5);
+  border-radius: var(--radio);
 }
 
 .avisoRequisitos {
@@ -120,7 +121,7 @@
   width: 7px;
   height: 7px;
   margin-top: 0.5em;
-  background: var(--acento);
+  background: var(--activo);
 }
 
 /* ---------- Postular ---------- */
@@ -151,6 +152,7 @@
   margin-top: var(--e6);
   border: 1px solid var(--regla);
   padding: var(--e6);
+  border-radius: var(--radio);
 }
 
 .marcoTexto {
@@ -168,7 +170,7 @@
 
 .barra {
   height: 12px;
-  background: var(--hundido2);
+  background: var(--nube-honda);
   margin-top: var(--e3);
 }
 

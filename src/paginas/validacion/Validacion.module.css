@@ -55,9 +55,10 @@
 /* ---------- El periodo ---------- */
 
 .periodo {
-  border: 1px solid var(--acento-regla);
-  background: var(--acento-papel);
+  border: 1px solid var(--activo-regla);
+  background: var(--activo-bruma);
   padding: var(--e5);
+  border-radius: var(--radio);
 }
 
 .etiAcento {
@@ -66,7 +67,7 @@
   font-weight: 600;
   letter-spacing: 0.09em;
   text-transform: uppercase;
-  color: var(--acento-pulsado);
+  color: var(--activo-pulsado);
   margin-bottom: var(--e3);
 }
 
@@ -91,10 +92,11 @@
 .bloque {
   border: 1px solid var(--regla);
   padding: var(--e5);
+  border-radius: var(--radio);
 }
 
 .bloque.hundido {
-  background: var(--hundido);
+  background: var(--nube-hundida);
 }
 
 .tituloBloque {
@@ -168,6 +170,7 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--tinta2);
+  border-radius: var(--radio);
 }
 
 .quien.persona {
@@ -186,11 +189,12 @@
   display: flex;
   gap: var(--e3);
   border: 1px solid var(--regla2);
-  background: var(--hundido);
+  background: var(--nube-hundida);
   padding: var(--e4);
   font-size: var(--t-apoyo);
   line-height: 1.55;
   color: var(--tinta2);
+  border-radius: var(--radio);
 }
 
 .falta::before {

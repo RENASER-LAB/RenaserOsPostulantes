@@ -9,15 +9,32 @@
   flex-direction: column;
 }
 
+/*
+ * Vidrio empañado, no un panel opaco.
+ *
+ * La cabecera se pega encima del canto irisado, y una barra blanca maciza
+ * partiria la nube en dos justo donde tiene que verse entera. Empañada, la
+ * banda se sigue leyendo detras y el texto de arriba conserva su fondo. Es el
+ * material del mundo haciendo un trabajo, no un cristal por gusto.
+ */
 .cabecera {
   /* Lo que mide la cabecera, para que la barra de avance del examen pueda
      pegarse justo debajo sin adivinarlo. */
   --alto-cabecera: 61px;
-  border-bottom: 1px solid var(--regla);
-  background: var(--papel);
+  border-bottom: 1px solid rgb(203 210 220 / 0.5);
+  background: rgb(255 255 255 / 0.72);
+  backdrop-filter: blur(18px) saturate(1.4);
   position: sticky;
   top: 0;
   z-index: 10;
+}
+
+/* Donde el navegador no empaña, se cierra el fondo: con 0,72 de opacidad y sin
+   desenfoque, el texto de la cabecera se leeria sobre la banda de color. */
+@supports not (backdrop-filter: blur(1px)) {
+  .cabecera {
+    background: var(--nube);
+  }
 }
 
 .cabeceraDentro {
@@ -46,35 +63,53 @@
 .navegacion {
   display: flex;
   align-items: center;
-  gap: var(--e5);
+  gap: var(--e2);
   font-size: var(--t-apoyo);
 }
 
+/*
+ * Pildoras, como cualquier control del mundo. El area tactil llega a 44 px por
+ * el `min-height`, y el relleno horizontal separa lo justo para que dos
+ * enlaces contiguos no compartan objetivo.
+ */
 .enlace {
   display: inline-flex;
   align-items: center;
   min-height: 44px;
+  padding: 0 var(--e3);
+  border-radius: var(--radio-control);
   color: var(--tinta2);
   text-decoration: none;
-  border-bottom: 1px solid transparent;
+  transition:
+    background 160ms var(--salida),
+    color 160ms var(--salida);
 }
 
 .enlace:hover {
   color: var(--tinta);
   text-decoration: none;
-  border-bottom-color: var(--regla2);
+  background: rgb(35 43 54 / 0.05);
 }
 
-/* La pagina en la que estas se marca con la regla, no con el acento: el acento
-   significa «te toca a ti» y nada mas. */
+/*
+ * La pagina en la que estas se marca con el peso y con un fondo de bruma, no
+ * con el violeta: el violeta significa «te toca a ti» y nada mas.
+ */
 .enlaceActivo {
   color: var(--tinta);
-  font-weight: 600;
-  border-bottom-color: var(--tinta);
+  font-weight: 700;
+  background: rgb(35 43 54 / 0.06);
+}
+
+.enlaceActivo:hover {
+  background: rgb(35 43 54 / 0.09);
 }
 
 .principal {
   flex: 1;
+  /* El canto va en `position: absolute` dentro de la pagina; sin contexto de
+     apilamiento aqui, se colaria por encima del pie. */
+  position: relative;
 }
 
 .pie {
@@ -109,6 +144,10 @@
   }
 
   .navegacion {
-    gap: var(--e4);
+    gap: var(--e1);
+  }
+
+  .enlace {
+    padding: 0 var(--e2);
   }
 }

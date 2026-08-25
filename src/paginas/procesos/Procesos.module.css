@@ -4,64 +4,83 @@
  * Lo primero que tiene que resolver, en menos de tres segundos: ¿me toca algo?
  * Por eso el titular es la respuesta a esa pregunta y no el nombre de la
  * pantalla, y la postulacion que pide algo va primera.
+ *
+ * El canto irisado entra a sangre por arriba y el titular se lee sobre el, en
+ * la parte blanca de la nube. Nunca sobre la banda de color: la prosa se lee
+ * sobre nube, el color vive en el canto.
  */
 
+/*
+ * El relleno de arriba no es aire: es el sitio del canto.
+ *
+ * La banda se dibuja en el tercio alto de su lienzo, y el titular empieza justo
+ * por debajo. Si este valor baja, el titular se mete dentro de la banda y la
+ * prosa acaba leyendose sobre color.
+ */
 .pagina {
+  position: relative;
   max-width: var(--ancho);
   margin: 0 auto;
-  padding: var(--e7) var(--e5) var(--e8);
+  padding: clamp(184px, 25vh, 272px) var(--e5) var(--e8);
+}
+
+/* Todo lo que se lee va por encima del canto. */
+.pagina > *:not([aria-hidden]) {
+  position: relative;
+  z-index: 1;
 }
 
 /* El titular responde la pregunta con la que el candidato llega. */
 .titular {
-  margin-bottom: var(--e2);
+  max-width: 18ch;
 }
 
 .entrada {
+  margin-top: var(--e4);
   font-size: var(--t-entradilla);
-  line-height: 1.5;
+  line-height: 1.55;
   color: var(--tinta2);
   max-width: var(--medida);
 }
 
 .procesos {
-  margin-top: var(--e7);
+  margin-top: var(--e8);
   display: flex;
   flex-direction: column;
-  gap: var(--e7);
+  gap: var(--e5);
 }
 
 /*
- * Una postulacion. No es una tarjeta: es un bloque separado por una regla, para
- * que la linea de hitos respire y no quede metida en una caja dentro de otra.
+ * Una postulacion es una superficie de nube sobre el cielo.
+ *
+ * No es una tarjeta de catalogo: cada una tiene su propio contenido y su propio
+ * alto, y lo que la separa del fondo es que esta un punto mas clara que el
+ * cielo, no un contorno grueso. La sombra es difusa y fria porque en este mundo
+ * la profundidad es aire, no papel levantado.
  */
 .proceso {
-  border-top: 1px solid var(--regla);
-  padding-top: var(--e5);
-}
-
-.proceso:first-child {
-  border-top: none;
-  padding-top: 0;
+  background: var(--nube);
+  border: 1px solid var(--regla);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra-nube);
+  padding: var(--e6);
 }
 
 /*
- * La fecha va pegada al nombre de la vacante, no al otro extremo.
- *
- * Con `space-between` y el ancho nuevo quedaban 644 px de nada entre dos cosas
- * que son el mismo dato: cuando postulaste a ESTO. En el telefono salian
- * adyacentes, asi que la agrupacion era mejor en movil que en escritorio.
+ * La fecha va pegada al nombre de la vacante, no al otro extremo: son el mismo
+ * dato —cuando postulaste a ESTO— y separarlos 600 px los convierte en dos.
  */
 .cabeceraProceso {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   gap: var(--e2) var(--e4);
-  margin-bottom: var(--e5);
+  margin-bottom: var(--e6);
 }
 
 .vacante {
   font-size: var(--t-destacado);
+  font-weight: 700;
   letter-spacing: -0.022em;
 }
 
@@ -71,23 +90,19 @@
   white-space: nowrap;
 }
 
-/* El resultado de una postulacion terminada. Se dice con palabras. */
 /*
  * La postulacion terminada.
  *
- * Tenia el mismo bloque hundido que una espera, asi que un rechazo y un «estan
- * revisando tu prueba» se leian igual y solo las palabras los separaban. Ahora
- * se distingue por dos cosas antes de leer nada: la marca tachada junto al
- * nombre de la vacante —la forma que el sistema ya usa para «aqui se detuvo»— y
- * el fondo de papel, porque un fondo hundido significa «hay algo esperando» y
- * aqui no espera nada.
+ * Se distingue de una espera antes de leer nada por la franja dispersa —la
+ * misma forma que el recorrido usa para «aqui se detuvo»— y no por el color.
  */
 .cierre {
-  border: 1px solid var(--regla2);
-  background: var(--papel);
-  padding: var(--e4);
+  border: 1px solid var(--regla);
+  border-radius: var(--radio);
+  background: var(--nube-hundida);
+  padding: var(--e5);
   margin-bottom: var(--e5);
-  max-width: 34rem;
+  max-width: 44rem;
 }
 
 .tituloCerrado {
@@ -96,40 +111,35 @@
   gap: var(--e3);
 }
 
-/* La misma marca tachada del recorrido. Dice «aqui se detuvo» sin el rojo. */
+/* La misma franja punteada del recorrido: el color se rompio aqui. */
 .marcaCortada {
-  position: relative;
   flex: none;
-  width: 15px;
-  height: 15px;
-  background: var(--papel);
-  border: 1px solid var(--regla2);
-}
-
-.marcaCortada::before {
-  content: '';
-  position: absolute;
-  inset: -1px;
-  top: 50%;
-  border-top: 1px solid var(--tinta3);
+  width: 34px;
+  height: 8px;
+  border-radius: var(--radio-control);
+  background: repeating-linear-gradient(
+    90deg,
+    var(--tinta2) 0 4px,
+    transparent 4px 9px
+  );
 }
 
 .cierreTitulo {
   font-size: var(--t-base);
   font-weight: 600;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.008em;
 }
 
 .cierreTexto {
   font-size: var(--t-apoyo);
-  line-height: 1.5;
+  line-height: 1.55;
   color: var(--tinta2);
   margin-top: var(--e2);
   max-width: var(--medida);
 }
 
 .pieProceso {
-  margin-top: var(--e3);
+  margin-top: var(--e4);
   font-size: var(--t-apoyo);
 }
 
@@ -142,14 +152,17 @@
 /* ---------- Sin ninguna postulacion ---------- */
 
 .vacio {
-  margin-top: var(--e6);
+  margin-top: var(--e7);
+  background: var(--nube);
   border: 1px solid var(--regla);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra-nube);
   padding: var(--e6);
 }
 
 .vacioTexto {
   font-size: var(--t-base);
-  line-height: 1.55;
+  line-height: 1.6;
   color: var(--tinta2);
   max-width: var(--medida-corta);
 }
@@ -162,14 +175,17 @@
 /* ---------- Cargando y fallo ---------- */
 
 .estado {
-  margin-top: var(--e6);
+  margin-top: var(--e7);
+  background: var(--nube);
   border: 1px solid var(--regla);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra-nube);
   padding: var(--e6);
 }
 
 .estadoTexto {
   font-size: var(--t-prosa);
-  line-height: 1.55;
+  line-height: 1.6;
   color: var(--tinta2);
   margin-top: var(--e3);
   max-width: var(--medida-corta);
@@ -183,7 +199,8 @@
 /* Las barras del esqueleto de carga: contenido que llega, no adorno. */
 .barra {
   height: 12px;
-  background: var(--hundido2);
+  border-radius: var(--radio-control);
+  background: var(--nube-honda);
   margin-top: var(--e3);
 }
 
@@ -215,15 +232,23 @@
   min-height: 44px;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 760px) {
   .pagina {
-    padding: var(--e6) var(--e4) var(--e7);
+    padding: clamp(168px, 24vh, 220px) var(--e4) var(--e7);
+  }
+
+  .titular {
+    max-width: none;
+  }
+
+  .proceso {
+    padding: var(--e5) var(--e4);
   }
 
   .procesos {
-    gap: var(--e6);
+    margin-top: var(--e7);
+    gap: var(--e4);
   }
-
 }
 
 /* Para lectores de pantalla y nada mas: la region que anuncia los cambios. */
@@ -242,29 +267,27 @@
 /* ---------- Una postulacion que no pide nada ---------- */
 
 /*
- * El tope va aqui y no en los parrafos de dentro.
- *
- * Al pasar el portal de 760 a 1088 px, estos paneles crecieron con el
- * contenedor y su texto no: quedaban con un 59 % de relleno vacio, y la
- * densidad EMPEORABA cuanto mas ancha la pantalla. Poniendolo en el panel, la
- * medida tiene un solo dueño.
+ * El tope de linea va aqui y no en los parrafos de dentro. Con el en el panel,
+ * la medida tiene un solo dueño y el bloque no se queda con medio relleno vacio
+ * al ensanchar la ventana.
  */
 .espera {
   border: 1px solid var(--regla);
-  background: var(--hundido);
-  padding: var(--e4);
-  max-width: 34rem;
+  border-radius: var(--radio);
+  background: var(--nube-hundida);
+  padding: var(--e5);
+  max-width: 44rem;
 }
 
 .esperaTitulo {
   font-size: var(--t-base);
   font-weight: 600;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.008em;
 }
 
 .esperaTexto {
   font-size: var(--t-apoyo);
-  line-height: 1.5;
+  line-height: 1.55;
   color: var(--tinta2);
   margin-top: var(--e2);
   max-width: var(--medida);
@@ -273,7 +296,7 @@
 /* El recorrido, a peticion. `details` nativo: teclado y lector de pantalla ya
    resueltos, y sin estado que mantener en JavaScript. */
 .plegable {
-  margin-top: var(--e3);
+  margin-top: var(--e4);
 }
 
 .resumen {
@@ -294,10 +317,10 @@
   width: 7px;
   height: 7px;
   margin-right: var(--e3);
-  border-right: 1px solid var(--tinta3);
-  border-bottom: 1px solid var(--tinta3);
+  border-right: 1.5px solid var(--tinta3);
+  border-bottom: 1.5px solid var(--tinta3);
   transform: rotate(-45deg);
-  transition: transform 140ms var(--salida);
+  transition: transform 160ms var(--salida);
 }
 
 .plegable[open] .resumen::before {

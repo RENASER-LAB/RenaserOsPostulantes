@@ -55,9 +55,10 @@
   align-items: center;
   gap: var(--e4);
   border: 1px solid var(--regla2);
-  background: var(--papel);
+  background: var(--nube);
   padding: var(--e4) var(--e5);
   cursor: pointer;
+  border-radius: var(--radio);
 }
 
 .fecha:hover {
@@ -66,13 +67,13 @@
 
 /* Elegida: contorno grueso y papel del acento. Es «te toca a ti» resuelto. */
 .fecha.elegida {
-  border: 2px solid var(--acento);
-  background: var(--acento-papel);
+  border: 2px solid var(--activo);
+  background: var(--activo-bruma);
   padding: calc(var(--e4) - 1px) calc(var(--e5) - 1px);
 }
 
 .fecha:has(.radio:focus-visible) {
-  outline: 2px solid var(--acento);
+  outline: 2px solid var(--activo);
   outline-offset: 2px;
 }
 
@@ -80,7 +81,7 @@
    raro de que alguien recorte el cupo con gente ya inscrita. */
 .fecha.llena {
   border-color: var(--regla);
-  background: var(--hundido);
+  background: var(--nube-hundida);
   color: var(--tinta3);
   cursor: default;
 }
@@ -97,18 +98,18 @@
   width: 18px;
   height: 18px;
   border: 1px solid var(--borde-control);
-  background: var(--papel);
+  background: var(--nube);
 }
 
 .fecha.elegida .marca {
-  border: 2px solid var(--acento);
-  background: var(--acento);
-  box-shadow: inset 0 0 0 3px var(--papel);
+  border: 2px solid var(--activo);
+  background: var(--activo);
+  box-shadow: inset 0 0 0 3px var(--nube);
 }
 
 .fecha.llena .marca {
   border-style: dashed;
-  background: var(--hundido2);
+  background: var(--nube-honda);
 }
 
 .cuando {
@@ -142,11 +143,12 @@
   min-height: 28px;
   padding: 0 var(--e3);
   border: 1px solid var(--regla2);
-  background: var(--papel);
+  background: var(--nube);
   font-size: var(--t-menor);
   font-weight: 600;
   color: var(--tinta2);
   font-variant-numeric: tabular-nums;
+  border-radius: var(--radio);
 }
 
 /* Una sola plaza no es un adorno: cambia la decision de cuanto esperar. */
@@ -189,11 +191,12 @@
   gap: var(--e3);
   margin-top: var(--e4);
   border: 1px solid var(--mal-regla);
-  background: var(--mal-papel);
+  background: var(--mal-bruma);
   padding: var(--e4);
   font-size: var(--t-prosa);
   line-height: 1.5;
   color: var(--mal);
+  border-radius: var(--radio);
 }
 
 .fallo::before {
@@ -213,6 +216,7 @@
   margin-top: var(--e6);
   border: 1px solid var(--regla);
   padding: var(--e5);
+  border-radius: var(--radio);
 }
 
 .cuandoGrande {
@@ -240,6 +244,7 @@
   font-size: var(--t-menor);
   font-weight: 600;
   color: var(--bien);
+  border-radius: var(--radio);
 }
 
 .asistira::before {
@@ -259,10 +264,11 @@
   margin-top: var(--e5);
   border: 1px solid var(--regla);
   padding: var(--e5);
+  border-radius: var(--radio);
 }
 
 .bloque.hundido {
-  background: var(--hundido);
+  background: var(--nube-hundida);
 }
 
 .tituloBloque {

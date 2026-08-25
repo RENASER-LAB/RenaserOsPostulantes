@@ -35,22 +35,24 @@
 .entrada {
   min-height: 48px;
   padding: 0 var(--e3);
-  background: var(--papel);
+  background: var(--nube);
   color: var(--tinta);
   border: 1px solid var(--borde-control);
   font: inherit;
   font-size: var(--t-base);
+  border-radius: var(--radio-menor);
 }
 
 .fallo {
   display: flex;
   gap: var(--e3);
   border: 1px solid var(--mal-regla);
-  background: var(--mal-papel);
+  background: var(--mal-bruma);
   padding: var(--e3) var(--e4);
   font-size: var(--t-prosa);
   line-height: 1.5;
   color: var(--mal);
+  border-radius: var(--radio-menor);
 }
 
 .fallo::before {

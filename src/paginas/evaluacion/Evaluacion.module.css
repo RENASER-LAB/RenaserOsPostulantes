@@ -42,7 +42,7 @@
   position: sticky;
   top: var(--alto-cabecera);
   z-index: 5;
-  background: var(--papel);
+  background: var(--nube);
   border-bottom: 1px solid var(--regla);
   padding: var(--e3) 0;
   margin-bottom: var(--e5);
@@ -68,7 +68,7 @@
   display: flex;
   height: 6px;
   margin-top: var(--e2);
-  background: var(--hundido2);
+  background: var(--nube-honda);
 }
 
 .recorrido {
@@ -90,11 +90,12 @@
   align-items: center;
   min-height: 44px;
   padding: 0 var(--e4);
-  background: var(--papel);
+  background: var(--nube);
   border: 1px solid var(--borde-control);
   font-size: var(--t-apoyo);
   font-weight: 600;
   cursor: pointer;
+  border-radius: var(--radio-menor);
 }
 
 .mando:hover {
@@ -104,7 +105,7 @@
 .mando[aria-expanded='true'] {
   background: var(--tinta);
   border-color: var(--tinta);
-  color: var(--papel);
+  color: var(--nube);
 }
 
 .faltan {
@@ -160,8 +161,9 @@
 .mapa {
   margin-top: var(--e4);
   border: 1px solid var(--regla2);
-  background: var(--hundido);
+  background: var(--nube-hundida);
   padding: var(--e4);
+  border-radius: var(--radio);
 }
 
 .rejilla {
@@ -176,11 +178,12 @@
   justify-content: center;
   min-width: 44px;
   min-height: 44px;
-  background: var(--papel);
+  background: var(--nube);
   border: 1px solid var(--regla2);
   font-size: var(--t-apoyo);
   font-variant-numeric: tabular-nums;
   cursor: pointer;
+  border-radius: var(--radio-menor);
 }
 
 .casilla:hover {
@@ -191,12 +194,12 @@
 .casilla.lista {
   background: var(--tinta);
   border-color: var(--tinta);
-  color: var(--papel);
+  color: var(--nube);
 }
 
 /* A medias: media caja rellena, para distinguirla de la vacía sin usar color. */
 .casilla.aMedias {
-  background: linear-gradient(to top, var(--tinta) 50%, var(--papel) 50%);
+  background: linear-gradient(to top, var(--tinta) 50%, var(--nube) 50%);
   border-color: var(--tinta);
   color: var(--tinta);
   font-weight: 600;
@@ -211,9 +214,9 @@
 
 /* Donde estás: el único acento del examen. */
 .casilla.aqui {
-  outline: 2px solid var(--acento);
+  outline: 2px solid var(--activo);
   outline-offset: -2px;
-  border-color: var(--acento);
+  border-color: var(--activo);
 }
 
 .leyenda {
@@ -237,7 +240,7 @@
   width: 15px;
   height: 15px;
   flex: none;
-  background: var(--papel);
+  background: var(--nube);
   border: 1px solid var(--regla2);
 }
 
@@ -247,7 +250,7 @@
 }
 
 .muestra.aMedias {
-  background: linear-gradient(to top, var(--tinta) 50%, var(--papel) 50%);
+  background: linear-gradient(to top, var(--tinta) 50%, var(--nube) 50%);
   border-color: var(--tinta);
 }
 
@@ -260,6 +263,7 @@
 .pregunta {
   border: 1px solid var(--regla);
   padding: var(--e6);
+  border-radius: var(--radio);
 }
 
 .cual {
@@ -341,11 +345,12 @@
   gap: var(--e3);
   margin-top: var(--e4);
   border: 1px solid var(--regla2);
-  background: var(--hundido);
+  background: var(--nube-hundida);
   padding: var(--e4);
   font-size: var(--t-apoyo);
   line-height: 1.55;
   color: var(--tinta2);
+  border-radius: var(--radio);
 }
 
 .aviso::before {
@@ -357,7 +362,7 @@
 
 .aviso.malo {
   border-color: var(--mal-regla);
-  background: var(--mal-papel);
+  background: var(--mal-bruma);
   color: var(--mal);
 }
 
@@ -460,6 +465,7 @@
   margin-top: var(--e6);
   border: 1px solid var(--regla);
   padding: var(--e6);
+  border-radius: var(--radio);
 }
 
 .marcoTexto {
@@ -477,7 +483,7 @@
 
 .barra {
   height: 12px;
-  background: var(--hundido2);
+  background: var(--nube-honda);
   margin-top: var(--e3);
 }
 
@@ -506,13 +512,15 @@
 .confirmacion {
   width: min(32rem, calc(100vw - 2rem));
   padding: var(--e6);
-  border: 1px solid var(--tinta);
-  background: var(--papel);
+  border: 1px solid var(--regla);
+  background: var(--nube);
   color: var(--tinta);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra-aviso);
 }
 
 .confirmacion::backdrop {
-  background: rgb(28 28 30 / 0.4);
+  background: rgb(35 43 54 / 0.4);
 }
 
 .confirmacionTitulo {

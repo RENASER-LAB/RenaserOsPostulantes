@@ -6,14 +6,32 @@
  * mismo — el proceso se dibuja como recorrido, no como cinco tarjetas iguales.
  */
 
+/*
+ * El relleno de arriba no es aire: es el sitio del canto, igual que en «Mis
+ * procesos». Si baja, el titular se mete en la banda y acaba habiendo prosa
+ * sobre color.
+ */
 .pagina {
+  position: relative;
   max-width: var(--ancho);
   margin: 0 auto;
-  padding: var(--e7) var(--e5) var(--e8);
+  padding: clamp(184px, 25vh, 272px) var(--e5) var(--e8);
 }
 
+/* Todo lo que se lee va por encima del canto. */
+.pagina > *:not([aria-hidden]) {
+  position: relative;
+  z-index: 1;
+}
+
+/*
+ * El tope es de la frase, no de la columna: a 56 px, «Tu próximo trabajo puede
+ * empezar aquí.» parte en dos renglones parejos con 19ch, y `balance` evita que
+ * el segundo se quede con una sola palabra.
+ */
 .entrada {
-  max-width: 34ch;
+  max-width: 19ch;
+  text-wrap: balance;
 }
 
 .bajada {
@@ -38,7 +56,7 @@
 
 .etapas {
   display: grid;
-  grid-template-columns: 15px 1fr;
+  grid-template-columns: 14px 1fr;
   column-gap: var(--e4);
 }
 
@@ -48,32 +66,30 @@
   grid-column: 1 / -1;
 }
 
+/*
+ * Las cinco etapas son el mismo canto que el recorrido de «Mis procesos», y
+ * por la misma razon: el espectro corre UNA vez de la primera a la quinta, y
+ * cada una enseña su rebanada. Aqui nadie ha empezado todavia, asi que no hay
+ * tramo vivo ni tramos ausentes — es la tirada entera, que es justo lo que la
+ * portada tiene que prometer.
+ */
 .marca {
   position: relative;
   display: flex;
   justify-content: center;
-  padding-top: 5px;
+  align-self: stretch;
+  min-height: 34px;
 }
 
 .marca::before {
   content: '';
-  width: 9px;
-  height: 9px;
-  border: 1px solid var(--tinta3);
+  width: 8px;
+  height: 100%;
+  border-radius: var(--radio-control);
   flex: none;
-}
-
-.marca::after {
-  content: '';
-  position: absolute;
-  top: 16px;
-  bottom: -4px;
-  width: 1px;
-  background: var(--regla);
-}
-
-.etapa:last-child .marca::after {
-  display: none;
+  background-image: var(--canto-vertical);
+  background-size: 100% 500%;
+  background-position-y: calc(var(--i) * 25%);
 }
 
 .textoEtapa {
@@ -125,18 +141,19 @@
 
   .marca {
     justify-content: flex-start;
-    padding-top: 0;
+    align-self: auto;
+    min-height: 0;
     padding-bottom: var(--e3);
   }
 
-  /* El riel se tumba: va de esta marca a la siguiente, a la altura del cuadro. */
-  .marca::after {
-    top: 4px;
-    bottom: auto;
-    left: 15px;
-    right: calc(var(--e4) * -1);
-    width: auto;
-    height: 1px;
+  /* Tumbada, la franja ocupa su tramo entero y las cinco forman la tirada. */
+  .marca::before {
+    width: 100%;
+    height: 8px;
+    background-image: var(--canto);
+    background-size: 500% 100%;
+    background-position-x: calc(var(--i) * 25%);
+    background-position-y: 0;
   }
 
   .textoEtapa {
@@ -281,6 +298,7 @@
 .marco {
   border: 1px solid var(--regla);
   padding: var(--e6);
+  border-radius: var(--radio);
 }
 
 .marcoTexto {
@@ -298,7 +316,7 @@
 
 .barra {
   height: 12px;
-  background: var(--hundido2);
+  background: var(--nube-honda);
   margin-top: var(--e3);
 }
 
@@ -312,7 +330,6 @@
 
 @media (max-width: 640px) {
   .pagina {
-    padding: var(--e6) var(--e4) var(--e7);
+    padding: clamp(168px, 24vh, 220px) var(--e4) var(--e7);
   }
-
 }

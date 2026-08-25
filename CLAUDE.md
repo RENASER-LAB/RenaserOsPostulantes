@@ -1,9 +1,83 @@
 # Portal del candidato · contexto de trabajo
 
-Última actualización: 2026-08-25 · empieza el panel del equipo, aquí mismo y provisional
+Última actualización: 2026-08-25 · **segundo rediseño en curso**, y el panel del equipo vive
+aquí mismo bajo `/admin`, provisional
 
 Este archivo es para retomar el trabajo sin tener que reconstruir nada. Cuenta qué es este
 proyecto, con qué habla, qué se decidió y por qué, y qué está a medias.
+
+---
+
+## ⚠️ Lo primero: el mundo visual ya no es «El seguimiento» (25/08/2026)
+
+En la rama `update/impeccable` se eligió un mundo nuevo y **buena parte de lo que este archivo
+dice más abajo sobre el aspecto del portal ya no es cierto**. Lo que sigue valiendo entero es
+todo lo que no es aspecto: el producto, los 18 estados, las trampas que costaron un fallo, cómo
+se escribe aquí, y con qué habla el portal.
+
+El mundo nuevo se llama **«El canto»**: una nube difractando la luz del sol por su borde. Tu
+candidatura es esa banda de color, que se forma tramo a tramo.
+
+| Lo que decía este archivo | Lo que es ahora |
+|---|---|
+| Papel blanco `#ffffff` de fondo | Fondo de bruma fría `--cielo #f6f8fb`; las superficies son nube blanca encima |
+| Acento índigo `#4338CA` | Violeta `--activo #5638d6`. **Sigue significando una sola cosa: «te toca a ti»** |
+| Tipografía Libre Franklin | **Mulish**, con el titular en peso 200 |
+| **Cero radios** en todo | `--radio: 14px` en superficies y **píldoras** en todos los controles |
+| Tinta casi negra `#1c1c1e` | Pizarra `--tinta #232b36`, gris azulado |
+| Marcas cuadradas en el recorrido | **Franjas de espectro**: el color es posicional y dice cuánto has avanzado |
+
+**Solo tema claro y el logotipo EX siguen intactos**, que son los dos compromisos con el cliente.
+
+**Los nombres de los tokens cambiaron en las veinte hojas**: `--papel`→`--nube`,
+`--hundido`→`--nube-hundida`, `--hundido2`→`--nube-honda`, `--acento*`→`--activo*`,
+`--mal-papel`→`--mal-bruma`, `--duda-papel`→`--duda-bruma`.
+
+### Qué está migrado y qué no
+
+**`DESIGN.md` y `.impeccable/design.json` están al día** (25/08): se regeneraron desde el código
+una vez el mundo estuvo construido y estable en la capa de tokens. El detector pasa con tres
+avisos, y los tres son `#000` dentro de un `mask-image` —máscaras, no colores—.
+
+Migrado del todo, con su composición propia: `mundo.css`, `piezas.module.css`, el armazón del
+portal, «Mis procesos» y su recorrido, la portada pública —sus cinco etapas son ahora la banda
+del espectro—, y **el panel del equipo entero**.
+
+Las otras pantallas del candidato tienen la paleta, la tipografía, los botones, los radios y las
+superficies del mundo nuevo, pero **no se han recompuesto**: siguen con la disposición que
+tenían. Se ven del mismo mundo; no están rediseñadas.
+
+### El panel comparte el mundo pero no la atmósfera (25/08/2026)
+
+El panel del equipo usa el mismo sistema —bruma, nube, Mulish, píldoras, el semáforo— y ninguna
+paleta inventada. Lo que **no** hereda es el canto irisado a sangre: doscientos píxeles de
+atmósfera son un regalo en una pantalla que se visita cada tres días y un estorbo en una
+herramienta que se habita la jornada entera. De todo el mundo se queda **un filete del espectro
+de dos píxeles** cruzando la cabecera, que además distingue las dos pestañas de un vistazo.
+
+⚠️ **El violeta significa cosas distintas en cada producto, y es a propósito.** En el portal es
+«te toca a ti», y su rareza es lo que lo hace legible entre trece estados de espera. En el panel
+no hay esa distinción —todo le toca al equipo— así que es simplemente la acción principal.
+
+### La trampa que costó tres rondas: los filtros SVG y la densidad de pixel
+
+`Canto.tsx` no usa `feGaussianBlur` ni `feDisplacementMap`, **y no es un descuido**. Chrome
+rasteriza un filtro SVG a resolución CSS y después amplía el resultado a la del dispositivo, así
+que en una pantalla de alta densidad la banda salía pixelada al lado de un texto nítido. La
+suavidad la hace ahora geometría: la misma curva trazada ochenta veces, de ancha y transparente
+a estrecha y opaca.
+
+⚠️ **Los `herramientas/capturar-*.mjs` capturan a densidad 1 y este fallo ahí no se ve.** Para
+mirarlo está `herramientas/capturar-densidad.mjs`, que saca la misma pantalla a 1× y a 2×: si la
+zona sospechosa a 2× no tiene más detalle que la de 1× ampliada, hay un mapa de bits en medio.
+
+### Mirar el panel sin tocar la base
+
+`herramientas/verificar-panel.mjs` recorre el panel contra el backend local **y escribe en la
+base**. Para solo mirarlo está `herramientas/capturar-panel.mjs`, que intercepta las respuestas
+y sirve un escenario de prueba: las cuatro pantallas, en dos anchos, sin tocar nada. Sus
+fixturas copian los `record` de `src/panel/api/tipos.ts`; si el contrato cambia allá, aquí
+revientan con un `Cannot read properties of undefined`.
 
 ---
 

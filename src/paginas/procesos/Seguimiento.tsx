@@ -1,22 +1,25 @@
 /**
- * El recorrido de una postulacion, hito por hito.
+ * El recorrido de una postulacion, tramo por tramo.
  *
- * Es la pieza que define el mundo del portal: tu postulacion como algo que va
- * en camino, con hitos cumplidos y un siguiente hito siempre nombrado. La
- * diferencia con un rastreo de paquete es deliberada — **lo cumplido no se
- * apaga**: una etapa cerrada se sigue leyendo con el mismo peso, porque lo que
- * el candidato ya demostro es suyo.
+ * Es la pieza que define el mundo del portal: tu candidatura como un canto de
+ * nube que se va formando. El espectro corre una sola vez de la primera etapa a
+ * la quinta y cada tramo enseña su rebanada, asi que el color dice cuanto has
+ * avanzado y no que etapa es. La diferencia con el fenomeno real es deliberada
+ * —alli el canto se deshace, aqui **lo formado se queda formado**— porque lo
+ * que el candidato ya demostro es suyo.
  *
- * La accion vive DENTRO del hito abierto, nunca en un boton suelto al pie: asi
- * «donde estoy» y «que hago» son la misma mirada.
+ * La accion vive en el panel que cuelga del tramo abierto, marcado con su
+ * misma señal violeta: asi «donde estoy» y «que hago» son la misma mirada. No
+ * va dentro del tramo porque un tramo mide una quinta parte del ancho y ahi no
+ * cabe ni el titulo.
  *
  * Aqui no hay fechas por etapa, y no es un olvido: la lista de postulaciones no
  * trae historial —eso solo llega en el detalle— y una fecha inventada seria
  * peor que ninguna.
  */
 
+import type { CSSProperties } from 'react'
 import { Link } from 'react-router-dom'
-import { motion, useReducedMotion } from 'motion/react'
 import type { MiPostulacion } from '@/api/tipos'
 import {
   esFinal,
@@ -29,7 +32,7 @@ import {
 import { describirAntiguedad, formatearFechaCorta } from '@/dominio/reloj'
 import estilos from './Seguimiento.module.css'
 
-/** Como suena cada estado de hito para quien no ve la pantalla. */
+/** Como suena cada estado de tramo para quien no ve la pantalla. */
 function comoSeOye(paso: Hito['paso'], leToca: boolean): string {
   if (paso === 'cumplida') return 'Etapa superada.'
   if (paso === 'cortada') return 'El proceso terminó en esta etapa.'
@@ -37,7 +40,7 @@ function comoSeOye(paso: Hito['paso'], leToca: boolean): string {
   return leToca ? 'Etapa en curso: te toca a ti.' : 'Etapa en curso: en revisión del equipo.'
 }
 
-/** El nombre del hito. Es lo que el candidato hace, no como se llama la etapa. */
+/** El nombre del tramo. Es lo que el candidato hace, no como se llama la etapa. */
 const QUE_PASA_EN: Record<string, string> = {
   PERFIL: 'Tu perfil',
   PRUEBA: 'La prueba del puesto',
@@ -77,85 +80,86 @@ export function Seguimiento({ postulacion, fechas, etapaDeCorte }: Props) {
   // repetia el mismo parrafo en cada postulacion y enterraba lo unico que hay
   // que leer: lo que toca hoy.
   const siguiente = hitos.find((h) => h.paso === 'pendiente')?.clave
+  const enCurso = hitos.find((h) => h.paso === 'en_curso')
 
   return (
-    <ol className={estilos.linea} role="list">
-      {hitos.map((hito) => (
-        <HitoDelRecorrido
-          key={hito.clave}
-          hito={hito}
-          esSiguiente={hito.clave === siguiente}
-          fecha={fechas?.[hito.clave]}
-          leToca={leToca}
-          final={final}
-          titulo={momento.titulo}
-          ayuda={momento.ayuda}
-          accion={momento.accion}
-          uuid={postulacion.uuid}
-          diasSinCambio={postulacion.diasSinCambio}
-        />
-      ))}
-    </ol>
+    <div className={estilos.recorrido}>
+      <ol className={estilos.banda} role="list">
+        {hitos.map((hito, indice) => (
+          <Tramo
+            key={hito.clave}
+            hito={hito}
+            indice={indice}
+            esSiguiente={hito.clave === siguiente}
+            fecha={fechas?.[hito.clave]}
+            leToca={leToca}
+            final={final}
+          />
+        ))}
+      </ol>
+
+      {/*
+        El panel del tramo abierto. Fuera de la lista y no dentro de un `<li>`:
+        una lista de cinco etapas cuyo tercer elemento pesa diez veces mas que
+        los otros deja de leerse como una secuencia de cinco.
+      */}
+      {enCurso && !final && leToca && momento.accion && (
+        <div className={estilos.abierto}>
+          <h3 className={estilos.abiertoTitulo}>{momento.titulo}</h3>
+          <p className={estilos.abiertoAyuda}>{momento.ayuda}</p>
+          <div className={estilos.abiertoPie}>
+            <Link className={estilos.accion} to={momento.accion.destino(postulacion.uuid)}>
+              {momento.accion.etiqueta}
+            </Link>
+            <span className={estilos.plazo}>
+              {describirAntiguedad(postulacion.diasSinCambio)}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {enCurso && !final && !leToca && (
+        <div className={estilos.espera}>
+          <h3 className={estilos.esperaTitulo}>{momento.titulo}</h3>
+          <p className={estilos.esperaAyuda}>
+            {momento.ayuda} <b>No tienes que hacer nada.</b>
+          </p>
+        </div>
+      )}
+    </div>
   )
 }
 
-function HitoDelRecorrido({
+function Tramo({
   hito,
+  indice,
   esSiguiente,
   fecha,
   leToca,
   final,
-  titulo,
-  ayuda,
-  accion,
-  uuid,
-  diasSinCambio,
 }: {
   hito: Hito
+  indice: number
   esSiguiente: boolean
   fecha?: string
   leToca: boolean
   final: boolean
-  titulo: string
-  ayuda: string
-  accion: { etiqueta: string; destino: (uuid: string) => string } | null
-  uuid: string
-  diasSinCambio: number
 }) {
-  const sinMovimiento = useReducedMotion()
   const enCurso = hito.paso === 'en_curso'
-
-  // Un hito en curso que no le toca al candidato espera a otra persona: se
-  // pinta con contorno, sin acento y sin boton.
-  const esperando = enCurso && !leToca
-  const clases = [
-    estilos.hito,
-    estilos[hito.paso === 'en_curso' ? 'enCurso' : hito.paso],
-    esperando ? estilos.esperando : '',
-  ]
-    .filter(Boolean)
-    .join(' ')
+  // Un tramo en curso que no le toca al candidato espera a otra persona: la
+  // banda se queda a medias, sin violeta y sin boton.
+  const forma = enCurso ? (leToca ? estilos.viva : estilos.esperando) : estilos[hito.paso]
+  const clases = `${estilos.tramo} ${forma}`
 
   return (
-    <li className={clases}>
-      <div className={estilos.marca}>
-        {/* El unico momento con movimiento del portal: la marca que se asienta
-            cuando una etapa se cierra. Por eso significa. */}
-        <motion.span
-          className={estilos.cuadro}
-          aria-hidden="true"
-          initial={sinMovimiento || hito.paso !== 'cumplida' ? false : { scale: 0.4, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.42, ease: [0.16, 1, 0.3, 1] }}
-        />
-      </div>
+    <li className={clases} style={{ '--i': indice } as CSSProperties}>
+      {/* La franja es decorativa para un lector de pantalla: su estado va en el
+          texto de abajo, no en la forma. */}
+      <span className={estilos.franja} aria-hidden="true" />
 
-      <div className={estilos.cuerpo}>
+      <div>
         <p className={estilos.nombre}>{QUE_PASA_EN[hito.clave] ?? hito.etiqueta}</p>
 
-        {/* El cuadro es decorativo para un lector de pantalla, asi que el
-            estado tiene que estar en el texto. Antes solo hablaban «cumplida» y
-            «cortada»: se oian cinco etapas planas sin saber en cual estaba. */}
         <span className={estilos.soloLectores}>{comoSeOye(hito.paso, leToca)}</span>
 
         {hito.paso === 'cumplida' && (
@@ -188,28 +192,6 @@ function HitoDelRecorrido({
               'El proceso terminó en esta etapa.'
             )}
           </p>
-        )}
-
-        {enCurso && !final && leToca && accion && (
-          <div className={estilos.abierto}>
-            <h3 className={estilos.abiertoTitulo}>{titulo}</h3>
-            <p className={estilos.abiertoAyuda}>{ayuda}</p>
-            <div className={estilos.abiertoPie}>
-              <Link className={estilos.accion} to={accion.destino(uuid)}>
-                {accion.etiqueta}
-              </Link>
-              <span className={estilos.plazo}>{describirAntiguedad(diasSinCambio)}</span>
-            </div>
-          </div>
-        )}
-
-        {enCurso && !final && !leToca && (
-          <div className={estilos.espera}>
-            <h3 className={estilos.esperaTitulo}>{titulo}</h3>
-            <p className={estilos.esperaAyuda}>
-              {ayuda} <b>No tienes que hacer nada.</b>
-            </p>
-          </div>
         )}
       </div>
     </li>
