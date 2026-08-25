@@ -455,15 +455,31 @@ export function Evaluacion() {
         <div className={estilos.portada}>
           <h1>Tu evaluación está lista.</h1>
           <p className={estilos.presentacion}>
-            Son preguntas sobre cómo trabajas, no sobre lo que memorizaste. No hay respuestas
-            de manual, y nadie las responde de una sentada.
+            Son preguntas sobre cómo trabajas, no sobre lo que memorizaste. Van de una en
+            una, no hay respuestas de manual, y nadie las responde de una sentada.
           </p>
 
           <div className={estilos.datos}>
-            <div className={estilos.dato}>
-              <span className={estilos.cifra}>{evaluacion.total}</span>
-              <span className={estilos.queEs}>preguntas, una por pantalla</span>
-            </div>
+            {/*
+              ⚠️ **Antes de empezar, `total` es cero y no significa «cero».**
+
+              El backend arma el orden de preguntas dentro de `iniciar()`, asi que
+              hasta entonces no hay filas que contar y `pintar()` devuelve 0 con el
+              comentario «Todavia no ha empezado: no hay preguntas que enseñar»
+              (`ServicioEvaluacionImpl.java:377`). Y la portada es, por definicion,
+              el estado de antes de empezar: **todo candidato leia «0 preguntas»**.
+
+              Un cero que en realidad quiere decir «todavia no lo se» es la regla del
+              indicador honesto rota. Los otros dos datos ya se guardaban de su nulo;
+              este no. Cuando el backend sepa decir cuantas seran sin tener que
+              armarlas, vuelve solo.
+            */}
+            {evaluacion.total > 0 && (
+              <div className={estilos.dato}>
+                <span className={estilos.cifra}>{evaluacion.total}</span>
+                <span className={estilos.queEs}>preguntas, una por pantalla</span>
+              </div>
+            )}
             {evaluacion.minutosObjetivo !== null && (
               <div className={estilos.dato}>
                 <span className={estilos.cifra}>{evaluacion.minutosObjetivo} min</span>
