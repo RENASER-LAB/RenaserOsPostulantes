@@ -699,74 +699,94 @@ export function Prueba() {
             </div>
           )}
 
-          <section className={estilos.bloque}>
-            <h2 className={estilos.tituloBloque}>
-              {hayEntregables ? 'El encargo' : 'De qué va'}
-            </h2>
-            <TextoPlano texto={prueba.enunciado ?? ''} queEs="el enunciado de la prueba" />
-          </section>
+          {/*
+            El encargo a un lado y el trabajo al otro.
 
-          {/* Durante la prueba tambien hacen falta: el enlace al PDF puede estar
-              en cualquiera de los tres campos, no solo en el reto. */}
-          {prueba.materiales && (
-            <section className={estilos.bloque}>
-              <h2 className={estilos.tituloBloque}>Materiales</h2>
-              <TextoPlano texto={prueba.materiales} queEs="el material de apoyo" />
-            </section>
-          )}
+            Esta pantalla se habita dos horas cronometradas y era la unica plana:
+            seis secciones a 32 px iguales entre el cronometro y el primer campo,
+            que en un telefono quedaba en y=819. La composicion estaba escrita
+            —`.columnas` y `.lateral`— pero solo se usaba en la portada, que se
+            mira treinta segundos.
 
-          {prueba.herramientasPermitidas && (
-            <section className={estilos.bloque}>
-              <h2 className={estilos.tituloBloque}>Herramientas permitidas</h2>
-              <TextoPlano texto={prueba.herramientasPermitidas} queEs="el documento" />
-            </section>
-          )}
+            Lo que se lee va a la izquierda y se queda fijo: el orden del DOM, el
+            visual y el del foco siguen coincidiendo, y el encargo deja de
+            perderse al hacer scroll hacia las respuestas.
+          */}
+          <div className={estilos.trabajando}>
+            <aside className={estilos.loQueSeLee}>
+              <section className={estilos.bloque}>
+                <h2 className={estilos.tituloBloque}>
+                  {hayEntregables ? 'El encargo' : 'De qué va'}
+                </h2>
+                <TextoPlano texto={prueba.enunciado ?? ''} queEs="el enunciado de la prueba" />
+              </section>
 
-          {prueba.preguntas.length > 0 && (
-            <section className={estilos.bloque}>
-              <h2 className={estilos.tituloBloque}>
-                {hayEntregables ? 'Tus respuestas' : 'Las preguntas'}
-              </h2>
-              <p className={estilos.texto} style={{ marginBottom: 'var(--e4)' }}>
-                {tiempoAgotado
-                  ? 'Así quedaron. Ya no se pueden cambiar.'
-                  : 'Se guardan solas mientras escribes.'}
-              </p>
-              <div className={estilos.preguntas}>
-                {prueba.preguntas.map((p) => (
-                  <PreguntaPrueba
-                    key={p.id}
-                    uuid={uuid}
-                    pregunta={p}
-                    bloqueado={tiempoAgotado}
-                    onPendiente={marcarPendiente}
-                  />
-                ))}
-              </div>
-            </section>
-          )}
+              {/* Durante la prueba tambien hacen falta: el enlace al PDF puede estar
+                  en cualquiera de los tres campos, no solo en el reto. */}
+              {prueba.materiales && (
+                <section className={estilos.bloque}>
+                  <h2 className={estilos.tituloBloque}>Materiales</h2>
+                  <TextoPlano texto={prueba.materiales} queEs="el material de apoyo" />
+                </section>
+              )}
 
-          {hayEntregables && (
-            <section className={estilos.bloque}>
-              <h2 className={estilos.tituloBloque}>Entregables</h2>
-              <p className={estilos.texto} style={{ marginBottom: 'var(--e4)' }}>
-                {tiempoAgotado
-                  ? 'Ya no se admiten envíos.'
-                  : 'Cada uno indica si se entrega como archivo o como enlace.'}
-              </p>
-              <div className={estilos.entregables}>
-                {prueba.entregables.map((e) => (
-                  <Entregable
-                    key={e.id}
-                    uuid={uuid}
-                    entregable={e}
-                    bloqueado={tiempoAgotado}
-                    alSubir={refrescar}
-                  />
-                ))}
-              </div>
-            </section>
-          )}
+              {prueba.herramientasPermitidas && (
+                <section className={estilos.bloque}>
+                  <h2 className={estilos.tituloBloque}>Herramientas permitidas</h2>
+                  <TextoPlano texto={prueba.herramientasPermitidas} queEs="el documento" />
+                </section>
+              )}
+            </aside>
+
+            <div className={estilos.loQueSeHace}>
+
+              {prueba.preguntas.length > 0 && (
+                <section className={estilos.bloque}>
+                  <h2 className={estilos.tituloBloque}>
+                    {hayEntregables ? 'Tus respuestas' : 'Las preguntas'}
+                  </h2>
+                  <p className={estilos.texto} style={{ marginBottom: 'var(--e4)' }}>
+                    {tiempoAgotado
+                      ? 'Así quedaron. Ya no se pueden cambiar.'
+                      : 'Se guardan solas mientras escribes.'}
+                  </p>
+                  <div className={estilos.preguntas}>
+                    {prueba.preguntas.map((p) => (
+                      <PreguntaPrueba
+                        key={p.id}
+                        uuid={uuid}
+                        pregunta={p}
+                        bloqueado={tiempoAgotado}
+                        onPendiente={marcarPendiente}
+                      />
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {hayEntregables && (
+                <section className={estilos.bloque}>
+                  <h2 className={estilos.tituloBloque}>Entregables</h2>
+                  <p className={estilos.texto} style={{ marginBottom: 'var(--e4)' }}>
+                    {tiempoAgotado
+                      ? 'Ya no se admiten envíos.'
+                      : 'Cada uno indica si se entrega como archivo o como enlace.'}
+                  </p>
+                  <div className={estilos.entregables}>
+                    {prueba.entregables.map((e) => (
+                      <Entregable
+                        key={e.id}
+                        uuid={uuid}
+                        entregable={e}
+                        bloqueado={tiempoAgotado}
+                        alSubir={refrescar}
+                      />
+                    ))}
+                  </div>
+                </section>
+              )}
+            </div>
+          </div>
 
           <div className={estilos.entrega}>
             {tiempoAgotado ? (

@@ -147,6 +147,8 @@
   border: 1px solid var(--acento-regla);
   background: var(--acento-papel);
   padding: var(--e4);
+  /* Ver el porque en `Procesos.module.css` → `.espera`. */
+  max-width: 34rem;
 }
 
 .abiertoTitulo {

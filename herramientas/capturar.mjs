@@ -24,6 +24,7 @@ const PORTAL = process.env.PORTAL ?? 'http://localhost:5174'
 const SALIDA = 'capturas'
 
 const TAMANOS = [
+  { nombre: 'ancho', width: 1920, height: 1000 },
   { nombre: 'escritorio', width: 1280, height: 900 },
   { nombre: 'movil', width: 375, height: 812 },
 ]

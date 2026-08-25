@@ -1,6 +1,6 @@
 # Portal del candidato · contexto de trabajo
 
-Última actualización: 2026-08-24 · el portal compone en escritorio; PR #3 abierto
+Última actualización: 2026-08-24 · `layout` corrido y sus P1 arreglados; PR #3 abierto
 
 Este archivo es para retomar el trabajo sin tener que reconstruir nada. Cuenta qué es este
 proyecto, con qué habla, qué se decidió y por qué, y qué está a medias.
@@ -273,7 +273,24 @@ ancho se lee peor. Privacidad se queda en 48rem.
 Cortes en **900 px** para las composiciones y **1100 px** para el mapa del examen.
 
 ⚠️ **Las capturas ahora son de tres anchos**: 1920, 1280 y 375. Sin el ancho grande, la red no
-ve justamente lo que se acaba de arreglar.
+ve justamente lo que se acaba de arreglar. `capturar.mjs` se quedó fuera del primer cambio
+porque usa un `const TAMANOS` en vez del array en línea, así que **el hub estuvo sin mirarse a
+1920**. Si añades un script, comprueba que tiene los tres.
+
+### Lo que dejó `layout` (24/08/2026)
+
+| Qué | Medido |
+|---|---|
+| **Los paneles crecieron con el contenedor y su texto no** | Relleno de 0,41 → **0,91**. El tope estaba en los párrafos; ahora está en el panel |
+| **El mapa del examen volvía a abrirse por arriba entre 900 y 1099 px** | La pregunta saltaba 127 px. Ahora **0 px** en 900, 1000 y 1280 |
+| **Dos desfases pegajosos estaban a ojo** | El mapa se pegaba 44 px demasiado arriba y se metía bajo la barra. Ahora son tokens medidos: `--alto-avance: 116px`, `--alto-reloj: 71px` |
+| **La prueba componía la pantalla de 30 s y dejaba plana la de 2 h** | `.columnas` solo se usaba en la portada. Ahora el encargo va fijo a la izquierda: el alto pasó de 2220 a **1205 px** y el primer campo de y=718 a **y=352** |
+| **La escala del SJT se estiraba a 908 px** | Son cinco dígitos. Tope de 22rem → **352 px** |
+| **El aviso del tiempo agotado iba a 106 caracteres por línea** | El único párrafo sin medida, y el más urgente |
+| **`space-between` separaba cada vacante de su propia fecha** | 644 px de nada entre dos cosas que son el mismo dato |
+
+⚠️ **Un elemento pegajoso no adivina la altura del que tiene encima**: se mide y se guarda en
+un token junto a la barra que la produce. Los dos que había escritos a mano estaban mal.
 
 ⚠️ **La medida se elige midiendo, no contando `ch`.** En Libre Franklin el cero es ancho: 62ch
 compraban 91-96 caracteres. Si cambias el tope, mídelo en el navegador.

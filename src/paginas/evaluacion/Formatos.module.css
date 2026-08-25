@@ -238,6 +238,12 @@
 .puntos {
   display: flex;
   gap: var(--e2);
+  /*
+   * Cinco digitos no ganan nada por medir 908 px. Y con tres afirmaciones que
+   * comparar entre si, responder de forma coherente obligaba a barrer ese ancho
+   * tres veces. 22rem = 5 x 64 + 4 x 8.
+   */
+  max-width: 22rem;
 }
 
 .punto {

@@ -9,6 +9,9 @@
  */
 
 .pagina {
+  /* Lo que mide la barra del cronometro, medida en el navegador: 71 px. El
+     encargo pegajoso se pega justo debajo de ella. */
+  --alto-reloj: 71px;
   max-width: var(--ancho);
   margin: 0 auto;
   padding: var(--e4) var(--e5) var(--e8);
@@ -128,7 +131,8 @@
 
 .lateral {
   position: sticky;
-  top: calc(var(--alto-cabecera) + 90px);
+  /* Solo la cabecera: en la portada de la prueba no hay barra encima. */
+  top: calc(var(--alto-cabecera) + var(--e5));
   border: 1px solid var(--regla);
   padding: var(--e5);
 }
@@ -162,6 +166,9 @@
 .aviso {
   display: flex;
   gap: var(--e3);
+  /* El tope va en el aviso, no en el `span` de dentro: con el campo a 1040 y el
+     texto a 460 se reproduce el mismo hueco que se queria quitar. */
+  max-width: var(--medida);
   border: 1px solid var(--regla2);
   background: var(--hundido);
   padding: var(--e4);
@@ -502,5 +509,46 @@
   .empezar,
   .entregar {
     width: 100%;
+  }
+}
+
+/* ---------- La prueba en curso: leer a un lado, trabajar al otro ---------- */
+
+.trabajando {
+  display: contents;
+}
+
+@media (min-width: 900px) {
+  .trabajando {
+    display: grid;
+    /* El encargo a la izquierda, el trabajo a la derecha: así el orden visual
+       sigue al del DOM y al del foco, que es el orden en que se usa. */
+    grid-template-columns: 19rem minmax(0, 1fr);
+    column-gap: var(--e7);
+    align-items: start;
+    margin-top: var(--e6);
+  }
+
+  .loQueSeLee {
+    position: sticky;
+    top: calc(var(--alto-cabecera) + var(--alto-reloj));
+    display: flex;
+    flex-direction: column;
+    gap: var(--e5);
+  }
+
+  /* Dentro de la columna estrecha, el aire entre secciones ya lo pone el `gap`. */
+  .loQueSeLee > .bloque {
+    margin-top: 0;
+  }
+
+  .loQueSeHace {
+    display: flex;
+    flex-direction: column;
+    gap: var(--e6);
+  }
+
+  .loQueSeHace > .bloque {
+    margin-top: 0;
   }
 }

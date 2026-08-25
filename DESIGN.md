@@ -324,9 +324,25 @@ examen, la prueba, la decisión y la validación.
 - La ficha pone «Lo que harás» y «Lo que buscamos» en paralelo, que es como se comparan.
 - El examen abre su **mapa al lado**, no encima: la pregunta ya no se mueve al abrirlo.
 
-**El corte está en 900 px** para las composiciones de dos y cinco columnas, y en **1100 px**
-para el mapa del examen, que necesita más sitio. Por debajo, todo vuelve a una columna: en un
-teléfono es lo único que funciona.
+- El **detalle** pone «Tu recorrido» y «Cómo llegaste hasta aquí» en paralelo: son dos lecturas
+  del mismo viaje —dónde estás y cómo llegaste— y en vertical la segunda quedaba tan abajo que
+  casi nadie la veía.
+- La **prueba en curso** pone el encargo a la izquierda y **fijo**, y el trabajo a la derecha.
+  Es la pantalla que se habita dos horas cronometradas, y era la única plana.
+
+**El corte está en 900 px** para todas las composiciones. Por debajo, todo vuelve a una
+columna: en un teléfono es lo único que funciona.
+
+### Named Rules
+
+**La regla del panel con dueño.** El tope de línea va en el panel, no en los párrafos de
+dentro. Cuando el portal pasó de 760 a 1088 px, los paneles crecieron con el contenedor y su
+texto no: quedaban con un 59 % de relleno vacío, y la densidad **empeoraba** cuanto más ancha
+la pantalla. Con el tope en el panel, la medida tiene un solo dueño.
+
+**La regla del desfase medido.** Un elemento pegajoso que se pega debajo de otro no adivina su
+altura: la mide y la guarda en un token junto a la barra que la produce —`--alto-avance`,
+`--alto-reloj`—. Los dos que había escritos a ojo estaban mal, uno por 44 px y otro por 90.
 
 El ritmo sale de ocho escalones —4, 8, 12, 16, 24, 32, 48 y 72 px— y de una sola regla: se
 agrupa apretando y se separa con holgura. Sobre un título va más aire que debajo.
