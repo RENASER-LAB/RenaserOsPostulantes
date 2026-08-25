@@ -3,6 +3,11 @@
 `/impeccable audit` sobre el portal completo. Es una revisión **de código**, no de diseño: lo
 que sigue es medible y verificable, y no incluye juicios de UX —eso lo hace `critique`.
 
+> **Es una foto del 24/08, no una lista de pendientes.** Los dos P1 —el título de la pestaña
+> y los trece tamaños de letra— se arreglaron ese mismo día, junto con los dos P0 de
+> `critique`. Se deja el informe entero porque el **cómo se midió** es lo que hay que repetir
+> la próxima vez; qué quedó arreglado y dónde está en [CLAUDE.md](../CLAUDE.md).
+
 **Cómo se midió.** Un guion de Playwright recorrió **once rutas en dos anchos** (1280 y 375),
 con las respuestas del backend interceptadas —la base real es producción y no se toca—, y midió
 sobre el DOM ya pintado: contraste de cada nodo de texto contra su fondo heredado, caja de todo

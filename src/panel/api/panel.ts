@@ -7,11 +7,13 @@
 import { pedir } from './cliente'
 import type {
   CrearSolicitud,
+  DesgloseEvaluacion,
   AreaPanel,
   ConteoEmbudo,
   CrearSesion,
   FichaPostulacion,
   GuardarVacante,
+  NotaCriterioEtapa,
   Parametro,
   PasoHistorialPanel,
   PerfilIntegral,
@@ -28,6 +30,7 @@ import type {
   VersionPesos,
   Catalogos,
   SolicitudResumen,
+  ValidacionPanel,
   PlantillaPruebaPanel,
   VersionPrueba,
 } from './tipos'
@@ -88,13 +91,25 @@ export const quitarRequisito = (vacanteId: number, requisitoId: number) =>
 
 export const verEmbudo = (vacanteId: number) =>
   pedir<ConteoEmbudo>(`/vacantes/${vacanteId}/embudo`)
-export const verRanking = (vacanteId: number) =>
-  pedir<RankingVacante>(`/vacantes/${vacanteId}/ranking`)
+/** Sin etapa es la preseleccion; con ella, la nota de la fila es la de esa etapa. */
+export const verRanking = (vacanteId: number, etapa?: string) =>
+  pedir<RankingVacante>(`/vacantes/${vacanteId}/ranking${etapa ? `?etapa=${etapa}` : ''}`)
 
 export const verFicha = (postulacionId: number) =>
   pedir<FichaPostulacion>(`/postulaciones/${postulacionId}`)
 export const verPerfilIntegral = (postulacionId: number) =>
   pedir<PerfilIntegral>(`/postulaciones/${postulacionId}/perfil-integral`)
+export const verDesgloseEvaluacion = (postulacionId: number) =>
+  pedir<DesgloseEvaluacion>(`/postulaciones/${postulacionId}/evaluacion`)
+export const verNotasPrueba = (postulacionId: number) =>
+  pedir<NotaCriterioEtapa[]>(`/postulaciones/${postulacionId}/prueba/notas`)
+export const verNotasSimulacion = (postulacionId: number) =>
+  pedir<NotaCriterioEtapa[]>(`/postulaciones/${postulacionId}/simulacion/notas`)
+/** 404 mientras el equipo no la habilite: se traduce a «todavia no hay». */
+export const verValidacion = (postulacionId: number) =>
+  pedir<ValidacionPanel>(`/postulaciones/${postulacionId}/validacion`)
+export const verMetricasValidacion = (postulacionId: number) =>
+  pedir<NotaCriterioEtapa[]>(`/postulaciones/${postulacionId}/validacion/metricas`)
 export const verHistorial = (postulacionId: number) =>
   pedir<PasoHistorialPanel[]>(`/postulaciones/${postulacionId}/historial`)
 
@@ -136,7 +151,11 @@ export const listarVersionesBanco = () =>
  * Si el archivo tiene problemas, el backend contesta 400 con la lista completa
  * y no importa nada: la version solo se crea si todo el Excel es coherente.
  */
-export const importarBanco = (archivo: File, nivelPuestoCodigo: string, etiqueta: string) => {
+export const importarBanco = (
+  archivo: File,
+  nivelPuestoCodigo: string,
+  etiqueta: string,
+) => {
   const formulario = new FormData()
   formulario.append('archivo', archivo)
   formulario.append('nivelPuestoCodigo', nivelPuestoCodigo)
@@ -164,7 +183,9 @@ export const listarPlantillasPrueba = () =>
  * Cada hueco deja un 404 en la consola: es feo, y es lo que hay hasta que el
  * backend abra la ruta. Ese dia esta funcion se borra entera.
  */
-export async function listarVersionesPrueba(huecosSeguidos = 3): Promise<VersionPrueba[]> {
+export async function listarVersionesPrueba(
+  huecosSeguidos = 3,
+): Promise<VersionPrueba[]> {
   const encontradas: VersionPrueba[] = []
   let huecos = 0
   for (let id = 1; huecos < huecosSeguidos; id++) {
@@ -187,13 +208,19 @@ export async function listarVersionesPrueba(huecosSeguidos = 3): Promise<Version
 // Sin estas cuatro no se puede publicar: el backend exige plantilla de
 // evaluacion (si la evaluacion esta encendida) y version de prueba.
 
-export const asignarPlantillaEvaluacion = (vacanteId: number, plantillaEvaluacionId: number) =>
+export const asignarPlantillaEvaluacion = (
+  vacanteId: number,
+  plantillaEvaluacionId: number,
+) =>
   pedir<void>(`/vacantes/${vacanteId}/plantilla-evaluacion`, {
     metodo: 'POST',
     cuerpo: { plantillaEvaluacionId },
   })
 
-export const asignarPlantillaPrueba = (vacanteId: number, versionPlantillaPruebaId: number) =>
+export const asignarPlantillaPrueba = (
+  vacanteId: number,
+  versionPlantillaPruebaId: number,
+) =>
   pedir<void>(`/vacantes/${vacanteId}/plantilla-prueba`, {
     metodo: 'POST',
     cuerpo: { versionPlantillaPruebaId },
