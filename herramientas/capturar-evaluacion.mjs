@@ -61,7 +61,14 @@ const EVALUACION = {
   // `total` tiene que cuadrar con las preguntas servidas: si no, la pantalla
   // pinta su estado degradado —«llegaron 4 de las 55»— y lo que se mira no es
   // la evaluación real. Ya pasó: cuatro capturas salieron de esa pantalla.
-  total: PREGUNTAS.length, respondidas: 1, preguntas: PREGUNTAS,
+  //
+  // Y en la portada va en cero con la lista vacía, porque es lo que devuelve el
+  // backend de verdad: el orden de preguntas se arma dentro de `iniciar()`, así
+  // que antes no hay nada que contar. Servir aquí el total escondía que todo
+  // candidato leía «0 preguntas».
+  ...(caso === 'portada'
+    ? { total: 0, respondidas: 0, preguntas: [] }
+    : { total: PREGUNTAS.length, respondidas: 1, preguntas: PREGUNTAS }),
 }
 
 const AL_FORMATO = { examen: 0, mapa: 0, sjt: 1, sec: 2, ef: 3, ef4: 3 }
