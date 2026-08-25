@@ -1,0 +1,202 @@
+/* La lista de vacantes del equipo, y el alta plegable. */
+
+.pagina {
+  max-width: var(--ancho);
+  margin: 0 auto;
+  padding: var(--e5) var(--e5) var(--e8);
+}
+
+.cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--e4);
+  margin-bottom: var(--e6);
+}
+
+.bajada {
+  font-size: var(--t-prosa);
+  line-height: 1.55;
+  color: var(--tinta2);
+  margin-top: var(--e2);
+  max-width: var(--medida);
+}
+
+.crear {
+  composes: acentoMenor from '../../estilos/piezas.module.css';
+}
+
+.titulo {
+  font-weight: 600;
+}
+
+.aviso {
+  font-size: var(--t-prosa);
+  color: var(--tinta2);
+  margin: var(--e4) 0;
+}
+
+.aviso.malo {
+  display: flex;
+  gap: var(--e3);
+  border: 1px solid var(--mal-regla);
+  background: var(--mal-papel);
+  padding: var(--e3) var(--e4);
+  color: var(--mal);
+}
+
+.aviso.malo::before {
+  content: '';
+  flex: none;
+  width: 3px;
+  background: var(--mal);
+}
+
+/* ---------- El alta ---------- */
+
+.alta {
+  border: 1px solid var(--regla2);
+  padding: var(--e5);
+  margin-bottom: var(--e6);
+}
+
+.tituloAlta {
+  margin: 0 0 var(--e4);
+}
+
+.rejilla {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: var(--e4);
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+  min-width: 0;
+}
+
+.anchoEntero {
+  grid-column: 1 / -1;
+}
+
+.etiqueta {
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+}
+
+.entrada {
+  min-height: 44px;
+  padding: 0 var(--e3);
+  background: var(--papel);
+  color: var(--tinta);
+  border: 1px solid var(--borde-control);
+  font: inherit;
+  font-size: var(--t-base);
+}
+
+.area {
+  min-height: 5.5rem;
+  padding: var(--e3);
+  background: var(--papel);
+  color: var(--tinta);
+  border: 1px solid var(--borde-control);
+  font: inherit;
+  font-size: var(--t-base);
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.enviar {
+  composes: acentoGrande from '../../estilos/piezas.module.css';
+  margin-top: var(--e5);
+}
+
+/* ---------- Sin solicitud aprobada ---------- */
+
+.sinSolicitud {
+  border: 1px solid var(--duda);
+  background: var(--duda-papel);
+  padding: var(--e4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--e4);
+  align-items: flex-start;
+}
+
+/**
+ * El ambar es del aviso, no de lo que se escribe dentro.
+ *
+ * Escribir una solicitud es trabajo normal; dejarlo sobre el fondo de la
+ * advertencia haria que todo el rato pareciera que algo va mal.
+ */
+.sinSolicitud .formulario {
+  background: var(--papel);
+  border: 1px solid var(--regla);
+  padding: var(--e4);
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e4);
+  align-items: flex-start;
+}
+
+.explicacion {
+  font-size: var(--t-prosa);
+  line-height: 1.55;
+  color: var(--duda-tinta);
+  max-width: var(--medida);
+}
+
+.borradores {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+  margin-top: var(--e4);
+}
+
+.borrador {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e3);
+  border: 1px solid var(--regla2);
+  background: var(--papel);
+  padding: var(--e3) var(--e4);
+  font-size: var(--t-apoyo);
+}
+
+.aprobar {
+  composes: secundario from '../../estilos/piezas.module.css';
+}
+
+@media (max-width: 640px) {
+  .pagina {
+    padding: var(--e4) var(--e4) var(--e7);
+  }
+
+  .crear,
+  .enviar {
+    width: 100%;
+  }
+}
+
+.resultados {
+  border: 1px solid var(--regla);
+  padding: var(--e4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+  align-items: flex-start;
+}
+
+.resultados legend {
+  padding: 0 var(--e2);
+}
+
+.resultados .rejilla {
+  width: 100%;
+}

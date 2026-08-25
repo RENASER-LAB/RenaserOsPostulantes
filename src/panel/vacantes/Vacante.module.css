@@ -1,0 +1,373 @@
+/* Una vacante por dentro: cabecera, embudo, ranking con ficha y requisitos. */
+
+.pagina {
+  max-width: var(--ancho);
+  margin: 0 auto;
+  padding: var(--e5) var(--e5) var(--e8);
+}
+
+.volver {
+  composes: volver from '../../estilos/piezas.module.css';
+}
+
+.cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--e4);
+  margin-top: var(--e4);
+  margin-bottom: var(--e5);
+}
+
+.datosVacante {
+  font-size: var(--t-prosa);
+  color: var(--tinta2);
+  margin-top: var(--e2);
+}
+
+.publicar {
+  composes: acentoMenor from '../../estilos/piezas.module.css';
+}
+
+.cierre {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e2);
+}
+
+.cerrar {
+  composes: secundario from '../../estilos/piezas.module.css';
+  border-color: var(--mal);
+  color: var(--mal);
+}
+
+.cargando {
+  font-size: var(--t-prosa);
+  color: var(--tinta2);
+  padding: var(--e5);
+}
+
+.avisoMalo {
+  display: flex;
+  gap: var(--e3);
+  border: 1px solid var(--mal-regla);
+  background: var(--mal-papel);
+  padding: var(--e3) var(--e4);
+  font-size: var(--t-prosa);
+  line-height: 1.5;
+  color: var(--mal);
+  margin: var(--e3) 0;
+}
+
+.avisoMalo::before {
+  content: '';
+  flex: none;
+  width: 3px;
+  background: var(--mal);
+}
+
+.seccion {
+  margin-top: var(--e6);
+}
+
+.tituloSeccion {
+  margin-bottom: var(--e3);
+}
+
+/* ---------- El embudo ---------- */
+
+.embudo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e2);
+}
+
+.tramoEmbudo {
+  display: flex;
+  align-items: baseline;
+  gap: var(--e2);
+  border: 1px solid var(--regla2);
+  padding: var(--e2) var(--e3);
+  font-size: var(--t-apoyo);
+}
+
+.cuantos {
+  font-size: var(--t-entradilla);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.enQue {
+  color: var(--tinta2);
+}
+
+/* ---------- El ranking ---------- */
+
+.resumenTanda {
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+  margin-bottom: var(--e3);
+}
+
+.candidato {
+  display: block;
+  font-weight: 600;
+}
+
+.correo {
+  display: block;
+  color: var(--tinta3);
+  font-size: var(--t-menor);
+}
+
+.celdaDetalle {
+  background: var(--hundido);
+  padding: var(--e5) !important;
+}
+
+.detalle {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+  gap: var(--e6);
+}
+
+.columnaDetalle {
+  min-width: 0;
+}
+
+.tituloDetalle {
+  margin: 0 0 var(--e3);
+}
+
+.tituloDetalle + .tituloDetalle,
+.columnaDetalle > .tituloDetalle:not(:first-child) {
+  margin-top: var(--e5);
+}
+
+.subtitulo {
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  margin: var(--e4) 0 var(--e2);
+}
+
+.dato {
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+  margin-bottom: var(--e2);
+}
+
+.texto {
+  font-size: var(--t-prosa);
+  line-height: 1.55;
+  max-width: var(--medida);
+}
+
+.historial {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+}
+
+.paso {
+  display: flex;
+  gap: var(--e3);
+  font-size: var(--t-menor);
+  line-height: 1.5;
+}
+
+.cuandoPaso {
+  flex: none;
+  width: 14rem;
+  color: var(--tinta3);
+  font-variant-numeric: tabular-nums;
+}
+
+.hallazgos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+}
+
+.hallazgo {
+  font-size: var(--t-apoyo);
+  line-height: 1.5;
+  border-left: 1px solid var(--regla2);
+  padding-left: var(--e3);
+}
+
+.criterios {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+}
+
+.criterio {
+  display: flex;
+  gap: var(--e3);
+  font-size: var(--t-apoyo);
+  line-height: 1.5;
+}
+
+.notaCriterio {
+  flex: none;
+  width: 3.5rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.explicacion {
+  display: block;
+  color: var(--tinta2);
+}
+
+/* ---------- El avance ---------- */
+
+.avance {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e3);
+  margin-top: var(--e4);
+}
+
+.entradaMotivo {
+  flex: 1 1 18rem;
+  min-height: 44px;
+  padding: 0 var(--e3);
+  background: var(--papel);
+  color: var(--tinta);
+  border: 1px solid var(--borde-control);
+  font: inherit;
+  font-size: var(--t-base);
+}
+
+.avanzar {
+  composes: acentoMenor from '../../estilos/piezas.module.css';
+}
+
+.resultadoAvance {
+  font-size: var(--t-prosa);
+  line-height: 1.55;
+  color: var(--tinta2);
+  margin-top: var(--e3);
+  max-width: var(--medida);
+}
+
+/* ---------- Requisitos ---------- */
+
+.notaRequisitos {
+  font-size: var(--t-prosa);
+  line-height: 1.55;
+  color: var(--tinta2);
+  max-width: var(--medida);
+  margin-bottom: var(--e4);
+}
+
+.requisitos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+}
+
+.requisito {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e3);
+  border: 1px solid var(--regla2);
+  padding: var(--e3) var(--e4);
+  font-size: var(--t-apoyo);
+}
+
+.sinRequisitos {
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+}
+
+.quitarRequisito {
+  composes: secundario from '../../estilos/piezas.module.css';
+}
+
+.altaRequisito {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e3);
+  margin-top: var(--e4);
+}
+
+.anadir {
+  composes: secundario from '../../estilos/piezas.module.css';
+}
+
+@media (max-width: 640px) {
+  .pagina {
+    padding: var(--e4) var(--e4) var(--e7);
+  }
+
+  .publicar,
+  .avanzar,
+  .anadir {
+    width: 100%;
+  }
+}
+
+/* ---------- Lo que hace falta para publicar ---------- */
+
+.listaParaPublicar {
+  font-size: var(--t-prosa);
+  color: var(--bien);
+  border-left: 2px solid var(--bien);
+  padding-left: var(--e3);
+  margin-bottom: var(--e4);
+}
+
+/**
+ * El desplegable de un ajuste.
+ *
+ * No reusa `.entradaMotivo`: aquella lleva `flex: 1 1 18rem` para repartirse
+ * una fila, y dentro de esta columna ese `grow` la estira a lo alto.
+ */
+.eleccion {
+  min-height: 44px;
+  padding: 0 var(--e3);
+  background: var(--papel);
+  color: var(--tinta);
+  border: 1px solid var(--borde-control);
+  font: inherit;
+  font-size: var(--t-base);
+}
+
+.configuracion {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: var(--e4);
+}
+
+.ajuste {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+  min-width: 0;
+}
+
+.etiquetaAjuste {
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+}
+
+.interruptor {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--e2);
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+  min-height: 44px;
+  line-height: 1.4;
+}
+
+.pista {
+  font-size: var(--t-menor);
+  color: var(--duda-tinta);
+}

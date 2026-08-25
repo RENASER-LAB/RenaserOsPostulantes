@@ -1,0 +1,195 @@
+/* La configuracion: parametros, banco, equipo y lo de solo lectura. */
+
+.pagina {
+  max-width: var(--ancho);
+  margin: 0 auto;
+  padding: var(--e5) var(--e5) var(--e8);
+}
+
+.bajada {
+  font-size: var(--t-prosa);
+  line-height: 1.55;
+  color: var(--tinta2);
+  margin-top: var(--e2);
+  max-width: var(--medida);
+}
+
+.seccion {
+  margin-top: var(--e7);
+}
+
+.tituloSeccion {
+  margin-bottom: var(--e2);
+}
+
+.nota {
+  font-size: var(--t-prosa);
+  line-height: 1.55;
+  color: var(--tinta2);
+  margin-bottom: var(--e4);
+  max-width: var(--medida);
+}
+
+.subtitulo {
+  font-size: var(--t-base);
+  font-weight: 600;
+  margin-bottom: var(--e3);
+}
+
+/* ---------- Parametros ---------- */
+
+.codigoParametro {
+  display: block;
+  font-weight: 600;
+}
+
+.descripcionParametro {
+  display: block;
+  color: var(--tinta2);
+  max-width: 44ch;
+}
+
+.valorParametro {
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+  max-width: 26rem;
+}
+
+.edicion {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+  min-width: 16rem;
+}
+
+.botonesEdicion {
+  display: flex;
+  gap: var(--e2);
+}
+
+.entrada {
+  min-height: 40px;
+  padding: 0 var(--e3);
+  background: var(--papel);
+  color: var(--tinta);
+  border: 1px solid var(--borde-control);
+  font: inherit;
+  font-size: var(--t-apoyo);
+}
+
+.chico {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 var(--e3);
+  background: var(--papel);
+  border: 1px solid var(--borde-control);
+  font-size: var(--t-menor);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.chico:hover:not(:disabled) {
+  border-color: var(--tinta);
+}
+
+.chico:disabled {
+  background: var(--hundido2);
+  border-color: var(--regla2);
+  color: var(--tinta3);
+  cursor: default;
+}
+
+/* ---------- El banco ---------- */
+
+.importar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e3);
+  border: 1px dashed var(--borde-control);
+  background: var(--hundido);
+  padding: var(--e4);
+}
+
+.archivo {
+  font-size: var(--t-apoyo);
+}
+
+.subir {
+  composes: acentoMenor from '../../estilos/piezas.module.css';
+}
+
+.versiones {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+  margin-top: var(--e4);
+}
+
+.version {
+  display: flex;
+  align-items: center;
+  gap: var(--e3);
+  border: 1px solid var(--regla);
+  padding: var(--e3) var(--e4);
+  font-size: var(--t-apoyo);
+}
+
+.estadoVersion {
+  flex: none;
+  font-size: var(--t-micro);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tinta2);
+  border: 1px solid var(--regla2);
+  padding: 2px var(--e2);
+}
+
+.dosListas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+  gap: var(--e6);
+}
+
+/* ---------- Avisos ---------- */
+
+.avisoBien {
+  font-size: var(--t-prosa);
+  color: var(--bien);
+  border-left: 2px solid var(--bien);
+  padding-left: var(--e3);
+  margin-top: var(--e3);
+}
+
+.avisoMalo {
+  display: flex;
+  gap: var(--e3);
+  border: 1px solid var(--mal-regla);
+  background: var(--mal-papel);
+  padding: var(--e3) var(--e4);
+  font-size: var(--t-prosa);
+  line-height: 1.5;
+  color: var(--mal);
+  margin-top: var(--e3);
+  max-width: var(--medida);
+}
+
+.avisoMalo::before {
+  content: '';
+  flex: none;
+  width: 3px;
+  background: var(--mal);
+}
+
+@media (max-width: 640px) {
+  .pagina {
+    padding: var(--e4) var(--e4) var(--e7);
+  }
+
+  .subir {
+    width: 100%;
+  }
+}

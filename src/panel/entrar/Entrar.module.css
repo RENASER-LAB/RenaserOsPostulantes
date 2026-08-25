@@ -1,0 +1,83 @@
+/* Entrar al panel. Un formulario: estrecho, como todos los del mundo. */
+
+.pagina {
+  max-width: 34rem;
+  margin: 0 auto;
+  padding: var(--e7) var(--e5) var(--e8);
+}
+
+.bajada {
+  font-size: var(--t-base);
+  line-height: 1.55;
+  color: var(--tinta2);
+  margin-top: var(--e3);
+  max-width: var(--medida-corta);
+}
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e4);
+  margin-top: var(--e6);
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+}
+
+.etiqueta {
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+}
+
+.entrada {
+  min-height: 48px;
+  padding: 0 var(--e3);
+  background: var(--papel);
+  color: var(--tinta);
+  border: 1px solid var(--borde-control);
+  font: inherit;
+  font-size: var(--t-base);
+}
+
+.fallo {
+  display: flex;
+  gap: var(--e3);
+  border: 1px solid var(--mal-regla);
+  background: var(--mal-papel);
+  padding: var(--e3) var(--e4);
+  font-size: var(--t-prosa);
+  line-height: 1.5;
+  color: var(--mal);
+}
+
+.fallo::before {
+  content: '';
+  flex: none;
+  width: 3px;
+  background: var(--mal);
+}
+
+.enviar {
+  composes: acentoGrande from '../../estilos/piezas.module.css';
+  align-self: flex-start;
+}
+
+.aparte {
+  margin-top: var(--e6);
+  border-top: 1px solid var(--regla);
+  padding-top: var(--e4);
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta3);
+  max-width: var(--medida-corta);
+}
+
+@media (max-width: 640px) {
+  .enviar {
+    width: 100%;
+    align-self: stretch;
+  }
+}

@@ -22,6 +22,13 @@ export const patrones = {
   validacion: '/procesos/:uuid/validacion',
   decision: '/procesos/:uuid/decision',
   privacidad: '/privacidad',
+
+  // ---------- El panel del equipo ----------
+  adminEntrar: '/admin/entrar',
+  adminVacantes: '/admin',
+  adminVacante: '/admin/vacantes/:id',
+  adminSesiones: '/admin/simulacion',
+  adminConfiguracion: '/admin/configuracion',
 } as const
 
 export const rutas = {
@@ -46,4 +53,11 @@ export const rutas = {
   validacion: (uuid: string) => `/procesos/${uuid}/validacion`,
   decision: (uuid: string) => `/procesos/${uuid}/decision`,
   privacidad: () => '/privacidad',
+
+  // ---------- El panel del equipo ----------
+  adminEntrar: () => '/admin/entrar',
+  adminVacantes: () => '/admin',
+  adminVacante: (id: number | string) => `/admin/vacantes/${id}`,
+  adminSesiones: () => '/admin/simulacion',
+  adminConfiguracion: () => '/admin/configuracion',
 } as const

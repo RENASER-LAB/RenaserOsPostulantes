@@ -1,0 +1,181 @@
+/* Las sesiones de simulacion: la tabla y el alta. */
+
+.pagina {
+  max-width: var(--ancho);
+  margin: 0 auto;
+  padding: var(--e5) var(--e5) var(--e8);
+}
+
+.cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--e4);
+  margin-bottom: var(--e6);
+}
+
+.bajada {
+  font-size: var(--t-prosa);
+  line-height: 1.55;
+  color: var(--tinta2);
+  margin-top: var(--e2);
+  max-width: var(--medida);
+}
+
+.crear {
+  composes: acentoMenor from '../../estilos/piezas.module.css';
+}
+
+.aviso {
+  font-size: var(--t-prosa);
+  color: var(--tinta2);
+  margin: var(--e3) 0;
+}
+
+.avisoMalo {
+  display: flex;
+  gap: var(--e3);
+  border: 1px solid var(--mal-regla);
+  background: var(--mal-papel);
+  padding: var(--e3) var(--e4);
+  font-size: var(--t-prosa);
+  line-height: 1.5;
+  color: var(--mal);
+  margin: var(--e3) 0;
+}
+
+.avisoMalo::before {
+  content: '';
+  flex: none;
+  width: 3px;
+  background: var(--mal);
+}
+
+.accionesFila {
+  display: flex;
+  gap: var(--e2);
+}
+
+.chico {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 var(--e3);
+  background: var(--papel);
+  border: 1px solid var(--borde-control);
+  font-size: var(--t-menor);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.chico:hover:not(:disabled) {
+  border-color: var(--tinta);
+}
+
+.peligro {
+  border-color: var(--mal);
+  color: var(--mal);
+}
+
+/* El hueco del backend, dicho en voz alta. */
+.hueco {
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+  border-left: 2px solid var(--regla2);
+  padding-left: var(--e4);
+  margin-top: var(--e5);
+  max-width: var(--medida);
+}
+
+/* ---------- El alta ---------- */
+
+.alta {
+  border: 1px solid var(--regla2);
+  padding: var(--e5);
+  margin-bottom: var(--e6);
+}
+
+.tituloAlta {
+  margin: 0 0 var(--e4);
+}
+
+.rejilla {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: var(--e4);
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+  min-width: 0;
+}
+
+.anchoEntero {
+  margin-top: var(--e4);
+}
+
+.etiqueta {
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+}
+
+.entrada {
+  min-height: 44px;
+  padding: 0 var(--e3);
+  background: var(--papel);
+  color: var(--tinta);
+  border: 1px solid var(--borde-control);
+  font: inherit;
+  font-size: var(--t-base);
+}
+
+.area {
+  min-height: 5rem;
+  padding: var(--e3);
+  background: var(--papel);
+  color: var(--tinta);
+  border: 1px solid var(--borde-control);
+  font: inherit;
+  font-size: var(--t-base);
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.grupoVacantes {
+  border: 1px solid var(--regla);
+  padding: var(--e4);
+  margin-top: var(--e4);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e3) var(--e5);
+}
+
+.opcionVacante {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  font-size: var(--t-apoyo);
+  min-height: 24px;
+  cursor: pointer;
+}
+
+.enviar {
+  composes: acentoGrande from '../../estilos/piezas.module.css';
+  margin-top: var(--e5);
+}
+
+@media (max-width: 640px) {
+  .pagina {
+    padding: var(--e4) var(--e4) var(--e7);
+  }
+
+  .crear,
+  .enviar {
+    width: 100%;
+  }
+}

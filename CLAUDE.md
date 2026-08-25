@@ -1,6 +1,6 @@
 # Portal del candidato · contexto de trabajo
 
-Última actualización: 2026-08-24 · `layout` corrido y sus P1 arreglados; PR #3 abierto
+Última actualización: 2026-08-25 · empieza el panel del equipo, aquí mismo y provisional
 
 Este archivo es para retomar el trabajo sin tener que reconstruir nada. Cuenta qué es este
 proyecto, con qué habla, qué se decidió y por qué, y qué está a medias.
@@ -33,10 +33,59 @@ La cara que ve **quien postula** a una vacante de Renaser: elegir oportunidad, p
 responder la evaluación, hacer la prueba del puesto, elegir fecha de simulación y seguir el
 estado de su proceso.
 
-**Qué NO es.** El panel del equipo de Talento no está aquí, y **tampoco en el repositorio del
-backend**: el `frontend/` de demostración que había allí se borró a propósito. El panel de
-verdad vive en RENASER OS (`~/Documentos/RenaserOs`). El panel de administración del rediseño
-se hará aparte y más adelante.
+**Y desde el 25/08, también el panel del equipo — aquí mismo y a sabiendas de que es
+provisional.** El plan sigue siendo que viva integrado en RENASER OS (`~/Documentos/RenaserOs`),
+pero mientras un agente de backend trabaja en que otras empresas puedan crear sus propias
+vacantes (modelo Indeed), el panel se construye en este repositorio, bajo `/admin`:
+
+- **Se entra como usuario del equipo**, no como candidato. El backend tiene
+  `POST /api/v1/panel/auth/dev-login` hecho justo para esto: emite un token de equipo sin
+  RENASER OS, se apaga en producción con `app.seguridad.dev-login-activo=false`, y el primer
+  id que entra se crea solo con los tres roles. En la base local ya existen `andy-dev` y un
+  UUID; el id es **texto**, no número.
+- **La base del panel es `/api/v1/panel`**, con token propio (`renaser_panel_token`), aparte
+  del token del candidato. Un 401 del panel no puede cerrar la sesión del portal ni al revés.
+- Tres pestañas: **Vacantes** (el CRUD, y dentro de cada una el embudo, el ranking con las
+  notas de la IA, la ficha de cada postulante y avanzar de etapa), **Simulación** (crear y
+  gestionar las sesiones presenciales) y **Configuración** (parámetros, banco de preguntas por
+  Excel, usuarios y roles, áreas).
+- ⚠️ **Huecos del backend, comprobados el 25/08**: `GET /panel/bandeja` devuelve 500; no hay
+  endpoint que liste **quiénes** se inscribieron a una sesión de simulación —`SesionPanel` solo
+  trae el conteo—; y **no hay forma de listar las versiones de una plantilla de prueba**, solo
+  de pedir una suelta por su id. Se enseña lo que existe, como hizo el portal con la decisión
+  ámbar.
+
+### Publicar una vacante exige tres cosas antes (25/08)
+
+Era el atasco: el backend rechaza publicar y el panel no tenía dónde resolverlo. Ahora las
+tres viven en el detalle de la vacante, bajo **«Qué responderá quien postule»**.
+
+| Qué | Obligatorio |
+|---|---|
+| Plantilla de evaluación | **Sí, si `aplicaEvaluacion` está encendido** |
+| Versión de plantilla de prueba | **Sí, siempre** |
+| Versión de pesos | No: sin elegir, rigen los generales |
+
+Y antes que todo eso, la vacante misma exige **una solicitud de talento aprobada** que no haya
+usado ninguna otra. Si no hay ninguna `ABIERTA`, el panel deja aprobar un borrador o escribir
+una solicitud nueva; el backend le exige **entre 3 y 5 resultados esperados**, cada uno con su
+indicador.
+
+⚠️ **La plantilla de evaluación tiene que ser del mismo nivel que el puesto** y estar
+`PUBLICADA`. El selector filtra por eso: ofrecer las demás sería dejar elegir algo que falla.
+
+⚠️ **`listarVersionesPrueba` tantea ids y deja 404 en la consola.** No es un fallo: es el hueco
+del backend. Se para tras tres huecos seguidos, y el día que exista
+`GET /plantillas-prueba/{id}/versiones` esa función se borra entera.
+
+⚠️ **Un `<form>` dentro de otro `<form>` lo descarta el navegador**, y su botón de enviar acaba
+enviando el de fuera. Pasó con el formulario de solicitud dentro del de alta: se veía bien y no
+hacía nada. Va fuera, con un `return` temprano.
+
+**El recorrido entero, los dos lados**, está en
+[docs/06-FLUJO-COMPLETO.md](docs/06-FLUJO-COMPLETO.md), y se comprueba con
+`node herramientas/e2e-vacante.mjs`: abre un Chrome de verdad y va de la solicitud a la vacante
+publicada en el portal. ⚠️ Escribe en la base local.
 
 ---
 

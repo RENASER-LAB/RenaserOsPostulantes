@@ -1,0 +1,121 @@
+/*
+ * El armazon del panel.
+ *
+ * El mismo mundo que el portal —papel, tinta, cero radios— con una sola
+ * diferencia deliberada: la cabecera va sobre fondo hundido y dice «Panel del
+ * equipo». Quien tenga las dos pestañas abiertas sabe cual es cual de un
+ * vistazo, sin inventar otra paleta.
+ */
+
+.armazon {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.cabecera {
+  border-bottom: 1px solid var(--regla);
+  background: var(--hundido);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.cabeceraDentro {
+  max-width: var(--ancho);
+  margin: 0 auto;
+  padding: var(--e2) var(--e5);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e4);
+  min-height: 44px;
+}
+
+.marca {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e3);
+  min-height: 44px;
+  color: var(--tinta);
+  text-decoration: none;
+}
+
+.marca:hover {
+  color: var(--tinta);
+  text-decoration: none;
+}
+
+.quienEs {
+  font-size: var(--t-menor);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--tinta2);
+  border-left: 1px solid var(--regla2);
+  padding-left: var(--e3);
+}
+
+.navegacion {
+  display: flex;
+  align-items: center;
+  gap: var(--e5);
+  font-size: var(--t-apoyo);
+}
+
+.enlace {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--tinta2);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+
+.enlace:hover {
+  color: var(--tinta);
+  text-decoration: none;
+  border-bottom-color: var(--regla2);
+}
+
+/* La pestaña activa se marca con la regla y el peso, no con el acento: el
+   acento del mundo significa «te toca a ti» y aqui todo le toca al equipo. */
+.enlaceActivo {
+  color: var(--tinta);
+  font-weight: 600;
+  border-bottom-color: var(--tinta);
+}
+
+.salir {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  background: none;
+  border: 0;
+  padding: 0;
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: var(--regla2);
+  text-underline-offset: 0.22em;
+}
+
+.salir:hover {
+  color: var(--tinta);
+}
+
+.principal {
+  flex: 1;
+}
+
+@media (max-width: 640px) {
+  .cabeceraDentro {
+    padding: var(--e2) var(--e4);
+    flex-wrap: wrap;
+  }
+
+  .quienEs {
+    display: none;
+  }
+}
