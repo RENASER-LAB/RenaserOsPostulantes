@@ -7,7 +7,7 @@
  */
 
 .pagina {
-  max-width: 760px;
+  max-width: var(--ancho);
   margin: 0 auto;
   padding: var(--e5) var(--e5) var(--e8);
 }
@@ -187,5 +187,25 @@
 
   .boton {
     width: 100%;
+  }
+}
+
+/*
+ * «Lo que harás» y «Lo que buscamos», una al lado de la otra.
+ *
+ * Son dos listas del mismo tipo y se comparan mejor en paralelo que apiladas.
+ * `auto-fit` hace que, si la vacante solo trae una de las dos, ocupe el ancho
+ * entera en vez de dejar media pantalla vacía.
+ */
+.dosListas {
+  display: contents;
+}
+
+@media (min-width: 900px) {
+  .dosListas {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr));
+    column-gap: var(--e7);
+    align-items: start;
   }
 }

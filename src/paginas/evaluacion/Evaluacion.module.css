@@ -18,7 +18,7 @@
  */
 
 .pagina {
-  max-width: 62rem;
+  max-width: var(--ancho);
   margin: 0 auto;
   padding: var(--e4) var(--e5) var(--e8);
 }
@@ -28,6 +28,15 @@
 }
 
 /* ---------- La barra de avance, siempre a la vista ---------- */
+
+/*
+ * Lo que mide esta barra, para que el mapa pueda pegarse justo debajo sin
+ * adivinarlo. Medido en el navegador a 1100, 1280, 1400 y 1920: 116 px en los
+ * cuatro. Si cambia lo que va dentro, se vuelve a medir.
+ */
+.pagina {
+  --alto-avance: 116px;
+}
 
 .avance {
   position: sticky;
@@ -105,6 +114,48 @@
 }
 
 /* ---------- El mapa de preguntas ---------- */
+
+/*
+ * El mapa al lado, no encima.
+ *
+ * `CLAUDE.md` decia «mapa lateral» y la implementacion lo abria por arriba,
+ * empujando la pregunta fuera de la pantalla. Aqui se cumple lo que estaba
+ * escrito: en escritorio la columna de la derecha —la que sobraba— lo aloja, y
+ * la pregunta se queda donde estaba.
+ */
+.conMapa {
+  display: contents;
+}
+
+@media (min-width: 900px) {
+  .conMapa {
+    display: grid;
+    /* `auto` para que, con el mapa cerrado, la columna se encoja a cero. */
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: var(--e6);
+    align-items: start;
+  }
+
+  .conMapa > .mapa {
+    order: 2;
+    /* Estrecho en la banda de 900 a 1099, donde la pregunta necesita el resto. */
+    width: 13rem;
+    margin-top: 0;
+    position: sticky;
+    /* Debajo de la barra de avance, que tambien es pegajosa. */
+    top: calc(var(--alto-cabecera) + var(--alto-avance));
+  }
+
+  .conMapa > .pregunta {
+    order: 1;
+  }
+}
+
+@media (min-width: 1100px) {
+  .conMapa > .mapa {
+    width: 17rem;
+  }
+}
 
 .mapa {
   margin-top: var(--e4);

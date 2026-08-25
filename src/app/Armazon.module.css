@@ -21,7 +21,7 @@
 }
 
 .cabeceraDentro {
-  max-width: 760px;
+  max-width: var(--ancho);
   margin: 0 auto;
   padding: var(--e2) var(--e5);
   display: flex;
@@ -89,7 +89,7 @@
 }
 
 .pieDentro {
-  max-width: 760px;
+  max-width: var(--ancho);
   margin: 0 auto;
   padding: var(--e2) var(--e5);
   display: flex;
