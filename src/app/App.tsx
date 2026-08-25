@@ -26,6 +26,14 @@ import { Validacion } from '@/paginas/validacion/Validacion'
 import { Decision } from '@/paginas/decision/Decision'
 import { Privacidad } from '@/paginas/privacidad/Privacidad'
 
+import { ProveedorSesionPanel } from '@/panel/Sesion'
+import { ArmazonPanel } from '@/panel/Armazon'
+import { EntrarPanel } from '@/panel/entrar/Entrar'
+import { VacantesPanel } from '@/panel/vacantes/Vacantes'
+import { VacantePanelDetalle } from '@/panel/vacantes/Vacante'
+import { SesionesPanel } from '@/panel/simulacion/Sesiones'
+import { ConfiguracionPanel } from '@/panel/configuracion/Configuracion'
+
 const datos = new QueryClient({
   defaultOptions: {
     queries: {
@@ -60,6 +68,30 @@ export function App() {
             <ProveedorAvisos>
               <BrowserRouter>
                 <Routes>
+                  {/* ---------- El panel del equipo ---------- */}
+                  {/* Va antes que el portal y fuera de su armazon: otra persona,
+                      otra sesion, otra cabecera. El candado vive en ArmazonPanel. */}
+                  <Route
+                    path={patrones.adminEntrar}
+                    element={
+                      <ProveedorSesionPanel>
+                        <EntrarPanel />
+                      </ProveedorSesionPanel>
+                    }
+                  />
+                  <Route
+                    element={
+                      <ProveedorSesionPanel>
+                        <ArmazonPanel />
+                      </ProveedorSesionPanel>
+                    }
+                  >
+                    <Route path={patrones.adminVacantes} element={<VacantesPanel />} />
+                    <Route path={patrones.adminVacante} element={<VacantePanelDetalle />} />
+                    <Route path={patrones.adminSesiones} element={<SesionesPanel />} />
+                    <Route path={patrones.adminConfiguracion} element={<ConfiguracionPanel />} />
+                  </Route>
+
                   <Route element={<Armazon />}>
                     {/* Publico */}
                     <Route path={patrones.vacantes} element={<Vacantes />} />

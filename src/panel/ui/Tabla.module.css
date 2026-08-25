@@ -1,0 +1,62 @@
+/*
+ * La tabla del panel.
+ *
+ * El panel es la unica parte del producto con tablas de verdad: filas que se
+ * comparan entre si. El mundo manda igual: reglas a un pixel, cero radios, y
+ * los numeros en columna con `tabular-nums`.
+ */
+
+.envoltura {
+  /* La tabla puede ser mas ancha que la pantalla: que ruede ella, no la pagina. */
+  overflow-x: auto;
+  border: 1px solid var(--regla);
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--t-apoyo);
+}
+
+.tabla th {
+  text-align: left;
+  font-size: var(--t-micro);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tinta3);
+  background: var(--hundido);
+  padding: var(--e3) var(--e4);
+  border-bottom: 1px solid var(--regla2);
+  white-space: nowrap;
+}
+
+.tabla td {
+  padding: var(--e3) var(--e4);
+  border-bottom: 1px solid var(--regla);
+  vertical-align: top;
+}
+
+.tabla tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.tabla tbody tr:hover {
+  background: var(--hundido);
+}
+
+/* Una fila que abre algo al pulsarla. */
+.pulsable {
+  cursor: pointer;
+}
+
+.cifra {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.vacia {
+  padding: var(--e5);
+  font-size: var(--t-prosa);
+  color: var(--tinta2);
+}
