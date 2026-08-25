@@ -316,3 +316,28 @@
     align-items: flex-start;
   }
 }
+
+/*
+ * «Tu recorrido» y «Cómo llegaste hasta aquí» en paralelo.
+ *
+ * Son dos lecturas del mismo viaje —dónde estás y cómo llegaste—, y en vertical
+ * la segunda quedaba tan abajo que casi nadie la veía. El recorrido lleva la
+ * acción dentro del hito, así que va primero y se lleva más sitio.
+ */
+.dosLecturas {
+  display: contents;
+}
+
+@media (min-width: 900px) {
+  .dosLecturas {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    column-gap: var(--e7);
+    align-items: start;
+  }
+
+  /* El primero ya trae su propio aire desde arriba; el segundo lo iguala. */
+  .dosLecturas > .seccion {
+    margin-top: var(--e7);
+  }
+}

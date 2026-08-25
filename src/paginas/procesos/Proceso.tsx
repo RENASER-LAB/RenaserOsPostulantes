@@ -159,29 +159,35 @@ export function Proceso() {
         </section>
       )}
 
-      <section className={estilos.seccion}>
-        <h2 className={estilos.tituloSeccion}>Tu recorrido</h2>
-        <p className={estilos.entradilla}>
-          Las cinco etapas del proceso, con la fecha en que llegaste a cada una.
-        </p>
-        <Seguimiento postulacion={resumen} fechas={fechas} etapaDeCorte={etapaDeCorte} />
-      </section>
+      {/* Las dos lecturas del mismo viaje, una al lado de la otra en escritorio:
+          el recorrido dice DONDE estas, el registro dice COMO llegaste. Era la
+          unica pantalla del portal, con el hub, que no reflowaba nunca por
+          encima de 640 px, y es de las dos mas visitadas. */}
+      <div className={estilos.dosLecturas}>
+        <section className={estilos.seccion}>
+          <h2 className={estilos.tituloSeccion}>Tu recorrido</h2>
+          <p className={estilos.entradilla}>
+            Las cinco etapas del proceso, con la fecha en que llegaste a cada una.
+          </p>
+          <Seguimiento postulacion={resumen} fechas={fechas} etapaDeCorte={etapaDeCorte} />
+        </section>
 
-      <section className={estilos.seccion}>
-        <h2 className={estilos.tituloSeccion}>Cómo llegaste hasta aquí</h2>
-        <p className={estilos.entradilla}>
-          Cada cambio de tu postulación, con su fecha. Sale del registro del sistema, no es una línea de tiempo de adorno.
-        </p>
-        {pasos.length === 0 ? (
-          <p className={estilos.sinRegistro}>Todavía no hay movimientos que mostrar.</p>
-        ) : (
-          <ol className={estilos.registro} role="list">
-            {pasos.map((paso, i) => (
-              <Cambio key={`${paso.ocurridaEn}-${i}`} paso={paso} />
-            ))}
-          </ol>
-        )}
-      </section>
+        <section className={estilos.seccion}>
+          <h2 className={estilos.tituloSeccion}>Cómo llegaste hasta aquí</h2>
+          <p className={estilos.entradilla}>
+            Cada cambio de tu postulación, con su fecha. Sale del registro del sistema, no es una línea de tiempo de adorno.
+          </p>
+          {pasos.length === 0 ? (
+            <p className={estilos.sinRegistro}>Todavía no hay movimientos que mostrar.</p>
+          ) : (
+            <ol className={estilos.registro} role="list">
+              {pasos.map((paso, i) => (
+                <Cambio key={`${paso.ocurridaEn}-${i}`} paso={paso} />
+              ))}
+            </ol>
+          )}
+        </section>
+      </div>
 
       {!final && (
         <Retirada

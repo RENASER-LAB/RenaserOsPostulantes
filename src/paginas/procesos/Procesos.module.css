@@ -45,11 +45,17 @@
   padding-top: 0;
 }
 
+/*
+ * La fecha va pegada al nombre de la vacante, no al otro extremo.
+ *
+ * Con `space-between` y el ancho nuevo quedaban 644 px de nada entre dos cosas
+ * que son el mismo dato: cuando postulaste a ESTO. En el telefono salian
+ * adyacentes, asi que la agrupacion era mejor en movil que en escritorio.
+ */
 .cabeceraProceso {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  justify-content: space-between;
   gap: var(--e2) var(--e4);
   margin-bottom: var(--e5);
 }
@@ -81,6 +87,7 @@
   background: var(--papel);
   padding: var(--e4);
   margin-bottom: var(--e5);
+  max-width: 34rem;
 }
 
 .tituloCerrado {
@@ -234,10 +241,19 @@
 
 /* ---------- Una postulacion que no pide nada ---------- */
 
+/*
+ * El tope va aqui y no en los parrafos de dentro.
+ *
+ * Al pasar el portal de 760 a 1088 px, estos paneles crecieron con el
+ * contenedor y su texto no: quedaban con un 59 % de relleno vacio, y la
+ * densidad EMPEORABA cuanto mas ancha la pantalla. Poniendolo en el panel, la
+ * medida tiene un solo dueño.
+ */
 .espera {
   border: 1px solid var(--regla);
   background: var(--hundido);
   padding: var(--e4);
+  max-width: 34rem;
 }
 
 .esperaTitulo {
