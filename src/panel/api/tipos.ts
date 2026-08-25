@@ -126,6 +126,75 @@ export interface FilaRanking {
   notasCriterio: NotaCriterio[]
 }
 
+/**
+ * Una nota por criterio de una etapa que califica con rubrica: la prueba, la
+ * simulacion y las metricas de la validacion comparten esta forma exacta
+ * (`CalificacionPorCriterio.Vista` en el backend).
+ */
+export interface NotaCriterioEtapa {
+  criterioId: number
+  nombre: string
+  puntosMaximos: number | null
+  puntaje: number | null
+  explicacion: string | null
+  /** IA o el usuario que ajusto a mano. */
+  origen: string | null
+}
+
+/** La cabecera del periodo de validacion, si el equipo ya lo habilito. */
+export interface ValidacionPanel {
+  id: number
+  modalidad: string | null
+  tipoVinculacion: string | null
+  dias: number | null
+  inicioEn: FechaIso | null
+  finEn: FechaIso | null
+  estado: string
+  responsableUsuarioId: number | null
+}
+
+// ---------- El desglose de la evaluacion del banco ----------
+
+/** Lo cerrado no se desglosa por pregunta: sale como un promedio sobre 100. */
+export interface ResumenCerradas {
+  nota: number
+  preguntas: number
+}
+
+/** Una respuesta abierta con la nota de la IA. El puntaje va de 0 a 4. */
+export interface RespuestaAbiertaVista {
+  pregunta: string
+  formato: string
+  respuesta: string
+  puntaje: number | null
+  explicacion: string | null
+  evidenciaCitada: string | null
+  confianza: number | null
+  /** Solo si un humano corrigio la nota; el porque es obligatorio alla. */
+  motivoAjuste: string | null
+}
+
+export interface AlineacionVista {
+  bloque: string
+  semaforo: string
+  explicacion: string | null
+}
+
+/**
+ * La evaluacion del banco, abierta por dentro. Sin evaluacion asignada todo
+ * viene vacio; entregada pero sin calificar trae las respuestas sin nota.
+ * Nunca es 404: una evaluacion sin calificar es un estado normal.
+ */
+export interface DesgloseEvaluacion {
+  postulacionId: number
+  estado: string | null
+  entregadaEn: FechaIso | null
+  notaEvaluacion: number | null
+  cerradas: ResumenCerradas
+  abiertas: RespuestaAbiertaVista[]
+  alineacion: AlineacionVista[]
+}
+
 export interface RankingVacante {
   vacanteId: number
   vacante: string

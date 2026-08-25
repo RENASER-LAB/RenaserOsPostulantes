@@ -17,8 +17,11 @@ Su situación: está buscando trabajo y acaba de encontrar una vacante. Lo que n
 portal es entender qué le piden, hacerlo sin perderse, y saber en qué punto está su proceso
 sin tener que preguntar.
 
-**No es un usuario de este portal** el equipo de Talento de Renaser. Su panel es otro
-producto, vive en RENASER OS, y el del rediseño se hará aparte.
+**El equipo de Talento también es usuario, desde el 25/08**, aunque de otra cara: su panel
+vive en `/admin`, dentro de este mismo repositorio. Debería estar integrado en RENASER OS y
+ese sigue siendo el plan; está aquí mientras se termina lo que permitirá a otras empresas
+crear sus propias vacantes. Lo que ve el equipo no lo ve el candidato, y al revés: son dos
+sesiones con dos tokens distintos.
 
 ## Product Purpose
 

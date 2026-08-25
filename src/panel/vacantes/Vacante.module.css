@@ -371,3 +371,84 @@
   font-size: var(--t-menor);
   color: var(--duda-tinta);
 }
+
+/* ---------- Las pestañas de etapa ---------- */
+
+.pestanas {
+  display: flex;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--regla);
+  margin-bottom: var(--e4);
+}
+
+.pestana,
+.pestanaActiva {
+  font: inherit;
+  font-size: var(--t-apoyo);
+  padding: var(--e2) var(--e4);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--tinta2);
+  cursor: pointer;
+  min-height: 44px;
+}
+
+/* La etapa activa es donde estás mirando: lleva el acento porque es la que
+   te toca a ti leer, y es el único acento de la tabla. */
+.pestanaActiva {
+  color: var(--tinta);
+  font-weight: 600;
+  border-bottom-color: var(--acento);
+}
+
+.pestana:hover {
+  color: var(--tinta);
+}
+
+.filaResumen {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--e3);
+}
+
+.filtroAhora {
+  display: flex;
+  align-items: center;
+  gap: var(--e2);
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+  cursor: pointer;
+}
+
+.cuantasOculta {
+  color: var(--tinta2);
+}
+
+/* ---------- La tabla de la evaluación del banco ---------- */
+
+.celdaRespuesta {
+  max-width: 26rem;
+}
+
+.respuestaDada {
+  display: block;
+  color: var(--tinta2);
+  font-size: var(--t-menor);
+  line-height: 1.45;
+  margin-top: var(--e1);
+}
+
+.celdaExplicacion {
+  max-width: 22rem;
+  font-size: var(--t-menor);
+  line-height: 1.45;
+}
+
+.evidencia {
+  display: block;
+  color: var(--tinta2);
+  margin-top: var(--e1);
+}
