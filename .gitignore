@@ -36,3 +36,9 @@ portal-candidato-ex.html
 # se descargan para mirar. Ninguno es del proyecto.
 .impeccable/live/
 .impeccable/worlds/
+
+# Las skills de las herramientas de IA. A diferencia del backend, aqui no se
+# versionan: nadie del equipo las necesita para levantar el portal.
+.agents/
+.claude/skills/
+skills-lock.json
