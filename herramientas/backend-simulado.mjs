@@ -23,6 +23,7 @@ const VACANTES = [
   {
     id: 1,
     titulo: 'Ingeniero/a de Infraestructura',
+    nombreEmpresa: 'Renaser Consulting',
     descripcion: 'Sostener una plataforma que no se cae y que el equipo entiende.',
     proposito:
       'Que la plataforma sostenga el crecimiento del próximo año sin sobresaltos, y que el equipo sepa por qué está montada como está.',
@@ -43,6 +44,7 @@ const VACANTES = [
   {
     id: 2,
     titulo: 'Analista de Datos',
+    nombreEmpresa: 'Clínica San Juan',
     descripcion: 'Convertir datos dispersos en decisiones que alguien toma el lunes.',
     proposito: 'Que las decisiones del comité dejen de apoyarse en intuición.',
     responsabilidades: 'Levantar y limpiar las fuentes.\nConstruir los indicadores que se miran cada semana.',
@@ -56,6 +58,7 @@ const VACANTES = [
   {
     id: 3,
     titulo: 'Especialista en Servicio',
+    nombreEmpresa: 'Transportes del Sur',
     descripcion: 'Resolver antes de que el cliente tenga que insistir.',
     proposito: 'Que un cliente con un problema termine la conversación mejor de lo que la empezó.',
     responsabilidades: 'Atender los casos difíciles.\nDejar escrito lo que se aprende de cada uno.',
@@ -85,13 +88,13 @@ const CONSENTIMIENTOS = [
 
 // Una postulacion por situacion, para poder recorrer todas las pantallas.
 const POSTULACIONES = [
-  { uuid: 'a1', vacante: 'Ingeniero/a de Infraestructura', estado: 'PRUEBA_TURNO_CANDIDATO', estadoNombre: 'Prueba habilitada', grupoPrioridad: 'A', diasSinCambio: 1, creadoEn: '2026-08-12T11:02:00Z' },
-  { uuid: 'b2', vacante: 'Analista de Datos', estado: 'PERFIL_TURNO_CANDIDATO', estadoNombre: 'Evaluación pendiente', grupoPrioridad: 'B', diasSinCambio: 2, creadoEn: '2026-08-15T09:20:00Z' },
-  { uuid: 'c3', vacante: 'Especialista en Servicio', estado: 'SIMULACION_TURNO_CANDIDATO', estadoNombre: 'Simulación por confirmar', grupoPrioridad: 'A', diasSinCambio: 0, creadoEn: '2026-08-01T15:40:00Z' },
-  { uuid: 'd4', vacante: 'Analista de Datos', estado: 'PERFIL_CALIFICANDO', estadoNombre: 'Calificando', grupoPrioridad: 'B', diasSinCambio: 0, creadoEn: '2026-08-18T08:00:00Z' },
-  { uuid: 'e5', vacante: 'Ingeniero/a de Infraestructura', estado: 'DECISION_TURNO_CANDIDATO', estadoNombre: 'Evidencia adicional', grupoPrioridad: 'A', diasSinCambio: 3, creadoEn: '2026-07-20T10:00:00Z' },
-  { uuid: 'f6', vacante: 'Especialista en Servicio', estado: 'CONTRATADO', estadoNombre: 'Contratado', grupoPrioridad: 'A', diasSinCambio: 5, creadoEn: '2026-06-10T10:00:00Z' },
-  { uuid: 'g7', vacante: 'Analista de Datos', estado: 'NO_CONTINUA', estadoNombre: 'No continúa', grupoPrioridad: 'C', diasSinCambio: 9, creadoEn: '2026-06-02T10:00:00Z' },
+  { uuid: 'a1', vacante: 'Ingeniero/a de Infraestructura', empresa: 'Renaser Consulting', estado: 'PRUEBA_TURNO_CANDIDATO', estadoNombre: 'Prueba habilitada', grupoPrioridad: 'A', diasSinCambio: 1, creadoEn: '2026-08-12T11:02:00Z' },
+  { uuid: 'b2', vacante: 'Analista de Datos', empresa: 'Clínica San Juan', estado: 'PERFIL_TURNO_CANDIDATO', estadoNombre: 'Evaluación pendiente', grupoPrioridad: 'B', diasSinCambio: 2, creadoEn: '2026-08-15T09:20:00Z' },
+  { uuid: 'c3', vacante: 'Especialista en Servicio', empresa: 'Transportes del Sur', estado: 'SIMULACION_TURNO_CANDIDATO', estadoNombre: 'Simulación por confirmar', grupoPrioridad: 'A', diasSinCambio: 0, creadoEn: '2026-08-01T15:40:00Z' },
+  { uuid: 'd4', vacante: 'Analista de Datos', empresa: 'Clínica San Juan', estado: 'PERFIL_CALIFICANDO', estadoNombre: 'Calificando', grupoPrioridad: 'B', diasSinCambio: 0, creadoEn: '2026-08-18T08:00:00Z' },
+  { uuid: 'e5', vacante: 'Ingeniero/a de Infraestructura', empresa: 'Renaser Consulting', estado: 'DECISION_TURNO_CANDIDATO', estadoNombre: 'Evidencia adicional', grupoPrioridad: 'A', diasSinCambio: 3, creadoEn: '2026-07-20T10:00:00Z' },
+  { uuid: 'f6', vacante: 'Especialista en Servicio', empresa: 'Transportes del Sur', estado: 'CONTRATADO', estadoNombre: 'Contratado', grupoPrioridad: 'A', diasSinCambio: 5, creadoEn: '2026-06-10T10:00:00Z' },
+  { uuid: 'g7', vacante: 'Analista de Datos', empresa: 'Clínica San Juan', estado: 'NO_CONTINUA', estadoNombre: 'No continúa', grupoPrioridad: 'C', diasSinCambio: 9, creadoEn: '2026-06-02T10:00:00Z' },
 ]
 
 const HISTORIALES = {
@@ -305,6 +308,24 @@ const servidor = createServer(async (req, res) => {
 
   // Vacantes y textos publicos
   if (ruta === '/vacantes' && metodo === 'GET') return responder(res, 200, VACANTES)
+  // Antes de la ficha: si no, `/vacantes/1/consentimiento` cae en la regla de
+  // abajo —que solo mira `partes[1]`— y devuelve la vacante.
+  if (partes[0] === 'vacantes' && partes[2] === 'consentimiento' && metodo === 'GET') {
+    const v = VACANTES.find((x) => String(x.id) === partes[1])
+    if (!v) return responder(res, 404, { detail: 'No existe esa vacante' })
+    return responder(res, 200, {
+      nombreEmpresa: v.nombreEmpresa,
+      version: '1.0',
+      texto:
+        `${v.nombreEmpresa} tratará los datos que envíes en este formulario —tu currículum, `
+        + 'tus respuestas y los resultados de las evaluaciones— con la única finalidad de '
+        + 'evaluar tu candidatura a este puesto.\n\n'
+        + 'Los datos se conservarán mientras dure el proceso y hasta doce meses después de su '
+        + 'cierre, salvo que pidas su eliminación antes.\n\n'
+        + 'Parte de la evaluación se apoya en sistemas automatizados. Ninguna decisión final '
+        + 'se toma de forma automática: siempre la revisa una persona.',
+    })
+  }
   if (partes[0] === 'vacantes' && partes[1] && metodo === 'GET') {
     const v = VACANTES.find((x) => String(x.id) === partes[1])
     return v ? responder(res, 200, v) : responder(res, 404, { mensaje: 'No existe esa vacante' })

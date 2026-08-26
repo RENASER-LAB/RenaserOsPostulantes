@@ -160,7 +160,18 @@ function Vacante({ vacante }: { vacante: VacantePublica }) {
   return (
     <article className={estilos.vacante}>
       <Link className={estilos.enlaceVacante} to={rutas.vacante(vacante.id)}>
-        <h3 className={estilos.tituloVacante}>{vacante.titulo}</h3>
+        {/*
+          El puesto y quien lo ofrece van juntos y en un solo envoltorio: en
+          escritorio esto es una rejilla de areas nombradas, y un cuarto hijo
+          suelto caeria en colocacion automatica y partiria la composicion.
+        */}
+        {/* `div` y no `span`: lleva un `h3` dentro, que es contenido de flujo. */}
+        <div className={estilos.identidad}>
+          <h3 className={estilos.tituloVacante}>{vacante.titulo}</h3>
+          {vacante.nombreEmpresa && (
+            <span className={estilos.empresa}>{vacante.nombreEmpresa}</span>
+          )}
+        </div>
         {donde && <span className={estilos.donde}>{donde}</span>}
         {resumen && <p className={estilos.queSeHace}>{resumen}</p>}
         <span className={estilos.ver}>Ver el puesto y postular →</span>

@@ -1,10 +1,123 @@
 # Portal del candidato · contexto de trabajo
 
-Última actualización: 2026-08-25 · **mundo visual nuevo**, y el ranking del panel es por
-etapas con el porqué de la IA
+Última actualización: 2026-08-26 · **multiempresa y el perfil del candidato**
 
 Este archivo es para retomar el trabajo sin tener que reconstruir nada. Cuenta qué es este
 proyecto, con qué habla, qué se decidió y por qué, y qué está a medias.
+
+---
+
+## Multiempresa y «Mi perfil» (26/08/2026)
+
+El backend fusionó dos tandas grandes —el perfil (#36, migración V36) y el multiempresa (#41,
+V37-V39)— y el portal se puso al día con las tres primeras piezas.
+
+### El portal estaba roto, y esto es lo que lo arreglaba
+
+`POST /portal/postulaciones` **exige `aceptaTratamiento` y sin él responde 400**. El portal no
+lo mandaba: ninguna postulación entraba. Ahora la pantalla de postular lleva la casilla del
+tratamiento de datos **de la empresa de esa vacante**, con su texto legal servido por
+`GET /vacantes/{id}/consentimiento` (público, para poder leerlo antes de decidir).
+
+⚠️ **Esa casilla SÍ bloquea, y no contradice la regla de los requisitos.** Los requisitos son
+preguntas de sí o no porque una respuesta descarta a la persona y decidir por ella sería peor.
+El consentimiento es la ley 29733: sin él no hay postulación posible, así que preguntarle si
+quiere enviarla igual sería ofrecer algo que no existe. El candado vive dentro de `revisar()`,
+que es lo que hace que se resuelva **antes** que el aviso del descarte automático.
+
+### El tablón mezcla empresas, a propósito
+
+`VacantePublica` gana `nombreEmpresa` y `MiPostulacion` gana `empresa`. ⚠️ **Se llaman distinto
+en el backend y aquí se copian tal cual**, sin igualarlos: son dos `record` distintos.
+
+⚠️ **Una vacante de empresa suspendida devuelve 404, y eso es normal.** Antes el portal no
+distinguía ningún 404: pintaba «no pudimos cargar» con un botón de reintentar que no podía
+funcionar, y filtraba el mensaje interno del backend en inglés. Ahora la ficha tiene su rama.
+
+### Entrar al panel cambió de raíz
+
+RENASER OS quedó dormido: `POST /panel/auth/login` con correo y contraseña, para todo el equipo.
+**Las cuentas nacen solo por invitación** (`POST /panel/auth/invitacion`, contraseña **mínimo
+12**, no 8 como el portal) y **no hay recuperación de contraseña** — no existe el endpoint, y la
+pantalla lo dice en vez de fingirlo, igual que la `/clave` del candidato.
+
+⚠️ **El enlace de la invitación cae en un agujero si `renaser.panel.url` no lleva `/admin`.** El
+backend lo arma como `{esa propiedad}/invitacion?token=…`, el portal vive en `/admin/*`, y el
+comodín `path="*"` está dentro del armazón del candidato: sin nada más, `/invitacion` rebotaba a
+la portada y **el token desaparecía en silencio**. Hay una ruta suelta que redirige conservando
+el token; el día que la propiedad esté bien puesta en todos los entornos, se puede borrar.
+
+### «Mi perfil» · `/perfil`
+
+Un perfil por persona, no por vacante. 23 endpoints. **Nada es obligatorio y nada bloquea.**
+
+⚠️ **`PUT /perfil` reemplaza los siete campos de la cabecera de golpe.** Se siembra del `GET` y
+se manda entero. Guardar campo a campo borraría los seis que no van — la misma forma del fallo
+que ya costó respuestas perdidas en la evaluación. Hay test.
+
+⚠️ **Las cinco listas NO tienen las mismas operaciones**, y tratarlas como si sí devuelve 404:
+
+| Lista | Ruta | Reordenar | Confirmar | Editar |
+|---|---|:-:|:-:|:-:|
+| Experiencia | `/experiencia` **singular** | sí | sí | sí |
+| Educación | `/educacion` **singular** | sí | sí | sí |
+| Idiomas | `/idiomas` | — | sí | sí |
+| Certificaciones | `/certificaciones` | — | sí | sí |
+| Enlaces | `/enlaces` | — | — | **no** |
+
+**Cómo se marca de dónde salió cada dato.** Es la regla que más se nota en el uso: un dato con
+`origen: CURRICULUM` sin confirmar **lo dedujo un modelo y nadie lo ha verificado**. Se marca
+con **la forma, no con el violeta**: píldora con la palabra «Sin confirmar» dentro, y el botón
+«Está bien» que existe solo ahí. Un CV recién leído puede dejar veinte filas sin confirmar de
+golpe, y veinte filas violetas no son énfasis — además le quitarían el significado al violeta de
+«Mis procesos». **El violeta aparece una sola vez**: el panel de arriba con el recuento.
+Se comprueba con `node herramientas/capturar-perfil.mjs --caso gris`.
+
+⚠️ **`NO_LEGIBLE` no es un error y no se pinta como tal**: del archivo no salió nada, el sistema
+prefirió no leer antes que inventarse datos, y lo que toca ofrecer es llenarlo a mano.
+
+⚠️ **No hay endpoint para subir el CV al perfil.** El archivo llega al postular. La pantalla
+informa del estado de la lectura; no ofrece un botón que no existe.
+
+**«Mi cuenta» de la cabecera ahora lleva a `/perfil`**, no a privacidad: aquella es la pantalla
+de retirar consentimientos y pedir el borrado, que no es «mi cuenta». Privacidad se enlaza desde
+dentro del perfil y desde el pie.
+
+### Cuatro trampas que encontró el QA de esta tanda
+
+Ninguna se veía leyendo el código; las cuatro estaban escritas y compilando.
+
+**`isError` de TanStack Query se enciende aunque haya datos.** Lo pone sin condiciones al
+fallar un refresco de fondo (`query-core`, caso `"error"`). Como «Mi perfil» se sondea sola
+cada cinco segundos mientras se lee el currículum, **un hipo del servidor desmontaba el
+formulario entero con lo que la persona estuviera escribiendo dentro** — en la pantalla que le
+dice «puedes seguir llenando lo que quieras». La pantalla de fallo es solo para cuando **no
+hay nada que enseñar**: `consulta.isError && !consulta.data`. Hay test.
+
+**`AreaTexto` tenía `maximo` y no lo pasaba al elemento.** Solo pintaba el contador: se podía
+escribir de más y el guardado rebotaba con el `@Size` del backend. Ahora `maximo` implica
+`maxLength`. Y **todos los campos de texto llevan su tope**, que sale de `DtosPerfil.java`.
+
+**`new Date().toISOString()` para el «hoy» es UTC.** En Lima, desde las siete de la tarde
+devuelve la fecha de mañana, así que una certificación que vencía hoy se marcaba **Vencida**
+esa misma tarde. Es la misma trampa que el propio archivo documenta para las fechas sin hora.
+El hoy sale de `ahora()` de `reloj.ts` y se arma con `getFullYear/getMonth/getDate`.
+
+**Una píldora con tres significados es una píldora sin significado.** «Sin confirmar»
+(procedencia pendiente), «Del currículum» (procedencia), «Titulado» (atributo) y «Vencida»
+(alerta) compartían silueta y solo las separaba el color: en gris eran idénticas. «Vencida»
+lleva ahora un punto. **Al añadir una etiqueta nueva a esa familia, mírala en gris primero**
+(`node herramientas/capturar-perfil.mjs --caso gris`).
+
+### Lo que falta de estas dos tandas
+
+Las pantallas de **empresa** (textos legales, invitar al equipo, personalizar instrumentos) y las
+de **plataforma** (alta y suspensión de empresas, tope de IA, consumo). Los 16 endpoints existen;
+el detalle está en `docs/APIS-MULTIEMPRESA.md` del backend.
+
+⚠️ **Sigue sin haber ruta que diga qué puede el usuario del panel.** `Sesion` es solo
+`{token, usuarioId}` y en los catálogos no hay permisos, así que esas secciones tendrán que pedir
+y desaparecer con el 403. Un `GET /panel/auth/yo` lo arreglaría de un golpe.
 
 ---
 
@@ -471,10 +584,19 @@ con los tokens de `mundo.css`, migrar las clases del `.tsx` sin tocar la lógica
 `npm test` (los 49 son el contrato), y mirarla de verdad con un script de
 `herramientas/capturar-*.mjs` en escritorio y en móvil.
 
-Dependencias acordadas. Instaladas y en uso: `motion` (**solo fuera del examen**),
-`react-hook-form` + `zod`. **`@dnd-kit` está instalado y no se usa**: el `SEC` se resolvió con
-flechas, que es lo que funciona en un teléfono. **Radix no se instaló y no hace falta**: los tres
-sitios que lo pedían los resuelve el HTML. Estilos con **CSS Modules**, no Tailwind.
+Dependencias acordadas. Instaladas y en uso: `motion` (**solo fuera del examen**) y `zod`.
+
+⚠️ **`react-hook-form` y `@hookform/resolvers` están instalados y NO los usa nadie** (corregido
+el 26/08: este archivo decía que sí). Ni un `useForm` ni un `zodResolver` en todo `src`. **Los
+formularios de aquí son `useState` + `zod.safeParse` a mano**, y el bloque exacto que se copia
+está en `Registro.tsx`: `safeParse` → primer error por campo (`nuevos[campo] ??= mensaje`) →
+`requestAnimationFrame` que enfoca el primer `[aria-invalid="true"]`. Ese `requestAnimationFrame`
+no sobra: sin él el atributo todavía no está en el DOM cuando se busca.
+
+**`@dnd-kit` está instalado y no se usa**: el `SEC` se resolvió con flechas, que es lo que
+funciona en un teléfono — y el reordenar del perfil, igual. **Radix no se instaló y no hace
+falta**: los tres sitios que lo pedían los resuelve el HTML. Estilos con **CSS Modules**, no
+Tailwind.
 
 ⚠️ **Instálalas dentro del worktree.** `node_modules` no se comparte entre worktrees, así que
 un `npm install` en el repositorio principal no llega aquí — ya pasó dos veces.

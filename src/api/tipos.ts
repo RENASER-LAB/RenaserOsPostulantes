@@ -25,6 +25,12 @@ export interface RequisitoPublico {
 export interface VacantePublica {
   id: number
   titulo: string
+  /**
+   * De quien es la vacante. El tablon mezcla empresas a proposito —es lo que
+   * hace de esto una plataforma— y sin este nombre el candidato no sabria a
+   * quien le esta mandando su curriculum.
+   */
+  nombreEmpresa: string
   descripcion: string | null
   proposito: string | null
   responsabilidades: string | null
@@ -38,6 +44,23 @@ export interface VacantePublica {
 
 export interface TextoConsentimientoPublico {
   tipo: string
+  version: string
+  texto: string
+}
+
+/**
+ * El texto de tratamiento de datos de LA EMPRESA de una vacante.
+ *
+ * Distinto de `TextoConsentimientoPublico`, que son los de la plataforma —los
+ * que se aceptan al crear la cuenta—. Este se acepta al postular, y hay uno
+ * por empresa: la ley 29733 pide que se sepa quien va a tratar los datos, y
+ * quien los trata es la empresa de la vacante, no Renaser.
+ *
+ * La ruta es publica a proposito: hay que poder leer lo que se acepta antes de
+ * decidir postular.
+ */
+export interface ConsentimientoDeVacante {
+  nombreEmpresa: string
   version: string
   texto: string
 }
@@ -74,6 +97,16 @@ export interface PedirBorrado {
 export interface MiPostulacion {
   uuid: string
   vacante: string
+  /**
+   * De que empresa es este proceso.
+   *
+   * ⚠️ Se llama `empresa` a secas y en la vacante `nombreEmpresa`: son dos
+   * `record` distintos del backend y aqui se copian tal cual, sin igualarlos.
+   *
+   * La cuenta es una sola, de la plataforma; los procesos son de cada empresa,
+   * asi que «Mis procesos» mezcla varias y cada fila tiene que decir de quien es.
+   */
+  empresa: string
   /** Uno de los 18. Ver `dominio/estados.ts`. */
   estado: string
   estadoNombre: string
@@ -107,6 +140,14 @@ export interface DatosPostulacion {
   linkedin?: string
   github?: string
   requisitosConfirmados?: number[]
+  /**
+   * Aceptar que la empresa de esta vacante trate los datos. **Obligatorio**:
+   * sin el, el backend responde 400 y no hay postulacion.
+   *
+   * Se firma con la version del texto, la fecha, la IP y el navegador, a nombre
+   * de esta postulacion. Por eso es por vacante y no una sola vez en la cuenta.
+   */
+  aceptaTratamiento: boolean
 }
 
 // ---------- Evaluacion (Perfil Integral) ----------
@@ -282,4 +323,163 @@ export interface MiSesion {
   enunciado: string | null
   asistio: boolean | null
   tramos: TramoSesion[]
+}
+
+// ---------- Perfil del candidato ----------
+
+/**
+ * Quien puso este dato.
+ *
+ * `PERSONA` lo escribio el candidato. `CURRICULUM` lo dedujo un modelo de
+ * lenguaje leyendo su archivo, y **eso no es lo mismo que haberlo dicho**: puede
+ * tener mal las fechas, el cargo o el nombre de la empresa.
+ *
+ * Va siempre junto a `confirmado`, y de la pareja salen tres estados reales
+ * —no cuatro—, porque crear o editar cualquier fila la deja en `PERSONA` y
+ * confirmada a la vez:
+ *
+ *   PERSONA + confirmado       lo escribio la persona
+ *   CURRICULUM sin confirmar   lo dedujo la IA y **nadie lo ha verificado**
+ *   CURRICULUM + confirmado    salio del archivo y la persona lo dio por bueno
+ */
+export type OrigenDelDato = 'PERSONA' | 'CURRICULUM'
+
+/** Lo que comparten las cuatro listas que llevan origen. Los enlaces no. */
+export interface ConOrigen {
+  origen: OrigenDelDato
+  confirmado: boolean
+}
+
+export interface Pretension {
+  min: number
+  max: number
+  moneda: string
+}
+
+export interface ExperienciaPerfil extends ConOrigen {
+  id: number
+  puesto: string
+  empresa: string
+  desde: string
+  /** `null` significa «sigo aqui», no que falte el dato. */
+  hasta: string | null
+  descripcion: string | null
+}
+
+export interface EducacionPerfil extends ConOrigen {
+  id: number
+  titulo: string
+  institucion: string
+  nivelCodigo: string | null
+  desde: string | null
+  hasta: string | null
+  enCurso: boolean
+}
+
+export interface IdiomaPerfil extends ConOrigen {
+  id: number
+  idioma: string
+  nivelCodigo: string
+}
+
+export interface CertificacionPerfil extends ConOrigen {
+  id: number
+  nombre: string
+  entidad: string | null
+  emitidaEn: string | null
+  /** `null` significa que no caduca. */
+  venceEn: string | null
+}
+
+/** Los enlaces no llevan origen: una direccion no es algo que un modelo deduzca. */
+export interface EnlacePerfil {
+  id: number
+  tipo: string
+  url: string
+}
+
+/** En que punto esta la lectura del ultimo curriculum. */
+export type EstadoLecturaCv = 'SIN_CV' | 'EN_CURSO' | 'LISTA' | 'NO_LEGIBLE'
+
+export interface LecturaCv {
+  estado: EstadoLecturaCv
+  actualizadoEn: FechaIso | null
+}
+
+export interface PerfilCompleto {
+  titular: string | null
+  resumen: string | null
+  habilidades: string[]
+  experienciaMeses: number | null
+  ubicacion: string | null
+  disponibilidad: string | null
+  /**
+   * ⚠️ En el panel, **sin el permiso `ver_pretension` este campo NO viaja, ni
+   * como `null`**: el nombre del campo ya delataria que hay una pretension que
+   * no puedes ver. Se pregunta con `'pretension' in perfil`, nunca comparando
+   * contra `null`, o «sin permiso» se lee como «no puso pretension».
+   */
+  pretension?: Pretension | null
+  experiencia: ExperienciaPerfil[]
+  educacion: EducacionPerfil[]
+  idiomas: IdiomaPerfil[]
+  certificaciones: CertificacionPerfil[]
+  enlaces: EnlacePerfil[]
+  lecturaCv: LecturaCv
+}
+
+/**
+ * ⚠️ **Es un PUT y reemplaza la cabecera entera.** Un campo que no se mande se
+ * guarda vacio, no se conserva: se parte siempre de lo que devolvio el GET.
+ *
+ * La pretension es todo o nada: o van `min`, `max` y `moneda`, o va `null`.
+ */
+export interface EditarCabeceraPerfil {
+  titular: string | null
+  resumen: string | null
+  habilidades: string[]
+  /** Entre 0 y 720. Fuera de ahi, 400. */
+  experienciaMeses: number | null
+  ubicacion: string | null
+  disponibilidad: string | null
+  pretension: Pretension | null
+}
+
+export interface EditarExperiencia {
+  puesto: string
+  empresa: string
+  desde: string
+  hasta: string | null
+  descripcion: string | null
+}
+
+export interface EditarEducacion {
+  titulo: string
+  institucion: string
+  nivelCodigo: string | null
+  desde: string | null
+  hasta: string | null
+  enCurso: boolean
+}
+
+export interface EditarIdioma {
+  idioma: string
+  nivelCodigo: string
+}
+
+export interface EditarCertificacion {
+  nombre: string
+  entidad: string | null
+  emitidaEn: string | null
+  venceEn: string | null
+}
+
+export interface EditarEnlace {
+  tipo: string
+  url: string
+}
+
+export interface OpcionCatalogo {
+  codigo: string
+  nombre: string
 }

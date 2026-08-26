@@ -33,6 +33,7 @@ const TITULOS: Array<[string, string]> = [
   [patrones.acceso, 'Entrando'],
   [patrones.registro, 'Crear cuenta'],
   [patrones.clave, 'No puedo entrar'],
+  [patrones.perfil, 'Tu perfil'],
   [patrones.procesos, 'Mis procesos'],
   [patrones.proceso, 'Mi proceso'],
   [patrones.evaluacion, 'Evaluación'],
@@ -93,9 +94,15 @@ export function Armazon() {
             <NavLink className={claseDelEnlace} to={rutas.procesos()}>
               Mis procesos
             </NavLink>
+            {/*
+              Con cuenta, «Mi cuenta» lleva al perfil y no a privacidad: aquella
+              es la pantalla de retirar consentimientos y pedir el borrado, que
+              es una cosa que se hace una vez, no «mi cuenta». Privacidad se
+              enlaza desde dentro del perfil y desde el pie.
+            */}
             <NavLink
               className={claseDelEnlace}
-              to={hayCuenta ? rutas.privacidad() : rutas.ingresar()}
+              to={hayCuenta ? rutas.perfil() : rutas.ingresar()}
             >
               {hayCuenta ? 'Mi cuenta' : 'Ingresar'}
             </NavLink>

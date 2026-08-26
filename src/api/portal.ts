@@ -2,6 +2,7 @@
 
 import { pedir } from './cliente'
 import type {
+  ConsentimientoDeVacante,
   CrearCuenta,
   DatosPostulacion,
   Login,
@@ -23,6 +24,16 @@ export const verVacante = (id: number | string) =>
 
 export const textosConsentimiento = () =>
   pedir<TextoConsentimientoPublico[]>('/consentimientos/textos', { sinToken: true })
+
+/**
+ * El texto que hay que aceptar para postular a ESTA vacante, con el nombre de
+ * la empresa que va a tratar los datos.
+ *
+ * Sin token, igual que `verVacante`: hay que poder leer lo que se acepta antes
+ * de decidir postular, y sin cuenta.
+ */
+export const consentimientoDeVacante = (id: number | string) =>
+  pedir<ConsentimientoDeVacante>(`/vacantes/${id}/consentimiento`, { sinToken: true })
 
 export const crearCuenta = (datos: CrearCuenta) =>
   pedir<void>('/cuentas', { metodo: 'POST', cuerpo: datos, sinToken: true })
@@ -53,6 +64,10 @@ export function postular(datos: DatosPostulacion) {
   for (const id of datos.requisitosConfirmados ?? []) {
     formulario.append('requisitosConfirmados', String(id))
   }
+  // Obligatorio: sin el, el backend responde 400. Va siempre, tambien en false,
+  // porque omitirlo y mandar false son la misma cosa para el servidor pero no
+  // para quien lea esto: el campo dice que la pantalla lo tuvo en cuenta.
+  formulario.append('aceptaTratamiento', String(datos.aceptaTratamiento))
   return pedir<{ codigo: string }>('/postulaciones', { metodo: 'POST', formulario })
 }
 

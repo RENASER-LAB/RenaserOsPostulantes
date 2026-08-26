@@ -1,0 +1,642 @@
+/*
+ * Mi perfil.
+ *
+ * El perfil se llena solo leyendo el currículum, y el candidato corrige. De ahí
+ * sale la decisión que ordena toda la pantalla:
+ *
+ * ⚠️ **Un dato que dedujo la IA y nadie ha confirmado NO lo ha dicho la
+ * persona.** Puede tener mal las fechas, el cargo o la empresa. Tiene que
+ * distinguirse, y distinguirse SIN COLOR: la palabra «Sin confirmar» va dentro
+ * de la píldora y el botón de confirmar existe o no existe. Con la pantalla en
+ * gris se siguen leyendo los tres estados.
+ *
+ * ⚠️ **El violeta aparece UNA sola vez en la pantalla**: el panel de arriba que
+ * dice cuántos datos hay por revisar. Un currículum recién leído puede dejar
+ * veinte filas sin confirmar de golpe, y veinte filas violetas no son énfasis,
+ * son un fondo — y de paso le quitarían el significado al violeta de «Mis
+ * procesos», que es la única pregunta con la que el candidato entra al portal.
+ *
+ * El ámbar de «sin confirmar» no es un color prestado: `--duda` está definido
+ * como «lo que cambia tu decisión», y un dato que nadie verificó es exactamente
+ * eso.
+ */
+
+.pagina {
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: var(--e5) var(--e5) var(--e8);
+}
+
+.volver {
+  composes: volver from '../../estilos/piezas.module.css';
+}
+
+.encabezado {
+  margin-top: var(--e4);
+}
+
+.bajada {
+  font-size: var(--t-base);
+  line-height: 1.55;
+  color: var(--tinta2);
+  margin-top: var(--e3);
+  max-width: var(--medida);
+}
+
+/* ---------- El panel de lo que hay que revisar ---------- */
+
+/*
+ * El único violeta de la pantalla. Campo de nube con perímetro vivo y
+ * resplandor, como el tramo abierto de «Mis procesos»: el color vive en el
+ * canto, nunca bajo la prosa.
+ */
+.porRevisar {
+  margin-top: var(--e6);
+  padding: var(--e5);
+  border: 2px solid var(--activo-regla);
+  border-radius: var(--radio);
+  background: var(--nube);
+  box-shadow:
+    0 2px 6px rgb(35 43 54 / 0.05),
+    0 14px 40px rgb(86 56 214 / 0.14);
+}
+
+.porRevisarTitulo {
+  margin: 0;
+  font-size: var(--t-entradilla);
+  font-weight: 700;
+  letter-spacing: -0.014em;
+  color: var(--tinta);
+}
+
+.porRevisarTexto {
+  margin-top: var(--e2);
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+  max-width: var(--medida);
+}
+
+/*
+ * El refresco de fondo falló y lo que se ve puede estar viejo.
+ *
+ * En bruma y no en rojo: no se ha perdido nada y todo sigue funcionando. Un
+ * aviso rojo aquí diría que hay que hacer algo, y no lo hay.
+ */
+.desactualizado {
+  margin-top: var(--e5);
+  padding: var(--e3) var(--e4);
+  border: 1px solid var(--regla);
+  border-radius: var(--radio-menor);
+  background: var(--nube-hundida);
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+  max-width: var(--medida);
+}
+
+.reintentarEnLinea {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--tinta);
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: var(--regla2);
+  text-underline-offset: 0.22em;
+}
+
+/* ---------- El estado de la lectura del currículum ---------- */
+
+/*
+ * Bruma y filete corriente: aquí no se le pide nada al candidato, se le informa.
+ * `NO_LEGIBLE` comparte esta forma a propósito — **no es un error**: el sistema
+ * prefirió no leer nada antes que inventarse datos, y pintarlo en rojo diría lo
+ * contrario.
+ */
+.lectura {
+  margin-top: var(--e5);
+  padding: var(--e4) var(--e5);
+  border: 1px solid var(--regla);
+  border-radius: var(--radio);
+  background: var(--nube-hundida);
+}
+
+.lecturaTitulo {
+  display: flex;
+  align-items: center;
+  gap: var(--e3);
+  font-size: var(--t-base);
+  font-weight: 600;
+  letter-spacing: -0.008em;
+  margin: 0;
+}
+
+/*
+ * Algo está pasando ahora mismo.
+ *
+ * El único momento de la pantalla con movimiento, y por eso significa algo:
+ * distingue «lo estamos leyendo» de «no hay nada que leer», que antes se veían
+ * idénticos. Respeta `prefers-reduced-motion` por la regla global de
+ * `mundo.css`, y entonces el punto se queda quieto — que sigue distinguiendo.
+ */
+.trabajando {
+  border-color: var(--regla2);
+}
+
+.latido {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--tinta2);
+  animation: latir 1400ms var(--salida) infinite;
+}
+
+@keyframes latir {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.lecturaTexto {
+  margin-top: var(--e2);
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+  max-width: var(--medida);
+}
+
+/* ---------- Las secciones ---------- */
+
+.secciones {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e6);
+  margin-top: var(--e7);
+}
+
+.seccion {
+  border-top: 1px solid var(--regla);
+  padding-top: var(--e5);
+}
+
+.tituloSeccion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--e2) var(--e4);
+}
+
+.tituloSeccion h2 {
+  margin: 0;
+}
+
+.cuantos {
+  font-size: var(--t-apoyo);
+  color: var(--tinta3);
+}
+
+.explicacion {
+  margin-top: var(--e2);
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+  max-width: var(--medida);
+}
+
+/* ---------- Una fila de cualquier lista ---------- */
+
+.filas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+  margin-top: var(--e4);
+}
+
+.fila {
+  border: 1px solid var(--regla2);
+  border-radius: var(--radio);
+  background: var(--nube);
+  padding: var(--e4);
+}
+
+/*
+ * Sin confirmar. El contorno engorda y se pone ámbar, pero **la señal que se lee
+ * en gris es la píldora con su palabra dentro y el botón de confirmar**, no el
+ * color.
+ */
+.fila.sinConfirmar {
+  border: 2px solid var(--duda);
+  background: var(--duda-bruma);
+  padding: calc(var(--e4) - 1px);
+}
+
+.cabeceraFila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--e2) var(--e3);
+}
+
+.queEs {
+  font-size: var(--t-base);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.donde {
+  font-size: var(--t-prosa);
+  color: var(--tinta2);
+}
+
+.cuando {
+  font-size: var(--t-menor);
+  color: var(--tinta3);
+  white-space: nowrap;
+}
+
+.detalleFila {
+  margin-top: var(--e2);
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+  max-width: var(--medida);
+}
+
+/*
+ * La marca del origen: píldora **con la palabra dentro**.
+ *
+ * Es el mismo criterio que el panel usa con las etiquetas de la IA. El color
+ * acompaña; lo que se lee es el texto.
+ */
+.marca {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 var(--e2);
+  border-radius: var(--radio-control);
+  border: 1px solid transparent;
+  font-size: var(--t-micro);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.marca.duda {
+  border-color: var(--duda);
+  background: var(--nube);
+  color: var(--duda-tinta);
+}
+
+/*
+ * Salió del archivo y la persona lo dio por bueno: se dice, sin alarmar.
+ *
+ * ⚠️ Va en `--tinta2` y no en `--tinta3`: sobre nube hundida, la tercera se
+ * queda en 4,31:1 y no llega al mínimo. Es texto pequeño en negrita y además
+ * marca uno de los tres estados, así que no puede ser el texto más flojo de la
+ * página.
+ */
+.marca.delCv {
+  border-color: var(--regla2);
+  background: var(--nube-hundida);
+  color: var(--tinta2);
+}
+
+/*
+ * Fecha vencida de una certificación.
+ *
+ * ⚠️ **Lleva su propia forma, no solo su color.** Sin el punto, en gris era
+ * idéntica a «Del currículum» y a la etiqueta del nivel de estudios: tres cosas
+ * distintas —una alerta, una procedencia y un atributo— con la misma silueta.
+ * El punto la separa sin depender del rojo.
+ */
+.marca.vencida {
+  border-color: var(--mal-regla);
+  background: var(--mal-bruma);
+  color: var(--mal);
+  gap: var(--e1);
+}
+
+.marca.vencida::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--mal);
+}
+
+/*
+ * Lo que sabe hacer, en píldoras.
+ *
+ * Se separan así de las condiciones de la línea de abajo —experiencia,
+ * disponibilidad, pretensión—: antes las dos iban con el mismo `·` y el mismo
+ * tamaño, y se leían como una sola lista partida en dos renglones.
+ */
+.habilidades {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e2);
+  margin-top: var(--e3);
+}
+
+.habilidad {
+  padding: 2px var(--e3);
+  border-radius: var(--radio-control);
+  background: var(--nube-hundida);
+  font-size: var(--t-menor);
+  color: var(--tinta2);
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e2) var(--e3);
+  margin-top: var(--e4);
+}
+
+/* ---------- Los botones de una fila ---------- */
+
+.confirmar {
+  composes: secundario from '../../estilos/piezas.module.css';
+  min-height: 36px;
+  padding: 0 var(--e4);
+  font-size: var(--t-apoyo);
+}
+
+.enlaceAccion {
+  min-height: 36px;
+  padding: 0 var(--e3);
+  display: inline-flex;
+  align-items: center;
+  border: none;
+  background: none;
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  color: var(--tinta2);
+  cursor: pointer;
+  border-radius: var(--radio-control);
+}
+
+.enlaceAccion:hover:not(:disabled) {
+  color: var(--tinta);
+  background: var(--nube-hundida);
+}
+
+.enlaceAccion:disabled {
+  color: var(--tinta3);
+  cursor: default;
+}
+
+/*
+ * Quitar.
+ *
+ * ⚠️ **En reposo va en tinta, no en rojo.** Con once filas en la pantalla, once
+ * «Quitar» rojos eran el único color repetido de la página: la acción menos
+ * frecuente y más peligrosa gritaba más que «Editar», que es la habitual. Y en
+ * la misma tarjeta de una certificación el rojo pasaba a significar dos cosas
+ * —«Vencida», que avisa sobre el dato, y «Quitar», que es un control—.
+ *
+ * El rojo aparece cuando el puntero o el foco están encima, que es cuando la
+ * advertencia sirve de algo: justo antes de pulsar.
+ */
+.quitar {
+  composes: enlaceAccion;
+}
+
+.quitar:hover:not(:disabled),
+.quitar:focus-visible:not(:disabled) {
+  color: var(--mal-pulsado);
+  background: var(--mal-bruma);
+}
+
+/* Las flechas de reordenar. Solo experiencia y educación las tienen. */
+.mover {
+  composes: enlaceAccion;
+  padding: 0 var(--e2);
+  font-size: var(--t-base);
+  line-height: 1;
+}
+
+/* ---------- Los formularios de alta y edición ---------- */
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e4);
+  margin-top: var(--e4);
+  padding: var(--e5);
+  border: 1px solid var(--regla);
+  border-radius: var(--radio);
+  background: var(--nube-hundida);
+}
+
+.pareja {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--e4);
+}
+
+.pieFormulario {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e3);
+}
+
+.guardar {
+  composes: acentoMenor from '../../estilos/piezas.module.css';
+}
+
+.cancelar {
+  composes: secundario from '../../estilos/piezas.module.css';
+}
+
+.anadir {
+  composes: secundario from '../../estilos/piezas.module.css';
+  align-self: flex-start;
+  margin-top: var(--e4);
+}
+
+.campoSuelto {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+}
+
+/* Un `fieldset` sin la caja que el navegador le pone por defecto. */
+.grupo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+  border: none;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+
+.etiqueta {
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+}
+
+.ayuda {
+  font-size: var(--t-menor);
+  line-height: 1.45;
+  color: var(--tinta3);
+  max-width: var(--medida);
+}
+
+.seleccion {
+  min-height: 48px;
+  padding: 0 var(--e3);
+  background: var(--nube);
+  color: var(--tinta);
+  border: 1px solid var(--borde-control);
+  font: inherit;
+  font-size: var(--t-base);
+  border-radius: var(--radio-menor);
+}
+
+.casilla {
+  display: flex;
+  align-items: center;
+  gap: var(--e3);
+  font-size: var(--t-prosa);
+}
+
+/* ---------- Nada todavía ---------- */
+
+.ninguna {
+  margin-top: var(--e4);
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta3);
+  max-width: var(--medida);
+}
+
+.fallo {
+  display: flex;
+  gap: var(--e3);
+  margin-top: var(--e4);
+  border: 1px solid var(--mal-regla);
+  background: var(--mal-bruma);
+  padding: var(--e3) var(--e4);
+  font-size: var(--t-prosa);
+  line-height: 1.5;
+  color: var(--mal);
+  border-radius: var(--radio-menor);
+}
+
+.fallo::before {
+  content: '';
+  flex: none;
+  width: 3px;
+  background: var(--mal);
+}
+
+/* ---------- Cargando y fallo de la pantalla entera ---------- */
+
+/*
+ * Escritos aquí y no con las piezas de `Mensajes`: aquellas son de pantalla
+ * entera —traen su propio marco y su `h1`— y dentro de una sección dejarían dos
+ * bordes anidados y un segundo `h1` por debajo de un `h2`.
+ */
+.estado {
+  margin-top: var(--e6);
+  background: var(--nube);
+  border: 1px solid var(--regla);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra-nube);
+  padding: var(--e6);
+}
+
+.estadoTexto {
+  font-size: var(--t-prosa);
+  line-height: 1.6;
+  color: var(--tinta2);
+  margin-top: var(--e3);
+  max-width: var(--medida-corta);
+}
+
+.reintentar {
+  composes: secundario from '../../estilos/piezas.module.css';
+  margin-top: var(--e5);
+}
+
+.barra {
+  height: 12px;
+  border-radius: var(--radio-control);
+  background: var(--nube-honda);
+  margin-top: var(--e3);
+}
+
+.barraCorta {
+  width: 42%;
+}
+
+.barraMedia {
+  width: 68%;
+}
+
+/* ---------- El pie ---------- */
+
+.pie {
+  margin-top: var(--e8);
+  padding-top: var(--e3);
+  border-top: 1px solid var(--regla);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--e5);
+  font-size: var(--t-apoyo);
+}
+
+.pie a,
+.pie button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+.descargar {
+  composes: enlaceAccion;
+  padding: 0;
+  text-decoration: underline;
+  text-decoration-color: var(--regla2);
+  text-underline-offset: 0.22em;
+}
+
+@media (max-width: 640px) {
+  .pagina {
+    padding: var(--e5) var(--e4) var(--e7);
+  }
+
+  .pareja {
+    grid-template-columns: 1fr;
+  }
+
+  .formulario {
+    padding: var(--e4);
+  }
+}
+
+/* Para lectores de pantalla y nada más. */
+.soloLectores {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}

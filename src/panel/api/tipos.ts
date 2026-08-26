@@ -15,6 +15,26 @@ export interface SesionEquipo {
   usuarioId: number
 }
 
+export interface LoginPanel {
+  correo: string
+  contrasena: string
+}
+
+/**
+ * Lo que se manda al canjear la invitacion del correo.
+ *
+ * ⚠️ **La contrasena del panel exige minimo 12, no 8 como la del portal.** Una
+ * cuenta de equipo ve los datos de muchas personas, no solo los suyos. El mismo
+ * minimo tiene que estar en la validacion de la pantalla: si aqui fuera menor,
+ * el envio rebotaria con un error que la pantalla pudo haber evitado.
+ */
+export interface AceptarInvitacionPanel {
+  token: string
+  nombre: string
+  apellidos: string
+  contrasena: string
+}
+
 // ---------- Vacantes ----------
 
 export interface VacantePanel {

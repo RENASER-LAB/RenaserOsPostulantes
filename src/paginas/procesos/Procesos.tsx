@@ -170,6 +170,13 @@ function Proceso({ postulacion }: { postulacion: MiPostulacion }) {
       <h2 className={estilos.vacante} id={idTitulo}>
         {postulacion.vacante}
       </h2>
+      {/*
+        La cuenta es una sola pero los procesos son de cada empresa, asi que dos
+        puestos con el mismo nombre en dos empresas distintas se leerian igual.
+      */}
+      {postulacion.empresa && (
+        <span className={estilos.empresa}>{postulacion.empresa}</span>
+      )}
       <span className={estilos.desde}>
         Postulaste el{' '}
         <time dateTime={postulacion.creadoEn}>
@@ -181,10 +188,13 @@ function Proceso({ postulacion }: { postulacion: MiPostulacion }) {
 
   // El enlace nombra su vacante: cuatro enlaces con el mismo texto son cuatro
   // entradas indistinguibles en la lista de enlaces de un lector de pantalla.
+  // Con varias empresas en juego el puesto solo ya no distingue, asi que la
+  // empresa entra tambien en el nombre del enlace.
   const enlaceDetalle = (
     <p className={estilos.pieProceso}>
       <Link to={rutas.proceso(postulacion.uuid)}>
         Ver el detalle de {postulacion.vacante}
+        {postulacion.empresa ? ` en ${postulacion.empresa}` : ''}
       </Link>
     </p>
   )
@@ -256,7 +266,10 @@ function resumenParaLectores(procesos: MiPostulacion[]): string {
   const pendientes = procesos.filter((p) => leTocaAlCandidato(p.estado))
   if (pendientes.length === 0) return 'Ninguna de tus postulaciones necesita nada de ti.'
   return pendientes
-    .map((p) => `${p.vacante}: ${momentoDe(p.estado).titulo}.`)
+    .map((p) => {
+      const donde = p.empresa ? ` en ${p.empresa}` : ''
+      return `${p.vacante}${donde}: ${momentoDe(p.estado).titulo}.`
+    })
     .join(' ')
 }
 

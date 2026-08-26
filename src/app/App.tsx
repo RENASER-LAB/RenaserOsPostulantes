@@ -17,6 +17,7 @@ import { Acceso } from '@/paginas/cuenta/Acceso'
 import { Registro } from '@/paginas/cuenta/Registro'
 import { Clave } from '@/paginas/cuenta/Clave'
 import { Postular } from '@/paginas/postular/Postular'
+import { Perfil } from '@/paginas/perfil/Perfil'
 import { Procesos } from '@/paginas/procesos/Procesos'
 import { Proceso } from '@/paginas/procesos/Proceso'
 import { Evaluacion } from '@/paginas/evaluacion/Evaluacion'
@@ -29,6 +30,7 @@ import { Privacidad } from '@/paginas/privacidad/Privacidad'
 import { ProveedorSesionPanel } from '@/panel/Sesion'
 import { ArmazonPanel } from '@/panel/Armazon'
 import { EntrarPanel } from '@/panel/entrar/Entrar'
+import { InvitacionPanel } from '@/panel/entrar/Invitacion'
 import { VacantesPanel } from '@/panel/vacantes/Vacantes'
 import { VacantePanelDetalle } from '@/panel/vacantes/Vacante'
 import { SesionesPanel } from '@/panel/simulacion/Sesiones'
@@ -60,6 +62,18 @@ const datos = new QueryClient({
   },
 })
 
+/**
+ * `/invitacion` → `/admin/invitacion`, conservando el token.
+ *
+ * Existe solo por si `renaser.panel.url` del backend no lleva el `/admin`. Es
+ * una linea que puede borrarse el dia que esa propiedad este puesta en todos
+ * los entornos; mientras tanto, es lo que evita que un enlace de invitacion
+ * muera en la portada del candidato.
+ */
+function HaciaLaInvitacion() {
+  return <Navigate to={`${patrones.adminInvitacion}${window.location.search}`} replace />
+}
+
 export function App() {
   return (
     <Salvavidas>
@@ -79,6 +93,25 @@ export function App() {
                       </ProveedorSesionPanel>
                     }
                   />
+                  {/*
+                    Canjear la invitacion. Suelta y NO dentro de ArmazonPanel:
+                    ese armazon manda a `/admin/entrar` a quien no tiene sesion,
+                    y quien viene de una invitacion es justo eso.
+                  */}
+                  <Route
+                    path={patrones.adminInvitacion}
+                    element={
+                      <ProveedorSesionPanel>
+                        <InvitacionPanel />
+                      </ProveedorSesionPanel>
+                    }
+                  />
+                  {/*
+                    El backend arma el enlace con `renaser.panel.url`, que puede
+                    no llevar el `/admin`. Sin esta linea el comodin del final se
+                    traga la direccion y el token se pierde sin decir nada.
+                  */}
+                  <Route path={patrones.invitacionSuelta} element={<HaciaLaInvitacion />} />
                   <Route
                     element={
                       <ProveedorSesionPanel>
@@ -108,6 +141,14 @@ export function App() {
                       element={
                         <Privada>
                           <Postular />
+                        </Privada>
+                      }
+                    />
+                    <Route
+                      path={patrones.perfil}
+                      element={
+                        <Privada>
+                          <Perfil />
                         </Privada>
                       }
                     />

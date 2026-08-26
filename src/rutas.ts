@@ -14,6 +14,7 @@ export const patrones = {
   acceso: '/acceso',
   registro: '/registro',
   clave: '/clave',
+  perfil: '/perfil',
   procesos: '/procesos',
   proceso: '/procesos/:uuid',
   evaluacion: '/procesos/:uuid/evaluacion',
@@ -25,6 +26,18 @@ export const patrones = {
 
   // ---------- El panel del equipo ----------
   adminEntrar: '/admin/entrar',
+  /**
+   * Canjear la invitacion del correo. El token va en la query, como el acceso
+   * del candidato.
+   *
+   * ⚠️ **Hay dos**, y no es un descuido. El backend arma el enlace como
+   * `{renaser.panel.url}/invitacion?token=…`, asi que si esa propiedad no
+   * apunta a `…/admin` el correo manda a `/invitacion` a secas. La segunda ruta
+   * recoge ese caso y redirige conservando el token; sin ella, el comodin de
+   * abajo lo tragaria y el token desapareceria en silencio.
+   */
+  adminInvitacion: '/admin/invitacion',
+  invitacionSuelta: '/invitacion',
   adminVacantes: '/admin',
   adminVacante: '/admin/vacantes/:id',
   adminSesiones: '/admin/simulacion',
@@ -45,6 +58,7 @@ export const rutas = {
     vacanteId === undefined ? '/registro' : `/registro?vacante=${vacanteId}`,
   /** La contrasena olvidada. No restablece: explica y da la salida que si existe. */
   clave: () => '/clave',
+  perfil: () => '/perfil',
   procesos: () => '/procesos',
   proceso: (uuid: string) => `/procesos/${uuid}`,
   evaluacion: (uuid: string) => `/procesos/${uuid}/evaluacion`,
@@ -56,6 +70,7 @@ export const rutas = {
 
   // ---------- El panel del equipo ----------
   adminEntrar: () => '/admin/entrar',
+  adminInvitacion: (token: string) => `/admin/invitacion?token=${encodeURIComponent(token)}`,
   adminVacantes: () => '/admin',
   adminVacante: (id: number | string) => `/admin/vacantes/${id}`,
   adminSesiones: () => '/admin/simulacion',

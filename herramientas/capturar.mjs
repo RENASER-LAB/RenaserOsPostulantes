@@ -33,22 +33,22 @@ const TAMANOS = [
 const CASOS = {
   normal: [
     {
-      uuid: 'a1', vacante: 'Analista de Datos',
+      uuid: 'a1', vacante: 'Analista de Datos', empresa: 'Clínica San Juan',
       estado: 'PERFIL_TURNO_CANDIDATO', estadoNombre: 'Evaluación pendiente',
       grupoPrioridad: 'PRIORIDAD_ALTA', diasSinCambio: 2, creadoEn: '2026-08-04T14:12:00Z',
     },
     {
-      uuid: 'a2', vacante: 'Coordinador de Proyectos',
+      uuid: 'a2', vacante: 'Coordinador de Proyectos', empresa: 'Transportes del Sur',
       estado: 'PRUEBA_POR_CONFIRMAR', estadoNombre: 'Prueba en revisión',
       grupoPrioridad: 'PRIORIDAD_MEDIA', diasSinCambio: 1, creadoEn: '2026-07-28T09:00:00Z',
     },
     {
-      uuid: 'a3', vacante: 'Administrador',
+      uuid: 'a3', vacante: 'Administrador', empresa: 'Transportes del Sur',
       estado: 'PERFIL_POR_CONFIRMAR', estadoNombre: 'Revisando currículum',
       grupoPrioridad: 'PRIORIDAD_MEDIA', diasSinCambio: 3, creadoEn: '2026-08-20T11:30:00Z',
     },
     {
-      uuid: 'a4', vacante: 'Ingeniero/a de Infraestructura',
+      uuid: 'a4', vacante: 'Ingeniero/a de Infraestructura', empresa: 'Renaser Consulting',
       estado: 'NO_CONTINUA', estadoNombre: 'No continúa',
       grupoPrioridad: null, diasSinCambio: 12, creadoEn: '2026-06-15T08:00:00Z',
     },
@@ -57,7 +57,7 @@ const CASOS = {
   // El escenario del peor momento del producto: ya no continua en ninguna.
   terminado: [
     {
-      uuid: 'b1', vacante: 'Ingeniero/a de Infraestructura',
+      uuid: 'b1', vacante: 'Ingeniero/a de Infraestructura', empresa: 'Renaser Consulting',
       estado: 'NO_CONTINUA', estadoNombre: 'No continúa',
       grupoPrioridad: null, diasSinCambio: 12, creadoEn: '2026-06-15T08:00:00Z',
     },

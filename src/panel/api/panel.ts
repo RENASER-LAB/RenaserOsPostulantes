@@ -6,6 +6,8 @@
 
 import { pedir } from './cliente'
 import type {
+  AceptarInvitacionPanel,
+  LoginPanel,
   CrearSolicitud,
   DesgloseEvaluacion,
   AreaPanel,
@@ -38,9 +40,40 @@ import type {
 // ---------- Entrar ----------
 
 /**
- * El login de desarrollo. Existe mientras no este el contrato con RENASER OS;
- * en produccion el backend lo apaga con `app.seguridad.dev-login-activo=false`.
- * El id es TEXTO (`andy-dev`), no un numero.
+ * La entrada normal del panel: correo y contrasena.
+ *
+ * RENASER OS quedo dormido y ahora todo el equipo entra por aqui, Renaser
+ * incluida. **El panel no tiene registro publico**: las cuentas nacen solo por
+ * invitacion, asi que esta pantalla no ofrece crear ninguna.
+ *
+ * Tres respuestas que hay que distinguir, y las tres llegan como `ErrorApi`:
+ *   401 a secas         — el correo o la contrasena no cuadran. El mensaje es
+ *                         el mismo exista o no el correo, a proposito
+ *   401 con explicacion — la empresa esta suspendida; ese `detail` si se enseña
+ *   429                 — demasiados intentos; el cuerpo trae `segundosDeEspera`
+ */
+export const entrarAlPanel = (datos: LoginPanel) =>
+  pedir<SesionEquipo>('/auth/login', { metodo: 'POST', cuerpo: datos, sinToken: true })
+
+/**
+ * Canjear la invitacion que llego por correo y quedarse dentro.
+ *
+ * El token va **en el cuerpo y nunca en la direccion de la API**: en la barra
+ * acaba en el historial, en los registros del servidor y en el `Referer`. Es de
+ * un solo uso, y vencida, usada o revocada dan el mismo error generico — decir
+ * cual de las tres es contarle a quien prueba enlaces si acerto.
+ */
+export const aceptarInvitacion = (datos: AceptarInvitacionPanel) =>
+  pedir<SesionEquipo>('/auth/invitacion', { metodo: 'POST', cuerpo: datos, sinToken: true })
+
+/**
+ * El login de desarrollo. El backend lo mantiene para local y lo apaga en
+ * produccion con `app.seguridad.dev-login-activo=false`. El id es TEXTO
+ * (`andy-dev`), no un numero.
+ *
+ * Se conserva porque en una base local recien levantada puede no haber ninguna
+ * cuenta con contrasena, y entonces esta es la unica forma de entrar. Ningun
+ * flujo del portal depende de el.
  */
 export const entrarComoEquipo = (usuarioRenaserOsId: string) =>
   pedir<SesionEquipo>('/auth/dev-login', {
