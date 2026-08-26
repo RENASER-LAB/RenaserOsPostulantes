@@ -1,6 +1,6 @@
 # Estado del rediseño del portal del candidato
 
-Última actualización: 2026-08-24 · las diecisiete pantallas construidas; quedan los comandos de cierre
+Última actualización: 2026-08-25 · el rediseño está cerrado; lo que sigue es el panel
 
 Este documento es el punto de arranque para retomar el rediseño. Cuenta qué se decidió,
 qué queda por hacer y en qué orden.
@@ -9,9 +9,15 @@ qué queda por hacer y en qué orden.
 
 ## Dónde estamos
 
-El maquetado está hecho y aprobado, y **el portal entero está construido sobre él**. No queda
-nada del `src/` viejo salvo el nombre EX y su logotipo: `base.css` y `variables.css` se
-borraron el 24/08 con la última pantalla, y todo el estilo son ya CSS Modules.
+El maquetado está hecho y aprobado, **el portal entero está construido sobre él**, y los
+comandos de cierre corrieron. No queda nada del `src/` viejo salvo el nombre EX y su
+logotipo: `base.css` y `variables.css` se borraron el 24/08 con la última pantalla, y todo
+el estilo son ya CSS Modules.
+
+**Desde el 25/08 hay una segunda cara en el mismo repositorio**: el panel del equipo, en
+`/admin`. Es provisional a sabiendas —debería estar en RENASER OS— y su estado vive en
+[CLAUDE.md](../CLAUDE.md), no aquí: este documento es del rediseño del portal, que ya
+terminó.
 
 | Pieza | Dónde |
 |---|---|
@@ -55,42 +61,40 @@ con la hormiga dentro de la X.
 
 ## Lo que queda por hacer
 
-### 1 · Los comandos de cierre de `impeccable`
+### 1 · Los comandos de cierre de `impeccable` · **hechos el 24/08**
 
-El mundo visual ya está decidido y construido: se llama **«El seguimiento»**, sus tokens viven
-en `src/estilos/mundo.css` y su porqué en [04-BRIEF-MIS-PROCESOS.md](04-BRIEF-MIS-PROCESOS.md).
-`init` y `shape` ya corrieron, y `critique` corrió sobre «Mis procesos».
+Corrieron sobre el portal completo, que es donde rinden. Correrlos pantalla a pantalla es
+caro y no ve lo que importa, que es la consistencia entre ellas.
 
-Lo que queda va **sobre el portal completo**, que es donde rinde. Correrlo pantalla a pantalla
-es caro y no ve lo que importa, que es la consistencia entre ellas.
+| Comando | Resultado |
+|---|---|
+| `extract` | Cincuenta bloques con forma de botón repartidos por dieciséis hojas quedaron en **cuatro piezas** en `piezas.module.css`. El CSS pasó de 79,9 kB a 68,9 kB |
+| `document` | `DESIGN.md` en la raíz y `.impeccable/design.json` al lado. **Se regeneran juntos, nunca uno solo** |
+| `audit` | 17/20. El informe, en [05-AUDITORIA.md](05-AUDITORIA.md) |
+| `critique` | 27/40. Dos P0: el cronómetro sin estilo ni aviso, y la contraseña sin recuperación. Los dos, arreglados |
+| `polish`, `typeset`, `harden`, `distill` | En la misma tanda |
+| `layout` | El portal compone en escritorio: el examen con el mapa al lado, la portada en horizontal, la prosa cortada por `--medida` |
 
-| Orden | Comando | Para qué |
-|---|---|---|
-| 1 | `/impeccable extract` | Consolida en el sistema lo que se repite en las quince hojas |
-| 2 | `/impeccable audit` | Accesibilidad, rendimiento y responsive, sobre todo |
-| 3 | `/impeccable critique` | Apuntado a las tres pantallas donde se juega el proceso |
-| 4 | `/impeccable polish` | Lee el resultado de `critique` como lista de pendientes |
+⚠️ **`document` estuvo prohibido y ya no lo está.** La razón era que generaba `DESIGN.md` a
+partir del código, y el código era el portal viejo. Ese código ya no está.
 
-Después, según haga falta: `harden`, `adapt`, `typeset`, `layout`, `animate`.
-
-**Hay que invocarla con el directorio de trabajo en este worktree**: el repositorio del
-backend tiene su propio `PRODUCT.md`, y describe al reclutador, no al candidato.
-
-**No usar `document`**: genera `DESIGN.md` a partir del código existente, y el código
-existente era justo el portal que se tiró. Consagraría el aspecto que se acaba de reemplazar.
+⚠️ **Si cambias los tokens de `mundo.css`, `DESIGN.md` miente hasta que lo regeneres.**
 
 **No usar `craft`**: está deprecado, es un alias que no aporta nada.
 
-### 2 · Las dependencias acordadas
+### 2 · Las dependencias · en qué quedó cada una
 
-Cuatro, cada una atada a algo real de este portal:
+Se acordaron cuatro. Al construir, dos sobraron:
 
-| Paquete | Por qué |
+| Paquete | En qué quedó |
 |---|---|
-| `@dnd-kit/core` + `@dnd-kit/sortable` | El formato `SEC` del banco v3 es «ordena estos cinco pasos». Trae arrastre por teclado y anuncios a lector de pantalla |
-| `@radix-ui/react-*` | Modal, select, tooltip, pestañas — accesibles y sin estilos. La alternativa era React Aria, más estricto con WCAG pero mucho más código |
-| `motion` (import `motion/react`) | ~31 KB, ~15 KB con `LazyMotion`. **Solo fuera del examen**: esa ruta pinta 50-85 preguntas de golpe |
-| `react-hook-form` + `zod` | Registro y postulación. `zod` deja escribir en un sitio los límites del backend (el `@Size(max = 20_000)`) |
+| `motion` (import `motion/react`) | **En uso.** ~31 KB, ~15 KB con `LazyMotion`. **Solo fuera del examen**: esa ruta pinta 50-85 preguntas de golpe |
+| `react-hook-form` + `zod` | **En uso.** Registro y postulación. `zod` deja escribir en un sitio los límites del backend (el `@Size(max = 20_000)`) |
+| `@dnd-kit/core` + `@dnd-kit/sortable` | **Instalado y no lo importa nadie.** El `SEC` se resolvió con flechas: arrastrar va mal en un teléfono, y desde el teléfono responde casi todo el mundo. `Formatos.module.css` conserva `.asa` y `.arrastrando` de ese intento: es CSS muerto |
+| `@radix-ui/react-*` | **No se instaló y no hace falta.** Los tres sitios que lo pedían los resuelve el HTML: el aviso de postular es un `dialog` nativo, el recorrido plegable un `details`, y apagar el formulario de la decisión un `fieldset disabled`. Foco atrapado, escape y teclado vienen gratis |
+
+**Antes de traer nada nuevo, mira si el HTML ya lo resuelve.** Una librería es para lo que
+la plataforma no cubre.
 
 **Estilos: CSS Modules**, no Tailwind. Cero configuración en Vite, nombres de clase en
 español, CSS normal que cualquiera lee.

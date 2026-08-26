@@ -151,10 +151,19 @@ es escribirle al equipo, y es lo que lleva el acento.
 
 ## Cómo el equipo mueve a la gente de etapa
 
-**Panel · la vacante → «El ranking de la tanda»**
+**Panel · la vacante → «El ranking, etapa por etapa»**
 
-El ranking **es la mesa donde se decide**, no un informe que se mira. Cada fila
-trae la nota de la etapa, adecuación, potencial, alertas y riesgos críticos.
+El ranking **es la mesa donde se decide**, no un informe que se mira. Tiene
+**cinco pestañas** —las cuatro etapas que puntúan y Decisión— y cada fila trae
+la nota de la etapa elegida, adecuación, potencial, alertas y riesgos críticos.
+El filtro «Solo quienes están aquí ahora» deja la foto del presente, y dice
+cuántas filas oculta.
+
+Al abrir una fila, la ficha es de la etapa: en Perfil integral (y en Decisión)
+salen **las dos tablas** —el CV criterio a criterio y la evaluación del banco
+con la nota, el porqué y la evidencia citada por la IA en cada respuesta
+abierta—; en Prueba y Simulación, su rúbrica; en Validación, el periodo y sus
+métricas.
 
 1. Se marca la casilla de quienes avanzan.
 2. Se escribe **un motivo**, obligatorio, que vale para toda la tanda.

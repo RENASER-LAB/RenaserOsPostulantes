@@ -37,10 +37,21 @@ import {
   verFicha,
   verHistorial,
   verPerfilIntegral,
+  verDesgloseEvaluacion,
+  verMetricasValidacion,
+  verNotasPrueba,
+  verNotasSimulacion,
   verRanking,
+  verValidacion,
   verVacante,
 } from '../api/panel'
-import type { FilaRanking, VacantePanel } from '../api/tipos'
+import { ErrorApi } from '../api/cliente'
+import type {
+  DesgloseEvaluacion,
+  FilaRanking,
+  NotaCriterioEtapa,
+  VacantePanel,
+} from '../api/tipos'
 import { rutas } from '@/rutas'
 import { formatearFechaCorta, formatearFechaLarga } from '@/dominio/reloj'
 import tabla from '../ui/Tabla.module.css'
@@ -61,9 +72,12 @@ export function VacantePanelDetalle() {
     queryFn: () => verEmbudo(vacanteId),
     enabled: Number.isFinite(vacanteId),
   })
+  // La etapa elegida manda sobre la query: cambiar de pestana pide el ranking
+  // con la nota de esa etapa, no reordena en el navegador una nota vieja.
+  const [etapa, setEtapa] = useState<EtapaPanel>('PERFIL_INTEGRAL')
   const ranking = useQuery({
-    queryKey: ['panel-ranking', vacanteId],
-    queryFn: () => verRanking(vacanteId),
+    queryKey: ['panel-ranking', vacanteId, etapa],
+    queryFn: () => verRanking(vacanteId, etapa),
     enabled: Number.isFinite(vacanteId),
   })
   const catalogos = useQuery({
@@ -202,7 +216,25 @@ export function VacantePanelDetalle() {
 
       {/* ---------- El ranking ---------- */}
       <section className={estilos.seccion}>
-        <h2 className={estilos.tituloSeccion}>El ranking de la tanda</h2>
+        <h2 className={estilos.tituloSeccion}>El ranking, etapa por etapa</h2>
+
+        {/* Una pestana por etapa: la tabla es la misma mesa de decidir, lo que
+            cambia es de que etapa es la nota con la que se ordena. */}
+        <div className={estilos.pestanas} role="tablist" aria-label="Etapa del ranking">
+          {ETAPAS_PANEL.map((e) => (
+            <button
+              key={e.codigo}
+              type="button"
+              role="tab"
+              aria-selected={etapa === e.codigo}
+              className={etapa === e.codigo ? estilos.pestanaActiva : estilos.pestana}
+              onClick={() => setEtapa(e.codigo)}
+            >
+              {e.nombre}
+            </button>
+          ))}
+        </div>
+
         {ranking.isPending && <p className={estilos.cargando}>Calculando el ranking…</p>}
         {ranking.isError && (
           <p className={estilos.avisoMalo} role="alert">
@@ -213,6 +245,8 @@ export function VacantePanelDetalle() {
         )}
         {ranking.data && (
           <Ranking
+            key={etapa}
+            etapa={etapa}
             filas={ranking.data.filas}
             resumen={`${ranking.data.total} en la tanda · ${ranking.data.calificados} calificados · ${ranking.data.enCurso} en curso · ${ranking.data.fallidos} con la calificación fallida`}
             alAvanzar={async () => {
@@ -232,19 +266,66 @@ export function VacantePanelDetalle() {
   )
 }
 
+// ---------- Las etapas del panel ----------
+
+/**
+ * Las cinco etapas que conoce el ranking del backend, en su orden.
+ *
+ * `prefijos` es como se sabe quien esta parado en cada una HOY: el codigo de
+ * estado de una postulacion empieza por el nombre de su etapa. Los estados
+ * finales (NO_CONTINUA, CERRADA...) no empiezan por ninguno, y es correcto:
+ * quien termino ya no esta "en" ninguna etapa.
+ */
+const ETAPAS_PANEL = [
+  {
+    codigo: 'PERFIL_INTEGRAL',
+    nombre: 'Perfil integral',
+    prefijos: ['POSTULADA', 'PERFIL_'],
+  },
+  { codigo: 'PRUEBA_PUESTO', nombre: 'Prueba del puesto', prefijos: ['PRUEBA_'] },
+  { codigo: 'SIMULACION', nombre: 'Simulación', prefijos: ['SIMULACION_'] },
+  { codigo: 'VALIDACION', nombre: 'Validación', prefijos: ['VALIDACION_'] },
+  { codigo: 'DECISION', nombre: 'Decisión', prefijos: ['DECISION_'] },
+] as const
+
+type EtapaPanel = (typeof ETAPAS_PANEL)[number]['codigo']
+
+/**
+ * Solo un 404 significa «todavia no hay». Un 403 —el rol no alcanza— o un 500
+ * disfrazados de «sin datos» mienten: se dice lo que el backend dijo.
+ */
+const leerFallo = (causa: unknown, sinDatos: string) =>
+  causa instanceof ErrorApi && causa.estado === 404
+    ? sinDatos
+    : causa instanceof Error
+      ? causa.message
+      : sinDatos
+
+const estaAhoraEn = (estado: string, etapa: EtapaPanel) =>
+  ETAPAS_PANEL.find((e) => e.codigo === etapa)!.prefijos.some((p) => estado.startsWith(p))
+
 // ---------- El ranking, con seleccion y avance ----------
 
 function Ranking({
+  etapa,
   filas,
   resumen,
   alAvanzar,
 }: {
+  etapa: EtapaPanel
   filas: FilaRanking[]
   resumen: string
   alAvanzar: () => Promise<void>
 }) {
   const [marcados, setMarcados] = useState<Set<number>>(new Set())
   const [abierta, setAbierta] = useState<number | null>(null)
+  // «Todos los que pasaron por aqui» o solo quien esta parado en la etapa hoy.
+  const [soloAhora, setSoloAhora] = useState(false)
+  const visibles = soloAhora ? filas.filter((f) => estaAhoraEn(f.estado, etapa)) : filas
+  const ocultas = filas.length - visibles.length
+  // Solo cuentan las marcas que se VEN: si el filtro oculta una fila marcada,
+  // el boton no puede seguir diciendo que avanzara a esa persona.
+  const marcadosVisibles = visibles.filter((f) => marcados.has(f.postulacionId))
   const [motivo, setMotivo] = useState('')
   const [resultado, setResultado] = useState<string | null>(null)
   const [avanzando, setAvanzando] = useState(false)
@@ -264,7 +345,7 @@ function Ranking({
     const fallaron: string[] = []
     // Uno a uno, no en paralelo: si el backend rechaza a alguien, el mensaje
     // dice a quien, y los demas no se pierden por ello.
-    for (const fila of filas.filter((f) => marcados.has(f.postulacionId))) {
+    for (const fila of marcadosVisibles) {
       try {
         await confirmarAvance(fila.postulacionId, motivo.trim())
         avanzaron.push(fila.candidato)
@@ -290,7 +371,23 @@ function Ranking({
 
   return (
     <>
-      <p className={estilos.resumenTanda}>{resumen}</p>
+      <div className={estilos.filaResumen}>
+        <p className={estilos.resumenTanda}>{resumen}</p>
+        <label className={estilos.filtroAhora}>
+          <input
+            type="checkbox"
+            checked={soloAhora}
+            onChange={(e) => setSoloAhora(e.target.checked)}
+          />
+          Solo quienes están aquí ahora
+          {/* Cuantos esconde se dice siempre: ocultar sin decirlo miente. */}
+          {soloAhora && ocultas > 0 && (
+            <span className={estilos.cuantasOculta}>
+              — oculta {ocultas} de {filas.length}
+            </span>
+          )}
+        </label>
+      </div>
 
       <div className={tabla.envoltura}>
         <table className={tabla.tabla}>
@@ -307,7 +404,7 @@ function Ranking({
             </tr>
           </thead>
           <tbody>
-            {filas.map((fila) => (
+            {visibles.map((fila) => (
               <Fragment key={fila.postulacionId}>
                 <tr
                   className={tabla.pulsable}
@@ -341,16 +438,19 @@ function Ranking({
                 {abierta === fila.postulacionId && (
                   <tr>
                     <td colSpan={8} className={estilos.celdaDetalle}>
-                      <DetalleDelPostulante fila={fila} />
+                      <DetalleDelPostulante fila={fila} etapa={etapa} />
                     </td>
                   </tr>
                 )}
               </Fragment>
             ))}
-            {filas.length === 0 && (
+            {visibles.length === 0 && (
               <tr>
                 <td colSpan={8} className={tabla.vacia}>
-                  Todavía no hay postulaciones en esta vacante.
+                  {filas.length === 0
+                    ? 'Todavía no hay postulaciones en esta vacante.'
+                    : 'Nadie está en esta etapa ahora mismo. El filtro oculta ' +
+                      `${filas.length} ${filas.length === 1 ? 'postulación' : 'postulaciones'}.`}
                 </td>
               </tr>
             )}
@@ -371,13 +471,13 @@ function Ranking({
           className={estilos.avanzar}
           type="button"
           onClick={() => void avanzarMarcados()}
-          disabled={avanzando || marcados.size === 0 || motivo.trim() === ''}
+          disabled={avanzando || marcadosVisibles.length === 0 || motivo.trim() === ''}
         >
           {avanzando
             ? 'Avanzando…'
-            : marcados.size === 0
+            : marcadosVisibles.length === 0
               ? 'Marca a quienes avanzan'
-              : `Avanzar a ${marcados.size} ${marcados.size === 1 ? 'persona' : 'personas'}`}
+              : `Avanzar a ${marcadosVisibles.length} ${marcadosVisibles.length === 1 ? 'persona' : 'personas'}`}
         </button>
       </div>
       {resultado && (
@@ -391,7 +491,7 @@ function Ranking({
 
 // ---------- La ficha, abierta debajo de la fila ----------
 
-function DetalleDelPostulante({ fila }: { fila: FilaRanking }) {
+function DetalleDelPostulante({ fila, etapa }: { fila: FilaRanking; etapa: EtapaPanel }) {
   const catalogos = useQuery({
     queryKey: ['panel-catalogos'],
     queryFn: verCatalogos,
@@ -402,10 +502,6 @@ function DetalleDelPostulante({ fila }: { fila: FilaRanking }) {
   const ficha = useQuery({
     queryKey: ['panel-ficha', fila.postulacionId],
     queryFn: () => verFicha(fila.postulacionId),
-  })
-  const perfil = useQuery({
-    queryKey: ['panel-perfil', fila.postulacionId],
-    queryFn: () => verPerfilIntegral(fila.postulacionId),
   })
   const historial = useQuery({
     queryKey: ['panel-historial', fila.postulacionId],
@@ -466,54 +562,285 @@ function DetalleDelPostulante({ fila }: { fila: FilaRanking }) {
       </div>
 
       <div className={estilos.columnaDetalle}>
-        <h3 className={estilos.tituloDetalle}>Lo que calificó la IA</h3>
-        {perfil.isPending && <p className={estilos.dato}>Cargando el retrato…</p>}
-        {perfil.data && (
-          <>
-            {perfil.data.resumen ? (
-              <p className={estilos.texto}>{perfil.data.resumen}</p>
-            ) : (
-              <p className={estilos.dato}>
-                Sin retrato todavía: la calificación está{' '}
-                {perfil.data.estadoCalificacion.toLowerCase().replaceAll('_', ' ')}.
-              </p>
-            )}
-
-            {perfil.data.hallazgos.length > 0 && (
-              <>
-                <h4 className={estilos.subtitulo}>Hallazgos y alertas</h4>
-                <ul className={estilos.hallazgos} role="list">
-                  {perfil.data.hallazgos.map((h, i) => (
-                    <li className={estilos.hallazgo} key={i}>
-                      <b>{h.tipo}</b> {h.texto}
-                    </li>
-                  ))}
-                </ul>
-              </>
-            )}
-
-            <h4 className={estilos.subtitulo}>Criterio a criterio</h4>
-            <ul className={estilos.criterios} role="list">
-              {perfil.data.notasCriterio.map((n) => (
-                <li className={estilos.criterio} key={n.criterio}>
-                  <span className={estilos.notaCriterio}>
-                    {n.puntaje !== null
-                      ? `${n.puntaje}${n.maximo ? `/${n.maximo}` : ''}`
-                      : '—'}
-                  </span>
-                  <span>
-                    <b>{n.criterio}</b> · peso {n.peso}
-                    {n.explicacion && (
-                      <span className={estilos.explicacion}>{n.explicacion}</span>
-                    )}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </>
+        {etapa === 'PRUEBA_PUESTO' ? (
+          <CriteriosDeEtapa
+            titulo="La prueba del puesto, criterio a criterio"
+            postulacionId={fila.postulacionId}
+            clave="prueba"
+            pedir={verNotasPrueba}
+            sinDatos="Todavía no rindió la prueba, o nadie la calificó."
+          />
+        ) : etapa === 'SIMULACION' ? (
+          <CriteriosDeEtapa
+            titulo="La simulación, criterio a criterio"
+            postulacionId={fila.postulacionId}
+            clave="simulacion"
+            pedir={verNotasSimulacion}
+            sinDatos="Todavía no pasó por la simulación, o nadie la calificó."
+          />
+        ) : etapa === 'VALIDACION' ? (
+          <Validacion postulacionId={fila.postulacionId} />
+        ) : (
+          <PerfilYEvaluacion fila={fila} />
         )}
       </div>
     </div>
+  )
+}
+
+/**
+ * El perfil integral: las dos tablas. La del CV —los ocho criterios con su
+ * porque— y la de la evaluacion del banco —cada respuesta abierta con la nota
+ * y la evidencia que cito la IA, lo cerrado, y los semaforos—.
+ *
+ * En Decision se ensena esto mismo: decidir es mirar el retrato completo.
+ */
+function PerfilYEvaluacion({ fila }: { fila: FilaRanking }) {
+  const perfil = useQuery({
+    queryKey: ['panel-perfil', fila.postulacionId],
+    queryFn: () => verPerfilIntegral(fila.postulacionId),
+  })
+  const evaluacion = useQuery({
+    queryKey: ['panel-desglose-evaluacion', fila.postulacionId],
+    queryFn: () => verDesgloseEvaluacion(fila.postulacionId),
+  })
+
+  return (
+    <>
+      <h3 className={estilos.tituloDetalle}>Lo que calificó la IA</h3>
+      {perfil.isPending && <p className={estilos.dato}>Cargando el retrato…</p>}
+      {perfil.data && (
+        <>
+          {perfil.data.resumen ? (
+            <p className={estilos.texto}>{perfil.data.resumen}</p>
+          ) : (
+            <p className={estilos.dato}>
+              Sin retrato todavía: la calificación está{' '}
+              {perfil.data.estadoCalificacion.toLowerCase().replaceAll('_', ' ')}.
+            </p>
+          )}
+
+          {perfil.data.hallazgos.length > 0 && (
+            <>
+              <h4 className={estilos.subtitulo}>Hallazgos y alertas</h4>
+              <ul className={estilos.hallazgos} role="list">
+                {perfil.data.hallazgos.map((h, i) => (
+                  <li className={estilos.hallazgo} key={i}>
+                    <b>{h.tipo}</b> {h.texto}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+
+          <h4 className={estilos.subtitulo}>Criterio a criterio</h4>
+          <ul className={estilos.criterios} role="list">
+            {perfil.data.notasCriterio.map((n) => (
+              <li className={estilos.criterio} key={n.criterio}>
+                <span className={estilos.notaCriterio}>
+                  {n.puntaje !== null
+                    ? `${n.puntaje}${n.maximo ? `/${n.maximo}` : ''}`
+                    : '—'}
+                </span>
+                <span>
+                  <b>{n.criterio}</b> · peso {n.peso}
+                  {n.explicacion && (
+                    <span className={estilos.explicacion}>{n.explicacion}</span>
+                  )}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+
+      <h3 className={estilos.tituloDetalle}>La evaluación del banco</h3>
+      {evaluacion.isPending && <p className={estilos.dato}>Abriendo la evaluación…</p>}
+      {evaluacion.data && <TablaDeLaEvaluacion desglose={evaluacion.data} />}
+    </>
+  )
+}
+
+/**
+ * La evaluacion del banco, abierta por dentro. Una respuesta sin nota se
+ * ensena igual: respondida y pendiente es informacion, no un hueco.
+ */
+function TablaDeLaEvaluacion({ desglose }: { desglose: DesgloseEvaluacion }) {
+  if (desglose.estado === null) {
+    return (
+      <p className={estilos.dato}>
+        Esta postulación no lleva evaluación del banco: la vacante se publicó con ella
+        apagada.
+      </p>
+    )
+  }
+
+  const sinNota = desglose.abiertas.filter((a) => a.puntaje === null).length
+
+  return (
+    <>
+      <p className={estilos.dato}>
+        {desglose.notaEvaluacion !== null
+          ? `Nota de la evaluación: ${desglose.notaEvaluacion} sobre 100. `
+          : 'Todavía sin nota de conjunto. '}
+        {desglose.cerradas.preguntas > 0 &&
+          `Las ${desglose.cerradas.preguntas} cerradas promedian ${desglose.cerradas.nota}.`}
+        {sinNota > 0 &&
+          ` ${sinNota} ${sinNota === 1 ? 'respuesta abierta espera' : 'respuestas abiertas esperan'} calificación.`}
+      </p>
+
+      {desglose.abiertas.length > 0 && (
+        <div className={tabla.envoltura}>
+          <table className={tabla.tabla}>
+            <thead>
+              <tr>
+                <th>Pregunta y respuesta</th>
+                <th className={tabla.cifra}>Nota</th>
+                <th>Lo que vio la IA</th>
+              </tr>
+            </thead>
+            <tbody>
+              {desglose.abiertas.map((a, i) => (
+                <tr key={i}>
+                  <td className={estilos.celdaRespuesta}>
+                    <b>{a.pregunta}</b>
+                    <span className={estilos.respuestaDada}>{a.respuesta}</span>
+                  </td>
+                  <td className={tabla.cifra}>
+                    {a.puntaje !== null ? `${a.puntaje}/4` : '—'}
+                  </td>
+                  <td className={estilos.celdaExplicacion}>
+                    {a.explicacion ?? 'Pendiente de calificar.'}
+                    {a.evidenciaCitada && (
+                      <span className={estilos.evidencia}>Citó: {a.evidenciaCitada}</span>
+                    )}
+                    {a.motivoAjuste && (
+                      <span className={estilos.evidencia}>
+                        Nota ajustada a mano: {a.motivoAjuste}
+                      </span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {desglose.alineacion.length > 0 && (
+        <>
+          <h4 className={estilos.subtitulo}>Alineación personal</h4>
+          <ul className={estilos.hallazgos} role="list">
+            {desglose.alineacion.map((a) => (
+              <li className={estilos.hallazgo} key={a.bloque}>
+                <b>{a.bloque}</b> {a.semaforo}
+                {a.explicacion ? ` — ${a.explicacion}` : ''}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </>
+  )
+}
+
+/**
+ * Las notas por criterio de una etapa que califica con rubrica: la prueba y
+ * la simulacion comparten forma porque el backend les da la misma.
+ */
+function CriteriosDeEtapa({
+  titulo,
+  postulacionId,
+  clave,
+  pedir,
+  sinDatos,
+}: {
+  titulo: string
+  postulacionId: number
+  clave: string
+  pedir: (postulacionId: number) => Promise<NotaCriterioEtapa[]>
+  sinDatos: string
+}) {
+  const notas = useQuery({
+    queryKey: [`panel-notas-${clave}`, postulacionId],
+    queryFn: () => pedir(postulacionId),
+    retry: false,
+  })
+
+  return (
+    <>
+      <h3 className={estilos.tituloDetalle}>{titulo}</h3>
+      {notas.isPending && <p className={estilos.dato}>Cargando las notas…</p>}
+      {notas.isError && <p className={estilos.dato}>{leerFallo(notas.error, sinDatos)}</p>}
+      {notas.data &&
+        (notas.data.length === 0 ? (
+          <p className={estilos.dato}>{sinDatos}</p>
+        ) : (
+          <ul className={estilos.criterios} role="list">
+            {notas.data.map((n) => (
+              <li className={estilos.criterio} key={n.criterioId}>
+                <span className={estilos.notaCriterio}>
+                  {n.puntaje !== null
+                    ? `${n.puntaje}${n.puntosMaximos ? `/${n.puntosMaximos}` : ''}`
+                    : '—'}
+                </span>
+                <span>
+                  <b>{n.nombre}</b>
+                  {n.origen &&
+                    ` · ${n.origen === 'IA' ? 'calificó la IA' : 'ajustado a mano'}`}
+                  {n.explicacion && (
+                    <span className={estilos.explicacion}>{n.explicacion}</span>
+                  )}
+                </span>
+              </li>
+            ))}
+          </ul>
+        ))}
+    </>
+  )
+}
+
+/** El periodo de validacion: la cabecera del periodo y sus metricas. */
+function Validacion({ postulacionId }: { postulacionId: number }) {
+  // 404 mientras nadie la habilite: es lo normal antes de llegar aqui.
+  const periodo = useQuery({
+    queryKey: ['panel-validacion', postulacionId],
+    queryFn: () => verValidacion(postulacionId),
+    retry: false,
+  })
+
+  return (
+    <>
+      <h3 className={estilos.tituloDetalle}>El periodo de validación</h3>
+      {periodo.isPending && <p className={estilos.dato}>Cargando el periodo…</p>}
+      {periodo.isError && (
+        <p className={estilos.dato}>
+          Todavía no tiene un periodo de validación habilitado.
+        </p>
+      )}
+      {periodo.data && (
+        <p className={estilos.dato}>
+          {periodo.data.dias ? `${periodo.data.dias} días` : 'Sin plazo definido'}
+          {periodo.data.modalidad ? ` · ${periodo.data.modalidad}` : ''}
+          {' · '}
+          {periodo.data.inicioEn
+            ? `del ${formatearFechaCorta(periodo.data.inicioEn)}`
+            : 'sin empezar'}
+          {periodo.data.finEn ? ` al ${formatearFechaCorta(periodo.data.finEn)}` : ''}
+          {' · '}
+          {periodo.data.estado.toLowerCase().replaceAll('_', ' ')}
+        </p>
+      )}
+      {periodo.data && (
+        <CriteriosDeEtapa
+          titulo="Las métricas del periodo"
+          postulacionId={postulacionId}
+          clave="validacion"
+          pedir={verMetricasValidacion}
+          sinDatos="Sin métricas completadas todavía."
+        />
+      )}
+    </>
   )
 }
 
@@ -729,8 +1056,8 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
             </select>
             {evaluacionesDelNivel.length === 0 && (
               <span className={estilos.pista}>
-                No hay ninguna publicada para este nivel. Se crean y publican aparte, o
-                se apaga la evaluación del banco y basta con la prueba del puesto.
+                No hay ninguna publicada para este nivel. Se crean y publican aparte, o se
+                apaga la evaluación del banco y basta con la prueba del puesto.
               </span>
             )}
           </label>

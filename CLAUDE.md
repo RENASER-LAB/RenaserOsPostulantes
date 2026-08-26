@@ -1,7 +1,7 @@
 # Portal del candidato · contexto de trabajo
 
-Última actualización: 2026-08-25 · **segundo rediseño en curso**, y el panel del equipo vive
-aquí mismo bajo `/admin`, provisional
+Última actualización: 2026-08-25 · **mundo visual nuevo**, y el ranking del panel es por
+etapas con el porqué de la IA
 
 Este archivo es para retomar el trabajo sin tener que reconstruir nada. Cuenta qué es este
 proyecto, con qué habla, qué se decidió y por qué, y qué está a medias.
@@ -128,6 +128,32 @@ vacantes (modelo Indeed), el panel se construye en este repositorio, bajo `/admi
   trae el conteo—; y **no hay forma de listar las versiones de una plantilla de prueba**, solo
   de pedir una suelta por su id. Se enseña lo que existe, como hizo el portal con la decisión
   ámbar.
+
+### El ranking es por etapas (25/08)
+
+Cinco pestañas sobre la misma tabla: las cuatro etapas que puntúan y Decisión. La tabla
+sigue siendo la mesa de decidir —casillas, motivo, avance en lote—; lo que cambia con la
+pestaña es **de qué etapa es la nota** (`GET /vacantes/{id}/ranking?etapa=…`, hecho a
+juego en el backend) y **qué enseña la ficha** al abrir una fila:
+
+| Pestaña | La ficha muestra |
+|---|---|
+| Perfil integral y Decisión | **Dos tablas**: el CV criterio a criterio, y la evaluación del banco —cada respuesta abierta con la nota, el porqué y la evidencia citada por la IA (`GET /postulaciones/{id}/evaluacion`, nuevo)— |
+| Prueba / Simulación | La rúbrica con nota, explicación y origen (IA o ajuste a mano). Comparten componente porque el backend les da la misma forma |
+| Validación | La cabecera del periodo y sus métricas. **El panel sí tiene ruta de validación**; la que falta es la del candidato |
+
+Encima de la tabla va el filtro **«Solo quienes están aquí ahora»**, que se deriva del
+prefijo del estado (`PRUEBA_*`, `SIMULACION_*`…) y **dice cuántas filas oculta**. Los
+estados finales no pertenecen a ninguna etapa: con el filtro puesto no salen en ninguna.
+
+⚠️ **La clave de DeepSeek del `application-secrets.yaml` local está muerta** (401 del
+proveedor desde el 25/08; el 24/08 funcionaba). Sin ella la IA no califica: las abiertas
+de la evaluación quedan «pendiente de calificar», que el panel enseña sin fingir. Hay una
+evaluación entregada de verdad en la base local —sembrada con
+`scripts/sembrar-evaluacion-local.py` del backend— esperando esa clave.
+
+Verificarlo entero: `PORTAL=http://localhost:5175 node herramientas/e2e-etapas.mjs`
+(Chrome visible, solo lee).
 
 ### Publicar una vacante exige tres cosas antes (25/08)
 
