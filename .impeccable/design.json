@@ -307,7 +307,7 @@
       },
       {
         "name": "La regla del color en el canto",
-        "body": "El color vive en cantos, filetes, franjas y cabeceras. El campo donde hay prosa se queda en nube. Es lo que hace el mundo y también lo que resuelve el contraste.",
+        "body": "El color vive en cantos, filetes, franjas y cabeceras. El campo donde hay prosa se queda en nube. Es lo que hace el mundo y también lo que resuelve el contraste. De ahí sale la forma del panel que reclama: nube blanca, perímetro de 2 px de regla viva y resplandor violeta. Un relleno de bruma viva detrás de un párrafo es la versión equivocada de esa idea. Las dos superficies que sí llevan ese relleno —la fecha elegida y la zona de soltar— no tienen prosa dentro: son un estado momentáneo y una elección.",
         "section": "colors"
       },
       {
@@ -354,6 +354,11 @@
         "name": "La regla de la caja constante",
         "body": "La caja de una franja mide siempre lo mismo aunque la franja de dentro cambie de grosor, o los nombres de las etapas caen a alturas distintas y la fila deja de leerse como fila.",
         "section": "shapes"
+      },
+      {
+        "name": "La regla del antetítulo único",
+        "body": "Las versalitas nombran bloques y estados, nunca van encima de un titular. La única excepción registrada es «DECISIÓN · TE PEDIMOS UNA COSA MÁS», que sitúa el momento del proceso: sin él, «Queremos resolver una duda antes de decidir» se lee como un rechazo. Cualquier otro antetítulo es un descuido, no un precedente.",
+        "section": "typography"
       }
     ],
     "dos": [
@@ -374,7 +379,8 @@
       "Don't anidar superficies con sombra, ni crear un nivel de jerarquía con un recuadro cuando el tamaño de letra ya lo crea.",
       "Don't añadir un segundo momento con movimiento que se dispare solo, ni ningún movimiento dentro del examen.",
       "Don't volver a introducir el tema oscuro. Es petición expresa del cliente.",
-      "Don't partir una frase con elementos dentro para enfatizar un número."
+      "Don't partir una frase con elementos dentro para enfatizar un número.",
+      "Don't rellenar de bruma viva un panel que tiene prosa dentro: el perímetro violeta sobre nube dice lo mismo y deja el campo de lectura limpio."
     ]
   }
 }

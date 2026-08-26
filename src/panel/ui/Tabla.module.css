@@ -66,6 +66,18 @@
 }
 
 /*
+ * El encabezado de una columna de cifras tambien va a la derecha.
+ *
+ * `.tabla th` gana en especificidad a `.cifra`, asi que el rotulo se quedaba a
+ * la izquierda mientras sus valores caian a la derecha: en una columna ancha,
+ * el nombre acababa a trescientos pixeles de lo que nombra. Pasa en todas las
+ * tablas del panel, no solo en la de la evaluacion.
+ */
+.tabla th.cifra {
+  text-align: right;
+}
+
+/*
  * La columna de acciones, pegada al canto derecho.
  *
  * Una tabla de siete columnas no cabe en 1040 px y la envoltura rueda; sin

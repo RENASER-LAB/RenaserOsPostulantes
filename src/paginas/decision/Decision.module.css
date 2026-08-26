@@ -20,10 +20,13 @@
 
 .cabeza {
   margin-top: var(--e4);
-  border: 1px solid var(--activo-regla);
-  background: var(--activo-bruma);
+  border: 2px solid var(--activo-regla);
+  background: var(--nube);
   padding: var(--e6);
   border-radius: var(--radio);
+  box-shadow:
+    0 2px 6px rgb(35 43 54 / 0.05),
+    0 14px 40px rgb(86 56 214 / 0.14);
 }
 
 .eti {

@@ -59,6 +59,12 @@ de dos píxeles** cruzando la cabecera, que además distingue las dos pestañas 
 «te toca a ti», y su rareza es lo que lo hace legible entre trece estados de espera. En el panel
 no hay esa distinción —todo le toca al equipo— así que es simplemente la acción principal.
 
+Por eso **lo elegido no se marca con color en el panel, se marca cambiando de superficie**: las
+cinco pestañas del ranking son un control segmentado sobre bruma con la activa en nube, y la
+pestaña de la cabecera lleva un fondo gris. Si además llevaran violeta, el violeta dejaría de
+señalar la acción. Y las etiquetas de la IA —fortaleza, alerta, riesgo— van en píldora con el
+semáforo, con la palabra dentro: el color no es la única señal.
+
 ### La trampa que costó tres rondas: los filtros SVG y la densidad de pixel
 
 `Canto.tsx` no usa `feGaussianBlur` ni `feDisplacementMap`, **y no es un descuido**. Chrome
@@ -75,7 +81,8 @@ zona sospechosa a 2× no tiene más detalle que la de 1× ampliada, hay un mapa 
 
 `herramientas/verificar-panel.mjs` recorre el panel contra el backend local **y escribe en la
 base**. Para solo mirarlo está `herramientas/capturar-panel.mjs`, que intercepta las respuestas
-y sirve un escenario de prueba: las cuatro pantallas, en dos anchos, sin tocar nada. Sus
+y sirve un escenario de prueba: las cinco pantallas —incluida una ficha del ranking ya abierta,
+que es lo más denso del panel—, en dos anchos, sin tocar nada. Sus
 fixturas copian los `record` de `src/panel/api/tipos.ts`; si el contrato cambia allá, aquí
 revientan con un `Cannot read properties of undefined`.
 

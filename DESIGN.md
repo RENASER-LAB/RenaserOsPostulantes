@@ -279,6 +279,14 @@ color y tiene que leerlo todo. Los enlaces van en tinta con subrayado gris por e
 campo donde hay prosa se queda en nube. Es lo que hace el mundo y también lo que resuelve el
 contraste: no hay texto leyéndose sobre color en ningún sitio.
 
+De ahí sale la forma de **el panel que reclama**, que aparece en seis pantallas: nube blanca,
+perímetro de 2 px de regla viva y el resplandor violeta. Un relleno de `--activo-bruma` detrás
+de un párrafo es la versión equivocada de esa misma idea, y se corrigió en las seis.
+
+⚠️ **Dos sitios sí llevan relleno de bruma viva, y no son excepciones a la regla:** la fecha
+elegida de la simulación y la zona de soltar mientras arrastras un archivo. Ninguno tiene prosa
+dentro — son un estado momentáneo y una elección— y ahí el tinte es lo que dice «esta es».
+
 **La regla del color posicional.** El espectro dice avance, no categoría. Si algún día un color
 del canto empieza a significar «esto es la prueba», el recorrido deja de poder leerse.
 
@@ -315,7 +323,13 @@ Diez escalones, y cada uno tiene un trabajo, no un tamaño. Viven como tokens en
 - **Apoyo** `--t-apoyo` (400, 14px, 1.5): el texto secundario de la interfaz. El más usado.
 - **Menor** `--t-menor` (400, 13px): pies, unidades, pistas bajo un campo.
 - **Label** `--t-micro` (700, 12px, `0.08em`, versalitas): títulos de bloque dentro de una
-  pantalla densa, nunca antetítulos encima de un titular.
+  pantalla densa, la etiqueta que nombra un producto —«PANEL DEL EQUIPO»— y las píldoras de
+  estado. **Nunca un antetítulo encima de un titular**, con una sola excepción registrada abajo.
+
+⚠️ **La excepción: `DECISIÓN · TE PEDIMOS UNA COSA MÁS`.** Es el único antetítulo del portal y
+se queda porque no es decorativo: sitúa el momento del proceso. Sin él, «Queremos resolver una
+duda antes de decidir» se lee como un rechazo, que es exactamente lo contrario de lo que es.
+Cualquier otro antetítulo que aparezca es un descuido, no un precedente.
 
 Los datos —fechas, cuentas, plazos, el cronómetro— llevan `font-variant-numeric: tabular-nums`,
 aplicado globalmente a `<time>` y a `[data-cifra]`.

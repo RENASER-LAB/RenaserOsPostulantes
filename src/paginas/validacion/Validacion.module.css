@@ -55,21 +55,17 @@
 /* ---------- El periodo ---------- */
 
 .periodo {
-  border: 1px solid var(--activo-regla);
-  background: var(--activo-bruma);
+  border: 2px solid var(--activo-regla);
+  background: var(--nube);
   padding: var(--e5);
   border-radius: var(--radio);
+  box-shadow:
+    0 2px 6px rgb(35 43 54 / 0.05),
+    0 14px 40px rgb(86 56 214 / 0.14);
 }
 
-.etiAcento {
-  display: block;
-  font-size: var(--t-micro);
-  font-weight: 600;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  color: var(--activo-pulsado);
-  margin-bottom: var(--e3);
-}
+/* `.etiAcento` se fue con «TU PERIODO»: era un antetítulo encima de un
+   titular, y el titular se sostiene solo. */
 
 .desde {
   margin: 0;
