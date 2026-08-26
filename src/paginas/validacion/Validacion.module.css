@@ -55,20 +55,17 @@
 /* ---------- El periodo ---------- */
 
 .periodo {
-  border: 1px solid var(--acento-regla);
-  background: var(--acento-papel);
+  border: 2px solid var(--activo-regla);
+  background: var(--nube);
   padding: var(--e5);
+  border-radius: var(--radio);
+  box-shadow:
+    0 2px 6px rgb(35 43 54 / 0.05),
+    0 14px 40px rgb(86 56 214 / 0.14);
 }
 
-.etiAcento {
-  display: block;
-  font-size: var(--t-micro);
-  font-weight: 600;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  color: var(--acento-pulsado);
-  margin-bottom: var(--e3);
-}
+/* `.etiAcento` se fue con «TU PERIODO»: era un antetítulo encima de un
+   titular, y el titular se sostiene solo. */
 
 .desde {
   margin: 0;
@@ -91,10 +88,11 @@
 .bloque {
   border: 1px solid var(--regla);
   padding: var(--e5);
+  border-radius: var(--radio);
 }
 
 .bloque.hundido {
-  background: var(--hundido);
+  background: var(--nube-hundida);
 }
 
 .tituloBloque {
@@ -168,6 +166,7 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--tinta2);
+  border-radius: var(--radio);
 }
 
 .quien.persona {
@@ -186,11 +185,12 @@
   display: flex;
   gap: var(--e3);
   border: 1px solid var(--regla2);
-  background: var(--hundido);
+  background: var(--nube-hundida);
   padding: var(--e4);
   font-size: var(--t-apoyo);
   line-height: 1.55;
   color: var(--tinta2);
+  border-radius: var(--radio);
 }
 
 .falta::before {

@@ -15,6 +15,7 @@
   margin: var(--e7) auto;
   border: 1px solid var(--regla);
   padding: var(--e6);
+  border-radius: var(--radio);
 }
 
 .eti {
@@ -55,8 +56,9 @@
  */
 .barra {
   height: 12px;
-  background: var(--hundido2);
+  background: var(--nube-honda);
   margin-top: var(--e3);
+  border-radius: var(--radio-control);
 }
 
 .barraLarga {
@@ -128,8 +130,9 @@
 .detalle {
   margin-top: var(--e5);
   border: 1px solid var(--regla);
-  background: var(--hundido);
+  background: var(--nube-hundida);
   padding: var(--e4);
+  border-radius: var(--radio-menor);
 }
 
 .tituloDetalle {

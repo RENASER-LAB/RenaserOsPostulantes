@@ -12,7 +12,7 @@
   z-index: 110;
   max-width: min(24rem, calc(100vw - 2 * var(--e5)));
   background: var(--tinta);
-  color: var(--papel);
+  color: var(--nube);
   padding: var(--e3) var(--e4);
   font-size: var(--t-apoyo);
   font-weight: 600;

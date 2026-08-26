@@ -109,9 +109,9 @@ for (const tamano of TAMANOS) {
   pagina.on('pageerror', (e) => fallos.push(String(e)))
 
   await pagina.goto(`${PORTAL}/procesos`, { waitUntil: 'networkidle' })
-  // El unico movimiento del portal es la marca al cerrarse una etapa: se le
-  // deja terminar para que la captura no la coja a medias.
-  await pagina.waitForTimeout(700)
+  // La banda del tramo vivo tarda 900 ms en formarse. Sin esperarla, la
+  // captura la coge a medio dibujar y parece que falte el recorrido.
+  await pagina.waitForTimeout(1300)
 
   const archivo = `${SALIDA}/procesos-${caso}-${tamano.nombre}.png`
   await pagina.screenshot({ path: archivo, fullPage: true })

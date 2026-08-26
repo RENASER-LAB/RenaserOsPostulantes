@@ -52,12 +52,13 @@
   display: flex;
   gap: var(--e3);
   border: 1px solid var(--mal-regla);
-  background: var(--mal-papel);
+  background: var(--mal-bruma);
   padding: var(--e3) var(--e4);
   font-size: var(--t-prosa);
   line-height: 1.5;
   color: var(--mal);
   margin: var(--e3) 0;
+  border-radius: var(--radio-menor);
 }
 
 .avisoMalo::before {
@@ -90,6 +91,7 @@
   border: 1px solid var(--regla2);
   padding: var(--e2) var(--e3);
   font-size: var(--t-apoyo);
+  border-radius: var(--radio-control);
 }
 
 .cuantos {
@@ -122,14 +124,33 @@
 }
 
 .celdaDetalle {
-  background: var(--hundido);
+  background: var(--nube-hundida);
   padding: var(--e5) !important;
+  border-radius: var(--radio);
 }
 
+/*
+ * La ficha abierta: orientacion arriba, trabajo abajo.
+ *
+ * Antes eran dos columnas iguales y todo lo largo caia en la derecha: la
+ * izquierda —nombre, fecha, un parrafo— se quedaba corta y dejaba media pantalla
+ * vacia mientras la evaluacion se estrujaba en quinientos pixeles. Con cincuenta
+ * preguntas eso es una tabla de tres columnas partida a martillazos.
+ *
+ * Ahora la fila de arriba son las dos lecturas cortas, y lo que se compara
+ * renglon a renglon baja a una banda con el ancho entero.
+ */
 .detalle {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
   gap: var(--e6);
+  align-items: start;
+}
+
+.banda {
+  grid-column: 1 / -1;
+  border-top: 1px solid var(--regla2);
+  padding-top: var(--e5);
 }
 
 .columnaDetalle {
@@ -190,10 +211,49 @@
 }
 
 .hallazgo {
+  display: flex;
+  align-items: baseline;
+  gap: var(--e3);
   font-size: var(--t-apoyo);
   line-height: 1.5;
-  border-left: 1px solid var(--regla2);
-  padding-left: var(--e3);
+}
+
+/*
+ * La etiqueta de un hallazgo o de un semaforo.
+ *
+ * Salian como texto negro en mayusculas —FORTALEZA, ALERTA, VERDE— cuando el
+ * sistema ya tiene los tres colores con ese significado exacto. Van en pildora
+ * de bruma, que es como el panel dice «estado» en el resto de la pantalla.
+ *
+ * El color no es la unica señal: la palabra dentro sigue diciendo cual es, asi
+ * que quien no distingue colores lee lo mismo.
+ */
+.etiqueta {
+  flex: none;
+  align-self: center;
+  padding: 3px var(--e3);
+  border-radius: var(--radio-control);
+  font-size: var(--t-micro);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: var(--nube-hundida);
+  color: var(--tinta2);
+}
+
+.etiqueta.bien {
+  background: var(--bien-bruma);
+  color: var(--bien);
+}
+
+.etiqueta.duda {
+  background: var(--duda-bruma);
+  color: var(--duda-tinta);
+}
+
+.etiqueta.mal {
+  background: var(--mal-bruma);
+  color: var(--mal-pulsado);
 }
 
 .criterios {
@@ -235,11 +295,12 @@
   flex: 1 1 18rem;
   min-height: 44px;
   padding: 0 var(--e3);
-  background: var(--papel);
+  background: var(--nube);
   color: var(--tinta);
   border: 1px solid var(--borde-control);
   font: inherit;
   font-size: var(--t-base);
+  border-radius: var(--radio-menor);
 }
 
 .avanzar {
@@ -279,6 +340,7 @@
   border: 1px solid var(--regla2);
   padding: var(--e3) var(--e4);
   font-size: var(--t-apoyo);
+  border-radius: var(--radio-menor);
 }
 
 .sinRequisitos {
@@ -332,11 +394,12 @@
 .eleccion {
   min-height: 44px;
   padding: 0 var(--e3);
-  background: var(--papel);
+  background-color: var(--nube);
   color: var(--tinta);
   border: 1px solid var(--borde-control);
   font: inherit;
   font-size: var(--t-base);
+  border-radius: var(--radio-menor);
 }
 
 .configuracion {
@@ -374,36 +437,58 @@
 
 /* ---------- Las pestañas de etapa ---------- */
 
+/*
+ * Un control segmentado, no un subrayado con acento.
+ *
+ * Dos motivos. El violeta ya lo llevan los botones de acción del panel, y
+ * dárselo también a la pestaña activa lo deja sin decir nada; y el mundo de
+ * este producto no marca lo elegido con una raya de color, lo marca cambiando
+ * de superficie. La cabecera del panel hace lo mismo con su pestaña activa.
+ *
+ * Se distingue de esa cabecera por el sitio y por el fondo: aquella son
+ * píldoras sueltas sobre vidrio, y esto es un grupo cerrado sobre bruma, que es
+ * lo que dice «cinco vistas de la misma tabla» y no «cinco secciones».
+ */
 .pestanas {
-  display: flex;
+  display: inline-flex;
   flex-wrap: wrap;
-  border-bottom: 1px solid var(--regla);
-  margin-bottom: var(--e4);
+  gap: var(--e1);
+  padding: var(--e1);
+  border-radius: var(--radio-control);
+  background: var(--nube-hundida);
+  margin-bottom: var(--e5);
 }
 
 .pestana,
 .pestanaActiva {
   font: inherit;
   font-size: var(--t-apoyo);
-  padding: var(--e2) var(--e4);
+  padding: 0 var(--e4);
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: var(--radio-control);
   background: none;
-  border: none;
-  border-bottom: 2px solid transparent;
   color: var(--tinta2);
   cursor: pointer;
-  min-height: 44px;
+  transition:
+    background 160ms var(--salida),
+    color 160ms var(--salida);
 }
 
-/* La etapa activa es donde estás mirando: lleva el acento porque es la que
-   te toca a ti leer, y es el único acento de la tabla. */
+/* La etapa que estás mirando sube a superficie de nube. */
 .pestanaActiva {
   color: var(--tinta);
-  font-weight: 600;
-  border-bottom-color: var(--acento);
+  font-weight: 700;
+  background: var(--nube);
+  border-color: var(--regla);
+  box-shadow: 0 1px 2px rgb(35 43 54 / 0.06);
 }
 
 .pestana:hover {
   color: var(--tinta);
+  background: rgb(35 43 54 / 0.04);
 }
 
 .filaResumen {
@@ -429,8 +514,34 @@
 
 /* ---------- La tabla de la evaluación del banco ---------- */
 
+/*
+ * El reparto de la tabla de la evaluacion, ya con el ancho entero.
+ *
+ * `table-layout: fixed` y no automatico: con cincuenta filas, el navegador
+ * reparte segun la fila mas larga y las columnas bailan al desplazarse. Fijo,
+ * el ojo baja por la columna de notas sin perderla.
+ */
+.tablaEvaluacion {
+  table-layout: fixed;
+}
+
+/*
+ * Con cincuenta preguntas el encabezado se pierde a la tercera fila. Pegado al
+ * borde de su envoltura, la columna que estas leyendo sigue teniendo nombre.
+ */
+.tablaEvaluacion thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+/* La nota son tres caracteres: no necesita un octavo de la tabla. */
+.celdaNota {
+  width: 5rem;
+}
+
 .celdaRespuesta {
-  max-width: 26rem;
+  width: 46%;
 }
 
 .respuestaDada {
@@ -442,7 +553,7 @@
 }
 
 .celdaExplicacion {
-  max-width: 22rem;
+  width: auto;
   font-size: var(--t-menor);
   line-height: 1.45;
 }

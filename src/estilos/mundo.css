@@ -1,113 +1,138 @@
 /*
- * El mundo visual del portal: «El seguimiento».
+ * El mundo visual del portal: «El canto».
  *
- * Tu postulacion es algo que va en camino, con hitos cumplidos y fechados y un
- * siguiente hito siempre nombrado. Lo que separa esto de un rastreo de paquete
- * cualquiera: **lo cumplido no se apaga**. Cada etapa cerrada se sigue leyendo
- * con el mismo peso, porque el producto trata de acumular evidencia.
+ * Una nube recien formada difracta la luz del sol cuando sus gotas son de
+ * tamaño parecido, y aparece en su borde una banda estrecha de color. Tu
+ * candidatura es esa banda: se forma tramo a tramo a lo largo de semanas.
  *
- * Tres reglas que sostienen el resto y que no se negocian por comodidad:
+ * Del fenomeno viene el vocabulario de estado entero —ausente, formandose,
+ * vivido, disperso— y una sola inversion deliberada: en el cielo el canto se
+ * deshace cuando las gotas engordan; **aqui lo que se formo se queda formado**,
+ * porque el producto trata de acumular evidencia y lo que el candidato ya
+ * demostro es suyo.
  *
- *   1. El acento indigo significa UNA cosa: «te toca a ti». El hito abierto y
- *      su accion. Si aparece en un boton secundario, deja de leerse.
- *   2. El estado se lee en la FORMA antes que en el color —relleno, contorno,
- *      discontinuo, tachado— para que quien no distingue colores lea el mismo
- *      recorrido.
- *   3. Cero radios y las reglas a un pixel exacto. Los estados son marcas
- *      impresas, no cromo con sombra.
+ * Cuatro reglas que sostienen el resto:
  *
- * Ver `docs/04-BRIEF-MIS-PROCESOS.md`.
+ *   1. El color es POSICIONAL, no categorico. El espectro corre una sola vez de
+ *      principio a fin del recorrido, y cada tramo enseña su rebanada. Ningun
+ *      color significa «esta etapa»; significa «hasta aqui llego la luz».
+ *   2. El violeta pleno significa UNA cosa: «te toca a ti». Es la banda viva.
+ *   3. El estado se lee en la FORMA antes que en el color —barra maciza, filete,
+ *      punteado disperso— porque quien no distingue colores lee lo mismo.
+ *   4. El color vive en el CANTO. El campo donde se lee se queda en nube: filete
+ *      espectral en el borde de lo que importa, nunca relleno bajo el texto.
+ *
+ * El contrato de direccion completo esta en la cabecera de `index.html`.
  */
 
 :root {
-  /* Superficies, de mas al fondo a mas al frente */
-  --papel: #ffffff;
-  --hundido: #f5f5f7;
-  --hundido2: #ebebef;
-
-  /* Tinta */
-  --tinta: #1c1c1e;
-  --tinta2: #48484d;
-  /* No bajar de aqui: con #77777d el texto pequeño se queda en 4,45:1 sobre
-     papel y no llega al minimo de 4,5. */
-  --tinta3: #6e6e77;
-
-  /* Reglas. La fina divide; la marcada cierra un bloque */
-  --regla: #e3e3e8;
-  --regla2: #c7c7d0;
-  /* Los controles piden mas contraste que una caja: 3:1 sobre papel */
-  --borde-control: #8a8a99;
-
-  /* La tinta que va ENCIMA de un relleno, no la del papel. Se parecen —el
-     papel tambien es blanco— pero no son lo mismo: si un dia el papel deja de
-     ser blanco puro, el texto de los botones no tiene por que moverse. */
-  --tinta-invertida: #ffffff;
-  --tinta-pulsado: #000000;
-
-  /* El acento. Una sola cosa: «te toca a ti» */
-  --acento: #4338ca;
-  --acento-pulsado: #312ba0;
-  --acento-papel: #f1f0fe;
-  --acento-regla: #c5c2f4;
-
-  /* El semaforo del sistema. Cada uno ya significa algo fijo */
-  --bien: #0f7a3d;
-  --duda: #8a5a00;
-  --duda-papel: #fdf6e6;
-  /* Sobre `--duda-papel`, el propio `--duda` se queda en 4,1:1. Este llega a
-     8,3:1 y sigue leyendose como el mismo ambar. */
-  --duda-tinta: #6b4700;
-  --mal: #b3261e;
-  --mal-pulsado: #8e1e17;
-  --mal-papel: #fdecea;
-  --mal-regla: #f2c0bc;
+  /*
+   * Superficies. El fondo es bruma fria y las superficies son nube blanca: al
+   * reves que un portal corriente, donde la pagina es blanca y los bloques
+   * tambien y solo un contorno los separa.
+   */
+  --cielo: #f6f8fb;
+  --nube: #ffffff;
+  --nube-hundida: #eef1f6;
+  /* Barras de esqueleto y fondo de lo apagado: tiene que separarse de
+     `--nube-hundida` o un control deshabitado dentro de un bloque de apoyo
+     desaparece. */
+  --nube-honda: #dfe4ec;
 
   /*
-   * La escala tipografica.
-   *
-   * No estaba, y por eso cada hoja se inventaba su tamaño: trece valores
-   * distintos en veinte hojas. Estos diez son los que quedan, y cada uno tiene
-   * un trabajo, no un tamaño.
-   *
-   * Los dos `clamp` sustituyen a cuatro reglas de `@media` que solo bajaban un
-   * numero: 21→19 y 22→20 en el destacado, y 30→26 en la cifra.
+   * Tinta. Pizarra, no negro: es el gris azulado del cuerpo de una nube vista a
+   * contraluz, y el unico color que el mundo tiene fuera del canto.
    */
-  --t-micro: 12px;      /* versalitas y etiquetas */
+  --tinta: #232b36;  /* 13,0:1 sobre nube */
+  --tinta2: #4a5563; /* 7,5:1  — la prosa que explica */
+  /* No bajar de aqui: 4,81:1 sobre nube. Un escalon mas claro no llega al 4,5
+     que pide el texto pequeño. */
+  --tinta3: #68727f;
+
+  --regla: #e3e7ee;
+  --regla2: #cbd2dc;
+  /* Un control pide 3:1 contra el fondo; una caja no. Este da 3,27:1. */
+  --borde-control: #848e9c;
+
+  /* La tinta que va ENCIMA de un relleno, no la de la nube. Se parecen —la
+     nube tambien es blanca— pero no son lo mismo: si un dia la superficie deja
+     de ser blanca pura, el texto de los botones no tiene por que moverse. */
+  --tinta-invertida: #ffffff;
+  --tinta-pulsado: #11161d;
+
+  /*
+   * El violeta de la banda viva. En el fenomeno es la banda que se ve cuando el
+   * angulo es el tuyo; aqui es «te toca a ti», y no significa nada mas.
+   */
+  --activo: #5638d6;         /* 7,1:1 con texto blanco encima */
+  --activo-pulsado: #4429b8;
+  --activo-bruma: #efecfd;
+  --activo-regla: #c6bcf7;
+
+  /*
+   * El semaforo del sistema, releido en los colores del canto. Cada uno ya
+   * significaba algo fijo en el producto antes que en el diseño, y por eso el
+   * violeta no podia ser ninguno de ellos.
+   */
+  --bien: #0b7a63;        /* 5,3:1 — lo confirmado */
+  --bien-bruma: #e6f5f0;
+  --duda: #8f5a0a;        /* 5,8:1 — lo que cambia tu decision */
+  --duda-bruma: #fbf2e4;
+  /* Sobre `--duda-bruma` el propio `--duda` se queda corto; este llega a 7,9:1
+     y se sigue leyendo como el mismo ambar. */
+  --duda-tinta: #6d4406;
+  --mal: #c22a3f;         /* 5,4:1 — el error real y lo que borra */
+  --mal-pulsado: #9e2134;
+  --mal-bruma: #fdedf0;
+  --mal-regla: #f3c3cc;
+
+  /*
+   * El canto: el espectro entero, de un extremo al otro del recorrido.
+   *
+   * No son cinco colores para cinco etapas. Es una sola tirada de luz, y cada
+   * tramo enseña la rebanada que le toca por su sitio. Por eso avanzar cambia
+   * de color sin que ningun color signifique una etapa.
+   */
+  --canto: linear-gradient(90deg, #16a184 0%, #4f8ac9 34%, #d2497e 68%, #6b4be0 100%);
+  --canto-vertical: linear-gradient(180deg, #16a184 0%, #4f8ac9 34%, #d2497e 68%, #6b4be0 100%);
+  --canto-menta: #16a184;
+  --canto-aqua: #4f8ac9;
+  --canto-rosa: #d2497e;
+  --canto-violeta: #6b4be0;
+
+  /*
+   * La escala tipografica. Diez escalones y cada uno tiene un trabajo.
+   *
+   * El titular es fino y grande a proposito —200 a 56 px— porque es lo que hace
+   * el mundo: una banda estrecha de luz sobre mucho cielo. Ese peso NO baja de
+   * `--t-portada`: por debajo de 30 px una Mulish de 200 deja de leerse comoda,
+   * y este es un portal de empleo donde una barrera impide postular.
+   */
+  --t-micro: 12px;      /* etiquetas de bloque */
   --t-menor: 13px;      /* pies, unidades, pistas */
   --t-apoyo: 14px;      /* el texto secundario de la interfaz */
   --t-prosa: 15px;      /* la prosa que explica */
   --t-base: 16px;       /* el cuerpo, y los campos: por debajo iOS hace zoom */
-  --t-entradilla: 17px; /* la entradilla, y el titulo del hito abierto */
-  --t-titulo: 19px;     /* el titulo de un bloque */
-  --t-destacado: clamp(19px, 2vw, 22px); /* lo mayor de una pantalla */
-  --t-cifra: clamp(26px, 5vw, 30px);     /* el cronometro y las cifras */
-  --t-portada: clamp(28px, 4.4vw, 40px); /* el titular */
+  --t-entradilla: 18px; /* la entradilla, y el titulo del tramo abierto */
+  --t-titulo: 20px;     /* el titulo de un bloque */
+  --t-destacado: clamp(20px, 2.1vw, 24px); /* lo mayor de una pantalla */
+  --t-cifra: clamp(28px, 5vw, 34px);       /* el cronometro y las cifras */
+  --t-portada: clamp(32px, 5.2vw, 56px);   /* el titular */
 
   /*
-   * El ancho del portal en escritorio.
-   *
-   * `--ancho` no es una medida de lectura: es el hueco donde componer. La prosa
-   * de dentro sigue cortada por `--medida`, asi que ensanchar esto no alarga
-   * una sola linea — lo que hace es dar sitio para poner cosas al lado de otras
-   * en vez de una debajo de otra. A 1920 el portal ocupaba 760 px, dos tercios
-   * de pantalla vacios, y parecia hecho para el telefono.
-   *
-   * Las pantallas que NO lo usan son las que no ganan nada con el: entrar,
-   * crear cuenta y postular son formularios, y un formulario ancho se lee peor.
+   * El ancho del portal en escritorio. No es medida de lectura: es el hueco
+   * donde componer. La prosa sigue cortada por `--medida`.
    */
   --ancho: 68rem;
 
   /*
-   * La medida de la linea.
-   *
-   * En `ch`, que es el ancho del «0». En Libre Franklin el cero es ancho, asi
-   * que 62ch compraban 91-96 caracteres por linea: muy por encima del suelo de
-   * 65-75 con el que se lee comodo. Medido en el navegador, no calculado.
+   * La medida de la linea, en `ch` —el ancho del cero—. En Mulish el cero es
+   * algo mas estrecho que en la familia anterior, asi que estos valores compran
+   * 66-72 caracteres por linea. Medido en el navegador, no calculado.
    */
-  --medida: 47ch;       /* la prosa corriente */
-  --medida-corta: 42ch; /* dentro de un bloque de apoyo */
+  --medida: 50ch;
+  --medida-corta: 44ch;
 
-  /* Espacios */
   --e1: 4px;
   --e2: 8px;
   --e3: 12px;
@@ -117,12 +142,35 @@
   --e7: 48px;
   --e8: 72px;
 
+  /*
+   * El radio. La nube no tiene esquinas: el mundo anterior era papel impreso y
+   * este es vapor, asi que las superficies se redondean y los controles son
+   * pildoras enteras.
+   */
+  --radio: 14px;
+  --radio-menor: 10px;
+  --radio-control: 999px;
+  /* Lo mas pequeño que se redondea: una casilla de 20 px. Con 10 px se
+     convierte en una pastilla y deja de leerse como casilla. */
+  --radio-marca: 4px;
+
   /* Lo que mide la cabecera fija. Lo consume la barra de avance del examen,
      que se pega justo debajo. */
   --alto-cabecera: 61px;
 
   /* El movimiento: salida exponencial desde algo que ya se ve */
   --salida: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /*
+   * Las tres sombras del portal, y ninguna es decorativa.
+   *
+   * Son difusas y frias porque en este mundo la profundidad es aire, no papel
+   * levantado: desplazamiento corto, desenfoque largo, y el color de la tinta
+   * con muy poca opacidad.
+   */
+  --sombra-nube: 0 1px 2px rgb(35 43 54 / 0.04), 0 8px 24px rgb(35 43 54 / 0.05);
+  --sombra-aviso: 0 12px 24px rgb(35 43 54 / 0.10), 0 32px 64px rgb(35 43 54 / 0.14);
+  --bruma-viva: 0 0 0 4px var(--activo-bruma);
 }
 
 *,
@@ -133,13 +181,14 @@
 
 html {
   -webkit-text-size-adjust: 100%;
+  background: var(--cielo);
 }
 
 body {
   margin: 0;
-  background: var(--papel);
+  background: var(--cielo);
   color: var(--tinta);
-  font-family: 'Libre Franklin', system-ui, sans-serif;
+  font-family: Mulish, system-ui, sans-serif;
   font-size: 16px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -167,19 +216,25 @@ ol {
   list-style: none;
 }
 
-/* El tamaño y el peso hacen la jerarquia. Ningun recuadro la fabrica. */
+/*
+ * El tamaño y el peso hacen la jerarquia. Ningun recuadro la fabrica.
+ *
+ * El titular va en 200: es el peso del mundo. Los titulos de bloque suben a 600
+ * porque a 20 px un 200 se pierde contra la prosa que tienen debajo, y entonces
+ * el nivel dejaria de existir.
+ */
 h1 {
   font-size: var(--t-portada);
-  line-height: 1.12;
-  letter-spacing: -0.028em;
-  font-weight: 600;
+  line-height: 1.06;
+  letter-spacing: -0.03em;
+  font-weight: 200;
   text-wrap: balance;
 }
 
 h2 {
   font-size: var(--t-titulo);
   line-height: 1.25;
-  letter-spacing: -0.018em;
+  letter-spacing: -0.015em;
   font-weight: 600;
   text-wrap: balance;
 }
@@ -187,17 +242,16 @@ h2 {
 h3 {
   font-size: var(--t-base);
   line-height: 1.3;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.008em;
   font-weight: 600;
 }
 
 /*
- * Los enlaces NO llevan el acento.
+ * Los enlaces no llevan el violeta.
  *
- * El indigo significa una sola cosa —«te toca a ti»— y con seis enlaces de ese
+ * El violeta significa una sola cosa —«te toca a ti»— y con seis enlaces de ese
  * color rodeando un boton del mismo color, el candidato deja de poder confiar
- * en el color y tiene que leerlo todo. El subrayado ya identifica un enlace;
- * el color no hacia falta.
+ * en el color y tiene que leerlo todo. El subrayado ya identifica un enlace.
  */
 a {
   color: var(--tinta);
@@ -205,6 +259,7 @@ a {
   text-decoration-thickness: 1px;
   text-underline-offset: 0.22em;
   text-decoration-color: var(--regla2);
+  transition: text-decoration-color 140ms var(--salida);
 }
 
 a:hover {
@@ -218,33 +273,84 @@ button {
 }
 
 /*
+ * El desplegable del sistema.
+ *
+ * Un `<select>` trae su flecha de fabrica, que no es de ningun sistema de
+ * diseño: gris azulado en un sitio, doble triangulo en otro, y siempre pegada
+ * al borde. Se apaga y se dibuja una con la tinta del mundo. El hueco de la
+ * derecha se lo hace el relleno para que una opcion larga no se meta debajo.
+ *
+ * Global y no en una hoja de pantalla porque hay cinco pantallas con `select` y
+ * ninguna razon para que se vean distinto.
+ */
+select {
+  appearance: none;
+  padding-right: var(--e7);
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--tinta2) 50%),
+    linear-gradient(135deg, var(--tinta2) 50%, transparent 50%);
+  background-position:
+    calc(100% - 22px) calc(50% + 2px),
+    calc(100% - 16px) calc(50% + 2px);
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+
+select:disabled {
+  cursor: default;
+  background-image: none;
+}
+
+/*
+ * El boton de «Elegir archivo», por lo mismo. `::file-selector-button` lo viste
+ * sin sustituir el control: esconder el `<input type=file>` detras de un
+ * `<label>` pierde el nombre del archivo elegido y complica el teclado.
+ */
+input[type='file']::file-selector-button {
+  min-height: 36px;
+  margin-right: var(--e3);
+  padding: 0 var(--e4);
+  border-radius: var(--radio-control);
+  background: var(--nube);
+  border: 1px solid var(--borde-control);
+  font: inherit;
+  font-weight: 600;
+  color: var(--tinta);
+  cursor: pointer;
+  transition: border-color 160ms var(--salida);
+}
+
+input[type='file']::file-selector-button:hover {
+  border-color: var(--tinta);
+}
+
+/*
  * Las superficies que no dibujamos tambien son del diseño: sin esto llegan con
  * los valores de fabrica del navegador, que no pertenecen a ningun sistema.
  */
 ::selection {
-  background: var(--acento-papel);
-  color: var(--acento-pulsado);
+  background: var(--activo-bruma);
+  color: var(--activo-pulsado);
 }
 
 :root {
-  accent-color: var(--acento);
-  caret-color: var(--acento);
+  accent-color: var(--activo);
+  caret-color: var(--activo);
   scrollbar-color: var(--regla2) transparent;
   scrollbar-width: thin;
 }
 
 :focus-visible {
-  outline: 2px solid var(--acento);
-  outline-offset: 2px;
+  outline: 2px solid var(--activo);
+  outline-offset: 3px;
+  border-radius: var(--radio-menor);
 }
 
 /*
- * Fuera de la vista, dentro del arbol de accesibilidad.
- *
- * Global y no un modulo porque lo usan piezas que no tienen hoja propia —el
- * cronometro— y porque estaba copiado en cuatro sitios. `display: none` no
- * sirve: esconderia el texto tambien del lector de pantalla, que es justo a
- * quien va dirigido.
+ * Fuera de la vista, dentro del arbol de accesibilidad. `display: none` no
+ * sirve: esconderia el texto tambien del lector de pantalla, que es a quien va
+ * dirigido.
  */
 .solo-lectores {
   position: absolute;
@@ -275,13 +381,11 @@ time,
 }
 
 /*
- * El logotipo de EX, lo unico que sobrevive del portal anterior: la palabra con
- * la hormiga metida dentro de la X.
+ * El logotipo de EX, lo unico que sobrevive de los portales anteriores: la
+ * palabra con la hormiga metida dentro de la X.
  *
- * Se redefine aqui porque la hoja vieja la dejaba en .44em —a 22px eso son
- * nueve pixeles y la hormiga desaparecia, que es justo lo que no puede pasarle
- * a la unica pieza de marca que hay—. Va centrada sobre la X y ocupando su
- * hueco, no colgando de la esquina.
+ * El peso baja de 800 a 700: en Mulish el 800 es notablemente mas ancho y la
+ * hormiga se quedaba sin sitio sobre el vertice de la X.
  */
 .marca {
   position: relative;
@@ -295,14 +399,14 @@ time,
 .marca-letras {
   display: block;
   font-size: 1em;
-  font-weight: 800;
-  letter-spacing: -0.06em;
+  font-weight: 700;
+  letter-spacing: -0.05em;
 }
 
 .marca-hormiga {
   position: absolute;
   /* Posada en el vertice superior derecho de la X, solapandola apenas. Encima
-     del trazo se perderia —hormiga y letra van del mismo negro— y del todo
+     del trazo se perderia —hormiga y letra van del mismo color— y del todo
      fuera dejaria de ser «la hormiga dentro de la X». */
   top: -0.14em;
   right: -0.04em;

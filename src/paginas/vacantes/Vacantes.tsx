@@ -9,12 +9,14 @@
  * Se ve sin cuenta. `GET /vacantes` es público.
  */
 
+import type { CSSProperties } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { listarVacantes } from '@/api/portal'
 import type { VacantePublica } from '@/api/tipos'
 import { ETAPAS } from '@/dominio/estados'
 import { rutas } from '@/rutas'
+import { Canto } from '@/ui/Canto'
 import estilos from './Vacantes.module.css'
 
 /** Qué hace el candidato en cada etapa. Es texto de producto, no dato. */
@@ -34,30 +36,64 @@ export function Vacantes() {
 
   return (
     <div className={estilos.pagina}>
-      <h1 className={estilos.entrada}>Aquí no se decide por un currículum.</h1>
-      <p className={estilos.bajada}>
-        El proceso son cinco etapas, y en todas se mira cómo trabajas. Tu currículum entra,
-        pero por diseño no descarta a nadie.
-      </p>
+      {/*
+        Otra semilla y menos luz que en «Mis procesos», y no por variar: alli la
+        banda esta formada porque hay un proceso en marcha, y aqui todavia no ha
+        empezado nada. Es la misma luz formandose.
+      */}
+      <Canto semilla={7} intensidad={0.6} />
 
-      <section className={estilos.proceso}>
-        <h2 className={estilos.tituloProceso}>Lo que te espera</h2>
-        <ol className={estilos.etapas} role="list">
-          {ETAPAS.map((etapa) => (
-            <li className={estilos.etapa} key={etapa.clave}>
-              <div className={estilos.marca} aria-hidden="true" />
-              <div className={estilos.textoEtapa}>
-                <p className={estilos.nombreEtapa}>{etapa.etiqueta}</p>
-                <p className={estilos.queEsEtapa}>{QUE_ES[etapa.clave]}</p>
-              </div>
-            </li>
-          ))}
-        </ol>
-      </section>
+      {/*
+        El primer golpe de vista no promete: enseña. A la izquierda lo que se
+        dice, a la derecha las cinco etapas con su tramo del espectro. Lo que
+        distingue a este proceso de una bolsa de empleo es justamente que hay
+        cinco etapas y en todas se mira cómo trabajas, así que eso tiene que
+        estar arriba, no detrás de una regla.
+      */}
+      <div className={estilos.portada}>
+        <div className={estilos.dicho}>
+          <h1 className={estilos.entrada}>Tu próximo trabajo puede empezar aquí.</h1>
+          <p className={estilos.bajada}>
+            El proceso son cinco etapas, y en todas se mira cómo trabajas. Tu currículum
+            entra, pero por diseño no descarta a nadie.
+          </p>
+
+          {/*
+            La accion va en tinta y no en violeta. El violeta significa «te toca
+            a ti» dentro de un proceso, y aqui todavia no hay ninguno: quien
+            llega no tiene turno, tiene curiosidad.
+          */}
+          <a className={estilos.verVacantes} href="#vacantes-abiertas">
+            Ver las vacantes abiertas
+          </a>
+        </div>
+
+        <section className={estilos.proceso} aria-labelledby="lo-que-te-espera">
+          <h2 className={estilos.tituloProceso} id="lo-que-te-espera">
+            Lo que te espera
+          </h2>
+          <ol className={estilos.etapas} role="list">
+            {ETAPAS.map((etapa, indice) => (
+              <li
+                className={estilos.etapa}
+                key={etapa.clave}
+                style={{ '--i': indice } as CSSProperties}
+              >
+                {/* La rebanada del espectro que le toca a esta etapa por su sitio. */}
+                <div className={estilos.marca} aria-hidden="true" />
+                <div>
+                  <p className={estilos.nombreEtapa}>{etapa.etiqueta}</p>
+                  <p className={estilos.queEsEtapa}>{QUE_ES[etapa.clave]}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>
+      </div>
 
       <section className={estilos.seccionVacantes}>
         <div className={estilos.cabeceraVacantes}>
-          <h2>Vacantes abiertas</h2>
+          <h2 id="vacantes-abiertas">Vacantes abiertas</h2>
           {vacantes.length > 0 && (
             <span className={estilos.cuantas}>
               {vacantes.length} {vacantes.length === 1 ? 'puesto' : 'puestos'}

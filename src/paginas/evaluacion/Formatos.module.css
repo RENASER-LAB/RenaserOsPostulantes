@@ -23,10 +23,11 @@
   gap: var(--e3);
   margin-top: var(--e4);
   border: 1px solid var(--regla2);
-  background: var(--hundido);
+  background: var(--nube-hundida);
   padding: var(--e3) var(--e4);
   font-size: var(--t-apoyo);
   color: var(--tinta2);
+  border-radius: var(--radio);
 }
 
 .pendiente::before {
@@ -50,11 +51,12 @@
   align-items: flex-start;
   gap: var(--e3);
   border: 1px solid var(--regla2);
-  background: var(--papel);
+  background: var(--nube);
   padding: var(--e4);
   font-size: var(--t-base);
   line-height: 1.5;
   cursor: pointer;
+  border-radius: var(--radio);
 }
 
 .opcion:hover {
@@ -79,7 +81,7 @@
   height: 18px;
   margin-top: 2px;
   border: 1px solid var(--borde-control);
-  background: var(--papel);
+  background: var(--nube);
 }
 
 .opcion.elegida .marca {
@@ -88,7 +90,7 @@
 }
 
 .opcion:has(.control:focus-visible) {
-  outline: 2px solid var(--acento);
+  outline: 2px solid var(--activo);
   outline-offset: 2px;
 }
 
@@ -109,13 +111,14 @@
   width: 100%;
   min-height: 10rem;
   padding: var(--e4);
-  background: var(--papel);
+  background: var(--nube);
   color: var(--tinta);
   border: 1px solid var(--borde-control);
   font: inherit;
   font-size: var(--t-base);
   line-height: 1.6;
   resize: vertical;
+  border-radius: var(--radio-menor);
 }
 
 .cuenta {
@@ -149,11 +152,12 @@
 .campoParte {
   min-height: 48px;
   padding: 0 var(--e3);
-  background: var(--papel);
+  background-color: var(--nube);
   color: var(--tinta);
   border: 1px solid var(--borde-control);
   font: inherit;
   font-size: var(--t-base);
+  border-radius: var(--radio-menor);
 }
 
 /* ---------- EF-4 · la que más y la que menos ---------- */
@@ -170,8 +174,9 @@
   align-items: center;
   gap: var(--e3) var(--e4);
   border: 1px solid var(--regla2);
-  background: var(--papel);
+  background: var(--nube);
   padding: var(--e4);
+  border-radius: var(--radio);
 }
 
 .textoEf4 {
@@ -196,22 +201,23 @@
   min-height: 44px;
   padding: 0 var(--e3);
   border: 1px solid var(--borde-control);
-  background: var(--papel);
+  background: var(--nube);
   font-size: var(--t-menor);
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   cursor: pointer;
+  border-radius: var(--radio-control);
 }
 
 .marcaEf4.puesta {
   background: var(--tinta);
   border-color: var(--tinta);
-  color: var(--papel);
+  color: var(--nube);
 }
 
 .marcaEf4:has(.control:focus-visible) {
-  outline: 2px solid var(--acento);
+  outline: 2px solid var(--activo);
   outline-offset: 2px;
 }
 
@@ -225,8 +231,9 @@
 
 .bloqueEscala {
   border: 1px solid var(--regla2);
-  background: var(--papel);
+  background: var(--nube);
   padding: var(--e4);
+  border-radius: var(--radio);
 }
 
 .textoEscala {
@@ -255,21 +262,22 @@
   min-width: 44px;
   min-height: 44px;
   border: 1px solid var(--borde-control);
-  background: var(--papel);
+  background: var(--nube);
   font-size: var(--t-prosa);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   cursor: pointer;
+  border-radius: var(--radio-control);
 }
 
 .punto.puesto {
   background: var(--tinta);
   border-color: var(--tinta);
-  color: var(--papel);
+  color: var(--nube);
 }
 
 .punto:has(.control:focus-visible) {
-  outline: 2px solid var(--acento);
+  outline: 2px solid var(--activo);
   outline-offset: 2px;
 }
 
@@ -294,14 +302,15 @@
   align-items: center;
   gap: var(--e3);
   border: 1px solid var(--regla2);
-  background: var(--papel);
+  background: var(--nube);
   padding: var(--e3) var(--e4);
+  border-radius: var(--radio);
 }
 
 /* Mientras se arrastra: se levanta del papel. */
 .paso.arrastrando {
   border-color: var(--tinta);
-  box-shadow: 0 6px 16px rgb(28 28 30 / 0.14);
+  box-shadow: 0 6px 16px rgb(35 43 54 / 0.16);
   position: relative;
   z-index: 2;
 }
@@ -336,7 +345,7 @@
   width: 28px;
   height: 28px;
   background: var(--tinta);
-  color: var(--papel);
+  color: var(--nube);
   font-size: var(--t-apoyo);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -361,10 +370,11 @@
   justify-content: center;
   width: 44px;
   height: 44px;
-  background: var(--papel);
+  background: var(--nube);
   border: 1px solid var(--regla2);
   font-size: var(--t-prosa);
   cursor: pointer;
+  border-radius: var(--radio);
 }
 
 .flecha:hover:not(:disabled) {

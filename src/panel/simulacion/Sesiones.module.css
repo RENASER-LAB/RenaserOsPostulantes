@@ -37,12 +37,13 @@
   display: flex;
   gap: var(--e3);
   border: 1px solid var(--mal-regla);
-  background: var(--mal-papel);
+  background: var(--mal-bruma);
   padding: var(--e3) var(--e4);
   font-size: var(--t-prosa);
   line-height: 1.5;
   color: var(--mal);
   margin: var(--e3) 0;
+  border-radius: var(--radio-menor);
 }
 
 .avisoMalo::before {
@@ -62,12 +63,13 @@
   align-items: center;
   min-height: 36px;
   padding: 0 var(--e3);
-  background: var(--papel);
+  background: var(--nube);
   border: 1px solid var(--borde-control);
   font-size: var(--t-menor);
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
+  border-radius: var(--radio-menor);
 }
 
 .chico:hover:not(:disabled) {
@@ -84,10 +86,25 @@
   font-size: var(--t-apoyo);
   line-height: 1.55;
   color: var(--tinta2);
-  border-left: 2px solid var(--regla2);
-  padding-left: var(--e4);
+  /*
+   * Bloque de bruma y no barra lateral: en este mundo un hueco que el backend
+   * todavia no cubre se dice sobre nube hundida, igual que una espera en el
+   * portal. Una barra de color a la izquierda es el patron que el suelo de
+   * calidad veta, y ademas aqui competia con el filete del espectro.
+   */
+  background: var(--nube-hundida);
+  border-radius: var(--radio-menor);
+  padding: var(--e4);
   margin-top: var(--e5);
   max-width: var(--medida);
+}
+
+/*
+ * La fecha es un dato, no prosa: sin suelo de ancho se partia en cuatro
+ * renglones con media tabla vacia al lado.
+ */
+.cuando {
+  min-width: 11rem;
 }
 
 /* ---------- El alta ---------- */
@@ -96,6 +113,7 @@
   border: 1px solid var(--regla2);
   padding: var(--e5);
   margin-bottom: var(--e6);
+  border-radius: var(--radio);
 }
 
 .tituloAlta {
@@ -127,23 +145,25 @@
 .entrada {
   min-height: 44px;
   padding: 0 var(--e3);
-  background: var(--papel);
+  background-color: var(--nube);
   color: var(--tinta);
   border: 1px solid var(--borde-control);
   font: inherit;
   font-size: var(--t-base);
+  border-radius: var(--radio-menor);
 }
 
 .area {
   min-height: 5rem;
   padding: var(--e3);
-  background: var(--papel);
+  background: var(--nube);
   color: var(--tinta);
   border: 1px solid var(--borde-control);
   font: inherit;
   font-size: var(--t-base);
   line-height: 1.5;
   resize: vertical;
+  border-radius: var(--radio-menor);
 }
 
 .grupoVacantes {
@@ -153,6 +173,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--e3) var(--e5);
+  border-radius: var(--radio-menor);
 }
 
 .opcionVacante {

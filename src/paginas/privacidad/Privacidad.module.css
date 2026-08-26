@@ -45,12 +45,13 @@
 .accion {
   border: 1px solid var(--regla);
   padding: var(--e5);
+  border-radius: var(--radio);
 }
 
 /* La que borra. Dos pixeles y papel propio: se ve antes de leerse. */
 .accion.borra {
   border: 2px solid var(--mal);
-  background: var(--mal-papel);
+  background: var(--mal-bruma);
   padding: calc(var(--e5) - 1px);
 }
 
@@ -85,7 +86,7 @@
 .alcance.roja {
   border-color: var(--mal);
   color: var(--mal);
-  background: var(--papel);
+  background: var(--nube);
 }
 
 .texto {
@@ -124,6 +125,7 @@
   gap: var(--e3) var(--e4);
   border: 1px solid var(--regla2);
   padding: var(--e3) var(--e4);
+  border-radius: var(--radio);
 }
 
 .cual {
@@ -159,16 +161,17 @@
   justify-content: center;
   min-height: 44px;
   padding: 0 var(--e4);
-  background: var(--papel);
+  background: var(--nube);
   border: 1px solid var(--mal);
   color: var(--mal);
   font-size: var(--t-apoyo);
   font-weight: 600;
   cursor: pointer;
+  border-radius: var(--radio);
 }
 
 .retirar:hover:not(:disabled) {
-  background: var(--mal-papel);
+  background: var(--mal-bruma);
 }
 
 .retirar:disabled {
@@ -195,6 +198,7 @@
   font-size: var(--t-prosa);
   font-weight: 600;
   cursor: pointer;
+  border-radius: var(--radio);
 }
 
 .peligroso:hover:not(:disabled) {
@@ -209,11 +213,12 @@
   gap: var(--e3);
   margin-top: var(--e4);
   border: 1px solid var(--mal-regla);
-  background: var(--papel);
+  background: var(--nube);
   padding: var(--e3) var(--e4);
   font-size: var(--t-apoyo);
   line-height: 1.5;
   color: var(--mal);
+  border-radius: var(--radio);
 }
 
 .fallo::before {
@@ -268,11 +273,12 @@
   gap: var(--e3);
   margin-bottom: var(--e4);
   border: 1px solid var(--mal);
-  background: var(--mal-papel);
+  background: var(--mal-bruma);
   padding: var(--e4);
   font-size: var(--t-prosa);
   line-height: 1.55;
   color: var(--mal);
+  border-radius: var(--radio);
 }
 
 .consecuencia::before {
@@ -298,13 +304,14 @@
   width: 100%;
   min-height: 6rem;
   padding: var(--e3);
-  background: var(--papel);
+  background: var(--nube);
   color: var(--tinta);
   border: 1px solid var(--borde-control);
   font: inherit;
   font-size: var(--t-base);
   line-height: 1.6;
   resize: vertical;
+  border-radius: var(--radio-menor);
 }
 
 .cancelar {
@@ -323,10 +330,11 @@
   font-size: var(--t-prosa);
   font-weight: 600;
   cursor: pointer;
+  border-radius: var(--radio);
 }
 
 .confirmarPeligro:disabled {
-  background: var(--hundido2);
+  background: var(--nube-honda);
   border-color: var(--regla2);
   color: var(--tinta3);
   cursor: default;

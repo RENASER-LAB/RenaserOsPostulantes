@@ -20,9 +20,13 @@
 
 .cabeza {
   margin-top: var(--e4);
-  border: 1px solid var(--acento-regla);
-  background: var(--acento-papel);
+  border: 2px solid var(--activo-regla);
+  background: var(--nube);
   padding: var(--e6);
+  border-radius: var(--radio);
+  box-shadow:
+    0 2px 6px rgb(35 43 54 / 0.05),
+    0 14px 40px rgb(86 56 214 / 0.14);
 }
 
 .eti {
@@ -31,7 +35,7 @@
   font-weight: 600;
   letter-spacing: 0.09em;
   text-transform: uppercase;
-  color: var(--acento-pulsado);
+  color: var(--activo-pulsado);
   margin-bottom: var(--e3);
 }
 
@@ -73,10 +77,11 @@
 .bloque {
   border: 1px solid var(--regla);
   padding: var(--e5);
+  border-radius: var(--radio);
 }
 
 .bloque.hundido {
-  background: var(--hundido);
+  background: var(--nube-hundida);
 }
 
 .tituloBloque {
@@ -128,12 +133,13 @@
   display: flex;
   gap: var(--e3);
   border: 1px solid var(--duda);
-  background: var(--duda-papel);
+  background: var(--duda-bruma);
   padding: var(--e4);
   margin-bottom: var(--e5);
   font-size: var(--t-prosa);
   line-height: 1.55;
   color: var(--duda-tinta);
+  border-radius: var(--radio);
 }
 
 .todaviaNo::before {
@@ -174,17 +180,18 @@
   width: 100%;
   min-height: 10rem;
   padding: var(--e4);
-  background: var(--papel);
+  background: var(--nube);
   color: var(--tinta);
   border: 1px solid var(--borde-control);
   font: inherit;
   font-size: var(--t-base);
   line-height: 1.6;
   resize: vertical;
+  border-radius: var(--radio-menor);
 }
 
 .escrito:disabled {
-  background: var(--hundido);
+  background: var(--nube-hundida);
   color: var(--tinta3);
 }
 
@@ -195,8 +202,9 @@
   justify-content: space-between;
   gap: var(--e4);
   border: 1px dashed var(--borde-control);
-  background: var(--hundido);
+  background: var(--nube-hundida);
   padding: var(--e5);
+  border-radius: var(--radio-menor);
 }
 
 .adjuntarTexto {
@@ -210,11 +218,12 @@
   justify-content: center;
   min-height: 44px;
   padding: 0 var(--e4);
-  background: var(--papel);
+  background: var(--nube);
   border: 1px solid var(--borde-control);
   font-size: var(--t-apoyo);
   font-weight: 600;
   cursor: pointer;
+  border-radius: var(--radio-control);
 }
 
 .boton:disabled {
@@ -252,12 +261,13 @@
   justify-content: center;
   min-height: 48px;
   padding: 0 var(--e6);
-  background: var(--hundido2);
+  background: var(--nube-honda);
   color: var(--tinta3);
   border: 1px solid var(--regla2);
   font-size: var(--t-base);
   font-weight: 600;
   cursor: default;
+  border-radius: var(--radio);
 }
 
 .correo {

@@ -97,7 +97,6 @@ export function Validacion() {
         <div className={estilos.columna}>
           {/* Acento: durante el periodo, lo que se espera lo hace el candidato. */}
           <section className={estilos.periodo}>
-            <span className={estilos.etiAcento}>Tu periodo</span>
             <p className={estilos.desde}>
               {empezo ? `Empezó el ${formatearFechaCorta(empezo)}` : 'Ya empezó'}
             </p>

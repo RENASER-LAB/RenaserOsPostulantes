@@ -19,19 +19,25 @@
  * cualquier cosa que dependa de donde esta el boton son del sitio, no de la
  * pieza, y quedarse con ellos aqui haria imposible reusarla.
  *
- * Lo que NO esta aqui, y es a proposito: el antetitulo en versalitas que hay en
- * siete pantallas. Es un patron que el suelo de calidad de `impeccable` veta, y
- * meterlo al sistema seria justamente consagrarlo. Se queda local hasta que
- * `critique` decida si se va.
+ * En «El canto» los controles son **pildoras**: la nube no tiene esquinas. Los
+ * nombres `acentoGrande` y `acentoMenor` se conservan aunque el mundo ya no
+ * llame «acento» a su color, porque renombrarlos tocaria dieciseis hojas para
+ * no cambiar nada de lo que se ve.
  */
 
-/* ---------- La accion del acento ---------- */
+/* ---------- La accion de la banda viva ---------- */
 
 /*
- * El indigo significa una sola cosa, «te toca a ti», asi que estas dos son las
+ * El violeta significa una sola cosa, «te toca a ti», asi que estas dos son las
  * unicas piezas que lo llevan. La grande es la accion principal de una pantalla
  * —entregar, postular, empezar la prueba—; la menor es la misma accion cuando
- * vive dentro de un hito o de un aviso y no puede pesar mas que su contenedor.
+ * vive dentro de un tramo o de un aviso y no puede pesar mas que su contenedor.
+ *
+ * Van rellenas y no con filete espectral, aunque el filete sea mas bonito: esta
+ * es la afordancia mas importante del producto y un contorno pesa menos que un
+ * enlace subrayado que tenga al lado. El filete espectral tiene su propio
+ * trabajo —marcar la superficie donde estas— y darselo tambien a los botones lo
+ * dejaria sin significar nada.
  */
 .acentoGrande {
   display: inline-flex;
@@ -39,14 +45,18 @@
   justify-content: center;
   min-height: 48px;
   padding: 0 var(--e6);
-  background: var(--acento);
+  border-radius: var(--radio-control);
+  background: var(--activo);
   color: var(--tinta-invertida);
-  border: 1px solid var(--acento);
+  border: 1px solid var(--activo);
   font-size: var(--t-base);
   font-weight: 600;
+  letter-spacing: -0.004em;
   text-decoration: none;
   cursor: pointer;
-  transition: background 140ms var(--salida);
+  transition:
+    background 160ms var(--salida),
+    box-shadow 160ms var(--salida);
 }
 
 .acentoMenor {
@@ -55,38 +65,46 @@
   justify-content: center;
   min-height: 44px;
   padding: 0 var(--e5);
-  background: var(--acento);
+  border-radius: var(--radio-control);
+  background: var(--activo);
   color: var(--tinta-invertida);
-  border: 1px solid var(--acento);
+  border: 1px solid var(--activo);
   font-size: var(--t-prosa);
   font-weight: 600;
+  letter-spacing: -0.004em;
   text-decoration: none;
   cursor: pointer;
-  transition: background 140ms var(--salida);
+  transition:
+    background 160ms var(--salida),
+    box-shadow 160ms var(--salida);
 }
 
 .acentoGrande:hover:not(:disabled),
 .acentoMenor:hover:not(:disabled) {
-  background: var(--acento-pulsado);
-  border-color: var(--acento-pulsado);
+  background: var(--activo-pulsado);
+  border-color: var(--activo-pulsado);
+  /* El halo es la banda ensanchandose, que es lo que le pasa a la luz cuando te
+     acercas al angulo. Es la respuesta del mundo, no un adorno. */
+  box-shadow: var(--bruma-viva);
   /* Declarado y no heredado: en un `<a>`, la regla global de enlaces le
-     devolveria la tinta del papel al pasar por encima. */
+     devolveria la tinta del cielo al pasar por encima. */
   color: var(--tinta-invertida);
 }
 
 .acentoGrande:disabled,
 .acentoMenor:disabled {
-  background: var(--hundido2);
-  border-color: var(--regla2);
+  background: var(--nube-honda);
+  border-color: var(--nube-honda);
   color: var(--tinta3);
+  box-shadow: none;
   cursor: default;
 }
 
 /* ---------- La accion que no es la principal ---------- */
 
 /*
- * Papel con contorno. El contorno es `--borde-control` y no `--regla2` porque
- * un control pide 3:1 contra el fondo y una caja no.
+ * Nube con contorno. El contorno es `--borde-control` y no `--regla2` porque un
+ * control pide 3:1 contra el fondo y una caja no.
  */
 .secundario {
   display: inline-flex;
@@ -94,24 +112,29 @@
   justify-content: center;
   min-height: 44px;
   padding: 0 var(--e5);
-  background: var(--papel);
+  border-radius: var(--radio-control);
+  background: var(--nube);
   border: 1px solid var(--borde-control);
   font-size: var(--t-prosa);
   font-weight: 600;
+  letter-spacing: -0.004em;
   text-decoration: none;
   cursor: pointer;
-  transition: border-color 140ms var(--salida);
+  transition:
+    border-color 160ms var(--salida),
+    background 160ms var(--salida);
 }
 
 .secundario:hover:not(:disabled) {
   border-color: var(--tinta);
+  background: var(--nube);
 }
 
 .secundario:disabled {
-  /* El fondo tambien, como en `.acentoGrande:disabled`. Sin el, un boton
-     apagado sobre papel blanco sigue pareciendo pulsable. */
-  background: var(--hundido2);
-  border-color: var(--regla2);
+  /* El fondo tambien: sin el, un boton apagado sobre nube blanca sigue
+     pareciendo pulsable. */
+  background: var(--nube-honda);
+  border-color: var(--nube-honda);
   color: var(--tinta3);
   cursor: default;
 }
@@ -120,7 +143,7 @@
 
 /*
  * Rellena de tinta. Es para cuando algo tiene que pesar mas que un contorno y
- * el acento estaria mintiendo: la salida segura de un aviso, o el boton de una
+ * el violeta estaria mintiendo: la salida segura de un aviso, o el boton de una
  * pantalla vacia, donde no hay ningun proceso esperando al candidato.
  */
 .solido {
@@ -129,20 +152,22 @@
   justify-content: center;
   min-height: 44px;
   padding: 0 var(--e5);
+  border-radius: var(--radio-control);
   background: var(--tinta);
-  color: var(--papel);
+  color: var(--nube);
   border: 1px solid var(--tinta);
   font-size: var(--t-prosa);
   font-weight: 600;
+  letter-spacing: -0.004em;
   text-decoration: none;
   cursor: pointer;
-  transition: background 140ms var(--salida);
+  transition: background 160ms var(--salida);
 }
 
 .solido:hover:not(:disabled) {
   background: var(--tinta-pulsado);
   border-color: var(--tinta-pulsado);
-  color: var(--papel);
+  color: var(--nube);
 }
 
 /* ---------- Volver ---------- */

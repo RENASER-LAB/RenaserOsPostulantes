@@ -57,6 +57,26 @@ import { formatearFechaCorta, formatearFechaLarga } from '@/dominio/reloj'
 import tabla from '../ui/Tabla.module.css'
 import estilos from './Vacante.module.css'
 
+/**
+ * El semaforo del sistema, aplicado a lo que la IA marca.
+ *
+ * Verde, ambar y rojo ya significan hecho, duda y error en todo el producto, y
+ * un hallazgo es exactamente eso. Lo que no encaja en los tres se queda neutro
+ * en vez de inventarle un color.
+ */
+function tonoDe(codigo: string): string {
+  const c = codigo.toUpperCase()
+  if (c === 'FORTALEZA' || c === 'VERDE') return estilos.bien ?? ''
+  if (c === 'ALERTA' || c === 'AMBAR' || c === 'ÁMBAR') return estilos.duda ?? ''
+  if (c === 'RIESGO' || c === 'RIESGO_CRITICO' || c === 'ROJO') return estilos.mal ?? ''
+  return ''
+}
+
+/** El codigo del backend, dicho como se lee. */
+function enPalabras(codigo: string): string {
+  return codigo.replaceAll('_', ' ').toLowerCase()
+}
+
 export function VacantePanelDetalle() {
   const { id = '' } = useParams()
   const vacanteId = Number(id)
@@ -581,9 +601,20 @@ function DetalleDelPostulante({ fila, etapa }: { fila: FilaRanking; etapa: Etapa
         ) : etapa === 'VALIDACION' ? (
           <Validacion postulacionId={fila.postulacionId} />
         ) : (
-          <PerfilYEvaluacion fila={fila} />
+          <LoQueCalificoLaIA fila={fila} />
         )}
       </div>
+
+      {/*
+        La banda: lo que se compara renglon a renglon va a todo lo ancho, y no
+        dentro de una columna. Solo aparece donde hay evaluacion del banco —
+        Perfil integral y Decision—; las otras tres etapas caben en su columna.
+      */}
+      {(etapa === 'PERFIL_INTEGRAL' || etapa === 'DECISION') && (
+        <div className={estilos.banda}>
+          <LaEvaluacionDelBanco fila={fila} />
+        </div>
+      )}
     </div>
   )
 }
@@ -595,14 +626,10 @@ function DetalleDelPostulante({ fila, etapa }: { fila: FilaRanking; etapa: Etapa
  *
  * En Decision se ensena esto mismo: decidir es mirar el retrato completo.
  */
-function PerfilYEvaluacion({ fila }: { fila: FilaRanking }) {
+function LoQueCalificoLaIA({ fila }: { fila: FilaRanking }) {
   const perfil = useQuery({
     queryKey: ['panel-perfil', fila.postulacionId],
     queryFn: () => verPerfilIntegral(fila.postulacionId),
-  })
-  const evaluacion = useQuery({
-    queryKey: ['panel-desglose-evaluacion', fila.postulacionId],
-    queryFn: () => verDesgloseEvaluacion(fila.postulacionId),
   })
 
   return (
@@ -626,7 +653,10 @@ function PerfilYEvaluacion({ fila }: { fila: FilaRanking }) {
               <ul className={estilos.hallazgos} role="list">
                 {perfil.data.hallazgos.map((h, i) => (
                   <li className={estilos.hallazgo} key={i}>
-                    <b>{h.tipo}</b> {h.texto}
+                    <span className={`${estilos.etiqueta} ${tonoDe(h.tipo)}`}>
+                      {enPalabras(h.tipo)}
+                    </span>
+                    <span>{h.texto}</span>
                   </li>
                 ))}
               </ul>
@@ -654,6 +684,27 @@ function PerfilYEvaluacion({ fila }: { fila: FilaRanking }) {
         </>
       )}
 
+    </>
+  )
+}
+
+/**
+ * La evaluacion del banco, en su propia banda.
+ *
+ * Vivia dentro de la columna derecha, en quinientos pixeles, y con cincuenta
+ * preguntas eso era una tabla de tres columnas partida a martillazos al lado de
+ * media pantalla vacia. La ficha y el retrato son ORIENTACION —cortos, se leen
+ * una vez— y esto es el TRABAJO: se compara renglon a renglon y necesita el
+ * ancho entero.
+ */
+function LaEvaluacionDelBanco({ fila }: { fila: FilaRanking }) {
+  const evaluacion = useQuery({
+    queryKey: ['panel-desglose-evaluacion', fila.postulacionId],
+    queryFn: () => verDesgloseEvaluacion(fila.postulacionId),
+  })
+
+  return (
+    <>
       <h3 className={estilos.tituloDetalle}>La evaluación del banco</h3>
       {evaluacion.isPending && <p className={estilos.dato}>Abriendo la evaluación…</p>}
       {evaluacion.data && <TablaDeLaEvaluacion desglose={evaluacion.data} />}
@@ -691,11 +742,11 @@ function TablaDeLaEvaluacion({ desglose }: { desglose: DesgloseEvaluacion }) {
 
       {desglose.abiertas.length > 0 && (
         <div className={tabla.envoltura}>
-          <table className={tabla.tabla}>
+          <table className={`${tabla.tabla} ${estilos.tablaEvaluacion}`}>
             <thead>
               <tr>
                 <th>Pregunta y respuesta</th>
-                <th className={tabla.cifra}>Nota</th>
+                <th className={`${tabla.cifra} ${estilos.celdaNota}`}>Nota</th>
                 <th>Lo que vio la IA</th>
               </tr>
             </thead>
@@ -733,8 +784,13 @@ function TablaDeLaEvaluacion({ desglose }: { desglose: DesgloseEvaluacion }) {
           <ul className={estilos.hallazgos} role="list">
             {desglose.alineacion.map((a) => (
               <li className={estilos.hallazgo} key={a.bloque}>
-                <b>{a.bloque}</b> {a.semaforo}
-                {a.explicacion ? ` — ${a.explicacion}` : ''}
+                <span className={`${estilos.etiqueta} ${tonoDe(a.semaforo)}`}>
+                  {enPalabras(a.semaforo)}
+                </span>
+                <span>
+                  <b>{a.bloque}</b>
+                  {a.explicacion ? ` — ${a.explicacion}` : ''}
+                </span>
               </li>
             ))}
           </ul>

@@ -64,11 +64,12 @@
   display: flex;
   gap: var(--e3);
   border: 1px solid var(--mal-regla);
-  background: var(--mal-papel);
+  background: var(--mal-bruma);
   padding: var(--e4);
   font-size: var(--t-apoyo);
   line-height: 1.5;
   color: var(--mal);
+  border-radius: var(--radio);
 }
 
 .falloEnvio::before {
@@ -98,6 +99,7 @@
 .camino {
   border: 1px solid var(--regla);
   padding: var(--e5);
+  border-radius: var(--radio);
 }
 
 .tituloCamino {
@@ -114,11 +116,12 @@
 .pista {
   margin-top: var(--e4);
   border: 1px solid var(--regla);
-  background: var(--hundido);
+  background: var(--nube-hundida);
   padding: var(--e4);
   font-size: var(--t-apoyo);
   line-height: 1.55;
   color: var(--tinta2);
+  border-radius: var(--radio);
 }
 
 .asunto {
@@ -151,11 +154,12 @@
   display: flex;
   gap: var(--e3);
   border: 1px solid var(--mal-regla);
-  background: var(--mal-papel);
+  background: var(--mal-bruma);
   padding: var(--e4);
   font-size: var(--t-prosa);
   line-height: 1.5;
   color: var(--mal);
+  border-radius: var(--radio);
 }
 
 .resumenErrores::before {

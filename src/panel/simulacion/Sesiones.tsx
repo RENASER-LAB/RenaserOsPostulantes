@@ -84,19 +84,21 @@ export function SesionesPanel() {
           <table className={tabla.tabla}>
             <thead>
               <tr>
-                <th>Cuándo</th>
+                <th className={estilos.cuando}>Cuándo</th>
                 <th>Modalidad</th>
                 <th>Dónde</th>
                 <th className={tabla.cifra}>Inscritos</th>
                 <th>Estado</th>
                 <th>Para qué vacantes</th>
-                <th />
+                <th className={tabla.acciones} />
               </tr>
             </thead>
             <tbody>
               {sesiones.data.map((s) => (
                 <tr key={s.id}>
-                  <td>{formatearFechaLarga(s.fechaHora)} · {s.duracionMinutos} min</td>
+                  <td className={estilos.cuando}>
+                    {formatearFechaLarga(s.fechaHora)} · {s.duracionMinutos} min
+                  </td>
                   <td>{s.modalidad === 'GRUPAL' ? 'Grupal' : 'Individual'}</td>
                   <td>{s.lugar ?? s.enlace ?? '—'}</td>
                   <td className={tabla.cifra}>
@@ -104,7 +106,7 @@ export function SesionesPanel() {
                   </td>
                   <td>{s.estado}</td>
                   <td>{s.vacanteIds.map(nombreDeVacante).join(', ') || '—'}</td>
-                  <td>
+                  <td className={tabla.acciones}>
                     <div className={estilos.accionesFila}>
                       {s.estado !== 'CANCELADA' && (
                         <>

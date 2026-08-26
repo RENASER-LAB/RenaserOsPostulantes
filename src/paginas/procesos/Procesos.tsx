@@ -19,6 +19,7 @@ import type { MiPostulacion } from '@/api/tipos'
 import { esFinal, estaCalificando, leTocaAlCandidato, momentoDe } from '@/dominio/estados'
 import { formatearFechaCorta } from '@/dominio/reloj'
 import { rutas } from '@/rutas'
+import { Canto } from '@/ui/Canto'
 import { Seguimiento } from './Seguimiento'
 import estilos from './Procesos.module.css'
 
@@ -61,6 +62,7 @@ export function Procesos() {
   if (consulta.isPending) {
     return (
       <div className={estilos.pagina}>
+        <Canto />
         <div className={estilos.estado} aria-busy="true">
           <h1>Cargando tus procesos…</h1>
           <div className={estilos.barra} />
@@ -78,6 +80,7 @@ export function Procesos() {
         : 'No pudimos conectar con el servidor.'
     return (
       <div className={estilos.pagina}>
+        <Canto />
         <div className={estilos.estado}>
           <h1>No pudimos cargar tus procesos.</h1>
           <p className={estilos.estadoTexto}>
@@ -109,6 +112,8 @@ export function Procesos() {
 
   return (
     <div className={estilos.pagina}>
+      <Canto />
+
       {/*
         La lista se refresca sola cada 15 segundos y hasta ahora el estado
         cambiaba en silencio: quien no ve la pantalla no se enteraba de que

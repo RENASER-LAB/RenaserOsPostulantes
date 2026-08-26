@@ -1,171 +1,217 @@
 /*
- * La linea de hitos: el recorrido de una postulacion, de arriba abajo.
+ * El recorrido de una postulacion: la pieza que sostiene el mundo entero.
  *
- * El estado se lee en la FORMA de la marca antes que en su color —relleno,
- * contorno grueso, contorno fino, tachado— para que quien no distingue colores
- * lea el mismo recorrido. El color solo confirma lo que la forma ya dijo.
+ * Es un canto de nube difractando la luz. El espectro corre **una sola vez** de
+ * la primera etapa a la quinta, y cada tramo enseña la rebanada que le toca por
+ * su sitio: por eso avanzar cambia de color sin que ningun color signifique una
+ * etapa concreta. El color dice «hasta aqui llego la luz», no «esto es la
+ * prueba».
+ *
+ * En el cielo el canto se deshace cuando las gotas engordan. Aqui no: **lo que
+ * se formo se queda formado**, porque lo que el candidato ya demostro es suyo.
+ *
+ * El estado se lee en la FORMA antes que en el color, y la forma es el GROSOR
+ * de la franja mas su relleno:
+ *
+ *   formada    franja gruesa, maciza, en su color del espectro
+ *   viva       franja mas gruesa aun, violeta pleno y con resplandor
+ *   formandose franja gruesa que se desvanece a la mitad
+ *   ausente    filete de dos pixeles
+ *   dispersa   franja gruesa punteada
+ *
+ * Con la pantalla en gris se distinguen las cinco. Es la comprobacion, y hay
+ * que volver a hacerla si se toca esta hoja.
  */
 
-.linea {
-  display: grid;
-  /* La columna de la marca es fija: las marcas caen alineadas aunque el texto
-     de al lado ocupe una linea o cinco. */
-  grid-template-columns: 22px 1fr;
-  column-gap: var(--e4);
-}
-
-.hito {
-  display: grid;
-  grid-template-columns: subgrid;
-  grid-column: 1 / -1;
-}
-
-/* El riel que une un hito con el siguiente. El ultimo no lo lleva. */
-.marca {
-  position: relative;
-  display: flex;
-  justify-content: center;
-  padding-top: 3px;
-}
-
-.marca::after {
-  content: '';
-  position: absolute;
-  top: 24px;
-  bottom: -2px;
-  width: 1px;
-  background: var(--regla2);
-}
-
-.hito:last-child .marca::after {
-  display: none;
-}
-
-/* Un riel ya recorrido va en tinta; el que falta, en regla. */
-.cumplida .marca::after,
-.enCurso .marca::after {
-  background: var(--tinta);
-}
-
-.cortada .marca::after {
-  background: var(--regla2);
-}
-
-.cuadro {
-  width: 15px;
-  height: 15px;
-  flex: none;
+.recorrido {
   display: block;
 }
 
-/* Cumplida: relleno macizo. Lo demostrado no se atenua al pasar de etapa. */
-.cumplida .cuadro {
-  background: var(--tinta);
+/*
+ * Cinco tramos en fila: el canto es una tirada horizontal de luz, y leerlo de
+ * izquierda a derecha es lo que dice «esto va avanzando». En vertical seria una
+ * lista de etapas, que es otra cosa.
+ */
+.banda {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--e3);
+  align-items: start;
 }
 
-/* En curso y le toca: relleno indigo con halo, la unica marca con acento. */
-.enCurso .cuadro {
-  background: var(--acento);
-  box-shadow: 0 0 0 3px var(--acento-papel);
-}
-
-/* En curso pero esperando a otro: contorno grueso, sin acento. */
-.esperando .cuadro {
-  background: var(--papel);
-  border: 3px solid var(--tinta);
-  box-shadow: none;
-}
-
-/* Pendiente: contorno fino. */
-.pendiente .cuadro {
-  background: var(--papel);
-  border: 1px solid var(--regla2);
-}
-
-/* Cortada: tachada. La forma dice «aqui se detuvo» sin depender del rojo. */
-.cortada .cuadro {
-  background: var(--papel);
-  border: 1px solid var(--regla2);
+.tramo {
   position: relative;
-}
-
-.cortada .cuadro::before,
-.cortada .cuadro::after {
-  content: '';
-  position: absolute;
-  inset: -1px;
-  border-top: 1px solid var(--tinta3);
-  top: 50%;
-}
-
-.cortada .cuadro::before {
-  transform: rotate(45deg);
-}
-
-.cortada .cuadro::after {
-  transform: rotate(-45deg);
-}
-
-/* ---------- El texto de cada hito ---------- */
-
-.cuerpo {
-  padding-bottom: var(--e4);
   min-width: 0;
+  padding-bottom: var(--e5);
 }
 
-.hito:last-child .cuerpo {
-  padding-bottom: 0;
+/* ---------- La franja: el estado, en el grosor ---------- */
+
+/*
+ * La caja de la franja mide siempre lo mismo, y la barra va centrada dentro.
+ *
+ * Sin esto, un tramo con barra de 12 px y otro con filete de 2 px empujaban su
+ * nombre a alturas distintas, y las cinco etapas dejaban de leerse como una
+ * fila. El grosor sigue diciendo el estado; lo que no puede moverse es el
+ * renglon de abajo.
+ */
+.franja {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 14px;
 }
+
+.franja::before {
+  content: '';
+  display: block;
+  width: 100%;
+  height: 8px;
+  border-radius: var(--radio-control);
+  /*
+   * Cada tramo enseña su rebanada del espectro completo. Con el fondo a cinco
+   * veces el ancho del tramo, la tirada entera mide justo los cinco tramos, y
+   * `--i` elige cual se ve.
+   */
+  background-image: var(--canto);
+  background-size: 500% 100%;
+  background-position-x: calc(var(--i) * 25%);
+  background-repeat: no-repeat;
+}
+
+/* Ausente: la luz todavia no ha llegado aqui. Filete, no franja. */
+.pendiente .franja::before {
+  height: 2px;
+  background-image: none;
+  background-color: var(--regla2);
+}
+
+/*
+ * Formandose: la banda esta a medias porque el angulo aun no es el tuyo. El
+ * grosor es el mismo pero se desvanece antes de terminar el tramo.
+ */
+.esperando .franja::before {
+  mask-image: linear-gradient(90deg, #000 0%, #000 46%, transparent 82%);
+}
+
+/*
+ * Dispersa: las gotas dejaron de tener el mismo tamaño y el color se rompio.
+ * La forma dice «aqui se detuvo» sin depender del rojo.
+ */
+.cortada .franja::before {
+  background: repeating-linear-gradient(
+    90deg,
+    var(--tinta2) 0 4px,
+    transparent 4px 9px
+  );
+}
+
+/*
+ * Viva: violeta pleno, mas gruesa que ninguna y con resplandor.
+ *
+ * Aqui el violeta le gana al color posicional a proposito. El espectro dice
+ * cuanto has avanzado, pero «te toca a ti» es la unica pregunta con la que el
+ * candidato entra a esta pantalla, y si su tramo sale verde porque va por la
+ * primera etapa, el portal ha contestado otra cosa. El avance ya se lee en los
+ * tramos cerrados que tiene detras.
+ */
+.viva .franja::before {
+  height: 12px;
+  background-image: none;
+  background-color: var(--activo);
+  box-shadow:
+    0 0 0 1px rgb(255 255 255 / 0.9),
+    0 4px 18px rgb(86 56 214 / 0.35);
+  /*
+   * El unico momento con movimiento que se dispara solo: la banda formandose de
+   * izquierda a derecha al entrar. Por eso significa algo cuando ocurre.
+   */
+  animation: formarse 900ms var(--salida) both;
+}
+
+@keyframes formarse {
+  from {
+    clip-path: inset(0 100% 0 0 round 999px);
+  }
+  to {
+    clip-path: inset(0 0 0 0 round 999px);
+  }
+}
+
+/* ---------- El texto de cada tramo ---------- */
 
 .nombre {
+  margin-top: var(--e3);
   font-size: var(--t-prosa);
   font-weight: 600;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.008em;
   color: var(--tinta);
-  margin: 0;
+  text-wrap: balance;
 }
 
-.pendiente .nombre {
+.viva .nombre {
+  font-weight: 700;
+}
+
+.pendiente .nombre,
+.cortada .nombre {
   font-weight: 400;
   color: var(--tinta3);
 }
 
-.cortada .nombre {
+.detalle {
+  margin-top: var(--e1);
+  font-size: var(--t-menor);
+  line-height: 1.45;
+  color: var(--tinta2);
+}
+
+.pendiente .detalle {
   color: var(--tinta3);
 }
 
-.detalle {
-  font-size: var(--t-apoyo);
-  color: var(--tinta2);
-  margin-top: 2px;
-}
+/* ---------- Los paneles, debajo de la banda ---------- */
 
-/* ---------- El hito abierto: la accion vive dentro ---------- */
+/*
+ * El panel de la accion va debajo de la banda y no dentro de un tramo: un tramo
+ * mide una quinta parte del ancho y ahi no cabe ni el titulo. Lo que lo ata a su
+ * tramo es el violeta, que es el mismo de la franja viva de arriba.
+ */
 
+/*
+ * El tramo abierto.
+ *
+ * Llevaba perimetro espectral y se ha quitado: con la franja viva ya en
+ * violeta, el arcoiris del borde era una segunda señal para la misma cosa, y
+ * dos señales para un solo significado es no tener ninguna. El campo de dentro
+ * se queda en nube blanca — el color vive en el canto, nunca bajo la prosa.
+ */
 .abierto {
-  margin-top: var(--e3);
-  border: 1px solid var(--acento-regla);
-  background: var(--acento-papel);
-  padding: var(--e4);
-  /* Ver el porque en `Procesos.module.css` → `.espera`. */
-  max-width: 34rem;
+  margin-top: var(--e2);
+  padding: var(--e5);
+  border: 2px solid var(--activo-regla);
+  border-radius: var(--radio);
+  background: var(--nube);
+  box-shadow:
+    0 2px 6px rgb(35 43 54 / 0.05),
+    0 14px 40px rgb(86 56 214 / 0.14);
+  /* Ver `Procesos.module.css` → `.espera`: el tope de linea es del panel. */
+  max-width: 44rem;
 }
 
 .abiertoTitulo {
-  font-size: var(--t-entradilla);
   margin: 0;
-  font-weight: 600;
+  font-size: var(--t-entradilla);
+  font-weight: 700;
   letter-spacing: -0.014em;
   color: var(--tinta);
 }
 
 .abiertoAyuda {
-  font-size: var(--t-apoyo);
-  line-height: 1.45;
-  color: var(--tinta2);
   margin-top: var(--e2);
-  /* Sin esto el texto llenaba los 760px del contenedor: 91 caracteres por
-     linea, muy por encima de lo que el ojo sigue sin perder el renglon. */
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
   max-width: var(--medida);
 }
 
@@ -173,57 +219,126 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--e3);
-  margin-top: var(--e4);
+  gap: var(--e3) var(--e4);
+  margin-top: var(--e5);
 }
 
 .accion {
   composes: acentoMenor from '../../estilos/piezas.module.css';
-  letter-spacing: -0.006em;
 }
 
 .plazo {
   font-size: var(--t-apoyo);
-  color: var(--tinta2);
+  color: var(--tinta3);
 }
 
-/* Cuando espera a otra persona: se dice, sin acento y sin boton. */
+/*
+ * Cuando espera a otra persona: se dice, sin violeta y sin boton. Fondo de
+ * bruma y filete corriente — nada aqui pide nada al candidato.
+ */
 .espera {
-  margin-top: var(--e3);
+  margin-top: var(--e2);
+  padding: var(--e5);
   border: 1px solid var(--regla);
-  background: var(--hundido);
-  padding: var(--e4);
+  border-radius: var(--radio);
+  background: var(--nube-hundida);
+  max-width: 44rem;
 }
 
 .esperaTitulo {
-  font-size: var(--t-base);
   margin: 0;
+  font-size: var(--t-base);
   font-weight: 600;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.008em;
 }
 
 .esperaAyuda {
-  font-size: var(--t-apoyo);
-  line-height: 1.45;
-  color: var(--tinta2);
   margin-top: var(--e2);
-  /* Sin esto el texto llenaba los 760px del contenedor: 91 caracteres por
-     linea, muy por encima de lo que el ojo sigue sin perder el renglon. */
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
   max-width: var(--medida);
 }
 
-@media (max-width: 640px) {
-  .linea {
-    grid-template-columns: 20px 1fr;
-    column-gap: var(--e3);
+/*
+ * Por debajo de 760 px el canto se pone de pie.
+ *
+ * Cinco tramos en fila en un telefono dejan 60 px para «La simulación de
+ * trabajo», y el nombre de la etapa es justo lo que hay que leer. En vertical,
+ * el espectro corre de arriba abajo y el orden se sigue leyendo igual.
+ */
+@media (max-width: 760px) {
+  .banda {
+    grid-template-columns: 14px 1fr;
+    gap: 0 var(--e4);
   }
 
-  .cuerpo {
-    padding-bottom: var(--e3);
+  .tramo {
+    display: grid;
+    grid-template-columns: subgrid;
+    grid-column: 1 / -1;
+    padding-bottom: var(--e4);
+  }
+
+  .franja {
+    height: 100%;
+    min-height: 36px;
+    width: 14px;
+  }
+
+  .franja::before {
+    width: 8px;
+    height: 100%;
+    background-image: var(--canto-vertical);
+    background-size: 100% 500%;
+    background-position-x: 0;
+    background-position-y: calc(var(--i) * 25%);
+  }
+
+  .pendiente .franja::before {
+    width: 2px;
+    height: 100%;
+  }
+
+  .esperando .franja::before {
+    mask-image: linear-gradient(180deg, #000 0%, #000 46%, transparent 82%);
+  }
+
+  .cortada .franja::before {
+    background: repeating-linear-gradient(
+      180deg,
+      var(--tinta2) 0 4px,
+      transparent 4px 9px
+    );
+  }
+
+  .viva .franja::before {
+    width: 12px;
+    height: 100%;
+    animation-name: formarseVertical;
+  }
+
+  .nombre {
+    margin-top: 0;
+  }
+
+  .abierto,
+  .espera {
+    margin-top: var(--e3);
+    padding: var(--e4);
   }
 }
 
-/* El estado de cada hito, para quien no ve la pantalla. */
+@keyframes formarseVertical {
+  from {
+    clip-path: inset(0 0 100% 0 round 999px);
+  }
+  to {
+    clip-path: inset(0 0 0 0 round 999px);
+  }
+}
+
+/* El estado de cada tramo, para quien no ve la pantalla. */
 .soloLectores {
   position: absolute;
   width: 1px;

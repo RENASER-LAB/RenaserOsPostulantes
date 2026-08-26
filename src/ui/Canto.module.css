@@ -1,0 +1,90 @@
+/*
+ * El sitio donde vive el canto: a sangre, arriba del todo, detras de todo.
+ *
+ * `position: absolute` y no `fixed`: la nube pertenece a la pantalla, no a la
+ * ventana. Al bajar se queda arriba, como se queda una nube cuando dejas de
+ * mirarla.
+ */
+
+/*
+ * A sangre, y de verdad: la pagina esta centrada en 68rem y una nube que
+ * terminase en ese ancho se leeria como una fotografia dentro de un marco, con
+ * dos cortes verticales blancos a los lados. El cielo no tiene marco.
+ */
+.canto {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 100vw;
+  margin-left: -50vw;
+  height: clamp(300px, 38vh, 440px);
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+  /* Sin esto, el borde inferior de la banda se corta a cuchillo contra el
+     cielo justo donde empieza el contenido. */
+  mask-image: linear-gradient(180deg, #000 0%, #000 54%, transparent 100%);
+}
+
+/*
+ * El sobreancho va en la CAJA, no en un `scale()`.
+ *
+ * Aqui estaba el pixelado. Un elemento filtrado se rasteriza una vez y el
+ * compositor reutiliza ese mapa de bits; si encima se le aplica `scale(1.1)`,
+ * lo que se ve es ese mapa de bits AMPLIADO, con sus escalones. Dandole el
+ * sobreancho por `width` y `left`, el SVG se dibuja directamente al tamaño
+ * final y el filtro se calcula a la resolucion de pantalla.
+ *
+ * El 112 % de ancho es el margen que necesita la deriva para no descubrir el
+ * canto izquierdo o derecho al desplazarse.
+ */
+.cielo {
+  display: block;
+  position: absolute;
+  top: 0;
+  left: -6%;
+  width: 112%;
+  height: 100%;
+  /*
+   * El unico movimiento continuo del portal, y es material, no efecto: en el
+   * cielo la banda se desplaza cuando cambia el reparto de tamaños de las
+   * gotas. Cincuenta y dos segundos y una amplitud de dos por ciento — a esa
+   * velocidad no se ve moverse, se ve que no esta quieta.
+   *
+   * Solo se traslada, nunca se escala: una traslacion compone el mismo mapa de
+   * bits en otro sitio, y un escalado lo estira.
+   *
+   * Sin `will-change`: promocionar esto a su propia capa de compositor le baja
+   * la precision de color en algunas maquinas, y en un degradado tan suave eso
+   * son bandas. La deriva dura 52 segundos; no necesita la promocion.
+   */
+  animation: deriva 52s var(--salida) infinite alternate;
+}
+
+/*
+ * El grano, encima de todo. Ver el porque en `Canto.tsx`: rompe las franjas de
+ * valor constante que deja un degradado grande sobre ocho bits por canal.
+ *
+ * `overlay` y no `normal` para que oscurezca y aclare por igual: sumado en
+ * normal, el grano lava el color de la banda.
+ */
+.grano {
+  mix-blend-mode: overlay;
+  opacity: 0.06;
+}
+
+@keyframes deriva {
+  from {
+    transform: translate3d(-2%, 0, 0);
+  }
+  to {
+    transform: translate3d(2%, -1%, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cielo {
+    animation: none;
+    transform: none;
+  }
+}

@@ -6,14 +6,32 @@
  * mismo — el proceso se dibuja como recorrido, no como cinco tarjetas iguales.
  */
 
+/*
+ * El relleno de arriba no es aire: es el sitio del canto, igual que en «Mis
+ * procesos». Si baja, el titular se mete en la banda y acaba habiendo prosa
+ * sobre color.
+ */
 .pagina {
+  position: relative;
   max-width: var(--ancho);
   margin: 0 auto;
-  padding: var(--e7) var(--e5) var(--e8);
+  padding: clamp(184px, 25vh, 272px) var(--e5) var(--e8);
 }
 
+/* Todo lo que se lee va por encima del canto. */
+.pagina > *:not([aria-hidden]) {
+  position: relative;
+  z-index: 1;
+}
+
+/*
+ * El tope es de la frase, no de la columna: a 56 px, «Tu próximo trabajo puede
+ * empezar aquí.» parte en dos renglones parejos con 19ch, y `balance` evita que
+ * el segundo se quede con una sola palabra.
+ */
 .entrada {
-  max-width: 34ch;
+  max-width: 19ch;
+  text-wrap: balance;
 }
 
 .bajada {
@@ -24,71 +42,114 @@
   max-width: var(--medida);
 }
 
+/* ---------- El primer golpe de vista ---------- */
+
+/*
+ * La portada y «Mis procesos» tenian la misma receta —banda, titular fino a dos
+ * renglones, parrafo, contenido— y se leian como la misma pantalla. Se separan
+ * aqui, y por lo que cada una tiene que hacer:
+ *
+ *   «Mis procesos» contesta UNA pregunta en tres segundos, «¿me toca algo?», y
+ *   por eso es una sola columna que va directa a la respuesta.
+ *
+ *   Esta convence a alguien que todavia no ha postulado y que va a invertir
+ *   semanas. No le basta con prometer: tiene que enseñar el proceso. Por eso el
+ *   primer golpe de vista se parte en dos —lo que se dice, y las cinco etapas
+ *   con su tramo del espectro— y las etapas suben a la portada en vez de vivir
+ *   detras de una regla.
+ *
+ * De ahi sale tambien que aqui el espectro corra en VERTICAL y en «Mis
+ * procesos» en horizontal: la misma tirada de luz puesta de dos maneras, que es
+ * lo que hace que las dos pantallas no se confundan de un vistazo.
+ */
+.portada {
+  display: grid;
+  gap: var(--e7);
+}
+
+@media (min-width: 900px) {
+  .portada {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 25rem);
+    gap: var(--e8);
+    align-items: start;
+  }
+}
+
+/*
+ * La unica accion del primer golpe de vista. Sin ella habia que desplazarse
+ * para descubrir que hay vacantes, que es lo que esta pantalla viene a vender.
+ */
+.verVacantes {
+  composes: solido from '../../estilos/piezas.module.css';
+  margin-top: var(--e6);
+  align-self: flex-start;
+}
+
+.dicho {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
 /* ---------- El proceso, como recorrido ---------- */
 
 .proceso {
-  margin-top: var(--e7);
   border-top: 1px solid var(--regla);
   padding-top: var(--e5);
+}
+
+@media (min-width: 900px) {
+  /* En la columna, la regla de arriba sobra: la separacion la hace el hueco. */
+  .proceso {
+    border-top: 0;
+    padding-top: 0;
+  }
 }
 
 .tituloProceso {
   margin-bottom: var(--e5);
 }
 
+/*
+ * Cada etapa es su propia fila, con hueco entre ellas.
+ *
+ * Antes las cinco compartian una sola rejilla y el espacio lo hacia el relleno
+ * de abajo del texto, asi que los cinco railes se tocaban por los extremos y se
+ * leian como una linea rota, no como cinco bandas. Con la etapa duenna de su
+ * fila y `--e6` de hueco, cada banda tiene principio y fin.
+ */
 .etapas {
   display: grid;
-  grid-template-columns: 15px 1fr;
-  column-gap: var(--e4);
+  gap: var(--e6);
 }
 
 .etapa {
   display: grid;
-  grid-template-columns: subgrid;
-  grid-column: 1 / -1;
+  grid-template-columns: 14px 1fr;
+  column-gap: var(--e4);
+  align-items: start;
 }
 
+/*
+ * La rebanada del espectro de esta etapa. Ocupa el alto de su fila, con un
+ * suelo para que «Prueba» —que solo tiene un renglon de texto— no se quede con
+ * una marca de doce pixeles al lado de otra de sesenta.
+ */
 .marca {
-  position: relative;
-  display: flex;
-  justify-content: center;
-  padding-top: 5px;
-}
-
-.marca::before {
-  content: '';
-  width: 9px;
-  height: 9px;
-  border: 1px solid var(--tinta3);
-  flex: none;
-}
-
-.marca::after {
-  content: '';
-  position: absolute;
-  top: 16px;
-  bottom: -4px;
-  width: 1px;
-  background: var(--regla);
-}
-
-.etapa:last-child .marca::after {
-  display: none;
-}
-
-.textoEtapa {
-  padding-bottom: var(--e5);
-  min-width: 0;
-}
-
-.etapa:last-child .textoEtapa {
-  padding-bottom: 0;
+  justify-self: center;
+  width: 8px;
+  height: 100%;
+  min-height: 40px;
+  border-radius: var(--radio-control);
+  background-image: var(--canto-vertical);
+  background-size: 100% 500%;
+  background-position-y: calc(var(--i) * 25%);
 }
 
 .nombreEtapa {
   font-size: var(--t-prosa);
   font-weight: 600;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.008em;
   margin: 0;
 }
 
@@ -101,54 +162,12 @@
 }
 
 /*
- * En escritorio, el recorrido se lee de izquierda a derecha.
+ * El recorrido se queda de pie a cualquier ancho.
  *
- * Son cinco etapas en orden, y una secuencia puesta en horizontal dice «esto va
- * en camino» mejor que la misma lista apilada — que es justo lo que el mundo de
- * esta pantalla quiere decir. Apilada tambien dejaba dos tercios de la pantalla
- * vacios a la derecha.
- *
- * El corte esta en 900 px y no en 640: con cinco columnas y una tablet, cada
- * una se queda en 150 px y los nombres se parten. Por debajo vuelve a la
- * columna, que en un telefono es lo unico que funciona.
+ * Antes se tumbaba a partir de 900 px, y eso hacia dos cosas malas: dibujaba
+ * exactamente la misma banda horizontal que «Mis procesos», y en la columna
+ * nueva de la portada cada etapa se quedaba en 90 px con los nombres partidos.
  */
-@media (min-width: 900px) {
-  .etapas {
-    grid-template-columns: repeat(5, 1fr);
-    column-gap: var(--e4);
-  }
-
-  .etapa {
-    display: block;
-    grid-column: auto;
-  }
-
-  .marca {
-    justify-content: flex-start;
-    padding-top: 0;
-    padding-bottom: var(--e3);
-  }
-
-  /* El riel se tumba: va de esta marca a la siguiente, a la altura del cuadro. */
-  .marca::after {
-    top: 4px;
-    bottom: auto;
-    left: 15px;
-    right: calc(var(--e4) * -1);
-    width: auto;
-    height: 1px;
-  }
-
-  .textoEtapa {
-    padding-bottom: 0;
-  }
-
-  .queEsEtapa {
-    /* Aqui manda la columna, no la medida de lectura: son cinco etiquetas
-       cortas, no prosa. */
-    max-width: none;
-  }
-}
 
 /* ---------- Las vacantes ---------- */
 
@@ -281,6 +300,7 @@
 .marco {
   border: 1px solid var(--regla);
   padding: var(--e6);
+  border-radius: var(--radio);
 }
 
 .marcoTexto {
@@ -298,7 +318,7 @@
 
 .barra {
   height: 12px;
-  background: var(--hundido2);
+  background: var(--nube-honda);
   margin-top: var(--e3);
 }
 
@@ -312,7 +332,6 @@
 
 @media (max-width: 640px) {
   .pagina {
-    padding: var(--e6) var(--e4) var(--e7);
+    padding: clamp(168px, 24vh, 220px) var(--e4) var(--e7);
   }
-
 }

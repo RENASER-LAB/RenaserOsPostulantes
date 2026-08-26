@@ -11,6 +11,7 @@
  */
 
 import { createServer } from 'node:http'
+import { RESPUESTAS as PANEL } from './datos-panel.mjs'
 
 const PUERTO = 8080
 const ahora = () => new Date()
@@ -249,8 +250,45 @@ async function leerCuerpo(req) {
   }
 }
 
+/**
+ * El panel del equipo.
+ *
+ * Sirve las mismas fixturas que usan las capturas, para poder recorrer `/admin`
+ * en el navegador sin levantar el Spring ni tocar `renaser-postgres`. Solo lee:
+ * lo que muta responde 200 y no guarda nada, porque este simulado existe para
+ * MIRAR el panel, no para probar su lógica de escritura — eso es el trabajo de
+ * `verificar-panel.mjs`, que sí va contra el backend de verdad.
+ *
+ * El dev-login acepta cualquier id: aquí no hay usuarios que validar.
+ */
+function atenderPanel(ruta, metodo, res) {
+  if (ruta === '/auth/dev-login') {
+    return responder(res, 200, { token: 'panel-de-mentira', usuarioId: 1, roles: ['TALENTO'] })
+  }
+
+  if (metodo !== 'GET') return responder(res, 200, { ok: true })
+
+  // El ranking llega con `?etapa=`; la fixtura es la misma para las cinco.
+  const sinConsulta = ruta.split('?')[0]
+  if (sinConsulta in PANEL) return responder(res, 200, PANEL[sinConsulta])
+
+  // Lo que el backend real tampoco tiene todavía se dice como lo que es.
+  if (sinConsulta === '/bandeja') {
+    return responder(res, 500, { detail: 'GET /panel/bandeja devuelve 500 también en el real' })
+  }
+
+  return responder(res, 404, { mensaje: `El simulado no tiene ${metodo} /panel${sinConsulta}` })
+}
+
 const servidor = createServer(async (req, res) => {
   const { pathname } = new URL(req.url, 'http://localhost')
+
+  if (pathname.startsWith('/api/v1/panel')) {
+    const rutaPanel = pathname.replace(/^\/api\/v1\/panel/, '') || '/'
+    console.log(`${req.method} /panel${rutaPanel}`)
+    return atenderPanel(rutaPanel, req.method, res)
+  }
+
   const ruta = pathname.replace(/^\/api\/v1\/portal/, '').replace(/^\/api/, '')
   const metodo = req.method
   const partes = ruta.split('/').filter(Boolean)
