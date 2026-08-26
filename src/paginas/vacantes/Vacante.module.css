@@ -20,6 +20,18 @@
   margin-top: var(--e4);
 }
 
+/*
+ * Quien contrata. Pegado al titulo y por encima de los datos, porque «de quien
+ * es este puesto» se pregunta antes que «donde» y con mas peso que una pastilla.
+ */
+.empresa {
+  margin-top: var(--e2);
+  font-size: var(--t-entradilla);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--tinta2);
+}
+
 .donde {
   display: flex;
   flex-wrap: wrap;

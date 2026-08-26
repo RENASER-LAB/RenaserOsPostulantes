@@ -151,7 +151,7 @@ interface PropsArea extends TextareaHTMLAttributes<HTMLTextAreaElement> {
 }
 
 export const AreaTexto = forwardRef<HTMLTextAreaElement, PropsArea>(function AreaTexto(
-  { etiqueta, ayuda, error, maximo, id, value, ...resto },
+  { etiqueta, ayuda, error, maximo, id, value, maxLength, ...resto },
   ref,
 ) {
   const propio = useId()
@@ -160,6 +160,11 @@ export const AreaTexto = forwardRef<HTMLTextAreaElement, PropsArea>(function Are
   const idError = `${idCampo}-error`
   const escrito = typeof value === 'string' ? value.length : 0
   const avisar = maximo !== undefined && escrito > maximo * 0.8
+  // ⚠️ **`maximo` tiene que llegar tambien al elemento, no solo al contador.**
+  // Antes solo pintaba la cuenta: se podia escribir de mas, el guardado rebotaba
+  // con un 400 del `@Size` del backend y la pantalla no lo habia evitado.
+  // Es la trampa de «limites del backend que el portal no conoce».
+  const tope = maxLength ?? maximo
 
   return (
     <div className={estilos.campo}>
@@ -176,6 +181,7 @@ export const AreaTexto = forwardRef<HTMLTextAreaElement, PropsArea>(function Are
         value={value}
         id={idCampo}
         ref={ref}
+        maxLength={tope}
         className={estilos.area}
         aria-invalid={error ? true : undefined}
         aria-describedby={[ayuda && idAyuda, error && idError].filter(Boolean).join(' ') || undefined}

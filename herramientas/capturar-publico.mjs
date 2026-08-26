@@ -17,7 +17,7 @@ const conErrores = process.argv.includes('--errores')
 
 const VACANTES = [
   {
-    id: 1, titulo: 'Analista de Datos',
+    id: 1, titulo: 'Analista de Datos', nombreEmpresa: 'Clínica San Juan',
     descripcion: null,
     proposito: 'Que los reportes semanales salgan solos y sean confiables, y que el área comercial deje de pedir números por chat.',
     responsabilidades: 'Ordenar la información que hoy vive en hojas sueltas\nArmar los reportes que el equipo comercial usa cada semana\nDejar documentado cómo se calcula cada número',
@@ -31,7 +31,7 @@ const VACANTES = [
     ],
   },
   {
-    id: 2, titulo: 'Administrador',
+    id: 2, titulo: 'Administrador', nombreEmpresa: 'Transportes del Sur',
     descripcion: 'Llevar la operación del día a día: compras, proveedores, caja chica y el control de que lo comprometido se cumpla.',
     proposito: null, responsabilidades: null, requisitos: null,
     modalidad: 'Presencial', horario: null, ubicacion: 'Lima',

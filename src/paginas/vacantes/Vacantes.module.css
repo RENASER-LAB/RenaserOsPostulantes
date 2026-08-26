@@ -221,10 +221,31 @@
   text-underline-offset: 0.18em;
 }
 
+/*
+ * El puesto y quien lo ofrece, en un solo bloque.
+ *
+ * Van juntos porque son una sola pregunta —«que es esto y de quien es»— y
+ * porque el tablon mezcla empresas: sin el nombre, dos vacantes iguales de dos
+ * empresas distintas se leen como la misma.
+ */
+.identidad {
+  display: block;
+  min-width: 0;
+}
+
 .tituloVacante {
   font-size: var(--t-destacado);
   letter-spacing: -0.022em;
   margin: 0;
+}
+
+/* Debajo del puesto y en tinta segunda: importa, pero el puesto manda. */
+.empresa {
+  display: block;
+  margin-top: var(--e1);
+  font-size: var(--t-prosa);
+  font-weight: 600;
+  color: var(--tinta2);
 }
 
 .donde {
@@ -271,7 +292,8 @@
     align-items: start;
   }
 
-  .tituloVacante {
+  /* El area la ocupa el envoltorio; el titulo ya vive dentro de el. */
+  .identidad {
     grid-area: titulo;
   }
 

@@ -15,7 +15,7 @@ const PORTAL = process.env.PORTAL ?? 'http://localhost:5174'
 const UUID = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'
 
 const resumen = {
-  uuid: UUID, vacante: 'Coordinador de Proyectos', grupoPrioridad: 'PRIORIDAD_ALTA',
+  uuid: UUID, vacante: 'Coordinador de Proyectos', empresa: 'Transportes del Sur', grupoPrioridad: 'PRIORIDAD_ALTA',
   creadoEn: '2026-08-04T14:12:00Z',
 }
 

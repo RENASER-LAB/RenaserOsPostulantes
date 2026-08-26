@@ -84,6 +84,16 @@
   letter-spacing: -0.022em;
 }
 
+/*
+ * De que empresa es este proceso. En tinta segunda, entre el puesto y la fecha:
+ * pesa mas que cuando postulaste y menos que a que puesto.
+ */
+.empresa {
+  font-size: var(--t-prosa);
+  font-weight: 600;
+  color: var(--tinta2);
+}
+
 .desde {
   font-size: var(--t-apoyo);
   color: var(--tinta3);
