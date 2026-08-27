@@ -152,8 +152,8 @@ if (!bloqueado) fallos.push('El botón de publicar no espera a que se elija eval
 // La casilla la manda el servidor, no el navegador: no se marca sola al
 // pulsarla, cambia cuando el backend lo confirma. Por eso se espera al texto.
 // ⚠️ Nombrada, no `getByRole('checkbox')` a secas: el ranking por etapas trajo
-// la casilla «Solo quienes están aquí ahora» a esta misma pantalla y desde
-// entonces hay dos, así que el selector anónimo se rompe por ambigüedad.
+// a esta misma pantalla la casilla «Ver la tanda entera» —y una por fila del
+// ranking—, así que el selector anónimo se rompe por ambigüedad.
 const interruptor = pagina.getByRole('checkbox', { name: /La evaluación del banco/ })
 await interruptor.click()
 await pagina.getByText(/Apagada: la prueba del puesto/).waitFor({ timeout: 15000 })

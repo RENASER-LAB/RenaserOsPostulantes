@@ -208,8 +208,10 @@ export function SesionesPanel() {
               {sesiones.data.length === 0 && (
                 <tr>
                   <td colSpan={7} className={tabla.vacia}>
-                    No hay sesiones creadas. Quien llegue a la etapa de simulación esperará
-                    hasta que exista una con cupo.
+                    <p>
+                      No hay sesiones creadas. Quien llegue a la etapa de simulación esperará
+                      hasta que exista una con cupo.
+                    </p>
                   </td>
                 </tr>
               )}

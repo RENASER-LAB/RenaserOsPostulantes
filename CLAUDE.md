@@ -1,9 +1,69 @@
 # Portal del candidato · contexto de trabajo
 
-Última actualización: 2026-08-27 · **la prueba por dentro, y la entrada de las empresas**
+Última actualización: 2026-08-27 · **el ranking enseña una etapa, no la tanda entera**
 
 Este archivo es para retomar el trabajo sin tener que reconstruir nada. Cuenta qué es este
 proyecto, con qué habla, qué se decidió y por qué, y qué está a medias.
+
+---
+
+## El ranking enseña una etapa, no la tanda entera (27/08/2026, noche)
+
+Las cinco pestañas traían **las mismas filas**: el `?etapa=` del backend cambia de qué etapa es
+la nota, **no a quién devuelve**. En la vacante 3 de la base local eso son las 16 postulaciones
+repetidas cinco veces, con la nota de la prueba vacía en quien todavía no la ha rendido y vieja
+en quien pasó de ahí hace semanas. **Ninguna de las cinco listas era la mesa de decidir de su
+etapa.** Ahora cada pestaña abre filtrada: 12 en Perfil integral, 1 en la Prueba, 1 en Decisión.
+
+**El filtro se quedó, invertido: «Ver la tanda entera».** Es un escape, no el modo normal.
+
+⚠️ **Quien terminó no está en ninguna etapa, y con esto deja de verse en las cinco pestañas.**
+`CONTRATADO`, `NO_CONTINUA` y `CERRADA` no empiezan por el prefijo de ninguna. Se llega a ellos
+solo por el escape — y por eso el escape **vive en el padre y sobrevive al cambio de pestaña**:
+la tabla se remonta entera con `key={etapa}`, así que dentro se apagaría solo al mirar la etapa
+siguiente. Si hace falta un sitio propio para las terminadas, es una decisión aparte.
+
+⚠️ **Filtrar por defecto obliga a decir cuántas se ven**, y sale de contar las filas pintadas:
+«Se ven 3 de 8: quienes están en Perfil integral ahora mismo». Sin esa línea, tres filas debajo
+de un resumen que habla de ocho personas parecen una tabla rota. Las cuatro cifras del backend
+—tanda, calificados, en curso, fallidos— **son de la tanda entera y se quedan como estaban**.
+
+⚠️ **Los dos vacíos no son el mismo.** «Todavía no hay postulaciones» y «nadie está en
+Validación ahora mismo» mandan a buscar en sitios distintos, y **el segundo es ahora el estado
+normal** de Validación y Decisión en casi toda vacante: se dice sin alarma y se nombra el
+escape con las palabras que lleva escritas la casilla.
+
+**Y la celda del «no hay» hereda el ancho de la tabla, no el de la pantalla** — la misma trampa
+que la fila de detalle, y ahora importa porque esa celda se ve a diario. En un teléfono la frase
+terminaba a la derecha del scroll. Se arregla en `Tabla.module.css` con `100cqi` + `sticky`
+sobre el hijo de `.vacia`, así que **el texto va dentro de un `<p>`**, no suelto en el `<td>`.
+Vale para las tres tablas del panel.
+
+### Cómo se comprueba
+
+```bash
+PORTAL=http://localhost:5199 node herramientas/e2e-ranking-etapa.mjs
+```
+
+29 comprobaciones contra el backend vivo, **solo lectura**. Elige sola la vacante que reparte su
+gente entre más etapas —tomar «la primera» dejaría la prueba a merced del orden del backend— y
+compara **lo pintado contra los estados que devuelve la API**, no contra una lista escrita a
+mano. Lo primero que mira es que `?etapa=` siga sin filtrar: el día que el backend filtre, esa
+comprobación se pone roja y el filtro del navegador sobra.
+
+Y `Vacante.test.tsx`, 9 tests: el filtro por defecto, la terminada fuera de las cinco pestañas,
+el escape que sobrevive al cambio de pestaña, los dos vacíos, y que una marca escondida por el
+filtro no siga contando en el botón de avanzar.
+
+⚠️ **`e2e-etapas.mjs` necesitaba la tanda entera en cuatro sitios y por eso se tocó**: el viaje
+de ana-lopez por cuatro etapas y las dos fichas dejaron de encontrar a nadie al filtrar. **Es el
+recordatorio de siempre**: al cambiar una pantalla, corre los `e2e-*` que pasan por ella.
+
+⚠️ **Y la fixtura volvió a tapar el fallo, por tercera vez.** `datos-panel.mjs` traía tres filas
+en tres etapas distintas: con el filtro puesto, cinco tablas de una fila y las capturas parecían
+rotas. Ahora son ocho filas repartidas —una ya terminada, para ver que queda fuera— y sus cifras
+cuadran con las filas. **La ficha de Perfil integral tuvo que cambiar de protagonista**: Camila
+está en la prueba, así que en esa pestaña ya no existe.
 
 ---
 
@@ -245,8 +305,8 @@ await pagina.getByLabel('Identificador de RENASER OS').fill('andy-dev')
 await pagina.getByRole('button', { name: 'Entrar como desarrollo' }).click()
 ```
 
-⚠️ **`getByRole('checkbox')` sin nombre ya no vale en el detalle de una vacante**: el filtro
-«Solo quienes están aquí ahora» del ranking por etapas trajo una segunda casilla.
+⚠️ **`getByRole('checkbox')` sin nombre ya no vale en el detalle de una vacante**: el ranking
+por etapas trajo más casillas —«Ver la tanda entera» y una por fila—.
 
 **Al cambiar una pantalla, corre los `e2e-*` que pasan por ella.** Un e2e roto no avisa de que
 está roto: simplemente deja de correrse, y lo que guardaba queda sin guardia.
@@ -536,9 +596,8 @@ juego en el backend) y **qué enseña la ficha** al abrir una fila:
 | Prueba / Simulación | La rúbrica con nota, explicación y origen (IA o ajuste a mano). Comparten componente porque el backend les da la misma forma |
 | Validación | La cabecera del periodo y sus métricas. **El panel sí tiene ruta de validación**; la que falta es la del candidato |
 
-Encima de la tabla va el filtro **«Solo quienes están aquí ahora»**, que se deriva del
-prefijo del estado (`PRUEBA_*`, `SIMULACION_*`…) y **dice cuántas filas oculta**. Los
-estados finales no pertenecen a ninguna etapa: con el filtro puesto no salen en ninguna.
+Cada pestaña enseña **solo a quien está parado en esa etapa** — ver la sección del 27/08 por
+la tarde. Se deriva del prefijo del estado (`PRUEBA_*`, `SIMULACION_*`…).
 
 ⚠️ **La clave de DeepSeek del `application-secrets.yaml` local está muerta** (401 del
 proveedor desde el 25/08; el 24/08 funcionaba). Sin ella la IA no califica: las abiertas

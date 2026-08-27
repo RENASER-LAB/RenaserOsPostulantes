@@ -98,6 +98,18 @@ export function VacantePanelDetalle() {
   // La etapa elegida manda sobre la query: cambiar de pestana pide el ranking
   // con la nota de esa etapa, no reordena en el navegador una nota vieja.
   const [etapa, setEtapa] = useState<EtapaPanel>('PERFIL_INTEGRAL')
+  /*
+    La tabla trae a toda la tanda y por defecto se enseña solo a quien está
+    parado en la etapa de la pestaña. Una vacante con treinta postulaciones
+    repetía las treinta cinco veces, y ninguna de las cinco listas era la
+    mesa de decidir de esa etapa: la de la prueba llevaba dentro a quien
+    todavía no la ha rendido y a quien ya la pasó hace dos semanas.
+
+    ⚠️ Vive aquí y no dentro de `<Ranking>` porque aquel lleva `key={etapa}`:
+    dentro, cambiar de pestaña lo remontaría y volvería a filtrar justo
+    después de que alguien pidiera ver la tanda entera.
+  */
+  const [soloEstaEtapa, setSoloEstaEtapa] = useState(true)
   const ranking = useQuery({
     queryKey: ['panel-ranking', vacanteId, etapa],
     queryFn: () => verRanking(vacanteId, etapa),
@@ -294,6 +306,8 @@ export function VacantePanelDetalle() {
             key={etapa}
             etapa={etapa}
             filas={ranking.data.filas}
+            soloEstaEtapa={soloEstaEtapa}
+            alFiltrar={setSoloEstaEtapa}
             resumen={`${ranking.data.total} en la tanda · ${ranking.data.calificados} calificados · ${ranking.data.enCurso} en curso · ${ranking.data.fallidos} con la calificación fallida`}
             alAvanzar={async () => {
               await cache.invalidateQueries({
@@ -379,19 +393,22 @@ function Ranking({
   etapa,
   filas,
   resumen,
+  soloEstaEtapa,
+  alFiltrar,
   alAvanzar,
 }: {
   etapa: EtapaPanel
   filas: FilaRanking[]
   resumen: string
+  soloEstaEtapa: boolean
+  alFiltrar: (solo: boolean) => void
   alAvanzar: () => Promise<void>
 }) {
   const [marcados, setMarcados] = useState<Set<number>>(new Set())
   const [abierta, setAbierta] = useState<number | null>(null)
-  // «Todos los que pasaron por aqui» o solo quien esta parado en la etapa hoy.
-  const [soloAhora, setSoloAhora] = useState(false)
-  const visibles = soloAhora ? filas.filter((f) => estaAhoraEn(f.estado, etapa)) : filas
-  const ocultas = filas.length - visibles.length
+  const visibles = soloEstaEtapa
+    ? filas.filter((f) => estaAhoraEn(f.estado, etapa))
+    : filas
 
   const laEtapa = ETAPAS_PANEL.find((e) => e.codigo === etapa)!
   /*
@@ -452,20 +469,29 @@ function Ranking({
   return (
     <>
       <div className={estilos.filaResumen}>
-        <p className={estilos.resumenTanda}>{resumen}</p>
-        <label className={estilos.filtroAhora}>
+        <div className={estilos.recuentos}>
+          {/* Las cuatro cifras del backend son de la tanda entera, y lo dicen. */}
+          <p className={estilos.resumenTanda}>{resumen}</p>
+          {/*
+            Cuantas filas se ven, y de cuantas, siempre — y sale de contar las
+            que se pintan, no de un texto fijo. Ocultar sin decirlo miente, y
+            ahora se oculta por defecto: sin esta linea, una pestaña con tres
+            filas encima de un resumen que habla de treinta y cuatro personas
+            parece una tabla rota.
+          */}
+          <p className={estilos.cuantasSeVen}>
+            {soloEstaEtapa
+              ? `Se ven ${visibles.length} de ${filas.length}: quienes están en ${laEtapa.nombre} ahora mismo.`
+              : `Se ven las ${filas.length} de la tanda, estén en la etapa que estén.`}
+          </p>
+        </div>
+        <label className={estilos.verLaTanda}>
           <input
             type="checkbox"
-            checked={soloAhora}
-            onChange={(e) => setSoloAhora(e.target.checked)}
+            checked={!soloEstaEtapa}
+            onChange={(e) => alFiltrar(!e.target.checked)}
           />
-          Solo quienes están aquí ahora
-          {/* Cuantos esconde se dice siempre: ocultar sin decirlo miente. */}
-          {soloAhora && ocultas > 0 && (
-            <span className={estilos.cuantasOculta}>
-              — oculta {ocultas} de {filas.length}
-            </span>
-          )}
+          Ver la tanda entera
         </label>
       </div>
 
@@ -553,10 +579,22 @@ function Ranking({
             {visibles.length === 0 && (
               <tr>
                 <td colSpan={columnas} className={tabla.vacia}>
-                  {filas.length === 0
-                    ? 'Todavía no hay postulaciones en esta vacante.'
-                    : 'Nadie está en esta etapa ahora mismo. El filtro oculta ' +
-                      `${filas.length} ${filas.length === 1 ? 'postulación' : 'postulaciones'}.`}
+                  {/*
+                    Dos vacios distintos, y confundirlos manda a buscar en el
+                    sitio equivocado. Sin nadie en la etapa es lo NORMAL en
+                    Validación y Decisión casi siempre: se dice sin alarma y se
+                    nombra el escape con las palabras que lleva escritas.
+
+                    En un <p>, y no suelto: la celda mide lo que miden las
+                    columnas, y en un teléfono la frase acababa a la derecha del
+                    scroll. Ver `.vacia` en `Tabla.module.css`.
+                  */}
+                  <p>
+                    {filas.length === 0
+                      ? 'Todavía no hay postulaciones en esta vacante.'
+                      : `Nadie está en ${laEtapa.nombre} ahora mismo. Marca «Ver la tanda ` +
+                        `entera» para las ${filas.length} de la vacante.`}
+                  </p>
                 </td>
               </tr>
             )}

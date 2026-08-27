@@ -57,7 +57,24 @@ await pagina.getByRole('heading', { name: 'El ranking, etapa por etapa' }).waitF
 await pagina.getByRole('tab', { name: 'Perfil integral' }).waitFor()
 await paso('El ranking abre en Perfil integral')
 
-// 3 · Recorrer las cinco pestañas y anotar la primera nota de cada una
+/*
+ * ⚠️ **El ranking abre filtrado por la etapa de su pestaña.** Desde el 27/08
+ * cada pestaña enseña solo a quien esta parado en ella, asi que una tabla vacia
+ * es lo normal y no un fallo. Para lo que necesita ver a alguien concreto —el
+ * viaje de ana-lopez por cuatro etapas, o abrir una ficha— hay que pedir la
+ * tanda entera antes.
+ */
+const verTandaEntera = async (encendido) => {
+  const casilla = pagina.getByLabel('Ver la tanda entera')
+  if (encendido) await casilla.check()
+  else await casilla.uncheck()
+  await pagina.waitForTimeout(700)
+}
+
+// 3 · Recorrer las cinco pestañas y anotar la primera nota de cada una.
+// Con la tanda entera: lo que se mira aqui es que la NOTA cambie de etapa, y
+// una tabla filtrada a cero no tiene ninguna nota que enseñar.
+await verTandaEntera(true)
 for (const etapa of ['Prueba del puesto', 'Simulación', 'Validación', 'Decisión', 'Perfil integral']) {
   await pagina.getByRole('tab', { name: etapa }).click()
   await pagina.waitForTimeout(1100)
@@ -67,22 +84,26 @@ for (const etapa of ['Prueba del puesto', 'Simulación', 'Validación', 'Decisi�
 }
 await paso('De vuelta en Perfil integral')
 
-// 4 · El filtro de «aquí ahora»
-const antes = await pagina.locator('tbody tr').count()
-await pagina.getByLabel(/Solo quienes están aquí ahora/).check()
-await pagina.waitForTimeout(700)
-const despues = await pagina.locator('tbody tr').count()
-console.log(`   · filas: ${antes} → ${despues} con el filtro`)
-await paso('El filtro deja solo a quienes están en la etapa hoy')
-await pagina.getByLabel(/Solo quienes están aquí ahora/).uncheck()
+// 4 · Cuanto esconde el filtro: la tanda entera contra la etapa sola
+const enLaTanda = await pagina.locator('tbody tr').count()
+await verTandaEntera(false)
+const enLaEtapa = await pagina.locator('tbody tr').count()
+console.log(`   · filas: ${enLaTanda} en la tanda → ${enLaEtapa} parados en el perfil`)
+if (enLaEtapa > enLaTanda) fallos.push('El filtro por etapa enseña MÁS filas que la tanda entera')
+await paso('Perfil integral enseña solo a quien está ahí hoy')
 
-// 5 · La ficha del perfil integral: las dos tablas
+// 5 · La ficha del perfil integral: las dos tablas.
+// ⚠️ Con la tanda entera puesta: quien tiene la evaluacion del banco hecha
+// puede haber avanzado de etapa, y entonces no esta en esta pestaña.
+await verTandaEntera(true)
 await pagina.locator('tbody tr').first().click()
 await pagina.getByRole('heading', { name: 'La evaluación del banco' }).waitFor({ timeout: 15000 })
 await pagina.getByRole('heading', { name: 'Lo que calificó la IA' }).waitFor()
 await paso('La ficha: el CV criterio a criterio y la evaluación del banco')
 
-// 6 · La misma ficha en la pestaña de la prueba
+// 6 · La misma ficha en la pestaña de la prueba. Tambien con la tanda entera:
+// en la base local no siempre hay alguien PARADO en la prueba, y lo que se
+// mira aqui es que la ficha cambie de contenido con la pestaña.
 await pagina.getByRole('tab', { name: 'Prueba del puesto' }).click()
 await pagina.waitForTimeout(1100)
 await pagina.locator('tbody tr').first().click()
@@ -92,6 +113,9 @@ await paso('La ficha de la prueba: su rúbrica, no el CV')
 // 7 · El viaje de ana-lopez: nota en las cuatro etapas
 await pagina.goto(`${PORTAL}/admin/vacantes/3`, { waitUntil: 'domcontentloaded' })
 await pagina.getByRole('heading', { name: 'El ranking, etapa por etapa' }).waitFor({ timeout: 15000 })
+// ⚠️ Ana esta parada en UNA etapa: sin la tanda entera, en las otras tres no
+// aparece. Que sus notas viejas sigan ahi es justamente lo que se comprueba.
+await verTandaEntera(true)
 for (const [etapa, celda] of [
   ['Prueba del puesto', '73.8'],
   ['Simulación', '72.8'],
@@ -109,18 +133,18 @@ await pagina.getByRole('heading', { name: 'El periodo de validación' }).waitFor
 await pagina.getByRole('heading', { name: 'Las métricas del periodo' }).waitFor()
 await paso('El periodo de validación: 15 días y las métricas explicadas')
 
-// 9 · Decisión con el filtro: solo quien está ahí hoy
+// 9 · Decisión, sin el escape: solo quien está ahí hoy
 await pagina.getByRole('tab', { name: 'Decisión' }).click()
-await pagina.getByLabel(/Solo quienes están aquí ahora/).check()
-await pagina.waitForTimeout(800)
+await verTandaEntera(false)
 const enDecision = await pagina.locator('tbody tr').count()
 console.log(`   · en Decisión ahora: ${enDecision} fila(s)`)
-await paso('El filtro en Decisión: solo ana-lopez')
-await pagina.getByLabel(/Solo quienes están aquí ahora/).uncheck()
+await paso('Decisión enseña a quien está ahí hoy, y nada más')
 
 // 10 · La siembra: la evaluación del banco abierta por dentro
 await pagina.getByRole('tab', { name: 'Perfil integral' }).click()
 await pagina.waitForTimeout(900)
+// La siembra puede haber avanzado de etapa: se la busca en la tanda entera.
+await verTandaEntera(true)
 await pagina.locator('tr', { hasText: 'Siembra' }).first().click()
 await pagina.getByRole('heading', { name: 'La evaluación del banco' }).waitFor({ timeout: 15000 })
 await pagina.getByText(/cerradas promedian/).waitFor()

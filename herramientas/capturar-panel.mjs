@@ -37,7 +37,12 @@ const PANTALLAS = [
   // enseñaria nada de lo que hay que juzgar.
   { nombre: 'permisos', ruta: '/admin/configuracion', pulsar: 'Talento' },
   { nombre: 'vacante', ruta: '/admin/vacantes/1' },
-  { nombre: 'ficha', ruta: '/admin/vacantes/1', abrirFicha: true },
+  /*
+   * ⚠️ A quien se le abre la ficha depende de la pestaña, y no es un capricho:
+   * el ranking enseña solo a quien esta parado en esa etapa, asi que Camila
+   * —que esta en la prueba— no existe en la tabla del perfil integral.
+   */
+  { nombre: 'ficha', ruta: '/admin/vacantes/1', abrirFicha: 'Rodrigo Ayala Pinto' },
   // La misma ficha en la pestaña de Prueba, que enseña otra cosa: la rubrica y
   // debajo lo que la persona escribio, con sus tres estados —contestada, en
   // blanco y sin tocar—. Sin esta pantalla el bloque de respuestas no se mira
@@ -46,8 +51,12 @@ const PANTALLAS = [
     nombre: 'ficha-prueba',
     ruta: '/admin/vacantes/1',
     etapa: 'Prueba del puesto',
-    abrirFicha: true,
+    abrirFicha: 'Camila Reyes Ortiz',
   },
+  // La etapa por la que hoy no pasa nadie. Es el estado NORMAL de Validación y
+  // Decisión en casi toda vacante, asi que su tabla vacia hay que mirarla: no
+  // puede leerse como un fallo, y tiene que nombrar el escape a la tanda entera.
+  { nombre: 'ranking-vacio', ruta: '/admin/vacantes/1', etapa: 'Validación' },
   { nombre: 'entrar', ruta: '/admin/entrar', sinSesion: true },
 ]
 
@@ -116,7 +125,7 @@ for (const tamano of TAMANOS) {
     }
 
     if (pantalla.abrirFicha) {
-      const fila = pagina.getByText('Camila Reyes Ortiz').first()
+      const fila = pagina.getByText(pantalla.abrirFicha).first()
       if (await fila.count()) {
         await fila.click()
         await pagina.waitForTimeout(900)

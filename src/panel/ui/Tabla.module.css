@@ -143,8 +143,25 @@
   background: var(--nube-hundida);
 }
 
+/*
+ * La celda del «no hay», que es la misma trampa que la fila de detalle.
+ *
+ * Su `colSpan` mide lo que miden las columnas, que en un telefono es mas que
+ * la pantalla: la frase empezaba en el borde izquierdo y terminaba a la derecha
+ * del scroll. En una tabla llena da igual —se rueda y se lee—, pero aqui la
+ * frase ES el contenido, y con el ranking filtrado por etapa una tabla vacia es
+ * lo normal en Validacion y Decision. Que se lea entera sin rodar.
+ */
 .vacia {
   padding: var(--e5);
   font-size: var(--t-prosa);
   color: var(--tinta2);
+}
+
+.vacia > * {
+  position: sticky;
+  left: 0;
+  width: 100cqi;
+  /* Sin tope, en un escritorio ancho la frase cruzaria toda la tabla. */
+  max-width: var(--medida);
 }
