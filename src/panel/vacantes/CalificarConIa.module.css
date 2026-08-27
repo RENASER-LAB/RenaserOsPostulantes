@@ -1,0 +1,282 @@
+/*
+ * Pedirle notas a la IA: el bloque de la tanda y el boton de una persona.
+ *
+ * Dos formas distintas a proposito, y no dos tarjetas iguales apiladas: la
+ * tanda es un panel con su titulo encima de la tabla del ranking, y lo de una
+ * persona es una fila de accion dentro de una ficha ya abierta. Si las dos
+ * fueran el mismo rectangulo habria que leerlas para saber a quien alcanzan.
+ *
+ * El violeta esta una sola vez en toda la pantalla —la criba rapida— y el
+ * porque esta en la cabecera del `.tsx`.
+ */
+
+/* ---------- La tanda, encima de la tabla ---------- */
+
+.tanda {
+  background: var(--nube);
+  border: 1px solid var(--regla);
+  border-radius: var(--radio);
+  padding: var(--e4) var(--e5);
+  margin-bottom: var(--e4);
+}
+
+.titulo {
+  font-size: var(--t-base);
+  font-weight: 600;
+  letter-spacing: -0.008em;
+  margin: 0;
+}
+
+/*
+ * La diferencia entre las dos cribas, dicha antes de los botones.
+ *
+ * «Rapida» y «fina» son palabras del backend y no dicen por si solas cual
+ * ordena y cual decide, ni cual pisa a la otra. Sin esta linea la eleccion se
+ * hace por el tamaño del boton.
+ */
+.explica {
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+  max-width: var(--medida);
+  margin: var(--e2) 0 var(--e4);
+}
+
+/* ---------- Una persona, dentro de la ficha ---------- */
+
+.uno {
+  margin-top: var(--e4);
+}
+
+.filaAccion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e3);
+}
+
+/* ---------- Los controles ---------- */
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e2);
+}
+
+/*
+ * La criba rapida: la unica accion violeta de esta pantalla. Es la que llena de
+ * notas un ranking vacio, y la fina no tiene sentido antes que ella.
+ */
+.rapida {
+  composes: acentoMenor from '../../estilos/piezas.module.css';
+}
+
+/* Pulsado: el mismo violeta hundido pero sin el halo, que es lo del hover. Sin
+   quitarlo, pasar por encima y pulsar se ven igual. */
+.rapida:active:not(:disabled) {
+  background: var(--activo-pulsado);
+  border-color: var(--activo-pulsado);
+  box-shadow: none;
+}
+
+.fina {
+  composes: secundario from '../../estilos/piezas.module.css';
+}
+
+.pedir {
+  composes: secundario from '../../estilos/piezas.module.css';
+}
+
+.cancelar {
+  composes: secundario from '../../estilos/piezas.module.css';
+}
+
+.fina:active:not(:disabled),
+.pedir:active:not(:disabled),
+.cancelar:active:not(:disabled) {
+  background: var(--nube-hundida);
+  border-color: var(--tinta);
+}
+
+/*
+ * El segundo paso de la criba. Tinta rellena y no violeta ni rojo: violeta
+ * significa «te toca a ti» en el otro producto y aqui es la accion principal,
+ * que ya se gasto en el boton que abrio la pregunta; y rojo es lo que borra, y
+ * esto no borra a nadie — vuelve a puntuar.
+ */
+.confirmar {
+  composes: solido from '../../estilos/piezas.module.css';
+}
+
+.confirmar:active:not(:disabled) {
+  background: var(--tinta-pulsado);
+  border-color: var(--tinta-pulsado);
+}
+
+/* ---------- La pregunta de la criba ---------- */
+
+/*
+ * Ambar, que en este sistema es «lo que cambia tu decision»: la fina pisa notas
+ * que ya estan puestas y la rapida vuelve a puntuar a gente que ya tiene nota.
+ * En rojo se leeria como un fallo, y en gris como un pie de pagina.
+ *
+ * ⚠️ **Contorno entero y no filete a la izquierda, que era lo primero que se
+ * escribio.** En gris ese filete la dejaba igual que `.avisoMalo`, que lleva el
+ * suyo: dos siluetas identicas para una pregunta y para una averia. Mirado con
+ * `--gris`, ahora una es una caja contorneada y la otra una caja con barra.
+ */
+.pregunta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+  align-items: flex-start;
+  /* Que la caja abrace su contenido y no el ancho de la tabla: el texto ya esta
+     cortado por `--medida`, y sin esto el contorno seguia hasta el otro extremo
+     de la pantalla con medio metro de ambar vacio dentro. */
+  width: fit-content;
+  max-width: 100%;
+  border: 1px solid var(--duda);
+  background: var(--duda-bruma);
+  border-radius: var(--radio-menor);
+  padding: var(--e4);
+}
+
+/* La consecuencia va antes que los botones: quien lee de izquierda a derecha y
+   de arriba abajo se encuentra lo que se pierde antes que el boton que lo hace. */
+.queSePierde {
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--duda-tinta);
+  max-width: var(--medida);
+  margin: 0;
+}
+
+/* ---------- Mientras el agente trabaja ---------- */
+
+/*
+ * Contorno punteado y sin relleno, como «Sin pasar lista» en la lista de
+ * inscritos: es la forma con la que este panel dice «queda algo por terminar»,
+ * y en gris se distingue de una etiqueta rellena sin mirar el color.
+ */
+.calificando {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  padding: 3px var(--e3);
+  border: 1px dashed var(--regla2);
+  border-radius: var(--radio-control);
+  font-size: var(--t-micro);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--tinta3);
+  white-space: nowrap;
+}
+
+/*
+ * Lo que se pidio y lo que estamos haciendo mientras. Nube hundida y no verde:
+ * no ha salido bien nada todavia, solo se ha encolado.
+ */
+.esperando {
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+  background: var(--nube-hundida);
+  border-radius: var(--radio-menor);
+  padding: var(--e3) var(--e4);
+  margin: var(--e3) 0 0;
+  max-width: var(--medida);
+}
+
+/*
+ * Cuando dejamos de mirar. La misma superficie que la espera y no la del error:
+ * agotar el sondeo no es que fallara nada, es que nosotros paramos.
+ */
+.agotado {
+  composes: esperando;
+}
+
+.mirarOtraVez {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}
+
+.mirarOtraVez:hover {
+  color: var(--tinta);
+}
+
+/* ---------- Lo que no se pudo ---------- */
+
+/*
+ * El 403 no se pinta como una averia: es el reparto de permisos funcionando, y
+ * no se arregla reintentando. Misma decision que en la lista de inscritos.
+ */
+.sinPermiso {
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+  background: var(--nube-hundida);
+  border-radius: var(--radio-menor);
+  padding: var(--e3) var(--e4);
+  margin: var(--e3) 0 0;
+  max-width: var(--medida);
+}
+
+/*
+ * El 200 que no encolo nada comparte superficie con el 403, y es a proposito:
+ * los dos son respuestas correctas a lo que se pidio, no averias. Nombre propio
+ * y no reusar `.sinPermiso` en el JSX, que obligaria a leer el TSX para saber
+ * cual de los dos casos se esta pintando.
+ */
+.sinCambios {
+  composes: sinPermiso;
+}
+
+.avisoMalo {
+  display: flex;
+  gap: var(--e3);
+  border: 1px solid var(--mal-regla);
+  background: var(--mal-bruma);
+  border-radius: var(--radio-menor);
+  padding: var(--e3) var(--e4);
+  font-size: var(--t-apoyo);
+  line-height: 1.5;
+  color: var(--mal);
+  margin: var(--e3) 0 0;
+  max-width: var(--medida);
+}
+
+/* El filete de la izquierda: en gris esto se distingue de la espera sin leerlo. */
+.avisoMalo::before {
+  content: '';
+  flex: none;
+  width: 3px;
+  background: var(--mal);
+}
+
+/*
+ * En estrecho los botones se apilan, no se reparten la fila.
+ *
+ * ⚠️ **`flex: 1` era lo primero que habia aqui, copiado de la lista de
+ * inscritos, y ahi funciona porque sus botones dicen «Vino».** Estos dicen «Sí,
+ * criba fina»: repartida la fila, la etiqueta se parte en dos renglones dentro
+ * de la pildora. Una linea entera por boton es mas barata que eso.
+ */
+@media (max-width: 640px) {
+  .acciones {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+
+  /* La etiqueta no es un control y no se estira con ellos: una pildora de
+     «Está calificando» de borde a borde parece un boton apagado. */
+  .acciones .calificando {
+    align-self: flex-start;
+  }
+}

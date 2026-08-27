@@ -55,6 +55,9 @@ import type {
 import { rutas } from '@/rutas'
 import { formatearFechaCorta, formatearFechaLarga } from '@/dominio/reloj'
 import tabla from '../ui/Tabla.module.css'
+import { RespuestasDePrueba } from './RespuestasDePrueba'
+import { CierreDeLaVacante, PlazoDeUnaPersona } from './CierreDePrueba'
+import { CalificarAUno, CalificarLaTanda } from './CalificarConIa'
 import estilos from './Vacante.module.css'
 
 /**
@@ -263,6 +266,29 @@ export function VacantePanelDetalle() {
               : 'No se pudo cargar.'}
           </p>
         )}
+        {/*
+          Solo en Perfil integral, y fuera de `<Ranking>`.
+
+          Solo ahi porque es donde caen sus notas: las dos cribas puntuan el
+          curriculum, y ofrecerlas mirando la tabla de la prueba invita a creer
+          que califican esa. Y fuera del `<Ranking>` porque aquel lleva
+          `key={etapa}`: dentro, cualquier refresco de la tabla lo remontaria y
+          se llevaria por delante la espera de una pasada en vuelo.
+
+          ⚠️ Cambiar de pestaña con una criba pedida SI la desmonta y se pierde
+          el sondeo. La peticion sigue viva en el servidor —el bloque nunca dice
+          lo contrario— pero nadie volvera a refrescar solo.
+        */}
+        {etapa === 'PERFIL_INTEGRAL' && ranking.data && (
+          <CalificarLaTanda
+            vacanteId={vacanteId}
+            total={ranking.data.total}
+            alTerminar={() => {
+              cache.invalidateQueries({ queryKey: ['panel-ranking', vacanteId] })
+              cache.invalidateQueries({ queryKey: ['panel-embudo', vacanteId] })
+            }}
+          />
+        )}
         {ranking.data && (
           <Ranking
             key={etapa}
@@ -301,11 +327,32 @@ const ETAPAS_PANEL = [
     codigo: 'PERFIL_INTEGRAL',
     nombre: 'Perfil integral',
     prefijos: ['POSTULADA', 'PERFIL_'],
+    nota: 'Nota del perfil',
   },
-  { codigo: 'PRUEBA_PUESTO', nombre: 'Prueba del puesto', prefijos: ['PRUEBA_'] },
-  { codigo: 'SIMULACION', nombre: 'Simulación', prefijos: ['SIMULACION_'] },
-  { codigo: 'VALIDACION', nombre: 'Validación', prefijos: ['VALIDACION_'] },
-  { codigo: 'DECISION', nombre: 'Decisión', prefijos: ['DECISION_'] },
+  {
+    codigo: 'PRUEBA_PUESTO',
+    nombre: 'Prueba del puesto',
+    prefijos: ['PRUEBA_'],
+    nota: 'Nota de la prueba',
+  },
+  {
+    codigo: 'SIMULACION',
+    nombre: 'Simulación',
+    prefijos: ['SIMULACION_'],
+    nota: 'Nota de la simulación',
+  },
+  {
+    codigo: 'VALIDACION',
+    nombre: 'Validación',
+    prefijos: ['VALIDACION_'],
+    nota: 'Nota de la validación',
+  },
+  {
+    codigo: 'DECISION',
+    nombre: 'Decisión',
+    prefijos: ['DECISION_'],
+    nota: 'Nota de la decisión',
+  },
 ] as const
 
 type EtapaPanel = (typeof ETAPAS_PANEL)[number]['codigo']
@@ -320,6 +367,8 @@ const leerFallo = (causa: unknown, sinDatos: string) =>
     : causa instanceof Error
       ? causa.message
       : sinDatos
+
+const noHayNadaQueRefrescar = () => {}
 
 const estaAhoraEn = (estado: string, etapa: EtapaPanel) =>
   ETAPAS_PANEL.find((e) => e.codigo === etapa)!.prefijos.some((p) => estado.startsWith(p))
@@ -343,6 +392,17 @@ function Ranking({
   const [soloAhora, setSoloAhora] = useState(false)
   const visibles = soloAhora ? filas.filter((f) => estaAhoraEn(f.estado, etapa)) : filas
   const ocultas = filas.length - visibles.length
+
+  const laEtapa = ETAPAS_PANEL.find((e) => e.codigo === etapa)!
+  /*
+    Adecuacion y potencial son dimensiones del retrato que sale del curriculum,
+    no de la prueba ni de la simulacion. Enseñarlas en las cinco pestañas hacia
+    que la mesa de la prueba mostrara dos numeros del CV junto a uno de la
+    prueba, y los tres con la misma pinta: la lista parecia hablar del CV
+    estando en otra etapa. Donde significan algo se quedan; donde no, se van.
+  */
+  const delCurriculum = etapa === 'PERFIL_INTEGRAL' || etapa === 'DECISION'
+  const columnas = delCurriculum ? 8 : 6
   // Solo cuentan las marcas que se VEN: si el filtro oculta una fila marcada,
   // el boton no puede seguir diciendo que avanzara a esa persona.
   const marcadosVisibles = visibles.filter((f) => marcados.has(f.postulacionId))
@@ -416,9 +476,19 @@ function Ranking({
               <th aria-label="Avanza" />
               <th className={tabla.cifra}>#</th>
               <th>Candidato</th>
-              <th className={tabla.cifra}>Nota de etapa</th>
-              <th className={tabla.cifra}>Adecuación</th>
-              <th className={tabla.cifra}>Potencial</th>
+              {/*
+                La nota se llama por su etapa y no «Nota de etapa» a secas.
+                Cinco pestanas con la misma cabecera obligan a recordar en cual
+                estas para saber que numero estas leyendo, y la que se recuerda
+                mal siempre es la primera.
+              */}
+              <th className={tabla.cifra}>{laEtapa.nota}</th>
+              {delCurriculum && (
+                <>
+                  <th className={tabla.cifra}>Adecuación</th>
+                  <th className={tabla.cifra}>Potencial</th>
+                </>
+              )}
               <th className={tabla.cifra}>Alertas</th>
               <th>Estado</th>
             </tr>
@@ -445,9 +515,25 @@ function Ranking({
                     <span className={estilos.candidato}>{fila.candidato}</span>
                     <span className={estilos.correo}>{fila.correo}</span>
                   </td>
-                  <td className={tabla.cifra}>{fila.notaEtapa ?? '—'}</td>
-                  <td className={tabla.cifra}>{fila.adecuacion ?? '—'}</td>
-                  <td className={tabla.cifra}>{fila.potencial ?? '—'}</td>
+                  <td className={tabla.cifra}>
+                    {fila.notaEtapa ?? '—'}
+                    {/*
+                      Una nota de la criba rapida es provisional y la fina la
+                      va a pisar. Decirlo con la palabra y no con un color: en
+                      escala de grises un 82 provisional y un 82 firme serian
+                      el mismo 82, y ordenar por el primero es decidir con algo
+                      que va a cambiar.
+                    */}
+                    {delCurriculum && fila.pasada === 'RAPIDA' && fila.notaEtapa !== null && (
+                      <span className={estilos.provisional}>provisional</span>
+                    )}
+                  </td>
+                  {delCurriculum && (
+                    <>
+                      <td className={tabla.cifra}>{fila.adecuacion ?? '—'}</td>
+                      <td className={tabla.cifra}>{fila.potencial ?? '—'}</td>
+                    </>
+                  )}
                   <td className={tabla.cifra}>
                     {fila.alertas + fila.riesgosCriticos > 0
                       ? fila.alertas + fila.riesgosCriticos
@@ -457,7 +543,7 @@ function Ranking({
                 </tr>
                 {abierta === fila.postulacionId && (
                   <tr>
-                    <td colSpan={8} className={estilos.celdaDetalle}>
+                    <td colSpan={columnas} className={estilos.celdaDetalle}>
                       <DetalleDelPostulante fila={fila} etapa={etapa} />
                     </td>
                   </tr>
@@ -466,7 +552,7 @@ function Ranking({
             ))}
             {visibles.length === 0 && (
               <tr>
-                <td colSpan={8} className={tabla.vacia}>
+                <td colSpan={columnas} className={tabla.vacia}>
                   {filas.length === 0
                     ? 'Todavía no hay postulaciones en esta vacante.'
                     : 'Nadie está en esta etapa ahora mismo. El filtro oculta ' +
@@ -528,6 +614,17 @@ function DetalleDelPostulante({ fila, etapa }: { fila: FilaRanking; etapa: Etapa
     queryFn: () => verHistorial(fila.postulacionId),
   })
 
+  const cache = useQueryClient()
+  /*
+    El ranking se invalida por prefijo, sin la vacante ni la etapa: una nota
+    nueva cambia el orden de las cinco tablas, no solo el de la que se esta
+    mirando, y aqui dentro no se conoce el id de la vacante.
+  */
+  const refrescarLasNotas = (clave: string) => () => {
+    cache.invalidateQueries({ queryKey: [clave, fila.postulacionId] })
+    cache.invalidateQueries({ queryKey: ['panel-ranking'] })
+  }
+
   return (
     <div className={estilos.detalle}>
       <div className={estilos.columnaDetalle}>
@@ -583,13 +680,43 @@ function DetalleDelPostulante({ fila, etapa }: { fila: FilaRanking; etapa: Etapa
 
       <div className={estilos.columnaDetalle}>
         {etapa === 'PRUEBA_PUESTO' ? (
-          <CriteriosDeEtapa
-            titulo="La prueba del puesto, criterio a criterio"
-            postulacionId={fila.postulacionId}
-            clave="prueba"
-            pedir={verNotasPrueba}
-            sinDatos="Todavía no rindió la prueba, o nadie la calificó."
-          />
+          <>
+            <CriteriosDeEtapa
+              titulo="La prueba del puesto, criterio a criterio"
+              postulacionId={fila.postulacionId}
+              clave="prueba"
+              pedir={verNotasPrueba}
+              sinDatos="Todavía no rindió la prueba, o nadie la calificó."
+            />
+            {/*
+              La rubrica dice que nota le pusieron; esto, a que. Van juntas
+              porque contrastar la una con la otra es el trabajo: leer un 6 de
+              10 sin poder ver el texto que lo merecio es creerse el 6.
+            */}
+            <CalificarAUno
+              postulacionId={fila.postulacionId}
+              etapa="PRUEBA_PUESTO"
+              alTerminar={refrescarLasNotas('panel-notas-prueba')}
+            />
+            <RespuestasDePrueba postulacionId={fila.postulacionId} />
+            {/*
+              Al final y no arriba: la fecha propia se toca despues de mirar si
+              rindio y que escribio, no antes. Quien no entrego nada es
+              justamente de quien se decide si darle mas horas.
+            */}
+            <PlazoDeUnaPersona
+              postulacionId={fila.postulacionId}
+              /*
+                No hay nada que refrescar y no es un descuido: la fecha propia
+                no sale en ninguna otra parte de la ficha —`FichaPostulacion` no
+                la trae— y el propio control ya ensena lo que contesto el
+                servidor. Invalidar consultas aqui seria pedir datos que nadie
+                va a mirar; el dia que la ficha traiga el plazo, esto pasa a
+                refrescarla.
+              */
+              alGuardar={noHayNadaQueRefrescar}
+            />
+          </>
         ) : etapa === 'SIMULACION' ? (
           <CriteriosDeEtapa
             titulo="La simulación, criterio a criterio"
@@ -601,7 +728,22 @@ function DetalleDelPostulante({ fila, etapa }: { fila: FilaRanking; etapa: Etapa
         ) : etapa === 'VALIDACION' ? (
           <Validacion postulacionId={fila.postulacionId} />
         ) : (
-          <LoQueCalificoLaIA fila={fila} />
+          <>
+            <LoQueCalificoLaIA fila={fila} />
+            {/*
+              Solo en Perfil integral y no en Decision, aunque las dos ensenen
+              el mismo retrato: recalificar es rehacer la preseleccion, y
+              ofrecerlo en la mesa donde se decide invita a mover la nota de
+              alguien mientras se le esta juzgando.
+            */}
+            {etapa === 'PERFIL_INTEGRAL' && (
+              <CalificarAUno
+                postulacionId={fila.postulacionId}
+                etapa="PERFIL_INTEGRAL"
+                alTerminar={refrescarLasNotas('panel-perfil')}
+              />
+            )}
+          </>
         )}
       </div>
 
@@ -1018,9 +1160,20 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
     queryKey: ['panel-plantillas-prueba'],
     queryFn: listarPlantillasPrueba,
   })
+  /*
+    La version que ya tiene la vacante entra como pista del rastreo: los ids son
+    una secuencia de toda la plataforma, y saber que existe el 47 dice donde
+    buscar los suyos. Sin ella el rastreo empieza en el 1 y en una base con las
+    pruebas altas no encuentra ninguna — el desplegable vacio.
+  */
   const versionesPrueba = useQuery({
-    queryKey: ['panel-versiones-prueba'],
-    queryFn: () => listarVersionesPrueba(),
+    queryKey: ['panel-versiones-prueba', vacante.versionPlantillaPruebaId],
+    queryFn: () =>
+      listarVersionesPrueba(
+        vacante.versionPlantillaPruebaId === null
+          ? []
+          : [vacante.versionPlantillaPruebaId],
+      ),
   })
   const pesos = useQuery({
     queryKey: ['panel-pesos'],
@@ -1136,6 +1289,22 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
               </option>
             ))}
           </select>
+          {/*
+            Un desplegable con una sola linea y esa vacia no dice nada: quien lo
+            abre no sabe si el panel sigue cargando, si le falta permiso o si de
+            verdad no hay ninguna prueba escrita. Y como esta eleccion es
+            obligatoria para publicar, quedarse callado aqui es dejar la vacante
+            atascada sin explicar en que. Las plantillas SI se listan de verdad,
+            asi que se puede distinguir «no hay ninguna prueba» de «hay
+            plantillas pero ninguna version que se pueda usar».
+          */}
+          {!versionesPrueba.isPending && (versionesPrueba.data ?? []).length === 0 && (
+            <span className={estilos.ayudaAjuste} role="status">
+              {(plantillasPrueba.data ?? []).length === 0
+                ? 'No hay ninguna plantilla de prueba escrita todavía. Se crean en el módulo de pruebas, y sin una la vacante no se puede publicar.'
+                : `Hay ${(plantillasPrueba.data ?? []).length} plantilla(s) de prueba, pero ninguna con una versión que se pueda usar aquí. Falta crear y publicar una versión.`}
+            </span>
+          )}
         </label>
 
         <label className={estilos.ajuste}>
@@ -1157,6 +1326,41 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
           </select>
         </label>
       </div>
+
+      {/*
+        Fuera de la rejilla de los tres desplegables, y no como un cuarto: una
+        fecha con su motivo, sus dos acciones y lo que contesta el servidor no
+        cabe en una celda hecha para un `select` de una linea. Y no lleva `key`
+        ni se remonta al refrescar la vacante: las cifras de a quien alcanzo el
+        cambio viven en su estado, y remontarlo las borraria justo despues de
+        pulsar.
+      */}
+      {/*
+        Dos casos en los que el control no se ofrece, comprobados llamando al
+        backend y no leyendo el codigo:
+
+        - **Vacante cerrada**: contesta 409 «Una vacante cerrada no se edita».
+        - **Sin version de prueba elegida**: revienta con un 400 cuyo texto es
+          «The given id must not be null» — el `findById(null)` de Spring Data
+          saliendo a la cara de quien usa el panel, en ingles. Es un fallo del
+          backend, pero ofrecer el control aqui seria ofrecer una averia.
+
+        En los dos casos se dice por que en vez de esconderlo sin mas: un hueco
+        callado en la pantalla que ordena la prueba se lee como que falta una
+        pieza del panel.
+      */}
+      {vacante.estado === 'CERRADA' ? (
+        <p className={estilos.ayudaAjuste}>
+          La vacante está cerrada, así que su prueba ya no admite una fecha nueva.
+        </p>
+      ) : vacante.versionPlantillaPruebaId === null ? (
+        <p className={estilos.ayudaAjuste}>
+          Para fijar cuándo cierra la prueba hay que elegir antes cuál es: la fecha
+          se calcula sobre la versión de la plantilla.
+        </p>
+      ) : (
+        <CierreDeLaVacante vacanteId={vacante.id} alGuardar={refrescar} />
+      )}
 
       {fallo && (
         <p className={estilos.avisoMalo} role="alert">

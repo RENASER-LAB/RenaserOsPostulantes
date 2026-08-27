@@ -1,9 +1,141 @@
 # Portal del candidato · contexto de trabajo
 
-Última actualización: 2026-08-27 · **los inscritos de una sesión y el reparto de permisos**
+Última actualización: 2026-08-27 · **la prueba por dentro, y la entrada de las empresas**
 
 Este archivo es para retomar el trabajo sin tener que reconstruir nada. Cuenta qué es este
 proyecto, con qué habla, qué se decidió y por qué, y qué está a medias.
+
+---
+
+## La prueba por dentro, y la entrada de las empresas (27/08/2026, tarde)
+
+Cuatro huecos del panel que ya tenían endpoint y nadie había cableado, más el enlace que le
+faltaba al portal. Todo verificado contra el backend local, no leído.
+
+### Qué se cerró, y qué resultó estar hecho ya
+
+| Lo que faltaba | Cómo quedó |
+|---|---|
+| **Calificar con IA** | Dos sitios: la tanda entera —criba rápida y fina, encima de la tabla, solo en Perfil integral— y una persona, en su ficha |
+| **Ver las respuestas** | `GET /postulaciones/{id}/prueba/respuestas` en la ficha, debajo de la rúbrica |
+| **Fecha de cierre** | Dos alcances: la vacante entera y el plazo propio de una persona |
+| **Ranking por etapa** | El `?etapa=` ya se mandaba; lo que faltaba eran **las columnas** |
+| Apagar el banco | Ya estaba hecho. El interruptor lleva ahí desde el 25/08 |
+| Listar versiones de prueba | Sigue sin endpoint, pero **el desplegable vacío era otra cosa** — ver abajo |
+
+### El ranking enseñaba la nota del CV en las cinco pestañas
+
+Las cabeceras eran fijas. «Adecuación» y «Potencial» son dimensiones del retrato que sale del
+currículum, y salían igual en Prueba, Simulación y Validación: tres cifras con la misma pinta,
+dos de ellas de otra etapa. Ahora **la nota se llama por su etapa** —«Nota de la prueba»— y las
+dos del currículum solo aparecen donde significan algo (Perfil integral y Decisión).
+
+⚠️ **Una nota de la criba rápida es provisional y ahora lo dice**, con la palabra debajo de la
+cifra. En una columna de números un tono distinto se lee como otro número; y ordenar por una
+nota que la criba fina va a pisar es decidir con algo que va a cambiar.
+
+### El desplegable de la prueba estaba vacío por una fixtura que mentía
+
+`datos-panel.mjs` traía `'/plantillas-prueba': [{ …, versiones: [...] }]`. El backend **no
+devuelve eso**: `PlantillaResponse` es `{id, nombre, puestoId, esActiva}` y las versiones se
+piden una a una. Como la fixtura tampoco servía ninguna versión suelta, en las capturas el
+desplegable salía vacío. **Es la segunda vez que una fixtura inventada tapa un fallo** —la
+primera fue el `asistio: false`— y las dos veces costó buscar en el sitio equivocado.
+
+⚠️ **El mecanismo tiene nombre y conviene reconocerlo a la tercera.** El interceptor de
+`capturar-panel.mjs` acaba en `?? []`, así que **ninguna ruta del panel devuelve nunca un 404**:
+toda ruta que la fixtura no conozca contesta 200 con una lista vacía. De ahí salen los dos
+fallos. Dos consecuencias al escribir una pantalla nueva: **su rama de «no hay» no se puede ver
+en una captura** —hay que mirarla con un test o con el backend de verdad—, y **una fixtura con
+una forma que la API no devuelve se ve perfecta** hasta que alguien la usa.
+
+El rastreo de ids sigue existiendo porque `GET /plantillas-prueba/{id}/versiones` sigue sin
+existir, pero ya no empieza siempre en el 1 a ciegas:
+
+- **Entra como pista la versión que la vacante ya tiene.** Los ids son una secuencia de toda la
+  plataforma: una empresa cuyas pruebas vivan del 40 para arriba no encontraba ninguna, porque
+  tres 404 al principio lo paraban.
+- **Va por tandas de ocho en paralelo**, no de una en una.
+- **Y si no encuentra nada, lo dice**, distinguiendo «no hay ninguna plantilla escrita» de «hay
+  plantillas pero ninguna versión usable». Un desplegable con una sola línea vacía deja atascada
+  la publicación de la vacante sin explicar en qué.
+
+### Cuatro trampas que encontró el e2e contra el backend vivo
+
+Las cuatro estaban escritas, compilando y con los tests en verde.
+
+**`CierrePruebaResponse` se llama `intentosConPlazoPropio`, no `conPlazoPropio`.** El nombre
+corto es una variable local dentro de la implementación de Java. Con él, el campo llegaba
+`undefined` y **el único número que ese bloque existe para no callar** —a cuánta gente NO le
+aplicó la fecha porque tiene la suya— se perdía en silencio.
+
+**⚠️ `estado` no siempre es `ENCOLADA`, y `SIN_CAMBIOS` significa que NO se encoló nada.** Hay
+cuatro motivos —la rúbrica no le reserva criterios al agente, ya hay un trabajo en marcha…— y
+todos contestan 200. Tratar el 200 como «se pidió» pintaba «la IA está calificando» y arrancaba
+cinco refrescos sobre una cola vacía: **«indicadores que mienten» otra vez**, en una pantalla
+nueva. Ahora solo `ENCOLADA` cuenta como encolado, un estado desconocido tampoco se da por
+bueno, y en esa rama **sí se pinta el `mensaje` del backend** porque es lo único que distingue
+los cuatro motivos.
+
+**Sin versión de prueba elegida, `POST /vacantes/{id}/cierre-prueba` revienta en inglés.** El
+`findById(vacante.getVersionPlantillaPruebaId())` recibe null y Spring Data contesta 400 «The
+given id must not be null». Es un fallo del backend; mientras tanto **el panel no ofrece ahí el
+control** y dice que falta elegir la prueba. Tampoco lo ofrece en una vacante cerrada, que
+responde 409.
+
+**Una prueba `CRONOMETRADA` no admite fecha de cierre**, y el backend lo explica bien: el plazo
+son los minutos que corren desde que cada uno empieza. El panel enseña ese mensaje tal cual.
+
+### La zona horaria, otra vez
+
+Las dos fechas viajan como `Instant`. `new Date('2036-01-15T23:59').toISOString()` sí da el
+instante correcto —la cadena sin zona se interpreta como local—, pero **la vuelta no**:
+`toISOString().slice(0,16)` devolvería el reloj de UTC y el campo lo leería como local. Se arma
+con `getFullYear/getMonth/getDate/getHours/getMinutes`.
+
+⚠️ **La ida y vuelta sola no prueba nada**: un par de funciones mal escritas la cumple. El test
+fija `TZ=America/Lima` y afirma **literales en las dos direcciones**, con el salto de día
+(`2035-08-30T23:59` ⇄ `2035-08-31T04:59:00.000Z`). Y la pantalla dice en qué zona se está
+hablando, con el eco del instante exacto que se va a guardar.
+
+### La entrada de las empresas va en el pie, no en la cabecera
+
+Los tres enlaces de arriba son el camino de quien postula; un cuarto para otro público los
+diluye justo cuando quien busca trabajo más los necesita. Quien trabaja en el panel entra una
+vez y lo guarda: lo que necesita es que exista un sitio donde encontrarlo.
+
+⚠️ **Dice «Entrar», nunca «Crear cuenta».** Las cuentas del panel nacen solo por invitación, y
+un enlace que prometa registrarse lleva a una pantalla que no puede cumplirlo.
+
+### El e2e de esta tanda
+
+```bash
+PORTAL=http://localhost:5177 node herramientas/e2e-prueba-y-empresas.mjs
+```
+
+28 comprobaciones: el contrato de los cuatro endpoints, las columnas que cambian con la
+pestaña, la ficha con lo escrito, el cierre rechazado por cronometrada, la criba que pregunta
+antes y el pie del portal. **Es lo que encontró las cuatro trampas de arriba.**
+
+⚠️ **Escribe poco y todo idempotente**: quita un cierre que ya estaba quitado y pide una
+calificación. Lo que no se deshace son las filas de auditoría, y es correcto que así sea.
+
+⚠️ **Esperar a que la URL cambie no basta para dar la sesión por abierta.** El token se guarda
+un instante después de la redirección; navegar en ese hueco recarga sin sesión y el panel rebota
+a la entrada. El fallo parecía del detalle de la vacante y era de la prueba.
+
+⚠️ **Contra el backend real no valen los `waitForTimeout` fijos** que sirven con las fixturas:
+se espera a que la pieza exista.
+
+### Lo que no entra, y por qué
+
+- **La consola de los diez eventos de simulación** sigue sin construirse (viene del #44).
+- **`POST /panel/postulaciones/{id}/ausencia-simulacion`**, igual.
+- **`POST /prueba/calificacion`** —ponderar las notas ya puestas— y `POST /criterios/{id}/nota`
+  —ajustar una a mano— existen y no se cablearon: son la mesa de calificar entera, y esta tanda
+  iba de poder ver y de poder pedir.
+- **No hay `GET` del cierre vigente de una vacante**: `VacantePanel` no trae el campo, así que
+  el formulario empieza vacío y lo dice en vez de fingir que ese hueco significa «sin fecha».
 
 ---
 
@@ -331,9 +463,9 @@ zona sospechosa a 2× no tiene más detalle que la de 1× ampliada, hay un mapa 
 
 `herramientas/verificar-panel.mjs` recorre el panel contra el backend local **y escribe en la
 base**. Para solo mirarlo está `herramientas/capturar-panel.mjs`, que intercepta las respuestas
-y sirve un escenario de prueba: **ocho pantallas** —incluidas una ficha del ranking ya abierta,
-una sesión con sus inscritos desplegados y la matriz de permisos de un rol—, en **los tres
-anchos**, sin tocar nada. Sus fixturas copian los `record` de `src/panel/api/tipos.ts`; si el
+y sirve un escenario de prueba: **nueve pantallas** —incluidas la ficha del ranking abierta en
+Perfil integral y en Prueba, una sesión con sus inscritos desplegados y la matriz de permisos de
+un rol—, en **los tres anchos**, sin tocar nada. Sus fixturas copian los `record` de `src/panel/api/tipos.ts`; si el
 contrato cambia allá, aquí revientan con un `Cannot read properties of undefined`.
 
 ⚠️ **`--gris` es la comprobación de la regla de la forma primero**, igual que en el perfil:
@@ -387,7 +519,8 @@ vacantes (modelo Indeed), el panel se construye en este repositorio, bajo `/admi
   Excel, usuarios y roles, áreas).
 - ⚠️ **Huecos del backend, comprobados el 27/08**: `GET /panel/bandeja` devuelve 500; y **no hay
   forma de listar las versiones de una plantilla de prueba**, solo de pedir una suelta por su
-  id. Se enseña lo que existe, como hizo el portal con la decisión ámbar.
+  id. Y `POST /vacantes/{id}/cierre-prueba` contesta 400 **en inglés** si la vacante no tiene
+  versión elegida. Se enseña lo que existe, como hizo el portal con la decisión ámbar.
   (El hueco de «quiénes se inscribieron» se cerró: ver la sección del 27/08.)
 
 ### El ranking es por etapas (25/08)
@@ -436,7 +569,8 @@ indicador.
 `PUBLICADA`. El selector filtra por eso: ofrecer las demás sería dejar elegir algo que falla.
 
 ⚠️ **`listarVersionesPrueba` tantea ids y deja 404 en la consola.** No es un fallo: es el hueco
-del backend. Se para tras tres huecos seguidos, y el día que exista
+del backend. Va por tandas de ocho en paralelo, sembrado con la versión que la vacante ya tiene
+—ver la sección del 27/08 por la tarde—, y el día que exista
 `GET /plantillas-prueba/{id}/versiones` esa función se borra entera.
 
 ⚠️ **Un `<form>` dentro de otro `<form>` lo descarta el navegador**, y su botón de enviar acaba

@@ -1,0 +1,202 @@
+/*
+ * Lo que escribio en la prueba, dentro de la ficha del postulante.
+ *
+ * Es un bloque de la columna derecha, debajo de los criterios: hereda su
+ * lenguaje —canal a la izquierda para el numero, prosa a la derecha— y no se
+ * envuelve en tarjetas. Ocho respuestas en ocho recuadros iguales serian ocho
+ * marcos y ninguna jerarquia; aqui la hace la tipografia.
+ */
+
+/*
+ * El margen de arriba es del bloque y no del titulo.
+ *
+ * `Vacante.module.css` separa dos titulos seguidos con `.tituloDetalle +
+ * .tituloDetalle`, y ese selector no alcanza a una clase de otro modulo: sin
+ * esto, el titulo quedaria pegado a la ultima nota de la rubrica de encima.
+ */
+.bloque {
+  margin-top: var(--e5);
+}
+
+.cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--e3);
+  margin-bottom: var(--e3);
+}
+
+.titulo {
+  margin: 0;
+}
+
+.recuento {
+  font-size: var(--t-menor);
+  font-variant-numeric: tabular-nums;
+  color: var(--tinta3);
+  margin: 0;
+}
+
+.dato {
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+  margin: 0;
+}
+
+.vacio {
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+  max-width: var(--medida);
+  margin: 0;
+}
+
+/* ---------- La lista ---------- */
+
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e5);
+}
+
+.pregunta {
+  display: flex;
+  gap: var(--e3);
+  font-size: var(--t-apoyo);
+  line-height: 1.5;
+}
+
+/*
+ * La canal del numero, del ancho de la nota de la rubrica de arriba para que
+ * los dos bloques empiecen su texto en la misma vertical.
+ */
+.orden {
+  flex: none;
+  width: 1.5rem;
+  text-align: right;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--tinta3);
+}
+
+/*
+ * `min-width: 0` no sobra: sin el, un elemento flexible se niega a encoger por
+ * debajo de su contenido y una respuesta con una palabra larguisima —una URL
+ * pegada, un log— empuja el ancho de la ficha y saca la pagina de cuadro.
+ */
+.cuerpo {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+}
+
+.enunciado {
+  font-weight: 600;
+  max-width: var(--medida);
+  overflow-wrap: anywhere;
+  margin: 0;
+}
+
+/* El codigo y el tipo: del equipo, no de quien postula. Por debajo del enunciado. */
+.contexto {
+  font-size: var(--t-menor);
+  color: var(--tinta3);
+  margin: 0;
+}
+
+/*
+ * Lo que escribio la persona, y solo eso.
+ *
+ * La regla de la izquierda marca de donde a donde son sus palabras: lo demas de
+ * la fila lo dice el sistema. Es contorno y no fondo porque un fondo por
+ * respuesta devuelve las tarjetas apiladas que este bloque evita.
+ *
+ * `pre-wrap` conserva los parrafos de quien respondio —una respuesta larga
+ * aplastada en un bloque corrido no se puede leer, y menos para calificarla— y
+ * `overflow-wrap` parte lo que no tiene espacios donde haga falta.
+ *
+ * ⚠️ **Sin tope de alto, y no es un olvido.** Aqui se corta a los 50ch de la
+ * medida, asi que un tope de 32rem son unas veintitres lineas: doscientas
+ * palabras, el tamano de una respuesta abierta normal. Recortarla ahi la
+ * esconderia detras de una barra de scroll que en reposo no se ve, y quien
+ * califica leeria hasta el corte sin saber que hay mas — que es justo el fallo
+ * que este bloque existe para arreglar. El largo lo paga la pagina, que para
+ * eso este bloque es el ultimo de la columna.
+ */
+.texto {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-width: var(--medida);
+  line-height: 1.55;
+  border-left: 2px solid var(--regla2);
+  padding-left: var(--e3);
+  margin: 0;
+}
+
+/*
+ * Nulo y vacio. Sin regla a la izquierda —no son palabras de nadie, es el panel
+ * contando lo que hay— y sin color propio: lo que las distingue es la frase.
+ */
+.sinRespuesta {
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta3);
+  max-width: var(--medida);
+  margin: 0;
+}
+
+/* ---------- Lo que no se pudo ---------- */
+
+/*
+ * El 403 va sobre nube hundida y no en rojo: que un rol no abra la ficha es el
+ * reparto de permisos haciendo su trabajo, no algo que se haya roto.
+ */
+.sinPermiso {
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+  background: var(--nube-hundida);
+  border-radius: var(--radio-menor);
+  padding: var(--e3) var(--e4);
+  max-width: var(--medida);
+  margin: 0;
+}
+
+.avisoMalo {
+  border: 1px solid var(--mal-regla);
+  background: var(--mal-bruma);
+  padding: var(--e3) var(--e4);
+  font-size: var(--t-apoyo);
+  line-height: 1.5;
+  color: var(--mal);
+  border-radius: var(--radio-menor);
+  max-width: var(--medida);
+  margin: 0;
+}
+
+.desactualizado {
+  font-size: var(--t-menor);
+  line-height: 1.5;
+  color: var(--tinta2);
+  background: var(--nube-hundida);
+  border-radius: var(--radio-menor);
+  padding: var(--e2) var(--e3);
+  max-width: var(--medida);
+  margin: 0 0 var(--e3);
+}
+
+.reintentar {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}
