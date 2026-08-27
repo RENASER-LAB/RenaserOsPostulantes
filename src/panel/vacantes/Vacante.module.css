@@ -420,6 +420,18 @@
   font-weight: 600;
 }
 
+/*
+  La explicacion que acompaña a un ajuste cuando el control no puede decirlo
+  solo. Va debajo y en apoyo: es contexto de lo de arriba, no un aviso aparte,
+  y ponerle recuadro o color la convertiria en una alerta que no es.
+*/
+.ayudaAjuste {
+  font-size: var(--t-menor);
+  color: var(--tinta3);
+  line-height: 1.45;
+  max-width: var(--medida-corta);
+}
+
 .interruptor {
   display: flex;
   align-items: flex-start;
@@ -562,4 +574,21 @@
   display: block;
   color: var(--tinta2);
   margin-top: var(--e1);
+}
+
+/*
+  «Provisional» debajo de la nota de la criba rapida.
+
+  Va en palabra y no en color porque la tabla se tiene que poder leer en escala
+  de grises, y porque la columna es de cifras: un tono distinto sobre un numero
+  se lee como otro numero, no como otra cosa. Debajo y en micro para que no le
+  quite el sitio a la cifra, que es lo que se compara al ordenar.
+*/
+.provisional {
+  display: block;
+  font-size: var(--t-micro);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  color: var(--tinta3);
+  font-variant-numeric: normal;
 }

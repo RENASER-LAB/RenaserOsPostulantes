@@ -38,6 +38,11 @@ import type {
   ValidacionPanel,
   PlantillaPruebaPanel,
   VersionPrueba,
+  RespuestaDePrueba,
+  CalificacionEncolada,
+  PasadaEncolada,
+  CierrePruebaAplicado,
+  PlazoDePrueba,
 } from './tipos'
 
 // ---------- Entrar ----------
@@ -281,32 +286,65 @@ export const listarPlantillasPrueba = () =>
  * ⚠️ **Esto deberia ser una llamada y son varias.** El backend no expone
  * `GET /plantillas-prueba/{id}/versiones`: solo deja pedir una version suelta
  * por su id. Y la vacante necesita el id de la VERSION —no el de la
- * plantilla— para poder publicarse.
+ * plantilla— para poder publicarse. El dia que exista esa ruta, esta funcion
+ * se borra entera y se queda una linea.
  *
- * Asi que se tantean los ids en orden y se para tras tres huecos seguidos.
- * Cada hueco deja un 404 en la consola: es feo, y es lo que hay hasta que el
- * backend abra la ruta. Ese dia esta funcion se borra entera.
+ * Mientras tanto se tantean los ids. Dos cosas que la version anterior hacia
+ * mal y costaban un desplegable vacio:
+ *
+ * 1. **Empezaba en 1 y paraba a los tres huecos seguidos.** Los ids son una
+ *    secuencia global de toda la plataforma, asi que una empresa cuyas
+ *    versiones vivan del 40 para arriba no encontraba ni una: tres 404 al
+ *    principio y a casa. Por eso entra `pistas` — ids que ya se sabe que
+ *    existen, como el que la vacante tiene asignado. Donde vive uno viven sus
+ *    vecinos.
+ * 2. **Iba de una en una.** Cuarenta ids eran cuarenta viajes en fila. Ahora
+ *    van por tandas en paralelo.
+ *
+ * Los huecos siguen dejando 404 en la consola. Es feo y es lo que hay: son
+ * peticiones legitimas a ids que no existen, no un fallo del panel.
  */
 export async function listarVersionesPrueba(
-  huecosSeguidos = 3,
+  pistas: number[] = [],
 ): Promise<VersionPrueba[]> {
+  /*
+    Ocho y no doce: cada hueco deja un 404 en la consola, y la tanda que decide
+    el final se paga entera. Con ocho, una base normal —dos versiones— cuesta
+    dieciseis peticiones en vez de veinticuatro, y la ventana sigue siendo lo
+    bastante ancha para saltar un par de ids borrados.
+  */
+  const TANDA = 8
+  // Hasta donde barrer: mas alla del id conocido mas alto, y nunca menos de
+  // dos tandas, que es lo que basta en una base recien sembrada.
+  const techo = Math.max(TANDA * 2, ...pistas.map((p) => p + TANDA))
+
   const encontradas: VersionPrueba[] = []
-  let huecos = 0
-  for (let id = 1; huecos < huecosSeguidos; id++) {
-    const version = await pedir<{ version: VersionPrueba }>(
-      `/plantillas-prueba/versiones/${id}`,
+  for (let desde = 1; desde <= techo; desde += TANDA) {
+    const ids = Array.from(
+      { length: Math.min(TANDA, techo - desde + 1) },
+      (_, i) => desde + i,
     )
-      .then((r) => r.version)
-      .catch(() => null)
-    if (version) {
-      encontradas.push(version)
-      huecos = 0
-    } else {
-      huecos++
-    }
+    const tanda = await Promise.all(ids.map(pedirVersionDePrueba))
+    const halladas = tanda.filter((v): v is VersionPrueba => v != null)
+    encontradas.push(...halladas)
+
+    // Una tanda entera vacia por encima de la ultima pista es el final de la
+    // secuencia. Por debajo no: puede ser un hueco de ids borrados.
+    const noQuedanPistasArriba = pistas.every((p) => p < desde)
+    if (halladas.length === 0 && noQuedanPistasArriba && encontradas.length > 0) break
   }
-  return encontradas
+  return encontradas.sort((a, b) => a.id - b.id)
 }
+
+/*
+  El `?? null` no sobra: un 200 con otra cosa dentro —una fixtura floja, un
+  proxy que contesta lo que no es— dejaba pasar un `undefined` como si fuera
+  una version, y el desplegable se llenaba de opciones vacias.
+*/
+const pedirVersionDePrueba = (id: number) =>
+  pedir<{ version: VersionPrueba }>(`/plantillas-prueba/versiones/${id}`)
+    .then((r) => r?.version ?? null)
+    .catch(() => null)
 
 // ---------- La configuracion de una vacante ----------
 // Sin estas cuatro no se puede publicar: el backend exige plantilla de
@@ -341,4 +379,70 @@ export const asignarVersionPesos = (vacanteId: number, versionPesosId: number) =
   pedir<void>(`/vacantes/${vacanteId}/version-pesos`, {
     metodo: 'POST',
     cuerpo: { versionPesosId },
+  })
+
+
+// ---------- La prueba por dentro: lo escrito, la IA y el plazo ----------
+
+/** Lo que contesto el candidato, pregunta a pregunta. */
+export const verRespuestasDePrueba = (postulacionId: number) =>
+  pedir<RespuestaDePrueba[]>(`/postulaciones/${postulacionId}/prueba/respuestas`)
+
+/**
+ * Pedirle al agente que califique la prueba de esta persona.
+ *
+ * ⚠️ **No pisa lo ajustado a mano** y **no devuelve la nota**: encola y
+ * contesta al momento. Lo unico honesto que se puede decir despues es que se
+ * pidio; la nota aparece cuando el agente termina y se vuelve a pedir.
+ */
+export const calificarPruebaConIa = (postulacionId: number) =>
+  pedir<CalificacionEncolada>(`/postulaciones/${postulacionId}/prueba/calificacion-ia`, {
+    metodo: 'POST',
+  })
+
+/** Lo mismo para el retrato: currículum y evaluación del banco juntos. */
+export const calificarPerfilIntegralConIa = (postulacionId: number) =>
+  pedir<CalificacionEncolada>(
+    `/postulaciones/${postulacionId}/calificacion-perfil-integral`,
+    { metodo: 'POST' },
+  )
+
+/**
+ * La tanda entera de una vez.
+ *
+ * La rapida es el modelo que no razona, en paralelo: ordena, no decide, y sus
+ * notas quedan marcadas como provisionales. La fina vuelve sobre la parte alta
+ * —cuanta, lo dice el parametro `porcentaje_criba_fina`— y **pisa** aquellas.
+ */
+export const cribaRapida = (vacanteId: number) =>
+  pedir<PasadaEncolada>(`/vacantes/${vacanteId}/criba-rapida`, { metodo: 'POST' })
+
+export const cribaFina = (vacanteId: number) =>
+  pedir<PasadaEncolada>(`/vacantes/${vacanteId}/criba-fina`, { metodo: 'POST' })
+
+/**
+ * Cuando cierra la prueba de esta vacante, para todos.
+ *
+ * Con `cierraEn` en nulo se quita, y cada intento vuelve a contar los dias de
+ * su plantilla. El motivo es obligatorio y queda en la auditoria.
+ */
+export const definirCierreDePrueba = (
+  vacanteId: number,
+  cierraEn: string | null,
+  motivo: string,
+) =>
+  pedir<CierrePruebaAplicado>(`/vacantes/${vacanteId}/cierre-prueba`, {
+    metodo: 'POST',
+    cuerpo: { cierraEn, motivo },
+  })
+
+/** La fecha de UNA persona, que manda sobre la de la vacante. */
+export const definirPlazoDePrueba = (
+  postulacionId: number,
+  venceEn: string,
+  motivo: string,
+) =>
+  pedir<PlazoDePrueba>(`/postulaciones/${postulacionId}/prueba/plazo`, {
+    metodo: 'POST',
+    cuerpo: { venceEn, motivo },
   })

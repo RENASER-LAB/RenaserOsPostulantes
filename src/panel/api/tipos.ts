@@ -104,6 +104,72 @@ export interface VersionPrueba {
   version: number
 }
 
+// ---------- La prueba del puesto, por dentro ----------
+
+/**
+ * Una pregunta de la prueba con lo que contesto el candidato.
+ *
+ * ⚠️ **`respuesta` en nulo no es lo mismo que en blanco.** Nulo es que dejo la
+ * pregunta sin tocar; una cadena vacia es que la abrio y no escribio nada. El
+ * backend los distingue a proposito y la pantalla tambien tiene que hacerlo:
+ * quien califica no juzga igual las dos cosas.
+ *
+ * No trae `revela` —que mide cada pregunta— porque saber que se buscaba
+ * condiciona a quien lee la respuesta. Es una omision del backend, no un hueco.
+ */
+export interface RespuestaDePrueba {
+  preguntaId: number
+  codigo: string
+  orden: number
+  tipo: string
+  enunciado: string
+  respuesta: string | null
+  respondidaEn: FechaIso | null
+}
+
+/**
+ * Lo que contesta el backend al pedirle a la IA que califique.
+ *
+ * ⚠️ **Encolada no es calificada.** La llamada al modelo tarda decenas de
+ * segundos y esto vuelve al momento. Lo que se puede decir es que se pidio.
+ */
+export interface CalificacionEncolada {
+  estado: string
+  mensaje: string
+}
+
+/** Igual, pero sobre la tanda entera: dice a cuantos alcanza. */
+export interface PasadaEncolada {
+  estado: string
+  candidatos: number
+  mensaje: string
+}
+
+/** Lo que devuelve fijarle a la vacante entera la fecha de cierre de la prueba. */
+export interface CierrePruebaAplicado {
+  cierraEn: FechaIso | null
+  /** Intentos ya abiertos que se movieron a la fecha nueva. */
+  intentosMovidos: number
+  /**
+   * Los que NO se movieron porque tienen fecha propia. Se dice: es lo que
+   * sorprende, y callarlo deja creer que la fecha aplico a toda la tanda.
+   *
+   * ⚠️ **Se llama asi y no `conPlazoPropio`.** El `record` de Java es
+   * `CierrePruebaResponse(cierraEn, intentosMovidos, intentosConPlazoPropio)`;
+   * el nombre corto es una variable local de su implementacion. Con el corto
+   * el campo llegaba `undefined` y el unico numero que este bloque existe para
+   * no callar se perdia en silencio, con todo compilando.
+   */
+  intentosConPlazoPropio: number
+}
+
+/** El plazo de UNA persona, que manda sobre el de la vacante. */
+export interface PlazoDePrueba {
+  postulacionId: number
+  venceEn: FechaIso
+  yaEmpezo: boolean
+}
+
 // ---------- Postulaciones ----------
 
 export interface ConteoEmbudo {

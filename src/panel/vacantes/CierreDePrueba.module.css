@@ -1,0 +1,307 @@
+/*
+ * Cuando cierra la prueba del puesto.
+ *
+ * Dos controles del mismo mundo que el resto del detalle de la vacante: viven
+ * entre `.ajuste`, `.etiquetaAjuste` y `.eleccion` de `Vacante.module.css`, y
+ * de ahi salen las medidas —la etiqueta en `--t-apoyo` y en 600, el control a
+ * 44 px— para que no se lean como una pieza pegada de otro sitio.
+ *
+ * El violeta aparece **una sola vez por componente**: el boton que guarda. Lo
+ * demas —quitar el cierre, las dos confirmaciones— es nube con contorno, que es
+ * como el panel dice «esto tambien se puede pulsar, pero no es lo principal».
+ */
+
+/*
+  El aire de arriba lo pone el bloque y no quien lo aloja: en la vacante cae
+  justo debajo de la rejilla de los tres desplegables y sin el, su titulo se
+  pegaba al ultimo `select` como si fuera su etiqueta.
+*/
+.bloque {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e4);
+  min-width: 0;
+  margin-top: var(--e5);
+}
+
+.titulo {
+  font-size: var(--t-base);
+  font-weight: 600;
+  letter-spacing: -0.008em;
+  margin: 0;
+}
+
+.prosa {
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+  max-width: var(--medida);
+  margin: 0;
+}
+
+/* Lo que el backend todavia no deja saber. Va en la tinta mas floja: es una
+   advertencia sobre el limite de la pantalla, no una instruccion. */
+.pista {
+  font-size: var(--t-menor);
+  line-height: 1.5;
+  color: var(--tinta3);
+  max-width: var(--medida);
+  margin: 0;
+}
+
+/*
+  Los campos no se estiran con la seccion.
+
+  El bloque vive dentro del detalle de la vacante, que mide `--ancho`: sin tope,
+  el motivo salia a mil pixeles de ancho —una linea de auditoria de dos frases
+  en un campo del tamaño de la pantalla— y la fecha, que son doce caracteres,
+  igual. Un campo ancho no invita a escribir mas, invita a no saber cuanto se
+  espera.
+*/
+.campos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+  max-width: var(--medida);
+}
+
+.campos input[type='datetime-local'] {
+  max-width: 18rem;
+}
+
+/*
+ * El eco en UTC, debajo del campo.
+ *
+ * Es la pieza que quita la duda: quien escribe «domingo 23:59» ve al momento el
+ * instante exacto que se va a guardar, con su Z. Sin esto la unica forma de
+ * saber si el panel entendio bien la hora es esperar a que se cierre un examen.
+ */
+.eco {
+  font-size: var(--t-menor);
+  font-variant-numeric: tabular-nums;
+  color: var(--tinta2);
+  background: var(--nube-hundida);
+  border-radius: var(--radio-menor);
+  padding: var(--e2) var(--e3);
+  margin: 0;
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e3);
+}
+
+.principal {
+  composes: acentoMenor from '../../estilos/piezas.module.css';
+  align-self: flex-start;
+}
+
+.secundaria {
+  composes: secundario from '../../estilos/piezas.module.css';
+  align-self: flex-start;
+}
+
+/* ---------- Quitar el cierre ---------- */
+
+/*
+ * Seccion aparte, con su propio titulo y su propia prosa.
+ *
+ * ⚠️ **No es «guardar con el campo vacio».** Quitar el cierre devuelve a cada
+ * intento los dias de su plantilla, que es una regla distinta —relativa a
+ * cuando cada uno empieza— y no una fecha distinta. Escondida detras del mismo
+ * boton, se hace sin querer al borrar el campo para escribir otra cosa.
+ *
+ * La regla de arriba la separa sin usar color: en gris se sigue viendo que
+ * empieza algo nuevo.
+ */
+.quitar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+  border-top: 1px solid var(--regla);
+  padding-top: var(--e4);
+}
+
+.tituloQuitar {
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  margin: 0;
+}
+
+/* ---------- Las dos preguntas de antes ---------- */
+
+/*
+ * Se pregunta en el sitio, no en un modal: la consecuencia tiene que leerse
+ * pegada al boton que la ejecuta, igual que en la lista de inscritos.
+ *
+ * Ambar y no rojo, y con filete de 3 px: no es un error ni algo que se borre,
+ * es una fecha que cambia lo que le pasa a gente que esta trabajando. El filete
+ * es lo que la distingue del resto en escala de grises.
+ */
+/*
+  Contorno entero y no filete a la izquierda.
+
+  El filete de tres pixeles es la silueta que el resto del panel no usa en
+  ningun sitio —sus avisos son contorno de un pixel sobre bruma— asi que traia
+  una forma nueva para decir lo mismo. Y la traia dos veces, aqui y en el aviso
+  de abajo: en gris las dos cajas se volvian la misma caja con barra, que es
+  justo lo que la regla de la forma primero prohibe.
+*/
+.pregunta {
+  display: flex;
+  gap: var(--e3);
+  border: 1px solid var(--duda);
+  background: var(--duda-bruma);
+  border-radius: var(--radio-menor);
+  padding: var(--e3) var(--e4);
+  margin: 0;
+}
+
+/* La columna de dentro: el filete vive en el `::before` del padre, asi que el
+   texto y los botones necesitan su propio contenedor para apilarse. */
+.cuerpoPregunta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+  min-width: 0;
+}
+
+.textoPregunta {
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--duda-tinta);
+  max-width: var(--medida);
+  margin: 0;
+}
+
+.botonesPregunta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e2);
+}
+
+.chico {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 var(--e4);
+  background: var(--nube);
+  color: var(--tinta);
+  border: 1px solid var(--borde-control);
+  font: inherit;
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  border-radius: var(--radio-control);
+}
+
+.chico:hover:not(:disabled) {
+  border-color: var(--tinta);
+}
+
+.chico:disabled {
+  background: var(--nube-hundida);
+  color: var(--tinta3);
+  border-color: var(--regla2);
+  cursor: default;
+}
+
+/* El que confirma la consecuencia. Contorno ambar y no relleno: se puede
+   volver a poner otra fecha, asi que no es de las que no se deshacen. */
+.seguir:not(:disabled) {
+  border-color: var(--duda);
+  color: var(--duda-tinta);
+}
+
+/* ---------- Lo que paso ---------- */
+
+/*
+ * Nube hundida y no verde: guardar una fecha es trabajo hecho, no un logro. Lo
+ * que importa aqui no es el tono, son las dos cifras — y sobre todo la segunda,
+ * la de quien NO se movio, que es lo unico que sorprende de esta operacion.
+ */
+.resultado {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+  background: var(--nube-hundida);
+  border-radius: var(--radio-menor);
+  padding: var(--e4);
+  margin: 0;
+}
+
+.loQueQueda {
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta);
+  font-weight: 600;
+  max-width: var(--medida);
+  margin: 0;
+}
+
+.detalle {
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+  max-width: var(--medida);
+  margin: 0;
+}
+
+/*
+ * La frase de quien no se movio, y la de quien ya tiene el examen abierto.
+ *
+ * Punto delante, como la certificacion vencida del perfil y como la ausencia de
+ * la simulacion: es la linea que cambia lo que creias que acababas de hacer, y
+ * en gris tiene que distinguirse de las otras dos sin depender del tono.
+ */
+.loQueSorprende {
+  display: flex;
+  gap: var(--e2);
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--duda-tinta);
+  font-weight: 600;
+  max-width: var(--medida);
+  margin: 0;
+}
+
+.loQueSorprende::before {
+  content: '';
+  flex: none;
+  width: 5px;
+  height: 5px;
+  margin-top: 0.55em;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* ---------- Lo que no se pudo ---------- */
+
+.avisoMalo {
+  display: flex;
+  gap: var(--e3);
+  border: 1px solid var(--mal-regla);
+  background: var(--mal-bruma);
+  padding: var(--e3) var(--e4);
+  font-size: var(--t-apoyo);
+  line-height: 1.5;
+  color: var(--mal);
+  max-width: var(--medida);
+  border-radius: var(--radio-menor);
+  margin: 0;
+}
+
+@media (max-width: 640px) {
+  .principal,
+  .secundaria {
+    align-self: stretch;
+  }
+
+  .chico {
+    flex: 1;
+    justify-content: center;
+  }
+}

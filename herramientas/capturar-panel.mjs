@@ -38,6 +38,16 @@ const PANTALLAS = [
   { nombre: 'permisos', ruta: '/admin/configuracion', pulsar: 'Talento' },
   { nombre: 'vacante', ruta: '/admin/vacantes/1' },
   { nombre: 'ficha', ruta: '/admin/vacantes/1', abrirFicha: true },
+  // La misma ficha en la pestaña de Prueba, que enseña otra cosa: la rubrica y
+  // debajo lo que la persona escribio, con sus tres estados —contestada, en
+  // blanco y sin tocar—. Sin esta pantalla el bloque de respuestas no se mira
+  // nunca, porque la ficha abre siempre en Perfil integral.
+  {
+    nombre: 'ficha-prueba',
+    ruta: '/admin/vacantes/1',
+    etapa: 'Prueba del puesto',
+    abrirFicha: true,
+  },
   { nombre: 'entrar', ruta: '/admin/entrar', sinSesion: true },
 ]
 
@@ -90,6 +100,18 @@ for (const tamano of TAMANOS) {
         await pagina.waitForTimeout(900)
       } else {
         console.log(`    ⚠ no aparecio el boton «${pantalla.pulsar}»`)
+      }
+    }
+
+    // La etapa se elige ANTES de abrir la ficha: cambiar de pestaña remonta la
+    // tabla y cerraria la fila que se acaba de desplegar.
+    if (pantalla.etapa) {
+      const pestana = pagina.getByRole('tab', { name: pantalla.etapa })
+      if (await pestana.count()) {
+        await pestana.click()
+        await pagina.waitForTimeout(700)
+      } else {
+        console.log(`    ⚠ no aparecio la pestaña «${pantalla.etapa}»`)
       }
     }
 

@@ -204,6 +204,31 @@ const VALIDACION = {
   estado: 'EN_CURSO', responsableUsuarioId: 1,
 }
 
+/*
+ * Lo que escribio el candidato en la prueba.
+ *
+ * ⚠️ **Las tres primeras filas son tres estados distintos a proposito**, y hay
+ * que poder distinguirlos de un vistazo: contestada, abierta y dejada en blanco
+ * (`respuesta: ''`), y ni siquiera abierta (`respuesta: null`). Una fixtura que
+ * solo trajera respuestas llenas taparia justo el caso que quien califica
+ * necesita ver.
+ */
+const RESPUESTAS_DE_PRUEBA = [
+  { preguntaId: 1, codigo: 'PP-01', orden: 1, tipo: 'ABIERTA',
+    enunciado: '¿Cómo priorizarías las tres incidencias del anexo, y por qué en ese orden?',
+    respuesta:
+      'Primero la caída del cobro, porque es la única que ya está costando dinero cada minuto.\n\n' +
+      'Segundo el informe de cierre: tiene fecha, pero la fecha es el viernes y hoy es martes.\n\n' +
+      'Tercero la migración, que es la que más me apetece y la que nadie está esperando.',
+    respondidaEn: '2026-08-22T15:41:00Z' },
+  { preguntaId: 2, codigo: 'PP-02', orden: 2, tipo: 'ABIERTA',
+    enunciado: 'Describe una decisión técnica que tomaste y que hoy tomarías distinta.',
+    respuesta: '', respondidaEn: '2026-08-22T15:52:00Z' },
+  { preguntaId: 3, codigo: 'PP-03', orden: 3, tipo: 'ABIERTA',
+    enunciado: '¿Qué le dirías al área que pidió el cambio a dos días de la entrega?',
+    respuesta: null, respondidaEn: null },
+]
+
 /** Lo que responde cada ruta. Nada de esto sale de aqui. */
 export const RESPUESTAS = {
   '/vacantes': VACANTES,
@@ -211,6 +236,9 @@ export const RESPUESTAS = {
   '/sesiones-simulacion/1/inscritos': INSCRITOS,
   // La sesion 2 se queda sin inscritos a proposito: es el caso vacio.
   '/sesiones-simulacion/2/inscritos': [],
+  '/postulaciones/91/prueba/respuestas': RESPUESTAS_DE_PRUEBA,
+  // La 92 no rindio: lista vacia, que no es un error.
+  '/postulaciones/92/prueba/respuestas': [],
   '/roles/1/permisos': PERMISOS_DEL_ROL,
   '/roles/2/permisos': PERMISOS_DEL_ROL,
   '/solicitudes': [
@@ -242,9 +270,26 @@ export const RESPUESTAS = {
       version: 3, estado: 'PUBLICADA', minutosObjetivo: 75, vigenciaMeses: 12,
       publicadaEn: '2026-04-11T09:00:00Z' },
   ],
+  /*
+   * ⚠️ **Esta fixtura mentia y por eso el desplegable de la prueba salia vacio
+   * en las capturas.** Traia un `versiones: [...]` dentro que el backend NO
+   * devuelve —`PlantillaResponse` es solo `{id, nombre, puestoId, esActiva}`—,
+   * y a cambio no servia ninguna version suelta, que es de donde el panel las
+   * saca de verdad. La forma de aqui es ahora la del backend, y las dos
+   * versiones estan abajo, cada una en su ruta.
+   */
   '/plantillas-prueba': [
-    { id: 1, nombre: 'Reto con entregables', versiones: [{ id: 4, etiqueta: 'v2', estado: 'PUBLICADA' }] },
+    { id: 1, nombre: 'Reto con entregables', puestoId: null, esActiva: true },
+    { id: 2, nombre: 'Cuestionario técnico', puestoId: 1, esActiva: true },
   ],
+  '/plantillas-prueba/versiones/1': {
+    version: { id: 1, plantillaPruebaId: 1, version: 1, estado: 'PUBLICADA' },
+    variantes: [], preguntas: [], entregables: [], rubrica: [],
+  },
+  '/plantillas-prueba/versiones/2': {
+    version: { id: 2, plantillaPruebaId: 2, version: 3, estado: 'PUBLICADA' },
+    variantes: [], preguntas: [], entregables: [], rubrica: [],
+  },
   '/parametros': [
     { codigo: 'evaluacion.dias', valor: '14', tipo: 'ENTERO',
       descripcion: 'Días que dura el plazo de la evaluación escrita.' },

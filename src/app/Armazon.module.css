@@ -117,6 +117,19 @@
   margin-top: var(--e8);
 }
 
+/*
+  Los dos enlaces del pie van juntos a la derecha y no repartidos por el
+  `space-between`: separar «Privacidad» de «Entrar al panel» dejaria el copyright
+  en un extremo y un enlace suelto en el medio, que se lee como tres bloques sin
+  relacion. Son dos salidas del mismo sitio.
+*/
+.enlacesDelPie {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e2) var(--e5);
+}
+
 .pieDentro a {
   display: inline-flex;
   align-items: center;

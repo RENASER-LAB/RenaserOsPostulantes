@@ -117,9 +117,23 @@ export function Armazon() {
       <footer className={estilos.pie}>
         <div className={estilos.pieDentro}>
           <span>© 2026 Renaser Consulting</span>
-          <span>
+          {/*
+            La entrada de las empresas vive en el pie y no en la barra de
+            arriba, y es una decision, no una rebaja. Esos tres enlaces son el
+            camino de quien postula; un cuarto para otro publico distinto los
+            diluye justo cuando quien busca trabajo mas los necesita. Quien
+            trabaja en el panel entra una vez y lo guarda: lo que necesita es
+            que exista un sitio donde encontrarlo, no que le compita al
+            candidato.
+
+            Y dice «Entrar», nunca «Crear cuenta»: las cuentas del panel nacen
+            solo por invitacion. Un enlace que prometa registrarse lleva a una
+            pantalla que no puede cumplirlo.
+          */}
+          <nav className={estilos.enlacesDelPie} aria-label="Enlaces del pie">
             <Link to={rutas.privacidad()}>Privacidad y tratamiento de datos</Link>
-          </span>
+            <Link to={rutas.adminEntrar()}>Entrar al panel de empresas</Link>
+          </nav>
         </div>
       </footer>
     </div>
