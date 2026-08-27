@@ -14,11 +14,14 @@ import type {
   ConteoEmbudo,
   CrearSesion,
   FichaPostulacion,
+  InscritoEnSesion,
   GuardarVacante,
   NotaCriterioEtapa,
   Parametro,
   PasoHistorialPanel,
   PerfilIntegral,
+  PermisoDelRol,
+  AlcancePermiso,
   PlantillaEvaluacionPanel,
   PuestoPanel,
   RankingVacante,
@@ -167,6 +170,32 @@ export const cancelarSesion = (id: number, motivo: string) =>
     cuerpo: { motivo },
   })
 
+/**
+ * Quien eligio esta fecha.
+ *
+ * ⚠️ **Pide `ver_inscritos_simulacion`, que no es el permiso con el que se
+ * llega a la pantalla.** Los dos GET de sesiones admiten tambien
+ * `crear_sesiones_simulacion`, asi que quien organiza fechas puede estar
+ * viendo la tabla y recibir un 403 aqui. No es un fallo: es que ver el aforo y
+ * ver los nombres son dos preguntas distintas.
+ *
+ * ⚠️ **La longitud de esto NO es `SesionPanel.inscritos`.** Con alcance
+ * acotado el backend recorta la lista, y el conteo de la sesion se recorta a
+ * juego solo si tambien se tiene este permiso.
+ */
+export const listarInscritos = (sesionId: number) =>
+  pedir<InscritoEnSesion[]>(`/sesiones-simulacion/${sesionId}/inscritos`)
+
+/**
+ * Pasar lista. Marcar que no asistio lo devuelve a la bandeja del equipo, que
+ * decide entre darle otra fecha o cerrar — nunca es automatico.
+ */
+export const marcarAsistencia = (inscripcionId: number, asistio: boolean) =>
+  pedir<void>(`/inscripciones/${inscripcionId}/asistencia`, {
+    metodo: 'POST',
+    cuerpo: { asistio },
+  })
+
 // ---------- Configuracion ----------
 
 export const listarParametros = () => pedir<Parametro[]>('/parametros')
@@ -175,6 +204,48 @@ export const editarParametro = (codigo: string, valor: string, motivo: string) =
 
 export const listarUsuarios = () => pedir<UsuarioEquipo[]>('/usuarios')
 export const listarRoles = () => pedir<RolPanel[]>('/roles')
+
+// ---------- Que puede cada rol ----------
+//
+// Las tres piden `administrar_permisos`, que es un permiso aparte de
+// `crear_usuarios_y_asignar_roles` a proposito: dar un rol a alguien es una
+// cosa, redefinir lo que ese rol significa es otra bastante mayor.
+//
+// ⚠️ **Un cambio aqui vale desde la peticion siguiente de cada afectado.** El
+// backend relee los permisos en cada llamada, asi que nadie tiene que volver a
+// entrar — y nadie recibe aviso de que su alcance cambio.
+
+export const permisosDelRol = (rolId: number) =>
+  pedir<PermisoDelRol[]>(`/roles/${rolId}/permisos`)
+
+/** Conceder, o cambiar el alcance si ya lo tenia. El motivo se audita. */
+export const concederPermiso = (
+  rolId: number,
+  codigo: string,
+  alcance: AlcancePermiso,
+  motivo: string,
+) =>
+  pedir<void>(`/roles/${rolId}/permisos/${codigo}`, {
+    metodo: 'PUT',
+    cuerpo: { alcance, motivo },
+  })
+
+/**
+ * Quitarle el permiso al rol.
+ *
+ * **POST y no DELETE porque el motivo va en el cuerpo** y hay proxies que
+ * descartan el cuerpo de un DELETE. Misma forma que la cancelacion de una
+ * sesion.
+ *
+ * ⚠️ El backend **rechaza con 409 quitar el ultimo `administrar_permisos`**:
+ * dejaria el reparto sin nadie que pudiera volver a tocarlo. Ese mensaje se
+ * enseña tal cual.
+ */
+export const revocarPermiso = (rolId: number, codigo: string, motivo: string) =>
+  pedir<void>(`/roles/${rolId}/permisos/${codigo}/revocacion`, {
+    metodo: 'POST',
+    cuerpo: { motivo },
+  })
 export const listarAreas = () => pedir<AreaPanel[]>('/areas')
 
 export const listarVersionesBanco = () =>

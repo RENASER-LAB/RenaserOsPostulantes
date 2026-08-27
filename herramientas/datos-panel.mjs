@@ -47,6 +47,59 @@ export const SESIONES = [
     enunciado: null, vacanteIds: [2], responsableIds: [1], tramos: [] },
 ]
 
+/**
+ * Quien eligio la sesion 1.
+ *
+ * ⚠️ **No hay ninguna fila con `asistio: false`, y no es un olvido.** Se
+ * comprobo contra el backend vivo: marcar que alguien no vino pone
+ * `es_vigente = false` y `GET /inscritos` solo devuelve las vigentes, asi que
+ * esa fila **deja de existir en esta lista**. Una fixtura con un ausente dentro
+ * enseñaria un estado que la API nunca devuelve, y fue justo lo que escondio el
+ * fallo: la persona se desvanecia al marcarla y nada lo decia.
+ *
+ * Quedan los dos que si llegan: sin pasar lista, y presente.
+ */
+export const INSCRITOS = [
+  { inscripcionId: 11, postulacionId: 91, candidato: 'Camila Reyes Ortiz',
+    vacante: 'Ingeniero/a de Infraestructura', inscritaEn: '2026-08-24T18:10:00Z',
+    asistio: null },
+  { inscripcionId: 12, postulacionId: 92, candidato: 'Diego Napuri Salas',
+    vacante: 'Ingeniero/a de Infraestructura', inscritaEn: '2026-08-24T19:02:00Z',
+    asistio: true },
+  { inscripcionId: 13, postulacionId: 93, candidato: 'Rosa Huaman Lopez',
+    vacante: 'Analista de Datos', inscritaEn: '2026-08-25T09:40:00Z', asistio: null },
+]
+
+/**
+ * La matriz de un rol: el catalogo entero, con `alcance: null` en lo que no
+ * tiene. **Llega ordenado por grupo y orden desde el backend**, y la fixtura lo
+ * copia asi para que la pantalla se vea con el orden real y no con uno inventado.
+ */
+export const PERMISOS_DEL_ROL = [
+  { codigo: 'ver_candidatos', etiqueta: 'Ver la lista de candidatos', grupo: 'CANDIDATOS',
+    orden: 1, alcance: 'TODO' },
+  { codigo: 'abrir_ficha_candidato', etiqueta: 'Abrir la ficha completa de un candidato',
+    grupo: 'CANDIDATOS', orden: 2, alcance: 'SUS_VACANTES' },
+  { codigo: 'ver_cv_completo', etiqueta: 'Ver el curriculum sin ocultar datos',
+    grupo: 'CANDIDATOS', orden: 3, alcance: null },
+  { codigo: 'ver_pretension', etiqueta: 'Ver la pretension salarial', grupo: 'CANDIDATOS',
+    orden: 41, alcance: 'PROPIO' },
+  { codigo: 'crear_sesiones_simulacion',
+    etiqueta: 'Crear sesiones de simulacion con fecha y cupo', grupo: 'SESIONES',
+    orden: 1, alcance: null },
+  { codigo: 'marcar_eventos_simulacion',
+    etiqueta: 'Marcar los eventos observables de una sesion', grupo: 'SESIONES',
+    orden: 3, alcance: 'SUS_VACANTES' },
+  { codigo: 'marcar_asistencia', etiqueta: 'Marcar quien asistio a una sesion',
+    grupo: 'SESIONES', orden: 4, alcance: 'TODO' },
+  { codigo: 'ver_inscritos_simulacion',
+    etiqueta: 'Ver quien eligio cada sesion de simulacion', grupo: 'SESIONES',
+    orden: 9, alcance: 'SUS_VACANTES' },
+  { codigo: 'ver_vacantes', etiqueta: 'Ver las vacantes', grupo: 'VACANTES', orden: 1,
+    alcance: 'TODO' },
+  { codigo: 'publicar_vacante', etiqueta: 'Publicar una vacante', grupo: 'VACANTES',
+    orden: 4, alcance: null },
+]
 
 /** El detalle de una vacante: embudo, ranking y requisitos. */
 const RANKING = {
@@ -155,6 +208,11 @@ const VALIDACION = {
 export const RESPUESTAS = {
   '/vacantes': VACANTES,
   '/sesiones-simulacion': SESIONES,
+  '/sesiones-simulacion/1/inscritos': INSCRITOS,
+  // La sesion 2 se queda sin inscritos a proposito: es el caso vacio.
+  '/sesiones-simulacion/2/inscritos': [],
+  '/roles/1/permisos': PERMISOS_DEL_ROL,
+  '/roles/2/permisos': PERMISOS_DEL_ROL,
   '/solicitudes': [
     { id: 7, estado: 'APROBADA', urgencia: 'ALTA', areaId: 1,
       resultadoPrincipal: 'Tablero de ventas al día', creadoEn: '2026-06-20T09:00:00Z' },

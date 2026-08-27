@@ -10,6 +10,11 @@
 .envoltura {
   /* La tabla puede ser mas ancha que la pantalla: que ruede ella, no la pagina. */
   overflow-x: auto;
+  /*
+   * Contenedor de consulta para que una fila de detalle pueda medirse contra lo
+   * que SE VE y no contra lo que hay debajo del scroll. Ver `.detalle`.
+   */
+  container-type: inline-size;
   background: var(--nube);
   border: 1px solid var(--regla);
   border-radius: var(--radio);
@@ -58,6 +63,43 @@
 /* Una fila que abre algo al pulsarla. */
 .pulsable {
   cursor: pointer;
+}
+
+/*
+ * La fila que NO es una fila: el detalle desplegado de la de arriba.
+ *
+ * Va en esta hoja y no en la de cada pantalla por especificidad. `.tabla td` y
+ * `.tabla tbody tr:hover` le ganan a una clase suelta de otro modulo, asi que
+ * escrito alli obligaria a un `!important` en cada pantalla que despliegue.
+ *
+ * Sin relleno propio: el bloque de dentro pone el suyo. Y sin `:hover`, porque
+ * esto no es una fila que se compare ni se elija.
+ */
+.tabla tbody tr.detalle:hover {
+  background: var(--nube-hundida);
+}
+
+.tabla tbody tr.detalle > td {
+  padding: 0;
+  background: var(--nube-hundida);
+}
+
+/*
+ * ⚠️ **El detalle no puede heredar el ancho de la tabla.**
+ *
+ * Un `colSpan` sobre siete columnas mide lo que miden las siete, que en esta
+ * tabla es mas que la pantalla: el contenido se iba a la derecha del scroll y
+ * en un telefono no se veia ni una sola pildora de asistencia — justo lo que
+ * hay que mirar para pasar lista, que se hace de pie en la sala.
+ *
+ * `100cqi` es el ancho de la envoltura, o sea el visible, no el desplazado. Y
+ * el `sticky` lo mantiene pegado al canto izquierdo mientras la tabla rueda por
+ * debajo, asi que el detalle esta siempre entero delante.
+ */
+.tabla tbody tr.detalle > td > * {
+  position: sticky;
+  left: 0;
+  width: 100cqi;
 }
 
 .cifra {

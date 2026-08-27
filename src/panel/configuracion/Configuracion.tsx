@@ -20,6 +20,7 @@ import {
   listarVersionesPesos,
   verCatalogos,
 } from '../api/panel'
+import { Permisos } from './Permisos'
 import tabla from '../ui/Tabla.module.css'
 import estilos from './Configuracion.module.css'
 
@@ -35,6 +36,7 @@ export function ConfiguracionPanel() {
       <Parametros />
       <BancoDePreguntas />
       <Equipo />
+      <Permisos />
       <SoloLectura />
     </div>
   )

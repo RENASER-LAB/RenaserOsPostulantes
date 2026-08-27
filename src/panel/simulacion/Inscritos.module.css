@@ -1,0 +1,309 @@
+/*
+ * La lista de quién viene a una sesión.
+ *
+ * Va dentro de la fila de la tabla, sobre nube hundida: es un detalle que se
+ * abre, no una sección propia. Lista y no tabla porque cada fila es una
+ * persona con su acción al lado, no una celda que se compare con la de arriba.
+ */
+
+.bloque {
+  padding: var(--e4) var(--e4) var(--e5);
+}
+
+.cabeceraLista {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--e3);
+  margin-bottom: var(--e4);
+}
+
+.titulo {
+  font-size: var(--t-base);
+  font-weight: 600;
+  letter-spacing: -0.008em;
+  margin: 0;
+}
+
+.recuento {
+  font-size: var(--t-apoyo);
+  font-variant-numeric: tabular-nums;
+  color: var(--tinta2);
+  margin: 0;
+}
+
+.porQue {
+  color: var(--tinta3);
+}
+
+.aviso {
+  font-size: var(--t-prosa);
+  color: var(--tinta2);
+  padding: var(--e4);
+  margin: 0;
+}
+
+.vacio {
+  font-size: var(--t-prosa);
+  line-height: 1.55;
+  color: var(--tinta2);
+  max-width: var(--medida);
+  margin: 0;
+}
+
+/* ---------- Las filas ---------- */
+
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+}
+
+.fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e3) var(--e4);
+  background: var(--nube);
+  border: 1px solid var(--regla);
+  border-radius: var(--radio-menor);
+  padding: var(--e3) var(--e4);
+}
+
+.quien {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  /* Que sea esta la que absorbe el ancho sobrante y no la marca de asistencia. */
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+
+.nombre {
+  font-size: var(--t-prosa);
+  font-weight: 600;
+}
+
+.contexto {
+  font-size: var(--t-menor);
+  color: var(--tinta3);
+}
+
+.acciones {
+  display: flex;
+  gap: var(--e2);
+  margin-left: auto;
+}
+
+.chico {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 var(--e3);
+  background: var(--nube);
+  color: var(--tinta);
+  border: 1px solid var(--borde-control);
+  font: inherit;
+  font-size: var(--t-menor);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  border-radius: var(--radio-control);
+}
+
+.chico:hover:not(:disabled) {
+  border-color: var(--tinta);
+}
+
+.chico:disabled {
+  background: var(--nube-hundida);
+  color: var(--tinta3);
+  border-color: var(--regla2);
+  cursor: default;
+}
+
+/*
+ * Rojo solo en el contorno y solo mientras se puede pulsar: marcar que alguien
+ * no vino lo devuelve a la bandeja del equipo, que decidirá entre otra fecha o
+ * cerrar. Es reversible —se puede volver a marcar que sí— así que no lleva el
+ * rojo relleno de las acciones que no se deshacen.
+ */
+.peligro:not(:disabled) {
+  border-color: var(--mal);
+  color: var(--mal);
+}
+
+/*
+ * La pregunta de la ausencia, dentro de la fila.
+ *
+ * El texto va antes que los dos botones y no despues: quien lee de izquierda a
+ * derecha se encuentra la consecuencia antes que el boton que la ejecuta.
+ */
+.pregunta {
+  font-size: var(--t-menor);
+  font-weight: 600;
+  color: var(--mal);
+  align-self: center;
+}
+
+/*
+ * El unico rojo relleno de la pantalla, y solo en el segundo paso: aqui si es
+ * una accion que no se deshace desde esta pantalla.
+ */
+.confirmar {
+  background: var(--mal);
+  border-color: var(--mal);
+  color: var(--tinta-invertida);
+}
+
+.confirmar:hover:not(:disabled) {
+  background: var(--mal-pulsado);
+  border-color: var(--mal-pulsado);
+}
+
+/*
+ * Lo que acaba de pasar con quien ya no esta en la lista.
+ *
+ * Bruma y no rojo: marcar una ausencia es trabajo hecho, no un error. Lo que
+ * hace falta es que no se desvanezca en silencio.
+ */
+.seFue {
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+  background: var(--nube-hundida);
+  border-radius: var(--radio-menor);
+  padding: var(--e3) var(--e4);
+  margin: 0 0 var(--e3);
+  max-width: var(--medida);
+}
+
+/* ---------- Los tres estados de la asistencia ---------- */
+
+.marca {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  padding: 3px var(--e3);
+  font-size: var(--t-micro);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  border-radius: var(--radio-control);
+}
+
+/*
+ * Nadie ha pasado lista. Contorno punteado y sin relleno: en gris se distingue
+ * de las otras dos por el trazo, no por el tono. Es lo único de la fila que
+ * significa «queda algo por hacer».
+ */
+.pendiente {
+  border: 1px dashed var(--regla2);
+  color: var(--tinta3);
+}
+
+.vino {
+  border: 1px solid transparent;
+  background: var(--bien-bruma);
+  color: var(--bien);
+}
+
+/*
+ * La ausencia lleva punto además de color, como la certificación vencida del
+ * perfil: es la única de las tres que cambia el proceso de alguien, y sin el
+ * punto en gris es idéntica a «Asistió».
+ */
+.falto {
+  border: 1px solid transparent;
+  background: var(--mal-bruma);
+  color: var(--mal);
+}
+
+.falto::before {
+  content: '';
+  flex: none;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* ---------- Lo que no se pudo ---------- */
+
+/*
+ * El 403 no es un fallo, así que no se pinta como uno: nube hundida, la misma
+ * superficie con la que el portal dice «esto todavía no existe». En rojo se
+ * leería como algo que se rompió y que hay que reintentar.
+ */
+.sinPermiso {
+  background: var(--nube-hundida);
+  border-radius: var(--radio-menor);
+  padding: var(--e4);
+}
+
+.textoSinPermiso {
+  font-size: var(--t-prosa);
+  line-height: 1.55;
+  color: var(--tinta2);
+  max-width: var(--medida);
+  margin: 0;
+}
+
+.avisoMalo {
+  display: flex;
+  gap: var(--e3);
+  border: 1px solid var(--mal-regla);
+  background: var(--mal-bruma);
+  padding: var(--e3) var(--e4);
+  font-size: var(--t-prosa);
+  line-height: 1.5;
+  color: var(--mal);
+  margin: 0 0 var(--e3);
+  border-radius: var(--radio-menor);
+}
+
+.avisoMalo::before {
+  content: '';
+  flex: none;
+  width: 3px;
+  background: var(--mal);
+}
+
+/* Hay datos, pero son los de antes. Se dice sin quitarlos de en medio. */
+.desactualizado {
+  font-size: var(--t-apoyo);
+  line-height: 1.5;
+  color: var(--tinta2);
+  background: var(--nube-hundida);
+  border-radius: var(--radio-menor);
+  padding: var(--e3) var(--e4);
+  margin: 0 0 var(--e3);
+  max-width: var(--medida);
+}
+
+.reintentar {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}
+
+@media (max-width: 640px) {
+  .acciones {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .chico {
+    flex: 1;
+    justify-content: center;
+  }
+}

@@ -61,8 +61,12 @@ const paso = async (titulo) => {
 
 // 1 · Entrar como el equipo
 await pagina.goto(`${PORTAL}/admin/entrar`, { waitUntil: 'domcontentloaded' })
-await pagina.getByLabel('Tu identificador de RENASER OS').fill('andy-dev')
-await pagina.getByRole('button', { name: 'Entrar al panel' }).click()
+// ⚠️ El panel entra con correo y contraseña desde la reescritura del login. La
+// entrada de desarrollo sigue ahí pero **plegada**, y hay que abrirla: el campo
+// no existe en el DOM accesible hasta que el `<details>` se despliega.
+await pagina.getByText('Entrar con un id de desarrollo').click()
+await pagina.getByLabel('Identificador de RENASER OS').fill('andy-dev')
+await pagina.getByRole('button', { name: 'Entrar como desarrollo' }).click()
 await pagina.getByRole('heading', { name: 'Vacantes.' }).waitFor({ timeout: 15000 })
 await paso('Entrar al panel con andy-dev')
 
@@ -147,7 +151,10 @@ if (!bloqueado) fallos.push('El botón de publicar no espera a que se elija eval
 // aquí porque es el único de los cuatro ajustes que cambia lo que se pide.
 // La casilla la manda el servidor, no el navegador: no se marca sola al
 // pulsarla, cambia cuando el backend lo confirma. Por eso se espera al texto.
-const interruptor = pagina.getByRole('checkbox')
+// ⚠️ Nombrada, no `getByRole('checkbox')` a secas: el ranking por etapas trajo
+// la casilla «Solo quienes están aquí ahora» a esta misma pantalla y desde
+// entonces hay dos, así que el selector anónimo se rompe por ambigüedad.
+const interruptor = pagina.getByRole('checkbox', { name: /La evaluación del banco/ })
 await interruptor.click()
 await pagina.getByText(/Apagada: la prueba del puesto/).waitFor({ timeout: 15000 })
 await paso('Evaluación del banco apagada: ya no pide elegir cuál')
