@@ -40,7 +40,11 @@ await foto('vacantes')
 
 // 2 · El detalle de la vacante con postulantes (la 4, Administrador)
 await pagina.getByRole('link', { name: /Ver postulantes/ }).first().click()
-await pagina.getByRole('heading', { name: 'El ranking de la tanda' }).waitFor({ timeout: 10000 })
+// ⚠️ El titulo cambio con el ranking por etapas del 25/08 y este script se
+// quedo con el viejo: llevaba desde entonces reventando en esta linea, asi que
+// las tres pantallas de abajo no se miraban. Un e2e roto no avisa de que esta
+// roto, simplemente deja de correrse.
+await pagina.getByRole('heading', { name: 'El ranking, etapa por etapa' }).waitFor({ timeout: 10000 })
 await pagina.waitForTimeout(800)
 await foto('vacante-detalle')
 
@@ -70,6 +74,12 @@ await pagina.getByRole('link', { name: 'Configuración' }).click()
 await pagina.getByRole('heading', { name: 'Configuración.' }).waitFor({ timeout: 10000 })
 await pagina.waitForTimeout(800)
 await foto('configuracion')
+
+// 6 · El banco con una version abierta: el resumen y su lista de preguntas.
+await pagina.getByRole('heading', { name: 'El banco de preguntas' }).waitFor({ timeout: 10000 })
+await pagina.getByRole('button', { name: 'Ver qué contiene' }).first().click()
+await pagina.getByText(/\d+ preguntas · \d+ puntúan/).waitFor({ timeout: 15000 })
+await foto('banco')
 
 console.log(fallos.length ? `⚠ errores de consola:\n  ${fallos.join('\n  ')}` : '✓ sin errores de consola')
 await navegador.close()

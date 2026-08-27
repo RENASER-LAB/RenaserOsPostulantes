@@ -469,13 +469,84 @@ export interface AreaPanel {
   esActiva?: boolean
 }
 
+// ---------- El banco de preguntas ----------
+
+/** BORRADOR se edita entero, PUBLICADA circula, ARCHIVADA es historia. */
+export type EstadoDeVersion = 'BORRADOR' | 'PUBLICADA' | 'ARCHIVADA'
+
+/**
+ * NIVEL es el banco que se le pone delante al candidato segun el nivel del
+ * puesto; ALINEACION es el otro banco y **no lleva nivel**, asi que su
+ * `nivelPuestoCodigo` viaja en null.
+ */
+export type TipoDeBanco = 'NIVEL' | 'ALINEACION'
+
+/**
+ * Copia de `VersionBancoResponse`.
+ *
+ * ⚠️ **No hay campo `nombre`.** El nombre que se lee en pantalla es `etiqueta`;
+ * este tipo lo declaraba y nadie lo mandaba nunca.
+ */
 export interface VersionBanco {
   id: number
-  nombre?: string
-  estado: string
-  nivelPuestoCodigo?: string
-  publicadaEn?: FechaIso | null
-  [otros: string]: unknown
+  tipoBanco: TipoDeBanco
+  nivelPuestoCodigo: string | null
+  etiqueta: string
+  estado: EstadoDeVersion
+  publicadaEn: FechaIso | null
+}
+
+/** Copia de `CrearVersionBanco`. Nace siempre en BORRADOR y vacia. */
+export interface NuevaVersionBanco {
+  tipoBanco: TipoDeBanco
+  /** Null en ALINEACION, obligatorio de hecho en NIVEL: sin el no rige a nadie. */
+  nivelPuestoCodigo: string | null
+  etiqueta: string
+}
+
+/**
+ * Copia de `ResultadoImportacion`.
+ *
+ * ⚠️ **El Excel NO devuelve una `VersionBanco`**, que es lo que este archivo
+ * declaraba. Devuelve el recuento de lo que entro, y ese recuento es lo unico
+ * que permite comprobar que el archivo se leyo entero.
+ */
+export interface ResultadoDeImportacion {
+  versionBancoId: number
+  etiqueta: string
+  preguntas: number
+  opciones: number
+  camposCaso: number
+  rangos: number
+  pares: number
+  dimensionesAsignadas: number
+}
+
+/**
+ * Copia de `PreguntaResponse`.
+ *
+ * ⚠️ **`logicaInterna` entra pero jamas sale** (RF-53 del backend): no esta en
+ * el `record` y no hay que inventarle un hueco aqui.
+ */
+export interface PreguntaDelBanco {
+  id: number
+  versionBancoId: number
+  codigo: string
+  bloque: string | null
+  tipo: string
+  enunciado: string
+  situacion: string | null
+  esPuntuable: boolean
+  orden: number | null
+  /** 0 no suma, 1 vale hasta 3 puntos, 2 hasta 6. */
+  peso: number | null
+  /** El item clave (★): hay que preguntar por el en la entrevista. */
+  esClave: boolean
+  /** Descarta al candidato por si solo, con independencia del puntaje. */
+  esEliminatorio: boolean
+  casosPedidos: number | null
+  rangosDePreguntaCodigo: string | null
+  formulaPuntaje: string | null
 }
 
 export interface PlantillaEvaluacionPanel {

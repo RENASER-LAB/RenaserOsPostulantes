@@ -2,24 +2,22 @@
  * La configuracion, en un solo sitio y en secciones que se entienden.
  *
  * Cada bloque dice que es y que pasa al tocarlo. Los parametros se editan con
- * motivo porque el backend audita cada cambio con el valor anterior; el banco
- * de preguntas entra por la plantilla Excel y, si el archivo tiene problemas,
- * el backend contesta con la lista completa y no importa nada.
+ * motivo porque el backend audita cada cambio con el valor anterior. El banco
+ * de preguntas tiene bloque propio: su ciclo —importar, publicar, archivar,
+ * descartar— no cabe en una lista.
  */
 
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   editarParametro,
-  importarBanco,
   listarAreas,
   listarParametros,
   listarPlantillasEvaluacion,
   listarUsuarios,
-  listarVersionesBanco,
   listarVersionesPesos,
-  verCatalogos,
 } from '../api/panel'
+import { BancoDePreguntas } from './BancoDePreguntas'
 import { Permisos } from './Permisos'
 import tabla from '../ui/Tabla.module.css'
 import estilos from './Configuracion.module.css'
@@ -154,103 +152,6 @@ function Parametros() {
         <p className={estilos.avisoMalo} role="alert">
           {fallo}
         </p>
-      )}
-    </section>
-  )
-}
-
-// ---------- El banco de preguntas ----------
-
-function BancoDePreguntas() {
-  const cache = useQueryClient()
-  const versiones = useQuery({ queryKey: ['panel-banco'], queryFn: listarVersionesBanco })
-  const catalogos = useQuery({ queryKey: ['panel-catalogos'], queryFn: verCatalogos })
-
-  const [archivo, setArchivo] = useState<File | null>(null)
-  const [nivel, setNivel] = useState('')
-  const [etiqueta, setEtiqueta] = useState('')
-  const [resultado, setResultado] = useState<string | null>(null)
-  const [fallo, setFallo] = useState<string | null>(null)
-
-  const importacion = useMutation({
-    mutationFn: () => importarBanco(archivo as File, nivel, etiqueta.trim()),
-    onSuccess: async () => {
-      setResultado('Banco importado: quedó como versión en borrador, lista para revisar y publicar.')
-      setArchivo(null)
-      setEtiqueta('')
-      await cache.invalidateQueries({ queryKey: ['panel-banco'] })
-    },
-    onError: (c) => setFallo(c instanceof Error ? c.message : 'No se pudo importar.'),
-  })
-
-  return (
-    <section className={estilos.seccion}>
-      <h2 className={estilos.tituloSeccion}>El banco de preguntas</h2>
-      <p className={estilos.nota}>
-        Se importa desde la plantilla Excel. Si el archivo tiene problemas, el backend
-        devuelve la lista completa y no importa nada: la versión solo se crea entera.
-      </p>
-
-      <div className={estilos.importar}>
-        <input
-          className={estilos.archivo}
-          type="file"
-          accept=".xlsx,.xls"
-          aria-label="La plantilla Excel del banco"
-          onChange={(e) => setArchivo(e.target.files?.[0] ?? null)}
-        />
-        <select
-          className={estilos.entrada}
-          value={nivel}
-          onChange={(e) => setNivel(e.target.value)}
-          aria-label="Nivel del puesto al que pertenece el banco"
-        >
-          <option value="">Nivel del puesto…</option>
-          {(catalogos.data?.nivelesPuesto ?? []).map((n) => (
-            <option value={n.codigo} key={n.codigo}>
-              {n.nombre}
-            </option>
-          ))}
-        </select>
-        <input
-          className={estilos.entrada}
-          type="text"
-          placeholder="Etiqueta de la versión (p. ej. «v4 borrador septiembre»)"
-          value={etiqueta}
-          onChange={(e) => setEtiqueta(e.target.value)}
-        />
-        <button
-          className={estilos.subir}
-          type="button"
-          onClick={() => importacion.mutate()}
-          disabled={importacion.isPending || !archivo || nivel === '' || etiqueta.trim() === ''}
-        >
-          {importacion.isPending ? 'Importando…' : 'Importar el Excel'}
-        </button>
-      </div>
-      {resultado && (
-        <p className={estilos.avisoBien} role="status">
-          {resultado}
-        </p>
-      )}
-      {fallo && (
-        <p className={estilos.avisoMalo} role="alert">
-          {fallo}
-        </p>
-      )}
-
-      {versiones.data && versiones.data.length > 0 && (
-        <ul className={estilos.versiones} role="list">
-          {versiones.data.map((v) => (
-            <li className={estilos.version} key={v.id}>
-              <span className={estilos.estadoVersion}>{String(v.estado)}</span>
-              <span>
-                {String(v.nombre ?? v.etiqueta ?? `Versión ${v.id}`)}
-                {v.nivelPuestoCodigo ? ` · ${String(v.nivelPuestoCodigo)}` : ''}
-              </span>
-            </li>
-          ))}
-        </ul>
       )}
     </section>
   )

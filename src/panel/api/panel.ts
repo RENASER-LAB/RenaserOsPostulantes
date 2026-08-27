@@ -32,6 +32,9 @@ import type {
   UsuarioEquipo,
   VacantePanel,
   VersionBanco,
+  NuevaVersionBanco,
+  ResultadoDeImportacion,
+  PreguntaDelBanco,
   VersionPesos,
   Catalogos,
   SolicitudResumen,
@@ -253,8 +256,18 @@ export const revocarPermiso = (rolId: number, codigo: string, motivo: string) =>
   })
 export const listarAreas = () => pedir<AreaPanel[]>('/areas')
 
+/**
+ * Las versiones que esta organizacion ve.
+ *
+ * ⚠️ **Ver no implica poder tocar.** Una empresa que no personalizo el banco ve
+ * aqui las versiones de la plataforma, y publicar o archivar cualquiera de
+ * ellas contesta **404** —el backend compara el `organizacionId` y a lo ajeno
+ * lo trata como inexistente—. `VersionBancoResponse` no trae el dueño, asi que
+ * desde aqui no hay forma de saberlo antes: se aprende del primer 404.
+ */
 export const listarVersionesBanco = () =>
   pedir<VersionBanco[]>('/banco-preguntas/versiones')
+
 /**
  * La plantilla Excel entra tal cual: multipart, el navegador pone el tipo.
  * Si el archivo tiene problemas, el backend contesta 400 con la lista completa
@@ -269,11 +282,62 @@ export const importarBanco = (
   formulario.append('archivo', archivo)
   formulario.append('nivelPuestoCodigo', nivelPuestoCodigo)
   formulario.append('etiqueta', etiqueta)
-  return pedir<VersionBanco>('/banco-preguntas/importaciones', {
+  return pedir<ResultadoDeImportacion>('/banco-preguntas/importaciones', {
     metodo: 'POST',
     formulario,
   })
 }
+
+/** Una version vacia en borrador, para llenarla despues. */
+export const crearVersionBanco = (datos: NuevaVersionBanco) =>
+  pedir<{ id: number }>('/banco-preguntas/versiones', {
+    metodo: 'POST',
+    cuerpo: datos,
+  })
+
+/**
+ * Publicar valida la coherencia de cada formato, cierra la version y **archiva
+ * a todas las publicadas hermanas** —mismo tipo de banco y mismo nivel—, no
+ * solo a la ultima.
+ *
+ * ⚠️ **La validacion para en la primera pregunta que falla.** El mensaje del
+ * 409 nombra un solo codigo; si hay tres rotas, hacen falta tres intentos. Se
+ * dice en pantalla para que nadie lea ese mensaje como la lista completa.
+ */
+export const publicarVersionBanco = (id: number) =>
+  pedir<void>(`/banco-preguntas/versiones/${id}/publicacion`, { metodo: 'POST' })
+
+/**
+ * Archivar retira la version. Quien no empezo su evaluacion pasa al reemplazo;
+ * quien ya empezo conserva la suya, porque su examen esta armado con esas
+ * preguntas y un banco archivado guarda sus claves.
+ *
+ * ⚠️ **Sin reemplazo publicado, el backend contesta 409 y dice a cuanta gente
+ * dejaria sin banco.** Ese numero no se calcula aqui: se enseña el suyo.
+ */
+export const archivarVersionBanco = (id: number) =>
+  pedir<void>(`/banco-preguntas/versiones/${id}/archivado`, { metodo: 'POST' })
+
+/**
+ * Descartar borra el borrador entero: sus preguntas, opciones, tramos, campos
+ * y pares. **No se deshace y no hay papelera.**
+ */
+export const descartarBorradorBanco = (id: number) =>
+  pedir<void>(`/banco-preguntas/versiones/${id}`, { metodo: 'DELETE' })
+
+/**
+ * Renombrar es correccion editorial y **solo vale sobre una PUBLICADA**: un
+ * borrador se edita entero y una archivada ya no se toca. Las dos contestan 409.
+ */
+export const renombrarVersionBanco = (id: number, etiqueta: string) =>
+  pedir<void>(`/banco-preguntas/versiones/${id}/etiqueta`, {
+    metodo: 'PATCH',
+    cuerpo: { etiqueta },
+  })
+
+/** Lo que hay dentro de una version, para poder mirarla antes de publicarla. */
+export const verPreguntasDeVersion = (id: number) =>
+  pedir<PreguntaDelBanco[]>(`/banco-preguntas/versiones/${id}/preguntas`)
 
 export const listarPlantillasEvaluacion = () =>
   pedir<PlantillaEvaluacionPanel[]>('/plantillas-evaluacion')
