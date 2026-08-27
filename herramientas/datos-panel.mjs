@@ -101,11 +101,25 @@ export const PERMISOS_DEL_ROL = [
     orden: 4, alcance: null },
 ]
 
-/** El detalle de una vacante: embudo, ranking y requisitos. */
+/*
+ * El detalle de una vacante: embudo, ranking y requisitos.
+ *
+ * ⚠️ **Las filas reparten a la gente por etapas a proposito, y una esta
+ * terminada.** El ranking enseña por defecto solo a quien esta parado en la
+ * etapa de la pestaña, asi que una fixtura con una persona por etapa daria
+ * cinco tablas de una fila y las capturas pareceran rotas sin estarlo. Y sin
+ * una fila terminada —NO_CONTINUA no empieza por el prefijo de ninguna etapa—
+ * no hay forma de ver que esas quedan fuera de las cinco pestañas.
+ *
+ * Las cifras de arriba cuadran con estas ocho filas. Una fixtura con `total:
+ * 34` sobre ocho filas hace que la linea de «se ven N de M» parezca un fallo
+ * del panel: es la tercera vez que una fixtura inventada manda a buscar en el
+ * sitio equivocado.
+ */
 const RANKING = {
   vacanteId: 1, vacante: 'Ingeniero/a de Infraestructura',
   puesto: 'Ingeniero de Infraestructura', nivelPuesto: 'MEDIO',
-  total: 34, conPasadaFina: 21, calificados: 21, enCurso: 11, fallidos: 2,
+  total: 8, conPasadaFina: 5, calificados: 6, enCurso: 1, fallidos: 1,
   filas: [
     { puesto: 1, postulacionId: 91, uuid: 'p1', candidato: 'Camila Reyes Ortiz',
       correo: 'camila@example.com', estado: 'PRUEBA_POR_CONFIRMAR',
@@ -136,6 +150,49 @@ const RANKING = {
       adecuacion: 66, potencial: 70, altoRendimiento: 71, confianzaEvidencia: 74,
       resumen: 'Trabajo sólido y sin sobresaltos.',
       riesgosCriticos: 0, fortalezas: 3, alertas: 0, actualizadoEn: '2026-08-20T09:00:00Z',
+      notasCriterio: [] },
+    { puesto: 4, postulacionId: 94, uuid: 'p4', candidato: 'Rodrigo Ayala Pinto',
+      correo: 'rodrigo@example.com', estado: 'PERFIL_POR_CONFIRMAR',
+      estadoNombre: 'Perfil por confirmar', estadoCalificacion: 'CALIFICADA', pasada: 'FINA',
+      archivoNombre: 'cv-rodrigo.pdf', grupoPrioridad: 'A', notaEtapa: 84, notaCurriculum: 80,
+      adecuacion: 82, potencial: 85, altoRendimiento: 77, confianzaEvidencia: 81,
+      resumen: 'Llevó un equipo pequeño durante una migración que salió mal y lo cuenta entero.',
+      riesgosCriticos: 0, fortalezas: 3, alertas: 1, actualizadoEn: '2026-08-23T12:10:00Z',
+      notasCriterio: [] },
+    { puesto: 5, postulacionId: 96, uuid: 'p6', candidato: 'Marcos Ibáñez Trujillo',
+      correo: 'marcos@example.com', estado: 'PRUEBA_TURNO_CANDIDATO',
+      estadoNombre: 'Prueba habilitada', estadoCalificacion: 'PENDIENTE', pasada: 'FINA',
+      archivoNombre: 'cv-marcos.pdf', grupoPrioridad: 'B', notaEtapa: 75, notaCurriculum: 75,
+      adecuacion: 73, potencial: 78, altoRendimiento: 70, confianzaEvidencia: 69,
+      resumen: 'Perfil sólido de operación; menos evidencia de decidir con poca información.',
+      riesgosCriticos: 0, fortalezas: 2, alertas: 1, actualizadoEn: '2026-08-24T08:30:00Z',
+      notasCriterio: [] },
+    { puesto: 6, postulacionId: 98, uuid: 'p8', candidato: 'Ana Belén Zegarra',
+      correo: 'ana@example.com', estado: 'DECISION_POR_CONFIRMAR',
+      estadoNombre: 'En decisión final', estadoCalificacion: 'CALIFICADA', pasada: 'FINA',
+      archivoNombre: 'cv-ana.pdf', grupoPrioridad: 'A', notaEtapa: 73, notaCurriculum: 79,
+      adecuacion: 81, potencial: 76, altoRendimiento: 75, confianzaEvidencia: 80,
+      resumen: 'Terminó la validación con las métricas cumplidas y una duda del área.',
+      riesgosCriticos: 0, fortalezas: 4, alertas: 1, actualizadoEn: '2026-08-25T16:45:00Z',
+      notasCriterio: [] },
+    /* La terminada: no empieza por el prefijo de ninguna etapa, asi que con el
+       filtro puesto no sale en ninguna de las cinco pestañas. */
+    { puesto: 7, postulacionId: 97, uuid: 'p7', candidato: 'Lucía Ferrer Zavala',
+      correo: 'lucia@example.com', estado: 'NO_CONTINUA',
+      estadoNombre: 'No continúa', estadoCalificacion: 'CALIFICADA', pasada: 'FINA',
+      archivoNombre: 'cv-lucia.pdf', grupoPrioridad: 'C', notaEtapa: 52, notaCurriculum: 55,
+      adecuacion: 51, potencial: 58, altoRendimiento: 49, confianzaEvidencia: 62,
+      resumen: 'No sostuvo el caso de la prueba y el cierre quedó a medias.',
+      riesgosCriticos: 2, fortalezas: 1, alertas: 3, actualizadoEn: '2026-08-19T11:00:00Z',
+      notasCriterio: [] },
+    /* Sin calificar todavia: la nota va vacia, que no es un cero. */
+    { puesto: 8, postulacionId: 95, uuid: 'p5', candidato: 'Fátima Quispe Loayza',
+      correo: 'fatima@example.com', estado: 'PERFIL_TURNO_CANDIDATO',
+      estadoNombre: 'Evaluación pendiente', estadoCalificacion: 'PENDIENTE', pasada: null,
+      archivoNombre: 'cv-fatima.pdf', grupoPrioridad: null, notaEtapa: null, notaCurriculum: null,
+      adecuacion: null, potencial: null, altoRendimiento: null, confianzaEvidencia: null,
+      resumen: null,
+      riesgosCriticos: 0, fortalezas: 0, alertas: 0, actualizadoEn: null,
       notasCriterio: [] },
   ],
 }
@@ -321,16 +378,21 @@ export const RESPUESTAS = {
         etapaCodigo: 'PRUEBA', esperaA: 'CANDIDATO', orden: 3, esFinal: false },
       { codigo: 'PRUEBA_POR_CONFIRMAR', nombre: 'Prueba en revisión',
         etapaCodigo: 'PRUEBA', esperaA: 'EQUIPO', orden: 4, esFinal: false },
+      { codigo: 'PERFIL_POR_CONFIRMAR', nombre: 'Perfil por confirmar',
+        etapaCodigo: 'PERFIL', esperaA: 'EQUIPO', orden: 3, esFinal: false },
       { codigo: 'SIMULACION_POR_CONFIRMAR', nombre: 'Simulación por confirmar',
         etapaCodigo: 'SIMULACION', esperaA: 'EQUIPO', orden: 5, esFinal: false },
+      { codigo: 'DECISION_POR_CONFIRMAR', nombre: 'En decisión final',
+        etapaCodigo: 'DECISION', esperaA: 'EQUIPO', orden: 6, esFinal: false },
       { codigo: 'NO_CONTINUA', nombre: 'No continúa',
         etapaCodigo: null, esperaA: 'NADIE', orden: 20, esFinal: true },
     ],
   },
   '/vacantes/1': VACANTES[0],
   '/vacantes/1/embudo': { porEstado: {
-    PERFIL_TURNO_CANDIDATO: 6, PERFIL_CALIFICANDO: 5, PRUEBA_TURNO_CANDIDATO: 4,
-    PRUEBA_POR_CONFIRMAR: 3, SIMULACION_POR_CONFIRMAR: 2, NO_CONTINUA: 14 } },
+    PERFIL_TURNO_CANDIDATO: 1, PERFIL_CALIFICANDO: 1, PERFIL_POR_CONFIRMAR: 1,
+    PRUEBA_TURNO_CANDIDATO: 1, PRUEBA_POR_CONFIRMAR: 1, SIMULACION_POR_CONFIRMAR: 1,
+    DECISION_POR_CONFIRMAR: 1, NO_CONTINUA: 1 } },
   '/vacantes/1/ranking': RANKING,
   '/postulaciones/91/evaluacion': EVALUACION,
   '/postulaciones/91': {
@@ -359,6 +421,39 @@ export const RESPUESTAS = {
     ],
   },
   '/postulaciones/91/historial': [],
+  /*
+   * El segundo protagonista, y hace falta por el filtro por etapa.
+   *
+   * Camila (91) esta en PRUEBA_POR_CONFIRMAR, asi que en la pestaña de Perfil
+   * integral ya no aparece: su ficha solo se puede abrir desde la pestaña de
+   * la prueba. Rodrigo esta parado en el perfil y es quien sostiene esa otra
+   * captura. Sin estas cuatro rutas, el interceptor contestaria `[]` a todo y
+   * la ficha saldria vacia sin decir por que.
+   */
+  '/postulaciones/94': {
+    id: 94, uuid: 'p4', candidato: 'Rodrigo Ayala Pinto', correo: 'rodrigo@example.com',
+    vacante: 'Ingeniero/a de Infraestructura', estado: 'PERFIL_POR_CONFIRMAR',
+    estadoNombre: 'Perfil por confirmar', grupoPrioridad: 'A', motivoCierre: null,
+    resultadoOrgulloso: 'Saqué adelante una migración que se cayó dos veces antes de salir.',
+    enlaces: [], archivoCvId: 7,
+    creadoEn: '2026-08-13T09:40:00Z', movidoEn: '2026-08-23T12:10:00Z',
+  },
+  '/postulaciones/94/perfil-integral': {
+    postulacionId: 94, estadoCalificacion: 'CALIFICADA',
+    resumen: 'Llevó un equipo pequeño durante una migración que salió mal y lo cuenta entero.',
+    adecuacion: 82, potencial: 85, altoRendimiento: 77, confianzaEvidencia: 81,
+    notaEtapa: 84, actualizadoEn: '2026-08-23T12:10:00Z',
+    hallazgos: [
+      { tipo: 'FORTALEZA', texto: 'Cuenta el error propio antes de que se lo pregunten.' },
+      { tipo: 'ALERTA', texto: 'Poco recorrido decidiendo con presupuesto ajeno.' },
+    ],
+    notasCriterio: [
+      { criterio: 'Criterio técnico', puntaje: 8, maximo: 10, peso: 0.4,
+        explicacion: 'Volvió atrás a tiempo en vez de sostener la decisión.', origen: 'EVALUACION' },
+    ],
+  },
+  '/postulaciones/94/evaluacion': EVALUACION,
+  '/postulaciones/94/historial': [],
   '/postulaciones/91/rubrica-prueba': RUBRICA,
   '/postulaciones/91/rubrica-simulacion': RUBRICA,
   '/postulaciones/91/validacion': VALIDACION,

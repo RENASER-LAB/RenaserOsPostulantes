@@ -109,7 +109,19 @@
 .resumenTanda {
   font-size: var(--t-apoyo);
   color: var(--tinta2);
-  margin-bottom: var(--e3);
+}
+
+/*
+ * Cuantas filas se ven de cuantas. Va pegada al resumen de la tanda —son el
+ * mismo dato leido a dos alcances— y por eso separa e1 de la de arriba y no e3.
+ * En tinta plena porque es lo que explica la tabla que se esta mirando; el
+ * resumen de la tanda, que es contexto, se queda en tinta2.
+ */
+.cuantasSeVen {
+  font-size: var(--t-apoyo);
+  color: var(--tinta);
+  margin-top: var(--e1);
+  font-variant-numeric: tabular-nums;
 }
 
 .candidato {
@@ -503,25 +515,41 @@
   background: rgb(35 43 54 / 0.04);
 }
 
+/* Las dos cifras a la izquierda, el escape a la derecha. */
+.recuentos {
+  min-width: 0;
+}
+
 .filaResumen {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   justify-content: space-between;
   gap: var(--e3);
+  margin-bottom: var(--e3);
 }
 
-.filtroAhora {
+/*
+ * El escape: se lee como lo que es, una excepción a lo que la pestaña enseña.
+ *
+ * Con 44 px de alto: es la unica salida a la tanda entera y antes era una linea
+ * de texto de veinte, que en un telefono se falla al pulsar. La casilla propia
+ * tambien crece — la del navegador mide trece.
+ */
+.verLaTanda {
   display: flex;
   align-items: center;
   gap: var(--e2);
+  min-height: 44px;
   font-size: var(--t-apoyo);
   color: var(--tinta2);
   cursor: pointer;
 }
 
-.cuantasOculta {
-  color: var(--tinta2);
+.verLaTanda input {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
 }
 
 /* ---------- La tabla de la evaluación del banco ---------- */

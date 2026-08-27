@@ -107,7 +107,7 @@ export function VacantesPanel() {
               {vacantes.data.length === 0 && (
                 <tr>
                   <td colSpan={5} className={tabla.vacia}>
-                    Todavía no hay vacantes. Crea la primera con el botón de arriba.
+                    <p>Todavía no hay vacantes. Crea la primera con el botón de arriba.</p>
                   </td>
                 </tr>
               )}
