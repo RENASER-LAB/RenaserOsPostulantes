@@ -41,8 +41,13 @@ const paso = async (titulo) => {
 
 // 1 · Entrar
 await pagina.goto(`${PORTAL}/admin/entrar`, { waitUntil: 'domcontentloaded' })
-await pagina.getByLabel('Tu identificador de RENASER OS').fill('andy-dev')
-await pagina.getByRole('button', { name: 'Entrar al panel' }).click()
+// ⚠️ El panel entra con correo y contraseña desde la reescritura del login. La
+// entrada de desarrollo sigue ahí pero **plegada**, y hay que abrirla: el campo
+// no existe en el DOM accesible hasta que el `<details>` se despliega. Antes
+// esto era el formulario principal, y por eso este bloque se quedó obsoleto.
+await pagina.getByText('Entrar con un id de desarrollo').click()
+await pagina.getByLabel('Identificador de RENASER OS').fill('andy-dev')
+await pagina.getByRole('button', { name: 'Entrar como desarrollo' }).click()
 await pagina.getByRole('heading', { name: 'Vacantes.' }).waitFor({ timeout: 15000 })
 await paso('Entrar al panel')
 

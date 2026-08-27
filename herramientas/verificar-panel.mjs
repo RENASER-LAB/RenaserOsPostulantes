@@ -28,8 +28,12 @@ const foto = async (nombre) => {
 await pagina.goto(`${PORTAL}/admin/entrar`, { waitUntil: 'domcontentloaded' })
 await pagina.getByRole('button', { name: 'Entrar al panel' }).waitFor()
 await foto('entrar')
-await pagina.getByLabel('Tu identificador de RENASER OS').fill('andy-dev')
-await pagina.getByRole('button', { name: 'Entrar al panel' }).click()
+// ⚠️ El panel entra con correo y contraseña desde la reescritura del login. La
+// entrada de desarrollo sigue ahí pero **plegada**, y hay que abrirla: el campo
+// no existe en el DOM accesible hasta que el `<details>` se despliega.
+await pagina.getByText('Entrar con un id de desarrollo').click()
+await pagina.getByLabel('Identificador de RENASER OS').fill('andy-dev')
+await pagina.getByRole('button', { name: 'Entrar como desarrollo' }).click()
 await pagina.waitForURL('**/admin', { timeout: 10000 })
 await pagina.getByRole('table').waitFor({ timeout: 10000 })
 await foto('vacantes')

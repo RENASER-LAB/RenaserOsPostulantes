@@ -1,9 +1,146 @@
 # Portal del candidato · contexto de trabajo
 
-Última actualización: 2026-08-26 · **multiempresa y el perfil del candidato**
+Última actualización: 2026-08-27 · **los inscritos de una sesión y el reparto de permisos**
 
 Este archivo es para retomar el trabajo sin tener que reconstruir nada. Cuenta qué es este
 proyecto, con qué habla, qué se decidió y por qué, y qué está a medias.
+
+---
+
+## Los inscritos de una sesión, y quién puede qué (27/08/2026)
+
+El backend fusionó el #44 (migración **V40**) y el portal se puso al día con las dos piezas.
+
+### Ya se sabe **quiénes** vienen a una sesión
+
+`GET /panel/sesiones-simulacion/{id}/inscritos` devuelve la lista con nombre, vacante, cuándo
+se inscribió y la asistencia. Cada fila de la tabla de sesiones se abre con **«Ver quién
+viene»** y enseña la lista, donde se pasa lista con `POST /panel/inscripciones/{id}/asistencia`.
+
+Lo que de verdad desbloquea es la **`inscripcionId`**: es lo que piden asistencia y marcas, y
+hasta ahora no había forma de averiguarla desde el panel.
+
+⚠️ **`asistio` tiene TRES valores, no dos.** Vacío es «nadie ha pasado lista todavía», que no
+es «no vino»: uno es una tarea pendiente del equipo y el otro cierra el paso de alguien. Un
+`!asistio` en el JSX los colapsa y convierte una sesión sin pasar lista en una a la que no fue
+nadie. Hay test.
+
+⚠️ **Marcar «No vino» hace que la persona DESAPAREZCA de la lista, y `asistio: false` no llega
+nunca por esta ruta.** `marcarAsistencia(false)` pone `es_vigente = false` y `listarInscritos`
+solo devuelve las vigentes. Comprobado contra el backend vivo, no leído.
+
+Eso obliga a dos cosas que parecen rarezas y no lo son: **la ausencia pregunta antes** —en dos
+pasos dentro de la propia fila, para que la pregunta se vea pegada al nombre— y **después se
+dice quién se fue y a dónde**, porque la postulación vuelve a la bandeja del equipo. Sin eso se
+pulsa, la fila se desvanece y no queda ni rastro. La píldora «No asistió» se queda como rama
+defensiva: el contrato admite el valor y pintar «Sin pasar lista» sobre una ausencia sería peor.
+
+⚠️ **Esto lo escondió una fixtura.** `datos-panel.mjs` traía una fila con `asistio: false`, un
+estado que la API real nunca devuelve, así que con datos inventados todo se veía bien. **Una
+fixtura que enseña un estado inalcanzable no es un descuido inofensivo: tapa justo el fallo.**
+
+⚠️ **El conteo de la sesión y la longitud de la lista NO son lo mismo, y pueden divergir.** El
+backend recorta la lista por alcance y deja el conteo entero —es aforo, no identidades—.
+Derivar el número de `inscritos.length` enseñaría «0 de 5» en una sesión llena. Cuando
+divergen, la pantalla **dice por qué** en vez de dejar dos cifras contradictorias.
+
+⚠️ **Entrar a `/admin/simulacion` ya no implica poder gestionarla.** Los dos GET de sesiones
+admiten ahora `crear_sesiones_simulacion` **o** `ver_inscritos_simulacion`, pero crear, ampliar
+cupo y cancelar siguen pidiendo el primero: un responsable de área llega a la tabla y esos tres
+botones le responden 403. Como no hay forma de saberlo antes, **se aprende del primer 403**: se
+retiran las tres acciones y se explica. «Ver quién viene» se queda, que es lo que sí puede.
+
+### El reparto de permisos se edita desde el panel · Configuración
+
+`GET/PUT/POST` sobre `/panel/roles/{id}/permisos[/{codigo}[/revocacion]]`. Se elige un rol y
+sale **el catálogo entero** (71 permisos, 9 grupos), con el alcance de lo concedido y vacío en
+lo que no.
+
+⚠️ **Un cambio vale desde la petición siguiente de cada afectado**, sin desplegar y sin que
+nadie vuelva a entrar — y sin que nadie reciba aviso. Por eso el motivo es obligatorio en los
+dos verbos y queda auditado.
+
+⚠️ **Hacen falta DOS permisos, no uno.** La matriz es de `administrar_permisos`, pero elegir el
+rol necesita `crear_usuarios_y_asignar_roles`, que es lo que abre `GET /roles`. Hoy solo
+Administrador tiene los dos, y conceder el primero sin el segundo deja a alguien mirando una
+lista de roles vacía. La pantalla nombra cuál de los dos falta.
+
+⚠️ **Quitar un permiso NO es un `PUT` con alcance vacío**: tiene su propia ruta de revocación,
+y es POST porque el motivo va en el cuerpo. El backend **rechaza con 409 quitar el último
+`administrar_permisos`** —dejaría el reparto sin nadie que pueda tocarlo— y ese mensaje se
+enseña tal cual.
+
+⚠️ **`PROPIO` casi nunca es lo que se quiere aquí**, y por eso es la única de las cuatro
+píldoras con punto: se lee de quien llama, y en el panel nadie mira su propia postulación. En
+toda la simulación el backend lo trata como «no alcanza a nadie», así que parece un permiso
+concedido y no concede nada.
+
+### El e2e contra el backend de verdad
+
+`PORTAL=http://localhost:5176 node herramientas/e2e-simulacion-permisos.mjs` — 32 comprobaciones
+sobre las dos piezas: la lista, la asistencia con su confirmación, la matriz, conceder, el
+rechazo sin motivo y el 409 del último administrador. **Es lo que encontró el fallo de arriba**;
+los `capturar-*.mjs` no podían, porque interceptan las respuestas.
+
+⚠️ **Escribe en la base local y lo devuelve todo al terminar**, pase o falle (`restaurar()`).
+Nunca toca `administrar_permisos`. Lo que no se puede deshacer son las filas de auditoría de los
+cambios de permiso, y es correcto que así sea.
+
+⚠️ **Necesita que haya alguien inscrito en una sesión** o esa mitad no se ejercita — lo dice en
+voz alta en vez de pasar en verde. Hoy la base local no tiene ninguna inscripción.
+
+⚠️ **No uses `.first()` sobre «Ver quién viene»**: la tabla ordena como quiera el backend y la
+primera fila puede ser una sesión vacía. La primera versión de esta prueba lo hizo y el fallo
+parecía del panel.
+
+### Tres scripts que llevaban rotos desde la reescritura del login (27/08)
+
+No lo rompió esta rama: **estaban así en main** y nadie lo había corrido desde el PR #8. Los
+tres entraban al panel por el formulario viejo de RENASER OS.
+
+| Script | Qué le pasaba |
+|---|---|
+| `e2e-etapas.mjs` | Buscaba «Tu identificador de RENASER OS» |
+| `e2e-vacante.mjs` | Lo mismo, **y además** `getByRole('checkbox')` a secas ya era ambiguo |
+| `verificar-panel.mjs` | Lo mismo del login |
+
+⚠️ **La entrada de desarrollo existe pero está plegada**, así que hay que abrir el `<details>`
+antes: el campo no está en el DOM accesible hasta entonces. El bloque que funciona es
+
+```js
+await pagina.getByText('Entrar con un id de desarrollo').click()
+await pagina.getByLabel('Identificador de RENASER OS').fill('andy-dev')
+await pagina.getByRole('button', { name: 'Entrar como desarrollo' }).click()
+```
+
+⚠️ **`getByRole('checkbox')` sin nombre ya no vale en el detalle de una vacante**: el filtro
+«Solo quienes están aquí ahora» del ranking por etapas trajo una segunda casilla.
+
+**Al cambiar una pantalla, corre los `e2e-*` que pasan por ella.** Un e2e roto no avisa de que
+está roto: simplemente deja de correrse, y lo que guardaba queda sin guardia.
+
+### Dos cosas que se encontraron mirándolo, no leyéndolo
+
+**Una fila de detalle hereda el ancho de la tabla, no el de la pantalla.** El `colSpan` sobre
+siete columnas mide lo que miden las siete, que aquí es más que el viewport: el contenido se
+iba a la derecha del scroll y **en un teléfono no se veía ni una píldora de asistencia** —justo
+lo que hay que mirar para pasar lista, que se hace de pie en la sala—. Se resuelve en
+`Tabla.module.css` con `container-type: inline-size` en la envoltura y `width: 100cqi` +
+`position: sticky` en el bloque de dentro. **Vale para cualquier tabla del panel que despliegue
+algo**, por eso vive ahí y no en la hoja de la pantalla.
+
+**`!important` no era la salida.** `.tabla td` le gana en especificidad a una clase suelta de
+otro CSS Module, así que el reset del relleno tenía que vivir en la hoja de la tabla.
+
+### Lo que este commit deja a mano y no se construyó
+
+**La consola de los diez eventos observables.** `POST` y `GET /panel/inscripciones/{id}/marcas`
+existen desde antes y ahora son **alcanzables** —esa era la razón de ser de la `inscripcionId`—
+pero no se implementó: no es nuevo del #44 y es la pieza más grande. `ocurridaEn` vacío
+significa «ahora, según el servidor»: **no mandar la hora del cliente**.
+
+También sigue sin cablearse `POST /panel/postulaciones/{id}/ausencia-simulacion`, que es lo que
+decide entre otra fecha y cerrar para quien faltó.
 
 ---
 
@@ -194,10 +331,15 @@ zona sospechosa a 2× no tiene más detalle que la de 1× ampliada, hay un mapa 
 
 `herramientas/verificar-panel.mjs` recorre el panel contra el backend local **y escribe en la
 base**. Para solo mirarlo está `herramientas/capturar-panel.mjs`, que intercepta las respuestas
-y sirve un escenario de prueba: las cinco pantallas —incluida una ficha del ranking ya abierta,
-que es lo más denso del panel—, en dos anchos, sin tocar nada. Sus
-fixturas copian los `record` de `src/panel/api/tipos.ts`; si el contrato cambia allá, aquí
-revientan con un `Cannot read properties of undefined`.
+y sirve un escenario de prueba: **ocho pantallas** —incluidas una ficha del ranking ya abierta,
+una sesión con sus inscritos desplegados y la matriz de permisos de un rol—, en **los tres
+anchos**, sin tocar nada. Sus fixturas copian los `record` de `src/panel/api/tipos.ts`; si el
+contrato cambia allá, aquí revientan con un `Cannot read properties of undefined`.
+
+⚠️ **`--gris` es la comprobación de la regla de la forma primero**, igual que en el perfil:
+`node herramientas/capturar-panel.mjs --gris`. El panel tiene ya dos familias de etiquetas
+—los tres estados de la asistencia y los cuatro alcances de un permiso— y en color se
+distinguen solas.
 
 ---
 
@@ -243,11 +385,10 @@ vacantes (modelo Indeed), el panel se construye en este repositorio, bajo `/admi
   notas de la IA, la ficha de cada postulante y avanzar de etapa), **Simulación** (crear y
   gestionar las sesiones presenciales) y **Configuración** (parámetros, banco de preguntas por
   Excel, usuarios y roles, áreas).
-- ⚠️ **Huecos del backend, comprobados el 25/08**: `GET /panel/bandeja` devuelve 500; no hay
-  endpoint que liste **quiénes** se inscribieron a una sesión de simulación —`SesionPanel` solo
-  trae el conteo—; y **no hay forma de listar las versiones de una plantilla de prueba**, solo
-  de pedir una suelta por su id. Se enseña lo que existe, como hizo el portal con la decisión
-  ámbar.
+- ⚠️ **Huecos del backend, comprobados el 27/08**: `GET /panel/bandeja` devuelve 500; y **no hay
+  forma de listar las versiones de una plantilla de prueba**, solo de pedir una suelta por su
+  id. Se enseña lo que existe, como hizo el portal con la decisión ámbar.
+  (El hueco de «quiénes se inscribieron» se cerró: ver la sección del 27/08.)
 
 ### El ranking es por etapas (25/08)
 

@@ -291,13 +291,46 @@ export interface SesionPanel {
   lugar: string | null
   enlace: string | null
   cupo: number
-  /** Solo el conteo: el backend aun no lista quienes son. */
+  /**
+   * El aforo ocupado, **no la longitud de la lista de inscritos**.
+   *
+   * ⚠️ Las dos cifras pueden no coincidir y eso es correcto: quien no tiene
+   * `ver_inscritos_simulacion` recibe el conteo entero —es aforo, no
+   * identidades— y una lista vacia. Derivar el numero de `inscritos.length`
+   * enseñaria «0 de 5» en una sesion llena.
+   */
   inscritos: number
   estado: string
   enunciado: string | null
   vacanteIds: number[]
   responsableIds: number[]
   tramos: TramoSesionPanel[]
+}
+
+/**
+ * Quien eligio esta fecha. Una fila por inscripcion vigente.
+ *
+ * `inscripcionId` es lo que abre el trabajo de la sesion: es lo que piden
+ * `/inscripciones/{id}/asistencia` y `/inscripciones/{id}/marcas`, y hasta el
+ * commit que trajo esta ruta no habia forma de averiguarlo desde el panel.
+ *
+ * ⚠️ **`asistio` tiene tres valores, no dos.** `null` es «nadie lo ha marcado
+ * todavia», que no es «no vino». Pintarlos igual convierte una sesion sin
+ * pasar lista en una sesion a la que no fue nadie.
+ */
+export interface InscritoEnSesion {
+  inscripcionId: number
+  postulacionId: number
+  candidato: string
+  vacante: string
+  inscritaEn: FechaIso
+  asistio: boolean | null
+}
+
+/** Uno de los diez eventos observables, con la hora en que ocurrio. */
+export interface MarcaSimulacion {
+  evento: string
+  ocurridaEn: FechaIso
 }
 
 export interface CrearSesion {
@@ -333,6 +366,35 @@ export interface RolPanel {
   id: number
   codigo: string
   nombre?: string
+}
+
+/**
+ * Los tres alcances de un permiso, de mas a menos.
+ *
+ * ⚠️ **No son niveles de un mismo eje**: `SUS_VACANTES` se lee de la vacante y
+ * `PROPIO` de la persona que llama. En el panel `PROPIO` casi nunca sirve
+ * —nadie mira ahi su propia postulacion— y el backend lo trata como «no
+ * alcanza a nadie» en toda la simulacion.
+ */
+export type AlcancePermiso = 'TODO' | 'SUS_VACANTES' | 'PROPIO'
+
+/**
+ * Una casilla de la matriz: un permiso del catalogo y que alcance tiene este
+ * rol sobre el.
+ *
+ * Llega el catalogo **entero**, no solo lo concedido: sin lo que falta no se
+ * puede conceder nada. `alcance: null` es exactamente eso — este rol no tiene
+ * este permiso.
+ *
+ * ⚠️ **Llega ordenado por grupo y orden desde el backend. No reordenar aqui**:
+ * el orden dentro de un grupo es el del proceso, no el alfabetico.
+ */
+export interface PermisoDelRol {
+  codigo: string
+  etiqueta: string
+  grupo: string
+  orden: number
+  alcance: AlcancePermiso | null
 }
 
 export interface AreaPanel {

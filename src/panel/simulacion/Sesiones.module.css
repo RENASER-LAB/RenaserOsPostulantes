@@ -81,21 +81,21 @@
   color: var(--mal);
 }
 
-/* El hueco del backend, dicho en voz alta. */
-.hueco {
+/*
+ * Lo que este rol no puede hacer aqui.
+ *
+ * Bloque de bruma y no barra roja: que un responsable de area no cree sesiones
+ * no es un error suyo ni del sistema, es el reparto de permisos funcionando.
+ * En rojo se leeria como algo que se rompio y que hay que reintentar.
+ */
+.soloLectura {
   font-size: var(--t-apoyo);
   line-height: 1.55;
   color: var(--tinta2);
-  /*
-   * Bloque de bruma y no barra lateral: en este mundo un hueco que el backend
-   * todavia no cubre se dice sobre nube hundida, igual que una espera en el
-   * portal. Una barra de color a la izquierda es el patron que el suelo de
-   * calidad veta, y ademas aqui competia con el filete del espectro.
-   */
   background: var(--nube-hundida);
   border-radius: var(--radio-menor);
   padding: var(--e4);
-  margin-top: var(--e5);
+  margin: 0 0 var(--e5);
   max-width: var(--medida);
 }
 

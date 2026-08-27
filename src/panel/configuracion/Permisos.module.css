@@ -1,0 +1,326 @@
+/*
+ * La matriz de permisos de un rol.
+ *
+ * Setenta y una filas: la densidad manda. Lista y no tabla porque cada fila es
+ * un permiso con su control al lado, no una celda que se compare con la de
+ * arriba —y una tabla de setenta y una filas con un selector dentro rueda peor
+ * en un portátil que una lista agrupada.
+ */
+
+.seccion {
+  margin-top: var(--e7);
+  padding-top: var(--e5);
+  border-top: 1px solid var(--regla);
+}
+
+.tituloSeccion {
+  font-size: var(--t-titulo);
+  letter-spacing: -0.012em;
+  margin: 0;
+}
+
+.nota {
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+  max-width: var(--medida);
+  margin: var(--e3) 0 var(--e4);
+}
+
+/* ---------- Elegir el rol ---------- */
+
+/*
+ * Control segmentado, como las pestañas del ranking: sobre bruma, con la activa
+ * en nube. **Sin violeta a propósito** — en el panel el violeta es la acción
+ * principal, y si además marcara lo elegido dejaría de señalarla.
+ */
+.selectorRol {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--e1);
+  background: var(--nube-hundida);
+  padding: var(--e1);
+  border-radius: var(--radio-control);
+  margin-bottom: var(--e4);
+}
+
+.pestanaRol {
+  min-height: 38px;
+  padding: 0 var(--e4);
+  background: none;
+  border: 0;
+  font: inherit;
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  color: var(--tinta2);
+  cursor: pointer;
+  border-radius: var(--radio-control);
+  white-space: nowrap;
+}
+
+.pestanaRol:hover {
+  color: var(--tinta);
+}
+
+.pestanaViva {
+  background: var(--nube);
+  color: var(--tinta);
+  box-shadow: var(--sombra-nube);
+}
+
+/* ---------- La matriz ---------- */
+
+.matriz {
+  margin-top: var(--e4);
+}
+
+.recuento {
+  font-size: var(--t-apoyo);
+  font-variant-numeric: tabular-nums;
+  color: var(--tinta2);
+  margin: 0 0 var(--e4);
+}
+
+.grupo {
+  margin-bottom: var(--e5);
+}
+
+.tituloGrupo {
+  font-size: var(--t-micro);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tinta3);
+  margin: 0 0 var(--e2);
+}
+
+.filas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+}
+
+.fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e3) var(--e4);
+  background: var(--nube);
+  border: 1px solid var(--regla);
+  border-radius: var(--radio-menor);
+  padding: var(--e3) var(--e4);
+}
+
+.queEs {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 18rem;
+  min-width: 0;
+}
+
+.etiquetaPermiso {
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+}
+
+/*
+ * El código, debajo y en gris claro. No sobra: es el nombre por el que aparece
+ * en los mensajes del backend y en la auditoría, y sin él no hay forma de atar
+ * un 403 con la casilla que lo produce.
+ */
+.codigo {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: var(--t-micro);
+  color: var(--tinta3);
+}
+
+.estado {
+  display: flex;
+  align-items: center;
+  gap: var(--e3);
+  margin-left: auto;
+}
+
+/* ---------- Los cuatro alcances ---------- */
+
+.marca {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  padding: 3px var(--e3);
+  font-size: var(--t-micro);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  border-radius: var(--radio-control);
+}
+
+/* Lo que no está concedido: contorno punteado, sin relleno. En gris se separa
+   de las otras tres por el trazo, no por el tono. */
+.noTiene {
+  border: 1px dashed var(--regla2);
+  color: var(--tinta3);
+}
+
+.todo {
+  border: 1px solid transparent;
+  background: var(--nube-honda);
+  color: var(--tinta);
+}
+
+.suyas {
+  border: 1px solid var(--regla2);
+  color: var(--tinta2);
+}
+
+/*
+ * `PROPIO` lleva punto porque es la trampa de esta pantalla: parece un permiso
+ * concedido y en el panel casi nunca alcanza a nadie. Sin la marca es idéntico
+ * a «Sus vacantes» en gris, que sí hace algo.
+ */
+.propio {
+  border: 1px solid var(--duda);
+  background: var(--duda-bruma);
+  color: var(--duda-tinta);
+}
+
+.propio::before {
+  content: '';
+  flex: none;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* ---------- Cambiar una casilla ---------- */
+
+.edicion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--e3);
+  flex: 1 1 100%;
+  padding-top: var(--e3);
+  border-top: 1px solid var(--regla);
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+  min-width: 0;
+  flex: 1 1 12rem;
+}
+
+.rotulo {
+  font-size: var(--t-micro);
+  font-weight: 600;
+  color: var(--tinta2);
+}
+
+.entrada {
+  min-height: 40px;
+  padding: 0 var(--e3);
+  background-color: var(--nube);
+  color: var(--tinta);
+  border: 1px solid var(--borde-control);
+  font: inherit;
+  font-size: var(--t-apoyo);
+  border-radius: var(--radio-menor);
+}
+
+.explica {
+  flex: 1 1 100%;
+  font-size: var(--t-menor);
+  line-height: 1.5;
+  color: var(--tinta2);
+  max-width: var(--medida);
+  margin: 0;
+}
+
+.botones {
+  display: flex;
+  gap: var(--e2);
+}
+
+.guardar {
+  composes: acentoMenor from '../../estilos/piezas.module.css';
+}
+
+.chico {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 var(--e3);
+  background: var(--nube);
+  color: var(--tinta);
+  border: 1px solid var(--borde-control);
+  font: inherit;
+  font-size: var(--t-menor);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  border-radius: var(--radio-control);
+}
+
+.chico:hover {
+  border-color: var(--tinta);
+}
+
+/* ---------- Lo que no se pudo ---------- */
+
+/* Un 403 aquí es el reparto funcionando, no un fallo: bruma, no rojo. */
+.sinPermiso {
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+  background: var(--nube-hundida);
+  border-radius: var(--radio-menor);
+  padding: var(--e4);
+  margin: var(--e3) 0 0;
+  max-width: var(--medida);
+}
+
+.avisoMalo {
+  display: flex;
+  gap: var(--e3);
+  border: 1px solid var(--mal-regla);
+  background: var(--mal-bruma);
+  padding: var(--e3) var(--e4);
+  font-size: var(--t-prosa);
+  line-height: 1.5;
+  color: var(--mal);
+  margin: var(--e3) 0;
+  border-radius: var(--radio-menor);
+}
+
+.avisoMalo::before {
+  content: '';
+  flex: none;
+  width: 3px;
+  background: var(--mal);
+}
+
+.enlace {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}
+
+@media (max-width: 640px) {
+  .estado {
+    margin-left: 0;
+    width: 100%;
+    justify-content: space-between;
+  }
+}
