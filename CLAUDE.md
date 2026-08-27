@@ -1,12 +1,143 @@
 # Portal del candidato · contexto de trabajo
 
-Última actualización: 2026-08-27 · **el ranking enseña una etapa, no la tanda entera**
+Última actualización: 2026-08-27 · **el ciclo de vida del banco de preguntas**
 
 Este archivo es para retomar el trabajo sin tener que reconstruir nada. Cuenta qué es este
 proyecto, con qué habla, qué se decidió y por qué, y qué está a medias.
 
 ---
 
+## El banco de preguntas tiene ciclo de vida (27/08/2026, noche)
+
+`BancoPreguntasController` lleva desde siempre publicar, archivar, descartar, renombrar y
+crear, y el panel solo sabía importar el Excel y listar. Ahora vive en su propio archivo,
+`src/panel/configuracion/BancoDePreguntas.tsx`, porque una lista plana no sostiene cinco verbos
+con cinco consecuencias distintas.
+
+### Lo que estaba mintiendo: tres bancos «PUBLICADA» por nivel y solo uno circula
+
+`laPublicadaDelNivel` es `order by publicadaEn desc limit 1` por organización, tipo de banco y
+nivel — **eso es lo que se le fija a quien empieza su evaluación**. Dejar dos publicadas del
+mismo nivel «funciona» y el backend ni se queja. En la base local hay **tres niveles así ahora
+mismo**: las de agosto rigen y las de abril no, y las seis filas decían exactamente lo mismo.
+
+Por eso las versiones **se agrupan por (tipo de banco, nivel)**: es el único corte donde la
+pregunta «cuál rige» tiene respuesta. Cada grupo avisa si tiene más de una publicada, y las dos
+etiquetas —«Se asigna a quien empiece ahora» y «Publicada, pero no se asigna a nadie»— **llevan
+la frase entera dentro**, no un tono: en gris las dos filas volverían a ser la misma.
+
+⚠️ **«Rige» es «se le fija a quien empiece ahora», no «la que usa todo el mundo».** Quien ya
+empezó conserva la suya aunque se publique otra (RF-138) y se le califica con las claves de la
+versión archivada. Decirlo de otra forma haría creer que publicar mueve un examen en curso.
+
+### Publicar archiva a TODAS las hermanas, no a «la anterior»
+
+Es un `for` sobre `findPublicadasHermanas`. Publicar el borrador de Dirección archiva la 8 **y**
+la 4. La confirmación las **nombra una a una** por su etiqueta, antes de pulsar y otra vez
+después.
+
+⚠️ **`validarCoherencia` para en la primera pregunta que falla**, no recolecta. El 409 nombra un
+solo código; si hay tres rotas hacen falta tres intentos. La pantalla lo dice, para que nadie
+lea ese mensaje como la lista completa. (El importador de Excel sí recolecta todo — son dos
+mecanismos distintos.)
+
+### Los cinco 409 vienen escritos en español y se enseñan tal cual
+
+| Qué | Qué contesta |
+|---|---|
+| Publicar una PUBLICADA | «Solo se publica una versión en borrador; esta está PUBLICADA» |
+| Archivar un BORRADOR | «Solo se archiva una versión publicada…» |
+| Archivar sin reemplazo | «Archivar dejaría a N candidato(s) sin banco de preguntas…» |
+| Renombrar un BORRADOR / una ARCHIVADA | «un borrador se edita entero» / «una archivada ya no se toca» |
+| Publicar una versión vacía | «No se publica un banco vacío…» |
+
+⚠️ **Que ese `detail` llegue entero a la pantalla no lo puede probar un test de unidad.** Los de
+unidad construyen el `ErrorApi` con el mensaje ya puesto, así que afirman la suposición; entre
+el 409 y el párrafo rojo hay una pieza que ninguno de los dos lados mira —`mensajeDe()` de
+`puerta.ts`, que elige entre `detail`, `title` y `message`—. Si un día eligiera `title`, los
+cinco 409 dirían «El estado actual no permite esta operación» y todo seguiría en verde. El e2e
+lo comprueba en pantalla, con una versión propia que publica a un 409 seguro.
+
+**El único que hay que traducir es el 404**, y es el que más engaña: `laVersionPropia` compara
+el `organizacionId` y a lo ajeno lo trata como inexistente. Una empresa que **no personalizó**
+el banco ve en la lista las versiones de la plataforma —`listarVersiones` resuelve el dueño con
+`DuenoDelInstrumento`— y publicar cualquiera de ellas responde «no encontrada» sobre una fila
+que está mirando. `VersionBancoResponse` no trae el dueño, así que no hay forma de saberlo
+antes: se aprende del primer 404 y se dice qué significa.
+
+### Tres tipos que mentían, y la tercera fixtura inventada
+
+- **`VersionBanco` declaraba un campo `nombre`** que el `record` no tiene —el nombre es
+  `etiqueta`— y lo tapaba con un `[otros: string]: unknown`. Ahora es copia exacta de
+  `VersionBancoResponse`, y `tsc` señaló solo la rama muerta que lo usaba.
+- **`importarBanco` decía devolver una `VersionBanco`** y devuelve `ResultadoImportacion`: el
+  recuento de preguntas, opciones, tramos, campos, pares y dimensiones. Ese recuento es lo único
+  que permite comprobar que el Excel entró entero —a un archivo sin la hoja de opciones se le
+  importan las preguntas y no falla— y se tiraba para decir «Banco importado» a secas.
+- **La fixtura de `datos-panel.mjs` servía `nombre: 'v3'` y ningún `tipoBanco`.** Es la **cuarta**
+  vez que una fixtura inventada tapa algo, y la segunda el mismo día. Ahora siembra el escenario
+  de la base local: **dos publicadas del mismo nivel**, un
+  borrador, una archivada y un banco de ALINEACION sin nivel.
+
+### ⚠️ Un banco de ALINEACION no reparte por nivel, y el backend lo trata distinto
+
+`archivarVersion` mete la guarda de «archivar sin reemplazo» **dentro de un
+`if ("NIVEL".equals(tipoBanco))`**, y `archivarYRepuntar` hace lo mismo con el repunte de quien
+no empezó. En un banco de alineación ninguna de las dos se dispara: archivar la única publicada
+funciona y deja el banco sin nada detrás, sin avisar.
+
+Por eso tres frases de la pantalla cambian según el tipo de banco, y ninguna dice «en este
+nivel» sobre ALINEACION. Es invisible en las capturas y en la base local —hoy no hay ninguna
+versión de alineación— así que **la guardan tres tests de unidad**.
+
+### Dos permisos, no uno
+
+`publicar_version_banco` abre publicar, archivar y renombrar; `editar_banco_preguntas` abre
+importar y descartar. Se aprenden **por separado** del primer 403 y cada uno retira solo lo
+suyo — colapsarlos retiraría acciones que sí están permitidas. Sigue sin haber `GET
+/panel/auth/yo`.
+
+### Lo que no se ofrece, aunque el endpoint exista
+
+**Crear una versión en blanco.** `POST /banco-preguntas/versiones` funciona, pero una versión
+vacía no se puede publicar (409) y **desde el panel no hay forma de añadirle una sola pregunta**:
+el editor de ítems —preguntas, opciones, tramos, campos de caso, pares— no está construido. El
+botón crearía filas que no llevan a ningún sitio. La función de API sí existe porque **el e2e la
+usa**, que es donde sirve.
+
+**Los `PATCH .../textos` de una publicada** (corregir el enunciado de una pregunta, el texto de
+una opción…) tampoco se cablearon: son la misma pieza que el editor de ítems.
+
+### El e2e de esta tanda
+
+```bash
+PORTAL=http://localhost:5178 node herramientas/e2e-banco.mjs
+```
+
+45 comprobaciones: el contrato con sus seis campos exactos, los tres niveles con dos publicadas,
+las cinco guardas, el ciclo entero de una versión propia, lo que la pantalla enseña de cada
+estado, y el `detail` del 409 leído en el párrafo rojo.
+
+⚠️ **Publicar y archivar de verdad NO se ejercitan, a propósito, y el script lo dice en voz
+alta.** Las dos son irreversibles —no hay desarchivar— y un recorrido feliz se comería las
+versiones sembradas sin forma de devolverlas. Lo que se ejercita son **las guardas**, que el
+backend evalúa antes de escribir nada, y **un ciclo entero sobre una versión propia**: crearla,
+chocar con el 409 de «banco vacío» y borrarla. Renombrar con éxito tampoco se prueba: solo vale
+sobre una PUBLICADA, que es justo la que no se toca.
+
+⚠️ Lo único que escribe es esa versión de usar y tirar. Si el script muere a mitad puede quedar
+viva: su etiqueta empieza por **`e2e-banco `**.
+
+### `verificar-panel.mjs` llevaba roto desde el 25/08
+
+Buscaba el encabezado «El ranking de la tanda», que se llama «El ranking, etapa por etapa» desde
+que el ranking se dividió en pestañas. **Reventaba ahí**, así que la simulación y la
+configuración no se miraban desde entonces. Es la cuarta vez que un script se queda atrás sin
+avisar. Arreglado, y de paso abre el banco.
+
+⚠️ `esClave` llega siempre en `false` en la base local: el importador de Excel no marca ningún
+ítem ★. La cifra del resumen dice «0 marcadas como clave» y eso es la verdad, no un campo que no
+llega.
 ## El ranking enseña una etapa, no la tanda entera (27/08/2026, noche)
 
 Las cinco pestañas traían **las mismas filas**: el `?etapa=` del backend cambia de qué etapa es
@@ -523,15 +654,16 @@ zona sospechosa a 2× no tiene más detalle que la de 1× ampliada, hay un mapa 
 
 `herramientas/verificar-panel.mjs` recorre el panel contra el backend local **y escribe en la
 base**. Para solo mirarlo está `herramientas/capturar-panel.mjs`, que intercepta las respuestas
-y sirve un escenario de prueba: **nueve pantallas** —incluidas la ficha del ranking abierta en
-Perfil integral y en Prueba, una sesión con sus inscritos desplegados y la matriz de permisos de
-un rol—, en **los tres anchos**, sin tocar nada. Sus fixturas copian los `record` de `src/panel/api/tipos.ts`; si el
+y sirve un escenario de prueba: **once pantallas** —incluidas la ficha del ranking abierta en
+Perfil integral y en Prueba, una etapa sin nadie dentro, una sesión con sus inscritos
+desplegados, la matriz de permisos de un rol y el banco con una versión abierta—, en **los tres
+anchos**, sin tocar nada. Sus fixturas copian los `record` de `src/panel/api/tipos.ts`; si el
 contrato cambia allá, aquí revientan con un `Cannot read properties of undefined`.
 
 ⚠️ **`--gris` es la comprobación de la regla de la forma primero**, igual que en el perfil:
-`node herramientas/capturar-panel.mjs --gris`. El panel tiene ya dos familias de etiquetas
-—los tres estados de la asistencia y los cuatro alcances de un permiso— y en color se
-distinguen solas.
+`node herramientas/capturar-panel.mjs --gris`. El panel tiene ya tres familias de etiquetas
+—los tres estados de la asistencia, los cuatro alcances de un permiso y las dos de una versión
+publicada— y en color se distinguen solas.
 
 ---
 

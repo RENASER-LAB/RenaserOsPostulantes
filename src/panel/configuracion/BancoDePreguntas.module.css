@@ -1,0 +1,548 @@
+/*
+ * El banco de preguntas.
+ *
+ * Mismo mundo que el resto de Configuracion —bruma, nube, pildoras, Mulish— y
+ * ninguna paleta propia. Lo unico que este bloque añade al idioma de la pagina
+ * es la jerarquia de tres niveles que la lista plana no tenia: grupo, version,
+ * y lo que hay dentro de una version.
+ *
+ * El violeta aparece **una sola vez por fila**: el boton que publica, que es la
+ * accion principal de un borrador. Archivar, renombrar y descartar son nube con
+ * contorno. Descartar no lleva rojo de relleno aunque no se deshaga: el rojo
+ * relleno del panel es para un fallo, y aqui el peso lo lleva la pregunta, que
+ * dice en palabras que no hay papelera.
+ */
+
+.seccion {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e4);
+  margin-top: var(--e7);
+}
+
+.tituloSeccion {
+  font-size: var(--t-titulo-menor);
+  margin: 0;
+}
+
+.nota {
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+  max-width: var(--medida);
+  margin: 0;
+}
+
+.pista {
+  font-size: var(--t-menor);
+  line-height: 1.5;
+  color: var(--tinta3);
+  max-width: var(--medida);
+  margin: 0;
+}
+
+/* ---------- Importar el Excel ---------- */
+
+.importarBloque {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+}
+
+.importar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e3);
+  border: 1px dashed var(--borde-control);
+  background: var(--nube-hundida);
+  padding: var(--e4);
+  border-radius: var(--radio);
+}
+
+/* La etiqueta del archivo elegido. El boton lo viste `mundo.css`. */
+.archivo {
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+}
+
+.subir {
+  composes: acentoMenor from '../../estilos/piezas.module.css';
+}
+
+.entrada {
+  min-height: 44px;
+  padding: 0 var(--e3);
+  background: var(--nube);
+  color: var(--tinta);
+  border: 1px solid var(--borde-control);
+  border-radius: var(--radio-control);
+  font: inherit;
+  font-size: var(--t-apoyo);
+}
+
+.entrada:focus-visible {
+  outline: 2px solid var(--activo);
+  outline-offset: 1px;
+}
+
+/* ---------- Los grupos ---------- */
+
+.grupos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e6);
+  margin-top: var(--e3);
+}
+
+.grupo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+}
+
+/*
+  El titulo del grupo se separa con una regla, no con un fondo.
+
+  Un fondo por grupo convertiria cada nivel en una tarjeta y competiria con las
+  propias versiones, que ya son cajas. La regla dice «aqui empieza otro nivel»
+  y deja el peso visual en las filas, que es donde estan las decisiones.
+*/
+.tituloGrupo {
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--tinta2);
+  border-bottom: 1px solid var(--regla);
+  padding-bottom: var(--e2);
+  margin: 0;
+}
+
+/*
+  Los dos avisos de grupo: ninguna publicada, y mas de una publicada.
+
+  Ambar y contorno de un pixel, que es como el panel dice «esto no esta roto
+  pero tampoco esta bien». En gris se distinguen del resto por el contorno, y
+  entre si por lo que dicen.
+*/
+.avisoDuda,
+.sinVigente {
+  border: 1px solid var(--duda);
+  background: var(--duda-bruma);
+  border-radius: var(--radio-menor);
+  padding: var(--e3) var(--e4);
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--duda-tinta);
+  max-width: var(--medida);
+  margin: 0;
+}
+
+/* ---------- Una version ---------- */
+
+.versiones {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.version {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+  border: 1px solid var(--regla);
+  border-radius: var(--radio-menor);
+  padding: var(--e4);
+  min-width: 0;
+}
+
+.cabeceraVersion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e2);
+}
+
+.estadoVersion {
+  flex: none;
+  font-size: var(--t-micro);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tinta2);
+  border: 1px solid var(--regla2);
+  padding: 2px var(--e2);
+  border-radius: var(--radio-control);
+}
+
+/*
+ * Las dos etiquetas que separan a las publicadas entre si.
+ *
+ * ⚠️ **La palabra es lo que las distingue, no el tono.** Dos versiones del
+ * mismo nivel dicen las dos PUBLICADA y solo una se le asigna a la gente; si la
+ * diferencia viviera en el color, en escala de grises volverian a ser la misma
+ * fila. Por eso llevan la frase entera dentro y no un punto de color.
+ *
+ * La que no rige lleva ademas el punto delante, el mismo recurso que «Vencida»
+ * en el perfil y que la ausencia en la simulacion: es la linea que corrige lo
+ * que la pildora de al lado te hizo creer.
+ */
+.rige {
+  font-size: var(--t-micro);
+  font-weight: 600;
+  color: var(--bien);
+  border: 1px solid var(--bien);
+  padding: 2px var(--e2);
+  border-radius: var(--radio-control);
+}
+
+.noRige {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  font-size: var(--t-micro);
+  font-weight: 600;
+  color: var(--duda-tinta);
+  border: 1px solid var(--duda);
+  padding: 2px var(--e2);
+  border-radius: var(--radio-control);
+}
+
+.noRige::before {
+  content: '';
+  flex: none;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.etiquetaVersion {
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  color: var(--tinta);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.datosVersion {
+  font-size: var(--t-menor);
+  color: var(--tinta3);
+  font-variant-numeric: tabular-nums;
+  margin: 0;
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e2);
+}
+
+.principal {
+  composes: acentoMenor from '../../estilos/piezas.module.css';
+  align-self: flex-start;
+}
+
+.chico {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 var(--e4);
+  background: var(--nube);
+  color: var(--tinta);
+  border: 1px solid var(--borde-control);
+  font: inherit;
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  border-radius: var(--radio-control);
+}
+
+.chico:hover:not(:disabled) {
+  border-color: var(--tinta);
+}
+
+.chico:disabled {
+  background: var(--nube-hundida);
+  color: var(--tinta3);
+  border-color: var(--regla2);
+  cursor: default;
+}
+
+/* ---------- La pregunta de antes ---------- */
+
+.preguntaCaja,
+.preguntaGrave {
+  display: flex;
+  gap: var(--e3);
+  border-radius: var(--radio-menor);
+  padding: var(--e3) var(--e4);
+  margin: 0;
+}
+
+.preguntaCaja {
+  border: 1px solid var(--duda);
+  background: var(--duda-bruma);
+}
+
+/*
+  La grave se distingue por el contorno rojo, no por un relleno rojo: el fondo
+  rojo del panel es lo que se pinta cuando algo YA fallo, y esto todavia se
+  puede cancelar. Lo que la separa en gris es que su boton dice «Descartar» y
+  el texto de dentro dice que no hay papelera.
+*/
+.preguntaGrave {
+  border: 1px solid var(--mal-regla);
+  background: var(--mal-bruma);
+}
+
+.cuerpoPregunta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+  min-width: 0;
+}
+
+.textoPregunta {
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta);
+  max-width: var(--medida);
+  margin: 0;
+}
+
+/*
+ * La frase que corrige lo que el texto de arriba te hizo suponer: que el
+ * mensaje de error sera la lista entera, o que descartar se puede deshacer.
+ * Punto delante, como en el resto del panel.
+ */
+.avisoDentro {
+  display: flex;
+  gap: var(--e2);
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  font-weight: 600;
+  color: var(--tinta);
+  max-width: var(--medida);
+  margin: 0;
+}
+
+.avisoDentro::before {
+  content: '';
+  flex: none;
+  width: 5px;
+  height: 5px;
+  margin-top: 0.55em;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.botonesPregunta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e2);
+}
+
+.seguir {
+  composes: chico;
+}
+
+.seguir:not(:disabled) {
+  border-color: var(--duda);
+  color: var(--duda-tinta);
+}
+
+.seguirGrave {
+  composes: chico;
+}
+
+.seguirGrave:not(:disabled) {
+  border-color: var(--mal);
+  color: var(--mal);
+}
+
+/* ---------- Renombrar ---------- */
+
+.renombrar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+  border: 1px solid var(--regla2);
+  background: var(--nube-hundida);
+  border-radius: var(--radio-menor);
+  padding: var(--e4);
+  max-width: var(--medida);
+}
+
+.etiquetaCampo {
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  color: var(--tinta);
+}
+
+/* ---------- Lo que contiene una version ---------- */
+
+.contenido {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+  border-top: 1px solid var(--regla);
+  padding-top: var(--e4);
+  min-width: 0;
+}
+
+.resumen {
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  color: var(--tinta);
+  font-variant-numeric: tabular-nums;
+  margin: 0;
+}
+
+/*
+  Ochenta y cinco preguntas no caben, y recortarlas en silencio seria peor que
+  no enseñarlas: el bloque existe para poder comprobar lo que se va a publicar.
+  Se hace scroll dentro, con la altura acotada para que la lista no empuje a las
+  otras doce versiones fuera de la pantalla.
+*/
+.preguntas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 24rem;
+  overflow-y: auto;
+}
+
+.pregunta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--e2);
+  border-bottom: 1px solid var(--regla);
+  padding-bottom: var(--e2);
+  font-size: var(--t-menor);
+  line-height: 1.5;
+  min-width: 0;
+}
+
+.codigoPregunta {
+  flex: none;
+  font-weight: 600;
+  color: var(--tinta);
+  font-variant-numeric: tabular-nums;
+}
+
+.tipoPregunta {
+  flex: none;
+  font-size: var(--t-micro);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--tinta2);
+  border: 1px solid var(--regla2);
+  padding: 1px var(--e2);
+  border-radius: var(--radio-control);
+}
+
+.enunciado {
+  flex: 1 1 20rem;
+  color: var(--tinta2);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Las dos marcas de una pregunta. La grave lleva punto: descarta por si sola. */
+.marca {
+  flex: none;
+  font-size: var(--t-micro);
+  font-weight: 600;
+  color: var(--tinta2);
+  border: 1px solid var(--regla2);
+  padding: 1px var(--e2);
+  border-radius: var(--radio-control);
+}
+
+.marcaGrave {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  flex: none;
+  font-size: var(--t-micro);
+  font-weight: 600;
+  color: var(--mal);
+  border: 1px solid var(--mal-regla);
+  padding: 1px var(--e2);
+  border-radius: var(--radio-control);
+}
+
+.marcaGrave::before {
+  content: '';
+  flex: none;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* ---------- Avisos ---------- */
+
+.avisoBien {
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--bien);
+  border-left: 2px solid var(--bien);
+  padding-left: var(--e3);
+  max-width: var(--medida);
+  margin: 0;
+}
+
+.avisoMalo {
+  display: flex;
+  gap: var(--e3);
+  border: 1px solid var(--mal-regla);
+  background: var(--mal-bruma);
+  padding: var(--e3) var(--e4);
+  font-size: var(--t-apoyo);
+  line-height: 1.5;
+  color: var(--mal);
+  max-width: var(--medida);
+  border-radius: var(--radio-menor);
+  margin: 0;
+}
+
+/*
+  El permiso que falta va en nube hundida, no en rojo: no es un fallo de la
+  pantalla ni algo que el usuario pueda arreglar pulsando. Es una explicacion de
+  por que los botones que habia hace un segundo ya no estan.
+*/
+.avisoPermiso {
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+  background: var(--nube-hundida);
+  border-radius: var(--radio-menor);
+  padding: var(--e3) var(--e4);
+  max-width: var(--medida);
+  margin: 0;
+}
+
+@media (max-width: 640px) {
+  .subir {
+    width: 100%;
+  }
+
+  .principal,
+  .chico,
+  .seguir,
+  .seguirGrave {
+    flex: 1;
+    justify-content: center;
+  }
+}

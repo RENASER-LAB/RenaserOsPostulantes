@@ -33,6 +33,11 @@ const PANTALLAS = [
   // a la vez, que es lo que hay que mirar en gris antes de darlo por bueno.
   { nombre: 'inscritos', ruta: '/admin/simulacion', pulsar: 'Ver quién viene' },
   { nombre: 'configuracion', ruta: '/admin/configuracion' },
+  // El banco con una version abierta: el resumen y la lista de preguntas, que
+  // es lo que hay que poder mirar antes de publicar. La fixtura siembra dos
+  // PUBLICADA del mismo nivel a proposito, asi que esta captura es tambien
+  // donde se ve si «se asigna» y «no se asigna» se distinguen en gris.
+  { nombre: 'banco', ruta: '/admin/configuracion', pulsar: 'Ver qué contiene' },
   // La matriz solo aparece con un rol elegido: sin el clic, la captura no
   // enseñaria nada de lo que hay que juzgar.
   { nombre: 'permisos', ruta: '/admin/configuracion', pulsar: 'Talento' },

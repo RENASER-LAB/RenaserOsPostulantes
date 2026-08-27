@@ -287,6 +287,32 @@ const RESPUESTAS_DE_PRUEBA = [
 ]
 
 /** Lo que responde cada ruta. Nada de esto sale de aqui. */
+/*
+ * Lo que hay dentro de una version del banco. Copia de `PreguntaResponse`:
+ * `logicaInterna` no esta porque el backend no la devuelve nunca (RF-53), y no
+ * hay campo `dimensiones` aunque el Excel las traiga.
+ *
+ * Las tres cubren lo que la lista distingue: una clave, una eliminatoria y una
+ * que no es ninguna de las dos.
+ */
+const PREGUNTAS_DEL_BANCO = [
+  { id: 101, versionBancoId: 15, codigo: 'M01', bloque: 'Autonomía', tipo: 'EF-4',
+    enunciado: 'Elige la frase que más se parece a cómo trabajas.',
+    situacion: null, esPuntuable: true, orden: 1, peso: 2, esClave: true,
+    esEliminatorio: false, casosPedidos: null, rangosDePreguntaCodigo: null,
+    formulaPuntaje: null },
+  { id: 102, versionBancoId: 15, codigo: 'M02', bloque: 'Experiencia', tipo: 'V',
+    enunciado: '¿Cuántas personas te reportan hoy de forma directa?',
+    situacion: null, esPuntuable: true, orden: 2, peso: 1, esClave: false,
+    esEliminatorio: true, casosPedidos: null, rangosDePreguntaCodigo: null,
+    formulaPuntaje: null },
+  { id: 103, versionBancoId: 15, codigo: 'M03', bloque: 'Consistencia', tipo: 'PC',
+    enunciado: 'Prefiero decidir rápido aunque me falte información.',
+    situacion: null, esPuntuable: false, orden: 3, peso: 0, esClave: false,
+    esEliminatorio: false, casosPedidos: null, rangosDePreguntaCodigo: null,
+    formulaPuntaje: null },
+]
+
 export const RESPUESTAS = {
   '/vacantes': VACANTES,
   '/sesiones-simulacion': SESIONES,
@@ -356,10 +382,44 @@ export const RESPUESTAS = {
   '/pesos/versiones': [
     { id: 2, etiqueta: 'v2', estado: 'PUBLICADA', publicadaEn: '2026-03-02T09:00:00Z' },
   ],
+  /*
+   * ⚠️ **Tercera fixtura con una forma que la API no devuelve.** Esta traia un
+   * `nombre: 'v3'` que `VersionBancoResponse` no tiene —el nombre es
+   * `etiqueta`— y le faltaba `tipoBanco`, que es la mitad del corte con el que
+   * se agrupa. Con el tipo corregido, esa fila pintaba «undefined».
+   *
+   * El escenario copia el de la base local a proposito: **dos PUBLICADA del
+   * mismo nivel**, que es el caso que la pantalla existe para enseñar, mas un
+   * borrador, una archivada y un banco de ALINEACION sin nivel.
+   */
   '/banco-preguntas/versiones': [
-    { id: 3, nombre: 'v3', estado: 'PUBLICADA', nivelPuestoCodigo: 'MEDIO',
-      publicadaEn: '2026-04-11T09:00:00Z' },
+    { id: 10, tipoBanco: 'NIVEL', nivelPuestoCodigo: 'MEDIO',
+      etiqueta: 'Banco desde Excel · Medio — prueba local',
+      estado: 'PUBLICADA', publicadaEn: '2026-08-22T22:38:36Z' },
+    { id: 6, tipoBanco: 'NIVEL', nivelPuestoCodigo: 'MEDIO',
+      etiqueta: 'Banco RENASER v3 · Medio',
+      estado: 'PUBLICADA', publicadaEn: '2026-04-11T09:00:00Z' },
+    { id: 15, tipoBanco: 'NIVEL', nivelPuestoCodigo: 'MEDIO',
+      etiqueta: 'Banco CAZATALENTOS · Medio',
+      estado: 'BORRADOR', publicadaEn: null },
+    { id: 2, tipoBanco: 'NIVEL', nivelPuestoCodigo: 'MEDIO',
+      etiqueta: 'Banco Medio V0.1', estado: 'ARCHIVADA',
+      publicadaEn: '2025-11-03T09:00:00Z' },
+    { id: 21, tipoBanco: 'ALINEACION', nivelPuestoCodigo: null,
+      etiqueta: 'Alineación cultural · v2',
+      estado: 'PUBLICADA', publicadaEn: '2026-07-01T09:00:00Z' },
   ],
+  /*
+   * ⚠️ Sin esto, el interceptor cae en su `?? []` y «Ver qué contiene» enseña
+   * la rama de version vacia en TODAS. Que es justo el fallo que el `?? []`
+   * lleva escondiendo: una ruta que la fixtura no conoce nunca da 404, da 200
+   * con una lista vacia, y la captura sale creible.
+   */
+  '/banco-preguntas/versiones/15/preguntas': PREGUNTAS_DEL_BANCO,
+  '/banco-preguntas/versiones/10/preguntas': PREGUNTAS_DEL_BANCO,
+  '/banco-preguntas/versiones/6/preguntas': PREGUNTAS_DEL_BANCO,
+  '/banco-preguntas/versiones/2/preguntas': PREGUNTAS_DEL_BANCO,
+  '/banco-preguntas/versiones/21/preguntas': PREGUNTAS_DEL_BANCO,
   '/banco-preguntas/importaciones': [],
   /*
    * ⚠️ Sin `estados`, el embudo se queda con los codigos crudos del backend
