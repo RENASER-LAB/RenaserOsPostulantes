@@ -50,6 +50,7 @@ import type {
   DesgloseEvaluacion,
   FilaRanking,
   NotaCriterioEtapa,
+  RankingVacante,
   VacantePanel,
 } from '../api/tipos'
 import { rutas } from '@/rutas'
@@ -58,6 +59,17 @@ import tabla from '../ui/Tabla.module.css'
 import { RespuestasDePrueba } from './RespuestasDePrueba'
 import { CierreDeLaVacante, PlazoDeUnaPersona } from './CierreDePrueba'
 import { CalificarAUno, CalificarLaTanda } from './CalificarConIa'
+import {
+  ETAPAS_PANEL,
+  cifrasDeLaEtapa,
+  esDelCurriculum,
+  filtrar,
+  laEtapaDe,
+  porQueNoHayNota,
+  recuentos,
+  type EtapaPanel,
+  type Vista,
+} from './ranking'
 import estilos from './Vacante.module.css'
 
 /**
@@ -99,17 +111,20 @@ export function VacantePanelDetalle() {
   // con la nota de esa etapa, no reordena en el navegador una nota vieja.
   const [etapa, setEtapa] = useState<EtapaPanel>('PERFIL_INTEGRAL')
   /*
-    La tabla trae a toda la tanda y por defecto se enseña solo a quien está
-    parado en la etapa de la pestaña. Una vacante con treinta postulaciones
-    repetía las treinta cinco veces, y ninguna de las cinco listas era la
-    mesa de decidir de esa etapa: la de la prueba llevaba dentro a quien
-    todavía no la ha rendido y a quien ya la pasó hace dos semanas.
+    La tabla trae a toda la tanda y se mira por uno de tres cortes. Sin ninguno,
+    una vacante con treinta postulaciones repetía las treinta cinco veces y
+    ninguna de las cinco listas era la mesa de decidir de su etapa.
+
+    **Por defecto, quien ya tiene nota de esta etapa**: es con lo que se decide.
+    «Está aquí ahora» es el otro trabajo —perseguir a quien falta— y fuera del
+    perfil integral casi no se solapan: en la prueba, quien está ahí ahora es
+    quien todavía NO la ha rendido.
 
     ⚠️ Vive aquí y no dentro de `<Ranking>` porque aquel lleva `key={etapa}`:
-    dentro, cambiar de pestaña lo remontaría y volvería a filtrar justo
-    después de que alguien pidiera ver la tanda entera.
+    dentro, cambiar de pestaña lo remontaría y volvería al corte por defecto
+    justo después de que alguien pidiera otro.
   */
-  const [soloEstaEtapa, setSoloEstaEtapa] = useState(true)
+  const [vista, setVista] = useState<Vista>('con-nota')
   const ranking = useQuery({
     queryKey: ['panel-ranking', vacanteId, etapa],
     queryFn: () => verRanking(vacanteId, etapa),
@@ -306,9 +321,9 @@ export function VacantePanelDetalle() {
             key={etapa}
             etapa={etapa}
             filas={ranking.data.filas}
-            soloEstaEtapa={soloEstaEtapa}
-            alFiltrar={setSoloEstaEtapa}
-            resumen={`${ranking.data.total} en la tanda · ${ranking.data.calificados} calificados · ${ranking.data.enCurso} en curso · ${ranking.data.fallidos} con la calificación fallida`}
+            cabeceraDelCv={ranking.data}
+            vista={vista}
+            alCambiarVista={setVista}
             alAvanzar={async () => {
               await cache.invalidateQueries({
                 queryKey: ['panel-ranking', vacanteId],
@@ -336,41 +351,6 @@ export function VacantePanelDetalle() {
  * finales (NO_CONTINUA, CERRADA...) no empiezan por ninguno, y es correcto:
  * quien termino ya no esta "en" ninguna etapa.
  */
-const ETAPAS_PANEL = [
-  {
-    codigo: 'PERFIL_INTEGRAL',
-    nombre: 'Perfil integral',
-    prefijos: ['POSTULADA', 'PERFIL_'],
-    nota: 'Nota del perfil',
-  },
-  {
-    codigo: 'PRUEBA_PUESTO',
-    nombre: 'Prueba del puesto',
-    prefijos: ['PRUEBA_'],
-    nota: 'Nota de la prueba',
-  },
-  {
-    codigo: 'SIMULACION',
-    nombre: 'Simulación',
-    prefijos: ['SIMULACION_'],
-    nota: 'Nota de la simulación',
-  },
-  {
-    codigo: 'VALIDACION',
-    nombre: 'Validación',
-    prefijos: ['VALIDACION_'],
-    nota: 'Nota de la validación',
-  },
-  {
-    codigo: 'DECISION',
-    nombre: 'Decisión',
-    prefijos: ['DECISION_'],
-    nota: 'Nota de la decisión',
-  },
-] as const
-
-type EtapaPanel = (typeof ETAPAS_PANEL)[number]['codigo']
-
 /**
  * Solo un 404 significa «todavia no hay». Un 403 —el rol no alcanza— o un 500
  * disfrazados de «sin datos» mienten: se dice lo que el backend dijo.
@@ -384,33 +364,31 @@ const leerFallo = (causa: unknown, sinDatos: string) =>
 
 const noHayNadaQueRefrescar = () => {}
 
-const estaAhoraEn = (estado: string, etapa: EtapaPanel) =>
-  ETAPAS_PANEL.find((e) => e.codigo === etapa)!.prefijos.some((p) => estado.startsWith(p))
-
 // ---------- El ranking, con seleccion y avance ----------
 
 function Ranking({
   etapa,
   filas,
-  resumen,
-  soloEstaEtapa,
-  alFiltrar,
+  cabeceraDelCv,
+  vista,
+  alCambiarVista,
   alAvanzar,
 }: {
   etapa: EtapaPanel
   filas: FilaRanking[]
-  resumen: string
-  soloEstaEtapa: boolean
-  alFiltrar: (solo: boolean) => void
+  /** Las cuatro cifras del backend, que son de la cola del currículum. */
+  cabeceraDelCv: RankingVacante
+  vista: Vista
+  alCambiarVista: (v: Vista) => void
   alAvanzar: () => Promise<void>
 }) {
   const [marcados, setMarcados] = useState<Set<number>>(new Set())
   const [abierta, setAbierta] = useState<number | null>(null)
-  const visibles = soloEstaEtapa
-    ? filas.filter((f) => estaAhoraEn(f.estado, etapa))
-    : filas
 
-  const laEtapa = ETAPAS_PANEL.find((e) => e.codigo === etapa)!
+  const laEtapa = laEtapaDe(etapa)
+  const visibles = filtrar(filas, etapa, vista)
+  const cuantas = recuentos(filas, etapa)
+  const cifras = cifrasDeLaEtapa(filas, etapa)
   /*
     Adecuacion y potencial son dimensiones del retrato que sale del curriculum,
     no de la prueba ni de la simulacion. Enseñarlas en las cinco pestañas hacia
@@ -418,7 +396,7 @@ function Ranking({
     prueba, y los tres con la misma pinta: la lista parecia hablar del CV
     estando en otra etapa. Donde significan algo se quedan; donde no, se van.
   */
-  const delCurriculum = etapa === 'PERFIL_INTEGRAL' || etapa === 'DECISION'
+  const delCurriculum = esDelCurriculum(etapa)
   const columnas = delCurriculum ? 8 : 6
   // Solo cuentan las marcas que se VEN: si el filtro oculta una fila marcada,
   // el boton no puede seguir diciendo que avanzara a esa persona.
@@ -470,29 +448,78 @@ function Ranking({
     <>
       <div className={estilos.filaResumen}>
         <div className={estilos.recuentos}>
-          {/* Las cuatro cifras del backend son de la tanda entera, y lo dicen. */}
-          <p className={estilos.resumenTanda}>{resumen}</p>
           {/*
-            Cuantas filas se ven, y de cuantas, siempre — y sale de contar las
-            que se pintan, no de un texto fijo. Ocultar sin decirlo miente, y
-            ahora se oculta por defecto: sin esta linea, una pestaña con tres
-            filas encima de un resumen que habla de treinta y cuatro personas
-            parece una tabla rota.
+            ⚠️ **Las cifras de la etapa, contadas de las filas.** Las cuatro del
+            backend —calificados, en curso, fallidos— salen de la cola que
+            califica el CURRÍCULUM y son idénticas en las cinco pestañas: en la
+            de la prueba decían «76 calificados» encima de setenta y ocho
+            guiones. Aquí se cuenta lo de esta etapa, y lo del currículum baja
+            a su propia línea con su nombre puesto.
+          */}
+          <p className={estilos.resumenTanda}>
+            {cifras.conNota} de {filas.length} con {laEtapa.nota.toLowerCase()}
+            {cifras.sinNota > 0 && (
+              <span className={estilos.detalleTanda}>
+                {' · '}
+                {[
+                  cifras.esperandoALaPersona > 0
+                    ? `${cifras.esperandoALaPersona} esperando a la persona`
+                    : null,
+                  cifras.esperandoAlEquipo > 0
+                    ? `${cifras.esperandoAlEquipo} esperando al equipo`
+                    : null,
+                ]
+                  .filter(Boolean)
+                  .join(' · ') || `${cifras.sinNota} sin nota todavía`}
+              </span>
+            )}
+          </p>
+          {/*
+            La línea del currículum, con su nombre delante. Fuera del perfil
+            dice además que no habla de esta etapa: es la frase que faltaba
+            cuando «65 calificados» se leía sobre una columna de guiones.
           */}
           <p className={estilos.cuantasSeVen}>
-            {soloEstaEtapa
-              ? `Se ven ${visibles.length} de ${filas.length}: quienes están en ${laEtapa.nombre} ahora mismo.`
-              : `Se ven las ${filas.length} de la tanda, estén en la etapa que estén.`}
+            {delCurriculum ? 'La criba con IA' : 'La criba del currículum con IA'} va por{' '}
+            {cabeceraDelCv.calificados} de {cabeceraDelCv.total} calificados
+            {cabeceraDelCv.enCurso > 0 && `, ${cabeceraDelCv.enCurso} en curso`}
+            {cabeceraDelCv.fallidos > 0 && `, ${cabeceraDelCv.fallidos} fallidos`}
+            {delCurriculum ? '.' : ' — eso es del currículum, no de esta etapa.'}
           </p>
         </div>
-        <label className={estilos.verLaTanda}>
-          <input
-            type="checkbox"
-            checked={!soloEstaEtapa}
-            onChange={(e) => alFiltrar(!e.target.checked)}
-          />
-          Ver la tanda entera
-        </label>
+
+        {/*
+          Tres cortes del mismo listado, no tres peticiones.
+
+          ⚠️ **Los dos primeros casi no se solapan fuera del perfil**, y por eso
+          hacen falta los dos: quien «está aquí ahora» en la prueba es quien
+          TODAVÍA no la ha rendido —hay que perseguirlo— y quien ya tiene nota
+          pasó de largo —con él se decide—. En la vacante 3 son una fila cada
+          uno, sin una sola persona en común.
+
+          Cada posición lleva su cifra: sin ellas hay que pulsar las tres para
+          saber si alguna tiene algo dentro.
+        */}
+        <div className={estilos.vistas} role="group" aria-label="Qué filas se ven">
+          {(
+            [
+              ['con-nota', `Con ${laEtapa.nota.toLowerCase()}`],
+              ['aqui-ahora', 'Está aquí ahora'],
+              ['toda', 'Toda la tanda'],
+            ] as const
+          ).map(([cual, texto]) => (
+            <button
+              key={cual}
+              className={vista === cual ? estilos.vistaActiva : estilos.vista}
+              type="button"
+              aria-pressed={vista === cual}
+              onClick={() => alCambiarVista(cual)}
+            >
+              {texto}
+              <span className={estilos.cuantasEnLaVista}>{cuantas[cual]}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className={tabla.envoltura}>
@@ -509,12 +536,32 @@ function Ranking({
                 mal siempre es la primera.
               */}
               <th className={tabla.cifra}>{laEtapa.nota}</th>
+              {/*
+                ⚠️ Las del retrato salen del `PerfilTalento`, que se arma UNA
+                vez con el currículum y no se recalcula por etapa. En la pestaña
+                de la prueba serían cifras del CV con la misma pinta que la de
+                la prueba.
+
+                ⚠️ **Solo dos, y no las cuatro.** Con «Alto rendimiento» y
+                «Confianza en la evidencia» la tabla medía 1314 px dentro de una
+                envoltura de 1038 —medido a 1920— y la columna de Estado, que
+                dice dónde está la persona, quedaba fuera del scroll. Las otras
+                dos viven en la ficha, que es donde además cabe decir qué miden:
+                un «79» bajo una cabecera de dos palabras no justifica nada.
+              */}
               {delCurriculum && (
                 <>
                   <th className={tabla.cifra}>Adecuación</th>
                   <th className={tabla.cifra}>Potencial</th>
                 </>
               )}
+              {/*
+                ⚠️ Antes eran una sola cifra sumada, y son dos tablas
+                distintas: un riesgo crítico lo escribió el agente sobre el
+                perfil y una alerta la levantó el proceso. Sumarlas daba un «3»
+                que no se podía ir a mirar a ningún sitio.
+              */}
+              <th className={tabla.cifra}>Riesgos</th>
               <th className={tabla.cifra}>Alertas</th>
               <th>Estado</th>
             </tr>
@@ -553,6 +600,16 @@ function Ranking({
                     {delCurriculum && fila.pasada === 'RAPIDA' && fila.notaEtapa !== null && (
                       <span className={estilos.provisional}>provisional</span>
                     )}
+                    {/*
+                      ⚠️ **El guion tenía cinco significados y no decía cuál.**
+                      «Están calificados pero no se ve su nota» era exactamente
+                      esto: el currículum estaba calificado —lo decía la cifra
+                      de arriba— y la prueba no, y el guion no distinguía eso de
+                      «no ha llegado» ni de «pasó sin nota».
+                    */}
+                    {fila.notaEtapa === null && (
+                      <span className={estilos.porQue}>{porQueNoHayNota(fila, etapa)}</span>
+                    )}
                   </td>
                   {delCurriculum && (
                     <>
@@ -561,10 +618,13 @@ function Ranking({
                     </>
                   )}
                   <td className={tabla.cifra}>
-                    {fila.alertas + fila.riesgosCriticos > 0
-                      ? fila.alertas + fila.riesgosCriticos
-                      : '—'}
+                    {fila.riesgosCriticos > 0 ? (
+                      <span className={estilos.riesgo}>{fila.riesgosCriticos}</span>
+                    ) : (
+                      '—'
+                    )}
                   </td>
+                  <td className={tabla.cifra}>{fila.alertas > 0 ? fila.alertas : '—'}</td>
                   <td>{fila.estadoNombre}</td>
                 </tr>
                 {abierta === fila.postulacionId && (
@@ -592,8 +652,12 @@ function Ranking({
                   <p>
                     {filas.length === 0
                       ? 'Todavía no hay postulaciones en esta vacante.'
-                      : `Nadie está en ${laEtapa.nombre} ahora mismo. Marca «Ver la tanda ` +
-                        `entera» para las ${filas.length} de la vacante.`}
+                      : vista === 'con-nota'
+                        ? `Nadie tiene todavía ${laEtapa.nota.toLowerCase()}: hace falta ` +
+                          `${laEtapa.loQueDejaNota}. Pulsa «Toda la tanda» para las ` +
+                          `${filas.length} de la vacante.`
+                        : `Nadie está en ${laEtapa.nombre} ahora mismo. Pulsa «Toda la ` +
+                          `tanda» para las ${filas.length} de la vacante.`}
                   </p>
                 </td>
               </tr>
@@ -812,15 +876,58 @@ function LoQueCalificoLaIA({ fila }: { fila: FilaRanking }) {
     queryFn: () => verPerfilIntegral(fila.postulacionId),
   })
 
+  /*
+    Las cuatro dimensiones del retrato, que son lo que sostiene la nota.
+    Llegan **en la propia fila del ranking**, así que se pintan al instante:
+    esperar a `verPerfilIntegral` para enseñar cifras que ya se tienen deja la
+    justificación en blanco durante el segundo en el que se decide.
+  */
+  const RETRATO = [
+    ['Adecuación', fila.adecuacion, 'cuánto encaja con lo que el puesto pide'],
+    ['Potencial', fila.potencial, 'cuánto puede crecer en el puesto'],
+    ['Alto rendimiento', fila.altoRendimiento, 'evidencia de haber rendido por encima'],
+    ['Confianza en la evidencia', fila.confianzaEvidencia, 'cuánto se apoya en hechos y no en adjetivos'],
+  ] as const
+
   return (
     <>
       <h3 className={estilos.tituloDetalle}>Lo que calificó la IA</h3>
+
+      {/*
+        ⚠️ **Con su procedencia dicha.** Las cuatro salen del `PerfilTalento`,
+        que se arma una vez con el currículum y no se recalcula por etapa: en la
+        ficha abierta desde Decisión son las mismas de hace tres semanas.
+      */}
+      {RETRATO.some(([, valor]) => valor !== null) && (
+        <>
+          <h4 className={estilos.subtitulo}>El retrato del currículum, en cifras</h4>
+          <dl className={estilos.retrato}>
+            {RETRATO.map(([nombre, valor, porQue]) => (
+              <div className={estilos.dimension} key={nombre}>
+                <dt className={estilos.nombreDimension}>{nombre}</dt>
+                <dd className={estilos.cifraDimension}>{valor ?? '—'}</dd>
+                <dd className={estilos.porQueDimension}>{porQue}</dd>
+              </div>
+            ))}
+          </dl>
+          <p className={estilos.dato}>
+            {fila.fortalezas} fortaleza{fila.fortalezas === 1 ? '' : 's'} ·{' '}
+            {fila.riesgosCriticos} riesgo{fila.riesgosCriticos === 1 ? '' : 's'} crítico
+            {fila.riesgosCriticos === 1 ? '' : 's'} · {fila.alertas} alerta
+            {fila.alertas === 1 ? '' : 's'}
+            {fila.actualizadoEn && ` · calificado el ${formatearFechaCorta(fila.actualizadoEn)}`}
+            {fila.pasada === 'RAPIDA' && ' · criba rápida: la fina va a pisar esta nota'}
+          </p>
+        </>
+      )}
+
+      {/* El porqué en prosa, también desde la fila: no espera a la petición. */}
+      {fila.resumen && <p className={estilos.texto}>{fila.resumen}</p>}
+
       {perfil.isPending && <p className={estilos.dato}>Cargando el retrato…</p>}
       {perfil.data && (
         <>
-          {perfil.data.resumen ? (
-            <p className={estilos.texto}>{perfil.data.resumen}</p>
-          ) : (
+          {!perfil.data.resumen && !fila.resumen && (
             <p className={estilos.dato}>
               Sin retrato todavía: la calificación está{' '}
               {perfil.data.estadoCalificacion.toLowerCase().replaceAll('_', ' ')}.

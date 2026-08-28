@@ -58,18 +58,36 @@ await pagina.getByRole('tab', { name: 'Perfil integral' }).waitFor()
 await paso('El ranking abre en Perfil integral')
 
 /*
- * ⚠️ **El ranking abre filtrado por la etapa de su pestaña.** Desde el 27/08
- * cada pestaña enseña solo a quien esta parado en ella, asi que una tabla vacia
- * es lo normal y no un fallo. Para lo que necesita ver a alguien concreto —el
- * viaje de ana-lopez por cuatro etapas, o abrir una ficha— hay que pedir la
- * tanda entera antes.
+ * ⚠️ **El ranking abre por un corte, no por la tanda entera.** Desde el 28/08
+ * son tres cortes del mismo listado —«Con nota de esta etapa» por defecto,
+ * «Está aquí ahora» y «Toda la tanda»— asi que una tabla corta es lo normal y
+ * no un fallo. Para lo que necesita ver a alguien concreto —el viaje de
+ * ana-lopez por cuatro etapas, o abrir una ficha— hay que pedir la tanda
+ * entera antes.
+ *
+ * ⚠️ El corte «con nota» lleva el nombre de la etapa dentro («Con nota de la
+ * prueba»), asi que se busca por lo que empieza y no por el texto entero.
  */
-const verTandaEntera = async (encendido) => {
-  const casilla = pagina.getByLabel('Ver la tanda entera')
-  if (encendido) await casilla.check()
-  else await casilla.uncheck()
+const verCorte = async (cual) => {
+  await pagina
+    .getByRole('group', { name: 'Qué filas se ven' })
+    .getByRole('button')
+    .filter({ hasText: cual })
+    .first()
+    .click()
   await pagina.waitForTimeout(700)
 }
+
+const verTandaEntera = (encendido) => verCorte(encendido ? /^Toda la tanda/ : /^Está aquí ahora/)
+
+/*
+ * ⚠️ **La celda de la nota ya no es solo la cifra.** Desde el 28/08 lleva
+ * dentro un `<span>` que dice por que esta vacia, asi que un `textContent` de
+ * la celda devuelve «—Todavía no llega a esta etapa». Se lee el primer nodo de
+ * texto, que es la cifra o su guion.
+ */
+const laNotaDe = async (celda) =>
+  (await celda.evaluate((td) => td.childNodes[0]?.textContent ?? '').catch(() => '—')).trim()
 
 // 3 · Recorrer las cinco pestañas y anotar la primera nota de cada una.
 // Con la tanda entera: lo que se mira aqui es que la NOTA cambie de etapa, y
@@ -78,13 +96,13 @@ await verTandaEntera(true)
 for (const etapa of ['Prueba del puesto', 'Simulación', 'Validación', 'Decisión', 'Perfil integral']) {
   await pagina.getByRole('tab', { name: etapa }).click()
   await pagina.waitForTimeout(1100)
-  const primera = await pagina.locator('tbody tr td:nth-child(4)').first().textContent().catch(() => '—')
-  console.log(`   · ${etapa}: primera nota ${primera?.trim()}`)
+  const primera = await laNotaDe(pagina.locator('tbody tr td:nth-child(4)').first())
+  console.log(`   · ${etapa}: primera nota ${primera}`)
   if (etapa === 'Prueba del puesto') await paso('La pestaña de la prueba, con su nota')
 }
 await paso('De vuelta en Perfil integral')
 
-// 4 · Cuanto esconde el filtro: la tanda entera contra la etapa sola
+// 4 · Cuanto esconde el corte: la tanda entera contra quien esta parado aqui
 const enLaTanda = await pagina.locator('tbody tr').count()
 await verTandaEntera(false)
 const enLaEtapa = await pagina.locator('tbody tr').count()

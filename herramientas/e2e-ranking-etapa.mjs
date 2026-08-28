@@ -202,17 +202,31 @@ const nombresPintados = async (pagina) => {
   return nombres
 }
 
-const casillaDeLaTanda = (pagina) => pagina.getByRole('checkbox', { name: 'Ver la tanda entera' })
+/*
+ * Los tres cortes. El de «con nota» lleva el nombre de la etapa dentro
+ * —«Con nota de la prueba»— asi que se busca por lo que empieza.
+ */
+const losCortes = (pagina) => pagina.getByRole('group', { name: 'Qué filas se ven' })
+const elCorte = (pagina, empiezaPor) =>
+  losCortes(pagina)
+    .getByRole('button')
+    .filter({ hasText: new RegExp(`^${empiezaPor}`) })
+    .first()
+
+const cuantasEn = async (pagina, empiezaPor) => {
+  const texto = (await elCorte(pagina, empiezaPor).textContent()) ?? ''
+  return Number(texto.match(/(\d+)\s*$/)?.[1])
+}
 
 async function laPantalla(pagina, vacanteId, todas) {
   await pagina.goto(`${PORTAL}/admin/vacantes/${vacanteId}`, { waitUntil: 'domcontentloaded' })
   await pagina.getByRole('heading', { name: 'El ranking, etapa por etapa' }).waitFor({ timeout: 20000 })
-  await pagina.getByText(/Se ven /).waitFor({ timeout: 20000 })
+  await losCortes(pagina).waitFor({ timeout: 20000 })
 
-  console.log('\nLas cinco pestañas, filtradas')
+  console.log('\nLas cinco pestañas, con el corte por defecto')
   comprobar(
-    !(await casillaDeLaTanda(pagina).isChecked()),
-    'abre filtrado por la etapa: «Ver la tanda entera» viene sin marcar',
+    (await elCorte(pagina, 'Con nota').getAttribute('aria-pressed')) === 'true',
+    'abre por quien ya tiene nota de la etapa, que es con lo que se decide',
   )
 
   const terminadas = todas.filter((f) => etapaDe(f.estado) === null)
@@ -220,40 +234,63 @@ async function laPantalla(pagina, vacanteId, todas) {
 
   for (const etapa of ETAPAS) {
     await pagina.getByRole('tab', { name: etapa.nombre }).click()
-    await pagina.getByText(/Se ven /).waitFor({ timeout: 15000 })
-    await pagina.waitForTimeout(500)
+    await losCortes(pagina).waitFor({ timeout: 15000 })
+    await pagina.waitForTimeout(600)
 
+    /*
+      ⚠️ **Cada pestaña pide su propio ranking**, y `notaEtapa` es lo unico que
+      cambia: hay que traer el de ESTA etapa para saber quien tiene nota aqui.
+      Comparar contra el del perfil daria el fallo que esta pantalla arregla.
+    */
+    const suyas = (await api(`/vacantes/${vacanteId}/ranking?etapa=${CODIGOS[etapa.nombre]}`)).cuerpo.filas
+    const conNota = suyas.filter((f) => f.notaEtapa !== null)
     const deLaEtapa = todas.filter((f) => etapaDe(f.estado) === etapa.nombre)
+
+    comprobar(
+      (await cuantasEn(pagina, 'Con nota')) === conNota.length,
+      `${etapa.nombre}: el corte «con nota» dice ${conNota.length}, como la API`,
+      `la pantalla dice ${await cuantasEn(pagina, 'Con nota')}`,
+    )
+    comprobar(
+      (await cuantasEn(pagina, 'Está aquí ahora')) === deLaEtapa.length,
+      `${etapa.nombre}: «está aquí ahora» dice ${deLaEtapa.length}, como la API`,
+    )
+    comprobar(
+      (await cuantasEn(pagina, 'Toda la tanda')) === todas.length,
+      `${etapa.nombre}: «toda la tanda» dice ${todas.length}`,
+    )
+
     const pintados = await nombresPintados(pagina)
     comprobar(
-      pintados.length === deLaEtapa.length,
-      `${etapa.nombre}: se pintan ${deLaEtapa.length} de ${todas.length}, los que están ahí hoy`,
-      `la API dice ${deLaEtapa.length} y la tabla enseña ${pintados.length}`,
+      pintados.length === conNota.length,
+      `${etapa.nombre}: se pintan ${conNota.length}, los que tienen nota de esta etapa`,
+      `la API dice ${conNota.length} y la tabla enseña ${pintados.length}`,
     )
 
-    // La linea de recuento sale de contar lo pintado; si mintiera, seria el
-    // indicador que este producto ya pago dos veces.
-    const linea = (await pagina.getByText(/Se ven /).first().textContent()) ?? ''
+    // La cifra de la etapa NO puede ser la de la cola del curriculum, que es de
+    // donde salia «76 calificados» encima de una columna de guiones.
+    const cabecera = (await pagina.locator('p').filter({ hasText: /con nota de/ }).first().textContent()) ?? ''
     comprobar(
-      linea.includes(`Se ven ${deLaEtapa.length} de ${todas.length}`),
-      `${etapa.nombre}: la línea dice «${deLaEtapa.length} de ${todas.length}» y coincide con la tabla`,
-      `decía: ${linea.trim()}`,
+      cabecera.includes(`${conNota.length} de ${todas.length}`),
+      `${etapa.nombre}: la cifra de arriba es de la etapa, no de la criba del CV`,
+      `decía: ${cabecera.trim()}`,
     )
 
-    const coladas = terminadas.filter((f) => pintados.includes(f.candidato))
-    comprobar(
-      coladas.length === 0,
-      `${etapa.nombre}: quien ya terminó no se cuela`,
-      coladas.map((f) => `${f.candidato} (${f.estado})`).join(', '),
-    )
+    if (etapa.nombre !== 'Perfil integral' && etapa.nombre !== 'Decisión') {
+      const delCv = (await pagina.locator('p').filter({ hasText: /La criba del currículum/ }).first().textContent()) ?? ''
+      comprobar(
+        delCv.includes('no de esta etapa'),
+        `${etapa.nombre}: la línea del currículum dice que no habla de esta etapa`,
+        delCv.trim().slice(0, 140),
+      )
+    }
 
-    if (deLaEtapa.length === 0 && !vacia) vacia = etapa.nombre
-    if (deLaEtapa.length === 0) {
+    if (conNota.length === 0 && !vacia) vacia = etapa.nombre
+    if (conNota.length === 0) {
       const dice = (await pagina.locator('tbody').first().textContent()) ?? ''
       comprobar(
-        dice.includes(`Nadie está en ${etapa.nombre} ahora mismo`) &&
-          dice.includes('Ver la tanda entera'),
-        `${etapa.nombre}: sin nadie, lo dice sin alarma y nombra el escape`,
+        dice.includes('Nadie tiene todavía') && dice.includes('Toda la tanda'),
+        `${etapa.nombre}: sin ninguna nota, dice qué falta y nombra el escape`,
         dice.trim().slice(0, 160),
       )
       comprobar(
@@ -264,15 +301,28 @@ async function laPantalla(pagina, vacanteId, todas) {
   }
 
   await mkdir(SALIDA, { recursive: true })
-  await pagina.screenshot({ path: `${SALIDA}/ranking-etapa-filtrado.png`, fullPage: true })
+  await pagina.screenshot({ path: `${SALIDA}/ranking-etapa-con-nota.png`, fullPage: true })
+
+  console.log('\nEl corte de «está aquí ahora» sigue existiendo')
+  await elCorte(pagina, 'Está aquí ahora').click()
+  await pagina.waitForTimeout(700)
+  const aqui = await nombresPintados(pagina)
+  const enDecision = todas.filter((f) => etapaDe(f.estado) === 'Decisión')
+  comprobar(
+    aqui.length === enDecision.length,
+    `en Decisión enseña a los ${enDecision.length} que están ahí ahora`,
+    `se pintan ${aqui.length}`,
+  )
+  const coladas = terminadas.filter((f) => aqui.includes(f.candidato))
+  comprobar(coladas.length === 0, 'y quien ya terminó no se cuela', coladas.map((f) => f.candidato).join(', '))
 
   console.log('\nEl escape a la tanda entera')
-  await casillaDeLaTanda(pagina).check()
-  await pagina.waitForTimeout(600)
+  await elCorte(pagina, 'Toda la tanda').click()
+  await pagina.waitForTimeout(700)
   const conTodos = await nombresPintados(pagina)
   comprobar(
     conTodos.length === todas.length,
-    `marcarlo trae las ${todas.length} de la tanda`,
+    `pulsarlo trae las ${todas.length} de la tanda`,
     `se pintan ${conTodos.length}`,
   )
   if (terminadas.length > 0) {
@@ -284,30 +334,41 @@ async function laPantalla(pagina, vacanteId, todas) {
     console.log('  · nadie ha terminado su proceso en esta vacante: esa mitad no se ejercita')
   }
 
-  // Sobrevive al cambio de pestaña: la tabla se remonta entera al cambiar de
-  // etapa, asi que el filtro tiene que vivir por encima de ella.
-  await pagina.getByRole('tab', { name: 'Decisión' }).click()
-  await pagina.waitForTimeout(600)
+  /*
+    El porque de cada guion. Es lo que faltaba: un guion significaba cinco cosas
+    y la mas confusa era «el curriculum esta calificado y esta etapa no».
+  */
+  const cuerpo = (await pagina.locator('tbody').first().textContent()) ?? ''
+  const motivos = [
+    'Todavía no llega a esta etapa',
+    'Pasó de esta etapa sin que quedara nota',
+    'Terminó su proceso sin nota de esta etapa',
+    'Le toca a la persona',
+    'Calificándose ahora mismo',
+    'pendiente de que el equipo la cierre',
+    'El equipo no la ha habilitado',
+  ].filter((m) => cuerpo.includes(m))
   comprobar(
-    await casillaDeLaTanda(pagina).isChecked(),
-    'y sigue puesto al cambiar de pestaña, sin volver a pedirlo',
+    motivos.length > 0,
+    `cada nota vacía dice por qué lo está (${motivos.length} motivo(s) distintos en pantalla)`,
+    'ninguna fila sin nota explicaba su guion',
   )
-  const trasCambiar = await nombresPintados(pagina)
+
+  // Sobrevive al cambio de pestaña: la tabla se remonta entera al cambiar de
+  // etapa, asi que el corte tiene que vivir por encima de ella.
+  await pagina.getByRole('tab', { name: 'Prueba del puesto' }).click()
+  await pagina.waitForTimeout(700)
   comprobar(
-    trasCambiar.length === todas.length,
+    (await elCorte(pagina, 'Toda la tanda').getAttribute('aria-pressed')) === 'true',
+    'y el corte elegido sigue puesto al cambiar de pestaña, sin volver a pedirlo',
+  )
+  comprobar(
+    (await nombresPintados(pagina)).length === todas.length,
     'con la tabla entera todavía delante',
-    `se pintan ${trasCambiar.length} de ${todas.length}`,
   )
   await pagina.screenshot({ path: `${SALIDA}/ranking-etapa-tanda-entera.png`, fullPage: true })
 
-  await casillaDeLaTanda(pagina).uncheck()
-  await pagina.waitForTimeout(500)
-  comprobar(
-    (await nombresPintados(pagina)).length <= todas.length,
-    'y se puede volver a la etapa sola',
-  )
-
-  if (!vacia) console.log('  · ninguna etapa quedó vacía: la copia del vacío no se ejercitó')
+  if (!vacia) console.log('  · ninguna etapa quedó sin notas: esa copia no se ejercitó')
 }
 
 // ---------- La carrera ----------

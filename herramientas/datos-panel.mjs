@@ -115,6 +115,16 @@ export const PERMISOS_DEL_ROL = [
  * 34` sobre ocho filas hace que la linea de «se ven N de M» parezca un fallo
  * del panel: es la tercera vez que una fixtura inventada manda a buscar en el
  * sitio equivocado.
+ *
+ * ⚠️ **`estadoCalificacion` decia `CALIFICADA` y `PENDIENTE`, y la API no
+ * devuelve ninguno de los dos.** Los cuatro de la cola son `SIN_EMPEZAR`,
+ * `EN_CURSO`, `TERMINADA` y `FALLIDA`. Van ya corregidos: un valor inalcanzable
+ * en una fixtura tapa justo el fallo que se viene a mirar.
+ *
+ * ⚠️ **`notaEtapa` es el UNICO campo que cambia con `?etapa=`**, y una fixtura
+ * que devuelva la misma nota en las cinco pestañas no puede enseñar el caso que
+ * de verdad se ve en produccion: el curriculum calificado y la prueba sin nota.
+ * De eso se encarga `rankingDeLaEtapa()`, abajo.
  */
 const RANKING = {
   vacanteId: 1, vacante: 'Ingeniero/a de Infraestructura',
@@ -123,7 +133,7 @@ const RANKING = {
   filas: [
     { puesto: 1, postulacionId: 91, uuid: 'p1', candidato: 'Camila Reyes Ortiz',
       correo: 'camila@example.com', estado: 'PRUEBA_POR_CONFIRMAR',
-      estadoNombre: 'Prueba en revisión', estadoCalificacion: 'CALIFICADA', pasada: 'FINA',
+      estadoNombre: 'Prueba en revisión', estadoCalificacion: 'TERMINADA', pasada: 'FINA',
       archivoNombre: 'cv-camila.pdf', grupoPrioridad: 'A', notaEtapa: 88, notaCurriculum: 76,
       adecuacion: 84, potencial: 91, altoRendimiento: 79, confianzaEvidencia: 86,
       resumen: 'Sostuvo una plataforma con usuarios reales y lo explica sin jerga.',
@@ -145,7 +155,7 @@ const RANKING = {
       notasCriterio: [] },
     { puesto: 3, postulacionId: 93, uuid: 'p3', candidato: 'Valeria Chumpitaz Ríos',
       correo: 'valeria@example.com', estado: 'SIMULACION_POR_CONFIRMAR',
-      estadoNombre: 'Simulación por confirmar', estadoCalificacion: 'CALIFICADA', pasada: 'FINA',
+      estadoNombre: 'Simulación por confirmar', estadoCalificacion: 'TERMINADA', pasada: 'FINA',
       archivoNombre: null, grupoPrioridad: 'A', notaEtapa: 69, notaCurriculum: 72,
       adecuacion: 66, potencial: 70, altoRendimiento: 71, confianzaEvidencia: 74,
       resumen: 'Trabajo sólido y sin sobresaltos.',
@@ -153,7 +163,7 @@ const RANKING = {
       notasCriterio: [] },
     { puesto: 4, postulacionId: 94, uuid: 'p4', candidato: 'Rodrigo Ayala Pinto',
       correo: 'rodrigo@example.com', estado: 'PERFIL_POR_CONFIRMAR',
-      estadoNombre: 'Perfil por confirmar', estadoCalificacion: 'CALIFICADA', pasada: 'FINA',
+      estadoNombre: 'Perfil por confirmar', estadoCalificacion: 'TERMINADA', pasada: 'FINA',
       archivoNombre: 'cv-rodrigo.pdf', grupoPrioridad: 'A', notaEtapa: 84, notaCurriculum: 80,
       adecuacion: 82, potencial: 85, altoRendimiento: 77, confianzaEvidencia: 81,
       resumen: 'Llevó un equipo pequeño durante una migración que salió mal y lo cuenta entero.',
@@ -161,7 +171,7 @@ const RANKING = {
       notasCriterio: [] },
     { puesto: 5, postulacionId: 96, uuid: 'p6', candidato: 'Marcos Ibáñez Trujillo',
       correo: 'marcos@example.com', estado: 'PRUEBA_TURNO_CANDIDATO',
-      estadoNombre: 'Prueba habilitada', estadoCalificacion: 'PENDIENTE', pasada: 'FINA',
+      estadoNombre: 'Prueba habilitada', estadoCalificacion: 'SIN_EMPEZAR', pasada: 'FINA',
       archivoNombre: 'cv-marcos.pdf', grupoPrioridad: 'B', notaEtapa: 75, notaCurriculum: 75,
       adecuacion: 73, potencial: 78, altoRendimiento: 70, confianzaEvidencia: 69,
       resumen: 'Perfil sólido de operación; menos evidencia de decidir con poca información.',
@@ -169,7 +179,7 @@ const RANKING = {
       notasCriterio: [] },
     { puesto: 6, postulacionId: 98, uuid: 'p8', candidato: 'Ana Belén Zegarra',
       correo: 'ana@example.com', estado: 'DECISION_POR_CONFIRMAR',
-      estadoNombre: 'En decisión final', estadoCalificacion: 'CALIFICADA', pasada: 'FINA',
+      estadoNombre: 'En decisión final', estadoCalificacion: 'TERMINADA', pasada: 'FINA',
       archivoNombre: 'cv-ana.pdf', grupoPrioridad: 'A', notaEtapa: 73, notaCurriculum: 79,
       adecuacion: 81, potencial: 76, altoRendimiento: 75, confianzaEvidencia: 80,
       resumen: 'Terminó la validación con las métricas cumplidas y una duda del área.',
@@ -179,7 +189,7 @@ const RANKING = {
        filtro puesto no sale en ninguna de las cinco pestañas. */
     { puesto: 7, postulacionId: 97, uuid: 'p7', candidato: 'Lucía Ferrer Zavala',
       correo: 'lucia@example.com', estado: 'NO_CONTINUA',
-      estadoNombre: 'No continúa', estadoCalificacion: 'CALIFICADA', pasada: 'FINA',
+      estadoNombre: 'No continúa', estadoCalificacion: 'TERMINADA', pasada: 'FINA',
       archivoNombre: 'cv-lucia.pdf', grupoPrioridad: 'C', notaEtapa: 52, notaCurriculum: 55,
       adecuacion: 51, potencial: 58, altoRendimiento: 49, confianzaEvidencia: 62,
       resumen: 'No sostuvo el caso de la prueba y el cierre quedó a medias.',
@@ -188,13 +198,97 @@ const RANKING = {
     /* Sin calificar todavia: la nota va vacia, que no es un cero. */
     { puesto: 8, postulacionId: 95, uuid: 'p5', candidato: 'Fátima Quispe Loayza',
       correo: 'fatima@example.com', estado: 'PERFIL_TURNO_CANDIDATO',
-      estadoNombre: 'Evaluación pendiente', estadoCalificacion: 'PENDIENTE', pasada: null,
+      estadoNombre: 'Evaluación pendiente', estadoCalificacion: 'SIN_EMPEZAR', pasada: null,
       archivoNombre: 'cv-fatima.pdf', grupoPrioridad: null, notaEtapa: null, notaCurriculum: null,
       adecuacion: null, potencial: null, altoRendimiento: null, confianzaEvidencia: null,
       resumen: null,
       riesgosCriticos: 0, fortalezas: 0, alertas: 0, actualizadoEn: null,
       notasCriterio: [] },
   ],
+}
+
+/*
+ * El ranking de UNA etapa, que es lo unico que `?etapa=` cambia.
+ *
+ * ⚠️ **A escala de verdad.** Las ocho de arriba estan escritas a mano porque
+ * cada una cubre un caso —la terminada, la que se esta calificando, la que no
+ * tiene nota— pero una tanda real trae setenta y ocho, y con ocho filas no se
+ * ve como compone la tabla con sus diez columnas ni si el control de cortes
+ * cabe al lado de las cifras. Las setenta de relleno se generan aqui: es un
+ * script, no produccion.
+ *
+ * ⚠️ **En las cuatro etapas que no son el perfil, casi nadie tiene nota.** No
+ * es pereza de la fixtura: es como se ve una vacante de verdad, y es justo el
+ * caso que hacia leer «76 calificados» encima de una columna de guiones.
+ */
+const RELLENO = Array.from({ length: 70 }, (_, i) => {
+  const n = i + 1
+  // Reparte por etapas con una mayoria en el perfil, como una tanda real.
+  const estado = [
+    'PERFIL_TURNO_CANDIDATO',
+    'PERFIL_POR_CONFIRMAR',
+    'PERFIL_CALIFICANDO',
+    'PRUEBA_TURNO_CANDIDATO',
+    'PERFIL_POR_CONFIRMAR',
+    'NO_CONTINUA',
+    'PERFIL_POR_CONFIRMAR',
+  ][n % 7]
+  const notaPerfil = estado === 'PERFIL_TURNO_CANDIDATO' ? null : 40 + ((n * 7) % 55)
+  return {
+    puesto: 8 + n,
+    postulacionId: 200 + n,
+    uuid: `r${n}`,
+    candidato: `${['Ariana', 'Bruno', 'Carla', 'Diego', 'Elena', 'Fabio', 'Gabriela'][n % 7]} ${['Quispe', 'Mamani', 'Rojas', 'Vargas', 'Huamán', 'Castro', 'Salas'][(n * 3) % 7]} ${['Loayza', 'Ccahuana', 'Ríos', 'Peña'][n % 4]}`,
+    correo: `postulante.${n}@cv-convocatoria.local`,
+    estado,
+    estadoNombre: estado,
+    // Casi todas con el curriculum ya calificado: es lo que hace que la cifra
+    // de la criba diga «calificados» mientras la columna de la etapa esta vacia.
+    estadoCalificacion: estado === 'PERFIL_TURNO_CANDIDATO' ? 'SIN_EMPEZAR' : 'TERMINADA',
+    pasada: n % 5 === 0 ? 'RAPIDA' : 'FINA',
+    archivoNombre: `cv-${n}.pdf`,
+    grupoPrioridad: ['A', 'B', 'C'][n % 3],
+    notaEtapa: notaPerfil,
+    notaCurriculum: notaPerfil,
+    adecuacion: notaPerfil,
+    potencial: notaPerfil === null ? null : Math.min(99, notaPerfil + 6),
+    altoRendimiento: notaPerfil === null ? null : Math.max(30, notaPerfil - 8),
+    confianzaEvidencia: notaPerfil === null ? null : Math.min(99, notaPerfil + 3),
+    resumen: notaPerfil === null ? null : 'Perfil leído por el agente; evidencia media.',
+    riesgosCriticos: n % 11 === 0 ? 1 : 0,
+    fortalezas: n % 4,
+    alertas: n % 3,
+    actualizadoEn: notaPerfil === null ? null : '2026-08-24T10:00:00Z',
+    notasCriterio: [],
+  }
+})
+
+const TODAS = [...RANKING.filas, ...RELLENO]
+
+/** Quien tiene nota en cada etapa, por su id. Fuera del perfil, casi nadie. */
+const NOTA_DE_LA_ETAPA = {
+  PERFIL_INTEGRAL: (f) => f.notaEtapa,
+  // Solo la que ya la rindió y está en revisión.
+  PRUEBA_PUESTO: (f) => (f.postulacionId === 91 ? 88 : null),
+  SIMULACION: (f) => (f.postulacionId === 93 ? 69 : null),
+  VALIDACION: () => null,
+  DECISION: (f) => (f.postulacionId === 98 ? 73 : null),
+}
+
+export function rankingDeLaEtapa(etapa = 'PERFIL_INTEGRAL') {
+  const nota = NOTA_DE_LA_ETAPA[etapa] ?? NOTA_DE_LA_ETAPA.PERFIL_INTEGRAL
+  return {
+    ...RANKING,
+    // ⚠️ Las cuatro cifras NO cambian con la etapa, y eso es fiel al backend:
+    // salen de la cola que califica el currículum. Es el fallo que la pantalla
+    // viene a nombrar, así que la fixtura tiene que reproducirlo.
+    total: TODAS.length,
+    conPasadaFina: TODAS.filter((f) => f.pasada === 'FINA').length,
+    calificados: TODAS.filter((f) => f.estadoCalificacion === 'TERMINADA').length,
+    enCurso: TODAS.filter((f) => f.estadoCalificacion === 'EN_CURSO').length,
+    fallidos: TODAS.filter((f) => f.estadoCalificacion === 'FALLIDA').length,
+    filas: TODAS.map((f) => ({ ...f, notaEtapa: nota(f) })),
+  }
 }
 
 const REQUISITOS = [
@@ -453,7 +547,7 @@ export const RESPUESTAS = {
     PERFIL_TURNO_CANDIDATO: 1, PERFIL_CALIFICANDO: 1, PERFIL_POR_CONFIRMAR: 1,
     PRUEBA_TURNO_CANDIDATO: 1, PRUEBA_POR_CONFIRMAR: 1, SIMULACION_POR_CONFIRMAR: 1,
     DECISION_POR_CONFIRMAR: 1, NO_CONTINUA: 1 } },
-  '/vacantes/1/ranking': RANKING,
+  '/vacantes/1/ranking': rankingDeLaEtapa(),
   '/postulaciones/91/evaluacion': EVALUACION,
   '/postulaciones/91': {
     id: 91, uuid: 'p1', candidato: 'Camila Reyes Ortiz', correo: 'camila@example.com',
@@ -464,7 +558,7 @@ export const RESPUESTAS = {
     creadoEn: '2026-08-12T11:02:00Z', movidoEn: '2026-08-22T10:00:00Z',
   },
   '/postulaciones/91/perfil-integral': {
-    postulacionId: 91, estadoCalificacion: 'CALIFICADA',
+    postulacionId: 91, estadoCalificacion: 'TERMINADA',
     resumen: 'Sostuvo una plataforma con usuarios reales y lo explica sin jerga.',
     adecuacion: 84, potencial: 91, altoRendimiento: 79, confianzaEvidencia: 86,
     notaEtapa: 88, actualizadoEn: '2026-08-22T10:00:00Z',
@@ -499,7 +593,7 @@ export const RESPUESTAS = {
     creadoEn: '2026-08-13T09:40:00Z', movidoEn: '2026-08-23T12:10:00Z',
   },
   '/postulaciones/94/perfil-integral': {
-    postulacionId: 94, estadoCalificacion: 'CALIFICADA',
+    postulacionId: 94, estadoCalificacion: 'TERMINADA',
     resumen: 'Llevó un equipo pequeño durante una migración que salió mal y lo cuenta entero.',
     adecuacion: 82, potencial: 85, altoRendimiento: 77, confianzaEvidencia: 81,
     notaEtapa: 84, actualizadoEn: '2026-08-23T12:10:00Z',

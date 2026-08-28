@@ -24,7 +24,7 @@ const PORTAL = process.env.PORTAL ?? 'http://localhost:5174'
 const SALIDA = 'capturas'
 const GRIS = process.argv.includes('--gris')
 
-import { RESPUESTAS } from './datos-panel.mjs'
+import { RESPUESTAS, rankingDeLaEtapa } from './datos-panel.mjs'
 
 const PANTALLAS = [
   { nombre: 'vacantes', ruta: '/admin' },
@@ -62,6 +62,18 @@ const PANTALLAS = [
   // Decisión en casi toda vacante, asi que su tabla vacia hay que mirarla: no
   // puede leerse como un fallo, y tiene que nombrar el escape a la tanda entera.
   { nombre: 'ranking-vacio', ruta: '/admin/vacantes/1', etapa: 'Validación' },
+  /*
+   * La pestaña de la prueba con la tanda entera: setenta y ocho filas, casi
+   * todas con el currículum calificado y sin nota de la prueba. Es el caso que
+   * hacia leer «calificados» encima de una columna de guiones, y donde se ve si
+   * el porqué de cada guion cabe en la columna.
+   */
+  {
+    nombre: 'ranking-sin-nota',
+    ruta: '/admin/vacantes/1',
+    etapa: 'Prueba del puesto',
+    pulsar: 'Toda la tanda',
+  },
   { nombre: 'entrar', ruta: '/admin/entrar', sinSesion: true },
 ]
 
@@ -90,8 +102,18 @@ for (const tamano of TAMANOS) {
     })
 
     await contexto.route('**/api/v1/panel/**', (ruta) => {
-      const camino = new URL(ruta.request().url()).pathname.replace('/api/v1/panel', '')
-      const cuerpo = RESPUESTAS[camino] ?? RESPUESTAS[`/${camino.split('/')[1]}`] ?? []
+      const url = new URL(ruta.request().url())
+      const camino = url.pathname.replace('/api/v1/panel', '')
+      /*
+        ⚠️ **El ranking es la unica ruta cuya respuesta depende de la query.**
+        `?etapa=` cambia `notaEtapa` y nada mas; el resto del interceptor mira
+        solo el `pathname`, asi que sin este caso las cinco pestañas servian la
+        misma nota y la captura no podia enseñar el caso de verdad —el
+        curriculum calificado y la etapa sin nota—.
+      */
+      const cuerpo = camino.endsWith('/ranking')
+        ? rankingDeLaEtapa(url.searchParams.get('etapa') ?? undefined)
+        : (RESPUESTAS[camino] ?? RESPUESTAS[`/${camino.split('/')[1]}`] ?? [])
       return ruta.fulfill({
         status: 200,
         contentType: 'application/json',

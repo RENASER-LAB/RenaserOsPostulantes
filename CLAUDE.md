@@ -1,9 +1,127 @@
 # Portal del candidato · contexto de trabajo
 
-Última actualización: 2026-08-27 · **el ciclo de vida del banco de preguntas**
+Última actualización: 2026-08-28 · **el ranking enseña quién tiene nota, y por qué el resto no**
 
 Este archivo es para retomar el trabajo sin tener que reconstruir nada. Cuenta qué es este
 proyecto, con qué habla, qué se decidió y por qué, y qué está a medias.
+
+---
+
+## El ranking enseña quién tiene nota, y por qué el resto no (28/08/2026)
+
+Tres cosas, y la del medio explica la queja que las trajo: «algunos ya respondieron, están
+calificados y no se ve su nota».
+
+### ⚠️ Lo que estaba mintiendo: las cuatro cifras de arriba son de OTRA etapa
+
+`calificados`, `enCurso`, `fallidos` y `conPasadaFina` salen de **`ColaCalificacionIa`**, que es
+la cola que califica el **currículum** con IA, y el servicio no la filtra por `?etapa=`.
+`notaEtapa` sí sale de `nota_etapa` filtrada por la etapa pedida.
+
+Medido contra el backend vivo, vacante 3: las cuatro cifras son **idénticas en las cinco
+pestañas** (16 / 5 / 0 / 9) mientras las filas con `notaEtapa` van **5, 1, 1, 1**. De ahí salía
+«76 calificados» encima de setenta y ocho guiones, y la lectura natural era que la pantalla
+estaba rota.
+
+Ahora cada pestaña **cuenta lo suyo** —«1 de 78 con nota de la prueba · 11 esperando a la
+persona»— y lo del currículum baja a su propia línea **con su nombre puesto**: «La criba del
+currículum con IA va por 65 de 78 calificados — eso es del currículum, no de esta etapa».
+
+⚠️ **Casi ningún campo del ranking es de la etapa que se mira.** `?etapa=` cambia UNA cosa.
+`estadoCalificacion`, `pasada`, `adecuacion`, `potencial`, `altoRendimiento`,
+`confianzaEvidencia`, `resumen`, `fortalezas`, `riesgosCriticos` y **hasta `notasCriterio`** se
+arman sin mirar la etapa: los tres primeros vienen de la cola del CV, el resto del
+`PerfilTalento` y de los criterios del currículum (`delCurriculum` usa la constante
+`ETAPA = "PERFIL_INTEGRAL"`). Está escrito en la cabecera de `ranking.ts`.
+
+### Un guion significaba cinco cosas y no decía cuál
+
+`porQueNoHayNota()` lo nombra debajo de la cifra, en palabras: «Le toca a la persona: aún no la
+ha hecho», «Calificándose ahora mismo», «Hecha, pendiente de que el equipo la cierre»,
+«Todavía no llega a esta etapa», «Pasó de esta etapa sin que quedara nota» y «Terminó su
+proceso sin nota de esta etapa».
+
+⚠️ **`estadoCalificacion` NO sirve para explicarlo fuera del perfil.** Un `TERMINADA` en la
+pestaña de la prueba dice que el currículum está calificado y no dice nada de la prueba —es
+exactamente el origen de la queja—. Lo que sí es de la etapa es **dónde está parada la
+persona**, y de ahí salen los seis motivos. Hay test: los seis son distintos entre sí, con
+`estadoCalificacion` fijo en `TERMINADA` en las seis filas para que ninguna regla pueda
+apoyarse en él.
+
+### Tres cortes, no una casilla
+
+«Con nota de esta etapa» (por defecto), «Está aquí ahora» y «Toda la tanda», cada uno con su
+cifra dentro. El del PR #11 se queda: **los dos primeros eligen gente casi opuesta** fuera del
+perfil integral. En la prueba, quien «está aquí ahora» es quien **todavía no la ha rendido** —hay
+que perseguirlo— y quien tiene nota **ya pasó de largo** —con él se decide—. Medido en la vacante
+3: una fila cada uno, **sin una sola persona en común**.
+
+Las tres cifras se cuentan **de las filas sin filtrar**, nunca de lo que se pinta: derivarlas de
+lo visible haría que «Con nota» dijera siempre «12 de 12».
+
+### Lo que justifica la decisión de la IA, y dónde cabe
+
+| Dónde | Qué |
+|---|---|
+| La tabla, solo en Perfil integral y Decisión | Adecuación y Potencial |
+| **Riesgos y Alertas, separadas** | Eran una cifra sumada. Son dos tablas distintas: un riesgo crítico lo escribió el agente sobre el perfil, una alerta la levantó el proceso. El «3» sumado no se podía ir a mirar a ningún sitio |
+| La ficha abierta | Las **cuatro** dimensiones con **qué mide cada una** debajo, el recuento de fortalezas/riesgos/alertas, cuándo se calificó, si la nota es de la criba rápida, y el `resumen` en prosa |
+
+⚠️ **El retrato de la ficha sale de `fila`, no de `verPerfilIntegral`.** Ya viene en el ranking:
+esperar a otra petición para enseñar cifras que ya se tienen deja la justificación en blanco
+durante el segundo en el que se decide.
+
+⚠️ **Con las cuatro dimensiones en la tabla, no cabía.** Medido a 1920: 1314 px dentro de una
+envoltura de 1038, y la columna de **Estado quedaba fuera del scroll**. Con dos: 1052 sobre
+1038. Las otras dos viven en la ficha, que además es donde cabe decir qué miden — un «79» bajo
+una cabecera de dos palabras no justifica nada.
+
+⚠️ **El retrato salía a una sola columna** aunque el CSS pedía `auto-fit`: la columna del
+detalle mide **323 px medidos**, no los 660 que parecían. Es `repeat(2, …)` fijo.
+
+### Cómo se comprueba
+
+`ranking.ts` sale de `Vacante.tsx` con **18 tests propios** —las reglas tienen casos, no
+dibujo— y `Vacante.test.tsx` sube a 14.
+
+⚠️ **El mock de `verRanking` tuvo que respetar la etapa.** Devolvía la misma nota en las cinco
+pestañas, así que no podía probar una pantalla que va justamente de eso: tres afirmaciones mías
+eran falsas y pasaban. Ahora hay un `NOTAS_POR_ETAPA` y Camila reproduce el caso del usuario —el
+currículum calificado, la prueba sin nota—.
+
+⚠️ **Y la fixtura mentía dos veces más.** `estadoCalificacion: 'CALIFICADA'` y `'PENDIENTE'`
+**no existen** (los cuatro son `SIN_EMPEZAR`, `EN_CURSO`, `TERMINADA`, `FALLIDA`), y el ranking
+servía la misma nota en las cinco pestañas porque **el interceptor de `capturar-panel.mjs`
+descarta la query string**. Las dos corregidas: `rankingDeLaEtapa()` responde por etapa y el
+interceptor mira `searchParams` en esa única ruta.
+
+⚠️ **Y a escala real.** La fixtura tenía 8 filas y una tanda de verdad trae 78: con ocho no se ve
+si la tabla desborda ni si el control cabe al lado de las cifras. Ahora las 8 escritas a mano
+—cada una cubre un caso— más 70 generadas, con casi nadie con nota fuera del perfil, que es como
+se ve una vacante de verdad.
+
+```bash
+PORTAL=http://localhost:5179 node herramientas/e2e-ranking-etapa.mjs
+```
+
+**42 comprobaciones contra el backend vivo, solo lectura.** Además de lo que ya miraba, fija que
+**la cifra de cabecera es de la etapa y no de la criba del CV**, que la línea del currículum dice
+que no habla de esta etapa, y que cada guion trae su motivo. En la vacante 3 los dos primeros
+cortes divergen en las cuatro etapas que no son el perfil:
+
+| Pestaña | Con nota | Está aquí ahora |
+|---|---:|---:|
+| Perfil integral | 5 | 12 |
+| Prueba del puesto | 1 | 1 |
+| Simulación | 1 | 0 |
+| Validación | 1 | 0 |
+| Decisión | 0 | 1 |
+
+⚠️ **`e2e-etapas.mjs` se rompió por lo de siempre y hubo que tocarlo**: entraba por la casilla
+«Ver la tanda entera», que ya no existe. Y además **leía la nota con un `textContent` de la
+celda**, que ahora devuelve «—Todavía no llega a esta etapa» porque el porqué vive dentro: se lee
+el primer nodo de texto. Su `verTandaEntera(false)` vuelve a «Está aquí ahora», que es lo que ese
+paso mide — no al corte por defecto.
 
 ---
 
@@ -654,10 +772,10 @@ zona sospechosa a 2× no tiene más detalle que la de 1× ampliada, hay un mapa 
 
 `herramientas/verificar-panel.mjs` recorre el panel contra el backend local **y escribe en la
 base**. Para solo mirarlo está `herramientas/capturar-panel.mjs`, que intercepta las respuestas
-y sirve un escenario de prueba: **once pantallas** —incluidas la ficha del ranking abierta en
-Perfil integral y en Prueba, una etapa sin nadie dentro, una sesión con sus inscritos
-desplegados, la matriz de permisos de un rol y el banco con una versión abierta—, en **los tres
-anchos**, sin tocar nada. Sus fixturas copian los `record` de `src/panel/api/tipos.ts`; si el
+y sirve un escenario de prueba: **doce pantallas** —incluidas la ficha del ranking abierta en
+Perfil integral y en Prueba, una etapa sin nadie dentro, la tanda entera de 78 con sus notas
+vacías explicadas, una sesión con sus inscritos desplegados, la matriz de permisos de un rol y
+el banco con una versión abierta—, en **los tres anchos**, sin tocar nada. Sus fixturas copian los `record` de `src/panel/api/tipos.ts`; si el
 contrato cambia allá, aquí revientan con un `Cannot read properties of undefined`.
 
 ⚠️ **`--gris` es la comprobación de la regla de la forma primero**, igual que en el perfil:
