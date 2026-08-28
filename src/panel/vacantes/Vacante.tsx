@@ -459,19 +459,29 @@ function Ranking({
           */}
           <p className={estilos.resumenTanda}>
             {cifras.conNota} de {filas.length} con {laEtapa.nota.toLowerCase()}
+            {/*
+              ⚠️ **Las tres categorías suman `sinNota`.** Antes eran dos y
+              `CALIFICANDO` no caía en ninguna: en una vacante real de 78 se
+              perdían 15 personas de la cuenta, y eran justo las que rindieron
+              la prueba y siguen sin nota.
+
+              «Ya la hicieron» va primero aunque no sea la mayor: es la única
+              de las tres de la que el equipo tiene trabajo pendiente.
+            */}
             {cifras.sinNota > 0 && (
               <span className={estilos.detalleTanda}>
                 {' · '}
                 {[
+                  cifras.hechasSinNota > 0
+                    ? `${cifras.hechasSinNota} ya la hicieron y siguen sin nota`
+                    : null,
                   cifras.esperandoALaPersona > 0
-                    ? `${cifras.esperandoALaPersona} esperando a la persona`
+                    ? `${cifras.esperandoALaPersona} sin hacerla todavía`
                     : null,
-                  cifras.esperandoAlEquipo > 0
-                    ? `${cifras.esperandoAlEquipo} esperando al equipo`
-                    : null,
+                  cifras.enOtraEtapa > 0 ? `${cifras.enOtraEtapa} en otra etapa` : null,
                 ]
                   .filter(Boolean)
-                  .join(' · ') || `${cifras.sinNota} sin nota todavía`}
+                  .join(' · ')}
               </span>
             )}
           </p>

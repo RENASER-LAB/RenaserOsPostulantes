@@ -207,8 +207,43 @@ describe('las cifras de la etapa', () => {
       conNota: 1,
       sinNota: 2,
       esperandoALaPersona: 1,
-      esperandoAlEquipo: 1,
+      hechasSinNota: 1,
+      enOtraEtapa: 0,
     })
+  })
+
+  /*
+    ⚠️ El caso que se perdía. En una vacante real de 78: 51 sin hacerla, 15 en
+    `PRUEBA_CALIFICANDO` y 4 en `PRUEBA_POR_CONFIRMAR`. Con dos categorías la
+    cabecera decía «51 esperando a la persona · 4 esperando al equipo» y **los
+    15 no salían en ninguna**, que son justo los que rindieron y siguen sin
+    nota.
+  */
+  it('quien se está calificando cuenta: antes no salía en ninguna categoría', () => {
+    const cifras = cifrasDeLaEtapa(
+      [
+        fila('PRUEBA_CALIFICANDO', null),
+        fila('PRUEBA_POR_CONFIRMAR', null),
+        fila('PRUEBA_TURNO_CANDIDATO', null),
+      ],
+      'PRUEBA_PUESTO',
+    )
+    expect(cifras.hechasSinNota).toBe(2)
+    expect(cifras.esperandoALaPersona).toBe(1)
+  })
+
+  it('las tres categorías suman siempre las que no tienen nota', () => {
+    const tanda = [
+      fila('PRUEBA_TURNO_CANDIDATO', null),
+      fila('PRUEBA_CALIFICANDO', null),
+      fila('PRUEBA_POR_CONFIRMAR', null),
+      fila('PERFIL_TURNO_CANDIDATO', null),
+      fila('NO_CONTINUA', null),
+      fila('SIMULACION_TURNO_CANDIDATO', 75),
+    ]
+    const c = cifrasDeLaEtapa(tanda, 'PRUEBA_PUESTO')
+    expect(c.esperandoALaPersona + c.hechasSinNota + c.enOtraEtapa).toBe(c.sinNota)
+    expect(c.conNota + c.sinNota).toBe(tanda.length)
   })
 
   it('quien no está en la etapa no cuenta como espera de nadie', () => {
@@ -217,7 +252,8 @@ describe('las cifras de la etapa', () => {
     const cifras = cifrasDeLaEtapa([fila('SIMULACION_TURNO_CANDIDATO', null)], 'PRUEBA_PUESTO')
     expect(cifras.sinNota).toBe(1)
     expect(cifras.esperandoALaPersona).toBe(0)
-    expect(cifras.esperandoAlEquipo).toBe(0)
+    expect(cifras.hechasSinNota).toBe(0)
+    expect(cifras.enOtraEtapa).toBe(1)
   })
 })
 

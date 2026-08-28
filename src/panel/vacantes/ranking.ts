@@ -181,10 +181,15 @@ export function porQueNoHayNota(fila: FilaRanking, etapa: EtapaPanel): string {
 export interface CifrasDeLaEtapa {
   conNota: number
   sinNota: number
-  /** Cuántas de las que no tienen nota es porque le toca a la persona. */
+  /** Le toca a la persona: todavía no la ha hecho. */
   esperandoALaPersona: number
-  /** Cuántas están hechas y esperando al equipo. */
-  esperandoAlEquipo: number
+  /**
+   * **Ya la hicieron y siguen sin nota.** Es la cifra accionable de la
+   * cabecera: son las personas de las que el equipo tiene trabajo pendiente.
+   */
+  hechasSinNota: number
+  /** Ni una cosa ni la otra: su proceso está parado en otra etapa. */
+  enOtraEtapa: number
 }
 
 /**
@@ -195,15 +200,27 @@ export interface CifrasDeLaEtapa {
  * misma trampa del conteo de una sesion frente a la longitud de su lista de
  * inscritos.
  */
+/*
+  ⚠️ **Las categorías tienen que sumar `sinNota`, y antes no sumaban.** Eran
+  «esperando a la persona» (TURNO_CANDIDATO) y «esperando al equipo»
+  (POR_CONFIRMAR / POR_HABILITAR), y **`CALIFICANDO` no caía en ninguna**. En una
+  vacante real de 78 eso dejaba fuera a 15 personas — y eran justo las que
+  importan: rindieron la prueba y siguen sin nota.
+
+  Ahora son tres, y la del medio es la accionable: **quien ya la hizo y sigue
+  sin nota** es de quien el equipo tiene trabajo pendiente. Un `CALIFICANDO` no
+  significa que algo se esté calificando ahora mismo: puede que nadie lo haya
+  pedido, o que esté calificada y falte ponderar (ver `porQueNoHayNota`).
+*/
 export function cifrasDeLaEtapa(filas: FilaRanking[], etapa: EtapaPanel): CifrasDeLaEtapa {
   const sinNota = filas.filter((f) => !tieneNota(f))
   const aqui = sinNota.filter((f) => estaAhoraEn(f.estado, etapa))
+  const esperandoALaPersona = aqui.filter((f) => f.estado.endsWith('TURNO_CANDIDATO')).length
   return {
     conNota: filas.length - sinNota.length,
     sinNota: sinNota.length,
-    esperandoALaPersona: aqui.filter((f) => f.estado.endsWith('TURNO_CANDIDATO')).length,
-    esperandoAlEquipo: aqui.filter(
-      (f) => f.estado.endsWith('POR_CONFIRMAR') || f.estado.endsWith('POR_HABILITAR'),
-    ).length,
+    esperandoALaPersona,
+    hechasSinNota: aqui.length - esperandoALaPersona,
+    enOtraEtapa: sinNota.length - aqui.length,
   }
 }

@@ -38,6 +38,18 @@ resumirlo a «faltan notas» tiraría lo único accionable del mensaje.
 ⚠️ **`0` es una nota.** La 16 tiene sus siete criterios en 0.0 y su nota de etapa es 0.00. Un
 `!puntaje` la contaría como vacía y escondería el botón justo en la fila que lo necesita.
 
+### ⚠️ Las cifras de la cabecera dejaban fuera a quien ya la hizo
+
+Eran dos categorías —«esperando a la persona» (TURNO_CANDIDATO) y «esperando al equipo»
+(POR_CONFIRMAR / POR_HABILITAR)— y **`CALIFICANDO` no caía en ninguna**. En la vacante real de
+78 de producción eso son **15 personas que desaparecían de la cuenta**: la línea decía «51
+esperando a la persona · 4 esperando al equipo» sobre una tanda donde 19 habían rendido la
+prueba.
+
+Ahora son tres y **suman siempre** las que no tienen nota: «ya la hicieron y siguen sin nota»
+(la accionable, primero), «sin hacerla todavía» y «en otra etapa». Lo fija un test de unidad y
+una comprobación del e2e que suma las cifras de la línea pintada.
+
 ### ⚠️ El estado de una postulación RETROCEDE, y eso rompía un texto del #13
 
 Comprobado en el historial de las postulaciones 16 y 18: **`PRUEBA_CALIFICANDO →
@@ -68,7 +80,9 @@ PORTAL=http://localhost:5180 node herramientas/e2e-prueba-y-empresas.mjs
 ```
 
 **35 comprobaciones** (28 + 7 nuevas): las tres situaciones del guion, que la rúbrica entera
-ofrece el botón, que la vacía no lo ofrece, y el 409 con sus criterios nombrados.
+ofrece el botón, que la vacía no lo ofrece, y el 409 con sus criterios nombrados. Y
+`e2e-ranking-etapa.mjs` sube a **47**: las cinco pestañas comprueban que las tres categorías de
+la cabecera suman las filas sin nota.
 
 ⚠️ **El botón NO se pulsa, a propósito, y el script lo dice en voz alta.** Calcular escribe, y se
 comería el único caso de la base local que reproduce el fallo: sin él, la próxima vez que alguien
