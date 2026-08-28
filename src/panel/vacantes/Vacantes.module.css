@@ -27,6 +27,27 @@
   composes: acentoMenor from '../../estilos/piezas.module.css';
 }
 
+/*
+ * La explicacion del bloque de solicitud. No reusa `.bajada` —que es la de la
+ * cabecera y no lleva margen, porque alli no tiene nada debajo— ni
+ * `.explicacion`, que va en tinta de duda: aqui no hay ninguna duda que
+ * resolver, es el paso de antes contado en una linea.
+ */
+.explicacionAlta {
+  font-size: var(--t-prosa);
+  line-height: 1.55;
+  color: var(--tinta2);
+  max-width: var(--medida);
+  margin: 0 0 var(--e5);
+}
+
+/* Las dos puertas de la pantalla, juntas: la solicitud es el paso de antes. */
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e3);
+}
+
 .titulo {
   font-weight: 600;
 }
@@ -183,6 +204,14 @@
 @media (max-width: 640px) {
   .pagina {
     padding: var(--e4) var(--e4) var(--e7);
+  }
+
+  .acciones {
+    width: 100%;
+  }
+
+  .acciones > * {
+    flex: 1;
   }
 
   .crear,
