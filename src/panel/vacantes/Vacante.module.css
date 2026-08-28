@@ -530,26 +530,94 @@
 }
 
 /*
- * El escape: se lee como lo que es, una excepción a lo que la pestaña enseña.
+ * Los tres cortes de la tabla.
  *
- * Con 44 px de alto: es la unica salida a la tanda entera y antes era una linea
- * de texto de veinte, que en un telefono se falla al pulsar. La casilla propia
- * tambien crece — la del navegador mide trece.
+ * Segundo control segmentado de la pantalla, y a proposito: es la misma
+ * operacion —tres vistas del mismo listado— que las cinco pestañas de arriba, y
+ * darle otra silueta diria que hace algo de otra clase. Se distingue por el
+ * sitio y por el tamaño: aquellas son la etapa, estas son un corte dentro.
+ *
+ * ⚠️ **Sin violeta.** En el panel el violeta es la accion principal, y elegir
+ * un corte no es una accion: es mirar. Como en las pestañas, lo elegido sube a
+ * superficie de nube.
  */
-.verLaTanda {
-  display: flex;
-  align-items: center;
-  gap: var(--e2);
-  min-height: 44px;
-  font-size: var(--t-apoyo);
-  color: var(--tinta2);
-  cursor: pointer;
+.vistas {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--e1);
+  padding: var(--e1);
+  border-radius: var(--radio-control);
+  background: var(--nube-hundida);
 }
 
-.verLaTanda input {
-  width: 18px;
-  height: 18px;
+.vista,
+.vistaActiva {
+  font: inherit;
+  font-size: var(--t-menor);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  /* 40 px, como las pestañas: se pulsa desde un teléfono. */
+  min-height: 40px;
+  padding: 0 var(--e3);
+  border: 1px solid transparent;
+  border-radius: var(--radio-control);
+  background: none;
+  color: var(--tinta2);
   cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background 160ms var(--salida),
+    color 160ms var(--salida);
+}
+
+.vistaActiva {
+  color: var(--tinta);
+  font-weight: 700;
+  background: var(--nube);
+  border-color: var(--regla);
+  box-shadow: 0 1px 2px rgb(35 43 54 / 0.06);
+}
+
+.vista:hover {
+  color: var(--tinta);
+  background: rgb(35 43 54 / 0.04);
+}
+
+/*
+ * La cifra de cada corte, dentro de su propio boton.
+ *
+ * Va en pildora hundida y no suelta detras del texto: «Con nota de la prueba 12
+ * / Está aquí ahora 3» sin separacion se lee como un solo rotulo con numeros
+ * dentro. Y es lo que evita tener que pulsar los tres para saber si alguno
+ * tiene algo.
+ */
+.cuantasEnLaVista {
+  font-size: var(--t-micro);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--tinta2);
+  background: var(--nube-honda);
+  border-radius: var(--radio-control);
+  padding: 1px var(--e2);
+}
+
+.vistaActiva .cuantasEnLaVista {
+  color: var(--tinta);
+  background: var(--nube-hundida);
+}
+
+/*
+ * Lo que la criba del currículum lleva hecho, debajo de la cifra de la etapa.
+ *
+ * ⚠️ En `--tinta3` y en la linea de apoyo a proposito: son cifras de OTRA
+ * etapa. Cuando compartian peso con la de la etapa que se mira, «76
+ * calificados» se leia como si hablara de la columna de al lado, que estaba
+ * entera en guiones.
+ */
+.detalleTanda {
+  font-weight: 400;
+  color: var(--tinta2);
 }
 
 /* ---------- La tabla de la evaluación del banco ---------- */
@@ -619,4 +687,105 @@
   letter-spacing: 0.02em;
   color: var(--tinta3);
   font-variant-numeric: normal;
+}
+
+/*
+  Por que esa nota esta vacia, debajo del guion.
+  
+  Misma forma que «provisional» —debajo, en micro, en palabra— porque hace lo
+  mismo: dice algo sobre la cifra que la cifra sola no puede decir. Un guion
+  significaba cinco cosas distintas y la mas confusa era la que provoco la
+  queja: el CURRICULUM esta calificado y esta etapa no.
+
+  Envuelve en vez de recortar: «Pasó de esta etapa sin que quedara nota» no cabe
+  en una columna de cifras, y cortarlo con puntos suspensivos deja justo la
+  mitad que no explica nada.
+*/
+.porQue {
+  display: block;
+  max-width: 19ch;
+  margin-left: auto;
+  font-size: var(--t-micro);
+  font-weight: 400;
+  line-height: 1.35;
+  letter-spacing: 0.02em;
+  color: var(--tinta3);
+  font-variant-numeric: normal;
+  text-wrap: balance;
+}
+
+/*
+ * El retrato en cifras, dentro de la ficha abierta.
+ *
+ * Cuatro columnas en escritorio y una en teléfono. Cada dimensión lleva **qué
+ * mide debajo**: «Potencial 91» sin más obliga a saberse de memoria qué mide el
+ * agente, y quien decide con esa cifra suele no saberlo.
+ */
+/* Dos por fila. La columna del detalle mide 323 px medidos, no los 660 que
+   parecía: con `minmax(11rem, …)` salía una sola y las cuatro cifras se leían
+   como una lista, no como un retrato que se compara de un vistazo. */
+.retrato {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--e3);
+  margin: var(--e3) 0;
+}
+
+.dimension {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--nube-hundida);
+  border-radius: var(--radio-menor);
+  padding: var(--e3);
+  min-width: 0;
+}
+
+.nombreDimension {
+  font-size: var(--t-micro);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--tinta2);
+}
+
+.cifraDimension {
+  font-size: var(--t-titulo-menor);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--tinta);
+  margin: 0;
+}
+
+.porQueDimension {
+  font-size: var(--t-micro);
+  line-height: 1.4;
+  color: var(--tinta3);
+  margin: 0;
+}
+
+/*
+  Un riesgo critico no es una alerta mas.
+  
+  Lo escribio el agente sobre el perfil y descarta por si solo; una alerta la
+  levanta el proceso. Antes se sumaban en una cifra que no se podia ir a mirar a
+  ningun sitio. El punto delante es el mismo recurso que «Vencida» en el perfil
+  y la ausencia en la simulacion: en gris la columna de riesgos tiene que
+  distinguirse de la de alertas, que esta pegada.
+*/
+.riesgo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  font-weight: 700;
+  color: var(--mal);
+}
+
+.riesgo::before {
+  content: '';
+  flex: none;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
 }
