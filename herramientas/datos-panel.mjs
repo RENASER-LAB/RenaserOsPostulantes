@@ -418,10 +418,18 @@ export const RESPUESTAS = {
   '/postulaciones/92/prueba/respuestas': [],
   '/roles/1/permisos': PERMISOS_DEL_ROL,
   '/roles/2/permisos': PERMISOS_DEL_ROL,
+  /*
+   * ⚠️ El estado que abre el formulario de alta es ABIERTA, no APROBADA: eso es
+   * lo que filtra `Vacantes.tsx` y lo que devuelve el backend. Con APROBADA la
+   * fixtura enseñaba el callejon de «no hay ninguna solicitud aprobada» creyendo
+   * enseñar el formulario, asi que sus cuatro desplegables no se miraban nunca.
+   * Se siembra el escenario de las dos: una ABIERTA que admite vacante y una ya
+   * consumida.
+   */
   '/solicitudes': [
-    { id: 7, estado: 'APROBADA', urgencia: 'ALTA', areaId: 1,
+    { id: 7, estado: 'ABIERTA', urgencia: 'ALTA', areaId: 1,
       resultadoPrincipal: 'Tablero de ventas al día', creadoEn: '2026-06-20T09:00:00Z' },
-    { id: 11, estado: 'APROBADA', urgencia: 'MEDIA', areaId: 2,
+    { id: 11, estado: 'CON_VACANTE', urgencia: 'MEDIA', areaId: 2,
       resultadoPrincipal: 'Rotación por debajo del 12 %', creadoEn: '2026-08-10T09:00:00Z' },
   ],
   '/areas': [

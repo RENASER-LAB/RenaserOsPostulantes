@@ -5,6 +5,12 @@
  * backend es solicitud → aprobacion de Direccion → vacante. Si no hay ninguna
  * solicitud aprobada sin vacante, el formulario lo dice y deja aprobar una en
  * el sitio, en vez de fallar al enviar con un error que no se entiende.
+ *
+ * ⚠️ Y escribir una solicitud NO depende de que falte: el backend admite varias
+ * ABIERTA a la vez —comprobado contra el local, aprueba dos seguidas con 200—
+ * asi que su boton vive en la cabecera. Antes la unica puerta estaba dentro del
+ * callejon de «no hay ninguna aprobada» y con una sola abierta desaparecia: no
+ * habia forma de escribir la segunda desde el panel.
  */
 
 import { useMemo, useState, type FormEvent } from 'react'
@@ -37,6 +43,7 @@ const ESTADO_VACANTE: Record<string, string> = {
 export function VacantesPanel() {
   const cache = useQueryClient()
   const [creando, setCreando] = useState(false)
+  const [escribiendoSolicitud, setEscribiendoSolicitud] = useState(false)
 
   const vacantes = useQuery({
     queryKey: ['panel-vacantes'],
@@ -53,14 +60,45 @@ export function VacantesPanel() {
             de etapa.
           </p>
         </div>
-        <button
-          className={estilos.crear}
-          type="button"
-          onClick={() => setCreando((v) => !v)}
-        >
-          {creando ? 'Cerrar el formulario' : 'Crear vacante'}
-        </button>
+        <div className={estilos.acciones}>
+          {/*
+            ⚠️ Vive aqui arriba y no dentro del alta a proposito. El backend
+            admite varias solicitudes ABIERTA a la vez —comprobado: aprueba dos
+            seguidas con 200— asi que escribir una no puede depender de que no
+            haya ninguna. Antes la unica puerta estaba dentro del callejon de
+            «no hay ninguna aprobada», y con una sola abierta desaparecia.
+
+            Y va FUERA del `<form>` de alta, como bloque hermano: un formulario
+            dentro de otro lo descarta el navegador.
+          */}
+          <button
+            className={estilos.aprobar}
+            type="button"
+            onClick={() => setEscribiendoSolicitud((v) => !v)}
+          >
+            {escribiendoSolicitud ? 'Dejarlo' : 'Escribir una solicitud'}
+          </button>
+          <button
+            className={estilos.crear}
+            type="button"
+            onClick={() => setCreando((v) => !v)}
+          >
+            {creando ? 'Cerrar el formulario' : 'Crear vacante'}
+          </button>
+        </div>
       </div>
+
+      {escribiendoSolicitud && (
+        <div className={estilos.alta}>
+          <h2 className={estilos.tituloAlta}>Solicitud de talento</h2>
+          <p className={estilos.explicacionAlta}>
+            Es el paso de antes: Dirección aprueba una solicitud y esa solicitud
+            respalda <b>una</b> vacante. Puede haber varias aprobadas a la vez esperando
+            su vacante.
+          </p>
+          <SolicitudNueva alTerminar={() => setEscribiendoSolicitud(false)} />
+        </div>
+      )}
 
       {creando && (
         <FormularioDeAlta
@@ -208,9 +246,56 @@ function FormularioDeAlta({ alCrear }: { alCrear: () => Promise<void> }) {
     })
   }
 
+  /*
+   * ⚠️ El formulario NO se pinta mientras `/solicitudes` esta en vuelo, y esa
+   * espera es el arreglo entero.
+   *
+   * Esta consulta nace con el formulario —vive dentro de este componente, que
+   * solo se monta al pulsar «Crear vacante»— asi que `isPending` es cierto en
+   * TODO primer clic, no solo con una red lenta. Pintar el formulario ahi lo
+   * condena: si no viene ninguna ABIERTA, el bloque de abajo lo sustituye y los
+   * cuatro desplegables se desmontan bajo el raton. Uno abierto se cierra en el
+   * acto, que es exactamente como se ve el fallo. Y hasta entonces el de
+   * solicitudes solo lleva «Elige…»: se abre una linea que no sirve de nada.
+   */
+  if (solicitudes.isPending) {
+    return (
+      <div className={estilos.alta}>
+        <h2 className={estilos.tituloAlta}>Vacante nueva</h2>
+        <p className={estilos.aviso}>Buscando las solicitudes aprobadas…</p>
+      </div>
+    )
+  }
+
+  /*
+   * Sin la lista no se sabe si hay solicitudes o no, y «No hay ninguna
+   * solicitud aprobada» sobre una consulta que fallo manda a escribir una que
+   * quiza ya existe.
+   */
+  if (solicitudes.isError) {
+    return (
+      <div className={estilos.alta}>
+        <h2 className={estilos.tituloAlta}>Vacante nueva</h2>
+        <p className={`${estilos.aviso} ${estilos.malo}`} role="alert">
+          {solicitudes.error instanceof Error
+            ? solicitudes.error.message
+            : 'No se pudieron cargar las solicitudes.'}{' '}
+          Sin ellas no se sabe cuáles hay aprobadas.
+        </p>
+        <button
+          className={estilos.aprobar}
+          type="button"
+          onClick={() => void solicitudes.refetch()}
+        >
+          Volver a intentarlo
+        </button>
+      </div>
+    )
+  }
+
   // ⚠️ Fuera del <form>, y no dentro: un formulario anidado lo descarta el
   // navegador, y su boton de enviar acaba enviando el de fuera.
-  if (abiertas.length === 0 && !solicitudes.isPending) {
+  if (abiertas.length === 0) {
     return (
       <div className={estilos.alta}>
         <h2 className={estilos.tituloAlta}>Vacante nueva</h2>
@@ -237,6 +322,8 @@ function FormularioDeAlta({ alCrear }: { alCrear: () => Promise<void> }) {
           etiqueta="Puesto del catálogo"
           valor={datos.puestoId}
           alCambiar={poner('puestoId')}
+          cargando={puestos.isPending}
+          vacio="No hay ningún puesto en el catálogo"
           opciones={(puestos.data ?? []).map((p) => ({
             valor: String(p.id),
             texto: p.nombre,
@@ -246,6 +333,8 @@ function FormularioDeAlta({ alCrear }: { alCrear: () => Promise<void> }) {
           etiqueta="Responsable del proceso"
           valor={datos.responsableUsuarioId}
           alCambiar={poner('responsableUsuarioId')}
+          cargando={usuarios.isPending}
+          vacio="No hay ningún usuario del equipo"
           opciones={(usuarios.data ?? []).map((u) => ({
             valor: String(u.id),
             texto: u.correo ?? u.usuarioRenaserOsId ?? `Usuario ${u.id}`,
@@ -305,6 +394,7 @@ function FormularioDeAlta({ alCrear }: { alCrear: () => Promise<void> }) {
           valor={datos.tipoCierre}
           alCambiar={poner('tipoCierre')}
           sinVacio
+          cargando={catalogos.isPending}
           opciones={(catalogos.data?.tiposCierre ?? []).map((t) => ({
             valor: t.codigo,
             texto: t.nombre,
@@ -338,6 +428,40 @@ function FormularioDeAlta({ alCrear }: { alCrear: () => Promise<void> }) {
         {creacion.isPending ? 'Creando…' : 'Crear en borrador'}
       </button>
     </form>
+  )
+}
+
+/**
+ * Escribir una solicitud y dejarla lista para respaldar una vacante.
+ *
+ * Se aprueba al vuelo —lo hace Direccion— porque una solicitud en BORRADOR no
+ * sirve para abrir nada y no hay otra pantalla donde aprobarla. El motivo queda
+ * auditado y no se deshace, asi que dice lo que de verdad paso.
+ */
+function SolicitudNueva({ alTerminar }: { alTerminar: () => void }) {
+  const cache = useQueryClient()
+  const [fallo, setFallo] = useState<string | null>(null)
+
+  const aprobacion = useMutation({
+    mutationFn: (id: number) =>
+      aprobarSolicitud(id, 'Escrita y aprobada desde el panel de vacantes'),
+    onSuccess: async () => {
+      await cache.invalidateQueries({ queryKey: ['panel-solicitudes'] })
+      alTerminar()
+    },
+    onError: (causa) =>
+      setFallo(causa instanceof Error ? causa.message : 'No se pudo aprobar.'),
+  })
+
+  return (
+    <>
+      <FormularioDeSolicitud alCrear={(id) => aprobacion.mutate(id)} />
+      {fallo && (
+        <p className={`${estilos.aviso} ${estilos.malo}`} role="alert">
+          {fallo} La solicitud se escribió, pero quedó en borrador.
+        </p>
+      )}
+    </>
   )
 }
 
@@ -491,6 +615,8 @@ function FormularioDeSolicitud({ alCrear }: { alCrear: (id: number) => void }) {
           etiqueta="Área que pide"
           valor={datos.areaId}
           alCambiar={poner('areaId')}
+          cargando={areas.isPending}
+          vacio="No hay ningún área dada de alta"
           opciones={(areas.data ?? []).map((a) => ({
             valor: String(a.id),
             texto: a.nombre,
@@ -501,6 +627,7 @@ function FormularioDeSolicitud({ alCrear }: { alCrear: (id: number) => void }) {
           valor={datos.urgencia}
           alCambiar={poner('urgencia')}
           sinVacio
+          cargando={catalogos.isPending}
           opciones={(catalogos.data?.urgencias ?? []).map((u) => ({
             valor: u.codigo,
             texto: u.nombre,
@@ -615,33 +742,51 @@ function Area({ etiqueta, valor, alCambiar, ancho }: PropsCampo) {
   )
 }
 
+/**
+ * Un desplegable que no miente sobre lo que lleva dentro.
+ *
+ * ⚠️ Un `<select>` cuya unica linea es «Elige…» se abre y parece cerrarse solo:
+ * no hay nada que elegir y no se dice por que. Mientras su lista viaja se apaga
+ * y lo cuenta; si llega vacia, tambien. Las dos cosas son informacion, y un
+ * control apagado ya se ve apagado.
+ */
 function Selector({
   etiqueta,
   valor,
   alCambiar,
   opciones,
   sinVacio,
+  cargando,
+  vacio,
 }: {
   etiqueta: string
   valor: string
   alCambiar: (valor: string) => void
   opciones: { valor: string; texto: string }[]
   sinVacio?: boolean
+  cargando?: boolean
+  /** Que decir cuando la lista llego y no traia nada. */
+  vacio?: string
 }) {
+  const sinNada = !cargando && opciones.length === 0
   return (
     <label className={estilos.campo}>
       <span className={estilos.etiqueta}>{etiqueta}</span>
       <select
         className={estilos.entrada}
         value={valor}
+        disabled={cargando || sinNada}
         onChange={(e) => alCambiar(e.target.value)}
       >
-        {!sinVacio && <option value="">Elige…</option>}
-        {opciones.map((o) => (
-          <option value={o.valor} key={o.valor}>
-            {o.texto}
-          </option>
-        ))}
+        {cargando && <option value="">Cargando…</option>}
+        {sinNada && <option value="">{vacio ?? 'No hay ninguna'}</option>}
+        {!cargando && !sinNada && !sinVacio && <option value="">Elige…</option>}
+        {!cargando &&
+          opciones.map((o) => (
+            <option value={o.valor} key={o.valor}>
+              {o.texto}
+            </option>
+          ))}
       </select>
     </label>
   )

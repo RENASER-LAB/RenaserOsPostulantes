@@ -1,9 +1,69 @@
 # Portal del candidato · contexto de trabajo
 
-Última actualización: 2026-08-28 · **calificar la prueba no dejaba nota, y por qué**
+Última actualización: 2026-08-28 · **el desplegable que se cerraba solo, y la solicitud escondida**
 
 Este archivo es para retomar el trabajo sin tener que reconstruir nada. Cuenta qué es este
 proyecto, con qué habla, qué se decidió y por qué, y qué está a medias.
+
+---
+
+## El desplegable se cerraba solo, y no era del `<select>` (28/08/2026)
+
+«Lo intento abrir pero se cierra al instante», sobre los cuatro desplegables de **Vacante
+nueva**. La sospecha obvia —el `<select>` envuelto en `<label>`, que es como está todo el
+panel— **es falsa y se descartó midiendo**: en Chrome y en Firefox el clic no se duplica, y con
+datos el desplegable se abre y se queda abierto.
+
+### Lo que pasaba: el formulario se desmonta bajo el ratón
+
+`listarSolicitudes` **nace con el formulario** —su `useQuery` vive dentro de `FormularioDeAlta`,
+que solo se monta al pulsar «Crear vacante»— así que `isPending` es cierto en **todo primer
+clic**, no solo con una red lenta. La guarda era
+`if (abiertas.length === 0 && !solicitudes.isPending)`, o sea: **pintar el formulario mientras
+la lista viaja**. Si no venía ninguna `ABIERTA`, lo sustituía el callejón de «no hay ninguna
+aprobada» y los cuatro `<select>` se desmontaban con el ratón encima.
+
+Medido en Chrome contra el backend local, retrasando solo esa respuesta:
+
+| | Con la lista en vuelo | Al llegar la respuesta |
+|---|---|---|
+| Antes | **4 desplegables**, el de solicitud con **1 sola opción** | **0** — se desmontan |
+| Ahora | 0, y una línea que dice «Buscando las solicitudes aprobadas…» | 0 |
+
+⚠️ **El segundo síntoma es el mismo sin desmontaje.** Un `<select>` cuya única línea es
+«Elige…» se abre, no hay nada que elegir y no se dice por qué. Ahora `Selector` se apaga y lo
+cuenta mientras su lista viaja, y **distingue eso de que la lista llegara vacía** —«No hay
+ningún puesto en el catálogo»—: una manda a esperar y la otra a dar de alta un puesto.
+
+### ⚠️ El backend admite VARIAS solicitudes abiertas, y el panel lo impedía
+
+Comprobado contra el local: se crearon dos y **las dos se aprobaron con 200**. No hay ninguna
+regla que limite a una.
+
+El botón de escribir una solicitud vivía **dentro** del callejón de «no hay ninguna aprobada».
+En cuanto había una, ese bloque desaparecía y se llevaba el botón: **con una sola abierta no
+había forma de escribir la segunda desde el panel**. Ahora vive en la cabecera y existe siempre.
+
+⚠️ **Va FUERA del `<form>` de alta, como bloque hermano.** Un formulario dentro de otro lo
+descarta el navegador, y en esta misma pantalla ya costó un fallo. Hay test:
+`document.querySelectorAll('form form').length === 0`.
+
+⚠️ **Y la fixtura mentía otra vez, la quinta.** `datos-panel.mjs` servía `estado: 'APROBADA'`,
+que el backend no usa —los de verdad son `ABIERTA`, `CON_VACANTE`, `RECHAZADA`, `BORRADOR`—,
+así que las capturas enseñaban el callejón creyendo enseñar el formulario y **sus cuatro
+desplegables no se miraban nunca**. Ahora siembra una `ABIERTA` y una `CON_VACANTE`.
+
+### Cómo se comprueba
+
+`Vacantes.test.tsx`, **7 tests**, y los cinco primeros **se ponen rojos sin el arreglo**
+(comprobado revirtiendo el archivo con `git stash`).
+
+⚠️ **El del desmontaje mira ANTES de soltar la respuesta, y eso es lo que lo hace valer.**
+Afirmar solo el estado final pasa en verde con el fallo dentro: al terminar tampoco hay
+`<select>`, porque los cuatro ya se desmontaron. Lo que no puede pasar es que llegaran a existir.
+
+⚠️ **Este fallo no se ve en una captura**: la fixtura contesta al momento, así que la ventana
+donde ocurre no existe. Se reproduce retrasando `/solicitudes` con `contexto.route(...)`.
 
 ---
 
@@ -943,9 +1003,10 @@ tres viven en el detalle de la vacante, bajo **«Qué responderá quien postule�
 | Versión de pesos | No: sin elegir, rigen los generales |
 
 Y antes que todo eso, la vacante misma exige **una solicitud de talento aprobada** que no haya
-usado ninguna otra. Si no hay ninguna `ABIERTA`, el panel deja aprobar un borrador o escribir
-una solicitud nueva; el backend le exige **entre 3 y 5 resultados esperados**, cada uno con su
-indicador.
+usado ninguna otra. **Escribir una solicitud se ofrece siempre, desde la cabecera** —puede haber
+varias `ABIERTA` a la vez, ver la seccion del 28/08— y si no hay ninguna el panel ademas deja
+aprobar un borrador ahi mismo; el backend le exige **entre 3 y 5 resultados esperados**, cada
+uno con su indicador.
 
 ⚠️ **La plantilla de evaluación tiene que ser del mismo nivel que el puesto** y estar
 `PUBLICADA`. El selector filtra por eso: ofrecer las demás sería dejar elegir algo que falla.
