@@ -1,0 +1,139 @@
+/*
+ * Las notas de la prueba, para la tanda entera.
+ *
+ * Misma silueta que `.tanda` de `CalificarConIa.module.css` —panel de nube con
+ * su titulo encima de la tabla— y a proposito: las dos son «esto alcanza a
+ * toda la tanda» y darles formas distintas obligaria a leerlas para saber a
+ * quien alcanzan. Lo unico que este añade es el reparto, que aquel no necesita.
+ *
+ * Nunca se ven las dos a la vez: la criba del curriculum se monta solo en
+ * Perfil integral y esta solo en Prueba del puesto.
+ */
+
+.tanda {
+  background: var(--nube);
+  border: 1px solid var(--regla);
+  border-radius: var(--radio);
+  padding: var(--e4) var(--e5);
+  margin-bottom: var(--e4);
+}
+
+.titulo {
+  font-size: var(--t-base);
+  font-weight: 600;
+  letter-spacing: -0.008em;
+  margin: 0;
+}
+
+.explica {
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+  max-width: var(--medida);
+  margin: var(--e2) 0 var(--e4);
+}
+
+/*
+ * El reparto: en cuantas situaciones distintas esta la gente que rindio.
+ *
+ * Lista y no tarjetas: son dos o tres lineas de una frase cada una, y meterlas
+ * en rectangulos iguales convertiria tres datos en una rejilla que hay que
+ * recorrer. La cifra delante porque es lo que se compara entre lineas.
+ */
+.reparto {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+  list-style: none;
+  padding: 0;
+  margin: 0 0 var(--e4);
+  max-width: var(--medida);
+}
+
+.grupo {
+  display: flex;
+  align-items: baseline;
+  gap: var(--e3);
+  font-size: var(--t-apoyo);
+  line-height: 1.5;
+  color: var(--tinta2);
+}
+
+/*
+ * La cifra, alineada a la derecha en su columna.
+ *
+ * `ch` y no `rem`: la columna tiene que caber «19» y «7» sin que las frases
+ * empiecen en sitios distintos, y son digitos. Con `tabular-nums` un 1 y un 7
+ * ocupan lo mismo, asi que dos lineas seguidas se comparan de un vistazo.
+ */
+.cuantas {
+  flex: none;
+  min-width: 2.5ch;
+  text-align: right;
+  font-size: var(--t-base);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--tinta);
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e3);
+}
+
+/*
+ * El violeta va en ponderar, la accion que produce notas de verdad: es
+ * sincrona, no cuesta llamadas al modelo y deja la cifra en la tabla al
+ * momento. Pedirle al agente es la cara y la que solo encola.
+ */
+.principal {
+  composes: acentoMenor from '../../estilos/piezas.module.css';
+}
+
+.secundario {
+  composes: secundario from '../../estilos/piezas.module.css';
+}
+
+/* Lo que cuesta pulsar, y lo que no tiene accion en lote. */
+.pista {
+  font-size: var(--t-menor);
+  line-height: 1.5;
+  color: var(--tinta3);
+  max-width: var(--medida);
+  margin: var(--e2) 0 0;
+}
+
+.avisoBien {
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--bien);
+  border-left: 2px solid var(--bien);
+  padding-left: var(--e3);
+  max-width: var(--medida);
+  margin: var(--e4) 0 0;
+}
+
+.avisoMalo {
+  display: flex;
+  gap: var(--e3);
+  border: 1px solid var(--mal-regla);
+  background: var(--mal-bruma);
+  padding: var(--e3) var(--e4);
+  font-size: var(--t-apoyo);
+  line-height: 1.5;
+  color: var(--mal);
+  max-width: var(--medida);
+  border-radius: var(--radio-menor);
+  margin: var(--e4) 0 0;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 640px) {
+  .principal,
+  .secundario {
+    flex: 1;
+    justify-content: center;
+  }
+}

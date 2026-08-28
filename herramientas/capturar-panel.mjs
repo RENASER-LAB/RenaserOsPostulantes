@@ -74,6 +74,18 @@ const PANTALLAS = [
     etapa: 'Prueba del puesto',
     pulsar: 'Toda la tanda',
   },
+  /*
+   * El bloque de la tanda con su reparto abierto: las tres situaciones a la vez
+   * —solo falta ponderar, sin calificar, y a medias—. Es lo que hay que mirar
+   * para saber si tres cifras y dos botones caben encima de la tabla sin
+   * empujarla fuera de la primera pantalla.
+   */
+  {
+    nombre: 'tanda-prueba',
+    ruta: '/admin/vacantes/1',
+    etapa: 'Prueba del puesto',
+    pulsar: 'Ver qué le falta',
+  },
   { nombre: 'entrar', ruta: '/admin/entrar', sinSesion: true },
 ]
 

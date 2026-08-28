@@ -32,14 +32,19 @@
 }
 
 /*
- * El violeta, una sola vez y solo en la rama que puede pulsarse.
+ * ⚠️ **Secundario, no violeta, y por lo que hay encima.** El bloque de la tanda
+ * vive siempre sobre la tabla de esta pestaña y lleva el violeta de la
+ * pantalla; con la ficha abierta se verian los dos a la vez y el violeta
+ * dejaria de señalar cual es la accion principal. Es la misma regla por la que
+ * el boton de una persona de `CalificarConIa` es secundario aunque sea el unico
+ * de su ficha.
  *
- * En las otras dos —ya calculada, o le faltan criterios— no hay boton: no
+ * En las otras dos ramas —ya calculada, o le faltan criterios— no hay boton: no
  * porque este apagado, sino porque no hay nada que hacer aqui. Un boton
  * deshabilitado invitaria a pulsarlo y a preguntarse por que no responde.
  */
 .principal {
-  composes: acentoMenor from '../../estilos/piezas.module.css';
+  composes: secundario from '../../estilos/piezas.module.css';
 }
 
 .avisoBien {

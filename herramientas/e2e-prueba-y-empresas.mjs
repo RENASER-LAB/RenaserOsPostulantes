@@ -456,6 +456,145 @@ async function elPasoQueProduceLaNota(pagina) {
   )
 }
 
+/**
+ * El bloque de la tanda, encima de la tabla de la prueba.
+ *
+ * ⚠️ **El backend no tiene nada en lote para la prueba y no sabe quien esta
+ * calificado**: el panel pide la rubrica de cada uno y reparte. Lo que se
+ * comprueba aqui es ese reparto contra lo que devuelve la API, no contra una
+ * lista escrita a mano.
+ *
+ * ⚠️ **No se pulsa ninguno de los dos botones.** Ponderar escribe y se comeria
+ * el caso que reproduce el fallo; calificar cuesta una llamada al modelo por
+ * persona. Lo que se ejercita es que el reparto sea el correcto y que las
+ * acciones que ofrece cuadren con el.
+ */
+async function elBloqueDeLaTanda(pagina) {
+  console.log('\nLas notas de la prueba, para la tanda entera')
+
+  /*
+    ⚠️ **La vacante se elige, no se fija.** A quien alcanza el bloque es a quien
+    esta PARADO en la prueba sin nota, y el estado retrocede: en la base local
+    las que rindieron volvieron a `PERFIL_CALIFICANDO`, asi que la vacante de
+    las pruebas rendidas no tiene ni un caso. Fijarla dejaria esta mitad sin
+    ejercitar y pasando en verde — el mismo patron que `e2e-ranking-etapa`.
+  */
+  const vacantes = (await api('/vacantes')).cuerpo ?? []
+  let vacanteId = null
+  let alcanzados = []
+  for (const v of vacantes) {
+    const filas = (await api(`/vacantes/${v.id}/ranking?etapa=PRUEBA_PUESTO`)).cuerpo?.filas ?? []
+    const suyos = filas.filter(
+      (f) =>
+        f.notaEtapa === null &&
+        f.estado.startsWith('PRUEBA_') &&
+        !f.estado.endsWith('TURNO_CANDIDATO'),
+    )
+    if (suyos.length > alcanzados.length) {
+      vacanteId = v.id
+      alcanzados = suyos
+    }
+  }
+  if (vacanteId === null) vacanteId = VACANTE_CON_PRUEBAS
+  console.log(`  · se mira la vacante ${vacanteId}: ${alcanzados.length} rindieron y siguen sin nota`)
+
+  await abrirLaVacante(pagina, vacanteId)
+  await pagina.getByRole('tab', { name: 'Prueba del puesto' }).click()
+  await pagina.waitForTimeout(1200)
+
+  const bloque = pagina.locator('section').filter({ hasText: 'Las notas de la prueba' }).first()
+
+  if (alcanzados.length === 0) {
+    comprobar(
+      (await bloque.count()) === 0,
+      'sin nadie que haya rendido y siga sin nota, el bloque no se pinta',
+    )
+    console.log('  · nadie rindió la prueba sin nota en esta vacante: el reparto no se ejercita')
+    return
+  }
+
+  await bloque.waitFor({ timeout: 20000 })
+  const dice = await bloque.innerText()
+  comprobar(
+    dice.includes(`${alcanzados.length} persona`),
+    `alcanza a ${alcanzados.length}, que son los que rindieron y siguen sin nota`,
+    dice.slice(0, 140),
+  )
+  comprobar(
+    !/TURNO_CANDIDATO/.test(dice),
+    'y no a quien todavía no la ha rendido',
+  )
+
+  // El reparto de verdad, calculado desde la API igual que lo hace el panel.
+  const esperado = { entera: 0, vacia: 0, aMedias: 0, sinRubrica: 0 }
+  for (const f of alcanzados) {
+    const rubrica = (await api(`/postulaciones/${f.postulacionId}/prueba/notas`)).cuerpo
+    if (!Array.isArray(rubrica) || rubrica.length === 0) {
+      esperado.sinRubrica += 1
+      continue
+    }
+    const puestas = rubrica.filter((n) => n.puntaje !== null).length
+    if (puestas === rubrica.length) esperado.entera += 1
+    else if (puestas === 0) esperado.vacia += 1
+    else esperado.aMedias += 1
+  }
+
+  await bloque.getByRole('button', { name: /Ver qué le falta/ }).click()
+  await pagina.waitForTimeout(2500)
+  const reparto = await bloque.innerText()
+
+  comprobar(
+    esperado.entera === 0 || reparto.includes(`${esperado.entera}`),
+    `el reparto cuenta ${esperado.entera} con la rúbrica entera, como la API`,
+    reparto.slice(0, 220),
+  )
+  comprobar(
+    (esperado.entera > 0) ===
+      Boolean(await bloque.getByRole('button', { name: /^Calcular/ }).count()),
+    esperado.entera > 0
+      ? 'y ofrece calcular sus notas, que es el paso que las produce'
+      : 'y sin ninguna entera NO ofrece calcular: el backend contestaría 409',
+  )
+  /*
+    ⚠️ **Que no haya ninguna entera pasa en verde, y eso esconde que la mitad
+    importante no se miro.** El boton de calcular es lo que este bloque existe
+    para ofrecer, y sin un caso no se ejercita nunca. No es un fallo del codigo
+    —es el estado de la base— asi que no se marca rojo, pero tampoco se calla.
+
+    Hoy no lo hay por una razon concreta: la postulacion 16 tiene sus siete
+    criterios calificados y ninguna nota de etapa, que es EL caso, pero su
+    estado retrocedio a `PERFIL_CALIFICANDO` y este bloque solo alcanza a quien
+    esta parado en la prueba. Para sembrarlo:
+
+      update postulacion set estado_codigo = 'PRUEBA_CALIFICANDO' where id = 16;
+  */
+  if (esperado.entera === 0) {
+    console.log(
+      '      ⚠ NADIE tiene la rúbrica entera y sin nota: el botón de calcular\n' +
+        '        —lo que este bloque existe para ofrecer— no se ejercitó.\n' +
+        '        Se siembra moviendo la 16 a PRUEBA_CALIFICANDO; ver el comentario.',
+    )
+  }
+  comprobar(
+    (esperado.vacia > 0) ===
+      Boolean(await bloque.getByRole('button', { name: /Pedirle a la IA/ }).count()),
+    esperado.vacia > 0
+      ? 'ofrece pedirle la calificación a la IA para quien no tiene ningún criterio'
+      : 'y sin ninguna vacía no ofrece pedirle nada a la IA',
+  )
+  if (esperado.aMedias > 0) {
+    comprobar(
+      /se le termina desde su ficha/.test(reparto),
+      'a quien tiene la rúbrica a medias lo manda a su ficha, sin acción en lote',
+    )
+  }
+
+  console.log(
+    '      ⚠ no se pulsa ninguno de los dos: ponderar escribe y calificar cuesta\n' +
+      '        una llamada al modelo por persona.',
+  )
+}
+
 async function laCribaDeLaTanda(pagina) {
   console.log('\nCalificar la tanda')
   await abrirLaVacante(pagina, VACANTE_CON_PRUEBAS)
@@ -533,6 +672,7 @@ try {
   await loQueEscribio(pagina)
   await elCierreDeLaPrueba(pagina)
   await elPasoQueProduceLaNota(pagina)
+  await elBloqueDeLaTanda(pagina)
   await laCribaDeLaTanda(pagina)
   await laEntradaDeLasEmpresas(pagina)
 } catch (causa) {

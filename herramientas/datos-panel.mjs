@@ -146,16 +146,16 @@ const RANKING = {
           origen: 'EVALUACION' },
       ] },
     { puesto: 2, postulacionId: 92, uuid: 'p2', candidato: 'Diego Salazar Nuñez',
-      correo: 'diego@example.com', estado: 'PERFIL_CALIFICANDO',
-      estadoNombre: 'Calificando el perfil', estadoCalificacion: 'EN_CURSO', pasada: 'RAPIDA',
+      correo: 'diego@example.com', estado: 'PRUEBA_CALIFICANDO',
+      estadoNombre: 'Prueba · calificando', estadoCalificacion: 'EN_CURSO', pasada: 'RAPIDA',
       archivoNombre: 'cv-diego.pdf', grupoPrioridad: 'B', notaEtapa: 71, notaCurriculum: 68,
       adecuacion: 70, potencial: 74, altoRendimiento: 62, confianzaEvidencia: 58,
       resumen: 'Buena base, poca evidencia de haber respondido a un incidente.',
       riesgosCriticos: 1, fortalezas: 2, alertas: 2, actualizadoEn: '2026-08-24T18:20:00Z',
       notasCriterio: [] },
     { puesto: 3, postulacionId: 93, uuid: 'p3', candidato: 'Valeria Chumpitaz Ríos',
-      correo: 'valeria@example.com', estado: 'SIMULACION_POR_CONFIRMAR',
-      estadoNombre: 'Simulación por confirmar', estadoCalificacion: 'TERMINADA', pasada: 'FINA',
+      correo: 'valeria@example.com', estado: 'PRUEBA_CALIFICANDO',
+      estadoNombre: 'Prueba · calificando', estadoCalificacion: 'TERMINADA', pasada: 'FINA',
       archivoNombre: null, grupoPrioridad: 'A', notaEtapa: 69, notaCurriculum: 72,
       adecuacion: 66, potencial: 70, altoRendimiento: 71, confianzaEvidencia: 74,
       resumen: 'Trabajo sólido y sin sobresaltos.',
@@ -170,8 +170,8 @@ const RANKING = {
       riesgosCriticos: 0, fortalezas: 3, alertas: 1, actualizadoEn: '2026-08-23T12:10:00Z',
       notasCriterio: [] },
     { puesto: 5, postulacionId: 96, uuid: 'p6', candidato: 'Marcos Ibáñez Trujillo',
-      correo: 'marcos@example.com', estado: 'PRUEBA_TURNO_CANDIDATO',
-      estadoNombre: 'Prueba habilitada', estadoCalificacion: 'SIN_EMPEZAR', pasada: 'FINA',
+      correo: 'marcos@example.com', estado: 'PRUEBA_POR_CONFIRMAR',
+      estadoNombre: 'Prueba · por confirmar', estadoCalificacion: 'SIN_EMPEZAR', pasada: 'FINA',
       archivoNombre: 'cv-marcos.pdf', grupoPrioridad: 'B', notaEtapa: 75, notaCurriculum: 75,
       adecuacion: 73, potencial: 78, altoRendimiento: 70, confianzaEvidencia: 69,
       resumen: 'Perfil sólido de operación; menos evidencia de decidir con poca información.',
@@ -269,8 +269,13 @@ const TODAS = [...RANKING.filas, ...RELLENO]
 const NOTA_DE_LA_ETAPA = {
   PERFIL_INTEGRAL: (f) => f.notaEtapa,
   // Solo la que ya la rindió y está en revisión.
+  /*
+   * ⚠️ Solo la 91 tiene nota de prueba: las 92 y 96 rindieron y siguen sin ella,
+   * que es exactamente el caso al que alcanza el bloque de la tanda. Sin esto,
+   * ese bloque no aparece en ninguna captura.
+   */
   PRUEBA_PUESTO: (f) => (f.postulacionId === 91 ? 88 : null),
-  SIMULACION: (f) => (f.postulacionId === 93 ? 69 : null),
+  SIMULACION: () => null,
   VALIDACION: () => null,
   DECISION: (f) => (f.postulacionId === 98 ? 73 : null),
 }
@@ -475,6 +480,30 @@ export const RESPUESTAS = {
     version: { id: 2, plantillaPruebaId: 2, version: 3, estado: 'PUBLICADA' },
     variantes: [], preguntas: [], entregables: [], rubrica: [],
   },
+  /*
+   * ⚠️ **La rúbrica de la prueba, por persona.** Sin estas rutas el interceptor
+   * cae en su `?? []` y el bloque de la tanda reparte a todo el mundo en «no
+   * tiene rúbrica», que es justo la rama que no se quiere mirar. Se siembran las
+   * tres situaciones reales: entera sin nota, vacía, y a medias.
+   */
+  '/postulaciones/92/prueba/notas': [
+    { criterioId: 1, nombre: 'Criterio técnico', puntosMaximos: 10, puntaje: 8,
+      explicacion: 'Eligió lo simple donde lo complejo era tentador.', origen: 'AGENTE' },
+    { criterioId: 2, nombre: 'Comunicación', puntosMaximos: 10, puntaje: 6,
+      explicacion: 'Explicó una decisión a alguien no técnico.', origen: 'AGENTE' },
+  ],
+  '/postulaciones/96/prueba/notas': [
+    { criterioId: 1, nombre: 'Criterio técnico', puntosMaximos: 10, puntaje: null,
+      explicacion: null, origen: null },
+    { criterioId: 2, nombre: 'Comunicación', puntosMaximos: 10, puntaje: null,
+      explicacion: null, origen: null },
+  ],
+  '/postulaciones/93/prueba/notas': [
+    { criterioId: 1, nombre: 'Criterio técnico', puntosMaximos: 10, puntaje: 9,
+      explicacion: 'Sostuvo el caso entero.', origen: 'AGENTE' },
+    { criterioId: 2, nombre: 'Comunicación', puntosMaximos: 10, puntaje: null,
+      explicacion: null, origen: null },
+  ],
   '/parametros': [
     { codigo: 'evaluacion.dias', valor: '14', tipo: 'ENTERO',
       descripcion: 'Días que dura el plazo de la evaluación escrita.' },

@@ -60,6 +60,7 @@ import { RespuestasDePrueba } from './RespuestasDePrueba'
 import { CierreDeLaVacante, PlazoDeUnaPersona } from './CierreDePrueba'
 import { CalificarAUno, CalificarLaTanda } from './CalificarConIa'
 import { NotaDeLaPrueba } from './NotaDeLaPrueba'
+import { LaTandaDeLaPrueba } from './LaTandaDeLaPrueba'
 import {
   ETAPAS_PANEL,
   cifrasDeLaEtapa,
@@ -317,6 +318,26 @@ export function VacantePanelDetalle() {
             }}
           />
         )}
+        {/*
+          ⚠️ **Solo en la prueba, y encima de la tabla.** El equivalente del
+          currículum —`CalificarLaTanda`— vive justo arriba y solo en Perfil
+          integral: las dos nunca coinciden, así que el violeta de la pantalla
+          es siempre uno.
+
+          Recibe `ranking.data.filas` SIN filtrar: a quién alcanza no puede
+          depender del corte que esté puesto en la tabla. Quien rindió y sigue
+          sin nota no sale en «con nota de la prueba», que es el corte por
+          defecto.
+        */}
+        {etapa === 'PRUEBA_PUESTO' && ranking.data && (
+          <LaTandaDeLaPrueba
+            filas={ranking.data.filas}
+            alTerminar={() => {
+              cache.invalidateQueries({ queryKey: ['panel-ranking', vacanteId] })
+              cache.invalidateQueries({ queryKey: ['panel-notas-prueba'] })
+            }}
+          />
+        )}
         {ranking.data && (
           <Ranking
             key={etapa}
@@ -463,15 +484,16 @@ function Ranking({
               <span className={estilos.detalleTanda}>
                 {' · '}
                 {[
+                  cifras.hechasSinNota > 0
+                    ? `${cifras.hechasSinNota} ya la hicieron y siguen sin nota`
+                    : null,
                   cifras.esperandoALaPersona > 0
-                    ? `${cifras.esperandoALaPersona} esperando a la persona`
+                    ? `${cifras.esperandoALaPersona} sin hacerla todavía`
                     : null,
-                  cifras.esperandoAlEquipo > 0
-                    ? `${cifras.esperandoAlEquipo} esperando al equipo`
-                    : null,
+                  cifras.enOtraEtapa > 0 ? `${cifras.enOtraEtapa} en otra etapa` : null,
                 ]
                   .filter(Boolean)
-                  .join(' · ') || `${cifras.sinNota} sin nota todavía`}
+                  .join(' · ')}
               </span>
             )}
           </p>
