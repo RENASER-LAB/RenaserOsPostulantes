@@ -113,7 +113,7 @@ try {
 
   // ---------- 5 · Una contraseña equivocada no dice si el correo existe ----------
   await pagina.getByLabel('Correo').fill(CORREO)
-  await pagina.getByLabel('Contraseña').fill('estaNoEsLaBuena123')
+  await pagina.getByRole('textbox', { name: 'Contraseña' }).fill('estaNoEsLaBuena123')
   await pagina.getByRole('button', { name: /entrar al panel/i }).click()
   await pagina.waitForTimeout(1500)
   const textoDelError = await pagina.locator('[role=alert]').first().textContent().catch(() => '')
@@ -121,7 +121,7 @@ try {
   anotar(`El error no delata si el correo existe: «${(textoDelError ?? '').trim()}»`, esGenerico)
 
   // ---------- 6 · Entrar con la buena ----------
-  await pagina.getByLabel('Contraseña').fill(CLAVE)
+  await pagina.getByRole('textbox', { name: 'Contraseña' }).fill(CLAVE)
   await pagina.getByRole('button', { name: /entrar al panel/i }).click()
   await pagina.waitForURL(/\/admin$/, { timeout: 25_000 })
   anotar('Entra con correo y contraseña, sin RENASER OS')

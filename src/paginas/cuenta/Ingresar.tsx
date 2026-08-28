@@ -1,15 +1,14 @@
 /**
  * Entrar.
  *
- * **Hay dos caminos y los dos son normales**, no uno principal y una excepción:
+ * Un solo formulario: correo y contraseña.
  *
- *   - Correo y contraseña, para quien se registró en el portal.
- *   - **El enlace del correo, sin contraseña**, para quien llegó por una carpeta
- *     de currículums y no tiene cuenta que recordar. Es la vía de toda una tanda
- *     de candidatos, así que aparece en la pantalla, no escondida en un pie.
- *
- * Del segundo camino no hay formulario que enseñar: el enlace se canjea solo al
- * abrirlo. Lo que se puede hacer aquí es decirle dónde buscarlo.
+ * ⚠️ **El enlace del correo sigue funcionando; lo que se quitó es explicarlo.**
+ * Esta pantalla tenía un segundo bloque —«Con el enlace que te enviamos»— y se
+ * retiró por decisión del cliente. El mecanismo no se tocó: `/acceso` canjea el
+ * token igual que antes, y quien llega por ese enlace entra sin pasar por aquí.
+ * Lo que ya no ocurre es que alguien que llegó por esa vía y aterrizó en esta
+ * pantalla se entere de dónde buscar su correo.
  */
 
 import { useState, type FormEvent } from 'react'
@@ -79,62 +78,45 @@ export function Ingresar() {
   return (
     <div className={estilos.pagina}>
       <h1>Entra a tu proceso.</h1>
-      <p className={estilos.bajada}>
-        Hay dos formas de entrar, según cómo llegó tu candidatura hasta nosotros.
+
+      {/*
+        Sin caja alrededor y sin subtítulo encima: con un solo camino, el
+        recuadro no separaba de nada y el «Con tu correo y contraseña» repetía
+        lo que las dos etiquetas de debajo ya dicen. El titular nombra la
+        pantalla y el formulario empieza en la línea siguiente.
+      */}
+      <form className={estilos.formulario} onSubmit={enviar} noValidate>
+        <Campo
+          etiqueta="Correo"
+          type="email"
+          autoComplete="email"
+          value={correo}
+          onChange={(e) => setCorreo(e.target.value)}
+          error={errores.correo}
+        />
+        <Campo
+          etiqueta="Contraseña"
+          type="password"
+          autoComplete="current-password"
+          value={contrasena}
+          onChange={(e) => setContrasena(e.target.value)}
+          error={errores.contrasena}
+        />
+
+        {fallo && (
+          <p className={estilos.falloEnvio} role="alert">
+            {fallo}
+          </p>
+        )}
+
+        <button type="submit" className={estilos.enviar} disabled={entrando}>
+          {entrando ? 'Entrando…' : 'Entrar'}
+        </button>
+      </form>
+
+      <p className={estilos.olvidada}>
+        <Link to={rutas.clave()}>¿Olvidaste tu contraseña?</Link>
       </p>
-
-      <div className={estilos.caminos}>
-        <section className={estilos.camino}>
-          <h2 className={estilos.tituloCamino}>Con tu correo y contraseña</h2>
-          <p className={estilos.queEs}>Si creaste tu cuenta en este portal.</p>
-
-          <form className={estilos.formulario} onSubmit={enviar} noValidate>
-            <Campo
-              etiqueta="Correo"
-              type="email"
-              autoComplete="email"
-              value={correo}
-              onChange={(e) => setCorreo(e.target.value)}
-              error={errores.correo}
-            />
-            <Campo
-              etiqueta="Contraseña"
-              type="password"
-              autoComplete="current-password"
-              value={contrasena}
-              onChange={(e) => setContrasena(e.target.value)}
-              error={errores.contrasena}
-            />
-
-            {fallo && (
-              <p className={estilos.falloEnvio} role="alert">
-                {fallo}
-              </p>
-            )}
-
-            <button type="submit" className={estilos.enviar} disabled={entrando}>
-              {entrando ? 'Entrando…' : 'Entrar'}
-            </button>
-          </form>
-          <p className={estilos.olvidada}>
-            <Link to={rutas.clave()}>¿Olvidaste tu contraseña?</Link>
-          </p>
-        </section>
-
-        <section className={estilos.camino}>
-          <h2 className={estilos.tituloCamino}>Con el enlace que te enviamos</h2>
-          <p className={estilos.queEs}>
-            Si tu currículum nos llegó por otra vía, <b>no tienes contraseña</b> y no hace
-            falta que crees una: el correo que te mandamos trae un enlace que te mete
-            directo.
-          </p>
-          <div className={estilos.pista}>
-            Búscalo por el asunto <span className={estilos.asunto}>«Tu postulación
-            avanza»</span> o <span className={estilos.asunto}>«Tu prueba está
-            disponible»</span>. Dentro está el botón para entrar.
-          </div>
-        </section>
-      </div>
 
       <p className={estilos.pie}>
         ¿Todavía no tienes cuenta?{' '}

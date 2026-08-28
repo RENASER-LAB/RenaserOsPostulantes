@@ -23,7 +23,7 @@
  */
 
 import { useEffect, useState, type FormEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   descargarMisDatos,
@@ -33,6 +33,7 @@ import {
   verPerfil,
 } from '@/api/perfil'
 import type { PerfilCompleto } from '@/api/tipos'
+import { useSesion } from '@/app/Sesion'
 import { rutas } from '@/rutas'
 import { useAviso } from '@/ui/Avisos'
 import { AreaTexto, Campo } from '@/ui/campos/Campo'
@@ -60,6 +61,41 @@ function cuantosSinConfirmar(perfil: PerfilCompleto): number {
   return listas
     .flat()
     .filter((d) => d.origen === 'CURRICULUM' && !d.confirmado).length
+}
+
+/**
+ * Cerrar sesión.
+ *
+ * Vive en «Mi cuenta», que es donde se va a buscar. Antes estaba al final de
+ * «Privacidad y tratamiento de datos», detrás de retirar una postulación, salir
+ * del radar de talento y pedir el borrado: tres acciones que no se deshacen y
+ * que no tienen nada que ver con salir de la sesión en un ordenador prestado.
+ *
+ * ⚠️ **Después de salir se va a las vacantes, y es a propósito.** `salir()` solo
+ * borra el token, y `Privada` no desvía: deja la dirección donde está y cambia
+ * la pantalla por el muro de «Ingresa para ver tu proceso». Quedarse ahí, en
+ * `/perfil`, después de haber pulsado un botón, se lee como que algo se rompió.
+ * La portada es pública y confirma la salida sin decir nada.
+ *
+ * No pregunta antes: no se pierde nada, y volver a entrar es escribir la
+ * contraseña. Confirmar lo que se deshace solo gasta el aviso que sí importa.
+ */
+function SalirDeLaCuenta() {
+  const { salir } = useSesion()
+  const navegar = useNavigate()
+
+  return (
+    <button
+      type="button"
+      className={estilos.salir}
+      onClick={() => {
+        salir()
+        navegar(rutas.vacantes())
+      }}
+    >
+      Cerrar sesión
+    </button>
+  )
 }
 
 export function Perfil() {
@@ -128,13 +164,21 @@ export function Perfil() {
               ? consulta.error.message
               : 'No pudimos conectar con el servidor.'}
           </p>
-          <button
-            type="button"
-            className={estilos.reintentar}
-            onClick={() => void consulta.refetch()}
-          >
-            Intentar de nuevo
-          </button>
+          {/*
+            Salir también vive aquí, y no es duplicar por duplicar: si el perfil
+            no carga, esta es la pantalla entera de «Mi cuenta». Sin el botón,
+            cerrar sesión volvería a estar escondido justo el día que algo falla.
+          */}
+          <div className={estilos.accionesDelFallo}>
+            <button
+              type="button"
+              className={estilos.reintentar}
+              onClick={() => void consulta.refetch()}
+            >
+              Intentar de nuevo
+            </button>
+            <SalirDeLaCuenta />
+          </div>
         </div>
       </div>
     )
@@ -150,7 +194,10 @@ export function Perfil() {
       </Link>
 
       <div className={estilos.encabezado}>
-        <h1>Tu perfil.</h1>
+        <div className={estilos.tituloYSalida}>
+          <h1>Tu perfil.</h1>
+          <SalirDeLaCuenta />
+        </div>
         <p className={estilos.bajada}>
           Lo llenas una vez y vale para todas las vacantes del portal. Nada es obligatorio, y
           no tenerlo no te impide postular ni cambia ninguna nota.
