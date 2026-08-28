@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">EX</string>
+    <string name="title_activity_main">EX</string>
+    <string name="package_name">com.renaser.ex</string>
+    <string name="custom_url_scheme">com.renaser.ex</string>
+</resources>

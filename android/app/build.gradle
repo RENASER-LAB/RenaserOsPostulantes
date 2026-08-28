@@ -1,0 +1,148 @@
+apply plugin: 'com.android.application'
+
+// La version legible sale de `package.json`, que es donde ya se lleva la del
+// portal. Tenerla escrita en dos sitios garantiza que un dia digan cosas
+// distintas y nadie sepa cual mira el usuario.
+def versionDelPortal = new groovy.json.JsonSlurper()
+        .parseText(file('../../package.json').text)
+        .version
+
+/*
+ * La llave de subida, si esta a mano.
+ *
+ * `keystore.properties` NO va al repositorio y la llave vive fuera del
+ * proyecto: con las dos, cualquiera puede firmar un paquete que Android acepta
+ * como si fuera esta aplicacion.
+ *
+ * ⚠️ Sin el archivo, la compilacion de release **sigue funcionando y sale sin
+ * firmar**. Es a proposito: quien clone el repositorio tiene que poder compilar
+ * sin pedirle la llave a nadie. Lo que no puede es subir eso a Play, y por eso
+ * la guarda de abajo lo dice en voz alta al terminar.
+ */
+def credenciales = new Properties()
+def archivoDeCredenciales = rootProject.file('keystore.properties')
+if (archivoDeCredenciales.exists()) {
+    archivoDeCredenciales.withInputStream { credenciales.load(it) }
+}
+
+android {
+    namespace = "com.renaser.ex"
+    compileSdk = rootProject.ext.compileSdkVersion
+    defaultConfig {
+        applicationId "com.renaser.ex"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        // ⚠️ `versionCode` NO sale de `package.json` y es a proposito: Play
+        // exige que crezca en CADA subida y no admite repetir uno ya usado, ni
+        // siquiera de una version retirada. Un `0.1.0` no se traduce a un
+        // entero creciente sin inventar una regla que algun dia se salta. Se
+        // sube a mano, y subirlo es parte de publicar.
+        versionCode 1
+        versionName versionDelPortal
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    signingConfigs {
+        subida {
+            if (credenciales.containsKey('almacen')) {
+                storeFile file(credenciales['almacen'])
+                storePassword credenciales['claveAlmacen']
+                keyAlias credenciales['alias']
+                keyPassword credenciales['clave']
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            // Solo si hay llave. Sin ella el paquete sale sin firmar y Play lo
+            // rechaza, pero la compilacion no se cae — ver el comentario de
+            // arriba.
+            if (credenciales.containsKey('almacen')) {
+                signingConfig signingConfigs.subida
+            }
+        }
+    }
+}
+
+/*
+ * ⚠️ Una version de release NO puede llevar dentro un backend que no sea el de
+ * produccion.
+ *
+ * Gradle empaqueta lo que encuentre en `assets/public` y **no reconstruye los
+ * archivos web**: si lo ultimo que se corrio fue `npm run build:emulador`, un
+ * `bundleRelease` produce un `.aab` que apunta al Spring de la maquina de quien
+ * lo compilo. Ya paso una vez aqui, y el `.aab` parecia perfecto: 3,2 MB,
+ * compilado sin un aviso, y con `10.0.2.2:8081` dentro.
+ *
+ * Los dos casos que se cazan:
+ *   - `build:emulador` — apunta a la maquina local; en un telefono no hay nada.
+ *   - `npm run build` a secas — sin origen ninguno, las rutas quedan relativas
+ *     y la aplicacion se pediria los datos a si misma.
+ */
+def comprobarElOrigen = tasks.register('comprobarElOrigenDeProduccion') {
+    doLast {
+        def publicados = file('src/main/assets/public')
+        if (!publicados.exists()) {
+            throw new GradleException(
+                'No hay nada en assets/public. Corre `npm run build:movil` antes de empaquetar.')
+        }
+
+        def guiones = fileTree(publicados).matching { include '**/*.js' }
+        def conElLocal = guiones.findAll { it.text.contains('10.0.2.2') }
+        if (!conElLocal.isEmpty()) {
+            throw new GradleException(
+                'Esta version lleva dentro el backend LOCAL (10.0.2.2): ' +
+                conElLocal*.name.join(', ') + '.\n' +
+                'Es el resultado de `npm run build:emulador`. Corre ' +
+                '`npm run build:movil` y vuelve a empaquetar.')
+        }
+
+        def conProduccion = guiones.any { it.text.contains('renaser-os-postulantes.vercel.app') }
+        if (!conProduccion) {
+            throw new GradleException(
+                'Esta version no lleva ningun origen dentro, asi que pediria los datos a si ' +
+                'misma y no funcionaria en ningun telefono.\n' +
+                'Sale de `npm run build` a secas: para empaquetar hace falta `npm run build:movil`.')
+        }
+    }
+}
+
+tasks.matching { it.name in ['bundleRelease', 'assembleRelease'] }.configureEach {
+    dependsOn comprobarElOrigen
+}
+
+repositories {
+    flatDir{
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation project(':capacitor-android')
+    testImplementation "junit:junit:$junitVersion"
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    implementation project(':capacitor-cordova-android-plugins')
+}
+
+apply from: 'capacitor.build.gradle'
+
+try {
+    def servicesJSON = file('google-services.json')
+    if (servicesJSON.text) {
+        apply plugin: 'com.google.gms.google-services'
+    }
+} catch(Exception e) {
+    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}

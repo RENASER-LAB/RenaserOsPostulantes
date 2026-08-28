@@ -11,6 +11,12 @@
  *   - convertir un error HTTP en algo que la pantalla pueda enseñar,
  *   - apuntar la hora del servidor en cada respuesta, para los cronometros,
  *   - avisar una sola vez cuando el token deja de valer.
+ *
+ * Y desde la version movil, dos costuras mas —`ORIGEN` y `Almacen`, las dos
+ * documentadas abajo—. **En la web las dos valen lo de siempre**: origen vacio
+ * y `localStorage`. Existen porque una aplicacion instalada no tiene ningun
+ * servidor delante que reescriba `/api`, y porque el almacenamiento de una
+ * WebView es de usar y tirar.
  */
 
 import { anotarHoraDelServidor } from '@/dominio/reloj'
@@ -96,6 +102,76 @@ export interface Opciones {
   senal?: AbortSignal
 }
 
+/**
+ * El origen del backend, delante de la base de cada puerta.
+ *
+ * **Vacio en la web, y ahi esta el punto**: la ruta sigue siendo relativa y la
+ * reescriben Vite en desarrollo y `vercel.json` en produccion, exactamente como
+ * hasta hoy. Una aplicacion instalada no tiene ningun servidor delante que
+ * reescriba nada, asi que su compilacion (`npm run build:movil`) lo rellena.
+ *
+ * ⚠️ **Apunta a Vercel, no al backend.** La direccion del backend es una IP
+ * prestada de `nip.io` que este proyecto ya tiene marcada como provisional: si
+ * viajara dentro del `.aab`, el dia que Renaser tenga dominio propio **todas
+ * las apps instaladas dejarian de conectar a la vez**. Yendo por Vercel, ese
+ * cambio sigue siendo una linea de `vercel.json` y nadie tiene que actualizar.
+ */
+const ORIGEN = import.meta.env.VITE_ORIGEN_API ?? ''
+
+/**
+ * Donde se guarda el token.
+ *
+ * En la web es `localStorage` y punto. Existe la costura porque el
+ * almacenamiento nativo de Android **es asincrono**, y volver asincrono
+ * `leerToken()` obligaria a tocar todas las pantallas: por eso la interfaz es
+ * sincrona, y quien la implemente para la aplicacion guarda en memoria y
+ * persiste por detras, sembrandose antes de montar React.
+ *
+ * ⚠️ En una WebView `localStorage` lo borra el sistema al limpiar la cache o al
+ * quedarse sin espacio. Ahi eso echa a alguien de una evaluacion a medias, y
+ * por eso la aplicacion no lo usa.
+ */
+export interface Almacen {
+  leer: (clave: string) => string | null
+  escribir: (clave: string, valor: string) => void
+  borrar: (clave: string) => void
+}
+
+const delNavegador: Almacen = {
+  leer(clave) {
+    try {
+      return localStorage.getItem(clave)
+    } catch {
+      return null
+    }
+  },
+  escribir(clave, valor) {
+    try {
+      localStorage.setItem(clave, valor)
+    } catch {
+      // Navegacion privada con el almacenamiento bloqueado: la sesion dura
+      // lo que dure la pestaña y ya.
+    }
+  },
+  borrar(clave) {
+    try {
+      localStorage.removeItem(clave)
+    } catch {
+      /* igual que arriba */
+    }
+  },
+}
+
+let almacen: Almacen = delNavegador
+
+/**
+ * Cambia donde se guardan los tokens. Lo llama solo el arranque de la
+ * aplicacion instalada, antes de montar React.
+ */
+export function usarAlmacen(otro: Almacen): void {
+  almacen = otro
+}
+
 export interface Puerta {
   pedir: <T>(ruta: string, opciones?: Opciones) => Promise<T>
   leerToken: () => string | null
@@ -109,28 +185,15 @@ export function crearPuerta(base: string, claveToken: string): Puerta {
   const escuchas = new Set<() => void>()
 
   function leerToken(): string | null {
-    try {
-      return localStorage.getItem(claveToken)
-    } catch {
-      return null
-    }
+    return almacen.leer(claveToken)
   }
 
   function guardarToken(token: string): void {
-    try {
-      localStorage.setItem(claveToken, token)
-    } catch {
-      // Navegacion privada con el almacenamiento bloqueado: la sesion dura
-      // lo que dure la pestaña y ya.
-    }
+    almacen.escribir(claveToken, token)
   }
 
   function borrarToken(): void {
-    try {
-      localStorage.removeItem(claveToken)
-    } catch {
-      /* igual que arriba */
-    }
+    almacen.borrar(claveToken)
   }
 
   async function pedir<T>(ruta: string, opciones: Opciones = {}): Promise<T> {
@@ -144,7 +207,7 @@ export function crearPuerta(base: string, claveToken: string): Puerta {
 
     let respuesta: Response
     try {
-      respuesta = await fetch(`${base}${ruta}`, {
+      respuesta = await fetch(`${ORIGEN}${base}${ruta}`, {
         method: metodo,
         headers: cabeceras,
         body: formulario ?? (cuerpo === undefined ? undefined : JSON.stringify(cuerpo)),

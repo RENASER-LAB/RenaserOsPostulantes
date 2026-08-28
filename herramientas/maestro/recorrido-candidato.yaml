@@ -1,0 +1,123 @@
+# El recorrido de quien postula, dentro de la aplicacion instalada.
+#
+# Lo que esto prueba y las sondas no: que la app **se usa**, no solo que
+# responde. Toca la lista que viene del backend, abre una vacante, crea una
+# cuenta de verdad y —lo que de verdad importa— **mata la aplicacion y la vuelve
+# a abrir** para ver si la sesion sigue puesta. Eso ultimo es la razon de ser de
+# todo el cambio del almacenamiento: en una WebView `localStorage` se borra, y
+# quien lo sufra pierde la sesion a mitad de una evaluacion.
+#
+# **No se lanza a mano.** Lo hace `node herramientas/e2e-android.mjs`, que le
+# pasa el correo y **borra la cuenta al terminar, pase o falle**. Lanzado
+# directamente, la cuenta se queda en la base local.
+#
+# ⚠️ **Espera un APK de `npm run build:emulador`**, que habla con el Spring
+# local. Con el de `build:movil` esto crearia una cuenta en la base de
+# PRODUCCION, junto a candidatos reales.
+#
+# ⚠️ **Maestro exige que el texto coincida ENTERO, no por partes.** Un
+# `assertVisible: 'Tu próximo trabajo'` falla sobre un titular que dice «Tu
+# próximo trabajo puede empezar aquí.», y el fallo se lee como si la pantalla
+# estuviera rota. Por eso aqui todo va como expresion regular con `.*`: asi un
+# retoque de redaccion no tumba la prueba.
+
+appId: com.renaser.ex
+env:
+  # Lo pone `e2e-android.mjs`, que es tambien quien lo borra despues. El valor
+  # de aqui es solo para que el archivo se pueda leer suelto; si se usara de
+  # verdad, la segunda ejecucion chocaria con la primera.
+  CORREO: maestro.sin-envoltorio@example.com
+---
+- launchApp:
+    clearState: true
+
+# ---------- La app abre, y lo que se ve es suyo, no del navegador ----------
+- assertVisible: '.*Tu próximo trabajo puede empezar aquí.*'
+- assertVisible: '.*Ver las vacantes abiertas.*'
+
+# ---------- La lista viene del backend por la capa nativa ----------
+- scrollUntilVisible:
+    element: '.*Vacantes abiertas.*'
+    direction: DOWN
+- assertVisible: '.*Ver el puesto y postular.*'
+
+# ---------- Una vacante se abre y trae su contenido ----------
+# ⚠️ Hay que desplazarse hasta el enlace ANTES de tocarlo. `assertVisible` se
+# conforma con que exista en la jerarquia, pero `tapOn` toca coordenadas: sobre
+# un enlace que asoma por el borde, el toque se da por hecho y no navega — y el
+# fallo aparece dos pasos despues, donde no esta la causa.
+- scrollUntilVisible:
+    element: '.*Ver el puesto y postular.*'
+    direction: DOWN
+    centerElement: true
+- tapOn: '.*Ver el puesto y postular.*'
+# ⚠️ Se afirma sobre lo que la ficha trae SIEMPRE, no sobre sus secciones.
+# «Lo que harás» solo se pinta si la vacante tiene responsabilidades escritas, y
+# la primera de la base local no las tiene: la prueba se ponia roja por un dato,
+# no por un fallo. Volver y postular existen en toda ficha.
+- assertVisible: '.*Volver a las vacantes.*'
+- assertVisible: '.*Postular a este puesto.*'
+
+# ---------- Crear una cuenta ----------
+- tapOn: 'Ingresar'
+- assertVisible: '.*Entra a tu proceso.*'
+
+# El enlace al registro vive al final de una pantalla larga: sin bajar antes, el
+# toque se da por hecho y no pasa nada. Es la misma trampa de dos pasos atras.
+- scrollUntilVisible:
+    element: '.*Créala aquí.*'
+    direction: DOWN
+    centerElement: true
+- tapOn: '.*Créala aquí.*'
+- assertVisible: '.*Crear cuenta y seguir.*'
+
+- tapOn: 'Nombre'
+- inputText: 'Prueba'
+- tapOn: 'Apellidos'
+- inputText: 'De Maestro'
+- tapOn: 'Correo'
+- inputText: ${CORREO}
+- hideKeyboard
+
+- scrollUntilVisible:
+    element: 'Contraseña'
+    direction: DOWN
+    centerElement: true
+- tapOn: 'Contraseña'
+- inputText: 'Contrasena12345'
+- hideKeyboard
+
+- scrollUntilVisible:
+    element: '.*Repite la contraseña.*'
+    direction: DOWN
+    centerElement: true
+- tapOn: '.*Repite la contraseña.*'
+- inputText: 'Contrasena12345'
+- hideKeyboard
+
+# El del tratamiento es obligatorio: sin el, la ley 29733 no deja postular.
+- scrollUntilVisible:
+    element: '.*Tratamiento de mis datos para este proceso.*'
+    direction: DOWN
+    centerElement: true
+- tapOn: '.*Tratamiento de mis datos para este proceso.*'
+
+- scrollUntilVisible:
+    element: '.*Crear cuenta y seguir.*'
+    direction: DOWN
+    centerElement: true
+- tapOn: '.*Crear cuenta y seguir.*'
+
+# ---------- Hay sesion: la cabecera deja de decir «Ingresar» ----------
+- assertVisible: 'Mi cuenta'
+- assertNotVisible: 'Ingresar'
+
+# ---------- LO QUE IMPORTA: matarla y volver ----------
+# `clearState: false` es lo que hace que esto valga: se reabre con lo que quedo
+# guardado. Si el token viviera en `localStorage`, aqui volveria a decir
+# «Ingresar».
+- stopApp
+- launchApp:
+    clearState: false
+- assertVisible: 'Mi cuenta'
+- assertNotVisible: 'Ingresar'

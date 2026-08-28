@@ -42,6 +42,7 @@ const TITULOS: Array<[string, string]> = [
   [patrones.validacion, 'Validación práctica'],
   [patrones.decision, 'Decisión'],
   [patrones.privacidad, 'Privacidad y control'],
+  [patrones.politica, 'Política de privacidad'],
 ]
 
 function TituloDeLaPagina() {
@@ -131,7 +132,14 @@ export function Armazon() {
             pantalla que no puede cumplirlo.
           */}
           <nav className={estilos.enlacesDelPie} aria-label="Enlaces del pie">
-            <Link to={rutas.privacidad()}>Privacidad y tratamiento de datos</Link>
+            {/*
+              Son dos y se llaman distinto a proposito. «Privacidad y control»
+              es el panel de acciones y necesita sesion; la politica es el
+              documento y se lee sin cuenta — Google Play exige poder enlazarla
+              asi. Con el mismo nombre, la que pide sesion pareceria un error.
+            */}
+            <Link to={rutas.politica()}>Política de privacidad</Link>
+            <Link to={rutas.privacidad()}>Privacidad y control</Link>
             <Link to={rutas.adminEntrar()}>Entrar al panel de empresas</Link>
           </nav>
         </div>

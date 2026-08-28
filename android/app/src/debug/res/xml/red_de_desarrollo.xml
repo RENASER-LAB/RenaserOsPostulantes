@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Con quien se puede hablar sin cifrar. Una sola direccion.
+
+    Android bloquea el trafico en claro desde API 28, y con razon. Aqui se abre
+    la excepcion minima: `10.0.2.2`, que es como el emulador ve la maquina de
+    quien desarrolla, para poder probar contra el Spring local en vez de contra
+    la base de produccion.
+
+    ⚠️ Este archivo vive en `src/debug/`, asi que **no existe en la compilacion
+    de release**. Moverlo al sourceSet principal abriria la aplicacion publicada
+    a un intermediario en cualquier wifi.
+-->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">10.0.2.2</domain>
+    </domain-config>
+</network-security-config>

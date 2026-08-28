@@ -1,0 +1,76 @@
+/*
+ * La politica de privacidad publica.
+ *
+ * Es un documento para leer, no una pantalla para operar: por eso no hay ni un
+ * control con acento y todo el ancho lo manda `--medida`. La unica accion —como
+ * pedir el borrado— vive al final, que es donde llega quien vino buscandola.
+ */
+
+.pagina {
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: var(--e5) var(--e5) var(--e8);
+}
+
+.encabezado {
+  margin-top: var(--e4);
+}
+
+.bajada {
+  font-size: var(--t-base);
+  line-height: 1.55;
+  color: var(--tinta2);
+  margin-top: var(--e3);
+  max-width: var(--medida);
+}
+
+.seccion {
+  margin-top: var(--e6);
+}
+
+.seccion h2 {
+  font-size: var(--t-titulo);
+  font-weight: 600;
+  margin: 0 0 var(--e3);
+}
+
+.seccion p,
+.seccion li {
+  font-size: var(--t-base);
+  line-height: 1.6;
+  color: var(--tinta2);
+  max-width: var(--medida);
+}
+
+.seccion p {
+  margin: 0 0 var(--e3);
+}
+
+.lista {
+  margin: 0 0 var(--e3);
+  padding-left: var(--e4);
+}
+
+.lista li {
+  margin-bottom: var(--e2);
+}
+
+.lista li strong {
+  color: var(--tinta);
+  font-weight: 600;
+}
+
+.contacto {
+  margin-top: var(--e6);
+  padding: var(--e4);
+  background: var(--nube-hundida);
+  border-radius: var(--radio);
+}
+
+.contacto p {
+  margin: 0 0 var(--e2);
+}
+
+.contacto p:last-child {
+  margin-bottom: 0;
+}

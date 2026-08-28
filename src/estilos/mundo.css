@@ -25,6 +25,50 @@
  * El contrato de direccion completo esta en la cabecera de `index.html`.
  */
 
+/*
+ * Mulish, servida por el propio sitio.
+ *
+ * Venia de Google Fonts, y para la aplicacion instalada eso no vale: un
+ * telefono sin cobertura abriria la app con los titulares en otra letra, que en
+ * un mundo cuyo titular pesa 200 no es un detalle. Empaquetada, carga siempre.
+ *
+ * En la web tambien mejora: se van las dos conexiones previas del arranque y
+ * deja de depender de un tercero.
+ *
+ * ⚠️ **Es la fuente variable, un solo archivo por subconjunto.** El portal usa
+ * cuatro pesos —200, 400, 600 y 700— y con estaticas serian cuatro descargas de
+ * cada subconjunto. `font-weight: 200 900` declara el rango entero, asi que un
+ * peso nuevo no obliga a volver aqui a añadir un archivo.
+ *
+ * ⚠️ **No hay cursiva a proposito**: no se usa en ninguna hoja del portal, y la
+ * cursiva es otro archivo. Si algun dia se usa, hay que traerla — el navegador
+ * la fabricaria inclinando la recta, que en Mulish se ve mal.
+ *
+ * Los `unicode-range` son los de Google y no se tocan a ojo: son los que hacen
+ * que un navegador que solo pinta español no descargue el subconjunto extendido.
+ */
+@font-face {
+  font-family: Mulish;
+  font-style: normal;
+  font-weight: 200 900;
+  font-display: swap;
+  src: url('/tipografia/mulish-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
+    U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: Mulish;
+  font-style: normal;
+  font-weight: 200 900;
+  font-display: swap;
+  src: url('/tipografia/mulish-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0,
+    U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
 :root {
   /*
    * Superficies. El fondo es bruma fria y las superficies son nube blanca: al

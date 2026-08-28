@@ -25,6 +25,7 @@ import { Prueba } from '@/paginas/prueba/Prueba'
 import { Simulacion } from '@/paginas/simulacion/Simulacion'
 import { Validacion } from '@/paginas/validacion/Validacion'
 import { Decision } from '@/paginas/decision/Decision'
+import { PoliticaPublica } from '@/paginas/privacidad/PoliticaPublica'
 import { Privacidad } from '@/paginas/privacidad/Privacidad'
 
 import { ProveedorSesionPanel } from '@/panel/Sesion'
@@ -134,6 +135,8 @@ export function App() {
                     <Route path={patrones.acceso} element={<Acceso />} />
                     <Route path={patrones.registro} element={<Registro />} />
                     <Route path={patrones.clave} element={<Clave />} />
+                    {/* La politica, sin sesion: Play exige poder leerla sin cuenta. */}
+                    <Route path={patrones.politica} element={<PoliticaPublica />} />
 
                     {/* Con cuenta */}
                     <Route
