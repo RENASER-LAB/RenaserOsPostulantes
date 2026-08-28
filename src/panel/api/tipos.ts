@@ -626,3 +626,103 @@ export interface Catalogos {
   motivosCierre: EntradaCatalogo[]
   estados: EstadoCatalogo[]
 }
+
+// ---------- La prueba tecnica del puesto (metodo CAZATALENTOS) ----------
+// Copiados de `DtosFichaVacante` y `DtosCuestionarioTecnico` del backend.
+
+export type EstadoFichaDelPuesto = 'BORRADOR' | 'COMPLETA'
+export type TamanoDeEmpresa = 'MICRO' | 'MEDIA' | 'GRANDE'
+
+/**
+ * El cuerpo del PUT de la ficha.
+ *
+ * ⚠️ **Es un reemplazo completo, no un parche.** Lo que no viaje se borra en el
+ * servidor: el formulario manda los 22 campos siempre, aunque solo cambie uno.
+ * Todos admiten `null` porque BORRADOR se guarda a medias.
+ */
+export interface GuardarFichaDelPuesto {
+  q1Resultado: string | null
+  q2Riesgo: string | null
+  q3DiaReal: string | null
+  q4EpocaDorada: string | null
+  q5Estructura: string | null
+  q6Autonomia: string | null
+  q7JefeDirecto: string | null
+  q8LoIncomodo: string | null
+  q9Requerimientos: string | null
+  q10Espejo: string | null
+  genteEnEmpresa: number | null
+  genteACargo: number | null
+  /** El orden ES la velocidad de daño: el 1 es el que se nota primero. Sin huecos. */
+  riesgo1: string | null
+  riesgo2: string | null
+  riesgo3: string | null
+  riesgo4: string | null
+  eliminatoria1: string | null
+  eliminatoria2: string | null
+  requerimiento1: string | null
+  requerimiento2: string | null
+  requerimiento3: string | null
+  /** F1..F7 separadas por coma, p. ej. `F4` o `F4,F1`. */
+  familias: string | null
+}
+
+/** La version de pesos que corresponde al tamaño derivado, para asignarla con un clic. */
+export interface PesosSugeridos {
+  id: number
+  etiqueta: string
+  yaAsignada: boolean
+}
+
+export interface FichaDelPuesto extends GuardarFichaDelPuesto {
+  id: number
+  vacanteId: number
+  /** Derivado de `genteEnEmpresa`: ≤30 MICRO · 31–200 MEDIA · 200+ GRANDE. */
+  tamano: TamanoDeEmpresa | null
+  /** COMPLETA es lo que enciende «generar cuestionario». La calcula el servidor. */
+  estado: EstadoFichaDelPuesto
+  actualizadoEn: FechaIso | null
+  pesosSugeridos: PesosSugeridos | null
+}
+
+export interface PreguntaDelCuestionario {
+  id: number
+  codigo: string
+  /** EXPERIENCIA · RIESGO_1 · RIESGO_2 · RIESGO_3 · REQUERIMIENTO · DILEMA · PRESENCIAL */
+  bloque: string
+  enunciado: string
+  c3Esperado: string | null
+  c4Esperado: string | null
+  senalDeCero: string | null
+  /** La muestra de trabajo: nunca se envia al candidato. */
+  presencial: boolean
+  orden: number | null
+}
+
+/**
+ * El cuestionario de la vacante: el borrador si hay, si no la publicada.
+ *
+ * `generacion` es el ultimo trabajo del REDACTOR: SIN_PEDIR · EN_CURSO ·
+ * FALLIDA · LISTA. `desactualizado`: la ficha cambio despues de generar esto.
+ * Sin version todavia, `versionBancoId` y `estado` vienen nulos y `preguntas` vacia.
+ */
+export interface CuestionarioTecnico {
+  versionBancoId: number | null
+  estado: string | null
+  desactualizado: boolean
+  generacion: string
+  preguntas: PreguntaDelCuestionario[]
+}
+
+/** Lo que contesta pedir la generacion: 202 y si se encolo o no. */
+export interface GeneracionPedida {
+  encolada: boolean
+}
+
+/** ⚠️ Reemplazo completo de la pregunta: van los cuatro campos aunque cambie uno. */
+export interface CorregirPreguntaTecnica {
+  enunciado: string
+  c3Esperado: string | null
+  c4Esperado: string | null
+  senalDeCero: string | null
+}

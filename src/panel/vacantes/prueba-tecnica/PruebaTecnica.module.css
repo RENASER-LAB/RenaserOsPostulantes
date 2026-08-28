@@ -1,0 +1,78 @@
+/* La pagina de la prueba tecnica: cabecera y dos secciones numeradas. */
+
+.pagina {
+  max-width: var(--ancho);
+  margin: 0 auto;
+  padding: var(--e5) var(--e5) var(--e8);
+}
+
+.volver {
+  composes: volver from '../../../estilos/piezas.module.css';
+}
+
+.cabecera {
+  margin-top: var(--e4);
+  margin-bottom: var(--e4);
+}
+
+.titulo {
+  margin: 0;
+}
+
+.vacante {
+  font-size: var(--t-prosa);
+  color: var(--tinta2);
+  margin: var(--e2) 0 0;
+}
+
+.explica {
+  font-size: var(--t-prosa);
+  line-height: 1.55;
+  color: var(--tinta2);
+  max-width: var(--medida);
+  margin: 0;
+}
+
+.nota {
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+  background: var(--nube-hundida);
+  border-radius: var(--radio-menor);
+  padding: var(--e3) var(--e4);
+  margin: var(--e4) 0 0;
+  max-width: var(--medida);
+}
+
+.seccion {
+  margin-top: var(--e6);
+}
+
+.tituloSeccion {
+  margin-bottom: var(--e4);
+}
+
+.cargando {
+  font-size: var(--t-prosa);
+  color: var(--tinta2);
+}
+
+.avisoMalo {
+  display: flex;
+  gap: var(--e3);
+  border: 1px solid var(--mal-regla);
+  background: var(--mal-bruma);
+  padding: var(--e3) var(--e4);
+  font-size: var(--t-prosa);
+  line-height: 1.5;
+  color: var(--mal);
+  margin: 0;
+  border-radius: var(--radio-menor);
+}
+
+.avisoMalo::before {
+  content: '';
+  flex: none;
+  width: 3px;
+  background: var(--mal);
+}

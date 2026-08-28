@@ -46,6 +46,11 @@ import type {
   PasadaEncolada,
   CierrePruebaAplicado,
   PlazoDePrueba,
+  FichaDelPuesto,
+  GuardarFichaDelPuesto,
+  CuestionarioTecnico,
+  GeneracionPedida,
+  CorregirPreguntaTecnica,
 } from './tipos'
 
 // ---------- Entrar ----------
@@ -527,3 +532,38 @@ export const definirPlazoDePrueba = (
     metodo: 'POST',
     cuerpo: { venceEn, motivo },
   })
+
+// ---------- La prueba tecnica del puesto ----------
+// La ficha que llena el dueño y el cuestionario que redacta el agente REDACTOR
+// a partir de ella. Cinco rutas bajo la vacante. El 404 de la ficha significa
+// «todavia no se ha empezado», no una averia.
+
+export const verFichaDelPuesto = (vacanteId: number) =>
+  pedir<FichaDelPuesto>(`/vacantes/${vacanteId}/ficha`)
+/** ⚠️ Reemplazo completo: van los 22 campos siempre, o lo que falte se borra. */
+export const guardarFichaDelPuesto = (vacanteId: number, datos: GuardarFichaDelPuesto) =>
+  pedir<FichaDelPuesto>(`/vacantes/${vacanteId}/ficha`, { metodo: 'PUT', cuerpo: datos })
+
+export const verCuestionarioTecnico = (vacanteId: number) =>
+  pedir<CuestionarioTecnico>(`/vacantes/${vacanteId}/cuestionario-tecnico`)
+/**
+ * Pedirle el borrador al REDACTOR. Contesta 202 al momento: la IA tarda uno o
+ * dos minutos. `encolada=false` = ya hay una generacion viva o la IA esta
+ * apagada. Exige la ficha COMPLETA (409 si no). Cuenta contra el tope de IA.
+ */
+export const generarCuestionarioTecnico = (vacanteId: number) =>
+  pedir<GeneracionPedida>(`/vacantes/${vacanteId}/cuestionario-tecnico/generacion`, {
+    metodo: 'POST',
+  })
+export const corregirPreguntaTecnica = (
+  vacanteId: number,
+  preguntaId: number,
+  datos: CorregirPreguntaTecnica,
+) =>
+  pedir<void>(`/vacantes/${vacanteId}/cuestionario-tecnico/preguntas/${preguntaId}`, {
+    metodo: 'PUT',
+    cuerpo: datos,
+  })
+/** El acto humano: vuelve a pasar la aduana entera y archiva la publicada anterior. */
+export const publicarCuestionarioTecnico = (vacanteId: number) =>
+  pedir<void>(`/vacantes/${vacanteId}/cuestionario-tecnico/publicacion`, { metodo: 'POST' })

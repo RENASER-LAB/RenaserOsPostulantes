@@ -1,0 +1,341 @@
+/*
+ * El cuestionario tecnico: los avisos de la generacion, las preguntas por
+ * bloque y las dos acciones.
+ *
+ * El violeta esta una sola vez: en pedir el cuestionario cuando no hay ninguno,
+ * o en publicarlo cuando hay borrador. Es el paso que avanza; volver a generar
+ * y corregir son secundarios.
+ *
+ * La tarjeta PRESENCIAL lleva contorno ambar y su marca escrita: en gris se
+ * distingue igual, y la marca dice por que es distinta sin tener que saberse
+ * el color.
+ */
+
+.cuestionario {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e4);
+}
+
+.cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--e3);
+}
+
+.explica {
+  font-size: var(--t-prosa);
+  line-height: 1.55;
+  color: var(--tinta2);
+  max-width: var(--medida);
+  margin: 0;
+}
+
+.cargando {
+  font-size: var(--t-prosa);
+  color: var(--tinta2);
+  margin: 0;
+}
+
+/* ---------- Chips ---------- */
+
+.chipBorrador,
+.chipPublicado {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px var(--e3);
+  border-radius: var(--radio-control);
+  font-size: var(--t-micro);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.chipBorrador {
+  border: 1px dashed var(--regla2);
+  color: var(--tinta3);
+}
+
+.chipPublicado {
+  border: 1px solid var(--bien);
+  background: var(--bien-bruma);
+  color: var(--bien);
+}
+
+/* ---------- Los avisos ---------- */
+
+/* Nube hundida y no verde: no ha salido bien nada todavia, solo se ha pedido. */
+.esperando {
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+  background: var(--nube-hundida);
+  border-radius: var(--radio-menor);
+  padding: var(--e3) var(--e4);
+  margin: 0;
+  max-width: var(--medida);
+}
+
+.agotado {
+  composes: esperando;
+}
+
+/* El 403, el `encolada=false` y «desactualizado» comparten superficie: son
+   respuestas correctas a lo que se pidio, no averias. */
+.sinCambios {
+  composes: esperando;
+}
+
+.publicado {
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--bien);
+  border-left: 2px solid var(--bien);
+  padding-left: var(--e3);
+  margin: 0;
+  max-width: var(--medida);
+}
+
+.mirarOtraVez {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}
+
+.mirarOtraVez:hover {
+  color: var(--tinta);
+}
+
+.avisoMalo {
+  display: flex;
+  gap: var(--e3);
+  border: 1px solid var(--mal-regla);
+  background: var(--mal-bruma);
+  border-radius: var(--radio-menor);
+  padding: var(--e3) var(--e4);
+  font-size: var(--t-apoyo);
+  line-height: 1.5;
+  color: var(--mal);
+  margin: 0;
+  max-width: var(--medida);
+}
+
+.avisoMalo::before {
+  content: '';
+  flex: none;
+  width: 3px;
+  background: var(--mal);
+}
+
+.listaAduana {
+  margin: var(--e2) 0 0;
+  padding-left: var(--e5);
+}
+
+.completaLaFicha {
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+  line-height: 1.5;
+}
+
+/* ---------- Los bloques y las tarjetas ---------- */
+
+.bloques {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e5);
+}
+
+.bloque {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+}
+
+.tituloBloque {
+  font-size: var(--t-base);
+  font-weight: 600;
+  letter-spacing: -0.008em;
+  margin: 0;
+  padding-top: var(--e3);
+  border-top: 1px solid var(--regla);
+}
+
+.explicaBloque {
+  font-size: var(--t-menor);
+  color: var(--tinta3);
+  line-height: 1.45;
+  max-width: var(--medida-corta);
+  margin: 0;
+}
+
+.tarjeta {
+  background: var(--nube);
+  border: 1px solid var(--regla);
+  border-radius: var(--radio);
+  padding: var(--e4) var(--e5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+}
+
+.tarjetaPresencial {
+  composes: tarjeta;
+  border-color: var(--duda);
+  background: var(--duda-bruma);
+}
+
+.cabeceraTarjeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e3);
+}
+
+.codigo {
+  font-size: var(--t-micro);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--tinta3);
+}
+
+.marcaPresencial {
+  font-size: var(--t-micro);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--duda-tinta);
+}
+
+.enunciado {
+  font-size: var(--t-prosa);
+  line-height: 1.55;
+  margin: 0;
+  max-width: var(--medida);
+}
+
+/* La guia de calificacion: tres pares en una fila, apilados en estrecho. */
+.guia {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: var(--e3) var(--e4);
+  margin: 0;
+  font-size: var(--t-apoyo);
+  line-height: 1.5;
+}
+
+.guia dt {
+  font-size: var(--t-micro);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--tinta3);
+  margin-bottom: var(--e1);
+}
+
+.guia dd {
+  margin: 0;
+  color: var(--tinta2);
+}
+
+.sinGuia {
+  color: var(--mal);
+  font-style: italic;
+}
+
+/* ---------- Corregir ---------- */
+
+.edicion {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+}
+
+.campoEdicion {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+}
+
+.etiqueta {
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+}
+
+.area {
+  min-height: 3.5rem;
+  padding: var(--e3);
+  background: var(--nube);
+  color: var(--tinta);
+  border: 1px solid var(--borde-control);
+  font: inherit;
+  font-size: var(--t-base);
+  line-height: 1.5;
+  resize: vertical;
+  border-radius: var(--radio-menor);
+  max-width: var(--medida);
+}
+
+.accionesTarjeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e2);
+}
+
+.corregir {
+  composes: secundario from '../../../estilos/piezas.module.css';
+  min-height: 36px;
+  padding: 0 var(--e4);
+  font-size: var(--t-apoyo);
+}
+
+.confirmar {
+  composes: solido from '../../../estilos/piezas.module.css';
+}
+
+.cancelar {
+  composes: secundario from '../../../estilos/piezas.module.css';
+}
+
+/* ---------- Las acciones del cuestionario ---------- */
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e3);
+  padding-top: var(--e4);
+  border-top: 1px solid var(--regla);
+}
+
+.generar {
+  composes: acentoMenor from '../../../estilos/piezas.module.css';
+}
+
+.publicar {
+  composes: acentoMenor from '../../../estilos/piezas.module.css';
+}
+
+.generar:active:not(:disabled),
+.publicar:active:not(:disabled) {
+  background: var(--activo-pulsado);
+  border-color: var(--activo-pulsado);
+  box-shadow: none;
+}
+
+.regenerar {
+  composes: secundario from '../../../estilos/piezas.module.css';
+}
+
+@media (max-width: 640px) {
+  .acciones,
+  .accionesTarjeta {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
