@@ -1,9 +1,92 @@
 # Portal del candidato · contexto de trabajo
 
-Última actualización: 2026-08-28 · **calificar y ponderar la prueba de la tanda entera**
+Última actualización: 2026-08-28 · **la prueba técnica del puesto: la ficha y el cuestionario de la IA**
 
 Este archivo es para retomar el trabajo sin tener que reconstruir nada. Cuenta qué es este
 proyecto, con qué habla, qué se decidió y por qué, y qué está a medias.
+
+---
+
+## La prueba técnica del puesto: la ficha y el cuestionario de la IA (28/08/2026)
+
+El backend cerró el ciclo 1 del método CAZATALENTOS (PR #48, V42): una **ficha del puesto**
+que llena el dueño con sus palabras y un **cuestionario técnico por vacante** que redacta el
+agente REDACTOR a partir de ella y el dueño corrige y publica. Esto es su pantalla:
+`/admin/vacantes/:id/prueba-tecnica`, la **primera sub-ruta de una vacante**, con una tarjeta
+de estado bajo «Qué responderá quien postule» que enlaza a ella. Todo vive en
+`src/panel/vacantes/prueba-tecnica/`.
+
+### Página propia, y no dos secciones más en la vacante
+
+`Vacante.tsx` apila secciones y pasa de las mil quinientas líneas; la ficha son diez respuestas
+largas y el cuestionario una docena de preguntas con su guía. En la vacante queda solo la
+tarjeta (`EstadoDeLaPruebaTecnica.tsx`): «Ficha: a medias · Cuestionario: sin pedir» y el
+enlace. **No entra en la puerta de publicar la vacante** —ni en `leFalta` ni en
+`listaParaPublicar`—: el backend no lo exige, y el panel no inventa puertas. Si un día lo
+exige, hay que tocar las dos o el botón y el cartel se contradicen.
+
+### La ficha (`FichaDelPuesto.tsx`, guion en `guion.ts`)
+
+- **Se guarda con un botón, no sola.** Son respuestas pensadas, y el `PUT` es un **reemplazo
+  completo**: lo que no viaje se borra en el servidor. `aCuerpo` recorre los 22 campos del
+  record siempre, y hay test que los cuenta.
+- **«Hay cambios sin guardar» sale de comparar** con lo último que el servidor confirmó, y
+  «Guardada.» también — nunca por decreto. `beforeunload` avisa si se cierra la pestaña; dentro
+  del portal no hay enrutador de datos que bloquee, así que se dice en pantalla todo el rato.
+- **COMPLETA la decide el servidor** y llega en `estado`; `queLeFalta` es una copia para decir
+  *qué* falta antes de guardar (Q1–Q9, las dos cifras, los cuatro riesgos, la primera
+  eliminatoria, una familia). Si difieren, manda el servidor y se corrige la lista.
+- **Los riesgos van en orden y sin huecos.** El N+1 se apaga hasta que el N tenga texto, que es
+  la regla que el backend aplica con un 400. Igual eliminatorias (2) y requerimientos (3).
+- El **tamaño** (MICRO/MEDIA/GRANDE) lo deriva el servidor de la cifra de gente y sugiere la
+  `version_pesos` de la etapa 1; «Usar estos pesos» llama al mismo `asignarVersionPesos` que el
+  desplegable de la vacante. Con `yaAsignada` lo dice y no ofrece botón.
+
+⚠️ **«ficha» ya significa la ficha del candidato** (`verFicha`, `FichaPostulacion`). Lo nuevo se
+llama *del puesto*: `verFichaDelPuesto`, `FichaDelPuesto`.
+
+⚠️ **Los tests de Playwright piden `exact: true`** en «Cuánta gente hay en la empresa»: la
+pregunta Q5 lleva esa misma frase dentro de su etiqueta y `getByLabel` a secas resuelve dos
+elementos. En vitest no pasa: `getByLabelText` con texto es exacto.
+
+### El cuestionario (`CuestionarioTecnico.tsx`, bloques en `bloques.ts`)
+
+- **Pedir no es tener.** `POST …/generacion` contesta 202 y la IA tarda uno o dos minutos. Aquí
+  **sí hay endpoint de estado**: `generacion` dice SIN_PEDIR · EN_CURSO · FALLIDA · LISTA, así
+  que el sondeo sigue al servidor y no al botón: arranca solo si al abrir ya está EN_CURSO y
+  **se corta al salir de EN_CURSO** aunque queden vueltas. Para eso `useSondeoAcotado` —que
+  salió de `CalificarConIa.tsx` a su archivo, sin cambiar de comportamiento— ganó un `parar`.
+  Al agotarse dice «dejamos de refrescar», nunca «falló».
+- **`encolada=false` no es un error**: ya hay una generación viva o la IA está apagada. Nube
+  hundida y `status`. FALLIDA sí es `alert`, y se puede volver a pedir.
+- **El 400 de publicar es una lista.** El servidor junta la aduana con « · » y
+  `erroresDeLaAduana` la separa para pintar un `<ul>`; un 409 (la ficha a medias) se lee tal
+  cual.
+- **La PRESENCIAL se pinta distinta** (contorno ámbar y su marca escrita): es la muestra de
+  trabajo y **nunca se envía al candidato**. Solo la lleva DIR.
+- **Corregir manda los cuatro campos** aunque cambie uno (reemplazo), y solo sobre el borrador:
+  sobre lo publicado no hay botón. «Volver a generar» pregunta en un `Modal` y dice qué se
+  pierde según haya borrador (se archiva) o publicado (sigue vigente hasta publicar el nuevo).
+- Cada generación cuenta contra el tope de IA de la empresa, y el texto lo dice.
+
+### Cómo se comprueba
+
+```bash
+npm run typecheck && npm test           # 41 tests nuevos: guion, bloques, ficha, cuestionario, tarjeta
+node herramientas/e2e-prueba-tecnica.mjs             # Chrome real: hasta la ficha COMPLETA
+DE_VERDAD=1 node herramientas/e2e-prueba-tecnica.mjs # …y el cuestionario de verdad, hasta publicarlo
+```
+
+⚠️ **Sin `DE_VERDAD=1` no le pide nada a la IA** —cuesta una llamada a DeepSeek y cuenta
+contra el tope— y lo dice. Contra una base recién sembrada hacen falta un área y un puesto
+(el catálogo nace vacío) y las `version_pesos` CAZATALENTOS publicadas para que aparezca
+«Usar estos pesos»; el script del backend `completar-y-publicar-pesos-cazatalentos.py` lo hace.
+
+### Lo que queda para el ciclo 2
+
+Que el candidato **rinda** el cuestionario (la etapa 2 de su proceso) y que se califique
+contando criterios. Hoy el portal del candidato no lo enseña, a propósito: el backend todavía
+no lo sirve.
 
 ---
 

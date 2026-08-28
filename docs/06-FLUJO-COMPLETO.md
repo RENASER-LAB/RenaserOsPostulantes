@@ -63,6 +63,40 @@ nivel y hay que crearla aparte.
 
 Mientras falte algo, el botón de publicar está apagado y dice qué falta.
 
+Debajo de los desplegables hay una tarjeta más, **«La prueba técnica del
+puesto»**, con el estado de su ficha y de su cuestionario y el enlace para
+prepararla. No entra en la puerta de publicar: el backend no lo exige.
+
+### 3b · La prueba técnica del puesto
+
+**Panel · la vacante → «Preparar la prueba técnica →»** (`/admin/vacantes/:id/prueba-tecnica`)
+
+Es el método CAZATALENTOS: la prueba técnica no se escribe a mano, la escribe
+la IA a partir de lo que cuenta el dueño del puesto, y el dueño la corrige y la
+publica. Dos pasos en la misma página, en ese orden:
+
+| Paso | Qué hace | Quién decide |
+|---|---|---|
+| **1 · La ficha del puesto** | Diez preguntas con las palabras del dueño (resultado, riesgo, día real, época dorada, estructura, autonomía, jefe directo, lo incómodo, requerimientos y —opcional— espejo), las dos cifras de gente, los **cuatro riesgos en orden de velocidad de daño**, hasta dos eliminatorias, hasta tres requerimientos y las familias F1–F7 | Se guarda con un botón, a medias las veces que haga falta. **COMPLETA lo decide el servidor**; el panel dice qué falta |
+| **2 · El cuestionario técnico** | «Pedirle el cuestionario a la IA» (solo con la ficha completa). El servidor contesta 202 y el agente REDACTOR tarda uno o dos minutos: la página refresca sola unas cuantas veces y para. Llega un borrador por bloques —experiencia, riesgo 1, 2 y 3, requerimiento, dilema y, solo en DIR, la muestra de trabajo **presencial**— con la guía de calificación de cada pregunta | Se corrige pregunta a pregunta y se **publica**: hasta entonces ningún candidato lo ve. Publicar vuelve a pasar la aduana del servidor, y si no pasa se enseña la lista de lo que hay que corregir |
+
+⚠️ **La pregunta presencial nunca se envía al candidato.** Se enseña marcada
+para que el dueño la use en su entrevista.
+
+⚠️ **Cada generación cuenta contra el tope de IA de la empresa.** Con una
+generación ya en curso, o con la IA apagada, el servidor contesta
+`encolada=false` y el panel lo dice sin pintarlo como avería.
+
+La ficha, al guardarse con la cifra de gente, deriva el **tamaño** (MICRO ·
+MEDIA · GRANDE) y sugiere la versión de pesos de la etapa 1 que le corresponde,
+con un botón que la asigna a la vacante: es el mismo endpoint que el
+desplegable de pesos del paso 3.
+
+**Cuándo se hace:** el momento natural es con la vacante en borrador, antes de
+publicarla. El backend no lo ata: se puede preparar con la vacante ya
+publicada, porque nadie rinde el cuestionario hasta que se publique aquí —y la
+rendición es del ciclo siguiente.
+
 ### 4 · Requisitos indispensables
 
 **Panel · la vacante → «Requisitos indispensables»**
@@ -213,6 +247,16 @@ Abre un Chrome de verdad y recorre los pasos 1 a 5, comprueba que la vacante
 sale en la portada del portal, y **la cierra al terminar**: una vacante
 publicada la ve cualquiera que entre, y no hay forma de borrarla. Deja las
 capturas en `capturas/`.
+
+```bash
+node herramientas/e2e-prueba-tecnica.mjs
+DE_VERDAD=1 node herramientas/e2e-prueba-tecnica.mjs
+```
+
+El paso 3b: una vacante en borrador, la tarjeta, la ficha rellenada hasta que
+el servidor la declara COMPLETA y deriva el tamaño. **Sin `DE_VERDAD=1` no le
+pide nada a la IA** —cuesta una llamada al modelo y cuenta contra el tope— y
+lo dice; con él sigue hasta corregir una pregunta y publicar el cuestionario.
 
 ⚠️ **Escribe en la base local**, así que hace falta el Spring en `localhost:8081`
 y `API_URL=http://localhost:8081` en `.env.local`. Nunca contra producción.

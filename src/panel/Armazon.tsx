@@ -16,6 +16,7 @@ import estilos from './Armazon.module.css'
 const TITULOS: Array<[string, string]> = [
   [patrones.adminVacantes, 'Vacantes · Panel'],
   [patrones.adminVacante, 'Vacante · Panel'],
+  [patrones.adminPruebaTecnica, 'Prueba técnica · Panel'],
   [patrones.adminSesiones, 'Simulación · Panel'],
   [patrones.adminConfiguracion, 'Configuración · Panel'],
 ]

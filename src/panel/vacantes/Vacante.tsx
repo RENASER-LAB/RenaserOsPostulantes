@@ -61,6 +61,7 @@ import { CierreDeLaVacante, PlazoDeUnaPersona } from './CierreDePrueba'
 import { CalificarAUno, CalificarLaTanda } from './CalificarConIa'
 import { NotaDeLaPrueba } from './NotaDeLaPrueba'
 import { LaTandaDeLaPrueba } from './LaTandaDeLaPrueba'
+import { EstadoDeLaPruebaTecnica } from './prueba-tecnica/EstadoDeLaPruebaTecnica'
 import {
   ETAPAS_PANEL,
   cifrasDeLaEtapa,
@@ -1522,6 +1523,15 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
           </select>
         </label>
       </div>
+
+      {/*
+        La prueba tecnica del puesto —la ficha del dueño y el cuestionario que
+        redacta la IA— es de esta misma familia, lo que se le pide a quien
+        postule, pero no cabe en un desplegable: tiene su pagina. Aqui queda el
+        estado y el enlace. No entra en `leFalta` ni en `listaParaPublicar`: el
+        servidor no lo exige para publicar la vacante.
+      */}
+      <EstadoDeLaPruebaTecnica vacanteId={vacante.id} />
 
       {/*
         Fuera de la rejilla de los tres desplegables, y no como un cuarto: una

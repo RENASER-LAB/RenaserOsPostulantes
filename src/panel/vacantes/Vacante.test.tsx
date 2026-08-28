@@ -35,6 +35,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { VacantePanelDetalle } from './Vacante'
+import { ErrorApi } from '../api/cliente'
 import type { FilaRanking } from '../api/tipos'
 
 const verRanking = vi.fn()
@@ -149,6 +150,16 @@ vi.mock('../api/panel', () => ({
   quitarCierrePrueba: () => Promise.resolve({}),
   fijarPlazoPropio: () => Promise.resolve({}),
   verRespuestasDePrueba: () => Promise.resolve([]),
+  // La tarjeta de la prueba tecnica: sin ficha (404 = null) y sin cuestionario.
+  verFichaDelPuesto: () => Promise.reject(new ErrorApi(404, 'No encontramos eso, o no es tuyo.')),
+  verCuestionarioTecnico: () =>
+    Promise.resolve({
+      versionBancoId: null,
+      estado: null,
+      desactualizado: false,
+      generacion: 'SIN_PEDIR',
+      preguntas: [],
+    }),
 }))
 
 const tanda = (filas: FilaRanking[]) => ({
@@ -391,5 +402,21 @@ describe('avanzar en tanda', () => {
     await waitFor(() =>
       expect(screen.getByRole('button', { name: 'Marca a quienes avanzan' })).toBeTruthy(),
     )
+  })
+})
+
+/*
+ * La prueba tecnica del puesto vive en su propia pagina; en la vacante queda
+ * una tarjeta con el estado y el enlace. No entra en la puerta de publicar: el
+ * servidor no lo exige, y el panel no inventa puertas.
+ */
+describe('la tarjeta de la prueba técnica', () => {
+  it('dice en qué va la ficha y el cuestionario, y enlaza a prepararla', async () => {
+    await pintar()
+    await waitFor(() =>
+      expect(screen.getByText(/Ficha: sin empezar · Cuestionario: sin pedir/)).toBeTruthy(),
+    )
+    const enlace = screen.getByRole('link', { name: 'Preparar la prueba técnica →' })
+    expect(enlace.getAttribute('href')).toBe('/admin/vacantes/1/prueba-tecnica')
   })
 })

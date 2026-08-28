@@ -59,7 +59,7 @@
  * se pinta, con cinturon: si viene vacio o no es texto, hay una frase propia.
  */
 
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { ErrorApi } from '../api/cliente'
 import {
   calificarPerfilIntegralConIa,
@@ -67,6 +67,7 @@ import {
   cribaFina,
   cribaRapida,
 } from '../api/panel'
+import { useSondeoAcotado } from './useSondeoAcotado'
 import estilos from './CalificarConIa.module.css'
 
 /**
@@ -251,59 +252,6 @@ function explicarFallo(causa: unknown): { texto: string; permiso: boolean } {
       causa instanceof Error
         ? `No llegamos a pedirlo: ${causa.message} Comprueba la conexión y vuelve a intentarlo.`
         : 'No llegamos a pedirlo. Comprueba la conexión y vuelve a intentarlo.',
-  }
-}
-
-/**
- * El sondeo acotado: refrescar unas cuantas veces y parar.
- *
- * No devuelve si llego la nota porque no puede saberlo —quien la tiene es la
- * tabla— sino cuantas vueltas lleva y si ya se agotaron. Con eso se escribe la
- * unica frase honesta que hay: cuantas veces hemos mirado.
- */
-function useSondeoAcotado(pasos: readonly number[], alRefrescar: () => void) {
-  const [vueltas, setVueltas] = useState(0)
-  const [mirando, setMirando] = useState(false)
-
-  // En una referencia y no en las dependencias del efecto de abajo: `alTerminar`
-  // llega nueva en cada render del padre, y meterla ahi reiniciaria el
-  // temporizador en cada uno de ellos — un sondeo bastante mas rapido del
-  // pactado, y sobre un backend que cobra por llamada al modelo.
-  const refrescar = useRef(alRefrescar)
-  useEffect(() => {
-    refrescar.current = alRefrescar
-  }, [alRefrescar])
-
-  useEffect(() => {
-    if (!mirando) {
-      return
-    }
-    if (vueltas >= pasos.length) {
-      setMirando(false)
-      return
-    }
-    const temporizador = setTimeout(() => {
-      refrescar.current()
-      setVueltas((n) => n + 1)
-    }, pasos[vueltas])
-    // La limpieza es lo que corta el sondeo al cerrarse la ficha. Cuerpo entre
-    // llaves en todo el efecto: un `useEffect(() => algo(), [])` le regala a
-    // React lo que devuelva `algo` como funcion de limpieza, y al desmontar
-    // revienta y se lleva la pagina entera.
-    return () => {
-      clearTimeout(temporizador)
-    }
-  }, [mirando, vueltas, pasos])
-
-  return {
-    mirando,
-    vueltas,
-    total: pasos.length,
-    agotado: !mirando && vueltas >= pasos.length,
-    empezar: () => {
-      setVueltas(0)
-      setMirando(true)
-    },
   }
 }
 
