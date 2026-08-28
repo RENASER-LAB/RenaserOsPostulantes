@@ -1,9 +1,107 @@
 # Portal del candidato · contexto de trabajo
 
-Última actualización: 2026-08-28 · **calificar y ponderar la prueba de la tanda entera**
+Última actualización: 2026-08-28 · **la contraseña se puede mirar, y salir dejó de estar escondido**
 
 Este archivo es para retomar el trabajo sin tener que reconstruir nada. Cuenta qué es este
 proyecto, con qué habla, qué se decidió y por qué, y qué está a medias.
+
+---
+
+## La contraseña se puede mirar, y salir dejó de estar escondido (28/08/2026)
+
+Tres cosas pedidas de una vez, y las tres tocan la misma pregunta: dónde espera encontrar algo
+quien lo está buscando.
+
+### El ojo se implementa UNA vez, en `Campo.tsx`
+
+Hay **cinco** campos de contraseña —entrar, crear cuenta con su repetición, la entrada del
+equipo y la invitación con la suya— repartidos entre el portal y el panel, y los cinco usan el
+mismo `Campo` de `@/ui/campos/Campo`. Escribirlo en cada pantalla habría sido escribirlo cinco
+veces y arreglarlo cinco veces. Es la razón por la que esa pieza existe.
+
+⚠️ **`type` se saca del spread a mano.** Llegaba dentro de `...resto` y aterrizaba en el
+`<input>`; si se deja ahí y encima se escribe otro `type`, **el que gana lo decide el orden de
+las líneas**. El ojo dejaría de cambiar nada sin que nada fallara.
+
+⚠️ **El botón lleva `type="button"`.** Sin él es de envío: pulsar el ojo intentaría entrar. Es
+la trampa que este portal ya pagó una vez, y por eso tiene test propio.
+
+⚠️ **El icono dice la ACCIÓN, no el estado.** Con la contraseña tapada se dibuja el ojo abierto
+—«mostrar»—, que es lo que también dice su `aria-label`. Al revés, el dibujo diría una cosa y
+quien usa lector de pantalla oiría la contraria.
+
+Y va dibujado a mano en SVG, no como emoji: un glifo cambia de forma en cada sistema y no
+hereda el grosor de trazo. Sin violeta —aquí no le toca nada a nadie, solo está mirando lo que
+ya escribió—: `--tinta3`, **4,88:1** contra la nube en reposo, `--tinta2` al pasar por encima.
+
+⚠️ **Medir el color después de un `click()` de Playwright da el del hover**, porque el ratón se
+queda encima: la primera medida salió 7,5:1, que es `--tinta2`. Se lee sin tocar el ratón.
+
+⚠️ **`getByLabel('Contraseña')` de Playwright ya no basta, y rompió un e2e.** Busca por
+subcadena, y ahora «Mostrar la contraseña» también casa: resolvía **dos** elementos.
+`e2e-panel-entrar.mjs` usaba ese selector en dos sitios y se pasó a
+`getByRole('textbox', { name: 'Contraseña' })`. Los otros tres usos ya llevaban `exact: true`
+y siguen valiendo. En Testing Library **no** pasa: `getByLabelText` es exacto por defecto.
+
+### Cerrar sesión vive en «Mi cuenta», no al final de Privacidad
+
+Estaba en el pie de «Privacidad y tratamiento de datos», detrás de retirar una postulación,
+salir del radar de talento y pedir el borrado — **tres acciones que no se deshacen** y que no
+tienen nada que ver con salir de la sesión en un ordenador prestado. Ahora está arriba en
+`/perfil`, que es a donde lleva «Mi cuenta» de la cabecera, alineado con la base del titular.
+
+⚠️ **También está en la pantalla de fallo del perfil.** Si el perfil no carga, esa **es** la
+pantalla entera de «Mi cuenta»: sin el botón ahí, cerrar sesión volvería a estar escondido
+justo el día que algo se rompe.
+
+⚠️ **Después de salir se navega a las vacantes.** `salir()` solo borra el token, y `Privada` no
+desvía: deja la dirección y cambia la pantalla por el muro de «Ingresa para ver tu proceso».
+Quedarse en `/perfil` después de pulsar un botón se lee como que algo falló.
+
+No pregunta antes: no se pierde nada. Confirmar lo que no destruye gasta el aviso que sí
+importa.
+
+### Fuera el bloque «Con el enlace que te enviamos»
+
+Por decisión del cliente. Con él se fueron la frase «Hay dos formas de entrar…» —que con un
+solo camino mentía—, el subtítulo «Con tu correo y contraseña» y la caja que los separaba:
+sin nada al lado, un recuadro no separa de nada. La pantalla quedó como su hermana de crear
+cuenta, que es lo que dice la cabecera de `Cuenta.module.css`.
+
+⚠️ **El mecanismo NO se tocó.** `/acceso` sigue canjeando el token igual, y quien llega por el
+enlace del correo entra sin pasar por aquí. Lo que ya no ocurre es que alguien de esa vía que
+aterrice en `/ingresar` se entere de dónde buscar su correo — y sigue siendo, según
+`PRODUCT.md`, la vía de toda una tanda de candidatos.
+
+⚠️ **`.caminos`, `.camino`, `.tituloCamino` y `.queEs` NO son CSS muerto**: los usa `/clave`,
+que sigue teniendo dos salidas en paralelo. Solo se borraron `.pista` y `.asunto`.
+
+El maquetado (`maquetado/Entrar.body.html`) conserva el bloque: es la especificación aprobada
+y material de referencia, no la pantalla.
+
+### Cómo se comprueba
+
+`npm test` — **247** (236 + 11 nuevos), y `npx tsc --noEmit` limpio.
+
+- `Campo.test.tsx`, **6**: que nace tapada, que no se pierde lo escrito, que el ojo **no envía
+  el formulario**, que apunta al campo, que un campo que no es contraseña no lo lleva, y que el
+  error sigue atado con el campo destapado.
+- `Ingresar.test.tsx`, **3**: que los tres textos del bloque no vuelven, que el formulario y sus
+  dos salidas siguen, y que la contraseña se puede mirar desde ahí.
+- `Perfil.test.tsx` sube a **10**: que «Cerrar sesión» se ve al entrar y que borra el token.
+
+⚠️ **`Perfil.test.tsx` necesitaba `ProveedorSesion` y no lo tenía**, en `montar()` y en un
+`render` suelto. Sin él, los ocho tests que ya había reventaban en cuanto el perfil miró la
+sesión.
+
+Y a ojo, con lo que ya existe y sin backend: `capturar-publico.mjs`, `capturar-perfil.mjs`,
+`capturar-panel-entrar.mjs` y `capturar-privacidad.mjs` —esta última porque al quitar el botón
+se fue con él el `.pie` que cerraba la página; cierra bien, el bloque rojo ya trae su contorno—.
+El detector de impeccable pasa con **cero** hallazgos.
+
+⚠️ **`e2e-panel-entrar.mjs` se tocó y NO se pudo correr**: necesita el backend en el 8081, que
+no estaba levantado. Es justo el escenario que este archivo repite —un e2e roto no avisa, deja
+de correrse— así que queda dicho: hay que pasarlo con el backend arriba.
 
 ---
 
@@ -1168,7 +1266,7 @@ los tokens con su porqué en [src/estilos/mundo.css](src/estilos/mundo.css).
 | `src/estilos/mundo.css` | **La única hoja global que queda.** Todo lo demás son CSS Modules, uno por pantalla |
 | `src/estilos/piezas.module.css` | Lo que se repite: los cuatro botones y el enlace de volver. **No se escribe en el JSX**, se trae con `composes` desde la hoja de cada pantalla |
 | `src/paginas/vacantes/` | La portada y la ficha de vacante. **Públicas**, se ven sin cuenta |
-| `src/paginas/cuenta/` | Entrar —con sus **dos** caminos— y crear cuenta. Comparten `Cuenta.module.css` |
+| `src/paginas/cuenta/` | Entrar —un solo formulario desde el 28/08— y crear cuenta. Comparten `Cuenta.module.css` |
 | `src/paginas/postular/` | Postular. **Aquí vive el único descarte automático del sistema** |
 | `src/paginas/procesos/` | «Mis procesos», el detalle de una postulación y la línea de hitos |
 | `src/paginas/evaluacion/` | La evaluación y los ocho formatos del banco v3. **Solo se migró el estilo: la lógica no se tocó** |

@@ -87,7 +87,7 @@
   color: var(--tinta2);
 }
 
-/* ---------- Los dos caminos de entrada ---------- */
+/* ---------- Dos salidas en paralelo (hoy solo `/clave`) ---------- */
 
 .caminos {
   display: flex;
@@ -111,22 +111,6 @@
   line-height: 1.55;
   color: var(--tinta2);
   max-width: var(--medida-corta);
-}
-
-.pista {
-  margin-top: var(--e4);
-  border: 1px solid var(--regla);
-  background: var(--nube-hundida);
-  padding: var(--e4);
-  font-size: var(--t-apoyo);
-  line-height: 1.55;
-  color: var(--tinta2);
-  border-radius: var(--radio);
-}
-
-.asunto {
-  color: var(--tinta);
-  font-weight: 600;
 }
 
 @media (max-width: 640px) {
@@ -212,8 +196,9 @@
 /*
  * La salida de quien no puede entrar.
  *
- * Va dentro del camino de la contraseña y no al pie de la pagina: quien la
- * necesita esta mirando ese formulario, no el resto de la pantalla.
+ * Va pegada al formulario y no al pie de la pagina: quien la necesita esta
+ * mirando el campo de la contraseña, no el resto de la pantalla. Por eso su
+ * separacion es la corta y la del pie es la larga, con regla.
  */
 .olvidada {
   margin-top: var(--e4);

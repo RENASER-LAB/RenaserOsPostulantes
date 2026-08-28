@@ -44,6 +44,62 @@
   border-color: var(--mal);
 }
 
+/* ---------- El ojo de una contraseña ---------- */
+
+/*
+ * El interruptor va DENTRO del campo, no al lado: fuera se lleva una columna
+ * entera, y en «Crear cuenta» las dos contraseñas van en pareja y se quedarian
+ * sin sitio para escribir.
+ */
+.conBoton {
+  position: relative;
+  display: flex;
+}
+
+.conBoton .entrada {
+  width: 100%;
+}
+
+/* Una contraseña larga acabaria escribiendose por debajo del icono. */
+.entrada.conOjo {
+  padding-right: 46px;
+}
+
+/*
+ * Edge pone su propio ojo dentro del campo. Con el nuestro al lado serian dos,
+ * y el de la izquierda se lee como un fallo de maquetacion.
+ */
+.entrada.conOjo::-ms-reveal,
+.entrada.conOjo::-ms-clear {
+  display: none;
+}
+
+.interruptorOjo {
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: 46px;
+  display: grid;
+  place-items: center;
+  /*
+   * Sin violeta: aqui no le toca nada al candidato, solo esta mirando lo que ya
+   * escribio. El violeta significa una sola cosa en todo el portal.
+   */
+  color: var(--tinta3);
+  background: none;
+  border: 0;
+  border-radius: var(--radio-menor);
+  cursor: pointer;
+  transition: color 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.interruptorOjo:hover {
+  color: var(--tinta2);
+}
+
+.ojo {
+  display: block;
+}
+
 .error {
   display: flex;
   align-items: flex-start;
