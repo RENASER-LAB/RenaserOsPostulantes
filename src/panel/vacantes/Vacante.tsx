@@ -59,6 +59,7 @@ import tabla from '../ui/Tabla.module.css'
 import { RespuestasDePrueba } from './RespuestasDePrueba'
 import { CierreDeLaVacante, PlazoDeUnaPersona } from './CierreDePrueba'
 import { CalificarAUno, CalificarLaTanda } from './CalificarConIa'
+import { NotaDeLaPrueba } from './NotaDeLaPrueba'
 import {
   ETAPAS_PANEL,
   cifrasDeLaEtapa,
@@ -800,6 +801,21 @@ function DetalleDelPostulante({ fila, etapa }: { fila: FilaRanking; etapa: Etapa
               etapa="PRUEBA_PUESTO"
               alTerminar={refrescarLasNotas('panel-notas-prueba')}
             />
+            {/*
+              ⚠️ **El paso que faltaba, y por el que la columna salía vacía.**
+              Calificar con IA pone la nota de cada criterio; la de la etapa
+              nace solo de ponderarlas, y ese endpoint no estaba cableado. En la
+              base local había una postulación con sus siete criterios
+              calificados y la columna en blanco por esto exactamente.
+
+              Va detrás del botón de la IA porque ese es el orden real: primero
+              se califica, después se pondera.
+            */}
+            <NotaDeLaPrueba
+              postulacionId={fila.postulacionId}
+              notaEnElRanking={fila.notaEtapa}
+              alCalcular={refrescarLasNotas('panel-notas-prueba')}
+            />
             <RespuestasDePrueba postulacionId={fila.postulacionId} />
             {/*
               Al final y no arriba: la fecha propia se toca despues de mirar si
@@ -1091,6 +1107,9 @@ function TablaDeLaEvaluacion({ desglose }: { desglose: DesgloseEvaluacion }) {
  * Las notas por criterio de una etapa que califica con rubrica: la prueba y
  * la simulacion comparten forma porque el backend les da la misma.
  */
+const autorDeLaNota = (origen: string) =>
+  origen === 'AGENTE' ? 'calificó la IA' : origen === 'PERSONA' ? 'ajustado a mano' : origen
+
 function CriteriosDeEtapa({
   titulo,
   postulacionId,
@@ -1129,8 +1148,18 @@ function CriteriosDeEtapa({
                 </span>
                 <span>
                   <b>{n.nombre}</b>
-                  {n.origen &&
-                    ` · ${n.origen === 'IA' ? 'calificó la IA' : 'ajustado a mano'}`}
+                  {/*
+                    ⚠️ **Los dos valores son `AGENTE` y `PERSONA`**, nunca `IA`:
+                    los escriben `PuentePruebaIaImpl` y `ServicioCalificacionPrueba`.
+                    Comparando con `'IA'`, toda nota puesta por el agente caía en
+                    el `else` y decía «ajustado a mano» — es decir, que un humano
+                    tocó una nota que nadie tocó.
+
+                    Un valor que no se conozca se enseña tal cual en vez de
+                    caer en una de las dos ramas: inventarle un autor es peor
+                    que no saberlo.
+                  */}
+                  {n.origen && ` · ${autorDeLaNota(n.origen)}`}
                   {n.explicacion && (
                     <span className={estilos.explicacion}>{n.explicacion}</span>
                   )}

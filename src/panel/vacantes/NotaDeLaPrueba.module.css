@@ -1,0 +1,74 @@
+/*
+ * El paso que faltaba entre calificar y ver la nota.
+ *
+ * Vive dentro de la ficha abierta del ranking, asi que hereda su columna: las
+ * medidas son las de `.dato` y `.texto` de `Vacante.module.css`, no unas
+ * propias. Lo unico que añade es el aire de arriba, que lo separa de la rubrica
+ * sin necesitar una regla — la rubrica es una lista larga y una linea mas
+ * debajo se leeria como su ultimo elemento.
+ */
+
+.bloque {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--e3);
+  margin-top: var(--e5);
+  min-width: 0;
+}
+
+.titulo {
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  margin: 0;
+}
+
+.prosa {
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+  max-width: var(--medida);
+  margin: 0;
+}
+
+/*
+ * El violeta, una sola vez y solo en la rama que puede pulsarse.
+ *
+ * En las otras dos —ya calculada, o le faltan criterios— no hay boton: no
+ * porque este apagado, sino porque no hay nada que hacer aqui. Un boton
+ * deshabilitado invitaria a pulsarlo y a preguntarse por que no responde.
+ */
+.principal {
+  composes: acentoMenor from '../../estilos/piezas.module.css';
+}
+
+.avisoBien {
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--bien);
+  border-left: 2px solid var(--bien);
+  padding-left: var(--e3);
+  max-width: var(--medida);
+  margin: 0;
+}
+
+/*
+ * El 409 de «faltan notas» **nombra los criterios uno a uno**, asi que este
+ * parrafo puede ser largo de verdad: es una lista de siete nombres dentro de
+ * una frase. Envuelve y no se recorta — recortarlo tiraria justo la parte
+ * accionable.
+ */
+.avisoMalo {
+  display: flex;
+  gap: var(--e3);
+  border: 1px solid var(--mal-regla);
+  background: var(--mal-bruma);
+  padding: var(--e3) var(--e4);
+  font-size: var(--t-apoyo);
+  line-height: 1.5;
+  color: var(--mal);
+  max-width: var(--medida);
+  border-radius: var(--radio-menor);
+  margin: 0;
+  overflow-wrap: anywhere;
+}

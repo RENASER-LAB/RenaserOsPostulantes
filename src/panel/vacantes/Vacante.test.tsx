@@ -291,8 +291,9 @@ describe('el ranking filtra por la etapa de su pestaña', () => {
     verCorte('Toda la tanda')
     const tabla = within(laTabla())
     await waitFor(() => expect(tabla.queryByText('Fátima Quispe')).toBeTruthy())
-    // Fátima y Rodrigo están en el perfil: todavía no llegan a la prueba.
-    expect(tabla.getAllByText('Todavía no llega a esta etapa')).toHaveLength(2)
+    // Fátima y Rodrigo están en el perfil. Dice dónde están y no si ya pasaron
+    // por la prueba: el estado retrocede, así que eso no se puede afirmar.
+    expect(tabla.getAllByText('Su proceso está en Perfil integral')).toHaveLength(2)
     // Camila SÍ está parada en la prueba, y le toca a ella.
     expect(tabla.getByText('Le toca a la persona: aún no la ha hecho')).toBeTruthy()
     // Lucía terminó su proceso, que no es ninguna de las dos.
