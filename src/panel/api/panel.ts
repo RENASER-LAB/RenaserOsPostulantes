@@ -459,6 +459,23 @@ export const verRespuestasDePrueba = (postulacionId: number) =>
  * contesta al momento. Lo unico honesto que se puede decir despues es que se
  * pidio; la nota aparece cuando el agente termina y se vuelve a pedir.
  */
+/**
+ * Pondera las notas ya puestas y produce la nota de la etapa.
+ *
+ * ⚠️ **Sin esto, calificar con IA no deja nota en el ranking.** El agente pone
+ * la nota de cada criterio; la de la etapa —la que sale en la columna y con la
+ * que se ordena— nace SOLO aqui. En la base local hay una postulacion con sus
+ * siete criterios calificados y la columna en blanco por esto exactamente.
+ *
+ * ⚠️ **Exige que esten TODOS los criterios de la rubrica.** Si falta alguno
+ * contesta 409 nombrandolos uno a uno, en español, y ese mensaje se enseña tal
+ * cual: es la lista de lo que hay que calificar antes.
+ */
+export const calcularNotaDePrueba = (postulacionId: number) =>
+  pedir<{ nota: number }>(`/postulaciones/${postulacionId}/prueba/calificacion`, {
+    metodo: 'POST',
+  })
+
 export const calificarPruebaConIa = (postulacionId: number) =>
   pedir<CalificacionEncolada>(`/postulaciones/${postulacionId}/prueba/calificacion-ia`, {
     metodo: 'POST',

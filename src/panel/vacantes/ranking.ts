@@ -136,10 +136,21 @@ export function porQueNoHayNota(fila: FilaRanking, etapa: EtapaPanel): string {
   const suya = indiceDeLaEtapaDe(fila.estado)
   const esta = ETAPAS_PANEL.findIndex((e) => e.codigo === etapa)
 
-  // Terminó el proceso sin pasar por aquí, o pasó sin que quedara nota.
   if (suya === null) return 'Terminó su proceso sin nota de esta etapa'
-  if (suya < esta) return 'Todavía no llega a esta etapa'
-  if (suya > esta) return 'Pasó de esta etapa sin que quedara nota'
+
+  /*
+    ⚠️ **El estado NO es monótono, así que no se puede decir «todavía no llega»
+    ni «ya pasó».** Comprobado contra el backend vivo: las postulaciones 16 y 18
+    de la base local hicieron `PRUEBA_CALIFICANDO → PERFIL_CALIFICANDO`, es
+    decir, rindieron la prueba y volvieron al perfil —se recalifica el
+    currículum y el proceso retrocede—. Sobre ellas, «todavía no llega a esta
+    etapa» es sencillamente falso: la 16 tiene los siete criterios de la prueba
+    calificados.
+
+    Lo único que el ranking puede afirmar con lo que trae es **dónde está
+    ahora**, y eso además es lo accionable: dice qué pestaña mirar.
+  */
+  if (suya !== esta) return `Su proceso está en ${ETAPAS_PANEL[suya]!.nombre}`
 
   /*
     Está parada justo aquí. El sufijo del estado dice de quién se espera algo,
@@ -148,7 +159,18 @@ export function porQueNoHayNota(fila: FilaRanking, etapa: EtapaPanel): string {
     `POR_CONFIRMAR` y `POR_HABILITAR` son del equipo.
   */
   if (fila.estado.endsWith('TURNO_CANDIDATO')) return 'Le toca a la persona: aún no la ha hecho'
-  if (fila.estado.endsWith('CALIFICANDO')) return 'Calificándose ahora mismo'
+  /*
+    ⚠️ **`CALIFICANDO` no significa que algo se esté calificando ahora.** La
+    persona la hizo y su nota de etapa no existe, y eso cubre tres situaciones
+    que desde el ranking no se distinguen: nadie pidió la calificación, la IA
+    está en ello, o **está calificada entera y falta ponderarla** —el paso que
+    produce la nota—. Saber en cuál está exige la rúbrica de esa persona, que
+    son 78 peticiones desde aquí y una sola desde su ficha.
+
+    Por eso el motivo no afirma quién trabaja: dice que ya la hizo y manda al
+    único sitio donde la respuesta existe.
+  */
+  if (fila.estado.endsWith('CALIFICANDO')) return 'Ya la hizo: su nota se calcula en la ficha'
   if (fila.estado.endsWith('POR_HABILITAR')) return 'El equipo no la ha habilitado'
   if (fila.estado.endsWith('POR_CONFIRMAR')) return 'Hecha, pendiente de que el equipo la cierre'
   return 'Sin nota de esta etapa'

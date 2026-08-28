@@ -343,6 +343,119 @@ async function elCierreDeLaPrueba(pagina) {
   )
 }
 
+/**
+ * El paso que faltaba entre calificar la prueba y verla en el ranking.
+ *
+ * ⚠️ **Calificar con IA no deja nota en la columna.** El agente pone la nota de
+ * cada criterio; la de la etapa nace solo de `POST .../prueba/calificacion`, y
+ * ese endpoint no estaba cableado. En la base local hay una postulacion con sus
+ * SIETE criterios calificados y la columna en blanco por esto exactamente.
+ *
+ * ⚠️ **No se pulsa el boton, a proposito.** Calcular la nota escribe, y se
+ * comeria el unico caso de la base local que reproduce el fallo: sin el, la
+ * siguiente vez que alguien corra esta prueba no tendra nada que mirar. Lo que
+ * se ejercita es que la pantalla DIGA en cual de las tres situaciones esta cada
+ * persona, y el 409 de la rama que si se puede provocar sin escribir.
+ */
+/**
+ * Abre la vacante en la pestaña de la prueba, con la tanda entera, y despliega
+ * la ficha de un correo.
+ *
+ * ⚠️ Con la tanda entera y no con el corte por defecto: quien tiene la rúbrica
+ * calificada y ninguna nota de etapa es justamente quien NO sale en «con nota
+ * de la prueba», que es el corte con el que abre la pantalla.
+ */
+async function abrirLaFichaDe(pagina, correo) {
+  await abrirLaVacante(pagina, VACANTE_CON_PRUEBAS)
+  await pagina.getByRole('tab', { name: 'Prueba del puesto' }).click()
+  await pagina.waitForTimeout(900)
+  await pagina.getByRole('button', { name: /^Toda la tanda/ }).click()
+  await pagina.waitForTimeout(900)
+  await pagina.getByText(correo, { exact: true }).first().click()
+  await pagina.waitForTimeout(2000)
+}
+
+async function elPasoQueProduceLaNota(pagina) {
+  console.log('\nLa nota de la prueba, que no nace de calificar')
+
+  const filas = (await api(`/vacantes/${VACANTE_CON_PRUEBAS}/ranking?etapa=PRUEBA_PUESTO`)).cuerpo
+    ?.filas ?? []
+
+  // De cada fila, cuantos criterios de la prueba tienen nota y si hay nota de etapa.
+  const conRubrica = []
+  for (const f of filas) {
+    const notas = (await api(`/postulaciones/${f.postulacionId}/prueba/notas`)).cuerpo
+    if (!Array.isArray(notas) || notas.length === 0) continue
+    const puestas = notas.filter((n) => n.puntaje !== null).length
+    conRubrica.push({ ...f, criterios: notas.length, puestas })
+  }
+  comprobar(conRubrica.length > 0, 'hay postulaciones con rúbrica de prueba que mirar')
+
+  const enteraSinNota = conRubrica.find(
+    (f) => f.puestas === f.criterios && f.notaEtapa === null,
+  )
+  const sinCalificar = conRubrica.find((f) => f.puestas === 0 && f.notaEtapa === null)
+
+  if (!enteraSinNota) {
+    // No se pasa en verde callando: es el caso que esta pieza existe para cubrir.
+    mal(
+      'no hay ninguna con la rúbrica entera y sin nota de etapa',
+      'ese es el caso que dejaba la columna en blanco; sin él no se ejercita el botón',
+    )
+  } else {
+    await abrirLaFichaDe(pagina, enteraSinNota.correo)
+    const bloque = pagina.locator('section').filter({ hasText: 'La nota de la prueba' }).first()
+    await bloque.waitFor({ timeout: 20000 })
+    const dice = await bloque.innerText()
+    comprobar(
+      /todavía no tiene nota de la prueba/i.test(dice),
+      `la ${enteraSinNota.postulacionId} tiene sus ${enteraSinNota.criterios} criterios y ninguna nota: la pantalla lo dice`,
+      dice.slice(0, 160),
+    )
+    comprobar(
+      await bloque.getByRole('button', { name: 'Calcular la nota de la prueba' }).count(),
+      'y ofrece el paso que la produce, que es lo que no existía',
+    )
+    comprobar(
+      /se calcula ponderándolas/i.test(dice),
+      'explicando que calificar y ponderar son dos cosas',
+    )
+  }
+
+  if (sinCalificar) {
+    await abrirLaFichaDe(pagina, sinCalificar.correo)
+    const bloque = pagina.locator('section').filter({ hasText: 'La nota de la prueba' }).first()
+    await bloque.waitFor({ timeout: 20000 })
+    const dice = await bloque.innerText()
+    comprobar(
+      /Ninguno de sus criterios tiene nota/i.test(dice),
+      'con la rúbrica vacía manda a pedirle la calificación a la IA',
+      dice.slice(0, 140),
+    )
+    comprobar(
+      (await bloque.getByRole('button', { name: 'Calcular la nota de la prueba' }).count()) === 0,
+      'y NO ofrece calcular: el backend lo rechazaría con 409',
+    )
+
+    // El 409, por la API: nombra los criterios que faltan uno a uno y no escribe.
+    const rechazo = await api(`/postulaciones/${sinCalificar.postulacionId}/prueba/calificacion`, {
+      method: 'POST',
+    })
+    comprobar(
+      rechazo.estado === 409 && /faltan notas por poner/i.test(String(rechazo.cuerpo?.detail)),
+      'y el 409 nombra los criterios que faltan, uno a uno',
+      `estado ${rechazo.estado}: ${JSON.stringify(rechazo.cuerpo?.detail ?? rechazo.cuerpo)}`,
+    )
+  } else {
+    console.log('  · no hay ninguna con la rúbrica vacía: esa rama no se ejercita')
+  }
+
+  console.log(
+    '      ⚠ el botón NO se pulsa: calcular escribe, y se comería el único caso\n' +
+      '        de la base local que reproduce el fallo.',
+  )
+}
+
 async function laCribaDeLaTanda(pagina) {
   console.log('\nCalificar la tanda')
   await abrirLaVacante(pagina, VACANTE_CON_PRUEBAS)
@@ -419,6 +532,7 @@ try {
   await elRankingPorEtapa(pagina)
   await loQueEscribio(pagina)
   await elCierreDeLaPrueba(pagina)
+  await elPasoQueProduceLaNota(pagina)
   await laCribaDeLaTanda(pagina)
   await laEntradaDeLasEmpresas(pagina)
 } catch (causa) {

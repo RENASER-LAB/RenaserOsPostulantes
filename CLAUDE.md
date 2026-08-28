@@ -1,9 +1,82 @@
 # Portal del candidato · contexto de trabajo
 
-Última actualización: 2026-08-28 · **el ranking enseña quién tiene nota, y por qué el resto no**
+Última actualización: 2026-08-28 · **calificar la prueba no dejaba nota, y por qué**
 
 Este archivo es para retomar el trabajo sin tener que reconstruir nada. Cuenta qué es este
 proyecto, con qué habla, qué se decidió y por qué, y qué está a medias.
+
+---
+
+## Calificar la prueba no dejaba nota en el ranking (28/08/2026)
+
+La columna «Nota de la prueba» seguía en blanco después de calificar, y **no era la pantalla**.
+
+### El paso que faltaba, y que el panel no ofrecía
+
+`POST /postulaciones/{id}/prueba/calificacion` —«Ponderar las notas ya puestas»— **existe desde
+siempre y no estaba cableado**. Calificar con IA pone la nota de **cada criterio** de la rúbrica;
+la nota de la **etapa** —la que sale en la columna y con la que se ordena— nace solo de
+ponderarlas. Sin ese botón, la rúbrica se llenaba y la columna se quedaba vacía, sin nada que
+pulsar.
+
+Comprobado en la base local: la postulación **16** tenía sus **siete criterios calificados por el
+agente** y ninguna nota de etapa. Un solo POST la produjo (`{"nota": 0.00}`).
+
+⚠️ **Un guion en la columna significa tres cosas y solo una es del panel:**
+
+| Situación | Qué toca |
+|---|---|
+| No rindió la prueba | Nada que calificar |
+| La rindió y nadie la calificó | Pedirle la calificación a la IA (ese botón ya existía) |
+| **Calificada entera y sin ponderar** | El botón nuevo. **Era el caso invisible** |
+
+`NotaDeLaPrueba.tsx` dice en cuál de las tres está cada persona, debajo de la rúbrica.
+
+⚠️ **El 409 nombra los criterios que faltan uno a uno**, en español, y se enseña tal cual:
+resumirlo a «faltan notas» tiraría lo único accionable del mensaje.
+
+⚠️ **`0` es una nota.** La 16 tiene sus siete criterios en 0.0 y su nota de etapa es 0.00. Un
+`!puntaje` la contaría como vacía y escondería el botón justo en la fila que lo necesita.
+
+### ⚠️ El estado de una postulación RETROCEDE, y eso rompía un texto del #13
+
+Comprobado en el historial de las postulaciones 16 y 18: **`PRUEBA_CALIFICANDO →
+PERFIL_CALIFICANDO`**. Rindieron la prueba y volvieron al perfil —se recalifica el currículum y
+el proceso va hacia atrás—.
+
+Por eso el ranking **ya no dice «Todavía no llega a esta etapa» ni «Pasó de esta etapa»**: sobre
+la 16, que tiene los siete criterios de la prueba calificados, la primera frase era falsa. Dice
+**dónde está ahora** —«Su proceso está en Perfil integral»—, que es lo único que se puede
+afirmar con lo que la fila trae, y además dice qué pestaña mirar.
+
+Lo mismo con `CALIFICANDO`: decía «Calificándose ahora mismo» y eso afirma que el sistema está
+trabajando. Puede que nadie haya pedido la calificación, o que esté calificada y solo falte
+ponderar. Ahora dice **«Ya la hizo: su nota se calcula en la ficha»**.
+
+### ⚠️ Toda nota de la IA decía «ajustado a mano»
+
+`origen` vale **`AGENTE`** o **`PERSONA`** —los escriben `PuentePruebaIaImpl` y
+`ServicioCalificacionPrueba`—, y el panel comparaba con `'IA'`, que no llega nunca. Así que
+**toda nota puesta por el agente caía en el `else` y decía que un humano la había tocado**. Un
+valor desconocido se enseña tal cual en vez de caer en una de las dos ramas: inventarle un autor
+es peor que no saberlo.
+
+### Cómo se comprueba
+
+```bash
+PORTAL=http://localhost:5180 node herramientas/e2e-prueba-y-empresas.mjs
+```
+
+**35 comprobaciones** (28 + 7 nuevas): las tres situaciones del guion, que la rúbrica entera
+ofrece el botón, que la vacía no lo ofrece, y el 409 con sus criterios nombrados.
+
+⚠️ **El botón NO se pulsa, a propósito, y el script lo dice en voz alta.** Calcular escribe, y se
+comería el único caso de la base local que reproduce el fallo: sin él, la próxima vez que alguien
+corra la prueba no tendrá nada que mirar.
+
+⚠️ **Y el repro se consumió una vez.** Al diagnosticar se ponderó la 16 y se perdió el caso;
+hubo que recrearlo con un `delete from nota_etapa where postulacion_id=16 and etapa_codigo =
+'PRUEBA_PUESTO'`. Si vuelve a hacer falta, es esa línea.
 
 ---
 

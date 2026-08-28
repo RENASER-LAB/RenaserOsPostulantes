@@ -88,10 +88,17 @@ describe('por qué esa nota está vacía', () => {
     )
   })
 
-  it('quien está aquí ahora y se está calificando lo dice', () => {
-    expect(porQueNoHayNota(fila('PRUEBA_CALIFICANDO', null), 'PRUEBA_PUESTO')).toMatch(
-      /Calificándose/,
-    )
+  /*
+    ⚠️ Antes decía «Calificándose ahora mismo», y eso afirma que el sistema
+    está trabajando. Puede que nadie haya pedido la calificación, o que esté
+    calificada entera y solo falte ponderarla — el paso que produce la nota.
+    Desde el ranking no se distinguen, así que el motivo manda a la ficha en
+    vez de inventar quién trabaja.
+  */
+  it('quien ya la hizo no afirma que se esté calificando: manda a la ficha', () => {
+    const dicho = porQueNoHayNota(fila('PRUEBA_CALIFICANDO', null), 'PRUEBA_PUESTO')
+    expect(dicho).toMatch(/Ya la hizo/)
+    expect(dicho).not.toMatch(/ahora mismo/)
   })
 
   it('quien la hizo y espera al equipo lo dice, y no es lo mismo', () => {
@@ -100,23 +107,34 @@ describe('por qué esa nota está vacía', () => {
     )
   })
 
-  it('quien todavía no llega a esta etapa lo dice', () => {
-    expect(porQueNoHayNota(fila('PERFIL_TURNO_CANDIDATO', null), 'SIMULACION')).toMatch(
-      /Todavía no llega/,
+  /*
+    ⚠️ **No se puede decir «todavía no llega» ni «ya pasó»**: el estado
+    retrocede. Comprobado contra el backend vivo — las postulaciones 16 y 18
+    hicieron `PRUEBA_CALIFICANDO → PERFIL_CALIFICANDO`, o sea rindieron la
+    prueba y volvieron al perfil. Sobre la 16, que tiene sus siete criterios de
+    prueba calificados, «todavía no llega a la prueba» es falso.
+  */
+  it('quien está en otra etapa dice en cuál, sin afirmar si ya pasó por esta', () => {
+    expect(porQueNoHayNota(fila('PERFIL_TURNO_CANDIDATO', null), 'SIMULACION')).toBe(
+      'Su proceso está en Perfil integral',
     )
   })
 
-  it('quien ya pasó de esta etapa sin nota lo dice, que es lo raro', () => {
-    expect(porQueNoHayNota(fila('SIMULACION_TURNO_CANDIDATO', null), 'PRUEBA_PUESTO')).toMatch(
-      /Pasó de esta etapa/,
-    )
+  it('y da igual si su etapa va antes o después: el estado no es monótono', () => {
+    const antes = porQueNoHayNota(fila('PERFIL_TURNO_CANDIDATO', null), 'PRUEBA_PUESTO')
+    const despues = porQueNoHayNota(fila('SIMULACION_TURNO_CANDIDATO', null), 'PRUEBA_PUESTO')
+    expect(antes).toBe('Su proceso está en Perfil integral')
+    expect(despues).toBe('Su proceso está en Simulación')
+    for (const dicho of [antes, despues]) {
+      expect(dicho).not.toMatch(/todavía no llega|ya pasó|Pasó de/i)
+    }
   })
 
   it('quien terminó su proceso lo dice, y no se confunde con las otras cuatro', () => {
     expect(porQueNoHayNota(fila('NO_CONTINUA', null), 'PRUEBA_PUESTO')).toMatch(/Terminó su proceso/)
   })
 
-  it('las seis respuestas son distintas: un guion con seis nombres iguales no explica nada', () => {
+  it('las respuestas son distintas: un guion con seis nombres iguales no explica nada', () => {
     const dichas = [
       porQueNoHayNota(fila('PRUEBA_TURNO_CANDIDATO', null), 'PRUEBA_PUESTO'),
       porQueNoHayNota(fila('PRUEBA_CALIFICANDO', null), 'PRUEBA_PUESTO'),
