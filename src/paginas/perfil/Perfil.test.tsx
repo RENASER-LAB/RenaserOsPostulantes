@@ -20,6 +20,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
+import { ProveedorSesion } from '@/app/Sesion'
 import { ProveedorAvisos } from '@/ui/Avisos'
 import type { PerfilCompleto } from '@/api/tipos'
 import { Perfil } from './Perfil'
@@ -111,11 +112,13 @@ function montar() {
   })
   return render(
     <QueryClientProvider client={datos}>
-      <ProveedorAvisos>
-        <MemoryRouter initialEntries={['/perfil']}>
-          <Perfil />
-        </MemoryRouter>
-      </ProveedorAvisos>
+      <ProveedorSesion>
+        <ProveedorAvisos>
+          <MemoryRouter initialEntries={['/perfil']}>
+            <Perfil />
+          </MemoryRouter>
+        </ProveedorAvisos>
+      </ProveedorSesion>
     </QueryClientProvider>,
   )
 }
@@ -209,11 +212,13 @@ describe('un refresco fallido no puede tirar el formulario', () => {
     })
     render(
       <QueryClientProvider client={datos}>
-        <ProveedorAvisos>
-          <MemoryRouter initialEntries={['/perfil']}>
-            <Perfil />
-          </MemoryRouter>
-        </ProveedorAvisos>
+        <ProveedorSesion>
+          <ProveedorAvisos>
+            <MemoryRouter initialEntries={['/perfil']}>
+              <Perfil />
+            </MemoryRouter>
+          </ProveedorAvisos>
+        </ProveedorSesion>
       </QueryClientProvider>,
     )
     await screen.findByText('Analista senior')
@@ -255,5 +260,27 @@ describe('el origen de cada dato se lee sin color', () => {
     // confirmado. El título tiene que contar uno, no dos: si contara la
     // procedencia, el número no cuadraría con lo que se ve marcado abajo.
     await screen.findByText(/te queda un dato por revisar/i)
+  })
+})
+
+describe('cerrar sesión vive en «Mi cuenta»', () => {
+  it('se ve al entrar, junto al titular', async () => {
+    montar()
+    await screen.findByText('Analista senior')
+
+    // Antes estaba al final de «Privacidad y tratamiento de datos», detrás de
+    // tres acciones que no se deshacen. Aquí es la primera pantalla a la que
+    // lleva «Mi cuenta» de la cabecera, y el botón está arriba.
+    expect(screen.getByRole('button', { name: 'Cerrar sesión' })).toBeTruthy()
+  })
+
+  it('borra la sesión al pulsarlo', async () => {
+    localStorage.setItem('renaser_portal_token', 'un-token')
+    montar()
+    await screen.findByText('Analista senior')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cerrar sesión' }))
+
+    await waitFor(() => expect(localStorage.getItem('renaser_portal_token')).toBeNull())
   })
 })
