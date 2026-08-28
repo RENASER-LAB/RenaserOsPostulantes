@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Que NO sale del telefono.
+
+    Desde Android 12 `allowBackup` ya no manda solo: la copia a la nube y el
+    traspaso a un telefono nuevo se controlan aqui, por separado. Se excluyen
+    las `SharedPreferences` en las dos, porque es donde viven los tokens de
+    sesion del candidato y del equipo. Una copia restaurada en otro aparato
+    llevaria la sesion puesta; volver a entrar emite un token nuevo y no cuesta
+    nada.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="sharedpref" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="sharedpref" />
+    </device-transfer>
+</data-extraction-rules>

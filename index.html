@@ -7,9 +7,15 @@
   <meta name="theme-color" content="#f6f8fb">
   <link rel="icon" type="image/svg+xml" href="/hormiga.svg">
   <meta name="description" content="EX · Oportunidades profesionales en Renaser Consulting.">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mulish:ital,wght@0,200..900;1,300..700&display=swap">
+  <!--
+    Mulish la sirve el propio sitio, no Google Fonts: una aplicacion instalada
+    no puede quedarse sin sus titulares porque el telefono no tenga cobertura.
+    Los `@font-face` viven en `mundo.css` y los archivos en `public/tipografia/`.
+
+    Se precarga el subconjunto latino —el unico que el español necesita casi
+    siempre— porque lo descubre el navegador dentro del CSS, es decir tarde.
+  -->
+  <link rel="preload" href="/tipografia/mulish-latin.woff2" as="font" type="font/woff2" crossorigin>
   <title>EX · Empleos en Renaser</title>
 </head>
 <body>

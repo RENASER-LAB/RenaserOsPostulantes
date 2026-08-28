@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Lo que SOLO vale mientras se desarrolla.
+
+    Gradle fusiona este manifiesto sobre el principal unicamente en la variante
+    de depuracion, asi que nada de lo que hay aqui llega al `.aab` que se sube a
+    Play. Es la unica forma correcta de relajar una regla de seguridad para
+    probar: hacerlo en el manifiesto principal la relajaria para todo el mundo.
+
+    Lo unico que añade es permitir hablar sin cifrar con `10.0.2.2` —la maquina
+    anfitriona vista desde el emulador— para poder probar contra el Spring local
+    en vez de contra la base de produccion.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application android:networkSecurityConfig="@xml/red_de_desarrollo" />
+</manifest>

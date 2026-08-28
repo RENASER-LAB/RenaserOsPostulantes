@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!--
+        `allowBackup` se apaga, y la plantilla de Capacitor lo trae encendido.
+
+        Con el encendido, Android copia los datos de la aplicacion a la nube del
+        usuario — y ahi dentro estan ahora las `SharedPreferences` donde viven
+        los tokens de sesion, tanto el del candidato como el del equipo. Una
+        copia de seguridad restaurada en otro telefono llevaria la sesion
+        puesta. La comodidad que se pierde es nula: al volver a entrar se emite
+        un token nuevo.
+    -->
+    <application
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/reglas_de_copia"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
+
+        <activity
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
+            android:name=".MainActivity"
+            android:label="@string/title_activity_main"
+            android:theme="@style/AppTheme.NoActionBarLaunch"
+            android:launchMode="singleTask"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!--
+                Los enlaces del correo abren la aplicacion, no el navegador.
+
+                Son tres y ninguno es decorativo: `/acceso` es la entrada del
+                candidato SIN contraseña, e `/invitacion` (con su gemela bajo
+                `/admin`) es la unica forma de que nazca una cuenta del equipo.
+                Sin esto, quien tenga la app instalada acaba con dos sesiones
+                distintas: una en la app y otra en Chrome.
+
+                `android:autoVerify` es lo que evita el dialogo de «¿con que
+                quieres abrir esto?». A cambio exige que
+                https://renaser-os-postulantes.vercel.app/.well-known/assetlinks.json
+                exista y lleve dentro la huella SHA-256 de la firma **de Play**
+                —no la de depuracion—. Mientras la huella no este puesta, esto
+                no rompe nada: los enlaces siguen abriendo el navegador, que es
+                lo que hacen hoy.
+
+                ⚠️ El dia que el portal cambie de dominio hay que mover el
+                assetlinks.json Y dejar aqui los DOS hosts mientras queden
+                telefonos con la version vieja instalada.
+
+                ⚠️ Las rutas van una a una a proposito. Un `pathPrefix` de `/`
+                haria que la app se ofreciera para CUALQUIER direccion del
+                portal, incluidas las publicas que se comparten por WhatsApp:
+                quien no tenga cuenta abriria una app en la que no puede entrar.
+            -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https"
+                      android:host="renaser-os-postulantes.vercel.app"
+                      android:path="/acceso" />
+                <data android:scheme="https"
+                      android:host="renaser-os-postulantes.vercel.app"
+                      android:path="/invitacion" />
+                <data android:scheme="https"
+                      android:host="renaser-os-postulantes.vercel.app"
+                      android:path="/admin/invitacion" />
+            </intent-filter>
+
+        </activity>
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths"></meta-data>
+        </provider>
+    </application>
+
+    <!-- Permissions -->
+
+    <uses-permission android:name="android.permission.INTERNET" />
+</manifest>

@@ -23,6 +23,15 @@ export const patrones = {
   validacion: '/procesos/:uuid/validacion',
   decision: '/procesos/:uuid/decision',
   privacidad: '/privacidad',
+  /**
+   * La politica de privacidad **sin sesion**.
+   *
+   * No duplica a `/privacidad`: aquella es el panel de acciones y todas
+   * necesitan saber quien las pide. Esta existe porque Google Play exige una
+   * URL de politica que se pueda leer sin cuenta, y porque el borrado de datos
+   * tiene que poder pedirse desde la web sin instalar la aplicacion.
+   */
+  politica: '/politica-de-privacidad',
 
   // ---------- El panel del equipo ----------
   adminEntrar: '/admin/entrar',
@@ -67,6 +76,8 @@ export const rutas = {
   validacion: (uuid: string) => `/procesos/${uuid}/validacion`,
   decision: (uuid: string) => `/procesos/${uuid}/decision`,
   privacidad: () => '/privacidad',
+  /** La politica que se lee sin cuenta. La que Play necesita enlazar. */
+  politica: () => '/politica-de-privacidad',
 
   // ---------- El panel del equipo ----------
   adminEntrar: () => '/admin/entrar',

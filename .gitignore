@@ -42,3 +42,8 @@ portal-candidato-ex.html
 .agents/
 .claude/skills/
 skills-lock.json
+
+# La llave de firma y su contrasena. NUNCA al repositorio: con ellas
+# cualquiera puede firmar un paquete que Android acepta como si fuera esta app.
+# La llave vive fuera del proyecto, en ~/llaves/.
+android/keystore.properties
