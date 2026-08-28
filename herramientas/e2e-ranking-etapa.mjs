@@ -267,6 +267,24 @@ async function laPantalla(pagina, vacanteId, todas) {
       `la API dice ${conNota.length} y la tabla enseña ${pintados.length}`,
     )
 
+    /*
+      Las tres categorias de la cabecera tienen que sumar las que no tienen
+      nota. Con dos —«esperando a la persona» y «esperando al equipo»— los
+      `CALIFICANDO` no salian en ninguna: en una vacante real de 78 se perdian
+      15 personas, y eran las que rindieron la prueba y siguen sin nota.
+    */
+    const sinNota = suyas.length - conNota.length
+    if (sinNota > 0) {
+      const linea = (await pagina.locator('p').filter({ hasText: /con nota de/ }).first().innerText()) ?? ''
+      const cifras = [...linea.matchAll(/(\d+) (?:ya la hicieron|sin hacerla|en otra etapa)/g)]
+      const suman = cifras.reduce((a, m) => a + Number(m[1]), 0)
+      comprobar(
+        suman === sinNota,
+        `${etapa.nombre}: las categorías suman las ${sinNota} sin nota`,
+        `suman ${suman} en «${linea.trim()}»`,
+      )
+    }
+
     // La cifra de la etapa NO puede ser la de la cola del curriculum, que es de
     // donde salia «76 calificados» encima de una columna de guiones.
     const cabecera = (await pagina.locator('p').filter({ hasText: /con nota de/ }).first().textContent()) ?? ''

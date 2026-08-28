@@ -1,10 +1,86 @@
 # Portal del candidato · contexto de trabajo
 
-Última actualización: 2026-08-28 · **el desplegable que se cerraba solo, y la solicitud escondida**
+Última actualización: 2026-08-28 · **calificar y ponderar la prueba de la tanda entera**
 
 Este archivo es para retomar el trabajo sin tener que reconstruir nada. Cuenta qué es este
 proyecto, con qué habla, qué se decidió y por qué, y qué está a medias.
 
+---
+
+## Calificar y ponderar la prueba de la tanda entera (28/08/2026, noche)
+
+El #14 puso el paso que faltaba —ponderar— en la ficha de una persona. Con **diecinueve que
+rindieron y ninguna con nota** en una vacante real, abrir diecinueve fichas no es un flujo: es
+la misma tarea repetida diecinueve veces. `LaTandaDeLaPrueba.tsx` va **encima de la tabla**, y
+solo en la pestaña de la prueba.
+
+### ⚠️ El backend no tiene nada en lote para la prueba, y esto lo orquesta
+
+`criba-rapida` y `criba-fina` son del **currículum** (`PostulacionesPanelController`). Para la
+prueba solo existen los dos endpoints **por persona**, así que aquí se llaman N veces, una a una
+como el avance en tanda: si el backend rechaza a alguien, el mensaje dice a quién y los demás no
+se pierden.
+
+⚠️ **Y tampoco sabe quién está calificado y quién no.** Se averigua pidiendo la rúbrica de cada
+uno —`GET .../prueba/notas`, por tandas de ocho— y repartiendo en el panel. Por eso hay un paso
+de «revisar» antes de las acciones: son N peticiones y se hacen cuando alguien las pide, no al
+abrir la pestaña. El botón dice el coste antes de pulsarlo.
+
+### Los dos verbos NO son el mismo, y por eso son dos botones
+
+**Ponderar** es síncrono, no llama a ningún modelo y deja la nota en la columna al momento.
+**Calificar** encola un trabajo del agente que tarda decenas de segundos.
+
+Juntarlos obligaría a mentir sobre uno de los dos: o se dice «listo» sobre algo encolado, o se
+dice «puede tardar» sobre algo que ya terminó. Por eso las dos frases del resultado son
+distintas, y **solo ponderar puede decir que hay nota** —su respuesta la trae—. Es la regla de
+`CalificarConIa.tsx` y hay test.
+
+El reparto tiene **tres grupos**, y el tercero no tiene acción en lote:
+
+| Grupo | Qué se ofrece |
+|---|---|
+| Rúbrica entera, sin nota de etapa | **Calcular** — el violeta |
+| Ningún criterio con nota | Pedirle la calificación a la IA |
+| **Rúbrica a medias** | Nada: se termina desde su ficha, criterio a criterio |
+
+⚠️ Volver a pedirle al agente una persona a medias no está garantizado que respete lo que alguien
+ajustó a mano, así que se dice en vez de ofrecer una acción que haría daño.
+
+⚠️ **El violeta pasa de la ficha a la tanda.** El botón del #14 baja a secundario: este bloque
+está siempre encima de la tabla, y con la ficha abierta se verían dos violetas en la misma
+pantalla. Es la misma regla por la que el botón de una persona de `CalificarConIa` es secundario.
+
+### Y lo que se perdió al fusionar el #14 antes de tiempo
+
+Las cifras de la cabecera se quedaron en dos categorías —«esperando a la persona» y «esperando
+al equipo»— y **`CALIFICANDO` no caía en ninguna**: en la vacante real de 78 eso son **15
+personas fuera de la cuenta**, justo las que rindieron y siguen sin nota. Recuperado aquí: son
+tres, **suman siempre**, y la accionable va primero. Con su test y su comprobación en el e2e.
+
+### Cómo se comprueba
+
+```bash
+PORTAL=http://localhost:5181 node herramientas/e2e-prueba-y-empresas.mjs
+```
+
+**40 comprobaciones** (35 + 5 nuevas): a quién alcanza el bloque, que no alcanza a quien no ha
+rendido, y que el reparto cuadra con lo que devuelve la API.
+
+⚠️ **La vacante se elige, no se fija.** A quien alcanza es a quien está **parado** en la prueba
+sin nota, y el estado retrocede: en la base local las que rindieron volvieron a
+`PERFIL_CALIFICANDO`, así que la vacante de las pruebas rendidas **no tiene ni un caso**.
+Fijarla dejaba esta mitad sin ejercitar y pasando en verde. Es el patrón de
+`e2e-ranking-etapa.mjs`.
+
+⚠️ **No se pulsa ninguno de los dos botones, y el script lo dice.** Ponderar escribe y se comería
+el caso; calificar cuesta una llamada al modelo por persona.
+
+### Lo que habría que pedirle al backend
+
+**Que `calificacion-ia` pondere al terminar el agente.** Es la raíz: si la nota de etapa naciera
+sola al acabar la calificación, ni el botón de la ficha del #14 ni la mitad de este bloque harían
+falta. Un endpoint de lote ahorraría las N llamadas, pero no arregla la causa.
 ---
 
 ## El desplegable se cerraba solo, y no era del `<select>` (28/08/2026)
@@ -905,7 +981,7 @@ zona sospechosa a 2× no tiene más detalle que la de 1× ampliada, hay un mapa 
 
 `herramientas/verificar-panel.mjs` recorre el panel contra el backend local **y escribe en la
 base**. Para solo mirarlo está `herramientas/capturar-panel.mjs`, que intercepta las respuestas
-y sirve un escenario de prueba: **doce pantallas** —incluidas la ficha del ranking abierta en
+y sirve un escenario de prueba: **trece pantallas** —incluidas la ficha del ranking abierta en
 Perfil integral y en Prueba, una etapa sin nadie dentro, la tanda entera de 78 con sus notas
 vacías explicadas, una sesión con sus inscritos desplegados, la matriz de permisos de un rol y
 el banco con una versión abierta—, en **los tres anchos**, sin tocar nada. Sus fixturas copian los `record` de `src/panel/api/tipos.ts`; si el
