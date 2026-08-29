@@ -228,34 +228,6 @@
   background: var(--mal);
 }
 
-.pie {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  margin-top: var(--e6);
-  border-top: 1px solid var(--regla);
-  padding-top: var(--e4);
-}
-
-.salir {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  background: none;
-  border: 0;
-  padding: 0;
-  font-size: var(--t-apoyo);
-  color: var(--tinta2);
-  cursor: pointer;
-  text-decoration: underline;
-  text-decoration-color: var(--regla2);
-  text-underline-offset: 0.22em;
-}
-
-.salir:hover {
-  color: var(--tinta);
-}
-
 /* ---------- Dentro de los avisos ---------- */
 
 .avisoTexto {

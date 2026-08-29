@@ -9,6 +9,7 @@
 import {
   forwardRef,
   useId,
+  useState,
   type InputHTMLAttributes,
   type ReactNode,
   type TextareaHTMLAttributes,
@@ -22,14 +23,69 @@ interface PropsCampo extends InputHTMLAttributes<HTMLInputElement> {
   error?: string
 }
 
+/**
+ * El ojo de una contraseña.
+ *
+ * Dibujado, no un glifo: un emoji cambia de forma en cada sistema y no hereda
+ * el grosor de trazo del resto. Las dos siluetas comparten la misma pupila y el
+ * mismo párpado, así que **lo que cambia es la barra**, no el icono entero: se
+ * lee como un interruptor y no como dos dibujos distintos.
+ *
+ * ⚠️ **El icono dice la acción, no el estado**, igual que el nombre del botón.
+ * Con la contraseña tapada se dibuja el ojo abierto —«mostrar»—, y tachado
+ * cuando ya se ve. Al revés, el dibujo diría una cosa y su etiqueta la
+ * contraria, y quien navega con lector de pantalla oiría la buena.
+ */
+function Ojo({ tachado }: { tachado: boolean }) {
+  return (
+    <svg
+      className={estilos.ojo}
+      viewBox="0 0 24 24"
+      width="20"
+      height="20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12Z" />
+      <circle cx="12" cy="12" r="3.1" />
+      {tachado && <path d="M4.2 19.8 19.8 4.2" />}
+    </svg>
+  )
+}
+
 export const Campo = forwardRef<HTMLInputElement, PropsCampo>(function Campo(
-  { etiqueta, ayuda, error, id, ...resto },
+  { etiqueta, ayuda, error, id, type, ...resto },
   ref,
 ) {
   const propio = useId()
   const idCampo = id ?? propio
   const idAyuda = `${idCampo}-ayuda`
   const idError = `${idCampo}-error`
+
+  const [visible, setVisible] = useState(false)
+  // ⚠️ `type` se saca de `resto` a propósito. Si se quedara dentro del spread,
+  // el atributo que gana lo decidiría el orden en el que se escriben las líneas
+  // y el ojo dejaría de cambiar nada, en silencio.
+  const esContrasena = type === 'password'
+
+  const entrada = (
+    <input
+      {...resto}
+      type={esContrasena && visible ? 'text' : type}
+      id={idCampo}
+      ref={ref}
+      className={`${estilos.entrada}${esContrasena ? ` ${estilos.conOjo}` : ''}`}
+      aria-invalid={error ? true : undefined}
+      // El error y la ayuda se anuncian con el campo, no sueltos: sin esto,
+      // quien navega con lector de pantalla oye el campo y nunca su error.
+      aria-describedby={[ayuda && idAyuda, error && idError].filter(Boolean).join(' ') || undefined}
+    />
+  )
 
   return (
     <div className={estilos.campo}>
@@ -41,16 +97,31 @@ export const Campo = forwardRef<HTMLInputElement, PropsCampo>(function Campo(
           {ayuda}
         </span>
       )}
-      <input
-        {...resto}
-        id={idCampo}
-        ref={ref}
-        className={estilos.entrada}
-        aria-invalid={error ? true : undefined}
-        // El error y la ayuda se anuncian con el campo, no sueltos: sin esto,
-        // quien navega con lector de pantalla oye el campo y nunca su error.
-        aria-describedby={[ayuda && idAyuda, error && idError].filter(Boolean).join(' ') || undefined}
-      />
+      {esContrasena ? (
+        <div className={estilos.conBoton}>
+          {entrada}
+          {/*
+            `type="button"` no es adorno: sin él, el botón por defecto envía el
+            formulario, y aquí eso sería intentar entrar al pulsar el ojo. Es una
+            trampa que este portal ya pagó una vez.
+
+            El nombre dice la acción que va a ocurrir, y cambia con el estado: un
+            «Mostrar» fijo miente en cuanto la contraseña ya se ve.
+          */}
+          <button
+            type="button"
+            className={estilos.interruptorOjo}
+            onClick={() => setVisible((antes) => !antes)}
+            aria-label={visible ? 'Ocultar la contraseña' : 'Mostrar la contraseña'}
+            aria-controls={idCampo}
+            title={visible ? 'Ocultar la contraseña' : 'Mostrar la contraseña'}
+          >
+            <Ojo tachado={visible} />
+          </button>
+        </div>
+      ) : (
+        entrada
+      )}
       {error && (
         <p className={estilos.error} id={idError}>
           {error}

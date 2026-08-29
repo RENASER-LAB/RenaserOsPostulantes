@@ -32,7 +32,6 @@ import {
   retirarPostulacion,
 } from '@/api/portal'
 import type { MiPostulacion } from '@/api/tipos'
-import { useSesion } from '@/app/Sesion'
 import { esFinal } from '@/dominio/estados'
 import { rutas } from '@/rutas'
 import { useAviso } from '@/ui/Avisos'
@@ -46,7 +45,6 @@ function mensajeDe(causa: unknown, respaldo: string): string {
 export function Privacidad() {
   const avisar = useAviso()
   const cache = useQueryClient()
-  const { salir } = useSesion()
 
   // Las dos irreversibles preguntan antes. Retirarse de una vacante no se
   // deshace desde el portal —hay que volver a postular— y con un solo clic se
@@ -208,12 +206,6 @@ export function Privacidad() {
             Pedir el borrado
           </button>
         </section>
-      </div>
-
-      <div className={estilos.pie}>
-        <button className={estilos.salir} type="button" onClick={salir}>
-          Cerrar sesión
-        </button>
       </div>
 
       {/* ---------- Los dos avisos ---------- */}

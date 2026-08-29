@@ -35,6 +35,43 @@
   margin-top: var(--e4);
 }
 
+/*
+ * El titular y la salida comparten la primera linea: es la forma de que cerrar
+ * sesion se vea al entrar, sin bajar y sin competir con el titular.
+ *
+ * `flex-end` alinea el boton con la base del titular, no con su caja: un
+ * `--t-portada` de 56px con interlineado 1.06 deja aire arriba, y centrar
+ * verticalmente dejaria el boton flotando alto.
+ */
+.tituloYSalida {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--e3) var(--e5);
+}
+
+.salir {
+  composes: secundario from '../../estilos/piezas.module.css';
+  flex: none;
+}
+
+/* Debajo de 640px el titular ocupa la fila entera y el boton pasa a la
+   siguiente; a ancho completo pareceria la accion principal de la pantalla. */
+@media (max-width: 640px) {
+  .salir {
+    align-self: flex-start;
+  }
+}
+
+.accionesDelFallo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e3);
+  margin-top: var(--e5);
+}
+
 .bajada {
   font-size: var(--t-base);
   line-height: 1.55;
@@ -567,9 +604,10 @@
   max-width: var(--medida-corta);
 }
 
+/* El aire va en la fila que los contiene, no en un boton: con el margen dentro,
+   el que lo lleva empuja su caja y los dos dejan de estar a la misma altura. */
 .reintentar {
   composes: secundario from '../../estilos/piezas.module.css';
-  margin-top: var(--e5);
 }
 
 .barra {

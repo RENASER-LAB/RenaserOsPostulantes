@@ -1,0 +1,308 @@
+/*
+ * La ficha del puesto: diez preguntas largas y unos cuantos campos cortos.
+ *
+ * Una sola columna y no la rejilla del alta de vacante: las respuestas son
+ * prosa pensada, y dos textareas lado a lado invitan a contestar corto. Los
+ * campos cortos (riesgos, eliminatorias, requerimientos) van en su grupo justo
+ * debajo de la pregunta que los origina, que es como se le pregunta al dueño.
+ */
+
+.ficha {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e5);
+}
+
+.cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--e3);
+}
+
+.explica {
+  font-size: var(--t-prosa);
+  line-height: 1.55;
+  color: var(--tinta2);
+  max-width: var(--medida);
+  margin: 0;
+}
+
+/* ---------- Los chips de estado ---------- */
+
+.chipVacio,
+.chipBorrador,
+.chipCompleta {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px var(--e3);
+  border-radius: var(--radio-control);
+  font-size: var(--t-micro);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+/* Punteado: la forma con la que el panel dice «queda algo por terminar». */
+.chipVacio,
+.chipBorrador {
+  border: 1px dashed var(--regla2);
+  color: var(--tinta3);
+}
+
+.chipCompleta {
+  border: 1px solid var(--bien);
+  background: var(--bien-bruma);
+  color: var(--bien);
+}
+
+/* ---------- Las preguntas ---------- */
+
+.preguntas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e5);
+}
+
+.pregunta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e4);
+  padding-top: var(--e4);
+  border-top: 1px solid var(--regla);
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+  min-width: 0;
+}
+
+.titulo {
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+}
+
+.opcional {
+  font-weight: 400;
+  color: var(--tinta3);
+}
+
+/* La pregunta de la clienta, en prosa y no en etiqueta: es lo que se le lee al dueño. */
+.enunciado {
+  font-size: var(--t-prosa);
+  line-height: 1.5;
+  max-width: var(--medida);
+}
+
+.ayuda {
+  font-size: var(--t-menor);
+  color: var(--tinta3);
+  line-height: 1.45;
+  max-width: var(--medida-corta);
+  margin: 0;
+}
+
+.area {
+  min-height: 5.5rem;
+  padding: var(--e3);
+  background: var(--nube);
+  color: var(--tinta);
+  border: 1px solid var(--borde-control);
+  font: inherit;
+  font-size: var(--t-base);
+  line-height: 1.5;
+  resize: vertical;
+  border-radius: var(--radio-menor);
+  max-width: var(--medida);
+}
+
+.entrada {
+  min-height: 44px;
+  padding: 0 var(--e3);
+  background-color: var(--nube);
+  color: var(--tinta);
+  border: 1px solid var(--borde-control);
+  font: inherit;
+  font-size: var(--t-base);
+  border-radius: var(--radio-menor);
+}
+
+.entrada:disabled {
+  background: var(--nube-honda);
+  border-color: var(--nube-honda);
+  color: var(--tinta3);
+}
+
+/* ---------- Los campos cortos ---------- */
+
+.grupo {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+  max-width: var(--medida);
+}
+
+.grupo > legend {
+  padding: 0;
+  margin-bottom: var(--e2);
+}
+
+.campoCorto {
+  display: grid;
+  grid-template-columns: minmax(9rem, 12rem) 1fr;
+  align-items: center;
+  gap: var(--e3);
+}
+
+.etiqueta {
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+}
+
+.cifras {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: var(--e4);
+  max-width: var(--medida);
+}
+
+.campoCifra {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+}
+
+/* El tamaño derivado ocupa la fila entera: es la consecuencia de las dos cifras. */
+.tamano {
+  grid-column: 1 / -1;
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+  background: var(--nube-hundida);
+  border-radius: var(--radio-menor);
+  padding: var(--e3) var(--e4);
+  margin: 0;
+}
+
+.usarPesos {
+  composes: secundario from '../../../estilos/piezas.module.css';
+  min-height: 36px;
+  padding: 0 var(--e4);
+  font-size: var(--t-apoyo);
+}
+
+/* ---------- Las familias ---------- */
+
+.familias {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: var(--e2) var(--e4);
+}
+
+.familia {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--e2);
+  font-size: var(--t-apoyo);
+  line-height: 1.4;
+  min-height: 32px;
+}
+
+.familia input {
+  margin-top: 3px;
+}
+
+.pista {
+  color: var(--tinta3);
+}
+
+/* ---------- Guardar ---------- */
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e3);
+  padding-top: var(--e4);
+  border-top: 1px solid var(--regla);
+}
+
+/*
+ * Tinta rellena y no violeta: el violeta de esta pagina es pedirle el
+ * cuestionario a la IA (o publicarlo), que es el paso que de verdad avanza.
+ * Guardar la ficha es trabajo, no la accion principal.
+ */
+.guardar {
+  composes: solido from '../../../estilos/piezas.module.css';
+}
+
+.guardar:active:not(:disabled) {
+  background: var(--tinta-pulsado);
+  border-color: var(--tinta-pulsado);
+}
+
+.sinGuardar {
+  font-size: var(--t-apoyo);
+  color: var(--duda-tinta);
+}
+
+.guardada {
+  font-size: var(--t-apoyo);
+  color: var(--bien);
+}
+
+.faltan {
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+  line-height: 1.5;
+  max-width: var(--medida);
+  margin: 0;
+}
+
+.sinPermiso {
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+  background: var(--nube-hundida);
+  border-radius: var(--radio-menor);
+  padding: var(--e3) var(--e4);
+  margin: 0;
+  max-width: var(--medida);
+}
+
+.avisoMalo {
+  display: flex;
+  gap: var(--e3);
+  border: 1px solid var(--mal-regla);
+  background: var(--mal-bruma);
+  border-radius: var(--radio-menor);
+  padding: var(--e3) var(--e4);
+  font-size: var(--t-apoyo);
+  line-height: 1.5;
+  color: var(--mal);
+  margin: 0;
+  max-width: var(--medida);
+}
+
+.avisoMalo::before {
+  content: '';
+  flex: none;
+  width: 3px;
+  background: var(--mal);
+}
+
+@media (max-width: 640px) {
+  .campoCorto {
+    grid-template-columns: 1fr;
+    gap: var(--e1);
+  }
+}

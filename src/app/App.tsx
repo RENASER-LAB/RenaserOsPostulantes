@@ -34,6 +34,7 @@ import { EntrarPanel } from '@/panel/entrar/Entrar'
 import { InvitacionPanel } from '@/panel/entrar/Invitacion'
 import { VacantesPanel } from '@/panel/vacantes/Vacantes'
 import { VacantePanelDetalle } from '@/panel/vacantes/Vacante'
+import { PruebaTecnica } from '@/panel/vacantes/prueba-tecnica/PruebaTecnica'
 import { SesionesPanel } from '@/panel/simulacion/Sesiones'
 import { ConfiguracionPanel } from '@/panel/configuracion/Configuracion'
 
@@ -122,6 +123,7 @@ export function App() {
                   >
                     <Route path={patrones.adminVacantes} element={<VacantesPanel />} />
                     <Route path={patrones.adminVacante} element={<VacantePanelDetalle />} />
+                    <Route path={patrones.adminPruebaTecnica} element={<PruebaTecnica />} />
                     <Route path={patrones.adminSesiones} element={<SesionesPanel />} />
                     <Route path={patrones.adminConfiguracion} element={<ConfiguracionPanel />} />
                   </Route>

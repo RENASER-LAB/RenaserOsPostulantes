@@ -49,6 +49,8 @@ export const patrones = {
   invitacionSuelta: '/invitacion',
   adminVacantes: '/admin',
   adminVacante: '/admin/vacantes/:id',
+  /** La ficha del puesto y su cuestionario tecnico: la primera sub-ruta de una vacante. */
+  adminPruebaTecnica: '/admin/vacantes/:id/prueba-tecnica',
   adminSesiones: '/admin/simulacion',
   adminConfiguracion: '/admin/configuracion',
 } as const
@@ -84,6 +86,7 @@ export const rutas = {
   adminInvitacion: (token: string) => `/admin/invitacion?token=${encodeURIComponent(token)}`,
   adminVacantes: () => '/admin',
   adminVacante: (id: number | string) => `/admin/vacantes/${id}`,
+  adminPruebaTecnica: (id: number | string) => `/admin/vacantes/${id}/prueba-tecnica`,
   adminSesiones: () => '/admin/simulacion',
   adminConfiguracion: () => '/admin/configuracion',
 } as const
