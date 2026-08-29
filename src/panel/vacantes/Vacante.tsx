@@ -18,13 +18,12 @@ import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   aplicarEvaluacion,
-  asignarPlantillaEvaluacion,
   asignarPlantillaPrueba,
   asignarVersionPesos,
   cerrarVacante,
   confirmarAvance,
   crearRequisito,
-  listarPlantillasEvaluacion,
+  listarVersionesBanco,
   listarPlantillasPrueba,
   listarPuestos,
   listarRequisitos,
@@ -110,6 +109,13 @@ export function VacantePanelDetalle() {
     queryFn: () => verEmbudo(vacanteId),
     enabled: Number.isFinite(vacanteId),
   })
+  /*
+    ⚠️ Aqui arriba y no junto a `v`, que es donde se usa: abajo quedaria detras
+    de los `return` de cargando y de fallo, y un hook que a veces no se llama
+    rompe el arbol entero. Comparte cache con el de la seccion de configuracion
+    —misma `queryKey`— asi que no cuesta una peticion mas.
+  */
+  const elBanco = useBancoDelNivel(vacante.data?.puestoId)
   // La etapa elegida manda sobre la query: cambiar de pestana pide el ranking
   // con la nota de esa etapa, no reordena en el navegador una nota vieja.
   const [etapa, setEtapa] = useState<EtapaPanel>('PERFIL_INTEGRAL')
@@ -176,11 +182,27 @@ export function VacantePanelDetalle() {
   }
 
   const v = vacante.data
+  /*
+    ⚠️ **Solo se afirma que falta cuando se SABE que falta.** Mientras las
+    listas viajan, o si no se pudieron leer, el boton no se bloquea: quien
+    decide es el backend, y deshabilitar «Publicar» por no haber podido mirar
+    deja la vacante atascada por un permiso que no es el de publicar.
+  */
+  const faltaElBanco = !elBanco.buscando && !elBanco.noSePuedeSaber && !elBanco.banco
 
-  // El backend rechaza publicar sin esto, asi que el boton lo dice antes de
-  // pulsarlo en vez de fallar despues.
+  /*
+    Lo que el backend rechaza al publicar, dicho antes de pulsar en vez de
+    fallar despues.
+
+    ⚠️ **Ya NO es la plantilla de evaluacion, es el BANCO del nivel.** La guarda
+    del backend cambio con la V44: la plantilla se resuelve sola y lo que de
+    verdad falta cuando no hay examen posible es el banco. Dejar aqui la
+    condicion vieja deshabilitaba «Publicar» para siempre —la vacante nace sin
+    plantilla y ya no hay desplegable que la ponga— y mandaba a un bloque donde
+    no queda nada que pulsar.
+  */
   const leFalta = [
-    v.aplicaEvaluacion && v.plantillaEvaluacionId === null ? 'la evaluación' : null,
+    v.aplicaEvaluacion && faltaElBanco ? 'un banco de preguntas publicado de su nivel' : null,
     v.versionPlantillaPruebaId === null ? 'la prueba del puesto' : null,
   ].filter(Boolean)
 
@@ -1330,29 +1352,92 @@ function Requisitos({ vacanteId }: { vacanteId: number }) {
 // ---------- Lo que hace falta para poder publicar ----------
 
 /**
- * La configuracion de la vacante: que evaluacion, que prueba y que pesos.
+ * El banco de preguntas que va a responder quien postule a esta vacante.
  *
- * Existe porque **sin esto no se puede publicar**: el backend exige la
- * plantilla de evaluacion —si la evaluacion del banco esta encendida— y la
- * version de la prueba, y rechaza la publicacion con un mensaje que, sin esta
+ * No se elige: se publica por NIVEL en Configuracion y rige para toda la
+ * organizacion, asi que la vacante lo hereda del nivel de su puesto. Es la
+ * misma resolucion que hace el backend en `crearAlPostular`, adelantada aqui
+ * para poder decir de antemano que se va a responder y cuanto durara.
+ *
+ * Vive fuera de la seccion porque **la cabecera tambien lo necesita**: sin
+ * banco del nivel el backend rechaza publicar, y el boton tiene que decirlo
+ * antes de pulsarlo. Las dos consultas comparten `queryKey`, asi que llamarlo
+ * dos veces no cuesta una peticion mas.
+ */
+function useBancoDelNivel(puestoId: number | undefined) {
+  const puestos = useQuery({ queryKey: ['panel-puestos'], queryFn: listarPuestos })
+  const bancos = useQuery({
+    queryKey: ['panel-versiones-banco'],
+    queryFn: listarVersionesBanco,
+  })
+
+  const puesto = puestoId == null ? undefined : puestos.data?.find((p) => p.id === puestoId)
+  const nivel = puesto?.nivelPuestoCodigo
+
+  /*
+    ⚠️ **`isError` es tan importante como `isPending`, y por motivos distintos.**
+    `GET /banco-preguntas/versiones` pide `ver_banco_preguntas`, que el detalle
+    de la vacante NO pide: un rol con `ver_vacantes` y sin aquel recibe un 403
+    aqui. Sin esta rama, `data` llega vacio, `isPending` es falso y la pantalla
+    afirmaria «no hay ningun banco publicado para este nivel» —que es mentira, y
+    ademas contradice al backend, que si lo ve y deja publicar—.
+
+    Lo mismo con el puesto: `listarPuestos` solo devuelve los ACTIVOS, asi que
+    una vacante de un puesto desactivado se quedaria en «buscando» para siempre.
+  */
+  const noSePuedeSaber =
+    bancos.isError ||
+    puestos.isError ||
+    (puestoId != null && !puestos.isPending && puesto == null)
+
+  /*
+    Mismo desempate que el backend: `publicadaEn desc`, la mas reciente. El
+    orden en que llega la lista es `creadoEn desc`, que NO es lo mismo — con dos
+    publicadas del mismo nivel (situacion que el panel del banco documenta y
+    avisa) el panel nombraria una y el candidato responderia la otra.
+  */
+  const banco = !nivel
+    ? undefined
+    : (bancos.data ?? [])
+        .filter(
+          (b) =>
+            b.tipoBanco === 'NIVEL' &&
+            b.estado === 'PUBLICADA' &&
+            b.nivelPuestoCodigo === nivel,
+        )
+        .sort((a, b) => (b.publicadaEn ?? '').localeCompare(a.publicadaEn ?? ''))[0]
+
+  return {
+    banco,
+    nivel,
+    noSePuedeSaber,
+    buscando: !noSePuedeSaber && (puestos.isPending || bancos.isPending || !nivel),
+  }
+}
+
+/**
+ * La configuracion de la vacante: que responde, que prueba rinde y que pesos rigen.
+ *
+ * Existe porque **sin esto no se puede publicar**: el backend exige la version
+ * de la prueba y —si la evaluacion del banco esta encendida— un banco publicado
+ * del nivel del puesto, y rechaza la publicacion con un mensaje que, sin esta
  * pantalla, no tenia donde resolverse.
  *
- * La plantilla de evaluacion se filtra por el nivel del puesto: el backend
- * rechaza las de otro nivel, y ofrecerlas seria dejar elegir algo que va a
- * fallar.
+ * ⚠️ **La plantilla de evaluacion ya no se elige aqui, ni se filtra, ni se
+ * exige.** La resuelve el nivel desde la V44: era una pregunta con una sola
+ * respuesta legal y, con las cuotas retiradas, tampoco decide que preguntas
+ * caen. En su sitio hay una linea que dice que banco se va a responder.
  */
 function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
   const cache = useQueryClient()
   const [fallo, setFallo] = useState<string | null>(null)
 
-  const puestos = useQuery({
-    queryKey: ['panel-puestos'],
-    queryFn: listarPuestos,
-  })
-  const plantillasEva = useQuery({
-    queryKey: ['panel-plantillas-eva'],
-    queryFn: listarPlantillasEvaluacion,
-  })
+  const {
+    banco: bancoDelNivel,
+    nivel,
+    noSePuedeSaber,
+    buscando: buscandoElBanco,
+  } = useBancoDelNivel(vacante.puestoId)
   const plantillasPrueba = useQuery({
     queryKey: ['panel-plantillas-prueba'],
     queryFn: listarPlantillasPrueba,
@@ -1382,11 +1467,6 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
   const alFallar = (c: unknown) =>
     setFallo(c instanceof Error ? c.message : 'No se pudo guardar.')
 
-  const evaluacion = useMutation({
-    mutationFn: (id: number) => asignarPlantillaEvaluacion(vacante.id, id),
-    onSuccess: refrescar,
-    onError: alFallar,
-  })
   const prueba = useMutation({
     mutationFn: (id: number) => asignarPlantillaPrueba(vacante.id, id),
     onSuccess: refrescar,
@@ -1403,17 +1483,50 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
     onError: alFallar,
   })
 
-  const nivel = puestos.data?.find((p) => p.id === vacante.puestoId)?.nivelPuestoCodigo
-  const evaluacionesDelNivel = (plantillasEva.data ?? []).filter(
-    (p) => p.estado === 'PUBLICADA' && (!nivel || p.nivelPuestoCodigo === nivel),
-  )
+
+  /*
+    ⚠️ `Number('')` es `0`, no `undefined`.
+
+    Elegir la linea vacia de un desplegable mandaba un id `0` al backend, que
+    contesta «not found with id: '0'» sobre una fila que nadie escogio. Volver a
+    «Elige…» no es una eleccion: no se manda nada.
+  */
+  const alElegir = (valor: string, mutar: (id: number) => void) => {
+    if (valor !== '') {
+      mutar(Number(valor))
+    }
+  }
+
+  /*
+    Las pruebas que sirven para ESTE puesto.
+
+    Sin filtrar, una vacante de Desarrollador web ofrecia el «Cuestionario
+    tecnico · Administrador General»: elegirla es escoger una prueba de otro
+    puesto sin que nada avise. Es la misma razon por la que el banco lo fija el
+    nivel y no se elige.
+
+    ⚠️ **Una plantilla con `puestoId` null es generica y vale para cualquiera**,
+    asi que se queda: filtrarla fuera dejaria sin opciones a casi toda vacante.
+  */
+  const pruebasDelPuesto = (versionesPrueba.data ?? []).filter((v) => {
+    /*
+      ⚠️ **La que la vacante YA tiene puesta no se filtra nunca.** El backend
+      no valida el puesto al asignarla, asi que existen asignaciones cruzadas
+      legitimas; escondiendola, el `<select>` no encontraria su `<option>` y
+      diria «Elige la prueba…» sobre una vacante que si tiene prueba elegida.
+    */
+    if (v.id === vacante.versionPlantillaPruebaId) return true
+    const suyo = plantillasPrueba.data?.find((p) => p.id === v.plantillaPruebaId)
+    return suyo == null || suyo.puestoId == null || suyo.puestoId === vacante.puestoId
+  })
 
   const nombreDePlantillaPrueba = (plantillaPruebaId: number) =>
     plantillasPrueba.data?.find((p) => p.id === plantillaPruebaId)?.nombre ??
     `Plantilla ${plantillaPruebaId}`
 
+  // La misma regla que el boton de publicar: el banco, no la plantilla.
   const listaParaPublicar =
-    (!vacante.aplicaEvaluacion || vacante.plantillaEvaluacionId !== null) &&
+    (!vacante.aplicaEvaluacion || bancoDelNivel != null) &&
     vacante.versionPlantillaPruebaId !== null
 
   return (
@@ -1442,31 +1555,70 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
           </span>
         </label>
 
+        {/*
+          Qué banco responderá quien postule. **Es una línea, no un desplegable**,
+          y eso es el cambio: aquí se elegía la plantilla de evaluación, una
+          pregunta obligatoria para publicar que solo tenía una respuesta legal
+          —hay una publicada por nivel, y el backend rechazaba las de otro—. Y
+          desde que se retiraron las cuotas, la plantilla ni siquiera decide qué
+          preguntas caen: el examen es el banco entero del nivel.
+
+          Lo que faltaba no era elegir mejor, era decir qué va a pasar. Antes la
+          pantalla nombraba «el cuestionario del banco» sin decir cuál, así que
+          quien publicaba una vacante no tenía forma de saber qué se iba a
+          responder ni cuánto duraría.
+        */}
         {vacante.aplicaEvaluacion && (
-          <label className={estilos.ajuste}>
+          <div className={estilos.ajuste}>
             <span className={estilos.etiquetaAjuste}>
               Qué evaluación responderá{nivel ? ` · nivel ${nivel}` : ''}
             </span>
-            <select
-              className={estilos.eleccion}
-              value={vacante.plantillaEvaluacionId ?? ''}
-              onChange={(e) => evaluacion.mutate(Number(e.target.value))}
-              disabled={evaluacion.isPending}
-            >
-              <option value="">Elige la evaluación…</option>
-              {evaluacionesDelNivel.map((p) => (
-                <option value={p.id} key={p.id}>
-                  {p.nombre} · {p.minutosObjetivo} min
-                </option>
-              ))}
-            </select>
-            {evaluacionesDelNivel.length === 0 && (
-              <span className={estilos.pista}>
-                No hay ninguna publicada para este nivel. Se crean y publican aparte, o se
-                apaga la evaluación del banco y basta con la prueba del puesto.
+            {noSePuedeSaber ? (
+              /*
+                No se dice ni que hay banco ni que no lo hay: no se sabe. La
+                causa mas comun es un permiso —`ver_banco_preguntas` no viene
+                con `ver_vacantes`— y afirmar cualquiera de las dos cosas
+                contradiria al backend, que si lo ve.
+              */
+              <span className={estilos.ayudaAjuste} role="status">
+                No se pudo averiguar qué banco le toca a este nivel. Publicar seguirá
+                funcionando si lo hay: quien decide es el backend. Suele faltar el permiso
+                para ver el banco de preguntas.
               </span>
+            ) : buscandoElBanco ? (
+              <p className={estilos.bancoQueRige} role="status">
+                Buscando el banco de este nivel…
+              </p>
+            ) : bancoDelNivel ? (
+              <>
+                <p className={estilos.bancoQueRige}>{bancoDelNivel.etiqueta}</p>
+                {/*
+                  ⚠️ `typeof … === 'number'`, no `!== null`. El campo nacio en la V44,
+                  asi que un backend anterior NO LO MANDA y llega `undefined`: con un
+                  `!== null` eso cae en la otra rama y pinta «undefined minutos» en la
+                  cara de quien publica la vacante. Lo encontro el e2e contra un backend
+                  sin la migracion, que es exactamente lo que pasa mientras el portal va
+                  por delante en un despliegue.
+                */}
+                <span className={estilos.ayudaAjuste}>
+                  {typeof bancoDelNivel.minutosObjetivo === 'number'
+                    ? `${bancoDelNivel.minutosObjetivo} minutos. Lo fija el nivel del puesto: para cambiarlo se publica otra versión en Configuración.`
+                    : 'Lo fija el nivel del puesto. Para cambiarlo se publica otra versión en Configuración.'}
+                </span>
+              </>
+            ) : (
+              /*
+                Ámbar y no rojo: nadie se ha equivocado, pero cambia lo que se
+                puede hacer ahora. Es lo que impide publicar, así que dice dónde
+                se arregla y cuál es la otra salida.
+              */
+              <p className={estilos.pista} role="status">
+                No hay ningún banco publicado para este nivel, así que la vacante no se puede
+                publicar todavía. Se publica uno en Configuración, o se apaga la evaluación aquí
+                arriba y basta con la prueba del puesto.
+              </p>
             )}
-          </label>
+          </div>
         )}
 
         <label className={estilos.ajuste}>
@@ -1474,13 +1626,13 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
           <select
             className={estilos.eleccion}
             value={vacante.versionPlantillaPruebaId ?? ''}
-            onChange={(e) => prueba.mutate(Number(e.target.value))}
+            onChange={(e) => alElegir(e.target.value, prueba.mutate)}
             disabled={prueba.isPending || versionesPrueba.isPending}
           >
             <option value="">
               {versionesPrueba.isPending ? 'Buscando las pruebas…' : 'Elige la prueba…'}
             </option>
-            {(versionesPrueba.data ?? []).map((v) => (
+            {pruebasDelPuesto.map((v) => (
               <option value={v.id} key={v.id}>
                 {nombreDePlantillaPrueba(v.plantillaPruebaId)} · v{v.version}
               </option>
@@ -1495,11 +1647,13 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
             asi que se puede distinguir «no hay ninguna prueba» de «hay
             plantillas pero ninguna version que se pueda usar».
           */}
-          {!versionesPrueba.isPending && (versionesPrueba.data ?? []).length === 0 && (
+          {!versionesPrueba.isPending && pruebasDelPuesto.length === 0 && (
             <span className={estilos.ayudaAjuste} role="status">
               {(plantillasPrueba.data ?? []).length === 0
                 ? 'No hay ninguna plantilla de prueba escrita todavía. Se crean en el módulo de pruebas, y sin una la vacante no se puede publicar.'
-                : `Hay ${(plantillasPrueba.data ?? []).length} plantilla(s) de prueba, pero ninguna con una versión que se pueda usar aquí. Falta crear y publicar una versión.`}
+                : (versionesPrueba.data ?? []).length === 0
+                  ? `Hay ${(plantillasPrueba.data ?? []).length} plantilla(s) de prueba, pero ninguna con una versión que se pueda usar aquí. Falta crear y publicar una versión.`
+                  : 'Ninguna de las pruebas escritas es de este puesto. Se escribe una para él, o una genérica que valga para cualquiera. Sin ella la vacante no se puede publicar.'}
             </span>
           )}
         </label>
@@ -1509,10 +1663,12 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
           <select
             className={estilos.eleccion}
             value={vacante.versionPesosId ?? ''}
-            onChange={(e) => version.mutate(Number(e.target.value))}
+            onChange={(e) => alElegir(e.target.value, version.mutate)}
             disabled={version.isPending}
           >
-            <option value="">Los pesos generales</option>
+            <option value="" disabled={vacante.versionPesosId !== null}>
+              Los pesos generales
+            </option>
             {(pesos.data ?? [])
               .filter((p) => p.estado === 'PUBLICADA')
               .map((p) => (
@@ -1521,6 +1677,19 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
                 </option>
               ))}
           </select>
+          {/*
+            ⚠️ **No hay forma de volver a los pesos generales.** El backend solo
+            tiene `POST .../version-pesos`, que exige un id: ninguna ruta
+            desasigna. Sin la linea, elegir «Los pesos generales» mandaba un id
+            `0` y contestaba «not found with id: '0'»; con el guardian puesto no
+            haria nada, que engaña igual. Se apaga la opcion y se dice por que.
+          */}
+          {vacante.versionPesosId !== null && (
+            <span className={estilos.ayudaAjuste}>
+              Ya no se puede volver a los pesos generales desde aquí: se cambia por otra versión
+              publicada, no se quita.
+            </span>
+          )}
         </label>
       </div>
 

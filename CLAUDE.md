@@ -1,10 +1,104 @@
 # Portal del candidato · contexto de trabajo
 
-Última actualización: 2026-08-28 · **la prueba técnica del puesto: la ficha y el cuestionario de la IA**
+Última actualización: 2026-08-28 · **el tiempo viaja con el banco, y la vacante deja de preguntar**
 
 Este archivo es para retomar el trabajo sin tener que reconstruir nada. Cuenta qué es este
 proyecto, con qué habla, qué se decidió y por qué, y qué está a medias.
 
+---
+
+## El tiempo viaja con el banco, y la vacante deja de preguntar (28/08/2026, noche)
+
+Migración **V44** en el backend — el PR #49 se llevó el 43. Dos cosas que son la
+misma: la plantilla de evaluación dejó de estorbar y el tiempo del examen se mudó a quien lo determina.
+
+### La plantilla ya no hacía lo que su nombre promete
+
+Nació para **muestrear** el banco —cuántas preguntas de cada tipo pedirle— y ese mecanismo
+está retirado desde el banco v3. Lo dice `ServicioEvaluacionImpl.armarOrden`: sirve el banco
+**entero** del nivel, sin leer una sola cuota. El banco CAZATALENTOS lo confirma —es fijo,
+todos los del mismo nivel responden lo mismo en el mismo orden—.
+
+Con las cuotas muertas, elegirla era una pregunta **obligatoria para publicar y con una sola
+respuesta legal**: hay una publicada por nivel, y `asignarPlantillaEvaluacion` ya rechazaba
+las de otro. Medido: de las 22 vacantes de la base local, **las 19 que eligieron plantilla
+eligieron la única de su nivel**. Cero excepciones.
+
+Ahora la vacante no pregunta y la resuelve `laPlantilla()`, con el mismo desempate que el
+banco —`publicadaEn desc limit 1`—. `asignarPlantillaEvaluacion` **se queda entera**: es el
+escape para el día que haya dos del mismo nivel.
+
+### ⚠️ La guarda de publicar cambió de sujeto: es el BANCO, no la plantilla
+
+`exigirBancoDelNivel` sustituye a las dos guardas viejas. Lo que de verdad falta cuando no
+hay examen posible es el banco, y ese error salía en `crearAlPostular` —o sea, **encima del
+candidato que acababa de mandar su currículum**—.
+
+⚠️ **No mira `vacante.isAplicaEvaluacion()`, y es a propósito.** Al ENCENDER la evaluación la
+vacante todavía la tiene apagada —el `set` viene después—, así que preguntárselo dentro dejaba
+pasar justo el caso que existe para frenar. Decide quien llama. **Lo encontró su propio test.**
+
+⚠️ **Y el panel tenía que cambiar a la vez.** `leFalta` y `listaParaPublicar` seguían pidiendo
+`plantillaEvaluacionId` justo después de borrar el desplegable que era la única forma de
+ponerlo: «Publicar» quedaba deshabilitado **para siempre**, apuntando a un bloque sin nada que
+pulsar. Ningún test lo vio porque **ninguno pintaba la vacante en BORRADOR**, que es el único
+estado donde ese botón existe. Ahora hay tres que sí.
+
+### El tiempo vive en el banco, con la plantilla de respaldo
+
+Son sus 21, 18 o 15 preguntas las que se tardan en responder. Mientras el número vivía en la
+plantilla **nadie lo miraba**: DIRECCION estuvo once días en 45 minutos contra los 50-60 que
+pide `docs/CAZATALENTOS-BANCO-RENASER.md`.
+
+Los valores son el **tope** del rango del documento —DIR 60, SUP 45, EJE 35—, y no el medio
+porque la clienta declara pendiente cronometrar el primer envío real y **acortar** preguntas si
+alguien pasa de 60 minutos. Se empieza por arriba y se recorta con datos.
+
+⚠️ **La columna nace nullable y hay respaldo.** Los bancos v3 y v0.1 no tienen minutos propios
+y las evaluaciones ya rendidas cuelgan de ellos: sin la rama se quedarían sin tiempo al
+abrirlas. La V44 **no toca las archivadas** a propósito — ponerles el número nuevo reescribiría
+hacia atrás lo que se le dijo a esa gente.
+
+⚠️ **Y el número se perdía en la primera actualización del banco.** Nada lo escribe salvo la
+migración: ni el importador de Excel —el archivo **no lo trae**, comprobado hoja por hoja: la
+portada está vacía y la única con números guarda los pesos de los pilares— ni `crearVersion`, y
+no hay endpoint que lo edite. Publicar la v4 de Dirección archivaba la v3 con sus 60 minutos y
+dejaba el examen leyendo el de la plantilla, que es **justo el valor que la V44 vino a
+corregir**. Ahora `publicarVersion` lo hereda de la que reemplaza, y `CopiadorDeInstrumentos`
+lo copia como ya copiaba `metodoCalificacion`.
+
+### Lo que ve el panel
+
+Donde había un desplegable hay una frase: **«Banco CAZATALENTOS · Ejecutivo y Operativo — 35
+minutos»**. Los datos ya estaban a mano; lo que faltaba no era elegir mejor, era decir qué va a
+pasar. `useBancoDelNivel` los resuelve una vez y lo comparten la cabecera y la sección.
+
+⚠️ **Tres ramas, no dos, y la tercera es la que importa.** `GET /banco-preguntas/versiones`
+pide `ver_banco_preguntas`, que el detalle de la vacante **no** pide: un rol con `ver_vacantes`
+y sin aquel recibe un 403. Sin mirar `isError`, la pantalla afirmaría «no hay ningún banco
+publicado para este nivel» —mentira, y además contradiciendo al backend, que sí lo ve y deja
+publicar—. Ahora dice que **no se pudo saber**, y **no bloquea el botón**: quien decide es el
+backend, y frenar por no haber podido mirar atasca la vacante por un permiso que no es el de
+publicar. Lo mismo con un puesto desactivado, que `listarPuestos` no devuelve.
+
+⚠️ **El desempate del panel tuvo que copiar al del backend.** La lista llega en `creadoEn desc`
+y el backend elige por `publicadaEn desc`: con dos publicadas del mismo nivel —situación que el
+panel del banco documenta y avisa— el panel nombraría una y el candidato respondería la otra.
+
+### Tres defectos del mismo bloque que caían de paso
+
+- **`Number('')` es `0`.** Volver a «Elige…» mandaba un id `0` y el backend contestaba «not
+  found with id: '0'». ⚠️ **Su primera prueba pasaba en verde con el fallo dentro, dos veces**:
+  sobre un `<select>` que ya vale `''` el navegador no dispara `change`, y `mutate` **encola**,
+  así que un `not.toHaveBeenCalled()` justo después del evento corre antes de que la mutación
+  salga. Se **cuentan** las llamadas.
+- **La prueba del puesto no se filtraba.** Ofrecía «Cuestionario técnico · Administrador
+  General» para una vacante de Desarrollador web. ⚠️ **La genérica (`puestoId: null`) sigue
+  saliendo**, y **la que la vacante ya tiene puesta no se filtra nunca**: el backend no valida
+  el puesto al asignarla, así que esconderla dejaría el `<select>` diciendo «Elige la prueba…»
+  sobre una vacante que sí la tiene.
+- **«Los pesos generales» era una opción que no existe.** No hay ruta que desasigne: solo
+  `POST .../version-pesos`, que exige un id. Se apaga la opción y se dice por qué.
 ---
 
 ## La prueba técnica del puesto: la ficha y el cuestionario de la IA (28/08/2026)
@@ -1254,9 +1348,12 @@ tres viven en el detalle de la vacante, bajo **«Qué responderá quien postule�
 
 | Qué | Obligatorio |
 |---|---|
-| Plantilla de evaluación | **Sí, si `aplicaEvaluacion` está encendido** |
+| **Banco publicado del nivel del puesto** | **Sí, si `aplicaEvaluacion` está encendido.** No se elige aquí: se publica en Configuración y la vacante lo hereda de su puesto (V44) |
 | Versión de plantilla de prueba | **Sí, siempre** |
 | Versión de pesos | No: sin elegir, rigen los generales |
+
+⚠️ **La plantilla de evaluación ya NO se elige ni se exige** — ver la sección del 28/08 por la
+noche. La resuelve el nivel.
 
 Y antes que todo eso, la vacante misma exige **una solicitud de talento aprobada** que no haya
 usado ninguna otra. **Escribir una solicitud se ofrece siempre, desde la cabecera** —puede haber
@@ -1264,8 +1361,9 @@ varias `ABIERTA` a la vez, ver la seccion del 28/08— y si no hay ninguna el pa
 aprobar un borrador ahi mismo; el backend le exige **entre 3 y 5 resultados esperados**, cada
 uno con su indicador.
 
-⚠️ **La plantilla de evaluación tiene que ser del mismo nivel que el puesto** y estar
-`PUBLICADA`. El selector filtra por eso: ofrecer las demás sería dejar elegir algo que falla.
+⚠️ **La prueba del puesto sí se elige, y se filtra por el puesto de la vacante.** La genérica
+—`puestoId: null`— vale para cualquiera y sigue saliendo; la que la vacante ya tiene puesta no
+se filtra nunca, porque el backend admite asignaciones cruzadas.
 
 ⚠️ **`listarVersionesPrueba` tantea ids y deja 404 en la consola.** No es un fallo: es el hueco
 del backend. Va por tandas de ocho en paralelo, sembrado con la versión que la vacante ya tiene

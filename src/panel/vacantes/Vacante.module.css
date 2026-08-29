@@ -444,6 +444,27 @@
   max-width: var(--medida-corta);
 }
 
+/*
+  El banco que va a responder quien postule. Es un DATO leido, no un control, y
+  por eso no lleva ni borde ni pildora: donde habia un desplegable ahora hay una
+  respuesta, y darle silueta de control invitaria a pulsarlo.
+
+  Peso 600 sobre --t-base para que sea lo primero que se lee del bloque. No hace
+  falta recuadro: el tamaño ya hace el nivel.
+*/
+.bancoQueRige {
+  font-size: var(--t-base);
+  font-weight: 600;
+  color: var(--tinta);
+  line-height: 1.35;
+  /* La altura de un control, para que la fila no se descuadre al lado de los
+     dos desplegables que siguen existiendo. */
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  max-width: var(--medida-corta);
+}
+
 .interruptor {
   display: flex;
   align-items: flex-start;

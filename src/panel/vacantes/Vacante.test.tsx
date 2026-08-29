@@ -36,7 +36,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { VacantePanelDetalle } from './Vacante'
 import { ErrorApi } from '../api/cliente'
-import type { FilaRanking } from '../api/tipos'
+import type { FilaRanking, VersionBanco } from '../api/tipos'
 
 const verRanking = vi.fn()
 
@@ -107,8 +107,93 @@ const NOTAS_POR_ETAPA: Record<string, Record<number, number | null>> = {
   DECISION: { 91: null, 92: null, 93: null, 94: null },
 }
 
+/*
+  El banco publicado del nivel de la vacante: lo que de verdad va a responder
+  quien postule. Se sirven tres para que el filtro tenga algo que hacer —el
+  archivado y el de otro nivel no pueden salir— porque un unico banco pasa
+  igual con el filtro roto.
+*/
+const BANCOS: VersionBanco[] = [
+  {
+    id: 15,
+    tipoBanco: 'NIVEL' as const,
+    nivelPuestoCodigo: 'MEDIO',
+    etiqueta: 'Banco CAZATALENTOS · Medio',
+    estado: 'PUBLICADA' as const,
+    minutosObjetivo: 35,
+    publicadaEn: '2026-08-28T18:38:57Z',
+  },
+  {
+    id: 6,
+    tipoBanco: 'NIVEL' as const,
+    nivelPuestoCodigo: 'MEDIO',
+    etiqueta: 'Banco RENASER v3 · Medio',
+    estado: 'ARCHIVADA' as const,
+    minutosObjetivo: null,
+    publicadaEn: '2026-04-11T09:00:00Z',
+  },
+  {
+    id: 13,
+    tipoBanco: 'NIVEL' as const,
+    nivelPuestoCodigo: 'DIRECCION',
+    etiqueta: 'Banco CAZATALENTOS · Directivo',
+    estado: 'PUBLICADA' as const,
+    minutosObjetivo: 60,
+    publicadaEn: '2026-08-28T18:38:10Z',
+  },
+]
+
+const PUESTOS = [
+  {
+    id: 7,
+    codigo: 'INFRA',
+    nombre: 'Ingeniero de Infraestructura',
+    nivelPuestoCodigo: 'MEDIO',
+    familiaCodigo: 'TECNOLOGIA',
+  },
+]
+
+/*
+  Una vacante de verdad: con su puesto —de ahi sale el nivel, y del nivel el
+  banco— y la evaluacion encendida.
+*/
+const VACANTE: {
+  id: number
+  titulo: string
+  estado: string
+  puestoId: number
+  aplicaEvaluacion: boolean
+  plantillaEvaluacionId: number | null
+  versionPlantillaPruebaId: number | null
+  versionPesosId: number | null
+} = {
+  id: 1,
+  titulo: 'Ingeniera',
+  estado: 'PUBLICADA',
+  puestoId: 7,
+  aplicaEvaluacion: true,
+  plantillaEvaluacionId: null,
+  versionPlantillaPruebaId: null,
+  versionPesosId: null,
+}
+
+/* Una prueba generica —sin puesto— y otra escrita para OTRO puesto. */
+const PLANTILLAS_PRUEBA = [
+  { id: 1, nombre: 'Prueba de talento · convocatoria', puestoId: null, esActiva: true },
+  { id: 2, nombre: 'Cuestionario técnico · Administrador General', puestoId: 99, esActiva: true },
+]
+const VERSIONES_PRUEBA = [
+  { id: 1, plantillaPruebaId: 1, version: 1 },
+  { id: 2, plantillaPruebaId: 2, version: 1 },
+]
+
+const listarVersionesBanco = vi.fn(() => Promise.resolve(BANCOS))
+const asignarPlantillaPrueba = vi.fn((_vacanteId: number, _versionId: number) =>
+  Promise.resolve({}),
+)
+
 const sinRuido = {
-  verVacante: () => Promise.resolve({ id: 1, titulo: 'Ingeniera', estado: 'PUBLICADA' }),
+  verVacante: () => Promise.resolve(VACANTE),
   verEmbudo: () => Promise.resolve({ porEstado: {} }),
   verCatalogos: () => Promise.resolve({ areas: [], puestos: [], nivelesPuesto: [], estados: [] }),
 }
@@ -119,14 +204,15 @@ vi.mock('../api/panel', () => ({
   verCatalogos: () => sinRuido.verCatalogos(),
   verRanking: (id: number, etapa?: string) => verRanking(id, etapa),
   listarRequisitos: () => Promise.resolve([]),
-  listarPuestos: () => Promise.resolve([]),
-  listarPlantillasEvaluacion: () => Promise.resolve([]),
-  listarPlantillasPrueba: () => Promise.resolve([]),
+  listarPuestos: () => Promise.resolve(PUESTOS),
+  listarVersionesBanco: () => listarVersionesBanco(),
+  listarPlantillasPrueba: () => Promise.resolve(PLANTILLAS_PRUEBA),
   listarVersionesPesos: () => Promise.resolve([]),
-  listarVersionesPrueba: () => Promise.resolve([]),
+  listarVersionesPrueba: () => Promise.resolve(VERSIONES_PRUEBA),
   aplicarEvaluacion: () => Promise.resolve({}),
   asignarPlantillaEvaluacion: () => Promise.resolve({}),
-  asignarPlantillaPrueba: () => Promise.resolve({}),
+  asignarPlantillaPrueba: (vacanteId: number, versionId: number) =>
+    asignarPlantillaPrueba(vacanteId, versionId),
   asignarVersionPesos: () => Promise.resolve({}),
   cerrarVacante: () => Promise.resolve({}),
   confirmarAvance: () => Promise.resolve({}),
@@ -216,7 +302,15 @@ const verCorte = (empiezaPor: string) => fireEvent.click(elCorte(empiezaPor))
 const cuantasEn = (empiezaPor: string) =>
   Number((elCorte(empiezaPor).textContent ?? '').match(/(\d+)$/)?.[1])
 
-beforeEach(() => verRanking.mockReset())
+beforeEach(() => {
+  verRanking.mockReset()
+  // Los espias y la vacante vuelven a su estado feliz: dos de estas pruebas los
+  // cambian para su caso, y sin esto se lo llevarian a la siguiente.
+  listarVersionesBanco.mockReset()
+  listarVersionesBanco.mockResolvedValue(BANCOS)
+  asignarPlantillaPrueba.mockReset()
+  sinRuido.verVacante = () => Promise.resolve(VACANTE)
+})
 afterEach(() => cleanup())
 
 describe('el ranking filtra por la etapa de su pestaña', () => {
@@ -418,5 +512,169 @@ describe('la tarjeta de la prueba técnica', () => {
     )
     const enlace = screen.getByRole('link', { name: 'Preparar la prueba técnica →' })
     expect(enlace.getAttribute('href')).toBe('/admin/vacantes/1/prueba-tecnica')
+  })
+})
+
+/*
+ * Que responde quien postule.
+ *
+ * Aqui habia un desplegable obligatorio —la plantilla de evaluacion— con una
+ * sola respuesta legal: hay una publicada por nivel y el backend rechazaba las
+ * de otro. Ahora la vacante no pregunta, y en su sitio dice lo que de verdad va
+ * a pasar.
+ */
+describe('el banco que responderá quien postule', () => {
+  it('lo nombra con su tiempo, y no lo pregunta', async () => {
+    await pintar()
+
+    expect(screen.getByText('Banco CAZATALENTOS · Medio')).toBeTruthy()
+    expect(screen.getByText(/35 minutos/)).toBeTruthy()
+
+    // La afirmacion que da sentido al cambio: ya no hay nada que elegir.
+    expect(screen.queryByText('Elige la evaluación…')).toBeNull()
+  })
+
+  /*
+   * El filtro tiene que hacer trabajo de verdad: se sirven un archivado del
+   * mismo nivel y un publicado de otro, y ninguno de los dos puede salir.
+   */
+  it('no confunde el banco de otro nivel ni uno archivado', async () => {
+    await pintar()
+    expect(screen.queryByText('Banco CAZATALENTOS · Directivo')).toBeNull()
+    expect(screen.queryByText('Banco RENASER v3 · Medio')).toBeNull()
+  })
+
+  /*
+   * ⚠️ Un backend anterior a la V44 NO manda `minutosObjetivo`, asi que llega
+   * `undefined`. Con un `!== null` eso pintaba «undefined minutos» en la cara
+   * de quien publica la vacante. Lo encontro el e2e contra el backend viejo,
+   * que es exactamente lo que pasa mientras el portal va por delante en un
+   * despliegue.
+   */
+  it('sin minutos nombra el banco igual, y no escribe «undefined»', async () => {
+    const { minutosObjetivo: _fuera, ...sinMinutos } = BANCOS[0]!
+    listarVersionesBanco.mockResolvedValue([sinMinutos, ...BANCOS.slice(1)])
+    await pintar()
+
+    expect(screen.getByText('Banco CAZATALENTOS · Medio')).toBeTruthy()
+    expect(screen.queryByText(/undefined/i)).toBeNull()
+    expect(screen.queryByText(/minutos/)).toBeNull()
+  })
+
+  it('sin banco del nivel avisa, y dice dónde se arregla', async () => {
+    // Es lo que impide publicar, asi que callarlo deja la vacante atascada sin
+    // explicar en que.
+    listarVersionesBanco.mockResolvedValue([])
+    await pintar()
+
+    expect(screen.getByText(/No hay ningún banco publicado para este nivel/)).toBeTruthy()
+    expect(screen.getByText(/se publica uno en Configuración/i)).toBeTruthy()
+  })
+
+  it('con la evaluación apagada no habla de ningún banco', async () => {
+    sinRuido.verVacante = () =>
+      Promise.resolve({ ...VACANTE, aplicaEvaluacion: false })
+    await pintar()
+    expect(screen.queryByText('Banco CAZATALENTOS · Medio')).toBeNull()
+  })
+})
+
+describe('los desplegables que siguen existiendo', () => {
+  /*
+   * ⚠️ `Number('')` es `0`. Volver a «Elige…» mandaba un id 0 y el backend
+   * contestaba «not found with id: '0'» sobre una fila que nadie escogio.
+   */
+  it('volver a la línea vacía no manda ningún id, y elegir sí manda el suyo', async () => {
+    /*
+      Las dos mitades en una: sin la segunda, un `alElegir` que no llamara nunca
+      pasaria en verde y habria roto el desplegable entero.
+
+      ⚠️ Y la vacante llega CON una prueba puesta a proposito. Sobre un `select`
+      que ya vale '' el navegador no dispara `change`: el test se quedaba en
+      verde sin tocar el codigo que dice probar.
+    */
+    sinRuido.verVacante = () => Promise.resolve({ ...VACANTE, versionPlantillaPruebaId: 1 })
+    await pintar()
+    const cual = screen.getByRole('combobox', { name: /prueba del puesto/i })
+
+    fireEvent.change(cual, { target: { value: '' } })
+    fireEvent.change(cual, { target: { value: '1' } })
+
+    /*
+      ⚠️ Se cuentan las llamadas, no se afirma que no hubo ninguna. `mutate`
+      encola: un `expect(...).not.toHaveBeenCalled()` justo despues del evento
+      corre ANTES de que la mutacion salga, y pasa en verde tanto si el guardian
+      esta como si no. Lo que no puede ocurrir es que salgan dos.
+    */
+    await waitFor(() => expect(asignarPlantillaPrueba).toHaveBeenCalledWith(1, 1))
+    expect(asignarPlantillaPrueba).toHaveBeenCalledTimes(1)
+  })
+
+  /*
+   * Una prueba escrita para otro puesto no se ofrece: elegirla es escoger la
+   * prueba equivocada sin que nada avise.
+   */
+  it('no ofrece una prueba escrita para otro puesto', async () => {
+    await pintar()
+    expect(screen.queryByText(/Cuestionario técnico · Administrador/)).toBeNull()
+    // La generica —sin puesto— si tiene que salir: filtrarla dejaria a casi
+    // toda vacante sin ninguna opcion.
+    expect(screen.getByText(/Prueba de talento · convocatoria · v1/)).toBeTruthy()
+  })
+})
+
+/*
+ * El botón de publicar, en BORRADOR, que es el único estado donde existe.
+ *
+ * ⚠️ Ningún test miraba este estado, y por eso el cambio llegó a dejar
+ * «Publicar» deshabilitado para siempre: la condición seguía pidiendo la
+ * plantilla de evaluación justo después de borrar el desplegable que era la
+ * única forma de ponerla.
+ */
+describe('publicar una vacante en borrador', () => {
+  const enBorrador = (extra: Record<string, unknown> = {}) => {
+    sinRuido.verVacante = () =>
+      Promise.resolve({
+        ...VACANTE,
+        estado: 'BORRADOR',
+        versionPlantillaPruebaId: 1,
+        ...extra,
+      })
+  }
+
+  it('con banco del nivel se puede publicar, aunque no haya plantilla elegida', async () => {
+    enBorrador()
+    await pintar()
+
+    const boton = screen.getByRole('button', { name: 'Publicar en el portal' })
+    expect((boton as HTMLButtonElement).disabled).toBe(false)
+    expect(screen.getByText('Todo listo: ya se puede publicar.')).toBeTruthy()
+  })
+
+  it('sin banco del nivel se frena, y nombra el banco y no la plantilla', async () => {
+    listarVersionesBanco.mockResolvedValue([])
+    enBorrador()
+    await pintar()
+
+    const boton = screen.getByRole('button', { name: 'Publicar en el portal' })
+    expect((boton as HTMLButtonElement).disabled).toBe(true)
+    expect(screen.getByText(/banco de preguntas publicado de su nivel/)).toBeTruthy()
+    expect(screen.queryByText(/Antes hay que elegir la evaluación/)).toBeNull()
+  })
+
+  /*
+   * Si no se pudo leer el banco —un 403 de `ver_banco_preguntas`, que no viene
+   * con `ver_vacantes`— el botón NO se bloquea: quien decide es el backend, y
+   * frenar por no haber podido mirar deja la vacante atascada por un permiso
+   * que no es el de publicar.
+   */
+  it('si no se pudo leer el banco, no se bloquea el botón', async () => {
+    listarVersionesBanco.mockRejectedValue(new Error('403'))
+    enBorrador()
+    await pintar()
+
+    const boton = screen.getByRole('button', { name: 'Publicar en el portal' })
+    expect((boton as HTMLButtonElement).disabled).toBe(false)
+    expect(screen.getByText(/No se pudo averiguar qué banco/)).toBeTruthy()
   })
 })
