@@ -810,3 +810,23 @@
   border-radius: 50%;
   background: currentColor;
 }
+
+/* El campo de minutos y su botón de guardar, en la misma línea: el botón solo aparece
+   cuando hay algo que guardar, así que la fila casi siempre lleva un solo control. */
+.filaMinutos {
+  display: flex;
+  gap: var(--e2);
+  align-items: center;
+}
+
+.filaMinutos .eleccion {
+  flex: 1 1 8rem;
+  min-width: 0;
+}
+
+.guardarMinutos {
+  composes: secundario from '../../estilos/piezas.module.css';
+  min-height: 44px;
+  padding: 0 var(--e4);
+  white-space: nowrap;
+}

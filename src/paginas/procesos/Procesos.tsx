@@ -16,7 +16,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { misPostulaciones } from '@/api/portal'
 import type { MiPostulacion } from '@/api/tipos'
-import { esFinal, estaCalificando, leTocaAlCandidato, momentoDe } from '@/dominio/estados'
+import { esFinal, estaCalificando, leTocaAlCandidato, momentoDeLaEtapa } from '@/dominio/estados'
 import { formatearFechaCorta } from '@/dominio/reloj'
 import { rutas } from '@/rutas'
 import { Canto } from '@/ui/Canto'
@@ -162,7 +162,7 @@ function Proceso({ postulacion }: { postulacion: MiPostulacion }) {
   const final = esFinal(postulacion.estado)
   const leToca = leTocaAlCandidato(postulacion.estado)
   const termino = COMO_TERMINO[postulacion.estado]
-  const momento = momentoDe(postulacion.estado)
+  const momento = momentoDeLaEtapa(postulacion.estado, postulacion.instrumentoEtapaTecnica)
   const idTitulo = `vacante-${postulacion.uuid}`
 
   const cabecera = (
@@ -268,7 +268,7 @@ function resumenParaLectores(procesos: MiPostulacion[]): string {
   return pendientes
     .map((p) => {
       const donde = p.empresa ? ` en ${p.empresa}` : ''
-      return `${p.vacante}${donde}: ${momentoDe(p.estado).titulo}.`
+      return `${p.vacante}${donde}: ${momentoDeLaEtapa(p.estado, p.instrumentoEtapaTecnica).titulo}.`
     })
     .join(' ')
 }

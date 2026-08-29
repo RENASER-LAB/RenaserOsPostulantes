@@ -117,6 +117,16 @@ export interface MiPostulacion {
   grupoPrioridad: string | null
   diasSinCambio: number
   creadoEn: FechaIso
+  /**
+   * Qué rendirá cuando le toque la etapa de la prueba: `PLANTILLA` (la prueba del puesto,
+   * con su enunciado y lo que hay que entregar) o `CUESTIONARIO_TECNICO` (preguntas
+   * escritas para esa vacante).
+   *
+   * ⚠️ Los dos comparten los MISMOS estados, así que sin este dato el portal no sabe a qué
+   * pantalla llevarlo. Puede venir nulo contra un backend anterior: entonces se trata como
+   * la prueba de siempre, que es lo que hacían todas las vacantes.
+   */
+  instrumentoEtapaTecnica: string | null
 }
 
 export interface PasoHistorial {

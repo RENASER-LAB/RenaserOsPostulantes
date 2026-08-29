@@ -39,6 +39,7 @@ import { ErrorApi } from '../api/cliente'
 import type { FilaRanking, VersionBanco } from '../api/tipos'
 
 const verRanking = vi.fn()
+const elegirInstrumento = vi.fn()
 
 /**
  * Una fila con lo justo: lo que la tabla lee de verdad.
@@ -166,6 +167,8 @@ const VACANTE: {
   plantillaEvaluacionId: number | null
   versionPlantillaPruebaId: number | null
   versionPesosId: number | null
+  instrumentoEtapaTecnica: string
+  minutosEtapaTecnica: number | null
 } = {
   id: 1,
   titulo: 'Ingeniera',
@@ -175,6 +178,10 @@ const VACANTE: {
   plantillaEvaluacionId: null,
   versionPlantillaPruebaId: null,
   versionPesosId: null,
+  // Lo que trae toda vacante que ya existía: la prueba del puesto de siempre, con el
+  // tiempo que diga su plantilla.
+  instrumentoEtapaTecnica: 'PLANTILLA',
+  minutosEtapaTecnica: null,
 }
 
 /* Una prueba generica —sin puesto— y otra escrita para OTRO puesto. */
@@ -214,6 +221,8 @@ vi.mock('../api/panel', () => ({
   asignarPlantillaPrueba: (vacanteId: number, versionId: number) =>
     asignarPlantillaPrueba(vacanteId, versionId),
   asignarVersionPesos: () => Promise.resolve({}),
+  elegirInstrumentoTecnico: (vacanteId: number, datos: unknown) =>
+    elegirInstrumento(vacanteId, datos),
   cerrarVacante: () => Promise.resolve({}),
   confirmarAvance: () => Promise.resolve({}),
   crearRequisito: () => Promise.resolve({}),
@@ -558,7 +567,11 @@ describe('el banco que responderá quien postule', () => {
 
     expect(screen.getByText('Banco CAZATALENTOS · Medio')).toBeTruthy()
     expect(screen.queryByText(/undefined/i)).toBeNull()
-    expect(screen.queryByText(/minutos/)).toBeNull()
+    // ⚠️ Acotado a la línea del banco. Desde el ciclo 2 hay otro control que habla de
+    // minutos con todo derecho —los de la etapa técnica—, así que buscar la palabra en
+    // la pantalla entera dejó de significar «el banco no los trae».
+    expect(screen.getByText('Banco CAZATALENTOS · Medio').parentElement?.textContent)
+      .not.toMatch(/minutos/)
   })
 
   it('sin banco del nivel avisa, y dice dónde se arregla', async () => {
@@ -676,5 +689,95 @@ describe('publicar una vacante en borrador', () => {
     const boton = screen.getByRole('button', { name: 'Publicar en el portal' })
     expect((boton as HTMLButtonElement).disabled).toBe(false)
     expect(screen.getByText(/No se pudo averiguar qué banco/)).toBeTruthy()
+  })
+})
+
+/*
+ * La palanca de la etapa técnica: uno de dos instrumentos, nunca los dos.
+ *
+ * Lo que compila perfectamente estando mal:
+ *   1. **Dejar los dos configurados a la vez.** Si se ven el desplegable de la prueba y el
+ *      cuestionario juntos, nadie sabe cuál va a rendir el candidato — y el backend solo
+ *      mira uno.
+ *   2. **Pedir la plantilla a una vacante que eligió el cuestionario.** Deja «Publicar»
+ *      apagado para siempre sobre algo que el servidor sí dejaría publicar.
+ *   3. **Guardar los minutos al escribir.** Cada tecla es un valor distinto y, con gente
+ *      dentro, cada tecla es un 409 en la cara de quien escribe.
+ */
+describe('qué se rinde en la etapa técnica', () => {
+  /** La misma vacante con algo cambiado. Se reasigna antes de pintar, como el resto. */
+  const conLaVacante = (cambios: Record<string, unknown>) => {
+    sinRuido.verVacante = () => Promise.resolve({ ...VACANTE, ...cambios })
+  }
+
+  it('con la prueba del puesto se ofrece su desplegable', async () => {
+    await pintar()
+
+    expect(screen.getByRole('combobox', { name: /qué rendirá en la etapa técnica/i }))
+      .toHaveProperty('value', 'PLANTILLA')
+    expect(screen.getByRole('combobox', { name: /prueba del puesto/i })).toBeTruthy()
+  })
+
+  it('con el cuestionario, el desplegable de la prueba desaparece', async () => {
+    conLaVacante({ instrumentoEtapaTecnica: 'CUESTIONARIO_TECNICO' })
+    await pintar()
+
+    expect(screen.queryByRole('combobox', { name: /prueba del puesto/i })).toBeNull()
+    // Y en su lugar queda lo que sí aplica: la tarjeta que lleva a prepararlo.
+    expect(screen.getByRole('link', { name: /la prueba técnica →/ })).toBeTruthy()
+  })
+
+  it('elegir el otro instrumento lo manda con los minutos que ya tenía', async () => {
+    conLaVacante({ minutosEtapaTecnica: 45 })
+    await pintar()
+
+    fireEvent.change(screen.getByRole('combobox', { name: /qué rendirá en la etapa técnica/i }), {
+      target: { value: 'CUESTIONARIO_TECNICO' },
+    })
+
+    await waitFor(() =>
+      expect(elegirInstrumento).toHaveBeenCalledWith(1, {
+        instrumento: 'CUESTIONARIO_TECNICO',
+        minutos: 45,
+      }),
+    )
+  })
+
+  it('los minutos se guardan con un botón, no al escribir', async () => {
+    await pintar()
+    const minutos = screen.getByRole('spinbutton', { name: /cuánto tiempo tendrá/i })
+
+    fireEvent.change(minutos, { target: { value: '4' } })
+    fireEvent.change(minutos, { target: { value: '45' } })
+    // Ni una llamada por el camino: «4» y «45» son valores distintos y los dos se habrían
+    // mandado.
+    expect(elegirInstrumento).not.toHaveBeenCalled()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+    await waitFor(() =>
+      expect(elegirInstrumento).toHaveBeenCalledWith(1, {
+        instrumento: 'PLANTILLA',
+        minutos: 45,
+      }),
+    )
+  })
+
+  it('unos minutos que no son un número entero no se ofrecen guardar', async () => {
+    await pintar()
+
+    fireEvent.change(screen.getByRole('spinbutton', { name: /cuánto tiempo tendrá/i }), {
+      target: { value: '0' },
+    })
+
+    expect(screen.queryByRole('button', { name: 'Guardar' })).toBeNull()
+    expect(screen.getByText(/número entero mayor que cero/i)).toBeTruthy()
+  })
+
+  it('vacío es un valor: el tiempo lo pone el instrumento', async () => {
+    await pintar()
+
+    expect(screen.getByRole('spinbutton', { name: /cuánto tiempo tendrá/i }))
+      .toHaveProperty('value', '')
+    expect(screen.getByText(/rige el tiempo que traiga el instrumento/i)).toBeTruthy()
   })
 })

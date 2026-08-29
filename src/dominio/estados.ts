@@ -244,6 +244,36 @@ const MOMENTOS: Record<EstadoPostulacion, Momento> = {
  * devuelve un momento neutro en vez de romper la pantalla: el candidato ve que
  * su proceso sigue vivo y nosotros no perdemos la postulacion.
  */
+/**
+ * El momento de un estado, ajustado a lo que esta vacante rinde en su etapa técnica.
+ *
+ * <p>Los dos instrumentos comparten estados, así que el estado por sí solo no basta para
+ * saber a dónde mandar al candidato ni qué prometerle: «el cronómetro empieza cuando
+ * confirmes» y «tu entregable» son de la prueba del puesto, y en el cuestionario no hay
+ * nada que entregar ni un cronómetro que corra siempre.
+ *
+ * <p>Un instrumento nulo o desconocido se trata como la prueba de siempre: es lo que hacían
+ * todas las vacantes antes de que esto existiera, y lo que manda el backend por defecto.
+ */
+export function momentoDeLaEtapa(estado: string, instrumentoEtapaTecnica: string | null): Momento {
+  const momento = momentoDe(estado)
+  if (instrumentoEtapaTecnica !== 'CUESTIONARIO_TECNICO') {
+    return momento
+  }
+  if (estado === 'PRUEBA_TURNO_CANDIDATO') {
+    return {
+      ...momento,
+      titulo: 'Tu prueba técnica está lista',
+      ayuda: 'Son preguntas sobre este puesto, y se responden escribiendo. Si la vacante fijó un tiempo, el reloj empieza cuando la abras.',
+      accion: { etiqueta: 'Abrir prueba técnica', destino: rutas.cuestionarioTecnico },
+    }
+  }
+  if (estado === 'PRUEBA_CALIFICANDO') {
+    return { ...momento, ayuda: 'Se están leyendo tus respuestas, una por una.' }
+  }
+  return momento
+}
+
 export function momentoDe(estado: string): Momento {
   return (
     MOMENTOS[estado as EstadoPostulacion] ?? {
