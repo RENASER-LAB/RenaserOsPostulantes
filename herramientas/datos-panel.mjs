@@ -128,7 +128,7 @@ export const PERMISOS_DEL_ROL = [
  */
 const RANKING = {
   vacanteId: 1, vacante: 'Ingeniero/a de Infraestructura',
-  puesto: 'Ingeniero de Infraestructura', nivelPuesto: 'MEDIO',
+  puesto: 'Ingeniero de Infraestructura', nivelPuesto: 'EJECUCION',
   total: 8, conPasadaFina: 5, calificados: 6, enCurso: 1, fallidos: 1,
   filas: [
     { puesto: 1, postulacionId: 91, uuid: 'p1', candidato: 'Camila Reyes Ortiz',
@@ -441,9 +441,24 @@ export const RESPUESTAS = {
     { id: 1, nombre: 'Tecnología', esActiva: true },
     { id: 2, nombre: 'Operaciones', esActiva: true },
   ],
+  /*
+   * ⚠️ Copia exacta de `PuestoPanel`. Traia un `areaId` que el backend no
+   * devuelve y le FALTABA `nivelPuestoCodigo`, que es de donde sale el banco
+   * que respondera quien postule: sin el, la vacante se quedaba para siempre
+   * en «Buscando el banco de este nivel…» y la captura salia creible.
+   */
   '/puestos': [
-    { id: 1, nombre: 'Ingeniero de Infraestructura', areaId: 1 },
-    { id: 2, nombre: 'Analista de Datos', areaId: 1 },
+    { id: 1, codigo: 'INFRA', nombre: 'Ingeniero de Infraestructura',
+      nivelPuestoCodigo: 'EJECUCION', familiaCodigo: 'TECNOLOGIA' },
+    { id: 2, codigo: 'DATOS', nombre: 'Analista de Datos',
+      nivelPuestoCodigo: 'EJECUCION', familiaCodigo: 'TECNOLOGIA' },
+    // ⚠️ Los cuatro, no dos. VACANTES usa los puestos 3 y 4, y un puesto que la
+    // lista no trae deja la vacante sin nivel: la linea del banco se quedaria
+    // en «Buscando el banco de este nivel…» para siempre en las capturas.
+    { id: 3, codigo: 'EXP', nombre: 'Analista de experiencia del cliente',
+      nivelPuestoCodigo: 'EJECUCION', familiaCodigo: 'OPERACIONES' },
+    { id: 4, codigo: 'LID_OPS', nombre: 'Líder de operaciones',
+      nivelPuestoCodigo: 'SUPERVISION', familiaCodigo: 'OPERACIONES' },
   ],
   '/roles': [
     { id: 1, codigo: 'TALENTO', nombre: 'Talento' },
@@ -456,7 +471,7 @@ export const RESPUESTAS = {
       esActivo: false, roles: ['ADMIN', 'TALENTO'] },
   ],
   '/plantillas-evaluacion': [
-    { id: 1, nombre: 'Banco v3 · nivel medio', nivelPuestoCodigo: 'MEDIO', familiaCodigo: null,
+    { id: 1, nombre: 'Banco v3 · nivel ejecución', nivelPuestoCodigo: 'EJECUCION', familiaCodigo: null,
       version: 3, estado: 'PUBLICADA', minutosObjetivo: 75, vigenciaMeses: 12,
       publicadaEn: '2026-04-11T09:00:00Z' },
   ],
@@ -524,21 +539,21 @@ export const RESPUESTAS = {
    * borrador, una archivada y un banco de ALINEACION sin nivel.
    */
   '/banco-preguntas/versiones': [
-    { id: 10, tipoBanco: 'NIVEL', nivelPuestoCodigo: 'MEDIO',
-      etiqueta: 'Banco desde Excel · Medio — prueba local',
-      estado: 'PUBLICADA', publicadaEn: '2026-08-22T22:38:36Z' },
-    { id: 6, tipoBanco: 'NIVEL', nivelPuestoCodigo: 'MEDIO',
-      etiqueta: 'Banco RENASER v3 · Medio',
-      estado: 'PUBLICADA', publicadaEn: '2026-04-11T09:00:00Z' },
-    { id: 15, tipoBanco: 'NIVEL', nivelPuestoCodigo: 'MEDIO',
-      etiqueta: 'Banco CAZATALENTOS · Medio',
-      estado: 'BORRADOR', publicadaEn: null },
-    { id: 2, tipoBanco: 'NIVEL', nivelPuestoCodigo: 'MEDIO',
-      etiqueta: 'Banco Medio V0.1', estado: 'ARCHIVADA',
-      publicadaEn: '2025-11-03T09:00:00Z' },
+    { id: 10, tipoBanco: 'NIVEL', nivelPuestoCodigo: 'EJECUCION',
+      etiqueta: 'Banco desde Excel · Ejecución — prueba local',
+      estado: 'PUBLICADA', minutosObjetivo: 45, publicadaEn: '2026-08-22T22:38:36Z' },
+    { id: 6, tipoBanco: 'NIVEL', nivelPuestoCodigo: 'EJECUCION',
+      etiqueta: 'Banco RENASER v3 · Ejecución',
+      estado: 'PUBLICADA', minutosObjetivo: 45, publicadaEn: '2026-04-11T09:00:00Z' },
+    { id: 15, tipoBanco: 'NIVEL', nivelPuestoCodigo: 'SUPERVISION',
+      etiqueta: 'Banco CAZATALENTOS · Supervisión',
+      estado: 'BORRADOR', minutosObjetivo: 35, publicadaEn: null },
+    { id: 2, tipoBanco: 'NIVEL', nivelPuestoCodigo: 'EJECUCION',
+      etiqueta: 'Banco Ejecución V0.1', estado: 'ARCHIVADA',
+      minutosObjetivo: null, publicadaEn: '2025-11-03T09:00:00Z' },
     { id: 21, tipoBanco: 'ALINEACION', nivelPuestoCodigo: null,
       etiqueta: 'Alineación cultural · v2',
-      estado: 'PUBLICADA', publicadaEn: '2026-07-01T09:00:00Z' },
+      estado: 'PUBLICADA', minutosObjetivo: null, publicadaEn: '2026-07-01T09:00:00Z' },
   ],
   /*
    * ⚠️ Sin esto, el interceptor cae en su `?? []` y «Ver qué contiene» enseña
@@ -559,7 +574,12 @@ export const RESPUESTAS = {
    */
   '/catalogos': {
     areas: [], puestos: [],
-    nivelesPuesto: [{ codigo: 'MEDIO', nombre: 'Medio' }, { codigo: 'SENIOR', nombre: 'Sénior' }],
+    // Los tres del backend, no dos inventados: son los que reparten el banco.
+    nivelesPuesto: [
+      { codigo: 'DIRECCION', nombre: 'Dirección' },
+      { codigo: 'SUPERVISION', nombre: 'Supervisión' },
+      { codigo: 'EJECUCION', nombre: 'Ejecución' },
+    ],
     estados: [
       { codigo: 'PERFIL_TURNO_CANDIDATO', nombre: 'Evaluación pendiente',
         etapaCodigo: 'PERFIL', esperaA: 'CANDIDATO', orden: 1, esFinal: false },

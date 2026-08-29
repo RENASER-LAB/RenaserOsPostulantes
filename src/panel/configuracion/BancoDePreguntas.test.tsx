@@ -31,6 +31,7 @@ const version = (parcial: Partial<VersionBanco> & { id: number }): VersionBanco 
   nivelPuestoCodigo: 'DIRECCION',
   etiqueta: `Versión ${parcial.id}`,
   estado: 'PUBLICADA',
+  minutosObjetivo: null,
   publicadaEn: null,
   ...parcial,
 })

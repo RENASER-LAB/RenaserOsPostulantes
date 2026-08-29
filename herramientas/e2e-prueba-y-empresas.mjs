@@ -135,15 +135,22 @@ async function elContrato() {
     `llego ${JSON.stringify(quitado.cuerpo)}`,
   )
 
-  // Sin version elegida el backend revienta en ingles. Se comprueba para que el
-  // dia que lo arreglen, esta prueba lo diga y el panel pueda ofrecer el control.
+  /*
+    El hueco se cerró en el ciclo 2 (PR #49): antes contestaba 400 «The given id
+    must not be null», el mensaje de Spring Data al recibir un id nulo, y este
+    paso existía para avisar el día que lo arreglaran. Ya está: contesta 409 en
+    español y explica por qué esa vacante no tiene fecha que fijar.
+
+    Se queda vigilando lo contrario de lo que vigilaba: que no vuelva el inglés.
+  */
   const sinVersion = await api('/vacantes/1/cierre-prueba', {
     method: 'POST',
-    cuerpo: { cierraEn: '2036-01-15T05:00:00Z', motivo: 'e2e: hueco conocido del backend' },
+    cuerpo: { cierraEn: '2036-01-15T05:00:00Z', motivo: 'e2e: sin prueba del puesto' },
   })
+  const explicado = String(sinVersion.cuerpo?.detail ?? '')
   comprobar(
-    sinVersion.estado === 400 && String(sinVersion.cuerpo?.detail).includes('must not be null'),
-    'sigue reventando en ingles si la vacante no tiene version de prueba (hueco del backend)',
+    sinVersion.estado === 409 && !explicado.includes('must not be null') && explicado.length > 20,
+    'sin prueba del puesto lo explica en español, y ya no revienta en inglés',
     `estado ${sinVersion.estado}: ${JSON.stringify(sinVersion.cuerpo?.detail)}`,
   )
 

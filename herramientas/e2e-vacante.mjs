@@ -161,13 +161,21 @@ await paso('Evaluación del banco apagada: ya no pide elegir cuál')
 await interruptor.click()
 await pagina.getByText(/Encendida: responderá el cuestionario/).waitFor({ timeout: 15000 })
 
-// 8 · Elegir la evaluación (solo salen las del nivel del puesto)
-const selEvaluacion = pagina.getByLabel(/Qué evaluación responderá/)
-const opcionesEva = await selEvaluacion.locator('option:not([value=""])').allTextContents()
-console.log(`   · evaluaciones ofrecidas: ${opcionesEva.join(' | ') || '(ninguna)'}`)
-await selEvaluacion.selectOption({ index: 1 })
-await pagina.waitForTimeout(1200)
-await paso('Elegida la evaluación del banco')
+// 8 · La evaluación ya no se elige: se dice qué banco le toca por su nivel
+//
+// ⚠️ Aquí había un `selectOption` sobre «Qué evaluación responderá». Ese
+// desplegable ya no existe: la plantilla tenía una sola respuesta legal —una
+// publicada por nivel— y desde que se retiraron las cuotas tampoco decide qué
+// preguntas caen. Ahora es una línea que nombra el banco del nivel.
+const laEvaluacion = pagina.locator('div').filter({
+  hasText: /^Qué evaluación responderá/,
+})
+if ((await laEvaluacion.count()) > 0) {
+  console.log(`   · ${(await laEvaluacion.first().innerText()).replace(/\n/g, ' · ')}`)
+} else {
+  console.log('   ⚠ no aparece la línea del banco: mírala antes de seguir')
+}
+await paso('El banco del nivel, dicho y no preguntado')
 
 // 9 · Elegir la prueba del puesto
 const selPrueba = pagina.getByLabel('Qué prueba del puesto rendirá')

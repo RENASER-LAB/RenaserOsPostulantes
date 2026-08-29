@@ -493,6 +493,17 @@ export interface VersionBanco {
   nivelPuestoCodigo: string | null
   etiqueta: string
   estado: EstadoDeVersion
+  /**
+   * Cuanto se espera que dure responder este banco.
+   *
+   * ⚠️ **Null en todo banco anterior a la V44**, que es cuando el tiempo se mudo
+   * aqui desde la plantilla de evaluacion. Los archivados se quedaron sin el a
+   * proposito: sus evaluaciones ya rendidas siguen leyendo el de su plantilla, y
+   * reescribirlo hacia atras cambiaria lo que se le dijo a esa gente.
+   */
+  /* Opcional a proposito: un backend anterior a la V44 NO manda el campo, asi
+     que quien lo pinta comprueba `typeof === 'number'`, no `!== null`. */
+  minutosObjetivo?: number | null
   publicadaEn: FechaIso | null
 }
 
