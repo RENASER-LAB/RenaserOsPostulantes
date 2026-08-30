@@ -9,12 +9,16 @@
  * ⚠️ Escribe en la base local (renaser-postgres). Nunca contra producción.
  *
  *   node herramientas/e2e-vacante.mjs
+ *
+ * Con `PARAR_EN=N` se puede comprobar solo el tramo que se esta trabajando sin
+ * exigir que la base temporal tenga ya publicados bancos, pruebas y pesos.
  */
 import { chromium } from 'playwright'
 import { mkdir } from 'node:fs/promises'
 
 const PORTAL = process.env.PORTAL ?? 'http://localhost:5174'
 const PAUSA = Number(process.env.PAUSA ?? 900) // para que se pueda seguir con la vista
+const PARAR_EN = Number(process.env.PARAR_EN ?? 0)
 
 await mkdir('capturas', { recursive: true })
 const navegador = await chromium.launch({ channel: 'chrome', headless: false, slowMo: 220 })
@@ -52,11 +56,27 @@ const queja = async () => {
   return avisos.join(' · ')
 }
 
+const comprobar = (condicion, queDeberia) => {
+  if (!condicion) fallos.push(queDeberia)
+}
+
+const resumir = () => {
+  console.log(`\n${fallos.length === 0 ? '✓ sin errores' : `⚠️ ${fallos.length} problemas:`}`)
+  fallos.forEach((f) => console.log(`   ${f}`))
+  console.log(`   (${huecosEsperados} 404 esperados al tantear versiones de prueba)`)
+}
+
 const paso = async (titulo) => {
   pasos.push(titulo)
   console.log(`\n${pasos.length}. ${titulo}`)
   await pagina.waitForTimeout(PAUSA)
   await pagina.screenshot({ path: `capturas/e2e-${String(pasos.length).padStart(2, '0')}.png`, fullPage: true })
+  if (PARAR_EN > 0 && pasos.length >= PARAR_EN) {
+    console.log(`\n⏹  PARAR_EN=${PARAR_EN}: se corta aquí sin exigir los instrumentos de publicación.`)
+    resumir()
+    await navegador.close()
+    process.exit(fallos.length > 0 ? 1 : 0)
+  }
 }
 
 // 1 · Entrar como el equipo
@@ -80,6 +100,21 @@ if (sinSolicitud) {
   await paso('No hay solicitud aprobada: el panel lo dice y deja escribir una')
   await pagina.getByRole('button', { name: 'Escribir una solicitud nueva' }).click()
   await pagina.getByLabel('El resultado principal que se busca').waitFor({ timeout: 10000 })
+  await pagina.getByRole('button', { name: 'Crear un puesto nuevo' }).click()
+  await pagina.getByLabel('Nombre del puesto').fill('Analista de experiencia')
+  await pagina.getByRole('radio', { name: 'Ejecución' }).check()
+  await pagina.getByLabel('Familia del puesto').selectOption({ label: 'Operaciones' })
+  await pagina.getByRole('button', { name: 'Guardar y elegir este puesto' }).click()
+
+  const puestoDeLaSolicitud = pagina.getByLabel('Puesto seleccionado')
+  await puestoDeLaSolicitud.waitFor({ timeout: 15000 })
+  comprobar(
+    (await puestoDeLaSolicitud.innerText()).includes('Analista de experiencia') &&
+      (await puestoDeLaSolicitud.innerText()).includes('Ejecución · Operaciones'),
+    'El puesto creado no quedó elegido con su nivel y familia en la solicitud',
+  )
+  await paso('El puesto nace en la solicitud: Ejecución · Operaciones')
+
   await pagina.getByLabel('Área que pide').selectOption({ label: 'Crecimiento' })
   await pagina.getByLabel('Urgencia').selectOption({ index: 0 })
   await pagina.getByLabel('El resultado principal que se busca').fill(
@@ -116,7 +151,17 @@ if (sinSolicitud) {
 const marca = new Date().toISOString().slice(11, 19).replace(/:/g, '')
 const titulo = `Analista de experiencia · e2e ${marca}`
 await pagina.getByLabel('Solicitud aprobada que la respalda').selectOption({ index: 1 })
-await pagina.getByLabel('Puesto del catálogo').selectOption({ label: 'Analista de experiencia' })
+const puestoHeredado = pagina.getByLabel('Puesto seleccionado')
+await puestoHeredado.waitFor({ timeout: 10000 })
+comprobar(
+  (await puestoHeredado.innerText()).includes('Analista de experiencia') &&
+    (await puestoHeredado.innerText()).includes('Ejecución · Operaciones'),
+  'La vacante no enseña el puesto heredado de la solicitud',
+)
+comprobar(
+  (await pagina.getByLabel('Puesto del catálogo').count()) === 0,
+  'La vacante moderna todavía deja escoger otro puesto',
+)
 await pagina.getByLabel('Responsable del proceso').selectOption({ index: 1 })
 await pagina.getByLabel('Título que ve quien postula').fill(titulo)
 await pagina.getByLabel('Descripción').fill(
@@ -222,7 +267,5 @@ await pagina.getByRole('button', { name: 'Cerrar vacante' }).click()
 await pagina.getByText(/^Cerrada/).waitFor({ timeout: 15000 })
 await paso('Cerrada: el e2e no deja vacantes sueltas en el portal')
 
-console.log(`\n${fallos.length === 0 ? '✓ sin errores' : `⚠️ ${fallos.length} problemas:`}`)
-fallos.forEach((f) => console.log(`   ${f}`))
-console.log(`   (${huecosEsperados} 404 esperados al tantear versiones de prueba)`)
+resumir()
 console.log('\nEl navegador queda abierto. Ciérralo cuando termines de mirar.')
