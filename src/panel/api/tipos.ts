@@ -51,6 +51,23 @@ export interface VacantePanel {
   plantillaEvaluacionId: number | null
   versionPlantillaPruebaId: number | null
   versionPesosId: number | null
+  /**
+   * Qué se rinde en la etapa técnica de esta vacante. Uno de los dos, nunca los dos.
+   *
+   * `PLANTILLA` = la prueba del puesto de siempre · `CUESTIONARIO_TECNICO` = el
+   * cuestionario CAZATALENTOS que la IA escribe para esta vacante.
+   */
+  instrumentoEtapaTecnica: InstrumentoTecnico
+  /** Minutos del candidato en esa etapa. `null` = los que traiga el instrumento elegido. */
+  minutosEtapaTecnica: number | null
+}
+
+export type InstrumentoTecnico = 'PLANTILLA' | 'CUESTIONARIO_TECNICO'
+
+/** El cuerpo de elegir instrumento. Los minutos vacíos dejan los del instrumento. */
+export interface ElegirInstrumentoTecnico {
+  instrumento: InstrumentoTecnico
+  minutos: number | null
 }
 
 /** El cuerpo de crear y de editar. Los campos de texto admiten venir vacios. */

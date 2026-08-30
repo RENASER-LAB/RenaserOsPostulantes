@@ -24,7 +24,7 @@ import type { MiPostulacion } from '@/api/tipos'
 import {
   esFinal,
   leTocaAlCandidato,
-  momentoDe,
+  momentoDeLaEtapa,
   recorridoDe,
   type Etapa,
   type Hito,
@@ -72,7 +72,7 @@ interface Props {
 
 export function Seguimiento({ postulacion, fechas, etapaDeCorte }: Props) {
   const hitos = recorridoDe(postulacion.estado, etapaDeCorte)
-  const momento = momentoDe(postulacion.estado)
+  const momento = momentoDeLaEtapa(postulacion.estado, postulacion.instrumentoEtapaTecnica)
   const leToca = leTocaAlCandidato(postulacion.estado)
   const final = esFinal(postulacion.estado)
 

@@ -22,6 +22,7 @@ import { Procesos } from '@/paginas/procesos/Procesos'
 import { Proceso } from '@/paginas/procesos/Proceso'
 import { Evaluacion } from '@/paginas/evaluacion/Evaluacion'
 import { Prueba } from '@/paginas/prueba/Prueba'
+import { CuestionarioTecnico } from '@/paginas/cuestionario/CuestionarioTecnico'
 import { Simulacion } from '@/paginas/simulacion/Simulacion'
 import { Validacion } from '@/paginas/validacion/Validacion'
 import { Decision } from '@/paginas/decision/Decision'
@@ -186,6 +187,14 @@ export function App() {
                       element={
                         <Privada>
                           <Prueba />
+                        </Privada>
+                      }
+                    />
+                    <Route
+                      path={patrones.cuestionarioTecnico}
+                      element={
+                        <Privada>
+                          <CuestionarioTecnico />
                         </Privada>
                       }
                     />

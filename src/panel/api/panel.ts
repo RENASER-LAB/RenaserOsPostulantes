@@ -45,6 +45,7 @@ import type {
   CalificacionEncolada,
   PasadaEncolada,
   CierrePruebaAplicado,
+  ElegirInstrumentoTecnico,
   PlazoDePrueba,
   FichaDelPuesto,
   GuardarFichaDelPuesto,
@@ -443,6 +444,19 @@ export const aplicarEvaluacion = (vacanteId: number, aplica: boolean) =>
     metodo: 'POST',
     cuerpo: { aplica },
   })
+
+/**
+ * Qué se rinde en la etapa técnica de esta vacante, y en cuántos minutos.
+ *
+ * ⚠️ Publicar exige tener listo el que se elija, y cambiarlo con candidatos dentro se
+ * frena en el servidor (409): todos se miden con la misma vara. Los minutos cuentan
+ * como parte de esa vara, así que bajarlos a mitad de tanda se frena igual.
+ */
+export const elegirInstrumentoTecnico = (
+  vacanteId: number,
+  datos: ElegirInstrumentoTecnico,
+) =>
+  pedir<void>(`/vacantes/${vacanteId}/instrumento-tecnico`, { metodo: 'POST', cuerpo: datos })
 
 export const asignarVersionPesos = (vacanteId: number, versionPesosId: number) =>
   pedir<void>(`/vacantes/${vacanteId}/version-pesos`, {

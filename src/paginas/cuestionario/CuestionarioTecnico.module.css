@@ -1,0 +1,171 @@
+/*
+ * La prueba técnica del candidato: una pregunta a la vez, con sitio de sobra para escribir.
+ *
+ * Una sola columna y el área de respuesta grande: lo que se pide aquí es un caso contado
+ * con detalle, y una caja de tres líneas dice «respóndeme corto» sin decirlo.
+ */
+
+.pagina {
+  max-width: var(--medida);
+  margin: 0 auto;
+  padding: var(--e5) var(--e5) var(--e8);
+}
+
+.cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--e3);
+  margin-bottom: var(--e5);
+}
+
+.titulo {
+  margin: 0;
+}
+
+.avance {
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+  margin: var(--e2) 0 0;
+}
+
+.texto {
+  font-size: var(--t-prosa);
+  line-height: 1.6;
+  color: var(--tinta2);
+  margin: 0 0 var(--e4);
+}
+
+/* El reloj: neutro mientras sobra tiempo, ámbar cuando queda poco. Nunca rojo — que quede
+   poco no es un error de nadie. */
+.reloj {
+  font-size: var(--t-base);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--tinta2);
+  padding: var(--e2) var(--e3);
+  border: 1px solid var(--regla2);
+  border-radius: var(--radio-control);
+  white-space: nowrap;
+}
+
+.relojPoco {
+  composes: reloj;
+  color: var(--duda-tinta);
+  border-color: var(--duda);
+  background: var(--duda-bruma);
+}
+
+/* ---------- La pregunta ---------- */
+
+.pregunta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+}
+
+.enunciado {
+  font-size: var(--t-entradilla);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+}
+
+.etiqueta {
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+}
+
+.area {
+  min-height: 14rem;
+  padding: var(--e4);
+  background: var(--nube);
+  color: var(--tinta);
+  border: 1px solid var(--borde-control);
+  font: inherit;
+  font-size: var(--t-base);
+  line-height: 1.6;
+  resize: vertical;
+  border-radius: var(--radio-menor);
+}
+
+/*
+ * Lo que pasa con lo escrito. Nunca dice «guardada» por defecto: un indicador que miente
+ * sobre esto ya costó respuestas perdidas en la evaluación del banco.
+ */
+.pista {
+  font-size: var(--t-menor);
+  color: var(--tinta3);
+  margin: 0;
+}
+
+/* ---------- Moverse y entregar ---------- */
+
+.pasos {
+  display: flex;
+  gap: var(--e3);
+  margin: var(--e5) 0;
+}
+
+.secundario {
+  composes: secundario from '../../estilos/piezas.module.css';
+}
+
+.empezar,
+.entregar {
+  composes: acentoGrande from '../../estilos/piezas.module.css';
+}
+
+.entrega {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e3);
+  padding-top: var(--e4);
+  border-top: 1px solid var(--regla);
+}
+
+/* Nube hundida: que falten respuestas o que algo no haya llegado todavía no es una avería. */
+.aviso {
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+  background: var(--nube-hundida);
+  border-radius: var(--radio-menor);
+  padding: var(--e3) var(--e4);
+  margin: 0 0 var(--e4);
+}
+
+.error {
+  display: flex;
+  gap: var(--e3);
+  border: 1px solid var(--mal-regla);
+  background: var(--mal-bruma);
+  border-radius: var(--radio-menor);
+  padding: var(--e3) var(--e4);
+  font-size: var(--t-apoyo);
+  line-height: 1.5;
+  color: var(--mal);
+  margin: 0 0 var(--e4);
+}
+
+.error::before {
+  content: '';
+  flex: none;
+  width: 3px;
+  background: var(--mal);
+}
+
+@media (max-width: 640px) {
+  .pasos,
+  .entrega {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

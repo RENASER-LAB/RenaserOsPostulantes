@@ -13,11 +13,12 @@
  *     fallar a medias; decir «fallo» a secas dejaria sin saber quien si paso.
  */
 
-import { Fragment, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   aplicarEvaluacion,
+  elegirInstrumentoTecnico,
   asignarPlantillaPrueba,
   asignarVersionPesos,
   cerrarVacante,
@@ -47,6 +48,8 @@ import {
 import { ErrorApi } from '../api/cliente'
 import type {
   DesgloseEvaluacion,
+  ElegirInstrumentoTecnico as DatosDelInstrumento,
+  InstrumentoTecnico,
   FilaRanking,
   NotaCriterioEtapa,
   RankingVacante,
@@ -61,6 +64,8 @@ import { CalificarAUno, CalificarLaTanda } from './CalificarConIa'
 import { NotaDeLaPrueba } from './NotaDeLaPrueba'
 import { LaTandaDeLaPrueba } from './LaTandaDeLaPrueba'
 import { EstadoDeLaPruebaTecnica } from './prueba-tecnica/EstadoDeLaPruebaTecnica'
+import { claveDelCuestionario } from './prueba-tecnica/consultas'
+import { verCuestionarioTecnico } from '../api/panel'
 import {
   ETAPAS_PANEL,
   cifrasDeLaEtapa,
@@ -116,6 +121,9 @@ export function VacantePanelDetalle() {
     —misma `queryKey`— asi que no cuesta una peticion mas.
   */
   const elBanco = useBancoDelNivel(vacante.data?.puestoId)
+  // Lo mismo para el otro instrumento: sin esto la puerta de publicar solo sabría mirar
+  // la plantilla, y una vacante con cuestionario listo se quedaría sin poder publicarse.
+  const cuestionarioPublicado = useCuestionarioPublicado(vacanteId)
   // La etapa elegida manda sobre la query: cambiar de pestana pide el ranking
   // con la nota de esa etapa, no reordena en el navegador una nota vieja.
   const [etapa, setEtapa] = useState<EtapaPanel>('PERFIL_INTEGRAL')
@@ -201,9 +209,20 @@ export function VacantePanelDetalle() {
     plantilla y ya no hay desplegable que la ponga— y mandaba a un bloque donde
     no queda nada que pulsar.
   */
+  // ⚠️ Desde el ciclo 2 la etapa técnica se cumple de DOS formas y la vacante dice cuál
+  // usa: la prueba del puesto de siempre, o el cuestionario CAZATALENTOS aprobado para
+  // ella. Pedir siempre la plantilla dejaría «Publicar» apagado para siempre en una
+  // vacante que eligió el cuestionario y lo tiene listo.
+  const rindeElCuestionario = v.instrumentoEtapaTecnica === 'CUESTIONARIO_TECNICO'
   const leFalta = [
     v.aplicaEvaluacion && faltaElBanco ? 'un banco de preguntas publicado de su nivel' : null,
-    v.versionPlantillaPruebaId === null ? 'la prueba del puesto' : null,
+    rindeElCuestionario
+      ? cuestionarioPublicado === false
+        ? 'publicar su cuestionario técnico'
+        : null
+      : v.versionPlantillaPruebaId === null
+        ? 'la prueba del puesto'
+        : null,
   ].filter(Boolean)
 
   return (
@@ -1364,6 +1383,24 @@ function Requisitos({ vacanteId }: { vacanteId: number }) {
  * antes de pulsarlo. Las dos consultas comparten `queryKey`, asi que llamarlo
  * dos veces no cuesta una peticion mas.
  */
+/**
+ * Si el cuestionario técnico de esta vacante está publicado.
+ *
+ * <p>Comparte `queryKey` con la tarjeta de estado, así que no cuesta una petición más. Y
+ * distingue las tres cosas que no son lo mismo: todavía no se sabe, no se puede saber
+ * —`ver_vacantes` alcanza, pero un 403 o un 500 no son un «no hay»— y no hay.
+ */
+function useCuestionarioPublicado(vacanteId: number) {
+  const cuestionario = useQuery({
+    queryKey: claveDelCuestionario(vacanteId),
+    queryFn: () => verCuestionarioTecnico(vacanteId),
+  })
+  if (cuestionario.isPending || cuestionario.isError) {
+    return null      // no se sabe: no se afirma que falte
+  }
+  return cuestionario.data.estado === 'PUBLICADA'
+}
+
 function useBancoDelNivel(puestoId: number | undefined) {
   const puestos = useQuery({ queryKey: ['panel-puestos'], queryFn: listarPuestos })
   const bancos = useQuery({
@@ -1477,6 +1514,17 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
     onSuccess: refrescar,
     onError: alFallar,
   })
+  /*
+    Qué se rinde en la etapa técnica, y en cuántos minutos. Van juntos en la misma
+    llamada porque el backend los recibe juntos: los minutos son parte de la vara, no un
+    ajuste aparte, y cambiarlos con gente dentro se frena igual que cambiar de
+    instrumento.
+  */
+  const instrumento = useMutation({
+    mutationFn: (datos: DatosDelInstrumento) => elegirInstrumentoTecnico(vacante.id, datos),
+    onSuccess: refrescar,
+    onError: alFallar,
+  })
   const version = useMutation({
     mutationFn: (id: number) => asignarVersionPesos(vacante.id, id),
     onSuccess: refrescar,
@@ -1524,10 +1572,16 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
     plantillasPrueba.data?.find((p) => p.id === plantillaPruebaId)?.nombre ??
     `Plantilla ${plantillaPruebaId}`
 
-  // La misma regla que el boton de publicar: el banco, no la plantilla.
+  // La misma regla que el boton de publicar, y por eso mira lo mismo: el banco en vez de
+  // la plantilla de evaluacion, y el instrumento que la vacante eligio para su etapa
+  // tecnica. Si las dos se separan, el boton y el cartel se contradicen en la misma
+  // pantalla — que es como se descubrio la vez anterior.
+  const cuestionarioPublicado = useCuestionarioPublicado(vacante.id)
   const listaParaPublicar =
     (!vacante.aplicaEvaluacion || bancoDelNivel != null) &&
-    vacante.versionPlantillaPruebaId !== null
+    (vacante.instrumentoEtapaTecnica === 'CUESTIONARIO_TECNICO'
+      ? cuestionarioPublicado === true
+      : vacante.versionPlantillaPruebaId !== null)
 
   return (
     <section className={estilos.seccion}>
@@ -1622,6 +1676,41 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
         )}
 
         <label className={estilos.ajuste}>
+          <span className={estilos.etiquetaAjuste}>Qué rendirá en la etapa técnica</span>
+          <select
+            className={estilos.eleccion}
+            value={vacante.instrumentoEtapaTecnica}
+            onChange={(e) =>
+              instrumento.mutate({
+                instrumento: e.target.value as InstrumentoTecnico,
+                minutos: vacante.minutosEtapaTecnica,
+              })
+            }
+            disabled={instrumento.isPending}
+          >
+            <option value="PLANTILLA">Una prueba del puesto, de las que ya están escritas</option>
+            <option value="CUESTIONARIO_TECNICO">
+              El cuestionario técnico que escribe la IA para esta vacante
+            </option>
+          </select>
+          <span className={estilos.ayudaAjuste}>
+            {vacante.instrumentoEtapaTecnica === 'CUESTIONARIO_TECNICO'
+              ? 'Preguntas escritas para este puesto y esta empresa, a partir de lo que cuente el dueño. Se contestan escribiendo: aquí no se entrega ningún archivo.'
+              : 'Un problema nuevo que resolver, con su enunciado y lo que hay que entregar. Se elige abajo.'}
+          </span>
+        </label>
+
+        <label className={estilos.ajuste}>
+          <span className={estilos.etiquetaAjuste}>Cuánto tiempo tendrá</span>
+          <MinutosDeLaEtapa vacante={vacante} alGuardar={instrumento.mutate}
+                            guardando={instrumento.isPending} />
+        </label>
+
+        {/* Todo lo que no sea el cuestionario es la prueba del puesto, incluido un campo
+            que no llegara: `PLANTILLA` es el valor por defecto del servidor, y esconder
+            los dos desplegables dejaría la vacante sin forma de configurarse. */}
+        {vacante.instrumentoEtapaTecnica !== 'CUESTIONARIO_TECNICO' && (
+        <label className={estilos.ajuste}>
           <span className={estilos.etiquetaAjuste}>Qué prueba del puesto rendirá</span>
           <select
             className={estilos.eleccion}
@@ -1657,6 +1746,7 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
             </span>
           )}
         </label>
+        )}
 
         <label className={estilos.ajuste}>
           <span className={estilos.etiquetaAjuste}>Qué pesos rigen la decisión</span>
@@ -1743,5 +1833,74 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
         </p>
       )}
     </section>
+  )
+}
+
+/**
+ * Cuánto tiempo tiene el candidato en la etapa técnica.
+ *
+ * ⚠️ **Con un botón, no al escribir.** Cada tecla en un campo numérico es un valor
+ * distinto —`4`, `45`, `450`— y guardar al vuelo mandaría los tres; peor aún, el servidor
+ * frena el cambio cuando ya hay candidatos dentro, así que cada tecla sería un 409 en la
+ * cara de quien escribe.
+ *
+ * Vacío es un valor: significa «el que traiga el instrumento elegido», y es lo que tienen
+ * todas las vacantes que existían antes de esto.
+ */
+function MinutosDeLaEtapa({
+  vacante,
+  alGuardar,
+  guardando,
+}: {
+  vacante: VacantePanel
+  alGuardar: (datos: DatosDelInstrumento) => void
+  guardando: boolean
+}) {
+  const guardados = vacante.minutosEtapaTecnica
+  const [escrito, setEscrito] = useState(guardados === null ? '' : String(guardados))
+  useEffect(() => {
+    setEscrito(guardados === null ? '' : String(guardados))
+  }, [guardados])
+
+  const limpio = escrito.trim()
+  const comoNumero = limpio === '' ? null : Number(limpio)
+  const valido = comoNumero === null || (Number.isInteger(comoNumero) && comoNumero > 0)
+  const cambio = comoNumero !== guardados
+
+  return (
+    <>
+      <span className={estilos.filaMinutos}>
+        <input
+          className={estilos.eleccion}
+          type="number"
+          min={1}
+          inputMode="numeric"
+          value={escrito}
+          placeholder="El del instrumento"
+          onChange={(e) => setEscrito(e.target.value)}
+          disabled={guardando}
+        />
+        {cambio && valido && (
+          <button
+            className={estilos.guardarMinutos}
+            type="button"
+            onClick={() =>
+              alGuardar({
+                instrumento: vacante.instrumentoEtapaTecnica,
+                minutos: comoNumero,
+              })
+            }
+            disabled={guardando}
+          >
+            {guardando ? 'Guardando…' : 'Guardar'}
+          </button>
+        )}
+      </span>
+      <span className={estilos.ayudaAjuste}>
+        {!valido
+          ? 'Los minutos son un número entero mayor que cero, o se deja vacío.'
+          : 'En blanco, rige el tiempo que traiga el instrumento elegido. El reloj de cada candidato arranca cuando abre su prueba, no antes.'}
+      </span>
+    </>
   )
 }

@@ -19,6 +19,8 @@ export const patrones = {
   proceso: '/procesos/:uuid',
   evaluacion: '/procesos/:uuid/evaluacion',
   prueba: '/procesos/:uuid/prueba',
+  /** La otra forma de la etapa de la prueba: el cuestionario técnico de la vacante. */
+  cuestionarioTecnico: '/procesos/:uuid/prueba-tecnica',
   simulacion: '/procesos/:uuid/simulacion',
   validacion: '/procesos/:uuid/validacion',
   decision: '/procesos/:uuid/decision',
@@ -74,6 +76,7 @@ export const rutas = {
   proceso: (uuid: string) => `/procesos/${uuid}`,
   evaluacion: (uuid: string) => `/procesos/${uuid}/evaluacion`,
   prueba: (uuid: string) => `/procesos/${uuid}/prueba`,
+  cuestionarioTecnico: (uuid: string) => `/procesos/${uuid}/prueba-tecnica`,
   simulacion: (uuid: string) => `/procesos/${uuid}/simulacion`,
   validacion: (uuid: string) => `/procesos/${uuid}/validacion`,
   decision: (uuid: string) => `/procesos/${uuid}/decision`,
