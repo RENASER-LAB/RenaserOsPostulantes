@@ -1,6 +1,6 @@
 # De la solicitud a la decisión: el proceso entero
 
-Última actualización: 2026-08-25
+Última actualización: 2026-08-30
 
 **Los pasos 1 a 5 están corridos** contra el backend local con
 `herramientas/e2e-vacante.mjs`. Del 6 en adelante, lo que hay aquí está leído del
@@ -65,7 +65,12 @@ Mientras falte algo, el botón de publicar está apagado y dice qué falta.
 
 Debajo de los desplegables hay una tarjeta más, **«La prueba técnica del
 puesto»**, con el estado de su ficha y de su cuestionario y el enlace para
-prepararla. No entra en la puerta de publicar: el backend no lo exige.
+prepararla.
+
+⚠️ **Desde el 30/08 esa tarjeta SÍ puede cerrar la puerta de publicar.** Si la
+vacante eligió rendir el cuestionario técnico, publicar exige tenerlo publicado
+—y entonces la versión de plantilla de prueba deja de exigirse—. Cuál de las
+dos se pide lo decide el paso 3a.
 
 ### 3b · La prueba técnica del puesto
 
@@ -94,8 +99,84 @@ desplegable de pesos del paso 3.
 
 **Cuándo se hace:** el momento natural es con la vacante en borrador, antes de
 publicarla. El backend no lo ata: se puede preparar con la vacante ya
-publicada, porque nadie rinde el cuestionario hasta que se publique aquí —y la
-rendición es del ciclo siguiente.
+publicada, porque nadie rinde el cuestionario hasta que se publique aquí.
+
+### 3a · Qué se rinde en la etapa técnica, y en cuánto tiempo
+
+**Panel · la vacante → «Qué responderá quien postule»**
+
+La etapa **Prueba del puesto** se cumple de **dos formas, y cada vacante elige
+una**. No conviven: lo decidió la clienta, y el cuestionario CAZATALENTOS no es
+un añadido a la prueba de siempre sino su alternativa.
+
+| Si elige… | El candidato rinde | Y para publicar hace falta |
+|---|---|---|
+| **La prueba del puesto** (por defecto) | El enunciado con sus entregables y su reloj | Una versión de plantilla de prueba elegida |
+| **El cuestionario técnico** | Preguntas escritas para esa vacante, que se contestan escribiendo | El cuestionario publicado en el paso 3b |
+
+Al elegir el cuestionario, **el desplegable de la prueba del puesto
+desaparece**: dejarlo visible invita a configurar las dos y sugiere que
+conviven. Y aparece la línea de **cuánto tiempo tendrá la etapa**, que se
+guarda con su propio botón —solo sale cuando el número cambió—. En blanco rige
+el tiempo que traiga el instrumento elegido.
+
+⚠️ **Por defecto es la prueba del puesto, y no es una preferencia:** es lo que
+hacían todas las vacantes que ya existían, y la migración se lo puso a todas
+para que ninguna cambiara de comportamiento.
+
+⚠️ **Se cambia mientras nadie haya rendido todavía, y ni un minuto más.** En
+cuanto alguien está dentro, el instrumento y los minutos quedan quietos: el
+backend lo frena y los minutos cuentan como parte de esa quietud. Mover el reloj
+con gente contestando sería cambiarles el examen por debajo.
+
+⚠️ **Con el cuestionario no se sube ningún archivo.** Es la diferencia que más
+se nota para quien postula, y la pantalla se lo dice antes de empezar.
+
+### 3c · El candidato rinde el cuestionario
+
+**Portal · «Mis procesos» → «Abrir prueba técnica»**
+(`/procesos/:uuid/prueba-tecnica`)
+
+Cuando el equipo le avanza la etapa, quien postula ve **«Tu prueba técnica está
+lista»** y, antes de abrirla, cuántas preguntas son, cuánto tiempo tiene y que
+no hay nada que subir. **El reloj arranca al abrirla**, no al avanzarle la
+etapa.
+
+Una pregunta por pantalla, con «Anterior» y «Siguiente». Lo escrito se guarda
+solo, y **no se da por guardado hasta que el servidor lo confirma**: hasta
+entonces dice «Guardando lo que escribiste…». No deja entregar dejando alguna en
+blanco, y entregar pregunta antes porque después ya no se toca.
+
+Al entregar, el portal **lleva al detalle del proceso**, que pasa a decir
+«Estamos calificando tu prueba · No tienes que hacer nada».
+
+⚠️ **La pregunta presencial no está.** Para DIRECCION el REDACTOR escribe doce y
+el candidato rinde once: la muestra de trabajo se hace en persona.
+
+⚠️ **Los dos instrumentos comparten los mismos estados**, así que el estado por
+sí solo no dice a qué pantalla llevarlo: hace falta saber qué rinde esa vacante.
+Si ese dato no llega, se trata como la prueba de siempre.
+
+### 3d · El equipo lo lee y le pone nota
+
+**Panel · el ranking → pestaña «Prueba del puesto» → la fila de la persona**
+
+Se abre su ficha y ahí está **«Lo que escribió en la prueba»**, pregunta por
+pregunta, con la nota de cada respuesta y el porqué. Debajo, «Pedirle a la IA
+que califique la prueba».
+
+⚠️ **Aquí NO hay que ponderar, y con la prueba del puesto sí.** Con la prueba de
+siempre alguien pulsa «Calcular la nota de la prueba» para que la nota de la
+etapa nazca de la rúbrica. Con el cuestionario la calcula el propio método
+—índice = puntos ÷ (4 × preguntas) × 100— y **llega hecha** a la columna del
+ranking. Por eso ese botón no aparece: no hay rúbrica que ponderar.
+
+⚠️ **Una respuesta sin un episodio concreto vale cero**, aunque cumpla los otros
+criterios. Es la regla del método, no un fallo: si una nota baja sorprende, es lo
+primero que hay que mirar.
+
+⚠️ **El corte por índice sigue siendo manual.** Quién avanza lo decide el equipo,
+como en las demás etapas.
 
 ### 4 · Requisitos indispensables
 
@@ -257,6 +338,25 @@ El paso 3b: una vacante en borrador, la tarjeta, la ficha rellenada hasta que
 el servidor la declara COMPLETA y deriva el tamaño. **Sin `DE_VERDAD=1` no le
 pide nada a la IA** —cuesta una llamada al modelo y cuenta contra el tope— y
 lo dice; con él sigue hasta corregir una pregunta y publicar el cuestionario.
+
+```bash
+PORTAL=http://localhost:5182 node herramientas/e2e-cuestionario-tecnico.mjs
+```
+
+Los pasos **3a, 3c y 3d de una tirada**: la empresa elige el cuestionario y su
+tiempo, la IA lo escribe, la vacante se publica, una candidata se registra,
+postula, el equipo la avanza, ella contesta y entrega, y el panel lo lee con
+nota. Es el recorrido que no existía en ningún sitio.
+
+⚠️ **Gasta DOS llamadas al modelo**, el REDACTOR y el EVALUADOR_TECNICO.
+`PARAR_EN=10` corta justo antes de la primera y deja ejercitado todo el panel
+gratis; `CONTINUAR=1` y `DESDE_CALIFICAR=1` retoman una corrida a medias sin
+volver a pagar lo ya escrito.
+
+⚠️ **Necesita una vacante recién creada en BORRADOR** —afirma el estado de
+salida, así que una segunda corrida sobre la misma falla— y **su propia base y
+su propio vhost de RabbitMQ**: compartir el broker con otro backend le roba los
+mensajes de la IA.
 
 ⚠️ **Escribe en la base local**, así que hace falta el Spring en `localhost:8081`
 y `API_URL=http://localhost:8081` en `.env.local`. Nunca contra producción.

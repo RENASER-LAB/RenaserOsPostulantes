@@ -32,7 +32,7 @@ cinco acciones y el candidato no distingue "tengo que hacer algo" de "no tengo q
 | `PERFIL_TURNO_CANDIDATO` | Perfil | **Sí** | Evaluación |
 | `PERFIL_CALIFICANDO` | Perfil | No (sistema) | — |
 | `PERFIL_POR_CONFIRMAR` | Perfil | No (equipo) | — |
-| `PRUEBA_TURNO_CANDIDATO` | Prueba | **Sí** | Prueba del puesto |
+| `PRUEBA_TURNO_CANDIDATO` | Prueba | **Sí** | Prueba del puesto **o** cuestionario técnico — lo dice la vacante, ver 2.9b |
 | `PRUEBA_CALIFICANDO` | Prueba | No (sistema) | — |
 | `PRUEBA_POR_CONFIRMAR` | Prueba | No (equipo) | — |
 | `SIMULACION_POR_HABILITAR` | Simulación | No (equipo) | — |
@@ -206,6 +206,38 @@ Reglas:
 - Hay un minuto de gracia: el backend sigue diciendo `EN_CURSO` aunque `venceEn` ya pasó, porque
   quien cierra el intento es un barrido que corre cada minuto. La pantalla tiene que detectarlo.
 - La consigna llega como texto libre con párrafos y direcciones dentro.
+
+
+### 2.9b Cuestionario técnico — la OTRA forma de esa misma etapa (30/08/2026)
+
+`GET /portal/cuestionario-tecnico/{uuid}` → `estado`, `iniciadaEn`, `terminadaEn`, `venceEn`,
+`minutosObjetivo`, `total`, `respondidas`, `preguntas[]`.
+
+**No es una variante de 2.9: es un instrumento distinto, y cada vacante rinde uno de los dos.**
+La vacante lo dice en `instrumentoEtapaTecnica`, que viaja con la postulación
+(`PLANTILLA` | `CUESTIONARIO_TECNICO`).
+
+| | Prueba del puesto (2.9) | Cuestionario técnico |
+|---|---|---|
+| Qué se entrega | Archivos y enlaces | **Nada: se contesta escribiendo** |
+| De dónde salen las preguntas | Una plantilla reutilizable | Escritas por la IA **para esa vacante** |
+| Cuándo arranca el reloj | Al confirmar | **Al abrir la prueba** |
+| Quién pone la nota de etapa | El equipo, ponderando la rúbrica | El método, sola |
+
+⚠️ **Los dos comparten los mismos estados.** `PRUEBA_TURNO_CANDIDATO` no basta para saber a
+qué pantalla llevar a nadie: hace falta el instrumento. Sin ese dato se trata como la prueba de
+siempre, que es lo que hacían todas las vacantes.
+
+⚠️ **La pregunta presencial no se le envía.** Para DIRECCION son doce escritas y once rendidas:
+la muestra de trabajo se hace en persona.
+
+Reglas:
+- **El reloj lo fija la vacante** y arranca al abrir. Antes de empezar se le dice cuánto tendrá.
+- **Lo escrito no se da por guardado hasta que el servidor lo confirma**, con la misma cola que
+  la evaluación del banco. Una pregunta en blanco está *sin responder*, no «guardada».
+- **No se entrega a medias**, y entregar pregunta antes: después ya no se toca.
+- **Al entregar se sale de la pantalla** al detalle del proceso, que pasa a decir «Estamos
+  calificando tu prueba».
 
 ### 2.10 Simulación
 `GET /portal/simulacion/{uuid}/sesiones` → fechas con `fechaHora`, `duracionMinutos`, `modalidad`,
