@@ -73,7 +73,7 @@ export interface ElegirInstrumentoTecnico {
 /** El cuerpo de crear y de editar. Los campos de texto admiten venir vacios. */
 export interface GuardarVacante {
   solicitudTalentoId: number
-  puestoId: number
+  puestoId?: number
   titulo: string
   descripcion: string
   proposito?: string
@@ -104,6 +104,14 @@ export interface PuestoPanel {
   /** El nivel manda: la plantilla de evaluacion tiene que ser del mismo. */
   nivelPuestoCodigo: string
   familiaCodigo: string | null
+}
+
+export interface GuardarPuesto {
+  nombre: string
+  nivelPuestoCodigo: string
+  familiaCodigo: string
+  /** Los clientes antiguos pueden conservarlo; el panel deja que lo genere el servidor. */
+  codigo?: string
 }
 
 export interface PlantillaPruebaPanel {
@@ -612,6 +620,7 @@ export interface ResultadoEsperado {
  */
 export interface CrearSolicitud {
   areaId: number
+  puestoId: number
   urgencia: string
   resultadoPrincipal: string
   motivo: string
@@ -629,6 +638,10 @@ export interface SolicitudResumen {
   estado: string
   urgencia: string
   areaId: number | null
+  puestoId: number | null
+  puestoNombre: string | null
+  nivelPuestoCodigo: string | null
+  familiaCodigo: string | null
   resultadoPrincipal: string | null
   creadoEn: FechaIso
 }

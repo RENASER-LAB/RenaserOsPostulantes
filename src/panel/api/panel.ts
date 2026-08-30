@@ -16,6 +16,7 @@ import type {
   FichaPostulacion,
   InscritoEnSesion,
   GuardarVacante,
+  GuardarPuesto,
   NotaCriterioEtapa,
   Parametro,
   PasoHistorialPanel,
@@ -126,6 +127,9 @@ export const cerrarVacante = (id: number, motivo: string) =>
   pedir<void>(`/vacantes/${id}/cierre`, { metodo: 'POST', cuerpo: { motivo } })
 
 export const listarPuestos = () => pedir<PuestoPanel[]>('/puestos')
+/** El código interno lo genera el servidor cuando el panel no lo envía. */
+export const crearPuesto = async (datos: GuardarPuesto) =>
+  (await pedir<{ id: number }>('/puestos', { metodo: 'POST', cuerpo: datos })).id
 
 export const listarRequisitos = (vacanteId: number) =>
   pedir<RequisitoPanel[]>(`/vacantes/${vacanteId}/requisitos`)

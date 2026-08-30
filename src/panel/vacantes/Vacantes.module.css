@@ -84,6 +84,12 @@
   border-radius: var(--radio);
 }
 
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e4);
+}
+
 .tituloAlta {
   margin: 0 0 var(--e4);
 }
@@ -121,6 +127,13 @@
   border-radius: var(--radio-menor);
 }
 
+.entrada:focus-visible,
+.area:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--activo) 28%, transparent);
+  outline-offset: 2px;
+  border-color: var(--activo);
+}
+
 .area {
   min-height: 5.5rem;
   padding: var(--e3);
@@ -137,6 +150,118 @@
 .enviar {
   composes: acentoGrande from '../../estilos/piezas.module.css';
   margin-top: var(--e5);
+}
+
+/* ---------- El puesto de la solicitud ---------- */
+
+.puesto {
+  border: 1px solid var(--regla);
+  padding: var(--e4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+  border-radius: var(--radio-menor);
+  min-width: 0;
+}
+
+.puesto > legend {
+  padding: 0 var(--e2);
+}
+
+.ayudaPuesto,
+.compatibilidad {
+  color: var(--tinta2);
+  font-size: var(--t-apoyo);
+  line-height: 1.5;
+  max-width: var(--medida);
+}
+
+.compatibilidad {
+  margin: 0 0 var(--e3);
+}
+
+.puestoCabecera {
+  display: grid;
+  grid-template-columns: minmax(16rem, 1fr) auto;
+  gap: var(--e3);
+  align-items: end;
+}
+
+.puestoCabecera > button {
+  min-height: 44px;
+}
+
+.puestoResumen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e1);
+  padding: var(--e3) var(--e4);
+  background: var(--nube-hundida);
+  border-radius: var(--radio-menor);
+  min-width: 0;
+}
+
+.puestoResumen strong {
+  overflow-wrap: anywhere;
+}
+
+.clasificacionPuesto {
+  color: var(--tinta2);
+  font-size: var(--t-apoyo);
+}
+
+.puestoNuevo {
+  display: grid;
+  grid-template-columns: minmax(14rem, 1fr) minmax(14rem, 1fr);
+  gap: var(--e4);
+  align-items: end;
+  padding-top: var(--e3);
+  border-top: 1px solid var(--regla2);
+}
+
+.puestoNuevo > .niveles,
+.puestoNuevo > .aviso,
+.puestoNuevo > button {
+  grid-column: 1 / -1;
+}
+
+.niveles {
+  border: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.niveles > legend {
+  margin-bottom: var(--e2);
+}
+
+.opcionesNivel {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--e2);
+}
+
+.opcionNivel {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: var(--e2);
+  padding: var(--e2) var(--e3);
+  border: 1px solid var(--borde-control);
+  border-radius: var(--radio-menor);
+  cursor: pointer;
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+}
+
+.opcionNivel:has(input:checked) {
+  border-color: var(--activo);
+  background: var(--activo-bruma);
+}
+
+.opcionNivel:has(input:focus-visible) {
+  outline: 3px solid color-mix(in srgb, var(--activo) 28%, transparent);
+  outline-offset: 2px;
 }
 
 /* ---------- Sin solicitud aprobada ---------- */
@@ -216,6 +341,17 @@
 
   .crear,
   .enviar {
+    width: 100%;
+  }
+
+  .puestoCabecera,
+  .puestoNuevo,
+  .opcionesNivel {
+    grid-template-columns: 1fr;
+  }
+
+  .puestoCabecera > button,
+  .puestoNuevo > button {
     width: 100%;
   }
 }
