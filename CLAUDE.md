@@ -1,9 +1,111 @@
 # Portal del candidato · contexto de trabajo
 
-Última actualización: 2026-08-28 · **el tiempo viaja con el banco, y la vacante deja de preguntar**
+Última actualización: 2026-08-30 · **la vacante elige qué prueba se rinde, y el candidato la contesta**
 
 Este archivo es para retomar el trabajo sin tener que reconstruir nada. Cuenta qué es este
 proyecto, con qué habla, qué se decidió y por qué, y qué está a medias.
+
+---
+
+## La vacante elige qué prueba se rinde, y el candidato la contesta (30/08/2026)
+
+La etapa **Prueba del puesto** se cumple de **dos formas, nunca las dos a la vez**, y la
+vacante dice cuál. Lo decidió la clienta: el cuestionario CAZATALENTOS no es un añadido a la
+prueba de siempre, es su alternativa.
+
+| Instrumento | Qué rinde | Qué exige para publicar |
+|---|---|---|
+| `PLANTILLA` (por defecto) | La prueba del puesto de siempre: enunciado, entregables, reloj | Una versión de plantilla de prueba elegida |
+| `CUESTIONARIO_TECNICO` | Preguntas escritas para ESA vacante por el REDACTOR | El cuestionario **publicado** |
+
+⚠️ **Por defecto es `PLANTILLA`, y no es una preferencia: es lo que hacían todas las vacantes
+que ya existían.** La migración se lo puso a todas, así que ninguna cambió de comportamiento.
+
+### Dónde se elige, y hasta cuándo
+
+En el detalle de la vacante, bajo «Qué responderá quien postule», mientras está en
+**BORRADOR**. Al lado, **cuánto tiempo tendrá la etapa** — se guarda con su propio botón, que
+solo aparece cuando el número cambió.
+
+⚠️ **Se puede cambiar mientras nadie haya rendido todavía, y ni un minuto más.** Lo frena
+`exigirVaraQuieta` en el backend, y los minutos cuentan como parte de la vara: cambiarlos con
+gente dentro movería el examen bajo los pies de quien lo está haciendo.
+
+⚠️ **El desplegable de la prueba del puesto DESAPARECE al elegir el cuestionario**, y no es
+cosmética: dejarlo visible invita a configurar las dos y sugiere que conviven.
+
+### Qué ve el candidato
+
+`/procesos/:uuid/prueba-tecnica` (`CuestionarioTecnico.tsx`). Una pregunta por pantalla, sin
+mapa lateral —son once o doce, no cuarenta— y **sin nada que subir**: esta etapa se contesta
+escribiendo. El reloj arranca **al abrirla**, no al avanzarle la etapa.
+
+⚠️ **`momentoDeLaEtapa(estado, instrumentoEtapaTecnica)` envuelve a `momentoDe`, y por eso
+existe.** Los dos instrumentos comparten los MISMOS estados, así que `PRUEBA_TURNO_CANDIDATO`
+por sí solo no dice a qué pantalla mandar a nadie. Un instrumento nulo o desconocido se trata
+como la prueba de siempre — es lo que hacían todas las vacantes y lo que manda un backend
+anterior.
+
+⚠️ **La pregunta PRESENCIAL nunca se le envía.** El REDACTOR escribe 12 para DIRECCION y el
+candidato rinde 11: la muestra de trabajo se hace en persona. Comprobado en el e2e.
+
+⚠️ **Lo escrito no sale de la cola hasta que el servidor lo confirma**, con la misma regla que
+la evaluación del banco. Vive en `useColaDeRespuestas.ts`, extraído para no tener dos copias de
+lo que ya costó respuestas perdidas una vez.
+
+### Y aquí NO hay que ponderar
+
+Con la prueba del puesto, la nota de la etapa nace de **ponderar la rúbrica a mano**: alguien
+pulsa «Calcular la nota de la prueba». Con el cuestionario la calcula el método —índice =
+puntos ÷ (4 × preguntas) × 100— y **llega hecha**.
+
+Por eso `NotaDeLaPrueba` no pinta nada en esta etapa: su primera línea es
+`if (rubrica.length === 0) return null`, y un cuestionario técnico no usa criterios de rúbrica.
+**No es un hueco, es la rama correcta** — pero cuesta un rato entenderlo mirando la pantalla,
+así que queda escrito.
+
+⚠️ **Una respuesta sin un episodio concreto vale CERO**, aunque cumpla los otros tres
+criterios: `FormulasCazatalentos.puntaje` corta con `if (cumpleSenalCero || !c1Episodio)`. En el
+e2e las once respuestas inventadas describían prácticas habituales y el índice salió **0,00** —
+parecía un fallo y era el método haciendo su trabajo. Si un día una nota baja sorprende, mirar
+`c1Episodio` antes que el código.
+
+### Cómo se comprueba
+
+```bash
+npm run typecheck && npm test
+PORTAL=http://localhost:5182 node herramientas/e2e-cuestionario-tecnico.mjs
+```
+
+El e2e recorre el ciclo entero en un Chrome de verdad: la empresa elige, la IA escribe, la
+candidata contesta y entrega, y el equipo lo lee con nota.
+
+⚠️ **Gasta DOS llamadas al modelo** —el REDACTOR y el EVALUADOR_TECNICO— y las dos cuentan
+contra el tope de la empresa. Tres escapes para no pagar de más:
+
+| Variable | Para qué |
+|---|---|
+| `PARAR_EN=10` | Corta justo antes de la generación: ejercita todo el panel gratis |
+| `CONTINUAR=1` | Retoma desde el avance, con `CORREO_CANDIDATA` |
+| `DESDE_CALIFICAR=1` | Solo el cierre: la candidata ya entregó |
+
+⚠️ **Necesita una vacante recién creada en BORRADOR**: afirma el estado de salida —instrumento
+`PLANTILLA`, sin minutos— así que una segunda corrida sobre la misma vacante falla en el paso 3.
+
+⚠️ **Y necesita su propia base y su propio vhost de RabbitMQ.** Compartir el broker con otro
+backend le roba los mensajes: el trabajo de la IA se lo come el otro proceso y el cuestionario
+no llega nunca.
+
+Cuatro cosas que encontró y que ningún test de unidad podía ver:
+
+- La ruta del portal para entrar es **`/ingresar`**; `/entrar` es la del panel.
+- **La ficha del ranking no se abre con un enlace**: el `onClick` va en la fila entera, y la
+  celda de la casilla para la propagación a propósito.
+- **Entregar SACA de la pantalla del examen** y lleva al detalle del proceso, que pasa a decir
+  «Estamos calificando tu prueba».
+- **Al postular, tres de los cuatro saltos hasta la etapa técnica ya han pasado solos.** La
+  máquina la pone en el perfil integral y el currículum la mueve hasta «por confirmar» sin que
+  nadie pulse nada. Se avanza mientras la persona siga apareciendo, no se cuentan saltos.
 
 ---
 
@@ -176,11 +278,11 @@ contra el tope— y lo dice. Contra una base recién sembrada hacen falta un ár
 (el catálogo nace vacío) y las `version_pesos` CAZATALENTOS publicadas para que aparezca
 «Usar estos pesos»; el script del backend `completar-y-publicar-pesos-cazatalentos.py` lo hace.
 
-### Lo que queda para el ciclo 2
+### El ciclo 2 ya está hecho
 
-Que el candidato **rinda** el cuestionario (la etapa 2 de su proceso) y que se califique
-contando criterios. Hoy el portal del candidato no lo enseña, a propósito: el backend todavía
-no lo sirve.
+Que el candidato **rinda** el cuestionario y que se califique contando criterios entró el
+30/08 — ver la sección de arriba. Lo que sigue faltando es la textura F1–F7, la repregunta, el
+índice combinado 45/55 y el corte automático por índice.
 ---
 
 ## La contraseña se puede mirar, y salir dejó de estar escondido (28/08/2026)
@@ -1349,7 +1451,7 @@ tres viven en el detalle de la vacante, bajo **«Qué responderá quien postule�
 | Qué | Obligatorio |
 |---|---|
 | **Banco publicado del nivel del puesto** | **Sí, si `aplicaEvaluacion` está encendido.** No se elige aquí: se publica en Configuración y la vacante lo hereda de su puesto (V44) |
-| Versión de plantilla de prueba | **Sí, siempre** |
+| Versión de plantilla de prueba | **Solo si la vacante rinde la prueba del puesto.** Si eligió el cuestionario técnico, lo obligatorio es tenerlo publicado — ver la sección del 30/08 |
 | Versión de pesos | No: sin elegir, rigen los generales |
 
 ⚠️ **La plantilla de evaluación ya NO se elige ni se exige** — ver la sección del 28/08 por la
