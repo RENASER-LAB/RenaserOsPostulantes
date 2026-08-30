@@ -18,6 +18,7 @@ import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   aprobarSolicitud,
+  crearPuesto,
   crearSolicitud,
   crearVacante,
   listarAreas,
@@ -27,7 +28,13 @@ import {
   listarVacantes,
   verCatalogos,
 } from '../api/panel'
-import type { CrearSolicitud, GuardarVacante, ResultadoEsperado } from '../api/tipos'
+import type {
+  Catalogos,
+  CrearSolicitud,
+  GuardarVacante,
+  PuestoPanel,
+  ResultadoEsperado,
+} from '../api/tipos'
 import { rutas } from '@/rutas'
 import { formatearFechaCorta } from '@/dominio/reloj'
 import tabla from '../ui/Tabla.module.css'
@@ -164,10 +171,6 @@ function FormularioDeAlta({ alCrear }: { alCrear: () => Promise<void> }) {
     queryKey: ['panel-solicitudes'],
     queryFn: listarSolicitudes,
   })
-  const puestos = useQuery({
-    queryKey: ['panel-puestos'],
-    queryFn: listarPuestos,
-  })
   const usuarios = useQuery({
     queryKey: ['panel-usuarios'],
     queryFn: listarUsuarios,
@@ -204,6 +207,26 @@ function FormularioDeAlta({ alCrear }: { alCrear: () => Promise<void> }) {
     () => (solicitudes.data ?? []).filter((s) => s.estado === 'ABIERTA'),
     [solicitudes.data],
   )
+  const solicitudSeleccionada = abiertas.find(
+    (solicitud) => String(solicitud.id) === datos.solicitudTalentoId,
+  )
+
+  const escogerSolicitud = (valor: string) => {
+    const solicitud = abiertas.find((candidata) => String(candidata.id) === valor)
+    setDatos((actuales) => ({
+      ...actuales,
+      solicitudTalentoId: valor,
+      puestoId: solicitud?.puestoId ? String(solicitud.puestoId) : '',
+      titulo:
+        actuales.titulo.trim() === '' && solicitud?.puestoNombre
+          ? solicitud.puestoNombre
+          : actuales.titulo,
+      proposito:
+        actuales.proposito.trim() === '' && solicitud?.resultadoPrincipal
+          ? solicitud.resultadoPrincipal
+          : actuales.proposito,
+    }))
+  }
 
   const creacion = useMutation({
     mutationFn: (cuerpo: GuardarVacante) => crearVacante(cuerpo),
@@ -215,8 +238,12 @@ function FormularioDeAlta({ alCrear }: { alCrear: () => Promise<void> }) {
   function alEnviar(evento: FormEvent) {
     evento.preventDefault()
     setFallo(null)
-    if (!datos.solicitudTalentoId || !datos.puestoId || !datos.responsableUsuarioId) {
-      setFallo('Elige la solicitud, el puesto y el responsable: los tres hacen falta.')
+    if (!datos.solicitudTalentoId || !datos.responsableUsuarioId) {
+      setFallo('Elige la solicitud y el responsable del proceso.')
+      return
+    }
+    if (!solicitudSeleccionada?.puestoId && !datos.puestoId) {
+      setFallo('Esta solicitud histórica necesita que elijas un puesto.')
       return
     }
     if (datos.titulo.trim() === '' || datos.descripcion.trim() === '') {
@@ -225,7 +252,9 @@ function FormularioDeAlta({ alCrear }: { alCrear: () => Promise<void> }) {
     }
     creacion.mutate({
       solicitudTalentoId: Number(datos.solicitudTalentoId),
-      puestoId: Number(datos.puestoId),
+      puestoId: solicitudSeleccionada?.puestoId
+        ? undefined
+        : Number(datos.puestoId),
       responsableUsuarioId: Number(datos.responsableUsuarioId),
       titulo: datos.titulo.trim(),
       descripcion: datos.descripcion.trim(),
@@ -312,23 +341,32 @@ function FormularioDeAlta({ alCrear }: { alCrear: () => Promise<void> }) {
         <Selector
           etiqueta="Solicitud aprobada que la respalda"
           valor={datos.solicitudTalentoId}
-          alCambiar={poner('solicitudTalentoId')}
+          alCambiar={escogerSolicitud}
           opciones={abiertas.map((s) => ({
             valor: String(s.id),
-            texto: `#${s.id} · ${s.resultadoPrincipal || 'sin resultado descrito'}`,
+            texto: `#${s.id} · ${s.puestoNombre ?? 'solicitud histórica sin puesto'} · ${s.resultadoPrincipal || 'sin resultado descrito'}`,
           }))}
         />
-        <Selector
-          etiqueta="Puesto del catálogo"
-          valor={datos.puestoId}
-          alCambiar={poner('puestoId')}
-          cargando={puestos.isPending}
-          vacio="No hay ningún puesto en el catálogo"
-          opciones={(puestos.data ?? []).map((p) => ({
-            valor: String(p.id),
-            texto: p.nombre,
-          }))}
-        />
+        {solicitudSeleccionada?.puestoId && (
+          <ResumenPuesto
+            nombre={solicitudSeleccionada.puestoNombre ?? `Puesto ${solicitudSeleccionada.puestoId}`}
+            nivel={solicitudSeleccionada.nivelPuestoCodigo}
+            familia={solicitudSeleccionada.familiaCodigo}
+            catalogos={catalogos.data}
+          />
+        )}
+        {solicitudSeleccionada && !solicitudSeleccionada.puestoId && (
+          <div className={estilos.anchoEntero}>
+            <p className={estilos.compatibilidad}>
+              Esta solicitud es anterior al catálogo. Elige su puesto para dejarla actualizada.
+            </p>
+            <SelectorDePuesto
+              etiqueta="Puesto para esta solicitud histórica"
+              valor={datos.puestoId}
+              alCambiar={poner('puestoId')}
+            />
+          </div>
+        )}
         <Selector
           etiqueta="Responsable del proceso"
           valor={datos.responsableUsuarioId}
@@ -553,8 +591,8 @@ function SinSolicitudAprobada({ alAprobar }: { alAprobar: () => void }) {
 /**
  * La solicitud de contratación: por qué hace falta contratar a alguien.
  *
- * Solo pide lo que el backend exige. Lo demás —nivel, familia, modalidad— lo
- * hereda la vacante, y repetirlo aquí sería preguntarlo dos veces.
+ * El puesto nace aquí. Su nivel y familia se enseñan para confirmar la decisión,
+ * pero el backend los deriva del catálogo: no hay dos fuentes de verdad.
  */
 function FormularioDeSolicitud({ alCrear }: { alCrear: (id: number) => void }) {
   const areas = useQuery({ queryKey: ['panel-areas'], queryFn: listarAreas })
@@ -565,6 +603,7 @@ function FormularioDeSolicitud({ alCrear }: { alCrear: (id: number) => void }) {
   const [fallo, setFallo] = useState<string | null>(null)
   const [datos, setDatos] = useState({
     areaId: '',
+    puestoId: '',
     urgencia: 'NORMAL',
     resultadoPrincipal: '',
     motivo: '',
@@ -592,8 +631,13 @@ function FormularioDeSolicitud({ alCrear }: { alCrear: (id: number) => void }) {
   const enviar = (evento: FormEvent) => {
     evento.preventDefault()
     setFallo(null)
+    if (!datos.puestoId) {
+      setFallo('Elige o crea el puesto solicitado antes de continuar.')
+      return
+    }
     creacion.mutate({
       areaId: Number(datos.areaId),
+      puestoId: Number(datos.puestoId),
       urgencia: datos.urgencia,
       resultadoPrincipal: datos.resultadoPrincipal,
       motivo: datos.motivo,
@@ -609,7 +653,13 @@ function FormularioDeSolicitud({ alCrear }: { alCrear: (id: number) => void }) {
   }
 
   return (
-    <form className={estilos.formulario} onSubmit={enviar}>
+    <form className={estilos.formulario} onSubmit={enviar} noValidate>
+      <SelectorDePuesto
+        etiqueta="Puesto solicitado"
+        valor={datos.puestoId}
+        alCambiar={poner('puestoId')}
+      />
+
       <div className={estilos.rejilla}>
         <Selector
           etiqueta="Área que pide"
@@ -700,6 +750,204 @@ function FormularioDeSolicitud({ alCrear }: { alCrear: (id: number) => void }) {
         {creacion.isPending ? 'Creando…' : 'Crear la solicitud y aprobarla'}
       </button>
     </form>
+  )
+}
+
+function nombreDeCatalogo(codigo: string | null, opciones = [] as { codigo: string; nombre: string }[]) {
+  if (!codigo) return 'Sin clasificar'
+  return opciones.find((opcion) => opcion.codigo === codigo)?.nombre
+    ?? codigo.toLowerCase().replaceAll('_', ' ').replace(/^./, (letra) => letra.toUpperCase())
+}
+
+function ResumenPuesto({
+  nombre,
+  nivel,
+  familia,
+  catalogos,
+}: {
+  nombre: string
+  nivel: string | null
+  familia: string | null
+  catalogos?: Catalogos
+}) {
+  return (
+    <div className={`${estilos.puestoResumen} ${estilos.anchoEntero}`} aria-label="Puesto seleccionado">
+      <span className={estilos.etiqueta}>Puesto seleccionado</span>
+      <strong>{nombre}</strong>
+      <span className={estilos.clasificacionPuesto}>
+        {nombreDeCatalogo(nivel, catalogos?.nivelesPuesto)} ·{' '}
+        {nombreDeCatalogo(familia, catalogos?.familias)}
+      </span>
+    </div>
+  )
+}
+
+/**
+ * La misma decisión de puesto sirve para una solicitud nueva y para reparar una
+ * solicitud histórica. La creación inline es un fieldset, nunca otro formulario.
+ */
+function SelectorDePuesto({
+  etiqueta,
+  valor,
+  alCambiar,
+}: {
+  etiqueta: string
+  valor: string
+  alCambiar: (valor: string) => void
+}) {
+  const cache = useQueryClient()
+  const puestos = useQuery({ queryKey: ['panel-puestos'], queryFn: listarPuestos })
+  const catalogos = useQuery({ queryKey: ['panel-catalogos'], queryFn: verCatalogos })
+  const [creando, setCreando] = useState(false)
+  const [fallo, setFallo] = useState<string | null>(null)
+  const [nuevo, setNuevo] = useState({
+    nombre: '',
+    nivelPuestoCodigo: '',
+    familiaCodigo: '',
+  })
+  const puestoSeleccionado = (puestos.data ?? []).find((puesto) => String(puesto.id) === valor)
+  const errorId = `error-puesto-${etiqueta.toLowerCase().replaceAll(' ', '-')}`
+
+  const alta = useMutation({
+    mutationFn: () => crearPuesto({
+      nombre: nuevo.nombre.trim(),
+      nivelPuestoCodigo: nuevo.nivelPuestoCodigo,
+      familiaCodigo: nuevo.familiaCodigo,
+    }),
+    onSuccess: (id) => {
+      const puesto: PuestoPanel = {
+        id,
+        codigo: '',
+        nombre: nuevo.nombre.trim(),
+        nivelPuestoCodigo: nuevo.nivelPuestoCodigo,
+        familiaCodigo: nuevo.familiaCodigo,
+      }
+      cache.setQueryData<PuestoPanel[]>(['panel-puestos'], (actuales = []) => [
+        ...actuales.filter((actual) => actual.id !== id),
+        puesto,
+      ])
+      void cache.invalidateQueries({ queryKey: ['panel-puestos'], refetchType: 'none' })
+      alCambiar(String(id))
+      setCreando(false)
+      setFallo(null)
+    },
+    onError: (causa) =>
+      setFallo(causa instanceof Error ? causa.message : 'No se pudo crear el puesto.'),
+  })
+
+  const guardar = () => {
+    setFallo(null)
+    if (!nuevo.nombre.trim() || !nuevo.nivelPuestoCodigo || !nuevo.familiaCodigo) {
+      setFallo('Escribe el nombre y elige el nivel y la familia del puesto.')
+      return
+    }
+    alta.mutate()
+  }
+
+  return (
+    <fieldset className={estilos.puesto}>
+      <legend className={estilos.etiqueta}>{etiqueta}</legend>
+      <p className={estilos.ayudaPuesto}>
+        El puesto define el nivel de evaluación y la familia de trabajo de todo el proceso.
+      </p>
+      <div className={estilos.puestoCabecera}>
+        <Selector
+          etiqueta={etiqueta}
+          valor={valor}
+          alCambiar={alCambiar}
+          cargando={puestos.isPending}
+          vacio="Todavía no hay puestos; crea el primero"
+          opciones={(puestos.data ?? []).map((puesto) => ({
+            valor: String(puesto.id),
+            texto: `${puesto.nombre} · ${nombreDeCatalogo(puesto.nivelPuestoCodigo, catalogos.data?.nivelesPuesto)} · ${nombreDeCatalogo(puesto.familiaCodigo, catalogos.data?.familias)}`,
+          }))}
+        />
+        <button
+          className={estilos.aprobar}
+          type="button"
+          aria-expanded={creando}
+          onClick={() => {
+            setCreando((actual) => !actual)
+            setFallo(null)
+          }}
+        >
+          {creando ? 'Cancelar puesto nuevo' : 'Crear un puesto nuevo'}
+        </button>
+      </div>
+
+      {puestoSeleccionado && (
+        <ResumenPuesto
+          nombre={puestoSeleccionado.nombre}
+          nivel={puestoSeleccionado.nivelPuestoCodigo}
+          familia={puestoSeleccionado.familiaCodigo}
+          catalogos={catalogos.data}
+        />
+      )}
+
+      {creando && (
+        <div className={estilos.puestoNuevo}>
+          <label className={estilos.campo}>
+            <span className={estilos.etiqueta}>Nombre del puesto</span>
+            <input
+              className={estilos.entrada}
+              value={nuevo.nombre}
+              aria-describedby={fallo ? errorId : undefined}
+              onChange={(evento) => setNuevo((actual) => ({ ...actual, nombre: evento.target.value }))}
+            />
+          </label>
+
+          <fieldset className={estilos.niveles} aria-describedby={fallo ? errorId : undefined}>
+            <legend className={estilos.etiqueta}>Nivel del puesto</legend>
+            <div className={estilos.opcionesNivel}>
+              {(catalogos.data?.nivelesPuesto ?? []).map((nivel) => (
+                <label className={estilos.opcionNivel} key={nivel.codigo}>
+                  <input
+                    type="radio"
+                    name={`nivel-${etiqueta}`}
+                    value={nivel.codigo}
+                    checked={nuevo.nivelPuestoCodigo === nivel.codigo}
+                    onChange={(evento) => setNuevo((actual) => ({
+                      ...actual,
+                      nivelPuestoCodigo: evento.target.value,
+                    }))}
+                  />
+                  <span>{nivel.nombre}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+
+          <label className={estilos.campo}>
+            <span className={estilos.etiqueta}>Familia del puesto</span>
+            <select
+              className={estilos.entrada}
+              value={nuevo.familiaCodigo}
+              disabled={catalogos.isPending || (catalogos.data?.familias.length ?? 0) === 0}
+              aria-describedby={fallo ? errorId : undefined}
+              onChange={(evento) => setNuevo((actual) => ({
+                ...actual,
+                familiaCodigo: evento.target.value,
+              }))}
+            >
+              <option value="">Elige…</option>
+              {(catalogos.data?.familias ?? []).map((familia) => (
+                <option value={familia.codigo} key={familia.codigo}>{familia.nombre}</option>
+              ))}
+            </select>
+          </label>
+
+          {fallo && <p className={`${estilos.aviso} ${estilos.malo}`} id={errorId} role="alert">{fallo}</p>}
+          <button
+            className={estilos.aprobar}
+            type="button"
+            disabled={alta.isPending || catalogos.isPending}
+            onClick={guardar}
+          >
+            {alta.isPending ? 'Guardando puesto…' : 'Guardar y elegir este puesto'}
+          </button>
+        </div>
+      )}
+    </fieldset>
   )
 }
 
