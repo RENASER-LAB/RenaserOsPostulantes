@@ -12,7 +12,9 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:mirar": "vitest"
+    "test:mirar": "vitest",
+    "test:e2e": "playwright test",
+    "test:e2e:chrome": "E2E_CHROME=1 playwright test --headed"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.0",
@@ -33,6 +35,7 @@
   },
   "devDependencies": {
     "@capacitor/cli": "^8.5.0",
+    "@playwright/test": "^1.62.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.5",
     "@types/node": "^22.10.0",
