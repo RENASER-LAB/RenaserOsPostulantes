@@ -8,6 +8,7 @@ import type {
   Login,
   MiPostulacion,
   MiPostulacionDetalle,
+  OpcionUbigeo,
   PedirBorrado,
   Sesion,
   TextoConsentimientoPublico,
@@ -34,6 +35,19 @@ export const textosConsentimiento = () =>
  */
 export const consentimientoDeVacante = (id: number | string) =>
   pedir<ConsentimientoDeVacante>(`/vacantes/${id}/consentimiento`, { sinToken: true })
+
+/**
+ * Las provincias donde puede vivir un candidato, agrupadas por departamento.
+ *
+ * ⚠️ **Sin token, y eso no es un descuido**: lo pide la pantalla de crear cuenta,
+ * que por definicion todavia no tiene ninguno. Los otros dos catalogos del
+ * portal —niveles educativos y de idioma— si van con token porque solo se usan
+ * dentro del perfil.
+ *
+ * Llega ya ordenado por departamento y nombre: se respeta el array.
+ */
+export const catalogoUbigeo = () =>
+  pedir<OpcionUbigeo[]>('/catalogos/ubigeo', { sinToken: true })
 
 export const crearCuenta = (datos: CrearCuenta) =>
   pedir<void>('/cuentas', { metodo: 'POST', cuerpo: datos, sinToken: true })

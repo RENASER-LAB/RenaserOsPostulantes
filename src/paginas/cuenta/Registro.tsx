@@ -16,15 +16,44 @@
  * ficha sigue con su postulación al terminar, no vuelve a la portada a buscarla.
  */
 
-import { useState, type FormEvent } from 'react'
+import { useMemo, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { z } from 'zod'
-import { textosConsentimiento } from '@/api/portal'
+import { catalogoUbigeo, textosConsentimiento } from '@/api/portal'
+import type { OpcionUbigeo } from '@/api/tipos'
 import { useSesion } from '@/app/Sesion'
 import { rutas } from '@/rutas'
-import { Campo, Consentimiento } from '@/ui/campos/Campo'
+import { Campo, Consentimiento, Seleccion } from '@/ui/campos/Campo'
 import estilos from './Cuenta.module.css'
+
+/**
+ * Las provincias, repartidas por departamento y en el orden en que llegan.
+ *
+ * ⚠️ **`EXT` no tiene departamento y sale aparte.** Metido en un `<optgroup>`
+ * con `label={null}` el navegador pinta un grupo llamado «null»; y colgándolo de
+ * un departamento inventado diría que el extranjero está en algún sitio del
+ * Perú. Va suelto al final, que es donde se busca.
+ *
+ * El catálogo llega ya ordenado por departamento y nombre, así que aquí no se
+ * reordena nada: solo se agrupa respetando el orden de llegada.
+ */
+function agrupadasPorDepartamento(
+  opciones: OpcionUbigeo[],
+): { departamentos: [string, OpcionUbigeo[]][]; sueltas: OpcionUbigeo[] } {
+  const departamentos = new Map<string, OpcionUbigeo[]>()
+  const sueltas: OpcionUbigeo[] = []
+  for (const opcion of opciones) {
+    if (opcion.departamento == null) {
+      sueltas.push(opcion)
+      continue
+    }
+    const ya = departamentos.get(opcion.departamento)
+    if (ya) ya.push(opcion)
+    else departamentos.set(opcion.departamento, [opcion])
+  }
+  return { departamentos: [...departamentos.entries()], sueltas }
+}
 
 const Datos = z
   .object({
@@ -38,6 +67,15 @@ const Datos = z
     // rebotaría con un error que la pantalla no supo prevenir.
     contrasena: z.string().min(8, 'La contraseña necesita al menos 8 caracteres.'),
     repetir: z.string().min(1, 'Repite la contraseña.'),
+    /*
+      ⚠️ **`min(1)` y no `z.string()` a secas.** La primera opción del
+      desplegable vale `''` —hace falta para que se vea que no hay nada elegido—
+      y una cadena vacía es una cadena válida: sin este mínimo el formulario se
+      enviaba con la ciudad sin poner y el backend lo rebotaba con un 400 que la
+      pantalla no supo prevenir. Es la misma trampa que ya documentan las listas
+      del perfil.
+    */
+    ciudadUbigeo: z.string().min(1, 'Elige dónde vives.'),
     aceptaProceso: z.literal(true, {
       message: 'Sin este permiso no podemos evaluar tu candidatura.',
     }),
@@ -57,6 +95,7 @@ const VACIO = {
   correo: '',
   contrasena: '',
   repetir: '',
+  ciudadUbigeo: '',
   aceptaProceso: false,
   aceptaFuturosContactos: false,
 }
@@ -72,6 +111,16 @@ export function Registro() {
   const [fallo, setFallo] = useState<string | null>(null)
   const [enviando, setEnviando] = useState(false)
   const cuantosFaltan = Object.keys(errores).length
+
+  /*
+    El catálogo de provincias, público como los textos legales: quien está
+    creando su cuenta todavía no tiene token con el que pedirlo.
+  */
+  const ubigeo = useQuery({ queryKey: ['catalogo-ubigeo'], queryFn: catalogoUbigeo })
+  const { departamentos, sueltas } = useMemo(
+    () => agrupadasPorDepartamento(Array.isArray(ubigeo.data) ? ubigeo.data : []),
+    [ubigeo.data],
+  )
 
   // Los textos legales vigentes los sirve el backend, y son públicos.
   const textos = useQuery({ queryKey: ['consentimientos'], queryFn: textosConsentimiento })
@@ -112,6 +161,7 @@ export function Registro() {
         apellidos: revision.data.apellidos,
         correo: revision.data.correo,
         contrasena: revision.data.contrasena,
+        ciudadUbigeo: revision.data.ciudadUbigeo,
         aceptaProceso: true,
         aceptaFuturosContactos: revision.data.aceptaFuturosContactos,
       })
@@ -177,6 +227,58 @@ export function Registro() {
           onChange={(e) => cambiar('correo', e.target.value)}
           error={errores.correo}
         />
+
+        {/*
+          Un solo desplegable con las provincias agrupadas por departamento, no
+          dos encadenados: dos obligan a esperar una petición entre el primero y
+          el segundo, y aquí solo se pregunta una cosa.
+
+          ⚠️ **Se pide UNA vez, al crear la cuenta.** A quien ya tiene cuenta no
+          se le pregunta nunca, así que esta pantalla es el único sitio del
+          producto donde entra el dato.
+        */}
+        <Seleccion
+          etiqueta="Dónde vives"
+          ayuda={
+            ubigeo.isError
+              ? undefined
+              : 'La provincia donde vives ahora. Sirve para avisarte de vacantes cerca de ti.'
+          }
+          value={valores.ciudadUbigeo}
+          onChange={(e) => cambiar('ciudadUbigeo', e.target.value)}
+          disabled={ubigeo.isPending || ubigeo.isError}
+          /*
+            ⚠️ **Un fallo del catálogo se dice, no se disimula.** Sin la lista no
+            se puede crear la cuenta —el campo es obligatorio— y un desplegable
+            apagado y mudo deja a la persona pulsando «Crear cuenta» contra un
+            error que no explica nada.
+          */
+          error={
+            ubigeo.isError
+              ? 'No pudimos cargar la lista de provincias. Recarga la página e inténtalo otra vez.'
+              : errores.ciudadUbigeo
+          }
+        >
+          <option value="">
+            {ubigeo.isPending ? 'Cargando las provincias…' : 'Elige tu provincia…'}
+          </option>
+          {departamentos.map(([departamento, provincias]) => (
+            <optgroup key={departamento} label={departamento}>
+              {provincias.map((provincia) => (
+                <option key={provincia.codigo} value={provincia.codigo}>
+                  {provincia.nombre}
+                </option>
+              ))}
+            </optgroup>
+          ))}
+          {/* `EXT` y cualquier otro sin departamento: sueltas al final, porque
+              no cuelgan de ningún sitio del Perú. */}
+          {sueltas.map((opcion) => (
+            <option key={opcion.codigo} value={opcion.codigo}>
+              {opcion.nombre}
+            </option>
+          ))}
+        </Seleccion>
 
         <div className={estilos.pareja}>
           <Campo

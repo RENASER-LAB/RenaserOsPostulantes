@@ -40,6 +40,7 @@ import type { FilaRanking, VersionBanco } from '../api/tipos'
 
 const verRanking = vi.fn()
 const elegirInstrumento = vi.fn()
+const pedirExcel = vi.fn()
 
 /**
  * Una fila con lo justo: lo que la tabla lee de verdad.
@@ -55,6 +56,9 @@ const fila = (
   candidato: string,
   estado: string,
   notaEtapa: number | null,
+  /* Para las pruebas de orden, filtro y descarga: la ciudad, la pretensión y el
+     grupo se escriben aquí y el resto de la fila no estorba. */
+  extra: Partial<FilaRanking> = {},
 ): FilaRanking => ({
   puesto: postulacionId - 90,
   postulacionId,
@@ -70,6 +74,14 @@ const fila = (
   pasada: 'FINA',
   archivoNombre: null,
   grupoPrioridad: null,
+  /* ⚠️ Nulas por defecto porque así llega HOY la base entera: la ciudad solo se
+     le pide a quien crea cuenta desde ahora. Es el caso que obliga al filtro de
+     ciudad a decir que todavía no hay ninguna en vez de abrir una lista vacía. */
+  ciudad: null,
+  ciudadCodigo: null,
+  pretensionMin: null,
+  pretensionMax: null,
+  pretensionMoneda: null,
   notaEtapa,
   notaCurriculum: null,
   adecuacion: null,
@@ -82,6 +94,7 @@ const fila = (
   alertas: 0,
   actualizadoEn: null,
   notasCriterio: [],
+  ...extra,
 })
 
 const EN_PERFIL = fila(91, 'Rodrigo Ayala', 'PERFIL_POR_CONFIRMAR', 84)
@@ -220,6 +233,7 @@ vi.mock('../api/panel', () => ({
   verEmbudo: () => sinRuido.verEmbudo(),
   verCatalogos: () => sinRuido.verCatalogos(),
   verRanking: (id: number, etapa?: string) => verRanking(id, etapa),
+  descargarExcelDelRanking: (id: number, datos: unknown) => pedirExcel(id, datos),
   listarRequisitos: () => Promise.resolve([]),
   listarPuestos: () => Promise.resolve(PUESTOS),
   listarVersionesBanco: () => listarVersionesBanco(),
@@ -275,7 +289,7 @@ vi.mock('../api/panel', () => ({
     }),
 }))
 
-const tanda = (filas: FilaRanking[]) => ({
+const tanda = (filas: FilaRanking[], puedeVerPretension = true) => ({
   vacanteId: 1,
   vacante: 'Ingeniera',
   puesto: 'Ingeniera',
@@ -285,10 +299,11 @@ const tanda = (filas: FilaRanking[]) => ({
   calificados: filas.length,
   enCurso: 0,
   fallidos: 0,
+  puedeVerPretension,
   filas,
 })
 
-async function pintar(filas: FilaRanking[] = TANDA) {
+async function pintar(filas: FilaRanking[] = TANDA, puedeVerPretension = true) {
   verRanking.mockImplementation((_id: number, etapa = 'PERFIL_INTEGRAL') => {
     const notas = NOTAS_POR_ETAPA[etapa] ?? {}
     return Promise.resolve(
@@ -296,6 +311,7 @@ async function pintar(filas: FilaRanking[] = TANDA) {
         filas.map((f) =>
           f.postulacionId in notas ? { ...f, notaEtapa: notas[f.postulacionId]! } : f,
         ),
+        puedeVerPretension,
       ),
     )
   })
@@ -329,8 +345,37 @@ const verCorte = (empiezaPor: string) => fireEvent.click(elCorte(empiezaPor))
 const cuantasEn = (empiezaPor: string) =>
   Number((elCorte(empiezaPor).textContent ?? '').match(/(\d+)$/)?.[1])
 
+/**
+ * Los nombres de la columna «Candidato», en el orden en el que se pintan.
+ *
+ * El primer `<span>` y no la celda entera: debajo del nombre van el correo y,
+ * cuando lo hay, el grupo de prioridad, y `textContent` de la celda los pegaría
+ * todos en una cadena.
+ */
+const elOrdenDeLaTabla = () =>
+  Array.from(laTabla().querySelectorAll('tbody tr')).map(
+    (f) => f.querySelector('td:nth-child(3) span')?.textContent ?? '',
+  )
+
+/** La cabecera pulsable de una columna: el `<th>`, que es quien lleva `aria-sort`. */
+const laCabecera = (nombre: string) =>
+  within(laTabla()).getByRole('button', { name: new RegExp(nombre) }).closest('th')!
+const ordenarPor = (nombre: string) =>
+  fireEvent.click(within(laTabla()).getByRole('button', { name: new RegExp(nombre) }))
+
 beforeEach(() => {
   verRanking.mockReset()
+  pedirExcel.mockReset()
+  pedirExcel.mockResolvedValue({ contenido: new Blob(['x']), nombre: 'ranking.xlsx' })
+  /*
+    jsdom no trae ninguna de las dos, y sin ellas la descarga revienta antes de
+    que se pueda comprobar qué se mandó. Se sustituyen por espías: lo que este
+    archivo prueba es la PETICIÓN —los ids y su orden—, no que el navegador sepa
+    guardar un archivo.
+  */
+  URL.createObjectURL = vi.fn(() => 'blob:de-mentira')
+  URL.revokeObjectURL = vi.fn()
+  vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
   // Los espias y la vacante vuelven a su estado feliz: dos de estas pruebas los
   // cambian para su caso, y sin esto se lo llevarian a la siguiente.
   listarVersionesBanco.mockReset()
@@ -873,5 +918,270 @@ describe('qué se rinde en la etapa técnica', () => {
 
     expect(screen.getByText(/manda sobre el que traiga el instrumento/i)).toBeTruthy()
     expect(screen.queryByText(/rige el tiempo que traiga el instrumento/i)).toBeNull()
+  })
+})
+
+// ---------- Ordenar, filtrar y descargar ----------
+
+/*
+ * Una tanda con ciudad y pretensión puestas: es la única forma de que esas dos
+ * columnas existan. Sin ellas la tabla las esconde a propósito, que es lo que
+ * prueba el último bloque de este archivo.
+ */
+const CON_DATOS = [
+  fila(91, 'Rodrigo Ayala', 'PERFIL_POR_CONFIRMAR', 84, {
+    ciudad: 'Lima — Lima',
+    ciudadCodigo: '1501',
+    pretensionMin: 4000,
+    pretensionMoneda: 'PEN',
+  }),
+  fila(93, 'Camila Reyes', 'PERFIL_POR_CONFIRMAR', 75, {
+    ciudad: 'Arequipa — Camaná',
+    ciudadCodigo: '0402',
+    pretensionMin: 2500,
+    pretensionMax: 3000,
+    pretensionMoneda: 'PEN',
+  }),
+  fila(94, 'Lucía Ferrer', 'PERFIL_POR_CONFIRMAR', 52, {}),
+]
+
+const conDatos = () =>
+  pintar(CON_DATOS.map((f) => ({ ...f })))
+
+describe('ordenar por una columna', () => {
+  it('la tabla abre en el orden del backend, sin nada ordenado a mano', async () => {
+    await conDatos()
+    expect(elOrdenDeLaTabla()).toEqual(['Rodrigo Ayala', 'Camila Reyes', 'Lucía Ferrer'])
+    expect(laCabecera('Candidato')).toHaveProperty('ariaSort', 'none')
+  })
+
+  it('pulsar «Candidato» ordena de la A a la Z y lo dice en `aria-sort`', async () => {
+    await conDatos()
+    ordenarPor('Candidato')
+    await waitFor(() =>
+      expect(elOrdenDeLaTabla()).toEqual(['Camila Reyes', 'Lucía Ferrer', 'Rodrigo Ayala']),
+    )
+    expect(laCabecera('Candidato')).toHaveProperty('ariaSort', 'ascending')
+  })
+
+  /*
+    ⚠️ **La regla que se rompe sola.** Ordenar y dar la vuelta al array sube los
+    huecos a la primera pantalla en cuanto se pulsa «descendente». Lucía no tiene
+    pretensión y tiene que quedarse abajo en los dos sentidos.
+  */
+  it('quien no declaró pretensión se queda abajo suba o baje el orden', async () => {
+    await conDatos()
+    ordenarPor('Pretensión')
+    await waitFor(() =>
+      expect(elOrdenDeLaTabla()).toEqual(['Camila Reyes', 'Rodrigo Ayala', 'Lucía Ferrer']),
+    )
+    ordenarPor('Pretensión')
+    await waitFor(() =>
+      expect(elOrdenDeLaTabla()).toEqual(['Rodrigo Ayala', 'Camila Reyes', 'Lucía Ferrer']),
+    )
+  })
+
+  it('el tercer clic devuelve el orden del ranking', async () => {
+    await conDatos()
+    ordenarPor('Candidato')
+    await waitFor(() => expect(elOrdenDeLaTabla()[0]).toBe('Camila Reyes'))
+    ordenarPor('Candidato')
+    ordenarPor('Candidato')
+    await waitFor(() => expect(elOrdenDeLaTabla()[0]).toBe('Rodrigo Ayala'))
+    expect(laCabecera('Candidato')).toHaveProperty('ariaSort', 'none')
+  })
+})
+
+describe('los filtros de la barra', () => {
+  const elBuscador = () => screen.getByRole('searchbox', { name: /buscar por nombre/i })
+
+  it('busca por nombre sin tildes: «lucia» encuentra a Lucía', async () => {
+    await conDatos()
+    fireEvent.change(elBuscador(), { target: { value: 'lucia' } })
+    await waitFor(() => expect(elOrdenDeLaTabla()).toEqual(['Lucía Ferrer']))
+  })
+
+  /*
+    ⚠️ **El tercer vacío.** Con el corte lleno y la tabla vacía por un filtro,
+    decir «nadie tiene nota del perfil» sería falso —los hay— y mandaría a pulsar
+    el corte de al lado, que tampoco es. Se nombra el filtro, que es lo que hay
+    que quitar.
+  */
+  it('cuando el filtro lo deja todo fuera, la tabla dice que fue el filtro', async () => {
+    await conDatos()
+    fireEvent.change(elBuscador(), { target: { value: 'nadie se llama así' } })
+    await waitFor(() =>
+      expect(screen.getByText(/pasa los filtros que hay puestos/i)).toBeTruthy(),
+    )
+    expect(screen.queryByText(/Nadie tiene todavía nota del perfil/)).toBeNull()
+  })
+
+  it('«Ver a todos» los devuelve', async () => {
+    await conDatos()
+    fireEvent.change(elBuscador(), { target: { value: 'lucia' } })
+    await waitFor(() => expect(elOrdenDeLaTabla()).toEqual(['Lucía Ferrer']))
+    fireEvent.click(screen.getByRole('button', { name: 'Ver a todos' }))
+    await waitFor(() => expect(elOrdenDeLaTabla()).toHaveLength(3))
+  })
+
+  it('mientras hay filtro puesto se dice cuántas se ven de cuántas', async () => {
+    await conDatos()
+    fireEvent.change(elBuscador(), { target: { value: 'lucia' } })
+    await waitFor(() => expect(screen.getByText(/Se ven 1 de 3 de este corte/)).toBeTruthy())
+  })
+})
+
+describe('la descarga del Excel', () => {
+  const elBoton = () => screen.getByRole('button', { name: /Descargar Excel/ })
+
+  /*
+    ⚠️ **Lo que de verdad hay que probar.** El backend escribe las filas en el
+    orden que se le manda y nada más: si aquí viajaran las filas sin ordenar, la
+    hoja no se parecería a la pantalla desde la que se pidió.
+  */
+  it('manda los ids en el orden EXACTO de la pantalla, no el del backend', async () => {
+    await conDatos()
+    ordenarPor('Candidato')
+    await waitFor(() => expect(elOrdenDeLaTabla()[0]).toBe('Camila Reyes'))
+
+    fireEvent.click(elBoton())
+
+    await waitFor(() => expect(pedirExcel).toHaveBeenCalledOnce())
+    expect(pedirExcel.mock.calls[0]?.[1]).toMatchObject({
+      etapa: 'PERFIL_INTEGRAL',
+      postulacionIds: [93, 94, 91],
+    })
+  })
+
+  it('manda solo lo que sobrevive al filtro, no la tanda entera', async () => {
+    await conDatos()
+    fireEvent.change(screen.getByRole('searchbox', { name: /buscar por nombre/i }), {
+      target: { value: 'lucia' },
+    })
+    await waitFor(() => expect(elOrdenDeLaTabla()).toEqual(['Lucía Ferrer']))
+
+    fireEvent.click(elBoton())
+
+    await waitFor(() => expect(pedirExcel).toHaveBeenCalledOnce())
+    expect(pedirExcel.mock.calls[0]?.[1]).toMatchObject({ postulacionIds: [94] })
+  })
+
+  it('la descripción dice el corte, el filtro y el orden: la hoja se abre lejos de aquí', async () => {
+    await conDatos()
+    fireEvent.click(elBoton())
+    await waitFor(() => expect(pedirExcel).toHaveBeenCalledOnce())
+    const descrito = (pedirExcel.mock.calls[0]?.[1] as { filtroDescrito: string }).filtroDescrito
+    expect(descrito).toContain('Perfil integral')
+    expect(descrito).toContain('Con nota del perfil')
+    expect(descrito).toContain('Orden del ranking')
+  })
+
+  it('el botón dice que está trabajando, y no se puede pulsar dos veces', async () => {
+    let soltar = () => {}
+    pedirExcel.mockImplementation(
+      () =>
+        new Promise((cumplir) => {
+          soltar = () => cumplir({ contenido: new Blob(['x']), nombre: 'r.xlsx' })
+        }),
+    )
+    await conDatos()
+    fireEvent.click(elBoton())
+
+    await waitFor(() => expect(screen.getByRole('button', { name: /Preparando el Excel/ })).toBeTruthy())
+    expect(screen.getByRole('button', { name: /Preparando el Excel/ })).toHaveProperty(
+      'disabled',
+      true,
+    )
+    soltar()
+    await waitFor(() => expect(elBoton()).toBeTruthy())
+  })
+
+  /*
+    El mensaje del servidor tal cual: es él quien sabe por qué —una etapa que no
+    exporta, un permiso que falta— y traducirlo a «no se pudo» borraría justo lo
+    que hay que arreglar.
+  */
+  it('un fallo se enseña con lo que dijo el servidor', async () => {
+    pedirExcel.mockRejectedValue(new Error('Esa etapa no se exporta.'))
+    await conDatos()
+    fireEvent.click(elBoton())
+    await waitFor(() => expect(screen.getByText('Esa etapa no se exporta.')).toBeTruthy())
+  })
+
+  /*
+    ⚠️ En Simulación, Validación y Decisión el backend responde 400. El botón no
+    existe, en vez de salir y fallar: ofrecer una descarga que el servidor va a
+    rechazar es peor que no ofrecerla.
+  */
+  it('no hay botón en las tres etapas que el backend no exporta', async () => {
+    await conDatos()
+    expect(screen.queryByRole('button', { name: /Descargar Excel/ })).toBeTruthy()
+    irA('Simulación')
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: /Descargar Excel/ })).toBeNull(),
+    )
+    irA('Prueba del puesto')
+    await waitFor(() => expect(elCorte('Con nota de la prueba')).toBeTruthy())
+    verCorte('Toda la tanda')
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: /Descargar Excel/ })).toBeTruthy(),
+    )
+  })
+})
+
+describe('una columna entera vacía no se pinta', () => {
+  /*
+    ⚠️ **La pretensión viaja bajo el permiso `ver_pretension`, que solo tiene
+    DIRECCIÓN.** Para todo el rol de talento llega nula siempre, y una columna de
+    guiones ahí se lee como «nadie pidió sueldo» — que puede ser falso. Cuál de
+    los dos motivos es lo dice `puedeVerPretension`, que viaja en la respuesta
+    justamente porque el nulo por sí solo no los separa.
+
+    La ciudad falta por otra razón y también entera: solo se le pide a quien crea
+    su cuenta desde ahora, así que ninguna postulación anterior la trae. `TANDA`,
+    la tanda por defecto de este archivo, es exactamente ese caso.
+  */
+  it('sin ciudad ni pretensión en la tanda, ninguna de las dos cabeceras existe', async () => {
+    await pintar()
+    const cabeceras = within(laTabla())
+      .getAllByRole('columnheader')
+      .map((c) => c.textContent ?? '')
+    expect(cabeceras.some((c) => c.includes('Ciudad'))).toBe(false)
+    expect(cabeceras.some((c) => c.includes('Pretensión'))).toBe(false)
+  })
+
+  it('y se dice por qué: con permiso, que nadie la declaró', async () => {
+    await pintar()
+    fireEvent.click(screen.getByText(/Ciudad, nota y pretensión/))
+    expect(screen.getByText(/Ninguno de estos candidatos declaró/)).toBeTruthy()
+    expect(screen.getByText(/solo se le pide a quien crea su cuenta desde ahora/)).toBeTruthy()
+  })
+
+  /*
+    El mismo blanco, el motivo opuesto. Sin `ver_pretension` el backend ni lanza
+    la consulta, así que la columna estaría vacía aunque todos hubieran pedido
+    sueldo: aquí la frase tiene que NEGAR expresamente esa lectura, no repetir
+    la de arriba.
+  */
+  it('y sin el permiso, que el dato ni se consultó', async () => {
+    await pintar(TANDA, false)
+    fireEvent.click(screen.getByText(/Ciudad, nota y pretensión/))
+    expect(screen.getByText(/Tu rol no puede ver la pretensión/)).toBeTruthy()
+    expect(screen.getByText(/NO quiere decir/)).toBeTruthy()
+  })
+
+  it('con una sola fila que las traiga, las dos columnas vuelven', async () => {
+    await conDatos()
+    const cabeceras = within(laTabla())
+      .getAllByRole('columnheader')
+      .map((c) => c.textContent ?? '')
+    expect(cabeceras.some((c) => c.includes('Ciudad'))).toBe(true)
+    expect(cabeceras.some((c) => c.includes('Pretensión'))).toBe(true)
+  })
+
+  it('la pretensión se lee con su moneda y su rango', async () => {
+    await conDatos()
+    expect(within(laTabla()).getByText('S/ 2,500 – 3,000')).toBeTruthy()
+    expect(within(laTabla()).getByText('desde S/ 4,000')).toBeTruthy()
   })
 })

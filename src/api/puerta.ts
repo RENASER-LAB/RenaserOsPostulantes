@@ -172,8 +172,54 @@ export function usarAlmacen(otro: Almacen): void {
   almacen = otro
 }
 
+/**
+ * Un archivo que devuelve el backend: el contenido y como se llama.
+ *
+ * El nombre sale de `Content-Disposition`, que es donde lo pone el servidor.
+ * Puede faltar —una respuesta sin esa cabecera es legal— y por eso es nulable:
+ * quien descarga pone entonces el suyo.
+ */
+export interface Archivo {
+  contenido: Blob
+  nombre: string | null
+}
+
+/**
+ * Como se llama el archivo, segun `Content-Disposition`.
+ *
+ * ⚠️ **Hay dos formas y la buena es la segunda.** `filename="x.xlsx"` solo
+ * admite ASCII; cuando el nombre lleva tildes —«Ingeniera de Producción»— los
+ * servidores mandan ademas `filename*=UTF-8''...` percent-encoded, que es la que
+ * manda segun la RFC 5987. Leyendo solo la primera, el archivo se guardaba con
+ * el nombre degradado que el servidor dejo de reserva.
+ */
+function nombreDelArchivo(disposicion: string | null): string | null {
+  if (!disposicion) return null
+  const extendido = /filename\*\s*=\s*[^']*'[^']*'([^;]+)/i.exec(disposicion)
+  if (extendido?.[1]) {
+    try {
+      return decodeURIComponent(extendido[1].trim())
+    } catch {
+      // Percent-encoding roto: mejor caer a la forma simple que reventar la
+      // descarga por el nombre.
+    }
+  }
+  const simple = /filename\s*=\s*"?([^";]+)"?/i.exec(disposicion)
+  return simple?.[1]?.trim() ?? null
+}
+
 export interface Puerta {
   pedir: <T>(ruta: string, opciones?: Opciones) => Promise<T>
+  /**
+   * Lo mismo que `pedir`, pero la respuesta buena se lee como archivo.
+   *
+   * ⚠️ **Solo cambia el exito.** Un fallo sigue llegando como
+   * `application/problem+json` aunque la ruta devuelva un `.xlsx`, asi que el
+   * error se lee y se traduce por el mismo camino de siempre: leerlo como blob
+   * dejaria «No se pudo completar la operación» donde el servidor explicaba que
+   * esa etapa no exporta.
+   */
+  pedirArchivo: (ruta: string, opciones?: Opciones) => Promise<Archivo>
   leerToken: () => string | null
   guardarToken: (token: string) => void
   borrarToken: () => void
@@ -196,7 +242,18 @@ export function crearPuerta(base: string, claveToken: string): Puerta {
     almacen.borrar(claveToken)
   }
 
-  async function pedir<T>(ruta: string, opciones: Opciones = {}): Promise<T> {
+  /**
+   * La peticion entera menos el ultimo paso: pedir, anotar la hora, y convertir
+   * un fallo en un `ErrorApi` con lo que el servidor haya dicho.
+   *
+   * Existe porque leer JSON y leer un archivo comparten TODO menos esa ultima
+   * linea. Duplicarla dejaria dos sitios donde tirar el token caducado, y el
+   * segundo se olvidaria.
+   */
+  async function lanzar(
+    ruta: string,
+    opciones: Opciones,
+  ): Promise<{ respuesta: Response; sinCuerpo: boolean }> {
     const { metodo = 'GET', cuerpo, formulario, sinToken, senal } = opciones
 
     const cabeceras: Record<string, string> = {}
@@ -240,12 +297,34 @@ export function crearPuerta(base: string, claveToken: string): Puerta {
       throw new ErrorApi(respuesta.status, mensajeDe(respuesta.status, leido), leido)
     }
 
+    return { respuesta, sinCuerpo }
+  }
+
+  async function pedir<T>(ruta: string, opciones: Opciones = {}): Promise<T> {
+    const { respuesta, sinCuerpo } = await lanzar(ruta, opciones)
     if (sinCuerpo) return undefined as T
     return (await leerCuerpo(respuesta)) as T
   }
 
+  async function pedirArchivo(ruta: string, opciones: Opciones = {}): Promise<Archivo> {
+    const { respuesta, sinCuerpo } = await lanzar(ruta, opciones)
+    /*
+      Un 200 sin cuerpo aqui no es un archivo vacio que valga la pena guardar:
+      es una descarga que no descargo nada. Se dice, en vez de dejar que el
+      navegador guarde cero bytes con extension `.xlsx`.
+    */
+    if (sinCuerpo) {
+      throw new ErrorApi(respuesta.status, 'El servidor no devolvió ningún archivo.')
+    }
+    return {
+      contenido: await respuesta.blob(),
+      nombre: nombreDelArchivo(respuesta.headers.get('Content-Disposition')),
+    }
+  }
+
   return {
     pedir,
+    pedirArchivo,
     leerToken,
     guardarToken,
     borrarToken,

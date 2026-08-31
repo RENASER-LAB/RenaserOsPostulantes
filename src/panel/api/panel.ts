@@ -4,7 +4,8 @@
  * Cada funcion es una linea: la ruta y el tipo. La mecanica vive en la puerta.
  */
 
-import { pedir } from './cliente'
+import { pedir, pedirArchivo } from './cliente'
+import type { Archivo } from '@/api/puerta'
 import type {
   AceptarInvitacionPanel,
   LoginPanel,
@@ -62,6 +63,7 @@ import type {
   CuestionarioTecnico,
   GeneracionPedida,
   CorregirPreguntaTecnica,
+  PedirExcelDelRanking,
 } from './tipos'
 
 // ---------- Entrar ----------
@@ -157,6 +159,23 @@ export const verEmbudo = (vacanteId: number) =>
 /** Sin etapa es la preseleccion; con ella, la nota de la fila es la de esa etapa. */
 export const verRanking = (vacanteId: number, etapa?: string) =>
   pedir<RankingVacante>(`/vacantes/${vacanteId}/ranking${etapa ? `?etapa=${etapa}` : ''}`)
+
+/**
+ * El ranking en Excel, con las filas EN EL ORDEN QUE SE MANDAN.
+ *
+ * ⚠️ **Es POST y no GET, y no por capricho**: lleva dentro la lista entera de
+ * ids ordenada, que en una tanda de ochenta no cabe en una URL. Y por eso mismo
+ * no vale un `<a href>`: el token va como `Bearer` en una cabecera, que un
+ * enlace no puede poner. El archivo se abre con `createObjectURL`.
+ *
+ * Solo `PERFIL_INTEGRAL` y `PRUEBA_PUESTO`; cualquier otra etapa sale con 400 y
+ * su mensaje, que es el que la pantalla enseña.
+ */
+export const descargarExcelDelRanking = (
+  vacanteId: number,
+  datos: PedirExcelDelRanking,
+): Promise<Archivo> =>
+  pedirArchivo(`/vacantes/${vacanteId}/ranking/excel`, { metodo: 'POST', cuerpo: datos })
 
 export const verFicha = (postulacionId: number) =>
   pedir<FichaPostulacion>(`/postulaciones/${postulacionId}`)

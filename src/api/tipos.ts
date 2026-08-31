@@ -72,10 +72,36 @@ export interface CrearCuenta {
   apellidos: string
   correo: string
   contrasena: string
+  /**
+   * Donde vive: el ubigeo de nivel 2 —la provincia—, o `EXT` si es fuera del
+   * pais. Obligatorio, y el backend lo valida contra su catalogo: un codigo que
+   * no exista sale con 400.
+   *
+   * ⚠️ **Solo se pide al crear la cuenta.** A quien ya tiene cuenta no se le
+   * pregunta nunca, asi que el panel tiene que contar con que casi ninguna
+   * postulacion vieja trae ciudad.
+   */
+  ciudadUbigeo: string
   /** Obligatorio: sin esto no se puede postular. */
   aceptaProceso: boolean
   /** Opcional y distinto del anterior: entrar al Radar de Talento. */
   aceptaFuturosContactos?: boolean
+}
+
+/**
+ * Una provincia del catalogo de ubigeo, para el desplegable del registro.
+ *
+ * ⚠️ **Un solo desplegable agrupado por departamento**, no dos encadenados: son
+ * 196 provincias, caben en un `<select>` con `<optgroup>`, y encadenar dos
+ * obliga a esperar una peticion entre el primero y el segundo.
+ *
+ * `departamento` viene nulo en el unico codigo que no es de ningun sitio del
+ * Peru: `EXT`, el extranjero.
+ */
+export interface OpcionUbigeo {
+  codigo: string
+  nombre: string
+  departamento: string | null
 }
 
 export interface Login {

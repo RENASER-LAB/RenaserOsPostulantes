@@ -44,6 +44,43 @@
   border-color: var(--mal);
 }
 
+/*
+ * El desplegable del sistema.
+ *
+ * Misma silueta que `.entrada`: en un formulario, dos campos que se rellenan
+ * igual no pueden verse distinto. La flecha la apaga y la redibuja `mundo.css`
+ * para todos los `select` del portal; aquí solo va la caja.
+ *
+ * 48 px de alto y 16 px de letra, como el resto de los campos: por debajo de 16
+ * iOS hace zoom al enfocar.
+ */
+.seleccion {
+  min-height: 48px;
+  padding: 0 var(--e3);
+  background-color: var(--nube);
+  color: var(--tinta);
+  border: 1px solid var(--borde-control);
+  font: inherit;
+  font-size: var(--t-base);
+  border-radius: var(--radio-menor);
+}
+
+.seleccion:hover:not(:disabled) {
+  border-color: var(--tinta2);
+}
+
+/* El error engorda el borde, igual que en `.entrada`: la forma antes que el color. */
+.seleccion[aria-invalid='true'] {
+  border-width: 2px;
+  border-color: var(--mal);
+}
+
+.seleccion:disabled {
+  background-color: var(--nube-honda);
+  border-color: var(--nube-honda);
+  color: var(--tinta3);
+}
+
 /* ---------- El ojo de una contraseña ---------- */
 
 /*

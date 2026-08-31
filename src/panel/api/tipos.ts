@@ -366,6 +366,14 @@ export interface NotaCriterio {
   peso: number
   explicacion: string | null
   origen: string | null
+  /**
+   * Cuanta evidencia sostiene esa nota, **de 0 a 100** —no de 0 a 1—.
+   * Confirmado en `DtosPerfilIntegral.java:50`: tratarla como fraccion pintaria
+   * un 87 % como un 8.700 %.
+   */
+  confianza: number | null
+  /** No-nulo significa que una PERSONA corrigio la nota, y por que. */
+  motivoAjuste: string | null
 }
 
 export interface FilaRanking {
@@ -381,6 +389,42 @@ export interface FilaRanking {
   pasada: string | null
   archivoNombre: string | null
   grupoPrioridad: string | null
+  /**
+   * Donde vive, ya compuesta: «Arequipa — Camaná». Nula mientras nadie la haya
+   * declarado.
+   *
+   * ⚠️ **Hoy es nula en casi toda la base**: la ciudad se pide al crear cuenta y
+   * a quien ya tenia cuenta no se le pregunta nunca. Por eso el filtro de ciudad
+   * del panel se arma de las filas y no del catalogo: un desplegable con las 196
+   * provincias sobre una tanda sin una sola ciudad promete lo que no hay.
+   */
+  ciudad: string | null
+  /**
+   * El ubigeo de nivel 2, o `EXT` para el extranjero.
+   *
+   * ⚠️ **Que este puesto NO implica que `ciudad` lo este.** Son dos consultas y
+   * el nombre puede faltar; pintar `ciudad` dando por hecho que hay codigo, o al
+   * reves, deja una celda en blanco sin motivo.
+   */
+  ciudadCodigo: string | null
+  /**
+   * Lo que pide ganar, del perfil. Cualquiera de los dos extremos puede faltar.
+   *
+   * ⚠️ **Va con candado: solo viaja con el permiso `ver_pretension`.** Sin el
+   * llega en nulo y el backend ni lanza la consulta. Lo decidio la V36 a
+   * proposito —«si la pretension apareciera junto a la nota pesaria en la
+   * decision, que es justo lo que este sistema busca evitar»— y solo el rol
+   * DIRECCION lo tiene; TALENTO no.
+   *
+   * ⚠️ **Por eso un nulo aqui NO significa «no pidio sueldo».** Los dos motivos
+   * —sin permiso y sin declarar— son indistinguibles desde el navegador, y la
+   * pantalla no puede afirmar ninguno de los dos. Ver `POR_QUE_NO_HAY_PRETENSION`
+   * en `ranking.ts`.
+   */
+  pretensionMin: number | null
+  pretensionMax: number | null
+  /** `PEN`, `USD` o nulo. */
+  pretensionMoneda: string | null
   notaEtapa: number | null
   notaCurriculum: number | null
   adecuacion: number | null
@@ -393,6 +437,22 @@ export interface FilaRanking {
   alertas: number
   actualizadoEn: FechaIso | null
   notasCriterio: NotaCriterio[]
+}
+
+/**
+ * Lo que se le manda al backend para que arme el Excel del ranking.
+ *
+ * ⚠️ **`postulacionIds` viaja YA ORDENADO y el backend escribe esas filas en ese
+ * orden.** El servidor no sabe que es un filtro ni un orden: filtrar y ordenar
+ * ocurre en el cliente, y lo que se exporta es exactamente lo que se esta
+ * viendo. De ahi que `filtroDescrito` sea obligatorio — una hoja sin decir de
+ * que recorte salio se lee como si fuera la tanda entera.
+ */
+export interface PedirExcelDelRanking {
+  /** Solo `PERFIL_INTEGRAL` y `PRUEBA_PUESTO`; el backend rechaza las otras. */
+  etapa: string
+  postulacionIds: number[]
+  filtroDescrito: string
 }
 
 /**
@@ -474,6 +534,14 @@ export interface RankingVacante {
   calificados: number
   enCurso: number
   fallidos: number
+  /**
+   * Si esta petición pudo siquiera consultar la pretensión salarial.
+   *
+   * Sin el permiso `ver_pretension` —solo lo tiene Dirección— el backend ni lanza
+   * la consulta, así que una columna vacía tiene dos lecturas opuestas. Este
+   * booleano es lo único que las separa desde el navegador.
+   */
+  puedeVerPretension: boolean
   filas: FilaRanking[]
 }
 

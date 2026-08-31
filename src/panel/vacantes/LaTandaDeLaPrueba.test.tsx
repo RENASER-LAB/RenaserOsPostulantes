@@ -36,6 +36,13 @@ const fila = (postulacionId: number, candidato: string, estado: string): FilaRan
   pasada: 'FINA',
   archivoNombre: null,
   grupoPrioridad: null,
+  // Nulas como en la base de hoy: la ciudad solo se le pide a quien crea cuenta
+  // desde ahora, y la pretensión es opcional en el perfil.
+  ciudad: null,
+  ciudadCodigo: null,
+  pretensionMin: null,
+  pretensionMax: null,
+  pretensionMoneda: null,
   notaEtapa: null,
   notaCurriculum: null,
   adecuacion: null,
