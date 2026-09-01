@@ -199,6 +199,10 @@ Ademas la prueba del backend tambien trae **preguntas**, que el mockup ignora de
 
 - La duracion de la prueba y el minuto del cambio los guarda en la vacante. En el backend
   viven en la plantilla de la prueba.
+  ⚠️ **Esto ya no es del todo cierto.** La vacante tiene sus propios minutos de etapa
+  tecnica, y cuando estan escritos **mandan sobre los de la plantilla** —hasta convierten en
+  cronometrada una prueba de plazo abierto—; el minimo son cinco. O sea que el mockup
+  acertaba a medias. El minuto del cambio inesperado si sigue viviendo solo en la plantilla.
 - La lista de postulaciones trae el **grupo de prioridad**. Es la clasificacion interna
   del equipo. **No deberia enseñarse al candidato.**
 - El detalle de una postulacion trae su historial real. El mockup dibuja una linea de

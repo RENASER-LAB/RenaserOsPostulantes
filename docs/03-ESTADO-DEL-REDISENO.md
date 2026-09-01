@@ -174,3 +174,13 @@ Conectarla, el día que haya ruta, es **una línea en `dominio/estados.ts`**.
 - **Todas las horas van en reloj de 24.** `formatearFechaLarga` salía con el «09:00 a. m.»
   de fábrica de `es-PE`, que en móvil parte la línea entre la «a.» y la «m.» y además no
   cuadraba con las horas de la agenda de la simulación, que sí eran de 24.
+- **El plazo acompaña al candidato dentro del examen** (31/08/2026). El maquetado ponía los
+  días restantes en la portada de la evaluación y nada más; con catorce días de plazo y una
+  pantalla que se retoma muchas veces, eso obligaba a salir del examen para saber cuánto
+  quedaba. Los días van ahora en la línea de servicio, junto a «Pregunta 2 de 55», y **se
+  apagan en la última hora** para no competir con la cuenta atrás del aviso.
+- **Un plazo puede tener dos límites, y se dicen los dos** (31/08/2026). El maquetado daba por
+  hecho que una prueba era cronometrada **o** de fecha de cierre. Pueden ser las dos cosas, y
+  manda la que caiga antes. El segundo límite va **debajo del primero**, en el tamaño menor y
+  la tinta clara: es la condición del dato de arriba, no un dato hermano, y al mismo peso se
+  leerían como dos plazos en competencia.

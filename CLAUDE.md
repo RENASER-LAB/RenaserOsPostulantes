@@ -1,9 +1,223 @@
 # Portal del candidato · contexto de trabajo
 
-Última actualización: 2026-08-30 · **la vacante elige qué prueba se rinde, y el candidato la contesta**
+Última actualización: 2026-09-01 · **las pruebas del puesto se escriben desde el panel, las áreas
+se administran desde Configuración, y el plazo se dice entero**
 
 Este archivo es para retomar el trabajo sin tener que reconstruir nada. Cuenta qué es este
 proyecto, con qué habla, qué se decidió y por qué, y qué está a medias.
+
+---
+
+## El plazo se dice entero, y no desaparece a media prueba (31/08/2026)
+
+Dos sitios donde el portal **tenía razón y callaba media verdad**. Los dos son de la misma
+familia: un plazo que el candidato necesitaba para decidir cómo repartirse el tiempo, y que la
+pantalla no le enseñaba.
+
+⚠️ **Los dos plazos de la prueba pueden existir A LA VEZ, y el lateral decía uno solo.** Antes
+de empezar (`estadoIntento === 'PENDIENTE'`), `Prueba.tsx` era un `if/else`: si venía
+`duracionMinutos` escribía «90 minutos desde que empieces» y **se callaba `venceEn`**. Pero son
+cosas distintas —los minutos los trae el instrumento, la fecha la cierra la convocatoria para
+todos— y **manda el que caiga antes**, que lo decide el servidor al arrancar el intento. Quien
+abriera a las 17:40 con cierre a las 18:00 leía noventa minutos y tenía veinte. Ahora se dicen
+los dos, y el segundo dice **cuál acorta a cuál**. Sin `venceEn` no se inventa ninguna fecha:
+las dos ramas están fijadas en `Prueba.test.tsx`.
+
+⚠️ **En la evaluación, los días que quedan estaban solo en la portada.** Entre esa pantalla y el
+aviso de la última hora hay **dos semanas** de plazo por defecto, y en todo ese tramo el
+candidato no volvía a ver cuánto le quedaba: para saberlo tenía que salir del examen. Ahora va
+en la línea de servicio, junto a «Pregunta 2 de 55», que es donde se mira de reojo sin
+interrumpir.
+
+⚠️ **Y desaparece por debajo de la hora**, que es exactamente cuando entra el aviso de «Queda
+poco plazo» con su cuenta atrás. Dos relojes a la vez —uno diciendo «hoy» y el otro
+`00:42:17`— se leen peor que el segundo solo. Por eso la frontera es **una sola constante**,
+`UNA_HORA`, que gobierna las dos apariciones: dos números que se desincronizaran dejarían un
+hueco sin ningún reloj, o los dos encendidos. De paso, ese corte deja fuera los dos textos de
+`diasHasta` que en esa línea no encajan, «vencida» y «sin plazo».
+
+**Y una decisión de forma que vale para los dos:** el segundo plazo va **debajo del primero**,
+en `--t-menor` y `--tinta3`, no a su lado y no al mismo peso. Es la condición del dato de
+arriba, no un dato hermano; subirlo haría leer dos plazos compitiendo en vez de uno con su
+límite.
+
+## Las áreas se administran desde Configuración (31/08/2026)
+
+Las áreas son la estructura de la empresa y **hace falta una para registrar una solicitud de
+talento**, que es el paso previo a cualquier vacante. El panel solo sabía *consumirlas*
+(`listarAreas` para llenar desplegables): no había ninguna pantalla para crear una, y menos
+para cambiarlas. Ahora hay una sección propia, `src/panel/configuracion/Areas.tsx`, entre el
+banco y el equipo.
+
+⚠️ **Son DOS listas y usar la equivocada rompe la pantalla en silencio.** `GET /areas` trae
+solo las activas —es la que llena los desplegables— y `GET /areas/todas` trae también las
+retiradas. Esta pantalla lee la segunda: con la primera, un área recién desactivada
+desaparecería de la lista sin ninguna forma de volver a encenderla, y el botón «Retirar» sería
+un viaje sin retorno.
+
+⚠️ **La tabla del equipo también pasó a la lista de todas**, y por lo mismo: leía la de activas
+y alguien de un área retirada caía en el `?? '—'`, que significa «no tiene área». Dos
+situaciones distintas pintadas igual, y la falsa hacía pensar que al desactivar se perdió el
+dato.
+
+⚠️ **Retirar y borrar son cosas distintas y la pantalla lo dice.** Retirar deja todo donde está
+y se deshace. Borrar exige mover antes lo que colgaba del área —las dos claves ajenas que
+apuntan a ella no declaran `ON DELETE`—, y ese movimiento no se deshace.
+
+⚠️ **El precio del borrado se enseña ANTES de confirmar.** Al abrir el bloque se pide
+`GET /areas/{id}/impacto` y se escriben los dos recuentos de verdad; mientras la respuesta no
+llega no se ofrece ningún botón de borrar, y si no se puede traer, tampoco. Un «¿seguro?» sin
+números deja decidiendo a ciegas sobre solicitudes de candidatos reales. El bloque se despliega
+**en la propia fila y no en un `<dialog>`**, como la asistencia de una simulación: tiene que
+leerse pegado al nombre al que se refiere.
+
+⚠️ **Cada cambio invalida las DOS claves de caché**, `['panel-areas-todas']` y
+`['panel-areas']`. La segunda la leen el desplegable de la vacante y la tabla del equipo: sin
+invalidarla, un área renombrada aquí sigue con el nombre viejo allá hasta que alguien recargue.
+
+Los 409 del backend vienen escritos en español —el nombre repetido, y el borrado con los dos
+recuentos dentro— y se enseñan tal cual: son la única indicación de qué hacer a continuación.
+
+**Lo que encontró mirarlo, y no leerlo** (`capturar-panel.mjs`, pantalla `areas`):
+
+- Un `flex-wrap: wrap` dentro de un flex en columna resolvía su alto a 152 px con 70 px de
+  contenido: los campos se iban al fondo y quedaba un hueco vacío de ochenta píxeles justo
+  encima del desplegable del destino. Se midió en el navegador; ni `align-content` ni
+  `flex: none` ni `height: fit-content` lo bajaban. El bloque pasó a rejilla.
+- **En gris, «Borrar» se leía idéntico a «Renombrar» y «Retirar»**: tres píldoras del mismo
+  trazo, y la única que no se deshace era indistinguible. Lleva contorno de 2 px en `--mal`, no
+  de 1 px en `--mal-regla` —con la regla clara salía *más pálido* que sus vecinos—.
+- «En uso» va rellena y «Retirada» con trazo punteado: se separan por la forma, no por el tono.
+
+## Las pruebas del puesto se escriben desde el panel (31/08/2026)
+
+Hasta hoy **no había ninguna pantalla** para crear una prueba: las que existen entraron por
+scripts de Python del backend —`cargar-convocatoria.py`, `cargar-prueba-administrador.py` y
+`cargar-prueba-de-la-empresa.py`—, llamando a la API una por una. Quien no escribe Python no
+podía escribir una prueba, y sin prueba publicada ninguna vacante se publica. Pestaña nueva
+**Pruebas** (`/admin/pruebas`) con dos pantallas en `src/panel/pruebas/`:
+
+- **`PlantillasDePrueba.tsx`** · las plantillas con sus versiones y el estado de cada una.
+  Crea plantillas (nombre y puesto opcional: sin puesto es genérica) y abre borradores nuevos.
+- **`ComponerPrueba.tsx`** (`/admin/pruebas/versiones/:versionId`) · la versión entera:
+  datos y tiempos, el enunciado subido como archivo, la guía de calificación, preguntas,
+  entregables, rúbrica y variantes. `DatosDeLaPrueba.tsx` y `ListasDeLaPrueba.tsx` son sus
+  dos mitades; `cuotas.ts` calcula los contadores y tiene sus 11 pruebas.
+
+### ⚠️ Todo se refresca de la versión entera, nunca se parchea a mano
+Componer una prueba son **diecisiete llamadas de escritura** a `/plantillas-prueba` —crear la
+plantilla y la versión, el `PUT` de los datos, publicar, subir la consigna, y el alta, la
+corrección y el borrado de preguntas, entregables, criterios y variantes—, y **ninguna devuelve
+la versión actualizada**: devuelven un id o nada. Cada `onSuccess` invalida
+`['panel-version-prueba', id]`. Es un viaje más y es lo que
+impide que **los contadores mientan**: llevados a mano se separarían del servidor al primer
+fallo de red, que es la trampa del «indicador honesto» que ya costó respuestas perdidas aquí.
+
+### ⚠️ `PUT /versiones/{id}` REEMPLAZA la versión entera
+Lo que no viaje se guarda en nulo. Por eso los datos y la guía son **un solo formulario con un
+solo botón**: partirlos haría que guardar uno borrase el otro. Y por eso `VersionResponse`
+tuvo que devolver `materiales`, `herramientasPermitidas` y `minutosExtra`, que antes se podían
+escribir y no leer — cargar el formulario y guardarlo los borraba sin que nadie los tocara.
+
+### Los contadores existen porque publicar para en la primera regla que falla
+El backend valida en cascada —duración, cuota de preguntas, rúbrica— y devuelve **un** mensaje.
+Con la rúbrica en 140 y tres preguntas de menos hacían falta tres intentos para enterarse de
+tres cosas. El balance de arriba las enseña a la vez mientras se compone. **El botón de
+publicar no se apaga** aunque el balance esté en rojo: es una copia de las reglas del servidor
+y una copia puede quedarse atrás; apagarlo encerraría la versión por un cálculo del panel.
+
+⚠️ **La cuota cambia con los entregables.** Sin ninguno la prueba es un cuestionario y basta
+una pregunta; con el primero pasan a hacer falta 8-10 universales y 3-5 del puesto. Es la
+regla que un contador fijo habría pintado mal, y es lo que fija `cuotas.test.ts`.
+
+### Las dos confusiones que la pantalla dice en voz alta
+- **El archivo es el ENUNCIADO, no la prueba.** Subirlo no crea preguntas, ni entregables, ni
+  rúbrica, y publicar exige lo mismo que antes. Además el enlace **caduca a los 180 días**.
+- **La guía de calificación orienta, no sustituye a la rúbrica.** La nota sigue saliendo
+  criterio a criterio y la rúbrica sigue teniendo que sumar 100.
+
+### ⚠️ Se borró el tanteo de ids de `panel.ts`
+`listarVersionesPrueba` adivinaba ids en tandas de ocho hasta dar con un hueco, porque
+`GET /plantillas-prueba/{id}/versiones` no existía. **Ya existe**, y la función es una línea.
+Si vuelve a aparecer código que adivina ids, alguien deshizo esto. El desplegable de la vacante
+pregunta plantilla por plantilla y junta las respuestas, y ahora que llega el `estado` **ya no
+ofrece borradores**: asignarlos contestaba 409.
+
+⚠️ **Ese `useQuery` espera a que las plantillas TERMINEN, no a que acierten**:
+`enabled: !plantillasPrueba.isLoading`, nunca `isSuccess`. Con `isSuccess`, un fallo al
+listarlas dejaba la consulta apagada para siempre —`isPending` no baja nunca, el desplegable se
+queda deshabilitado diciendo «Buscando las pruebas…», y ninguno de los tres carteles de abajo,
+que exigen `!isPending`, llega a salir—. Una espera eterna sin explicar es la versión silenciosa
+del indicador que miente. Terminando en error se corre igual con la lista vacía, y el cartel
+—que empieza por la rama del fallo, antes que por «no hay ninguna»— dice qué pasó y enlaza a
+`/admin/pruebas`.
+
+⚠️ **Dos excepciones que parecen incoherencias y no lo son.** La versión que la vacante YA tiene
+puesta no se filtra nunca —ni por estado ni por puesto—, y si su plantilla no sale en el listado
+se pide suelta con `verVersionDePrueba`. Sin eso, el `<select>` se quedaría sin su `<option>` y
+diría «Elige la prueba…» sobre una vacante que sí tiene prueba.
+
+### Dos defectos que solo se vieron en el navegador
+- **`composes: chico` de una clase escrita más abajo aborta la hoja entera.** PostCSS falla con
+  «referenced class name not found» y la pantalla sale sin un solo estilo. En jsdom las clases
+  son cadenas: ningún test lo ve.
+- **Un botón suelto dentro de un bloque flexible se estira a lo ancho.** «Añadir un criterio»
+  era una píldora de mil píxeles. De ahí `.bloque > .chico { align-self: flex-start }`.
+
+Y una decisión de forma: **quitar lleva el rojo del sistema**, contorno y texto, no relleno.
+Sin eso «Quitar» y «Corregir» eran dos píldoras idénticas en la misma fila y una borraba.
+
+### Cómo se comprueba
+
+```bash
+npm run typecheck && npm test
+PORTAL=http://localhost:5199 node herramientas/e2e-componer-prueba.mjs
+```
+
+`npm test` son **356 pruebas en 29 archivos** (medido el 01/09/2026), y pasan enteras.
+
+`e2e-componer-prueba.mjs` escribe una prueba entera en un Chrome de verdad y contra el
+backend de verdad: crea la plantilla, compone la v1 —datos, tiempos, el enunciado escrito y
+subido como PDF, la guía, once preguntas, dos entregables, la rúbrica y dos variantes—,
+intenta publicar hasta que el servidor deja, y comprueba el desplegable de una vacante.
+
+⚠️ **Es lo único que ejercita la escritura de verdad.** Los tests de esta pantalla corren
+contra `backend-simulado.mjs`, que **contesta `{ok:true}` a todo lo que no sea GET**: con ese
+doble, ningún guardado real se había visto nunca. La e2e cubre **catorce de las diecisiete**
+llamadas de escritura. Las tres que no ha ejercitado nunca nadie contra un backend de verdad
+—y conviene saberlo antes de fiarse— son escribir una pregunta nueva en el catálogo (la e2e
+trae las suyas de las ya sembradas), quitar un criterio de la rúbrica y quitar una variante del
+cambio inesperado. Las dos últimas comparten la confirmación con las que sí se prueban, pero
+**cada `quitar` es su propia mutación contra su propia ruta**: que el botón esté probado no dice
+nada de la llamada que hay detrás.
+
+⚠️ **No hay lista de 404 perdonados**, a diferencia de `e2e-cuestionario-tecnico.mjs`. Aquel
+perdona los de `/plantillas-prueba/versiones/` porque el panel tanteaba ids; ese tanteo es
+justo lo que se borró aquí, así que heredar el perdón taparía lo que la prueba busca. Lo
+único que se perdona es el 404 de la ficha de la vacante del último paso, que no está escrita.
+
+⚠️ **Deja rastro que nadie puede borrar**: una plantilla por corrida, una versión suya
+publicada —publicar congela— y otra en borrador. Nunca contra producción.
+
+Lo que encontró, y que ningún test con dobles podía ver:
+
+- **`CriterioRubricaResponse` no devolvía `descripcion`.** Corregir un criterio lo reemplaza
+  entero, así que el formulario se abría en blanco y guardar **borraba la explicación larga
+  sin decir nada**. Arreglado en el backend; ahora se siembra como el resto de campos. Es
+  exactamente el mismo agujero que ya había obligado a devolver `materiales` y
+  `herramientasPermitidas`.
+- **`PUT /versiones/{id}` NO se lleva por delante el enunciado subido**, que era el miedo:
+  `urlConsigna` no viaja en ese contrato y el backend la deja en paz a propósito. Para verlo
+  hay que subir el archivo y **guardar después** — al revés no se ejercita.
+- El resto del recorrido pasa entero: la cascada de validación al publicar nombra una regla
+  por intento («hay 7 universales», luego «la rúbrica suma 140.00»), el balance cambia de
+  cuota al añadir el primer entregable, y el desplegable de la vacante ofrece la v1 publicada
+  y no la v2 en borrador.
+
+⚠️ **Lo que esta prueba NO puede comprobar: que el enunciado subido se pueda abrir.** En
+local el almacén es el doble en memoria y reparte urls `memoria://`, que ningún navegador
+abre. Se afirma que el enlace existe y que sobrevive a guardar, no que sirva bytes: un fallo
+en la firma de Supabase pasaría por aquí sin que nadie se entere.
 
 ---
 
@@ -30,6 +244,16 @@ solo aparece cuando el número cambió.
 ⚠️ **Se puede cambiar mientras nadie haya rendido todavía, y ni un minuto más.** Lo frena
 `exigirVaraQuieta` en el backend, y los minutos cuentan como parte de la vara: cambiarlos con
 gente dentro movería el examen bajo los pies de quien lo está haciendo.
+
+⚠️ **El suelo de esos minutos son CINCO, no uno.** Ese número manda sobre el reloj del
+instrumento elegido —hasta convierte una prueba de plazo abierto en cronometrada—, así que un
+uno es una prueba que el servidor entrega sola sesenta segundos después de que el candidato la
+abra. El mismo suelo lo valida el backend; el panel lo dice antes de intentarlo, y el campo
+tiene tres textos de ayuda porque dice tres cosas distintas: el número inválido, el campo en
+blanco («rige el tiempo del instrumento») y el número escrito («este tiempo manda sobre el del
+instrumento»). El del medio ya estaba; el último es el arreglo, porque hasta ahora este campo
+no hacía nada con la prueba del puesto y quien lo escribe tiene que enterarse aquí, no por lo
+que le pase al candidato.
 
 ⚠️ **El desplegable de la prueba del puesto DESAPARECE al elegir el cuestionario**, y no es
 cosmética: dejarlo visible invita a configurar las dos y sugiere que conviven.
