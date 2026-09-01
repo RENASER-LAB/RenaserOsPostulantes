@@ -248,35 +248,6 @@ export function cifrasDeLaEtapa(filas: FilaRanking[], etapa: EtapaPanel): Cifras
 
 // ---------- El grupo de prioridad ----------
 
-/**
- * El orden de los grupos, copiado de `ServicioPerfilIntegralPanelImpl`.
- *
- * ⚠️ **Manda el grupo, no la nota.** Quien llega a un 90 arrastrando un riesgo
- * crítico no va por delante de quien llega con un 80 y ninguno, y ordenar por el
- * número escondería justo eso. El backend ya sirve la tanda así; aquí se repite
- * para que **ordenar por nota en el navegador no deshaga esa decisión**.
- *
- * Lo que no tiene grupo va al final, no arriba: es el caso normal mientras la IA
- * no ha leído a nadie, y colocarlo primero pondría a los no calificados por
- * delante de los que sí.
- */
-export const ORDEN_GRUPO = [
-  'ALTA',
-  'POTENCIAL_CON_RIESGO',
-  'NO_PRIORIZADO',
-  'INCOMPATIBLE',
-] as const
-
-/*
-  Un `Map` y no `ORDEN_GRUPO.indexOf(...)`: con `noUncheckedIndexedAccess` el
-  índice de una lista devuelve `T | undefined` y el `?? ` deja el caso del
-  desconocido dicho en una línea en vez de escondido en un `-1`.
-*/
-const POSICION_DEL_GRUPO = new Map<string, number>(ORDEN_GRUPO.map((g, i) => [g, i]))
-
-export const posicionDelGrupo = (grupo: string | null | undefined): number =>
-  grupo == null ? ORDEN_GRUPO.length : (POSICION_DEL_GRUPO.get(grupo) ?? ORDEN_GRUPO.length)
-
 const NOMBRE_DEL_GRUPO: Record<string, string> = {
   ALTA: 'Prioridad alta',
   POTENCIAL_CON_RIESGO: 'Potencial con riesgo',
@@ -287,10 +258,12 @@ const NOMBRE_DEL_GRUPO: Record<string, string> = {
 /**
  * El grupo dicho como se lee, o `null` si no tiene.
  *
- * ⚠️ **El panel SÍ pinta el grupo, y aquí hace falta.** La prohibición es del
- * portal del candidato —a nadie se le dice «incompatible» a la cara—, no de la
- * mesa donde se decide. Y ordenando por nota es obligatorio: las notas dejan de
- * ir de mayor a menor al cruzar de grupo, y sin ver el grupo el orden parece roto.
+ * ⚠️ **El panel SÍ pinta el grupo.** La prohibición es del portal del candidato
+ * —a nadie se le dice «incompatible» a la cara—, no de la mesa donde se decide.
+ *
+ * Ya no gobierna el orden, pero se sigue enseñando: que alguien llegue a un 95
+ * arrastrando un riesgo crítico es justo lo que hay que ver antes de llamarlo, y
+ * el número solo no lo dice.
  *
  * Un código que no esté en la lista se enseña tal cual: inventarle un nombre es
  * peor que no saberlo.
@@ -446,17 +419,22 @@ function comparadorDe(orden: Orden): (a: FilaRanking, b: FilaRanking) => number 
 
   return (a, b) => {
     /*
-      ⚠️ **La nota se ordena DENTRO de cada grupo de prioridad, y el grupo no se
-      da la vuelta.** Quien ordena está pidiendo otra nota arriba, no descartar
-      la separación por grupo, que es la que dice que un 90 con riesgo crítico no
-      manda sobre un 80 limpio. Sin esto, «nota descendente» mezcla los cuatro
-      grupos y el orden del backend queda deshecho por un clic.
-    */
-    if (orden.columna === 'nota') {
-      const porGrupo = posicionDelGrupo(a.grupoPrioridad) - posicionDelGrupo(b.grupoPrioridad)
-      if (porGrupo !== 0) return porGrupo
-    }
+      **El orden es plano: manda la columna pedida y nada más.**
 
+      Antes la nota se ordenaba dentro de cada grupo de prioridad, para que un 90
+      con riesgo crítico no mandara sobre un 80 limpio. Se quitó al mirar quién
+      escribe ese grupo: la IA solo pone ALTA (nota ≥ 80 y sin riesgo crítico),
+      POTENCIAL_CON_RIESGO (nota ≥ 65, o potencial ≥ 80) y NO_PRIORIZADO. Los tres
+      cuelgan de la nota, así que grupo y nota casi siempre van en el mismo
+      sentido y agrupar no cambiaba el orden. INCOMPATIBLE, el único que sí podía
+      contradecirlo, no lo escribe nadie: quien falla un requisito indispensable
+      se cierra como NO_CONTINUA y no llega a tener grupo.
+
+      Lo que sí hacía era confundir. Con cuatro filas ordenadas 55, 74, 61, 95 la
+      mesa se lee como rota, y la etiqueta del grupo dentro de la celda del
+      candidato no bastaba para explicarlo. Un orden que hay que explicar no está
+      ordenando. El grupo se sigue pintando en cada fila para quien quiera verlo.
+    */
     if (esTexto) {
       const ta = textoDe(a, orden.columna)
       const tb = textoDe(b, orden.columna)

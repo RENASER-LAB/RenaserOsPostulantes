@@ -70,29 +70,38 @@ test.describe('Nuevo · ordenar por las cuatro columnas', () => {
     ])
   })
 
-  test('Nota abre por la MAYOR y no mezcla grupos de prioridad', async ({ page }) => {
+  /*
+    El orden es PLANO: manda la nota y cruza los grupos de prioridad. Ordenaba
+    dentro de cada grupo, y producía una mesa 55, 74, 61, 95 que se lee como
+    rota. Se quitó al ver quién escribe ese grupo: INCOMPATIBLE —el único que
+    podía contradecir a la nota— no lo escribe nadie, y los otros tres cuelgan de
+    la propia nota, así que casi siempre iban en el mismo sentido.
+  */
+  test('Nota abre por la MAYOR y manda la nota, cruzando grupos', async ({ page }) => {
     const th = cabecera(page, 'Nota del perfil')
     await th.getByRole('button').click()
     // El primer clic de nota es descendente: el ranking ES eso.
     await expect(th).toHaveAttribute('aria-sort', 'descending')
     expect(await nombresVisibles(page)).toEqual([
-      'Lucía Chávez Paredes', // ALTA 74
-      'Camila Torres Rivas', // ALTA 55
-      'Sebastián Cárdenas Rojo', // NO_PRIORIZADO 61
-      'Joaquín Vargas Ureta', // INCOMPATIBLE 95 -> ÚLTIMO pese al 95
+      'Joaquín Vargas Ureta', // 95, aunque su grupo sea el último
+      'Lucía Chávez Paredes', // 74
+      'Sebastián Cárdenas Rojo', // 61
+      'Camila Torres Rivas', // 55
     ])
 
     await th.getByRole('button').click()
     await expect(th).toHaveAttribute('aria-sort', 'ascending')
     expect(await nombresVisibles(page)).toEqual([
-      'Camila Torres Rivas', // ALTA 55
-      'Lucía Chávez Paredes', // ALTA 74
-      'Sebastián Cárdenas Rojo', // NO_PRIORIZADO 61
-      'Joaquín Vargas Ureta', // INCOMPATIBLE 95 -> ÚLTIMO también aquí
+      'Camila Torres Rivas',
+      'Sebastián Cárdenas Rojo',
+      'Lucía Chávez Paredes',
+      'Joaquín Vargas Ureta',
     ])
 
-    // En los dos sentidos el Incompatible de 95 quedó detrás de los de Prioridad
-    // alta: lo comprueban las dos listas de arriba, no hace falta más.
+    // El grupo sigue pintándose aunque ya no mueva a nadie: quien mira tiene que
+    // ver que ese 95 arrastra algo antes de descolgar el teléfono.
+    await expect(page.getByText('Incompatible').first()).toBeVisible()
+
     await th.getByRole('button').click()
     await expect(th).toHaveAttribute('aria-sort', 'none')
     expect(await nombresVisibles(page)).toEqual(DEL_BACKEND)

@@ -378,13 +378,18 @@ describe('los vacíos van al final, suba o baje el orden', () => {
   })
 })
 
-describe('ordenar por nota no deshace los grupos de prioridad', () => {
+describe('ordenar por nota manda la nota, y nada más', () => {
   /*
-    ⚠️ **El grupo manda sobre la nota, y ordenar por nota no lo cambia.** Quien
-    llega a un 95 arrastrando un riesgo crítico no va por delante de quien llega
-    a un 60 sin ninguno: el backend sirve la tanda así a propósito, y un clic en
-    la cabecera no puede deshacer esa decisión. Lo que se ordena es la nota
-    DENTRO de cada grupo.
+    Esto ordenaba la nota DENTRO de cada grupo de prioridad, para que un 95 con
+    riesgo crítico no mandara sobre un 60 limpio. Se quitó al ver quién escribe
+    ese grupo: la IA solo pone ALTA (nota ≥ 80 y sin riesgo), POTENCIAL_CON_RIESGO
+    (nota ≥ 65, o potencial ≥ 80) y NO_PRIORIZADO. Los tres cuelgan de la nota, así
+    que grupo y nota casi siempre van en el mismo sentido. Y INCOMPATIBLE, el
+    único que sí podía contradecirla, NO LO ESCRIBE NADIE: quien falla un
+    requisito indispensable se cierra como NO_CONTINUA sin llegar a tener grupo.
+
+    Lo que sí producía era una mesa ordenada 55, 74, 61, 95 que se lee como rota.
+    Un orden que hay que explicar no está ordenando.
   */
   const MEZCLADOS = [
     fila('POSTULADA', 60, { candidato: 'Alta 60', grupoPrioridad: 'ALTA' }),
@@ -393,46 +398,63 @@ describe('ordenar por nota no deshace los grupos de prioridad', () => {
     fila('POSTULADA', 70, { candidato: 'Riesgo 70', grupoPrioridad: 'POTENCIAL_CON_RIESGO' }),
   ]
 
-  it('de mayor a menor: el 95 con riesgo sigue por debajo del 60 de prioridad alta', () => {
+  it('de mayor a menor: manda la nota aunque cruce grupos', () => {
     expect(nombres(ordenar(MEZCLADOS, { columna: 'nota', sentido: 'desc' }))).toEqual([
-      'Alta 88',
-      'Alta 60',
       'Riesgo 95',
+      'Alta 88',
       'Riesgo 70',
+      'Alta 60',
     ])
   })
 
-  it('de menor a mayor tampoco: el sentido ordena la nota, no los grupos', () => {
+  it('de menor a mayor, lo mismo al revés', () => {
     expect(nombres(ordenar(MEZCLADOS, { columna: 'nota', sentido: 'asc' }))).toEqual([
       'Alta 60',
-      'Alta 88',
       'Riesgo 70',
+      'Alta 88',
       'Riesgo 95',
     ])
   })
 
-  it('quien no tiene grupo va detrás de los cuatro, no delante', () => {
+  /*
+    El grupo deja de gobernar el orden, pero NO desaparece: se sigue pintando en
+    cada fila. Quien mira sabe que ese 95 arrastra un riesgo; lo que ya no pasa es
+    que su fila caiga en un sitio que nadie entiende.
+  */
+  it('el grupo ya no mueve a nadie de sitio', () => {
     const tanda = [
       fila('POSTULADA', 99, { candidato: 'Sin grupo', grupoPrioridad: null }),
-      fila('POSTULADA', 40, { candidato: 'Incompatible', grupoPrioridad: 'INCOMPATIBLE' }),
       fila('POSTULADA', 41, { candidato: 'Alta', grupoPrioridad: 'ALTA' }),
     ]
     expect(nombres(ordenar(tanda, { columna: 'nota', sentido: 'desc' }))).toEqual([
-      'Alta',
-      'Incompatible',
       'Sin grupo',
+      'Alta',
     ])
   })
 
-  it('un grupo que no esté en la lista tampoco se cuela arriba', () => {
+  /*
+    Y sin nota sigue yendo al final, que es la regla que NO cambia: una fila sin
+    nota no es un cero, y ponerla arriba llena de huecos la mesa de decidir.
+  */
+  it('sin nota, al final, suba o baje el orden', () => {
     const tanda = [
-      fila('POSTULADA', 99, { candidato: 'Inventado', grupoPrioridad: 'LO_QUE_SEA' }),
-      fila('POSTULADA', 10, { candidato: 'Alta', grupoPrioridad: 'ALTA' }),
+      fila('POSTULADA', null, { candidato: 'Sin nota' }),
+      fila('POSTULADA', 10, { candidato: 'Con 10' }),
+      fila('POSTULADA', 90, { candidato: 'Con 90' }),
     ]
-    expect(nombres(ordenar(tanda, { columna: 'nota', sentido: 'desc' }))[0]).toBe('Alta')
+    expect(nombres(ordenar(tanda, { columna: 'nota', sentido: 'desc' }))).toEqual([
+      'Con 90',
+      'Con 10',
+      'Sin nota',
+    ])
+    expect(nombres(ordenar(tanda, { columna: 'nota', sentido: 'asc' }))).toEqual([
+      'Con 10',
+      'Con 90',
+      'Sin nota',
+    ])
   })
 
-  it('ordenar por nombre no agrupa: solo la nota vive dentro del grupo', () => {
+  it('ordenar por nombre sigue siendo alfabético y nada más', () => {
     expect(nombres(ordenar(MEZCLADOS, { columna: 'nombre', sentido: 'asc' }))).toEqual([
       'Alta 60',
       'Alta 88',
