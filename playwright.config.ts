@@ -28,7 +28,7 @@ import { defineConfig, devices } from '@playwright/test'
 const navegador = process.env.E2E_CHROME ? { channel: 'chrome' as const } : {}
 
 export default defineConfig({
-  testDir: './e2e',
+  testDir: './herramientas/e2e',
   fullyParallel: false,
   workers: 1,
   retries: 0,
