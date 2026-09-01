@@ -117,7 +117,7 @@ una pantalla es gratis y seguro. Los dos e2e sí hablan con el backend local y e
 su base:
 
 ```bash
-node herramientas/e2e-vacante.mjs
+npx playwright test herramientas/e2e/14-vacante.spec.ts
 ```
 
 De la solicitud de talento a la vacante publicada en el portal, pasando por elegir la
@@ -125,7 +125,7 @@ evaluación y la prueba. Cierra la vacante que crea: una publicada la ve cualqui
 hay forma de borrarla.
 
 ```bash
-node herramientas/e2e-etapas.mjs
+npx playwright test herramientas/e2e/13-etapas.spec.ts
 ```
 
 El ranking por etapas: las cinco pestañas, el filtro de «aquí ahora», y la ficha que

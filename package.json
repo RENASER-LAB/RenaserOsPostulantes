@@ -11,10 +11,12 @@
     "build:emulador": "tsc --noEmit && vite build --mode emulador && cap sync android",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
+    "typecheck:e2e": "tsc -p tsconfig.e2e.json",
     "test": "vitest run",
     "test:mirar": "vitest",
     "test:e2e": "playwright test",
-    "test:e2e:chrome": "E2E_CHROME=1 playwright test --headed"
+    "test:e2e:chrome": "E2E_CHROME=1 playwright test --headed",
+    "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.0",

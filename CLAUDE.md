@@ -9,6 +9,49 @@ proyecto, con qué habla, qué se decidió y por qué, y qué está a medias.
 
 ---
 
+## Los e2e viven en `herramientas/e2e/` y corren con `@playwright/test` (01/09/2026)
+
+Había doce arneses sueltos en `herramientas/`, cada uno un `node` a pelo sobre la librería
+`playwright`, con sus comprobaciones a mano y su `process.exit`. **Se migraron todos al
+corredor** y la suite es una sola: 22 archivos numerados en `herramientas/e2e/`, con
+`playwright.config.ts` en la raíz. Cada comprobación del script viejo es un `expect` del
+nuevo; lo que se saltaba por falta de datos es un `test.skip` con el mismo motivo.
+
+```bash
+npm run test:e2e            # todo, con el Chromium clavado de la librería
+npm run test:e2e:ui         # la ventana con la lista, el viaje en el tiempo y el «elegir locator»
+npm run test:e2e:chrome     # el Chrome de la máquina, con ventana
+npm run typecheck:e2e       # los specs NO entran en `npm run typecheck`: tienen su tsconfig
+npx playwright test herramientas/e2e/15-componer-prueba.spec.ts   # uno solo
+```
+
+⚠️ **La suite no levanta nada**: espera Vite en 5174 y Spring en 8081 ya arrancados, con la base
+sembrada (`scripts/sembrar-datos-de-prueba.py` del backend). **Un solo worker**: la base es
+compartida y varios specs escriben. Y **17 tests se saltan** en local con motivo: los que
+dependen de la IA (aquí la clave es ficticia y el trabajo acaba en `FALLIDA`), un nivel del
+banco con dos versiones publicadas, una prueba entregada, una sesión con inscritos.
+
+**Los apartados de fechas anteriores citan los scripts por su nombre de entonces.** Hoy son:
+
+| Antes | Hoy |
+|---|---|
+| `e2e-panel-entrar.mjs` | `herramientas/e2e/10-panel-entrar.spec.ts` |
+| `e2e-perfil.mjs` | `herramientas/e2e/11-perfil.spec.ts` |
+| `e2e-postular.mjs` | `herramientas/e2e/12-postular.spec.ts` |
+| `e2e-etapas.mjs` | `herramientas/e2e/13-etapas.spec.ts` |
+| `e2e-vacante.mjs` | `herramientas/e2e/14-vacante.spec.ts` |
+| `e2e-componer-prueba.mjs` | `herramientas/e2e/15-componer-prueba.spec.ts` |
+| `e2e-cuestionario-tecnico.mjs` | `herramientas/e2e/16-cuestionario-tecnico.spec.ts` |
+| `e2e-prueba-tecnica.mjs` | `herramientas/e2e/17-prueba-tecnica.spec.ts` |
+| `e2e-ranking-etapa.mjs` | `herramientas/e2e/18-ranking-contra-api.spec.ts` |
+| `e2e-banco.mjs` | `herramientas/e2e/19-banco.spec.ts` |
+| `e2e-prueba-y-empresas.mjs` | `herramientas/e2e/20-prueba-y-empresas.spec.ts` |
+| `e2e-simulacion-permisos.mjs` | `herramientas/e2e/21-simulacion-permisos.spec.ts` |
+
+`e2e-android.mjs` se queda como script: conduce Maestro contra un APK, no un navegador.
+
+---
+
 ## El ranking se ordena, se filtra y se descarga (01/09/2026)
 
 La mesa donde se decide dejó de ser una lista que solo se mira. **Todo pasa en el navegador**:
@@ -276,7 +319,7 @@ Sin eso «Quitar» y «Corregir» eran dos píldoras idénticas en la misma fila
 
 ```bash
 npm run typecheck && npm test
-PORTAL=http://localhost:5199 node herramientas/e2e-componer-prueba.mjs
+npx playwright test herramientas/e2e/15-componer-prueba.spec.ts
 ```
 
 `npm test` son **356 pruebas en 29 archivos** (medido el 01/09/2026), y pasan enteras.
@@ -413,7 +456,7 @@ parecía un fallo y era el método haciendo su trabajo. Si un día una nota baja
 
 ```bash
 npm run typecheck && npm test
-PORTAL=http://localhost:5182 node herramientas/e2e-cuestionario-tecnico.mjs
+npx playwright test herramientas/e2e/16-cuestionario-tecnico.spec.ts
 ```
 
 El e2e recorre el ciclo entero en un Chrome de verdad: la empresa elige, la IA escribe, la
@@ -608,8 +651,8 @@ elementos. En vitest no pasa: `getByLabelText` con texto es exacto.
 
 ```bash
 npm run typecheck && npm test           # 41 tests nuevos: guion, bloques, ficha, cuestionario, tarjeta
-node herramientas/e2e-prueba-tecnica.mjs             # Chrome real: hasta la ficha COMPLETA
-DE_VERDAD=1 node herramientas/e2e-prueba-tecnica.mjs # …y el cuestionario de verdad, hasta publicarlo
+npx playwright test herramientas/e2e/17-prueba-tecnica.spec.ts             # Chrome real: hasta la ficha COMPLETA
+npx playwright test herramientas/e2e/17-prueba-tecnica.spec.ts # …y el cuestionario de verdad, hasta publicarlo
 ```
 
 ⚠️ **Sin `DE_VERDAD=1` no le pide nada a la IA** —cuesta una llamada a DeepSeek y cuenta
@@ -776,7 +819,7 @@ tres, **suman siempre**, y la accionable va primero. Con su test y su comprobaci
 ### Cómo se comprueba
 
 ```bash
-PORTAL=http://localhost:5181 node herramientas/e2e-prueba-y-empresas.mjs
+npx playwright test herramientas/e2e/20-prueba-y-empresas.spec.ts
 ```
 
 **40 comprobaciones** (35 + 5 nuevas): a quién alcanza el bloque, que no alcanza a quien no ha
@@ -915,7 +958,7 @@ es peor que no saberlo.
 ### Cómo se comprueba
 
 ```bash
-PORTAL=http://localhost:5180 node herramientas/e2e-prueba-y-empresas.mjs
+npx playwright test herramientas/e2e/20-prueba-y-empresas.spec.ts
 ```
 
 **35 comprobaciones** (28 + 7 nuevas): las tres situaciones del guion, que la rúbrica entera
@@ -1025,7 +1068,7 @@ si la tabla desborda ni si el control cabe al lado de las cifras. Ahora las 8 es
 se ve una vacante de verdad.
 
 ```bash
-PORTAL=http://localhost:5179 node herramientas/e2e-ranking-etapa.mjs
+npx playwright test herramientas/e2e/18-ranking-contra-api.spec.ts
 ```
 
 **42 comprobaciones contra el backend vivo, solo lectura.** Además de lo que ya miraba, fija que
@@ -1153,7 +1196,7 @@ una opción…) tampoco se cablearon: son la misma pieza que el editor de ítems
 ### El e2e de esta tanda
 
 ```bash
-PORTAL=http://localhost:5178 node herramientas/e2e-banco.mjs
+npx playwright test herramientas/e2e/19-banco.spec.ts
 ```
 
 45 comprobaciones: el contrato con sus seis campos exactos, los tres niveles con dos publicadas,
@@ -1215,7 +1258,7 @@ Vale para las tres tablas del panel.
 ### Cómo se comprueba
 
 ```bash
-PORTAL=http://localhost:5199 node herramientas/e2e-ranking-etapa.mjs
+npx playwright test herramientas/e2e/18-ranking-contra-api.spec.ts
 ```
 
 29 comprobaciones contra el backend vivo, **solo lectura**. Elige sola la vacante que reparte su
@@ -1343,7 +1386,7 @@ un enlace que prometa registrarse lleva a una pantalla que no puede cumplirlo.
 ### El e2e de esta tanda
 
 ```bash
-PORTAL=http://localhost:5177 node herramientas/e2e-prueba-y-empresas.mjs
+npx playwright test herramientas/e2e/20-prueba-y-empresas.spec.ts
 ```
 
 28 comprobaciones: el contrato de los cuatro endpoints, las columnas que cambian con la
@@ -1442,7 +1485,7 @@ concedido y no concede nada.
 
 ### El e2e contra el backend de verdad
 
-`PORTAL=http://localhost:5176 node herramientas/e2e-simulacion-permisos.mjs` — 32 comprobaciones
+`npx playwright test herramientas/e2e/21-simulacion-permisos.spec.ts` — 32 comprobaciones
 sobre las dos piezas: la lista, la asistencia con su confirmación, la matriz, conceder, el
 rechazo sin motivo y el 409 del último administrador. **Es lo que encontró el fallo de arriba**;
 los `capturar-*.mjs` no podían, porque interceptan las respuestas.
@@ -1779,7 +1822,7 @@ de la evaluación quedan «pendiente de calificar», que el panel enseña sin fi
 evaluación entregada de verdad en la base local —sembrada con
 `scripts/sembrar-evaluacion-local.py` del backend— esperando esa clave.
 
-Verificarlo entero: `PORTAL=http://localhost:5175 node herramientas/e2e-etapas.mjs`
+Verificarlo entero: `npx playwright test herramientas/e2e/13-etapas.spec.ts`
 (Chrome visible, solo lee).
 
 ### Publicar una vacante exige tres cosas antes (25/08)
@@ -1817,7 +1860,7 @@ hacía nada. Va fuera, con un `return` temprano.
 
 **El recorrido entero, los dos lados**, está en
 [docs/06-FLUJO-COMPLETO.md](docs/06-FLUJO-COMPLETO.md), y se comprueba con
-`node herramientas/e2e-vacante.mjs`: abre un Chrome de verdad y va de la solicitud a la vacante
+`npx playwright test herramientas/e2e/14-vacante.spec.ts`: abre un Chrome de verdad y va de la solicitud a la vacante
 publicada en el portal. ⚠️ Escribe en la base local.
 
 ---

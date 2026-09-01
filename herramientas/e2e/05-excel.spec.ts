@@ -262,11 +262,19 @@ test.describe('Nuevo · la descarga del Excel', () => {
   test('vacante 8: la hoja avisa de que la pretensión salió vacía y por qué', async ({ page }) => {
     await irAVacante(page, VACANTES.SIN_PRETENSION)
     await corte(page, 'Toda la tanda').click()
-    await expect(botonExcel(page)).toHaveText('Descargar Excel (3)')
+    /*
+      El número sale de la PANTALLA y no está escrito a mano. Había un «3» fijo, y
+      `12-postular` deja una postulación de prueba en esta misma vacante en cada
+      corrida: la suite pasaba la primera vez y fallaba la segunda. Lo que aquí se
+      afirma es que la hoja lleva exactamente lo que se veía, sea cuánto sea.
+    */
+    const enPantalla = await nombresVisibles(page)
+    expect(enPantalla.length, 'la vacante sin pretensión tiene que tener gente').toBeGreaterThan(0)
+    await expect(botonExcel(page)).toHaveText(`Descargar Excel (${enPantalla.length})`)
     const { ruta } = await bajar(page)
     const texto = textoDelLibro(ruta)
     expect(texto).toContain('Ninguno de estos candidatos declaró pretensión salarial')
-    expect(leerResumen(ruta).filas).toHaveLength(3)
+    expect(leerResumen(ruta).filas).toHaveLength(enPantalla.length)
   })
 
   test('si el servidor rechaza la descarga, se enseña SU mensaje y el botón revive', async ({ page }) => {

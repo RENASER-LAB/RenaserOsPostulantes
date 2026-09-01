@@ -9,7 +9,7 @@
  *
  *   node herramientas/e2e-android.mjs
  *
- * Sigue la forma de `e2e-simulacion-permisos.mjs`: **devuelve la base como la
+ * Sigue la forma que tenía `e2e-simulacion-permisos.mjs` (hoy `herramientas/e2e/21-simulacion-permisos.spec.ts`): **devuelve la base como la
  * encontro, pase o falle**. La limpieza va en un `finally`, asi que tambien
  * corre si el recorrido revienta a mitad, que es justo cuando mas falta hace.
  *

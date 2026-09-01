@@ -3,8 +3,8 @@
 Última actualización: 2026-09-01
 
 **Los pasos 1 a 5 están corridos** contra el backend local con
-`herramientas/e2e-vacante.mjs`, y **la mitad del paso 0 que escribe una prueba**,
-con `e2e-componer-prueba.mjs`. Del 6 en adelante —y de las áreas del paso 0—, lo
+`herramientas/e2e/14-vacante.spec.ts`, y **la mitad del paso 0 que escribe una prueba**,
+con `15-componer-prueba.spec.ts`. Del 6 en adelante —y de las áreas del paso 0—, lo
 que hay aquí está leído del código y de los tests, no de una ejecución.
 
 Los dos lados a la vez: qué hace el equipo en el panel y qué ve quien postula.
@@ -511,7 +511,7 @@ local.
 ## Comprobarlo entero
 
 ```bash
-node herramientas/e2e-vacante.mjs
+npx playwright test herramientas/e2e/14-vacante.spec.ts
 ```
 
 Abre un Chrome de verdad y recorre los pasos 1 a 5, comprueba que la vacante
@@ -520,8 +520,8 @@ publicada la ve cualquiera que entre, y no hay forma de borrarla. Deja las
 capturas en `capturas/`.
 
 ```bash
-node herramientas/e2e-prueba-tecnica.mjs
-DE_VERDAD=1 node herramientas/e2e-prueba-tecnica.mjs
+npx playwright test herramientas/e2e/17-prueba-tecnica.spec.ts
+npx playwright test herramientas/e2e/17-prueba-tecnica.spec.ts
 ```
 
 El paso 3b: una vacante en borrador, la tarjeta, la ficha rellenada hasta que
@@ -530,7 +530,7 @@ pide nada a la IA** —cuesta una llamada al modelo y cuenta contra el tope— y
 lo dice; con él sigue hasta corregir una pregunta y publicar el cuestionario.
 
 ```bash
-PORTAL=http://localhost:5182 node herramientas/e2e-cuestionario-tecnico.mjs
+npx playwright test herramientas/e2e/16-cuestionario-tecnico.spec.ts
 ```
 
 Los pasos **3a, 3c y 3d de una tirada**: la empresa elige el cuestionario y su
@@ -552,7 +552,7 @@ mensajes de la IA.
 y `API_URL=http://localhost:8081` en `.env.local`. Nunca contra producción.
 
 ```bash
-PORTAL=http://localhost:5199 node herramientas/e2e-componer-prueba.mjs
+npx playwright test herramientas/e2e/15-componer-prueba.spec.ts
 ```
 
 **Escribir una prueba del puesto desde cero**, que es lo que hasta el 31/08 no
