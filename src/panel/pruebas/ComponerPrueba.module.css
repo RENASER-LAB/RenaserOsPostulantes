@@ -1,0 +1,792 @@
+/*
+ * Componer una version de la prueba.
+ *
+ * Mismo mundo que el resto del panel. Dos cosas propias de esta pantalla, y las
+ * dos por un motivo:
+ *
+ * 1. **El balance de arriba lleva contorno de dos pixeles y el resplandor
+ *    violeta**, la piel del panel que reclama. Es literalmente eso: la unica
+ *    cosa de la pagina que dice «te toca a ti» —lo que falta para publicar— y la
+ *    unica que lleva la accion principal. Ninguna otra caja de aqui la usa.
+ *
+ * 2. **Quitar se ve distinto de corregir.** El rojo del sistema significa error
+ *    real y accion destructiva. Sin el, «Quitar», «Corregir» y «Añadirlo» eran
+ *    tres pildoras identicas en la misma fila, y una de las tres borra. El rojo
+ *    va en el contorno y el texto, no en el relleno: el relleno rojo es lo que
+ *    se pinta cuando algo YA fallo, y esto todavia se puede cancelar.
+ */
+
+.pagina {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e5);
+  max-width: var(--ancho);
+  margin: 0 auto;
+  padding: var(--e6) var(--e4) var(--e8);
+}
+
+.volver {
+  align-self: flex-start;
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+  text-decoration: underline;
+  text-decoration-color: var(--regla2);
+  text-underline-offset: 3px;
+}
+
+.volver:hover {
+  color: var(--tinta);
+  text-decoration-color: var(--tinta3);
+}
+
+.volver:focus-visible {
+  outline: 2px solid var(--activo);
+  outline-offset: 3px;
+}
+
+.encabezado {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+}
+
+.titulo {
+  font-size: var(--t-destacado);
+  font-weight: 700;
+  letter-spacing: -0.022em;
+  color: var(--tinta);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.identidad {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e2);
+  margin: 0;
+}
+
+/* Punteado el borrador, macizo lo publicado: se distinguen en gris. */
+.estadoBorrador,
+.estadoPublicada {
+  flex: none;
+  font-size: var(--t-micro);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 2px var(--e2);
+  border-radius: var(--radio-control);
+}
+
+.estadoBorrador {
+  color: var(--duda-tinta);
+  border: 1px dashed var(--duda);
+}
+
+.estadoPublicada {
+  color: var(--bien);
+  border: 1px solid var(--bien);
+}
+
+.numero {
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Lo que falta para publicar ---------- */
+
+.balance {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e4);
+  background: var(--nube);
+  border: 2px solid var(--activo-regla);
+  border-radius: var(--radio);
+  box-shadow: 0 4px 18px rgb(86 56 214 / 0.18);
+  padding: var(--e5);
+}
+
+.tituloBalance {
+  font-size: var(--t-titulo);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--tinta);
+  margin: 0;
+}
+
+.cuentas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e3);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+/*
+  Cada cuenta es una columna estrecha: nombre arriba, cifra en grande, veredicto
+  debajo. Se lee de un vistazo mientras se escribe, que es para lo que existe.
+
+  ⚠️ **La caja mide lo mismo cumpla o no.** Con alturas distintas, una fila de
+  cinco cuentas se escalona en cuanto una falla y deja de leerse como una fila.
+*/
+.cuentaBien,
+.cuentaFalta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e1);
+  flex: 1 1 11rem;
+  border-radius: var(--radio-menor);
+  padding: var(--e3) var(--e4);
+  min-width: 0;
+}
+
+.cuentaBien {
+  border: 1px solid var(--bien);
+  background: var(--bien-bruma);
+}
+
+/*
+  Rojo y no ambar: no es una duda, es que el servidor va a rechazar la
+  publicacion por esto. El ambar de este mundo es para lo que cambia la decision
+  sin ser un error.
+*/
+.cuentaFalta {
+  border: 1px solid var(--mal-regla);
+  background: var(--mal-bruma);
+}
+
+/*
+  ⚠️ **La caja del nombre mide dos lineas aunque solo ocupe una**, y no es aire
+  de sobra: sin esto, «Preguntas del puesto» se parte en dos y empuja su cifra
+  un renglon por debajo de las otras tres. Cuatro numeros a tres alturas dejan de
+  leerse como una fila, que es justo lo que este bloque tiene que ser — algo que
+  se mira de reojo mientras se escribe. Es la regla de la caja constante del
+  recorrido, aplicada aqui.
+*/
+.nombreCuenta {
+  font-size: var(--t-micro);
+  font-weight: 700;
+  line-height: 1.4;
+  min-height: 2.8em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tinta2);
+}
+
+.cifra {
+  font-size: var(--t-titulo);
+  font-weight: 600;
+  color: var(--tinta);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.015em;
+}
+
+.contra {
+  font-size: var(--t-menor);
+  font-weight: 400;
+  color: var(--tinta3);
+  letter-spacing: normal;
+}
+
+.veredicto {
+  font-size: var(--t-menor);
+  color: var(--tinta2);
+}
+
+.cuentaFalta .veredicto {
+  color: var(--mal);
+  font-weight: 600;
+}
+
+.cuentaBien .veredicto {
+  color: var(--bien);
+}
+
+.confirmar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+  border: 1px solid var(--duda);
+  background: var(--duda-bruma);
+  border-radius: var(--radio-menor);
+  padding: var(--e4);
+}
+
+.textoConfirmar {
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta);
+  max-width: var(--medida);
+  margin: 0;
+}
+
+/* La frase que corrige lo que el parrafo de arriba te hizo suponer. */
+.avisoDentro {
+  display: flex;
+  gap: var(--e2);
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  font-weight: 600;
+  color: var(--tinta);
+  max-width: var(--medida);
+  margin: 0;
+}
+
+.avisoDentro::before {
+  content: '';
+  flex: none;
+  width: 5px;
+  height: 5px;
+  margin-top: 0.55em;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* ---------- La version ya publicada ---------- */
+
+.congelada {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+  background: var(--nube-hundida);
+  border-radius: var(--radio);
+  padding: var(--e5);
+}
+
+.textoCongelada {
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+  max-width: var(--medida);
+  margin: 0;
+}
+
+.enlace {
+  color: var(--tinta);
+  text-decoration: underline;
+  text-decoration-color: var(--regla2);
+  text-underline-offset: 3px;
+}
+
+.enlace:hover {
+  text-decoration-color: var(--tinta3);
+}
+
+.enlace:focus-visible {
+  outline: 2px solid var(--activo);
+  outline-offset: 3px;
+}
+
+/* ---------- Un bloque de la composicion ---------- */
+
+.bloque {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e4);
+  background: var(--nube);
+  border: 1px solid var(--regla);
+  border-radius: var(--radio);
+  box-shadow: 0 1px 2px rgb(35 43 54 / 0.04), 0 8px 24px rgb(35 43 54 / 0.05);
+  padding: var(--e5);
+  min-width: 0;
+}
+
+.cabeceraBloque {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e3);
+}
+
+.tituloBloque {
+  font-size: var(--t-titulo);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--tinta);
+  margin: 0;
+}
+
+.tituloMenor {
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  color: var(--tinta);
+  margin: 0;
+}
+
+/*
+  La prosa que aclara una trampa —el archivo no es la prueba, la guia no es la
+  rubrica, el primer entregable cambia la cuota— va en tinta segunda y a la
+  medida corta, pegada a lo que aclara y no en un pie de pagina.
+*/
+.aclara {
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+  max-width: var(--medida);
+  margin: 0;
+}
+
+.nota {
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+  max-width: var(--medida);
+  margin: 0;
+}
+
+.pista {
+  font-size: var(--t-menor);
+  line-height: 1.5;
+  color: var(--tinta3);
+  max-width: var(--medida);
+  margin: 0;
+}
+
+/* ---------- Los marcadores de un bloque ---------- */
+
+.marcadores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e3);
+}
+
+.grupoMarcador {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nombreMarcador {
+  font-size: var(--t-micro);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tinta3);
+}
+
+.marcadorBien,
+.marcadorFalta,
+.marcadorNeutro {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--e2);
+  border-radius: var(--radio-control);
+  padding: 2px var(--e3);
+}
+
+.marcadorBien {
+  border: 1px solid var(--bien);
+  background: var(--bien-bruma);
+}
+
+.marcadorFalta {
+  border: 1px solid var(--mal-regla);
+  background: var(--mal-bruma);
+}
+
+.marcadorNeutro {
+  border: 1px solid var(--regla2);
+}
+
+.marcadorBien .cifra,
+.marcadorFalta .cifra,
+.marcadorNeutro .cifra {
+  font-size: var(--t-entradilla);
+}
+
+.marcadorFalta .veredicto {
+  color: var(--mal);
+  font-weight: 600;
+}
+
+/* ---------- Campos ---------- */
+
+/* El `<fieldset>` no aporta caja: la caja ya la pone el bloque. */
+.campos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e4);
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+
+/*
+  Apagado entero cuando la version esta publicada. El navegador ya quita el foco
+  y el teclado; esto es solo que se vea que no se puede tocar.
+*/
+.campos:disabled {
+  opacity: 0.72;
+}
+
+.oculto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.fila {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e4);
+}
+
+.fila > * {
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+  min-width: 0;
+}
+
+.campoAncho {
+  composes: campo;
+  flex: 1 1 20rem;
+}
+
+.etiqueta {
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  color: var(--tinta);
+}
+
+.entrada {
+  min-height: 44px;
+  padding: 0 var(--e3);
+  background: var(--nube);
+  color: var(--tinta);
+  border: 1px solid var(--borde-control);
+  border-radius: var(--radio-menor);
+  font: inherit;
+  font-size: var(--t-base);
+}
+
+.area {
+  padding: var(--e3);
+  background: var(--nube);
+  color: var(--tinta);
+  border: 1px solid var(--borde-control);
+  border-radius: var(--radio-menor);
+  font: inherit;
+  font-size: var(--t-base);
+  line-height: 1.5;
+  resize: vertical;
+}
+
+/* El borde engorda a dos pixeles y se vuelve rojo, en ese orden de importancia. */
+.areaMal {
+  composes: area;
+  border: 2px solid var(--mal);
+}
+
+.entrada:focus-visible,
+.area:focus-visible {
+  outline: 2px solid var(--activo);
+  outline-offset: 2px;
+}
+
+.casilla {
+  display: flex;
+  align-items: center;
+  gap: var(--e2);
+  font-size: var(--t-apoyo);
+  color: var(--tinta);
+  cursor: pointer;
+}
+
+.casilla input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--activo);
+  border-radius: var(--radio-marca);
+}
+
+.contador {
+  font-size: var(--t-menor);
+  color: var(--tinta3);
+  font-variant-numeric: tabular-nums;
+}
+
+.contadorMal {
+  composes: contador;
+  color: var(--mal);
+  font-weight: 600;
+}
+
+/* ---------- El enunciado como archivo ---------- */
+
+.consigna {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+  border-top: 1px solid var(--regla);
+  padding-top: var(--e4);
+}
+
+.hayArchivo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e1);
+  margin: 0;
+}
+
+.subirFila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--e3);
+}
+
+.archivo {
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+}
+
+/* ---------- Las listas ---------- */
+
+.lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e2) var(--e3);
+  background: var(--nube-hundida);
+  border-radius: var(--radio-menor);
+  padding: var(--e3) var(--e4);
+  min-width: 0;
+}
+
+.codigo {
+  flex: none;
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  color: var(--tinta);
+  font-variant-numeric: tabular-nums;
+}
+
+.puntos {
+  flex: none;
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  color: var(--tinta);
+  font-variant-numeric: tabular-nums;
+}
+
+.marcaTipo {
+  flex: none;
+  font-size: var(--t-micro);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--tinta2);
+  border: 1px solid var(--regla2);
+  padding: 1px var(--e2);
+  border-radius: var(--radio-control);
+}
+
+.texto {
+  flex: 1 1 18rem;
+  font-size: var(--t-menor);
+  line-height: 1.5;
+  color: var(--tinta2);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- Botones ---------- */
+
+.principal {
+  composes: acentoMenor from '../../estilos/piezas.module.css';
+  align-self: flex-start;
+}
+
+.chico {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 var(--e4);
+  background: var(--nube);
+  color: var(--tinta);
+  border: 1px solid var(--borde-control);
+  font: inherit;
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  border-radius: var(--radio-control);
+  transition: border-color 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.chico:hover:not(:disabled) {
+  border-color: var(--tinta);
+}
+
+.chico:disabled {
+  background: var(--nube-hundida);
+  color: var(--tinta3);
+  border-color: var(--regla2);
+  cursor: default;
+}
+
+/*
+  ⚠️ **Un boton suelto dentro de un bloque se estira a lo ancho si no se le
+  dice que no.** El bloque es una columna flexible, y su `align-items: stretch`
+  por defecto convertia «Añadir un criterio» en una pildora de mil pixeles: la
+  forma decia «esto es una barra» donde hay un boton. Solo les pasa a los que
+  cuelgan directamente del bloque; los que van dentro de una fila ya los acota
+  su fila.
+*/
+.bloque > .chico {
+  align-self: flex-start;
+}
+
+/*
+  El «Sí, publicar» de la confirmación: contorno ámbar, no violeta.
+
+  ⚠️ `composes` solo alcanza a una clase **ya declarada más arriba en el
+  archivo**, y por eso estos tres viven aquí y no junto al bloque que los usa:
+  con `.seguir` escrito antes que `.chico`, PostCSS aborta la hoja entera con
+  «referenced class name "chico" in composes not found» y la pantalla sale sin
+  un solo estilo. No lo ve ningún test: en jsdom las clases son cadenas.
+*/
+.seguir {
+  composes: chico;
+}
+
+.seguir:not(:disabled) {
+  border-color: var(--duda);
+  color: var(--duda-tinta);
+}
+
+/*
+ * Quitar, que es lo unico de esta pantalla que destruye.
+ *
+ * ⚠️ Con el mismo contorno gris que «Corregir» eran dos pildoras identicas en la
+ * misma fila y solo una borraba. El rojo va en contorno y texto, no en relleno:
+ * el relleno rojo es lo que se pinta cuando algo YA fallo, y esto todavia se
+ * puede cancelar. Se distingue en gris porque su contorno es el unico con punto
+ * delante.
+ */
+.quitar,
+.quitarSeguro {
+  composes: chico;
+}
+
+.quitar:not(:disabled),
+.quitarSeguro:not(:disabled) {
+  border-color: var(--mal-regla);
+  color: var(--mal);
+}
+
+.quitar:hover:not(:disabled),
+.quitarSeguro:hover:not(:disabled) {
+  border-color: var(--mal);
+}
+
+.quitarSeguro::before {
+  content: '';
+  flex: none;
+  width: 5px;
+  height: 5px;
+  margin-right: var(--e2);
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.confirmarEnLinea {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e2);
+}
+
+.botones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e3);
+}
+
+/* ---------- Un formulario dentro de un bloque ---------- */
+
+.formularioDentro {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e4);
+  border: 1px dashed var(--borde-control);
+  background: var(--nube-hundida);
+  border-radius: var(--radio-menor);
+  padding: var(--e4);
+  min-width: 0;
+}
+
+/* ---------- Avisos ---------- */
+
+.avisoBien {
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  color: var(--bien);
+}
+
+.avisoMalo {
+  border: 1px solid var(--mal-regla);
+  background: var(--mal-bruma);
+  padding: var(--e3) var(--e4);
+  font-size: var(--t-apoyo);
+  line-height: 1.5;
+  color: var(--mal);
+  max-width: var(--medida);
+  border-radius: var(--radio-menor);
+  margin: 0;
+}
+
+@media (max-width: 640px) {
+  .principal,
+  .chico,
+  .seguir,
+  .quitar,
+  .quitarSeguro {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .bloque,
+  .balance,
+  .congelada {
+    padding: var(--e4);
+  }
+
+  .cuentaBien,
+  .cuentaFalta {
+    flex: 1 1 100%;
+  }
+
+  /*
+    Apiladas ya no hay fila que alinear, asi que la caja de dos lineas seria aire
+    de mas debajo de cada nombre corto. La regla existe para que cuatro cifras se
+    lean en linea; en una columna no hace falta.
+  */
+  .nombreCuenta {
+    min-height: 0;
+  }
+}

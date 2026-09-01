@@ -54,6 +54,17 @@ export const patrones = {
   /** La ficha del puesto y su cuestionario tecnico: la primera sub-ruta de una vacante. */
   adminPruebaTecnica: '/admin/vacantes/:id/prueba-tecnica',
   adminSesiones: '/admin/simulacion',
+  /**
+   * Las pruebas del puesto: las plantillas y sus versiones.
+   *
+   * Pestaña propia y no un bloque mas de Configuracion, que es donde vive el
+   * banco de preguntas: componer una version es una tarea larga —enunciado,
+   * preguntas, entregables, rubrica y variantes— con su propia pantalla, y
+   * meterla dentro de una pagina que ya lleva cinco secciones dejaria el
+   * trabajo de todos los dias tres pantallazos por debajo del pliegue.
+   */
+  adminPruebas: '/admin/pruebas',
+  adminComponerPrueba: '/admin/pruebas/versiones/:versionId',
   adminConfiguracion: '/admin/configuracion',
 } as const
 
@@ -91,5 +102,8 @@ export const rutas = {
   adminVacante: (id: number | string) => `/admin/vacantes/${id}`,
   adminPruebaTecnica: (id: number | string) => `/admin/vacantes/${id}/prueba-tecnica`,
   adminSesiones: () => '/admin/simulacion',
+  adminPruebas: () => '/admin/pruebas',
+  adminComponerPrueba: (versionId: number | string) =>
+    `/admin/pruebas/versiones/${versionId}`,
   adminConfiguracion: () => '/admin/configuracion',
 } as const

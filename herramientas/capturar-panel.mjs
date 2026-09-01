@@ -41,6 +41,17 @@ const PANTALLAS = [
   // La matriz solo aparece con un rol elegido: sin el clic, la captura no
   // enseñaria nada de lo que hay que juzgar.
   { nombre: 'permisos', ruta: '/admin/configuracion', pulsar: 'Talento' },
+  /*
+   * Las areas con el borrado abierto. Sin el clic, la captura enseña tres filas
+   * y nada mas; lo que hay que juzgar es el bloque que dice el precio ANTES de
+   * cobrarlo —los dos recuentos, a donde se mueve todo y el motivo—, que es la
+   * unica parte de esta pantalla que no se puede deshacer.
+   *
+   * Es tambien la pantalla donde `--gris` decide si «En uso» y «Retirada» se
+   * separan por la forma: relleno contra trazo punteado. Si en gris se leen
+   * igual, la etiqueta esta mal.
+   */
+  { nombre: 'areas', ruta: '/admin/configuracion', pulsar: 'Borrar' },
   { nombre: 'vacante', ruta: '/admin/vacantes/1' },
   /*
    * ⚠️ A quien se le abre la ficha depende de la pestaña, y no es un capricho:

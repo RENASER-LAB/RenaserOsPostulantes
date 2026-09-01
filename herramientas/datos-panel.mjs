@@ -12,15 +12,22 @@
  * caiga a que enseñe algo que el backend real no daria.
  */
 
+/*
+ * ⚠️ **`versionPlantillaPruebaId` tiene que existir aqui abajo.** Apuntaba a la
+ * version 4, que ninguna fixtura sirve: el desplegable de la vacante buscaba esa
+ * version suelta, se comia el 404 y decia «Elige la prueba…» sobre una vacante
+ * que SI tiene prueba puesta —justo el fallo que el codigo de `Vacante.tsx` se
+ * escribio para evitar—. Ahora es la 1, que existe y esta publicada.
+ */
 export const VACANTES = [
   { id: 1, titulo: 'Ingeniero/a de Infraestructura', estado: 'PUBLICADA', tipoCierre: 'MANUAL',
     puestoId: 1, solicitudTalentoId: 7, responsableUsuarioId: 1,
     publicadaEn: '2026-07-02T09:00:00Z', cerradaEn: null, aplicaEvaluacion: true,
-    plantillaEvaluacionId: 1, versionPlantillaPruebaId: 4, versionPesosId: 2 },
+    plantillaEvaluacionId: 1, versionPlantillaPruebaId: 1, versionPesosId: 2 },
   { id: 2, titulo: 'Analista de Datos', estado: 'PUBLICADA', tipoCierre: 'MANUAL',
     puestoId: 2, solicitudTalentoId: 8, responsableUsuarioId: 1,
     publicadaEn: '2026-07-19T09:00:00Z', cerradaEn: null, aplicaEvaluacion: true,
-    plantillaEvaluacionId: 1, versionPlantillaPruebaId: 4, versionPesosId: 2 },
+    plantillaEvaluacionId: 1, versionPlantillaPruebaId: 1, versionPesosId: 2 },
   { id: 3, titulo: 'Coordinador de Proyectos', estado: 'BORRADOR', tipoCierre: 'MANUAL',
     puestoId: 3, solicitudTalentoId: 9, responsableUsuarioId: 1,
     publicadaEn: null, cerradaEn: null, aplicaEvaluacion: false,
@@ -28,7 +35,7 @@ export const VACANTES = [
   { id: 4, titulo: 'Especialista en Servicio', estado: 'CERRADA', tipoCierre: 'MANUAL',
     puestoId: 4, solicitudTalentoId: 10, responsableUsuarioId: 1,
     publicadaEn: '2026-05-04T09:00:00Z', cerradaEn: '2026-08-01T09:00:00Z',
-    aplicaEvaluacion: true, plantillaEvaluacionId: 1, versionPlantillaPruebaId: 4,
+    aplicaEvaluacion: true, plantillaEvaluacionId: 1, versionPlantillaPruebaId: 1,
     versionPesosId: 2 },
 ]
 
@@ -442,6 +449,30 @@ export const RESPUESTAS = {
     { id: 2, nombre: 'Operaciones', esActiva: true },
   ],
   /*
+   * ⚠️ Explicita, y no puede faltar. El interceptor cae a `RESPUESTAS['/areas']`
+   * cuando no encuentra el camino entero, asi que sin esta entrada la pantalla
+   * de administrar areas se serviria con la lista FILTRADA y saldria una captura
+   * creible donde no hay ninguna retirada — que es justo el estado que hay que
+   * mirar, porque es el unico que distingue las dos listas.
+   *
+   * Lleva una retirada a proposito: es la que hace mirable la etiqueta
+   * «Retirada» y, en gris, si se separa de «En uso» por la forma.
+   */
+  '/areas/todas': [
+    { id: 1, nombre: 'Tecnología', esActiva: true },
+    { id: 2, nombre: 'Operaciones', esActiva: true },
+    { id: 3, nombre: 'Logística de campo', esActiva: false },
+  ],
+  /*
+   * Lo que cuelga del area 1, que es la que abre la captura del borrado. Con
+   * ceros la pantalla enseñaria el camino corto —«no cuelga nada»— y el bloque
+   * que de verdad hay que juzgar, el de los dos recuentos y el destino, no
+   * saldria en ninguna imagen.
+   */
+  '/areas/1/impacto': {
+    areaId: 1, nombre: 'Tecnología', solicitudes: 4, usuarios: 2,
+  },
+  /*
    * ⚠️ Copia exacta de `PuestoPanel`. Traia un `areaId` que el backend no
    * devuelve y le FALTABA `nivelPuestoCodigo`, que es de donde sale el banco
    * que respondera quien postule: sin el, la vacante se quedaba para siempre
@@ -487,12 +518,88 @@ export const RESPUESTAS = {
     { id: 1, nombre: 'Reto con entregables', puestoId: null, esActiva: true },
     { id: 2, nombre: 'Cuestionario técnico', puestoId: 1, esActiva: true },
   ],
+  /*
+   * ⚠️ **Las versiones se listan POR PLANTILLA desde el 31/08.** Antes el panel
+   * las adivinaba tanteando ids sueltos; ahora hay ruta, y estas dos son las que
+   * la pantalla de pruebas y el desplegable de la vacante piden de verdad.
+   */
+  '/plantillas-prueba/1/versiones': [
+    { id: 3, plantillaPruebaId: 1, version: 2, enunciado: 'Tienes veinte currículums para una vacante y dos días. Di en qué orden los revisarías, con qué criterio descartas y qué le preguntarías a los tres primeros antes de invitarlos.',
+      materiales: 'Los veinte currículums se entregan al empezar.',
+      herramientasPermitidas: 'Cualquiera, siempre que digas cuál usaste.',
+      minutosExtra: 10, modalidad: 'CRONOMETRADA', duracionMinutos: 90, plazoDias: null,
+      minutoCambioMin: 30, minutoCambioMax: 50, estado: 'BORRADOR', publicadaEn: null,
+      guiaCalificacion: null, urlConsigna: null },
+    { id: 1, plantillaPruebaId: 1, version: 1, enunciado: 'La primera versión del reto.',
+      materiales: null, herramientasPermitidas: null, minutosExtra: null,
+      modalidad: 'CRONOMETRADA', duracionMinutos: 90, plazoDias: null,
+      minutoCambioMin: 30, minutoCambioMax: 50, estado: 'PUBLICADA',
+      publicadaEn: '2026-06-01T09:00:00Z', guiaCalificacion: null, urlConsigna: null },
+  ],
+  '/plantillas-prueba/2/versiones': [
+    { id: 2, plantillaPruebaId: 2, version: 3, enunciado: 'Veinte preguntas sobre el oficio.',
+      materiales: null, herramientasPermitidas: null, minutosExtra: null,
+      modalidad: 'CRONOMETRADA', duracionMinutos: 75, plazoDias: null,
+      minutoCambioMin: null, minutoCambioMax: null, estado: 'PUBLICADA',
+      publicadaEn: '2026-07-15T09:00:00Z', guiaCalificacion: null, urlConsigna: null },
+  ],
+  /*
+   * El catalogo de preguntas es **global**, no de una prueba: el backend no lo
+   * acota por organizacion. Las tres bastan para ver el desplegable lleno.
+   */
+  '/plantillas-prueba/preguntas': [
+    { id: 11, codigo: 'U01', enunciado: '¿Qué hiciste primero y por qué ese y no otro?', tipo: 'UNIVERSAL', puestoId: null },
+    { id: 12, codigo: 'U02', enunciado: '¿Qué dejaste fuera a propósito, y qué pasa si nadie lo atiende?', tipo: 'UNIVERSAL', puestoId: null },
+    { id: 21, codigo: 'T01', enunciado: '¿Cómo distingues un logro real de uno inflado en un currículum?', tipo: 'ESPECIFICA', puestoId: 1 },
+  ],
+  /*
+   * ⚠️ **La rúbrica de esta versión suma 140, a propósito.** Un borrador con
+   * todo en verde no enseña para qué existen los contadores: el estado que hay
+   * que poder mirar es el que sobra puntos y le faltan preguntas.
+   */
+  '/plantillas-prueba/versiones/3': {
+    version: { id: 3, plantillaPruebaId: 1, version: 2, enunciado: 'Tienes veinte currículums para una vacante y dos días. Di en qué orden los revisarías, con qué criterio descartas y qué le preguntarías a los tres primeros antes de invitarlos.',
+      materiales: 'Los veinte currículums se entregan al empezar.',
+      herramientasPermitidas: 'Cualquiera, siempre que digas cuál usaste.',
+      minutosExtra: 10, modalidad: 'CRONOMETRADA', duracionMinutos: 90, plazoDias: null,
+      minutoCambioMin: 30, minutoCambioMax: 50, estado: 'BORRADOR', publicadaEn: null,
+      guiaCalificacion: 'Mira si distingue lo demostrado de lo declarado. Un orden sin criterio explícito no vale, por muy razonable que parezca.',
+      urlConsigna: null },
+    variantes: [
+      { id: 1, texto: 'Cinco de los veinte retiran su candidatura. Rehaz el orden.', orden: 1 },
+      { id: 2, texto: 'El plazo se recorta a un día. ¿Qué dejas fuera?', orden: 2 },
+    ],
+    preguntas: [
+      { id: 11, codigo: 'U01', enunciado: '¿Qué hiciste primero y por qué ese y no otro?', tipo: 'UNIVERSAL', puestoId: null },
+      { id: 21, codigo: 'T01', enunciado: '¿Cómo distingues un logro real de uno inflado en un currículum?', tipo: 'ESPECIFICA', puestoId: 1 },
+    ],
+    entregables: [
+      { id: 1, nombre: 'El orden y su criterio', detalle: 'Un documento con el orden, el criterio de descarte y las preguntas.', formato: 'CUALQUIERA', esObligatorio: true },
+    ],
+    rubrica: [
+      // `descripcion` viaja porque el panel la reescribe al corregir el criterio: sin ella
+      // el formulario se abre en blanco y guardar la borra. Falta en la respuesta real =
+      // pérdida de datos, y por eso la fixtura no puede callarla.
+      { id: 1, codigo: 'CRITERIO', nombre: 'Criterio de descarte', descripcion: 'Se mira qué deja fuera y con qué argumento.', puntos: 40, metodoVerificacion: 'AGENTE' },
+      { id: 2, codigo: 'EVIDENCIA', nombre: 'Uso de la evidencia', descripcion: null, puntos: 40, metodoVerificacion: 'AGENTE' },
+      { id: 3, codigo: 'PREGUNTAS', nombre: 'Calidad de las preguntas', descripcion: null, puntos: 40, metodoVerificacion: 'PERSONA' },
+      { id: 4, codigo: 'CLARIDAD', nombre: 'Claridad', descripcion: null, puntos: 20, metodoVerificacion: 'PERSONA' },
+    ],
+  },
   '/plantillas-prueba/versiones/1': {
-    version: { id: 1, plantillaPruebaId: 1, version: 1, estado: 'PUBLICADA' },
+    version: { id: 1, plantillaPruebaId: 1, version: 1, enunciado: 'La primera versión del reto.',
+      materiales: null, herramientasPermitidas: null, minutosExtra: null,
+      modalidad: 'CRONOMETRADA', duracionMinutos: 90, plazoDias: null,
+      minutoCambioMin: 30, minutoCambioMax: 50, estado: 'PUBLICADA',
+      publicadaEn: '2026-06-01T09:00:00Z', guiaCalificacion: null, urlConsigna: null },
     variantes: [], preguntas: [], entregables: [], rubrica: [],
   },
   '/plantillas-prueba/versiones/2': {
-    version: { id: 2, plantillaPruebaId: 2, version: 3, estado: 'PUBLICADA' },
+    version: { id: 2, plantillaPruebaId: 2, version: 3, enunciado: 'Veinte preguntas sobre el oficio.',
+      materiales: null, herramientasPermitidas: null, minutosExtra: null,
+      modalidad: 'CRONOMETRADA', duracionMinutos: 75, plazoDias: null,
+      minutoCambioMin: null, minutoCambioMax: null, estado: 'PUBLICADA',
+      publicadaEn: '2026-07-15T09:00:00Z', guiaCalificacion: null, urlConsigna: null },
     variantes: [], preguntas: [], entregables: [], rubrica: [],
   },
   /*

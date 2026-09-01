@@ -189,10 +189,20 @@ const PLANTILLAS_PRUEBA = [
   { id: 1, nombre: 'Prueba de talento · convocatoria', puestoId: null, esActiva: true },
   { id: 2, nombre: 'Cuestionario técnico · Administrador General', puestoId: 99, esActiva: true },
 ]
-const VERSIONES_PRUEBA = [
-  { id: 1, plantillaPruebaId: 1, version: 1 },
-  { id: 2, plantillaPruebaId: 2, version: 1 },
+/*
+  Una version por plantilla, publicada, y un borrador que NO se puede elegir.
+
+  ⚠️ Las fixturas llevan los campos de verdad —`estado` incluido— porque el
+  desplegable ya los mira: con `{id, plantillaPruebaId, version}` a secas,
+  `estado` seria `undefined` y el filtro de publicadas se comeria las tres.
+*/
+const VERSIONES_DE_SIEMPRE = [
+  { id: 1, plantillaPruebaId: 1, version: 1, estado: 'PUBLICADA' },
+  { id: 2, plantillaPruebaId: 2, version: 1, estado: 'PUBLICADA' },
+  { id: 3, plantillaPruebaId: 1, version: 2, estado: 'BORRADOR' },
 ]
+/* Mutable: una prueba lo cambia para el caso en que TODO sea borrador. */
+let VERSIONES_PRUEBA = VERSIONES_DE_SIEMPRE
 
 const listarVersionesBanco = vi.fn(() => Promise.resolve(BANCOS))
 const asignarPlantillaPrueba = vi.fn((_vacanteId: number, _versionId: number) =>
@@ -215,7 +225,15 @@ vi.mock('../api/panel', () => ({
   listarVersionesBanco: () => listarVersionesBanco(),
   listarPlantillasPrueba: () => Promise.resolve(PLANTILLAS_PRUEBA),
   listarVersionesPesos: () => Promise.resolve([]),
-  listarVersionesPrueba: () => Promise.resolve(VERSIONES_PRUEBA),
+  /*
+    ⚠️ **Filtra por plantilla, como la ruta de verdad.** Devolviendo la lista
+    entera a cada llamada, el desplegable salia con cada version repetida una
+    vez por plantilla: el doble mentia sobre la forma del endpoint.
+  */
+  listarVersionesPrueba: (plantillaId: number) =>
+    Promise.resolve(VERSIONES_PRUEBA.filter((v) => v.plantillaPruebaId === plantillaId)),
+  verVersionDePrueba: (id: number) =>
+    Promise.resolve({ version: VERSIONES_PRUEBA.find((v) => v.id === id) }),
   aplicarEvaluacion: () => Promise.resolve({}),
   asignarPlantillaEvaluacion: () => Promise.resolve({}),
   asignarPlantillaPrueba: (vacanteId: number, versionId: number) =>
@@ -318,6 +336,7 @@ beforeEach(() => {
   listarVersionesBanco.mockReset()
   listarVersionesBanco.mockResolvedValue(BANCOS)
   asignarPlantillaPrueba.mockReset()
+  VERSIONES_PRUEBA = VERSIONES_DE_SIEMPRE
   sinRuido.verVacante = () => Promise.resolve(VACANTE)
 })
 afterEach(() => cleanup())
@@ -634,6 +653,34 @@ describe('los desplegables que siguen existiendo', () => {
     // toda vacante sin ninguna opcion.
     expect(screen.getByText(/Prueba de talento · convocatoria · v1/)).toBeTruthy()
   })
+
+  /*
+   * Un borrador no se puede asignar: el backend contesta 409 («esa version
+   * todavia esta en borrador»). Ofrecerlo era mandar a alguien contra un error
+   * que se puede ver venir — y ahora se ve, porque el listado trae el estado.
+   */
+  it('no ofrece una versión en borrador', async () => {
+    await pintar()
+    expect(screen.getByText(/Prueba de talento · convocatoria · v1/)).toBeTruthy()
+    expect(screen.queryByText(/Prueba de talento · convocatoria · v2/)).toBeNull()
+  })
+
+  /*
+   * El estado que el filtro de borradores creo: hay plantillas escritas y hay
+   * versiones, pero **ninguna publicada**. El desplegable se queda sin opciones
+   * y el cartel tiene que decir el paso que falta —publicar— y no «ninguna es de
+   * este puesto», que mandaria a escribir una prueba que ya existe.
+   */
+  it('con todas las versiones en borrador dice que falta publicar una', async () => {
+    VERSIONES_PRUEBA = [
+      { id: 3, plantillaPruebaId: 1, version: 2, estado: 'BORRADOR' },
+      { id: 4, plantillaPruebaId: 2, version: 2, estado: 'BORRADOR' },
+    ]
+    await pintar()
+
+    expect(screen.queryByText(/Prueba de talento · convocatoria · v2/)).toBeNull()
+    expect(screen.getByText(/Falta terminar y publicar una versión/)).toBeTruthy()
+  })
 })
 
 /*
@@ -770,7 +817,41 @@ describe('qué se rinde en la etapa técnica', () => {
     })
 
     expect(screen.queryByRole('button', { name: 'Guardar' })).toBeNull()
-    expect(screen.getByText(/número entero mayor que cero/i)).toBeTruthy()
+    expect(screen.getByText(/número entero de 5 o más/i)).toBeTruthy()
+  })
+
+  /*
+   * El suelo son cinco minutos, y el campo lo dice antes de intentarlo.
+   *
+   * Estos minutos mandan sobre el reloj del instrumento, así que un uno es una prueba que
+   * el servidor entrega sola sesenta segundos después de que el candidato la abra. El
+   * backend lo rechaza igual; aquí se frena para no gastar un 400 en decirlo.
+   */
+  it('un minuto no se ofrece guardar: el suelo son cinco', async () => {
+    await pintar()
+
+    fireEvent.change(screen.getByRole('spinbutton', { name: /cuánto tiempo tendrá/i }), {
+      target: { value: '1' },
+    })
+
+    expect(screen.queryByRole('button', { name: 'Guardar' })).toBeNull()
+    expect(screen.getByText(/número entero de 5 o más/i)).toBeTruthy()
+  })
+
+  it('cinco justos sí se guardan: el suelo entra', async () => {
+    await pintar()
+
+    fireEvent.change(screen.getByRole('spinbutton', { name: /cuánto tiempo tendrá/i }), {
+      target: { value: '5' },
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+    await waitFor(() =>
+      expect(elegirInstrumento).toHaveBeenCalledWith(1, {
+        instrumento: 'PLANTILLA',
+        minutos: 5,
+      }),
+    )
   })
 
   it('vacío es un valor: el tiempo lo pone el instrumento', async () => {
@@ -779,5 +860,18 @@ describe('qué se rinde en la etapa técnica', () => {
     expect(screen.getByRole('spinbutton', { name: /cuánto tiempo tendrá/i }))
       .toHaveProperty('value', '')
     expect(screen.getByText(/rige el tiempo que traiga el instrumento/i)).toBeTruthy()
+  })
+
+  /*
+   * Con un número escrito, la ayuda dice lo que este campo hace AHORA: mandar sobre el
+   * reloj del instrumento. Es el arreglo entero contado en una frase — antes el campo se
+   * guardaba y no le pasaba nada a la prueba del puesto.
+   */
+  it('con un número escrito, la ayuda dice que manda sobre el instrumento', async () => {
+    conLaVacante({ minutosEtapaTecnica: 90 })
+    await pintar()
+
+    expect(screen.getByText(/manda sobre el que traiga el instrumento/i)).toBeTruthy()
+    expect(screen.queryByText(/rige el tiempo que traiga el instrumento/i)).toBeNull()
   })
 })
