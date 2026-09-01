@@ -1,0 +1,314 @@
+/*
+ * La lista de pruebas del puesto.
+ *
+ * Mismo mundo que Configuracion y que el banco de preguntas —bruma, nube,
+ * pildoras, Mulish— y ninguna paleta propia. Lo unico que este bloque añade es
+ * la jerarquia de dos niveles que hacia falta: la plantilla, que es un nombre, y
+ * sus versiones, que son lo que de verdad se rinde.
+ *
+ * El violeta aparece **una sola vez en la pagina**: el boton que crea una
+ * plantilla nueva, que es la unica accion que empieza algo. Todo lo demas es
+ * nube con contorno.
+ */
+
+.pagina {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e5);
+  max-width: var(--ancho);
+  margin: 0 auto;
+  padding: var(--e6) var(--e4) var(--e8);
+}
+
+.bajada {
+  font-size: var(--t-prosa);
+  line-height: 1.55;
+  color: var(--tinta2);
+  max-width: var(--medida);
+  margin: 0;
+}
+
+.nota {
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+  max-width: var(--medida);
+  margin: 0;
+}
+
+.pista {
+  font-size: var(--t-menor);
+  line-height: 1.5;
+  color: var(--tinta3);
+  max-width: var(--medida);
+  margin: 0;
+}
+
+/* ---------- Crear una plantilla ---------- */
+
+.empezar {
+  composes: acentoMenor from '../../estilos/piezas.module.css';
+  align-self: flex-start;
+}
+
+.principal {
+  composes: acentoMenor from '../../estilos/piezas.module.css';
+  align-self: flex-start;
+}
+
+.chico {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 var(--e4);
+  background: var(--nube);
+  color: var(--tinta);
+  border: 1px solid var(--borde-control);
+  font: inherit;
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  border-radius: var(--radio-control);
+  transition: border-color 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.chico:hover:not(:disabled) {
+  border-color: var(--tinta);
+}
+
+.chico:disabled {
+  background: var(--nube-hundida);
+  color: var(--tinta3);
+  border-color: var(--regla2);
+  cursor: default;
+}
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e4);
+  border: 1px dashed var(--borde-control);
+  background: var(--nube-hundida);
+  border-radius: var(--radio);
+  padding: var(--e5);
+  max-width: 40rem;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+  min-width: 0;
+}
+
+.etiqueta {
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  color: var(--tinta);
+}
+
+.entrada {
+  min-height: 44px;
+  padding: 0 var(--e3);
+  background: var(--nube);
+  color: var(--tinta);
+  border: 1px solid var(--borde-control);
+  border-radius: var(--radio-menor);
+  font: inherit;
+  font-size: var(--t-base);
+}
+
+.entrada:focus-visible {
+  outline: 2px solid var(--activo);
+  outline-offset: 2px;
+}
+
+.botones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e2);
+}
+
+/* ---------- Una plantilla ---------- */
+
+.plantillas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e5);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+/*
+  Cada plantilla es una superficie de nube sobre el cielo, y sus versiones van
+  dentro cambiando de fondo, no de elevacion: en este mundo no se anidan
+  superficies con sombra.
+*/
+.plantilla {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+  background: var(--nube);
+  border: 1px solid var(--regla);
+  border-radius: var(--radio);
+  box-shadow: 0 1px 2px rgb(35 43 54 / 0.04), 0 8px 24px rgb(35 43 54 / 0.05);
+  padding: var(--e5);
+  min-width: 0;
+}
+
+.cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--e2) var(--e3);
+}
+
+.nombre {
+  font-size: var(--t-titulo);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--tinta);
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.deQuien {
+  font-size: var(--t-menor);
+  color: var(--tinta3);
+}
+
+/* ---------- Una version ---------- */
+
+.versiones {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.version {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e2) var(--e3);
+  background: var(--nube-hundida);
+  border-radius: var(--radio-menor);
+  padding: var(--e3) var(--e4);
+  min-width: 0;
+}
+
+/*
+ * Los dos estados se distinguen **en la forma**, no en el tono: el borrador va
+ * punteado —todavia se esta dibujando— y la publicada, maciza. En escala de
+ * grises siguen siendo dos cosas distintas, que es la comprobacion que este
+ * mundo exige.
+ */
+.estadoBorrador,
+.estadoPublicada {
+  flex: none;
+  font-size: var(--t-micro);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 2px var(--e2);
+  border-radius: var(--radio-control);
+}
+
+.estadoBorrador {
+  color: var(--duda-tinta);
+  border: 1px dashed var(--duda);
+}
+
+.estadoPublicada {
+  color: var(--bien);
+  border: 1px solid var(--bien);
+}
+
+.numero {
+  flex: none;
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  color: var(--tinta);
+  font-variant-numeric: tabular-nums;
+}
+
+.resumen {
+  flex: 1 1 22rem;
+  font-size: var(--t-menor);
+  line-height: 1.5;
+  color: var(--tinta2);
+  min-width: 0;
+}
+
+/*
+  El enlace de abrir es un enlace con forma de boton porque navega, no muta: en
+  el resto del panel lo que cambia algo es un `<button>` y lo que lleva a otra
+  pantalla es un `<a>`. La forma de pildora lo empareja con los botones de al
+  lado sin mentir sobre lo que hace.
+*/
+.abrir {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  min-height: 40px;
+  padding: 0 var(--e4);
+  background: var(--nube);
+  color: var(--tinta);
+  border: 1px solid var(--borde-control);
+  border-radius: var(--radio-control);
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  text-decoration: none;
+  transition: border-color 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.abrir:hover {
+  border-color: var(--tinta);
+}
+
+.abrir:focus-visible {
+  outline: 2px solid var(--activo);
+  outline-offset: 2px;
+}
+
+.piePlantilla {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e2) var(--e3);
+  border-top: 1px solid var(--regla);
+  padding-top: var(--e3);
+}
+
+/* ---------- Avisos ---------- */
+
+.avisoMalo {
+  border: 1px solid var(--mal-regla);
+  background: var(--mal-bruma);
+  padding: var(--e3) var(--e4);
+  font-size: var(--t-apoyo);
+  line-height: 1.5;
+  color: var(--mal);
+  max-width: var(--medida);
+  border-radius: var(--radio-menor);
+  margin: 0;
+}
+
+@media (max-width: 640px) {
+  .empezar,
+  .principal,
+  .chico,
+  .abrir {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .plantilla {
+    padding: var(--e4);
+  }
+}

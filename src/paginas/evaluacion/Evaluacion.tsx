@@ -64,6 +64,15 @@ import {
 
 const ESPERA_ANTES_DE_GUARDAR = 800
 /**
+ * La frontera entre «te queda plazo» y «se te acaba», en segundos.
+ *
+ * La cruza el candidato una sola vez y cambia las dos cosas a la vez: por encima se le
+ * enseñan los dias que le quedan en la linea de servicio; por debajo, esos dias sobran y lo
+ * que aparece es la cuenta atras del aviso. Es un solo numero porque es una sola decision:
+ * dos constantes que se desincronicen dejarian un hueco sin reloj o los dos a la vez.
+ */
+const UNA_HORA = 3600
+/**
  * Lo que el backend acepta como maximo en una respuesta escrita: el `@Size` del
  * record `Responder`. Si se pasa, el guardado rebota con un 400 y la respuesta
  * no llega, asi que aqui se corta antes y se avisa al acercarse.
@@ -604,6 +613,28 @@ export function Evaluacion() {
           <span>
             {respondidas} de {evaluacion.total} respondidas
           </span>
+
+          {/*
+            El plazo, mientras se responde.
+
+            Estaba solo en la portada. Entre esa pantalla y el aviso de la ultima hora hay
+            **dos semanas** de plazo por defecto, y en todo ese tramo el candidato no volvia
+            a ver cuanto le quedaba: para saberlo tenia que salir de la evaluacion. Va en la
+            linea de servicio y no en un aviso, por lo mismo que dice el comentario de abajo
+            —esto se mira de reojo, no interrumpe—.
+
+            ⚠️ **Desaparece por debajo de la hora**, que es justo cuando aparece el aviso de
+            «Queda poco plazo» con su cuenta atras. Dos relojes a la vez, uno diciendo «hoy»
+            y el otro `00:42:17`, se leen peor que el segundo solo. Y de paso, ese corte deja
+            fuera los dos textos de `diasHasta` que aqui no encajan: «vencida» y «sin plazo».
+          */}
+          {restante !== null && restante >= UNA_HORA && (
+            <time className={estilos.plazo} dateTime={evaluacion.venceEn ?? undefined}>
+              {diasHasta(evaluacion.venceEn) === 'hoy'
+                ? 'Se entrega hoy'
+                : `${diasHasta(evaluacion.venceEn)} para entregarla`}
+            </time>
+          )}
         </div>
         <div className={estilos.riel}>
           <div className={estilos.recorrido} style={{ width: `${porcentaje}%` }} />
@@ -776,7 +807,7 @@ export function Evaluacion() {
           </p>
         )}
 
-        {restante !== null && restante < 3600 && (
+        {restante !== null && restante < UNA_HORA && (
           <p className={estilos.aviso}>
             <span>
               <b>Queda poco plazo: {formatearTiempo(restante)}</b>. Cuando se acabe, se

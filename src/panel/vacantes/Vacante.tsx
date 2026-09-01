@@ -30,6 +30,7 @@ import {
   listarRequisitos,
   listarVersionesPesos,
   listarVersionesPrueba,
+  verVersionDePrueba,
   publicarVacante,
   quitarRequisito,
   verCatalogos,
@@ -1480,19 +1481,52 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
     queryFn: listarPlantillasPrueba,
   })
   /*
-    La version que ya tiene la vacante entra como pista del rastreo: los ids son
-    una secuencia de toda la plataforma, y saber que existe el 47 dice donde
-    buscar los suyos. Sin ella el rastreo empieza en el 1 y en una base con las
-    pruebas altas no encuentra ninguna — el desplegable vacio.
+    Las versiones de cada plantilla, ahora que el backend sabe listarlas.
+
+    Aqui habia un rastreo que **adivinaba ids** —de ocho en ocho hasta dar con
+    un hueco— porque `GET /plantillas-prueba/{id}/versiones` no existia. Ya
+    existe: se pregunta plantilla por plantilla y se juntan. Cuelga de
+    `plantillasPrueba` a proposito, y por eso el `enabled`: sin el, la primera
+    pasada preguntaria por una lista vacia y el desplegable saldria sin
+    opciones antes de que nadie lo tocara.
   */
+  const idsDePlantillas = (plantillasPrueba.data ?? []).map((p) => p.id)
   const versionesPrueba = useQuery({
-    queryKey: ['panel-versiones-prueba', vacante.versionPlantillaPruebaId],
-    queryFn: () =>
-      listarVersionesPrueba(
-        vacante.versionPlantillaPruebaId === null
-          ? []
-          : [vacante.versionPlantillaPruebaId],
-      ),
+    queryKey: [
+      'panel-versiones-prueba',
+      idsDePlantillas,
+      vacante.versionPlantillaPruebaId,
+    ],
+    /*
+      ⚠️ **Se espera a que las plantillas TERMINEN, no a que acierten.** Con
+      `isSuccess`, un fallo al listarlas dejaba esta consulta apagada para
+      siempre: `isPending` no baja nunca, el desplegable se queda deshabilitado
+      diciendo «Buscando las pruebas…», y ninguno de los tres carteles de abajo
+      —que exigen `!isPending`— llega a salir. Una espera eterna sin explicar,
+      que es la version silenciosa del indicador que miente. Terminando en
+      error, se corre igual con la lista vacia y el cartel dice qué pasó.
+    */
+    enabled: !plantillasPrueba.isLoading,
+    queryFn: async () => {
+      const porPlantilla = await Promise.all(
+        idsDePlantillas.map((id) => listarVersionesPrueba(id)),
+      )
+      const todas = porPlantilla.flat()
+
+      /*
+        ⚠️ **La que la vacante ya tiene puesta se busca aparte si hace falta.**
+        Normalmente esta entre las de arriba: el backend valida la asignacion
+        contra el mismo dueño que resuelve el listado de plantillas. Pero si esa
+        resolucion cambio despues de asignarla —la empresa personalizo sus
+        instrumentos—, su plantilla ya no sale en la lista y la version elegida
+        no llegaria nunca. El `<select>` se quedaria sin su `<option>` y diria
+        «Elige la prueba…» sobre una vacante que si tiene prueba.
+      */
+      const puesta = vacante.versionPlantillaPruebaId
+      if (puesta === null || todas.some((v) => v.id === puesta)) return todas
+      const suelta = await verVersionDePrueba(puesta).catch(() => null)
+      return suelta === null ? todas : [...todas, suelta.version]
+    },
   })
   const pesos = useQuery({
     queryKey: ['panel-pesos'],
@@ -1556,7 +1590,19 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
     ⚠️ **Una plantilla con `puestoId` null es generica y vale para cualquiera**,
     asi que se queda: filtrarla fuera dejaria sin opciones a casi toda vacante.
   */
-  const pruebasDelPuesto = (versionesPrueba.data ?? []).filter((v) => {
+  /*
+    Las que se pueden elegir de verdad: publicadas.
+
+    Antes no se sabia —el rastreo por ids no traia el estado— y el desplegable
+    ofrecia borradores que el backend rechaza con un 409 («Esa version todavia
+    esta en borrador»). Ahora el estado llega, y el cartel de mas abajo ya
+    decia lo que hay que hacer con ellas: «falta crear y publicar una version».
+  */
+  const versionesUsables = (versionesPrueba.data ?? []).filter(
+    (v) => v.estado === 'PUBLICADA' || v.id === vacante.versionPlantillaPruebaId,
+  )
+
+  const pruebasDelPuesto = versionesUsables.filter((v) => {
     /*
       ⚠️ **La que la vacante YA tiene puesta no se filtra nunca.** El backend
       no valida el puesto al asignarla, asi que existen asignaciones cruzadas
@@ -1738,11 +1784,19 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
           */}
           {!versionesPrueba.isPending && pruebasDelPuesto.length === 0 && (
             <span className={estilos.ayudaAjuste} role="status">
-              {(plantillasPrueba.data ?? []).length === 0
-                ? 'No hay ninguna plantilla de prueba escrita todavía. Se crean en el módulo de pruebas, y sin una la vacante no se puede publicar.'
-                : (versionesPrueba.data ?? []).length === 0
-                  ? `Hay ${(plantillasPrueba.data ?? []).length} plantilla(s) de prueba, pero ninguna con una versión que se pueda usar aquí. Falta crear y publicar una versión.`
-                  : 'Ninguna de las pruebas escritas es de este puesto. Se escribe una para él, o una genérica que valga para cualquiera. Sin ella la vacante no se puede publicar.'}
+              {/* ⚠️ El fallo va primero: sin esta rama, no poder leer las pruebas
+                  se contaba como que no hay ninguna, y mandaba a escribir una
+                  que a lo mejor ya existe. */}
+              {plantillasPrueba.isError
+                ? 'No se pudieron cargar las pruebas del puesto, así que no hay ninguna que ofrecer aquí. Puede ser un problema de permiso o del servidor: al recargar se vuelve a intentar.'
+                : (plantillasPrueba.data ?? []).length === 0
+                ? 'No hay ninguna prueba escrita todavía, y sin una la vacante no se puede publicar.'
+                : versionesUsables.length === 0
+                  ? `Hay ${(plantillasPrueba.data ?? []).length} prueba(s) escritas, pero ninguna con una versión publicada que se pueda usar aquí. Falta terminar y publicar una versión.`
+                  : 'Ninguna de las pruebas escritas es de este puesto. Hace falta una para él, o una genérica que valga para cualquiera. Sin ella la vacante no se puede publicar.'}{' '}
+              {/* El sitio donde se arregla, y ahora existe: hasta hoy este texto
+                  mandaba a «el módulo de pruebas», que no era ninguna pantalla. */}
+              <Link to={rutas.adminPruebas()}>Ir a las pruebas del puesto</Link>.
             </span>
           )}
         </label>
@@ -1841,12 +1895,20 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
  *
  * ⚠️ **Con un botón, no al escribir.** Cada tecla en un campo numérico es un valor
  * distinto —`4`, `45`, `450`— y guardar al vuelo mandaría los tres; peor aún, el servidor
- * frena el cambio cuando ya hay candidatos dentro, así que cada tecla sería un 409 en la
- * cara de quien escribe.
+ * frena el cambio cuando alguien ya empezó, así que cada tecla sería un 409 en la cara de
+ * quien escribe.
  *
  * Vacío es un valor: significa «el que traiga el instrumento elegido», y es lo que tienen
  * todas las vacantes que existían antes de esto.
+ *
+ * ⚠️ **El suelo son cinco minutos, no uno.** Este número manda sobre el reloj del
+ * instrumento —hasta convierte una prueba de plazo abierto en cronometrada—, así que un uno
+ * es una prueba que el servidor entrega sola sesenta segundos después de que el candidato la
+ * abra. El mismo suelo lo valida el backend, y aquí se dice antes de intentarlo.
  */
+/** El suelo del reloj de la etapa técnica. El mismo que valida el backend. */
+const MINIMO = 5
+
 function MinutosDeLaEtapa({
   vacante,
   alGuardar,
@@ -1864,7 +1926,7 @@ function MinutosDeLaEtapa({
 
   const limpio = escrito.trim()
   const comoNumero = limpio === '' ? null : Number(limpio)
-  const valido = comoNumero === null || (Number.isInteger(comoNumero) && comoNumero > 0)
+  const valido = comoNumero === null || (Number.isInteger(comoNumero) && comoNumero >= MINIMO)
   const cambio = comoNumero !== guardados
 
   return (
@@ -1873,7 +1935,7 @@ function MinutosDeLaEtapa({
         <input
           className={estilos.eleccion}
           type="number"
-          min={1}
+          min={MINIMO}
           inputMode="numeric"
           value={escrito}
           placeholder="El del instrumento"
@@ -1896,10 +1958,21 @@ function MinutosDeLaEtapa({
           </button>
         )}
       </span>
+      {/*
+        Tres frases y no una, porque el campo dice tres cosas distintas.
+
+        La de en blanco ya estaba y sigue siendo cierta para los dos instrumentos. La del
+        número escrito es nueva y es el arreglo: antes este campo no hacía nada con la prueba
+        del puesto, y ahora manda sobre el reloj de la plantilla —incluso sobre una de plazo
+        abierto, que pasa a contar minutos—. Quien lo escribe tiene que saberlo aquí, no
+        descubrirlo por lo que le pase al candidato.
+      */}
       <span className={estilos.ayudaAjuste}>
         {!valido
-          ? 'Los minutos son un número entero mayor que cero, o se deja vacío.'
-          : 'En blanco, rige el tiempo que traiga el instrumento elegido. El reloj de cada candidato arranca cuando abre su prueba, no antes.'}
+          ? `Los minutos son un número entero de ${MINIMO} o más, o se deja vacío.`
+          : comoNumero === null
+            ? 'En blanco, rige el tiempo que traiga el instrumento elegido. El reloj de cada candidato arranca cuando abre su prueba, no antes.'
+            : 'Este tiempo manda sobre el que traiga el instrumento elegido. El reloj de cada candidato arranca cuando abre su prueba, no antes.'}
       </span>
     </>
   )

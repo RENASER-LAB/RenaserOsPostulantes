@@ -18,6 +18,8 @@ const TITULOS: Array<[string, string]> = [
   [patrones.adminVacante, 'Vacante · Panel'],
   [patrones.adminPruebaTecnica, 'Prueba técnica · Panel'],
   [patrones.adminSesiones, 'Simulación · Panel'],
+  [patrones.adminPruebas, 'Pruebas del puesto · Panel'],
+  [patrones.adminComponerPrueba, 'Componer una prueba · Panel'],
   [patrones.adminConfiguracion, 'Configuración · Panel'],
 ]
 
@@ -60,6 +62,9 @@ export function ArmazonPanel() {
             </NavLink>
             <NavLink className={claseDelEnlace} to={rutas.adminSesiones()}>
               Simulación
+            </NavLink>
+            <NavLink className={claseDelEnlace} to={rutas.adminPruebas()}>
+              Pruebas
             </NavLink>
             <NavLink className={claseDelEnlace} to={rutas.adminConfiguracion()}>
               Configuración

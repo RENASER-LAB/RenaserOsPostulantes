@@ -37,6 +37,8 @@ import { VacantesPanel } from '@/panel/vacantes/Vacantes'
 import { VacantePanelDetalle } from '@/panel/vacantes/Vacante'
 import { PruebaTecnica } from '@/panel/vacantes/prueba-tecnica/PruebaTecnica'
 import { SesionesPanel } from '@/panel/simulacion/Sesiones'
+import { PlantillasDePrueba } from '@/panel/pruebas/PlantillasDePrueba'
+import { ComponerPrueba } from '@/panel/pruebas/ComponerPrueba'
 import { ConfiguracionPanel } from '@/panel/configuracion/Configuracion'
 
 const datos = new QueryClient({
@@ -126,6 +128,8 @@ export function App() {
                     <Route path={patrones.adminVacante} element={<VacantePanelDetalle />} />
                     <Route path={patrones.adminPruebaTecnica} element={<PruebaTecnica />} />
                     <Route path={patrones.adminSesiones} element={<SesionesPanel />} />
+                    <Route path={patrones.adminPruebas} element={<PlantillasDePrueba />} />
+                    <Route path={patrones.adminComponerPrueba} element={<ComponerPrueba />} />
                     <Route path={patrones.adminConfiguracion} element={<ConfiguracionPanel />} />
                   </Route>
 

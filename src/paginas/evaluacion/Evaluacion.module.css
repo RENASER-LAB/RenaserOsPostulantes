@@ -64,6 +64,22 @@
   font-weight: 600;
 }
 
+/*
+  El plazo que queda, al final de la linea de servicio.
+
+  Solo color: el `space-between` de `.cifras` ya lo coloca en los dos casos —al
+  canto derecho cuando los tres datos caben en una linea, y al margen izquierdo
+  cuando se parte y cae solo—, que es justo lo que se quiere en cada uno. Un
+  `margin-left: auto` acertaria en el primero y lo dejaria arrinconado contra
+  un borde que ya no existe en el segundo.
+
+  En --tinta3, el color de los plazos y las unidades: se lee de reojo sin
+  disputarle el sitio a «Pregunta 2 de 55», que es lo que manda en esta linea.
+*/
+.plazo {
+  color: var(--tinta3);
+}
+
 .riel {
   display: flex;
   height: 6px;

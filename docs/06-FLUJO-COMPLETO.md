@@ -1,10 +1,11 @@
 # De la solicitud a la decisión: el proceso entero
 
-Última actualización: 2026-08-30
+Última actualización: 2026-09-01
 
 **Los pasos 1 a 5 están corridos** contra el backend local con
-`herramientas/e2e-vacante.mjs`. Del 6 en adelante, lo que hay aquí está leído del
-código y de los tests, no de una ejecución.
+`herramientas/e2e-vacante.mjs`, y **la mitad del paso 0 que escribe una prueba**,
+con `e2e-componer-prueba.mjs`. Del 6 en adelante —y de las áreas del paso 0—, lo
+que hay aquí está leído del código y de los tests, no de una ejecución.
 
 Los dos lados a la vez: qué hace el equipo en el panel y qué ve quien postula.
 Cada paso dice **dónde** se hace y **qué lo desbloquea**, porque casi todos los
@@ -13,6 +14,55 @@ atascos del sistema son un requisito que el backend exige y nadie había dicho.
 ---
 
 ## Antes de que exista la vacante
+
+### 0 · Dos cosas que ya tienen que existir
+
+Ninguna de las dos es parte del proceso, y las dos lo paran en seco si faltan.
+Hasta el 31/08 se creaban por fuera del panel y por eso no estaban aquí.
+
+**Las áreas** · *Panel · Configuración → Áreas*
+
+Un área es dónde trabaja alguien, y **el paso 1 la pide como obligatoria**: sin
+ninguna no se registra una solicitud de talento, y sin solicitud no hay vacante.
+Se crean, se renombran, se retiran y se reactivan desde ahí.
+
+⚠️ **Retirar y borrar no son lo mismo.** Retirar deja todo donde está y se
+deshace: el área sale de los desplegables y quien la tuviera asignada la
+conserva. Borrar exige mover antes a otra área lo que colgaba de ella, y ese
+movimiento no se deshace. Antes de confirmar, la pantalla enseña cuántas
+solicitudes y cuántas personas cuelgan del área —los recuentos de verdad, no un
+«¿seguro?»—, y si no puede traerlos no ofrece el botón.
+
+**Las pruebas del puesto** · *Panel · Pruebas* (`/admin/pruebas`)
+
+El paso 3 obliga a elegir una versión de prueba publicada, y hasta el 31/08 **no
+había ninguna pantalla para escribirla**: las que existen entraron por scripts de
+Python del backend. Ahora se compone entera desde el panel —datos y tiempos, el
+enunciado subido como archivo, la guía de calificación para la IA, las preguntas
+traídas del catálogo, los entregables, la rúbrica y las variantes del cambio
+inesperado— y se publica.
+
+La prueba vive en un **catálogo propio, independiente de las vacantes**: primero
+existe la prueba, después alguna vacante la elige, y la misma puede servir a
+varias. Una plantilla sin puesto es genérica y vale para cualquiera.
+
+Mientras se compone, un balance arriba dice a la vez todo lo que falta. Existe
+porque publicar **para en la primera regla que falla**: el backend valida en
+cascada y devuelve un mensaje, así que con la rúbrica descuadrada y preguntas de
+menos hacían falta tres intentos para enterarse de tres cosas.
+
+⚠️ **Publicar congela la versión y no hay «despublicar».** Para cambiar algo se
+abre una versión nueva sobre ella.
+
+⚠️ **El archivo que se sube es el ENUNCIADO, no la prueba.** Subirlo no crea
+preguntas, ni entregables, ni rúbrica: publicar sigue exigiendo lo mismo. Y su
+enlace **caduca a los 180 días**.
+
+⚠️ **La subida no se ha probado contra un almacén de verdad.** En local los
+archivos viven en memoria y el enlace sale como `memoria://`, que ningún
+navegador abre: está comprobado que el enunciado se guarda y que sobrevive a
+volver a guardar la versión, **no que el archivo se pueda descargar**. Un fallo
+en la firma del almacén real no lo vería nadie hasta el primer candidato.
 
 ### 1 · La solicitud de contratación
 
@@ -53,13 +103,19 @@ Queda en `BORRADOR`: **todavía no aparece en el portal**.
 |---|---|
 | La evaluación del banco, encendida o apagada | — |
 | Qué evaluación responderá | **Sí, si el banco está encendido** |
-| Qué prueba del puesto rendirá | **Sí, siempre** |
+| Qué prueba del puesto rendirá | **Sí, salvo si la vacante rinde el cuestionario técnico** (paso 3a) |
 | Qué pesos rigen la decisión | No: sin elegir, rigen los generales |
 
 Solo se ofrecen las evaluaciones **publicadas y del nivel del puesto**. El
 backend rechaza las de otro nivel, así que ofrecerlas sería dejar elegir algo
 que va a fallar. Si la lista sale vacía, no hay ninguna publicada para ese
 nivel y hay que crearla aparte.
+
+Con las pruebas del puesto, la misma idea: **solo se ofrecen las versiones
+publicadas**, porque asignar un borrador lo rechaza el backend. Si no hay
+ninguna que valga, el cartel dice cuál de los tres motivos es —no se pudieron
+cargar, no hay ninguna prueba escrita, o ninguna es de este puesto— y enlaza al
+sitio donde se arregla, que desde el 31/08 existe (paso 0).
 
 Mientras falte algo, el botón de publicar está apagado y dice qué falta.
 
@@ -128,6 +184,12 @@ para que ninguna cambiara de comportamiento.
 cuanto alguien está dentro, el instrumento y los minutos quedan quietos: el
 backend lo frena y los minutos cuentan como parte de esa quietud. Mover el reloj
 con gente contestando sería cambiarles el examen por debajo.
+
+⚠️ **Escrito, ese número manda sobre el reloj del instrumento**, y hasta
+convierte en cronometrada una prueba de plazo abierto. El mínimo son **cinco
+minutos**: con uno, el servidor entregaría la prueba solo sesenta segundos
+después de que el candidato la abra. Lo valida el backend y el panel lo dice
+antes de intentarlo.
 
 ⚠️ **Con el cuestionario no se sube ningún archivo.** Es la diferencia que más
 se nota para quien postula, y la pantalla se lo dice antes de empezar.
@@ -227,14 +289,28 @@ Lo escrito **no sale de la cola hasta que el servidor lo confirma**, se
 reintenta solo cada cinco segundos, y no se deja entregar mientras quede algo
 sin guardar.
 
+El plazo por defecto son **catorce días**, y desde el 31/08 los que quedan se
+ven **también mientras se responde**, junto a «Pregunta 2 de 55». Antes estaban
+solo en la portada: entre esa pantalla y el aviso de la última hora había dos
+semanas en las que, para saber cuánto le quedaba, el candidato tenía que salir
+del examen. Por debajo de la hora ese dato desaparece y lo sustituye la cuenta
+atrás de «Queda poco plazo»: dos relojes a la vez, uno diciendo «hoy» y el otro
+`00:42:17`, se leen peor que el segundo solo.
+
 ### 8 · La prueba del puesto
 
 **Portal · Mis procesos → la postulación → «Hacer la prueba»**
 
-En sus dos formas: la corta con cronómetro y la larga con plazo de días. **La
-hora la manda el servidor**: el cronómetro recalcula cuánto falta hasta la hora
-de vencimiento del backend descontando el desfase entre relojes, así que
+**La hora la manda el servidor**: el cronómetro recalcula cuánto falta hasta la
+hora de vencimiento del backend descontando el desfase entre relojes, así que
 cambiar la hora del equipo no lo mueve.
+
+⚠️ **Hay dos plazos y pueden regir A LA VEZ.** Los minutos los trae el
+instrumento y empiezan a contar cuando el candidato abre la prueba; la fecha de
+cierre la pone la convocatoria y es la misma para todos. Manda **el que caiga
+antes**. Antes de empezar, la pantalla dice los dos y cuál acorta a cuál: decir
+solo los minutos dejaba a quien abriera a las 17:40 con un cierre a las 18:00
+leyendo noventa minutos cuando tenía veinte.
 
 ### 9 · La simulación
 
@@ -300,16 +376,26 @@ calificación tuvo en cuenta y por qué.
 |---|---|
 | Parámetros | Editar los del proceso. **Exige motivo**: queda auditado |
 | Banco de preguntas | Subir un Excel con su nivel y su etiqueta |
-| Equipo | Quién tiene acceso |
-| Solo lectura | Las plantillas y las versiones de pesos que existen |
+| Áreas | La estructura de la empresa: crear, renombrar, retirar, reactivar y borrar (paso 0) |
+| Equipo | Quién tiene acceso, y en qué área está cada quien |
+| Permisos | El reparto de permisos por rol |
+| Solo lectura | Las plantillas **de evaluación** y las versiones de pesos que existen |
+
+Las áreas van justo antes del equipo, y no es cosmética: un área es dónde
+trabaja alguien, así que la tabla del equipo no se entiende sin haber visto esa
+lista.
+
+⚠️ **Las pruebas del puesto NO están aquí**, aunque suenen a configuración:
+tienen pestaña propia en el panel (`/admin/pruebas`, paso 0). Lo que sigue en
+solo lectura son las plantillas de **evaluación**, que se editan por un flujo
+propio que todavía no está en el panel.
 
 ---
 
-## Los tres huecos del backend que se notan
+## Los huecos del backend que se notan
 
 | Qué falta | Dónde se nota |
 |---|---|
-| `GET /plantillas-prueba/{id}/versiones` | El panel tantea los ids en orden y deja 404 en la consola. La función `listarVersionesPrueba` se borra el día que exista la ruta |
 | `GET /panel/sesiones-simulacion/{id}/inscripciones` | Simulación enseña el conteo, no los nombres |
 | Las rutas de la decisión ámbar y de la validación | Las dos pantallas del portal están completas y no se pueden conectar |
 
@@ -360,3 +446,55 @@ mensajes de la IA.
 
 ⚠️ **Escribe en la base local**, así que hace falta el Spring en `localhost:8081`
 y `API_URL=http://localhost:8081` en `.env.local`. Nunca contra producción.
+
+```bash
+PORTAL=http://localhost:5199 node herramientas/e2e-componer-prueba.mjs
+```
+
+**Escribir una prueba del puesto desde cero**, que es lo que hasta el 31/08 no
+se podía hacer desde ninguna pantalla. Crea la plantilla, compone su primera
+versión entera —datos y tiempos, el enunciado escrito y subido como PDF, la
+guía para la IA, once preguntas, dos entregables, la rúbrica y dos variantes
+del cambio inesperado—, intenta publicarla hasta que el servidor deja, y
+comprueba que la versión publicada aparece en el desplegable de una vacante y
+que la que quedó en borrador **no**.
+
+Es la única prueba que ejercita los quince endpoints de edición y borrado: las
+pantallas se probaron contra `backend-simulado.mjs`, que contesta `{ok:true}` a
+todo lo que no sea GET, así que ningún guardado real se había visto.
+
+⚠️ **No le pide nada a la IA**: no hay coste ni cola de por medio.
+
+⚠️ **Deja rastro que no se puede borrar**: una plantilla nueva por corrida (el
+nombre lleva la hora), una versión suya **publicada** —y publicar congela: no
+existe «despublicar»— y otra en borrador. No toca ninguna vacante: la del paso
+final solo se mira.
+
+⚠️ **Antes de abrir el navegador comprueba con quién habla.** El 8080 suele ser
+Adminer y contesta 200 a todo: apuntar ahí da una e2e que «pasa» sin probar
+nada. El paso 0 exige un 401 con JSON y se corta si no lo ve.
+
+Variables: `PORTAL`, `PAUSA`, `DEV_ID`, `VACANTE` (el título de la vacante donde
+se mira el desplegable; tiene que rendir la prueba del puesto) y `PUESTO` (en
+blanco escribe una prueba genérica, que es lo que hace que la vacante la
+ofrezca sea cual sea su puesto).
+
+**Lo que hace falta levantado.** Lo normal es lo de siempre —el Spring en
+`localhost:8081` y este portal en el 5174— y entonces `PORTAL` sobra. Los
+números del ejemplo de arriba (8091 y 5199) son los de *un* worktree con el
+8081 ya ocupado por el backend de otro; no son los del proyecto. Lo que no
+cambia de un sitio a otro son tres reglas:
+
+- **`API_URL` de `.env.local` tiene que apuntar a donde esté el backend de
+  verdad**, sea el puerto que sea. El proxy de Vite se va al **8080** por
+  defecto, y ahí suele estar **Adminer**, que contesta 200 a todo: apuntar mal
+  no da un error, da una e2e que pasa sin probar nada. El paso 0 lo caza.
+- **`PORTAL` tiene que ser el puerto de este portal**, no el del backend.
+- **La base tiene que ser propia del worktree** cuando hay más de uno vivo.
+  `renaser_db` la comparten todos, y dos ramas pueden traer migraciones con el
+  mismo número: la primera que arranca deja a la otra sin poder migrar. Se clona
+  con `docker exec renaser-postgres createdb -U postgres -T renaser_db <nombre>`
+  y se apunta ahí con `spring.datasource.url`.
+
+⚠️ **Al terminar, node no se cierra**: el navegador queda abierto a propósito
+para poder mirar la prueba escrita, igual que en las demás e2e de esta familia.

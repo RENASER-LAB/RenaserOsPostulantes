@@ -177,6 +177,16 @@ Reglas duras que el maquetado no puede romper:
 - El backend **rechaza entregar una evaluación incompleta**.
 - 🚫 Nunca viaja al navegador: puntaje de cada opción, lógica interna, dimensión medida.
 
+⚠️ **Los días que quedan tienen que verse mientras se responde, no solo antes de empezar**
+(31/08/2026). El plazo son 14 días y esta pantalla se retoma muchas veces: si `venceEn` solo
+se pinta en la portada, hay dos semanas en las que el candidato tiene que **salir del examen**
+para saber cuánto le queda. Va en la línea de servicio, junto a «Pregunta 2 de 55», donde se
+mira de reojo sin interrumpir.
+
+⚠️ **Y se apaga en la última hora**, que es cuando entra el aviso de «Queda poco plazo» con su
+cuenta atrás. Dos relojes a la vez —«hoy» y `00:42:17`— se leen peor que el segundo solo, y ese
+mismo corte deja fuera los textos de plazo que ahí no encajan: «vencida» y «sin plazo».
+
 **De aquí salen las quejas reales.** Una pregunta por pantalla dejó a un candidato saltando de la
 50 a la 10 sin forma de volver, y por eso hoy existen el mapa de preguntas, "siguiente sin
 responder" y "volver a la 50". Es el punto donde el candidato se pierde.
@@ -197,6 +207,14 @@ cuestionario quedan vacías.
 Reglas:
 - **El cronómetro es del servidor.** Sale de `venceEn`, corregido por el desfase de reloj. Empieza
   al confirmar y **no se detiene al cerrar la página** — hay que avisarlo antes de arrancar.
+- ⚠️ **`duracionMinutos` y `venceEn` NO son excluyentes** (31/08/2026). Esto es **otro eje**, sin
+  relación con las dos formas de arriba: aquella partición es por `entregables`, y esta es por
+  cómo se acaba el tiempo — cualquiera de las dos formas puede traer uno de los plazos o los dos.
+  Los minutos los trae el instrumento y cuentan desde que se confirma; `venceEn` es el cierre de
+  la convocatoria y es el mismo para todos. Cuando llegan los dos **rige el que caiga antes**, y
+  lo resuelve el servidor al arrancar el intento. Antes de empezar hay que decir **los dos y
+  cuál acorta a cuál**: enseñar solo los minutos deja a quien abre a las 17:40 con cierre a las
+  18:00 leyendo noventa minutos cuando tiene veinte. Sin `venceEn` no se inventa ninguna fecha.
 - **El cambio inesperado no lo dispara el navegador**: `cambioTexto` llega en nulo hasta que el
   backend decide mostrarlo. La pantalla consulta cada pocos segundos.
 - **Los entregables son una lista**, cada uno con `nombre`, `detalle`, `formato`, `esObligatorio`,
