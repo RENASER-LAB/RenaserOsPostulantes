@@ -11,6 +11,7 @@ import type {
   CrearSolicitud,
   DesgloseEvaluacion,
   AreaPanel,
+  ImpactoDeBorrarArea,
   ConteoEmbudo,
   CrearSesion,
   FichaPostulacion,
@@ -42,6 +43,14 @@ import type {
   ValidacionPanel,
   PlantillaPruebaPanel,
   VersionPrueba,
+  VersionCompletaPrueba,
+  GuardarVersionPrueba,
+  ConsignaSubida,
+  PreguntaDePrueba,
+  GuardarPreguntaDePrueba,
+  TipoDePreguntaDePrueba,
+  GuardarEntregable,
+  GuardarCriterioRubrica,
   RespuestaDePrueba,
   CalificacionEncolada,
   PasadaEncolada,
@@ -264,7 +273,69 @@ export const revocarPermiso = (rolId: number, codigo: string, motivo: string) =>
     metodo: 'POST',
     cuerpo: { motivo },
   })
+// ---------- Las areas de la organizacion ----------
+//
+// El area es la estructura de la empresa, y **sin una no se puede registrar una
+// solicitud de talento**: es la pieza mas pequeña del panel con las
+// consecuencias mas grandes.
+//
+// ⚠️ **Dos listas, y no es una duplicidad.** `/areas` trae solo las activas y la
+// abre `ver_solicitudes`, porque es la que llena el desplegable al registrar una
+// solicitud —una area retirada ahi seria una solicitud nueva colgada de algo
+// cerrado—. `/areas/todas` trae tambien las retiradas y pide
+// `crear_usuarios_y_asignar_roles`. Solo la segunda permite volver a encender
+// algo: quien use la primera para una pantalla de administracion vera
+// desaparecer lo que acaba de desactivar, sin forma de recuperarlo.
+
+/** Las activas. Es la que alimenta cualquier desplegable de eleccion de area. */
 export const listarAreas = () => pedir<AreaPanel[]>('/areas')
+
+/** Todas, vivas y retiradas. La unica que deja reactivar. */
+export const listarTodasLasAreas = () => pedir<AreaPanel[]>('/areas/todas')
+
+/** Devuelve solo el id: el backend responde `{ "id": 7 }`. */
+export const crearArea = async (nombre: string) =>
+  (await pedir<{ id: number }>('/areas', { metodo: 'POST', cuerpo: { nombre } })).id
+
+/**
+ * Cambiarle el nombre. Lo que cuelga del area no se toca.
+ *
+ * ⚠️ El backend responde **409 si ya existe otra area con ese nombre** en la
+ * empresa (`UNIQUE (organizacion_id, nombre)`), y el mensaje viene escrito en
+ * español: se enseña tal cual. Guardar el mismo nombre no es error, no hace nada.
+ */
+export const renombrarArea = (id: number, nombre: string) =>
+  pedir<void>(`/areas/${id}`, { metodo: 'PUT', cuerpo: { nombre } })
+
+/** Retirarla de la lista sin borrar nada. Se deshace con `reactivarArea`. */
+export const desactivarArea = (id: number) =>
+  pedir<void>(`/areas/${id}/desactivacion`, { metodo: 'POST' })
+
+export const reactivarArea = (id: number) =>
+  pedir<void>(`/areas/${id}/reactivacion`, { metodo: 'POST' })
+
+/** Cuantas solicitudes y cuantas personas habria que mover. Se pide ANTES de borrar. */
+export const impactoDeBorrarArea = (id: number) =>
+  pedir<ImpactoDeBorrarArea>(`/areas/${id}/impacto`)
+
+/**
+ * Borrar el area de verdad, moviendo antes lo que colgaba de ella.
+ *
+ * ⚠️ **`areaDestinoId` no es opcional en la practica.** Las dos claves ajenas que
+ * apuntan al area —la solicitud de talento y el usuario— no declaran `ON DELETE`,
+ * asi que el borrado falla mientras quede una fila. Sin destino el backend
+ * responde **409 con los dos recuentos dentro**, y ese mensaje se enseña tal cual
+ * porque dice exactamente que hace falta.
+ *
+ * **POST y no DELETE**: el destino y el motivo van en el cuerpo, y hay proxies
+ * que descartan el cuerpo de un DELETE. Misma forma que la revocacion de un
+ * permiso.
+ */
+export const borrarArea = (id: number, areaDestinoId: number | null, motivo: string) =>
+  pedir<void>(`/areas/${id}/borrado`, {
+    metodo: 'POST',
+    cuerpo: { areaDestinoId, motivo },
+  })
 
 /**
  * Las versiones que esta organizacion ve.
@@ -353,72 +424,174 @@ export const listarPlantillasEvaluacion = () =>
   pedir<PlantillaEvaluacionPanel[]>('/plantillas-evaluacion')
 export const listarVersionesPesos = () => pedir<VersionPesos[]>('/pesos/versiones')
 
+// ---------- Las pruebas del puesto ----------
+// Una plantilla es «la prueba de Analista»; sus versiones son los intentos de
+// escribirla. Se compone en BORRADOR y publicar la congela: desde ahi solo se
+// corrige creando otra version, porque quien la este rindiendo queda atado a la
+// suya. Todos los `actualizar*` y `quitar*` de aqui abajo contestan **409 sobre
+// una PUBLICADA**, y ese 409 llega con su texto en español: se enseña tal cual.
+
 export const listarPlantillasPrueba = () =>
   pedir<PlantillaPruebaPanel[]>('/plantillas-prueba')
 
+/** Sin `puestoId` la plantilla es generica y sirve para cualquier vacante. */
+export const crearPlantillaPrueba = (nombre: string, puestoId: number | null) =>
+  pedir<{ id: number }>('/plantillas-prueba', {
+    metodo: 'POST',
+    cuerpo: { nombre, puestoId },
+  })
+
 /**
- * ⚠️ **Esto deberia ser una llamada y son varias.** El backend no expone
- * `GET /plantillas-prueba/{id}/versiones`: solo deja pedir una version suelta
- * por su id. Y la vacante necesita el id de la VERSION —no el de la
- * plantilla— para poder publicarse. El dia que exista esa ruta, esta funcion
- * se borra entera y se queda una linea.
+ * Las versiones de una plantilla, de la mas nueva a la mas vieja.
  *
- * Mientras tanto se tantean los ids. Dos cosas que la version anterior hacia
- * mal y costaban un desplegable vacio:
+ * Hasta el 31/08 esta ruta no existia y aqui habia un **tanteo de ids**: se
+ * pedian de ocho en ocho hasta dar con un hueco, dejando 404 legitimos en la
+ * consola y sin encontrar nada si las versiones de la empresa vivian altas.
+ * Ya no. Si vuelve a aparecer codigo que adivina ids, es que alguien deshizo
+ * esto.
  *
- * 1. **Empezaba en 1 y paraba a los tres huecos seguidos.** Los ids son una
- *    secuencia global de toda la plataforma, asi que una empresa cuyas
- *    versiones vivan del 40 para arriba no encontraba ni una: tres 404 al
- *    principio y a casa. Por eso entra `pistas` — ids que ya se sabe que
- *    existen, como el que la vacante tiene asignado. Donde vive uno viven sus
- *    vecinos.
- * 2. **Iba de una en una.** Cuarenta ids eran cuarenta viajes en fila. Ahora
- *    van por tandas en paralelo.
- *
- * Los huecos siguen dejando 404 en la consola. Es feo y es lo que hay: son
- * peticiones legitimas a ids que no existen, no un fallo del panel.
+ * Vienen **todas**, borradores incluidos: quien compone necesita ver el suyo, y
+ * quien elige para una vacante necesita distinguir «no hay ninguna» de «hay una
+ * sin publicar». El `estado` dice cual se puede usar.
  */
-export async function listarVersionesPrueba(
-  pistas: number[] = [],
-): Promise<VersionPrueba[]> {
-  /*
-    Ocho y no doce: cada hueco deja un 404 en la consola, y la tanda que decide
-    el final se paga entera. Con ocho, una base normal —dos versiones— cuesta
-    dieciseis peticiones en vez de veinticuatro, y la ventana sigue siendo lo
-    bastante ancha para saltar un par de ids borrados.
-  */
-  const TANDA = 8
-  // Hasta donde barrer: mas alla del id conocido mas alto, y nunca menos de
-  // dos tandas, que es lo que basta en una base recien sembrada.
-  const techo = Math.max(TANDA * 2, ...pistas.map((p) => p + TANDA))
+export const listarVersionesPrueba = (plantillaId: number) =>
+  pedir<VersionPrueba[]>(`/plantillas-prueba/${plantillaId}/versiones`)
 
-  const encontradas: VersionPrueba[] = []
-  for (let desde = 1; desde <= techo; desde += TANDA) {
-    const ids = Array.from(
-      { length: Math.min(TANDA, techo - desde + 1) },
-      (_, i) => desde + i,
-    )
-    const tanda = await Promise.all(ids.map(pedirVersionDePrueba))
-    const halladas = tanda.filter((v): v is VersionPrueba => v != null)
-    encontradas.push(...halladas)
+/** La version entera: enunciado, variantes, preguntas, entregables y rubrica. */
+export const verVersionDePrueba = (versionId: number) =>
+  pedir<VersionCompletaPrueba>(`/plantillas-prueba/versiones/${versionId}`)
 
-    // Una tanda entera vacia por encima de la ultima pista es el final de la
-    // secuencia. Por debajo no: puede ser un hueco de ids borrados.
-    const noQuedanPistasArriba = pistas.every((p) => p < desde)
-    if (halladas.length === 0 && noQuedanPistasArriba && encontradas.length > 0) break
-  }
-  return encontradas.sort((a, b) => a.id - b.id)
+export const crearVersionDePrueba = (
+  plantillaId: number,
+  datos: GuardarVersionPrueba,
+) =>
+  pedir<{ id: number }>(`/plantillas-prueba/${plantillaId}/versiones`, {
+    metodo: 'POST',
+    cuerpo: datos,
+  })
+
+/** ⚠️ **Reemplaza la version entera.** Lo que no viaje en `datos` se borra. */
+export const actualizarVersionDePrueba = (
+  versionId: number,
+  datos: GuardarVersionPrueba,
+) =>
+  pedir<void>(`/plantillas-prueba/versiones/${versionId}`, {
+    metodo: 'PUT',
+    cuerpo: datos,
+  })
+
+/**
+ * Publicar congela la version y la deja elegible para una vacante.
+ *
+ * ⚠️ **La validacion para en la primera regla que falla**, como la del banco: el
+ * 400 nombra un solo problema aunque haya tres. Por eso la pantalla lleva los
+ * contadores en vivo —la suma de la rubrica y las cuotas de preguntas—: para no
+ * descubrir lo que falta de uno en uno.
+ */
+export const publicarVersionDePrueba = (versionId: number) =>
+  pedir<void>(`/plantillas-prueba/versiones/${versionId}/publicacion`, {
+    metodo: 'POST',
+  })
+
+/**
+ * Sube el ENUNCIADO como archivo (PDF o Word), y nada mas.
+ *
+ * ⚠️ **No es la prueba entera.** De un PDF no sale ninguna nota: subirlo no crea
+ * preguntas, ni entregables, ni criterios, y publicar sigue exigiendo lo mismo.
+ * Es el papel que lee el candidato y el que va enlazado en el correo.
+ *
+ * ⚠️ **El enlace caduca**: el bucket es privado y la firma dura 180 dias. Por eso
+ * la respuesta trae `expira`.
+ */
+export const subirConsignaDePrueba = (versionId: number, archivo: File) => {
+  const formulario = new FormData()
+  formulario.append('archivo', archivo)
+  return pedir<ConsignaSubida>(
+    `/plantillas-prueba/versiones/${versionId}/consigna`,
+    { metodo: 'POST', formulario },
+  )
 }
 
-/*
-  El `?? null` no sobra: un 200 con otra cosa dentro —una fixtura floja, un
-  proxy que contesta lo que no es— dejaba pasar un `undefined` como si fuera
-  una version, y el desplegable se llenaba de opciones vacias.
-*/
-const pedirVersionDePrueba = (id: number) =>
-  pedir<{ version: VersionPrueba }>(`/plantillas-prueba/versiones/${id}`)
-    .then((r) => r?.version ?? null)
-    .catch(() => null)
+/** El catalogo de preguntas, que es **global**: lo comparten todas las versiones. */
+export const listarPreguntasDePrueba = (tipo?: TipoDePreguntaDePrueba) =>
+  pedir<PreguntaDePrueba[]>(
+    tipo === undefined
+      ? '/plantillas-prueba/preguntas'
+      : `/plantillas-prueba/preguntas?tipo=${tipo}`,
+  )
+
+export const crearPreguntaDePrueba = (datos: GuardarPreguntaDePrueba) =>
+  pedir<{ id: number }>('/plantillas-prueba/preguntas', {
+    metodo: 'POST',
+    cuerpo: datos,
+  })
+
+export const elegirPreguntaDePrueba = (versionId: number, preguntaPruebaId: number) =>
+  pedir<void>(`/plantillas-prueba/versiones/${versionId}/preguntas`, {
+    metodo: 'POST',
+    cuerpo: { preguntaPruebaId },
+  })
+
+/** Quitarla de esta version. ⚠️ **Sigue en el catalogo**: otras versiones la usan. */
+export const quitarPreguntaDePrueba = (versionId: number, preguntaId: number) =>
+  pedir<void>(`/plantillas-prueba/versiones/${versionId}/preguntas/${preguntaId}`, {
+    metodo: 'DELETE',
+  })
+
+export const agregarEntregableDePrueba = (versionId: number, datos: GuardarEntregable) =>
+  pedir<{ id: number }>(`/plantillas-prueba/versiones/${versionId}/entregables`, {
+    metodo: 'POST',
+    cuerpo: datos,
+  })
+
+export const actualizarEntregableDePrueba = (
+  entregableId: number,
+  datos: GuardarEntregable,
+) =>
+  pedir<void>(`/plantillas-prueba/entregables/${entregableId}`, {
+    metodo: 'PUT',
+    cuerpo: datos,
+  })
+
+export const quitarEntregableDePrueba = (entregableId: number) =>
+  pedir<void>(`/plantillas-prueba/entregables/${entregableId}`, { metodo: 'DELETE' })
+
+export const agregarCriterioRubrica = (
+  versionId: number,
+  datos: GuardarCriterioRubrica,
+) =>
+  pedir<{ id: number }>(`/plantillas-prueba/versiones/${versionId}/rubrica`, {
+    metodo: 'POST',
+    cuerpo: datos,
+  })
+
+export const actualizarCriterioRubrica = (
+  criterioId: number,
+  datos: GuardarCriterioRubrica,
+) =>
+  pedir<void>(`/plantillas-prueba/rubrica/${criterioId}`, {
+    metodo: 'PUT',
+    cuerpo: datos,
+  })
+
+/** Es lo que deshace una rubrica que se paso de 100 puntos. */
+export const quitarCriterioRubrica = (criterioId: number) =>
+  pedir<void>(`/plantillas-prueba/rubrica/${criterioId}`, { metodo: 'DELETE' })
+
+export const agregarVarianteDeCambio = (versionId: number, texto: string) =>
+  pedir<{ id: number }>(`/plantillas-prueba/versiones/${versionId}/variantes`, {
+    metodo: 'POST',
+    cuerpo: { texto },
+  })
+
+export const actualizarVarianteDeCambio = (varianteId: number, texto: string) =>
+  pedir<void>(`/plantillas-prueba/variantes/${varianteId}`, {
+    metodo: 'PUT',
+    cuerpo: { texto },
+  })
+
+export const quitarVarianteDeCambio = (varianteId: number) =>
+  pedir<void>(`/plantillas-prueba/variantes/${varianteId}`, { metodo: 'DELETE' })
 
 // ---------- La configuracion de una vacante ----------
 // Sin estas cuatro no se puede publicar: el backend exige plantilla de

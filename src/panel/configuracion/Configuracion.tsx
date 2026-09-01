@@ -11,12 +11,13 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   editarParametro,
-  listarAreas,
   listarParametros,
   listarPlantillasEvaluacion,
+  listarTodasLasAreas,
   listarUsuarios,
   listarVersionesPesos,
 } from '../api/panel'
+import { Areas } from './Areas'
 import { BancoDePreguntas } from './BancoDePreguntas'
 import { Permisos } from './Permisos'
 import tabla from '../ui/Tabla.module.css'
@@ -33,6 +34,12 @@ export function ConfiguracionPanel() {
 
       <Parametros />
       <BancoDePreguntas />
+      {/*
+        Las áreas van pegadas al equipo y antes que él: un área es dónde trabaja
+        alguien, así que la tabla de abajo no se entiende sin haber visto esta
+        lista. Y crear la primera área es lo que desbloquea registrar solicitudes.
+      */}
+      <Areas />
       <Equipo />
       <Permisos />
       <SoloLectura />
@@ -161,7 +168,14 @@ function Parametros() {
 
 function Equipo() {
   const usuarios = useQuery({ queryKey: ['panel-usuarios'], queryFn: listarUsuarios })
-  const areas = useQuery({ queryKey: ['panel-areas'], queryFn: listarAreas })
+  /*
+   * ⚠️ La lista de TODAS, no la de las activas. Con la de activas, una persona de
+   * un área retirada caía en el `?? '—'` de abajo, y ese guion significa «no
+   * tiene área»: dos situaciones distintas pintadas igual, y la falsa es la que
+   * hace pensar que al desactivar se perdió el dato. Quien ve esta tabla ya
+   * tiene `crear_usuarios_y_asignar_roles`, que es el permiso de esa lista.
+   */
+  const areas = useQuery({ queryKey: ['panel-areas-todas'], queryFn: listarTodasLasAreas })
 
   return (
     <section className={estilos.seccion}>

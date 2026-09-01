@@ -122,11 +122,169 @@ export interface PlantillaPruebaPanel {
   esActiva: boolean
 }
 
-/** Una version de plantilla de prueba, reducida a lo que el panel necesita. */
+/**
+ * Una version de plantilla de prueba: el `VersionResponse` de Java, uno a uno.
+ *
+ * ⚠️ **Solo dos estados, y no tres.** Una version de prueba nace en BORRADOR y
+ * al publicarse queda congelada; **no hay archivar ni despublicar**, a
+ * diferencia del banco de preguntas (`EstadoDeVersion`). El backend lo explica
+ * en `ServicioPlantillaPrueba`: una vacante con postulantes no puede quedarse
+ * apuntando a una version que ya no se puede usar. La salida a un error en una
+ * publicada es otra version, no volver atras.
+ */
+export type EstadoVersionPrueba = 'BORRADOR' | 'PUBLICADA'
+
 export interface VersionPrueba {
   id: number
   plantillaPruebaId: number
   version: number
+  enunciado: string
+  /*
+    ⚠️ **Estos tres se leen porque se escriben.** `actualizarVersion` es un PUT
+    que reemplaza la version entera: si la API no los devolviera, cargar el
+    formulario con lo que da y guardarlo los pondria en nulo sin que nadie los
+    tocara. Faltaban en `VersionResponse` justo por eso, y se añadieron.
+  */
+  materiales: string | null
+  herramientasPermitidas: string | null
+  minutosExtra: number | null
+  modalidad: ModalidadDePrueba
+  duracionMinutos: number | null
+  plazoDias: number | null
+  minutoCambioMin: number | null
+  minutoCambioMax: number | null
+  estado: EstadoVersionPrueba
+  publicadaEn: FechaIso | null
+  /** Lo que esta prueba le dice a la IA que la califica. **Orienta, no sustituye a la rubrica.** */
+  guiaCalificacion: string | null
+  /** El enunciado subido como archivo. ⚠️ El enlace **caduca** (180 dias). */
+  urlConsigna: string | null
+}
+
+/**
+ * CRONOMETRADA es lo normal: el candidato tiene un reloj. PLAZO_ABIERTO es de
+ * las pruebas viejas que se cargaron tal cual, con dias en vez de minutos.
+ */
+export type ModalidadDePrueba = 'CRONOMETRADA' | 'PLAZO_ABIERTO'
+
+/**
+ * Lo que se manda al crear o reemplazar una version en borrador.
+ *
+ * ⚠️ **`actualizarVersion` REEMPLAZA, no parchea**: el backend escribe todos
+ * los campos con lo que llegue, asi que mandar el formulario a medias borra lo
+ * que no viaje. Se manda siempre entero.
+ */
+export interface GuardarVersionPrueba {
+  enunciado: string
+  materiales: string | null
+  herramientasPermitidas: string | null
+  modalidad: ModalidadDePrueba
+  duracionMinutos: number | null
+  plazoDias: number | null
+  /** El cambio inesperado no tiene minuto fijo: se sortea uno de este rango al empezar. */
+  minutoCambioMin: number | null
+  minutoCambioMax: number | null
+  minutosExtra: number | null
+  guiaCalificacion: string | null
+}
+
+/** El tope de la guia de calificacion, el mismo `@Size` que el backend. */
+export const MAXIMO_GUIA_CALIFICACION = 2000
+
+/** Una forma posible del cambio inesperado. Se sortea una al empezar el intento. */
+export interface VarianteDeCambio {
+  id: number
+  texto: string
+  orden: number
+}
+
+/**
+ * Una pregunta del catalogo de pruebas.
+ *
+ * ⚠️ **El catalogo es global**, no de la version: quitar una pregunta de una
+ * version no la borra, porque otras pueden estar usandola.
+ */
+export type TipoDePreguntaDePrueba = 'PREVIA' | 'UNIVERSAL' | 'ESPECIFICA'
+
+export interface PreguntaDePrueba {
+  id: number
+  codigo: string
+  enunciado: string
+  tipo: TipoDePreguntaDePrueba
+  /** Nulo = sirve para cualquier puesto. */
+  puestoId: number | null
+}
+
+export interface GuardarPreguntaDePrueba {
+  codigo: string
+  enunciado: string
+  tipo: TipoDePreguntaDePrueba
+  puestoId: number | null
+  /** Que mide la pregunta. No se le enseña a quien lee la respuesta. */
+  revela: string | null
+}
+
+export type FormatoDeEntregable = 'ARCHIVO' | 'ENLACE' | 'CUALQUIERA'
+
+export interface EntregableDePrueba {
+  id: number
+  nombre: string
+  detalle: string
+  formato: FormatoDeEntregable
+  esObligatorio: boolean
+}
+
+export interface GuardarEntregable {
+  nombre: string
+  detalle: string
+  formato: FormatoDeEntregable
+  esObligatorio: boolean
+}
+
+/** SISTEMA lo comprueba el codigo, AGENTE la IA, PERSONA quien evalua a mano. */
+export type MetodoDeVerificacion = 'SISTEMA' | 'AGENTE' | 'PERSONA'
+
+export interface CriterioDeRubrica {
+  id: number
+  codigo: string
+  nombre: string
+  /*
+    ⚠️ **Se lee porque se escribe.** Corregir un criterio lo reemplaza entero, así que sin
+    esto el formulario se abría en blanco y guardar la borraba sin que nadie la tocara. Es
+    la misma razón por la que `VersionPrueba` devuelve `materiales`.
+  */
+  descripcion: string | null
+  puntos: number | null
+  metodoVerificacion: MetodoDeVerificacion
+}
+
+export interface GuardarCriterioRubrica {
+  codigo: string
+  nombre: string
+  descripcion: string | null
+  puntos: number
+  metodoVerificacion: MetodoDeVerificacion
+}
+
+/** La version entera: lo que hace falta para componerla y para publicarla. */
+export interface VersionCompletaPrueba {
+  version: VersionPrueba
+  variantes: VarianteDeCambio[]
+  preguntas: PreguntaDePrueba[]
+  entregables: EntregableDePrueba[]
+  rubrica: CriterioDeRubrica[]
+}
+
+/**
+ * Lo que devuelve subir el enunciado.
+ *
+ * `expira` viaja a proposito: el enlace lo firma el almacen y caduca, asi que
+ * se puede avisar antes de que salga un correo con un enlace muerto.
+ */
+export interface ConsignaSubida {
+  archivoId: number
+  urlConsigna: string
+  expira: FechaIso
 }
 
 // ---------- La prueba del puesto, por dentro ----------
@@ -488,10 +646,32 @@ export interface PermisoDelRol {
   alcance: AlcancePermiso | null
 }
 
+/**
+ * Un area de la organizacion: la estructura de la empresa.
+ *
+ * ⚠️ `esActiva` **solo dice algo en la lista de todas**. `GET /areas` filtra por
+ * activas, asi que ahi llega siempre `true` y no distingue nada. Dejo de ser
+ * opcional cuando aparecio la segunda lista: un `esActiva` que puede faltar se
+ * lee como `false` con un `??` mal puesto y pinta viva un area retirada.
+ */
 export interface AreaPanel {
   id: number
   nombre: string
-  esActiva?: boolean
+  esActiva: boolean
+}
+
+/**
+ * Lo que se lleva por delante borrar un area, contado ANTES de borrarla.
+ *
+ * Se pide al abrir la confirmacion, no al confirmar: quien borra tiene que ver
+ * cuantas solicitudes y cuantas personas se mueven mientras todavia puede
+ * arrepentirse.
+ */
+export interface ImpactoDeBorrarArea {
+  areaId: number
+  nombre: string
+  solicitudes: number
+  usuarios: number
 }
 
 // ---------- El banco de preguntas ----------

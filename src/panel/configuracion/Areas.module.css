@@ -1,0 +1,447 @@
+/*
+ * Las áreas de la organización.
+ *
+ * Lista y no tabla, por lo mismo que la matriz de permisos: cada fila es una
+ * cosa con sus acciones al lado, no una celda que se compare con la de arriba —y
+ * aquí además una fila se despliega en un formulario entero, que en una tabla
+ * obliga al `colSpan` y a pelear con el ancho de las columnas.
+ *
+ * Son pocas filas —una empresa tiene cinco o diez áreas—, así que la densidad
+ * importa menos que dejar sitio a lo que se despliega dentro.
+ */
+
+.seccion {
+  margin-top: var(--e7);
+  padding-top: var(--e5);
+  border-top: 1px solid var(--regla);
+}
+
+.tituloSeccion {
+  font-size: var(--t-titulo);
+  letter-spacing: -0.012em;
+  margin: 0;
+}
+
+.nota {
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+  max-width: var(--medida);
+  margin: var(--e3) 0 var(--e4);
+}
+
+.vacio {
+  font-size: var(--t-prosa);
+  line-height: 1.55;
+  color: var(--tinta2);
+  background: var(--nube-hundida);
+  border-radius: var(--radio-menor);
+  padding: var(--e4);
+  max-width: var(--medida);
+  margin: var(--e4) 0 0;
+}
+
+/* ---------- Añadir una ---------- */
+
+/*
+ * Contorno punteado, como la zona de importar del banco: dice «aquí se añade»
+ * sin competir con las filas que ya existen, que son las que hay que leer.
+ */
+.anadir {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--e3);
+  border: 1px dashed var(--borde-control);
+  background: var(--nube-hundida);
+  padding: var(--e4);
+  border-radius: var(--radio);
+  margin-bottom: var(--e4);
+}
+
+.crear {
+  composes: acentoMenor from '../../estilos/piezas.module.css';
+  flex: none;
+}
+
+/* ---------- Las filas ---------- */
+
+.filas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+}
+
+.fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e3) var(--e4);
+  background: var(--nube);
+  border: 1px solid var(--regla);
+  border-radius: var(--radio-menor);
+  padding: var(--e3) var(--e4);
+}
+
+/*
+ * Una retirada se hunde al fondo del bloque en vez de atenuarse: bajarle la
+ * opacidad al texto lo dejaría por debajo del contraste mínimo, y sigue siendo
+ * texto que hay que poder leer para saber qué se reactiva.
+ */
+.filaRetirada {
+  background: var(--nube-hundida);
+}
+
+.queEs {
+  display: flex;
+  align-items: center;
+  gap: var(--e3);
+  flex: 1 1 18rem;
+  min-width: 0;
+}
+
+.nombre {
+  font-size: var(--t-base);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e2);
+  margin-left: auto;
+}
+
+/* ---------- En uso o retirada ---------- */
+
+.marca {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  padding: 3px var(--e3);
+  font-size: var(--t-micro);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  border-radius: var(--radio-control);
+}
+
+/* Relleno: circula. */
+.viva {
+  border: 1px solid transparent;
+  background: var(--nube-honda);
+  color: var(--tinta);
+}
+
+/*
+ * Contorno punteado: ya no circula. La diferencia con la de arriba es de FORMA
+ * —relleno contra trazo—, así que con la pantalla en gris se siguen leyendo como
+ * dos estados y no como dos tonos del mismo.
+ */
+.retirada {
+  border: 1px dashed var(--regla2);
+  background: var(--nube);
+  color: var(--tinta3);
+}
+
+/* ---------- Lo que se despliega en la fila ---------- */
+
+/*
+ * Los dos bloques que se despliegan dentro de una fila. Lo que comparten es que
+ * ocupan la fila entera —`flex: 1 1 100%` los baja a su propia línea dentro del
+ * flex de `.fila`— y que se separan del renglón de arriba con una regla.
+ */
+.edicion,
+.borrado {
+  flex: 1 1 100%;
+  gap: var(--e3);
+  padding-top: var(--e3);
+  border-top: 1px solid var(--regla);
+}
+
+/* Renombrar: un campo y sus botones, en fila mientras quepan. */
+.edicion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+/*
+ * ⚠️ Rejilla y NO un flex en columna, y esto se midió en el navegador antes de
+ * escribirlo. Con `display: flex; flex-direction: column` aquí, el formulario de
+ * dentro resolvía su alto a 152 px teniendo 70 px de contenido: sus dos campos
+ * se iban al fondo de esa caja —van alineados abajo— y quedaba un hueco vacío de
+ * ochenta píxeles justo encima del desplegable del destino, que es donde hay que
+ * leer a dónde se mueven cuatro solicitudes de talento. Ni `align-content`, ni
+ * `flex: none`, ni `height: fit-content` sobre el formulario lo bajaban: el alto
+ * venía impuesto desde aquí. En rejilla, cada fila mide lo que mide su contenido
+ * y el hueco desaparece.
+ */
+.borrado {
+  display: grid;
+  align-content: start;
+}
+
+
+.titulinBorrado {
+  font-size: var(--t-apoyo);
+  font-weight: 700;
+  margin: 0;
+}
+
+/*
+ * A dónde se mueve todo, y por qué. `auto-fit` da las dos cosas sin consultar el
+ * ancho de la ventana: dos columnas cuando caben los 14rem de cada campo, y una
+ * sola columna cuando no. Es el mismo patrón que las dos listas del final de
+ * esta pantalla.
+ */
+.formulario {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  align-items: end;
+  gap: var(--e3);
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+  min-width: 0;
+  flex: 1 1 14rem;
+}
+
+.rotulo {
+  font-size: var(--t-micro);
+  font-weight: 600;
+  color: var(--tinta2);
+}
+
+.entrada {
+  min-height: 44px;
+  padding: 0 var(--e3);
+  background-color: var(--nube);
+  color: var(--tinta);
+  border: 1px solid var(--borde-control);
+  font: inherit;
+  font-size: var(--t-apoyo);
+  border-radius: var(--radio-menor);
+}
+
+/*
+ * ⚠️ `width: 100%` y NO `flex: 1 1 100%`. Esta pieza vive en los dos bloques que
+ * se despliegan en una fila, y solo uno de los dos es un flex: en el otro,
+ * `flex-basis` no significa nada. El ancho fuerza el salto de línea dentro del
+ * flex igual de bien y no depende de en cuál de los dos esté puesta.
+ */
+.explica {
+  width: 100%;
+  font-size: var(--t-menor);
+  line-height: 1.55;
+  color: var(--tinta2);
+  max-width: var(--medida);
+  margin: 0;
+}
+
+/* ---------- Lo que se lleva por delante el borrado ---------- */
+
+/*
+ * Los dos recuentos, grandes. Es la información por la que existe este bloque:
+ * si se leen como prosa corriente, quien borra los pasa por encima y confirma
+ * sin haberlos visto.
+ */
+.cuenta {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e3) var(--e6);
+  margin: 0;
+  padding: var(--e3) var(--e4);
+  background: var(--nube-hundida);
+  border-radius: var(--radio-menor);
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+}
+
+.cifra {
+  font-size: var(--t-cifra);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+  color: var(--tinta);
+  margin-right: var(--e1);
+}
+
+/* Ni error ni confirmación: una condición que cambia la decisión. Ámbar. */
+.aviso {
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--duda-tinta);
+  background: var(--duda-bruma);
+  border-radius: var(--radio-menor);
+  padding: var(--e3) var(--e4);
+  max-width: var(--medida);
+  margin: 0;
+}
+
+/* ---------- Los botones ---------- */
+
+.botones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e2);
+}
+
+.guardar {
+  composes: acentoMenor from '../../estilos/piezas.module.css';
+}
+
+.chico {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--e4);
+  background: var(--nube);
+  color: var(--tinta);
+  border: 1px solid var(--borde-control);
+  font: inherit;
+  font-size: var(--t-menor);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  border-radius: var(--radio-control);
+  transition: border-color 160ms var(--salida);
+}
+
+.chico:hover:not(:disabled) {
+  border-color: var(--tinta);
+}
+
+.chico:disabled {
+  background: var(--nube-honda);
+  border-color: var(--nube-honda);
+  color: var(--tinta3);
+  cursor: default;
+}
+
+/*
+ * El botón que ABRE el borrado va en rojo de contorno, no macizo: todavía no
+ * borra nada, solo lleva a la explicación. El macizo se reserva para el que sí.
+ *
+ * ⚠️ **Y el contorno es de 2 px, que es lo que lo distingue de verdad.** En la
+ * captura en gris —`capturar-panel.mjs --gris`— «Borrar» se leía idéntico a
+ * «Renombrar» y «Retirar»: tres píldoras con el mismo trazo, y la única que no
+ * se deshace era indistinguible de las dos que sí. El grosor lo dice sin
+ * depender del color, que es la regla de la forma primero. Los 2 px son además
+ * los que el sistema ya reserva para «lo erróneo», y no descuadran la fila
+ * porque el alto es `border-box`.
+ */
+.peligro {
+  border-width: 2px;
+  /*
+   * ⚠️ `--mal` y no `--mal-regla`. Con la regla clara, el contorno de 2 px salía
+   * MÁS pálido que el de 1 px de sus vecinos en la captura en gris: la única
+   * acción que no se deshace se leía como la más floja de las tres. El trazo
+   * tiene que pesar más, no menos.
+   */
+  border-color: var(--mal);
+  color: var(--mal);
+}
+
+.peligro:hover:not(:disabled) {
+  border-color: var(--mal-pulsado);
+  color: var(--mal-pulsado);
+}
+
+/* El que borra de verdad. Rojo macizo, y es el único de esta pantalla. */
+.borrar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 var(--e5);
+  background: var(--mal);
+  color: var(--tinta-invertida);
+  border: 1px solid var(--mal);
+  font: inherit;
+  font-size: var(--t-prosa);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  border-radius: var(--radio-control);
+  transition: background 160ms var(--salida);
+}
+
+.borrar:hover:not(:disabled) {
+  background: var(--mal-pulsado);
+  border-color: var(--mal-pulsado);
+}
+
+.borrar:disabled {
+  background: var(--nube-honda);
+  border-color: var(--nube-honda);
+  color: var(--tinta3);
+  cursor: default;
+}
+
+/* ---------- Lo que no se pudo ---------- */
+
+/* Un 403 aquí es el reparto de permisos funcionando, no un fallo: bruma, no rojo. */
+.sinPermiso {
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+  background: var(--nube-hundida);
+  border-radius: var(--radio-menor);
+  padding: var(--e4);
+  margin: var(--e3) 0 0;
+  max-width: var(--medida);
+}
+
+.avisoMalo {
+  display: flex;
+  gap: var(--e3);
+  border: 1px solid var(--mal-regla);
+  background: var(--mal-bruma);
+  padding: var(--e3) var(--e4);
+  font-size: var(--t-prosa);
+  line-height: 1.5;
+  color: var(--mal);
+  margin: var(--e3) 0;
+  max-width: var(--medida);
+  border-radius: var(--radio-menor);
+}
+
+.avisoMalo::before {
+  content: '';
+  flex: none;
+  width: 3px;
+  background: var(--mal);
+}
+
+.enlace {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}
+
+@media (max-width: 640px) {
+  .acciones {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .crear,
+  .campo {
+    width: 100%;
+    flex: 1 1 100%;
+  }
+}
