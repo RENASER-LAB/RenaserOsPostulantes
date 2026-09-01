@@ -267,6 +267,13 @@ Pasa a `PUBLICADA` y sale en la portada del portal el mismo instante.
 
 Se ve sin cuenta. Postular sí la exige: entrar o crearla.
 
+⚠️ **Crear la cuenta pide dónde vive, desde el 01/09/2026.** Un desplegable
+obligatorio con las 196 provincias del Perú agrupadas por departamento, y «Fuera
+del Perú» suelto al final. Se pregunta ahí y en ningún otro sitio: a quien ya
+tenía cuenta no se le pide nunca, ni al postular ni después. Por eso las
+postulaciones anteriores a esa fecha no traen ciudad, y el ranking cuenta con
+ello en vez de fingir que la tiene.
+
 En el formulario van los requisitos indispensables como preguntas de sí o no.
 Responder «no» **no impide enviar**: la pantalla nombra los requisitos que dijo
 no cumplir, avisa de que la postulación se cerrará de inmediato, y deja
@@ -347,8 +354,13 @@ es escribirle al equipo, y es lo que lleva el acento.
 El ranking **es la mesa donde se decide**, no un informe que se mira. Tiene
 **cinco pestañas** —las cuatro etapas que puntúan y Decisión— y cada fila trae
 la nota de la etapa elegida, adecuación, potencial, alertas y riesgos críticos.
-El filtro «Solo quienes están aquí ahora» deja la foto del presente, y dice
-cuántas filas oculta.
+
+A quién se mira lo eligen **tres cortes** con su cifra al lado: «Con nota del
+perfil» —el rótulo lleva el nombre de la nota de cada etapa—, «Está aquí ahora»,
+que deja la foto del presente, y «Toda la tanda». Fuera del perfil integral los
+dos primeros casi no se solapan: quien está aquí ahora es quien **todavía no ha
+rendido** —hay que perseguirlo— y quien tiene nota **ya pasó de largo** —con él
+se decide—.
 
 Al abrir una fila, la ficha es de la etapa: en Perfil integral (y en Decisión)
 salen **las dos tablas** —el CV criterio a criterio y la evaluación del banco
@@ -365,6 +377,98 @@ Al pulsar una fila se abre su ficha **debajo de la propia fila**, no en otra
 página: comparar es la razón de estar ahí, y perder la tabla para ver un
 detalle rompe la comparación. Dentro va el perfil integral, con lo que la
 calificación tuvo en cuenta y por qué.
+
+### Ordenar la mesa (01/09/2026)
+
+Cuatro cabeceras se pulsan: **Candidato**, **Ciudad**, la **nota** de la etapa y
+**Pretensión**. Cada una tiene tres estados y se recorren pulsándola: primero el
+sentido natural de la columna —la nota abre por la **mayor**, porque un ranking
+es eso y recibir los ceros arriba obligaría a un segundo clic siempre; los
+textos van de la A a la Z, y la pretensión de la más baja, que es la que cabe en
+presupuesto—, luego el inverso, y al tercero **se vuelve al orden que mandó el
+backend**, que es el que agrupa por prioridad y ordena la nota dentro de cada
+grupo. Sin ese tercer estado habría que recargar la página para recuperarlo.
+
+Todo esto pasa **en el navegador**: ordenar o filtrar no le vuelve a pedir nada
+al servidor.
+
+⚠️ **Cuando se ordena por una columna, manda esa columna y nada más.** El orden
+es plano. Hubo una versión que ordenaba la nota **dentro** de cada grupo de
+prioridad y se quitó: con cuatro filas saliendo 55, 74, 61, 95 la mesa se lee
+como rota, y la etiqueta del grupo dentro de la celda del candidato no bastaba
+para explicarlo. Un orden que hay que explicar no está ordenando. Y agrupar casi
+nunca cambiaba nada, porque los grupos que la IA escribe cuelgan de la propia
+nota.
+
+**El grupo de prioridad se sigue pintando en cada fila.** Ya no mueve a nadie,
+pero que alguien llegue a un 95 arrastrando un riesgo crítico es justo lo que hay
+que ver antes de llamarlo, y el número solo no lo dice. Es del panel: **al
+candidato no se le enseña nunca**, ni ahí ni en ningún sitio.
+
+**Los vacíos van al final, suba o baje el orden.** La ausencia se decide antes de
+aplicar el sentido; invertir la comparación entera llenaría la primera pantalla
+de filas sin dato justo al pulsar «de mayor a menor».
+
+### Filtrar sin perder el corte (01/09/2026)
+
+Encima de la tabla, y conviviendo con los tres cortes de la botonera:
+
+| Filtro | Qué hace |
+|---|---|
+| **Buscar por nombre** | Compara **sin tildes ni mayúsculas**: media tanda se llama Fátima, Lucía o Muñoz, y quien teclea `fatima` en un buscador que compara literales no encuentra a nadie y concluye que la caja está rota |
+| **Ciudad** | Las que de verdad hay en la tanda, con cuántas trae cada una, y se marcan varias. **Salen de las filas, nunca del catálogo de ubigeo**: servirlo del catálogo ofrecería 196 filtros que no devuelven a nadie |
+| **Nota** | Desde–hasta, sobre la nota de la etapa que se está mirando |
+| **Pretensión** | Desde–hasta. Sale quien pida algo dentro de esa banda |
+
+⚠️ **Un rango deja fuera a quien no declaró el dato, y es a propósito.** Una fila
+sin nota no es «≥ 60», y una sin pretensión no cabe en ninguna banda; colarlas
+por si acaso llenaría de huecos justo la lista que se pidió recortar. La pantalla
+lo dice debajo de cada rango, y vuelven quitando el filtro, que es un clic: «Ver
+a todos».
+
+Con cualquier filtro puesto, la pantalla dice **cuántas se ven de cuántas** de
+ese corte. Ocultar sin decirlo es el indicador que miente.
+
+### Dos columnas nuevas, y cuándo no se pintan (01/09/2026)
+
+**Ciudad** y **Pretensión** van pegadas al candidato, porque es lo que se lee
+junto al decidir a quién llamar. La pretensión **no es un dato nuevo** —vive en
+el perfil del candidato desde antes—: nueva es la columna que la trae a la mesa.
+
+⚠️ **Si ninguna fila trae una de las dos, esa columna no se pinta y se explica
+por qué** — y no es el mismo motivo en las dos:
+
+- **Ciudad:** todavía no hay ninguna en la tanda, porque solo se le pide a quien
+  crea su cuenta desde ahora y ninguna postulación anterior la trae.
+- **Pretensión:** o ninguno de estos candidatos la declaró, **o quien mira no
+  puede verla**. Viaja con el permiso `ver_pretension`, que solo tiene Dirección,
+  para que el sueldo no pese al calificar. El nulo por sí solo no separa los dos
+  casos, así que el backend manda además si se pudo consultar: sin esa señal la
+  frase tendría que nombrar los dos motivos sin afirmar ninguno, y una pantalla
+  que enumera hipótesis no está informando.
+
+Una columna entera de guiones no es una columna: es una promesa incumplida que
+además se lee al revés, «nadie pidió sueldo».
+
+### La hoja de Excel (01/09/2026)
+
+**Panel · el ranking → «Descargar Excel (n)»**
+
+Solo en **Perfil integral** y **Prueba del puesto**: son las dos etapas con
+rúbrica que sostienen una hoja de detalle, y en las otras tres el botón **no
+existe**, en vez de salir y fallar con un 400. Ofrecer una descarga que el
+servidor va a rechazar es peor que no ofrecerla.
+
+La hoja lleva **exactamente las filas que se están viendo, y en el orden de la
+pantalla**: el panel manda la lista de ids ya ordenada y el backend escribe en
+ese orden y nada más. Por eso el botón dice cuántas van y la línea de debajo lo
+repite mientras haya un filtro puesto.
+
+⚠️ **Dentro va de qué recorte salió**: la etapa, el corte de la botonera, cada
+filtro con su valor, el orden aplicado y —si la columna de pretensión salió
+vacía— por qué. Es donde más falta hace: la hoja se descarga, se reenvía y se
+abre lejos del panel, donde ya no hay ninguna pantalla que pueda explicar que un
+blanco ahí puede ser un permiso y no un candidato que no pidió sueldo.
 
 ---
 

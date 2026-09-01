@@ -89,7 +89,8 @@ no dato del backend).
 
 ### 2.3 Crear cuenta — pública
 `POST /portal/cuentas` — `nombre`, `apellidos`, `correo`, `contrasena` (mín. 8),
-`aceptaProceso` (obligatorio), `aceptaFuturosContactos` (opcional).
+`ciudadUbigeo` (obligatorio desde el 01/09/2026), `aceptaProceso` (obligatorio),
+`aceptaFuturosContactos` (opcional).
 
 `GET /portal/consentimientos/textos` devuelve los textos vigentes (`tipo`, `version`, `texto`).
 
@@ -97,6 +98,27 @@ no dato del backend).
 marca como urgente que nombren a DeepSeek y Google antes del primer candidato real. El bloque de
 consentimientos necesita sitio para un texto bastante más largo que el actual: dos casillas, dos
 textos, uno obligatorio y otro opcional.
+
+**Dónde vives (01/09/2026).** `ciudadUbigeo` es el ubigeo de nivel 2 —la provincia— o `EXT` si
+vive fuera del Perú, y el backend lo valida contra su catálogo: un código que no exista sale con
+400. Las opciones llegan de `GET /portal/catalogos/ubigeo`, ya ordenadas por departamento y
+nombre, con `departamento` en nulo únicamente en `EXT`.
+
+En pantalla es **un solo desplegable nativo con las 196 provincias agrupadas por departamento**,
+no dos encadenados: encadenar dos obliga a esperar una petición entre el primero y el segundo
+para preguntar una sola cosa. «Fuera del Perú» va suelto al final, fuera de todo `optgroup`,
+porque no cuelga de ningún sitio del Perú y es donde se busca.
+
+⚠️ **El catálogo se pide sin token, y no es un descuido**: lo consulta justamente la pantalla
+que todavía no tiene ninguno. Y si no carga, se dice con palabras: el campo es obligatorio, así
+que un desplegable apagado y mudo deja a la persona pulsando «Crear cuenta» contra un error que
+no explica nada.
+
+⚠️ **Se pregunta una vez y nunca más.** A quien ya tiene cuenta no se le pide jamás, ni al
+postular ni después: esta pantalla es el único sitio del producto por donde entra el dato.
+Consecuencia directa, y hay que contar con ella: **ninguna postulación anterior a esa fecha trae
+ciudad**. Quien la use en el panel tiene que decir que no la hay, en vez de enseñar una columna
+de guiones.
 
 ### 2.4 Entrar — dos caminos, no uno
 | Camino | Ruta | Quién lo usa |
@@ -126,8 +148,16 @@ decisión seria, no como una casilla más del formulario.
 `GET /portal/postulaciones` → por postulación: `uuid`, `vacante`, `estado`, `estadoNombre`,
 `grupoPrioridad`, `diasSinCambio`, `creadoEn`.
 
-🚫 **`grupoPrioridad` llega en la respuesta y NUNCA debe pintarse.** Es la clasificación interna
-del equipo. Debe seguir prohibido después del rediseño.
+🚫 **`grupoPrioridad` llega en la respuesta y NUNCA debe pintarse aquí.** Es la clasificación
+interna del equipo, y esta es la pantalla del candidato: nadie tiene que enterarse por su propio
+portal de en qué casilla lo pusieron, ni con esa palabra ni con otra más suave. Sigue prohibido
+después del rediseño.
+
+⚠️ **La prohibición es de este lado, y conviene decirlo porque leída suelta ya bloqueó trabajo
+legítimo.** El panel del equipo, en `/admin`, **sí enseña el grupo en cada fila del ranking**:
+ahí quien mira es el dueño de esa clasificación, y saber que un 95 arrastra un riesgo crítico es
+justo lo que hay que ver antes de llamar a alguien. Son dos sesiones con dos tokens distintos;
+lo que no puede pasar es que el dato cruce de una a la otra.
 
 Lo que hay que resolver aquí: separar visualmente **lo que le toca** de las esperas, y que el
 candidato entienda `diasSinCambio` sin que parezca abandono.
@@ -299,7 +329,10 @@ separa con claridad.
 
 `ConfiguracionSeguridad` deja abierto **sin token**: `GET /portal/vacantes/**`,
 `GET /portal/consentimientos/textos`, `POST /portal/cuentas`, `POST /portal/auth/login`,
-`POST /portal/auth/acceso`. **Todo lo demás exige token de candidato.**
+`POST /portal/auth/acceso`. A esa lista se suma `GET /portal/catalogos/ubigeo`, que se pide sin
+token desde crear cuenta (01/09/2026) — los otros dos catálogos del portal, niveles educativos y
+de idioma, sí van con token porque solo se usan dentro del perfil. **Todo lo demás exige token de
+candidato.**
 
 Traducido al layout: se puede navegar vacantes, leer una ficha completa y leer los textos legales
 sin cuenta. Cualquier cosa del proceso propio exige entrar.

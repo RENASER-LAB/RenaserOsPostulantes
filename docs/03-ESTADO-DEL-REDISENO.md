@@ -115,7 +115,7 @@ Cada una costó un fallo real. Los archivos pueden morir; estas no:
 | Ningún indicador fijo de «guardado» | Tiene que salir de comparar con el servidor. Y en blanco es «sin responder» |
 | Las 8 formas de respuesta del banco v3 | La forma exacta la valida el backend y responde 400 si no cuadra |
 | Los errores llegan como `application/problem+json` | Comprobar con `includes('json')`, no `'application/json'` |
-| `grupoPrioridad` nunca se pinta | Es clasificación interna del equipo |
+| `grupoPrioridad` nunca se pinta **en el portal** | Es la clasificación interna del equipo y el candidato no tiene que verla. El panel de `/admin` sí la enseña, que es la cara donde quien mira es su dueño |
 
 ### 4 · Decisiones pendientes que salieron de la crítica (24/08/2026)
 
