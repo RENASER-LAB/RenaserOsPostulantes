@@ -147,4 +147,31 @@ describe('la consigna', () => {
     expect(enlace.getAttribute('href')).toBe('https://sb.co/prueba.pdf')
     expect(enlace.getAttribute('target')).toBe('_blank')
   })
+
+  it('con reloj y fecha de cierre, dice los dos y cuál acorta a cuál', async () => {
+    /*
+     * El defecto que esto fija: el lateral era un if/else y con las dos cosas escribía
+     * «90 minutos desde que empieces» y CALLABA la fecha. Quien abriera a las 17:40 con
+     * cierre a las 18:00 leía noventa minutos y tenía veinte. Manda el más cercano, que
+     * lo decide el servidor, así que la pantalla tiene que decir los dos.
+     */
+    respuesta = { ...pruebaEnCurso('2026-08-20T18:00:00Z', 'ARCHIVO'), estadoIntento: 'PENDIENTE' }
+    montar()
+
+    expect(await screen.findByText(/90 minutos desde que empieces/)).toBeTruthy()
+    expect(screen.getByText(/la convocatoria cierra el/i)).toBeTruthy()
+    expect(screen.getByText(/tendrás el tiempo que quede/i)).toBeTruthy()
+  })
+
+  it('sin fecha de cierre no inventa ninguna', async () => {
+    respuesta = {
+      ...pruebaEnCurso('2026-08-20T18:00:00Z', 'ARCHIVO'),
+      estadoIntento: 'PENDIENTE',
+      venceEn: null,
+    }
+    montar()
+
+    expect(await screen.findByText(/90 minutos desde que empieces/)).toBeTruthy()
+    expect(screen.queryByText(/la convocatoria cierra el/i)).toBeNull()
+  })
 })

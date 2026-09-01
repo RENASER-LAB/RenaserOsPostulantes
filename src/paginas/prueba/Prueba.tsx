@@ -581,10 +581,13 @@ export function Prueba() {
             </div>
 
             <aside className={estilos.lateral}>
-              {/* Dos plazos distintos, y decirlos igual confunde. Una prueba
-                  cronometrada da minutos desde que empiezas; una de plazo abierto
-                  cierra un dia y una hora concretos, que el servidor ya sabe antes
-                  de que entres. */}
+              {/* ⚠️ Los dos plazos pueden existir A LA VEZ, y antes solo se decia uno.
+                  Una prueba da minutos desde que empiezas; la convocatoria puede ademas
+                  cerrar un dia y una hora para todos. Cuando habia las dos cosas esta
+                  rama escribia «90 minutos» y escondia la fecha, asi que quien abriera a
+                  las 17:40 con cierre a las 18:00 leia noventa minutos y tenia veinte.
+                  Manda el que caiga antes —lo decide el servidor al empezar— y por eso
+                  aqui se dicen los dos y cual acorta a cual. */}
               <div className={estilos.datoLateral}>
                 {prueba.duracionMinutos ? (
                   <>
@@ -592,6 +595,12 @@ export function Prueba() {
                     <span className={estilos.valorLateral}>
                       {prueba.duracionMinutos} minutos desde que empieces
                     </span>
+                    {prueba.venceEn && (
+                      <span className={estilos.matizLateral}>
+                        Y la convocatoria cierra el {formatearFechaLarga(prueba.venceEn)}: si
+                        empiezas más tarde de eso, tendrás el tiempo que quede hasta esa hora.
+                      </span>
+                    )}
                   </>
                 ) : prueba.venceEn ? (
                   <>

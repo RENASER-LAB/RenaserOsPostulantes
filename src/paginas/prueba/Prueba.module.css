@@ -163,6 +163,17 @@
   font-size: var(--t-prosa);
 }
 
+/* La segunda mitad del plazo: la fecha que puede acortar los minutos. Va debajo y en
+   tinta3 porque es la condicion del dato de arriba, no un dato hermano — subirla al
+   mismo peso haria leer dos plazos en competencia en vez de uno con su limite. */
+.matizLateral {
+  display: block;
+  margin-top: var(--e2);
+  font-size: var(--t-menor);
+  line-height: 1.5;
+  color: var(--tinta3);
+}
+
 /* ---------- Antes de empezar ---------- */
 
 .aviso {

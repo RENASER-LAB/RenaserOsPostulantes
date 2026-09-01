@@ -38,12 +38,14 @@ const CON_OPCIONES = 2
 let fallanUnaVez: Set<number>
 /** Preguntas que no hay manera de guardar, como una red que no vuelve. */
 let fallanSiempre: Set<number>
+/** Cuando vence el plazo. `null` = esta evaluacion no tiene ninguno. */
+let venceEn: string | null
 
 function evaluacionActual(iniciada: boolean): EvaluacionCandidato {
   return {
     id: 1,
     estado: iniciada ? 'EN_CURSO' : 'PENDIENTE',
-    venceEn: null,
+    venceEn,
     iniciadaEn: iniciada ? '2026-08-20T10:00:00Z' : null,
     terminadaEn: null,
     minutosObjetivo: 45,
@@ -137,6 +139,7 @@ beforeEach(() => {
   opcionesGuardadas = new Map()
   fallanUnaVez = new Set()
   fallanSiempre = new Set()
+  venceEn = null
   iniciada = false
   vi.clearAllMocks()
 })
@@ -373,6 +376,54 @@ function preguntaV(respuestaTexto: string | null): PreguntaEvaluacion {
     respuestaOpcionId: null,
   }
 }
+
+/**
+ * El plazo, mientras se responde.
+ *
+ * Estaba solo en la portada. Entre esa pantalla y el aviso de la ultima hora hay dos
+ * semanas de plazo por defecto, y en todo ese tramo el candidato no volvia a ver cuanto le
+ * quedaba: tenia que salirse de la evaluacion para saberlo.
+ */
+describe('el plazo mientras se responde', () => {
+  /** Dentro de N horas, en el formato que manda el servidor. */
+  const dentroDe = (horas: number) =>
+    new Date(Date.now() + horas * 3_600_000).toISOString()
+
+  it('con dias por delante, los dice en la linea de servicio', async () => {
+    venceEn = dentroDe(24 * 3 + 1)
+    await empezar()
+
+    expect(screen.getByText(/3 días para entregarla/)).toBeTruthy()
+  })
+
+  it('el ultimo dia lo dice con palabras, no con un cero', async () => {
+    // `diasHasta` devuelve «hoy» por debajo de las 24 h, y «hoy para entregarla» no se
+    // dice: es la unica salida que no compone con la frase.
+    venceEn = dentroDe(5)
+    await empezar()
+
+    expect(screen.getByText('Se entrega hoy')).toBeTruthy()
+  })
+
+  it('⚠️ por debajo de la hora desaparece: manda la cuenta atras del aviso', async () => {
+    // Dos relojes a la vez, uno diciendo «hoy» y el otro `00:42:17`, se leen peor que el
+    // segundo solo.
+    venceEn = dentroDe(0.5)
+    await empezar()
+
+    expect(screen.queryByText(/para entregarla/)).toBeNull()
+    expect(screen.queryByText('Se entrega hoy')).toBeNull()
+    expect(screen.getByText(/Queda poco plazo/)).toBeTruthy()
+  })
+
+  it('sin plazo no se inventa ninguno', async () => {
+    venceEn = null
+    await empezar()
+
+    expect(screen.queryByText(/para entregarla/)).toBeNull()
+    expect(screen.queryByText(/sin plazo/i)).toBeNull()
+  })
+})
 
 describe('el estado de cada pregunta', () => {
   it('separa la empezada a medias de la que está en blanco', () => {
