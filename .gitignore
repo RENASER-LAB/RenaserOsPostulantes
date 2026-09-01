@@ -47,3 +47,7 @@ skills-lock.json
 # cualquiera puede firmar un paquete que Android acepta como si fuera esta app.
 # La llave vive fuera del proyecto, en ~/llaves/.
 android/keystore.properties
+
+# Salida de Playwright: capturas y trazas de cada corrida, no versionable.
+test-results/
+playwright-report/

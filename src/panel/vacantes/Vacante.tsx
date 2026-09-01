@@ -14,6 +14,7 @@
  */
 
 import { Fragment, useEffect, useMemo, useState } from 'react'
+import type { ReactNode } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
@@ -24,6 +25,7 @@ import {
   cerrarVacante,
   confirmarAvance,
   crearRequisito,
+  descargarExcelDelRanking,
   listarVersionesBanco,
   listarPlantillasPrueba,
   listarPuestos,
@@ -69,13 +71,33 @@ import { claveDelCuestionario } from './prueba-tecnica/consultas'
 import { verCuestionarioTecnico } from '../api/panel'
 import {
   ETAPAS_PANEL,
+  POR_QUE_NO_HAY_CIUDAD,
+  porQueNoHayPretension,
+  SIN_FILTROS,
+  alternarOrden,
   cifrasDeLaEtapa,
+  ciudadesDelRanking,
+  columnasDelRanking,
+  comoSeOrdena,
+  describirFiltro,
   esDelCurriculum,
   filtrar,
+  filtrarFino,
+  hayFiltroPuesto,
   laEtapaDe,
+  nombreDelGrupo,
+  ordenar,
   porQueNoHayNota,
+  pretensionDicha,
+  queTraeLaTanda,
   recuentos,
+  rotuloDeVista,
+  seExportaAExcel,
+  type CiudadDelRanking,
   type EtapaPanel,
+  type Filtros,
+  type Orden,
+  type QueTraeLaTanda,
   type Vista,
 } from './ranking'
 import estilos from './Vacante.module.css'
@@ -384,6 +406,7 @@ export function VacantePanelDetalle() {
         {ranking.data && (
           <Ranking
             key={etapa}
+            vacanteId={vacanteId}
             etapa={etapa}
             filas={ranking.data.filas}
             cabeceraDelCv={ranking.data}
@@ -431,7 +454,55 @@ const noHayNadaQueRefrescar = () => {}
 
 // ---------- El ranking, con seleccion y avance ----------
 
+/**
+ * La flecha de orden y el pliegue de los filtros, DIBUJADOS.
+ *
+ * Estaban puestos con glifos de la fuente —`▲▼↕` y `▾▴`—, y un glifo no es un
+ * icono: cambia de tamaño, de peso y de línea base con la familia, y al lado
+ * del ojo de `Campo` —24×24, trazo 1.6, cabos redondos— se leía como venido de
+ * otro sistema. Se trazan con esa misma pluma para que sean el mismo objeto.
+ *
+ * ⚠️ **La flecha no lleva color.** El estado de orden se lee en la forma y en
+ * `aria-sort`; el violeta de esta pantalla ya significa otra cosa.
+ */
+function Pluma({ children, clase }: { children: ReactNode; clase?: string }) {
+  return (
+    <svg
+      className={clase}
+      viewBox="0 0 24 24"
+      width="14"
+      height="14"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      {children}
+    </svg>
+  )
+}
+
+function FlechaDeOrden({ como }: { como: 'ascending' | 'descending' | 'none' }) {
+  return (
+    <Pluma clase={estilos.flecha}>
+      {como === 'ascending' ? (
+        <path d="M12 19V5m0 0-5 5m5-5 5 5" />
+      ) : como === 'descending' ? (
+        <path d="M12 5v14m0 0 5-5m-5 5-5-5" />
+      ) : (
+        /* Sin ordenar: las dos direcciones a la vez y más tenue, para que se
+           vea que la cabecera SE PUEDE pulsar sin fingir que ya está ordenada. */
+        <path d="m8 10 4-4 4 4M8 14l4 4 4-4" opacity="0.5" />
+      )}
+    </Pluma>
+  )
+}
+
 function Ranking({
+  vacanteId,
   etapa,
   filas,
   cabeceraDelCv,
@@ -439,6 +510,7 @@ function Ranking({
   alCambiarVista,
   alAvanzar,
 }: {
+  vacanteId: number
   etapa: EtapaPanel
   filas: FilaRanking[]
   /** Las cuatro cifras del backend, que son de la cola del currículum. */
@@ -449,11 +521,48 @@ function Ranking({
 }) {
   const [marcados, setMarcados] = useState<Set<number>>(new Set())
   const [abierta, setAbierta] = useState<number | null>(null)
+  const [filtros, setFiltros] = useState<Filtros>(SIN_FILTROS)
+  /*
+    Sin orden puesto manda el del backend —grupo de prioridad y, dentro, nota—,
+    que es la opinión del producto sobre la tanda. Por eso el estado arranca en
+    `null` en vez de en una columna cualquiera: nadie ha pedido todavía otra
+    cosa.
+  */
+  const [orden, setOrden] = useState<Orden | null>(null)
 
   const laEtapa = laEtapaDe(etapa)
-  const visibles = filtrar(filas, etapa, vista)
+  /*
+    ⚠️ **Los tres pasos, en este orden y con un nombre cada uno.** El corte de
+    la botonera recorta la tanda, los filtros recortan ese corte, y el orden
+    ordena lo que quedó. `visibles` es lo ÚLTIMO, y es lo único que se pinta y
+    lo único que viaja al Excel: cualquier otro array daría una hoja distinta de
+    la pantalla desde la que se pidió.
+  */
+  const delCorte = filtrar(filas, etapa, vista)
+  const filtradas = filtrarFino(delCorte, filtros)
+  const visibles = ordenar(filtradas, orden)
+
   const cuantas = recuentos(filas, etapa)
   const cifras = cifrasDeLaEtapa(filas, etapa)
+  /*
+    ⚠️ **De las filas SIN filtrar, siempre.** Sobre las visibles, marcar una
+    ciudad haría desaparecer las demás de la lista y no habría manera de añadir
+    la segunda; y el aviso de «todavía no hay ciudades» se encendería en cuanto
+    un filtro dejara la tabla vacía, diciendo una falsedad.
+  */
+  const ciudades = ciudadesDelRanking(filas)
+  /*
+    ⚠️ **Qué de lo nuevo trae de verdad esta tanda**, también de las filas sin
+    filtrar. La ciudad puede faltar entera —solo se le pide a quien crea cuenta
+    desde ahora— y la pretensión viaja bajo el permiso `ver_pretension`, que solo
+    tiene DIRECCIÓN: para todo el rol TALENTO llega nula siempre. Una columna
+    entera de guiones no informa, y la de pretensión además se lee al revés
+    —«nadie pidió sueldo»—, así que la columna no se pinta y se dice por qué.
+
+    El motivo NO se adivina mirando los nulos: `puedeVerPretension` viaja en la
+    respuesta justamente para poder decir cuál de los dos es.
+  */
+  const trae = queTraeLaTanda(filas, cabeceraDelCv.puedeVerPretension)
   /*
     Adecuacion y potencial son dimensiones del retrato que sale del curriculum,
     no de la prueba ni de la simulacion. Enseñarlas en las cinco pestañas hacia
@@ -462,13 +571,73 @@ function Ranking({
     estando en otra etapa. Donde significan algo se quedan; donde no, se van.
   */
   const delCurriculum = esDelCurriculum(etapa)
-  const columnas = delCurriculum ? 8 : 6
+  /*
+    ⚠️ **El `colSpan` se DERIVA de la lista de columnas.** Estaba escrito a mano
+    —«8 : 6» sobre nueve y siete columnas reales— y con Ciudad y Pretensión
+    serían once y nueve: la fila de detalle y la celda del «no hay» medían menos
+    que la tabla y el bloque de dentro salía estrecho. Contando la lista, añadir
+    una columna no puede volver a descuadrarlo.
+  */
+  const columnasDeLaTabla = columnasDelRanking(etapa, trae)
+  const columnas = columnasDeLaTabla.length
   // Solo cuentan las marcas que se VEN: si el filtro oculta una fila marcada,
   // el boton no puede seguir diciendo que avanzara a esa persona.
   const marcadosVisibles = visibles.filter((f) => marcados.has(f.postulacionId))
   const [motivo, setMotivo] = useState('')
   const [resultado, setResultado] = useState<string | null>(null)
   const [avanzando, setAvanzando] = useState(false)
+  const [descargando, setDescargando] = useState(false)
+  const [falloDescarga, setFalloDescarga] = useState<string | null>(null)
+
+  /**
+   * El Excel de lo que se está viendo.
+   *
+   * ⚠️ **No vale un `<a href>`.** El token del panel va como `Bearer` en una
+   * cabecera y un enlace no puede ponerla: la descarga sale de una petición
+   * normal y el archivo se abre con `createObjectURL`, igual que la de datos del
+   * portal del candidato.
+   *
+   * ⚠️ **Los ids viajan en el orden de `visibles`**, que es el de la pantalla, y
+   * el backend escribe las filas en ESE orden. Mandar cualquier otro array —las
+   * filas sin filtrar, o las del corte sin ordenar— daría una hoja que no se
+   * parece a la tabla desde la que se pidió.
+   */
+  async function descargarExcel() {
+    setDescargando(true)
+    setFalloDescarga(null)
+    try {
+      const archivo = await descargarExcelDelRanking(vacanteId, {
+        etapa,
+        postulacionIds: visibles.map((f) => f.postulacionId),
+        /*
+          `trae` viaja dentro de la descripción: la hoja se descarga, se reenvía
+          y se abre fuera del panel, donde ya no hay ninguna pantalla que pueda
+          explicar que una columna de pretensión en blanco puede ser un permiso
+          y no un candidato que no pidió sueldo.
+        */
+        filtroDescrito: describirFiltro(etapa, vista, filtros, orden, ciudades, trae),
+      })
+      const url = URL.createObjectURL(archivo.contenido)
+      const enlace = document.createElement('a')
+      enlace.href = url
+      // El nombre lo pone el servidor en `Content-Disposition`; el de reserva es
+      // por si esa cabecera no llega, para no guardar un archivo sin nombre.
+      enlace.download = archivo.nombre ?? `ranking-${etapa.toLowerCase()}.xlsx`
+      enlace.click()
+      URL.revokeObjectURL(url)
+    } catch (causa) {
+      /*
+        El mensaje del servidor tal cual: es él quien sabe por qué no se pudo
+        —una etapa que no exporta, un permiso que falta—, y traducirlo a «no se
+        pudo descargar» borraría justo lo que hay que arreglar.
+      */
+      setFalloDescarga(
+        causa instanceof Error ? causa.message : 'No pudimos preparar la descarga.',
+      )
+    } finally {
+      setDescargando(false)
+    }
+  }
 
   const alternar = (id: number) =>
     setMarcados((antes) => {
@@ -566,14 +735,11 @@ function Ranking({
           Cada posición lleva su cifra: sin ellas hay que pulsar las tres para
           saber si alguna tiene algo dentro.
         */}
+        {/* El rótulo sale de `rotuloDeVista`: el mismo que viaja dentro del
+            Excel, para que la hoja no diga que salió de un corte con otro
+            nombre que el que se pulsó. */}
         <div className={estilos.vistas} role="group" aria-label="Qué filas se ven">
-          {(
-            [
-              ['con-nota', `Con ${laEtapa.nota.toLowerCase()}`],
-              ['aqui-ahora', 'Está aquí ahora'],
-              ['toda', 'Toda la tanda'],
-            ] as const
-          ).map(([cual, texto]) => (
+          {(['con-nota', 'aqui-ahora', 'toda'] as const).map((cual) => (
             <button
               key={cual}
               className={vista === cual ? estilos.vistaActiva : estilos.vista}
@@ -581,55 +747,98 @@ function Ranking({
               aria-pressed={vista === cual}
               onClick={() => alCambiarVista(cual)}
             >
-              {texto}
+              {rotuloDeVista(cual, etapa)}
               <span className={estilos.cuantasEnLaVista}>{cuantas[cual]}</span>
             </button>
           ))}
         </div>
       </div>
 
+      <BarraDeFiltros
+        etapa={etapa}
+        filtros={filtros}
+        alCambiar={setFiltros}
+        ciudades={ciudades}
+        trae={trae}
+        cuantasSeVen={visibles.length}
+        cuantasHabia={delCorte.length}
+        puedeDescargar={seExportaAExcel(etapa)}
+        descargando={descargando}
+        alDescargar={() => void descargarExcel()}
+      />
+      {falloDescarga && (
+        <p className={estilos.avisoMalo} role="alert">
+          {falloDescarga}
+        </p>
+      )}
+
       <div className={tabla.envoltura}>
         <table className={tabla.tabla}>
+          {/*
+            La cabecera se pinta de `columnasDeLaTabla`, que es la MISMA lista de
+            la que sale el `colSpan`. El cuerpo va escrito a mano justo debajo y
+            en este orden exacto: al añadir una columna hay que tocar los dos
+            sitios, pero la cabecera y el ancho de la fila de detalle ya no
+            pueden discrepar entre sí, que era el fallo.
+
+            La nota se llama por su etapa y no «Nota de etapa» a secas: cinco
+            pestañas con la misma cabecera obligan a recordar en cuál estás para
+            saber qué número estás leyendo.
+
+            ⚠️ Adecuación y Potencial salen del `PerfilTalento`, que se arma UNA
+            vez con el currículum y no se recalcula por etapa; y son solo dos de
+            las cuatro porque con las otras la tabla medía 1314 px dentro de una
+            envoltura de 1038 y la columna de Estado quedaba fuera del scroll.
+
+            ⚠️ Riesgos y Alertas son dos columnas y no una suma: un riesgo
+            crítico lo escribió el agente sobre el perfil y una alerta la levantó
+            el proceso. Sumarlas daba un «3» que no se podía ir a mirar.
+          */}
           <thead>
             <tr>
-              <th aria-label="Avanza" />
-              <th className={tabla.cifra}>#</th>
-              <th>Candidato</th>
-              {/*
-                La nota se llama por su etapa y no «Nota de etapa» a secas.
-                Cinco pestanas con la misma cabecera obligan a recordar en cual
-                estas para saber que numero estas leyendo, y la que se recuerda
-                mal siempre es la primera.
-              */}
-              <th className={tabla.cifra}>{laEtapa.nota}</th>
-              {/*
-                ⚠️ Las del retrato salen del `PerfilTalento`, que se arma UNA
-                vez con el currículum y no se recalcula por etapa. En la pestaña
-                de la prueba serían cifras del CV con la misma pinta que la de
-                la prueba.
-
-                ⚠️ **Solo dos, y no las cuatro.** Con «Alto rendimiento» y
-                «Confianza en la evidencia» la tabla medía 1314 px dentro de una
-                envoltura de 1038 —medido a 1920— y la columna de Estado, que
-                dice dónde está la persona, quedaba fuera del scroll. Las otras
-                dos viven en la ficha, que es donde además cabe decir qué miden:
-                un «79» bajo una cabecera de dos palabras no justifica nada.
-              */}
-              {delCurriculum && (
-                <>
-                  <th className={tabla.cifra}>Adecuación</th>
-                  <th className={tabla.cifra}>Potencial</th>
-                </>
-              )}
-              {/*
-                ⚠️ Antes eran una sola cifra sumada, y son dos tablas
-                distintas: un riesgo crítico lo escribió el agente sobre el
-                perfil y una alerta la levantó el proceso. Sumarlas daba un «3»
-                que no se podía ir a mirar a ningún sitio.
-              */}
-              <th className={tabla.cifra}>Riesgos</th>
-              <th className={tabla.cifra}>Alertas</th>
-              <th>Estado</th>
+              {columnasDeLaTabla.map((columna) => {
+                if (columna.clave === 'avance') return <th key={columna.clave} aria-label="Avanza" />
+                const clase = columna.cifra ? tabla.cifra : undefined
+                if (!columna.ordenable) {
+                  return (
+                    <th key={columna.clave} className={clase}>
+                      {columna.titulo}
+                    </th>
+                  )
+                }
+                const cual = columna.ordenable
+                const como = comoSeOrdena(orden, cual)
+                return (
+                  /*
+                    `aria-sort` va en el `<th>` y no en el botón: es la celda la
+                    que está ordenada. El botón se queda con el nombre de la
+                    columna como nombre accesible, que es el patrón de una tabla
+                    ordenable, y la flecha es decorativa —lo que un lector
+                    anuncia es el `aria-sort`—.
+                  */
+                  <th
+                    key={columna.clave}
+                    className={[
+                      clase,
+                      estilos.cabeceraOrdenable,
+                      columna.cifra ? estilos.cabeceraCifra : null,
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                    aria-sort={como}
+                  >
+                    <button
+                      type="button"
+                      className={estilos.ordenarPor}
+                      onClick={() => setOrden((antes) => alternarOrden(antes, cual))}
+                      title={`Ordenar por ${columna.titulo}`}
+                    >
+                      {columna.titulo}
+                      <FlechaDeOrden como={como} />
+                    </button>
+                  </th>
+                )
+              })}
             </tr>
           </thead>
           <tbody>
@@ -653,7 +862,44 @@ function Ranking({
                   <td>
                     <span className={estilos.candidato}>{fila.candidato}</span>
                     <span className={estilos.correo}>{fila.correo}</span>
+                    {/*
+                      ⚠️ **El grupo de prioridad, y aquí SÍ se pinta.** Lo que el
+                      producto prohíbe es enseñárselo al candidato —a nadie se le
+                      dice «incompatible» a la cara—, no al equipo que decide con
+                      ello delante.
+
+                      Y ordenando por nota es obligatorio: el orden se aplica
+                      DENTRO de cada grupo, así que las notas dejan de ir de mayor
+                      a menor al cruzar de grupo. Sin el grupo a la vista, eso se
+                      lee como una tabla mal ordenada.
+
+                      Va en la columna del candidato y no en una propia: la tabla
+                      ya se sale de la envoltura con once columnas, y una más
+                      empujaría «Estado» fuera del scroll otra vez.
+                    */}
+                    {nombreDelGrupo(fila.grupoPrioridad) && (
+                      <span className={estilos.grupo}>
+                        {nombreDelGrupo(fila.grupoPrioridad)}
+                      </span>
+                    )}
                   </td>
+                  {/*
+                    ⚠️ **Las dos celdas van con la MISMA condición que su
+                    cabecera**, o la fila se desalinea de la tabla entera. Cuando
+                    la tanda no trae el dato la columna no existe: ni cabecera ni
+                    celda, y el motivo se dice en la barra de filtros.
+
+                    Un guion aquí es «esta persona no lo declaró», y solo puede
+                    significar eso porque al menos otra sí lo declaró.
+                  */}
+                  {trae.hayCiudad && (
+                    <td className={estilos.celdaCiudad}>{fila.ciudad ?? '—'}</td>
+                  )}
+                  {trae.hayPretension && (
+                    <td className={`${tabla.cifra} ${estilos.celdaPretension}`}>
+                      {pretensionDicha(fila) ?? '—'}
+                    </td>
+                  )}
                   <td className={tabla.cifra}>
                     {fila.notaEtapa ?? '—'}
                     {/*
@@ -706,10 +952,16 @@ function Ranking({
               <tr>
                 <td colSpan={columnas} className={tabla.vacia}>
                   {/*
-                    Dos vacios distintos, y confundirlos manda a buscar en el
-                    sitio equivocado. Sin nadie en la etapa es lo NORMAL en
+                    ⚠️ **Ahora son TRES vacíos**, y confundirlos manda a buscar
+                    en el sitio equivocado. Sin nadie en la etapa es lo NORMAL en
                     Validación y Decisión casi siempre: se dice sin alarma y se
                     nombra el escape con las palabras que lleva escritas.
+
+                    El tercero es nuevo y lo trae la barra de filtros: si el
+                    corte SÍ tiene gente y lo que la esconde es un filtro
+                    puesto, decir «nadie tiene nota» sería falso —los hay— y
+                    mandaría a pulsar el corte de al lado, que tampoco es. Se
+                    nombra el filtro, que es lo que hay que quitar.
 
                     En un <p>, y no suelto: la celda mide lo que miden las
                     columnas, y en un teléfono la frase acababa a la derecha del
@@ -718,12 +970,15 @@ function Ranking({
                   <p>
                     {filas.length === 0
                       ? 'Todavía no hay postulaciones en esta vacante.'
-                      : vista === 'con-nota'
-                        ? `Nadie tiene todavía ${laEtapa.nota.toLowerCase()}: hace falta ` +
-                          `${laEtapa.loQueDejaNota}. Pulsa «Toda la tanda» para las ` +
-                          `${filas.length} de la vacante.`
-                        : `Nadie está en ${laEtapa.nombre} ahora mismo. Pulsa «Toda la ` +
-                          `tanda» para las ${filas.length} de la vacante.`}
+                      : delCorte.length > 0
+                        ? `Ninguna de las ${delCorte.length} de este corte pasa los filtros que ` +
+                          `hay puestos. Pulsa «Ver a todos» para quitarlos.`
+                        : vista === 'con-nota'
+                          ? `Nadie tiene todavía ${laEtapa.nota.toLowerCase()}: hace falta ` +
+                            `${laEtapa.loQueDejaNota}. Pulsa «Toda la tanda» para las ` +
+                            `${filas.length} de la vacante.`
+                          : `Nadie está en ${laEtapa.nombre} ahora mismo. Pulsa «Toda la ` +
+                            `tanda» para las ${filas.length} de la vacante.`}
                   </p>
                 </td>
               </tr>
@@ -760,6 +1015,278 @@ function Ranking({
         </p>
       )}
     </>
+  )
+}
+
+// ---------- La barra de filtros, y la descarga de lo que se ve ----------
+
+/**
+ * Un número escrito a mano, o nada.
+ *
+ * Una caja vacía es «sin límite», no un cero: tratarla como cero pondría un
+ * «Nota ≥ 0» que no filtra nada y encendería igualmente el aviso de «hay
+ * filtros puestos». Lo que no sea un número tampoco pasa.
+ */
+const aCifra = (valor: string): number | null => {
+  const limpio = valor.trim()
+  if (limpio === '') return null
+  const cifra = Number(limpio)
+  return Number.isFinite(cifra) ? cifra : null
+}
+
+/**
+ * Los cuatro filtros y el botón del Excel, encima de la tabla.
+ *
+ * ⚠️ **La búsqueda por nombre se queda a la vista y el resto se pliega.** Es la
+ * que se usa a diario —«¿dónde está Camila?»— y las otras tres son de recortar
+ * una tanda entera, que se hace de vez en cuando. Seis controles fijos sobre una
+ * mesa de decidir compiten con la tabla, que es lo que se viene a mirar.
+ *
+ * ⚠️ **Pero un filtro plegado NO puede quedar escondido.** El resumen del pliegue
+ * lleva cuántos hay puestos, y debajo de la barra se dice cuántas filas quedan de
+ * cuántas: un recorte que no se ve es la trampa del indicador que miente.
+ */
+function BarraDeFiltros({
+  etapa,
+  filtros,
+  alCambiar,
+  ciudades,
+  trae,
+  cuantasSeVen,
+  cuantasHabia,
+  puedeDescargar,
+  descargando,
+  alDescargar,
+}: {
+  etapa: EtapaPanel
+  filtros: Filtros
+  alCambiar: (f: Filtros) => void
+  /** Las que de verdad hay en la tanda. Vacío significa que todavía no hay ninguna. */
+  ciudades: CiudadDelRanking[]
+  /** Qué columnas nuevas trae la tanda. Lo que no trae, no se ofrece filtrar. */
+  trae: QueTraeLaTanda
+  cuantasSeVen: number
+  cuantasHabia: number
+  puedeDescargar: boolean
+  descargando: boolean
+  alDescargar: () => void
+}) {
+  const cambiar = <C extends keyof Filtros>(campo: C, valor: Filtros[C]) =>
+    alCambiar({ ...filtros, [campo]: valor })
+
+  const alternarCiudad = (codigo: string) =>
+    cambiar(
+      'ciudades',
+      filtros.ciudades.includes(codigo)
+        ? filtros.ciudades.filter((c) => c !== codigo)
+        : [...filtros.ciudades, codigo],
+    )
+
+  const puesto = hayFiltroPuesto(filtros)
+  const plegados = [
+    filtros.ciudades.length > 0,
+    filtros.notaMin != null || filtros.notaMax != null,
+    filtros.pretensionMin != null || filtros.pretensionMax != null,
+  ].filter(Boolean).length
+
+  return (
+    <div className={estilos.filtros}>
+      <div className={estilos.filaFiltros}>
+        <label className={estilos.campoFiltro}>
+          <span className={estilos.rotuloFiltro}>Buscar por nombre</span>
+          {/*
+            `type="search"` y no `text`: trae la cruz de borrar del sistema y el
+            teclado de búsqueda en el móvil, gratis. Es la regla de la plataforma
+            primero, la misma por la que el registro usa un `<select>` nativo.
+          */}
+          <input
+            className={estilos.buscador}
+            type="search"
+            value={filtros.texto}
+            onChange={(e) => cambiar('texto', e.target.value)}
+            placeholder="Parte del nombre"
+          />
+        </label>
+
+        <details className={estilos.masFiltros}>
+          <summary className={estilos.resumenFiltros}>
+            Ciudad, nota y pretensión
+            {plegados > 0 && <span className={estilos.cuantosFiltros}>{plegados}</span>}
+            <Pluma clase={estilos.pliegue}>
+              <path d="m7 10 5 5 5-5" />
+            </Pluma>
+          </summary>
+
+          <div className={estilos.cuerpoFiltros}>
+            <fieldset className={estilos.grupoFiltro}>
+              <legend className={estilos.rotuloFiltro}>Ciudad</legend>
+              {/*
+                ⚠️ **Si nadie tiene ciudad, aquí no va un desplegable vacío.** La
+                ciudad solo se le pide a quien crea cuenta desde ahora, así que
+                hoy la tanda entera viene sin ella: un control con cero opciones
+                se lee como una pantalla rota, y servirlo del catálogo de ubigeo
+                ofrecería 196 filtros que no devuelven a nadie. Se dice lo que
+                pasa, que es lo único honesto que hay que decir.
+              */}
+              {ciudades.length === 0 ? (
+                <p className={estilos.porQueNoSale}>{POR_QUE_NO_HAY_CIUDAD}</p>
+              ) : (
+                <div className={estilos.chips}>
+                  {ciudades.map((ciudad) => {
+                    const marcada = filtros.ciudades.includes(ciudad.codigo)
+                    return (
+                      <button
+                        key={ciudad.codigo}
+                        type="button"
+                        className={marcada ? estilos.chipMarcado : estilos.chip}
+                        aria-pressed={marcada}
+                        onClick={() => alternarCiudad(ciudad.codigo)}
+                      >
+                        {ciudad.nombre}
+                        <span className={estilos.cuantasEnLaVista}>{ciudad.cuantas}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </fieldset>
+
+            <fieldset className={estilos.grupoFiltro}>
+              <legend className={estilos.rotuloFiltro}>{laEtapaDe(etapa).nota}</legend>
+              <div className={estilos.rango}>
+                <input
+                  className={estilos.cifraFiltro}
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  max={100}
+                  aria-label={`${laEtapaDe(etapa).nota}, desde`}
+                  placeholder="desde"
+                  value={filtros.notaMin ?? ''}
+                  onChange={(e) => cambiar('notaMin', aCifra(e.target.value))}
+                />
+                <span aria-hidden="true">–</span>
+                <input
+                  className={estilos.cifraFiltro}
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  max={100}
+                  aria-label={`${laEtapaDe(etapa).nota}, hasta`}
+                  placeholder="hasta"
+                  value={filtros.notaMax ?? ''}
+                  onChange={(e) => cambiar('notaMax', aCifra(e.target.value))}
+                />
+              </div>
+              {/* Se dice, porque es lo que sorprende: una fila sin nota no es
+                  «≥ 60» y desaparece en cuanto se escribe un extremo. */}
+              <p className={estilos.pistaFiltro}>Quien no tiene nota queda fuera.</p>
+            </fieldset>
+
+            <fieldset className={estilos.grupoFiltro}>
+              <legend className={estilos.rotuloFiltro}>Pretensión</legend>
+              {/*
+                ⚠️ **Sin pretensión en la tanda no hay rango que ofrecer**, y
+                sobre todo hay que decir por qué. Un rango que solo puede quitar
+                filas y nunca dejar ninguna es un control roto; y una columna en
+                blanco se lee como «nadie pidió sueldo», que puede ser falso: la
+                pretensión viaja bajo el permiso `ver_pretension` y solo lo tiene
+                Dirección. `puedeVerPretension` dice cuál de los dos motivos es,
+                así que la frase afirma uno en vez de enumerar hipótesis.
+              */}
+              {!trae.hayPretension ? (
+                <p className={estilos.porQueNoSale}>
+                  {porQueNoHayPretension(trae.puedeVerPretension)}
+                </p>
+              ) : (
+                <>
+                  <div className={estilos.rango}>
+                    <input
+                      className={estilos.cifraFiltro}
+                      type="number"
+                      inputMode="numeric"
+                      min={0}
+                      aria-label="Pretensión, desde"
+                      placeholder="desde"
+                      value={filtros.pretensionMin ?? ''}
+                      onChange={(e) => cambiar('pretensionMin', aCifra(e.target.value))}
+                    />
+                    <span aria-hidden="true">–</span>
+                    <input
+                      className={estilos.cifraFiltro}
+                      type="number"
+                      inputMode="numeric"
+                      min={0}
+                      aria-label="Pretensión, hasta"
+                      placeholder="hasta"
+                      value={filtros.pretensionMax ?? ''}
+                      onChange={(e) => cambiar('pretensionMax', aCifra(e.target.value))}
+                    />
+                  </div>
+                  {/* Solape y no contención: quien solo declaró un extremo entra
+                      si ese extremo cabe en la banda. Ver `filtrarFino`. */}
+                  <p className={estilos.pistaFiltro}>
+                    Sale quien pida algo dentro de esa banda. Quien no la declaró queda fuera.
+                  </p>
+                </>
+              )}
+            </fieldset>
+          </div>
+        </details>
+
+        {puesto && (
+          <button
+            type="button"
+            className={estilos.quitarFiltros}
+            onClick={() => alCambiar(SIN_FILTROS)}
+          >
+            Ver a todos
+          </button>
+        )}
+
+        {/*
+          ⚠️ **Sin violeta.** En esta pantalla el violeta es «Avanzar a N
+          personas», la acción principal, y ya está puesto ahí abajo. Descargar
+          una hoja no compite con eso.
+
+          ⚠️ **Y el botón dice si está trabajando.** Armar el Excel de setenta y
+          ocho filas con su detalle tarda; un botón que no cambia invita a
+          pulsarlo tres veces y a bajar tres archivos iguales.
+        */}
+        {puedeDescargar && (
+          <button
+            type="button"
+            className={estilos.descargar}
+            onClick={alDescargar}
+            disabled={descargando || cuantasSeVen === 0}
+            aria-busy={descargando}
+          >
+            {descargando
+              ? 'Preparando el Excel…'
+              : cuantasSeVen === 0
+                ? 'Nada que descargar'
+                : `Descargar Excel (${cuantasSeVen})`}
+          </button>
+        )}
+      </div>
+
+      {/*
+        Cuántas quedan de cuántas, en cuanto hay un filtro puesto. Es la misma
+        regla que la cifra dentro de cada corte: ocultar sin decirlo es el
+        indicador que miente, y aquí además parte del recorte está plegado.
+
+        ⚠️ **La región viva se monta siempre y solo se esconde.** Naciendo con su
+        contenido, el lector de pantalla no anuncia nada: para él no hubo cambio,
+        apareció un párrafo nuevo. Es la trampa que el registro ya documenta con
+        su `.oculto`, y aquí `.solo-lectores` de `mundo.css` hace lo mismo — deja
+        el texto en el árbol de accesibilidad y fuera de la vista.
+      */}
+      <p className={puesto ? estilos.cuantasFiltradas : 'solo-lectores'} role="status">
+        {puesto &&
+          `Se ven ${cuantasSeVen} de ${cuantasHabia} de este corte.` +
+            (puedeDescargar ? ' El Excel lleva exactamente estas, en este orden.' : '')}
+      </p>
+    </div>
   )
 }
 

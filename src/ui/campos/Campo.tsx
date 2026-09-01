@@ -12,6 +12,7 @@ import {
   useState,
   type InputHTMLAttributes,
   type ReactNode,
+  type SelectHTMLAttributes,
   type TextareaHTMLAttributes,
 } from 'react'
 import estilos from './Campo.module.css'
@@ -122,6 +123,72 @@ export const Campo = forwardRef<HTMLInputElement, PropsCampo>(function Campo(
       ) : (
         entrada
       )}
+      {error && (
+        <p className={estilos.error} id={idError}>
+          {error}
+        </p>
+      )}
+    </div>
+  )
+})
+
+interface PropsSeleccion extends SelectHTMLAttributes<HTMLSelectElement> {
+  etiqueta: string
+  ayuda?: string
+  error?: string
+  /** Las `<option>` y `<optgroup>`, escritas por quien lo usa. */
+  children: ReactNode
+}
+
+/**
+ * Un desplegable del sistema, con su etiqueta y su error atados.
+ *
+ * ⚠️ **Es un `<select>` de verdad, y esa es la decisión.** Es la regla de la
+ * plataforma primero: con casi doscientas provincias agrupadas por departamento,
+ * un combobox propio tendría que reimplementar el teclado entero —flechas, inicio
+ * y fin, escribir para saltar, `Escape`—, el anuncio de «grupo, tal
+ * departamento» del lector de pantalla, y la rueda nativa del móvil. Todo eso
+ * viene gratis con `<optgroup>`, y la flecha ya la dibuja `mundo.css`.
+ *
+ * Comparte forma con `Campo` a propósito: en un formulario, dos campos que se
+ * rellenan igual no pueden verse distinto.
+ */
+export const Seleccion = forwardRef<HTMLSelectElement, PropsSeleccion>(function Seleccion(
+  { etiqueta, ayuda, error, id, children, ...resto },
+  ref,
+) {
+  const propio = useId()
+  const idCampo = id ?? propio
+  const idAyuda = `${idCampo}-ayuda`
+  const idError = `${idCampo}-error`
+
+  return (
+    <div className={estilos.campo}>
+      <label className={estilos.etiqueta} htmlFor={idCampo}>
+        {etiqueta}
+      </label>
+      {ayuda && (
+        <span className={estilos.ayuda} id={idAyuda}>
+          {ayuda}
+        </span>
+      )}
+      {/*
+        `aria-invalid` no es solo para el lector: el formulario busca
+        `[aria-invalid="true"]` para llevar el foco al primer campo con problema,
+        y sin esto un desplegable sin elegir se saltaría ese salto en silencio.
+      */}
+      <select
+        {...resto}
+        id={idCampo}
+        ref={ref}
+        className={estilos.seleccion}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={
+          [ayuda && idAyuda, error && idError].filter(Boolean).join(' ') || undefined
+        }
+      >
+        {children}
+      </select>
       {error && (
         <p className={estilos.error} id={idError}>
           {error}

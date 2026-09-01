@@ -1,10 +1,158 @@
 # Portal del candidato · contexto de trabajo
 
-Última actualización: 2026-09-01 · **las pruebas del puesto se escriben desde el panel, las áreas
-se administran desde Configuración, y el plazo se dice entero**
+Última actualización: 2026-09-01 · **el ranking se ordena, se filtra y se descarga; la cuenta
+nace con ciudad; las pruebas del puesto se escriben desde el panel; las áreas se administran
+desde Configuración; y el plazo se dice entero**
 
 Este archivo es para retomar el trabajo sin tener que reconstruir nada. Cuenta qué es este
 proyecto, con qué habla, qué se decidió y por qué, y qué está a medias.
+
+---
+
+## Los e2e viven en `herramientas/e2e/` y corren con `@playwright/test` (01/09/2026)
+
+Había doce arneses sueltos en `herramientas/`, cada uno un `node` a pelo sobre la librería
+`playwright`, con sus comprobaciones a mano y su `process.exit`. **Se migraron todos al
+corredor** y la suite es una sola: 22 archivos numerados en `herramientas/e2e/`, con
+`playwright.config.ts` en la raíz. Cada comprobación del script viejo es un `expect` del
+nuevo; lo que se saltaba por falta de datos es un `test.skip` con el mismo motivo.
+
+```bash
+npm run test:e2e            # todo, con el Chromium clavado de la librería
+npm run test:e2e:ui         # la ventana con la lista, el viaje en el tiempo y el «elegir locator»
+npm run test:e2e:chrome     # el Chrome de la máquina, con ventana
+npm run typecheck:e2e       # los specs NO entran en `npm run typecheck`: tienen su tsconfig
+npx playwright test herramientas/e2e/15-componer-prueba.spec.ts   # uno solo
+```
+
+⚠️ **La suite no levanta nada**: espera Vite en 5174 y Spring en 8081 ya arrancados, con la base
+sembrada (`scripts/sembrar-datos-de-prueba.py` del backend). **Un solo worker**: la base es
+compartida y varios specs escriben. Y **17 tests se saltan** en local con motivo: los que
+dependen de la IA (aquí la clave es ficticia y el trabajo acaba en `FALLIDA`), un nivel del
+banco con dos versiones publicadas, una prueba entregada, una sesión con inscritos.
+
+**Los apartados de fechas anteriores citan los scripts por su nombre de entonces.** Hoy son:
+
+| Antes | Hoy |
+|---|---|
+| `e2e-panel-entrar.mjs` | `herramientas/e2e/10-panel-entrar.spec.ts` |
+| `e2e-perfil.mjs` | `herramientas/e2e/11-perfil.spec.ts` |
+| `e2e-postular.mjs` | `herramientas/e2e/12-postular.spec.ts` |
+| `e2e-etapas.mjs` | `herramientas/e2e/13-etapas.spec.ts` |
+| `e2e-vacante.mjs` | `herramientas/e2e/14-vacante.spec.ts` |
+| `e2e-componer-prueba.mjs` | `herramientas/e2e/15-componer-prueba.spec.ts` |
+| `e2e-cuestionario-tecnico.mjs` | `herramientas/e2e/16-cuestionario-tecnico.spec.ts` |
+| `e2e-prueba-tecnica.mjs` | `herramientas/e2e/17-prueba-tecnica.spec.ts` |
+| `e2e-ranking-etapa.mjs` | `herramientas/e2e/18-ranking-contra-api.spec.ts` |
+| `e2e-banco.mjs` | `herramientas/e2e/19-banco.spec.ts` |
+| `e2e-prueba-y-empresas.mjs` | `herramientas/e2e/20-prueba-y-empresas.spec.ts` |
+| `e2e-simulacion-permisos.mjs` | `herramientas/e2e/21-simulacion-permisos.spec.ts` |
+
+`e2e-android.mjs` se queda como script: conduce Maestro contra un APK, no un navegador.
+
+---
+
+## El ranking se ordena, se filtra y se descarga (01/09/2026)
+
+La mesa donde se decide dejó de ser una lista que solo se mira. **Todo pasa en el navegador**:
+ordenar o filtrar no le vuelve a pedir nada al servidor, y el corte de la botonera —«Con nota del
+perfil» (el rótulo lleva el nombre de la nota de cada etapa), «Está aquí ahora» y «Toda la
+tanda»— sigue mandando por encima de todo lo demás. Las reglas viven en
+`src/panel/vacantes/ranking.ts`, con sus tests al lado.
+
+### Cuatro cabeceras, tres estados cada una
+
+Candidato, Ciudad, la nota de la etapa y Pretensión. Cada pulsación avanza: el sentido natural de
+la columna —**la nota abre por la mayor**, los textos de la A a la Z, la pretensión de la más
+baja—, el inverso, y al tercero **`alternarOrden` devuelve `null` y se vuelve al orden del
+backend**, que es el que agrupa por prioridad y ordena la nota dentro. Sin ese tercer estado
+habría que recargar para recuperarlo.
+
+⚠️ **El orden del cliente es PLANO: manda la columna pedida y nada más.** Hubo una versión que
+ordenaba la nota dentro de cada grupo de prioridad y se quitó. Dos motivos, y el segundo es el
+que decide: agrupar casi nunca cambiaba el resultado —los tres grupos que la IA escribe (`ALTA`,
+`POTENCIAL_CON_RIESGO`, `NO_PRIORIZADO`) cuelgan de la propia nota, y `INCOMPATIBLE` no lo
+escribe nadie porque quien falla un requisito indispensable se cierra como `NO_CONTINUA` sin
+llegar a tener grupo—; y cuando cambiaba algo, salía una tabla 55, 74, 61, 95 que se lee como
+rota. Un orden que hay que explicar no está ordenando.
+
+**El grupo se sigue pintando en cada fila**, dentro de la celda del candidato: ya no mueve a
+nadie, pero un 95 con riesgo crítico es justo lo que hay que ver antes de llamar.
+
+⚠️ **Los vacíos, al final, suba o baje el orden.** `elHuecoAlFinal` decide la ausencia **antes**
+de aplicar el sentido. Con un `ordenar(...).reverse()` los huecos suben a la primera pantalla al
+pulsar «descendente», que es como sale mal. Y los textos comparan con `localeCompare` en español,
+o «Ávila» cae detrás de «Zurita».
+
+⚠️ **`ordenar` copia antes de ordenar.** `filas` es el array de la caché de react-query; un
+`.sort()` encima lo reordena para todo el que lo lea después, y el estropicio sobrevive a cambiar
+de pestaña.
+
+### Los cuatro filtros
+
+Buscador por nombre **sin tildes ni mayúsculas** (`paraBuscar`: media tanda se llama Fátima o
+Muñoz), ciudades marcables de varias en varias, y rangos de nota y de pretensión.
+
+⚠️ **Las ciudades salen de las FILAS, nunca del catálogo de ubigeo**, y de las filas **sin
+filtrar**: del catálogo serían 196 filtros que no devuelven a nadie, y de las visibles, marcar
+una haría desaparecer a las demás y no habría forma de añadir la segunda.
+
+⚠️ **Un rango deja fuera a quien no declaró el dato, y es a propósito.** Una fila sin nota no es
+«≥ 60». Se dice debajo del control, y vuelven con «Ver a todos». La pretensión se cruza por
+**solape**, y quien declaró un solo extremo cuenta como esa cifra a secas: «desde 5 000» entra en
+«hasta 6 000» y no en «desde 6 000». Leerlo como una recta abierta sería ponerle en la boca al
+candidato una cifra que no escribió.
+
+### Ciudad y Pretensión: dos columnas que pueden no existir
+
+⚠️ **Si ninguna fila trae una de las dos, la columna no se pinta y se dice por qué** — y los
+motivos son distintos. Ciudad: solo se le pide a quien crea su cuenta desde ahora, así que hoy
+casi ninguna postulación la trae. Pretensión: **hay dos causas opuestas y el nulo no las separa**
+—el candidato no declaró sueldo, o quien mira no tiene `ver_pretension`, que solo tiene
+Dirección—, y por eso `RankingVacante.puedeVerPretension` viaja: sin esa señal la frase tendría
+que enumerar hipótesis. Una columna de guiones se lee al revés: «nadie pidió sueldo».
+
+⚠️ **La ciudad se detecta por el código además de por el nombre** (`ciudad` o `ciudadCodigo`):
+llegan de dos consultas distintas y tener código no implica tener nombre. Y
+`columnasDelRanking` es **la única fuente del `colSpan`**, ahora que hay columnas que aparecen y
+desaparecen con los datos.
+
+**La pretensión no es un dato nuevo**: vive en el perfil del candidato desde antes. Nueva es la
+columna.
+
+### El Excel
+
+`POST /vacantes/{id}/ranking/excel`, y solo en **Perfil integral** y **Prueba del puesto**: en
+las otras tres el botón no existe en vez de salir y fallar con un 400.
+
+⚠️ **Es POST y no GET porque lleva la lista entera de ids ordenada**, que en una tanda de ochenta
+no cabe en una URL. Y por eso mismo no vale un `<a href>`: el token va en una cabecera, que un
+enlace no puede poner. El archivo se abre con `createObjectURL`.
+
+La hoja lleva **las filas que se ven, en el orden de la pantalla** —el backend escribe el orden
+que se le manda y nada más— y dentro va `describirFiltro`: etapa, corte, filtros, orden aplicado
+y, si la pretensión salió vacía, por qué. La hoja se reenvía y se abre lejos del panel, donde ya
+no hay pantalla que explique que un blanco puede ser un permiso.
+
+### Crear cuenta pide dónde vive
+
+`POST /portal/cuentas` gana `ciudadUbigeo`, obligatorio: el ubigeo de nivel 2 —la provincia— o
+`EXT`. Las opciones vienen de `GET /portal/catalogos/ubigeo`, **sin token**, porque quien está
+creando la cuenta todavía no tiene ninguno. En pantalla, **un solo `<select>` nativo con
+`<optgroup>` por departamento** y las 196 provincias, no dos encadenados; «Fuera del Perú» va
+suelto al final, porque con `label={null}` el navegador pinta un grupo llamado «null» y colgarlo
+de un departamento inventado diría que el extranjero está en algún sitio del Perú.
+
+⚠️ **`z.string().min(1)` y no `z.string()` a secas.** La primera opción vale `''` —hace falta
+para que se vea que no hay nada elegido— y una cadena vacía es una cadena válida: sin el mínimo
+el formulario salía y el backend lo rebotaba con un 400 que la pantalla no supo prevenir.
+
+⚠️ **Se pide UNA vez y a nadie más.** A quien ya tiene cuenta no se le pregunta nunca, así que el
+panel tiene que contar con que **casi ninguna postulación trae ciudad**. De ahí que el filtro de
+ciudad y su columna nazcan de las filas y no del catálogo.
+
+⚠️ **Un fallo del catálogo se dice, no se disimula.** El campo es obligatorio: un desplegable
+apagado y mudo deja a la persona pulsando «Crear cuenta» contra un error que no explica nada.
 
 ---
 
@@ -171,7 +319,7 @@ Sin eso «Quitar» y «Corregir» eran dos píldoras idénticas en la misma fila
 
 ```bash
 npm run typecheck && npm test
-PORTAL=http://localhost:5199 node herramientas/e2e-componer-prueba.mjs
+npx playwright test herramientas/e2e/15-componer-prueba.spec.ts
 ```
 
 `npm test` son **356 pruebas en 29 archivos** (medido el 01/09/2026), y pasan enteras.
@@ -218,6 +366,16 @@ Lo que encontró, y que ningún test con dobles podía ver:
 local el almacén es el doble en memoria y reparte urls `memoria://`, que ningún navegador
 abre. Se afirma que el enlace existe y que sobrevive a guardar, no que sirva bytes: un fallo
 en la firma de Supabase pasaría por aquí sin que nadie se entere.
+
+npm run test:e2e          # Playwright con el Chromium clavado de la librería
+npm run test:e2e:chrome   # el Chrome de la máquina, con ventana, para mirar un fallo
+```
+
+⚠️ **La suite no levanta nada**: da por hecho el Vite en 5174 y el Spring en 8081 ya arrancados,
+porque arrancarlos ella abriría un segundo backend contra la misma base. **Un solo worker y sin
+paralelo**: la base es compartida y la prueba de avance de etapa muta `estado`, que cambia los
+contadores de «Está aquí ahora» de cualquier otra que esté corriendo. El archivo de móvil lo
+corre solo el proyecto `movil`, a 375 px.
 
 ---
 
@@ -298,7 +456,7 @@ parecía un fallo y era el método haciendo su trabajo. Si un día una nota baja
 
 ```bash
 npm run typecheck && npm test
-PORTAL=http://localhost:5182 node herramientas/e2e-cuestionario-tecnico.mjs
+npx playwright test herramientas/e2e/16-cuestionario-tecnico.spec.ts
 ```
 
 El e2e recorre el ciclo entero en un Chrome de verdad: la empresa elige, la IA escribe, la
@@ -493,8 +651,8 @@ elementos. En vitest no pasa: `getByLabelText` con texto es exacto.
 
 ```bash
 npm run typecheck && npm test           # 41 tests nuevos: guion, bloques, ficha, cuestionario, tarjeta
-node herramientas/e2e-prueba-tecnica.mjs             # Chrome real: hasta la ficha COMPLETA
-DE_VERDAD=1 node herramientas/e2e-prueba-tecnica.mjs # …y el cuestionario de verdad, hasta publicarlo
+npx playwright test herramientas/e2e/17-prueba-tecnica.spec.ts             # Chrome real: hasta la ficha COMPLETA
+npx playwright test herramientas/e2e/17-prueba-tecnica.spec.ts # …y el cuestionario de verdad, hasta publicarlo
 ```
 
 ⚠️ **Sin `DE_VERDAD=1` no le pide nada a la IA** —cuesta una llamada a DeepSeek y cuenta
@@ -661,7 +819,7 @@ tres, **suman siempre**, y la accionable va primero. Con su test y su comprobaci
 ### Cómo se comprueba
 
 ```bash
-PORTAL=http://localhost:5181 node herramientas/e2e-prueba-y-empresas.mjs
+npx playwright test herramientas/e2e/20-prueba-y-empresas.spec.ts
 ```
 
 **40 comprobaciones** (35 + 5 nuevas): a quién alcanza el bloque, que no alcanza a quien no ha
@@ -800,7 +958,7 @@ es peor que no saberlo.
 ### Cómo se comprueba
 
 ```bash
-PORTAL=http://localhost:5180 node herramientas/e2e-prueba-y-empresas.mjs
+npx playwright test herramientas/e2e/20-prueba-y-empresas.spec.ts
 ```
 
 **35 comprobaciones** (28 + 7 nuevas): las tres situaciones del guion, que la rúbrica entera
@@ -910,7 +1068,7 @@ si la tabla desborda ni si el control cabe al lado de las cifras. Ahora las 8 es
 se ve una vacante de verdad.
 
 ```bash
-PORTAL=http://localhost:5179 node herramientas/e2e-ranking-etapa.mjs
+npx playwright test herramientas/e2e/18-ranking-contra-api.spec.ts
 ```
 
 **42 comprobaciones contra el backend vivo, solo lectura.** Además de lo que ya miraba, fija que
@@ -1038,7 +1196,7 @@ una opción…) tampoco se cablearon: son la misma pieza que el editor de ítems
 ### El e2e de esta tanda
 
 ```bash
-PORTAL=http://localhost:5178 node herramientas/e2e-banco.mjs
+npx playwright test herramientas/e2e/19-banco.spec.ts
 ```
 
 45 comprobaciones: el contrato con sus seis campos exactos, los tres niveles con dos publicadas,
@@ -1100,7 +1258,7 @@ Vale para las tres tablas del panel.
 ### Cómo se comprueba
 
 ```bash
-PORTAL=http://localhost:5199 node herramientas/e2e-ranking-etapa.mjs
+npx playwright test herramientas/e2e/18-ranking-contra-api.spec.ts
 ```
 
 29 comprobaciones contra el backend vivo, **solo lectura**. Elige sola la vacante que reparte su
@@ -1228,7 +1386,7 @@ un enlace que prometa registrarse lleva a una pantalla que no puede cumplirlo.
 ### El e2e de esta tanda
 
 ```bash
-PORTAL=http://localhost:5177 node herramientas/e2e-prueba-y-empresas.mjs
+npx playwright test herramientas/e2e/20-prueba-y-empresas.spec.ts
 ```
 
 28 comprobaciones: el contrato de los cuatro endpoints, las columnas que cambian con la
@@ -1327,7 +1485,7 @@ concedido y no concede nada.
 
 ### El e2e contra el backend de verdad
 
-`PORTAL=http://localhost:5176 node herramientas/e2e-simulacion-permisos.mjs` — 32 comprobaciones
+`npx playwright test herramientas/e2e/21-simulacion-permisos.spec.ts` — 32 comprobaciones
 sobre las dos piezas: la lista, la asistencia con su confirmación, la matriz, conceder, el
 rechazo sin motivo y el 409 del último administrador. **Es lo que encontró el fallo de arriba**;
 los `capturar-*.mjs` no podían, porque interceptan las respuestas.
@@ -1664,7 +1822,7 @@ de la evaluación quedan «pendiente de calificar», que el panel enseña sin fi
 evaluación entregada de verdad en la base local —sembrada con
 `scripts/sembrar-evaluacion-local.py` del backend— esperando esa clave.
 
-Verificarlo entero: `PORTAL=http://localhost:5175 node herramientas/e2e-etapas.mjs`
+Verificarlo entero: `npx playwright test herramientas/e2e/13-etapas.spec.ts`
 (Chrome visible, solo lee).
 
 ### Publicar una vacante exige tres cosas antes (25/08)
@@ -1702,7 +1860,7 @@ hacía nada. Va fuera, con un `return` temprano.
 
 **El recorrido entero, los dos lados**, está en
 [docs/06-FLUJO-COMPLETO.md](docs/06-FLUJO-COMPLETO.md), y se comprueba con
-`node herramientas/e2e-vacante.mjs`: abre un Chrome de verdad y va de la solicitud a la vacante
+`npx playwright test herramientas/e2e/14-vacante.spec.ts`: abre un Chrome de verdad y va de la solicitud a la vacante
 publicada en el portal. ⚠️ Escribe en la base local.
 
 ---
@@ -2099,8 +2257,11 @@ equipo no lo mueve.
 que la pantalla pueda enseñar, apunta la hora del servidor y cierra la sesión sola cuando un
 401 revela que el token ya no vale.
 
-**`grupoPrioridad` nunca se pinta.** Llega en la respuesta de las postulaciones, pero es la
-clasificación interna del equipo.
+**`grupoPrioridad` nunca se pinta en el portal.** Llega en la respuesta de las postulaciones del
+candidato, pero es la clasificación interna del equipo y nadie tiene que enterarse por su propio
+portal de en qué casilla lo pusieron. **En el panel sí se pinta**, en cada fila del ranking: ahí
+quien mira es el dueño de esa clasificación. La regla se lee sobre la sesión del candidato, y lo
+que no puede pasar es que el dato cruce de una cara a la otra.
 
 **Las ocho formas de respuesta del banco v3.** `PC`, abierta/`V`, `EF-4`, `SJT-R`, `SEC`,
 `INV`, `DE` y `CD`. La forma exacta de lo que se envía la valida el backend y responde 400 si

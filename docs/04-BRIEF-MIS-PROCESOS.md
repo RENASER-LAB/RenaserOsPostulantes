@@ -139,7 +139,9 @@ codificado en forma, no solo en color, ya viene resuelto por la dirección.
 
 **Lo que un constructor no puede inventar aquí:**
 
-- El grupo de prioridad llega en la respuesta y **no se pinta jamás**.
+- El grupo de prioridad llega en la respuesta y **no se pinta jamás en el portal**. Es la
+  clasificación interna del equipo, y la mesa donde el equipo la usa es su panel, no esta
+  pantalla.
 - Si el candidato no tiene nombre, la pantalla no lo saluda; no se inventa uno ni se pone
   «Usuario».
 - El correo hoy puede no salir, así que «te avisaremos por correo» no puede ser la única vía

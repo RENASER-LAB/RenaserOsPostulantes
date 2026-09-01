@@ -158,3 +158,98 @@ describe('la hora del servidor sobrevive', () => {
     expect(anotar).toHaveBeenCalledWith(CUANDO)
   })
 })
+
+/*
+ * La descarga de un archivo, que es la unica ruta del panel que no devuelve JSON.
+ *
+ * Se prueba aqui y no en la pantalla porque alli el modulo de la API va
+ * sustituido por uno de mentira: `pedirArchivo` no lo ejecuta nadie mas, y las
+ * dos cosas que puede romper —el nombre del archivo y el error del servidor— no
+ * dan ningun sintoma visible hasta que alguien intenta descargar de verdad.
+ */
+describe('pedir un archivo', () => {
+  const excel = (cabeceras: Record<string, string>) =>
+    new Response('contenido', {
+      status: 200,
+      headers: {
+        date: CUANDO,
+        'Content-Type':
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ...cabeceras,
+      },
+    })
+
+  it('devuelve el contenido y el nombre que puso el servidor', async () => {
+    vi.stubGlobal('fetch', fetchDeMentira(() => excel({
+      'Content-Disposition': 'attachment; filename="ranking.xlsx"',
+    })))
+
+    const archivo = await crearPuerta('/api/v1/panel', 't').pedirArchivo('/x/ranking/excel')
+
+    expect(archivo.nombre).toBe('ranking.xlsx')
+    expect(await archivo.contenido.text()).toBe('contenido')
+  })
+
+  /*
+   * ⚠️ **Las dos formas llegan juntas y manda la segunda.** `filename=` solo
+   * admite ASCII, asi que un servidor que quiere mandar «ranking de
+   * Ingeniería.xlsx» manda ademas `filename*=UTF-8''...` percent-encoded. Leyendo
+   * solo la primera, el archivo se guardaba siempre con el nombre degradado que
+   * el servidor dejo de reserva.
+   */
+  it('con las dos formas se queda con la de UTF-8, que es la que lleva las tildes', async () => {
+    vi.stubGlobal('fetch', fetchDeMentira(() => excel({
+      'Content-Disposition':
+        "attachment; filename=\"ranking.xlsx\"; filename*=UTF-8''ranking%20de%20Ingenier%C3%ADa.xlsx",
+    })))
+
+    const archivo = await crearPuerta('/api/v1/panel', 't').pedirArchivo('/x/ranking/excel')
+
+    expect(archivo.nombre).toBe('ranking de Ingeniería.xlsx')
+  })
+
+  it('sin esa cabecera el nombre es nulo, y lo pone quien descarga', async () => {
+    vi.stubGlobal('fetch', fetchDeMentira(() => excel({})))
+
+    const archivo = await crearPuerta('/api/v1/panel', 't').pedirArchivo('/x/ranking/excel')
+
+    expect(archivo.nombre).toBeNull()
+  })
+
+  /*
+   * ⚠️ **Un fallo NO viene como archivo.** Spring responde
+   * `application/problem+json` aunque la ruta devuelva un `.xlsx`, asi que el
+   * error tiene que leerse por el mismo camino de siempre. Leyendolo como blob,
+   * «Esa etapa no se exporta» se convertiria en un archivo de cero bytes o en un
+   * «no se pudo completar la operación» que borra justo lo que hay que arreglar.
+   */
+  it('un 400 llega con lo que dijo el servidor, no como un archivo roto', async () => {
+    vi.stubGlobal(
+      'fetch',
+      fetchDeMentira(
+        () =>
+          new Response(JSON.stringify({ detail: 'Esa etapa no se exporta a Excel.' }), {
+            status: 400,
+            headers: { date: CUANDO, 'Content-Type': 'application/problem+json' },
+          }),
+      ),
+    )
+
+    await expect(
+      crearPuerta('/api/v1/panel', 't').pedirArchivo('/x/ranking/excel'),
+    ).rejects.toThrow('Esa etapa no se exporta a Excel.')
+  })
+
+  /*
+   * Un 200 sin cuerpo no es un archivo vacio que valga la pena guardar: es una
+   * descarga que no descargo nada. Se dice, en vez de dejar que el navegador
+   * guarde cero bytes con extension `.xlsx`.
+   */
+  it('un 200 sin cuerpo se dice, no se guarda vacio', async () => {
+    vi.stubGlobal('fetch', fetchDeMentira(respuestaVacia))
+
+    await expect(
+      crearPuerta('/api/v1/panel', 't').pedirArchivo('/x/ranking/excel'),
+    ).rejects.toThrow(/ningún archivo/)
+  })
+})

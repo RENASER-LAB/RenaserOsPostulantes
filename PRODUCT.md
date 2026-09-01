@@ -70,6 +70,12 @@ bien.
 - **Con un enlace del correo, sin contraseña**, para quien llegó por una carpeta de currículums
   y no tiene cuenta. Es la vía de toda una tanda de candidatos.
 
+**Crear la cuenta pregunta dónde vive, y solo ahí.** Desde el 01/09/2026 el registro pide la
+provincia —196 del Perú, más «Fuera del Perú» para quien no está en ninguna— y no deja terminar
+sin ella. **A quien ya tiene cuenta no se le pregunta nunca**, ni al postular ni después: las
+postulaciones anteriores a esa fecha no traen ciudad, y cualquier pantalla que la use tiene que
+contar con que falte.
+
 **Los tiempos y los plazos son reales y los manda el servidor.** La evaluación tiene 14 días
 por defecto. La prueba del puesto lleva un cronómetro que arranca al abrirla y no se detiene
 al cerrar el navegador.
@@ -95,10 +101,21 @@ un cuestionario de veinte preguntas sin entregables.
 **Confirmar los requisitos indispensables al postular es el único descarte automático de todo
 el sistema.** Un requisito activo sin confirmar cierra la postulación en el acto.
 
-**Lo que nunca puede llegar a la pantalla:** el grupo de prioridad —clasificación interna del
-equipo, aunque viaje en la respuesta—, las claves y puntajes de las preguntas, y la matriz de
-información crítica de la simulación, que es justamente lo que se espera que el candidato
-descubra o pregunte por su cuenta.
+**Lo que nunca puede llegar a la pantalla del candidato:** el grupo de prioridad —clasificación
+interna del equipo, aunque viaje en la respuesta de sus postulaciones—, las claves y puntajes de
+las preguntas, y la matriz de información crítica de la simulación, que es justamente lo que se
+espera que el candidato descubra o pregunte por su cuenta.
+
+**Las tres son del portal, y en el panel del equipo se ven las tres.** Son dos sesiones con dos
+tokens distintos, y lo que la regla prohíbe es que el dato cruce de una a la otra, no que exista.
+Quien edita el banco necesita leer la clave que escribió; quien conduce una simulación necesita
+la matriz para conducirla; y quien decide a quién llama necesita el grupo de prioridad, porque
+que alguien llegue a un 95 arrastrando un riesgo crítico es justo lo que hay que ver antes de
+descolgar el teléfono, y el número solo no lo dice.
+
+Lo que no se toca es la otra cara: a quien postula no se le enseña ninguna de las tres. No se le
+dice «incompatible», ni con esa palabra ni con otra más suave; no ve por qué puntuó lo que
+puntuó; y no ve la matriz, que es justamente lo que se espera que descubra o pregunte.
 
 **Reglas técnicas que ya costaron un fallo real y que el código nuevo hereda:**
 
@@ -166,9 +183,12 @@ de resultados. El sistema todavía no ha pasado por su primer candidato real.
    puede tratarlo como la única vía. Si una evidencia no se puede enviar todavía, no se finge
    un formulario.
 
-5. **Lo interno se queda dentro.** El grupo de prioridad, las claves de las preguntas y la
-   matriz de la simulación no llegan al navegador. No es un filtro al pintar: es que no deben
-   estar ahí.
+5. **Lo interno se queda dentro, y «dentro» se mide desde la sesión del candidato.** El grupo de
+   prioridad, las claves de las preguntas y la matriz de la simulación no llegan al portal. No
+   es un filtro al pintar: es que no deben viajar en esa respuesta. En el panel del equipo las
+   tres se ven, porque ahí quien mira es su dueño —edita el banco, conduce la simulación,
+   decide a quién llama—. Son dos sesiones con dos tokens distintos, y lo que no puede pasar es
+   que el dato cruce de una a la otra.
 
 ## Accessibility & Inclusion
 

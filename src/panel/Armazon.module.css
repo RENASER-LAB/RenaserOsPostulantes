@@ -84,14 +84,36 @@
   padding-left: var(--e3);
 }
 
+/*
+ * La navegación se desliza cuando no cabe, en vez de empujar la página.
+ *
+ * ⚠️ **Con un flex a secas, cada enlace nuevo estrecha el teléfono.** Al añadir
+ * «Pruebas» la barra pasó a medir 379 px en una pantalla de 375 y el desborde
+ * salió del `<body>`: la página entera se movía en horizontal, y con ella el
+ * titular y la tabla. Un `min-width: 0` y un scroll propio dejan el desbordo
+ * dentro de la barra, que es donde no molesta a nada.
+ *
+ * Los enlaces no encogen (`flex: none`) ni parten su texto: un «Configuración»
+ * en dos líneas rompe los 44 px de alto mínimo de lo que se puede tocar.
+ */
 .navegacion {
   display: flex;
   align-items: center;
   gap: var(--e2);
   font-size: var(--t-apoyo);
+  min-width: 0;
+  overflow-x: auto;
+  /* La barra de scroll no se enseña: son cuatro enlaces, no un panel de datos. */
+  scrollbar-width: none;
+}
+
+.navegacion::-webkit-scrollbar {
+  display: none;
 }
 
 .enlace {
+  flex: none;
+  white-space: nowrap;
   display: inline-flex;
   align-items: center;
   min-height: 44px;

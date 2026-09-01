@@ -830,3 +830,422 @@
   padding: 0 var(--e4);
   white-space: nowrap;
 }
+
+/* ---------- Ordenar por una columna ---------- */
+
+/*
+ * La cabecera que se pulsa.
+ *
+ * El relleno se lo lleva el boton y no el `<th>`: con el relleno en la celda, el
+ * area pulsable seria una pastilla flotando dentro de un margen muerto, y el
+ * cursor cambiaria a mano solo en la mitad del sitio donde se pulsa. Asi el
+ * boton ocupa la celda entera y el foco se ve alrededor de lo que se pulsa.
+ */
+.cabeceraOrdenable {
+  padding: 0 !important;
+}
+
+.ordenarPor {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  width: 100%;
+  /* 44 px: se pulsa desde un telefono, aunque la letra mida doce. */
+  min-height: 44px;
+  padding: var(--e3) var(--e4);
+  font: inherit;
+  font-size: var(--t-micro);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tinta3);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 160ms var(--salida);
+}
+
+.ordenarPor:hover {
+  color: var(--tinta);
+}
+
+/*
+ * ⚠️ **El foco va hacia DENTRO en estas cabeceras.**
+ *
+ * El anillo del mundo lleva `outline-offset: 3px`, y aqui el boton llena la
+ * celda entera de la primera fila de la tabla: esos tres pixeles caen fuera de
+ * `.envoltura`, que recorta con `clip-path` para que la cabecera no se salga por
+ * las esquinas redondeadas. El resultado es un anillo con el borde de arriba
+ * cortado justo en la unica columna que se recorre con el teclado.
+ *
+ * Negativo lo dibuja dentro de la celda, entero y sin tocar el recorte.
+ */
+.ordenarPor:focus-visible {
+  outline: 2px solid var(--activo);
+  outline-offset: -2px;
+  border-radius: var(--radio-menor);
+}
+
+/*
+ * En una columna de cifras el rotulo va a la derecha, con sus valores.
+ *
+ * ⚠️ Clase propia y no `.cabeceraOrdenable.cifra`: `.cifra` vive en
+ * `Tabla.module.css` y los modulos generan nombres distintos, asi que ese
+ * selector compilaria contra una clase local que no existe y no casaria nunca.
+ */
+.cabeceraCifra .ordenarPor {
+  justify-content: flex-end;
+}
+
+/*
+ * La flecha del orden.
+ *
+ * Hueco reservado siempre —tambien con el `↕` de «esta se puede ordenar»— para
+ * que la cabecera no se mueva un pixel al pulsarla: en una tabla de once
+ * columnas ese salto arrastra a las diez de al lado.
+ *
+ * ⚠️ **Sin color.** El estado de orden se lee en la FORMA —que flecha y hacia
+ * donde— y en `aria-sort`, no en un tono: la tabla se tiene que poder leer en
+ * escala de grises, y el violeta de esta pantalla ya significa «avanzar».
+ */
+.flecha {
+  flex: none;
+}
+
+/* La columna ordenada se marca en peso y tinta, que sobreviven al gris. */
+.cabeceraOrdenable[aria-sort='ascending'] .ordenarPor,
+.cabeceraOrdenable[aria-sort='descending'] .ordenarPor {
+  color: var(--tinta);
+  font-weight: 700;
+}
+
+/* ---------- Ciudad, pretension y grupo, dentro de la fila ---------- */
+
+/*
+ * La ciudad llega compuesta —«Arequipa — Camaná»— y con nombre largo cruzaria
+ * media tabla. Con tope envuelve en dos lineas, que en una tabla cuyas celdas
+ * ya van `vertical-align: top` no descuadra nada. Cortar con puntos suspensivos
+ * seria peor: lo que se pierde es la provincia, que es el dato.
+ */
+.celdaCiudad {
+  max-width: 11rem;
+}
+
+.celdaPretension {
+  white-space: nowrap;
+}
+
+/*
+ * El grupo de prioridad, debajo del correo.
+ *
+ * Pildora de bruma, como las demas etiquetas de estado de esta pantalla. **Sin
+ * semaforo**: «incompatible» en rojo convierte una fila de una mesa de trabajo
+ * en un veredicto, y la palabra ya lo dice entera.
+ */
+.grupo {
+  display: inline-block;
+  margin-top: var(--e1);
+  padding: 1px var(--e2);
+  border-radius: var(--radio-control);
+  background: var(--nube-hundida);
+  font-size: var(--t-micro);
+  font-weight: 600;
+  color: var(--tinta2);
+}
+
+/* ---------- La barra de filtros ---------- */
+
+.filtros {
+  margin-bottom: var(--e3);
+}
+
+.filaFiltros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--e3);
+}
+
+.campoFiltro {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+  min-width: 0;
+}
+
+.rotuloFiltro {
+  font-size: var(--t-micro);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--tinta2);
+  padding: 0;
+}
+
+.buscador {
+  width: 15rem;
+  max-width: 100%;
+  min-height: 44px;
+  padding: 0 var(--e3);
+  background: var(--nube);
+  color: var(--tinta);
+  border: 1px solid var(--borde-control);
+  font: inherit;
+  /* 16 px: por debajo, iOS hace zoom al enfocar y se pierde la tabla de vista. */
+  font-size: var(--t-base);
+  border-radius: var(--radio-menor);
+}
+
+.buscador:hover {
+  border-color: var(--tinta2);
+}
+
+/*
+ * Los tres filtros que se pliegan.
+ *
+ * `<details>` y no un desplegable propio: teclado, `Enter`, `Espacio` y el
+ * anuncio de «contraido/expandido» vienen de fabrica. La regla de la plataforma
+ * primero, la misma por la que el registro usa un `<select>` nativo.
+ */
+.masFiltros {
+  position: relative;
+}
+
+.resumenFiltros {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  min-height: 44px;
+  padding: 0 var(--e4);
+  border: 1px solid var(--borde-control);
+  border-radius: var(--radio-control);
+  background: var(--nube);
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  color: var(--tinta);
+  cursor: pointer;
+  list-style: none;
+  white-space: nowrap;
+}
+
+.resumenFiltros::-webkit-details-marker {
+  display: none;
+}
+
+/*
+ * El pliegue gira, no se sustituye.
+ *
+ * Un icono que cambia de forma al abrir se lee como otro icono; el mismo
+ * girando dice que es el MISMO control en el otro estado. 160ms con la curva
+ * del proyecto, y quieto para quien pidió menos movimiento.
+ */
+.pliegue {
+  flex: none;
+  color: var(--tinta3);
+  transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.masFiltros[open] .pliegue {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pliegue {
+    transition: none;
+  }
+}
+
+/*
+ * Cuantos filtros hay puestos ahi dentro.
+ *
+ * ⚠️ **Es lo que impide que el pliegue esconda un recorte.** Sin esta cifra,
+ * una tabla filtrada por ciudad y nota se ve igual que una sin filtrar, y quien
+ * llega a la pantalla decide sobre media tanda creyendo que la ve entera.
+ */
+.cuantosFiltros {
+  font-size: var(--t-micro);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--tinta);
+  background: var(--nube-honda);
+  border-radius: var(--radio-control);
+  padding: 1px var(--e2);
+}
+
+/*
+ * El cuerpo del pliegue, flotando sobre la tabla.
+ *
+ * Empujando en el flujo, abrirlo desplazaba la tabla entera hacia abajo y la
+ * fila que se estaba mirando se iba de la pantalla — justo mientras se recorta
+ * la lista, que es cuando hay que ver el efecto.
+ */
+.cuerpoFiltros {
+  position: absolute;
+  z-index: 2;
+  top: calc(100% + var(--e2));
+  left: 0;
+  min-width: 22rem;
+  max-width: min(34rem, 90vw);
+  display: flex;
+  flex-direction: column;
+  gap: var(--e4);
+  padding: var(--e4);
+  background: var(--nube);
+  border: 1px solid var(--regla2);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra-nube);
+}
+
+/* `fieldset` por la semantica —el rango son dos campos que van juntos— y sin
+   nada de su vestuario de fabrica. */
+.grupoFiltro {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e2);
+}
+
+/*
+ * Una ciudad marcada.
+ *
+ * Misma silueta que los tres cortes de arriba —pildora, cifra dentro, lo
+ * elegido sube a nube con borde— porque es la misma operacion: elegir que filas
+ * se ven. Otra forma diria que hace algo de otra clase.
+ */
+.chip,
+.chipMarcado {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  min-height: 44px;
+  padding: 0 var(--e3);
+  font: inherit;
+  font-size: var(--t-menor);
+  border: 1px solid var(--regla2);
+  border-radius: var(--radio-control);
+  background: var(--nube);
+  color: var(--tinta2);
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    border-color 160ms var(--salida),
+    color 160ms var(--salida);
+}
+
+.chip:hover {
+  border-color: var(--tinta2);
+  color: var(--tinta);
+}
+
+/* Lo marcado se lee en el borde y en el peso, no en un color: la tabla y sus
+   controles se tienen que poder leer en gris. */
+.chipMarcado {
+  border-color: var(--tinta);
+  border-width: 2px;
+  color: var(--tinta);
+  font-weight: 700;
+}
+
+.rango {
+  display: flex;
+  align-items: center;
+  gap: var(--e2);
+  color: var(--tinta3);
+}
+
+.cifraFiltro {
+  width: 6.5rem;
+  min-height: 44px;
+  padding: 0 var(--e3);
+  background: var(--nube);
+  color: var(--tinta);
+  border: 1px solid var(--borde-control);
+  font: inherit;
+  font-size: var(--t-base);
+  font-variant-numeric: tabular-nums;
+  border-radius: var(--radio-menor);
+}
+
+.cifraFiltro:hover {
+  border-color: var(--tinta2);
+}
+
+.pistaFiltro {
+  font-size: var(--t-menor);
+  color: var(--tinta3);
+  line-height: 1.4;
+  max-width: var(--medida-corta);
+}
+
+/*
+ * Por que una columna entera no sale: ni ciudad, ni pretension.
+ *
+ * En prosa y en el sitio donde estaria su control, no en un control apagado: un
+ * desplegable vacio o un rango que no puede devolver a nadie se leen como una
+ * pantalla rota, y esto no esta roto. La ciudad solo se le pide a quien crea
+ * cuenta desde ahora; la pretension viaja bajo un permiso que casi nadie tiene.
+ */
+.porQueNoSale {
+  font-size: var(--t-menor);
+  line-height: 1.45;
+  color: var(--tinta2);
+  max-width: var(--medida-corta);
+}
+
+.quitarFiltros {
+  composes: secundario from '../../estilos/piezas.module.css';
+  font-size: var(--t-apoyo);
+}
+
+/*
+ * Descargar el Excel de lo que se ve.
+ *
+ * Nube con contorno y no violeta: en esta pantalla el violeta es «Avanzar a N
+ * personas», que es la accion principal, y darselo tambien a una descarga lo
+ * dejaria sin significar nada.
+ */
+.descargar {
+  composes: secundario from '../../estilos/piezas.module.css';
+  font-size: var(--t-apoyo);
+  margin-left: auto;
+}
+
+.cuantasFiltradas {
+  font-size: var(--t-menor);
+  color: var(--tinta2);
+  margin-top: var(--e2);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 640px) {
+  .filaFiltros {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .buscador {
+    width: 100%;
+  }
+
+  .descargar {
+    margin-left: 0;
+  }
+
+  /* En un telefono el flotante no cabe al lado de nada: vuelve al flujo. */
+  .cuerpoFiltros {
+    position: static;
+    min-width: 0;
+    max-width: none;
+    margin-top: var(--e2);
+  }
+}
