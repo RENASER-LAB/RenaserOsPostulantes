@@ -1204,6 +1204,13 @@ thead .celdaCandidato {
   gap: var(--e1);
 }
 
+/* El peso, en tercer plano: acompaña al nombre, no compite con el. */
+.leyendaLetras i {
+  color: var(--tinta3);
+  font-style: normal;
+  font-variant-numeric: tabular-nums;
+}
+
 .leyendaLetras b {
   display: inline-flex;
   align-items: center;
@@ -1267,7 +1274,7 @@ thead .celdaCandidato {
  */
 .cabeceraCriterio b {
   display: block;
-  width: 1.5rem;
+  width: 1.25rem;
   font-size: var(--t-apoyo);
   font-weight: 700;
   line-height: 1.25;
@@ -1278,16 +1285,7 @@ thead .celdaCandidato {
   white-space: nowrap;
 }
 
-.cabeceraCriterio span {
-  display: block;
-  margin-top: var(--e1);
-  font-size: var(--t-micro);
-  font-weight: 400;
-  letter-spacing: 0;
-  text-transform: none;
-  color: var(--tinta3);
-  font-variant-numeric: tabular-nums;
-}
+
 
 /*
  * Una celda de criterio.
@@ -1340,8 +1338,39 @@ thead .celdaCandidato {
    * cabe «18/20», y con ocho columnas esos 16 px por lado son 256 px de tabla
    * que solo empujan el nombre del candidato fuera de la pantalla.
    */
+  padding-left: var(--e1) !important;
+  padding-right: var(--e1) !important;
+}
+
+/*
+ * Toda columna que solo enseña una cifra.
+ *
+ * ⚠️ **El relleno lo decidia el rotulo, no el dato.** «ADECUACIÓN» en versalitas
+ * con su espaciado pide 131 px para enseñar dos digitos, y con ocho criterios
+ * mas al lado esos sobrantes son los que sacan la tabla de la pantalla. Dentro
+ * caben tres cifras: e2 a cada lado basta y sobra.
+ */
+.columnaCifra {
   padding-left: var(--e2) !important;
   padding-right: var(--e2) !important;
+  /*
+   * ⚠️ **`width: 1%` no es un 1 %: es «encogete a lo que quepa».** La tabla mide
+   * el 100 % de su envoltura, asi que la holgura tiene que irse a alguna parte;
+   * sin esto se repartia entre TODAS y una columna de dos cifras acababa en 140
+   * px. Con un ancho pedido ridiculo, el navegador le da a estas lo minimo y
+   * suelta el resto en las de texto, que es donde el sitio se aprovecha.
+   */
+  width: 1%;
+  white-space: nowrap;
+}
+
+/*
+ * Y su cabecera pierde el espaciado de versalitas, que es lo que la ensancha.
+ * Se queda en versalitas —es la voz de las cabeceras de esta tabla— pero sin los
+ * 0.06em que multiplican por palabra.
+ */
+th.columnaCifra {
+  letter-spacing: 0;
 }
 
 /*

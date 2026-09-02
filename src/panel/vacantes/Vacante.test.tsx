@@ -670,14 +670,31 @@ describe('los criterios como columnas de color', () => {
     «Resultados demostrables». El largo no se pierde — va en el `title`, que es
     donde se consulta una vez y no una por fila.
   */
-  it('encendidos, la cabecera es una LETRA, con su peso debajo', async () => {
+  /*
+    ⚠️ **La cabecera es SOLO la letra.** El peso vivia aqui debajo y era quien
+    decidia el ancho de la columna —«no pondera» la estiraba a 87 px— para un
+    dato que se consulta al entender una nota, no al barrer una columna. Baja a
+    la leyenda, donde ya se explica cada letra.
+  */
+  it('encendidos, la cabecera es SOLO una letra: el peso no esta ahi', async () => {
     await pintar(CON_CRITERIOS)
     encender()
     const cabecera = within(laTabla()).getByText('R').closest('th')!
-    expect(cabecera.textContent).toContain('peso 25')
+    expect(cabecera.textContent).toBe('R')
+    expect(cabecera.textContent).not.toContain('peso')
     expect(cabecera.title).toBe('Resultados demostrables')
     expect(within(laTabla()).queryByText('Resultados demostrables')).toBeNull()
     expect(within(laTabla()).getByText('20/25')).toBeTruthy()
+  })
+
+  it('el peso se lee en la leyenda, junto a su letra', async () => {
+    await pintar(CON_CRITERIOS)
+    encender()
+    const leyenda = screen.getByText('Resultados').closest('span')!
+    expect(leyenda.textContent).toContain('peso 25')
+    // Y el que no pondera lo dice con palabras, no con un «peso 0».
+    const sinPeso = screen.getByText('Complejidad').closest('span')!
+    expect(sinPeso.textContent).toContain('peso 20')
   })
 
   /*

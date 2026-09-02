@@ -975,7 +975,14 @@ function Ranking({
             <tr>
               {columnasDeLaTabla.map((columna) => {
                 if (columna.clave === 'avance') return <th key={columna.clave} aria-label="Avanza" />
-                const clase = columna.cifra ? tabla.cifra : undefined
+                /*
+                  Toda columna de cifra se estrecha: dentro caben tres digitos y
+                  el ancho lo decidia el rotulo. Con ocho criterios al lado, esos
+                  sobrantes son los que sacaban la tabla de la pantalla.
+                */
+                const clase = columna.cifra
+                  ? `${tabla.cifra} ${estilos.columnaCifra}`
+                  : undefined
                 /*
                   El peso va bajo el nombre del criterio, en pequeño, como en el
                   informe del que sale esta pantalla. No es decoración: un 90 en
@@ -1002,14 +1009,13 @@ function Ranking({
                         al lado. El bloque sí manda: la columna no puede ser más
                         estrecha que su contenido.
                       */}
-                      <b>{columna.titulo}</b>
                       {/*
-                        «peso 0» se lee como un peso pequeño, y no lo es: un
-                        criterio con peso cero NO puede mover la nota de nadie
-                        —el backend suma `puntaje × peso` y divide por la suma de
-                        pesos—. Se dice con palabras, y sus celdas van sin teñir.
+                        Solo la letra. El peso baja a la leyenda: aqui decidia el
+                        ancho de la columna —«no pondera» la estiraba a 87 px—
+                        para un dato que se consulta al entender la nota, no al
+                        barrer una columna.
                       */}
-                      <span>{columna.peso === 0 ? 'no pondera' : `peso ${columna.peso}`}</span>
+                      <b>{columna.titulo}</b>
                     </th>
                   )
                 }
@@ -1077,7 +1083,9 @@ function Ranking({
                       onChange={() => alternar(fila.postulacionId)}
                     />
                   </td>
-                  {ve('puesto') && <td className={tabla.cifra}>{fila.puesto}</td>}
+                  {ve('puesto') && (
+                    <td className={`${tabla.cifra} ${estilos.columnaCifra}`}>{fila.puesto}</td>
+                  )}
                   {/* Clavada a la izquierda solo cuando hay algo que rodar. */}
                   <td className={criterios.length > 0 ? estilos.celdaCandidato : undefined}>
                     <span className={estilos.candidato}>{fila.candidato}</span>
@@ -1093,11 +1101,13 @@ function Ranking({
                     significar eso porque al menos otra sí lo declaró.
                   */}
                   {ve('pretension') && (
-                    <td className={`${tabla.cifra} ${estilos.celdaPretension}`}>
+                    <td
+                      className={`${tabla.cifra} ${estilos.columnaCifra} ${estilos.celdaPretension}`}
+                    >
                       {pretensionDicha(fila) ?? '—'}
                     </td>
                   )}
-                  <td className={tabla.cifra}>
+                  <td className={`${tabla.cifra} ${estilos.columnaCifra}`}>
                     {fila.notaEtapa ?? '—'}
                     {/*
                       Una nota de la criba rapida es provisional y la fina la
@@ -1193,13 +1203,17 @@ function Ranking({
                     )
                   })}
                   {ve('adecuacion') && (
-                    <td className={tabla.cifra}>{fila.adecuacion ?? '—'}</td>
+                    <td className={`${tabla.cifra} ${estilos.columnaCifra}`}>
+                      {fila.adecuacion ?? '—'}
+                    </td>
                   )}
                   {ve('potencial') && (
-                    <td className={tabla.cifra}>{fila.potencial ?? '—'}</td>
+                    <td className={`${tabla.cifra} ${estilos.columnaCifra}`}>
+                      {fila.potencial ?? '—'}
+                    </td>
                   )}
                   {ve('riesgos') && (
-                    <td className={tabla.cifra}>
+                    <td className={`${tabla.cifra} ${estilos.columnaCifra}`}>
                       {fila.riesgosCriticos > 0 ? (
                         <span className={estilos.riesgo}>{fila.riesgosCriticos}</span>
                       ) : (
@@ -1208,7 +1222,9 @@ function Ranking({
                     </td>
                   )}
                   {ve('alertas') && (
-                    <td className={tabla.cifra}>{fila.alertas > 0 ? fila.alertas : '—'}</td>
+                    <td className={`${tabla.cifra} ${estilos.columnaCifra}`}>
+                      {fila.alertas > 0 ? fila.alertas : '—'}
+                    </td>
                   )}
                   {/*
                     ⚠️ **En dos líneas a propósito, y ninguna se parte.** Sin
@@ -1312,6 +1328,12 @@ function Ranking({
             .map((c) => (
               <span key={c.nombre} title={c.nombre}>
                 <b>{c.inicial}</b> {c.rotulo}
+                {/*
+                  El peso, aqui y no en la cabecera. No es decoracion: un 90 en
+                  un criterio que pesa 25 y un 90 en uno que pesa 5 se leen igual
+                  en pantalla y no valen lo mismo.
+                */}
+                <i>{c.peso === 0 ? 'no pondera' : `peso ${c.peso}`}</i>
               </span>
             ))}
         </p>
