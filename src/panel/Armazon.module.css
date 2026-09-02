@@ -45,7 +45,7 @@
 }
 
 .cabeceraDentro {
-  max-width: var(--ancho);
+  max-width: var(--ancho-panel);
   margin: 0 auto;
   padding: var(--e2) var(--e5);
   display: flex;

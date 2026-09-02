@@ -75,24 +75,34 @@ import {
   porQueNoHayPretension,
   SIN_FILTROS,
   alternarOrden,
+  CORTE_DE_LA_TANDA,
   cifrasDeLaEtapa,
   ciudadesDelRanking,
   columnasDelRanking,
+  columnasVisibles,
   comoSeOrdena,
+  criteriosQueSePintan,
+  cuantoCubre,
   describirFiltro,
   esDelCurriculum,
   filtrar,
   filtrarFino,
   hayFiltroPuesto,
   laEtapaDe,
+  lecturaDeLaNota,
   nombreDelGrupo,
   ordenar,
   porQueNoHayNota,
   pretensionDicha,
   queTraeLaTanda,
   recuentos,
+  resumenDeLaTanda,
   rotuloDeVista,
   seExportaAExcel,
+  estadoEnDos,
+  notaDelCriterio,
+  notaEscrita,
+  tonoDelCriterio,
   type CiudadDelRanking,
   type EtapaPanel,
   type Filtros,
@@ -529,6 +539,22 @@ function Ranking({
     cosa.
   */
   const [orden, setOrden] = useState<Orden | null>(null)
+  /*
+    Las columnas de criterio arrancan apagadas. La tabla ya se sale de su
+    envoltura con once columnas —ver el comentario de la celda del candidato— y
+    los ocho criterios del currículum la llevarían a veinte. Quien viene a
+    comparar criterio a criterio las enciende; quien viene a ver quién encabeza
+    la tanda no paga ese scroll.
+  */
+  const [verCriterios, setVerCriterios] = useState(false)
+  /*
+    Las columnas que quien mira ha apagado, por su clave.
+
+    Vive en memoria como el orden, el corte y los filtros: se pierde al recargar,
+    y eso ya es la convención de esta pantalla. Guardarlo sería otra decisión
+    —dónde, y si es por persona o por vacante— y no una que se toma de paso.
+  */
+  const [apagadas, setApagadas] = useState<ReadonlySet<string>>(new Set())
 
   const laEtapa = laEtapaDe(etapa)
   /*
@@ -578,8 +604,24 @@ function Ranking({
     que la tabla y el bloque de dentro salía estrecho. Contando la lista, añadir
     una columna no puede volver a descuadrarlo.
   */
-  const columnasDeLaTabla = columnasDelRanking(etapa, trae)
+  /*
+    ⚠️ **Los criterios salen de las filas SIN filtrar, y por el mismo motivo que
+    las ciudades.** Sobre las visibles, un filtro que dejara fuera a la única
+    persona con un criterio puntuado borraría esa columna de la tabla, y la
+    cabecera cambiaría de forma al escribir en el buscador.
+  */
+  const criterios = criteriosQueSePintan(etapa, filas, verCriterios)
+  const todasLasColumnas = columnasDelRanking(etapa, trae, criterios)
+  const columnasDeLaTabla = columnasVisibles(todasLasColumnas, apagadas)
   const columnas = columnasDeLaTabla.length
+  /*
+    ⚠️ **La única fuente de «¿se pinta esta celda?».** La cabecera sale de
+    `columnasDeLaTabla` y el cuerpo va escrito a mano: con dos condiciones por
+    columna —que la tanda traiga el dato y que nadie la haya apagado—, repetirlas
+    a mano en cada celda es como se desalinea una fila de su cabecera.
+  */
+  const clavesVisibles = new Set(columnasDeLaTabla.map((c) => c.clave))
+  const ve = (clave: string) => clavesVisibles.has(clave)
   // Solo cuentan las marcas que se VEN: si el filtro oculta una fila marcada,
   // el boton no puede seguir diciendo que avanzara a esa persona.
   const marcadosVisibles = visibles.filter((f) => marcados.has(f.postulacionId))
@@ -678,8 +720,66 @@ function Ranking({
     await alAvanzar()
   }
 
+  const resumen = resumenDeLaTanda(filas, etapa)
+
   return (
     <>
+      {/*
+        Las cinco cifras de la tanda, de un vistazo y antes de la tabla.
+
+        ⚠️ **Las cinco se derivan de `filas`, ninguna del backend.** Los
+        contadores de la respuesta —calificados, en curso, fallidos— son de la
+        cola que califica el CURRÍCULUM y salen idénticos en las cinco pestañas;
+        un «2 aún calificando» sacado de ahí hablaría del CV estando en la
+        prueba. Ver `resumenDeLaTanda`.
+
+        ⚠️ **El corte del cuarto se dice en el rótulo.** Es 70 escrito a mano
+        porque la nota mínima que la vacante sí declara no viaja por la API.
+        «Con 70 o más» es comprobable; «llegan al mínimo» sería una afirmación
+        sobre un mínimo que esta pantalla no ha leído.
+      */}
+      <div className={estilos.cifrasDeLaTanda}>
+        {/*
+          El rótulo NO repite el de la línea de abajo, que dice «N de M con nota
+          de la prueba». Dos frases idénticas a dos alturas se leen como dos
+          datos distintos que no cuadran. Aquí va lo que el recuadro cuenta —los
+          que ya tienen nota— y el desglose se queda donde estaba.
+        */}
+        <div className={estilos.cifraTanda}>
+          <b>{resumen.conNota}</b>
+          <span>de {filas.length} ya calificados</span>
+        </div>
+        {/*
+          «de la tanda» no sobra: la tabla de abajo puede estar filtrada a Lima y
+          estas dos siguen siendo de todos. Es la misma convención que ya sigue
+          la línea de recuentos —se cuenta de las filas sin filtrar—, pero una
+          mediana es justo la cifra que alguien esperaría ver recalcularse al
+          filtrar, así que aquí se dice de qué conjunto sale.
+        */}
+        <div className={estilos.cifraTanda}>
+          <b>{resumen.mediana ?? '—'}</b>
+          <span>nota mediana de la tanda /100</span>
+        </div>
+        <div className={estilos.cifraTanda}>
+          <b>{resumen.media ?? '—'}</b>
+          <span>nota media de la tanda /100</span>
+        </div>
+        <div className={estilos.cifraTanda}>
+          <b>{resumen.lleganAlCorte}</b>
+          <span>con {CORTE_DE_LA_TANDA} o más</span>
+        </div>
+        {/*
+          El rótulo no repite el de la línea de abajo —«N ya la hicieron y siguen
+          sin nota»— por lo mismo que el primero: dos frases iguales a dos
+          alturas se leen como dos datos que no cuadran. Aquí va a quién señala,
+          que es de quien el equipo tiene trabajo pendiente.
+        */}
+        <div className={estilos.cifraTanda}>
+          <b>{resumen.calificando}</b>
+          <span>esperan nota del equipo</span>
+        </div>
+      </div>
+
       <div className={estilos.filaResumen}>
         <div className={estilos.recuentos}>
           {/*
@@ -754,6 +854,84 @@ function Ranking({
         </div>
       </div>
 
+      {/*
+        El interruptor de los criterios, solo donde los criterios hablan de esta
+        etapa. `notasCriterio` viene SIEMPRE del currículum: fuera del perfil
+        serían ocho columnas del CV con pinta de ser de la prueba.
+
+        Va apagado por defecto —la tabla ya se sale de su envoltura con once
+        columnas— y dice cuántas columnas va a añadir, para que encenderlo no
+        sorprenda.
+      */}
+      <div className={estilos.controlesDeColumnas}>
+        {delCurriculum && criteriosQueSePintan(etapa, filas, true).length > 0 && (
+          <p className={estilos.interruptorCriterios}>
+            <label>
+              <input
+                type="checkbox"
+                checked={verCriterios}
+                onChange={(e) => setVerCriterios(e.target.checked)}
+              />
+              Ver los criterios en la tabla
+            </label>
+            <span>
+              {criteriosQueSePintan(etapa, filas, true).length} columnas más, una por
+              criterio, con el fondo teñido según lo que cubre cada nota.
+            </span>
+          </p>
+        )}
+
+        {/*
+          Qué columnas se ven.
+
+          ⚠️ **La marca de avance y el candidato no salen aquí**: sin la primera
+          no se puede avanzar a nadie, y sin el segundo la fila deja de ser de
+          alguien. Una tabla de cifras sin nombre no se puede leer ni corregir.
+
+          Es un `<details>` y no un menú a mano: se abre con teclado, se cierra
+          con Escape y no hace falta atrapar el foco.
+        */}
+        <details className={estilos.selectorColumnas}>
+          <summary>
+            Columnas
+            {apagadas.size > 0 && (
+              <span className={estilos.cuantasApagadas}>{apagadas.size} ocultas</span>
+            )}
+          </summary>
+          <div className={estilos.listaColumnas}>
+            {todasLasColumnas
+              .filter((c) => c.ocultable)
+              .map((c) => (
+                <label key={c.clave}>
+                  <input
+                    type="checkbox"
+                    checked={!apagadas.has(c.clave)}
+                    onChange={() =>
+                      setApagadas((antes) => {
+                        const ahora = new Set(antes)
+                        if (ahora.has(c.clave)) ahora.delete(c.clave)
+                        else ahora.add(c.clave)
+                        return ahora
+                      })
+                    }
+                  />
+                  {/* La inicial no dice nada suelta: aquí va el nombre entero. */}
+                  {c.completo ?? c.titulo}
+                </label>
+              ))}
+            {apagadas.size > 0 && (
+              <button
+                className={estilos.verTodasLasColumnas}
+                type="button"
+                onClick={() => setApagadas(new Set())}
+              >
+                Ver todas
+              </button>
+            )}
+          </div>
+        </details>
+      </div>
+
       <BarraDeFiltros
         etapa={etapa}
         filtros={filtros}
@@ -798,10 +976,53 @@ function Ranking({
             <tr>
               {columnasDeLaTabla.map((columna) => {
                 if (columna.clave === 'avance') return <th key={columna.clave} aria-label="Avanza" />
-                const clase = columna.cifra ? tabla.cifra : undefined
+                /*
+                  Toda columna de cifra se estrecha: dentro caben tres digitos y
+                  el ancho lo decidia el rotulo. Con ocho criterios al lado, esos
+                  sobrantes son los que sacaban la tabla de la pantalla.
+                */
+                const clase = columna.cifra
+                  ? `${tabla.cifra} ${estilos.columnaCifra}`
+                  : undefined
+                /*
+                  El peso va bajo el nombre del criterio, en pequeño, como en el
+                  informe del que sale esta pantalla. No es decoración: un 90 en
+                  un criterio que pesa 25 y un 90 en uno que pesa 5 se leen igual
+                  y no valen lo mismo.
+                */
+                if (columna.peso != null) {
+                  return (
+                    <th
+                      key={columna.clave}
+                      className={`${clase} ${estilos.cabeceraCriterio}`}
+                      /*
+                        El nombre entero al pasar el cursor. La leyenda de debajo
+                        lo dice también y sin cursor: una letra sola no se puede
+                        dejar SOLO detrás de un hover.
+                      */
+                      title={columna.completo}
+                    >
+                      {/*
+                        El nombre va en un bloque de ancho fijo, y no suelto en
+                        la celda: una tabla de ancho automático ignora el
+                        `max-width` de un `<th>`, así que el nombre salía en una
+                        línea, se desbordaba de su columna y se pisaba con el de
+                        al lado. El bloque sí manda: la columna no puede ser más
+                        estrecha que su contenido.
+                      */}
+                      {/*
+                        Solo la letra. El peso baja a la leyenda: aqui decidia el
+                        ancho de la columna —«no pondera» la estiraba a 87 px—
+                        para un dato que se consulta al entender la nota, no al
+                        barrer una columna.
+                      */}
+                      <b>{columna.titulo}</b>
+                    </th>
+                  )
+                }
                 if (!columna.ordenable) {
                   return (
-                    <th key={columna.clave} className={clase}>
+                    <th key={columna.clave} className={clase} title={columna.completo}>
                       {columna.titulo}
                     </th>
                   )
@@ -822,6 +1043,11 @@ function Ranking({
                       clase,
                       estilos.cabeceraOrdenable,
                       columna.cifra ? estilos.cabeceraCifra : null,
+                      // La cabecera se clava con su columna, o al rodar se
+                      // quedaría atrás mientras las celdas de debajo no.
+                      columna.clave === 'candidato' && criterios.length > 0
+                        ? estilos.celdaCandidato
+                        : null,
                     ]
                       .filter(Boolean)
                       .join(' ')}
@@ -831,7 +1057,7 @@ function Ranking({
                       type="button"
                       className={estilos.ordenarPor}
                       onClick={() => setOrden((antes) => alternarOrden(antes, cual))}
-                      title={`Ordenar por ${columna.titulo}`}
+                      title={`Ordenar por ${columna.completo ?? columna.titulo}`}
                     >
                       {columna.titulo}
                       <FlechaDeOrden como={como} />
@@ -858,49 +1084,31 @@ function Ranking({
                       onChange={() => alternar(fila.postulacionId)}
                     />
                   </td>
-                  <td className={tabla.cifra}>{fila.puesto}</td>
-                  <td>
+                  {ve('puesto') && (
+                    <td className={`${tabla.cifra} ${estilos.columnaCifra}`}>{fila.puesto}</td>
+                  )}
+                  {/* Clavada a la izquierda solo cuando hay algo que rodar. */}
+                  <td className={criterios.length > 0 ? estilos.celdaCandidato : undefined}>
                     <span className={estilos.candidato}>{fila.candidato}</span>
                     <span className={estilos.correo}>{fila.correo}</span>
-                    {/*
-                      ⚠️ **El grupo de prioridad, y aquí SÍ se pinta.** Lo que el
-                      producto prohíbe es enseñárselo al candidato —a nadie se le
-                      dice «incompatible» a la cara—, no al equipo que decide con
-                      ello delante.
-
-                      Y ordenando por nota es obligatorio: el orden se aplica
-                      DENTRO de cada grupo, así que las notas dejan de ir de mayor
-                      a menor al cruzar de grupo. Sin el grupo a la vista, eso se
-                      lee como una tabla mal ordenada.
-
-                      Va en la columna del candidato y no en una propia: la tabla
-                      ya se sale de la envoltura con once columnas, y una más
-                      empujaría «Estado» fuera del scroll otra vez.
-                    */}
-                    {nombreDelGrupo(fila.grupoPrioridad) && (
-                      <span className={estilos.grupo}>
-                        {nombreDelGrupo(fila.grupoPrioridad)}
-                      </span>
-                    )}
                   </td>
                   {/*
-                    ⚠️ **Las dos celdas van con la MISMA condición que su
-                    cabecera**, o la fila se desalinea de la tabla entera. Cuando
-                    la tanda no trae el dato la columna no existe: ni cabecera ni
-                    celda, y el motivo se dice en la barra de filtros.
+                    ⚠️ **Cada celda va con la MISMA condición que su cabecera**,
+                    o la fila se desalinea de la tabla entera. Ahora son dos
+                    condiciones y las dos viven en `ve`: que la tanda traiga el
+                    dato, y que quien mira no haya apagado la columna.
 
                     Un guion aquí es «esta persona no lo declaró», y solo puede
                     significar eso porque al menos otra sí lo declaró.
                   */}
-                  {trae.hayCiudad && (
-                    <td className={estilos.celdaCiudad}>{fila.ciudad ?? '—'}</td>
-                  )}
-                  {trae.hayPretension && (
-                    <td className={`${tabla.cifra} ${estilos.celdaPretension}`}>
+                  {ve('pretension') && (
+                    <td
+                      className={`${tabla.cifra} ${estilos.columnaCifra} ${estilos.celdaPretension}`}
+                    >
                       {pretensionDicha(fila) ?? '—'}
                     </td>
                   )}
-                  <td className={tabla.cifra}>
+                  <td className={`${tabla.cifra} ${estilos.columnaCifra}`}>
                     {fila.notaEtapa ?? '—'}
                     {/*
                       Una nota de la criba rapida es provisional y la fina la
@@ -923,21 +1131,109 @@ function Ranking({
                       <span className={estilos.porQue}>{porQueNoHayNota(fila, etapa)}</span>
                     )}
                   </td>
-                  {delCurriculum && (
-                    <>
-                      <td className={tabla.cifra}>{fila.adecuacion ?? '—'}</td>
-                      <td className={tabla.cifra}>{fila.potencial ?? '—'}</td>
-                    </>
-                  )}
-                  <td className={tabla.cifra}>
-                    {fila.riesgosCriticos > 0 ? (
-                      <span className={estilos.riesgo}>{fila.riesgosCriticos}</span>
+                  {/*
+                    ⚠️ **El veredicto es el grupo de prioridad, no una etiqueta
+                    nueva.** El informe del cliente traía un «Fuerte / Sólido /
+                    Parcial» calculado de la nota, y sus cortes —80 y 65— son
+                    exactamente los de este grupo. Con una diferencia a favor del
+                    grupo: mira además el riesgo crítico, así que baja a alguien
+                    de 92 que la nota sola dejaría arriba. Dos rótulos que casi
+                    siempre dicen lo mismo obligan a explicar el caso en que no.
+
+                    Sube de píldora dentro del candidato a columna propia porque
+                    ahora se lee al comparar, no al identificar.
+
+                    ⚠️ **Sin semáforo, y eso es deliberado**: pintar
+                    «incompatible» en rojo convierte una fila de una mesa de
+                    trabajo en un veredicto. Ver `.grupo` en la hoja.
+
+                    ⚠️ `INCOMPATIBLE` está en el catálogo del backend pero hoy
+                    **ningún camino del código lo escribe** —sale de requisitos
+                    objetivos que aún no se comprueban al postular—. La columna
+                    no lo promete: pinta lo que llega.
+
+                    El guion es «la IA todavía no ha calificado su currículum»:
+                    el grupo se asigna al terminar esa pasada.
+                  */}
+                  <td>
+                    {nombreDelGrupo(fila.grupoPrioridad) ? (
+                      <span className={estilos.grupo}>
+                        {nombreDelGrupo(fila.grupoPrioridad)}
+                      </span>
                     ) : (
                       '—'
                     )}
                   </td>
-                  <td className={tabla.cifra}>{fila.alertas > 0 ? fila.alertas : '—'}</td>
-                  <td>{fila.estadoNombre}</td>
+                  {/*
+                    Una columna por criterio, en el MISMO orden que la cabecera
+                    —las dos salen de `criterios`—.
+
+                    ⚠️ **El color va al fondo de la celda, nunca al número.** Un
+                    18 verde y un 18 rojo tienen que seguir siendo el mismo 18,
+                    y la tabla se tiene que poder leer en escala de grises. Es la
+                    misma razón por la que «provisional» va en palabra.
+
+                    ⚠️ **Un hueco NO es un rojo.** Sin nota puede ser que la IA
+                    no haya llegado o que ese criterio sea de método PERSONA y le
+                    toque a alguien; teñirlo de rojo diría que lo hizo mal.
+
+                    El `title` lleva el nombre entero: la cabecera lo recorta y
+                    ocho columnas estrechas se vuelven ilegibles sin él.
+                  */}
+                  {criterios
+                    .filter((c) => ve(`criterio:${c.nombre}`))
+                    .map((criterio) => {
+                    const nota = notaDelCriterio(fila, criterio.nombre)
+                    const tono = nota ? tonoDelCriterio(nota) : 'hueco'
+                    const cubre = nota ? cuantoCubre(nota) : null
+                    return (
+                      <td
+                        key={criterio.nombre}
+                        className={`${tabla.cifra} ${estilos.celdaCriterio} ${estilos[tono]!}`}
+                        title={
+                          cubre === null
+                            ? `${criterio.nombre}: todavía sin nota`
+                            : `${criterio.nombre}: ${Math.round(cubre * 100)} % del criterio` +
+                              (criterio.peso === 0
+                                ? ' · no pondera: no mueve la nota final'
+                                : '')
+                        }
+                      >
+                        {notaEscrita(nota)}
+                      </td>
+                    )
+                  })}
+                  {/* El retrato del currículum vive en la ficha: ver el
+                      comentario de `columnasDelRanking`. */}
+                  {/*
+                    ⚠️ **En dos líneas a propósito, y ninguna se parte.** Sin
+                    esto «Perfil Integral · por confirmar» se partía solo en
+                    cuatro líneas dentro de sus 111 px y estiraba la fila a 109,
+                    mientras la de al lado —«Cerrada»— medía 66. En una tabla que
+                    se lee por columnas eso es lo peor: el mismo puntaje ocupa un
+                    bloque de color de distinto tamaño según lo largo que sea el
+                    estado de esa persona, y el ojo lee «más grande» como «más
+                    importante».
+                  */}
+                  {ve('estado') && (
+                    <td className={estilos.celdaEstado}>
+                      {(() => {
+                        const { etapa, momento } = estadoEnDos(fila.estadoNombre)
+                        return momento === null ? (
+                          <span className={estilos.momentoEstado}>{etapa}</span>
+                        ) : (
+                          <>
+                            <span className={estilos.etapaEstado}>{etapa}</span>
+                            <span className={estilos.momentoEstado}>{momento}</span>
+                          </>
+                        )
+                      })()}
+                    </td>
+                  )}
+                  {/* La ciudad, al final: ver el comentario de `columnasDelRanking`. */}
+                  {ve('ciudad') && (
+                    <td className={estilos.celdaCiudad}>{fila.ciudad ?? '—'}</td>
+                  )}
                 </tr>
                 {abierta === fila.postulacionId && (
                   <tr>
@@ -986,6 +1282,59 @@ function Ranking({
           </tbody>
         </table>
       </div>
+
+      {/*
+        La leyenda solo existe mientras hay algo que leer. Una leyenda de colores
+        sobre una tabla sin colores es ruido, y además enseñaría tres tonos que
+        no aparecen en ninguna celda.
+
+        El hueco va nombrado con sus dos causas, que es lo que impide leerlo como
+        un cero.
+      */}
+      {/*
+        Qué es cada letra, SIEMPRE a la vista.
+
+        ⚠️ **Sin esto la cabecera de una letra no se sostiene.** Una «R» encima
+        de un 43 no dice nada, y dejar su significado solo detrás del cursor
+        obliga a pasar por ocho columnas para leer una fila —y no existe con
+        teclado ni en una impresión—. La tabla se estrecha arriba y el precio se
+        paga una vez aquí abajo, no una vez por celda.
+      */}
+      {criterios.filter((c) => ve(`criterio:${c.nombre}`)).length > 0 && (
+        <p className={estilos.leyendaLetras}>
+          {criterios
+            .filter((c) => ve(`criterio:${c.nombre}`))
+            .map((c) => (
+              <span key={c.nombre} title={c.nombre}>
+                <b>{c.inicial}</b> {c.rotulo}
+                {/*
+                  El peso, aqui y no en la cabecera. No es decoracion: un 90 en
+                  un criterio que pesa 25 y un 90 en uno que pesa 5 se leen igual
+                  en pantalla y no valen lo mismo.
+                */}
+                <i>{c.peso === 0 ? 'no pondera' : `peso ${c.peso}`}</i>
+              </span>
+            ))}
+        </p>
+      )}
+
+      {criterios.filter((c) => ve(`criterio:${c.nombre}`)).length > 0 && (
+        <p className={estilos.leyendaCriterios}>
+          <span>
+            <i className={estilos.bien} /> cubre 70 % o más del criterio
+          </span>
+          <span>
+            <i className={estilos.duda} /> entre 40 y 69 %
+          </span>
+          <span>
+            <i className={estilos.mal} /> menos del 40 %
+          </span>
+          <span>
+            <i className={estilos.hueco} /> sin nota: la IA aún no llegó, o ese criterio lo
+            puntúa una persona
+          </span>
+        </p>
+      )}
 
       {/* La mesa de avance: un motivo para la tanda marcada. */}
       <div className={estilos.avance}>
@@ -1439,7 +1788,7 @@ function DetalleDelPostulante({ fila, etapa }: { fila: FilaRanking; etapa: Etapa
           <Validacion postulacionId={fila.postulacionId} />
         ) : (
           <>
-            <LoQueCalificoLaIA fila={fila} />
+            <LoQueCalificoLaIA fila={fila} etapa={etapa} />
             {/*
               Solo en Perfil integral y no en Decision, aunque las dos ensenen
               el mismo retrato: recalificar es rehacer la preseleccion, y
@@ -1478,7 +1827,7 @@ function DetalleDelPostulante({ fila, etapa }: { fila: FilaRanking; etapa: Etapa
  *
  * En Decision se ensena esto mismo: decidir es mirar el retrato completo.
  */
-function LoQueCalificoLaIA({ fila }: { fila: FilaRanking }) {
+function LoQueCalificoLaIA({ fila, etapa }: { fila: FilaRanking; etapa: EtapaPanel }) {
   const perfil = useQuery({
     queryKey: ['panel-perfil', fila.postulacionId],
     queryFn: () => verPerfilIntegral(fila.postulacionId),
@@ -1496,6 +1845,9 @@ function LoQueCalificoLaIA({ fila }: { fila: FilaRanking }) {
     ['Alto rendimiento', fila.altoRendimiento, 'evidencia de haber rendido por encima'],
     ['Confianza en la evidencia', fila.confianzaEvidencia, 'cuánto se apoya en hechos y no en adjetivos'],
   ] as const
+
+  const criteriosDeLaFicha =
+    fila.notasCriterio?.length ? fila.notasCriterio : (perfil.data?.notasCriterio ?? [])
 
   return (
     <>
@@ -1558,27 +1910,112 @@ function LoQueCalificoLaIA({ fila }: { fila: FilaRanking }) {
             </>
           )}
 
-          <h4 className={estilos.subtitulo}>Criterio a criterio</h4>
-          <ul className={estilos.criterios} role="list">
-            {perfil.data.notasCriterio.map((n) => (
-              <li className={estilos.criterio} key={n.criterio}>
-                <span className={estilos.notaCriterio}>
-                  {n.puntaje !== null
-                    ? `${n.puntaje}${n.maximo ? `/${n.maximo}` : ''}`
-                    : '—'}
-                </span>
-                <span>
-                  <b>{n.criterio}</b> · peso {n.peso}
-                  {n.explicacion && (
-                    <span className={estilos.explicacion}>{n.explicacion}</span>
-                  )}
-                </span>
-              </li>
-            ))}
-          </ul>
         </>
       )}
 
+      {/*
+        ⚠️ **Criterio a criterio se pinta de la FILA, no de la petición.** Los
+        ocho criterios con su puntaje, su máximo, su peso y su explicación ya
+        viajan en `fila.notasCriterio`; estaban llegando y nadie los leía, y la
+        ficha volvía a pedir por HTTP lo que ya tenía en memoria. Es el mismo
+        razonamiento del retrato de arriba: dejar la justificación en blanco
+        durante el segundo en el que se decide es justo lo que no se quiere.
+
+        El respaldo a `perfil.data` no es ceremonia: mientras el backend viaja en
+        paralelo, una respuesta antigua puede no traer el campo, y sin esto la
+        ficha se quedaría sin criterios en vez de tardar un segundo en tenerlos.
+      */}
+      {/*
+        Los dos párrafos del informe del cliente.
+
+        ⚠️ **Se derivan de las notas, no los escribe una IA.** Extraídos los
+        veintinueve del informe, son cinco plantillas con dos huecos. Hacerlos
+        así no cuesta nada, no se quedan obsoletos —se recalculan si alguien
+        corrige un criterio— y no inventan: nombran criterios que están en esta
+        misma pantalla.
+
+        ⚠️ **No son el veredicto.** Ese sigue siendo el grupo de prioridad, que
+        además mira el riesgo crítico. Esto explica la nota con palabras.
+      */}
+      {criteriosDeLaFicha.length > 0 && (
+        <>
+          {(() => {
+            const { porQue, lectura } = lecturaDeLaNota(
+              fila.notaEtapa,
+              criteriosDeLaFicha,
+              etapa,
+            )
+            return (
+              <>
+                <p className={estilos.porQueContratarlo}>
+                  <span>¿Por qué contratarlo?</span>
+                  {porQue}
+                </p>
+                {lectura && (
+                  <p className={estilos.lecturaDeLaNota}>
+                    <span>Lectura de {laEtapaDe(etapa).loCalificado}</span>
+                    {lectura}
+                  </p>
+                )}
+              </>
+            )
+          })()}
+          <h4 className={estilos.subtitulo}>Criterio a criterio</h4>
+          <ul className={estilos.criterios} role="list">
+            {criteriosDeLaFicha.map((n) => {
+              const cubre = cuantoCubre(n)
+              return (
+                <li className={estilos.criterio} key={n.criterio}>
+                  <span className={estilos.notaCriterio}>{notaEscrita(n)}</span>
+                  {/*
+                    La barrita mide lo mismo que tiñe la celda de la tabla: sale
+                    de `tonoDelCriterio`, así que la ficha y la tabla no pueden
+                    discrepar sobre si un criterio está cubierto.
+
+                    `aria-hidden` porque no añade nada a un lector: el «18/20» de
+                    al lado ya lo dice, y con más precisión.
+                  */}
+                  <span className={estilos.barraCriterio} aria-hidden="true">
+                    {cubre !== null && (
+                      <span
+                        className={estilos[tonoDelCriterio(n)]}
+                        style={{ width: `${Math.min(100, Math.round(cubre * 100))}%` }}
+                      />
+                    )}
+                  </span>
+                  <span>
+                    <b>{n.criterio}</b> · peso {n.peso}
+                    {/*
+                      Quién puso la nota. `motivoAjuste` no nulo significa
+                      exactamente una cosa —lo garantiza un CHECK en la base: sin
+                      motivo, la nota ajustada no entra— y es lo primero que hay
+                      que ver antes de discutir un número.
+                    */}
+                    {n.motivoAjuste != null
+                      ? ' · ajustada a mano'
+                      : n.origen === 'AGENTE'
+                        ? ' · la puso la IA'
+                        : ''}
+                    {/*
+                      La confianza va de 0 a 100, no de 0 a 1. Tratarla como
+                      fracción pintaría un 87 % como un 8.700 %.
+                    */}
+                    {n.confianza != null && ` · confianza ${n.confianza}`}
+                    {n.explicacion && (
+                      <span className={estilos.explicacion}>{n.explicacion}</span>
+                    )}
+                    {n.motivoAjuste && (
+                      <span className={estilos.explicacion}>
+                        Una persona corrigió esta nota: {n.motivoAjuste}
+                      </span>
+                    )}
+                  </span>
+                </li>
+              )
+            })}
+          </ul>
+        </>
+      )}
     </>
   )
 }

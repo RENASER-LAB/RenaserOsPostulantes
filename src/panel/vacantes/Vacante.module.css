@@ -1,7 +1,7 @@
 /* Una vacante por dentro: cabecera, embudo, ranking con ficha y requisitos. */
 
 .pagina {
-  max-width: var(--ancho);
+  max-width: var(--ancho-panel);
   margin: 0 auto;
   padding: var(--e5) var(--e5) var(--e8);
 }
@@ -124,13 +124,57 @@
   font-variant-numeric: tabular-nums;
 }
 
+/*
+ * La celda del candidato, clavada a la izquierda mientras la tabla rueda.
+ *
+ * Con los criterios encendidos la tabla mide el doble que su envoltura, y al
+ * rodar hasta «Calidad de la evidencia» el nombre ya no estaba: quedaban ocho
+ * cifras de colores sin saber de quien. Comparar una columna exige poder decir
+ * de quien es cada fila.
+ *
+ * Es el mismo recurso que ya usa `.acciones` en la hoja compartida, en el otro
+ * borde. El fondo es obligatorio —si no, el contenido de debajo se ve pasar— y
+ * por eso hay que repetirlo para la fila con el raton encima.
+ */
+.celdaCandidato {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--nube);
+  /* La regla de la derecha dice que hay mas tabla debajo de esta columna. */
+  box-shadow: inset -1px 0 0 var(--regla);
+}
+
+tr:hover > .celdaCandidato {
+  background: var(--nube-hundida);
+}
+
+/* La cabecera lleva su propio fondo en la hoja compartida; se respeta. */
+thead .celdaCandidato {
+  background: var(--nube-hundida);
+  z-index: 2;
+}
+
 .candidato {
   display: block;
   font-weight: 600;
 }
 
+/*
+ * El correo, debajo del nombre.
+ *
+ * ⚠️ **Acotado, porque es quien decide el ancho de la columna.** Un correo de
+ * siembra —«demo-1787090820960-30628@ejemplo.pe»— estiraba la celda a 289 px y
+ * era lo unico que dejaba la tabla 15 px por encima de la ventana. Es dato
+ * secundario: el nombre identifica y el correo se lee entero en la ficha, que se
+ * abre pulsando la fila.
+ */
 .correo {
   display: block;
+  max-width: 13rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: var(--tinta3);
   font-size: var(--t-menor);
 }
@@ -268,6 +312,43 @@
   color: var(--mal-pulsado);
 }
 
+/*
+ * Los dos parrafos que explican la nota, encima del criterio a criterio.
+ *
+ * ⚠️ **Sin relleno de color detras.** El sistema tiene escrito que el color vive
+ * en los cantos y el campo donde hay prosa se queda en nube; ademas verde, ambar
+ * y rojo ya significan hecho, duda y error, y no se usan para jerarquia. El
+ * filete de la izquierda separa sin teñir el texto.
+ *
+ * El rotulo va dentro del parrafo y no como titulo aparte: es una frase con su
+ * etiqueta, no un bloque nuevo.
+ */
+.porQueContratarlo,
+.lecturaDeLaNota {
+  border-left: 1px solid var(--regla2);
+  padding-left: var(--e3);
+  margin: 0 0 var(--e3);
+  font-size: var(--t-prosa);
+  line-height: 1.55;
+  max-width: var(--medida);
+  color: var(--tinta);
+}
+
+.porQueContratarlo span,
+.lecturaDeLaNota span {
+  display: block;
+  font-size: var(--t-micro);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tinta3);
+  margin-bottom: var(--e1);
+}
+
+.lecturaDeLaNota {
+  color: var(--tinta2);
+}
+
 .criterios {
   display: flex;
   flex-direction: column;
@@ -292,6 +373,50 @@
 .explicacion {
   display: block;
   color: var(--tinta2);
+}
+
+/*
+ * La barrita de cuanto cubre un criterio, entre la cifra y el nombre.
+ *
+ * Es la misma medida que tiñe la celda de la tabla —las dos salen de
+ * `tonoDelCriterio`—, asi que la ficha y la tabla no pueden decir cosas
+ * distintas del mismo criterio.
+ *
+ * `flex: none` con ancho fijo: si se estirara, dos criterios con el mismo
+ * porcentaje tendrian barras de largo distinto segun lo larga que fuera su
+ * explicacion, y entonces la barra dejaria de medir nada.
+ */
+.barraCriterio {
+  flex: none;
+  align-self: center;
+  width: 3.5rem;
+  height: 6px;
+  border-radius: var(--radio-control);
+  background: var(--nube-hundida);
+  overflow: hidden;
+}
+
+.barraCriterio span {
+  display: block;
+  height: 100%;
+}
+
+/*
+ * Dentro de la barra el tinte no basta: sobre 6 px de alto, `--bien-bruma` y el
+ * fondo de la barra son casi el mismo gris. Aqui van los tonos plenos, que es lo
+ * contrario de la celda de la tabla —y no se contradice con ella: alli el
+ * problema era teñir un NUMERO, y una barra no es un numero.
+ */
+.barraCriterio .bien {
+  background: var(--bien);
+}
+
+.barraCriterio .duda {
+  background: var(--duda);
+}
+
+.barraCriterio .mal {
+  background: var(--mal);
 }
 
 /* ---------- El avance ---------- */
@@ -899,6 +1024,20 @@
 }
 
 /*
+ * ⚠️ **En una columna de cifra el ancho lo pedia el BOTON, no la celda.** El
+ * `<th>` ordenable renuncia a su relleno para que el boton ocupe la celda
+ * entera, y el boton trae el suyo: 16 px a cada lado. Con «NOTA» dentro eso son
+ * 106 px de columna para enseñar dos digitos.
+ *
+ * Se queda en e2, que sigue dejando el area pulsable de 44 px de alto —eso lo
+ * fija `min-height`, no el relleno lateral—.
+ */
+.columnaCifra .ordenarPor {
+  padding-left: var(--e2);
+  padding-right: var(--e2);
+}
+
+/*
  * La flecha del orden.
  *
  * Hueco reservado siempre —tambien con el `↕` de «esta se puede ordenar»— para
@@ -937,21 +1076,420 @@
 }
 
 /*
- * El grupo de prioridad, debajo del correo.
+ * El grupo de prioridad, ahora en su columna «Veredicto».
  *
  * Pildora de bruma, como las demas etiquetas de estado de esta pantalla. **Sin
  * semaforo**: «incompatible» en rojo convierte una fila de una mesa de trabajo
  * en un veredicto, y la palabra ya lo dice entera.
+ *
+ * `white-space: nowrap` porque «Potencial con riesgo» partido en dos lineas
+ * estira todas las filas de la tabla por una etiqueta de tres palabras.
  */
 .grupo {
   display: inline-block;
-  margin-top: var(--e1);
   padding: 1px var(--e2);
   border-radius: var(--radio-control);
   background: var(--nube-hundida);
   font-size: var(--t-micro);
   font-weight: 600;
   color: var(--tinta2);
+  white-space: nowrap;
+}
+
+/* ---------- Las cinco cifras de la tanda ---------- */
+
+/*
+ * Los cinco recuadros de cabecera.
+ *
+ * `auto-fit` con un minimo: en un telefono caen a una o dos columnas sin que
+ * haya que decidir cuantas caben, y en el escritorio se reparten el ancho. Es
+ * la misma forma que tiene la rejilla del detalle mas abajo.
+ */
+.cifrasDeLaTanda {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: var(--e2);
+  margin-bottom: var(--e3);
+}
+
+.cifraTanda {
+  padding: var(--e2) var(--e3);
+  border: 1px solid var(--regla);
+  border-radius: var(--radio-menor);
+  background: var(--nube);
+}
+
+/*
+ * La cifra. `tabular-nums` para que cinco recuadros en fila tengan los digitos
+ * en la misma reticula: sin eso, un 66 y un 63.9 bailan uno respecto del otro.
+ */
+.cifraTanda b {
+  display: block;
+  font-size: var(--t-destacado);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--tinta);
+}
+
+.cifraTanda span {
+  font-size: var(--t-micro);
+  color: var(--tinta2);
+}
+
+/* ---------- Los criterios como columnas ---------- */
+
+/*
+ * El interruptor que enciende las columnas de criterio.
+ *
+ * Dice cuantas columnas va a añadir antes de añadirlas: encender algo que
+ * duplica el ancho de una tabla sin avisar se siente como un fallo.
+ */
+/* Los dos controles de columnas, en la misma linea y separados por el hueco. */
+.controlesDeColumnas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--e3);
+  margin-bottom: var(--e2);
+}
+
+.interruptorCriterios {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--e2);
+  margin: 0;
+  font-size: var(--t-menor);
+}
+
+/* ---------- Que columnas se ven ---------- */
+
+/*
+ * Un `<details>` y no un menu escrito a mano: se abre con teclado, se cierra con
+ * Escape y no hay que atrapar el foco. Es lo mas barato que cumple.
+ */
+.selectorColumnas {
+  position: relative;
+  font-size: var(--t-menor);
+}
+
+.selectorColumnas summary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  min-height: 32px;
+  padding: 0 var(--e3);
+  border: 1px solid var(--borde-control);
+  border-radius: var(--radio-control);
+  color: var(--tinta);
+  cursor: pointer;
+  user-select: none;
+}
+
+.cuantasApagadas {
+  color: var(--tinta3);
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * La lista, flotando sobre la tabla. `z-index` por encima de la celda del
+ * candidato, que es pegajosa: sin el, el menu se abre por debajo de ella.
+ */
+.listaColumnas {
+  position: absolute;
+  z-index: 3;
+  right: 0;
+  margin-top: var(--e1);
+  display: flex;
+  flex-direction: column;
+  gap: var(--e1);
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: var(--e3);
+  background: var(--nube);
+  border: 1px solid var(--regla);
+  border-radius: var(--radio-menor);
+  box-shadow: var(--sombra-nube);
+}
+
+.listaColumnas label {
+  display: flex;
+  align-items: center;
+  gap: var(--e2);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.verTodasLasColumnas {
+  margin-top: var(--e2);
+  align-self: flex-start;
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: var(--tinta2);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/*
+ * Que es cada letra, debajo de la tabla y siempre a la vista.
+ *
+ * ⚠️ **Es lo que sostiene una cabecera de una sola letra.** Una «R» encima de un
+ * 43 no dice nada, y dejar su significado solo en el cursor no existe con
+ * teclado ni en una impresion.
+ */
+.leyendaLetras {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e1) var(--e4);
+  margin: var(--e3) 0 0;
+  font-size: var(--t-menor);
+  color: var(--tinta2);
+}
+
+.leyendaLetras span {
+  display: flex;
+  align-items: baseline;
+  gap: var(--e1);
+}
+
+/* El peso, en tercer plano: acompaña al nombre, no compite con el. */
+.leyendaLetras i {
+  color: var(--tinta3);
+  font-style: normal;
+  font-variant-numeric: tabular-nums;
+}
+
+.leyendaLetras b {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  padding: 1px var(--e1);
+  border-radius: var(--radio-marca);
+  background: var(--nube-hundida);
+  color: var(--tinta);
+  font-weight: 700;
+}
+
+.interruptorCriterios label {
+  display: flex;
+  align-items: center;
+  gap: var(--e1);
+  font-weight: 600;
+  color: var(--tinta);
+  cursor: pointer;
+}
+
+.interruptorCriterios > span {
+  color: var(--tinta2);
+}
+
+/*
+ * La cabecera de una columna de criterio: el nombre y, debajo, lo que pesa.
+ *
+ * El nombre se recorta a dos lineas porque «Orientacion a resultados y plan de
+ * crecimiento» sobre ocho columnas dejaria una cabecera mas alta que la tabla.
+ * El nombre entero vive en el `title` de cada celda.
+ */
+/*
+ * La cabecera de una columna de criterio.
+ *
+ * ⚠️ **El ancho lo pone el `<b>` de dentro, NUNCA un `max-width` en el `<th>`.**
+ * Asi estaba, y una tabla de ancho automatico ignora el `max-width` de una
+ * celda: «Resultados demostrables» salia en una sola linea, se desbordaba de su
+ * columna y se pisaba con «Complejidad y alcance». Un bloque de ancho fijo
+ * dentro de la celda si manda, porque la columna no puede ser mas estrecha que
+ * su contenido.
+ *
+ * `text-transform: none` y sin `letter-spacing`, al reves que el resto de
+ * cabeceras: en mayusculas y espaciado, «Sistemas o procesos creados» ocupa un
+ * tercio mas y son ocho columnas. Aqui el nombre es un dato, no un rotulo.
+ */
+.cabeceraCriterio {
+  vertical-align: bottom;
+  padding-left: var(--e2) !important;
+  padding-right: var(--e2) !important;
+}
+
+/*
+ * La cabecera es una LETRA, asi que la caja es del tamaño de una letra: la
+ * columna no puede ser mas estrecha que su contenido, y debajo solo hay dos
+ * digitos. Con los nombres largos hacian falta 5.5rem y la cabecera medía 107 px
+ * de alto; con la palabra corta, 3rem y 77 px.
+ *
+ * Lo que hace que una letra se sostenga NO esta aqui: es la leyenda de debajo,
+ * que dice que es cada una sin pedir el cursor.
+ */
+.cabeceraCriterio b {
+  display: block;
+  width: 1.25rem;
+  font-size: var(--t-apoyo);
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--tinta);
+  text-align: center;
+  white-space: nowrap;
+}
+
+
+
+/*
+ * Una celda de criterio.
+ *
+ * ⚠️ **El tono va al FONDO, nunca al numero.** La misma regla que gobierna
+ * `.provisional` y `.porQue` mas abajo, y aqui vale el doble: la celda dice
+ * «18/20», y un 18 verde y un 18 rojo tienen que seguir siendo el mismo 18.
+ * Tiñendo el fondo, el barrido de la columna se lee igual de rapido y el numero
+ * no cambia de significado.
+ *
+ * Y **funciona en escala de grises**: las tres brumas tienen luminancias
+ * distintas, asi que impresa la tabla sigue diciendo algo.
+ */
+/* ---------- El estado, en dos lineas que no se parten ---------- */
+
+.celdaEstado {
+  white-space: nowrap;
+}
+
+/*
+ * La etapa, encima y en segundo plano: en la pestaña de Perfil integral casi
+ * todas las filas dicen lo mismo, y lo que distingue a una de otra es el momento
+ * de debajo. Se queda porque «Toda la tanda» trae gente parada en OTRA etapa, y
+ * ahi si es la mitad que informa.
+ */
+.etapaEstado {
+  display: block;
+  font-size: var(--t-micro);
+  color: var(--tinta3);
+}
+
+.momentoEstado {
+  display: block;
+  font-size: var(--t-apoyo);
+  color: var(--tinta);
+}
+
+.celdaCriterio {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  /*
+   * Centrada, no arriba. La hoja compartida alinea todo `top`, que esta bien
+   * para una celda de dos lineas y mal para una cifra suelta: el numero se
+   * quedaba pegado al techo de una fila de 66 px y el barrido de la columna
+   * subia y bajaba.
+   */
+  vertical-align: middle;
+  /*
+   * El relleno de las celdas normales es e4 a cada lado. Aqui sobra: dentro solo
+   * cabe «18/20», y con ocho columnas esos 16 px por lado son 256 px de tabla
+   * que solo empujan el nombre del candidato fuera de la pantalla.
+   */
+  padding-left: var(--e1) !important;
+  padding-right: var(--e1) !important;
+}
+
+/*
+ * Toda columna que solo enseña una cifra.
+ *
+ * ⚠️ **El relleno lo decidia el rotulo, no el dato.** «ADECUACIÓN» en versalitas
+ * con su espaciado pide 131 px para enseñar dos digitos, y con ocho criterios
+ * mas al lado esos sobrantes son los que sacan la tabla de la pantalla. Dentro
+ * caben tres cifras: e2 a cada lado basta y sobra.
+ */
+.columnaCifra {
+  padding-left: var(--e2) !important;
+  padding-right: var(--e2) !important;
+  /*
+   * ⚠️ **`width: 1%` no es un 1 %: es «encogete a lo que quepa».** La tabla mide
+   * el 100 % de su envoltura, asi que la holgura tiene que irse a alguna parte;
+   * sin esto se repartia entre TODAS y una columna de dos cifras acababa en 140
+   * px. Con un ancho pedido ridiculo, el navegador le da a estas lo minimo y
+   * suelta el resto en las de texto, que es donde el sitio se aprovecha.
+   */
+  width: 1%;
+  white-space: nowrap;
+}
+
+/*
+ * Y su cabecera pierde el espaciado de versalitas, que es lo que la ensancha.
+ * Se queda en versalitas —es la voz de las cabeceras de esta tabla— pero sin los
+ * 0.06em que multiplican por palabra.
+ */
+th.columnaCifra {
+  letter-spacing: 0;
+}
+
+/*
+ * Los tres tonos y el hueco.
+ *
+ * ⚠️ **Van ACOTADOS a la celda y a la muestra de la leyenda, nunca sueltos.**
+ * Esta hoja ya tiene `.etiqueta.bien` / `.duda` / `.mal` para los hallazgos y
+ * los semaforos, y un `.bien` a secas tambien casaria con esas pildoras: hoy no
+ * se notaria —el fondo es la misma bruma— y el dia que alguien le ponga un borde
+ * o un padding a la celda, se lo lleva cada pildora del archivo.
+ *
+ * ⚠️ **El hueco NO es un rojo.** Sin nota puede ser que la IA no haya llegado o
+ * que ese criterio lo puntue una persona; y un criterio que no pondera tampoco
+ * se tiñe, porque no mueve la nota de nadie. Ninguna de las tres cosas juzga al
+ * candidato, asi que van en el fondo de siempre.
+ */
+.celdaCriterio.bien,
+.leyendaCriterios .bien {
+  background: var(--bien-bruma);
+}
+
+.celdaCriterio.duda,
+.leyendaCriterios .duda {
+  background: var(--duda-bruma);
+}
+
+.celdaCriterio.mal,
+.leyendaCriterios .mal {
+  background: var(--mal-bruma);
+}
+
+.celdaCriterio.hueco,
+.leyendaCriterios .hueco {
+  background: transparent;
+  color: var(--tinta3);
+}
+
+/*
+ * La leyenda de los tonos, debajo de la tabla.
+ *
+ * Solo se pinta cuando hay columnas de criterio: una leyenda de colores sobre
+ * una tabla sin colores enseña tres tonos que no aparecen en ninguna celda.
+ */
+.leyendaCriterios {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e1) var(--e3);
+  margin: var(--e2) 0 0;
+  font-size: var(--t-micro);
+  color: var(--tinta2);
+}
+
+.leyendaCriterios span {
+  display: flex;
+  align-items: center;
+  gap: var(--e1);
+}
+
+/*
+ * La muestra de color. Lleva borde porque `.hueco` es transparente y sin el
+ * seria una muestra invisible junto a un texto que la nombra.
+ */
+.leyendaCriterios i {
+  display: inline-block;
+  width: 0.75rem;
+  height: 0.75rem;
+  border: 1px solid var(--regla);
+  border-radius: var(--radio-control);
 }
 
 /* ---------- La barra de filtros ---------- */
