@@ -670,14 +670,28 @@ describe('los criterios como columnas de color', () => {
     «Resultados demostrables». El largo no se pierde — va en el `title`, que es
     donde se consulta una vez y no una por fila.
   */
-  it('encendidos, la cabecera es el nombre corto, con su peso debajo', async () => {
+  it('encendidos, la cabecera es una LETRA, con su peso debajo', async () => {
     await pintar(CON_CRITERIOS)
     encender()
-    const cabecera = within(laTabla()).getByText('Resultados').closest('th')!
+    const cabecera = within(laTabla()).getByText('R').closest('th')!
     expect(cabecera.textContent).toContain('peso 25')
     expect(cabecera.title).toBe('Resultados demostrables')
     expect(within(laTabla()).queryByText('Resultados demostrables')).toBeNull()
     expect(within(laTabla()).getByText('20/25')).toBeTruthy()
+  })
+
+  /*
+    ⚠️ **Una letra sola no se sostiene sin esto.** Una «R» encima de un 43 no
+    dice nada, y dejar su significado solo detras del cursor no existe con
+    teclado ni en una impresion. La leyenda va SIEMPRE debajo de la tabla.
+  */
+  it('la leyenda dice que es cada letra, sin pedir el cursor', async () => {
+    await pintar(CON_CRITERIOS)
+    encender()
+    const leyenda = screen.getByText('Resultados').closest('p')!
+    expect(leyenda.textContent).toContain('R')
+    expect(leyenda.textContent).toContain('Resultados')
+    expect(leyenda.textContent).toContain('Complejidad')
   })
 
   /*
@@ -711,6 +725,62 @@ describe('los criterios como columnas de color', () => {
     expect(screen.getByText(/cubre 70 % o más/)).toBeTruthy()
     // El hueco va nombrado con sus dos causas: es lo que impide leerlo como un cero.
     expect(screen.getByText(/ese criterio lo\s+puntúa una persona/)).toBeTruthy()
+  })
+})
+
+describe('elegir qué columnas se ven', () => {
+  const abrirSelector = () =>
+    fireEvent.click(screen.getByText('Columnas', { selector: 'summary' }))
+
+  it('apagar una columna la quita de la cabecera y de todas las filas', async () => {
+    await pintar()
+    expect(within(laTabla()).queryByRole('columnheader', { name: 'Alertas' })).toBeTruthy()
+    abrirSelector()
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Alertas' }))
+    await waitFor(() =>
+      expect(within(laTabla()).queryByRole('columnheader', { name: 'Alertas' })).toBeNull(),
+    )
+  })
+
+  /*
+    ⚠️ **El `colSpan` de la fila de detalle sale de la MISMA lista.** Si se
+    filtrara solo la cabecera, la fila abierta mediría más que la tabla y el
+    bloque de dentro saldría descuadrado — el fallo clásico de esta pantalla.
+  */
+  it('el ancho de la fila de detalle sigue a las columnas que quedan', async () => {
+    await pintar()
+    const columnasAntes = laTabla().querySelectorAll('thead th').length
+    abrirSelector()
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Alertas' }))
+    await waitFor(() =>
+      expect(laTabla().querySelectorAll('thead th').length).toBe(columnasAntes - 1),
+    )
+    fireEvent.click(screen.getByText('Rodrigo Ayala'))
+    await waitFor(() => {
+      const detalle = laTabla().querySelector('td[colspan]')
+      expect(detalle?.getAttribute('colspan')).toBe(String(columnasAntes - 1))
+    })
+  })
+
+  it('«Ver todas» las devuelve de una vez', async () => {
+    await pintar()
+    const columnasAntes = laTabla().querySelectorAll('thead th').length
+    abrirSelector()
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Alertas' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Riesgos' }))
+    await waitFor(() =>
+      expect(laTabla().querySelectorAll('thead th').length).toBe(columnasAntes - 2),
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Ver todas' }))
+    await waitFor(() =>
+      expect(laTabla().querySelectorAll('thead th').length).toBe(columnasAntes),
+    )
+  })
+
+  it('el candidato no está entre las que se pueden apagar', async () => {
+    await pintar()
+    abrirSelector()
+    expect(screen.queryByRole('checkbox', { name: 'Candidato' })).toBeNull()
   })
 })
 

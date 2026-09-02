@@ -27,6 +27,8 @@ import {
   CORTE_DE_LA_TANDA,
   criteriosDeLaTanda,
   criteriosQueSePintan,
+  columnasVisibles,
+  inicialesDeLaTanda,
   cuantoCubre,
   notaEscrita,
   noPondera,
@@ -807,8 +809,8 @@ describe('cuántas columnas tiene la tabla', () => {
   */
   it('cada criterio encendido es una columna más, y el colSpan la cuenta', () => {
     const criterios = [
-      { nombre: 'Resultados demostrables', rotulo: 'Resultados', peso: 25, maximo: 100 },
-      { nombre: 'Complejidad y alcance', rotulo: 'Complejidad', peso: 20, maximo: 100 },
+      { nombre: 'Resultados demostrables', rotulo: 'Resultados', inicial: 'R', peso: 25, maximo: 100 },
+      { nombre: 'Complejidad y alcance', rotulo: 'Complejidad', inicial: 'C', peso: 20, maximo: 100 },
     ]
     const conCriterios = columnasDelRanking('PERFIL_INTEGRAL', undefined, criterios)
     expect(conCriterios).toHaveLength(12 + 2)
@@ -820,6 +822,34 @@ describe('cuántas columnas tiene la tabla', () => {
 
   it('apagado no añade ninguna: la tabla se queda como estaba', () => {
     expect(columnasDelRanking('PERFIL_INTEGRAL', undefined, [])).toHaveLength(12)
+  })
+
+  /*
+    ⚠️ **De aqui sale el `colSpan`.** Filtrar donde se pinta la cabecera y
+    olvidarlo en la fila de detalle es el fallo que este archivo lleva evitando
+    desde que la lista existe.
+  */
+  it('apagar una columna la quita de la lista, y con ella del colSpan', () => {
+    const todas = columnasDelRanking('PERFIL_INTEGRAL')
+    const menos = columnasVisibles(todas, new Set(['ciudad', 'alertas']))
+    expect(menos).toHaveLength(todas.length - 2)
+    expect(menos.map((c) => c.clave)).not.toContain('ciudad')
+    expect(menos.map((c) => c.clave)).not.toContain('alertas')
+  })
+
+  /*
+    ⚠️ **Sin la marca de avance no se puede avanzar a nadie, y sin el candidato
+    la fila deja de ser de alguien.** Una tabla de cifras sin nombre no se puede
+    leer ni corregir, asi que ninguna de las dos se ofrece para apagar.
+  */
+  it('la marca de avance y el candidato no se pueden apagar', () => {
+    const todas = columnasDelRanking('PERFIL_INTEGRAL')
+    expect(todas.find((c) => c.clave === 'avance')?.ocultable).toBeFalsy()
+    expect(todas.find((c) => c.clave === 'candidato')?.ocultable).toBeFalsy()
+    // Aunque alguien las meta en el conjunto, siguen ahi.
+    const menos = columnasVisibles(todas, new Set(['avance', 'candidato']))
+    expect(menos.map((c) => c.clave)).toContain('candidato')
+    expect(menos.map((c) => c.clave)).toContain('avance')
   })
 
   it('Adecuación y Potencial son las dos que aparecen y desaparecen', () => {
@@ -839,15 +869,33 @@ describe('cuántas columnas tiene la tabla', () => {
     }
   })
 
-  it('se ordena por cuatro, y la nota se llama por su etapa', () => {
+  /*
+    La ciudad se movio al final —separaba el nombre de sus cifras— asi que ahora
+    es la ultima ordenable, no la segunda.
+  */
+  it('se ordena por cuatro, y la ciudad es la ultima', () => {
     const columnas = columnasDelRanking('PRUEBA_PUESTO')
     expect(columnas.filter((c) => c.ordenable).map((c) => c.ordenable)).toEqual([
       'nombre',
-      'ciudad',
       'pretension',
       'nota',
+      'ciudad',
     ])
-    expect(columnas.find((c) => c.clave === 'nota')?.titulo).toBe('Nota de la prueba')
+    expect(columnas.at(-1)?.clave).toBe('ciudad')
+  })
+
+  /*
+    ⚠️ **«Nota» a secas, y la etapa en el titulo emergente.** El rotulo largo
+    existia para que cinco pestañas con la misma cabecera no obligaran a recordar
+    en cual estas; la pestaña activa ya lo dice justo encima. Lo que NO puede
+    pasar es que el dato se pierda: por eso `completo` lo sigue llevando.
+  */
+  it('la nota se llama «Nota», y su etapa viaja en el titulo', () => {
+    const nota = columnasDelRanking('PRUEBA_PUESTO').find((c) => c.clave === 'nota')
+    expect(nota?.titulo).toBe('Nota')
+    expect(nota?.completo).toBe('Nota de la prueba')
+    const enPerfil = columnasDelRanking('PERFIL_INTEGRAL').find((c) => c.clave === 'nota')
+    expect(enPerfil?.completo).toBe('Nota del perfil')
   })
 })
 
@@ -1014,6 +1062,47 @@ describe('el mapa de calor de los criterios', () => {
       nombre: 'Resultados demostrables',
       rotulo: 'Resultados',
     })
+  })
+
+  /*
+    ⚠️ **Dos columnas con la misma letra son dos columnas sin nombre.** En el
+    curriculum las ocho salen distintas por suerte, pero una rubrica de prueba
+    puede traer «Caja» y «Contable»: ahi la segunda tiene que crecer.
+  */
+  it('las iniciales son distintas entre si, aunque los nombres choquen', () => {
+    expect(inicialesDeLaTanda(['Caja', 'Contable', 'Divisas'])).toEqual(['C', 'Co', 'D'])
+    // Crece la SEGUNDA, no las dos: la primera ya era legible y cambiarla
+    // moveria un rotulo que alguien ya aprendio.
+    expect(inicialesDeLaTanda(['Caja', 'Contable'])[0]).toBe('C')
+  })
+
+  it('tres que chocan crecen hasta distinguirse', () => {
+    expect(inicialesDeLaTanda(['Caja', 'Cartera', 'Contable'])).toEqual(['C', 'Ca', 'Co'])
+  })
+
+  it('los ocho del curriculum caen en ocho letras distintas', () => {
+    const iniciales = inicialesDeLaTanda([
+      'Resultados', 'Complejidad', 'Sistemas', 'Personas',
+      'Aprendizaje', 'Iniciativa', 'Habilidades', 'Evidencia',
+    ])
+    expect(iniciales).toEqual(['R', 'C', 'S', 'P', 'A', 'I', 'H', 'E'])
+    expect(new Set(iniciales).size).toBe(8)
+  })
+
+  it('un nombre vacio no revienta ni se come la letra de otro', () => {
+    expect(inicialesDeLaTanda(['', 'Caja'])).toEqual(['?', 'C'])
+  })
+
+  it('la tanda reparte inicial ademas de palabra', () => {
+    const criterios = criteriosDeLaTanda([
+      fila('POSTULADA', 80, {
+        notasCriterio: [
+          nota('Resultados demostrables', 20, 25, { codigo: 'CV_RESULTADOS' }),
+          nota('Complejidad y alcance', 15, 20, { codigo: 'CV_COMPLEJIDAD' }),
+        ],
+      }),
+    ])
+    expect(criterios.map((c) => c.inicial)).toEqual(['R', 'C'])
   })
 
   it('los tres tramos son los del informe: 70 y 40', () => {

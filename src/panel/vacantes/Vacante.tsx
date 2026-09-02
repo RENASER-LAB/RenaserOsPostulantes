@@ -79,6 +79,7 @@ import {
   cifrasDeLaEtapa,
   ciudadesDelRanking,
   columnasDelRanking,
+  columnasVisibles,
   comoSeOrdena,
   criteriosQueSePintan,
   cuantoCubre,
@@ -545,6 +546,14 @@ function Ranking({
     la tanda no paga ese scroll.
   */
   const [verCriterios, setVerCriterios] = useState(false)
+  /*
+    Las columnas que quien mira ha apagado, por su clave.
+
+    Vive en memoria como el orden, el corte y los filtros: se pierde al recargar,
+    y eso ya es la convención de esta pantalla. Guardarlo sería otra decisión
+    —dónde, y si es por persona o por vacante— y no una que se toma de paso.
+  */
+  const [apagadas, setApagadas] = useState<ReadonlySet<string>>(new Set())
 
   const laEtapa = laEtapaDe(etapa)
   /*
@@ -601,8 +610,17 @@ function Ranking({
     cabecera cambiaría de forma al escribir en el buscador.
   */
   const criterios = criteriosQueSePintan(etapa, filas, verCriterios)
-  const columnasDeLaTabla = columnasDelRanking(etapa, trae, criterios)
+  const todasLasColumnas = columnasDelRanking(etapa, trae, criterios)
+  const columnasDeLaTabla = columnasVisibles(todasLasColumnas, apagadas)
   const columnas = columnasDeLaTabla.length
+  /*
+    ⚠️ **La única fuente de «¿se pinta esta celda?».** La cabecera sale de
+    `columnasDeLaTabla` y el cuerpo va escrito a mano: con dos condiciones por
+    columna —que la tanda traiga el dato y que nadie la haya apagado—, repetirlas
+    a mano en cada celda es como se desalinea una fila de su cabecera.
+  */
+  const clavesVisibles = new Set(columnasDeLaTabla.map((c) => c.clave))
+  const ve = (clave: string) => clavesVisibles.has(clave)
   // Solo cuentan las marcas que se VEN: si el filtro oculta una fila marcada,
   // el boton no puede seguir diciendo que avanzara a esa persona.
   const marcadosVisibles = visibles.filter((f) => marcados.has(f.postulacionId))
@@ -844,22 +862,74 @@ function Ranking({
         columnas— y dice cuántas columnas va a añadir, para que encenderlo no
         sorprenda.
       */}
-      {delCurriculum && criteriosQueSePintan(etapa, filas, true).length > 0 && (
-        <p className={estilos.interruptorCriterios}>
-          <label>
-            <input
-              type="checkbox"
-              checked={verCriterios}
-              onChange={(e) => setVerCriterios(e.target.checked)}
-            />
-            Ver los criterios en la tabla
-          </label>
-          <span>
-            {criteriosQueSePintan(etapa, filas, true).length} columnas más, una por criterio,
-            con el fondo teñido según lo que cubre cada nota.
-          </span>
-        </p>
-      )}
+      <div className={estilos.controlesDeColumnas}>
+        {delCurriculum && criteriosQueSePintan(etapa, filas, true).length > 0 && (
+          <p className={estilos.interruptorCriterios}>
+            <label>
+              <input
+                type="checkbox"
+                checked={verCriterios}
+                onChange={(e) => setVerCriterios(e.target.checked)}
+              />
+              Ver los criterios en la tabla
+            </label>
+            <span>
+              {criteriosQueSePintan(etapa, filas, true).length} columnas más, una por
+              criterio, con el fondo teñido según lo que cubre cada nota.
+            </span>
+          </p>
+        )}
+
+        {/*
+          Qué columnas se ven.
+
+          ⚠️ **La marca de avance y el candidato no salen aquí**: sin la primera
+          no se puede avanzar a nadie, y sin el segundo la fila deja de ser de
+          alguien. Una tabla de cifras sin nombre no se puede leer ni corregir.
+
+          Es un `<details>` y no un menú a mano: se abre con teclado, se cierra
+          con Escape y no hace falta atrapar el foco.
+        */}
+        <details className={estilos.selectorColumnas}>
+          <summary>
+            Columnas
+            {apagadas.size > 0 && (
+              <span className={estilos.cuantasApagadas}>{apagadas.size} ocultas</span>
+            )}
+          </summary>
+          <div className={estilos.listaColumnas}>
+            {todasLasColumnas
+              .filter((c) => c.ocultable)
+              .map((c) => (
+                <label key={c.clave}>
+                  <input
+                    type="checkbox"
+                    checked={!apagadas.has(c.clave)}
+                    onChange={() =>
+                      setApagadas((antes) => {
+                        const ahora = new Set(antes)
+                        if (ahora.has(c.clave)) ahora.delete(c.clave)
+                        else ahora.add(c.clave)
+                        return ahora
+                      })
+                    }
+                  />
+                  {/* La inicial no dice nada suelta: aquí va el nombre entero. */}
+                  {c.completo ?? c.titulo}
+                </label>
+              ))}
+            {apagadas.size > 0 && (
+              <button
+                className={estilos.verTodasLasColumnas}
+                type="button"
+                onClick={() => setApagadas(new Set())}
+              >
+                Ver todas
+              </button>
+            )}
+          </div>
+        </details>
+      </div>
 
       <BarraDeFiltros
         etapa={etapa}
@@ -913,17 +983,16 @@ function Ranking({
                   y no valen lo mismo.
                 */
                 if (columna.peso != null) {
-                  const suyo = criterios.find((c) => `criterio:${c.nombre}` === columna.clave)
                   return (
                     <th
                       key={columna.clave}
                       className={`${clase} ${estilos.cabeceraCriterio}`}
                       /*
-                        El nombre completo, en la cabecera además de en cada
-                        celda: quien no reconozca «Sistemas» lo pregunta una vez
-                        arriba, y no una vez por fila.
+                        El nombre entero al pasar el cursor. La leyenda de debajo
+                        lo dice también y sin cursor: una letra sola no se puede
+                        dejar SOLO detrás de un hover.
                       */
-                      title={suyo && suyo.nombre !== columna.titulo ? suyo.nombre : undefined}
+                      title={columna.completo}
                     >
                       {/*
                         El nombre va en un bloque de ancho fijo, y no suelto en
@@ -946,7 +1015,7 @@ function Ranking({
                 }
                 if (!columna.ordenable) {
                   return (
-                    <th key={columna.clave} className={clase}>
+                    <th key={columna.clave} className={clase} title={columna.completo}>
                       {columna.titulo}
                     </th>
                   )
@@ -981,7 +1050,7 @@ function Ranking({
                       type="button"
                       className={estilos.ordenarPor}
                       onClick={() => setOrden((antes) => alternarOrden(antes, cual))}
-                      title={`Ordenar por ${columna.titulo}`}
+                      title={`Ordenar por ${columna.completo ?? columna.titulo}`}
                     >
                       {columna.titulo}
                       <FlechaDeOrden como={como} />
@@ -1008,25 +1077,22 @@ function Ranking({
                       onChange={() => alternar(fila.postulacionId)}
                     />
                   </td>
-                  <td className={tabla.cifra}>{fila.puesto}</td>
+                  {ve('puesto') && <td className={tabla.cifra}>{fila.puesto}</td>}
                   {/* Clavada a la izquierda solo cuando hay algo que rodar. */}
                   <td className={criterios.length > 0 ? estilos.celdaCandidato : undefined}>
                     <span className={estilos.candidato}>{fila.candidato}</span>
                     <span className={estilos.correo}>{fila.correo}</span>
                   </td>
                   {/*
-                    ⚠️ **Las dos celdas van con la MISMA condición que su
-                    cabecera**, o la fila se desalinea de la tabla entera. Cuando
-                    la tanda no trae el dato la columna no existe: ni cabecera ni
-                    celda, y el motivo se dice en la barra de filtros.
+                    ⚠️ **Cada celda va con la MISMA condición que su cabecera**,
+                    o la fila se desalinea de la tabla entera. Ahora son dos
+                    condiciones y las dos viven en `ve`: que la tanda traiga el
+                    dato, y que quien mira no haya apagado la columna.
 
                     Un guion aquí es «esta persona no lo declaró», y solo puede
                     significar eso porque al menos otra sí lo declaró.
                   */}
-                  {trae.hayCiudad && (
-                    <td className={estilos.celdaCiudad}>{fila.ciudad ?? '—'}</td>
-                  )}
-                  {trae.hayPretension && (
+                  {ve('pretension') && (
                     <td className={`${tabla.cifra} ${estilos.celdaPretension}`}>
                       {pretensionDicha(fila) ?? '—'}
                     </td>
@@ -1103,7 +1169,9 @@ function Ranking({
                     El `title` lleva el nombre entero: la cabecera lo recorta y
                     ocho columnas estrechas se vuelven ilegibles sin él.
                   */}
-                  {criterios.map((criterio) => {
+                  {criterios
+                    .filter((c) => ve(`criterio:${c.nombre}`))
+                    .map((criterio) => {
                     const nota = notaDelCriterio(fila, criterio.nombre)
                     const tono = nota ? tonoDelCriterio(nota) : 'hueco'
                     const cubre = nota ? cuantoCubre(nota) : null
@@ -1124,20 +1192,24 @@ function Ranking({
                       </td>
                     )
                   })}
-                  {delCurriculum && (
-                    <>
-                      <td className={tabla.cifra}>{fila.adecuacion ?? '—'}</td>
-                      <td className={tabla.cifra}>{fila.potencial ?? '—'}</td>
-                    </>
+                  {ve('adecuacion') && (
+                    <td className={tabla.cifra}>{fila.adecuacion ?? '—'}</td>
                   )}
-                  <td className={tabla.cifra}>
-                    {fila.riesgosCriticos > 0 ? (
-                      <span className={estilos.riesgo}>{fila.riesgosCriticos}</span>
-                    ) : (
-                      '—'
-                    )}
-                  </td>
-                  <td className={tabla.cifra}>{fila.alertas > 0 ? fila.alertas : '—'}</td>
+                  {ve('potencial') && (
+                    <td className={tabla.cifra}>{fila.potencial ?? '—'}</td>
+                  )}
+                  {ve('riesgos') && (
+                    <td className={tabla.cifra}>
+                      {fila.riesgosCriticos > 0 ? (
+                        <span className={estilos.riesgo}>{fila.riesgosCriticos}</span>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
+                  )}
+                  {ve('alertas') && (
+                    <td className={tabla.cifra}>{fila.alertas > 0 ? fila.alertas : '—'}</td>
+                  )}
                   {/*
                     ⚠️ **En dos líneas a propósito, y ninguna se parte.** Sin
                     esto «Perfil Integral · por confirmar» se partía solo en
@@ -1148,19 +1220,25 @@ function Ranking({
                     estado de esa persona, y el ojo lee «más grande» como «más
                     importante».
                   */}
-                  <td className={estilos.celdaEstado}>
-                    {(() => {
-                      const { etapa, momento } = estadoEnDos(fila.estadoNombre)
-                      return momento === null ? (
-                        <span className={estilos.momentoEstado}>{etapa}</span>
-                      ) : (
-                        <>
-                          <span className={estilos.etapaEstado}>{etapa}</span>
-                          <span className={estilos.momentoEstado}>{momento}</span>
-                        </>
-                      )
-                    })()}
-                  </td>
+                  {ve('estado') && (
+                    <td className={estilos.celdaEstado}>
+                      {(() => {
+                        const { etapa, momento } = estadoEnDos(fila.estadoNombre)
+                        return momento === null ? (
+                          <span className={estilos.momentoEstado}>{etapa}</span>
+                        ) : (
+                          <>
+                            <span className={estilos.etapaEstado}>{etapa}</span>
+                            <span className={estilos.momentoEstado}>{momento}</span>
+                          </>
+                        )
+                      })()}
+                    </td>
+                  )}
+                  {/* La ciudad, al final: ver el comentario de `columnasDelRanking`. */}
+                  {ve('ciudad') && (
+                    <td className={estilos.celdaCiudad}>{fila.ciudad ?? '—'}</td>
+                  )}
                 </tr>
                 {abierta === fila.postulacionId && (
                   <tr>
@@ -1218,7 +1296,28 @@ function Ranking({
         El hueco va nombrado con sus dos causas, que es lo que impide leerlo como
         un cero.
       */}
-      {criterios.length > 0 && (
+      {/*
+        Qué es cada letra, SIEMPRE a la vista.
+
+        ⚠️ **Sin esto la cabecera de una letra no se sostiene.** Una «R» encima
+        de un 43 no dice nada, y dejar su significado solo detrás del cursor
+        obliga a pasar por ocho columnas para leer una fila —y no existe con
+        teclado ni en una impresión—. La tabla se estrecha arriba y el precio se
+        paga una vez aquí abajo, no una vez por celda.
+      */}
+      {criterios.filter((c) => ve(`criterio:${c.nombre}`)).length > 0 && (
+        <p className={estilos.leyendaLetras}>
+          {criterios
+            .filter((c) => ve(`criterio:${c.nombre}`))
+            .map((c) => (
+              <span key={c.nombre} title={c.nombre}>
+                <b>{c.inicial}</b> {c.rotulo}
+              </span>
+            ))}
+        </p>
+      )}
+
+      {criterios.filter((c) => ve(`criterio:${c.nombre}`)).length > 0 && (
         <p className={estilos.leyendaCriterios}>
           <span>
             <i className={estilos.bien} /> cubre 70 % o más del criterio

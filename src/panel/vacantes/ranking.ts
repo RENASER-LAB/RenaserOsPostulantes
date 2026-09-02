@@ -442,11 +442,48 @@ export function rotuloCorto(codigo: string | null, nombre: string): string {
   return palabra.charAt(0).toLocaleUpperCase('es') + palabra.slice(1)
 }
 
+/**
+ * La inicial de cada criterio, garantizada distinta dentro de la tanda.
+ *
+ * ⚠️ **La unicidad no se puede dar por hecha, y por eso esto no es un
+ * `charAt(0)`.** En el currículum las ocho salen distintas por suerte
+ * —Resultados, Complejidad, Sistemas, Personas, Aprendizaje, Iniciativa,
+ * Habilidades, Evidencia—, pero una rúbrica de prueba cualquiera puede traer
+ * «Caja» y «Contable». Dos columnas con la misma letra son dos columnas sin
+ * nombre: quien compare una fila no puede saber cuál es cuál.
+ *
+ * Cuando chocan, la que llega después crece hasta que se distingue: «C» y «Co».
+ * Crece la segunda y no las dos porque la primera ya era legible, y cambiarla
+ * movería un rótulo que alguien ya aprendió.
+ *
+ * ⚠️ **Una letra sola obliga a traducirla.** Eso lo paga la leyenda que va bajo
+ * la tabla, siempre a la vista: sin ella habría que pasar el cursor por ocho
+ * columnas para leer una sola fila.
+ */
+export function inicialesDeLaTanda(nombresCortos: string[]): string[] {
+  const usadas = new Set<string>()
+  return nombresCortos.map((corto) => {
+    const limpio = corto.trim()
+    if (limpio === '') return '?'
+    let letras = 1
+    let inicial = limpio.slice(0, 1).toLocaleUpperCase('es')
+    while (usadas.has(inicial) && letras < limpio.length) {
+      letras += 1
+      inicial =
+        limpio.slice(0, 1).toLocaleUpperCase('es') + limpio.slice(1, letras)
+    }
+    usadas.add(inicial)
+    return inicial
+  })
+}
+
 export interface CriterioDeLaTanda {
   /** El nombre completo, que es la clave: es lo único que llega en todas las filas. */
   nombre: string
-  /** El rótulo de su columna: corto, del código. */
+  /** El nombre corto, de una palabra. Es lo que se lee en la leyenda. */
   rotulo: string
+  /** La inicial, que es lo que cabe en la cabecera de la columna. */
+  inicial: string
   /** Lo que pesa en la nota final. Es lo que se lee bajo el título, como en el HTML. */
   peso: number
   /** Sobre cuánto puntúa. `null` si el criterio no lo declara. */
@@ -490,12 +527,18 @@ export function criteriosDeLaTanda(filas: FilaRanking[]): CriterioDeLaTanda[] {
       vistos.set(nota.criterio, {
         nombre: nota.criterio,
         rotulo: rotuloCorto(nota.codigo, nota.criterio),
+        // Se rellena abajo: la inicial depende de las OTRAS, no de esta sola.
+        inicial: '',
         peso: nota.peso,
         maximo: nota.maximo,
       })
     }
   }
-  return [...vistos.values()]
+  const todos = [...vistos.values()]
+  // Las iniciales se reparten al final, con la lista entera delante: una letra
+  // solo se sabe libre cuando se conocen todas las demás.
+  const iniciales = inicialesDeLaTanda(todos.map((c) => c.rotulo))
+  return todos.map((c, i) => ({ ...c, inicial: iniciales[i]! }))
 }
 
 /** La nota de un criterio concreto en una fila, o `null` si esa fila no lo trae. */
@@ -882,6 +925,18 @@ export interface ColumnaDelRanking {
    * pantalla y no valen lo mismo.
    */
   peso?: number
+  /**
+   * Lo que dice la cabecera cuando el título es una abreviatura. Va al `title`.
+   */
+  completo?: string
+  /**
+   * Si se puede apagar desde el selector de columnas.
+   *
+   * ⚠️ **La marca de avance y el candidato NO lo son.** Sin la primera no se
+   * puede avanzar a nadie, y sin el segundo la fila deja de ser de alguien: una
+   * tabla de cifras sin nombre no se puede leer ni corregir.
+   */
+  ocultable?: boolean
 }
 
 /**
@@ -974,39 +1029,79 @@ export function columnasDelRanking(
 ): ColumnaDelRanking[] {
   return [
     { clave: 'avance', titulo: '' },
-    { clave: 'puesto', titulo: '#', cifra: true },
+    { clave: 'puesto', titulo: '#', cifra: true, ocultable: true },
     { clave: 'candidato', titulo: 'Candidato', ordenable: 'nombre' },
-    ...(trae.hayCiudad
-      ? ([{ clave: 'ciudad', titulo: 'Ciudad', ordenable: 'ciudad' }] as ColumnaDelRanking[])
-      : []),
     ...(trae.hayPretension
       ? ([
-          { clave: 'pretension', titulo: 'Pretensión', cifra: true, ordenable: 'pretension' },
+          {
+            clave: 'pretension',
+            titulo: 'Pretensión',
+            cifra: true,
+            ordenable: 'pretension',
+            ocultable: true,
+          },
         ] as ColumnaDelRanking[])
       : []),
-    { clave: 'nota', titulo: laEtapaDe(etapa).nota, cifra: true, ordenable: 'nota' },
-    { clave: 'veredicto', titulo: 'Veredicto' },
+    /*
+      «Nota» a secas y la etapa en el título emergente. La cabecera se llamaba
+      «Nota del perfil» para que cinco pestañas con el mismo rótulo no obligaran
+      a recordar en cuál estás; la pestaña activa ya lo dice justo encima, y ese
+      nombre gastaba 167 px de una columna que enseña dos cifras.
+    */
+    {
+      clave: 'nota',
+      titulo: 'Nota',
+      completo: laEtapaDe(etapa).nota,
+      cifra: true,
+      ordenable: 'nota',
+    },
+    { clave: 'veredicto', titulo: 'Veredicto', ocultable: true },
     ...criterios.map(
       (c): ColumnaDelRanking => ({
         clave: `criterio:${c.nombre}`,
-        // La cabecera lleva el corto; el largo vive en el título emergente de
-        // cada celda, que es donde se consulta cuando hace falta.
-        titulo: c.rotulo,
+        // La cabecera lleva la INICIAL; la palabra vive en la leyenda de debajo,
+        // siempre a la vista, y el nombre entero en el título emergente.
+        titulo: c.inicial,
+        completo: c.nombre,
         cifra: true,
         peso: c.peso,
+        ocultable: true,
       }),
     ),
     ...(esDelCurriculum(etapa)
       ? ([
-          { clave: 'adecuacion', titulo: 'Adecuación', cifra: true },
-          { clave: 'potencial', titulo: 'Potencial', cifra: true },
+          { clave: 'adecuacion', titulo: 'Adecuación', cifra: true, ocultable: true },
+          { clave: 'potencial', titulo: 'Potencial', cifra: true, ocultable: true },
         ] as ColumnaDelRanking[])
       : []),
-    { clave: 'riesgos', titulo: 'Riesgos', cifra: true },
-    { clave: 'alertas', titulo: 'Alertas', cifra: true },
-    { clave: 'estado', titulo: 'Estado' },
+    { clave: 'riesgos', titulo: 'Riesgos', cifra: true, ocultable: true },
+    { clave: 'alertas', titulo: 'Alertas', cifra: true, ocultable: true },
+    { clave: 'estado', titulo: 'Estado', ocultable: true },
+    /*
+      La ciudad, al final. Estaba pegada al candidato porque es lo que se lee al
+      decidir a quién llamar; se mueve al borde porque con los criterios
+      encendidos separaba el nombre de sus cifras, que es la lectura que la
+      tabla existe para permitir.
+    */
+    ...(trae.hayCiudad
+      ? ([
+          { clave: 'ciudad', titulo: 'Ciudad', ordenable: 'ciudad', ocultable: true },
+        ] as ColumnaDelRanking[])
+      : []),
   ]
 }
+
+/**
+ * Las columnas que de verdad se pintan, quitando las apagadas.
+ *
+ * ⚠️ **De aquí sale el `colSpan`, igual que antes.** Filtrar en el sitio donde
+ * se pinta la cabecera y olvidarlo en la fila de detalle es el mismo fallo que
+ * este archivo lleva evitando desde que la lista existe.
+ */
+export const columnasVisibles = (
+  columnas: ColumnaDelRanking[],
+  apagadas: ReadonlySet<string>,
+): ColumnaDelRanking[] => columnas.filter((c) => !(c.ocultable && apagadas.has(c.clave)))
 
 /**
  * Las columnas de criterio que corresponde pintar, o ninguna.

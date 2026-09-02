@@ -1093,13 +1093,127 @@ thead .celdaCandidato {
  * Dice cuantas columnas va a añadir antes de añadirlas: encender algo que
  * duplica el ancho de una tabla sin avisar se siente como un fallo.
  */
+/* Los dos controles de columnas, en la misma linea y separados por el hueco. */
+.controlesDeColumnas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--e3);
+  margin-bottom: var(--e2);
+}
+
 .interruptorCriterios {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   gap: var(--e2);
-  margin: 0 0 var(--e2);
+  margin: 0;
   font-size: var(--t-menor);
+}
+
+/* ---------- Que columnas se ven ---------- */
+
+/*
+ * Un `<details>` y no un menu escrito a mano: se abre con teclado, se cierra con
+ * Escape y no hay que atrapar el foco. Es lo mas barato que cumple.
+ */
+.selectorColumnas {
+  position: relative;
+  font-size: var(--t-menor);
+}
+
+.selectorColumnas summary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  min-height: 32px;
+  padding: 0 var(--e3);
+  border: 1px solid var(--borde-control);
+  border-radius: var(--radio-control);
+  color: var(--tinta);
+  cursor: pointer;
+  user-select: none;
+}
+
+.cuantasApagadas {
+  color: var(--tinta3);
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * La lista, flotando sobre la tabla. `z-index` por encima de la celda del
+ * candidato, que es pegajosa: sin el, el menu se abre por debajo de ella.
+ */
+.listaColumnas {
+  position: absolute;
+  z-index: 3;
+  right: 0;
+  margin-top: var(--e1);
+  display: flex;
+  flex-direction: column;
+  gap: var(--e1);
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: var(--e3);
+  background: var(--nube);
+  border: 1px solid var(--regla);
+  border-radius: var(--radio-menor);
+  box-shadow: var(--sombra-nube);
+}
+
+.listaColumnas label {
+  display: flex;
+  align-items: center;
+  gap: var(--e2);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.verTodasLasColumnas {
+  margin-top: var(--e2);
+  align-self: flex-start;
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: var(--tinta2);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/*
+ * Que es cada letra, debajo de la tabla y siempre a la vista.
+ *
+ * ⚠️ **Es lo que sostiene una cabecera de una sola letra.** Una «R» encima de un
+ * 43 no dice nada, y dejar su significado solo en el cursor no existe con
+ * teclado ni en una impresion.
+ */
+.leyendaLetras {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e1) var(--e4);
+  margin: var(--e3) 0 0;
+  font-size: var(--t-menor);
+  color: var(--tinta2);
+}
+
+.leyendaLetras span {
+  display: flex;
+  align-items: baseline;
+  gap: var(--e1);
+}
+
+.leyendaLetras b {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  padding: 1px var(--e1);
+  border-radius: var(--radio-marca);
+  background: var(--nube-hundida);
+  color: var(--tinta);
+  font-weight: 700;
 }
 
 .interruptorCriterios label {
@@ -1143,29 +1257,25 @@ thead .celdaCandidato {
 }
 
 /*
- * El ancho de la columna lo decide esta caja, y de el depende si la tabla entera
- * cabe en la pantalla: debajo solo hay dos digitos.
+ * La cabecera es una LETRA, asi que la caja es del tamaño de una letra: la
+ * columna no puede ser mas estrecha que su contenido, y debajo solo hay dos
+ * digitos. Con los nombres largos hacian falta 5.5rem y la cabecera medía 107 px
+ * de alto; con la palabra corta, 3rem y 77 px.
  *
- * 3rem es lo medido: al rotulo corto —«Resultados», «Habilidades»— le basta con
- * dos lineas y ninguna palabra se parte por la mitad. Con los nombres largos
- * hacian falta 5.5rem y la cabecera media 107 px de alto en vez de 77.
- *
- * Bajar mas no compensa: de 3 a 2.75rem la tabla solo encoge 27 px y las
- * palabras empiezan a quedarse justas.
+ * Lo que hace que una letra se sostenga NO esta aqui: es la leyenda de debajo,
+ * que dice que es cada una sin pedir el cursor.
  */
 .cabeceraCriterio b {
   display: block;
-  width: 3rem;
-  font-size: var(--t-micro);
-  font-weight: 600;
+  width: 1.5rem;
+  font-size: var(--t-apoyo);
+  font-weight: 700;
   line-height: 1.25;
   letter-spacing: 0;
   text-transform: none;
-  color: var(--tinta2);
-  white-space: normal;
-  /* Un nombre de una sola palabra larga rompe antes que desbordarse. */
-  overflow-wrap: anywhere;
-  hyphens: auto;
+  color: var(--tinta);
+  text-align: center;
+  white-space: nowrap;
 }
 
 .cabeceraCriterio span {
