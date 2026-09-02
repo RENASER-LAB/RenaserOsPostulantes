@@ -24,6 +24,12 @@ import {
   cifrasDeLaEtapa,
   columnasDelRanking,
   comoSeOrdena,
+  CORTE_DE_LA_TANDA,
+  criteriosDeLaTanda,
+  criteriosQueSePintan,
+  cuantoCubre,
+  notaEscrita,
+  noPondera,
   describirFiltro,
   esDelCurriculum,
   filtrar,
@@ -38,10 +44,31 @@ import {
   pretensionParaOrdenar,
   queTraeLaTanda,
   recuentos,
+  resumenDeLaTanda,
   seExportaAExcel,
   SIN_FILTROS,
+  notaDelCriterio,
+  tonoDelCriterio,
 } from './ranking'
-import type { FilaRanking } from '../api/tipos'
+import type { FilaRanking, NotaCriterio } from '../api/tipos'
+
+/** Una nota de criterio con lo justo: el nombre, lo que sacó y sobre cuánto. */
+const nota = (
+  criterio: string,
+  puntaje: number | null,
+  maximo: number | null = 100,
+  extra: Partial<NotaCriterio> = {},
+): NotaCriterio => ({
+  criterio,
+  puntaje,
+  maximo,
+  peso: 10,
+  explicacion: null,
+  origen: 'AGENTE',
+  confianza: null,
+  motivoAjuste: null,
+  ...extra,
+})
 
 /**
  * Una fila con lo justo.
@@ -750,11 +777,46 @@ describe('cuántas columnas tiene la tabla', () => {
     celda del «no hay» medían dos columnas menos que la tabla. Derivado de la
     lista, añadir una columna no puede volver a descuadrarlo.
   */
-  it('nueve en las etapas sin retrato del currículum, once con él', () => {
-    expect(columnasDelRanking('PRUEBA_PUESTO')).toHaveLength(9)
-    expect(columnasDelRanking('SIMULACION')).toHaveLength(9)
-    expect(columnasDelRanking('PERFIL_INTEGRAL')).toHaveLength(11)
-    expect(columnasDelRanking('DECISION')).toHaveLength(11)
+  it('diez en las etapas sin retrato del currículum, doce con él', () => {
+    expect(columnasDelRanking('PRUEBA_PUESTO')).toHaveLength(10)
+    expect(columnasDelRanking('SIMULACION')).toHaveLength(10)
+    expect(columnasDelRanking('PERFIL_INTEGRAL')).toHaveLength(12)
+    expect(columnasDelRanking('DECISION')).toHaveLength(12)
+  })
+
+  /*
+    ⚠️ **Veredicto está en las CINCO etapas, y eso es a propósito.** No sale del
+    currículum como Adecuación y Potencial: es el grupo de prioridad, que es una
+    lectura de la persona y no de la etapa. Meterlo en `esDelCurriculum` lo
+    borraría de la mesa de la prueba, que es donde más se decide.
+  */
+  it('Veredicto está en las cinco, y no es del retrato del currículum', () => {
+    for (const etapa of ['PERFIL_INTEGRAL', 'PRUEBA_PUESTO', 'VALIDACION'] as const) {
+      expect(columnasDelRanking(etapa).map((c) => c.clave)).toContain('veredicto')
+    }
+  })
+
+  /*
+    ⚠️ **El `colSpan` sale de aquí, y las columnas de criterio lo mueven.** Es el
+    fallo clásico de este archivo: se añade una columna y la fila de detalle mide
+    menos que la tabla. Con ocho criterios encendidos la diferencia es de ocho, y
+    a ojo no se ve —el bloque de dentro solo sale un poco estrecho—.
+  */
+  it('cada criterio encendido es una columna más, y el colSpan la cuenta', () => {
+    const criterios = [
+      { nombre: 'Resultados demostrables', peso: 25, maximo: 100 },
+      { nombre: 'Complejidad y alcance', peso: 20, maximo: 100 },
+    ]
+    const conCriterios = columnasDelRanking('PERFIL_INTEGRAL', undefined, criterios)
+    expect(conCriterios).toHaveLength(12 + 2)
+    expect(conCriterios.filter((c) => c.clave.startsWith('criterio:'))).toHaveLength(2)
+    // El peso viaja en la columna: es lo que se pinta bajo el título, y sin él
+    // un 90 que pesa 25 y uno que pesa 5 se leen igual.
+    expect(conCriterios.find((c) => c.clave === 'criterio:Complejidad y alcance')?.peso).toBe(20)
+  })
+
+  it('apagado no añade ninguna: la tabla se queda como estaba', () => {
+    expect(columnasDelRanking('PERFIL_INTEGRAL', undefined, [])).toHaveLength(12)
   })
 
   it('Adecuación y Potencial son las dos que aparecen y desaparecen', () => {
@@ -783,6 +845,250 @@ describe('cuántas columnas tiene la tabla', () => {
       'nota',
     ])
     expect(columnas.find((c) => c.clave === 'nota')?.titulo).toBe('Nota de la prueba')
+  })
+})
+
+// ---------- Las cinco cifras de la tanda ----------
+
+describe('las cinco cifras de la tanda', () => {
+  /*
+    ⚠️ **Ninguna sale de los contadores del backend, y ese es el punto.**
+    `calificados` / `enCurso` / `fallidos` son de la cola que califica el
+    CURRÍCULUM y salen idénticos en las cinco pestañas: en la de la prueba
+    decían «76 calificados» encima de setenta y ocho guiones. Estas se cuentan
+    de las filas, que es lo único que sabe de esta etapa.
+  */
+  it('cuenta solo a quien tiene nota de ESTA etapa', () => {
+    const r = resumenDeLaTanda(
+      [
+        fila('PRUEBA_POR_CONFIRMAR', 80),
+        fila('PRUEBA_CALIFICANDO', null),
+        fila('POSTULADA', 60),
+      ],
+      'PRUEBA_PUESTO',
+    )
+    expect(r.conNota).toBe(2)
+  })
+
+  it('la mediana impar es el valor de en medio', () => {
+    // Desordenadas a propósito: la mediana no puede depender del orden de llegada.
+    const r = resumenDeLaTanda(
+      [fila('POSTULADA', 90), fila('POSTULADA', 50), fila('POSTULADA', 70)],
+      'PERFIL_INTEGRAL',
+    )
+    expect(r.mediana).toBe(70)
+  })
+
+  it('la mediana par es el promedio de las dos de en medio', () => {
+    const r = resumenDeLaTanda(
+      [
+        fila('POSTULADA', 40),
+        fila('POSTULADA', 60),
+        fila('POSTULADA', 70),
+        fila('POSTULADA', 90),
+      ],
+      'PERFIL_INTEGRAL',
+    )
+    expect(r.mediana).toBe(65)
+  })
+
+  /*
+    ⚠️ **Los huecos no entran en la media.** Contarlos como cero hundiría el
+    promedio de una tanda a medio calificar y lo pintaría como una tanda mala.
+    Un cero es un juicio; un hueco es que nadie ha mirado todavía.
+  */
+  it('la media ignora a quien no tiene nota, no lo cuenta como cero', () => {
+    const r = resumenDeLaTanda(
+      [fila('POSTULADA', 80), fila('POSTULADA', 60), fila('POSTULADA', null)],
+      'PERFIL_INTEGRAL',
+    )
+    expect(r.media).toBe(70)
+  })
+
+  it('la media va con un decimal, como el informe del que sale', () => {
+    const r = resumenDeLaTanda(
+      [fila('POSTULADA', 80), fila('POSTULADA', 61), fila('POSTULADA', 51)],
+      'PERFIL_INTEGRAL',
+    )
+    expect(r.media).toBe(64)
+    const otra = resumenDeLaTanda(
+      [fila('POSTULADA', 66), fila('POSTULADA', 61)],
+      'PERFIL_INTEGRAL',
+    )
+    expect(otra.media).toBe(63.5)
+  })
+
+  it('el corte es inclusivo: quien saca justo 70 llega', () => {
+    const r = resumenDeLaTanda(
+      [
+        fila('POSTULADA', CORTE_DE_LA_TANDA),
+        fila('POSTULADA', CORTE_DE_LA_TANDA - 1),
+        fila('POSTULADA', 95),
+      ],
+      'PERFIL_INTEGRAL',
+    )
+    expect(r.lleganAlCorte).toBe(2)
+  })
+
+  /*
+    ⚠️ **«Aún calificando» es quien YA la hizo y sigue sin nota**, no quien no la
+    ha hecho ni quien está en otra etapa. Es la cifra accionable: de esas
+    personas el equipo tiene trabajo pendiente.
+  */
+  it('«aún calificando» son los que ya la hicieron y siguen sin nota', () => {
+    const r = resumenDeLaTanda(
+      [
+        fila('PRUEBA_CALIFICANDO', null),
+        fila('PRUEBA_POR_CONFIRMAR', null),
+        fila('PRUEBA_TURNO_CANDIDATO', null),
+        fila('PERFIL_CALIFICANDO', null),
+        fila('PRUEBA_POR_CONFIRMAR', 80),
+      ],
+      'PRUEBA_PUESTO',
+    )
+    expect(r.calificando).toBe(2)
+  })
+
+  it('sin nadie calificado no inventa un cero: la mediana y la media son nulas', () => {
+    const r = resumenDeLaTanda([fila('POSTULADA', null)], 'PERFIL_INTEGRAL')
+    expect(r.mediana).toBeNull()
+    expect(r.media).toBeNull()
+    expect(r.lleganAlCorte).toBe(0)
+  })
+
+  it('con la tanda vacía tampoco revienta', () => {
+    expect(resumenDeLaTanda([], 'PERFIL_INTEGRAL')).toEqual({
+      conNota: 0,
+      mediana: null,
+      media: null,
+      lleganAlCorte: 0,
+      calificando: 0,
+    })
+  })
+})
+
+// ---------- Los criterios como columnas de color ----------
+
+describe('el mapa de calor de los criterios', () => {
+  it('los tres tramos son los del informe: 70 y 40', () => {
+    expect(tonoDelCriterio(nota('Caja', 14, 20))).toBe('bien') // 70 % justo
+    expect(tonoDelCriterio(nota('Caja', 13, 20))).toBe('duda') // 65 %
+    expect(tonoDelCriterio(nota('Caja', 8, 20))).toBe('duda') // 40 % justo
+    expect(tonoDelCriterio(nota('Caja', 7, 20))).toBe('mal') // 35 %
+  })
+
+  /*
+    ⚠️ **Un hueco NO es un rojo.** Sin nota puede ser que la IA no haya llegado o
+    que ese criterio lo puntúe una persona —hay criterios de método PERSONA en la
+    rúbrica—. Teñirlo de rojo diría que el candidato lo hizo mal, que es un
+    juicio que nadie ha emitido.
+  */
+  it('sin nota es un hueco, nunca un rojo', () => {
+    expect(tonoDelCriterio(nota('Caja', null, 20))).toBe('hueco')
+    expect(cuantoCubre(nota('Caja', null, 20))).toBeNull()
+    // Y sin nota NI máximo sigue siendo un hueco: lo que falta es la nota.
+    expect(tonoDelCriterio(nota('Caja', null, null))).toBe('hueco')
+  })
+
+  it('un cero sí es un rojo: alguien lo miró y puso cero', () => {
+    expect(tonoDelCriterio(nota('Caja', 0, 20))).toBe('mal')
+  })
+
+  /*
+    ⚠️ **Un criterio que pesa cero no se tiñe, aunque tenga nota.** No es
+    hipotético: en la vacante 3 de la base local «Desarrollo de personas» pesa 0
+    y todo el mundo tiene nota en él. El backend suma `puntaje × peso` y divide
+    por la suma de pesos, así que ese criterio NO puede mover la nota de nadie.
+    Pintarlo en verde lo pone al lado de uno que pesa 25 como si valieran igual.
+  */
+  it('un criterio que no pondera no se tiñe, aunque tenga nota', () => {
+    expect(tonoDelCriterio(nota('Desarrollo de personas', 90, null, { peso: 0 }))).toBe('hueco')
+    expect(noPondera(nota('Desarrollo de personas', 90, null, { peso: 0 }))).toBe(true)
+    // Con peso, el mismo 90 sí se tiñe: lo que cambia es la importancia.
+    expect(tonoDelCriterio(nota('Habilidades', 90, null, { peso: 25 }))).toBe('bien')
+    // Y la nota se sigue enseñando: lo que se quita es el color, no el dato.
+    expect(notaEscrita(nota('Desarrollo de personas', 90, null, { peso: 0 }))).toBe('90')
+  })
+
+  /*
+    ⚠️ **Sin máximo la escala es 100, no «ninguna».** Es como llegan los ocho
+    criterios del currículum —comprobado contra el backend vivo: `maximo: null` y
+    puntajes de 40, 50, 60—, porque lo que reparte ahí es el peso y no un máximo
+    propio. Leerlo como «sin escala» pintaba las ocho columnas del perfil integral
+    como huecos, encima de notas que sí estaban.
+  */
+  it('sin máximo la escala es cien, y la nota se escribe sola', () => {
+    expect(cuantoCubre(nota('Resultados', 60, null))).toBeCloseTo(0.6)
+    expect(tonoDelCriterio(nota('Resultados', 60, null))).toBe('duda')
+    expect(tonoDelCriterio(nota('Resultados', 70, null))).toBe('bien')
+    // «40/100» sería ruido: el 100 no añade nada.
+    expect(notaEscrita(nota('Resultados', 40, null))).toBe('40')
+    // Con máximo propio sí se escribe, que es lo que hace una prueba del puesto.
+    expect(notaEscrita(nota('Caja', 18, 20))).toBe('18/20')
+    expect(notaEscrita(null)).toBe('—')
+    // Un máximo en cero no divide: se trata como el vacío.
+    expect(cuantoCubre(nota('Caja', 50, 0))).toBeCloseTo(0.5)
+  })
+
+  /*
+    ⚠️ **La cabecera se arma de TODAS las filas, no de la primera.** Una fila sin
+    calificar trae la lista vacía o incompleta, y mirando solo la primera la
+    tabla perdería columnas según a quién le tocara encabezar la tanda.
+  */
+  it('la cabecera se arma de todas las filas, no de la primera', () => {
+    const criterios = criteriosDeLaTanda([
+      fila('POSTULADA', null, { notasCriterio: [] }),
+      fila('POSTULADA', 80, {
+        notasCriterio: [nota('Resultados', 20, 25), nota('Complejidad', 15, 20)],
+      }),
+    ])
+    expect(criterios.map((c) => c.nombre)).toEqual(['Resultados', 'Complejidad'])
+  })
+
+  it('un máximo nulo de una fila sin calificar no borra el que ya se sabía', () => {
+    const criterios = criteriosDeLaTanda([
+      fila('POSTULADA', 80, { notasCriterio: [nota('Resultados', 20, 25)] }),
+      fila('POSTULADA', null, { notasCriterio: [nota('Resultados', null, null)] }),
+    ])
+    expect(criterios[0]?.maximo).toBe(25)
+  })
+
+  it('no repite un criterio que sale en todas las filas', () => {
+    const criterios = criteriosDeLaTanda([
+      fila('POSTULADA', 80, { notasCriterio: [nota('Resultados', 20, 25)] }),
+      fila('POSTULADA', 60, { notasCriterio: [nota('Resultados', 10, 25)] }),
+    ])
+    expect(criterios).toHaveLength(1)
+  })
+
+  /*
+    ⚠️ **Fuera del currículum no se pinta ninguna, y no es por el ancho.**
+    `notasCriterio` viene SIEMPRE de los criterios del currículum, en las cinco
+    pestañas. En «Prueba del puesto» serían ocho columnas del CV con pinta de ser
+    de la prueba: exactamente el fallo que este archivo existe para no repetir.
+  */
+  it('fuera del currículum no se pinta ninguna, aunque el interruptor esté encendido', () => {
+    const filas = [fila('POSTULADA', 80, { notasCriterio: [nota('Resultados', 20, 25)] })]
+    expect(criteriosQueSePintan('PRUEBA_PUESTO', filas, true)).toEqual([])
+    expect(criteriosQueSePintan('SIMULACION', filas, true)).toEqual([])
+    expect(criteriosQueSePintan('PERFIL_INTEGRAL', filas, true)).toHaveLength(1)
+    expect(criteriosQueSePintan('DECISION', filas, true)).toHaveLength(1)
+  })
+
+  it('apagado no pinta ninguna ni en el perfil integral', () => {
+    const filas = [fila('POSTULADA', 80, { notasCriterio: [nota('Resultados', 20, 25)] })]
+    expect(criteriosQueSePintan('PERFIL_INTEGRAL', filas, false)).toEqual([])
+  })
+
+  /*
+    Los criterios se buscan por nombre porque es lo único que viaja: el backend
+    no manda el código. Quien no tiene esa nota da `null`, y la celda pinta un
+    hueco — que es distinto de un cero.
+  */
+  it('una fila sin ese criterio da null, y eso pinta un hueco', () => {
+    const suya = fila('POSTULADA', 80, { notasCriterio: [nota('Resultados', 20, 25)] })
+    expect(notaDelCriterio(suya, 'Resultados')?.puntaje).toBe(20)
+    expect(notaDelCriterio(suya, 'Complejidad')).toBeNull()
   })
 })
 
@@ -938,20 +1244,20 @@ describe('una columna entera vacía no se pinta: se dice por qué', () => {
     ).toBe(true)
   })
 
-  it('sin las dos, la tabla baja a nueve y siete columnas', () => {
+  it('sin las dos, la tabla baja a diez y ocho columnas', () => {
     const nada = { hayCiudad: false, hayPretension: false, puedeVerPretension: true }
-    expect(columnasDelRanking('PERFIL_INTEGRAL', nada)).toHaveLength(9)
-    expect(columnasDelRanking('PRUEBA_PUESTO', nada)).toHaveLength(7)
+    expect(columnasDelRanking('PERFIL_INTEGRAL', nada)).toHaveLength(10)
+    expect(columnasDelRanking('PRUEBA_PUESTO', nada)).toHaveLength(8)
   })
 
-  it('con solo una de las dos, once menos una', () => {
+  it('con solo una de las dos, doce menos una', () => {
     expect(
       columnasDelRanking('PERFIL_INTEGRAL', {
         hayCiudad: true,
         hayPretension: false,
         puedeVerPretension: true,
       }),
-    ).toHaveLength(10)
+    ).toHaveLength(11)
     const claves = columnasDelRanking('PRUEBA_PUESTO', {
       hayCiudad: false,
       hayPretension: true,
