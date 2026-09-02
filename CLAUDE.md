@@ -1,11 +1,116 @@
 # Portal del candidato · contexto de trabajo
 
-Última actualización: 2026-09-01 · **el ranking se ordena, se filtra y se descarga; la cuenta
-nace con ciudad; las pruebas del puesto se escriben desde el panel; las áreas se administran
-desde Configuración; y el plazo se dice entero**
+Última actualización: 2026-09-02 · **lo que entregó el candidato se ve desde la ficha; el
+ranking se ordena, se filtra y se descarga; la cuenta nace con ciudad; las pruebas del puesto se
+escriben desde el panel; y el plazo se dice entero**
 
 Este archivo es para retomar el trabajo sin tener que reconstruir nada. Cuenta qué es este
 proyecto, con qué habla, qué se decidió y por qué, y qué está a medias.
+
+---
+
+## Lo que entregó se ve desde la ficha (02/09/2026)
+
+Los entregables de la prueba los leían **dos**: el propio candidato en su portal, y el agente al
+armar su insumo. Quien tenía que poner a mano la nota de un criterio —los que la rúbrica reserva
+a una persona, que son justo los que el modelo no puede leer: un vídeo, un enlace— **no tenía
+dónde ver el vídeo**. Se le pedía un puntaje sobre algo que ninguna pantalla le enseñaba. Ahora
+hay un bloque **«Lo que entregó»** en la ficha (`src/panel/vacantes/EntregablesDePrueba.tsx`),
+entre la rúbrica y «Lo que escribió en la prueba»: cuánto vale, qué entregó, qué escribió — que
+es el orden en que se revisa. Lo alimenta `GET /postulaciones/{id}/prueba/entregables`, nuevo.
+
+### Salen todos los pedidos, entregados o no
+
+⚠️ **Un hueco no se lee: se lee una lista más corta, que parece completa.** Que faltara el
+tercero, y que fuera obligatorio, es justo lo que hay que ver antes de poner una nota. Por eso la
+fila sale igual y **la palabra va dentro de la píldora** —«Falta, y era obligatorio»—: es la
+regla de la forma primero, y en gris `--mal` y la prosa caen casi en la misma luminancia.
+
+### El permiso tiene dos niveles, porque el enlace ES el entregable
+
+Listar pide `abrir_ficha_candidato`; el **`enlace` y el `archivoId` viajan solo con
+`descargar_entregables`**. Sin el segundo se sigue sabiendo qué entregó y cuándo —lo que necesita
+quien solo lleva el seguimiento— y `porQueNoSeVe` explica el hueco con palabras.
+
+⚠️ **No es una asimetría, es cerrar la puerta de al lado.** En la prueba de marketing la
+sustentación en vídeo se entrega **pegando una dirección**, así que repartir el enlace con el
+permiso flojo abriría por ahí justo lo que las dos rutas de `/archivos` cierran.
+
+⚠️ **Y hasta la V48 abrir un entregable respondía 404 para cualquier empresa que no fuera la
+plataforma.** No era del panel: el backend sellaba el archivo con la organización de quien lo
+sube —el candidato, que es de la plataforma— y lo busca con la de la empresa de la vacante. El
+porqué entero está en el `CLAUDE.MD` del backend. **Esta pantalla es la primera que lo habría
+destapado**, y hoy no se nota porque RENASER es las dos cosas a la vez.
+
+### ⚠️ El enlace firmado NO falla en local, y decidir por la excepción no habría caído nunca
+
+`AlmacenArchivosEnMemoria.urlDeDescarga` devuelve `Optional.of("memoria://…")`: el endpoint
+contesta **200** con una url que ningún navegador abre. Lo dice `application-local.yaml` en su
+bloque de archivos. Así que el botón **no decide por la excepción —no hay ninguna— sino por el
+esquema de la url**, y lo que no sea `http`/`https` cae a `/archivos/{id}/descarga`, que sirve
+los bytes por el backend y funciona en los dos entornos. El `catch` sigue haciendo falta para el
+403 y para la red caída; lo que nunca se dispara en local es él.
+
+
+### ⚠️ `window.open` después de un `await` lo bloquea el navegador, y bloqueado devuelve `null`
+
+**No lanza.** Un `try/catch` alrededor no se entera, así que la pantalla se quedaría diciendo
+«Abriendo…» sobre una ventana que nunca existió. Por eso se pide **antes** del `await`, dentro
+del gesto de la persona: se abre en blanco, se navega si la url sirve, y se cierra si toca
+descargar. Es de la familia del `<button>` sin `type`: el navegador hace algo razonable, distinto
+de lo que se quería, y sin error.
+
+### El enlace del candidato es contenido de fuera
+
+⚠️ **Solo se hace pulsable lo que parsea como `http` o `https`.** Es texto libre —la única
+validación que tiene, ni en el DTO ni en la base, es que no venga en blanco—. React neutraliza
+`javascript:` en un `href` pero no los demás esquemas, y lo que no pasa la guarda se pinta como
+texto, que se lee y se copia, diciendo por qué no se abre.
+
+⚠️ **El texto del enlace es la dirección entera, a propósito.** Un «Ver el vídeo» escondería a
+dónde lleva, y quien va a pulsar sobre algo que escribió un desconocido tiene derecho a ver el
+destino antes. Por lo mismo va con `noopener noreferrer`.
+
+### ⚠️ Un 404 de ese endpoint son DOS cosas, y la pantalla no puede saber cuál
+
+El backend contesta 404 cuando la persona no tiene intento de prueba —no la rindió— **y también
+cuando la vacante queda fuera del alcance de quien mira**, porque `AlcanceSobreLaVacante` devuelve
+404 y no 403 a propósito, para no confirmar que existe algo que no te toca. Por eso la frase **no
+afirma** que no entregó: nombra las dos posibilidades. Decirlo era el fallo caro —quien califica
+leería un hecho sobre la persona cuando lo que pasa es que no alcanza a verlo—, y es la misma
+lección del guion del ranking, que significaba cinco cosas y no decía cuál.
+
+**Una lista vacía sí se afirma**: una prueba sin entregables es un cuestionario y se contesta
+escribiendo. El backend devuelve `[]`, no 404.
+
+### La sexta fixtura que iba a mentir
+
+`datos-panel.mjs` no traía la ruta, y el interceptor de `capturar-panel.mjs` acaba en `?? []`:
+la captura habría escrito **«esta prueba no pedía entregar nada» sobre una postulación que sí
+tenía entregables**. No es un hueco, es una afirmación falsa —y del lado que exculpa al sistema.
+Ahora siembra los cuatro casos que hay que poder mirar: un enlace, un archivo, uno obligatorio
+**sin** entregar, y uno cuyo archivo ya no está guardado.
+
+### Lo que queda sin resolver
+
+⚠️ **Con formato `CUALQUIERA` se puede perder una entrega de vista.** Quien pega un enlace y
+luego sube un archivo deja **dos filas**, y de cada entregable se enseña la última versión: el
+enlace anterior no se pinta en ningún sitio. Arreglarlo pide que el backend mande el historial.
+Está dicho en el código y no resuelto.
+
+### Cómo se comprueba
+
+```bash
+npm run typecheck && npm test
+```
+
+`npm test` son **528 pruebas en 30 archivos** (medido el 02/09/2026), y pasan enteras; `tsc` sale
+limpio y el detector de impeccable no encuentra nada en el bloque nuevo.
+
+⚠️ **Lo que NO se pudo comprobar: que el enlace firmado del bucket sirva bytes.** En local el
+almacén es el doble en memoria y no hay bucket, así que se verificó **el camino de la descarga**
+—el único que existe en los dos entornos— y el otro queda afirmado por construcción. Es el mismo
+hueco que ya tiene el enunciado subido de una prueba.
 
 ---
 
@@ -322,7 +427,7 @@ npm run typecheck && npm test
 npx playwright test herramientas/e2e/15-componer-prueba.spec.ts
 ```
 
-`npm test` son **356 pruebas en 29 archivos** (medido el 01/09/2026), y pasan enteras.
+`npm test` son **528 pruebas en 30 archivos** (medido el 02/09/2026), y pasan enteras.
 
 `e2e-componer-prueba.mjs` escribe una prueba entera en un Chrome de verdad y contra el
 backend de verdad: crea la plantilla, compone la v1 —datos, tiempos, el enunciado escrito y

@@ -686,11 +686,12 @@ export const verEntregablesDePrueba = (postulacionId: number) =>
 /**
  * El enlace firmado para abrir un archivo del bucket sin pasar por el backend.
  *
- * ⚠️ **En local NO existe y contesta 500, y no es un fallo.** El almacen de
- * desarrollo vive en memoria y no reparte enlaces; el backend lo dice con
- * «el almacen de archivos de este entorno no reparte enlaces». Por eso quien lo
- * llame tiene que saber caer a `descargarArchivo`, que sirve los bytes por el
- * backend y funciona en los dos sitios.
+ * ⚠️ **En local contesta 200, y su url no la abre nadie.** El almacen de
+ * desarrollo devuelve `memoria://…` —lo dice `application-local.yaml`—, asi que
+ * NO se puede decidir por la excepcion: no hay ninguna. Quien llame tiene que
+ * mirar el **esquema de la url** y caer a `descargarArchivo` cuando no sea
+ * `http`/`https`; ese es el camino que sirve los bytes por el backend y funciona
+ * en los dos entornos.
  */
 export const enlaceDeArchivo = (archivoId: number) =>
   pedir<EnlaceArchivo>(`/archivos/${archivoId}/enlace`)
