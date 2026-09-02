@@ -164,6 +164,19 @@
   transition: background 160ms var(--salida);
 }
 
+/*
+ * ⚠️ **Sin esto un boton de tinta apagado se lee como pulsable.** Las otras tres
+ * piezas lo declaran; esta no lo llevaba porque hasta hoy ningun `.solido` era
+ * desactivable. El primero que lo es —el de guardar la nota de un criterio—
+ * nace apagado, o sea que ese era el estado inicial que se veia.
+ */
+.solido:disabled {
+  background: var(--nube-honda);
+  border-color: var(--nube-honda);
+  color: var(--tinta3);
+  cursor: default;
+}
+
 .solido:hover:not(:disabled) {
   background: var(--tinta-pulsado);
   border-color: var(--tinta-pulsado);

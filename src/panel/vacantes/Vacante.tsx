@@ -13,7 +13,7 @@
  *     fallar a medias; decir «fallo» a secas dejaria sin saber quien si paso.
  */
 
-import { Fragment, useEffect, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -43,6 +43,8 @@ import {
   verDesgloseEvaluacion,
   verMetricasValidacion,
   verNotasPrueba,
+  ponerNotaCriterioPrueba,
+  ponerNotaCriterioSimulacion,
   verNotasSimulacion,
   verRanking,
   verValidacion,
@@ -1725,12 +1727,22 @@ function DetalleDelPostulante({ fila, etapa }: { fila: FilaRanking; etapa: Etapa
       <div className={estilos.columnaDetalle}>
         {etapa === 'PRUEBA_PUESTO' ? (
           <>
+            {/*
+              ⚠️ **`ponerNota` es lo que convierte esta lista en el sitio donde
+              se cierra la nota.** La rúbrica reserva criterios para una persona
+              —la sustentación en video de las pruebas de marketing y de
+              talento— y esos NUNCA llegan a la IA. Sin este prop, esa prueba se
+              quedaba en «le falta 1 de 6 criterios» para siempre, porque el
+              endpoint existía y ninguna pantalla lo llamaba.
+            */}
             <CriteriosDeEtapa
               titulo="La prueba del puesto, criterio a criterio"
               postulacionId={fila.postulacionId}
               clave="prueba"
               pedir={verNotasPrueba}
               sinDatos="Todavía no rindió la prueba, o nadie la calificó."
+              ponerNota={ponerNotaCriterioPrueba}
+              permiso="ajustar_nota"
             />
             {/*
               La rubrica dice que nota le pusieron; esto, a que. Van juntas
@@ -1783,6 +1795,9 @@ function DetalleDelPostulante({ fila, etapa }: { fila: FilaRanking; etapa: Etapa
             clave="simulacion"
             pedir={verNotasSimulacion}
             sinDatos="Todavía no pasó por la simulación, o nadie la calificó."
+            ponerNota={ponerNotaCriterioSimulacion}
+            /* ⚠️ Otro permiso que el de la prueba, no es un descuido. */
+            permiso="calificar_simulacion"
           />
         ) : etapa === 'VALIDACION' ? (
           <Validacion postulacionId={fila.postulacionId} />
@@ -2135,9 +2150,15 @@ function TablaDeLaEvaluacion({ desglose }: { desglose: DesgloseEvaluacion }) {
 /**
  * Las notas por criterio de una etapa que califica con rubrica: la prueba y
  * la simulacion comparten forma porque el backend les da la misma.
+ *
+ * ⚠️ **La lista sale de la RÚBRICA, no de las notas puestas.** `verNotas`
+ * recorre los criterios de la rúbrica y le pega encima la nota si la hay, así
+ * que un criterio sin calificar **sí aparece**, con un guion. Es lo que permite
+ * ofrecerle ahí mismo el botón de calificarlo: si la lista viniera de las notas
+ * guardadas, el criterio que falta seria justo el unico invisible.
  */
 const autorDeLaNota = (origen: string) =>
-  origen === 'AGENTE' ? 'calificó la IA' : origen === 'PERSONA' ? 'ajustado a mano' : origen
+  origen === 'AGENTE' ? 'calificó la IA' : origen === 'PERSONA' ? 'la puso una persona' : origen
 
 function CriteriosDeEtapa({
   titulo,
@@ -2145,12 +2166,28 @@ function CriteriosDeEtapa({
   clave,
   pedir,
   sinDatos,
+  ponerNota,
+  permiso,
 }: {
   titulo: string
   postulacionId: number
   clave: string
   pedir: (postulacionId: number) => Promise<NotaCriterioEtapa[]>
   sinDatos: string
+  /*
+    Opcional a proposito, y no por comodidad. De los tres sitios que usan esta
+    lista, solo la prueba y la simulacion tienen endpoint para poner la nota de
+    un criterio; las metricas del periodo de validacion NO lo tienen. Poner el
+    boton por defecto le daria a ese tercer bloque un boton que responde 404.
+  */
+  ponerNota?: (
+    postulacionId: number,
+    criterioId: number,
+    puntaje: number,
+    explicacion: string,
+  ) => Promise<void>
+  /** El que exige el endpoint, para traducir el 403 a algo accionable. */
+  permiso?: string
 }) {
   const notas = useQuery({
     queryKey: [`panel-notas-${clave}`, postulacionId],
@@ -2175,9 +2212,18 @@ function CriteriosDeEtapa({
                     ? `${n.puntaje}${n.puntosMaximos ? `/${n.puntosMaximos}` : ''}`
                     : '—'}
                 </span>
-                <span>
-                  <b>{n.nombre}</b>
+                <span className={estilos.cuerpoCriterio}>
                   {/*
+                    ⚠️ **El nombre y el autor van en el MISMO envoltorio.** El
+                    de fuera apila en columna —la explicación debajo, y el botón
+                    debajo de ella—, y en una columna un « · calificó la IA»
+                    suelto se convierte en su propia línea: un separador
+                    huérfano, sin nada a la izquierda que separar. Inline aquí
+                    dentro, en columna ahí fuera.
+                  */}
+                  <span>
+                    <b>{n.nombre}</b>
+                    {/*
                     ⚠️ **Los dos valores son `AGENTE` y `PERSONA`**, nunca `IA`:
                     los escriben `PuentePruebaIaImpl` y `ServicioCalificacionPrueba`.
                     Comparando con `'IA'`, toda nota puesta por el agente caía en
@@ -2187,10 +2233,26 @@ function CriteriosDeEtapa({
                     Un valor que no se conozca se enseña tal cual en vez de
                     caer en una de las dos ramas: inventarle un autor es peor
                     que no saberlo.
+
+                    ⚠️ **`PERSONA` ya no dice «ajustado a mano».** Desde que
+                    esta lista deja calificar, una nota de persona es casi
+                    siempre la PRIMERA de ese criterio —la rúbrica se lo
+                    reservaba— y no una corrección de nada. «La puso una
+                    persona» es cierto en los dos casos; «ajustado» solo en uno.
                   */}
-                  {n.origen && ` · ${autorDeLaNota(n.origen)}`}
+                    {n.origen && ` · ${autorDeLaNota(n.origen)}`}
+                  </span>
                   {n.explicacion && (
                     <span className={estilos.explicacion}>{n.explicacion}</span>
+                  )}
+                  {ponerNota && (
+                    <CalificarCriterioAMano
+                      postulacionId={postulacionId}
+                      criterio={n}
+                      clave={clave}
+                      ponerNota={ponerNota}
+                      permiso={permiso}
+                    />
                   )}
                 </span>
               </li>
@@ -2198,6 +2260,219 @@ function CriteriosDeEtapa({
           </ul>
         ))}
     </>
+  )
+}
+
+/**
+ * Poner o corregir a mano la nota de UN criterio.
+ *
+ * ⚠️ **Es lo que faltaba para poder cerrar la nota de la etapa.** La rúbrica
+ * decide criterio por criterio quién lo mira, y los que dice que los mira una
+ * persona **nunca se le mandan a la IA**: en la prueba de marketing, la
+ * sustentación en video son 10 de los 100 puntos y es de persona. La nota de la
+ * etapa exige los seis criterios, así que sin esta caja esa prueba no se podía
+ * cerrar por ninguna vía — se veía «le falta 1 de 6 criterios» y ningún botón
+ * en toda la pantalla.
+ *
+ * ⚠️ **Pisar la nota de la IA es intencional.** El servidor sustituye lo que
+ * hubiera y deja registrado quién lo cambió y con qué motivo; por eso la
+ * explicación es obligatoria y por eso el aviso cambia de texto cuando el
+ * criterio ya tenía nota. Que se pueda corregir un criterio de la IA es la
+ * misma facultad de siempre —el permiso ya la gobierna—, solo que hasta ahora
+ * no tenía dónde ejercerse.
+ */
+function CalificarCriterioAMano({
+  postulacionId,
+  criterio,
+  clave,
+  ponerNota,
+  permiso,
+}: {
+  postulacionId: number
+  criterio: NotaCriterioEtapa
+  clave: string
+  ponerNota: (
+    postulacionId: number,
+    criterioId: number,
+    puntaje: number,
+    explicacion: string,
+  ) => Promise<void>
+  permiso?: string
+}) {
+  const cache = useQueryClient()
+  const [abierto, setAbierto] = useState(false)
+  const [guardada, setGuardada] = useState(false)
+  /*
+    ⚠️ **Al cerrar, el formulario desaparece y el foco se cae al `body`.** Quien
+    navega con el teclado tendría que recorrer la lista de criterios entera para
+    volver a donde estaba. Se le devuelve al botón que lo abrió.
+  */
+  const disparador = useRef<HTMLButtonElement>(null)
+  /*
+    Texto y no numero: un `<input type="number">` vacio da `''`, y convertirlo a
+    numero antes de tiempo transforma «todavia no escribi nada» en un 0, que es
+    una nota legitima. Se valida al enviar.
+  */
+  const [puntaje, setPuntaje] = useState('')
+  const [explicacion, setExplicacion] = useState('')
+  const [fallo, setFallo] = useState<string | null>(null)
+
+  const yaTenia = criterio.puntaje !== null
+  const maximo = criterio.puntosMaximos
+
+  const guardar = useMutation({
+    mutationFn: () => ponerNota(postulacionId, criterio.criterioId, Number(puntaje), explicacion.trim()),
+    onSuccess: () => {
+      setFallo(null)
+      setAbierto(false)
+      setGuardada(true)
+      setPuntaje('')
+      setExplicacion('')
+      // El formulario ya no existe: sin esto el foco se queda en ningún sitio.
+      requestAnimationFrame(() => disparador.current?.focus())
+      /*
+        La misma clave que lee `NotaDeLaPrueba` para contar lo que falta. Al
+        invalidarla, el «le faltan N criterios» baja solo y, cuando llega a
+        cero, aparece por su cuenta el boton de calcular la nota de la etapa.
+        Ese encadenado es el arreglo entero: aqui no hace falta nada mas.
+      */
+      cache.invalidateQueries({ queryKey: [`panel-notas-${clave}`, postulacionId] })
+      cache.invalidateQueries({ queryKey: ['panel-ranking'] })
+    },
+    onError: (causa: unknown) => {
+      if (causa instanceof ErrorApi && causa.estado === 403) {
+        setFallo(
+          permiso
+            ? `Hace falta el permiso «${permiso}» para poner esta nota.`
+            : 'No tienes permiso para poner esta nota.',
+        )
+        return
+      }
+      setFallo(causa instanceof Error ? causa.message : 'No se pudo guardar la nota.')
+    },
+  })
+
+  if (!abierto) {
+    return (
+      <>
+        {guardada && (
+          <p className={estilos.guardadaCriterio} role="status">
+            Nota guardada.
+          </p>
+        )}
+      <button
+        ref={disparador}
+        className={estilos.calificarCriterio}
+        type="button"
+        onClick={() => {
+          setAbierto(true)
+          setFallo(null)
+          setGuardada(false)
+          // Se parte de lo que hay: corregir un 7 empieza en 7, no en blanco.
+          setPuntaje(criterio.puntaje !== null ? String(criterio.puntaje) : '')
+        }}
+      >
+        <span aria-hidden="true">
+          {yaTenia ? 'Corregir esta nota' : 'Calificar a mano'}
+        </span>
+        {/*
+          ⚠️ **Seis criterios, seis botones que se llaman igual.** Quien navega
+          con lector de pantalla oiría «Calificar a mano» seis veces sin saber
+          cuál es cuál. En la pantalla el nombre está justo encima; en el árbol
+          de accesibilidad hay que ponerlo dentro.
+        */}
+        <span className="solo-lectores">
+          {yaTenia ? 'Corregir la nota de' : 'Calificar a mano'} {criterio.nombre}
+        </span>
+      </button>
+      </>
+    )
+  }
+
+  /*
+    El servidor rechaza las dos cosas con un 400, pero enterarse despues de
+    escribir la explicacion entera es peor que no poder pulsar: el boton dice
+    lo que falta antes de intentarlo.
+  */
+  const numero = Number(puntaje)
+  const puntajeValido =
+    puntaje.trim() !== '' &&
+    Number.isFinite(numero) &&
+    numero >= 0 &&
+    (maximo === null || numero <= maximo)
+  const listo = puntajeValido && explicacion.trim() !== ''
+
+  return (
+    <form
+      className={estilos.formaCriterio}
+      /*
+        ⚠️ **La validación es de este componente, no del navegador.** Con `step`
+        y `max` puestos, el navegador bloqueaba en silencio envíos que el botón
+        había dado por buenos —un 7,05 pasa la comprobación de rango y no es
+        múltiplo de 0,1— y en vez del aviso propio salía un globo del navegador.
+        Dos jueces con reglas distintas es peor que uno.
+      */
+      noValidate
+      onSubmit={(e) => {
+        e.preventDefault()
+        if (listo) guardar.mutate()
+      }}
+    >
+      <label className={estilos.campoCriterio}>
+        <span className={estilos.etiquetaCriterio}>
+          Puntaje {maximo !== null ? `(0 a ${maximo})` : ''}
+        </span>
+        <input
+          className={estilos.puntajeCriterio}
+          type="number"
+          inputMode="decimal"
+          step="0.1"
+          min={0}
+          max={maximo ?? undefined}
+          value={puntaje}
+          onChange={(e) => setPuntaje(e.target.value)}
+          autoFocus
+        />
+      </label>
+      <label className={estilos.campoCriterio}>
+        <span className={estilos.etiquetaCriterio}>
+          Por qué esa nota {yaTenia && '· queda registrado como corrección'}
+        </span>
+        <textarea
+          className={estilos.explicacionCriterio}
+          value={explicacion}
+          onChange={(e) => setExplicacion(e.target.value)}
+          rows={3}
+          placeholder="Qué viste en su entrega que justifica ese puntaje."
+        />
+      </label>
+      <div className={estilos.accionesCriterio}>
+        <button
+          className={estilos.guardarCriterio}
+          type="submit"
+          disabled={!listo || guardar.isPending}
+        >
+          {guardar.isPending ? 'Guardando…' : 'Guardar la nota'}
+        </button>
+        <button
+          className={estilos.cancelarCriterio}
+          type="button"
+          onClick={() => {
+            setAbierto(false)
+            setFallo(null)
+            requestAnimationFrame(() => disparador.current?.focus())
+          }}
+          disabled={guardar.isPending}
+        >
+          Cancelar
+        </button>
+      </div>
+      {fallo && (
+        <p className={estilos.falloCriterio} role="alert">
+          {fallo}
+        </p>
+      )}
+    </form>
   )
 }
 

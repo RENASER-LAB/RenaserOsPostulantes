@@ -351,14 +351,21 @@ const EVALUACION = {
   ],
 }
 
-/** La misma forma para la prueba, la simulación y las métricas de validación. */
+/**
+ * La misma forma para la prueba, la simulación y las métricas de validación.
+ *
+ * ⚠️ **`origen` vale `AGENTE` o `PERSONA`, nunca `IA`.** Los escriben
+ * `PuentePruebaIaImpl` y `ServicioCalificacionPrueba`. Esta fixtura servía `IA`
+ * y `andy-dev`, dos valores que la API no devuelve: la captura enseñaba una
+ * etiqueta que en producción no existe, que es lo mismo que no mirarla.
+ */
 const RUBRICA = [
   { criterioId: 1, nombre: 'Criterio técnico', puntosMaximos: 10, puntaje: 9,
-    explicacion: 'Eligió lo simple donde lo complejo era tentador.', origen: 'IA' },
+    explicacion: 'Eligió lo simple donde lo complejo era tentador.', origen: 'AGENTE' },
   { criterioId: 2, nombre: 'Manejo del cambio a mitad', puntosMaximos: 10, puntaje: 7,
-    explicacion: 'Reordenó sin perder el entregable obligatorio, aunque tarde.', origen: 'IA' },
+    explicacion: 'Reordenó sin perder el entregable obligatorio, aunque tarde.', origen: 'AGENTE' },
   { criterioId: 3, nombre: 'Claridad de la entrega', puntosMaximos: 10, puntaje: 8,
-    explicacion: 'Se entiende sin preguntarle nada.', origen: 'andy-dev' },
+    explicacion: 'Se entiende sin preguntarle nada.', origen: 'PERSONA' },
 ]
 
 const VALIDACION = {
@@ -619,6 +626,32 @@ export const RESPUESTAS = {
       explicacion: null, origen: null },
     { criterioId: 2, nombre: 'Comunicación', puntosMaximos: 10, puntaje: null,
       explicacion: null, origen: null },
+  ],
+  /*
+   * ⚠️ **Camila es la 91, y su rubrica faltaba.** La captura `ficha-prueba` abre
+   * SU ficha, asi que sin esta entrada el bloque «criterio a criterio» salia
+   * diciendo «nadie la califico» y no se ha mirado nunca — la cuarta fixtura de
+   * este archivo que tapa justo lo que existe para enseñar.
+   *
+   * Es el caso de verdad, no uno comodo: cinco criterios que califico el agente
+   * y **uno que la rubrica le reserva a una persona**, sin nota. Esos no se le
+   * mandan al modelo, la nota de la etapa exige los seis, y por eso hay que
+   * poder escribirlo aqui. Si un dia todos llegan con nota, esta captura deja
+   * de enseñar el estado que importa.
+   */
+  '/postulaciones/91/prueba/notas': [
+    { criterioId: 31, nombre: 'Objetivo: la campaña está bien planteada', puntosMaximos: 22,
+      puntaje: 18, explicacion: 'Plantea el objetivo con una cifra y una fecha.', origen: 'AGENTE' },
+    { criterioId: 32, nombre: 'Ejecución: el anuncio y la pieza de conversión', puntosMaximos: 22,
+      puntaje: 15, explicacion: 'El anuncio promete lo que la pieza cumple.', origen: 'AGENTE' },
+    { criterioId: 33, nombre: 'Data: sabe leer los números', puntosMaximos: 18,
+      puntaje: 14, explicacion: 'Lee el coste por resultado, no solo el alcance.', origen: 'AGENTE' },
+    { criterioId: 34, nombre: 'Decisión: qué hace mañana', puntosMaximos: 18,
+      puntaje: 11, explicacion: 'Decide, pero no dice con qué presupuesto.', origen: 'AGENTE' },
+    { criterioId: 35, nombre: 'Qué es suyo frente a la IA', puntosMaximos: 10,
+      puntaje: 8, explicacion: 'Separa lo que le dio el modelo de lo que corrigió.', origen: 'AGENTE' },
+    { criterioId: 36, nombre: 'Sustentación en video', puntosMaximos: 10,
+      puntaje: null, explicacion: null, origen: null },
   ],
   '/postulaciones/93/prueba/notas': [
     { criterioId: 1, nombre: 'Criterio técnico', puntosMaximos: 10, puntaje: 9,

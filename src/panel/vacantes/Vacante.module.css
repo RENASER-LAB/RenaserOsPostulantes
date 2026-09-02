@@ -419,6 +419,150 @@ thead .celdaCandidato {
   background: var(--mal);
 }
 
+/*
+ * ---------- Calificar un criterio a mano ----------
+ *
+ * El boton vive DENTRO de la fila del criterio y no en una columna propia: lo
+ * que se califica es ese criterio y no otro, y separarlo obligaria a volver a
+ * leer el nombre para saber cual se esta tocando.
+ *
+ * Discreto a proposito. En una rubrica de seis criterios habria seis botones a
+ * la vez, y seis llamadas a la accion compiten entre si hasta que ninguna se
+ * ve: el trabajo normal aqui es LEER las notas, y calificar es la excepcion.
+ */
+
+.cuerpoCriterio {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--e2);
+  min-width: 0;
+}
+
+.calificarCriterio {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.calificarCriterio:hover {
+  color: var(--tinta);
+}
+
+.formaCriterio {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+  width: 100%;
+  padding: var(--e3);
+  border: 1px solid var(--borde-control);
+  border-radius: var(--radio-menor);
+  background: var(--nube-hundida);
+}
+
+.campoCriterio {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+}
+
+.etiquetaCriterio {
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+}
+
+.puntajeCriterio {
+  width: 8rem;
+  min-height: 44px;
+  padding: 0 var(--e3);
+  background: var(--nube);
+  color: var(--tinta);
+  /*
+   * ⚠️ **`--tinta3` y no `--borde-control`, solo aqui.** Un control pide 3:1
+   * contra su fondo. `--borde-control` da 3,12:1 sobre la nube, pero estos dos
+   * viven sobre `--nube-hundida`, donde cae a 2,93:1 — y como el relleno blanco
+   * apenas contrasta 1,13:1 con esa superficie, el borde es la unica frontera
+   * que tiene el campo.
+   */
+  border: 1px solid var(--tinta3);
+  font: inherit;
+  /* Por debajo de 16px iOS hace zoom al enfocar, y este campo lleva autoFocus. */
+  font-size: var(--t-base);
+  font-variant-numeric: tabular-nums;
+  border-radius: var(--radio-menor);
+}
+
+.explicacionCriterio {
+  padding: var(--e3);
+  background: var(--nube);
+  color: var(--tinta);
+  /* Lo mismo que el puntaje: vive sobre la superficie hundida. */
+  border: 1px solid var(--tinta3);
+  font: inherit;
+  font-size: var(--t-base);
+  line-height: 1.5;
+  border-radius: var(--radio-menor);
+  resize: vertical;
+}
+
+.accionesCriterio {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e3);
+}
+
+/*
+ * ⚠️ **Tinta y no violeta.** El violeta del producto significa una sola cosa,
+ * «te toca a ti», y se la dice al CANDIDATO. Esta pantalla es la del equipo:
+ * aqui no hay nadie esperando al otro lado, asi que la accion firme va rellena
+ * de tinta. Es el caso exacto que describe `.solido` en `piezas`.
+ */
+.guardarCriterio {
+  composes: solido from '../../estilos/piezas.module.css';
+}
+
+.cancelarCriterio {
+  composes: secundario from '../../estilos/piezas.module.css';
+}
+
+/*
+ * Que se guardo, dicho aqui y no solo por el numero que cambia arriba. Entre
+ * cerrar el formulario y que vuelva la lista hay un hueco en el que la pantalla
+ * no decia nada, y quien acaba de escribir una nota necesita saber que salio.
+ */
+.guardadaCriterio {
+  font-size: var(--t-apoyo);
+  line-height: 1.5;
+  color: var(--bien);
+  margin: 0;
+}
+
+/*
+ * ⚠️ **En rojo y nada mas, esto no se distingue de la explicacion de la IA.**
+ * «La regla de la forma primero»: el estado se lee en la forma antes que en el
+ * color. En gris, `--mal` y `--tinta2` caen casi en la misma luminancia, asi
+ * que un aviso sin caja se lee como una linea de prosa mas — y justo aqui el
+ * texto es lo unico accionable («hace falta el permiso ajustar_nota»).
+ * Es el mismo tratamiento que `NotaDeLaPrueba.module.css` ya le da al suyo.
+ */
+.falloCriterio {
+  font-size: var(--t-apoyo);
+  line-height: 1.5;
+  color: var(--mal);
+  border: 1px solid var(--mal-regla);
+  background: var(--mal-bruma);
+  padding: var(--e3);
+  border-radius: var(--radio-menor);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
 /* ---------- El avance ---------- */
 
 .avance {
