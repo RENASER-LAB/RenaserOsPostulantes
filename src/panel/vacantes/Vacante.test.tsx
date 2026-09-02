@@ -628,6 +628,7 @@ describe('los criterios como columnas de color', () => {
       notasCriterio: [
         {
           criterio: 'Resultados demostrables',
+          codigo: 'CV_RESULTADOS',
           puntaje: 20,
           maximo: 25,
           peso: 25,
@@ -638,6 +639,7 @@ describe('los criterios como columnas de color', () => {
         },
         {
           criterio: 'Complejidad y alcance',
+          codigo: 'CV_COMPLEJIDAD',
           puntaje: null,
           maximo: 20,
           peso: 20,
@@ -662,11 +664,19 @@ describe('los criterios como columnas de color', () => {
     expect(within(laTabla()).queryByText(/Resultados demostrables/)).toBeNull()
   })
 
-  it('encendidos, cada criterio es una columna con su peso debajo', async () => {
+  /*
+    ⚠️ **La cabecera lleva el nombre CORTO, no el largo.** Ese ancho decide si la
+    tabla entera cabe en la pantalla: debajo solo hay dos dígitos y encima cabía
+    «Resultados demostrables». El largo no se pierde — va en el `title`, que es
+    donde se consulta una vez y no una por fila.
+  */
+  it('encendidos, la cabecera es el nombre corto, con su peso debajo', async () => {
     await pintar(CON_CRITERIOS)
     encender()
-    const cabecera = within(laTabla()).getByText('Resultados demostrables').closest('th')!
+    const cabecera = within(laTabla()).getByText('Resultados').closest('th')!
     expect(cabecera.textContent).toContain('peso 25')
+    expect(cabecera.title).toBe('Resultados demostrables')
+    expect(within(laTabla()).queryByText('Resultados demostrables')).toBeNull()
     expect(within(laTabla()).getByText('20/25')).toBeTruthy()
   })
 
@@ -738,6 +748,7 @@ describe('la ficha, al abrir una fila', () => {
         notasCriterio: [
           {
             criterio: 'Resultados demostrables',
+            codigo: 'CV_RESULTADOS',
             puntaje: 20,
             maximo: 25,
             peso: 25,
@@ -768,6 +779,7 @@ describe('la ficha, al abrir una fila', () => {
         notasCriterio: [
           {
             criterio: 'Resultados demostrables',
+            codigo: 'CV_RESULTADOS',
             puntaje: 12,
             maximo: 25,
             peso: 25,

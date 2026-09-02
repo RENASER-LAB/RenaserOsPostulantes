@@ -913,8 +913,18 @@ function Ranking({
                   y no valen lo mismo.
                 */
                 if (columna.peso != null) {
+                  const suyo = criterios.find((c) => `criterio:${c.nombre}` === columna.clave)
                   return (
-                    <th key={columna.clave} className={`${clase} ${estilos.cabeceraCriterio}`}>
+                    <th
+                      key={columna.clave}
+                      className={`${clase} ${estilos.cabeceraCriterio}`}
+                      /*
+                        El nombre completo, en la cabecera además de en cada
+                        celda: quien no reconozca «Sistemas» lo pregunta una vez
+                        arriba, y no una vez por fila.
+                      */
+                      title={suyo && suyo.nombre !== columna.titulo ? suyo.nombre : undefined}
+                    >
                       {/*
                         El nombre va en un bloque de ancho fijo, y no suelto en
                         la celda: una tabla de ancho automático ignora el

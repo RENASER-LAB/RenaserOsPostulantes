@@ -415,9 +415,38 @@ export function tonoDelCriterio(nota: NotaCriterio): TonoDelCriterio {
   return 'mal'
 }
 
+/**
+ * El rótulo corto de una columna de criterio.
+ *
+ * ⚠️ **La cabecera decide el ancho de la columna, y el ancho decide si la tabla
+ * cabe en la pantalla.** Debajo solo hay dos dígitos; encima, «Resultados
+ * demostrables». Con los ocho nombres largos la tabla se sale de la ventana.
+ *
+ * Sale del código del criterio, que ya existe en la base y es estable dentro de
+ * su rúbrica: `CV_RESULTADOS` → «Resultados», `CAJA` → «Caja». El prefijo `CV_`
+ * se quita porque en la tabla del currículum lo llevan los ocho: repetirlo ocho
+ * veces no distingue nada y gasta el sitio que hace falta.
+ *
+ * ⚠️ **No se abrevia ni se numera.** «F1» o «RES» obligan a pasar el cursor por
+ * cada columna para leer una sola fila, y una numeración por posición además
+ * cambia de significado entre vacantes —los criterios de una prueba son de su
+ * plantilla—. Una palabra corta de verdad no necesita que la traduzcan.
+ *
+ * Sin código —una respuesta antigua— se cae al nombre largo: una cabecera ancha
+ * es peor que una cabecera muda, pero las dos son mejores que un hueco.
+ */
+export function rotuloCorto(codigo: string | null, nombre: string): string {
+  if (!codigo) return nombre
+  const sinPrefijo = codigo.replace(/^CV_/, '')
+  const palabra = sinPrefijo.replaceAll('_', ' ').toLocaleLowerCase('es')
+  return palabra.charAt(0).toLocaleUpperCase('es') + palabra.slice(1)
+}
+
 export interface CriterioDeLaTanda {
-  /** El nombre del criterio, que es su clave: no viaja ningún código. */
+  /** El nombre completo, que es la clave: es lo único que llega en todas las filas. */
   nombre: string
+  /** El rótulo de su columna: corto, del código. */
+  rotulo: string
   /** Lo que pesa en la nota final. Es lo que se lee bajo el título, como en el HTML. */
   peso: number
   /** Sobre cuánto puntúa. `null` si el criterio no lo declara. */
@@ -460,6 +489,7 @@ export function criteriosDeLaTanda(filas: FilaRanking[]): CriterioDeLaTanda[] {
       }
       vistos.set(nota.criterio, {
         nombre: nota.criterio,
+        rotulo: rotuloCorto(nota.codigo, nota.criterio),
         peso: nota.peso,
         maximo: nota.maximo,
       })
@@ -959,7 +989,9 @@ export function columnasDelRanking(
     ...criterios.map(
       (c): ColumnaDelRanking => ({
         clave: `criterio:${c.nombre}`,
-        titulo: c.nombre,
+        // La cabecera lleva el corto; el largo vive en el título emergente de
+        // cada celda, que es donde se consulta cuando hace falta.
+        titulo: c.rotulo,
         cifra: true,
         peso: c.peso,
       }),

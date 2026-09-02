@@ -46,6 +46,7 @@ import {
   queTraeLaTanda,
   recuentos,
   resumenDeLaTanda,
+  rotuloCorto,
   seExportaAExcel,
   SIN_FILTROS,
   notaDelCriterio,
@@ -61,6 +62,7 @@ const nota = (
   extra: Partial<NotaCriterio> = {},
 ): NotaCriterio => ({
   criterio,
+  codigo: `CV_${criterio.split(' ')[0]!.toLocaleUpperCase('es')}`,
   puntaje,
   maximo,
   peso: 10,
@@ -805,8 +807,8 @@ describe('cuántas columnas tiene la tabla', () => {
   */
   it('cada criterio encendido es una columna más, y el colSpan la cuenta', () => {
     const criterios = [
-      { nombre: 'Resultados demostrables', peso: 25, maximo: 100 },
-      { nombre: 'Complejidad y alcance', peso: 20, maximo: 100 },
+      { nombre: 'Resultados demostrables', rotulo: 'Resultados', peso: 25, maximo: 100 },
+      { nombre: 'Complejidad y alcance', rotulo: 'Complejidad', peso: 20, maximo: 100 },
     ]
     const conCriterios = columnasDelRanking('PERFIL_INTEGRAL', undefined, criterios)
     expect(conCriterios).toHaveLength(12 + 2)
@@ -971,6 +973,49 @@ describe('las cinco cifras de la tanda', () => {
 // ---------- Los criterios como columnas de color ----------
 
 describe('el mapa de calor de los criterios', () => {
+  /*
+    ⚠️ **El rótulo corto no es cosmética: es lo que decide el ancho de la
+    columna, y el ancho decide si la tabla cabe en la pantalla.** Debajo solo hay
+    dos dígitos y encima cabía «Resultados demostrables».
+  */
+  it('el rótulo sale del código, sin el prefijo que llevan los ocho', () => {
+    expect(rotuloCorto('CV_RESULTADOS', 'Resultados demostrables')).toBe('Resultados')
+    expect(rotuloCorto('CV_HABILIDADES', 'Habilidades del puesto')).toBe('Habilidades')
+    // Los de una prueba del puesto no llevan prefijo: se quedan como están.
+    expect(rotuloCorto('CAJA', 'Manejo y control de caja')).toBe('Caja')
+    expect(rotuloCorto('DIVISAS', 'Conocimiento del negocio de divisas')).toBe('Divisas')
+  })
+
+  it('un código de varias palabras se lee como una frase, no como una constante', () => {
+    expect(rotuloCorto('CV_ALTO_RENDIMIENTO', 'Evidencia de alto rendimiento')).toBe(
+      'Alto rendimiento',
+    )
+  })
+
+  /*
+    ⚠️ **Sin código se cae al nombre largo, no a un hueco.** Una respuesta
+    antigua del backend no trae el campo; una cabecera ancha es peor que una
+    corta, pero las dos son mejores que una columna sin nombre.
+  */
+  it('sin código se cae al nombre largo', () => {
+    expect(rotuloCorto(null, 'Resultados demostrables')).toBe('Resultados demostrables')
+    expect(rotuloCorto('', 'Resultados demostrables')).toBe('Resultados demostrables')
+  })
+
+  it('la columna se rotula con el corto y guarda el largo como clave', () => {
+    const criterios = criteriosDeLaTanda([
+      fila('POSTULADA', 80, {
+        notasCriterio: [
+          nota('Resultados demostrables', 20, 25, { codigo: 'CV_RESULTADOS' }),
+        ],
+      }),
+    ])
+    expect(criterios[0]).toMatchObject({
+      nombre: 'Resultados demostrables',
+      rotulo: 'Resultados',
+    })
+  })
+
   it('los tres tramos son los del informe: 70 y 40', () => {
     expect(tonoDelCriterio(nota('Caja', 14, 20))).toBe('bien') // 70 % justo
     expect(tonoDelCriterio(nota('Caja', 13, 20))).toBe('duda') // 65 %

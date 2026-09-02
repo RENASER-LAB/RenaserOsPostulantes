@@ -1143,14 +1143,19 @@ thead .celdaCandidato {
 }
 
 /*
- * 4.5rem y no mas: es el ancho el que decide si la tabla entera cabe en una
- * pantalla. Con 5.5rem sobraban 143 px sobre una ventana de 1920 y habia que
- * rodar; a 4.5 cabe, y dentro de la celda solo hay que poner «18/20». El nombre
- * gasta una linea mas y el sitio esta arriba, que es donde sobra.
+ * El ancho de la columna lo decide esta caja, y de el depende si la tabla entera
+ * cabe en la pantalla: debajo solo hay dos digitos.
+ *
+ * 3rem es lo medido: al rotulo corto —«Resultados», «Habilidades»— le basta con
+ * dos lineas y ninguna palabra se parte por la mitad. Con los nombres largos
+ * hacian falta 5.5rem y la cabecera media 107 px de alto en vez de 77.
+ *
+ * Bajar mas no compensa: de 3 a 2.75rem la tabla solo encoge 27 px y las
+ * palabras empiezan a quedarse justas.
  */
 .cabeceraCriterio b {
   display: block;
-  width: 4.5rem;
+  width: 3rem;
   font-size: var(--t-micro);
   font-weight: 600;
   line-height: 1.25;
