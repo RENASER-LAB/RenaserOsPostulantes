@@ -13,7 +13,7 @@
  *     fallar a medias; decir «fallo» a secas dejaria sin saber quien si paso.
  */
 
-import { Fragment, useEffect, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -2221,7 +2221,7 @@ function CriteriosDeEtapa({
                     huérfano, sin nada a la izquierda que separar. Inline aquí
                     dentro, en columna ahí fuera.
                   */}
-                  <span className={estilos.tituloCriterio}>
+                  <span>
                     <b>{n.nombre}</b>
                     {/*
                     ⚠️ **Los dos valores son `AGENTE` y `PERSONA`**, nunca `IA`:
@@ -2301,6 +2301,13 @@ function CalificarCriterioAMano({
 }) {
   const cache = useQueryClient()
   const [abierto, setAbierto] = useState(false)
+  const [guardada, setGuardada] = useState(false)
+  /*
+    ⚠️ **Al cerrar, el formulario desaparece y el foco se cae al `body`.** Quien
+    navega con el teclado tendría que recorrer la lista de criterios entera para
+    volver a donde estaba. Se le devuelve al botón que lo abrió.
+  */
+  const disparador = useRef<HTMLButtonElement>(null)
   /*
     Texto y no numero: un `<input type="number">` vacio da `''`, y convertirlo a
     numero antes de tiempo transforma «todavia no escribi nada» en un 0, que es
@@ -2318,8 +2325,11 @@ function CalificarCriterioAMano({
     onSuccess: () => {
       setFallo(null)
       setAbierto(false)
+      setGuardada(true)
       setPuntaje('')
       setExplicacion('')
+      // El formulario ya no existe: sin esto el foco se queda en ningún sitio.
+      requestAnimationFrame(() => disparador.current?.focus())
       /*
         La misma clave que lee `NotaDeLaPrueba` para contar lo que falta. Al
         invalidarla, el «le faltan N criterios» baja solo y, cuando llega a
@@ -2344,18 +2354,38 @@ function CalificarCriterioAMano({
 
   if (!abierto) {
     return (
+      <>
+        {guardada && (
+          <p className={estilos.guardadaCriterio} role="status">
+            Nota guardada.
+          </p>
+        )}
       <button
+        ref={disparador}
         className={estilos.calificarCriterio}
         type="button"
         onClick={() => {
           setAbierto(true)
           setFallo(null)
+          setGuardada(false)
           // Se parte de lo que hay: corregir un 7 empieza en 7, no en blanco.
           setPuntaje(criterio.puntaje !== null ? String(criterio.puntaje) : '')
         }}
       >
-        {yaTenia ? 'Corregir esta nota' : 'Calificar a mano'}
+        <span aria-hidden="true">
+          {yaTenia ? 'Corregir esta nota' : 'Calificar a mano'}
+        </span>
+        {/*
+          ⚠️ **Seis criterios, seis botones que se llaman igual.** Quien navega
+          con lector de pantalla oiría «Calificar a mano» seis veces sin saber
+          cuál es cuál. En la pantalla el nombre está justo encima; en el árbol
+          de accesibilidad hay que ponerlo dentro.
+        */}
+        <span className="solo-lectores">
+          {yaTenia ? 'Corregir la nota de' : 'Calificar a mano'} {criterio.nombre}
+        </span>
       </button>
+      </>
     )
   }
 
@@ -2375,6 +2405,14 @@ function CalificarCriterioAMano({
   return (
     <form
       className={estilos.formaCriterio}
+      /*
+        ⚠️ **La validación es de este componente, no del navegador.** Con `step`
+        y `max` puestos, el navegador bloqueaba en silencio envíos que el botón
+        había dado por buenos —un 7,05 pasa la comprobación de rango y no es
+        múltiplo de 0,1— y en vez del aviso propio salía un globo del navegador.
+        Dos jueces con reglas distintas es peor que uno.
+      */
+      noValidate
       onSubmit={(e) => {
         e.preventDefault()
         if (listo) guardar.mutate()
@@ -2422,6 +2460,7 @@ function CalificarCriterioAMano({
           onClick={() => {
             setAbierto(false)
             setFallo(null)
+            requestAnimationFrame(() => disparador.current?.focus())
           }}
           disabled={guardar.isPending}
         >

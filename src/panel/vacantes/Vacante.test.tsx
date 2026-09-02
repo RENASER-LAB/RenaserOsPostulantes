@@ -41,6 +41,41 @@ import type { FilaRanking, VersionBanco } from '../api/tipos'
 const verRanking = vi.fn()
 const elegirInstrumento = vi.fn()
 const pedirExcel = vi.fn()
+const ponerNotaPrueba = vi.fn()
+
+/**
+ * La rubrica de la prueba, con UN criterio sin nota.
+ *
+ * ⚠️ **Es el caso de verdad y no un extremo inventado.** La rubrica decide
+ * criterio por criterio quien lo mira, y los que dice que los mira una persona
+ * NUNCA se le mandan a la IA: en la prueba de marketing la sustentacion en
+ * video son 10 de los 100 puntos. El agente califica cinco de seis, la nota de
+ * la etapa exige los seis, y hasta hoy no habia en toda la pantalla un sitio
+ * donde escribir el que falta.
+ *
+ * ⚠️ **Las filas SIN nota tambien llegan**: `verNotas` recorre la rubrica y le
+ * pega encima la nota si la hay. Si un dia devolviera solo lo calificado, el
+ * criterio que falta seria justo el unico invisible y el boton no se pintaria
+ * nunca — por eso la fixtura trae el nulo.
+ */
+let NOTAS_PRUEBA = [
+  {
+    criterioId: 31,
+    nombre: 'Objetivo: la campaña está bien planteada',
+    puntosMaximos: 22,
+    puntaje: 18,
+    explicacion: 'Plantea el objetivo con una cifra.',
+    origen: 'AGENTE',
+  },
+  {
+    criterioId: 36,
+    nombre: 'Sustentación en video',
+    puntosMaximos: 10,
+    puntaje: null,
+    explicacion: null,
+    origen: null,
+  },
+]
 
 /**
  * Una fila con lo justo: lo que la tabla lee de verdad.
@@ -274,13 +309,26 @@ vi.mock('../api/panel', () => ({
   crearRequisito: () => Promise.resolve({}),
   publicarVacante: () => Promise.resolve({}),
   quitarRequisito: () => Promise.resolve({}),
-  verFicha: () => Promise.resolve({}),
+  /*
+    ⚠️ **`enlaces` tiene que ser una lista, no faltar.** La ficha hace
+    `ficha.data.enlaces.length` sin guarda, así que un `{}` la revienta entera
+    —y con ella la columna donde vive la rúbrica—. Estuvo así todo este tiempo
+    porque hasta ahora ningún test abría una ficha.
+  */
+  verFicha: () => Promise.resolve({ enlaces: [] }),
   verHistorial: () => Promise.resolve([]),
   verPerfilIntegral: () => sinRuido.verPerfilIntegral(),
   verDesgloseEvaluacion: () => Promise.resolve({}),
   verMetricasValidacion: () => Promise.resolve([]),
-  verNotasPrueba: () => Promise.resolve([]),
+  verNotasPrueba: () => Promise.resolve(NOTAS_PRUEBA),
   verNotasSimulacion: () => Promise.resolve([]),
+  ponerNotaCriterioPrueba: (
+    postulacionId: number,
+    criterioId: number,
+    puntaje: number,
+    explicacion: string,
+  ) => ponerNotaPrueba(postulacionId, criterioId, puntaje, explicacion),
+  ponerNotaCriterioSimulacion: () => Promise.resolve(),
   verValidacion: () => Promise.resolve({}),
   calificarPruebaConIa: () => Promise.resolve({ estado: 'ENCOLADA' }),
   calificarPerfilIntegralConIa: () => Promise.resolve({ estado: 'ENCOLADA' }),
@@ -395,6 +443,8 @@ beforeEach(() => {
   listarVersionesBanco.mockReset()
   listarVersionesBanco.mockResolvedValue(BANCOS)
   asignarPlantillaPrueba.mockReset()
+  ponerNotaPrueba.mockReset()
+  ponerNotaPrueba.mockResolvedValue(undefined)
   VERSIONES_PRUEBA = VERSIONES_DE_SIEMPRE
   sinRuido.verVacante = () => Promise.resolve(VACANTE)
 })
@@ -1518,5 +1568,130 @@ describe('una columna entera vacía no se pinta', () => {
     await conDatos()
     expect(within(laTabla()).getByText('S/ 2,500 – 3,000')).toBeTruthy()
     expect(within(laTabla()).getByText('desde S/ 4,000')).toBeTruthy()
+  })
+})
+
+/**
+ * Calificar a mano el criterio que la rúbrica le reserva a una persona.
+ *
+ * Lo que compila perfectamente estando mal aquí:
+ *
+ *   1. **No pintar el botón en el criterio SIN nota.** Es justo el que hay que
+ *      calificar. Si la lista solo ofreciera corregir lo ya puesto, la prueba
+ *      seguiría sin poder cerrarse y la pantalla se vería bien.
+ *   2. **Dejar guardar sin explicación.** El servidor la exige y contesta 400;
+ *      enterarse después de escribir el puntaje es la peor versión.
+ *   3. **Admitir un puntaje por encima del máximo del criterio.** Uno que vale
+ *      10 no puede recibir un 80: la escala es la del criterio, no 0 a 100.
+ *   4. **Ponerle el botón a las métricas del periodo de validación**, que no
+ *      tienen endpoint para esto y responderían 404.
+ */
+describe('calificar a mano un criterio de la prueba', () => {
+  /** Abrir la ficha de quien está parado en la prueba. */
+  const abrirLaFicha = async () => {
+    await pintar()
+    irA('Prueba del puesto')
+    /*
+      ⚠️ **Hay que cambiar de corte, y eso es el caso real.** La pestaña abre
+      por «con nota de la prueba», y quien tiene la rúbrica a medias NO tiene
+      nota de etapa todavía —es justo lo que falta calificar—, así que en el
+      corte por defecto no sale. A quien hay que calificar se le encuentra en
+      «está aquí ahora».
+    */
+    await waitFor(() => expect(elCorte('Con nota de la prueba')).toBeTruthy())
+    verCorte('Está aquí ahora')
+    const fila = await screen.findByText('Camila Reyes')
+    fireEvent.click(fila.closest('tr')!)
+    await screen.findByRole('heading', {
+      name: 'La prueba del puesto, criterio a criterio',
+    })
+    // El título sale antes que las notas: son dos consultas distintas.
+    return await screen.findByText('Sustentación en video')
+  }
+
+  /** La fila de un criterio, por su nombre. */
+  const elCriterio = (nombre: string) => screen.getByText(nombre).closest('li')!
+
+  it('ofrece calificar el criterio que la IA no puede tocar', async () => {
+    await abrirLaFicha()
+    // El que la rúbrica reserva a una persona: sin nota y con el botón.
+    expect(
+      within(elCriterio('Sustentación en video')).getByRole('button', {
+        name: 'Calificar a mano Sustentación en video',
+      }),
+    ).toBeTruthy()
+    // Y el que ya calificó la IA se puede corregir, que no es lo mismo.
+    expect(
+      within(elCriterio('Objetivo: la campaña está bien planteada')).getByRole('button', {
+        name: 'Corregir la nota de Objetivo: la campaña está bien planteada',
+      }),
+    ).toBeTruthy()
+  })
+
+  it('manda el puntaje y el porqué a ese criterio y a esa postulación', async () => {
+    await abrirLaFicha()
+    fireEvent.click(
+      within(elCriterio('Sustentación en video')).getByRole('button', {
+        name: 'Calificar a mano Sustentación en video',
+      }),
+    )
+    fireEvent.change(screen.getByLabelText(/Puntaje/), { target: { value: '8' } })
+    fireEvent.change(screen.getByLabelText(/Por qué esa nota/), {
+      target: { value: 'Defiende sus decisiones y responde a la objeción del presupuesto.' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar la nota' }))
+
+    await waitFor(() => expect(ponerNotaPrueba).toHaveBeenCalledTimes(1))
+    expect(ponerNotaPrueba).toHaveBeenCalledWith(
+      93,
+      36,
+      8,
+      'Defiende sus decisiones y responde a la objeción del presupuesto.',
+    )
+  })
+
+  it('no deja guardar sin explicación, ni con un puntaje por encima del máximo', async () => {
+    await abrirLaFicha()
+    fireEvent.click(
+      within(elCriterio('Sustentación en video')).getByRole('button', {
+        name: 'Calificar a mano Sustentación en video',
+      }),
+    )
+    const guardar = screen.getByRole('button', { name: 'Guardar la nota' })
+
+    // Con puntaje y sin porqué: apagado.
+    fireEvent.change(screen.getByLabelText(/Puntaje/), { target: { value: '8' } })
+    expect(guardar).toHaveProperty('disabled', true)
+
+    // Con porqué y un puntaje de 80 sobre un criterio que vale 10: apagado.
+    fireEvent.change(screen.getByLabelText(/Por qué esa nota/), {
+      target: { value: 'Sustenta bien.' },
+    })
+    fireEvent.change(screen.getByLabelText(/Puntaje/), { target: { value: '80' } })
+    expect(guardar).toHaveProperty('disabled', true)
+
+    // Dentro de la escala del criterio: encendido.
+    fireEvent.change(screen.getByLabelText(/Puntaje/), { target: { value: '8' } })
+    expect(guardar).toHaveProperty('disabled', false)
+
+    // Y un cero es una nota, no un hueco.
+    fireEvent.change(screen.getByLabelText(/Puntaje/), { target: { value: '0' } })
+    expect(guardar).toHaveProperty('disabled', false)
+  })
+
+  it('no ofrece el botón en las métricas del periodo de validación', async () => {
+    await pintar()
+    irA('Validación')
+    // Nadie está parado en Validación: la ficha se abre desde la tanda entera.
+    await waitFor(() => expect(elCorte('Toda la tanda')).toBeTruthy())
+    verCorte('Toda la tanda')
+    const fila = await screen.findByText('Rodrigo Ayala')
+    fireEvent.click(fila.closest('tr')!)
+    await screen.findByRole('heading', { name: 'El periodo de validación' })
+    /*
+      No hay `POST .../validacion/metricas/{id}/nota` en el backend: un botón
+      aquí sería una llamada a una ruta que no existe.
+    */
+    expect(screen.queryByRole('button', { name: /Calificar a mano/ })).toBeNull()
   })
 })

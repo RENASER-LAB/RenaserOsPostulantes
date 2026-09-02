@@ -439,14 +439,6 @@ thead .celdaCandidato {
   min-width: 0;
 }
 
-/*
- * Nombre y autor, en linea. El envoltorio de fuera apila en columna; este no,
- * porque « · calificó la IA» solo significa algo pegado al nombre que califica.
- */
-.tituloCriterio {
-  display: block;
-}
-
 .calificarCriterio {
   background: none;
   border: none;
@@ -468,7 +460,6 @@ thead .celdaCandidato {
   flex-direction: column;
   gap: var(--e3);
   width: 100%;
-  max-width: var(--medida);
   padding: var(--e3);
   border: 1px solid var(--borde-control);
   border-radius: var(--radio-menor);
@@ -492,8 +483,17 @@ thead .celdaCandidato {
   padding: 0 var(--e3);
   background: var(--nube);
   color: var(--tinta);
-  border: 1px solid var(--borde-control);
+  /*
+   * ⚠️ **`--tinta3` y no `--borde-control`, solo aqui.** Un control pide 3:1
+   * contra su fondo. `--borde-control` da 3,12:1 sobre la nube, pero estos dos
+   * viven sobre `--nube-hundida`, donde cae a 2,93:1 — y como el relleno blanco
+   * apenas contrasta 1,13:1 con esa superficie, el borde es la unica frontera
+   * que tiene el campo.
+   */
+  border: 1px solid var(--tinta3);
   font: inherit;
+  /* Por debajo de 16px iOS hace zoom al enfocar, y este campo lleva autoFocus. */
+  font-size: var(--t-base);
   font-variant-numeric: tabular-nums;
   border-radius: var(--radio-menor);
 }
@@ -502,9 +502,10 @@ thead .celdaCandidato {
   padding: var(--e3);
   background: var(--nube);
   color: var(--tinta);
-  border: 1px solid var(--borde-control);
+  /* Lo mismo que el puntaje: vive sobre la superficie hundida. */
+  border: 1px solid var(--tinta3);
   font: inherit;
-  font-size: var(--t-apoyo);
+  font-size: var(--t-base);
   line-height: 1.5;
   border-radius: var(--radio-menor);
   resize: vertical;
@@ -530,10 +531,34 @@ thead .celdaCandidato {
   composes: secundario from '../../estilos/piezas.module.css';
 }
 
+/*
+ * Que se guardo, dicho aqui y no solo por el numero que cambia arriba. Entre
+ * cerrar el formulario y que vuelva la lista hay un hueco en el que la pantalla
+ * no decia nada, y quien acaba de escribir una nota necesita saber que salio.
+ */
+.guardadaCriterio {
+  font-size: var(--t-apoyo);
+  line-height: 1.5;
+  color: var(--bien);
+  margin: 0;
+}
+
+/*
+ * ⚠️ **En rojo y nada mas, esto no se distingue de la explicacion de la IA.**
+ * «La regla de la forma primero»: el estado se lee en la forma antes que en el
+ * color. En gris, `--mal` y `--tinta2` caen casi en la misma luminancia, asi
+ * que un aviso sin caja se lee como una linea de prosa mas — y justo aqui el
+ * texto es lo unico accionable («hace falta el permiso ajustar_nota»).
+ * Es el mismo tratamiento que `NotaDeLaPrueba.module.css` ya le da al suyo.
+ */
 .falloCriterio {
   font-size: var(--t-apoyo);
   line-height: 1.5;
   color: var(--mal);
+  border: 1px solid var(--mal-regla);
+  background: var(--mal-bruma);
+  padding: var(--e3);
+  border-radius: var(--radio-menor);
   margin: 0;
   overflow-wrap: anywhere;
 }
