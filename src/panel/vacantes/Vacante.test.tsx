@@ -259,6 +259,21 @@ const asignarPlantillaPrueba = vi.fn((_vacanteId: number, _versionId: number) =>
 
 const sinRuido = {
   verVacante: () => Promise.resolve(VACANTE),
+  /*
+    ⚠️ **Las listas van vacias, no ausentes.** El componente las recorre en
+    cuanto llega el desglose, y un `{}` pelado revienta con «no es iterable».
+  */
+  verDesgloseEvaluacion: () =>
+    Promise.resolve({
+      postulacionId: 91,
+      estado: 'ENTREGADA',
+      entregadaEn: null,
+      notaEvaluacion: 70,
+      cerradas: { nota: 80, preguntas: 4 },
+      abiertas: [],
+      alineacion: [],
+      patrones: [],
+    }),
   verEmbudo: () => Promise.resolve({ porEstado: {} }),
   verCatalogos: () => Promise.resolve({ areas: [], puestos: [], nivelesPuesto: [], estados: [] }),
   /*
@@ -327,7 +342,7 @@ vi.mock('../api/panel', () => ({
   verFicha: () => Promise.resolve({ enlaces: [] }),
   verHistorial: () => Promise.resolve([]),
   verPerfilIntegral: () => sinRuido.verPerfilIntegral(),
-  verDesgloseEvaluacion: () => Promise.resolve({}),
+  verDesgloseEvaluacion: () => sinRuido.verDesgloseEvaluacion(),
   verMetricasValidacion: () => Promise.resolve([]),
   verNotasPrueba: () => Promise.resolve(NOTAS_PRUEBA),
   verNotasSimulacion: () => Promise.resolve([]),
@@ -1702,5 +1717,51 @@ describe('calificar a mano un criterio de la prueba', () => {
       aquí sería una llamada a una ruta que no existe.
     */
     expect(screen.queryByRole('button', { name: /Calificar a mano/ })).toBeNull()
+  })
+})
+
+describe('los dos párrafos que explican la nota', () => {
+  /*
+    ⚠️ **Van en la prueba del puesto y NO en el perfil integral, y el sitio es
+    el punto entero de este bloque.** En el perfil la frase no cuadraba con su
+    número: la nota de esa etapa mezcla currículum (peso 12) y evaluación del
+    banco (peso 28), así que venía sobre todo del banco mientras las razones
+    —«domina X y Y»— salían solo de los ocho criterios del CV. Justificaba una
+    nota con la mitad de sus motivos, y con la mitad que menos pesa.
+
+    En la prueba la nota sale ENTERA de su rúbrica: nota y razones son la misma
+    cosa, que es lo que hacía el informe del cliente.
+  */
+  it('NO salen en la ficha del perfil integral', async () => {
+    await pintar()
+    fireEvent.click(screen.getByText('Rodrigo Ayala'))
+    await waitFor(() => expect(screen.getByText('Lo que calificó la IA')).toBeTruthy())
+    expect(screen.queryByText('¿Por qué contratarlo?')).toBeNull()
+  })
+
+  it('salen en la ficha de la prueba del puesto', async () => {
+    await pintar()
+    irA('Prueba del puesto')
+    await waitFor(() => expect(elCorte('Con nota de la prueba')).toBeTruthy())
+    verCorte('Toda la tanda')
+    await waitFor(() => expect(screen.getByText('Camila Reyes')).toBeTruthy())
+    fireEvent.click(screen.getByText('Camila Reyes'))
+    await waitFor(() => expect(screen.getByText('¿Por qué contratarlo?')).toBeTruthy())
+  })
+
+  /*
+    Sin nota de la prueba no se dice nada de nadie: ni un veredicto ni una
+    lectura. Media rúbrica sumada no es una lectura, y esta persona no la ha
+    rendido. El párrafo lo dice con palabras en vez de callarse.
+  */
+  it('sin nota de la prueba lo dicen, y no inventan una lectura', async () => {
+    await pintar()
+    irA('Prueba del puesto')
+    await waitFor(() => expect(elCorte('Con nota de la prueba')).toBeTruthy())
+    verCorte('Toda la tanda')
+    await waitFor(() => expect(screen.getByText('Camila Reyes')).toBeTruthy())
+    fireEvent.click(screen.getByText('Camila Reyes'))
+    await waitFor(() => expect(screen.getByText(/Aún sin nota/)).toBeTruthy())
+    expect(screen.queryByText('Lectura de la prueba')).toBeNull()
   })
 })

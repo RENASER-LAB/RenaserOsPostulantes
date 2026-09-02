@@ -4,14 +4,70 @@
     {
       "name": "portal",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
       "port": 5174
     },
     {
       "name": "portal-worktree",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--", "--port", "5199", "--strictPort"],
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "5199",
+        "--strictPort"
+      ],
       "port": 5199,
+      "autoPort": false
+    },
+    {
+      "comment": [
+        "TEMPORAL, de la rama feat/verEntregablesDeLaPrueba. Se borra al fusionar.",
+        "",
+        "⚠️ BASE PROPIA Y DESECHABLE: `renaser-pg-verentregables` en el 5441, con la imagen",
+        "pgvector —la aplicacion hace CREATE EXTENSION vector al arrancar—. La del 5433 la",
+        "comparten los otros worktrees y Flyway reserva ahi el numero de migracion para todos,",
+        "y esta rama trae una migracion nueva.",
+        "",
+        "⚠️ VHOST PROPIO: compartir el broker con otro backend le roba los mensajes.",
+        "",
+        "⚠️ EL SECRETS POR RUTA ABSOLUTA: un worktree no lo tiene, no se versiona.",
+        "",
+        "⚠️ RABBITMQ A MANO aunque el perfil `local` ya lo diga: ese secrets apunta a CloudAMQP,",
+        "que es la cola del entorno de Pruebas."
+      ],
+      "name": "backend-verEntregables",
+      "runtimeExecutable": "./mvnw",
+      "runtimeArgs": [
+        "-f",
+        "/home/n4nd0/Documentos/RENASER-RECLUTAMIENTO/.claude/worktrees/verEntregables/pom.xml",
+        "spring-boot:test-run",
+        "-Dspring-boot.run.profiles=local",
+        "-Dspring-boot.run.arguments=--server.port=8086 --spring.config.import=optional:file:/home/n4nd0/Documentos/RENASER-RECLUTAMIENTO/application-secrets.yaml --spring.datasource.url=jdbc:postgresql://localhost:5441/renaser_db --spring.rabbitmq.host=localhost --spring.rabbitmq.port=5672 --spring.rabbitmq.username=guest --spring.rabbitmq.password=guest --spring.rabbitmq.ssl.enabled=false --spring.rabbitmq.virtual-host=verentregables --renaser.ai.calificacion.habilitada=false"
+      ],
+      "port": 8086,
+      "autoPort": false
+    },
+    {
+      "comment": [
+        "TEMPORAL, de la rama feat/verEntregablesDeLaPrueba. Se borra al fusionar.",
+        "El panel de esta rama, contra el backend de arriba (.env.local lo apunta)."
+      ],
+      "name": "portal-verEntregables",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "5211",
+        "--strictPort"
+      ],
+      "port": 5211,
       "autoPort": false
     }
   ]

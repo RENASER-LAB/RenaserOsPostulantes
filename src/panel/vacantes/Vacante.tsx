@@ -92,6 +92,8 @@ import {
   filtrarFino,
   hayFiltroPuesto,
   laEtapaDe,
+  porPilar,
+  SENALES,
   lecturaDeLaNota,
   nombreDelGrupo,
   ordenar,
@@ -1736,6 +1738,21 @@ function DetalleDelPostulante({ fila, etapa }: { fila: FilaRanking; etapa: Etapa
               quedaba en «le falta 1 de 6 criterios» para siempre, porque el
               endpoint existía y ninguna pantalla lo llamaba.
             */}
+            {/*
+              Los dos párrafos del informe del cliente, y van AQUÍ y no en el
+              perfil integral.
+
+              ⚠️ **En el perfil integral la frase no cuadraba con su número.**
+              La nota de esa etapa mezcla currículum (peso 12) y evaluación del
+              banco (peso 28), así que el número venía sobre todo del banco
+              mientras las razones —«domina X y Y»— salían solo de los ocho
+              criterios del CV. Justificaba una nota con la mitad de sus
+              motivos, y con la mitad que menos pesa.
+
+              Aquí no pasa: la nota de la prueba sale ENTERA de esta rúbrica.
+              Nota y razones son la misma cosa, que es lo que hacía el informe.
+            */}
+            <LecturaDeLaPrueba fila={fila} />
             <CriteriosDeEtapa
               titulo="La prueba del puesto, criterio a criterio"
               postulacionId={fila.postulacionId}
@@ -1810,7 +1827,7 @@ function DetalleDelPostulante({ fila, etapa }: { fila: FilaRanking; etapa: Etapa
           <Validacion postulacionId={fila.postulacionId} />
         ) : (
           <>
-            <LoQueCalificoLaIA fila={fila} etapa={etapa} />
+            <LoQueCalificoLaIA fila={fila} />
             {/*
               Solo en Perfil integral y no en Decision, aunque las dos ensenen
               el mismo retrato: recalificar es rehacer la preseleccion, y
@@ -1849,7 +1866,7 @@ function DetalleDelPostulante({ fila, etapa }: { fila: FilaRanking; etapa: Etapa
  *
  * En Decision se ensena esto mismo: decidir es mirar el retrato completo.
  */
-function LoQueCalificoLaIA({ fila, etapa }: { fila: FilaRanking; etapa: EtapaPanel }) {
+function LoQueCalificoLaIA({ fila }: { fila: FilaRanking }) {
   const perfil = useQuery({
     queryKey: ['panel-perfil', fila.postulacionId],
     queryFn: () => verPerfilIntegral(fila.postulacionId),
@@ -1947,41 +1964,8 @@ function LoQueCalificoLaIA({ fila, etapa }: { fila: FilaRanking; etapa: EtapaPan
         paralelo, una respuesta antigua puede no traer el campo, y sin esto la
         ficha se quedaría sin criterios en vez de tardar un segundo en tenerlos.
       */}
-      {/*
-        Los dos párrafos del informe del cliente.
-
-        ⚠️ **Se derivan de las notas, no los escribe una IA.** Extraídos los
-        veintinueve del informe, son cinco plantillas con dos huecos. Hacerlos
-        así no cuesta nada, no se quedan obsoletos —se recalculan si alguien
-        corrige un criterio— y no inventan: nombran criterios que están en esta
-        misma pantalla.
-
-        ⚠️ **No son el veredicto.** Ese sigue siendo el grupo de prioridad, que
-        además mira el riesgo crítico. Esto explica la nota con palabras.
-      */}
       {criteriosDeLaFicha.length > 0 && (
         <>
-          {(() => {
-            const { porQue, lectura } = lecturaDeLaNota(
-              fila.notaEtapa,
-              criteriosDeLaFicha,
-              etapa,
-            )
-            return (
-              <>
-                <p className={estilos.porQueContratarlo}>
-                  <span>¿Por qué contratarlo?</span>
-                  {porQue}
-                </p>
-                {lectura && (
-                  <p className={estilos.lecturaDeLaNota}>
-                    <span>Lectura de {laEtapaDe(etapa).loCalificado}</span>
-                    {lectura}
-                  </p>
-                )}
-              </>
-            )
-          })()}
           <h4 className={estilos.subtitulo}>Criterio a criterio</h4>
           <ul className={estilos.criterios} role="list">
             {criteriosDeLaFicha.map((n) => {
@@ -2094,43 +2078,126 @@ function TablaDeLaEvaluacion({ desglose }: { desglose: DesgloseEvaluacion }) {
           ` ${sinNota} ${sinNota === 1 ? 'respuesta abierta espera' : 'respuestas abiertas esperan'} calificación.`}
       </p>
 
-      {desglose.abiertas.length > 0 && (
-        <div className={tabla.envoltura}>
-          <table className={`${tabla.tabla} ${estilos.tablaEvaluacion}`}>
-            <thead>
-              <tr>
-                <th>Pregunta y respuesta</th>
-                <th className={`${tabla.cifra} ${estilos.celdaNota}`}>Nota</th>
-                <th>Lo que vio la IA</th>
-              </tr>
-            </thead>
-            <tbody>
-              {desglose.abiertas.map((a, i) => (
-                <tr key={i}>
-                  <td className={estilos.celdaRespuesta}>
-                    <b>{a.pregunta}</b>
-                    <span className={estilos.respuestaDada}>{a.respuesta}</span>
-                  </td>
-                  <td className={tabla.cifra}>
-                    {a.puntaje !== null ? `${a.puntaje}/4` : '—'}
-                  </td>
-                  <td className={estilos.celdaExplicacion}>
-                    {a.explicacion ?? 'Pendiente de calificar.'}
-                    {a.evidenciaCitada && (
-                      <span className={estilos.evidencia}>Citó: {a.evidenciaCitada}</span>
-                    )}
-                    {a.motivoAjuste && (
-                      <span className={estilos.evidencia}>
-                        Nota ajustada a mano: {a.motivoAjuste}
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      {/*
+        Los patrones del cuestionario completo: lo que ninguna respuesta suelta
+        deja ver. No descartan a nadie —son preguntas para la conversación
+        final—, así que van en ámbar y no en rojo: «lo que cambia tu decisión»,
+        que es lo que ese color significa en este sistema.
+      */}
+      {desglose.patrones.length > 0 && (
+        <ul className={estilos.patrones} role="list">
+          {desglose.patrones.map((p) => (
+            <li key={p.codigo}>
+              <b>{p.titulo}</b>
+              <span>{p.descripcion}</span>
+            </li>
+          ))}
+        </ul>
       )}
+
+      {desglose.abiertas.length > 0 &&
+        porPilar(desglose.abiertas).map(({ pilar, respuestas }) => (
+          <div key={pilar ?? 'sin-pilar'}>
+            {/*
+              El pilar como título de grupo. Sin él las abiertas son una lista
+              plana y no se puede saber cuáles sostienen «Iniciativa».
+
+              «Sin pilar» es un grupo normal y va al final: una pregunta puede no
+              colgar de ninguno, y un banco anterior no cuelga de ninguno en
+              absoluto. No es un error.
+            */}
+            <h4 className={estilos.subtitulo}>
+              {pilar ?? 'Sin pilar asignado'}
+              <span className={estilos.cuantasDelPilar}>
+                {respuestas.length}{' '}
+                {respuestas.length === 1 ? 'respuesta' : 'respuestas'}
+              </span>
+            </h4>
+            <div className={tabla.envoltura}>
+              <table className={`${tabla.tabla} ${estilos.tablaEvaluacion}`}>
+                <thead>
+                  <tr>
+                    <th>Pregunta y respuesta</th>
+                    <th className={`${tabla.cifra} ${estilos.celdaNota}`}>Nota</th>
+                    <th>Lo que vio la IA</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {respuestas.map((a, i) => (
+                    <tr key={i}>
+                      <td className={estilos.celdaRespuesta}>
+                        <b>{a.pregunta}</b>
+                        <span className={estilos.respuestaDada}>{a.respuesta}</span>
+                      </td>
+                      <td className={tabla.cifra}>
+                        {a.puntaje !== null ? `${a.puntaje}/4` : '—'}
+                        {/*
+                          Las cuatro se abren porque «3 de 4» sin decir cuál
+                          faltó no se puede discutir con la persona.
+
+                          ⚠️ **El puntaje NO es su conteo**, y por eso hace falta
+                          la frase de abajo: «Contó un episodio» es una PUERTA
+                          —sin ella el puntaje es 0 aunque las otras tres estén—,
+                          y cuando falta el dato la pregunta puede recortar el
+                          máximo. Un 0 con casillas marcadas es correcto, y sin
+                          explicarlo parece un error de cálculo.
+
+                          ⚠️ Vacías significa que ESE BANCO no las medía, no que
+                          no se cumpliera ninguna. Por eso hay una frase en vez
+                          de cuatro noes.
+                        */}
+                        {a.senales ? (
+                          <>
+                            <ul className={estilos.senales} role="list">
+                              {SENALES.map(([clave, dicho]) => (
+                                <li
+                                  key={clave}
+                                  className={
+                                    a.senales![clave] ? estilos.senalSi : estilos.senalNo
+                                  }
+                                >
+                                  {dicho}
+                                </li>
+                              ))}
+                            </ul>
+                            {/*
+                              El caso que parece un fallo y no lo es: sin
+                              episodio el puntaje es 0 por mucho que las otras
+                              estén. Se dice solo cuando pasa.
+                            */}
+                            {a.puntaje === 0 && !a.senales.episodio && (
+                              <span className={estilos.sinSenales}>
+                                Cero porque no contó un episodio: sin eso, lo demás no
+                                puntúa.
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          a.puntaje !== null && (
+                            <span className={estilos.sinSenales}>
+                              Este banco no medía las cuatro señales
+                            </span>
+                          )
+                        )}
+                      </td>
+                      <td className={estilos.celdaExplicacion}>
+                        {a.explicacion ?? 'Pendiente de calificar.'}
+                        {a.evidenciaCitada && (
+                          <span className={estilos.evidencia}>Citó: {a.evidenciaCitada}</span>
+                        )}
+                        {a.motivoAjuste && (
+                          <span className={estilos.evidencia}>
+                            Nota ajustada a mano: {a.motivoAjuste}
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ))}
 
       {desglose.alineacion.length > 0 && (
         <>
@@ -2166,6 +2233,65 @@ function TablaDeLaEvaluacion({ desglose }: { desglose: DesgloseEvaluacion }) {
  */
 const autorDeLaNota = (origen: string) =>
   origen === 'AGENTE' ? 'calificó la IA' : origen === 'PERSONA' ? 'la puso una persona' : origen
+
+/**
+ * Los dos párrafos que explican la nota de la prueba.
+ *
+ * ⚠️ **Comparte la clave de consulta con `CriteriosDeEtapa`**, así que no pide
+ * nada al servidor: la rúbrica ya está en la caché cuando esto se pinta. Si
+ * alguna vez dejan de compartirla, esta ficha empieza a hacer dos peticiones
+ * para la misma lista.
+ *
+ * ⚠️ **En una rúbrica de prueba, `puntosMaximos` ES el peso.** No hay un campo
+ * de peso aparte porque no hace falta: la rúbrica está obligada a sumar 100 al
+ * publicarse, así que lo que un criterio vale es lo que puede repartir. Por eso
+ * se traduce a los dos campos que espera `lecturaDeLaNota` — y por eso «lo que
+ * más pesa» sale de aquí sin que nadie declare cuál es el núcleo del puesto: en
+ * Administrador son caja (20) y divisas (15), los dos mayores.
+ */
+function LecturaDeLaPrueba({ fila }: { fila: FilaRanking }) {
+  const notas = useQuery({
+    queryKey: ['panel-notas-prueba', fila.postulacionId],
+    queryFn: () => verNotasPrueba(fila.postulacionId),
+    retry: false,
+  })
+
+  // Sin rúbrica no hay nada que leer, y eso es normal: la vacante puede rendir
+  // el cuestionario técnico, que se califica pregunta a pregunta y no por
+  // criterios. Un párrafo ahí hablaría de una rúbrica que no existe.
+  if (!notas.data || notas.data.length === 0) return null
+
+  const { porQue, lectura } = lecturaDeLaNota(
+    fila.notaEtapa,
+    notas.data.map((n) => ({
+      criterio: n.nombre,
+      codigo: null,
+      puntaje: n.puntaje,
+      maximo: n.puntosMaximos,
+      peso: n.puntosMaximos ?? 0,
+      explicacion: n.explicacion,
+      origen: n.origen,
+      confianza: null,
+      motivoAjuste: null,
+    })),
+    'PRUEBA_PUESTO',
+  )
+
+  return (
+    <>
+      <p className={estilos.porQueContratarlo}>
+        <span>¿Por qué contratarlo?</span>
+        {porQue}
+      </p>
+      {lectura && (
+        <p className={estilos.lecturaDeLaNota}>
+          <span>Lectura de la prueba</span>
+          {lectura}
+        </p>
+      )}
+    </>
+  )
+}
 
 function CriteriosDeEtapa({
   titulo,

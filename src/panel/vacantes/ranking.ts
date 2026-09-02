@@ -20,7 +20,7 @@
  * setenta y ocho guiones.
  */
 
-import type { FilaRanking, NotaCriterio } from '../api/tipos'
+import type { FilaRanking, NotaCriterio, RespuestaAbiertaVista } from '../api/tipos'
 
 export const ETAPAS_PANEL = [
   {
@@ -250,6 +250,48 @@ export function cifrasDeLaEtapa(filas: FilaRanking[], etapa: EtapaPanel): Cifras
     hechasSinNota: aqui.length - esperandoALaPersona,
     enOtraEtapa: sinNota.length - aqui.length,
   }
+}
+
+// ---------- La evaluación del banco, por dentro ----------
+
+/**
+ * Las cuatro señales, dichas como se leen.
+ *
+ * El orden es el de la rúbrica —episodio, autoría, dato, incomodidad— y no se
+ * reordena: quien las lee dos veces seguidas las espera en el mismo sitio.
+ */
+export const SENALES = [
+  ['episodio', 'Contó un episodio concreto'],
+  ['autoria', 'Dijo qué hizo él'],
+  ['dato', 'Dio un dato'],
+  ['incomodidad', 'Se metió en lo incómodo'],
+] as const
+
+/**
+ * Las respuestas abiertas agrupadas por pilar.
+ *
+ * ⚠️ **Sin esto son una lista plana y no se puede saber cuáles sostienen
+ * «Iniciativa»**, que es justo lo que hay que mirar cuando un pilar sale bajo.
+ *
+ * ⚠️ **«Sin pilar» va al final y es un grupo NORMAL.** Una pregunta puede no
+ * colgar de ningún pilar, y una evaluación de un banco anterior a CAZATALENTOS
+ * no cuelga de ninguno en absoluto: ahí el único grupo es ese. Tratarlo como un
+ * error convertiría el estado corriente de media base en una alarma.
+ *
+ * Dentro de cada grupo se respeta el orden de llegada, que es el de contestar.
+ */
+export function porPilar(
+  abiertas: RespuestaAbiertaVista[],
+): Array<{ pilar: string | null; respuestas: RespuestaAbiertaVista[] }> {
+  const grupos = new Map<string | null, RespuestaAbiertaVista[]>()
+  for (const a of abiertas) {
+    const clave = a.pilar ?? null
+    if (!grupos.has(clave)) grupos.set(clave, [])
+    grupos.get(clave)!.push(a)
+  }
+  return [...grupos.entries()]
+    .map(([pilar, respuestas]) => ({ pilar, respuestas }))
+    .sort((a, b) => (a.pilar === null ? 1 : b.pilar === null ? -1 : 0))
 }
 
 // ---------- Las cinco cifras de la tanda ----------
