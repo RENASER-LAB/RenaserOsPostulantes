@@ -914,7 +914,15 @@ function Ranking({
                 if (columna.peso != null) {
                   return (
                     <th key={columna.clave} className={`${clase} ${estilos.cabeceraCriterio}`}>
-                      {columna.titulo}
+                      {/*
+                        El nombre va en un bloque de ancho fijo, y no suelto en
+                        la celda: una tabla de ancho automático ignora el
+                        `max-width` de un `<th>`, así que el nombre salía en una
+                        línea, se desbordaba de su columna y se pisaba con el de
+                        al lado. El bloque sí manda: la columna no puede ser más
+                        estrecha que su contenido.
+                      */}
+                      <b>{columna.titulo}</b>
                       {/*
                         «peso 0» se lee como un peso pequeño, y no lo es: un
                         criterio con peso cero NO puede mover la nota de nadie
@@ -948,6 +956,11 @@ function Ranking({
                       clase,
                       estilos.cabeceraOrdenable,
                       columna.cifra ? estilos.cabeceraCifra : null,
+                      // La cabecera se clava con su columna, o al rodar se
+                      // quedaría atrás mientras las celdas de debajo no.
+                      columna.clave === 'candidato' && criterios.length > 0
+                        ? estilos.celdaCandidato
+                        : null,
                     ]
                       .filter(Boolean)
                       .join(' ')}
@@ -985,7 +998,8 @@ function Ranking({
                     />
                   </td>
                   <td className={tabla.cifra}>{fila.puesto}</td>
-                  <td>
+                  {/* Clavada a la izquierda solo cuando hay algo que rodar. */}
+                  <td className={criterios.length > 0 ? estilos.celdaCandidato : undefined}>
                     <span className={estilos.candidato}>{fila.candidato}</span>
                     <span className={estilos.correo}>{fila.correo}</span>
                   </td>
