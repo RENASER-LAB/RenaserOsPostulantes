@@ -59,6 +59,20 @@
   margin-bottom: var(--e4);
 }
 
+/*
+ * ⚠️ **El campo tiene tope, y no lo tenia.** `flex: 1 1 14rem` lo hacia crecer
+ * con la fila: en una pantalla ancha, la caja donde se escribe «Operaciones»
+ * llegaba a 1719 px. Un campo de una palabra tan largo como la pantalla no dice
+ * cuanto se espera que escribas, y el sistema ya tiene escrito por que —«un
+ * formulario ancho se lee peor»—.
+ *
+ * Va aqui y no en `.campo`, que tambien vive dentro de `.formulario`: alli la
+ * rejilla reparte con `auto-fit` y un tope dejaria huecos.
+ */
+.anadir .campo {
+  max-width: 22rem;
+}
+
 .crear {
   composes: acentoMenor from '../../estilos/piezas.module.css';
   flex: none;
