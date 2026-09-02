@@ -91,6 +91,8 @@ import {
   filtrarFino,
   hayFiltroPuesto,
   laEtapaDe,
+  porPilar,
+  SENALES,
   lecturaDeLaNota,
   nombreDelGrupo,
   ordenar,
@@ -2087,43 +2089,126 @@ function TablaDeLaEvaluacion({ desglose }: { desglose: DesgloseEvaluacion }) {
           ` ${sinNota} ${sinNota === 1 ? 'respuesta abierta espera' : 'respuestas abiertas esperan'} calificación.`}
       </p>
 
-      {desglose.abiertas.length > 0 && (
-        <div className={tabla.envoltura}>
-          <table className={`${tabla.tabla} ${estilos.tablaEvaluacion}`}>
-            <thead>
-              <tr>
-                <th>Pregunta y respuesta</th>
-                <th className={`${tabla.cifra} ${estilos.celdaNota}`}>Nota</th>
-                <th>Lo que vio la IA</th>
-              </tr>
-            </thead>
-            <tbody>
-              {desglose.abiertas.map((a, i) => (
-                <tr key={i}>
-                  <td className={estilos.celdaRespuesta}>
-                    <b>{a.pregunta}</b>
-                    <span className={estilos.respuestaDada}>{a.respuesta}</span>
-                  </td>
-                  <td className={tabla.cifra}>
-                    {a.puntaje !== null ? `${a.puntaje}/4` : '—'}
-                  </td>
-                  <td className={estilos.celdaExplicacion}>
-                    {a.explicacion ?? 'Pendiente de calificar.'}
-                    {a.evidenciaCitada && (
-                      <span className={estilos.evidencia}>Citó: {a.evidenciaCitada}</span>
-                    )}
-                    {a.motivoAjuste && (
-                      <span className={estilos.evidencia}>
-                        Nota ajustada a mano: {a.motivoAjuste}
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      {/*
+        Los patrones del cuestionario completo: lo que ninguna respuesta suelta
+        deja ver. No descartan a nadie —son preguntas para la conversación
+        final—, así que van en ámbar y no en rojo: «lo que cambia tu decisión»,
+        que es lo que ese color significa en este sistema.
+      */}
+      {desglose.patrones.length > 0 && (
+        <ul className={estilos.patrones} role="list">
+          {desglose.patrones.map((p) => (
+            <li key={p.codigo}>
+              <b>{p.titulo}</b>
+              <span>{p.descripcion}</span>
+            </li>
+          ))}
+        </ul>
       )}
+
+      {desglose.abiertas.length > 0 &&
+        porPilar(desglose.abiertas).map(({ pilar, respuestas }) => (
+          <div key={pilar ?? 'sin-pilar'}>
+            {/*
+              El pilar como título de grupo. Sin él las abiertas son una lista
+              plana y no se puede saber cuáles sostienen «Iniciativa».
+
+              «Sin pilar» es un grupo normal y va al final: una pregunta puede no
+              colgar de ninguno, y un banco anterior no cuelga de ninguno en
+              absoluto. No es un error.
+            */}
+            <h4 className={estilos.subtitulo}>
+              {pilar ?? 'Sin pilar asignado'}
+              <span className={estilos.cuantasDelPilar}>
+                {respuestas.length}{' '}
+                {respuestas.length === 1 ? 'respuesta' : 'respuestas'}
+              </span>
+            </h4>
+            <div className={tabla.envoltura}>
+              <table className={`${tabla.tabla} ${estilos.tablaEvaluacion}`}>
+                <thead>
+                  <tr>
+                    <th>Pregunta y respuesta</th>
+                    <th className={`${tabla.cifra} ${estilos.celdaNota}`}>Nota</th>
+                    <th>Lo que vio la IA</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {respuestas.map((a, i) => (
+                    <tr key={i}>
+                      <td className={estilos.celdaRespuesta}>
+                        <b>{a.pregunta}</b>
+                        <span className={estilos.respuestaDada}>{a.respuesta}</span>
+                      </td>
+                      <td className={tabla.cifra}>
+                        {a.puntaje !== null ? `${a.puntaje}/4` : '—'}
+                        {/*
+                          Las cuatro se abren porque «3 de 4» sin decir cuál
+                          faltó no se puede discutir con la persona.
+
+                          ⚠️ **El puntaje NO es su conteo**, y por eso hace falta
+                          la frase de abajo: «Contó un episodio» es una PUERTA
+                          —sin ella el puntaje es 0 aunque las otras tres estén—,
+                          y cuando falta el dato la pregunta puede recortar el
+                          máximo. Un 0 con casillas marcadas es correcto, y sin
+                          explicarlo parece un error de cálculo.
+
+                          ⚠️ Vacías significa que ESE BANCO no las medía, no que
+                          no se cumpliera ninguna. Por eso hay una frase en vez
+                          de cuatro noes.
+                        */}
+                        {a.senales ? (
+                          <>
+                            <ul className={estilos.senales} role="list">
+                              {SENALES.map(([clave, dicho]) => (
+                                <li
+                                  key={clave}
+                                  className={
+                                    a.senales![clave] ? estilos.senalSi : estilos.senalNo
+                                  }
+                                >
+                                  {dicho}
+                                </li>
+                              ))}
+                            </ul>
+                            {/*
+                              El caso que parece un fallo y no lo es: sin
+                              episodio el puntaje es 0 por mucho que las otras
+                              estén. Se dice solo cuando pasa.
+                            */}
+                            {a.puntaje === 0 && !a.senales.episodio && (
+                              <span className={estilos.sinSenales}>
+                                Cero porque no contó un episodio: sin eso, lo demás no
+                                puntúa.
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          a.puntaje !== null && (
+                            <span className={estilos.sinSenales}>
+                              Este banco no medía las cuatro señales
+                            </span>
+                          )
+                        )}
+                      </td>
+                      <td className={estilos.celdaExplicacion}>
+                        {a.explicacion ?? 'Pendiente de calificar.'}
+                        {a.evidenciaCitada && (
+                          <span className={estilos.evidencia}>Citó: {a.evidenciaCitada}</span>
+                        )}
+                        {a.motivoAjuste && (
+                          <span className={estilos.evidencia}>
+                            Nota ajustada a mano: {a.motivoAjuste}
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ))}
 
       {desglose.alineacion.length > 0 && (
         <>

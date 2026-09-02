@@ -259,6 +259,21 @@ const asignarPlantillaPrueba = vi.fn((_vacanteId: number, _versionId: number) =>
 
 const sinRuido = {
   verVacante: () => Promise.resolve(VACANTE),
+  /*
+    ⚠️ **Las listas van vacias, no ausentes.** El componente las recorre en
+    cuanto llega el desglose, y un `{}` pelado revienta con «no es iterable».
+  */
+  verDesgloseEvaluacion: () =>
+    Promise.resolve({
+      postulacionId: 91,
+      estado: 'ENTREGADA',
+      entregadaEn: null,
+      notaEvaluacion: 70,
+      cerradas: { nota: 80, preguntas: 4 },
+      abiertas: [],
+      alineacion: [],
+      patrones: [],
+    }),
   verEmbudo: () => Promise.resolve({ porEstado: {} }),
   verCatalogos: () => Promise.resolve({ areas: [], puestos: [], nivelesPuesto: [], estados: [] }),
   /*
@@ -318,7 +333,7 @@ vi.mock('../api/panel', () => ({
   verFicha: () => Promise.resolve({ enlaces: [] }),
   verHistorial: () => Promise.resolve([]),
   verPerfilIntegral: () => sinRuido.verPerfilIntegral(),
-  verDesgloseEvaluacion: () => Promise.resolve({}),
+  verDesgloseEvaluacion: () => sinRuido.verDesgloseEvaluacion(),
   verMetricasValidacion: () => Promise.resolve([]),
   verNotasPrueba: () => Promise.resolve(NOTAS_PRUEBA),
   verNotasSimulacion: () => Promise.resolve([]),
