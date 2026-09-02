@@ -517,8 +517,14 @@ export interface RespuestaAbiertaVista {
 /**
  * Las cuatro señales de una respuesta, presentes o ausentes.
  *
- * El puntaje 0-4 ES el conteo de estas cuatro: lo calcula el backend, no la
- * aritmetica del modelo.
+ * ⚠️ **El puntaje NO es el conteo de estas cuatro.** `episodio` es una PUERTA:
+ * sin el, el puntaje es 0 aunque las otras tres esten marcadas. `cumpleSenalCero`
+ * tambien fuerza el 0, y cuando falta `dato` la pregunta puede declarar un tope
+ * que recorta el resultado. Con la puerta abierta, el puntaje es 1 mas las otras
+ * tres que esten.
+ *
+ * Quien las pinte tiene que contar con ver un 0 con casillas marcadas: es
+ * correcto, no un error de calculo.
  */
 export interface Senales {
   episodio: boolean

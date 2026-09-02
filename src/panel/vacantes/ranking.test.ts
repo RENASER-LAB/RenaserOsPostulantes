@@ -836,7 +836,13 @@ describe('las respuestas del banco, agrupadas por pilar', () => {
     expect(porPilar([])).toEqual([])
   })
 
-  /* El orden de las cuatro es el de la rúbrica y no se reordena. */
+  /*
+    ⚠️ **El puntaje NO es el conteo de las cuatro**, aunque lo parezca. «Contó un
+    episodio» es una puerta: sin ella el puntaje es 0 aunque las otras tres estén
+    marcadas, y cuando falta el dato la pregunta puede recortar el máximo. El
+    orden de las cuatro es el de la rúbrica y no se reordena: quien las lee dos
+    veces seguidas las espera en el mismo sitio.
+  */
   it('las cuatro señales se nombran siempre en el mismo orden', () => {
     expect(SENALES.map(([clave]) => clave)).toEqual([
       'episodio', 'autoria', 'dato', 'incomodidad',

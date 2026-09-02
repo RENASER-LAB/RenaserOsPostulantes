@@ -1691,25 +1691,46 @@ function TablaDeLaEvaluacion({ desglose }: { desglose: DesgloseEvaluacion }) {
                       <td className={tabla.cifra}>
                         {a.puntaje !== null ? `${a.puntaje}/4` : '—'}
                         {/*
-                          El 0-4 ES el conteo de estas cuatro, así que se abren:
-                          «3 de 4» sin decir cuál faltó no se puede discutir con
-                          la persona.
+                          Las cuatro se abren porque «3 de 4» sin decir cuál
+                          faltó no se puede discutir con la persona.
+
+                          ⚠️ **El puntaje NO es su conteo**, y por eso hace falta
+                          la frase de abajo: «Contó un episodio» es una PUERTA
+                          —sin ella el puntaje es 0 aunque las otras tres estén—,
+                          y cuando falta el dato la pregunta puede recortar el
+                          máximo. Un 0 con casillas marcadas es correcto, y sin
+                          explicarlo parece un error de cálculo.
 
                           ⚠️ Vacías significa que ESE BANCO no las medía, no que
                           no se cumpliera ninguna. Por eso hay una frase en vez
                           de cuatro noes.
                         */}
                         {a.senales ? (
-                          <ul className={estilos.senales} role="list">
-                            {SENALES.map(([clave, dicho]) => (
-                              <li
-                                key={clave}
-                                className={a.senales![clave] ? estilos.senalSi : estilos.senalNo}
-                              >
-                                {dicho}
-                              </li>
-                            ))}
-                          </ul>
+                          <>
+                            <ul className={estilos.senales} role="list">
+                              {SENALES.map(([clave, dicho]) => (
+                                <li
+                                  key={clave}
+                                  className={
+                                    a.senales![clave] ? estilos.senalSi : estilos.senalNo
+                                  }
+                                >
+                                  {dicho}
+                                </li>
+                              ))}
+                            </ul>
+                            {/*
+                              El caso que parece un fallo y no lo es: sin
+                              episodio el puntaje es 0 por mucho que las otras
+                              estén. Se dice solo cuando pasa.
+                            */}
+                            {a.puntaje === 0 && !a.senales.episodio && (
+                              <span className={estilos.sinSenales}>
+                                Cero porque no contó un episodio: sin eso, lo demás no
+                                puntúa.
+                              </span>
+                            )}
+                          </>
                         ) : (
                           a.puntaje !== null && (
                             <span className={estilos.sinSenales}>
