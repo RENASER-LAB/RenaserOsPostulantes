@@ -2213,8 +2213,17 @@ function CriteriosDeEtapa({
                     : '—'}
                 </span>
                 <span className={estilos.cuerpoCriterio}>
-                  <b>{n.nombre}</b>
                   {/*
+                    ⚠️ **El nombre y el autor van en el MISMO envoltorio.** El
+                    de fuera apila en columna —la explicación debajo, y el botón
+                    debajo de ella—, y en una columna un « · calificó la IA»
+                    suelto se convierte en su propia línea: un separador
+                    huérfano, sin nada a la izquierda que separar. Inline aquí
+                    dentro, en columna ahí fuera.
+                  */}
+                  <span className={estilos.tituloCriterio}>
+                    <b>{n.nombre}</b>
+                    {/*
                     ⚠️ **Los dos valores son `AGENTE` y `PERSONA`**, nunca `IA`:
                     los escriben `PuentePruebaIaImpl` y `ServicioCalificacionPrueba`.
                     Comparando con `'IA'`, toda nota puesta por el agente caía en
@@ -2231,7 +2240,8 @@ function CriteriosDeEtapa({
                     reservaba— y no una corrección de nada. «La puso una
                     persona» es cierto en los dos casos; «ajustado» solo en uno.
                   */}
-                  {n.origen && ` · ${autorDeLaNota(n.origen)}`}
+                    {n.origen && ` · ${autorDeLaNota(n.origen)}`}
+                  </span>
                   {n.explicacion && (
                     <span className={estilos.explicacion}>{n.explicacion}</span>
                   )}

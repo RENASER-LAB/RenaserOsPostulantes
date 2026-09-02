@@ -439,6 +439,14 @@ thead .celdaCandidato {
   min-width: 0;
 }
 
+/*
+ * Nombre y autor, en linea. El envoltorio de fuera apila en columna; este no,
+ * porque « · calificó la IA» solo significa algo pegado al nombre que califica.
+ */
+.tituloCriterio {
+  display: block;
+}
+
 .calificarCriterio {
   background: none;
   border: none;
