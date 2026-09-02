@@ -283,6 +283,15 @@ vi.mock('../api/panel', () => ({
   verCatalogos: () => sinRuido.verCatalogos(),
   verRanking: (id: number, etapa?: string) => verRanking(id, etapa),
   descargarExcelDelRanking: (id: number, datos: unknown) => pedirExcel(id, datos),
+  /*
+    ⚠️ **Las tres del bloque de entregables tienen que estar.** `EntregablesDePrueba`
+    se monta dentro de la ficha en la pestaña de la prueba, asi que sin ellas el
+    doble no exporta lo que el componente importa y revientan los tests de esta
+    ficha — que no van de entregables.
+  */
+  verEntregablesDePrueba: () => Promise.resolve([]),
+  enlaceDeArchivo: () => Promise.reject(new Error('sin enlace en las pruebas')),
+  descargarArchivo: () => Promise.reject(new Error('sin descarga en las pruebas')),
   listarRequisitos: () => Promise.resolve([]),
   listarPuestos: () => Promise.resolve(PUESTOS),
   listarVersionesBanco: () => listarVersionesBanco(),

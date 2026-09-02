@@ -19,6 +19,8 @@ import type {
   InscritoEnSesion,
   GuardarVacante,
   GuardarPuesto,
+  EnlaceArchivo,
+  EntregaDeLaPrueba,
   NotaCriterioEtapa,
   Parametro,
   PasoHistorialPanel,
@@ -666,6 +668,42 @@ export const asignarVersionPesos = (vacanteId: number, versionPesosId: number) =
 /** Lo que contesto el candidato, pregunta a pregunta. */
 export const verRespuestasDePrueba = (postulacionId: number) =>
   pedir<RespuestaDePrueba[]>(`/postulaciones/${postulacionId}/prueba/respuestas`)
+
+/**
+ * Lo que subio: los archivos y los enlaces que la prueba le pedia.
+ *
+ * ⚠️ **Salen TODOS los pedidos, entregados o no.** Que faltara el tercero es
+ * justo lo que hay que ver, y una lista mas corta parece completa.
+ *
+ * ⚠️ **El contenido —el enlace, el id del archivo— pide `descargar_entregables`.**
+ * Sin ese permiso las filas llegan igual, con `porQueNoSeVe` explicandolo: se
+ * sigue sabiendo que entrego y cuando. El mismo permiso lo exigen las dos rutas
+ * de archivo, asi que un enlace no es una puerta de atras al contenido.
+ */
+export const verEntregablesDePrueba = (postulacionId: number) =>
+  pedir<EntregaDeLaPrueba[]>(`/postulaciones/${postulacionId}/prueba/entregables`)
+
+/**
+ * El enlace firmado para abrir un archivo del bucket sin pasar por el backend.
+ *
+ * ⚠️ **En local NO existe y contesta 500, y no es un fallo.** El almacen de
+ * desarrollo vive en memoria y no reparte enlaces; el backend lo dice con
+ * «el almacen de archivos de este entorno no reparte enlaces». Por eso quien lo
+ * llame tiene que saber caer a `descargarArchivo`, que sirve los bytes por el
+ * backend y funciona en los dos sitios.
+ */
+export const enlaceDeArchivo = (archivoId: number) =>
+  pedir<EnlaceArchivo>(`/archivos/${archivoId}/enlace`)
+
+/**
+ * Los bytes del archivo, servidos por el backend.
+ *
+ * Es el camino que funciona en todas partes y el unico que funciona en local.
+ * Con el bucket es mejor `enlaceDeArchivo` —el archivo no pasa por el backend—,
+ * pero este es el respaldo cuando aquel no esta disponible.
+ */
+export const descargarArchivo = (archivoId: number) =>
+  pedirArchivo(`/archivos/${archivoId}/descarga`)
 
 /**
  * Pedirle al agente que califique la prueba de esta persona.
