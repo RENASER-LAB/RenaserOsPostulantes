@@ -419,6 +419,117 @@ thead .celdaCandidato {
   background: var(--mal);
 }
 
+/*
+ * ---------- Calificar un criterio a mano ----------
+ *
+ * El boton vive DENTRO de la fila del criterio y no en una columna propia: lo
+ * que se califica es ese criterio y no otro, y separarlo obligaria a volver a
+ * leer el nombre para saber cual se esta tocando.
+ *
+ * Discreto a proposito. En una rubrica de seis criterios habria seis botones a
+ * la vez, y seis llamadas a la accion compiten entre si hasta que ninguna se
+ * ve: el trabajo normal aqui es LEER las notas, y calificar es la excepcion.
+ */
+
+.cuerpoCriterio {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--e2);
+  min-width: 0;
+}
+
+.calificarCriterio {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.calificarCriterio:hover {
+  color: var(--tinta);
+}
+
+.formaCriterio {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+  width: 100%;
+  max-width: var(--medida);
+  padding: var(--e3);
+  border: 1px solid var(--borde-control);
+  border-radius: var(--radio-menor);
+  background: var(--nube-hundida);
+}
+
+.campoCriterio {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+}
+
+.etiquetaCriterio {
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+}
+
+.puntajeCriterio {
+  width: 8rem;
+  min-height: 44px;
+  padding: 0 var(--e3);
+  background: var(--nube);
+  color: var(--tinta);
+  border: 1px solid var(--borde-control);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  border-radius: var(--radio-menor);
+}
+
+.explicacionCriterio {
+  padding: var(--e3);
+  background: var(--nube);
+  color: var(--tinta);
+  border: 1px solid var(--borde-control);
+  font: inherit;
+  font-size: var(--t-apoyo);
+  line-height: 1.5;
+  border-radius: var(--radio-menor);
+  resize: vertical;
+}
+
+.accionesCriterio {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e3);
+}
+
+/*
+ * ⚠️ **Tinta y no violeta.** El violeta del producto significa una sola cosa,
+ * «te toca a ti», y se la dice al CANDIDATO. Esta pantalla es la del equipo:
+ * aqui no hay nadie esperando al otro lado, asi que la accion firme va rellena
+ * de tinta. Es el caso exacto que describe `.solido` en `piezas`.
+ */
+.guardarCriterio {
+  composes: solido from '../../estilos/piezas.module.css';
+}
+
+.cancelarCriterio {
+  composes: secundario from '../../estilos/piezas.module.css';
+}
+
+.falloCriterio {
+  font-size: var(--t-apoyo);
+  line-height: 1.5;
+  color: var(--mal);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
 /* ---------- El avance ---------- */
 
 .avance {
