@@ -379,6 +379,12 @@ export type TonoDelCriterio = 'bien' | 'duda' | 'mal' | 'hueco'
  * cuenta lo pone al lado de uno que pesa 25 como si valieran lo mismo. La nota
  * se sigue enseñando —está puesta, y quien la lea querrá verla—; lo que no se
  * enseña es una importancia que no tiene.
+ *
+ * ⚠️ **Antes de reusar esto con la prueba del puesto, mirar qué trae `peso`
+ * ahí.** En el currículum el peso viene de `peso_criterio`; en una rúbrica de
+ * prueba el que reparte es `puntos` —que llega como `maximo`— y el backend
+ * obliga a que la rúbrica sume 100 al publicarla, así que un `peso 0` en esa
+ * etapa sería un dato roto y no un criterio que no cuenta.
  */
 export const noPondera = (nota: NotaCriterio): boolean => nota.peso === 0
 
@@ -432,6 +438,14 @@ export interface CriterioDeLaTanda {
  * Se recorren todas las filas y no solo la primera porque una fila sin calificar
  * puede traer la lista incompleta —o vacía—, y entonces la tabla perdería
  * columnas según a quién le tocara ir primero.
+ *
+ * ⚠️ **La clave es el NOMBRE del criterio, y el peso se queda con el de la
+ * primera fila que lo traiga.** Es correcto porque dentro de una tanda el peso
+ * es uniforme: sale de `peso_criterio` para la versión de pesos de la vacante y
+ * el nivel de su puesto, así que las diecisiete filas de una vacante traen el
+ * mismo peso para «Habilidades del puesto». Dejaría de serlo el día en que dos
+ * filas de la misma tanda pudieran pesar distinto en el mismo criterio; hoy no
+ * hay ningún camino que lo produzca.
  */
 export function criteriosDeLaTanda(filas: FilaRanking[]): CriterioDeLaTanda[] {
   const vistos = new Map<string, CriterioDeLaTanda>()
