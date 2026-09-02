@@ -1202,13 +1202,8 @@ function Ranking({
                       </td>
                     )
                   })}
-                  {/* Adecuación, Potencial y Riesgos viven en la ficha: ver
-                      el comentario de `columnasDelRanking`. */}
-                  {ve('alertas') && (
-                    <td className={`${tabla.cifra} ${estilos.columnaCifra}`}>
-                      {fila.alertas > 0 ? fila.alertas : '—'}
-                    </td>
-                  )}
+                  {/* El retrato del currículum vive en la ficha: ver el
+                      comentario de `columnasDelRanking`. */}
                   {/*
                     ⚠️ **En dos líneas a propósito, y ninguna se parte.** Sin
                     esto «Perfil Integral · por confirmar» se partía solo en

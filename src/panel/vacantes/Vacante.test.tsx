@@ -751,11 +751,11 @@ describe('elegir qué columnas se ven', () => {
 
   it('apagar una columna la quita de la cabecera y de todas las filas', async () => {
     await pintar()
-    expect(within(laTabla()).queryByRole('columnheader', { name: 'Alertas' })).toBeTruthy()
+    expect(within(laTabla()).queryByRole('columnheader', { name: 'Estado' })).toBeTruthy()
     abrirSelector()
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Alertas' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Estado' }))
     await waitFor(() =>
-      expect(within(laTabla()).queryByRole('columnheader', { name: 'Alertas' })).toBeNull(),
+      expect(within(laTabla()).queryByRole('columnheader', { name: 'Estado' })).toBeNull(),
     )
   })
 
@@ -768,7 +768,7 @@ describe('elegir qué columnas se ven', () => {
     await pintar()
     const columnasAntes = laTabla().querySelectorAll('thead th').length
     abrirSelector()
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Alertas' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Estado' }))
     await waitFor(() =>
       expect(laTabla().querySelectorAll('thead th').length).toBe(columnasAntes - 1),
     )
@@ -783,8 +783,8 @@ describe('elegir qué columnas se ven', () => {
     await pintar()
     const columnasAntes = laTabla().querySelectorAll('thead th').length
     abrirSelector()
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Alertas' }))
     fireEvent.click(screen.getByRole('checkbox', { name: 'Estado' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Veredicto' }))
     await waitFor(() =>
       expect(laTabla().querySelectorAll('thead th').length).toBe(columnasAntes - 2),
     )

@@ -1069,19 +1069,16 @@ export function columnasDelRanking(
       }),
     ),
     /*
-      ⚠️ **Adecuación, Potencial y Riesgos ya NO son columnas, y no se pierde
-      nada: los tres se leen en la ficha**, que se abre pulsando la fila. Ahí
-      además van con su explicación —«cuánto encaja con lo que el puesto pide»—,
-      que es lo que una columna de dos cifras no puede dar.
+      ⚠️ **El retrato del currículum ya NO son columnas —Adecuación, Potencial,
+      Riesgos y Alertas—, y no se pierde nada: los cuatro se leen en la ficha**,
+      que se abre pulsando la fila. Ahí además van con su explicación —«cuánto
+      encaja con lo que el puesto pide»— y las cuentas dichas en una frase, que
+      es lo que una columna de dos cifras no puede dar.
 
-      Ocupaban 248 px para tres números que no se comparan al barrer una tabla:
-      se miran cuando ya elegiste a alguien. Sacarlos es lo que deja sitio a los
+      Ocupaban 318 px para números que no se comparan al barrer una tabla: se
+      miran cuando ya elegiste a alguien. Sacarlos es lo que deja sitio a los
       criterios, que sí se comparan en vertical.
-
-      Alertas se queda: es lo único que avisa desde la propia lista de que hay
-      algo que mirar antes de llamar a esa persona.
     */
-    { clave: 'alertas', titulo: 'Alertas', cifra: true, ocultable: true },
     { clave: 'estado', titulo: 'Estado', ocultable: true },
     /*
       La ciudad, al final. Estaba pegada al candidato porque es lo que se lee al
