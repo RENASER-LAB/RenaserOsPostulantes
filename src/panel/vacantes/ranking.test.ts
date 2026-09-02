@@ -32,6 +32,7 @@ import {
   noPondera,
   describirFiltro,
   esDelCurriculum,
+  estadoEnDos,
   filtrar,
   filtrarFino,
   indiceDeLaEtapaDe,
@@ -1089,6 +1090,71 @@ describe('el mapa de calor de los criterios', () => {
     const suya = fila('POSTULADA', 80, { notasCriterio: [nota('Resultados', 20, 25)] })
     expect(notaDelCriterio(suya, 'Resultados')?.puntaje).toBe(20)
     expect(notaDelCriterio(suya, 'Complejidad')).toBeNull()
+  })
+})
+
+// ---------- El estado, partido donde toca ----------
+
+describe('el estado, en sus dos mitades', () => {
+  /*
+    ⚠️ **Esto existe por una medida, no por gusto.** «Perfil Integral · por
+    confirmar» se partía solo en cuatro líneas dentro de sus 111 px y estiraba la
+    fila a 109, mientras la de al lado —«Cerrada»— medía 66. En una tabla que se
+    lee por columnas es lo peor que puede pasar: el mismo puntaje ocupa un bloque
+    de color de distinto tamaño según lo largo que sea el estado de esa persona.
+  */
+  it('parte por el punto medio: etapa arriba, momento abajo', () => {
+    expect(estadoEnDos('Perfil Integral · por confirmar')).toEqual({
+      etapa: 'Perfil Integral',
+      momento: 'por confirmar',
+    })
+  })
+
+  /*
+    Cuatro de los dieciocho no tienen momento. No se les inventa una segunda
+    línea: son una etapa y ya está.
+  */
+  it('los cuatro sin momento salen enteros y sin segunda línea', () => {
+    for (const suelto of ['Postulada', 'Contratado', 'No continúa', 'Cerrada']) {
+      expect(estadoEnDos(suelto)).toEqual({ etapa: suelto, momento: null })
+    }
+  })
+
+  it('parte por el PRIMER punto medio, no por cualquiera', () => {
+    expect(estadoEnDos('Simulación · turno del candidato').momento).toBe(
+      'turno del candidato',
+    )
+    // Un estado con dos separadores conservaría el resto en el momento, entero.
+    expect(estadoEnDos('A · b · c')).toEqual({ etapa: 'A', momento: 'b · c' })
+  })
+
+  it('los dieciocho estados de la base caen en una de las dos formas', () => {
+    const todos = [
+      'Postulada',
+      'Perfil Integral · turno del candidato',
+      'Perfil Integral · calificando',
+      'Perfil Integral · por confirmar',
+      'Prueba · turno del candidato',
+      'Prueba · calificando',
+      'Prueba · por confirmar',
+      'Simulación · por habilitar',
+      'Simulación · turno del candidato',
+      'Simulación · por confirmar',
+      'Validación · por habilitar',
+      'Validación · turno del candidato',
+      'Validación · por confirmar',
+      'Decisión · por confirmar',
+      'Decisión · turno del candidato',
+      'Contratado',
+      'No continúa',
+      'Cerrada',
+    ]
+    // Ninguno pierde texto por el camino: las dos mitades reconstruyen el nombre.
+    for (const nombre of todos) {
+      const { etapa, momento } = estadoEnDos(nombre)
+      expect(momento === null ? etapa : `${etapa} · ${momento}`).toBe(nombre)
+    }
+    expect(todos.filter((n) => estadoEnDos(n).momento === null)).toHaveLength(4)
   })
 })
 

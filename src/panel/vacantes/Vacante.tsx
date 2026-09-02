@@ -97,6 +97,7 @@ import {
   resumenDeLaTanda,
   rotuloDeVista,
   seExportaAExcel,
+  estadoEnDos,
   notaDelCriterio,
   notaEscrita,
   tonoDelCriterio,
@@ -1127,7 +1128,29 @@ function Ranking({
                     )}
                   </td>
                   <td className={tabla.cifra}>{fila.alertas > 0 ? fila.alertas : '—'}</td>
-                  <td>{fila.estadoNombre}</td>
+                  {/*
+                    ⚠️ **En dos líneas a propósito, y ninguna se parte.** Sin
+                    esto «Perfil Integral · por confirmar» se partía solo en
+                    cuatro líneas dentro de sus 111 px y estiraba la fila a 109,
+                    mientras la de al lado —«Cerrada»— medía 66. En una tabla que
+                    se lee por columnas eso es lo peor: el mismo puntaje ocupa un
+                    bloque de color de distinto tamaño según lo largo que sea el
+                    estado de esa persona, y el ojo lee «más grande» como «más
+                    importante».
+                  */}
+                  <td className={estilos.celdaEstado}>
+                    {(() => {
+                      const { etapa, momento } = estadoEnDos(fila.estadoNombre)
+                      return momento === null ? (
+                        <span className={estilos.momentoEstado}>{etapa}</span>
+                      ) : (
+                        <>
+                          <span className={estilos.etapaEstado}>{etapa}</span>
+                          <span className={estilos.momentoEstado}>{momento}</span>
+                        </>
+                      )
+                    })()}
+                  </td>
                 </tr>
                 {abierta === fila.postulacionId && (
                   <tr>

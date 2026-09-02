@@ -171,7 +171,7 @@ thead .celdaCandidato {
  */
 .correo {
   display: block;
-  max-width: 14rem;
+  max-width: 13rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1186,9 +1186,40 @@ thead .celdaCandidato {
  * Y **funciona en escala de grises**: las tres brumas tienen luminancias
  * distintas, asi que impresa la tabla sigue diciendo algo.
  */
+/* ---------- El estado, en dos lineas que no se parten ---------- */
+
+.celdaEstado {
+  white-space: nowrap;
+}
+
+/*
+ * La etapa, encima y en segundo plano: en la pestaña de Perfil integral casi
+ * todas las filas dicen lo mismo, y lo que distingue a una de otra es el momento
+ * de debajo. Se queda porque «Toda la tanda» trae gente parada en OTRA etapa, y
+ * ahi si es la mitad que informa.
+ */
+.etapaEstado {
+  display: block;
+  font-size: var(--t-micro);
+  color: var(--tinta3);
+}
+
+.momentoEstado {
+  display: block;
+  font-size: var(--t-apoyo);
+  color: var(--tinta);
+}
+
 .celdaCriterio {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+  /*
+   * Centrada, no arriba. La hoja compartida alinea todo `top`, que esta bien
+   * para una celda de dos lineas y mal para una cifra suelta: el numero se
+   * quedaba pegado al techo de una fila de 66 px y el barrido de la columna
+   * subia y bajaba.
+   */
+  vertical-align: middle;
   /*
    * El relleno de las celdas normales es e4 a cada lado. Aqui sobra: dentro solo
    * cabe «18/20», y con ocho columnas esos 16 px por lado son 256 px de tabla

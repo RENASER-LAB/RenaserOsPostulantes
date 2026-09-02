@@ -474,6 +474,31 @@ export const notaDelCriterio = (
   nombre: string,
 ): NotaCriterio | null => fila.notasCriterio?.find((n) => n.criterio === nombre) ?? null
 
+// ---------- El estado, partido donde toca ----------
+
+/**
+ * El estado en sus dos mitades: la etapa y el momento dentro de ella.
+ *
+ * ⚠️ **Existe por una razón medida, no por gusto.** La columna de Estado mide
+ * 111 px y «Perfil Integral · por confirmar» se partia sola en CUATRO lineas,
+ * estirando esa fila a 109 px mientras la de al lado —«Cerrada»— medía 66. En
+ * una tabla que se lee por columnas eso es lo peor que puede pasar: el mismo
+ * puntaje ocupa un bloque de color de distinto tamaño según lo largo que sea el
+ * estado de esa persona, y el ojo lee «más grande» como «más importante».
+ *
+ * Partido a proposito son dos lineas, siempre las mismas, y cada una entera.
+ *
+ * Catorce de los dieciocho estados llevan « · »; los otros cuatro —Postulada,
+ * Contratado, No continúa, Cerrada— son una etapa sin momento y salen con
+ * {@link momento} vacío. No se inventa una segunda linea para ellos.
+ */
+export const estadoEnDos = (nombre: string): { etapa: string; momento: string | null } => {
+  const corte = nombre.indexOf(' · ')
+  return corte === -1
+    ? { etapa: nombre, momento: null }
+    : { etapa: nombre.slice(0, corte), momento: nombre.slice(corte + 3) }
+}
+
 // ---------- El grupo de prioridad ----------
 
 const NOMBRE_DEL_GRUPO: Record<string, string> = {
