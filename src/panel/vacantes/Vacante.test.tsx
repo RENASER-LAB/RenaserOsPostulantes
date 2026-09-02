@@ -784,7 +784,7 @@ describe('elegir qué columnas se ven', () => {
     const columnasAntes = laTabla().querySelectorAll('thead th').length
     abrirSelector()
     fireEvent.click(screen.getByRole('checkbox', { name: 'Alertas' }))
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Riesgos' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Estado' }))
     await waitFor(() =>
       expect(laTabla().querySelectorAll('thead th').length).toBe(columnasAntes - 2),
     )

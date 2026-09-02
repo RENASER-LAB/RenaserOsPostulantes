@@ -1202,25 +1202,8 @@ function Ranking({
                       </td>
                     )
                   })}
-                  {ve('adecuacion') && (
-                    <td className={`${tabla.cifra} ${estilos.columnaCifra}`}>
-                      {fila.adecuacion ?? '—'}
-                    </td>
-                  )}
-                  {ve('potencial') && (
-                    <td className={`${tabla.cifra} ${estilos.columnaCifra}`}>
-                      {fila.potencial ?? '—'}
-                    </td>
-                  )}
-                  {ve('riesgos') && (
-                    <td className={`${tabla.cifra} ${estilos.columnaCifra}`}>
-                      {fila.riesgosCriticos > 0 ? (
-                        <span className={estilos.riesgo}>{fila.riesgosCriticos}</span>
-                      ) : (
-                        '—'
-                      )}
-                    </td>
-                  )}
+                  {/* Adecuación, Potencial y Riesgos viven en la ficha: ver
+                      el comentario de `columnasDelRanking`. */}
                   {ve('alertas') && (
                     <td className={`${tabla.cifra} ${estilos.columnaCifra}`}>
                       {fila.alertas > 0 ? fila.alertas : '—'}

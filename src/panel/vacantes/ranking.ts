@@ -1068,13 +1068,19 @@ export function columnasDelRanking(
         ocultable: true,
       }),
     ),
-    ...(esDelCurriculum(etapa)
-      ? ([
-          { clave: 'adecuacion', titulo: 'Adecuación', cifra: true, ocultable: true },
-          { clave: 'potencial', titulo: 'Potencial', cifra: true, ocultable: true },
-        ] as ColumnaDelRanking[])
-      : []),
-    { clave: 'riesgos', titulo: 'Riesgos', cifra: true, ocultable: true },
+    /*
+      ⚠️ **Adecuación, Potencial y Riesgos ya NO son columnas, y no se pierde
+      nada: los tres se leen en la ficha**, que se abre pulsando la fila. Ahí
+      además van con su explicación —«cuánto encaja con lo que el puesto pide»—,
+      que es lo que una columna de dos cifras no puede dar.
+
+      Ocupaban 248 px para tres números que no se comparan al barrer una tabla:
+      se miran cuando ya elegiste a alguien. Sacarlos es lo que deja sitio a los
+      criterios, que sí se comparan en vertical.
+
+      Alertas se queda: es lo único que avisa desde la propia lista de que hay
+      algo que mirar antes de llamar a esa persona.
+    */
     { clave: 'alertas', titulo: 'Alertas', cifra: true, ocultable: true },
     { clave: 'estado', titulo: 'Estado', ocultable: true },
     /*

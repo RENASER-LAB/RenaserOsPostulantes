@@ -782,11 +782,15 @@ describe('cuántas columnas tiene la tabla', () => {
     celda del «no hay» medían dos columnas menos que la tabla. Derivado de la
     lista, añadir una columna no puede volver a descuadrarlo.
   */
-  it('diez en las etapas sin retrato del currículum, doce con él', () => {
-    expect(columnasDelRanking('PRUEBA_PUESTO')).toHaveLength(10)
-    expect(columnasDelRanking('SIMULACION')).toHaveLength(10)
-    expect(columnasDelRanking('PERFIL_INTEGRAL')).toHaveLength(12)
-    expect(columnasDelRanking('DECISION')).toHaveLength(12)
+  /*
+    Nueve en las cinco. Adecuación, Potencial y Riesgos dejaron de ser columnas
+    —se leen en la ficha, con su explicación al lado— y con ellas se fue lo
+    último que cambiaba con la etapa.
+  */
+  it('nueve en las cinco etapas: ya no hay columnas del retrato del currículum', () => {
+    for (const etapa of ['PRUEBA_PUESTO', 'SIMULACION', 'PERFIL_INTEGRAL', 'DECISION'] as const) {
+      expect(columnasDelRanking(etapa)).toHaveLength(9)
+    }
   })
 
   /*
@@ -813,7 +817,7 @@ describe('cuántas columnas tiene la tabla', () => {
       { nombre: 'Complejidad y alcance', rotulo: 'Complejidad', inicial: 'C', peso: 20, maximo: 100 },
     ]
     const conCriterios = columnasDelRanking('PERFIL_INTEGRAL', undefined, criterios)
-    expect(conCriterios).toHaveLength(12 + 2)
+    expect(conCriterios).toHaveLength(9 + 2)
     expect(conCriterios.filter((c) => c.clave.startsWith('criterio:'))).toHaveLength(2)
     // El peso viaja en la columna: es lo que se pinta bajo el título, y sin él
     // un 90 que pesa 25 y uno que pesa 5 se leen igual.
@@ -821,7 +825,7 @@ describe('cuántas columnas tiene la tabla', () => {
   })
 
   it('apagado no añade ninguna: la tabla se queda como estaba', () => {
-    expect(columnasDelRanking('PERFIL_INTEGRAL', undefined, [])).toHaveLength(12)
+    expect(columnasDelRanking('PERFIL_INTEGRAL', undefined, [])).toHaveLength(9)
   })
 
   /*
@@ -852,13 +856,18 @@ describe('cuántas columnas tiene la tabla', () => {
     expect(menos.map((c) => c.clave)).toContain('avance')
   })
 
-  it('Adecuación y Potencial son las dos que aparecen y desaparecen', () => {
-    const conRetrato = columnasDelRanking('PERFIL_INTEGRAL').map((c) => c.clave)
-    const sinRetrato = columnasDelRanking('PRUEBA_PUESTO').map((c) => c.clave)
-    expect(conRetrato.filter((c) => !sinRetrato.includes(c))).toEqual([
-      'adecuacion',
-      'potencial',
-    ])
+  /*
+    ⚠️ **Los tres se leen en la ficha, así que no se pierde nada.** Ocupaban
+    248 px para números que no se comparan al barrer la tabla: se miran cuando ya
+    elegiste a alguien, y allí van con su explicación.
+  */
+  it('Adecuación, Potencial y Riesgos ya no son columnas', () => {
+    const claves = columnasDelRanking('PERFIL_INTEGRAL').map((c) => c.clave)
+    expect(claves).not.toContain('adecuacion')
+    expect(claves).not.toContain('potencial')
+    expect(claves).not.toContain('riesgos')
+    // Alertas se queda: avisa desde la lista de que hay algo que mirar.
+    expect(claves).toContain('alertas')
   })
 
   it('Ciudad y Pretensión están en las cinco etapas: no son del currículum', () => {
@@ -1444,20 +1453,20 @@ describe('una columna entera vacía no se pinta: se dice por qué', () => {
     ).toBe(true)
   })
 
-  it('sin las dos, la tabla baja a diez y ocho columnas', () => {
+  it('sin las dos, la tabla baja de nueve a siete columnas', () => {
     const nada = { hayCiudad: false, hayPretension: false, puedeVerPretension: true }
-    expect(columnasDelRanking('PERFIL_INTEGRAL', nada)).toHaveLength(10)
-    expect(columnasDelRanking('PRUEBA_PUESTO', nada)).toHaveLength(8)
+    expect(columnasDelRanking('PERFIL_INTEGRAL', nada)).toHaveLength(7)
+    expect(columnasDelRanking('PRUEBA_PUESTO', nada)).toHaveLength(7)
   })
 
-  it('con solo una de las dos, doce menos una', () => {
+  it('con solo una de las dos, nueve menos una', () => {
     expect(
       columnasDelRanking('PERFIL_INTEGRAL', {
         hayCiudad: true,
         hayPretension: false,
         puedeVerPretension: true,
       }),
-    ).toHaveLength(11)
+    ).toHaveLength(8)
     const claves = columnasDelRanking('PRUEBA_PUESTO', {
       hayCiudad: false,
       hayPretension: true,

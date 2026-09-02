@@ -987,6 +987,20 @@ thead .celdaCandidato {
 }
 
 /*
+ * ⚠️ **En una columna de cifra el ancho lo pedia el BOTON, no la celda.** El
+ * `<th>` ordenable renuncia a su relleno para que el boton ocupe la celda
+ * entera, y el boton trae el suyo: 16 px a cada lado. Con «NOTA» dentro eso son
+ * 106 px de columna para enseñar dos digitos.
+ *
+ * Se queda en e2, que sigue dejando el area pulsable de 44 px de alto —eso lo
+ * fija `min-height`, no el relleno lateral—.
+ */
+.columnaCifra .ordenarPor {
+  padding-left: var(--e2);
+  padding-right: var(--e2);
+}
+
+/*
  * La flecha del orden.
  *
  * Hueco reservado siempre —tambien con el `↕` de «esta se puede ordenar»— para
