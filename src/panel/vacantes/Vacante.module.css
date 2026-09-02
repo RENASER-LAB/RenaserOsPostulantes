@@ -312,6 +312,43 @@ thead .celdaCandidato {
   color: var(--mal-pulsado);
 }
 
+/*
+ * Los dos parrafos que explican la nota, encima del criterio a criterio.
+ *
+ * ⚠️ **Sin relleno de color detras.** El sistema tiene escrito que el color vive
+ * en los cantos y el campo donde hay prosa se queda en nube; ademas verde, ambar
+ * y rojo ya significan hecho, duda y error, y no se usan para jerarquia. El
+ * filete de la izquierda separa sin teñir el texto.
+ *
+ * El rotulo va dentro del parrafo y no como titulo aparte: es una frase con su
+ * etiqueta, no un bloque nuevo.
+ */
+.porQueContratarlo,
+.lecturaDeLaNota {
+  border-left: 1px solid var(--regla2);
+  padding-left: var(--e3);
+  margin: 0 0 var(--e3);
+  font-size: var(--t-prosa);
+  line-height: 1.55;
+  max-width: var(--medida);
+  color: var(--tinta);
+}
+
+.porQueContratarlo span,
+.lecturaDeLaNota span {
+  display: block;
+  font-size: var(--t-micro);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tinta3);
+  margin-bottom: var(--e1);
+}
+
+.lecturaDeLaNota {
+  color: var(--tinta2);
+}
+
 .criterios {
   display: flex;
   flex-direction: column;

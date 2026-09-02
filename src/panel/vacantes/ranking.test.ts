@@ -27,6 +27,7 @@ import {
   CORTE_DE_LA_TANDA,
   criteriosDeLaTanda,
   criteriosQueSePintan,
+  lecturaDeLaNota,
   columnasVisibles,
   inicialesDeLaTanda,
   cuantoCubre,
@@ -1235,6 +1236,122 @@ describe('el mapa de calor de los criterios', () => {
     const suya = fila('POSTULADA', 80, { notasCriterio: [nota('Resultados', 20, 25)] })
     expect(notaDelCriterio(suya, 'Resultados')?.puntaje).toBe(20)
     expect(notaDelCriterio(suya, 'Complejidad')).toBeNull()
+  })
+})
+
+describe('los dos párrafos que explican la nota', () => {
+  const conNotas = (...ns: Array<[string, number | null, number]>) =>
+    ns.map(([c, p, peso]) => nota(c, p, 100, { peso }))
+
+  /*
+    ⚠️ **Se derivan, no los escribe una IA.** Extraídos los veintinueve del
+    informe del cliente son cinco plantillas con dos huecos. Que sean derivados
+    es lo que hace que no cuesten nada Y que no se queden obsoletos: se
+    recalculan de las notas de ahora.
+  */
+  it('sin nota no dice nada de nadie', () => {
+    const l = lecturaDeLaNota(null, conNotas(['Caja', null, 20]), 'PRUEBA_PUESTO')
+    expect(l.porQue).toContain('Aún sin nota')
+    expect(l.porQue).toContain('la prueba')
+    expect(l.lectura).toBeNull()
+  })
+
+  it('nombra la etapa que se está mirando, no «la prueba» siempre', () => {
+    const l = lecturaDeLaNota(null, conNotas(['X', null, 20]), 'PERFIL_INTEGRAL')
+    expect(l.porQue).toContain('el currículum')
+  })
+
+  /*
+    El núcleo sale del PESO, no de una lista escrita a mano. El informe lo tenía
+    clavado para su prueba —«el núcleo del puesto —caja y divisas—»— y así la
+    frase vale para cualquier rúbrica sin que nadie declare cuál es su núcleo.
+  */
+  it('lo que más pesa cubierto se dice, y sale del peso', () => {
+    const l = lecturaDeLaNota(
+      85,
+      conNotas(['Caja', 90, 20], ['Divisas', 80, 15], ['Sedes', 40, 5]),
+      'PRUEBA_PUESTO',
+    )
+    expect(l.porQue).toContain('primera línea')
+    expect(l.porQue).toContain('cubre lo que más pesa')
+    expect(l.porQue).toContain('caja y divisas')
+  })
+
+  it('con lo que más pesa flojo, la misma nota alta lo advierte', () => {
+    const l = lecturaDeLaNota(
+      85,
+      conNotas(['Caja', 30, 20], ['Divisas', 40, 15], ['Sedes', 95, 5]),
+      'PRUEBA_PUESTO',
+    )
+    expect(l.porQue).toContain('flojea en lo que más pesa')
+    expect(l.lectura).toContain('falla en lo que más pesa')
+  })
+
+  /*
+    ⚠️ **La frase que se contradecía sola.** Con el núcleo entero salía «Destaca
+    en Caja» y debajo «falla en lo que más pesa: caja y divisas», nombrando el
+    mismo criterio como fuerte y como flojo. Se nombran solo los que fallan.
+  */
+  it('si uno de los dos que más pesan sí está cubierto, no se le acusa de fallar', () => {
+    const l = lecturaDeLaNota(
+      70,
+      conNotas(['Caja', 95, 20], ['Divisas', 30, 15]),
+      'PRUEBA_PUESTO',
+    )
+    expect(l.lectura).toContain('Destaca en Caja')
+    expect(l.lectura).toContain('falla en lo que más pesa: divisas')
+    expect(l.lectura).not.toContain('caja y divisas')
+  })
+
+  /*
+    ⚠️ **Al tramo del medio se le había perdido el «no».** Decía «Aporta X, pero
+    cubre todo lo que el puesto exige», que afirma lo contrario de lo que es.
+  */
+  it('«solo con reservas» dice que NO cubre todo, no que sí', () => {
+    const l = lecturaDeLaNota(
+      55,
+      conNotas(['Caja', 90, 20], ['Divisas', 88, 15]),
+      'PRUEBA_PUESTO',
+    )
+    expect(l.porQue).toContain('no cubre todo lo que el puesto exige')
+  })
+
+  it('los cuatro tramos dicen cosas distintas', () => {
+    const notas = conNotas(['Caja', 90, 20], ['Divisas', 85, 15])
+    expect(lecturaDeLaNota(85, notas, 'PRUEBA_PUESTO').porQue).toContain('primera línea')
+    expect(lecturaDeLaNota(70, notas, 'PRUEBA_PUESTO').porQue).toContain('Contratable')
+    expect(lecturaDeLaNota(55, notas, 'PRUEBA_PUESTO').porQue).toContain('Solo con reservas')
+    expect(lecturaDeLaNota(30, notas, 'PRUEBA_PUESTO').porQue).toContain('no respalda')
+  })
+
+  /*
+    ⚠️ **Un criterio que no pondera no puede sostener a nadie.** Pesa cero: no
+    mueve la nota. Decir «lo contratarías porque domina X» sobre él sería
+    defenderlo con lo único que da igual.
+  */
+  it('un criterio que no pondera no entra en «domina»', () => {
+    const l = lecturaDeLaNota(
+      85,
+      conNotas(['Personas', 100, 0], ['Caja', 90, 20]),
+      'PRUEBA_PUESTO',
+    )
+    expect(l.porQue).toContain('Caja')
+    expect(l.porQue).not.toContain('Personas')
+  })
+
+  it('sin ningún criterio cubierto lo dice, y no inventa una fortaleza', () => {
+    const l = lecturaDeLaNota(30, conNotas(['Caja', 20, 20]), 'PRUEBA_PUESTO')
+    expect(l.porQue).toContain('No muestra fortalezas')
+    expect(l.lectura).toContain('No cubre ninguno')
+  })
+
+  it('enumera en castellano: «A, B y C», no «A, B, C»', () => {
+    const l = lecturaDeLaNota(
+      85,
+      conNotas(['Caja', 90, 20], ['Divisas', 88, 15], ['Sedes', 85, 10]),
+      'PRUEBA_PUESTO',
+    )
+    expect(l.lectura).toContain('Caja, Divisas y Sedes')
   })
 })
 

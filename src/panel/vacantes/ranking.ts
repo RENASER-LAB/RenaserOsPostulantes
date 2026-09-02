@@ -30,6 +30,8 @@ export const ETAPAS_PANEL = [
     nota: 'Nota del perfil',
     /** Lo que hace falta para que esta etapa deje nota, dicho al candidato. */
     loQueDejaNota: 'el currículum leído y calificado',
+    /** Cómo se nombra lo calificado en una frase: «lo que dice el currículum». */
+    loCalificado: 'el currículum',
   },
   {
     codigo: 'PRUEBA_PUESTO',
@@ -37,6 +39,7 @@ export const ETAPAS_PANEL = [
     prefijos: ['PRUEBA_'],
     nota: 'Nota de la prueba',
     loQueDejaNota: 'la prueba rendida y calificada',
+    loCalificado: 'la prueba',
   },
   {
     codigo: 'SIMULACION',
@@ -44,6 +47,7 @@ export const ETAPAS_PANEL = [
     prefijos: ['SIMULACION_'],
     nota: 'Nota de la simulación',
     loQueDejaNota: 'la sesión asistida y calificada',
+    loCalificado: 'la simulación',
   },
   {
     codigo: 'VALIDACION',
@@ -51,6 +55,7 @@ export const ETAPAS_PANEL = [
     prefijos: ['VALIDACION_'],
     nota: 'Nota de la validación',
     loQueDejaNota: 'el periodo terminado y calificado',
+    loCalificado: 'la validación',
   },
   {
     codigo: 'DECISION',
@@ -58,6 +63,7 @@ export const ETAPAS_PANEL = [
     prefijos: ['DECISION_'],
     nota: 'Nota de la decisión',
     loQueDejaNota: 'la decisión tomada',
+    loCalificado: 'la decisión',
   },
 ] as const
 
@@ -546,6 +552,154 @@ export const notaDelCriterio = (
   fila: FilaRanking,
   nombre: string,
 ): NotaCriterio | null => fila.notasCriterio?.find((n) => n.criterio === nombre) ?? null
+
+/**
+ * Los dos párrafos de la ficha: «¿Por qué contratarlo?» y «Lectura del test».
+ *
+ * ⚠️ **Ninguno lo escribe una IA, y comprobarlo importa.** En el informe del
+ * cliente parecían dos textos redactados; extraídos los veintinueve, son cinco
+ * plantillas con dos huecos: los dos criterios mejor cubiertos y una coletilla
+ * sobre el núcleo del puesto. Todo lo demás es literal en las veintinueve.
+ *
+ * Que sean derivados tiene tres consecuencias buenas, y por eso se hacen así:
+ *
+ * - **No cuestan nada.** Ni una llamada al modelo, ni una espera.
+ * - **No se quedan obsoletos.** Se recalculan de las notas de ahora, así que si
+ *   una persona corrige un criterio el párrafo cambia con él. Un texto guardado
+ *   seguiría defendiendo a un candidato que los números ya no sostienen — y es
+ *   justo el texto que la siguiente persona lee para decidir.
+ * - **No inventan.** Solo nombran criterios y cifras que están en la misma
+ *   pantalla, así que cualquiera puede comprobar la frase mirando arriba.
+ *
+ * ⚠️ **No son un veredicto ni lo sustituyen.** El veredicto sigue siendo el
+ * grupo de prioridad, que además mira el riesgo crítico. Esto explica la nota
+ * con palabras; quién entra y quién no lo decide una persona.
+ */
+
+/** Cubierto es el mismo 70 % con el que se tiñe la celda: una sola vara. */
+const CUBIERTO = 0.7
+
+export interface LecturaDeLaNota {
+  /** «¿Por qué contratarlo?» */
+  porQue: string
+  /** «Lectura del test», o null si no hay ningún criterio calificado. */
+  lectura: string | null
+}
+
+/**
+ * El núcleo de lo que se califica: los criterios que más pesan.
+ *
+ * El informe lo llamaba «el núcleo del puesto —caja y divisas—» y lo tenía
+ * escrito a mano para esa prueba. Aquí sale del peso, que es lo que de verdad
+ * hace que un criterio decida la nota: en la rúbrica de Administrador caja pesa
+ * 20 y divisas 15, los dos mayores. Así la frase vale para cualquier rúbrica sin
+ * que nadie tenga que declarar cuál es su núcleo.
+ *
+ * Empata a peso: entran los dos primeros en el orden en que llegan.
+ */
+const nucleoDe = (notas: NotaCriterio[]): NotaCriterio[] =>
+  [...notas].filter((n) => n.peso > 0).sort((a, b) => b.peso - a.peso).slice(0, 2)
+
+/** Los que mejor cubre, de los que pesan. Ordenados por cuánto cubren. */
+const losQueDomina = (notas: NotaCriterio[]): NotaCriterio[] =>
+  notas
+    .filter((n) => n.peso > 0 && (cuantoCubre(n) ?? 0) >= CUBIERTO)
+    .sort((a, b) => (cuantoCubre(b) ?? 0) - (cuantoCubre(a) ?? 0))
+
+/** «Caja y Divisas», «Caja, Divisas y Sedes», «Caja». */
+const enumerar = (nombres: string[]): string =>
+  nombres.length <= 1
+    ? (nombres[0] ?? '')
+    : `${nombres.slice(0, -1).join(', ')} y ${nombres[nombres.length - 1]}`
+
+export function lecturaDeLaNota(
+  nota: number | null,
+  notas: NotaCriterio[],
+  etapa: EtapaPanel,
+): LecturaDeLaNota {
+  const que = laEtapaDe(etapa).loCalificado
+  const calificados = notas.filter((n) => n.puntaje != null)
+
+  // Sin nota no se dice nada de nadie. Es el caso que el informe también
+  // contemplaba, y con razón: media rúbrica sumada no es una lectura.
+  if (nota == null || calificados.length === 0) {
+    return {
+      porQue: `Aún sin nota: ${que} sigue en calificación, no hay base para decidir.`,
+      lectura: null,
+    }
+  }
+
+  const domina = losQueDomina(calificados)
+  const nombres = domina.map((n) => n.criterio)
+  const nucleo = nucleoDe(calificados)
+  /*
+    ⚠️ **Se nombran los que FALLAN, no el núcleo entero.** Con el núcleo entero
+    salía una frase que se contradecía sola: «Destaca en Complejidad y
+    Habilidades» y debajo «falla en lo que más pesa: habilidades y resultados».
+    Si uno de los dos está cubierto y el otro no, el que falla es uno solo.
+  */
+  const fallanDelNucleo = nucleo.filter((n) => (cuantoCubre(n) ?? 0) < CUBIERTO)
+  const nucleoCubierto = nucleo.length > 0 && fallanDelNucleo.length === 0
+  const nombresDelNucleo = enumerar(nucleo.map((n) => n.criterio.toLocaleLowerCase('es')))
+  const nombresQueFallan = enumerar(
+    fallanDelNucleo.map((n) => n.criterio.toLocaleLowerCase('es')),
+  )
+
+  const lectura =
+    nombres.length === 0
+      ? `No cubre ninguno de los criterios de ${que}.`
+      : `Destaca en ${enumerar(nombres)}.` +
+        (nucleo.length === 0
+          ? ''
+          : nucleoCubierto
+            ? ` Cubre lo que más pesa: ${nombresDelNucleo}.`
+            : ` Pero falla en lo que más pesa: ${nombresQueFallan}.`)
+
+  const dosMejores = enumerar(nombres.slice(0, 2))
+
+  if (nota >= 80) {
+    return {
+      porQue:
+        `Candidato de primera línea. Lo contratarías porque domina ${dosMejores}` +
+        (nucleoCubierto
+          ? ` y cubre lo que más pesa —${nombresDelNucleo}—, que es lo más difícil de encontrar.`
+          : `, aunque flojea en lo que más pesa: ${nombresQueFallan}.`) +
+        ' Es de los que pasan a entrevista final.',
+      lectura,
+    }
+  }
+  if (nota >= 65) {
+    return {
+      porQue:
+        `Contratable. Su caso se sostiene en ${dosMejores}.` +
+        (nucleoCubierto
+          ? ' Cubre lo que más pesa, así que entra a la lista corta.'
+          : ` Reserva a confirmar en entrevista: aún flojo en ${nombresQueFallan}.`),
+      lectura,
+    }
+  }
+  if (nota >= 50) {
+    return {
+      porQue:
+        (nombres.length > 0
+          ? `Solo con reservas. Aporta ${dosMejores}, pero no cubre`
+          : 'Solo con reservas. No cubre') +
+        ` todo lo que el puesto exige` +
+        (nucleoCubierto ? '.' : `, y falla justo en lo que más pesa: ${nombresQueFallan}.`) +
+        ' Considerarlo solo si la lista corta se queda sin opciones.',
+      lectura,
+    }
+  }
+  return {
+    porQue:
+      `${que.charAt(0).toLocaleUpperCase('es')}${que.slice(1)} no respalda su contratación ` +
+      'para este puesto. ' +
+      (nombres.length > 0
+        ? `Lo único rescatable es ${nombres[0]}; para este rol no alcanza.`
+        : 'No muestra fortalezas aprovechables para el puesto.'),
+    lectura,
+  }
+}
 
 // ---------- El estado, partido donde toca ----------
 

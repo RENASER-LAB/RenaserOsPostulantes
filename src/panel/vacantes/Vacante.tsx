@@ -89,6 +89,7 @@ import {
   filtrarFino,
   hayFiltroPuesto,
   laEtapaDe,
+  lecturaDeLaNota,
   nombreDelGrupo,
   ordenar,
   porQueNoHayNota,
@@ -1787,7 +1788,7 @@ function DetalleDelPostulante({ fila, etapa }: { fila: FilaRanking; etapa: Etapa
           <Validacion postulacionId={fila.postulacionId} />
         ) : (
           <>
-            <LoQueCalificoLaIA fila={fila} />
+            <LoQueCalificoLaIA fila={fila} etapa={etapa} />
             {/*
               Solo en Perfil integral y no en Decision, aunque las dos ensenen
               el mismo retrato: recalificar es rehacer la preseleccion, y
@@ -1826,7 +1827,7 @@ function DetalleDelPostulante({ fila, etapa }: { fila: FilaRanking; etapa: Etapa
  *
  * En Decision se ensena esto mismo: decidir es mirar el retrato completo.
  */
-function LoQueCalificoLaIA({ fila }: { fila: FilaRanking }) {
+function LoQueCalificoLaIA({ fila, etapa }: { fila: FilaRanking; etapa: EtapaPanel }) {
   const perfil = useQuery({
     queryKey: ['panel-perfil', fila.postulacionId],
     queryFn: () => verPerfilIntegral(fila.postulacionId),
@@ -1924,8 +1925,41 @@ function LoQueCalificoLaIA({ fila }: { fila: FilaRanking }) {
         paralelo, una respuesta antigua puede no traer el campo, y sin esto la
         ficha se quedaría sin criterios en vez de tardar un segundo en tenerlos.
       */}
+      {/*
+        Los dos párrafos del informe del cliente.
+
+        ⚠️ **Se derivan de las notas, no los escribe una IA.** Extraídos los
+        veintinueve del informe, son cinco plantillas con dos huecos. Hacerlos
+        así no cuesta nada, no se quedan obsoletos —se recalculan si alguien
+        corrige un criterio— y no inventan: nombran criterios que están en esta
+        misma pantalla.
+
+        ⚠️ **No son el veredicto.** Ese sigue siendo el grupo de prioridad, que
+        además mira el riesgo crítico. Esto explica la nota con palabras.
+      */}
       {criteriosDeLaFicha.length > 0 && (
         <>
+          {(() => {
+            const { porQue, lectura } = lecturaDeLaNota(
+              fila.notaEtapa,
+              criteriosDeLaFicha,
+              etapa,
+            )
+            return (
+              <>
+                <p className={estilos.porQueContratarlo}>
+                  <span>¿Por qué contratarlo?</span>
+                  {porQue}
+                </p>
+                {lectura && (
+                  <p className={estilos.lecturaDeLaNota}>
+                    <span>Lectura de {laEtapaDe(etapa).loCalificado}</span>
+                    {lectura}
+                  </p>
+                )}
+              </>
+            )
+          })()}
           <h4 className={estilos.subtitulo}>Criterio a criterio</h4>
           <ul className={estilos.criterios} role="list">
             {criteriosDeLaFicha.map((n) => {
