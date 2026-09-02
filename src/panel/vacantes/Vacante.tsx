@@ -1737,6 +1737,21 @@ function DetalleDelPostulante({ fila, etapa }: { fila: FilaRanking; etapa: Etapa
               quedaba en «le falta 1 de 6 criterios» para siempre, porque el
               endpoint existía y ninguna pantalla lo llamaba.
             */}
+            {/*
+              Los dos párrafos del informe del cliente, y van AQUÍ y no en el
+              perfil integral.
+
+              ⚠️ **En el perfil integral la frase no cuadraba con su número.**
+              La nota de esa etapa mezcla currículum (peso 12) y evaluación del
+              banco (peso 28), así que el número venía sobre todo del banco
+              mientras las razones —«domina X y Y»— salían solo de los ocho
+              criterios del CV. Justificaba una nota con la mitad de sus
+              motivos, y con la mitad que menos pesa.
+
+              Aquí no pasa: la nota de la prueba sale ENTERA de esta rúbrica.
+              Nota y razones son la misma cosa, que es lo que hacía el informe.
+            */}
+            <LecturaDeLaPrueba fila={fila} />
             <CriteriosDeEtapa
               titulo="La prueba del puesto, criterio a criterio"
               postulacionId={fila.postulacionId}
@@ -1805,7 +1820,7 @@ function DetalleDelPostulante({ fila, etapa }: { fila: FilaRanking; etapa: Etapa
           <Validacion postulacionId={fila.postulacionId} />
         ) : (
           <>
-            <LoQueCalificoLaIA fila={fila} etapa={etapa} />
+            <LoQueCalificoLaIA fila={fila} />
             {/*
               Solo en Perfil integral y no en Decision, aunque las dos ensenen
               el mismo retrato: recalificar es rehacer la preseleccion, y
@@ -1844,7 +1859,7 @@ function DetalleDelPostulante({ fila, etapa }: { fila: FilaRanking; etapa: Etapa
  *
  * En Decision se ensena esto mismo: decidir es mirar el retrato completo.
  */
-function LoQueCalificoLaIA({ fila, etapa }: { fila: FilaRanking; etapa: EtapaPanel }) {
+function LoQueCalificoLaIA({ fila }: { fila: FilaRanking }) {
   const perfil = useQuery({
     queryKey: ['panel-perfil', fila.postulacionId],
     queryFn: () => verPerfilIntegral(fila.postulacionId),
@@ -1942,41 +1957,8 @@ function LoQueCalificoLaIA({ fila, etapa }: { fila: FilaRanking; etapa: EtapaPan
         paralelo, una respuesta antigua puede no traer el campo, y sin esto la
         ficha se quedaría sin criterios en vez de tardar un segundo en tenerlos.
       */}
-      {/*
-        Los dos párrafos del informe del cliente.
-
-        ⚠️ **Se derivan de las notas, no los escribe una IA.** Extraídos los
-        veintinueve del informe, son cinco plantillas con dos huecos. Hacerlos
-        así no cuesta nada, no se quedan obsoletos —se recalculan si alguien
-        corrige un criterio— y no inventan: nombran criterios que están en esta
-        misma pantalla.
-
-        ⚠️ **No son el veredicto.** Ese sigue siendo el grupo de prioridad, que
-        además mira el riesgo crítico. Esto explica la nota con palabras.
-      */}
       {criteriosDeLaFicha.length > 0 && (
         <>
-          {(() => {
-            const { porQue, lectura } = lecturaDeLaNota(
-              fila.notaEtapa,
-              criteriosDeLaFicha,
-              etapa,
-            )
-            return (
-              <>
-                <p className={estilos.porQueContratarlo}>
-                  <span>¿Por qué contratarlo?</span>
-                  {porQue}
-                </p>
-                {lectura && (
-                  <p className={estilos.lecturaDeLaNota}>
-                    <span>Lectura de {laEtapaDe(etapa).loCalificado}</span>
-                    {lectura}
-                  </p>
-                )}
-              </>
-            )
-          })()}
           <h4 className={estilos.subtitulo}>Criterio a criterio</h4>
           <ul className={estilos.criterios} role="list">
             {criteriosDeLaFicha.map((n) => {
@@ -2244,6 +2226,65 @@ function TablaDeLaEvaluacion({ desglose }: { desglose: DesgloseEvaluacion }) {
  */
 const autorDeLaNota = (origen: string) =>
   origen === 'AGENTE' ? 'calificó la IA' : origen === 'PERSONA' ? 'la puso una persona' : origen
+
+/**
+ * Los dos párrafos que explican la nota de la prueba.
+ *
+ * ⚠️ **Comparte la clave de consulta con `CriteriosDeEtapa`**, así que no pide
+ * nada al servidor: la rúbrica ya está en la caché cuando esto se pinta. Si
+ * alguna vez dejan de compartirla, esta ficha empieza a hacer dos peticiones
+ * para la misma lista.
+ *
+ * ⚠️ **En una rúbrica de prueba, `puntosMaximos` ES el peso.** No hay un campo
+ * de peso aparte porque no hace falta: la rúbrica está obligada a sumar 100 al
+ * publicarse, así que lo que un criterio vale es lo que puede repartir. Por eso
+ * se traduce a los dos campos que espera `lecturaDeLaNota` — y por eso «lo que
+ * más pesa» sale de aquí sin que nadie declare cuál es el núcleo del puesto: en
+ * Administrador son caja (20) y divisas (15), los dos mayores.
+ */
+function LecturaDeLaPrueba({ fila }: { fila: FilaRanking }) {
+  const notas = useQuery({
+    queryKey: ['panel-notas-prueba', fila.postulacionId],
+    queryFn: () => verNotasPrueba(fila.postulacionId),
+    retry: false,
+  })
+
+  // Sin rúbrica no hay nada que leer, y eso es normal: la vacante puede rendir
+  // el cuestionario técnico, que se califica pregunta a pregunta y no por
+  // criterios. Un párrafo ahí hablaría de una rúbrica que no existe.
+  if (!notas.data || notas.data.length === 0) return null
+
+  const { porQue, lectura } = lecturaDeLaNota(
+    fila.notaEtapa,
+    notas.data.map((n) => ({
+      criterio: n.nombre,
+      codigo: null,
+      puntaje: n.puntaje,
+      maximo: n.puntosMaximos,
+      peso: n.puntosMaximos ?? 0,
+      explicacion: n.explicacion,
+      origen: n.origen,
+      confianza: null,
+      motivoAjuste: null,
+    })),
+    'PRUEBA_PUESTO',
+  )
+
+  return (
+    <>
+      <p className={estilos.porQueContratarlo}>
+        <span>¿Por qué contratarlo?</span>
+        {porQue}
+      </p>
+      {lectura && (
+        <p className={estilos.lecturaDeLaNota}>
+          <span>Lectura de la prueba</span>
+          {lectura}
+        </p>
+      )}
+    </>
+  )
+}
 
 function CriteriosDeEtapa({
   titulo,
