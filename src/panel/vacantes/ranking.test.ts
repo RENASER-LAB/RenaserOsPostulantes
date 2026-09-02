@@ -32,6 +32,8 @@ import {
   nombreDelGrupo,
   ordenar,
   porQueNoHayNota,
+  porPilar,
+  SENALES,
   POR_QUE_NO_HAY_CIUDAD,
   porQueNoHayPretension,
   pretensionDicha,
@@ -41,7 +43,7 @@ import {
   seExportaAExcel,
   SIN_FILTROS,
 } from './ranking'
-import type { FilaRanking } from '../api/tipos'
+import type { FilaRanking, RespuestaAbiertaVista } from '../api/tipos'
 
 /**
  * Una fila con lo justo.
@@ -783,6 +785,62 @@ describe('cuántas columnas tiene la tabla', () => {
       'nota',
     ])
     expect(columnas.find((c) => c.clave === 'nota')?.titulo).toBe('Nota de la prueba')
+  })
+})
+
+describe('las respuestas del banco, agrupadas por pilar', () => {
+  const abierta = (pilar: string | null) =>
+    ({
+      pregunta: 'P', formato: 'V', respuesta: 'R', puntaje: 3, explicacion: null,
+      evidenciaCitada: null, confianza: null, motivoAjuste: null,
+      pilar, pilarCodigo: pilar, senales: null,
+    }) as RespuestaAbiertaVista
+
+  /*
+    ⚠️ Sin agrupar son una lista plana y no se puede saber cuáles sostienen
+    «Iniciativa», que es lo que hay que mirar cuando ese pilar sale bajo.
+  */
+  it('junta las de un mismo pilar', () => {
+    const g = porPilar([abierta('Iniciativa'), abierta('Excelencia'), abierta('Iniciativa')])
+    expect(g.map((x) => x.pilar)).toEqual(['Iniciativa', 'Excelencia'])
+    expect(g[0]!.respuestas).toHaveLength(2)
+  })
+
+  /*
+    ⚠️ **«Sin pilar» es un grupo NORMAL y va al final.** Una evaluación de un
+    banco anterior a CAZATALENTOS no cuelga de ningún pilar: ahí el único grupo
+    es ese. Tratarlo como error convertiría el estado corriente de media base en
+    una alarma.
+  */
+  it('las que no cuelgan de ninguno van al final', () => {
+    const g = porPilar([abierta(null), abierta('Iniciativa'), abierta(null)])
+    expect(g.at(-1)!.pilar).toBeNull()
+    expect(g.at(-1)!.respuestas).toHaveLength(2)
+  })
+
+  it('una evaluación entera sin pilares da un solo grupo, no cero', () => {
+    const g = porPilar([abierta(null), abierta(null)])
+    expect(g).toHaveLength(1)
+    expect(g[0]!.pilar).toBeNull()
+  })
+
+  it('dentro de un grupo se respeta el orden de llegada, que es el de contestar', () => {
+    const primera = abierta('Iniciativa')
+    const segunda = abierta('Iniciativa')
+    const g = porPilar([primera, segunda])
+    expect(g[0]!.respuestas[0]).toBe(primera)
+    expect(g[0]!.respuestas[1]).toBe(segunda)
+  })
+
+  it('sin respuestas no hay grupos', () => {
+    expect(porPilar([])).toEqual([])
+  })
+
+  /* El orden de las cuatro es el de la rúbrica y no se reordena. */
+  it('las cuatro señales se nombran siempre en el mismo orden', () => {
+    expect(SENALES.map(([clave]) => clave)).toEqual([
+      'episodio', 'autoria', 'dato', 'incomodidad',
+    ])
   })
 })
 

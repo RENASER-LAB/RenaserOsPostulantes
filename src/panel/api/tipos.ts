@@ -501,6 +501,43 @@ export interface RespuestaAbiertaVista {
   confianza: number | null
   /** Solo si un humano corrigio la nota; el porque es obligatorio alla. */
   motivoAjuste: string | null
+  /** Que pilar alimenta esta respuesta, dicho para leer. Nulo si no cuelga de ninguno. */
+  pilar: string | null
+  pilarCodigo: string | null
+  /**
+   * Las cuatro señales que el agente marco.
+   *
+   * ⚠️ **Nula NO significa «ninguna se cumplio»: significa que ese banco no las
+   * media.** Solo el banco CAZATALENTOS puntua asi. Pintar cuatro noes sobre una
+   * evaluacion anterior la convertiria en un cero de cuatro.
+   */
+  senales: Senales | null
+}
+
+/**
+ * Las cuatro señales de una respuesta, presentes o ausentes.
+ *
+ * El puntaje 0-4 ES el conteo de estas cuatro: lo calcula el backend, no la
+ * aritmetica del modelo.
+ */
+export interface Senales {
+  episodio: boolean
+  autoria: boolean
+  dato: boolean
+  incomodidad: boolean
+  cumpleSenalCero: boolean | null
+}
+
+/**
+ * Un patron del cuestionario completo: lo que solo se ve mirando las 50-85
+ * respuestas juntas. No descarta a nadie — es una pregunta para la conversacion.
+ */
+export interface PatronDelCuestionario {
+  codigo: string
+  titulo: string
+  descripcion: string
+  deCuantas: number
+  total: number
 }
 
 export interface AlineacionVista {
@@ -522,6 +559,7 @@ export interface DesgloseEvaluacion {
   cerradas: ResumenCerradas
   abiertas: RespuestaAbiertaVista[]
   alineacion: AlineacionVista[]
+  patrones: PatronDelCuestionario[]
 }
 
 export interface RankingVacante {

@@ -268,6 +268,110 @@
   color: var(--mal-pulsado);
 }
 
+/* ---------- Los pilares, las señales y los patrones ---------- */
+
+/* Cuantas respuestas sostienen este pilar, pegado a su titulo. */
+.cuantasDelPilar {
+  margin-left: var(--e2);
+  font-size: var(--t-menor);
+  font-weight: 400;
+  color: var(--tinta3);
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * Las cuatro señales, debajo del «3/4».
+ *
+ * ⚠️ **No se tiñen de verde y rojo.** Los tres colores del sistema significan
+ * hecho, duda y error, y una señal ausente no es un error del candidato: es algo
+ * que no hizo en ESA respuesta. Se dicen con una marca y con la tinta, que es lo
+ * que distingue sin acusar.
+ */
+.senales {
+  list-style: none;
+  margin: var(--e2) 0 0;
+  padding: 0;
+  text-align: left;
+  font-size: var(--t-micro);
+  line-height: 1.5;
+  white-space: normal;
+}
+
+.senalSi,
+.senalNo {
+  display: flex;
+  gap: var(--e1);
+}
+
+.senalSi::before {
+  content: '✓';
+  color: var(--tinta);
+}
+
+.senalNo::before {
+  content: '·';
+  color: var(--tinta3);
+}
+
+.senalSi {
+  color: var(--tinta);
+}
+
+/* Ausente en tinta tercera: se lee, pero no reclama la vista como la presente. */
+.senalNo {
+  color: var(--tinta3);
+}
+
+/*
+ * Cuando el banco no medía las señales. Es una frase y no cuatro casillas
+ * vacias: cuatro casillas en blanco se parecen demasiado a cuatro noes, y eso
+ * convertiria una evaluacion antigua en un cero de cuatro.
+ */
+.sinSenales {
+  display: block;
+  margin-top: var(--e2);
+  font-size: var(--t-micro);
+  line-height: 1.4;
+  color: var(--tinta3);
+  text-align: left;
+  white-space: normal;
+}
+
+/*
+ * Los patrones del cuestionario completo.
+ *
+ * En ambar y no en rojo: no descartan a nadie. Ambar es «lo que cambia tu
+ * decision», que es exactamente lo que son — dos preguntas para la conversacion
+ * final—. El filete a la izquierda y no un relleno detras del texto, que es como
+ * este sistema pinta el color.
+ */
+.patrones {
+  list-style: none;
+  margin: 0 0 var(--e4);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+}
+
+.patrones li {
+  border-left: 2px solid var(--duda);
+  padding-left: var(--e3);
+  max-width: var(--medida);
+}
+
+.patrones b {
+  display: block;
+  font-size: var(--t-apoyo);
+  color: var(--duda-tinta);
+}
+
+.patrones span {
+  font-size: var(--t-menor);
+  line-height: 1.5;
+  color: var(--tinta2);
+}
+
 .criterios {
   display: flex;
   flex-direction: column;
