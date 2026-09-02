@@ -170,6 +170,24 @@
   --ancho: 68rem;
 
   /*
+   * El ancho del PANEL, que no es el del portal y por eso es otro token.
+   *
+   * El portal lo lee una persona: 68rem es el hueco donde componer un anuncio de
+   * empleo, y ensancharlo empeoraria su lectura. El panel es una herramienta de
+   * trabajo con tablas que se comparan fila a fila, y ahi 68rem no es una
+   * decision de diseño: es un tope heredado que deja la mesa estrecha y manda al
+   * scroll horizontal lo que cabria en pantalla.
+   *
+   * Medido: el ranking necesita 1172 px sin las columnas de criterio y 2003 con
+   * las ocho. Con 68rem (1088) rodaba SIEMPRE, tuviera criterios o no.
+   *
+   * 120rem es «usa la ventana» en cualquier portatil y pone tope en un monitor
+   * muy ancho, donde una fila de dos metros deja de poderse seguir con la vista.
+   * Por debajo de ese tope no ata nada: manda el 100% del contenedor.
+   */
+  --ancho-panel: 120rem;
+
+  /*
    * La medida de la linea, en `ch` —el ancho del cero—. En Mulish el cero es
    * algo mas estrecho que en la familia anterior, asi que estos valores compran
    * 66-72 caracteres por linea. Medido en el navegador, no calculado.

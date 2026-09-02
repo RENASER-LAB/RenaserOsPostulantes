@@ -41,6 +41,41 @@ import type { FilaRanking, VersionBanco } from '../api/tipos'
 const verRanking = vi.fn()
 const elegirInstrumento = vi.fn()
 const pedirExcel = vi.fn()
+const ponerNotaPrueba = vi.fn()
+
+/**
+ * La rubrica de la prueba, con UN criterio sin nota.
+ *
+ * ⚠️ **Es el caso de verdad y no un extremo inventado.** La rubrica decide
+ * criterio por criterio quien lo mira, y los que dice que los mira una persona
+ * NUNCA se le mandan a la IA: en la prueba de marketing la sustentacion en
+ * video son 10 de los 100 puntos. El agente califica cinco de seis, la nota de
+ * la etapa exige los seis, y hasta hoy no habia en toda la pantalla un sitio
+ * donde escribir el que falta.
+ *
+ * ⚠️ **Las filas SIN nota tambien llegan**: `verNotas` recorre la rubrica y le
+ * pega encima la nota si la hay. Si un dia devolviera solo lo calificado, el
+ * criterio que falta seria justo el unico invisible y el boton no se pintaria
+ * nunca — por eso la fixtura trae el nulo.
+ */
+let NOTAS_PRUEBA = [
+  {
+    criterioId: 31,
+    nombre: 'Objetivo: la campaña está bien planteada',
+    puntosMaximos: 22,
+    puntaje: 18,
+    explicacion: 'Plantea el objetivo con una cifra.',
+    origen: 'AGENTE',
+  },
+  {
+    criterioId: 36,
+    nombre: 'Sustentación en video',
+    puntosMaximos: 10,
+    puntaje: null,
+    explicacion: null,
+    origen: null,
+  },
+]
 
 /**
  * Una fila con lo justo: lo que la tabla lee de verdad.
@@ -241,6 +276,20 @@ const sinRuido = {
     }),
   verEmbudo: () => Promise.resolve({ porEstado: {} }),
   verCatalogos: () => Promise.resolve({ areas: [], puestos: [], nivelesPuesto: [], estados: [] }),
+  /*
+    ⚠️ **Las tres listas van vacías, no ausentes.** El componente las recorre en
+    cuanto `perfil.data` existe, y un `{}` pelado revienta con «no es iterable»
+    al abrir la primera ficha. Estas son las primeras pruebas que abren una fila,
+    así que el doble tiene que parecerse a la respuesta de verdad.
+  */
+  verPerfilIntegral: () =>
+    Promise.resolve({
+      estadoCalificacion: 'TERMINADA',
+      resumen: null,
+      hallazgos: [],
+      notasCriterio: [],
+      alertas: [],
+    }),
 }
 
 vi.mock('../api/panel', () => ({
@@ -275,13 +324,26 @@ vi.mock('../api/panel', () => ({
   crearRequisito: () => Promise.resolve({}),
   publicarVacante: () => Promise.resolve({}),
   quitarRequisito: () => Promise.resolve({}),
-  verFicha: () => Promise.resolve({}),
+  /*
+    ⚠️ **`enlaces` tiene que ser una lista, no faltar.** La ficha hace
+    `ficha.data.enlaces.length` sin guarda, así que un `{}` la revienta entera
+    —y con ella la columna donde vive la rúbrica—. Estuvo así todo este tiempo
+    porque hasta ahora ningún test abría una ficha.
+  */
+  verFicha: () => Promise.resolve({ enlaces: [] }),
   verHistorial: () => Promise.resolve([]),
-  verPerfilIntegral: () => Promise.resolve({}),
+  verPerfilIntegral: () => sinRuido.verPerfilIntegral(),
   verDesgloseEvaluacion: () => sinRuido.verDesgloseEvaluacion(),
   verMetricasValidacion: () => Promise.resolve([]),
-  verNotasPrueba: () => Promise.resolve([]),
+  verNotasPrueba: () => Promise.resolve(NOTAS_PRUEBA),
   verNotasSimulacion: () => Promise.resolve([]),
+  ponerNotaCriterioPrueba: (
+    postulacionId: number,
+    criterioId: number,
+    puntaje: number,
+    explicacion: string,
+  ) => ponerNotaPrueba(postulacionId, criterioId, puntaje, explicacion),
+  ponerNotaCriterioSimulacion: () => Promise.resolve(),
   verValidacion: () => Promise.resolve({}),
   calificarPruebaConIa: () => Promise.resolve({ estado: 'ENCOLADA' }),
   calificarPerfilIntegralConIa: () => Promise.resolve({ estado: 'ENCOLADA' }),
@@ -363,9 +425,9 @@ const cuantasEn = (empiezaPor: string) =>
 /**
  * Los nombres de la columna «Candidato», en el orden en el que se pintan.
  *
- * El primer `<span>` y no la celda entera: debajo del nombre van el correo y,
- * cuando lo hay, el grupo de prioridad, y `textContent` de la celda los pegaría
- * todos en una cadena.
+ * El primer `<span>` y no la celda entera: debajo del nombre va el correo, y
+ * `textContent` de la celda los pegaría los dos en una cadena. (El grupo de
+ * prioridad vivía aquí y ya no: subió a su propia columna, «Veredicto».)
  */
 const elOrdenDeLaTabla = () =>
   Array.from(laTabla().querySelectorAll('tbody tr')).map(
@@ -396,6 +458,8 @@ beforeEach(() => {
   listarVersionesBanco.mockReset()
   listarVersionesBanco.mockResolvedValue(BANCOS)
   asignarPlantillaPrueba.mockReset()
+  ponerNotaPrueba.mockReset()
+  ponerNotaPrueba.mockResolvedValue(undefined)
   VERSIONES_PRUEBA = VERSIONES_DE_SIEMPRE
   sinRuido.verVacante = () => Promise.resolve(VACANTE)
 })
@@ -565,6 +629,327 @@ describe('los tres vacíos no se confunden', () => {
     await pintar([])
     expect(screen.getByText(/Todavía no hay postulaciones/)).toBeTruthy()
     expect(screen.queryByText(/Nadie está en/)).toBeNull()
+  })
+})
+
+describe('las cinco cifras de la tanda', () => {
+  /** El recuadro cuyo rótulo empieza por lo que se le pasa, y su cifra. */
+  const cifraDe = (rotulo: string | RegExp) =>
+    Number(screen.getByText(rotulo).closest('div')?.querySelector('b')?.textContent)
+
+  /*
+    ⚠️ **Salen de las filas de ESTA etapa, no de los contadores del backend.**
+    Los del backend son de la cola que califica el currículum y valen lo mismo en
+    las cinco pestañas: la vacante manda `calificados: 4` y en la pestaña de la
+    prueba nadie tiene nota. Si las cifras salieran de ahí, los recuadros dirían
+    lo mismo en las dos pestañas.
+  */
+  it('cuentan lo de la pestaña, no lo que manda la cabecera del backend', async () => {
+    await pintar()
+    verCorte('Toda la tanda')
+    // En el perfil: 84, 75 y 52 tienen nota; Fátima no.
+    expect(cifraDe(/ya calificados/)).toBe(3)
+
+    irA('Prueba del puesto')
+    await waitFor(() => expect(elCorte('Con nota de la prueba')).toBeTruthy())
+    verCorte('Toda la tanda')
+    // En la prueba nadie la tiene, aunque el backend siga diciendo «4 calificados».
+    await waitFor(() => expect(cifraDe(/ya calificados/)).toBe(0))
+  })
+
+  it('la mediana y la media son las de las notas con nota', async () => {
+    await pintar()
+    verCorte('Toda la tanda')
+    // 52, 75, 84 → mediana 75, media 70,3.
+    expect(cifraDe('nota mediana de la tanda /100')).toBe(75)
+    expect(cifraDe('nota media de la tanda /100')).toBe(70.3)
+  })
+
+  /*
+    ⚠️ **El rótulo dice el número.** Es 70 escrito a mano porque la nota mínima
+    que la vacante sí declara no viaja por la API. «Con 70 o más» es comprobable;
+    «llegan al mínimo» afirmaría conocer un mínimo que la pantalla no ha leído.
+  */
+  it('el corte se dice en el rótulo, y cuenta a quien lo alcanza', async () => {
+    await pintar()
+    verCorte('Toda la tanda')
+    expect(screen.getByText('con 70 o más')).toBeTruthy()
+    expect(cifraDe('con 70 o más')).toBe(2) // 84 y 75; el 52 no.
+  })
+
+  it('sin nadie calificado no inventa un cero: pone una raya', async () => {
+    await pintar([fila(95, 'Sin nota', 'POSTULADA', null)])
+    verCorte('Toda la tanda')
+    expect(
+      screen.getByText('nota mediana de la tanda /100').closest('div')?.querySelector('b')?.textContent,
+    ).toBe('—')
+  })
+})
+
+describe('los criterios como columnas de color', () => {
+  /** Una tanda con los criterios del currículum ya calificados. */
+  const CON_CRITERIOS = [
+    fila(91, 'Rodrigo Ayala', 'PERFIL_POR_CONFIRMAR', 84, {
+      notasCriterio: [
+        {
+          criterio: 'Resultados demostrables',
+          codigo: 'CV_RESULTADOS',
+          puntaje: 20,
+          maximo: 25,
+          peso: 25,
+          explicacion: 'Cifras concretas en tres puestos.',
+          origen: 'AGENTE',
+          confianza: 88,
+          motivoAjuste: null,
+        },
+        {
+          criterio: 'Complejidad y alcance',
+          codigo: 'CV_COMPLEJIDAD',
+          puntaje: null,
+          maximo: 20,
+          peso: 20,
+          explicacion: null,
+          origen: null,
+          confianza: null,
+          motivoAjuste: null,
+        },
+      ],
+    }),
+  ]
+
+  const encender = () =>
+    fireEvent.click(screen.getByRole('checkbox', { name: /Ver los criterios/ }))
+
+  it('arrancan apagados: la tabla no crece sin que nadie lo pida', async () => {
+    await pintar(CON_CRITERIOS)
+    expect(screen.getByRole('checkbox', { name: /Ver los criterios/ })).toHaveProperty(
+      'checked',
+      false,
+    )
+    expect(within(laTabla()).queryByText(/Resultados demostrables/)).toBeNull()
+  })
+
+  /*
+    ⚠️ **La cabecera lleva el nombre CORTO, no el largo.** Ese ancho decide si la
+    tabla entera cabe en la pantalla: debajo solo hay dos dígitos y encima cabía
+    «Resultados demostrables». El largo no se pierde — va en el `title`, que es
+    donde se consulta una vez y no una por fila.
+  */
+  /*
+    ⚠️ **La cabecera es SOLO la letra.** El peso vivia aqui debajo y era quien
+    decidia el ancho de la columna —«no pondera» la estiraba a 87 px— para un
+    dato que se consulta al entender una nota, no al barrer una columna. Baja a
+    la leyenda, donde ya se explica cada letra.
+  */
+  it('encendidos, la cabecera es SOLO una letra: el peso no esta ahi', async () => {
+    await pintar(CON_CRITERIOS)
+    encender()
+    const cabecera = within(laTabla()).getByText('R').closest('th')!
+    expect(cabecera.textContent).toBe('R')
+    expect(cabecera.textContent).not.toContain('peso')
+    expect(cabecera.title).toBe('Resultados demostrables')
+    expect(within(laTabla()).queryByText('Resultados demostrables')).toBeNull()
+    expect(within(laTabla()).getByText('20/25')).toBeTruthy()
+  })
+
+  it('el peso se lee en la leyenda, junto a su letra', async () => {
+    await pintar(CON_CRITERIOS)
+    encender()
+    const leyenda = screen.getByText('Resultados').closest('span')!
+    expect(leyenda.textContent).toContain('peso 25')
+    // Y el que no pondera lo dice con palabras, no con un «peso 0».
+    const sinPeso = screen.getByText('Complejidad').closest('span')!
+    expect(sinPeso.textContent).toContain('peso 20')
+  })
+
+  /*
+    ⚠️ **Una letra sola no se sostiene sin esto.** Una «R» encima de un 43 no
+    dice nada, y dejar su significado solo detras del cursor no existe con
+    teclado ni en una impresion. La leyenda va SIEMPRE debajo de la tabla.
+  */
+  it('la leyenda dice que es cada letra, sin pedir el cursor', async () => {
+    await pintar(CON_CRITERIOS)
+    encender()
+    const leyenda = screen.getByText('Resultados').closest('p')!
+    expect(leyenda.textContent).toContain('R')
+    expect(leyenda.textContent).toContain('Resultados')
+    expect(leyenda.textContent).toContain('Complejidad')
+  })
+
+  /*
+    ⚠️ **Un hueco no es un cero ni un rojo.** Sin nota puede ser que la IA no
+    haya llegado o que ese criterio lo puntúe una persona. El `title` lo dice, y
+    la celda no lleva ninguno de los tres tonos.
+  */
+  it('un criterio sin nota sale como hueco, y el título lo explica', async () => {
+    await pintar(CON_CRITERIOS)
+    encender()
+    const celda = within(laTabla()).getByTitle(/Complejidad y alcance: todavía sin nota/)
+    expect(celda.textContent).toBe('—')
+  })
+
+  /*
+    ⚠️ **Fuera del currículum no salen, y no es por el ancho.** `notasCriterio`
+    viene SIEMPRE del currículum: en la pestaña de la prueba serían columnas del
+    CV con pinta de ser de la prueba, que es el fallo que el ranking arrastraba.
+  */
+  it('el interruptor no existe fuera de las etapas del currículum', async () => {
+    await pintar(CON_CRITERIOS)
+    expect(screen.queryByRole('checkbox', { name: /Ver los criterios/ })).toBeTruthy()
+    irA('Prueba del puesto')
+    expect(screen.queryByRole('checkbox', { name: /Ver los criterios/ })).toBeNull()
+  })
+
+  it('la leyenda solo aparece cuando hay colores que leer', async () => {
+    await pintar(CON_CRITERIOS)
+    expect(screen.queryByText(/cubre 70 % o más/)).toBeNull()
+    encender()
+    expect(screen.getByText(/cubre 70 % o más/)).toBeTruthy()
+    // El hueco va nombrado con sus dos causas: es lo que impide leerlo como un cero.
+    expect(screen.getByText(/ese criterio lo\s+puntúa una persona/)).toBeTruthy()
+  })
+})
+
+describe('elegir qué columnas se ven', () => {
+  const abrirSelector = () =>
+    fireEvent.click(screen.getByText('Columnas', { selector: 'summary' }))
+
+  it('apagar una columna la quita de la cabecera y de todas las filas', async () => {
+    await pintar()
+    expect(within(laTabla()).queryByRole('columnheader', { name: 'Estado' })).toBeTruthy()
+    abrirSelector()
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Estado' }))
+    await waitFor(() =>
+      expect(within(laTabla()).queryByRole('columnheader', { name: 'Estado' })).toBeNull(),
+    )
+  })
+
+  /*
+    ⚠️ **El `colSpan` de la fila de detalle sale de la MISMA lista.** Si se
+    filtrara solo la cabecera, la fila abierta mediría más que la tabla y el
+    bloque de dentro saldría descuadrado — el fallo clásico de esta pantalla.
+  */
+  it('el ancho de la fila de detalle sigue a las columnas que quedan', async () => {
+    await pintar()
+    const columnasAntes = laTabla().querySelectorAll('thead th').length
+    abrirSelector()
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Estado' }))
+    await waitFor(() =>
+      expect(laTabla().querySelectorAll('thead th').length).toBe(columnasAntes - 1),
+    )
+    fireEvent.click(screen.getByText('Rodrigo Ayala'))
+    await waitFor(() => {
+      const detalle = laTabla().querySelector('td[colspan]')
+      expect(detalle?.getAttribute('colspan')).toBe(String(columnasAntes - 1))
+    })
+  })
+
+  it('«Ver todas» las devuelve de una vez', async () => {
+    await pintar()
+    const columnasAntes = laTabla().querySelectorAll('thead th').length
+    abrirSelector()
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Estado' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Veredicto' }))
+    await waitFor(() =>
+      expect(laTabla().querySelectorAll('thead th').length).toBe(columnasAntes - 2),
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Ver todas' }))
+    await waitFor(() =>
+      expect(laTabla().querySelectorAll('thead th').length).toBe(columnasAntes),
+    )
+  })
+
+  it('el candidato no está entre las que se pueden apagar', async () => {
+    await pintar()
+    abrirSelector()
+    expect(screen.queryByRole('checkbox', { name: 'Candidato' })).toBeNull()
+  })
+})
+
+describe('el veredicto es el grupo de prioridad', () => {
+  it('sube a columna propia, y sin semáforo', async () => {
+    await pintar([
+      fila(91, 'Rodrigo Ayala', 'PERFIL_POR_CONFIRMAR', 84, { grupoPrioridad: 'ALTA' }),
+    ])
+    expect(within(laTabla()).getByRole('columnheader', { name: 'Veredicto' })).toBeTruthy()
+    expect(within(laTabla()).getByText('Prioridad alta')).toBeTruthy()
+  })
+
+  /*
+    El guion es «la IA todavía no ha calificado su currículum»: el grupo se
+    asigna al terminar esa pasada, así que una fila recién postulada no lo trae.
+  */
+  it('sin grupo pone una raya, no una etiqueta inventada', async () => {
+    await pintar([fila(92, 'Fátima Quispe', 'POSTULADA', null)])
+    verCorte('Toda la tanda')
+    const fila92 = laTabla().querySelectorAll('tbody tr td')
+    expect(Array.from(fila92).some((c) => c.textContent === '—')).toBe(true)
+  })
+})
+
+describe('la ficha, al abrir una fila', () => {
+  /*
+    ⚠️ **Los criterios se pintan de la FILA, no de la petición.** Ya viajan en
+    `notasCriterio` del ranking y estaban llegando sin que nadie los leyera. Aquí
+    el doble de `verPerfilIntegral` devuelve la lista VACÍA a propósito: si la
+    ficha esperase a la petición, no habría nada que ver.
+  */
+  it('pinta los criterios sin esperar a la petición del perfil', async () => {
+    await pintar([
+      fila(91, 'Rodrigo Ayala', 'PERFIL_POR_CONFIRMAR', 84, {
+        notasCriterio: [
+          {
+            criterio: 'Resultados demostrables',
+            codigo: 'CV_RESULTADOS',
+            puntaje: 20,
+            maximo: 25,
+            peso: 25,
+            explicacion: 'Cifras concretas en tres puestos.',
+            origen: 'AGENTE',
+            confianza: 88,
+            motivoAjuste: null,
+          },
+        ],
+      }),
+    ])
+    fireEvent.click(screen.getByText('Rodrigo Ayala'))
+    await waitFor(() => expect(screen.getByText('Criterio a criterio')).toBeTruthy())
+    expect(screen.getByText('Cifras concretas en tres puestos.')).toBeTruthy()
+    expect(screen.getByText(/peso 25/)).toBeTruthy()
+    expect(screen.getByText(/confianza 88/)).toBeTruthy()
+    expect(screen.getByText(/la puso la IA/)).toBeTruthy()
+  })
+
+  /*
+    ⚠️ **`motivoAjuste` no nulo significa una sola cosa** —lo garantiza un CHECK
+    en la base: sin motivo, la nota ajustada no entra—. Es lo primero que hay que
+    ver antes de discutir un número, y hasta ahora no se pintaba en ninguna parte.
+  */
+  it('dice cuándo una persona corrigió la nota, y por qué', async () => {
+    await pintar([
+      fila(91, 'Rodrigo Ayala', 'PERFIL_POR_CONFIRMAR', 84, {
+        notasCriterio: [
+          {
+            criterio: 'Resultados demostrables',
+            codigo: 'CV_RESULTADOS',
+            puntaje: 12,
+            maximo: 25,
+            peso: 25,
+            explicacion: 'La IA vio cifras concretas.',
+            origen: 'PERSONA',
+            confianza: null,
+            motivoAjuste: 'Las cifras no se pudieron verificar con la referencia.',
+          },
+        ],
+      }),
+    ])
+    fireEvent.click(screen.getByText('Rodrigo Ayala'))
+    await waitFor(() => expect(screen.getByText('Criterio a criterio')).toBeTruthy())
+    expect(screen.getByText(/ajustada a mano/)).toBeTruthy()
+    expect(
+      screen.getByText(/Las cifras no se pudieron verificar con la referencia/),
+    ).toBeTruthy()
+    expect(screen.queryByText(/la puso la IA/)).toBeNull()
   })
 })
 
@@ -1198,5 +1583,130 @@ describe('una columna entera vacía no se pinta', () => {
     await conDatos()
     expect(within(laTabla()).getByText('S/ 2,500 – 3,000')).toBeTruthy()
     expect(within(laTabla()).getByText('desde S/ 4,000')).toBeTruthy()
+  })
+})
+
+/**
+ * Calificar a mano el criterio que la rúbrica le reserva a una persona.
+ *
+ * Lo que compila perfectamente estando mal aquí:
+ *
+ *   1. **No pintar el botón en el criterio SIN nota.** Es justo el que hay que
+ *      calificar. Si la lista solo ofreciera corregir lo ya puesto, la prueba
+ *      seguiría sin poder cerrarse y la pantalla se vería bien.
+ *   2. **Dejar guardar sin explicación.** El servidor la exige y contesta 400;
+ *      enterarse después de escribir el puntaje es la peor versión.
+ *   3. **Admitir un puntaje por encima del máximo del criterio.** Uno que vale
+ *      10 no puede recibir un 80: la escala es la del criterio, no 0 a 100.
+ *   4. **Ponerle el botón a las métricas del periodo de validación**, que no
+ *      tienen endpoint para esto y responderían 404.
+ */
+describe('calificar a mano un criterio de la prueba', () => {
+  /** Abrir la ficha de quien está parado en la prueba. */
+  const abrirLaFicha = async () => {
+    await pintar()
+    irA('Prueba del puesto')
+    /*
+      ⚠️ **Hay que cambiar de corte, y eso es el caso real.** La pestaña abre
+      por «con nota de la prueba», y quien tiene la rúbrica a medias NO tiene
+      nota de etapa todavía —es justo lo que falta calificar—, así que en el
+      corte por defecto no sale. A quien hay que calificar se le encuentra en
+      «está aquí ahora».
+    */
+    await waitFor(() => expect(elCorte('Con nota de la prueba')).toBeTruthy())
+    verCorte('Está aquí ahora')
+    const fila = await screen.findByText('Camila Reyes')
+    fireEvent.click(fila.closest('tr')!)
+    await screen.findByRole('heading', {
+      name: 'La prueba del puesto, criterio a criterio',
+    })
+    // El título sale antes que las notas: son dos consultas distintas.
+    return await screen.findByText('Sustentación en video')
+  }
+
+  /** La fila de un criterio, por su nombre. */
+  const elCriterio = (nombre: string) => screen.getByText(nombre).closest('li')!
+
+  it('ofrece calificar el criterio que la IA no puede tocar', async () => {
+    await abrirLaFicha()
+    // El que la rúbrica reserva a una persona: sin nota y con el botón.
+    expect(
+      within(elCriterio('Sustentación en video')).getByRole('button', {
+        name: 'Calificar a mano Sustentación en video',
+      }),
+    ).toBeTruthy()
+    // Y el que ya calificó la IA se puede corregir, que no es lo mismo.
+    expect(
+      within(elCriterio('Objetivo: la campaña está bien planteada')).getByRole('button', {
+        name: 'Corregir la nota de Objetivo: la campaña está bien planteada',
+      }),
+    ).toBeTruthy()
+  })
+
+  it('manda el puntaje y el porqué a ese criterio y a esa postulación', async () => {
+    await abrirLaFicha()
+    fireEvent.click(
+      within(elCriterio('Sustentación en video')).getByRole('button', {
+        name: 'Calificar a mano Sustentación en video',
+      }),
+    )
+    fireEvent.change(screen.getByLabelText(/Puntaje/), { target: { value: '8' } })
+    fireEvent.change(screen.getByLabelText(/Por qué esa nota/), {
+      target: { value: 'Defiende sus decisiones y responde a la objeción del presupuesto.' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar la nota' }))
+
+    await waitFor(() => expect(ponerNotaPrueba).toHaveBeenCalledTimes(1))
+    expect(ponerNotaPrueba).toHaveBeenCalledWith(
+      93,
+      36,
+      8,
+      'Defiende sus decisiones y responde a la objeción del presupuesto.',
+    )
+  })
+
+  it('no deja guardar sin explicación, ni con un puntaje por encima del máximo', async () => {
+    await abrirLaFicha()
+    fireEvent.click(
+      within(elCriterio('Sustentación en video')).getByRole('button', {
+        name: 'Calificar a mano Sustentación en video',
+      }),
+    )
+    const guardar = screen.getByRole('button', { name: 'Guardar la nota' })
+
+    // Con puntaje y sin porqué: apagado.
+    fireEvent.change(screen.getByLabelText(/Puntaje/), { target: { value: '8' } })
+    expect(guardar).toHaveProperty('disabled', true)
+
+    // Con porqué y un puntaje de 80 sobre un criterio que vale 10: apagado.
+    fireEvent.change(screen.getByLabelText(/Por qué esa nota/), {
+      target: { value: 'Sustenta bien.' },
+    })
+    fireEvent.change(screen.getByLabelText(/Puntaje/), { target: { value: '80' } })
+    expect(guardar).toHaveProperty('disabled', true)
+
+    // Dentro de la escala del criterio: encendido.
+    fireEvent.change(screen.getByLabelText(/Puntaje/), { target: { value: '8' } })
+    expect(guardar).toHaveProperty('disabled', false)
+
+    // Y un cero es una nota, no un hueco.
+    fireEvent.change(screen.getByLabelText(/Puntaje/), { target: { value: '0' } })
+    expect(guardar).toHaveProperty('disabled', false)
+  })
+
+  it('no ofrece el botón en las métricas del periodo de validación', async () => {
+    await pintar()
+    irA('Validación')
+    // Nadie está parado en Validación: la ficha se abre desde la tanda entera.
+    await waitFor(() => expect(elCorte('Toda la tanda')).toBeTruthy())
+    verCorte('Toda la tanda')
+    const fila = await screen.findByText('Rodrigo Ayala')
+    fireEvent.click(fila.closest('tr')!)
+    await screen.findByRole('heading', { name: 'El periodo de validación' })
+    /*
+      No hay `POST .../validacion/metricas/{id}/nota` en el backend: un botón
+      aquí sería una llamada a una ruta que no existe.
+    */
+    expect(screen.queryByRole('button', { name: /Calificar a mano/ })).toBeNull()
   })
 })

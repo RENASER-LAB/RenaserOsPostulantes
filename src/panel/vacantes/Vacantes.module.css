@@ -1,7 +1,7 @@
 /* La lista de vacantes del equipo, y el alta plegable. */
 
 .pagina {
-  max-width: var(--ancho);
+  max-width: var(--ancho-panel);
   margin: 0 auto;
   padding: var(--e5) var(--e5) var(--e8);
 }

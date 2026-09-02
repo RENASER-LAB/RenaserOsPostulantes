@@ -361,6 +361,14 @@ export interface ConteoEmbudo {
 
 export interface NotaCriterio {
   criterio: string
+  /**
+   * El nombre CORTO —`CV_RESULTADOS`, `CAJA`, `DIVISAS`—. Rotula una columna
+   * donde el largo no cabe; el largo se queda para explicarla.
+   *
+   * ⚠️ **Puede venir vacio mientras el backend viaja en paralelo**, y quien lo
+   * pinte tiene que caer al nombre largo en vez de dejar la cabecera muda.
+   */
+  codigo: string | null
   puntaje: number | null
   maximo: number | null
   peso: number

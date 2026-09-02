@@ -20,7 +20,7 @@
  * setenta y ocho guiones.
  */
 
-import type { FilaRanking, RespuestaAbiertaVista } from '../api/tipos'
+import type { FilaRanking, NotaCriterio, RespuestaAbiertaVista } from '../api/tipos'
 
 export const ETAPAS_PANEL = [
   {
@@ -30,6 +30,8 @@ export const ETAPAS_PANEL = [
     nota: 'Nota del perfil',
     /** Lo que hace falta para que esta etapa deje nota, dicho al candidato. */
     loQueDejaNota: 'el currículum leído y calificado',
+    /** Cómo se nombra lo calificado en una frase: «lo que dice el currículum». */
+    loCalificado: 'el currículum',
   },
   {
     codigo: 'PRUEBA_PUESTO',
@@ -37,6 +39,7 @@ export const ETAPAS_PANEL = [
     prefijos: ['PRUEBA_'],
     nota: 'Nota de la prueba',
     loQueDejaNota: 'la prueba rendida y calificada',
+    loCalificado: 'la prueba',
   },
   {
     codigo: 'SIMULACION',
@@ -44,6 +47,7 @@ export const ETAPAS_PANEL = [
     prefijos: ['SIMULACION_'],
     nota: 'Nota de la simulación',
     loQueDejaNota: 'la sesión asistida y calificada',
+    loCalificado: 'la simulación',
   },
   {
     codigo: 'VALIDACION',
@@ -51,6 +55,7 @@ export const ETAPAS_PANEL = [
     prefijos: ['VALIDACION_'],
     nota: 'Nota de la validación',
     loQueDejaNota: 'el periodo terminado y calificado',
+    loCalificado: 'la validación',
   },
   {
     codigo: 'DECISION',
@@ -58,6 +63,7 @@ export const ETAPAS_PANEL = [
     prefijos: ['DECISION_'],
     nota: 'Nota de la decisión',
     loQueDejaNota: 'la decisión tomada',
+    loCalificado: 'la decisión',
   },
 ] as const
 
@@ -286,6 +292,480 @@ export function porPilar(
   return [...grupos.entries()]
     .map(([pilar, respuestas]) => ({ pilar, respuestas }))
     .sort((a, b) => (a.pilar === null ? 1 : b.pilar === null ? -1 : 0))
+}
+
+// ---------- Las cinco cifras de la tanda ----------
+
+/**
+ * El corte del recuadro «con 70 o más».
+ *
+ * ⚠️ **Está escrito aquí y no sale de la vacante, y eso es una carencia, no una
+ * elección.** La vacante SÍ declara su propia nota mínima —`vacante.nota_minima`
+ * en la base—, pero es interna y no viaja por la API: no está en ningún DTO de
+ * vacante ni en `tipos.ts`. Hasta que salga, el número es fijo y **el rótulo lo
+ * dice en voz alta** («con 70 o más»), que es lo único honesto: un recuadro que
+ * dijera «llegan al mínimo» estaría afirmando que conoce un mínimo que no ha
+ * leído.
+ */
+export const CORTE_DE_LA_TANDA = 70
+
+export interface ResumenDeLaTanda {
+  /** Rindieron y tienen nota de ESTA etapa. */
+  conNota: number
+  /** La de en medio. `null` si nadie tiene nota. */
+  mediana: number | null
+  /** El promedio. `null` si nadie tiene nota. */
+  media: number | null
+  /** Cuántos llegan a {@link CORTE_DE_LA_TANDA}. */
+  lleganAlCorte: number
+  /** Ya la hicieron y siguen sin nota. */
+  calificando: number
+}
+
+/**
+ * Las cinco cifras de cabecera, todas derivadas de las filas.
+ *
+ * ⚠️ **Ninguna sale de los contadores que manda el backend.** `calificados`,
+ * `enCurso`, `fallidos` y `conPasadaFina` no distinguen etapa —lo documenta la
+ * cabecera de este archivo con la medición: en la vacante 3 las cuatro cifras
+ * son idénticas en las cinco pestañas mientras las filas con nota van 5, 1, 1,
+ * 1—. Un «2 aún calificando» sacado de `enCurso` hablaría del currículum en la
+ * pestaña de la prueba.
+ *
+ * `calificando` se delega en {@link cifrasDeLaEtapa}, que ya resuelve el caso
+ * que se escapaba: `CALIFICANDO` no cae ni en «le toca a la persona» ni en «le
+ * toca al equipo», y es justo el grupo que interesa.
+ *
+ * Las dos cifras van con **un decimal**. La mediana es un valor real de la lista
+ * y llega con los dos decimales de la base —«46.73»—: al lado de una media de
+ * «41.3» las dos precisiones distintas se leen como dos cosas distintas, cuando
+ * son la misma medida. Un decimal en las dos, y ninguna miente.
+ */
+export function resumenDeLaTanda(
+  filas: FilaRanking[],
+  etapa: EtapaPanel,
+): ResumenDeLaTanda {
+  const notas = filas
+    .map((f) => f.notaEtapa)
+    .filter((n): n is number => n != null)
+    .sort((a, b) => a - b)
+
+  const medio = Math.floor(notas.length / 2)
+  const unDecimal = (n: number) => Math.round(n * 10) / 10
+
+  return {
+    conNota: notas.length,
+    mediana:
+      notas.length === 0
+        ? null
+        : unDecimal(
+            notas.length % 2 === 1
+              ? notas[medio]!
+              : (notas[medio - 1]! + notas[medio]!) / 2,
+          ),
+    media:
+      notas.length === 0
+        ? null
+        : unDecimal(notas.reduce((a, b) => a + b, 0) / notas.length),
+    lleganAlCorte: notas.filter((n) => n >= CORTE_DE_LA_TANDA).length,
+    calificando: cifrasDeLaEtapa(filas, etapa).hechasSinNota,
+  }
+}
+
+// ---------- Los criterios, como columnas de color ----------
+
+/**
+ * Sobre cuánto puntúa un criterio.
+ *
+ * ⚠️ **Un `maximo` vacío NO significa «sin escala»: significa 100.** Los ocho
+ * criterios del currículum llegan así —comprobado contra el backend vivo: los
+ * ocho traen `maximo: null` y puntajes de 40, 50, 60— porque no declaran
+ * `puntos` y lo que reparte el peso es `peso_criterio`, no un máximo propio. El
+ * backend lo dice en dos sitios: `notaCurriculum` promedia los puntajes
+ * ponderándolos sin dividir por ningún máximo, y el comentario de `confianza`
+ * afirma que va «de 0 a 100, la misma escala del puntaje».
+ *
+ * Tratarlo como «no hay escala» pintaba las ocho columnas del perfil integral
+ * como huecos —«todavía sin nota» sobre notas que sí estaban—, que es justo lo
+ * contrario de lo que se ve en pantalla.
+ *
+ * Los de una prueba del puesto SÍ lo declaran (caja 20, divisas 15…) y ahí manda
+ * el suyo. Un máximo en cero no divide y se trata como el vacío.
+ */
+export const maximoDe = (nota: NotaCriterio): number =>
+  nota.maximo == null || nota.maximo === 0 ? 100 : nota.maximo
+
+/** Cuánto de su criterio cubre una nota, de 0 a 1, o `null` si no hay nota. */
+export const cuantoCubre = (nota: NotaCriterio): number | null =>
+  nota.puntaje == null ? null : nota.puntaje / maximoDe(nota)
+
+/**
+ * La nota escrita para la celda: «18/20» donde hay máximo propio, «40» donde la
+ * escala es sobre 100.
+ *
+ * Un «40/100» sería ruido —el 100 no añade nada— y un «40/null» era el error.
+ */
+export const notaEscrita = (nota: NotaCriterio | null): string =>
+  nota == null || nota.puntaje == null
+    ? '—'
+    : nota.maximo == null || nota.maximo === 0
+      ? `${nota.puntaje}`
+      : `${nota.puntaje}/${nota.maximo}`
+
+export type TonoDelCriterio = 'bien' | 'duda' | 'mal' | 'hueco'
+
+/**
+ * Un criterio que pesa cero **no puede mover la nota de nadie**.
+ *
+ * No es hipotético: en la vacante 3 de la base local, «Desarrollo de personas»
+ * pesa 0 y todo el mundo tiene nota en él. El backend lo confirma —
+ * `notaCurriculum` suma `puntaje × peso` y divide por la suma de pesos, así que
+ * un peso cero aporta cero arriba y cero abajo—.
+ *
+ * Se le quita el tinte por la misma razón que este archivo repite en todas
+ * partes: el color es la señal fuerte, y teñir de verde un criterio que no
+ * cuenta lo pone al lado de uno que pesa 25 como si valieran lo mismo. La nota
+ * se sigue enseñando —está puesta, y quien la lea querrá verla—; lo que no se
+ * enseña es una importancia que no tiene.
+ *
+ * ⚠️ **Antes de reusar esto con la prueba del puesto, mirar qué trae `peso`
+ * ahí.** En el currículum el peso viene de `peso_criterio`; en una rúbrica de
+ * prueba el que reparte es `puntos` —que llega como `maximo`— y el backend
+ * obliga a que la rúbrica sume 100 al publicarla, así que un `peso 0` en esa
+ * etapa sería un dato roto y no un criterio que no cuenta.
+ */
+export const noPondera = (nota: NotaCriterio): boolean => nota.peso === 0
+
+/**
+ * El tono del fondo de una celda de criterio.
+ *
+ * ⚠️ **El tono va al FONDO de la celda, nunca al número.** La regla está escrita
+ * en `Vacante.module.css` con su motivo —«un tono distinto sobre un número se
+ * lee como otro número»— y aquí valdría el doble: la celda dice `18/20`, y un 18
+ * verde y un 18 rojo tienen que seguir siendo el mismo 18.
+ *
+ * ⚠️ **Un hueco NO es un rojo.** Una celda sin nota puede ser que la IA todavía
+ * no haya llegado, o que ese criterio sea de método PERSONA y le toque a alguien
+ * (ver `docs/RUBRICA-DE-LA-PRUEBA.md` en el backend). Pintarla de rojo diría que
+ * el candidato lo hizo mal, que es un juicio que nadie ha emitido.
+ *
+ * Y **un criterio que no pondera tampoco se tiñe**: ver {@link noPondera}.
+ *
+ * Los tres tramos son los del HTML del cliente: cubierto ≥ 70 %, a medias
+ * 40–69 %, flojo < 40 %.
+ */
+export function tonoDelCriterio(nota: NotaCriterio): TonoDelCriterio {
+  if (noPondera(nota)) return 'hueco'
+  const cubre = cuantoCubre(nota)
+  if (cubre === null) return 'hueco'
+  if (cubre >= 0.7) return 'bien'
+  if (cubre >= 0.4) return 'duda'
+  return 'mal'
+}
+
+/**
+ * El rótulo corto de una columna de criterio.
+ *
+ * ⚠️ **La cabecera decide el ancho de la columna, y el ancho decide si la tabla
+ * cabe en la pantalla.** Debajo solo hay dos dígitos; encima, «Resultados
+ * demostrables». Con los ocho nombres largos la tabla se sale de la ventana.
+ *
+ * Sale del código del criterio, que ya existe en la base y es estable dentro de
+ * su rúbrica: `CV_RESULTADOS` → «Resultados», `CAJA` → «Caja». El prefijo `CV_`
+ * se quita porque en la tabla del currículum lo llevan los ocho: repetirlo ocho
+ * veces no distingue nada y gasta el sitio que hace falta.
+ *
+ * ⚠️ **No se abrevia ni se numera.** «F1» o «RES» obligan a pasar el cursor por
+ * cada columna para leer una sola fila, y una numeración por posición además
+ * cambia de significado entre vacantes —los criterios de una prueba son de su
+ * plantilla—. Una palabra corta de verdad no necesita que la traduzcan.
+ *
+ * Sin código —una respuesta antigua— se cae al nombre largo: una cabecera ancha
+ * es peor que una cabecera muda, pero las dos son mejores que un hueco.
+ */
+export function rotuloCorto(codigo: string | null, nombre: string): string {
+  if (!codigo) return nombre
+  const sinPrefijo = codigo.replace(/^CV_/, '')
+  const palabra = sinPrefijo.replaceAll('_', ' ').toLocaleLowerCase('es')
+  return palabra.charAt(0).toLocaleUpperCase('es') + palabra.slice(1)
+}
+
+/**
+ * La inicial de cada criterio, garantizada distinta dentro de la tanda.
+ *
+ * ⚠️ **La unicidad no se puede dar por hecha, y por eso esto no es un
+ * `charAt(0)`.** En el currículum las ocho salen distintas por suerte
+ * —Resultados, Complejidad, Sistemas, Personas, Aprendizaje, Iniciativa,
+ * Habilidades, Evidencia—, pero una rúbrica de prueba cualquiera puede traer
+ * «Caja» y «Contable». Dos columnas con la misma letra son dos columnas sin
+ * nombre: quien compare una fila no puede saber cuál es cuál.
+ *
+ * Cuando chocan, la que llega después crece hasta que se distingue: «C» y «Co».
+ * Crece la segunda y no las dos porque la primera ya era legible, y cambiarla
+ * movería un rótulo que alguien ya aprendió.
+ *
+ * ⚠️ **Una letra sola obliga a traducirla.** Eso lo paga la leyenda que va bajo
+ * la tabla, siempre a la vista: sin ella habría que pasar el cursor por ocho
+ * columnas para leer una sola fila.
+ */
+export function inicialesDeLaTanda(nombresCortos: string[]): string[] {
+  const usadas = new Set<string>()
+  return nombresCortos.map((corto) => {
+    const limpio = corto.trim()
+    if (limpio === '') return '?'
+    let letras = 1
+    let inicial = limpio.slice(0, 1).toLocaleUpperCase('es')
+    while (usadas.has(inicial) && letras < limpio.length) {
+      letras += 1
+      inicial =
+        limpio.slice(0, 1).toLocaleUpperCase('es') + limpio.slice(1, letras)
+    }
+    usadas.add(inicial)
+    return inicial
+  })
+}
+
+export interface CriterioDeLaTanda {
+  /** El nombre completo, que es la clave: es lo único que llega en todas las filas. */
+  nombre: string
+  /** El nombre corto, de una palabra. Es lo que se lee en la leyenda. */
+  rotulo: string
+  /** La inicial, que es lo que cabe en la cabecera de la columna. */
+  inicial: string
+  /** Lo que pesa en la nota final. Es lo que se lee bajo el título, como en el HTML. */
+  peso: number
+  /** Sobre cuánto puntúa. `null` si el criterio no lo declara. */
+  maximo: number | null
+}
+
+/**
+ * Los criterios de esta tanda, en el orden en que llegan.
+ *
+ * ⚠️ **La cabecera se arma de las filas, nunca escrita a mano.** Los criterios
+ * del currículum son ocho y globales, pero los de una prueba del puesto son de
+ * SU plantilla: dos vacantes distintas traen columnas distintas. Una lista fija
+ * aquí funcionaría hoy y mentiría en la primera vacante con otra prueba.
+ *
+ * Y por lo mismo, **las columnas de dos vacantes no son comparables entre sí**:
+ * esto describe una tanda, no un catálogo.
+ *
+ * Se recorren todas las filas y no solo la primera porque una fila sin calificar
+ * puede traer la lista incompleta —o vacía—, y entonces la tabla perdería
+ * columnas según a quién le tocara ir primero.
+ *
+ * ⚠️ **La clave es el NOMBRE del criterio, y el peso se queda con el de la
+ * primera fila que lo traiga.** Es correcto porque dentro de una tanda el peso
+ * es uniforme: sale de `peso_criterio` para la versión de pesos de la vacante y
+ * el nivel de su puesto, así que las diecisiete filas de una vacante traen el
+ * mismo peso para «Habilidades del puesto». Dejaría de serlo el día en que dos
+ * filas de la misma tanda pudieran pesar distinto en el mismo criterio; hoy no
+ * hay ningún camino que lo produzca.
+ */
+export function criteriosDeLaTanda(filas: FilaRanking[]): CriterioDeLaTanda[] {
+  const vistos = new Map<string, CriterioDeLaTanda>()
+  for (const fila of filas) {
+    for (const nota of fila.notasCriterio ?? []) {
+      const ya = vistos.get(nota.criterio)
+      // El máximo se queda con el primero que lo declare: una fila sin calificar
+      // lo trae nulo, y esa nulidad no debe borrar el que ya se sabía.
+      if (ya) {
+        if (ya.maximo == null && nota.maximo != null) ya.maximo = nota.maximo
+        continue
+      }
+      vistos.set(nota.criterio, {
+        nombre: nota.criterio,
+        rotulo: rotuloCorto(nota.codigo, nota.criterio),
+        // Se rellena abajo: la inicial depende de las OTRAS, no de esta sola.
+        inicial: '',
+        peso: nota.peso,
+        maximo: nota.maximo,
+      })
+    }
+  }
+  const todos = [...vistos.values()]
+  // Las iniciales se reparten al final, con la lista entera delante: una letra
+  // solo se sabe libre cuando se conocen todas las demás.
+  const iniciales = inicialesDeLaTanda(todos.map((c) => c.rotulo))
+  return todos.map((c, i) => ({ ...c, inicial: iniciales[i]! }))
+}
+
+/** La nota de un criterio concreto en una fila, o `null` si esa fila no lo trae. */
+export const notaDelCriterio = (
+  fila: FilaRanking,
+  nombre: string,
+): NotaCriterio | null => fila.notasCriterio?.find((n) => n.criterio === nombre) ?? null
+
+/**
+ * Los dos párrafos de la ficha: «¿Por qué contratarlo?» y «Lectura del test».
+ *
+ * ⚠️ **Ninguno lo escribe una IA, y comprobarlo importa.** En el informe del
+ * cliente parecían dos textos redactados; extraídos los veintinueve, son cinco
+ * plantillas con dos huecos: los dos criterios mejor cubiertos y una coletilla
+ * sobre el núcleo del puesto. Todo lo demás es literal en las veintinueve.
+ *
+ * Que sean derivados tiene tres consecuencias buenas, y por eso se hacen así:
+ *
+ * - **No cuestan nada.** Ni una llamada al modelo, ni una espera.
+ * - **No se quedan obsoletos.** Se recalculan de las notas de ahora, así que si
+ *   una persona corrige un criterio el párrafo cambia con él. Un texto guardado
+ *   seguiría defendiendo a un candidato que los números ya no sostienen — y es
+ *   justo el texto que la siguiente persona lee para decidir.
+ * - **No inventan.** Solo nombran criterios y cifras que están en la misma
+ *   pantalla, así que cualquiera puede comprobar la frase mirando arriba.
+ *
+ * ⚠️ **No son un veredicto ni lo sustituyen.** El veredicto sigue siendo el
+ * grupo de prioridad, que además mira el riesgo crítico. Esto explica la nota
+ * con palabras; quién entra y quién no lo decide una persona.
+ */
+
+/** Cubierto es el mismo 70 % con el que se tiñe la celda: una sola vara. */
+const CUBIERTO = 0.7
+
+export interface LecturaDeLaNota {
+  /** «¿Por qué contratarlo?» */
+  porQue: string
+  /** «Lectura del test», o null si no hay ningún criterio calificado. */
+  lectura: string | null
+}
+
+/**
+ * El núcleo de lo que se califica: los criterios que más pesan.
+ *
+ * El informe lo llamaba «el núcleo del puesto —caja y divisas—» y lo tenía
+ * escrito a mano para esa prueba. Aquí sale del peso, que es lo que de verdad
+ * hace que un criterio decida la nota: en la rúbrica de Administrador caja pesa
+ * 20 y divisas 15, los dos mayores. Así la frase vale para cualquier rúbrica sin
+ * que nadie tenga que declarar cuál es su núcleo.
+ *
+ * Empata a peso: entran los dos primeros en el orden en que llegan.
+ */
+const nucleoDe = (notas: NotaCriterio[]): NotaCriterio[] =>
+  [...notas].filter((n) => n.peso > 0).sort((a, b) => b.peso - a.peso).slice(0, 2)
+
+/** Los que mejor cubre, de los que pesan. Ordenados por cuánto cubren. */
+const losQueDomina = (notas: NotaCriterio[]): NotaCriterio[] =>
+  notas
+    .filter((n) => n.peso > 0 && (cuantoCubre(n) ?? 0) >= CUBIERTO)
+    .sort((a, b) => (cuantoCubre(b) ?? 0) - (cuantoCubre(a) ?? 0))
+
+/** «Caja y Divisas», «Caja, Divisas y Sedes», «Caja». */
+const enumerar = (nombres: string[]): string =>
+  nombres.length <= 1
+    ? (nombres[0] ?? '')
+    : `${nombres.slice(0, -1).join(', ')} y ${nombres[nombres.length - 1]}`
+
+export function lecturaDeLaNota(
+  nota: number | null,
+  notas: NotaCriterio[],
+  etapa: EtapaPanel,
+): LecturaDeLaNota {
+  const que = laEtapaDe(etapa).loCalificado
+  const calificados = notas.filter((n) => n.puntaje != null)
+
+  // Sin nota no se dice nada de nadie. Es el caso que el informe también
+  // contemplaba, y con razón: media rúbrica sumada no es una lectura.
+  if (nota == null || calificados.length === 0) {
+    return {
+      porQue: `Aún sin nota: ${que} sigue en calificación, no hay base para decidir.`,
+      lectura: null,
+    }
+  }
+
+  const domina = losQueDomina(calificados)
+  const nombres = domina.map((n) => n.criterio)
+  const nucleo = nucleoDe(calificados)
+  /*
+    ⚠️ **Se nombran los que FALLAN, no el núcleo entero.** Con el núcleo entero
+    salía una frase que se contradecía sola: «Destaca en Complejidad y
+    Habilidades» y debajo «falla en lo que más pesa: habilidades y resultados».
+    Si uno de los dos está cubierto y el otro no, el que falla es uno solo.
+  */
+  const fallanDelNucleo = nucleo.filter((n) => (cuantoCubre(n) ?? 0) < CUBIERTO)
+  const nucleoCubierto = nucleo.length > 0 && fallanDelNucleo.length === 0
+  const nombresDelNucleo = enumerar(nucleo.map((n) => n.criterio.toLocaleLowerCase('es')))
+  const nombresQueFallan = enumerar(
+    fallanDelNucleo.map((n) => n.criterio.toLocaleLowerCase('es')),
+  )
+
+  const lectura =
+    nombres.length === 0
+      ? `No cubre ninguno de los criterios de ${que}.`
+      : `Destaca en ${enumerar(nombres)}.` +
+        (nucleo.length === 0
+          ? ''
+          : nucleoCubierto
+            ? ` Cubre lo que más pesa: ${nombresDelNucleo}.`
+            : ` Pero falla en lo que más pesa: ${nombresQueFallan}.`)
+
+  const dosMejores = enumerar(nombres.slice(0, 2))
+
+  if (nota >= 80) {
+    return {
+      porQue:
+        `Candidato de primera línea. Lo contratarías porque domina ${dosMejores}` +
+        (nucleoCubierto
+          ? ` y cubre lo que más pesa —${nombresDelNucleo}—, que es lo más difícil de encontrar.`
+          : `, aunque flojea en lo que más pesa: ${nombresQueFallan}.`) +
+        ' Es de los que pasan a entrevista final.',
+      lectura,
+    }
+  }
+  if (nota >= 65) {
+    return {
+      porQue:
+        `Contratable. Su caso se sostiene en ${dosMejores}.` +
+        (nucleoCubierto
+          ? ' Cubre lo que más pesa, así que entra a la lista corta.'
+          : ` Reserva a confirmar en entrevista: aún flojo en ${nombresQueFallan}.`),
+      lectura,
+    }
+  }
+  if (nota >= 50) {
+    return {
+      porQue:
+        (nombres.length > 0
+          ? `Solo con reservas. Aporta ${dosMejores}, pero no cubre`
+          : 'Solo con reservas. No cubre') +
+        ` todo lo que el puesto exige` +
+        (nucleoCubierto ? '.' : `, y falla justo en lo que más pesa: ${nombresQueFallan}.`) +
+        ' Considerarlo solo si la lista corta se queda sin opciones.',
+      lectura,
+    }
+  }
+  return {
+    porQue:
+      `${que.charAt(0).toLocaleUpperCase('es')}${que.slice(1)} no respalda su contratación ` +
+      'para este puesto. ' +
+      (nombres.length > 0
+        ? `Lo único rescatable es ${nombres[0]}; para este rol no alcanza.`
+        : 'No muestra fortalezas aprovechables para el puesto.'),
+    lectura,
+  }
+}
+
+// ---------- El estado, partido donde toca ----------
+
+/**
+ * El estado en sus dos mitades: la etapa y el momento dentro de ella.
+ *
+ * ⚠️ **Existe por una razón medida, no por gusto.** La columna de Estado mide
+ * 111 px y «Perfil Integral · por confirmar» se partia sola en CUATRO lineas,
+ * estirando esa fila a 109 px mientras la de al lado —«Cerrada»— medía 66. En
+ * una tabla que se lee por columnas eso es lo peor que puede pasar: el mismo
+ * puntaje ocupa un bloque de color de distinto tamaño según lo largo que sea el
+ * estado de esa persona, y el ojo lee «más grande» como «más importante».
+ *
+ * Partido a proposito son dos lineas, siempre las mismas, y cada una entera.
+ *
+ * Catorce de los dieciocho estados llevan « · »; los otros cuatro —Postulada,
+ * Contratado, No continúa, Cerrada— son una etapa sin momento y salen con
+ * {@link momento} vacío. No se inventa una segunda linea para ellos.
+ */
+export const estadoEnDos = (nombre: string): { etapa: string; momento: string | null } => {
+  const corte = nombre.indexOf(' · ')
+  return corte === -1
+    ? { etapa: nombre, momento: null }
+    : { etapa: nombre.slice(0, corte), momento: nombre.slice(corte + 3) }
 }
 
 // ---------- El grupo de prioridad ----------
@@ -635,6 +1115,24 @@ export interface ColumnaDelRanking {
   cifra?: boolean
   /** Si se puede ordenar por ella, con qué clave. */
   ordenable?: ColumnaOrdenable
+  /**
+   * Solo en las columnas de criterio: lo que pesa, que se pinta bajo el título.
+   * Un 90 en un criterio que pesa 25 y un 90 en uno que pesa 5 se leen igual en
+   * pantalla y no valen lo mismo.
+   */
+  peso?: number
+  /**
+   * Lo que dice la cabecera cuando el título es una abreviatura. Va al `title`.
+   */
+  completo?: string
+  /**
+   * Si se puede apagar desde el selector de columnas.
+   *
+   * ⚠️ **La marca de avance y el candidato NO lo son.** Sin la primera no se
+   * puede avanzar a nadie, y sin el segundo la fila deja de ser de alguien: una
+   * tabla de cifras sin nombre no se puede leer ni corregir.
+   */
+  ocultable?: boolean
 }
 
 /**
@@ -723,31 +1221,106 @@ export const porQueNoHayPretension = (puedeVerPretension: boolean): string =>
 export function columnasDelRanking(
   etapa: EtapaPanel,
   trae: QueTraeLaTanda = TRAE_TODO,
+  criterios: CriterioDeLaTanda[] = [],
 ): ColumnaDelRanking[] {
   return [
     { clave: 'avance', titulo: '' },
-    { clave: 'puesto', titulo: '#', cifra: true },
+    { clave: 'puesto', titulo: '#', cifra: true, ocultable: true },
     { clave: 'candidato', titulo: 'Candidato', ordenable: 'nombre' },
-    ...(trae.hayCiudad
-      ? ([{ clave: 'ciudad', titulo: 'Ciudad', ordenable: 'ciudad' }] as ColumnaDelRanking[])
-      : []),
     ...(trae.hayPretension
       ? ([
-          { clave: 'pretension', titulo: 'Pretensión', cifra: true, ordenable: 'pretension' },
+          {
+            clave: 'pretension',
+            titulo: 'Pretensión',
+            cifra: true,
+            ordenable: 'pretension',
+            ocultable: true,
+          },
         ] as ColumnaDelRanking[])
       : []),
-    { clave: 'nota', titulo: laEtapaDe(etapa).nota, cifra: true, ordenable: 'nota' },
-    ...(esDelCurriculum(etapa)
+    /*
+      «Nota» a secas y la etapa en el título emergente. La cabecera se llamaba
+      «Nota del perfil» para que cinco pestañas con el mismo rótulo no obligaran
+      a recordar en cuál estás; la pestaña activa ya lo dice justo encima, y ese
+      nombre gastaba 167 px de una columna que enseña dos cifras.
+    */
+    {
+      clave: 'nota',
+      titulo: 'Nota',
+      completo: laEtapaDe(etapa).nota,
+      cifra: true,
+      ordenable: 'nota',
+    },
+    { clave: 'veredicto', titulo: 'Veredicto', ocultable: true },
+    ...criterios.map(
+      (c): ColumnaDelRanking => ({
+        clave: `criterio:${c.nombre}`,
+        // La cabecera lleva la INICIAL; la palabra vive en la leyenda de debajo,
+        // siempre a la vista, y el nombre entero en el título emergente.
+        titulo: c.inicial,
+        completo: c.nombre,
+        cifra: true,
+        peso: c.peso,
+        ocultable: true,
+      }),
+    ),
+    /*
+      ⚠️ **El retrato del currículum ya NO son columnas —Adecuación, Potencial,
+      Riesgos y Alertas—, y no se pierde nada: los cuatro se leen en la ficha**,
+      que se abre pulsando la fila. Ahí además van con su explicación —«cuánto
+      encaja con lo que el puesto pide»— y las cuentas dichas en una frase, que
+      es lo que una columna de dos cifras no puede dar.
+
+      Ocupaban 318 px para números que no se comparan al barrer una tabla: se
+      miran cuando ya elegiste a alguien. Sacarlos es lo que deja sitio a los
+      criterios, que sí se comparan en vertical.
+    */
+    { clave: 'estado', titulo: 'Estado', ocultable: true },
+    /*
+      La ciudad, al final. Estaba pegada al candidato porque es lo que se lee al
+      decidir a quién llamar; se mueve al borde porque con los criterios
+      encendidos separaba el nombre de sus cifras, que es la lectura que la
+      tabla existe para permitir.
+    */
+    ...(trae.hayCiudad
       ? ([
-          { clave: 'adecuacion', titulo: 'Adecuación', cifra: true },
-          { clave: 'potencial', titulo: 'Potencial', cifra: true },
+          { clave: 'ciudad', titulo: 'Ciudad', ordenable: 'ciudad', ocultable: true },
         ] as ColumnaDelRanking[])
       : []),
-    { clave: 'riesgos', titulo: 'Riesgos', cifra: true },
-    { clave: 'alertas', titulo: 'Alertas', cifra: true },
-    { clave: 'estado', titulo: 'Estado' },
   ]
 }
+
+/**
+ * Las columnas que de verdad se pintan, quitando las apagadas.
+ *
+ * ⚠️ **De aquí sale el `colSpan`, igual que antes.** Filtrar en el sitio donde
+ * se pinta la cabecera y olvidarlo en la fila de detalle es el mismo fallo que
+ * este archivo lleva evitando desde que la lista existe.
+ */
+export const columnasVisibles = (
+  columnas: ColumnaDelRanking[],
+  apagadas: ReadonlySet<string>,
+): ColumnaDelRanking[] => columnas.filter((c) => !(c.ocultable && apagadas.has(c.clave)))
+
+/**
+ * Las columnas de criterio que corresponde pintar, o ninguna.
+ *
+ * Dos condiciones, y las dos son necesarias:
+ *
+ * - **El interruptor.** Van apagadas por defecto. La tabla ya se sale de su
+ *   envoltura con once columnas —está dicho en `Vacante.tsx`— y ocho criterios
+ *   la llevarían a veinte. Quien las quiere, las enciende.
+ * - **La etapa.** Solo donde los criterios hablan de lo que se está mirando:
+ *   `notasCriterio` viene SIEMPRE del currículum, en las cinco pestañas. En
+ *   «Prueba del puesto» serían ocho columnas del CV con pinta de ser de la
+ *   prueba, que es exactamente el fallo que este archivo existe para no repetir.
+ */
+export const criteriosQueSePintan = (
+  etapa: EtapaPanel,
+  filas: FilaRanking[],
+  verCriterios: boolean,
+): CriterioDeLaTanda[] =>
+  verCriterios && esDelCurriculum(etapa) ? criteriosDeLaTanda(filas) : []
 
 // ---------- El Excel ----------
 

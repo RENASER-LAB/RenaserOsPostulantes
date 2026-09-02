@@ -1,7 +1,7 @@
 /* La configuracion: parametros, banco, equipo y lo de solo lectura. */
 
 .pagina {
-  max-width: var(--ancho);
+  max-width: var(--ancho-panel);
   margin: 0 auto;
   padding: var(--e5) var(--e5) var(--e8);
 }

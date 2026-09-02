@@ -259,7 +259,18 @@ test.describe('La prueba · el panel', () => {
     const diceQueNo = /no se encoló nada|no había nada que/i.test(texto)
     const desde = texto.indexOf('Pedirle a la IA')
     expect(dicePedido !== diceQueNo, texto.slice(desde, desde + 260)).toBe(true)
-    expect(texto).not.toMatch(/(nota|prueba) (ya )?(está|quedó) calificad[ao]|listo|terminó/i)
+    /*
+      ⚠️ **Sobre la respuesta del botón, NO sobre `main` entero.** Lo que no puede
+      pasar es que ESTE bloque afirme que la nota llegó. Mirando la pantalla
+      entera se cuela la tabla, y ahí «Terminó su proceso sin nota de esta etapa»
+      —uno de los seis porqués de un guion, sobre OTRO candidato— casa con
+      `terminó` y pone el test en rojo por un texto que dice justo lo contrario.
+      Solo salta cuando la tanda tiene a alguien cerrado, así que el día que
+      falle no se parecerá a nada de lo que se acaba de tocar.
+    */
+    expect(texto.slice(desde, desde + 260)).not.toMatch(
+      /(nota|prueba) (ya )?(está|quedó) calificad[ao]|listo|terminó/i,
+    )
   })
 
   test('cuándo cierra la prueba: una cronometrada rechaza la fecha con el porqué del backend, y quitar el cierre no pinta undefined', async ({ page }) => {

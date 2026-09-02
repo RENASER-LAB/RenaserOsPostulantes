@@ -777,3 +777,50 @@ export const corregirPreguntaTecnica = (
 /** El acto humano: vuelve a pasar la aduana entera y archiva la publicada anterior. */
 export const publicarCuestionarioTecnico = (vacanteId: number) =>
   pedir<void>(`/vacantes/${vacanteId}/cuestionario-tecnico/publicacion`, { metodo: 'POST' })
+
+/**
+ * Pone o corrige la nota de UN criterio, a mano.
+ *
+ * ⚠️ **El endpoint existía desde siempre y nadie lo llamaba.** La rúbrica marca
+ * criterio por criterio quién lo mira: los que dicen AGENTE se le mandan a la
+ * IA y los que dicen PERSONA **jamás salen hacia el modelo**. Sin esta llamada,
+ * una rúbrica con un solo criterio de persona —el video de sustentación de las
+ * pruebas de marketing y de talento— no tenía forma de completarse desde
+ * ninguna pantalla, y la nota de la etapa se quedaba sin poder calcularse para
+ * siempre. Se veía como «le falta 1 de 6 criterios» y ningún botón.
+ *
+ * ⚠️ **Pisa lo que hubiera, y eso es lo que se quiere.** Si el criterio ya
+ * tenía nota de la IA, el servidor la sustituye y además registra quién la
+ * cambió y con qué motivo. La explicación es obligatoria justamente por eso.
+ *
+ * El puntaje va de 0 a los puntos de ESE criterio, no a 100: uno que vale 10 no
+ * admite un 80. El servidor lo rechaza con un 400 que nombra el máximo.
+ */
+export const ponerNotaCriterioPrueba = (
+  postulacionId: number,
+  criterioId: number,
+  puntaje: number,
+  explicacion: string,
+) =>
+  pedir<void>(`/postulaciones/${postulacionId}/prueba/criterios/${criterioId}/nota`, {
+    metodo: 'POST',
+    cuerpo: { puntaje, explicacion },
+  })
+
+/**
+ * Lo mismo para la simulación.
+ *
+ * Mismo cuerpo y misma forma, pero **otro permiso**: aquí manda
+ * `calificar_simulacion` y en la prueba manda `ajustar_nota`. Quien traduzca el
+ * 403 a palabras tiene que decir el que toca.
+ */
+export const ponerNotaCriterioSimulacion = (
+  postulacionId: number,
+  criterioId: number,
+  puntaje: number,
+  explicacion: string,
+) =>
+  pedir<void>(`/postulaciones/${postulacionId}/simulacion/criterios/${criterioId}/nota`, {
+    metodo: 'POST',
+    cuerpo: { puntaje, explicacion },
+  })
