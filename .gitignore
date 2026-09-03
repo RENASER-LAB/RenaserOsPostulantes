@@ -51,3 +51,4 @@ android/keystore.properties
 # Salida de Playwright: capturas y trazas de cada corrida, no versionable.
 test-results/
 playwright-report/
+.claude/launch.json
