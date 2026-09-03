@@ -478,6 +478,39 @@ export interface NotaCriterioEtapa {
   origen: string | null
 }
 
+/**
+ * Una de las cosas que la prueba pedia entregar, y como llego.
+ *
+ * ⚠️ **`enlace` y `archivoId` viajan solo con `descargar_entregables`.** Quien
+ * abre la ficha ve QUE entrego y cuando; llegar al contenido pide el mismo
+ * permiso da igual que sea archivo o enlace. Cuando falta —o cuando no hay nada
+ * que ensenar— el porque viene escrito en `porQueNoSeVe`.
+ */
+export interface EntregaDeLaPrueba {
+  entregableRequeridoId: number
+  nombre: string
+  detalle: string
+  /** ARCHIVO, ENLACE o CUALQUIERA: lo que la prueba admitia. */
+  formato: string
+  esObligatorio: boolean
+  loEntrego: boolean
+  enlace: string | null
+  archivoId: number | null
+  archivoNombre: string | null
+  /** Pudo entregarlo varias veces antes del plazo; esta es la ultima. */
+  version: number | null
+  subidoEn: string | null
+  porQueNoSeVe: string | null
+}
+
+/** El enlace firmado del bucket, con cuando caduca. */
+export interface EnlaceArchivo {
+  url: string
+  /** ⚠️ Se llama `expiraEn` en el record de Java. `expira` es del almacen, y no sale por HTTP. */
+  expiraEn: string
+  nombre: string
+}
+
 /** La cabecera del periodo de validacion, si el equipo ya lo habilito. */
 export interface ValidacionPanel {
   id: number

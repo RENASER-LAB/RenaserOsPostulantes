@@ -19,6 +19,8 @@ import type {
   InscritoEnSesion,
   GuardarVacante,
   GuardarPuesto,
+  EnlaceArchivo,
+  EntregaDeLaPrueba,
   NotaCriterioEtapa,
   Parametro,
   PasoHistorialPanel,
@@ -666,6 +668,43 @@ export const asignarVersionPesos = (vacanteId: number, versionPesosId: number) =
 /** Lo que contesto el candidato, pregunta a pregunta. */
 export const verRespuestasDePrueba = (postulacionId: number) =>
   pedir<RespuestaDePrueba[]>(`/postulaciones/${postulacionId}/prueba/respuestas`)
+
+/**
+ * Lo que subio: los archivos y los enlaces que la prueba le pedia.
+ *
+ * ⚠️ **Salen TODOS los pedidos, entregados o no.** Que faltara el tercero es
+ * justo lo que hay que ver, y una lista mas corta parece completa.
+ *
+ * ⚠️ **El contenido —el enlace, el id del archivo— pide `descargar_entregables`.**
+ * Sin ese permiso las filas llegan igual, con `porQueNoSeVe` explicandolo: se
+ * sigue sabiendo que entrego y cuando. El mismo permiso lo exigen las dos rutas
+ * de archivo, asi que un enlace no es una puerta de atras al contenido.
+ */
+export const verEntregablesDePrueba = (postulacionId: number) =>
+  pedir<EntregaDeLaPrueba[]>(`/postulaciones/${postulacionId}/prueba/entregables`)
+
+/**
+ * El enlace firmado para abrir un archivo del bucket sin pasar por el backend.
+ *
+ * ⚠️ **En local contesta 200, y su url no la abre nadie.** El almacen de
+ * desarrollo devuelve `memoria://…` —lo dice `application-local.yaml`—, asi que
+ * NO se puede decidir por la excepcion: no hay ninguna. Quien llame tiene que
+ * mirar el **esquema de la url** y caer a `descargarArchivo` cuando no sea
+ * `http`/`https`; ese es el camino que sirve los bytes por el backend y funciona
+ * en los dos entornos.
+ */
+export const enlaceDeArchivo = (archivoId: number) =>
+  pedir<EnlaceArchivo>(`/archivos/${archivoId}/enlace`)
+
+/**
+ * Los bytes del archivo, servidos por el backend.
+ *
+ * Es el camino que funciona en todas partes y el unico que funciona en local.
+ * Con el bucket es mejor `enlaceDeArchivo` —el archivo no pasa por el backend—,
+ * pero este es el respaldo cuando aquel no esta disponible.
+ */
+export const descargarArchivo = (archivoId: number) =>
+  pedirArchivo(`/archivos/${archivoId}/descarga`)
 
 /**
  * Pedirle al agente que califique la prueba de esta persona.

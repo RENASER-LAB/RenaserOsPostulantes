@@ -63,6 +63,7 @@ import type {
 import { rutas } from '@/rutas'
 import { formatearFechaCorta, formatearFechaLarga } from '@/dominio/reloj'
 import tabla from '../ui/Tabla.module.css'
+import { EntregablesDePrueba } from './EntregablesDePrueba'
 import { RespuestasDePrueba } from './RespuestasDePrueba'
 import { CierreDeLaVacante, PlazoDeUnaPersona } from './CierreDePrueba'
 import { CalificarAUno, CalificarLaTanda } from './CalificarConIa'
@@ -1786,6 +1787,12 @@ function DetalleDelPostulante({ fila, etapa }: { fila: FilaRanking; etapa: Etapa
               notaEnElRanking={fila.notaEtapa}
               alCalcular={refrescarLasNotas('panel-notas-prueba')}
             />
+            {/*
+              Entre la nota y lo que escribio, y ese orden es el de la revision:
+              cuanto vale, que entrego, que escribio. Sin este bloque la rubrica
+              pedia puntuar un video que la pantalla no ensenaba por ningun lado.
+            */}
+            <EntregablesDePrueba postulacionId={fila.postulacionId} />
             <RespuestasDePrueba postulacionId={fila.postulacionId} />
             {/*
               Al final y no arriba: la fecha propia se toca despues de mirar si

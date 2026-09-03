@@ -1,0 +1,249 @@
+/*
+ * Lo que entrego, entregable a entregable.
+ *
+ * Comparte forma con `RespuestasDePrueba`: viven en la misma columna de la ficha
+ * y uno va justo encima del otro, asi que dos maquetados distintos se leerian
+ * como dos pantallas pegadas. Las medidas son las suyas.
+ */
+
+/*
+ * El margen de arriba es del bloque y no del titulo.
+ *
+ * `Vacante.module.css` separa dos titulos seguidos con `.tituloDetalle +
+ * .tituloDetalle`, y ese selector no alcanza a una clase de otro modulo: sin
+ * esto, el titulo quedaria pegado a la ultima nota de la rubrica de encima.
+ */
+.bloque {
+  margin-top: var(--e5);
+}
+
+.cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--e3);
+  margin-bottom: var(--e3);
+}
+
+.titulo {
+  margin: 0;
+}
+
+.recuento {
+  font-size: var(--t-menor);
+  font-variant-numeric: tabular-nums;
+  color: var(--tinta3);
+  margin: 0;
+}
+
+.dato {
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+  margin: 0;
+}
+
+.vacio {
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+  max-width: var(--medida);
+  margin: 0;
+}
+
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e5);
+}
+
+/*
+ * `min-width: 0` no sobra: sin el, un elemento flexible se niega a encoger por
+ * debajo de su contenido y una respuesta con una palabra larguisima —una URL
+ * pegada, un log— empuja el ancho de la ficha y saca la pagina de cuadro.
+ */
+.cuerpo {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+}
+
+/* El codigo y el tipo: del equipo, no de quien postula. Por debajo del enunciado. */
+.contexto {
+  font-size: var(--t-menor);
+  color: var(--tinta3);
+  margin: 0;
+}
+
+/*
+ * El 403 va sobre nube hundida y no en rojo: que un rol no abra la ficha es el
+ * reparto de permisos haciendo su trabajo, no algo que se haya roto.
+ */
+.sinPermiso {
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+  background: var(--nube-hundida);
+  border-radius: var(--radio-menor);
+  padding: var(--e3) var(--e4);
+  max-width: var(--medida);
+  margin: 0;
+}
+
+.avisoMalo {
+  border: 1px solid var(--mal-regla);
+  background: var(--mal-bruma);
+  padding: var(--e3) var(--e4);
+  font-size: var(--t-apoyo);
+  line-height: 1.5;
+  color: var(--mal);
+  border-radius: var(--radio-menor);
+  max-width: var(--medida);
+  margin: 0;
+}
+
+.desactualizado {
+  font-size: var(--t-menor);
+  line-height: 1.5;
+  color: var(--tinta2);
+  background: var(--nube-hundida);
+  border-radius: var(--radio-menor);
+  padding: var(--e2) var(--e3);
+  max-width: var(--medida);
+  margin: 0 0 var(--e3);
+}
+
+.reintentar {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}
+
+/* ---------- Lo propio de esta lista ---------- */
+
+.entrega {
+  padding-bottom: var(--e4);
+  border-bottom: 1px solid var(--regla);
+}
+
+.entrega:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.nombre {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--e2);
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--tinta);
+  margin: 0;
+}
+
+.detalle {
+  font-size: var(--t-apoyo);
+  line-height: 1.5;
+  color: var(--tinta2);
+  max-width: var(--medida);
+  margin: 0;
+}
+
+/*
+ * ⚠️ **La palabra va DENTRO de la etiqueta, no solo el color.** «La regla de la
+ * forma primero»: en gris, el rojo del sistema y la prosa caen casi en la misma
+ * luminancia, y un obligatorio sin entregar se leeria como una linea mas. Las
+ * dos etiquetas se separan ademas por el trazo: la grave lo lleva, la otra no.
+ */
+.falta {
+  font-size: var(--t-menor);
+  font-weight: 600;
+  color: var(--tinta3);
+  border: 1px solid var(--regla2);
+  border-radius: var(--radio-control);
+  padding: 0 var(--e2);
+  white-space: nowrap;
+}
+
+.faltaGrave {
+  composes: falta;
+  color: var(--mal);
+  border-color: var(--mal-regla);
+  background: var(--mal-bruma);
+}
+
+.contenido {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--e2);
+  margin-top: var(--e2);
+}
+
+/*
+ * El enlace lo escribio el candidato y puede ser larguisimo —una url firmada de
+ * Drive pasa de los doscientos caracteres—. Rompe por donde sea antes que sacar
+ * la ficha de cuadro, y no se recorta: la url entera es el dato.
+ */
+.enlace {
+  font-size: var(--t-apoyo);
+  line-height: 1.5;
+  color: var(--tinta);
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+/*
+ * ⚠️ **El recorte va en un `span` de dentro, no aqui.** `.secundario` es
+ * `inline-flex`, y `text-overflow` no cae sobre el texto de un contenedor
+ * flexible: el nombre largo se cortaba a hachazo, sin puntos suspensivos.
+ */
+.archivo {
+  composes: secundario from '../../estilos/piezas.module.css';
+  max-width: 100%;
+}
+
+.archivo > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.porQueNo {
+  font-size: var(--t-apoyo);
+  line-height: 1.5;
+  color: var(--tinta3);
+  max-width: var(--medida);
+  margin: 0;
+}
+
+/*
+ * Un enlace que no es una direccion web. Se pinta como texto —se lee y se copia—
+ * y se dice por que no se abre, en vez de dejar un `href` que no lleva a ningun
+ * sitio o, peor, callarse y parecer que la pantalla se rompio.
+ */
+.enlaceRaro {
+  font-size: var(--t-apoyo);
+  line-height: 1.5;
+  color: var(--tinta2);
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  margin: 0;
+}
+
+.avisoEnlace {
+  display: block;
+  font-size: var(--t-menor);
+  color: var(--tinta3);
+}

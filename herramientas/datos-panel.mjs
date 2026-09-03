@@ -639,6 +639,34 @@ export const RESPUESTAS = {
    * poder escribirlo aqui. Si un dia todos llegan con nota, esta captura deja
    * de enseñar el estado que importa.
    */
+  /*
+   * ⚠️ **La SEXTA fixtura de la cuenta, y esta iba a mentir de la peor forma.**
+   * El interceptor acaba en `?? []`, asi que sin esta entrada la ruta contestaba
+   * `200 []` y la pantalla escribia «esta prueba no pedia entregar nada» sobre
+   * una postulacion que si tenia entregables. No es un hueco: es una afirmacion
+   * falsa, y del lado que exculpa al sistema.
+   *
+   * Los cuatro casos que hay que poder mirar: un enlace, un archivo, uno
+   * obligatorio SIN entregar, y uno cuyo archivo ya no esta guardado.
+   */
+  '/postulaciones/91/prueba/entregables': [
+    { entregableRequeridoId: 1, nombre: 'La campaña en Meta Ads', detalle: 'El conjunto de anuncios, con su segmentación.',
+      formato: 'CUALQUIERA', esObligatorio: true, loEntrego: true,
+      enlace: 'https://drive.example.pe/campana-meta-ads', archivoId: null, archivoNombre: null,
+      version: 1, subidoEn: '2026-08-30T15:12:00Z', porQueNoSeVe: null },
+    { entregableRequeridoId: 2, nombre: 'La pieza de conversión', detalle: 'La landing o el formulario al que lleva el anuncio.',
+      formato: 'ARCHIVO', esObligatorio: true, loEntrego: true,
+      enlace: null, archivoId: 77, archivoNombre: 'pieza-de-conversion.pdf',
+      version: 2, subidoEn: '2026-08-30T16:40:00Z', porQueNoSeVe: null },
+    { entregableRequeridoId: 3, nombre: 'Video de sustentación (máximo 4 minutos)', detalle: 'Explica tus decisiones a cámara.',
+      formato: 'ENLACE', esObligatorio: true, loEntrego: false,
+      enlace: null, archivoId: null, archivoNombre: null,
+      version: null, subidoEn: null, porQueNoSeVe: 'No lo entregó, y era obligatorio' },
+    { entregableRequeridoId: 4, nombre: 'El anexo de referencias', detalle: 'Opcional: de dónde sacaste los números.',
+      formato: 'CUALQUIERA', esObligatorio: false, loEntrego: true,
+      enlace: null, archivoId: null, archivoNombre: null,
+      version: 1, subidoEn: '2026-08-30T16:41:00Z', porQueNoSeVe: 'El archivo ya no está guardado' },
+  ],
   '/postulaciones/91/prueba/notas': [
     { criterioId: 31, nombre: 'Objetivo: la campaña está bien planteada', puntosMaximos: 22,
       puntaje: 18, explicacion: 'Plantea el objetivo con una cifra y una fecha.', origen: 'AGENTE' },
