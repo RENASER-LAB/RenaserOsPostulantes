@@ -44,7 +44,7 @@ import {
   porQueNoHayNota,
   porQueNoHayNotaCorto,
   rotuloCortoDelGrupo,
-  VEREDICTOS,
+  veredictosDeLaTanda,
   porPilar,
   SENALES,
   POR_QUE_NO_HAY_CIUDAD,
@@ -272,10 +272,43 @@ describe('el veredicto, en el ancho de una columna', () => {
     expect(rotuloCortoDelGrupo('ALTA')).toBe('Alta')
     expect(rotuloCortoDelGrupo('POTENCIAL_CON_RIESGO')).toBe('Con riesgo')
     // Ninguno más largo que el nombre entero, y ninguno abreviado con un punto.
-    for (const v of VEREDICTOS) {
+    const todos = veredictosDeLaTanda([
+      fila('POSTULADA', 80, { grupoPrioridad: 'ALTA' }),
+      fila('POSTULADA', 70, { grupoPrioridad: 'POTENCIAL_CON_RIESGO' }),
+      fila('POSTULADA', 40, { grupoPrioridad: 'NO_PRIORIZADO' }),
+      fila('POSTULADA', 10, { grupoPrioridad: 'INCOMPATIBLE' }),
+    ])
+    for (const v of todos) {
       expect(v.corto.length).toBeLessThanOrEqual(v.entero.length)
       expect(v.corto).not.toContain('.')
     }
+  })
+
+  /*
+    ⚠️ **La leyenda sale de las filas, no del catálogo.** `INCOMPATIBLE` existe en
+    el backend y hoy no lo escribe ningún camino del código: explicarlo en la
+    leyenda sería prometer un rótulo que no aparece en ninguna fila. Y antes de la
+    primera pasada de la IA nadie tiene grupo, así que la leyenda no sale.
+  */
+  it('la leyenda solo explica los veredictos que hay en la tanda', () => {
+    const filas = [
+      fila('POSTULADA', 80, { grupoPrioridad: 'ALTA' }),
+      fila('POSTULADA', 40, { grupoPrioridad: null }),
+    ]
+    expect(veredictosDeLaTanda(filas).map((v) => v.corto)).toEqual(['Alta'])
+  })
+
+  it('sin ningún grupo asignado no hay leyenda que enseñar', () => {
+    expect(veredictosDeLaTanda([fila('POSTULADA', 80, { grupoPrioridad: null })])).toEqual([])
+  })
+
+  /* En el orden del catálogo —de más a menos prioridad—, no en el que lleguen. */
+  it('los ordena como el catálogo y no como llegan las filas', () => {
+    const filas = [
+      fila('POSTULADA', 40, { grupoPrioridad: 'NO_PRIORIZADO' }),
+      fila('POSTULADA', 80, { grupoPrioridad: 'ALTA' }),
+    ]
+    expect(veredictosDeLaTanda(filas).map((v) => v.corto)).toEqual(['Alta', 'No priorizado'])
   })
 
   it('sin grupo no se inventa una etiqueta', () => {

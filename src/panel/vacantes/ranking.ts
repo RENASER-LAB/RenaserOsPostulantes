@@ -852,10 +852,28 @@ const CORTO_DEL_GRUPO: Record<string, string> = {
 export const rotuloCortoDelGrupo = (grupo: string | null | undefined): string | null =>
   grupo == null ? null : (CORTO_DEL_GRUPO[grupo] ?? nombreDelGrupo(grupo))
 
-/** Los cuatro veredictos que existen, para la leyenda: corto y entero. */
-export const VEREDICTOS: ReadonlyArray<{ corto: string; entero: string }> = Object.keys(
-  NOMBRE_DEL_GRUPO,
-).map((g) => ({ corto: CORTO_DEL_GRUPO[g]!, entero: NOMBRE_DEL_GRUPO[g]! }))
+/**
+ * Los veredictos que hay **en esta tanda**, para la leyenda.
+ *
+ * ⚠️ **Sale de las filas y no del catálogo, por la misma razón que la cabecera de
+ * los criterios.** `INCOMPATIBLE` existe en el catálogo del backend pero hoy
+ * ningún camino del código lo escribe —sale de requisitos objetivos que aún no
+ * se comprueban al postular—, así que una leyenda fija explicaría un rótulo que
+ * no aparece en ninguna fila. Y antes de la primera pasada de la IA no hay
+ * ningún grupo asignado: entonces la leyenda no sale, en vez de explicar cuatro
+ * etiquetas de las que no se ve ninguna.
+ *
+ * En el orden del catálogo, que es de más a menos prioridad, y no en el que
+ * lleguen las filas.
+ */
+export const veredictosDeLaTanda = (
+  filas: FilaRanking[],
+): ReadonlyArray<{ corto: string; entero: string }> => {
+  const hay = new Set(filas.map((f) => f.grupoPrioridad).filter((g): g is string => g != null))
+  return Object.keys(NOMBRE_DEL_GRUPO)
+    .filter((g) => hay.has(g))
+    .map((g) => ({ corto: CORTO_DEL_GRUPO[g]!, entero: NOMBRE_DEL_GRUPO[g]! }))
+}
 
 // ---------- La ciudad y la pretensión, dichas ----------
 
@@ -1177,6 +1195,15 @@ export interface ColumnaDelRanking {
   titulo: string
   /** A la derecha y con `tabular-nums`. */
   cifra?: boolean
+  /**
+   * Se encoge a lo que quepa, pero sin alinear a la derecha.
+   *
+   * Es la mitad de `cifra` que vale también para una columna de texto corto: el
+   * ancho lo pide `columnaCifra`, el alineado lo pone `tabla.cifra`. Veredicto
+   * necesita lo primero y no lo segundo —una palabra pegada al borde derecho,
+   * al lado de la columna de números, se lee como si fuera otro número—.
+   */
+  estrecha?: boolean
   /** Si se puede ordenar por ella, con qué clave. */
   ordenable?: ColumnaOrdenable
   /**
@@ -1315,7 +1342,13 @@ export function columnasDelRanking(
       cifra: true,
       ordenable: 'nota',
     },
-    { clave: 'veredicto', titulo: 'Veredicto', ocultable: true },
+    /*
+      Se estrecha, pero NO es una cifra: el rótulo va a la izquierda como
+      cualquier texto. `cifra` traería además el alineado a la derecha de la hoja
+      compartida, y una palabra pegada al borde derecho junto a la columna de
+      números se lee como si fuera otro número.
+    */
+    { clave: 'veredicto', titulo: 'Veredicto', estrecha: true, ocultable: true },
     ...criterios.map(
       (c): ColumnaDelRanking => ({
         clave: `criterio:${c.nombre}`,

@@ -97,7 +97,7 @@ import {
   lecturaDeLaNota,
   nombreDelGrupo,
   rotuloCortoDelGrupo,
-  VEREDICTOS,
+  veredictosDeLaTanda,
   ordenar,
   porQueNoHayNota,
   porQueNoHayNotaCorto,
@@ -997,7 +997,9 @@ function Ranking({
                 */
                 const clase = columna.cifra
                   ? `${tabla.cifra} ${estilos.columnaCifra}`
-                  : undefined
+                  : columna.estrecha
+                    ? estilos.columnaCifra
+                    : undefined
                 /*
                   El peso va bajo el nombre del criterio, en pequeño, como en el
                   informe del que sale esta pantalla. No es decoración: un 90 en
@@ -1355,11 +1357,17 @@ function Ranking({
         riesgo»: lo mismo que pasa con las letras de los criterios, y se paga en
         el mismo sitio —una vez aquí abajo, y no una vez por celda—.
 
+        ⚠️ **Sale de las filas, no del catálogo.** `INCOMPATIBLE` existe en el
+        backend y hoy no lo escribe nadie: una leyenda fija explicaría un rótulo
+        que no aparece en ninguna fila, que es justo lo que la celda de al lado
+        se niega a hacer —«pinta lo que llega»—. Y antes de la primera pasada de
+        la IA no hay ningún grupo: entonces esta línea no sale.
+
         ⚠️ Sale con la columna: si alguien la apaga, esta línea sobra.
       */}
-      {ve('veredicto') && (
+      {ve('veredicto') && veredictosDeLaTanda(filas).length > 0 && (
         <p className={estilos.leyendaLetras}>
-          {VEREDICTOS.map((v) => (
+          {veredictosDeLaTanda(filas).map((v) => (
             <span key={v.corto} title={v.entero}>
               <b>{v.corto}</b> {v.entero}
             </span>

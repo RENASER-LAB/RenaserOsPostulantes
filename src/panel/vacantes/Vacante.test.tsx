@@ -961,7 +961,14 @@ describe('el veredicto es el grupo de prioridad', () => {
     const pildora = within(laTabla()).getByText('Alta')
     expect(pildora.title).toBe('Prioridad alta')
     // Y la leyenda lo traduce sin necesidad de ratón.
-    expect(screen.getByText('Potencial con riesgo')).toBeTruthy()
+    expect(screen.getByText('Prioridad alta')).toBeTruthy()
+    /*
+      ⚠️ **Y solo el que hay.** La leyenda sale de las filas, no del catálogo:
+      `INCOMPATIBLE` existe en el backend y hoy no lo escribe nadie, así que
+      explicarlo sería prometer un rótulo que no aparece en ninguna fila.
+    */
+    expect(screen.queryByText('Incompatible')).toBeNull()
+    expect(screen.queryByText('Potencial con riesgo')).toBeNull()
   })
 
   /*
