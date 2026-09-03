@@ -54,6 +54,7 @@ import { ErrorApi } from '../api/cliente'
 import type {
   DesgloseEvaluacion,
   ElegirInstrumentoTecnico as DatosDelInstrumento,
+  Hallazgo,
   InstrumentoTecnico,
   FilaRanking,
   NotaCriterioEtapa,
@@ -138,6 +139,86 @@ function tonoDe(codigo: string): string {
 /** El codigo del backend, dicho como se lee. */
 function enPalabras(codigo: string): string {
   return codigo.replaceAll('_', ' ').toLowerCase()
+}
+
+/**
+ * Los cuatro tipos de hallazgo que se enseñan, en el orden en el que se leen.
+ *
+ * ⚠️ **`PREFERENCIA` no está, y las alertas tampoco.** Los dos existen en el
+ * backend y se siguen guardando; lo que se decidió es que esta lista enseña lo
+ * que decide —en qué es bueno, qué riesgo trae y qué no sabemos de él— y nada
+ * más. Una preferencia («su motivación está en lo técnico») es contexto para la
+ * entrevista, no un hallazgo que mueva una decisión, y engordaba la lista.
+ *
+ * ⚠️ **`FALTA_EVIDENCIA` SÍ está, y no es un riesgo.** Un riesgo es algo que la
+ * persona hace mal; una falta de evidencia es algo que no sabemos. No son lo
+ * mismo —lo prohíbe expresamente la Regla 1 del documento 03— y el hueco suele
+ * ser lo que decide una entrevista: «no hay evidencia de gestión de equipos» no
+ * descalifica, dice qué hay que preguntar.
+ *
+ * El orden no es el que llegue: primero lo que suma, luego lo que resta, y al
+ * final lo que falta por saber.
+ */
+const TIPOS_QUE_SE_ENSENAN = [
+  'FORTALEZA',
+  'RIESGO_CRITICO',
+  'RIESGO_DESARROLLABLE',
+  'FALTA_EVIDENCIA',
+] as const
+
+/**
+ * Lo que la IA marcó del candidato, en lista.
+ *
+ * ⚠️ **Cada hallazgo se pinta con su FRASE, y eso es lo que aquí faltaba.** La
+ * lista enseñaba la etiqueta —FORTALEZA, RIESGO CRITICO— y a su lado nada. El
+ * motivo era un nombre de campo: la interfaz declaraba `texto` y el backend
+ * manda `descripcion`, así que React recibía `undefined` y no dibujaba nada.
+ * Una columna de rótulos sin una sola frase no dice cuál es el riesgo, que es
+ * justo para lo que se abre la ficha.
+ *
+ * La evidencia va debajo y no al lado: es lo que permite comprobar el hallazgo,
+ * pero se lee después de saber qué se afirma, no antes.
+ *
+ * ⚠️ **`sugerencia` llega y NO se pinta.** El agente propone qué hacer con cada
+ * hallazgo —«preguntarle por un cierre de caja que haya firmado él»— y es un
+ * texto útil, pero triplicaba el alto de la lista: siete hallazgos pasaban de
+ * siete líneas a veintiuna, y esta ficha se lee mientras se decide. El dato
+ * sigue viajando en la respuesta para el día que tenga su sitio.
+ *
+ * ⚠️ **Solo se pinta donde se pintaba: perfil integral y decisión.** Se probó a
+ * enseñarlo también en la ficha de la prueba del puesto, para responder ahí a la
+ * columna de Veredicto —que sale de la etapa 1 y no de la prueba—, y se quitó: en
+ * esa pantalla los dos párrafos de arriba salen ENTEROS de la rúbrica de la
+ * prueba, así que una segunda lista de fortalezas sacada del currículum no añade
+ * contexto, invita a confundir las dos fuentes. Quien vea «Con riesgo» en la
+ * columna lo mira en su pestaña.
+ */
+function Hallazgos({ hallazgos }: { hallazgos: Hallazgo[] }) {
+  /*
+    Por tipo y en el orden de TIPOS_QUE_SE_ENSENAN, no en el que los devolvió el
+    modelo. Cuatro fortalezas y dos riesgos entremezclados obligan a leer la
+    lista entera para saber si hay algo grave; agrupados, el bloque rojo se ve
+    sin leer. Dentro de cada tipo se respeta el orden de llegada.
+  */
+  const enOrden = TIPOS_QUE_SE_ENSENAN.flatMap((tipo) =>
+    hallazgos.filter((h) => h.tipo === tipo),
+  )
+  if (enOrden.length === 0) return null
+  return (
+    <ul className={estilos.hallazgos} role="list">
+      {enOrden.map((h, i) => (
+        <li className={estilos.hallazgo} key={`${h.tipo}-${i}`}>
+          <span className={`${estilos.etiqueta} ${tonoDe(h.tipo)}`}>{enPalabras(h.tipo)}</span>
+          <span>
+            {h.descripcion}
+            {h.evidencia && (
+              <span className={estilos.evidencia}>En qué se basa: {h.evidencia}</span>
+            )}
+          </span>
+        </li>
+      ))}
+    </ul>
+  )
 }
 
 export function VacantePanelDetalle() {
@@ -2003,19 +2084,22 @@ function LoQueCalificoLaIA({ fila }: { fila: FilaRanking }) {
             </p>
           )}
 
+          {/*
+            «Hallazgos» y ya no «Hallazgos y alertas»: el titular prometía unas
+            alertas que esta lista no enseña. Se decidió dejarlas fuera —una
+            alerta no descarta a nadie (RF-64), es una pregunta para la
+            conversación final— y un titular que nombra lo que no está es peor
+            que uno corto.
+
+            ⚠️ Las alertas SIGUEN contándose ahí arriba, en «N alerta(s)», y el
+            ranking tiene su columna. Hoy ese número no se puede abrir en ninguna
+            pantalla. Es una consecuencia sabida de dejarlas fuera, no un olvido:
+            el día que se quieran leer, se añaden aquí debajo.
+          */}
           {perfil.data.hallazgos.length > 0 && (
             <>
-              <h4 className={estilos.subtitulo}>Hallazgos y alertas</h4>
-              <ul className={estilos.hallazgos} role="list">
-                {perfil.data.hallazgos.map((h, i) => (
-                  <li className={estilos.hallazgo} key={i}>
-                    <span className={`${estilos.etiqueta} ${tonoDe(h.tipo)}`}>
-                      {enPalabras(h.tipo)}
-                    </span>
-                    <span>{h.texto}</span>
-                  </li>
-                ))}
-              </ul>
+              <h4 className={estilos.subtitulo}>Hallazgos</h4>
+              <Hallazgos hallazgos={perfil.data.hallazgos} />
             </>
           )}
 
