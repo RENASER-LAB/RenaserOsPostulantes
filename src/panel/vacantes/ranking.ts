@@ -202,6 +202,34 @@ export function porQueNoHayNota(fila: FilaRanking, etapa: EtapaPanel): string {
   return 'Sin nota de esta etapa'
 }
 
+/**
+ * Lo mismo, en dos palabras: lo que cabe debajo del guion de la columna Nota.
+ *
+ * ⚠️ **Este texto decidía el ancho de la columna Nota.** Se pintaba entero, con
+ * `max-width: 19ch`, y como en las etapas de más adelante casi ninguna fila tiene
+ * nota todavía, ese párrafo salía en casi todas: una columna que enseña dos
+ * dígitos medía diecinueve caracteres de ancho por un motivo escrito abajo.
+ *
+ * La frase entera **no se pierde**: va en el título emergente, en el mismo sitio
+ * donde ya vive el nombre completo de cada criterio. Es el mismo trato.
+ *
+ * ⚠️ **«En otra etapa» no dice cuál, y es correcto que no lo diga**: la columna
+ * Estado, dos celdas más allá, lo dice con todas sus letras. Repetirlo aquí era
+ * gastar el ancho de la tabla en decir dos veces lo mismo.
+ */
+export function porQueNoHayNotaCorto(fila: FilaRanking, etapa: EtapaPanel): string {
+  const suya = indiceDeLaEtapaDe(fila.estado)
+  const esta = ETAPAS_PANEL.findIndex((e) => e.codigo === etapa)
+
+  if (suya === null) return 'proceso cerrado'
+  if (suya !== esta) return 'en otra etapa'
+  if (fila.estado.endsWith('TURNO_CANDIDATO')) return 'no la ha hecho'
+  if (fila.estado.endsWith('CALIFICANDO')) return 'sin ponderar'
+  if (fila.estado.endsWith('POR_HABILITAR')) return 'sin habilitar'
+  if (fila.estado.endsWith('POR_CONFIRMAR')) return 'sin cerrar'
+  return 'sin nota'
+}
+
 // ---------- Las cifras de la cabecera ----------
 
 export interface CifrasDeLaEtapa {
@@ -555,11 +583,18 @@ export interface CriterioDeLaTanda {
  *
  * ⚠️ **La clave es el NOMBRE del criterio, y el peso se queda con el de la
  * primera fila que lo traiga.** Es correcto porque dentro de una tanda el peso
- * es uniforme: sale de `peso_criterio` para la versión de pesos de la vacante y
- * el nivel de su puesto, así que las diecisiete filas de una vacante traen el
- * mismo peso para «Habilidades del puesto». Dejaría de serlo el día en que dos
- * filas de la misma tanda pudieran pesar distinto en el mismo criterio; hoy no
- * hay ningún camino que lo produzca.
+ * es uniforme, aunque venga de dos sitios distintos:
+ *
+ * - En el **currículum**, de `peso_criterio` para la versión de pesos de la
+ *   vacante y el nivel de su puesto: las diecisiete filas traen el mismo peso
+ *   para «Habilidades del puesto».
+ * - En la **prueba del puesto**, de los `puntos` de la propia rúbrica —que suman
+ *   100—, y por eso ahí el peso y el máximo son el mismo número. Es uniforme
+ *   porque la tanda entera se mide con la misma versión de la plantilla:
+ *   reconfigurar la etapa técnica se bloquea en cuanto alguien abre su prueba.
+ *
+ * Dejaría de serlo el día en que dos filas de la misma tanda pudieran pesar
+ * distinto en el mismo criterio; hoy no hay ningún camino que lo produzca.
  */
 export function criteriosDeLaTanda(filas: FilaRanking[]): CriterioDeLaTanda[] {
   const vistos = new Map<string, CriterioDeLaTanda>()
@@ -792,6 +827,35 @@ const NOMBRE_DEL_GRUPO: Record<string, string> = {
  */
 export const nombreDelGrupo = (grupo: string | null | undefined): string | null =>
   grupo == null ? null : (NOMBRE_DEL_GRUPO[grupo] ?? grupo.replaceAll('_', ' ').toLowerCase())
+
+/*
+  El mismo veredicto, en el ancho de una columna.
+
+  ⚠️ **La píldora decide el ancho de su columna, y «Potencial con riesgo» son
+  veinte caracteres** en una celda cuyo trabajo es leerse de un vistazo mientras
+  se barre la tabla en vertical. El nombre entero no se pierde: va en el título
+  emergente y en la leyenda de debajo, que es el mismo trato que reciben las
+  letras de los criterios.
+
+  ⚠️ **No se abrevia con puntos suspensivos ni con iniciales.** «No prior.» y
+  «P.c.R.» obligan a traducir cada fila; estos cuatro se leen solos. Y ninguno
+  dice menos de lo que dice el largo: «Con riesgo» es la mitad de «Potencial con
+  riesgo», pero es la mitad que decide.
+*/
+const CORTO_DEL_GRUPO: Record<string, string> = {
+  ALTA: 'Alta',
+  POTENCIAL_CON_RIESGO: 'Con riesgo',
+  NO_PRIORIZADO: 'No priorizado',
+  INCOMPATIBLE: 'Incompatible',
+}
+
+export const rotuloCortoDelGrupo = (grupo: string | null | undefined): string | null =>
+  grupo == null ? null : (CORTO_DEL_GRUPO[grupo] ?? nombreDelGrupo(grupo))
+
+/** Los cuatro veredictos que existen, para la leyenda: corto y entero. */
+export const VEREDICTOS: ReadonlyArray<{ corto: string; entero: string }> = Object.keys(
+  NOMBRE_DEL_GRUPO,
+).map((g) => ({ corto: CORTO_DEL_GRUPO[g]!, entero: NOMBRE_DEL_GRUPO[g]! }))
 
 // ---------- La ciudad y la pretensión, dichas ----------
 
@@ -1303,24 +1367,45 @@ export const columnasVisibles = (
 ): ColumnaDelRanking[] => columnas.filter((c) => !(c.ocultable && apagadas.has(c.clave)))
 
 /**
+ * Las etapas donde `notasCriterio` habla de lo que se está mirando.
+ *
+ * Son las del currículum —Perfil integral y Decisión, que enseñan los ocho
+ * criterios globales— **y la prueba del puesto**, que desde ahora trae los de su
+ * propia rúbrica.
+ *
+ * ⚠️ **No son la misma rúbrica, y por eso la cabecera se arma de las filas.** Los
+ * ocho del currículum son globales e iguales para toda la organización; los de
+ * una prueba son de SU plantilla, así que dos vacantes traen columnas distintas
+ * y las de una no se comparan con las de otra.
+ *
+ * En Simulación y Validación no hay nada que poner: sus criterios existen, pero
+ * el ranking no los trae en la fila.
+ */
+export const laEtapaTieneRubrica = (etapa: EtapaPanel): boolean =>
+  esDelCurriculum(etapa) || etapa === 'PRUEBA_PUESTO'
+
+/**
  * Las columnas de criterio que corresponde pintar, o ninguna.
  *
- * Dos condiciones, y las dos son necesarias:
+ * Tres condiciones, y las tres son necesarias:
  *
  * - **El interruptor.** Van apagadas por defecto. La tabla ya se sale de su
  *   envoltura con once columnas —está dicho en `Vacante.tsx`— y ocho criterios
  *   la llevarían a veinte. Quien las quiere, las enciende.
- * - **La etapa.** Solo donde los criterios hablan de lo que se está mirando:
- *   `notasCriterio` viene SIEMPRE del currículum, en las cinco pestañas. En
- *   «Prueba del puesto» serían ocho columnas del CV con pinta de ser de la
- *   prueba, que es exactamente el fallo que este archivo existe para no repetir.
+ * - **La etapa.** Solo las dos que califican con rúbrica: ver
+ *   {@link laEtapaTieneRubrica}.
+ * - **Que la tanda los traiga.** Es lo que decide de verdad, y por eso la
+ *   cabecera se arma de las filas. Una vacante que rinde el CUESTIONARIO
+ *   TÉCNICO en vez de la prueba del puesto no tiene rúbrica —se califica
+ *   pregunta a pregunta— y el backend devuelve la lista vacía: cero columnas, y
+ *   el interruptor ni sale.
  */
 export const criteriosQueSePintan = (
   etapa: EtapaPanel,
   filas: FilaRanking[],
   verCriterios: boolean,
 ): CriterioDeLaTanda[] =>
-  verCriterios && esDelCurriculum(etapa) ? criteriosDeLaTanda(filas) : []
+  verCriterios && laEtapaTieneRubrica(etapa) ? criteriosDeLaTanda(filas) : []
 
 // ---------- El Excel ----------
 

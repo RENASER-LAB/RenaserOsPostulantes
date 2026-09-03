@@ -1097,7 +1097,18 @@ thead .celdaCandidato {
 */
 .porQue {
   display: block;
-  max-width: 19ch;
+  /*
+   * ⚠️ **Diecinueve caracteres decidian el ancho de la columna Nota.** Debajo
+   * del guion iba la frase entera —«Hecha, pendiente de que el equipo la
+   * cierre»— y en las etapas de mas adelante casi ninguna fila tiene nota
+   * todavia, asi que ese parrafo salia en casi todas: una columna que enseña
+   * dos digitos medía diecinueve caracteres por lo de abajo.
+   *
+   * Ahora la celda lleva dos palabras y la frase entera vive en el titulo. Doce
+   * es lo que mide el mas largo de los siete rotulos —«no la ha hecho»— y por
+   * eso ninguno se parte.
+   */
+  max-width: 13ch;
   margin-left: auto;
   font-size: var(--t-micro);
   font-weight: 400;
@@ -1332,6 +1343,17 @@ thead .celdaCandidato {
  *
  * `white-space: nowrap` porque «Potencial con riesgo» partido en dos lineas
  * estira todas las filas de la tabla por una etiqueta de tres palabras.
+ */
+/*
+ * El veredicto.
+ *
+ * ⚠️ **La pildora decide el ancho de su columna.** Con el nombre entero —«
+ * Potencial con riesgo», veinte caracteres— esta columna medía mas que la de
+ * Candidato, para un dato de una palabra. Lleva el rotulo corto; el entero esta
+ * en el titulo y en la leyenda de debajo, igual que las letras de los criterios.
+ *
+ * ⚠️ **Sin semaforo, y es deliberado**: pintar «incompatible» en rojo convierte
+ * una fila de una mesa de trabajo en un veredicto. Fondo neutro para los cuatro.
  */
 .grupo {
   display: inline-block;

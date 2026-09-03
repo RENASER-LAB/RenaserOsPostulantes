@@ -42,6 +42,9 @@ import {
   nombreDelGrupo,
   ordenar,
   porQueNoHayNota,
+  porQueNoHayNotaCorto,
+  rotuloCortoDelGrupo,
+  VEREDICTOS,
   porPilar,
   SENALES,
   POR_QUE_NO_HAY_CIUDAD,
@@ -221,6 +224,70 @@ describe('por qué esa nota está vacía', () => {
     expect(porQueNoHayNota(fila('SIMULACION_POR_HABILITAR', null), 'SIMULACION')).toMatch(
       /El equipo no la ha habilitado/,
     )
+  })
+})
+
+describe('el motivo del guion, en dos palabras', () => {
+  /*
+    ⚠️ **La frase larga NO desaparece: se muda al título.** Este par existe
+    porque el texto entero decidía el ancho de la columna Nota, y en las etapas
+    de más adelante sale en casi todas las filas. Los dos tienen que hablar del
+    mismo caso, o la celda dirá una cosa y su título otra.
+  */
+  it('cada caso tiene su rótulo corto y su frase entera', () => {
+    const casos = [
+      ['PRUEBA_TURNO_CANDIDATO', 'no la ha hecho'],
+      ['PRUEBA_CALIFICANDO', 'sin ponderar'],
+      ['PRUEBA_POR_HABILITAR', 'sin habilitar'],
+      ['PRUEBA_POR_CONFIRMAR', 'sin cerrar'],
+    ] as const
+    for (const [estado, corto] of casos) {
+      expect(porQueNoHayNotaCorto(fila(estado, null), 'PRUEBA_PUESTO')).toBe(corto)
+      // Y la frase entera dice algo más, que es para lo que está.
+      expect(
+        porQueNoHayNota(fila(estado, null), 'PRUEBA_PUESTO').length,
+      ).toBeGreaterThan(corto.length)
+    }
+  })
+
+  /*
+    «En otra etapa» no dice cuál a propósito: la columna Estado, dos celdas más
+    allá, lo dice con todas sus letras. El título sí lo dice.
+  */
+  it('quien está en otra etapa no la nombra en la celda, pero sí en el título', () => {
+    const suya = fila('PERFIL_TURNO_CANDIDATO', null)
+    expect(porQueNoHayNotaCorto(suya, 'PRUEBA_PUESTO')).toBe('en otra etapa')
+    expect(porQueNoHayNota(suya, 'PRUEBA_PUESTO')).toContain('Perfil integral')
+  })
+
+  it('quien terminó su proceso lo dice, y no «en otra etapa»', () => {
+    expect(porQueNoHayNotaCorto(fila('NO_CONTINUA', null), 'PRUEBA_PUESTO')).toBe(
+      'proceso cerrado',
+    )
+  })
+})
+
+describe('el veredicto, en el ancho de una columna', () => {
+  it('cada grupo tiene un rótulo corto que no es una abreviatura', () => {
+    expect(rotuloCortoDelGrupo('ALTA')).toBe('Alta')
+    expect(rotuloCortoDelGrupo('POTENCIAL_CON_RIESGO')).toBe('Con riesgo')
+    // Ninguno más largo que el nombre entero, y ninguno abreviado con un punto.
+    for (const v of VEREDICTOS) {
+      expect(v.corto.length).toBeLessThanOrEqual(v.entero.length)
+      expect(v.corto).not.toContain('.')
+    }
+  })
+
+  it('sin grupo no se inventa una etiqueta', () => {
+    expect(rotuloCortoDelGrupo(null)).toBeNull()
+  })
+
+  /*
+    Un grupo que el backend añada mañana no puede desaparecer de la columna: cae
+    al nombre largo, que es ancho pero legible.
+  */
+  it('un grupo desconocido cae al nombre largo en vez de perderse', () => {
+    expect(rotuloCortoDelGrupo('SIN_CLASIFICAR')).toBe('sin clasificar')
   })
 })
 
@@ -1211,17 +1278,54 @@ describe('el mapa de calor de los criterios', () => {
   })
 
   /*
-    ⚠️ **Fuera del currículum no se pinta ninguna, y no es por el ancho.**
-    `notasCriterio` viene SIEMPRE de los criterios del currículum, en las cinco
-    pestañas. En «Prueba del puesto» serían ocho columnas del CV con pinta de ser
-    de la prueba: exactamente el fallo que este archivo existe para no repetir.
+    ⚠️ **Solo las dos etapas que califican con una rúbrica.**
+
+    En el perfil integral son los ocho criterios globales; en la prueba del
+    puesto, los de SU plantilla —caja, divisas, sedes—, que es lo que trae el
+    backend en esa pestaña desde que el ranking los pide. En Simulación,
+    Validación y Decisión no hay rúbrica que poner en columnas.
+
+    ⚠️ **La prueba del puesto se SUMA, no sustituye a nadie.** Decisión sigue
+    enseñando los ocho del currículum, que es lo que su ficha explica.
   */
-  it('fuera del currículum no se pinta ninguna, aunque el interruptor esté encendido', () => {
+  it('se pintan donde los criterios hablan de lo que se mira', () => {
     const filas = [fila('POSTULADA', 80, { notasCriterio: [nota('Resultados', 20, 25)] })]
-    expect(criteriosQueSePintan('PRUEBA_PUESTO', filas, true)).toEqual([])
-    expect(criteriosQueSePintan('SIMULACION', filas, true)).toEqual([])
     expect(criteriosQueSePintan('PERFIL_INTEGRAL', filas, true)).toHaveLength(1)
+    expect(criteriosQueSePintan('PRUEBA_PUESTO', filas, true)).toHaveLength(1)
     expect(criteriosQueSePintan('DECISION', filas, true)).toHaveLength(1)
+    expect(criteriosQueSePintan('SIMULACION', filas, true)).toEqual([])
+    expect(criteriosQueSePintan('VALIDACION', filas, true)).toEqual([])
+  })
+
+  /*
+    Una vacante que rinde el CUESTIONARIO TÉCNICO no tiene rúbrica: se califica
+    pregunta a pregunta, así que el backend devuelve la lista vacía y no hay
+    columnas que pintar. La etapa deja pasar, los datos deciden.
+  */
+  it('sin criterios en las filas no hay columnas, aunque la etapa las permita', () => {
+    const filas = [fila('POSTULADA', 80, { notasCriterio: [] })]
+    expect(criteriosQueSePintan('PRUEBA_PUESTO', filas, true)).toEqual([])
+  })
+
+  /*
+    ⚠️ **En la prueba el peso y el máximo son el mismo número, y está bien.**
+    La rúbrica reparte cien puntos: «Caja, 20 puntos» es a la vez lo que vale y
+    sobre cuánto puntúa. En el currículum son dos cosas distintas —un criterio
+    sobre 100 que pesa 25—, y por eso las dos viajan por separado.
+  */
+  it('en la prueba del puesto la columna se rotula con el código de su rúbrica', () => {
+    const criterios = criteriosDeLaTanda([
+      fila('PRUEBA_POR_CONFIRMAR', 78, {
+        notasCriterio: [
+          nota('Manejo y control de caja', 18, 20, { codigo: 'CAJA', peso: 20 }),
+          nota('Conocimiento de divisas', 9, 15, { codigo: 'DIVISAS', peso: 15 }),
+        ],
+      }),
+    ])
+    expect(criterios.map((c) => c.rotulo)).toEqual(['Caja', 'Divisas'])
+    expect(criterios.map((c) => c.inicial)).toEqual(['C', 'D'])
+    expect(criterios[0]!.peso).toBe(20)
+    expect(criterios[0]!.maximo).toBe(20)
   })
 
   it('apagado no pinta ninguna ni en el perfil integral', () => {

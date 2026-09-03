@@ -557,13 +557,24 @@ describe('el ranking filtra por la etapa de su pestaña', () => {
     verCorte('Toda la tanda')
     const tabla = within(laTabla())
     await waitFor(() => expect(tabla.queryByText('Fátima Quispe')).toBeTruthy())
+    /*
+      ⚠️ **En la celda va el rótulo corto y la frase entera en el título.** El
+      párrafo completo decidía el ancho de la columna Nota —diecinueve caracteres
+      bajo dos dígitos— y en esta pestaña sale en casi todas las filas.
+    */
     // Fátima y Rodrigo están en el perfil. Dice dónde están y no si ya pasaron
     // por la prueba: el estado retrocede, así que eso no se puede afirmar.
-    expect(tabla.getAllByText('Su proceso está en Perfil integral')).toHaveLength(2)
+    const enOtra = tabla.getAllByText('en otra etapa')
+    expect(enOtra).toHaveLength(2)
+    expect(enOtra[0]!.title).toBe('Su proceso está en Perfil integral')
     // Camila SÍ está parada en la prueba, y le toca a ella.
-    expect(tabla.getByText('Le toca a la persona: aún no la ha hecho')).toBeTruthy()
+    expect(tabla.getByText('no la ha hecho').title).toBe(
+      'Le toca a la persona: aún no la ha hecho',
+    )
     // Lucía terminó su proceso, que no es ninguna de las dos.
-    expect(tabla.getByText('Terminó su proceso sin nota de esta etapa')).toBeTruthy()
+    expect(tabla.getByText('proceso cerrado').title).toBe(
+      'Terminó su proceso sin nota de esta etapa',
+    )
   })
 
   it('«está aquí ahora» deja fuera de las cinco pestañas a quien ya terminó', async () => {
@@ -729,6 +740,65 @@ describe('los criterios como columnas de color', () => {
   const encender = () =>
     fireEvent.click(screen.getByRole('checkbox', { name: /Ver los criterios/ }))
 
+  /*
+    ⚠️ **En la prueba del puesto las columnas son las de SU rúbrica.**
+
+    Hasta aquí las cinco pestañas enseñaban las mismas ocho del currículum y en
+    la técnica se apagaban a propósito, porque eran ocho criterios del CV con
+    pinta de ser de la prueba. Ahora el ranking trae los de la plantilla que
+    rindió cada candidato —caja, divisas—, así que se pintan.
+
+    Se comprueba lo que decide el ancho: la cabecera es una letra, y el nombre
+    entero **con su peso** vive en el título y en la leyenda de debajo.
+  */
+  const CON_RUBRICA_DE_PRUEBA = [
+    fila(95, 'Rodrigo Ayala', 'PRUEBA_POR_CONFIRMAR', 78, {
+      notasCriterio: [
+        {
+          criterio: 'Manejo y control de caja',
+          codigo: 'CAJA',
+          puntaje: 18,
+          // ⚠️ En una rúbrica de prueba el peso y el máximo son el MISMO número:
+          // los cien puntos los reparte ella, criterio a criterio.
+          maximo: 20,
+          peso: 20,
+          explicacion: 'Cuadre diario con arqueo, en tres monedas.',
+          origen: 'AGENTE',
+          confianza: 90,
+          motivoAjuste: null,
+        },
+        {
+          criterio: 'Conocimiento del negocio de divisas',
+          codigo: 'DIVISAS',
+          puntaje: null,
+          maximo: 15,
+          peso: 15,
+          explicacion: null,
+          origen: null,
+          confianza: null,
+          motivoAjuste: null,
+        },
+      ],
+    }),
+  ]
+
+  it('en la prueba del puesto se pintan los criterios de su rúbrica', async () => {
+    await pintar(CON_RUBRICA_DE_PRUEBA)
+    irA('Prueba del puesto')
+    await waitFor(() =>
+      expect(screen.getByRole('checkbox', { name: /Ver los criterios/ })).toBeTruthy(),
+    )
+    encender()
+
+    const cabecera = within(laTabla()).getByText('C').closest('th')!
+    expect(cabecera.textContent).toBe('C')
+    expect(cabecera.title).toBe('Manejo y control de caja · peso 20')
+    // La nota se escribe sobre su máximo, que aquí es lo que vale el criterio.
+    expect(within(laTabla()).getByText('18/20')).toBeTruthy()
+    // Y la leyenda traduce la letra sin necesidad de ratón.
+    expect(screen.getByText('Caja')).toBeTruthy()
+  })
+
   it('arrancan apagados: la tabla no crece sin que nadie lo pida', async () => {
     await pintar(CON_CRITERIOS)
     expect(screen.getByRole('checkbox', { name: /Ver los criterios/ })).toHaveProperty(
@@ -756,7 +826,8 @@ describe('los criterios como columnas de color', () => {
     const cabecera = within(laTabla()).getByText('R').closest('th')!
     expect(cabecera.textContent).toBe('R')
     expect(cabecera.textContent).not.toContain('peso')
-    expect(cabecera.title).toBe('Resultados demostrables')
+    // El nombre entero Y su peso: los dos viven en el título, no bajo la letra.
+    expect(cabecera.title).toBe('Resultados demostrables · peso 25')
     expect(within(laTabla()).queryByText('Resultados demostrables')).toBeNull()
     expect(within(laTabla()).getByText('20/25')).toBeTruthy()
   })
@@ -881,7 +952,16 @@ describe('el veredicto es el grupo de prioridad', () => {
       fila(91, 'Rodrigo Ayala', 'PERFIL_POR_CONFIRMAR', 84, { grupoPrioridad: 'ALTA' }),
     ])
     expect(within(laTabla()).getByRole('columnheader', { name: 'Veredicto' })).toBeTruthy()
-    expect(within(laTabla()).getByText('Prioridad alta')).toBeTruthy()
+    /*
+      ⚠️ **La píldora lleva el rótulo corto y el nombre entero en el título.**
+      «Potencial con riesgo» son veinte caracteres y decidían el ancho de esta
+      columna entera; el nombre completo está en el título y en la leyenda de
+      debajo, igual que las letras de los criterios.
+    */
+    const pildora = within(laTabla()).getByText('Alta')
+    expect(pildora.title).toBe('Prioridad alta')
+    // Y la leyenda lo traduce sin necesidad de ratón.
+    expect(screen.getByText('Potencial con riesgo')).toBeTruthy()
   })
 
   /*

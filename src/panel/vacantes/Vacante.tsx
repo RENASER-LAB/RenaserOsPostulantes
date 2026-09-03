@@ -96,8 +96,11 @@ import {
   SENALES,
   lecturaDeLaNota,
   nombreDelGrupo,
+  rotuloCortoDelGrupo,
+  VEREDICTOS,
   ordenar,
   porQueNoHayNota,
+  porQueNoHayNotaCorto,
   pretensionDicha,
   queTraeLaTanda,
   recuentos,
@@ -861,15 +864,21 @@ function Ranking({
 
       {/*
         El interruptor de los criterios, solo donde los criterios hablan de esta
-        etapa. `notasCriterio` viene SIEMPRE del currículum: fuera del perfil
-        serían ocho columnas del CV con pinta de ser de la prueba.
+        etapa: ver `criteriosQueSePintan`.
+
+        ⚠️ **En la prueba del puesto las columnas son las de SU rúbrica**, no las
+        ocho del currículum: caja, divisas, sedes… Y por eso la condición de
+        salir no es la etapa sino que la tanda TRAIGA criterios. Una vacante que
+        rinde el cuestionario técnico no tiene rúbrica —se califica pregunta a
+        pregunta— y entonces el interruptor no sale, en vez de encenderse y no
+        añadir nada.
 
         Va apagado por defecto —la tabla ya se sale de su envoltura con once
         columnas— y dice cuántas columnas va a añadir, para que encenderlo no
         sorprenda.
       */}
       <div className={estilos.controlesDeColumnas}>
-        {delCurriculum && criteriosQueSePintan(etapa, filas, true).length > 0 && (
+        {criteriosQueSePintan(etapa, filas, true).length > 0 && (
           <p className={estilos.interruptorCriterios}>
             <label>
               <input
@@ -1001,11 +1010,19 @@ function Ranking({
                       key={columna.clave}
                       className={`${clase} ${estilos.cabeceraCriterio}`}
                       /*
-                        El nombre entero al pasar el cursor. La leyenda de debajo
-                        lo dice también y sin cursor: una letra sola no se puede
-                        dejar SOLO detrás de un hover.
+                        El nombre entero **y su peso** al pasar el cursor. La
+                        leyenda de debajo lo dice también y sin cursor: una letra
+                        sola no se puede dejar SOLO detrás de un hover.
+
+                        El peso va aquí y no bajo la letra porque es lo que se
+                        consulta al entender una nota, no al barrer la columna:
+                        en la cabecera estiraba la columna a 87 px.
                       */
-                      title={columna.completo}
+                      title={
+                        columna.peso === 0
+                          ? `${columna.completo} · no pondera: no mueve la nota final`
+                          : `${columna.completo} · peso ${columna.peso}`
+                      }
                     >
                       {/*
                         El nombre va en un bloque de ancho fijo, y no suelto en
@@ -1133,7 +1150,24 @@ function Ranking({
                       «no ha llegado» ni de «pasó sin nota».
                     */}
                     {fila.notaEtapa === null && (
-                      <span className={estilos.porQue}>{porQueNoHayNota(fila, etapa)}</span>
+                      /*
+                        ⚠️ **En dos palabras, con la frase entera en el título.**
+                        El motivo se pintaba completo y, como en las etapas de
+                        más adelante casi ninguna fila tiene nota todavía, salía
+                        en casi todas: una columna que enseña dos dígitos medía
+                        diecinueve caracteres de ancho por un párrafo de debajo.
+
+                        Es el mismo trato que ya reciben las letras de los
+                        criterios —corto en la celda, entero en el título— y no
+                        se pierde nada: «en otra etapa» además tiene la columna
+                        Estado al lado diciendo cuál.
+                      */
+                      <span
+                        className={estilos.porQue}
+                        title={porQueNoHayNota(fila, etapa)}
+                      >
+                        {porQueNoHayNotaCorto(fila, etapa)}
+                      </span>
                     )}
                   </td>
                   {/*
@@ -1160,10 +1194,19 @@ function Ranking({
                     El guion es «la IA todavía no ha calificado su currículum»:
                     el grupo se asigna al terminar esa pasada.
                   */}
-                  <td>
-                    {nombreDelGrupo(fila.grupoPrioridad) ? (
-                      <span className={estilos.grupo}>
-                        {nombreDelGrupo(fila.grupoPrioridad)}
+                  <td className={estilos.columnaCifra}>
+                    {rotuloCortoDelGrupo(fila.grupoPrioridad) ? (
+                      <span
+                        className={estilos.grupo}
+                        /*
+                          El nombre entero al pasar el cursor, y en la leyenda de
+                          debajo para quien no usa el ratón. «Potencial con
+                          riesgo» son veinte caracteres y decidían el ancho de
+                          esta columna entera.
+                        */
+                        title={nombreDelGrupo(fila.grupoPrioridad) ?? undefined}
+                      >
+                        {rotuloCortoDelGrupo(fila.grupoPrioridad)}
                       </span>
                     ) : (
                       '—'
@@ -1305,6 +1348,25 @@ function Ranking({
         teclado ni en una impresión—. La tabla se estrecha arriba y el precio se
         paga una vez aquí abajo, no una vez por celda.
       */}
+      {/*
+        Qué es cada veredicto, para quien no pasa el cursor.
+
+        La píldora dice «Con riesgo» y el nombre entero es «Potencial con
+        riesgo»: lo mismo que pasa con las letras de los criterios, y se paga en
+        el mismo sitio —una vez aquí abajo, y no una vez por celda—.
+
+        ⚠️ Sale con la columna: si alguien la apaga, esta línea sobra.
+      */}
+      {ve('veredicto') && (
+        <p className={estilos.leyendaLetras}>
+          {VEREDICTOS.map((v) => (
+            <span key={v.corto} title={v.entero}>
+              <b>{v.corto}</b> {v.entero}
+            </span>
+          ))}
+        </p>
+      )}
+
       {criterios.filter((c) => ve(`criterio:${c.nombre}`)).length > 0 && (
         <p className={estilos.leyendaLetras}>
           {criterios
