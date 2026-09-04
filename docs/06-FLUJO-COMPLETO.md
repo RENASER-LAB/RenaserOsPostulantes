@@ -1,6 +1,6 @@
 # De la solicitud a la decisión: el proceso entero
 
-Última actualización: 2026-09-01
+Última actualización: 2026-09-04
 
 **Los pasos 1 a 5 están corridos** contra el backend local con
 `herramientas/e2e/14-vacante.spec.ts`, y **la mitad del paso 0 que escribe una prueba**,
@@ -367,6 +367,30 @@ salen **las dos tablas** —el CV criterio a criterio y la evaluación del banco
 con la nota, el porqué y la evidencia citada por la IA en cada respuesta
 abierta—; en Prueba y Simulación, su rúbrica; en Validación, el periodo y sus
 métricas.
+
+En Perfil integral y Decisión va además **«Hallazgos»** (04/09/2026): lo que el
+agente marcó del candidato, cada uno con su frase y con en qué se basa. Agrupados
+por tipo, que es el orden en que se leen: **fortaleza, riesgo crítico, riesgo
+desarrollable y falta de evidencia**. Una falta de evidencia no es un riesgo —un
+riesgo es algo que la persona hace mal, un hueco es algo que no sabemos— y suele
+ser lo que decide qué preguntar en la entrevista.
+
+⚠️ **No sale en la ficha de la prueba del puesto, aunque la columna de Veredicto
+sí esté ahí.** Ese veredicto lo escribe la etapa 1 y no se recalcula por etapa,
+así que para saber cuál es el riesgo de un «Con riesgo» hay que abrir a esa misma
+persona en la pestaña de Perfil integral. Se probó a enseñarlo también en la
+prueba y se quitó: ahí «¿Por qué contratarlo?» y «Lectura de la prueba» salen
+enteros de la rúbrica de esa prueba, y una segunda lista de fortalezas sacada del
+currículum invita a confundir las dos fuentes.
+
+⚠️ **«Con riesgo» no significa que haya un riesgo crítico.** Caen en ese grupo
+dos poblaciones: quien llega a la nota alta arrastrando un riesgo crítico, y quien
+se queda entre los dos cortes de nota sin arrastrar ninguno.
+
+⚠️ **Las alertas —`CONTRADICCION`, `DEMASIADO_IDEAL`— no se pintan en ninguna
+pantalla**, aunque el ranking las cuente en su columna. Una alerta no descarta a
+nadie (RF-64): es una pregunta para la conversación final. Hoy ese contador no se
+puede abrir.
 
 1. Se marca la casilla de quienes avanzan.
 2. Se escribe **un motivo**, obligatorio, que vale para toda la tanda.
