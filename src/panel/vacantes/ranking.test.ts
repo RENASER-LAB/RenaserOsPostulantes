@@ -59,6 +59,7 @@ import {
   SIN_FILTROS,
   notaDelCriterio,
   tonoDelCriterio,
+  desgloseDelPonderado,
 } from './ranking'
 import type { FilaRanking, NotaCriterio, RespuestaAbiertaVista } from '../api/tipos'
 
@@ -886,14 +887,37 @@ describe('cuántas columnas tiene la tabla', () => {
     lista, añadir una columna no puede volver a descuadrarlo.
   */
   /*
-    Nueve en las cinco. Adecuación, Potencial y Riesgos dejaron de ser columnas
-    —se leen en la ficha, con su explicación al lado— y con ellas se fue lo
-    último que cambiaba con la etapa.
+    Ocho en cuatro etapas y nueve en la prueba del puesto.
+
+    Adecuación, Potencial y Riesgos dejaron de ser columnas —se leen en la ficha,
+    con su explicación al lado—, y con ellas se fue lo último que cambiaba con la
+    etapa... hasta que llegó el Ponderado, que vuelve a hacer que el recuento
+    dependa de la pestaña. De ahí que este test cuente los dos casos: si mañana
+    alguien pusiera el Ponderado en todas, el `colSpan` de las otras cuatro se
+    descuadraría en silencio y esta es la prueba que lo caza.
   */
-  it('ocho en las cinco etapas: ya no hay columnas del retrato del currículum', () => {
-    for (const etapa of ['PRUEBA_PUESTO', 'SIMULACION', 'PERFIL_INTEGRAL', 'DECISION'] as const) {
+  it('ocho en cuatro etapas y nueve en la prueba del puesto', () => {
+    for (const etapa of ['SIMULACION', 'PERFIL_INTEGRAL', 'DECISION'] as const) {
       expect(columnasDelRanking(etapa)).toHaveLength(8)
     }
+    expect(columnasDelRanking('PRUEBA_PUESTO')).toHaveLength(9)
+  })
+
+  it('el ponderado solo es columna en la prueba del puesto', () => {
+    for (const etapa of ['SIMULACION', 'PERFIL_INTEGRAL', 'DECISION', 'VALIDACION'] as const) {
+      expect(columnasDelRanking(etapa).map((c) => c.clave)).not.toContain('ponderado')
+    }
+    expect(columnasDelRanking('PRUEBA_PUESTO').map((c) => c.clave)).toContain('ponderado')
+  })
+
+  /*
+    Se puede apagar como cualquier otra: es una cifra de apoyo, y quien esté
+    comparando otra cosa tiene que poder quitarla de en medio.
+  */
+  it('el ponderado se puede apagar, y entonces la tabla vuelve a ocho', () => {
+    const todas = columnasDelRanking('PRUEBA_PUESTO')
+    expect(todas.find((c) => c.clave === 'ponderado')?.ocultable).toBe(true)
+    expect(columnasVisibles(todas, new Set(['ponderado']))).toHaveLength(8)
   })
 
   /*
@@ -987,15 +1011,26 @@ describe('cuántas columnas tiene la tabla', () => {
     La ciudad se movio al final —separaba el nombre de sus cifras— asi que ahora
     es la ultima ordenable, no la segunda.
   */
-  it('se ordena por cuatro, y la ciudad es la ultima', () => {
+  it('se ordena por cinco en la prueba del puesto, y la ciudad es la ultima', () => {
     const columnas = columnasDelRanking('PRUEBA_PUESTO')
     expect(columnas.filter((c) => c.ordenable).map((c) => c.ordenable)).toEqual([
       'nombre',
       'pretension',
       'nota',
+      // El ponderado se ordena: una columna para comparar que no se puede
+      // ordenar obliga a barrer la tabla con el dedo.
+      'ponderado',
       'ciudad',
     ])
     expect(columnas.at(-1)?.clave).toBe('ciudad')
+  })
+
+  it('en las demas etapas se sigue ordenando por cuatro', () => {
+    expect(
+      columnasDelRanking('PERFIL_INTEGRAL')
+        .filter((c) => c.ordenable)
+        .map((c) => c.ordenable),
+    ).toEqual(['nombre', 'pretension', 'nota', 'ciudad'])
   })
 
   /*
@@ -1776,7 +1811,9 @@ describe('una columna entera vacía no se pinta: se dice por qué', () => {
   it('sin las dos, la tabla baja de ocho a seis columnas', () => {
     const nada = { hayCiudad: false, hayPretension: false, puedeVerPretension: true }
     expect(columnasDelRanking('PERFIL_INTEGRAL', nada)).toHaveLength(6)
-    expect(columnasDelRanking('PRUEBA_PUESTO', nada)).toHaveLength(6)
+    // Una más en la prueba del puesto: el Ponderado no depende de lo que traiga
+    // la tanda, sino de la pestaña, así que no se va con la ciudad y la pretensión.
+    expect(columnasDelRanking('PRUEBA_PUESTO', nada)).toHaveLength(7)
   })
 
   it('con solo una de las dos, ocho menos una', () => {
@@ -1804,7 +1841,7 @@ describe('una columna entera vacía no se pinta: se dice por qué', () => {
     })
       .filter((c) => c.ordenable)
       .map((c) => c.ordenable)
-    expect(ordenables).toEqual(['nombre', 'nota'])
+    expect(ordenables).toEqual(['nombre', 'nota', 'ponderado'])
   })
 
   /*
@@ -1850,5 +1887,69 @@ describe('una columna entera vacía no se pinta: se dice por qué', () => {
     expect(porQueNoHayPretension(false)).toContain('Dirección')
     expect(porQueNoHayPretension(true)).toContain('Ninguno de estos candidatos declaró')
     expect(porQueNoHayPretension(true)).not.toContain('permiso')
+  })
+})
+
+describe('el desglose del ponderado', () => {
+  const conPonderado = (
+    ponderado: FilaRanking['ponderado'],
+  ): FilaRanking => ({ ...fila('PRUEBA_CALIFICANDO', null), ponderado })
+
+  it('con las dos notas nombra las tres cifras y avisa de que no es la final', () => {
+    const dicho = desgloseDelPonderado(
+      conPonderado({ sobre100: 78.14, cv: 76.5, perfil: 82, prueba: 73 }),
+    )
+    expect(dicho).toContain('78.14')
+    expect(dicho).toContain('82')
+    expect(dicho).toContain('73')
+    expect(dicho).toContain('76.5')
+    // Lo que impide que la columna se lea como el resultado del proceso.
+    expect(dicho).toContain('No es la nota final')
+  })
+
+  /*
+    ⚠️ **Dice «incluye la nota del curriculum», no «funde curriculum y banco».**
+    La segunda dejaria de ser cierta el dia que el componente psicometrico deje
+    de pesar 0, y entonces la pantalla estaria afirmando algo que ya no pasa.
+  */
+  it('no promete que el perfil integral sea solo curriculum y banco', () => {
+    const dicho = desgloseDelPonderado(
+      conPonderado({ sobre100: 78.14, cv: 76.5, perfil: 82, prueba: 73 }),
+    )
+    expect(dicho).toContain('incluye la nota del curriculum')
+    expect(dicho).not.toContain('banco de preguntas')
+  })
+
+  it('sin la nota de la prueba dice cual falta y ensena la que hay', () => {
+    const dicho = desgloseDelPonderado(
+      conPonderado({ sobre100: null, cv: 76.5, perfil: 82, prueba: null }),
+    )
+    expect(dicho).toContain('falta la de la prueba del puesto')
+    expect(dicho).toContain('82')
+  })
+
+  it('sin la nota del perfil dice cual falta', () => {
+    const dicho = desgloseDelPonderado(
+      conPonderado({ sobre100: null, cv: null, perfil: null, prueba: 73 }),
+    )
+    expect(dicho).toContain('falta la del perfil integral')
+    expect(dicho).toContain('73')
+  })
+
+  it('sin ninguna de las dos lo dice en una frase, sin cifras inventadas', () => {
+    const dicho = desgloseDelPonderado(
+      conPonderado({ sobre100: null, cv: null, perfil: null, prueba: null }),
+    )
+    expect(dicho).toContain('faltan las dos notas')
+  })
+
+  /*
+    Un backend anterior al cambio no manda el campo: llega `undefined`, no
+    `null`. No puede reventar ni afirmar nada.
+  */
+  it('un backend que todavia no manda el campo no rompe la celda', () => {
+    expect(desgloseDelPonderado(fila('PRUEBA_CALIFICANDO', null))).toContain(
+      'faltan las dos notas',
+    )
   })
 })

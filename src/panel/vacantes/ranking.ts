@@ -143,6 +143,75 @@ export const recuentos = (filas: FilaRanking[], etapa: EtapaPanel) => ({
   toda: filas.length,
 })
 
+// ---------- El ponderado de lo ya rendido ----------
+
+/**
+ * Lo que la cabecera «Ponderado» dice al pasar el raton por encima.
+ *
+ * ⚠️ **Tiene que decir que NO es la nota final, y por eso es tan larga.** Una
+ * columna llamada «Ponderado» al lado de una llamada «Nota» se lee como el
+ * resultado del proceso, y no lo es: el resultado lo calcula la Decision con las
+ * cuatro etapas y es el que se compara con los umbrales. Esta mezcla dos.
+ */
+export const PONDERADO_EXPLICADO =
+  'Ponderado sobre 100 de lo que ya rindio: el perfil integral —que ya incluye la ' +
+  'nota del curriculum— y la prueba del puesto, reescalados sobre la suma de SUS ' +
+  'pesos. No es la nota final: esa se calcula en la Decision, con las cuatro etapas.'
+
+/** Una cifra para leer, o una raya si no esta. */
+const dicha = (valor: number | null | undefined): string =>
+  valor == null ? '—' : String(valor)
+
+/**
+ * El desglose, al pasar el raton por la celda.
+ *
+ * Enseña las tres cifras con las que la cuenta se rehace a mano, y cuando no hay
+ * ponderado dice **cual de las dos notas falta**, que es lo accionable: manda a
+ * la pestaña donde esa persona esta parada.
+ *
+ * ⚠️ **No usa `porQueNoHayNota`.** Aquella enumera cinco motivos sobre donde
+ * esta parada la persona, y «falta la nota del perfil integral» no es ninguno de
+ * los cinco: seria contestar otra pregunta con cara de contestar esta.
+ *
+ * ⚠️ La frase dice «el perfil integral ya incluye la del curriculum», y **no**
+ * «funde el curriculum y el banco», aunque hoy sea eso: la segunda dejaria de
+ * ser cierta el dia que el componente psicometrico deje de pesar 0, y la
+ * pantalla no puede quedarse diciendo una cosa que ya no pasa.
+ */
+export function desgloseDelPonderado(fila: FilaRanking): string {
+  const suyo = fila.ponderado
+  const hayPerfil = suyo?.perfil != null
+  const hayPrueba = suyo?.prueba != null
+
+  if (suyo?.sobre100 != null) {
+    return (
+      `Ponderado ${suyo.sobre100} sobre 100, de las dos etapas que ya existen: ` +
+      `perfil integral ${dicha(suyo.perfil)} y prueba del puesto ${dicha(suyo.prueba)}, ` +
+      'reescaladas sobre la suma de sus pesos. El perfil integral ya incluye la ' +
+      `nota del curriculum, que es ${dicha(suyo.cv)}. No es la nota final: esa se ` +
+      'calcula en la Decision, con las cuatro etapas.'
+    )
+  }
+
+  if (!hayPerfil && !hayPrueba) {
+    return (
+      'Todavia no hay ponderado: faltan las dos notas que lo componen, la del ' +
+      'perfil integral y la del puesto.'
+    )
+  }
+
+  const cual = hayPerfil ? 'la de la prueba del puesto' : 'la del perfil integral'
+  const laQueHay = hayPerfil
+    ? `La del perfil integral si esta: ${dicha(suyo?.perfil)} (incluye la nota del ` +
+      `curriculum, que es ${dicha(suyo?.cv)}).`
+    : `La de la prueba del puesto si esta: ${dicha(suyo?.prueba)}.`
+
+  return (
+    `Todavia no hay ponderado: falta ${cual}. ${laQueHay} Con una sola de las dos, ` +
+    'el «ponderado» seria esa misma nota repetida, no una mezcla.'
+  )
+}
+
 // ---------- Por que esa nota esta vacia ----------
 
 /**
@@ -947,7 +1016,7 @@ export const pretensionParaOrdenar = (fila: FilaRanking): number | null =>
 
 // ---------- Ordenar ----------
 
-export type ColumnaOrdenable = 'nombre' | 'ciudad' | 'nota' | 'pretension'
+export type ColumnaOrdenable = 'nombre' | 'ciudad' | 'nota' | 'pretension' | 'ponderado'
 export type Sentido = 'asc' | 'desc'
 
 export interface Orden {
@@ -967,6 +1036,8 @@ const SENTIDO_INICIAL: Record<ColumnaOrdenable, Sentido> = {
   ciudad: 'asc',
   nota: 'desc',
   pretension: 'asc',
+  // Como la nota, y por lo mismo: se pide para ver quién va arriba.
+  ponderado: 'desc',
 }
 
 /**
@@ -1014,8 +1085,14 @@ function elHuecoAlFinal(a: unknown, b: unknown): number | null {
 const textoDe = (fila: FilaRanking, columna: ColumnaOrdenable): string | null =>
   columna === 'nombre' ? (fila.candidato ?? null) : (fila.ciudad ?? null)
 
-const cifraDe = (fila: FilaRanking, columna: ColumnaOrdenable): number | null =>
-  columna === 'nota' ? (fila.notaEtapa ?? null) : pretensionParaOrdenar(fila)
+const cifraDe = (fila: FilaRanking, columna: ColumnaOrdenable): number | null => {
+  if (columna === 'nota') return fila.notaEtapa ?? null
+  // `?? null` y no `!= null`: `undefined` —el backend viejo, que no manda el
+  // campo— tiene que caer del mismo lado que un nulo, o el comparador restaría
+  // sobre él y devolvería NaN, que deja la tabla en un orden cualquiera.
+  if (columna === 'ponderado') return fila.ponderado?.sobre100 ?? null
+  return pretensionParaOrdenar(fila)
+}
 
 function comparadorDe(orden: Orden): (a: FilaRanking, b: FilaRanking) => number {
   const signo = orden.sentido === 'asc' ? 1 : -1
@@ -1348,6 +1425,29 @@ export function columnasDelRanking(
       compartida, y una palabra pegada al borde derecho junto a la columna de
       números se lee como si fuera otro número.
     */
+    /*
+      ⚠️ **La primera columna que depende de la ETAPA y no de lo que traiga la
+      tanda.** Pretensión y ciudad aparecen si alguien las declaró; esta aparece
+      según en qué pestaña estés, así que la condición es el literal y no hay
+      ayudante que reutilizar.
+
+      Solo aquí porque solo aquí significa algo: mezcla el perfil integral con la
+      prueba, y en la pestaña del perfil la mitad de la cuenta todavía no puede
+      existir para nadie. En simulación y validación ya hay notas posteriores, y
+      una cifra que las ignora invita a decidir con información vieja.
+    */
+    ...(etapa === 'PRUEBA_PUESTO'
+      ? ([
+          {
+            clave: 'ponderado',
+            titulo: 'Ponderado',
+            completo: PONDERADO_EXPLICADO,
+            cifra: true,
+            ordenable: 'ponderado',
+            ocultable: true,
+          },
+        ] as ColumnaDelRanking[])
+      : []),
     { clave: 'veredicto', titulo: 'Veredicto', estrecha: true, ocultable: true },
     ...criterios.map(
       (c): ColumnaDelRanking => ({
@@ -1461,6 +1561,7 @@ const ROTULO_DE_COLUMNA: Record<ColumnaOrdenable, string> = {
   ciudad: 'Ciudad',
   nota: 'Nota',
   pretension: 'Pretensión',
+  ponderado: 'Ponderado',
 }
 
 /**

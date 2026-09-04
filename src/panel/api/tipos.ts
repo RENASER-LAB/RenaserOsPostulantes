@@ -445,6 +445,32 @@ export interface FilaRanking {
   alertas: number
   actualizadoEn: FechaIso | null
   notasCriterio: NotaCriterio[]
+  /**
+   * Lo que lleva rendido, sobre 100.
+   *
+   * Opcional a proposito: un backend anterior al cambio no manda el campo, y
+   * entonces llega `undefined`, no `null`. Quien lo pinte comprueba con `!=
+   * null` —que cubre los dos— y nunca con `!== null`.
+   */
+  ponderado?: Ponderado | null
+}
+
+/**
+ * Lo ya rendido: las dos etapas que existen, reescaladas sobre 100.
+ *
+ * `sobre100` viene vacio mientras falte cualquiera de las dos notas. Las tres
+ * cifras del desglose se pueden quedar vacias por su cuenta sin que eso anule
+ * el total, y con ellas la cuenta se rehace a mano.
+ *
+ * ⚠️ **No hay nota del banco de preguntas, y no es un olvido**: esa no se
+ * guarda suelta en ninguna parte. `perfil` ya la contiene, mezclada con la del
+ * curriculum.
+ */
+export interface Ponderado {
+  sobre100: number | null
+  cv: number | null
+  perfil: number | null
+  prueba: number | null
 }
 
 /**
