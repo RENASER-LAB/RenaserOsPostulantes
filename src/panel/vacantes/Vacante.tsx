@@ -102,6 +102,7 @@ import {
   ordenar,
   porQueNoHayNota,
   porQueNoHayNotaCorto,
+  desgloseDelPonderado,
   pretensionDicha,
   queTraeLaTanda,
   recuentos,
@@ -1263,6 +1264,36 @@ function Ranking({
                       </span>
                     )}
                   </td>
+                  {/*
+                    ⚠️ **La misma condición que su cabecera, o la fila se
+                    desalinea entera.** La cabecera sale de `columnasDelRanking`
+                    y el cuerpo se pinta a mano aquí: `ve('ponderado')` es lo
+                    único que cubre las dos cosas —que la pestaña sea la de la
+                    prueba, y que nadie haya apagado la columna—.
+                  */}
+                  {ve('ponderado') && (
+                    <td className={`${tabla.cifra} ${estilos.columnaCifra}`}>
+                      {/*
+                        El desglose va en el título y no en la celda: son tres
+                        cifras más y una frase, y esta columna existe para
+                        ocupar lo mínimo. Se pone en los dos casos —con cifra y
+                        sin ella— porque en el segundo es cuando más falta hace:
+                        dice cuál de las dos notas falta.
+                      */}
+                      {fila.ponderado?.sobre100 != null ? (
+                        <span title={desgloseDelPonderado(fila)}>
+                          {fila.ponderado.sobre100}
+                        </span>
+                      ) : (
+                        <span
+                          className={estilos.porQue}
+                          title={desgloseDelPonderado(fila)}
+                        >
+                          —
+                        </span>
+                      )}
+                    </td>
+                  )}
                   {/*
                     ⚠️ **El veredicto es el grupo de prioridad, no una etiqueta
                     nueva.** El informe del cliente traía un «Fuerte / Sólido /

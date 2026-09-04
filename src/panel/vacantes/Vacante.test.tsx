@@ -810,6 +810,61 @@ describe('los criterios como columnas de color', () => {
     expect(screen.getByText('Caja')).toBeTruthy()
   })
 
+  /*
+    ⚠️ **La columna del ponderado es la unica que depende de la PESTAÑA.** Todas
+    las demas dependen de lo que traiga la tanda. Si se colara en las otras
+    cuatro, ensenaria la misma cifra bajo cinco cabeceras distintas —el fallo del
+    «76 calificados encima de setenta y ocho guiones» otra vez—.
+  */
+  it('el ponderado se ve en la prueba del puesto y en ninguna otra pestana', async () => {
+    await pintar([
+      fila(95, 'Rodrigo Ayala', 'PRUEBA_CALIFICANDO', 73, {
+        ponderado: { sobre100: 78.14, cv: 76.5, perfil: 82, prueba: 73 },
+      }),
+    ])
+
+    expect(within(laTabla()).queryByText('Ponderado')).toBeNull()
+
+    irA('Prueba del puesto')
+    await waitFor(() => expect(within(laTabla()).getByText('Ponderado')).toBeTruthy())
+    expect(within(laTabla()).getByText('78.14')).toBeTruthy()
+  })
+
+  /** El desglose no ocupa columnas: vive en el titulo de la celda. */
+  it('el desglose de las tres notas viaja en el titulo, no en la tabla', async () => {
+    await pintar([
+      fila(95, 'Rodrigo Ayala', 'PRUEBA_CALIFICANDO', 73, {
+        ponderado: { sobre100: 78.14, cv: 76.5, perfil: 82, prueba: 73 },
+      }),
+    ])
+    irA('Prueba del puesto')
+    await waitFor(() => expect(within(laTabla()).getByText('Ponderado')).toBeTruthy())
+
+    const celda = within(laTabla()).getByText('78.14')
+    expect(celda.title).toContain('perfil integral 82')
+    expect(celda.title).toContain('prueba del puesto 73')
+    expect(celda.title).toContain('76.5')
+  })
+
+  /*
+    Sin las dos notas, un guion — y el titulo diciendo CUAL falta, que es lo
+    accionable: manda a la pestaña donde esa persona esta parada.
+  */
+  it('sin las dos notas pinta un guion que dice cual falta', async () => {
+    // Rindio la prueba —por eso tiene nota de etapa y no se cae del corte— y su
+    // perfil integral todavia no esta calificado: sin las dos no hay mezcla.
+    await pintar([
+      fila(95, 'Rodrigo Ayala', 'PRUEBA_CALIFICANDO', 73, {
+        ponderado: { sobre100: null, cv: null, perfil: null, prueba: 73 },
+      }),
+    ])
+    irA('Prueba del puesto')
+    await waitFor(() => expect(within(laTabla()).getByText('Ponderado')).toBeTruthy())
+
+    const elPorQue = within(laTabla()).getByTitle(/falta la del perfil integral/)
+    expect(elPorQue.textContent).toBe('—')
+  })
+
   it('arrancan apagados: la tabla no crece sin que nadie lo pida', async () => {
     await pintar(CON_CRITERIOS)
     expect(screen.getByRole('checkbox', { name: /Ver los criterios/ })).toHaveProperty(

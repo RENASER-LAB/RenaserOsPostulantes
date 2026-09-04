@@ -402,6 +402,31 @@ página: comparar es la razón de estar ahí, y perder la tabla para ver un
 detalle rompe la comparación. Dentro va el perfil integral, con lo que la
 calificación tuvo en cuenta y por qué.
 
+### El ponderado de lo ya rendido (04/09/2026)
+
+En la pestaña **Prueba del puesto**, y solo en ella, la tabla trae una columna
+más: **Ponderado**. Es lo que el candidato lleva sacado sobre 100 contando las
+dos etapas que ya ocurrieron —el perfil integral, que por dentro es el currículum
+y el banco de preguntas, y la prueba—, reescaladas sobre la suma de sus pesos.
+
+Existe porque hasta que las cuatro etapas terminan **no hay ninguna cifra que
+compare la tanda**, y a quién seguir se decide mucho antes. Solo sale en esa
+pestaña: en la del perfil la mitad de la cuenta todavía no puede existir para
+nadie, y en simulación y validación ya hay notas posteriores que una cifra que
+las ignora invitaría a pasar por alto.
+
+Ocupa lo mínimo —una columna de cifra, que se puede apagar como cualquier otra— y
+**el desglose vive en el título**: al pasar el ratón se leen las tres notas con
+las que hay detrás de la cifra, currículum, perfil integral y prueba. Cuando
+no hay cifra, el guion dice **cuál de las dos notas falta**, que es lo accionable.
+
+Se puede ordenar por ella, y va también al Excel del ranking.
+
+⚠️ **No es la nota final.** La final la calcula la Decisión con las cuatro etapas
+y es la que se compara con los umbrales del semáforo. Esta mezcla dos, y por eso
+el título emergente lo dice con todas las letras: una columna llamada «Ponderado»
+al lado de una llamada «Nota» se leería como el resultado del proceso.
+
 ### Ordenar la mesa (01/09/2026)
 
 Cuatro cabeceras se pulsan: **Candidato**, **Ciudad**, la **nota** de la etapa y
