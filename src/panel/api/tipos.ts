@@ -684,9 +684,51 @@ export interface PasoHistorialPanel {
   ocurridaEn: FechaIso
 }
 
+/**
+ * Lo que el agente POTENCIAL_RIESGO marcó al cerrar el perfil integral.
+ *
+ * ⚠️ **`descripcion`, no `texto`.** Esta interfaz declaraba `texto`, un campo
+ * que el backend no manda en ninguna versión: `HallazgoResponse` es
+ * `(tipo, descripcion, evidencia, esCanalizable, sugerencia)`. La ficha pintaba
+ * la etiqueta —FORTALEZA, RIESGO CRITICO— seguida de un `undefined` que React
+ * no dibuja, así que durante meses la lista fue una columna de rótulos sin una
+ * sola frase. Los cinco nombres de aquí son ahora los del backend, letra por
+ * letra: si uno cambia allá, TypeScript no lo va a notar y esto vuelve a pasar.
+ *
+ * Los cinco tipos —FORTALEZA · RIESGO_CRITICO · RIESGO_DESARROLLABLE ·
+ * PREFERENCIA · FALTA_EVIDENCIA— no se mezclan entre sí: un riesgo que se puede
+ * corregir y algo que sencillamente no sabemos no son lo mismo.
+ */
 export interface Hallazgo {
   tipo: string
-  texto: string
+  /** Qué es, en una frase. */
+  descripcion: string
+  /** En qué se basó. Puede faltar. */
+  evidencia: string | null
+  /** Si es de las cosas que se pueden trabajar dentro. */
+  esCanalizable: boolean
+  /** Qué hacer con eso, cuando el agente propuso algo. */
+  sugerencia: string | null
+}
+
+/**
+ * Una alerta del perfil: `CONTRADICCION` o `DEMASIADO_IDEAL`.
+ *
+ * ⚠️ **Nunca descarta a nadie (RF-64)**: es una pregunta para la conversación
+ * final, no un veredicto. La `CONTRADICCION` no la escribe la IA — la levanta el
+ * sistema comparando dos respuestas de la misma persona entre sí.
+ *
+ * ⚠️ **Se declara pero HOY no se pinta en ninguna pantalla.** Está aquí porque
+ * el backend la manda y un tipo que calla lo que llega es el que produjo el
+ * fallo de `Hallazgo`: la ficha enseña solo fortalezas, riesgos y faltas de
+ * evidencia, por decisión, y las alertas se quedaron fuera. El ranking sigue
+ * contándolas, así que ese número no se puede abrir en ninguna parte; el día que
+ * se quiera, la lista está a una línea de distancia.
+ */
+export interface AlertaDelPerfil {
+  tipo: string
+  descripcion: string
+  creadoEn: FechaIso
 }
 
 export interface PerfilIntegral {
@@ -701,6 +743,11 @@ export interface PerfilIntegral {
   actualizadoEn: FechaIso | null
   hallazgos: Hallazgo[]
   notasCriterio: NotaCriterio[]
+  /**
+   * Puede llegar sin definir contra un backend anterior al campo. Quien la pinte
+   * la trata como lista vacía, que es lo que era hasta ahora en la práctica.
+   */
+  alertas?: AlertaDelPerfil[]
 }
 
 // ---------- Simulacion ----------

@@ -282,15 +282,25 @@ const sinRuido = {
     al abrir la primera ficha. Estas son las primeras pruebas que abren una fila,
     así que el doble tiene que parecerse a la respuesta de verdad.
   */
-  verPerfilIntegral: () =>
-    Promise.resolve({
-      estadoCalificacion: 'TERMINADA',
-      resumen: null,
-      hallazgos: [],
-      notasCriterio: [],
-      alertas: [],
-    }),
+  verPerfilIntegral: () => Promise.resolve(PERFIL),
 }
+
+/**
+ * El perfil de quien no tiene nada marcado, que es el caso por defecto.
+ *
+ * ⚠️ **Las tres listas van vacías, no ausentes**, por lo mismo que explica el
+ * comentario de arriba. Las pruebas que sí quieren hallazgos pisan `PERFIL`, y
+ * el `beforeEach` lo devuelve aquí para que no se lo lleven a la siguiente.
+ */
+const PERFIL_PELADO = {
+  estadoCalificacion: 'TERMINADA',
+  resumen: null,
+  hallazgos: [] as unknown[],
+  notasCriterio: [] as unknown[],
+  alertas: [] as unknown[],
+}
+
+let PERFIL: typeof PERFIL_PELADO = PERFIL_PELADO
 
 vi.mock('../api/panel', () => ({
   verVacante: () => sinRuido.verVacante(),
@@ -470,6 +480,7 @@ beforeEach(() => {
   ponerNotaPrueba.mockReset()
   ponerNotaPrueba.mockResolvedValue(undefined)
   VERSIONES_PRUEBA = VERSIONES_DE_SIEMPRE
+  PERFIL = PERFIL_PELADO
   sinRuido.verVacante = () => Promise.resolve(VACANTE)
 })
 afterEach(() => cleanup())
@@ -1101,6 +1112,176 @@ describe('la ficha, al abrir una fila', () => {
       screen.getByText(/Las cifras no se pudieron verificar con la referencia/),
     ).toBeTruthy()
     expect(screen.queryByText(/la puso la IA/)).toBeNull()
+  })
+})
+
+/**
+ * Lo que la IA marcó se puede LEER, y no solo contar.
+ *
+ * Lo que compilaba perfectamente estando mal aquí:
+ *
+ *   1. **La etiqueta sin su frase.** La interfaz declaraba `texto` y el backend
+ *      manda `descripcion`, así que la lista salía como una columna de rótulos
+ *      —FORTALEZA, RIESGO CRITICO— con un `undefined` al lado que React no
+ *      dibuja. Cuatro etiquetas sin una sola palabra de por qué. El fixture
+ *      antiguo mandaba `hallazgos: []`, así que ninguna prueba lo veía: por eso
+ *      estas traen hallazgos de verdad, con su descripción y su evidencia.
+ *   2. **Enseñarlo todo.** Los cinco tipos, más las alertas, más la sugerencia
+ *      de cada uno: siete hallazgos ocupaban veintiuna líneas en una ficha que
+ *      se lee mientras se decide. Se recortó a cuatro tipos y a dos líneas.
+ *   3. **Mezclar los tipos en el orden que llegaran.** Cuatro fortalezas y dos
+ *      riesgos entremezclados obligan a leer la lista entera para saber si hay
+ *      algo grave.
+ *   4. **Colarlo en la ficha de la prueba del puesto.** Se probó —la columna de
+ *      Veredicto sale de la etapa 1 y allí no había forma de saber cuál era el
+ *      riesgo— y se decidió que no: en esa pantalla «¿Por qué contratarlo?» y
+ *      «Lectura de la prueba» salen ENTEROS de la rúbrica de la prueba, así que
+ *      una segunda lista de fortalezas sacada del currículum no añade contexto,
+ *      invita a confundir las dos fuentes. El último caso lo deja fijado.
+ */
+describe('lo que marcó la IA se lee en la ficha', () => {
+  const unHallazgo = (tipo: string, descripcion: string, evidencia: string | null = null) => ({
+    tipo,
+    descripcion,
+    evidencia,
+    esCanalizable: false,
+    sugerencia: 'Preguntarle por un cierre de caja que haya firmado él.',
+  })
+
+  const HALLAZGOS = [
+    unHallazgo(
+      'RIESGO_CRITICO',
+      'Nunca ha manejado caja chica sin supervisión.',
+      'En los tres empleos reporta a un jefe de tienda.',
+    ),
+    unHallazgo(
+      'FORTALEZA',
+      'Cerró tres sedes con inventario cuadrado.',
+      'Cifras en el currículum, con mes y monto.',
+    ),
+    unHallazgo('FALTA_EVIDENCIA', 'No hay datos sobre trabajo en equipo ni liderazgo.'),
+    unHallazgo('PREFERENCIA', 'Su motivación está en la parte técnica.'),
+  ]
+
+  /** Abre la ficha de quien está en el perfil integral. */
+  const abrirLaFicha = async () => {
+    await pintar([fila(91, 'Rodrigo Ayala', 'PERFIL_POR_CONFIRMAR', 84)])
+    fireEvent.click(screen.getByText('Rodrigo Ayala'))
+    return await screen.findByText('Hallazgos')
+  }
+
+  it('cada etiqueta llega con su frase y con en qué se basa', async () => {
+    PERFIL = { ...PERFIL_PELADO, hallazgos: HALLAZGOS }
+    await abrirLaFicha()
+
+    expect(screen.getByText('Nunca ha manejado caja chica sin supervisión.')).toBeTruthy()
+    expect(screen.getByText('Cerró tres sedes con inventario cuadrado.')).toBeTruthy()
+    // La evidencia va debajo: es lo que permite no creerse la afirmación a ciegas.
+    expect(screen.getByText(/En los tres empleos reporta a un jefe de tienda/)).toBeTruthy()
+  })
+
+  /*
+    ⚠️ **La sugerencia llega y no se pinta**, y es a propósito: triplicaba el
+    alto de la lista. Sin este caso, quien vea el campo en la respuesta lo añade
+    de vuelta creyendo que se quedó a medias.
+  */
+  it('«qué hacer» no se pinta, aunque el backend lo mande', async () => {
+    PERFIL = { ...PERFIL_PELADO, hallazgos: HALLAZGOS }
+    await abrirLaFicha()
+
+    expect(screen.queryByText(/Preguntarle por un cierre de caja/)).toBeNull()
+  })
+
+  it('la falta de evidencia SÍ sale, y la preferencia no', async () => {
+    PERFIL = { ...PERFIL_PELADO, hallazgos: HALLAZGOS }
+    await abrirLaFicha()
+
+    // Un hueco no es un defecto, pero es lo que decide qué preguntar en la entrevista.
+    expect(screen.getByText('No hay datos sobre trabajo en equipo ni liderazgo.')).toBeTruthy()
+    // Una preferencia es contexto, no mueve una decisión: fuera.
+    expect(screen.queryByText('Su motivación está en la parte técnica.')).toBeNull()
+  })
+
+  it('van agrupados por tipo: primero lo que suma, al final lo que falta', async () => {
+    PERFIL = { ...PERFIL_PELADO, hallazgos: HALLAZGOS }
+    const titular = await abrirLaFicha()
+    const etiquetas = [...titular.nextElementSibling!.querySelectorAll('li')].map(
+      (li) => li.querySelector('span')!.textContent,
+    )
+
+    expect(etiquetas).toEqual(['fortaleza', 'riesgo critico', 'falta evidencia'])
+  })
+
+  /*
+    ⚠️ **El titular no se pinta sobre una lista vacía.** Se pintaba: el `<h4>`
+    miraba cuántos hallazgos llegaron y la lista cuántos sobreviven al filtro,
+    que son dos números distintos. Quien tuviera SOLO tipos de los que no se
+    enseñan —una `PREFERENCIA` y nada más— se llevaba un «Hallazgos» con el
+    vacío debajo. En la base de hoy no hay ni un perfil así, así que esto no lo
+    encuentra mirando datos: lo encuentra este caso.
+  */
+  it('sin ningún hallazgo de los que se enseñan, el titular tampoco sale', async () => {
+    PERFIL = {
+      ...PERFIL_PELADO,
+      hallazgos: [unHallazgo('PREFERENCIA', 'Su motivación está en la parte técnica.')],
+    }
+    await pintar([fila(91, 'Rodrigo Ayala', 'PERFIL_POR_CONFIRMAR', 84)])
+    fireEvent.click(screen.getByText('Rodrigo Ayala'))
+
+    /*
+      El ancla es el titular de la sección, que sale siempre. «El retrato del
+      currículum, en cifras» NO vale: solo se pinta si alguna de las cuatro
+      dimensiones tiene valor, y esta fila las trae en nulo.
+    */
+    await screen.findByRole('heading', { name: 'Lo que calificó la IA' })
+    expect(screen.queryByText('Hallazgos')).toBeNull()
+  })
+
+  /*
+    ⚠️ **Las alertas se quedaron fuera por decisión**: una alerta no descarta a
+    nadie (RF-64), es una pregunta para la conversación final. El titular dice
+    «Hallazgos» y no «Hallazgos y alertas» justamente para no prometerlas.
+  */
+  it('las alertas no se pintan, y el titular no las promete', async () => {
+    PERFIL = {
+      ...PERFIL_PELADO,
+      hallazgos: HALLAZGOS,
+      alertas: [
+        {
+          tipo: 'DEMASIADO_IDEAL',
+          descripcion: 'Todas las respuestas describen éxitos sin una sola dificultad.',
+          creadoEn: '2026-09-01T10:00:00Z',
+        },
+      ],
+    }
+    await abrirLaFicha()
+
+    expect(screen.queryByText('Hallazgos y alertas')).toBeNull()
+    expect(screen.queryByText(/Todas las respuestas describen éxitos/)).toBeNull()
+  })
+
+  /*
+    ⚠️ **El retrato de la etapa 1 NO se asoma a la ficha de la prueba**, ni
+    siquiera cuando esa persona arrastra un riesgo crítico y la columna de
+    Veredicto dice «Con riesgo». Es una decisión, no un descuido: la ficha de la
+    prueba habla de la rúbrica de la prueba y de nada más.
+  */
+  it('el retrato del perfil no se cuela en la ficha de la prueba del puesto', async () => {
+    PERFIL = { ...PERFIL_PELADO, hallazgos: HALLAZGOS }
+    await pintar([
+      fila(93, 'Camila Reyes', 'PRUEBA_TURNO_CANDIDATO', 75, {
+        grupoPrioridad: 'POTENCIAL_CON_RIESGO',
+        riesgosCriticos: 1,
+      }),
+    ])
+    irA('Prueba del puesto')
+    await waitFor(() => expect(elCorte('Con nota de la prueba')).toBeTruthy())
+    verCorte('Está aquí ahora')
+    fireEvent.click((await screen.findByText('Camila Reyes')).closest('tr')!)
+
+    await screen.findByRole('heading', { name: 'La prueba del puesto, criterio a criterio' })
+    expect(screen.queryByText('Hallazgos')).toBeNull()
+    expect(screen.queryByText('Nunca ha manejado caja chica sin supervisión.')).toBeNull()
   })
 })
 

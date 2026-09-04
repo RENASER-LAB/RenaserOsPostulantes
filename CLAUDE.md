@@ -1,11 +1,81 @@
 # Portal del candidato · contexto de trabajo
 
-Última actualización: 2026-09-02 · **lo que entregó el candidato se ve desde la ficha; el
-ranking se ordena, se filtra y se descarga; la cuenta nace con ciudad; las pruebas del puesto se
-escriben desde el panel; y el plazo se dice entero**
+Última actualización: 2026-09-04 · **la ficha dice QUÉ marcó la IA y no solo cuántos; lo que
+entregó el candidato se ve desde la ficha; el ranking se ordena, se filtra y se descarga; la
+cuenta nace con ciudad; las pruebas del puesto se escriben desde el panel; y el plazo se dice
+entero**
 
 Este archivo es para retomar el trabajo sin tener que reconstruir nada. Cuenta qué es este
 proyecto, con qué habla, qué se decidió y por qué, y qué está a medias.
+
+---
+
+## La ficha dice QUÉ marcó la IA, y no solo cuántos (04/09/2026)
+
+En el perfil integral la sección **«Hallazgos y alertas»** pintaba la etiqueta —`FORTALEZA`,
+`RIESGO CRITICO`, `RIESGO DESARROLLABLE`, `FALTA EVIDENCIA`— y **a su lado nada**. Una columna de
+rótulos sin una sola palabra de por qué. La tabla decía «1 riesgo crítico» y la única pantalla
+que podía explicarlo enseñaba la palabra «riesgo crítico» otra vez.
+
+⚠️ **La causa era un nombre de campo, y llevaba ahí desde el primer commit.** El backend manda
+`HallazgoResponse(tipo, descripcion, evidencia, esCanalizable, sugerencia)`; la interfaz de
+`tipos.ts` declaraba `{ tipo, texto }`, y `texto` no existe en ninguna versión de esa respuesta.
+React recibía `undefined` y no dibuja `undefined`: ni un hueco, ni un error, ni un aviso en
+consola. **Compilaba, pasaba el tipado y pasaba las pruebas** — porque el doble de
+`verPerfilIntegral` mandaba `hallazgos: []`, así que ninguna prueba abrió nunca la lista. Es el
+fallo que este archivo repite: un tipo que no es el del backend no lo dice TypeScript, lo dice la
+pantalla en blanco tres meses después.
+
+Ahora cada hallazgo sale con su **frase** y con **en qué se basa**, que es lo que permite no
+creerse la afirmación a ciegas.
+
+### Se enseñan cuatro de los cinco tipos, y agrupados
+
+Fuera `PREFERENCIA`: «su motivación está en lo técnico» es contexto para la entrevista, no algo
+que mueva una decisión. Dentro `FALTA_EVIDENCIA`, y conviene decir por qué no es un riesgo: **un
+riesgo es algo que la persona hace mal; un hueco es algo que no sabemos** —la Regla 1 del
+documento 03 prohíbe expresamente mezclarlos— y el hueco suele ser justo lo que decide qué
+preguntar. «No hay evidencia de gestión de equipos» no descalifica a nadie.
+
+El orden es por tipo y no el que devolvió el modelo: **primero lo que suma, luego lo que resta,
+al final lo que falta por saber**. Con todo entremezclado había que leer los siete para saber si
+había algo grave.
+
+### La sugerencia llega y no se pinta
+
+El agente propone qué hacer con cada hallazgo —«preguntarle por un cierre de caja que haya
+firmado él»— y es texto útil, pero **triplicaba el alto**: siete hallazgos pasaban de siete
+líneas a veintiuna en una ficha que se lee mientras se decide. El campo sigue viajando en la
+respuesta para el día que tenga su sitio.
+
+### ⚠️ Las alertas quedan fuera, y el contador se queda sin puerta
+
+`CONTRADICCION` y `DEMASIADO_IDEAL` viajaban en la respuesta y **ni siquiera estaban declaradas
+en el tipo**. Se declararon y se decidió no pintarlas: una alerta no descarta a nadie (RF-64), es
+una pregunta para la conversación final, y el titular pasó de «Hallazgos y alertas» a
+**«Hallazgos»** a secas para no prometer lo que no está.
+
+**Consecuencia sabida, no olvido:** el ranking sigue contando alertas en su columna y en el «N
+alerta(s)» de la ficha, y hoy ese número **no se puede abrir en ninguna pantalla**. Volver a
+enseñarlas es una línea. El tipo se declara igual, porque un tipo que calla lo que el backend
+manda es exactamente lo que produjo el fallo de arriba.
+
+### ⚠️ Esto NO se enseña en la ficha de la prueba del puesto, y se probó
+
+La columna de **Veredicto** puede decir «Con riesgo» en la pestaña de la prueba, y esa ficha no
+tenía forma de explicarlo: el veredicto es `grupo_prioridad`, lo escribe la etapa 1 al cerrar el
+perfil y **no se recalcula por etapa**. Parecía el sitio para responderlo. Se quitó.
+
+El motivo es que en esa pantalla **«¿Por qué contratarlo?» y «Lectura de la prueba» salen ENTEROS
+de la rúbrica de la prueba** —y están ahí justamente porque en el perfil integral la frase no
+cuadraba con su número—. Una segunda lista de fortalezas sacada del currículum, pegada debajo, no
+añade contexto: invita a confundir las dos fuentes. Quien vea «Con riesgo» lo mira en su pestaña.
+Lo deja fijado un caso de prueba, para que no se vuelva a añadir sin saber que ya se decidió.
+
+⚠️ **Y de paso, algo que el rótulo esconde: «Con riesgo» NO significa que haya un riesgo
+crítico.** La regla del backend mete en ese grupo a dos poblaciones —quien llega a la nota alta
+arrastrando un riesgo crítico, y quien se queda entre los dos cortes de nota sin arrastrar nada—.
+Un 70 limpio, sin un solo hallazgo, sale «Con riesgo».
 
 ---
 
