@@ -167,6 +167,25 @@ const TIPOS_QUE_SE_ENSENAN = [
 ] as const
 
 /**
+ * Los que se enseñan, ya en su orden. Vacío si no hay ninguno de los cuatro.
+ *
+ * ⚠️ **Es una función y no un filtro dentro del componente, y esa es la
+ * corrección.** El titular se pintaba mirando `hallazgos.length` y la lista
+ * mirando los que sobreviven al filtro: quien tuviera SOLO hallazgos de los
+ * tipos que no se enseñan —una `PREFERENCIA` y nada más— se llevaba un
+ * «Hallazgos» con el vacío debajo. Hoy no hay ninguno así en la base, y por eso
+ * no se vio; basta con que el agente devuelva una sola preferencia. Las dos
+ * decisiones tienen que salir del mismo número.
+ *
+ * El orden es por tipo y no el que devolvió el modelo: cuatro fortalezas y dos
+ * riesgos entremezclados obligan a leer la lista entera para saber si hay algo
+ * grave; agrupados, el bloque rojo se ve sin leer. Dentro de cada tipo se
+ * respeta el orden de llegada.
+ */
+const losQueSeEnsenan = (hallazgos: Hallazgo[]): Hallazgo[] =>
+  TIPOS_QUE_SE_ENSENAN.flatMap((tipo) => hallazgos.filter((h) => h.tipo === tipo))
+
+/**
  * Lo que la IA marcó del candidato, en lista.
  *
  * ⚠️ **Cada hallazgo se pinta con su FRASE, y eso es lo que aquí faltaba.** La
@@ -194,19 +213,10 @@ const TIPOS_QUE_SE_ENSENAN = [
  * columna lo mira en su pestaña.
  */
 function Hallazgos({ hallazgos }: { hallazgos: Hallazgo[] }) {
-  /*
-    Por tipo y en el orden de TIPOS_QUE_SE_ENSENAN, no en el que los devolvió el
-    modelo. Cuatro fortalezas y dos riesgos entremezclados obligan a leer la
-    lista entera para saber si hay algo grave; agrupados, el bloque rojo se ve
-    sin leer. Dentro de cada tipo se respeta el orden de llegada.
-  */
-  const enOrden = TIPOS_QUE_SE_ENSENAN.flatMap((tipo) =>
-    hallazgos.filter((h) => h.tipo === tipo),
-  )
-  if (enOrden.length === 0) return null
+  if (hallazgos.length === 0) return null
   return (
     <ul className={estilos.hallazgos} role="list">
-      {enOrden.map((h, i) => (
+      {hallazgos.map((h, i) => (
         <li className={estilos.hallazgo} key={`${h.tipo}-${i}`}>
           <span className={`${estilos.etiqueta} ${tonoDe(h.tipo)}`}>{enPalabras(h.tipo)}</span>
           <span>
@@ -2096,10 +2106,10 @@ function LoQueCalificoLaIA({ fila }: { fila: FilaRanking }) {
             pantalla. Es una consecuencia sabida de dejarlas fuera, no un olvido:
             el día que se quieran leer, se añaden aquí debajo.
           */}
-          {perfil.data.hallazgos.length > 0 && (
+          {losQueSeEnsenan(perfil.data.hallazgos).length > 0 && (
             <>
               <h4 className={estilos.subtitulo}>Hallazgos</h4>
-              <Hallazgos hallazgos={perfil.data.hallazgos} />
+              <Hallazgos hallazgos={losQueSeEnsenan(perfil.data.hallazgos)} />
             </>
           )}
 
