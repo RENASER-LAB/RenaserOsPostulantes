@@ -393,7 +393,7 @@ las ignora invitaría a pasar por alto.
 
 Ocupa lo mínimo —una columna de cifra, que se puede apagar como cualquier otra— y
 **el desglose vive en el título**: al pasar el ratón se leen las tres notas con
-las que se rehace la cuenta a mano, currículum, perfil integral y prueba. Cuando
+las que hay detrás de la cifra, currículum, perfil integral y prueba. Cuando
 no hay cifra, el guion dice **cuál de las dos notas falta**, que es lo accionable.
 
 Se puede ordenar por ella, y va también al Excel del ranking.

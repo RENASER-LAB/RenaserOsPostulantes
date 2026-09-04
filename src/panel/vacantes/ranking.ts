@@ -165,7 +165,7 @@ const dicha = (valor: number | null | undefined): string =>
 /**
  * El desglose, al pasar el raton por la celda.
  *
- * Enseña las tres cifras con las que la cuenta se rehace a mano, y cuando no hay
+ * Enseña las tres notas que hay detras de la cifra, y cuando no hay
  * ponderado dice **cual de las dos notas falta**, que es lo accionable: manda a
  * la pestaña donde esa persona esta parada.
  *
@@ -1420,12 +1420,6 @@ export function columnasDelRanking(
       ordenable: 'nota',
     },
     /*
-      Se estrecha, pero NO es una cifra: el rótulo va a la izquierda como
-      cualquier texto. `cifra` traería además el alineado a la derecha de la hoja
-      compartida, y una palabra pegada al borde derecho junto a la columna de
-      números se lee como si fuera otro número.
-    */
-    /*
       ⚠️ **La primera columna que depende de la ETAPA y no de lo que traiga la
       tanda.** Pretensión y ciudad aparecen si alguien las declaró; esta aparece
       según en qué pestaña estés, así que la condición es el literal y no hay
@@ -1448,6 +1442,12 @@ export function columnasDelRanking(
           },
         ] as ColumnaDelRanking[])
       : []),
+    /*
+      Se estrecha, pero NO es una cifra: el rótulo va a la izquierda como
+      cualquier texto. `cifra` traería además el alineado a la derecha de la hoja
+      compartida, y una palabra pegada al borde derecho junto a la columna de
+      números se lee como si fuera otro número.
+    */
     { clave: 'veredicto', titulo: 'Veredicto', estrecha: true, ocultable: true },
     ...criterios.map(
       (c): ColumnaDelRanking => ({

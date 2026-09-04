@@ -897,7 +897,7 @@ describe('cuántas columnas tiene la tabla', () => {
     descuadraría en silencio y esta es la prueba que lo caza.
   */
   it('ocho en cuatro etapas y nueve en la prueba del puesto', () => {
-    for (const etapa of ['SIMULACION', 'PERFIL_INTEGRAL', 'DECISION'] as const) {
+    for (const etapa of ['SIMULACION', 'VALIDACION', 'PERFIL_INTEGRAL', 'DECISION'] as const) {
       expect(columnasDelRanking(etapa)).toHaveLength(8)
     }
     expect(columnasDelRanking('PRUEBA_PUESTO')).toHaveLength(9)

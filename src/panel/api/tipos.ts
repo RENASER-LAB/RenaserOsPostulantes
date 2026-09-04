@@ -460,7 +460,8 @@ export interface FilaRanking {
  *
  * `sobre100` viene vacio mientras falte cualquiera de las dos notas. Las tres
  * cifras del desglose se pueden quedar vacias por su cuenta sin que eso anule
- * el total, y con ellas la cuenta se rehace a mano.
+ * el total. Enseñan de donde sale la cifra, no permiten recalcularla: los pesos
+ * con que se mezclan no viajan aqui y cambian por vacante.
  *
  * ⚠️ **No hay nota del banco de preguntas, y no es un olvido**: esa no se
  * guarda suelta en ninguna parte. `perfil` ya la contiene, mezclada con la del
