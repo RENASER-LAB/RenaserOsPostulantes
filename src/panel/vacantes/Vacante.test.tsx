@@ -1158,6 +1158,31 @@ describe('lo que marcó la IA se lee en la ficha', () => {
   })
 
   /*
+    ⚠️ **El titular no se pinta sobre una lista vacía.** Se pintaba: el `<h4>`
+    miraba cuántos hallazgos llegaron y la lista cuántos sobreviven al filtro,
+    que son dos números distintos. Quien tuviera SOLO tipos de los que no se
+    enseñan —una `PREFERENCIA` y nada más— se llevaba un «Hallazgos» con el
+    vacío debajo. En la base de hoy no hay ni un perfil así, así que esto no lo
+    encuentra mirando datos: lo encuentra este caso.
+  */
+  it('sin ningún hallazgo de los que se enseñan, el titular tampoco sale', async () => {
+    PERFIL = {
+      ...PERFIL_PELADO,
+      hallazgos: [unHallazgo('PREFERENCIA', 'Su motivación está en la parte técnica.')],
+    }
+    await pintar([fila(91, 'Rodrigo Ayala', 'PERFIL_POR_CONFIRMAR', 84)])
+    fireEvent.click(screen.getByText('Rodrigo Ayala'))
+
+    /*
+      El ancla es el titular de la sección, que sale siempre. «El retrato del
+      currículum, en cifras» NO vale: solo se pinta si alguna de las cuatro
+      dimensiones tiene valor, y esta fila las trae en nulo.
+    */
+    await screen.findByRole('heading', { name: 'Lo que calificó la IA' })
+    expect(screen.queryByText('Hallazgos')).toBeNull()
+  })
+
+  /*
     ⚠️ **Las alertas se quedaron fuera por decisión**: una alerta no descarta a
     nadie (RF-64), es una pregunta para la conversación final. El titular dice
     «Hallazgos» y no «Hallazgos y alertas» justamente para no prometerlas.
