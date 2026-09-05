@@ -1920,6 +1920,24 @@ describe('el desglose del ponderado', () => {
     expect(dicho).not.toContain('banco de preguntas')
   })
 
+  /*
+    ⚠️ **El caso que se vio en produccion.** Un candidato con su 62 de la prueba a la
+    vista y un guion en Ponderado: el texto decia «falta la de la prueba del puesto»
+    señalando una nota que estaba pintada en la celda de al lado. La cifra faltaba de
+    verdad —eso estaba bien—, pero por los PESOS de la vacante, no por las notas.
+  */
+  it('con las dos notas y sin cifra culpa a los pesos, no a una nota que si esta', () => {
+    const dicho = desgloseDelPonderado(
+      conPonderado({ sobre100: null, cv: 55, perfil: 70, prueba: 62 }),
+    )
+    expect(dicho).toContain('Las dos notas estan')
+    expect(dicho).toContain('62')
+    expect(dicho).toContain('pesos de la vacante')
+    // Lo que NO puede decir: que falte una nota que el usuario tiene delante.
+    expect(dicho).not.toContain('falta la de la prueba')
+    expect(dicho).not.toContain('falta la del perfil')
+  })
+
   it('sin la nota de la prueba dice cual falta y ensena la que hay', () => {
     const dicho = desgloseDelPonderado(
       conPonderado({ sobre100: null, cv: 76.5, perfil: 82, prueba: null }),

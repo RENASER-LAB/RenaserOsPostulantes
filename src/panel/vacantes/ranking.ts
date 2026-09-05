@@ -200,6 +200,28 @@ export function desgloseDelPonderado(fila: FilaRanking): string {
     )
   }
 
+  /*
+    ⚠️ **Las dos notas estan y aun asi no hay cifra: es de los PESOS, no de las notas.**
+
+    Y decia «falta la de la prueba del puesto» con el numero de la prueba pintado en
+    la celda de al lado. Quien lo leyera acababa dudando de la tabla entera, que es lo
+    contrario de para lo que existe este texto.
+
+    Pasa cuando la version de pesos de la vacante no reparte entre estas dos etapas —le
+    falta alguna, o una vale 0—. No es un dato del candidato y no se arregla
+    calificandolo: se arregla en la configuracion de la vacante, y por eso el texto
+    manda ahi en vez de dejar a nadie esperando una nota que ya tiene.
+  */
+  if (hayPerfil && hayPrueba) {
+    return (
+      'Las dos notas estan —perfil integral ' +
+      `${dicha(suyo?.perfil)} y prueba del puesto ${dicha(suyo?.prueba)}— pero no hay ` +
+      'ponderado: la version de pesos de esta vacante no reparte puntos entre esas dos ' +
+      'etapas, o le da cero a alguna, y sin peso no hay con que mezclarlas. Se corrige en ' +
+      'los pesos de la vacante, no calificando al candidato.'
+    )
+  }
+
   const cual = hayPerfil ? 'la de la prueba del puesto' : 'la del perfil integral'
   const laQueHay = hayPerfil
     ? `La del perfil integral si esta: ${dicha(suyo?.perfil)} (incluye la nota del ` +
