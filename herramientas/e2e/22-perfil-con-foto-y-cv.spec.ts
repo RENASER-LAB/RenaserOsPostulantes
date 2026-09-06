@@ -262,7 +262,7 @@ test.describe('Regresión · el perfil guarda tu foto, tu portada y tu currícul
   })
 
   test('una certificación lleva su diploma adjunto', async ({ page }) => {
-    await page.getByRole('button', { name: 'Añadir certificación' }).click()
+    await page.getByRole('button', { name: 'Añadir una certificación' }).click()
     await page.getByLabel('Nombre', { exact: true }).fill(CERTIFICADO)
     await page.getByLabel('Quién la emitió').fill('Sencico')
     await guardar(page)

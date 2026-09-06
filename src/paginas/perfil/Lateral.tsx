@@ -96,12 +96,12 @@ export function Lateral({ perfil }: { perfil: PerfilCompleto }) {
 
 /** Las secciones del perfil, en el orden en que se pintan. */
 const SECCIONES = [
-  { titulo: 'Acerca de ti', cuenta: null },
-  { titulo: 'Experiencia', cuenta: 'experiencia' },
-  { titulo: 'Estudios', cuenta: 'educacion' },
-  { titulo: 'Idiomas', cuenta: 'idiomas' },
-  { titulo: 'Certificaciones', cuenta: 'certificaciones' },
-  { titulo: 'Enlaces', cuenta: 'enlaces' },
+  { titulo: 'Acerca de ti', cuenta: [] },
+  // Empleos, estudios y certificaciones comparten sección desde que hay una
+  // sola cronología: el índice cuenta las tres juntas porque juntas se pintan.
+  { titulo: 'Tu trayectoria', cuenta: ['experiencia', 'educacion', 'certificaciones'] },
+  { titulo: 'Idiomas', cuenta: ['idiomas'] },
+  { titulo: 'Enlaces', cuenta: ['enlaces'] },
 ] as const
 
 /**
@@ -160,10 +160,14 @@ function Indice({ perfil }: { perfil: PerfilCompleto }) {
       <ul className={estilos.indice}>
         {SECCIONES.map((s) => {
           const ancla = anclaDe(s.titulo)
-          const filas = s.cuenta ? perfil[s.cuenta] : null
-          const sinConfirmar = filas
-            ? filas.filter((f) => 'origen' in f && f.origen === 'CURRICULUM' && !f.confirmado).length
-            : 0
+          // El tipo se ensancha a propósito: aquí solo se cuentan filas y su
+          // origen, que es lo único que las cinco listas tienen en común.
+          const filas: { origen?: string; confirmado?: boolean }[] = s.cuenta.flatMap(
+            (k) => perfil[k] as { origen?: string; confirmado?: boolean }[],
+          )
+          const sinConfirmar = filas.filter(
+            (f) => f.origen === 'CURRICULUM' && !f.confirmado,
+          ).length
           return (
             <li key={s.titulo}>
               <a
@@ -175,7 +179,7 @@ function Indice({ perfil }: { perfil: PerfilCompleto }) {
                 <span className={estilos.nombreSeccion}>{s.titulo}</span>
                 {sinConfirmar > 0 ? (
                   <span className={estilos.porRevisar}>{sinConfirmar} por revisar</span>
-                ) : filas && filas.length > 0 ? (
+                ) : filas.length > 0 ? (
                   <span className={estilos.cuantas}>{filas.length}</span>
                 ) : null}
               </a>

@@ -180,6 +180,40 @@ components:
 
 # Design System: EX · Portal del candidato
 
+## La cronología del perfil (06/09/2026)
+
+Pieza nueva del sistema, nacida en «Mi perfil» y disponible para cualquier
+superficie que enseñe hechos fechados.
+
+**El raíl.** Una línea de 2px en `--regla2` a la izquierda de la columna, con un
+nodo de 10px por entrada. El nodo se tiñe de `--activo` cuando esa entrada espera
+algo de la persona, y de `--tinta3` cuando no. El raíl lo dibuja el contenedor —
+no un borde por fila— para que no se parta ni en las cajas ni en los rótulos
+intermedios.
+
+**La especie.** Cuando una línea mezcla clases de hecho —empleos, estudios,
+certificaciones— cada entrada dice cuál es con **su palabra y su icono**, en
+`--t-micro` y versalitas. ⚠️ Nunca el icono solo: en una lista mezclada un
+pictograma suelto es un jeroglífico. Las listas que no mezclan no lo llevan,
+porque ahí lo dice el título de la sección.
+
+**El orden lo pone la fecha, no la persona.** Lo que sigue vivo va arriba: un
+tramo abierto ordena como si terminara hoy, para que el primer renglón sea lo
+que está pasando ahora. Por eso esta pieza **no lleva flechas de reordenar**: el
+trabajo que justificaba esas flechas desaparece en vez de facilitarse.
+
+**Los huecos se dicen.** Entre dos hechos de la misma clase, los meses sin nada
+se rotulan como una entrada más de la lista. ⚠️ **Solo si de verdad no hay nada**:
+si otra clase de hecho cubre esos meses —estudiaba, se certificaba— el hueco no
+se dibuja. Decirle «sin empleo registrado» a quien estaba en la universidad es
+afirmar algo falso sobre su vida.
+
+**Sin fecha no hay sitio en la línea.** Lo que llega sin fecha va al final, bajo
+su propio rótulo, y no se le inventa una: colocarlo «hoy» lo pondría arriba del
+todo mintiendo.
+
+---
+
 ## Overview
 
 **Creative North Star: «El canto»**

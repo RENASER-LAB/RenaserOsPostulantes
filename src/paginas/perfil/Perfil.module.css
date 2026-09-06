@@ -1076,3 +1076,50 @@
   clip-path: inset(50%);
   white-space: nowrap;
 }
+
+/* ---------- La cronología ---------- */
+
+/*
+ * De qué especie es la entrada. Va arriba de la fila, pequeña y en tinta de
+ * apoyo: en una línea que mezcla empleos, estudios y certificaciones hay que
+ * poder decir cuál es cada una sin leerla entera.
+ */
+.especie {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  margin-bottom: 2px;
+  font-size: var(--t-micro);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tinta3);
+}
+
+.especie svg {
+  flex: none;
+}
+
+.fila.sinConfirmar .especie {
+  color: var(--activo-pulsado);
+}
+
+/*
+ * Lo que no tiene fecha no entra en la línea, y se dice por qué en vez de
+ * dejarlo caer al final sin explicación.
+ */
+.sinFecha {
+  margin: var(--e5) 0 var(--e2);
+  font-size: var(--t-menor);
+  font-style: italic;
+  color: var(--tinta3);
+  list-style: none;
+}
+
+/* Las tres puertas de entrada a la línea, del mismo peso: ninguna manda. */
+.anadirTres {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e3);
+  margin-top: var(--e5);
+}

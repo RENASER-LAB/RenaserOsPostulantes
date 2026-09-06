@@ -37,7 +37,8 @@ import { useSesion } from '@/app/Sesion'
 import { rutas } from '@/rutas'
 import { useAviso } from '@/ui/Avisos'
 import { AreaTexto, Campo } from '@/ui/campos/Campo'
-import { anclaDe, Certificaciones, Educacion, Enlaces, Experiencia, Idiomas } from './Listas'
+import { anclaDe, Enlaces, Idiomas } from './Listas'
+import { Trayectoria } from './Trayectoria'
 import { Aptitudes, leerTodas } from './Aptitudes'
 import { CabeceraDelPerfil } from './Cabecera'
 import { Lateral } from './Lateral'
@@ -270,12 +271,18 @@ export function Perfil() {
           editando={editandoCabecera}
           setEditando={setEditandoCabecera}
         />
-        <Experiencia filas={perfil.experiencia} />
-        <Educacion
-          filas={perfil.educacion}
+        {/*
+          ⚠️ **Una sola cronología, no tres listas.** Empleos, estudios y
+          certificaciones comparten el mismo raíl ordenado por fecha: es la
+          estructura que el usuario fijó el 06/09/2026. Ver `Trayectoria.tsx`.
+        */}
+        <Trayectoria
+          experiencia={perfil.experiencia}
+          educacion={perfil.educacion}
+          certificaciones={perfil.certificaciones}
           niveles={educativos.data ?? []}
-          catalogoCaido={educativos.isError}
         />
+
         {/*
           ⚠️ Si el catálogo de niveles no llega, «Idiomas» queda **inservible**:
           el nivel es obligatorio en el backend y el selector se quedaría sin
@@ -287,7 +294,6 @@ export function Perfil() {
           niveles={idiomas.data ?? []}
           catalogoCaido={idiomas.isError}
         />
-        <Certificaciones filas={perfil.certificaciones} />
         <Enlaces filas={perfil.enlaces} />
         </div>
 

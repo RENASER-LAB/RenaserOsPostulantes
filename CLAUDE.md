@@ -1,8 +1,37 @@
 # Portal del candidato · contexto de trabajo
 
 Última actualización: 2026-09-06 · **«Mi perfil» tiene foto, portada, currículum propio y
-diplomas; la caja significa «esto te toca»; la experiencia es una línea de tiempo; y al
-postular ya no se vuelve a subir el currículum**
+diplomas; empleos, estudios y certificaciones comparten UNA cronología; la caja significa
+«esto te toca»; y al postular ya no se vuelve a subir el currículum**
+
+## Una sola cronología, no tres listas (06/09/2026, tarde)
+
+Rediseño de estructura elegido por el usuario sobre el reparto del dado
+(`concept-seed`, clave c5d8200b). El mundo visual **no se toca** —los compromisos
+de marca que aprobó la clienta sobreviven a un rediseño—; lo que cambia es la
+composición. La pieza nueva está documentada en `DESIGN.md`.
+
+**Empleos, estudios y certificaciones se pintan juntos**, ordenados por fecha, en
+`Trayectoria.tsx`. Las tres secciones de `Listas.tsx` dejaron de ser componentes y
+pasaron a ser **ganchos** (`useEmpleos`, `useEstudios`, `useCertificados`) que
+exponen sus mutaciones y su formulario; quien pinta las filas es la cronología,
+porque interleaved por fecha no se puede hacer con tres listas independientes.
+
+⚠️ **Ya no hay flechas de reordenar, y no es una pérdida.** Existían porque la
+lectura del currículum añadía sus filas al final y alguien tenía que arreglarlo a
+mano, de una en una y con un viaje al servidor por paso. La cronología hace ese
+trabajo innecesario. El `orden` del backend se queda: no estorba.
+
+⚠️ **Lo que sigue vivo va arriba.** Ordenar solo por fecha de inicio dejaba un
+certificado de 2024 por encima de un empleo empezado en 2022 que la persona
+todavía tiene. Un tramo abierto ordena como si terminara hoy.
+
+⚠️ **Y el hueco de empleo solo se dibuja si de verdad no había nada.** Si en esos
+meses hay estudios o un certificado, no se rotula: decirle «sin empleo
+registrado» a quien estaba estudiando es afirmar algo falso sobre su vida, en la
+pantalla que le pide validar lo que dedujo una máquina.
+
+El índice de la lateral cuenta las tres juntas, porque juntas se pintan.
 
 Este archivo es para retomar el trabajo sin tener que reconstruir nada. Cuenta qué es este
 proyecto, con qué habla, qué se decidió y por qué, y qué está a medias.

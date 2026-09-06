@@ -140,7 +140,7 @@ test.describe('Regresión · «Mi perfil», lista por lista', () => {
       ['Analista senior', 'Clínica San Juan', '2022-03-01'],
       ['Asistente de operaciones', 'Transportes del Sur', '2019-01-01'],
     ] as const) {
-      await page.getByRole('button', { name: 'Añadir experiencia' }).click()
+      await page.getByRole('button', { name: 'Añadir un empleo' }).click()
       await page.getByLabel('Puesto').fill(puesto)
       await page.getByLabel('Empresa').fill(empresa)
       await page.getByLabel('Desde', { exact: true }).fill(desde)
@@ -153,26 +153,12 @@ test.describe('Regresión · «Mi perfil», lista por lista', () => {
     expect(experiencia.every((e) => e.origen === 'PERSONA' && e.confirmado)).toBe(true)
   })
 
-  test('la trayectoria dice cuánto duró cada puesto, con palabras', async ({ page }) => {
-    // ⚠️ La duración se ESCRIBE. Se intentó codificarla en el alto de la fila y
-    // no se sostiene: el texto de la fila supera el mínimo por CSS, así que once
-    // años y cuatro miden lo mismo. Este test comprueba lo que la pantalla sí
-    // promete, no lo que se quiso hacer.
-    const filas = page.locator('[class*=trayectoria] li[class*=fila]')
-    await expect(filas).toHaveCount(2)
-
-    // «Analista senior» empezó en 2022-03 y sigue: años, no meses.
-    await expect(filas.first()).toContainText(/\d+ años?/)
-    // Y el periodo sigue estando: la duración lo acompaña, no lo sustituye.
-    await expect(filas.first()).toContainText('—')
-  })
-
   test('la columna lateral no mete una segunda barra de desplazamiento', async ({ page }) => {
     // ⚠️ Se intentó acotarla con `max-height` + `overflow-y: auto` para que el
     // índice no se saliera de la ventana, y el remedio fue peor: dos superficies
     // que mover para leer una página. Lo que se pega es solo el índice.
     await page.setViewportSize({ width: 1280, height: 800 })
-    await page.locator('#seccion-certificaciones').evaluate((e) => e.scrollIntoView())
+    await page.locator('#seccion-enlaces').evaluate((e) => e.scrollIntoView())
 
     const lateral = page.locator('aside')
     const dosBarras = await lateral.evaluate((e) => e.scrollHeight > e.clientHeight + 1)
@@ -192,35 +178,28 @@ test.describe('Regresión · «Mi perfil», lista por lista', () => {
     await expect(indice).toBeVisible()
 
     // `aria-current` y no solo una clase: la sección en la que estás se dice,
-    // no solo se pinta. Se usa Experiencia porque a estas alturas del recorrido
-    // ya tiene filas: una sección vacía es demasiado corta para entrar en la
-    // banda activa, y el test estaría midiendo el alto, no la marca.
-    await page.locator('#seccion-experiencia').evaluate((e) => e.scrollIntoView())
-    await expect(indice.getByRole('link', { name: /^Experiencia/ })).toHaveAttribute(
+    // no solo se pinta. Se usa la trayectoria porque a estas alturas del
+    // recorrido ya tiene filas: una sección vacía es demasiado corta para
+    // entrar en la banda activa, y el test estaría midiendo el alto, no la marca.
+    await page.locator('#seccion-tu-trayectoria').evaluate((e) => e.scrollIntoView())
+    await expect(indice.getByRole('link', { name: /^Tu trayectoria/ })).toHaveAttribute(
       'aria-current',
       'true',
     )
 
     // Y llevan a su sitio.
     await page.locator('#seccion-enlaces').evaluate((e) => e.scrollIntoView())
-    await indice.getByRole('link', { name: /^Experiencia/ }).click()
-    await expect(page.locator('#seccion-experiencia')).toBeInViewport()
+    await indice.getByRole('link', { name: /^Tu trayectoria/ }).click()
+    await expect(page.locator('#seccion-tu-trayectoria')).toBeInViewport()
   })
 
-  test('las flechas reordenan de verdad', async ({ page }) => {
-    const antes = (await pedirPerfil()).experiencia
-    expect(antes).toHaveLength(2)
-    const [primera, segunda] = antes
-    if (!primera || !segunda) throw new Error('El perfil no tiene las dos experiencias que creó el test anterior')
-
-    // El botón nombra la fila entera —puesto y empresa— para distinguirla de
-    // otra con el mismo cargo.
-    await page.getByRole('button', { name: `Bajar ${primera.puesto} en ${primera.empresa}` }).click()
-
-    await expect
-      .poll(async () => (await pedirPerfil()).experiencia.map((e) => e.id))
-      .toEqual([segunda.id, primera.id])
-  })
+  /*
+    ⚠️ **Ya no hay flechas, y por eso no hay test.** Existían porque la lectura
+    del currículum añadía sus filas al final y alguien tenía que reordenarlas a
+    mano, de una en una y con un viaje al servidor por paso. Desde que la
+    trayectoria ordena por fecha ese trabajo no existe: lo cubre
+    «la trayectoria mezcla las tres especies en una sola línea, por fecha».
+  */
 
   test('los estudios se guardan con el nivel del catálogo', async ({ page }) => {
     await page.getByRole('button', { name: 'Añadir estudios' }).click()
@@ -243,7 +222,7 @@ test.describe('Regresión · «Mi perfil», lista por lista', () => {
   })
 
   test('una certificación caducada se avisa en la pantalla', async ({ page }) => {
-    await page.getByRole('button', { name: 'Añadir certificación' }).click()
+    await page.getByRole('button', { name: 'Añadir una certificación' }).click()
     await page.getByLabel('Nombre', { exact: true }).fill('Soporte Vital Básico (BLS)')
     await page.getByLabel('Quién la emitió').fill('American Heart Association')
     await page.getByLabel('Emitida en').fill('2022-05-01')
@@ -251,6 +230,28 @@ test.describe('Regresión · «Mi perfil», lista por lista', () => {
     await guardar(page)
 
     await expect(page.getByText('Vencida', { exact: true })).toBeVisible()
+  })
+
+  test('la trayectoria mezcla las tres especies en una sola línea, por fecha', async ({
+    page,
+  }) => {
+    // ⚠️ Empleos, estudios y certificaciones comparten cronología desde el
+    // 06/09/2026: si esto vuelve a ser tres listas, este test lo dice.
+    const filas = page.locator('[class*=trayectoria] li[class*=fila]')
+    // Dos empleos, unos estudios y una certificación, creados por los pasos
+    // anteriores de este recorrido en serie.
+    await expect(filas).toHaveCount(4)
+
+    // Cada entrada dice de qué especie es, con la palabra y no solo el icono.
+    await expect(page.getByText('EMPLEO').first()).toBeVisible()
+    await expect(page.getByText('ESTUDIOS').first()).toBeVisible()
+
+    // Lo que sigue vivo va arriba: el empleo abierto manda sobre los estudios
+    // que terminaron, aunque los estudios empezaran después.
+    await expect(filas.first()).toContainText('Analista senior')
+    await expect(filas.first()).toContainText('Actualidad')
+    // Y la duración se escribe: años, no un alto de caja.
+    await expect(filas.first()).toContainText(/\d+ años?/)
   })
 
   test('un enlace se guarda, y no ofrece editar ni confirmar, que es lo que existe', async ({ page }) => {
