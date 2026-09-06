@@ -260,7 +260,7 @@ describe('V · el enunciado se parte en los datos que pide', () => {
     await montar(pregunta('V', { enunciado: V_EXPERIENCIA }))
 
     const anos = screen.getByLabelText('Años haciendo este trabajo') as HTMLInputElement
-    fireEvent.change(anos, { target: { value: 'Ricardo' } })
+    fireEvent.change(anos, { target: { value: 'texto' } })
     expect(anos.value).toBe('')
 
     fireEvent.change(anos, { target: { value: '5 años' } })

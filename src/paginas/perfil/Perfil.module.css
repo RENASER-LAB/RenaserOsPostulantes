@@ -759,14 +759,6 @@
   background: var(--mal-bruma);
 }
 
-/* Las flechas de reordenar. Solo experiencia y educación las tienen. */
-.mover {
-  composes: enlaceAccion;
-  padding: 0 var(--e2);
-  font-size: var(--t-base);
-  line-height: 1;
-}
-
 /* ---------- Los formularios de alta y edición ---------- */
 
 .formulario {

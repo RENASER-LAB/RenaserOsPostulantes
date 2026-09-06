@@ -103,6 +103,44 @@ test.describe('Regresión · el perfil guarda tu foto, tu portada y tu currícul
     await expect.poll(async () => (await pedirPerfil()).tieneFoto, { timeout: 15_000 }).toBe(false)
   })
 
+  test('la foto sigue viéndose al ir a otra pantalla del portal y volver', async ({ page }) => {
+    // ⚠️ **Solo se ve yendo y viniendo POR DENTRO del portal.** La foto se baja
+    // como blob y se pinta con una url de `createObjectURL` que se guarda en la
+    // caché de la pantalla; soltarla al salir dejaba la caché apuntando a una
+    // url muerta y al volver la persona veía su foto rota. Un `page.goto`
+    // recarga: caché vacía, imagen pedida otra vez, el fallo no aparece.
+    await page.getByRole('button', { name: 'Añadir una foto de perfil', exact: true }).click()
+    await page.setInputFiles('input[aria-label="Tu foto de perfil"]', {
+      name: 'yo.png',
+      mimeType: 'image/png',
+      buffer: PNG_MINIMO,
+    })
+    await expect.poll(async () => (await pedirPerfil()).tieneFoto, { timeout: 20_000 }).toBe(true)
+    await expect(page.getByRole('img', { name: /tu foto/i })).toBeVisible({ timeout: 15_000 })
+
+    // Los enlaces de la cabecera, que es como se mueve la gente por el portal.
+    await page.getByRole('link', { name: 'Mis procesos', exact: true }).click()
+    await expect(page.getByRole('img', { name: /tu foto/i })).toHaveCount(0)
+    await page.getByRole('link', { name: 'Mi cuenta', exact: true }).click()
+
+    // Lo que se comprueba es que la imagen CARGÓ, no que el `<img>` esté ahí:
+    // con la url revocada el elemento sale igual, vacío por dentro, y
+    // `toBeVisible` pasaría tan contento.
+    const laFoto = page.getByRole('img', { name: /tu foto/i })
+    await expect(laFoto).toBeVisible({ timeout: 15_000 })
+    await expect
+      .poll(async () => laFoto.evaluate((el) => (el as HTMLImageElement).naturalWidth), {
+        timeout: 15_000,
+      })
+      .toBeGreaterThan(0)
+
+    // El recorrido va en serie: se devuelve el perfil sin foto, como lo dejó el
+    // paso anterior.
+    await page.getByRole('button', { name: 'Cambiar tu foto de perfil' }).click()
+    await page.getByRole('button', { name: 'Quitar la foto' }).click()
+    await expect.poll(async () => (await pedirPerfil()).tieneFoto, { timeout: 15_000 }).toBe(false)
+  })
+
   test('un PDF no vale como foto, y lo dice sin jerga', async ({ page }) => {
     await page.getByRole('button', { name: 'Añadir una foto de perfil' }).click()
     await page.setInputFiles('input[aria-label="Tu foto de perfil"]', UN_CV('esto no es una foto'))

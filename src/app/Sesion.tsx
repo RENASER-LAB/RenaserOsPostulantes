@@ -28,6 +28,7 @@ import {
   useState,
   type ReactNode,
 } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { alCaerLaSesion, borrarToken, guardarToken, leerToken } from '@/api/cliente'
 import { accederConEnlace, crearCuenta, ingresar, quienSoy } from '@/api/portal'
 import type { CrearCuenta, Login, Sesion as SesionApi } from '@/api/tipos'
@@ -88,6 +89,17 @@ function olvidarNombre(): void {
 }
 
 export function ProveedorSesion({ children }: { children: ReactNode }) {
+  /*
+    ⚠️ **La cache se vacia al cerrar sesion, y no es limpieza de cortesia.** Lo
+    que hay dentro es de la persona que estaba: su perfil, sus procesos y —lo
+    que de verdad se ve— la url del blob de su foto, que sigue valiendo aunque
+    el token no. Sin esto, la cuenta siguiente que entrara en la misma pestaña
+    veia la foto de la anterior. `clear()` ademas dispara el `removed` de cada
+    consulta, que es lo que suelta esas urls (`soltarUrlsDeArchivos`).
+
+    Funciona porque `QueryClientProvider` envuelve a este proveedor en `App`.
+  */
+  const cache = useQueryClient()
   const [token, setToken] = useState<string | null>(() => leerToken())
   const [nombre, setNombre] = useState<string | null>(() => leerNombre())
   const [apellidos, setApellidos] = useState<string | null>(() => leerApellidos())
@@ -125,10 +137,11 @@ export function ProveedorSesion({ children }: { children: ReactNode }) {
   const salir = useCallback(() => {
     borrarToken()
     olvidarNombre()
+    cache.clear()
     setToken(null)
     setNombre(null)
     setApellidos(null)
-  }, [])
+  }, [cache])
 
   // Con token guardado y sin nombre, se le pregunta al servidor.
   //
@@ -161,11 +174,12 @@ export function ProveedorSesion({ children }: { children: ReactNode }) {
   useEffect(() => {
     return alCaerLaSesion(() => {
       olvidarNombre()
+      cache.clear()
       setToken(null)
       setNombre(null)
       setApellidos(null)
     })
-  }, [])
+  }, [cache])
 
   const valor = useMemo<Sesion>(
     () => ({

@@ -14,6 +14,10 @@
  *   certificaciones crear · editar · borrar · confirmar
  *   enlaces         crear · borrar
  *
+ * `reordenar` sigue en el backend y no se llama desde aqui: la trayectoria se
+ * ordena sola por fecha desde el rediseño de «Mi perfil», asi que la pantalla
+ * ya no ofrece flechas para subir y bajar.
+ *
  * ⚠️ **`experiencia` y `educacion` van en SINGULAR en la ruta**, las otras tres
  * en plural. No existe `/experiencias`. El nombre de cada una coincide con su
  * clave en el JSON del GET, que es lo que permite recorrerlas con un componente
@@ -65,9 +69,6 @@ export const borrarExperiencia = (id: number) =>
 export const confirmarExperiencia = (id: number) =>
   pedir<void>(`/perfil/experiencia/${id}/confirmacion`, { metodo: 'POST' })
 
-export const ordenarExperiencia = (ids: number[]) =>
-  pedir<void>('/perfil/experiencia/orden', { metodo: 'PUT', cuerpo: { ids } })
-
 // ---------- Educacion ----------
 
 export const crearEducacion = (datos: EditarEducacion) =>
@@ -81,9 +82,6 @@ export const borrarEducacion = (id: number) =>
 
 export const confirmarEducacion = (id: number) =>
   pedir<void>(`/perfil/educacion/${id}/confirmacion`, { metodo: 'POST' })
-
-export const ordenarEducacion = (ids: number[]) =>
-  pedir<void>('/perfil/educacion/orden', { metodo: 'PUT', cuerpo: { ids } })
 
 // ---------- Idiomas ----------
 
@@ -162,8 +160,13 @@ export const nivelesIdioma = () => pedir<OpcionCatalogo[]>('/catalogos/niveles-i
  * `memoria://` que ningun navegador abre. Se piden como blob y se pintan con
  * `URL.createObjectURL`, que funciona igual en los dos sitios.
  *
- * ⚠️ **Quien llame a `urlDeLaFoto` o `urlDeLaPortada` tiene que revocar la url
- * al desmontar** (`URL.revokeObjectURL`), o el blob se queda en memoria.
+ * ⚠️ **La url que devuelven `urlDeLaFoto` y `urlDeLaPortada` NO se revoca al
+ * desmontar.** Vive lo que viva el dato en la cache, que es mas: la consulta se
+ * guarda con `staleTime` y `gcTime` infinitos para no volver a bajar la imagen
+ * cada vez que se entra a la pantalla, asi que soltarla al salir dejaba la
+ * cache apuntando a una url muerta y la foto salia rota al volver. Se suelta
+ * cuando deja de ser la buena — al sustituirla o al quitar la imagen —, y de
+ * eso se encargan `renovarLaUrl` y `olvidarLaUrl` en `paginas/perfil/Cabecera`.
  */
 
 /** Las cinco portadas del catalogo. Los degradados viven en el CSS, no aqui. */
