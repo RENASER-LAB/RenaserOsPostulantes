@@ -227,7 +227,7 @@ test.describe('Regresión · «Mi perfil», lista por lista', () => {
   })
 
   test('una certificación caducada se avisa en la pantalla', async ({ page }) => {
-    await page.getByRole('button', { name: 'Añadir una certificación' }).click()
+    await page.getByRole('button', { name: 'Añadir certificación' }).click()
     await page.getByLabel('Nombre', { exact: true }).fill('Soporte Vital Básico (BLS)')
     await page.getByLabel('Quién la emitió').fill('American Heart Association')
     await page.getByLabel('Emitida en').fill('2022-05-01')
@@ -243,9 +243,14 @@ test.describe('Regresión · «Mi perfil», lista por lista', () => {
     // ⚠️ Empleos, estudios y certificaciones comparten cronología desde el
     // 06/09/2026: si esto vuelve a ser tres listas, este test lo dice.
     const filas = page.locator('[class*=trayectoria] li[class*=fila]')
-    // Dos empleos, unos estudios y una certificación, creados por los pasos
-    // anteriores de este recorrido en serie.
-    await expect(filas).toHaveCount(4)
+    // Dos empleos y unos estudios, creados por los pasos anteriores de este
+    // recorrido en serie. Las certificaciones NO están: son puntos, no tramos,
+    // y tienen su propia sección desde el 06/09/2026.
+    await expect(filas).toHaveCount(3)
+    // Y dentro de la línea no hay ni una certificación.
+    await expect(
+      page.locator('[class*=trayectoria]').getByText('Certificación'),
+    ).toHaveCount(0)
 
     // Cada entrada dice de qué especie es, con la palabra y no solo el icono.
     await expect(page.getByText('EMPLEO').first()).toBeVisible()

@@ -33,6 +33,18 @@ una banda dura que no se parece a nada del portal y compiten con el nombre que v
 justo debajo. Se sube por la ruta de portada propia, así que no toca backend, y el
 botón solo aparece si hay foto.
 
+## Las certificaciones salen de la cronología (06/09/2026, noche)
+
+⚠️ **Un empleo y unos estudios son TRAMOS; un certificado es un PUNTO.** Los tres
+compartieron línea medio día y no funciona: los tramos duran, se solapan y dejan
+huecos entre ellos, y un certificado se emite un día. Metidos en la misma línea
+partían la trayectoria con algo que no es trayectoria — en la ficha de prueba
+dejaban dos certificados entre el empleo actual y el anterior.
+
+`Certificaciones` vuelve a ser su propia sección en `Listas.tsx`, montada sobre el
+mismo gancho `useCertificados`. La cronología se queda con empleos y estudios, que
+sí comparten forma. El índice cuenta cinco secciones.
+
 ## Una sola cronología, no tres listas (06/09/2026, tarde)
 
 Rediseño de estructura elegido por el usuario sobre el reparto del dado
@@ -40,8 +52,9 @@ Rediseño de estructura elegido por el usuario sobre el reparto del dado
 de marca que aprobó la clienta sobreviven a un rediseño—; lo que cambia es la
 composición. La pieza nueva está documentada en `DESIGN.md`.
 
-**Empleos, estudios y certificaciones se pintan juntos**, ordenados por fecha, en
-`Trayectoria.tsx`. Las tres secciones de `Listas.tsx` dejaron de ser componentes y
+**Empleos y estudios se pintan juntos**, ordenados por fecha, en
+`Trayectoria.tsx` —las certificaciones salieron después, ver la sección de
+arriba—. Las tres secciones de `Listas.tsx` dejaron de ser componentes y
 pasaron a ser **ganchos** (`useEmpleos`, `useEstudios`, `useCertificados`) que
 exponen sus mutaciones y su formulario; quien pinta las filas es la cronología,
 porque interleaved por fecha no se puede hacer con tres listas independientes.

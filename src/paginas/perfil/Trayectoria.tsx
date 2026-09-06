@@ -1,10 +1,10 @@
 /**
  * Tu trayectoria: una sola cronología.
  *
- * THESIS · Empleos, estudios y certificaciones dejan de ser tres listas y pasan
- * a colgar de un raíl único ordenado por fecha. Rechaza el acordeón de secciones
- * iguales que usa cualquier portal de empleo: una vida laboral no son tres
- * cajones, es una línea con huecos.
+ * THESIS · Los empleos y los estudios dejan de ser dos listas y pasan a colgar de
+ * un raíl único ordenado por fecha. Rechaza el acordeón de secciones iguales que
+ * usa cualquier portal de empleo: una vida laboral no son dos cajones, es una
+ * línea con huecos. Las certificaciones se quedan fuera: son puntos, no tramos.
  *
  * OWN-WORLD · El mundo de EX sin tocar —Mulish, tema claro, tokens del canto—.
  * Lo que esta superficie añade es el raíl: una línea de 2px con un nodo por
@@ -35,36 +35,38 @@
 
 import { useMemo } from "react";
 import type {
-  CertificacionPerfil,
   EducacionPerfil,
   ExperienciaPerfil,
   OpcionCatalogo,
 } from "@/api/tipos";
-import { IconoBirrete, IconoMaletin, IconoSello } from "@/ui/Iconos";
+import { IconoBirrete, IconoMaletin } from "@/ui/Iconos";
 import {
-  ElDiploma,
-  estaVencida,
   Fila,
   Hueco,
   Marca,
   nombreDelNivelEducativo,
   periodo,
   Seccion,
-  useCertificados,
   useEmpleos,
   useEstudios,
 } from "./Listas";
 import { duracion, huecoEntre } from "./textos";
 import estilos from "./Perfil.module.css";
 
+/*
+ * ⚠️ **Las certificaciones NO están aquí, y es una decisión.** Un empleo y unos
+ * estudios son tramos: duran, se solapan, dejan huecos entre ellos. Un
+ * certificado es un punto —se emite un día— y metido en la misma línea partía la
+ * trayectoria en dos con algo que no es trayectoria: en la ficha de prueba
+ * dejaba dos certificados entre el empleo actual y el anterior. Tienen su propia
+ * sección desde el 06/09/2026, a petición del usuario.
+ */
 type Entrada =
   | { especie: "empleo"; fila: ExperienciaPerfil }
-  | { especie: "estudio"; fila: EducacionPerfil }
-  | { especie: "certificado"; fila: CertificacionPerfil };
+  | { especie: "estudio"; fila: EducacionPerfil };
 
 /** Cuándo empieza cada especie. */
 function desdeDe(e: Entrada): string | null {
-  if (e.especie === "certificado") return e.fila.emitidaEn;
   return e.fila.desde;
 }
 
@@ -77,16 +79,13 @@ function desdeDe(e: Entrada): string | null {
  * que está pasando ahora. Un tramo abierto ordena como si terminara hoy.
  */
 function hastaDe(e: Entrada): string {
-  if (e.especie === "certificado") return e.fila.emitidaEn ?? "";
   if (e.especie === "estudio" && e.fila.enCurso) return "9999";
-  const hasta = e.fila.hasta;
-  return hasta ?? "9999";
+  return e.fila.hasta ?? "9999";
 }
 
 const LA_ESPECIE = {
   empleo: { palabra: "Empleo", Icono: IconoMaletin },
   estudio: { palabra: "Estudios", Icono: IconoBirrete },
-  certificado: { palabra: "Certificación", Icono: IconoSello },
 } as const;
 
 /**
@@ -108,26 +107,22 @@ function ordenar(entradas: Entrada[]): { conFecha: Entrada[]; sinFecha: Entrada[
 export function Trayectoria({
   experiencia,
   educacion,
-  certificaciones,
   niveles,
 }: {
   experiencia: ExperienciaPerfil[];
   educacion: EducacionPerfil[];
-  certificaciones: CertificacionPerfil[];
   niveles: OpcionCatalogo[];
 }) {
   const empleos = useEmpleos();
   const estudios = useEstudios({ niveles });
-  const certificados = useCertificados();
 
   const { conFecha, sinFecha } = useMemo(
     () =>
       ordenar([
         ...experiencia.map((fila) => ({ especie: "empleo", fila }) as Entrada),
         ...educacion.map((fila) => ({ especie: "estudio", fila }) as Entrada),
-        ...certificaciones.map((fila) => ({ especie: "certificado", fila }) as Entrada),
       ]),
-    [experiencia, educacion, certificaciones],
+    [experiencia, educacion],
   );
 
   const todas = [...conFecha, ...sinFecha];
@@ -169,14 +164,14 @@ export function Trayectoria({
     return ocupado ? null : meses;
   };
 
-  const abierto = empleos.editando ?? estudios.editando ?? certificados.editando;
-  const ocupado = empleos.ocupado || estudios.ocupado || certificados.ocupado;
-  const fallo = empleos.fallo ?? estudios.fallo ?? certificados.fallo;
+  const abierto = empleos.editando ?? estudios.editando;
+  const ocupado = empleos.ocupado || estudios.ocupado;
+  const fallo = empleos.fallo ?? estudios.fallo;
 
   return (
     <Seccion
       titulo="Tu trayectoria"
-      explicacion="Tus empleos, tus estudios y tus certificaciones en una sola línea, de lo más reciente a lo más antiguo. El orden lo pone la fecha."
+      explicacion="Dónde has trabajado y qué estudiaste, en una sola línea de lo más reciente a lo más antiguo. El orden lo pone la fecha."
       cuantosSinConfirmar={sinConfirmar}
       vacia="Todavía no hay nada aquí. Empieza por donde quieras."
       hayAlgo={todas.length > 0}
@@ -192,7 +187,6 @@ export function Trayectoria({
               ocupado={ocupado}
               empleos={empleos}
               estudios={estudios}
-              certificados={certificados}
               hueco={huecoAntesDe(i)}
             />
           ))}
@@ -207,7 +201,6 @@ export function Trayectoria({
               ocupado={ocupado}
               empleos={empleos}
               estudios={estudios}
-              certificados={certificados}
               hueco={null}
             />
           ))}
@@ -222,7 +215,6 @@ export function Trayectoria({
         <>
           {empleos.editando !== null && empleos.formulario}
           {estudios.editando !== null && estudios.formulario}
-          {certificados.editando !== null && certificados.formulario}
         </>
       ) : (
         <div className={estilos.anadirTres}>
@@ -231,9 +223,6 @@ export function Trayectoria({
           </button>
           <button className={estilos.anadir} type="button" onClick={estudios.abrirNueva}>
             Añadir estudios
-          </button>
-          <button className={estilos.anadir} type="button" onClick={certificados.abrirNueva}>
-            Añadir una certificación
           </button>
         </div>
       )}
@@ -247,7 +236,6 @@ function EnLaLinea({
   ocupado,
   empleos,
   estudios,
-  certificados,
   hueco,
 }: {
   entrada: Entrada;
@@ -255,17 +243,11 @@ function EnLaLinea({
   ocupado: boolean;
   empleos: ReturnType<typeof useEmpleos>;
   estudios: ReturnType<typeof useEstudios>;
-  certificados: ReturnType<typeof useCertificados>;
   hueco: number | null;
 }) {
   const { palabra, Icono } = LA_ESPECIE[entrada.especie];
 
-  const gancho =
-    entrada.especie === "empleo"
-      ? empleos
-      : entrada.especie === "estudio"
-        ? estudios
-        : certificados;
+  const gancho = entrada.especie === "empleo" ? empleos : estudios;
 
   const comun = {
     dato: entrada.fila,
@@ -310,58 +292,25 @@ function EnLaLinea({
     );
   }
 
-  if (entrada.especie === "estudio") {
-    const f = entrada.fila;
-    const nivel = nombreDelNivelEducativo(niveles, f.nivelCodigo);
-    return (
-      <Fila
-        {...comun}
-        queEs={`${f.titulo} en ${f.institucion}`}
-        onConfirmar={() => estudios.confirmar(f.id)}
-        onEditar={() => estudios.abrir(f)}
-        onQuitar={() => estudios.quitar(f)}
-      >
-        <div className={estilos.conCuando}>
-          <div className={estilos.queYDonde}>
-            <span className={estilos.queEs}>{f.titulo}</span>
-            <span className={estilos.donde}>{f.institucion}</span>
-            {nivel && <span className={`${estilos.marca} ${estilos.atributo}`}>{nivel}</span>}
-            <Marca dato={f} />
-          </div>
-          <p className={estilos.cuando}>{periodo(f.desde, f.hasta, f.enCurso)}</p>
-        </div>
-      </Fila>
-    );
-  }
-
   const f = entrada.fila;
+  const nivel = nombreDelNivelEducativo(niveles, f.nivelCodigo);
   return (
     <Fila
       {...comun}
-      queEs={f.nombre}
-      onConfirmar={() => certificados.confirmar(f.id)}
-      onEditar={() => certificados.abrir(f)}
-      onQuitar={() => certificados.quitar(f)}
+      queEs={`${f.titulo} en ${f.institucion}`}
+      onConfirmar={() => estudios.confirmar(f.id)}
+      onEditar={() => estudios.abrir(f)}
+      onQuitar={() => estudios.quitar(f)}
     >
       <div className={estilos.conCuando}>
         <div className={estilos.queYDonde}>
-          <span className={estilos.queEs}>{f.nombre}</span>
-          {f.entidad && <span className={estilos.donde}>{f.entidad}</span>}
-          {estaVencida(f.venceEn) && (
-            <span className={`${estilos.marca} ${estilos.vencida}`}>Vencida</span>
-          )}
+          <span className={estilos.queEs}>{f.titulo}</span>
+          <span className={estilos.donde}>{f.institucion}</span>
+          {nivel && <span className={`${estilos.marca} ${estilos.atributo}`}>{nivel}</span>}
           <Marca dato={f} />
         </div>
-        <p className={estilos.cuando}>
-          {[
-            f.emitidaEn ? `Emitida` : null,
-            f.venceEn ? `vence ${f.venceEn.slice(0, 4)}` : "no caduca",
-          ]
-            .filter(Boolean)
-            .join(" · ")}
-        </p>
+        <p className={estilos.cuando}>{periodo(f.desde, f.hasta, f.enCurso)}</p>
       </div>
-      <ElDiploma certificacion={f} ocupado={ocupado} refrescar={certificados.refrescar} />
     </Fila>
   );
 }

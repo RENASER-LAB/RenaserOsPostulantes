@@ -37,7 +37,7 @@ import { useSesion } from '@/app/Sesion'
 import { rutas } from '@/rutas'
 import { useAviso } from '@/ui/Avisos'
 import { AreaTexto, Campo } from '@/ui/campos/Campo'
-import { anclaDe, Enlaces, Idiomas } from './Listas'
+import { anclaDe, Certificaciones, Enlaces, Idiomas } from './Listas'
 import { Trayectoria } from './Trayectoria'
 import { Aptitudes, leerTodas } from './Aptitudes'
 import { CabeceraDelPerfil } from './Cabecera'
@@ -279,9 +279,9 @@ export function Perfil() {
         <Trayectoria
           experiencia={perfil.experiencia}
           educacion={perfil.educacion}
-          certificaciones={perfil.certificaciones}
           niveles={educativos.data ?? []}
         />
+        <Certificaciones filas={perfil.certificaciones} />
 
         {/*
           ⚠️ Si el catálogo de niveles no llega, «Idiomas» queda **inservible**:

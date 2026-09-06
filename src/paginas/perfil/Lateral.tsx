@@ -103,9 +103,10 @@ export function Lateral({ perfil }: { perfil: PerfilCompleto }) {
 /** Las secciones del perfil, en el orden en que se pintan. */
 const SECCIONES = [
   { titulo: 'Acerca de ti', cuenta: [] },
-  // Empleos, estudios y certificaciones comparten sección desde que hay una
-  // sola cronología: el índice cuenta las tres juntas porque juntas se pintan.
-  { titulo: 'Tu trayectoria', cuenta: ['experiencia', 'educacion', 'certificaciones'] },
+  // Empleos y estudios comparten sección desde que hay una cronología; las
+  // certificaciones salieron de ella el 06/09 porque son puntos, no tramos.
+  { titulo: 'Tu trayectoria', cuenta: ['experiencia', 'educacion'] },
+  { titulo: 'Certificaciones', cuenta: ['certificaciones'] },
   { titulo: 'Idiomas', cuenta: ['idiomas'] },
   { titulo: 'Enlaces', cuenta: ['enlaces'] },
 ] as const

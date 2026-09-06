@@ -871,6 +871,86 @@ const QUE_SIGNIFICA: Record<string, string> = {
   NATIVO: "Es mi lengua materna.",
 };
 
+/**
+ * Certificaciones, colegiaturas y cursos con constancia.
+ *
+ * ⚠️ **Fuera de la cronología, y a propósito.** Estuvieron dentro medio día: un
+ * empleo y unos estudios son tramos —duran, se solapan, dejan huecos— y un
+ * certificado es un punto, se emite un día. Metido en la misma línea partía la
+ * trayectoria con algo que no es trayectoria: dos certificados quedaban entre el
+ * empleo actual y el anterior. Separado el 06/09/2026 a petición del usuario.
+ */
+export function Certificaciones({ filas }: { filas: CertificacionPerfil[] }) {
+  const c = useCertificados();
+
+  return (
+    <Seccion
+      titulo="Certificaciones"
+      explicacion="Certificados, colegiaturas y cursos con constancia. Si alguno caduca, pon la fecha: te avisamos aquí antes de que te pille."
+      cuantosSinConfirmar={
+        filas.filter((f) => f.origen === "CURRICULUM" && !f.confirmado).length
+      }
+      vacia="Todavía no hay nada aquí."
+      hayAlgo={filas.length > 0}
+      fallo={c.fallo}
+    >
+      {filas.length > 0 && (
+        <ul className={estilos.filas} role="list">
+          {filas.map((f) => (
+            <Fila
+              key={f.id}
+              dato={f}
+              queEs={f.nombre}
+              recienConfirmada={c.recienConfirmada === f.id}
+              ocupado={c.ocupado}
+              onConfirmar={() => c.confirmar(f.id)}
+              onEditar={() => c.abrir(f)}
+              onQuitar={() => c.quitar(f)}
+            >
+              <div className={estilos.conCuando}>
+                <div className={estilos.queYDonde}>
+                  <span className={estilos.queEs}>{f.nombre}</span>
+                  {f.entidad && <span className={estilos.donde}>{f.entidad}</span>}
+                  {/*
+                    Una certificación vencida importa de verdad en salud
+                    —colegiatura, primeros auxilios— y es mucho mejor verlo aquí
+                    que descubrirlo tarde. Lleva la palabra dentro, como todo.
+                  */}
+                  {estaVencida(f.venceEn) && (
+                    <span className={`${estilos.marca} ${estilos.vencida}`}>
+                      Vencida
+                    </span>
+                  )}
+                  <Marca dato={f} />
+                </div>
+                {/*
+                  Se arma juntando los trozos que existen: encadenar condiciones
+                  dejaba «Emitida en febrero de 2024No caduca» cuando no habia
+                  fecha de vencimiento.
+                */}
+                <p className={estilos.cuando}>
+                  {[
+                    f.emitidaEn ? `Emitida en ${mesYAno(f.emitidaEn)}` : null,
+                    f.venceEn ? `Vence en ${mesYAno(f.venceEn)}` : "No caduca",
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </p>
+              </div>
+              <ElDiploma
+                certificacion={f}
+                ocupado={c.ocupado}
+                refrescar={c.refrescar}
+              />
+            </Fila>
+          ))}
+        </ul>
+      )}
+      {c.formulario}
+    </Seccion>
+  );
+}
+
 export function Idiomas({
   filas,
   niveles,
