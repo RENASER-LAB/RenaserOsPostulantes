@@ -87,9 +87,15 @@ function nombrar(partes: { que: string }[]): string {
 export function Lateral({ perfil }: { perfil: PerfilCompleto }) {
   return (
     <aside className={estilos.lateral}>
+      {/*
+        ⚠️ **El índice va primero, y el orden es el arreglo.** La columna se pega
+        entera y mide más que una ventana de portátil: lo que quede fuera del
+        borde tiene que ser lo que menos falta mientras se lee, no la navegación.
+        El medidor y el currículum se miran al llegar; el índice, todo el rato.
+      */}
+      <Indice perfil={perfil} />
       <Completitud perfil={perfil} />
       <TuCurriculum perfil={perfil} />
-      <Indice perfil={perfil} />
     </aside>
   )
 }
@@ -317,13 +323,11 @@ function TuCurriculum({ perfil }: { perfil: PerfilCompleto }) {
               <p className={estilos.nombreArchivo} title={perfil.cv.nombre}>
                 {perfil.cv.nombre}
               </p>
-              <p className={estilos.pesoArchivo}>{pesoLegible(perfil.cv.tamano)}</p>
+              <p className={estilos.pesoArchivo}>
+              {pesoLegible(perfil.cv.tamano)} · lo usaremos al postular
+            </p>
             </div>
           </div>
-
-          <p className={estilos.pista}>
-            Lo usaremos cuando postules, sin que tengas que volver a subirlo.
-          </p>
 
           <div className={estilos.acciones}>
             <button

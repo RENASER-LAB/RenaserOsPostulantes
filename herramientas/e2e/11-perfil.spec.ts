@@ -158,14 +158,19 @@ test.describe('Regresión · «Mi perfil», lista por lista', () => {
     // índice no se saliera de la ventana, y el remedio fue peor: dos superficies
     // que mover para leer una página. Lo que se pega es solo el índice.
     await page.setViewportSize({ width: 1280, height: 800 })
-    await page.locator('#seccion-enlaces').evaluate((e) => e.scrollIntoView())
+    // A media página, que es donde importa que la columna acompañe. Al final del
+    // todo se suelta, y eso es lo correcto: `sticky` deja de pegar cuando su
+    // contenedor se acaba, y debajo de la última sección no hay nada que mirar.
+    await page.locator('#seccion-tu-trayectoria').evaluate((e) => e.scrollIntoView())
 
     const lateral = page.locator('aside')
     const dosBarras = await lateral.evaluate((e) => e.scrollHeight > e.clientHeight + 1)
     expect(dosBarras, 'la lateral no puede tener barra propia').toBe(false)
 
-    // Y el índice sigue estando entero dentro de la ventana, que era el problema
-    // que aquella barra intentaba resolver.
+    // Y el índice sigue entero dentro de la ventana. Va el PRIMERO de la
+    // columna a propósito: las tres tarjetas miden más que un portátil, así que
+    // lo que puede quedar fuera por abajo tiene que ser el currículum —que se
+    // mira al llegar— y nunca la navegación.
     const nav = page.getByRole('navigation', { name: 'Secciones de tu perfil' })
     const caja = await nav.boundingBox()
     expect(caja).not.toBeNull()

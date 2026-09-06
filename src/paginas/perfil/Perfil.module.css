@@ -58,16 +58,20 @@
  * columna y desborda la rejilla en vez de partirse.
  */
 /*
- * ⚠️ **Sin `align-items: start`, y es lo que hace que el índice funcione.**
- * `position: sticky` viaja dentro de la caja de su padre: con la lateral
- * encogida a su contenido (unos 1.028px), el índice se pegaba… hasta que se
- * pasaba esa altura, y entonces se iba con ella. Estirada a toda la fila —que no
- * se ve, porque no tiene fondo— el índice acompaña los 4.000px de página sin
- * necesitar una segunda barra de desplazamiento.
+ * ⚠️ **`align-items: start`, y de esto ya van cuatro intentos.** La lateral se
+ * pega ENTERA —el usuario quiere que las tres tarjetas viajen juntas—, y para
+ * eso tiene que medir lo que mide su contenido: `position: sticky` con `top` no
+ * engancha en un elemento más alto que la ventana, así que una lateral estirada
+ * a toda la fila simplemente se desplaza como si nada.
+ *
+ * Que quepa dejó de ser un problema cuando la fusión de las tres listas bajó el
+ * índice de seis entradas a cuatro y el bloque del currículum de 347px a 250:
+ * las tres tarjetas suman unos 716px y entran en una ventana de portátil.
  */
 .cuerpo {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 20rem;
+  align-items: start;
   gap: var(--e5);
   margin-top: var(--e6);
 }
@@ -75,7 +79,8 @@
 .principal {
   display: flex;
   flex-direction: column;
-  gap: var(--e5);
+  /* Separadas con generosidad; por dentro, apretadas. */
+  gap: var(--e6);
   min-width: 0;
 }
 
@@ -251,9 +256,29 @@
   max-width: var(--medida);
 }
 
+/*
+ * Cada sección, su propia superficie.
+ *
+ * Iban separadas por una regla de 1px y se leían como un solo bloque largo:
+ * cuatro secciones de altura muy distinta, sin nada que dijera dónde acaba una
+ * y empieza la otra. La tarjeta es lo que ya usa la columna lateral, así que no
+ * es un material nuevo — es el mismo, aplicado donde hacía falta.
+ *
+ * ⚠️ **La tarjeta separa secciones, NO filas.** Dentro sigue sin haber cajas:
+ * la única de la pantalla es la fila que espera algo. Anidar tarjetas dentro de
+ * tarjetas es exactamente lo que convierte una pantalla en un acordeón.
+ */
 .seccion {
-  border-top: 1px solid var(--regla);
-  padding-top: var(--e5);
+  padding: var(--e5);
+  border: 1px solid var(--regla);
+  border-radius: var(--radio);
+  background: var(--nube);
+}
+
+@media (max-width: 640px) {
+  .seccion {
+    padding: var(--e4);
+  }
 }
 
 .tituloSeccion {

@@ -17,17 +17,19 @@
   /* Acompaña mientras se recorre la columna larga. En pantallas cortas se suelta
      sola: `position: sticky` no hace nada si no hay sitio donde pegarse. */
   /*
-    ⚠️ **La columna NO se pega entera, y esto ya se hizo mal dos veces.**
-    Pegándola entera medía 885px: en una ventana de portátil su parte de abajo
-    quedaba fuera del borde y no volvía a subir, y las últimas entradas del
-    índice no se alcanzaban nunca. Acotarla con `overflow-y: auto` lo arreglaba
-    metiendo **una segunda barra de desplazamiento**: dos superficies que mover
-    para leer una página, que es peor que el problema.
+    ⚠️ **La columna se pega ENTERA, y el índice va primero.** Es la tercera
+    versión de esto y las dos anteriores fallaron por sitios distintos: pegarla
+    entera con el índice al final dejaba la navegación fuera del borde en una
+    ventana de portátil, y acotarla con `overflow-y: auto` metía una segunda
+    barra de desplazamiento — dos superficies que mover para leer una página.
 
-    Lo que se pega es solo el índice —lo único que hace falta continuamente—; el
-    medidor y el currículum se leen una vez al llegar y se van con la página.
-    Así nada es más alto que la ventana y no hay ninguna barra de más.
+    La solución no era elegir qué se pega, era elegir **el orden**. Las tres
+    tarjetas suman unos 830px: en una ventana de 950 o más caben enteras, y en
+    una más corta lo que se sale por abajo es el currículum —que se lee una vez
+    al llegar— en vez del índice, que hace falta todo el rato.
   */
+  position: sticky;
+  top: calc(var(--alto-cabecera) + var(--e4));
 }
 
 
@@ -175,21 +177,29 @@
 
 .acciones {
   display: flex;
-  flex-wrap: wrap;
   gap: var(--e2);
   margin-top: var(--e3);
 }
 
 /* La clase se aplica en el JSX: `composes` solo vale en un selector de clase
    suelto, no en `.acciones button`. */
+/*
+ * Los dos comparten renglón. Apilados, el bloque del currículum medía 347px —el
+ * más alto de la columna— y era lo que empujaba al índice fuera de la ventana en
+ * un portátil. `flex: 1` con `min-width: 0` para que «Descargar» y «Cambiar»
+ * quepan en 20rem sin desbordar.
+ */
 .accionMenor {
   composes: secundario from '../../estilos/piezas.module.css';
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: var(--e2);
+  flex: 1;
+  min-width: 0;
   /* Sin `min-height` propio: los 44px vienen de `secundario`, que es el alto de
      control del sistema. Bajarlo aquí era encoger a ojo lo que ya estaba fijado. */
-  padding: 0 var(--e4);
+  padding: 0 var(--e3);
   font-size: var(--t-menor);
 }
 
@@ -269,17 +279,8 @@
  * tinta, y lo que de verdad espera algo lleva la palabra «por revisar» en ámbar
  * —la misma que llevan sus filas—, que se lee sin color.
  */
-/* El bloque que contiene el índice es el único pegajoso de la columna. */
 .bloqueIndice {
   composes: bloque;
-  position: sticky;
-  top: calc(var(--alto-cabecera) + var(--e4));
-}
-
-@media (max-width: 900px) {
-  .bloqueIndice {
-    position: static;
-  }
 }
 
 .indice {

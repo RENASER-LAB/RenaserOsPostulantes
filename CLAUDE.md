@@ -33,6 +33,25 @@ pantalla que le pide validar lo que dedujo una máquina.
 
 El índice de la lateral cuenta las tres juntas, porque juntas se pintan.
 
+**Cada sección es una tarjeta** (`.seccion`), separadas por `--e6` y apretadas por
+dentro. Iban con una regla de 1px y se leían como un bloque largo. ⚠️ **La tarjeta
+separa SECCIONES, no filas**: dentro sigue sin haber cajas, la única de la
+pantalla es la fila que espera algo. Anidar tarjetas es lo que convierte una
+pantalla en un acordeón.
+
+⚠️ **La lateral se pega ENTERA, y `.cuerpo` lleva `align-items: start`.** De esto
+van cuatro intentos y el que faltaba entender es este: `position: sticky` con
+`top` **no engancha en un elemento más alto que la ventana**, así que estirar la
+lateral a toda la fila —lo que hacía falta para pegar solo el índice dentro de
+ella— la deja desplazándose como si no tuviera `sticky`. O se pega la columna, o
+se pega un hijo; las dos cosas a la vez no.
+
+Que quepa dejó de ser un problema con la fusión: el índice bajó de seis entradas
+a cuatro y el bloque del currículum de 347px a 250 —«Descargar» y «Cambiar»
+comparten renglón—, así que las tres tarjetas suman **716px** y entran en una
+ventana de 800. Medido. Al final del todo la columna se suelta, y eso es correcto:
+`sticky` deja de pegar cuando su contenedor se acaba.
+
 Este archivo es para retomar el trabajo sin tener que reconstruir nada. Cuenta qué es este
 proyecto, con qué habla, qué se decidió y por qué, y qué está a medias.
 
