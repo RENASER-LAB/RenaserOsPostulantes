@@ -426,13 +426,28 @@
   }
 }
 
+/*
+ * ⚠️ **El nombre es la portada de esta pantalla.**
+ *
+ * Estaba a `--t-destacado`, o sea a 24px como máximo: exactamente el mismo
+ * tamaño que la palabra «Idiomas». En una pantalla cuyo asunto es quién eres,
+ * la persona pesaba lo mismo que un rótulo de sección. Y el sistema tiene una
+ * escala de portada —`--t-portada`, con el peso 200 del titular— que esta
+ * pantalla no usaba: DESIGN.md pide «uno por pantalla y ninguno más», y aquí
+ * había cero.
+ *
+ * El peso 200 es el del titular del portal, no una elección propia. Por debajo
+ * de 30px una Mulish de 200 deja de leerse cómoda, y el `clamp` ya empieza en 32.
+ */
 .nombre {
   margin: 0;
-  font-size: var(--t-destacado);
-  font-weight: 700;
-  letter-spacing: -0.022em;
-  line-height: 1.2;
+  font-size: var(--t-portada);
+  font-weight: 200;
+  letter-spacing: -0.03em;
+  line-height: 1.06;
   color: var(--tinta);
+  /* Un nombre largo parte por palabras, nunca por sílabas ni por letras. */
+  overflow-wrap: break-word;
 }
 
 /*

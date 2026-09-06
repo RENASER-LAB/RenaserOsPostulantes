@@ -1148,3 +1148,49 @@
   gap: var(--e3);
   margin-top: var(--e5);
 }
+
+/*
+ * ---------- El momento de confirmar ----------
+ *
+ * ⚠️ **Es el ÚNICO movimiento de la pantalla, y por eso funciona.** Confirmar es
+ * el trabajo que este perfil pide —lo dice el panel de arriba y lo dice el
+ * índice— y hasta ahora la recompensa era que la fila cambiaba en silencio. La
+ * caja se disuelve donde estaba y la fila sube a su sitio: se ve que el trabajo
+ * se hizo, sin un confeti que celebre haber leído una fecha.
+ *
+ * `prefers-reduced-motion` lo apaga por la regla global de `mundo.css`, que
+ * corta `animation-duration` a 0,01ms en toda la aplicación.
+ */
+.recienConfirmada {
+  animation: seAsienta 0.5s var(--salida) both;
+}
+
+/* El fantasma de la caja, disolviéndose donde estaba. */
+.recienConfirmada::after {
+  content: '';
+  position: absolute;
+  inset: calc(var(--e3) * -1) calc(var(--e4) * -1);
+  border: 2px solid var(--activo-regla);
+  border-radius: var(--radio);
+  pointer-events: none;
+  animation: seDisuelve 0.5s var(--salida) both;
+}
+
+@keyframes seAsienta {
+  from {
+    transform: translateY(6px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes seDisuelve {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.01);
+  }
+}

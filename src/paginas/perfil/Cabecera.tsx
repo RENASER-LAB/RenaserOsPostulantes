@@ -64,6 +64,77 @@ const LADO_FOTO = 512
  */
 const PORTADA = { ancho: 1600, alto: 400 }
 
+/**
+ * Una portada hecha con los colores de tu propia foto.
+ *
+ * ⚠️ **Se aclaran hacia el cielo del portal, y no es un capricho.** Los colores
+ * crudos de una fotografía —una pared, una camisa, el cielo de ese día— dan una
+ * banda dura que no se parece a nada del resto del portal, y encima compiten con
+ * el nombre que va justo debajo. Mezclados al 55% con `--cielo` quedan como los
+ * cinco fondos de la casa: un lavado suave del que la persona reconoce el tono.
+ *
+ * Se muestrea en 16×16 porque no hace falta más: lo que se busca es de qué color
+ * es la foto, no qué hay en ella. Se cogen el píxel más oscuro y el más claro
+ * —los dos extremos dan un degradado con recorrido, promediar da barro— y se
+ * salta lo casi transparente.
+ */
+async function portadaConLosColoresDe(url: string): Promise<File> {
+  const imagen = await createImageBitmap(await (await fetch(url)).blob())
+  const muestra = document.createElement('canvas')
+  muestra.width = 16
+  muestra.height = 16
+  const ojo = muestra.getContext('2d', { willReadFrequently: true })
+  if (!ojo) throw new Error('Tu navegador no pudo leer los colores de la foto.')
+  ojo.drawImage(imagen, 0, 0, 16, 16)
+  imagen.close()
+
+  const pixeles = ojo.getImageData(0, 0, 16, 16).data
+  let oscuro = [0, 0, 0]
+  let claro = [255, 255, 255]
+  let menor = Infinity
+  let mayor = -Infinity
+  for (let i = 0; i < pixeles.length; i += 4) {
+    if (pixeles[i + 3]! < 128) continue
+    const rgb = [pixeles[i]!, pixeles[i + 1]!, pixeles[i + 2]!]
+    const luz = 0.2126 * rgb[0]! + 0.7152 * rgb[1]! + 0.0722 * rgb[2]!
+    if (luz < menor) {
+      menor = luz
+      oscuro = rgb
+    }
+    if (luz > mayor) {
+      mayor = luz
+      claro = rgb
+    }
+  }
+
+  // El cielo del portal, para aclarar hacia él.
+  const cielo = [246, 248, 251]
+  const suave = (c: number[]) =>
+    `rgb(${c.map((v, i) => Math.round(v * 0.45 + cielo[i]! * 0.55)).join(',')})`
+
+  const lienzo = document.createElement('canvas')
+  lienzo.width = PORTADA.ancho
+  lienzo.height = PORTADA.alto
+  const pincel = lienzo.getContext('2d')
+  if (!pincel) throw new Error('Tu navegador no pudo preparar la portada.')
+  const degradado = pincel.createLinearGradient(0, PORTADA.alto, PORTADA.ancho, 0)
+  degradado.addColorStop(0, suave(oscuro))
+  degradado.addColorStop(1, suave(claro))
+  pincel.fillStyle = degradado
+  pincel.fillRect(0, 0, PORTADA.ancho, PORTADA.alto)
+
+  return new Promise((resolver, rechazar) =>
+    lienzo.toBlob(
+      (blob) =>
+        blob
+          ? resolver(new File([blob], 'portada.jpg', { type: 'image/jpeg' }))
+          : rechazar(new Error('No pudimos preparar la portada.')),
+      'image/jpeg',
+      0.85,
+    ),
+  )
+}
+
 /** El tope del backend. Se comprueba aquí para no subir y rebotar. */
 const MAXIMO_IMAGEN = 2 * 1024 * 1024
 
@@ -118,13 +189,35 @@ function inicialesDe(nombre: string | null, apellidos: string | null): string {
 }
 
 /**
+ * El tono del disco, **derivado de la portada que la persona eligió**.
+ *
+ * ⚠️ **Antes salía de un hash del nombre, y eran dos identidades sueltas.** La
+ * cabecera tenía una portada elegida a propósito y, al lado, un disco de 128px
+ * de un color que nadie había decidido: la mitad de la composición era un
+ * sorteo. Ahora el disco y la banda son la misma decisión.
+ *
+ * El violeta vuelve a ser posible aquí, y no contradice la regla del acento: lo
+ * que la rompía era **imponérselo** a uno de cada cuatro candidatos. Elegir la
+ * portada violeta es un acto deliberado, y el disco acompaña a lo que eligió.
+ *
+ * Sin portada de galería —la de bruma, una foto propia, o ninguna— no hay nada
+ * que seguir, y ahí sí decide el nombre: ver `tonoDelNombre`.
+ */
+function tonoDeLaPortada(portada: PerfilCompleto['portada'], nombre: string): string {
+  if (portada.tipo === 'GALERIA' && portada.codigo?.startsWith('CANTO_')) {
+    return portada.codigo.slice('CANTO_'.length).toLowerCase();
+  }
+  return tonoDelNombre(nombre);
+}
+
+/**
  * El tono del disco, derivado del nombre.
  *
  * Del espectro del canto, y **siempre el mismo para la misma persona**: si
  * cambiara entre visitas dejaría de ser suyo. No significa nada —no es un
  * estado— y por eso puede ser cualquiera de los cuatro.
  */
-function tonoDe(texto: string): string {
+function tonoDelNombre(texto: string): string {
   /*
     ⚠️ **Sin violeta, y es la regla del acento.** El violeta significa una sola
     cosa en este portal: «te toca a ti». Repartiendo los cuatro tonos por el
@@ -215,7 +308,7 @@ export function CabeceraDelPerfil({
         <Foto
           tieneFoto={perfil.tieneFoto}
           iniciales={iniciales}
-          tono={tonoDe(nombreCompleto || 'EX')}
+          tono={tonoDeLaPortada(perfil.portada, nombreCompleto || 'EX')}
           abierto={menu === 'foto'}
           onAlternar={() => setMenu((m) => (m === 'foto' ? null : 'foto'))}
           onCerrar={() => setMenu(null)}
@@ -487,9 +580,25 @@ function Portada({
   }
 
   const cambio = useMutation({
-    mutationFn: async (accion: { tipo: 'galeria'; codigo: string } | { tipo: 'propia'; archivo: File } | { tipo: 'ninguna' }) => {
+    mutationFn: async (
+      accion:
+        | { tipo: 'galeria'; codigo: string }
+        | { tipo: 'propia'; archivo: File }
+        | { tipo: 'deLaFoto' }
+        | { tipo: 'ninguna' },
+    ) => {
       if (accion.tipo === 'galeria') return elegirPortada(accion.codigo)
       if (accion.tipo === 'ninguna') return quitarPortada()
+      if (accion.tipo === 'deLaFoto') {
+        const url = await urlDeLaFoto()
+        try {
+          return await subirPortada(await portadaConLosColoresDe(url))
+        } finally {
+          // La url del blob se suelta pase lo que pase: si no, cada intento deja
+          // uno colgado en memoria de una pantalla que se refresca sola.
+          URL.revokeObjectURL(url)
+        }
+      }
       const banda = await recortarAlCentro(accion.archivo, PORTADA.ancho, PORTADA.alto)
       return subirPortada(new File([banda], 'portada.jpg', { type: 'image/jpeg' }))
     },
@@ -552,6 +661,20 @@ function Portada({
             })}
           </ul>
           <div className={estilos.accionesPortada}>
+            {/*
+              Solo con foto: sin ella no hay colores de los que sacarla, y un
+              botón que no puede hacer nada es peor que no estar.
+            */}
+            {perfil.tieneFoto && (
+              <button
+                type="button"
+                className={estilos.accionMenor}
+                onClick={() => cambio.mutate({ tipo: 'deLaFoto' })}
+                disabled={cambio.isPending}
+              >
+                Los colores de mi foto
+              </button>
+            )}
             <button
               type="button"
               className={estilos.accionMenor}

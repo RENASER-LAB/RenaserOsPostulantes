@@ -16,6 +16,7 @@
  */
 
 import {
+  useEffect,
   useRef,
   useState,
   type FormEvent,
@@ -213,6 +214,8 @@ interface PropsFila {
    * (idiomas, enlaces) no lo pasan: ahí la sección ya lo dice.
    */
   especie?: ReactNode;
+  /** Acaba de confirmarse: dura lo que la animación. */
+  recienConfirmada?: boolean;
   onConfirmar: () => void;
   onEditar: () => void;
   onQuitar: () => void;
@@ -224,6 +227,7 @@ export function Fila({
   children,
   queEs,
   especie,
+  recienConfirmada,
   onConfirmar,
   onEditar,
   onQuitar,
@@ -233,7 +237,9 @@ export function Fila({
 
   return (
     <li
-      className={`${estilos.fila} ${sinConfirmar ? estilos.sinConfirmar : ""}`}
+      className={`${estilos.fila} ${sinConfirmar ? estilos.sinConfirmar : ""} ${
+        recienConfirmada ? estilos.recienConfirmada : ""
+      }`}
     >
       {especie}
       {children}
@@ -356,6 +362,23 @@ function useLista() {
   const cache = useQueryClient();
   const avisar = useAviso();
   const [fallo, setFallo] = useState<string | null>(null);
+  /*
+    Qué fila se acaba de confirmar, durante lo que dura su animación.
+    ⚠️ **Es el único momento con movimiento de la pantalla, y es a propósito.**
+    Confirmar es el trabajo que este perfil pide, y hasta ahora la recompensa
+    era que la fila cambiaba sin decir nada. El temporizador se limpia al
+    desmontar: la pantalla se sondea sola cada cinco segundos y un `setState`
+    sobre un componente ido es un aviso en consola por cada dato revisado.
+  */
+  const [recienConfirmada, setRecienConfirmada] = useState<number | null>(null);
+  const reloj = useRef<number | undefined>(undefined);
+  useEffect(() => () => window.clearTimeout(reloj.current), []);
+
+  const celebrar = (id: number) => {
+    setRecienConfirmada(id);
+    window.clearTimeout(reloj.current);
+    reloj.current = window.setTimeout(() => setRecienConfirmada(null), 900);
+  };
 
   // ⚠️ **Refrescar limpia el fallo**, y por eso lo usan todos los `onSuccess`.
   // Sin esto, un borrado que fallaba dejaba su aviso rojo en pantalla mientras
@@ -390,7 +413,7 @@ function useLista() {
     avisar(`Quitado: ${queEra}.`);
   };
 
-  return { fallo, setFallo, refrescar, alFallar, anunciarBaja };
+  return { fallo, setFallo, refrescar, alFallar, anunciarBaja, recienConfirmada, celebrar };
 }
 
 
@@ -405,7 +428,8 @@ const EXPERIENCIA_VACIA = {
 };
 
 export function useEmpleos() {
-  const { fallo, setFallo, refrescar, alFallar, anunciarBaja } = useLista();
+  const { fallo, setFallo, refrescar, alFallar, anunciarBaja, recienConfirmada, celebrar } =
+    useLista();
   const [editando, setEditando] = useState<number | "nueva" | null>(null);
   const [valores, setValores] = useState(EXPERIENCIA_VACIA);
 
@@ -454,7 +478,10 @@ export function useEmpleos() {
 
   const confirmacion = useMutation({
     mutationFn: confirmarExperiencia,
-    onSuccess: refrescar,
+    onSuccess: (_, id) => {
+      celebrar(id);
+      return refrescar();
+    },
     onError: alFallar,
   });
 
@@ -582,6 +609,7 @@ export function useEmpleos() {
     ocupado,
     formulario,
     refrescar,
+    recienConfirmada,
     abrirNueva: () => { setValores(EXPERIENCIA_VACIA); setEditando("nueva"); },
     abrir: (f: ExperienciaPerfil) => {
       setEditando(f.id);
@@ -618,7 +646,8 @@ export function nombreDelNivelEducativo(
 }
 
 export function useEstudios({ niveles }: { niveles: OpcionCatalogo[] }) {
-  const { fallo, setFallo, refrescar, alFallar, anunciarBaja } = useLista();
+  const { fallo, setFallo, refrescar, alFallar, anunciarBaja, recienConfirmada, celebrar } =
+    useLista();
   const [editando, setEditando] = useState<number | "nueva" | null>(null);
   const [valores, setValores] = useState(EDUCACION_VACIA);
 
@@ -663,7 +692,10 @@ export function useEstudios({ niveles }: { niveles: OpcionCatalogo[] }) {
   });
   const confirmacion = useMutation({
     mutationFn: confirmarEducacion,
-    onSuccess: refrescar,
+    onSuccess: (_, id) => {
+      celebrar(id);
+      return refrescar();
+    },
     onError: alFallar,
   });
   const orden = useMutation({
@@ -801,6 +833,7 @@ export function useEstudios({ niveles }: { niveles: OpcionCatalogo[] }) {
     ocupado,
     formulario,
     refrescar,
+    recienConfirmada,
     abrirNueva: () => { setValores(EDUCACION_VACIA); setEditando("nueva"); },
     abrir: (f: EducacionPerfil) => {
       setEditando(f.id);
@@ -847,7 +880,8 @@ export function Idiomas({
   niveles: OpcionCatalogo[];
   catalogoCaido?: boolean;
 }) {
-  const { fallo, setFallo, refrescar, alFallar, anunciarBaja } = useLista();
+  const { fallo, setFallo, refrescar, alFallar, anunciarBaja, recienConfirmada, celebrar } =
+    useLista();
   const [editando, setEditando] = useState<number | "nueva" | null>(null);
   const [idioma, setIdioma] = useState("");
   const [nivel, setNivel] = useState("");
@@ -886,7 +920,10 @@ export function Idiomas({
   });
   const confirmacion = useMutation({
     mutationFn: confirmarIdioma,
-    onSuccess: refrescar,
+    onSuccess: (_, id) => {
+      celebrar(id);
+      return refrescar();
+    },
     onError: alFallar,
   });
 
@@ -935,6 +972,7 @@ export function Idiomas({
               key={f.id}
               dato={f}
               queEs={f.idioma}
+              recienConfirmada={recienConfirmada === f.id}
               ocupado={ocupado}
               onConfirmar={() => confirmacion.mutate(f.id)}
               onEditar={() => {
@@ -1040,7 +1078,8 @@ const CERTIFICACION_VACIA = {
 };
 
 export function useCertificados() {
-  const { fallo, setFallo, refrescar, alFallar, anunciarBaja } = useLista();
+  const { fallo, setFallo, refrescar, alFallar, anunciarBaja, recienConfirmada, celebrar } =
+    useLista();
   const [editando, setEditando] = useState<number | "nueva" | null>(null);
   const [valores, setValores] = useState(CERTIFICACION_VACIA);
 
@@ -1082,7 +1121,10 @@ export function useCertificados() {
   });
   const confirmacion = useMutation({
     mutationFn: confirmarCertificacion,
-    onSuccess: refrescar,
+    onSuccess: (_, id) => {
+      celebrar(id);
+      return refrescar();
+    },
     onError: alFallar,
   });
 
@@ -1182,6 +1224,7 @@ export function useCertificados() {
     ocupado,
     formulario,
     refrescar,
+    recienConfirmada,
     abrirNueva: () => { setValores(CERTIFICACION_VACIA); setEditando("nueva"); },
     abrir: (f: CertificacionPerfil) => {
       setEditando(f.id);
@@ -1331,7 +1374,8 @@ export function ElDiploma({
 // ---------- Enlaces ----------
 
 export function Enlaces({ filas }: { filas: EnlacePerfil[] }) {
-  const { fallo, setFallo, refrescar, alFallar, anunciarBaja } = useLista();
+  const { fallo, setFallo, refrescar, alFallar, anunciarBaja } =
+    useLista();
   const [anadiendo, setAnadiendo] = useState(false);
   const [tipo, setTipo] = useState<string>(TIPOS_DE_ENLACE[0].codigo);
   const [url, setUrl] = useState("");

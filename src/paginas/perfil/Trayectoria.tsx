@@ -260,9 +260,17 @@ function EnLaLinea({
 }) {
   const { palabra, Icono } = LA_ESPECIE[entrada.especie];
 
+  const gancho =
+    entrada.especie === "empleo"
+      ? empleos
+      : entrada.especie === "estudio"
+        ? estudios
+        : certificados;
+
   const comun = {
     dato: entrada.fila,
     ocupado,
+    recienConfirmada: gancho.recienConfirmada === entrada.fila.id,
     especie: (
       <span className={estilos.especie}>
         <Icono tamano={14} />

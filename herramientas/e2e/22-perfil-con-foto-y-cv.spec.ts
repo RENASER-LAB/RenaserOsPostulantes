@@ -155,6 +155,38 @@ test.describe('Regresión · el perfil guarda tu foto, tu portada y tu currícul
     await expect(menuPortada).toHaveCount(0)
   })
 
+  test('la portada puede salir de los colores de tu propia foto', async ({ page }) => {
+    // Personalización sin pedirle a nadie que elija: si hay foto, la portada se
+    // arma con sus colores aclarados hacia el cielo del portal.
+    await page.getByRole('button', { name: 'Añadir una foto de perfil', exact: true }).click()
+    await page.setInputFiles('input[aria-label="Tu foto de perfil"]', {
+      name: 'yo.png',
+      mimeType: 'image/png',
+      buffer: PNG_MINIMO,
+    })
+    await expect.poll(async () => (await pedirPerfil()).tieneFoto, { timeout: 20_000 }).toBe(true)
+
+    await page.getByRole('button', { name: 'Portada', exact: true }).click()
+    await page.getByRole('button', { name: 'Los colores de mi foto' }).click()
+
+    await expect
+      .poll(async () => (await pedirPerfil()).portada.tipo, { timeout: 25_000 })
+      .toBe('PROPIA')
+
+    // Y sin foto el botón no está: uno que no puede hacer nada es peor que
+    // ninguno.
+    await page.getByRole('button', { name: 'Cambiar tu foto de perfil' }).click()
+    await page.getByRole('button', { name: 'Quitar la foto' }).click()
+    await expect.poll(async () => (await pedirPerfil()).tieneFoto, { timeout: 15_000 }).toBe(false)
+    await page.getByRole('button', { name: 'Portada', exact: true }).click()
+    await expect(page.getByRole('button', { name: 'Los colores de mi foto' })).toHaveCount(0)
+
+    // El recorrido va en serie: se devuelve el perfil como estaba para que el
+    // paso siguiente no herede una portada propia a medio camino.
+    await page.getByRole('button', { name: 'Aqua' }).click()
+    await expect.poll(async () => (await pedirPerfil()).portada.tipo).toBe('GALERIA')
+  })
+
   test('la portada propia se sube redibujada, no el archivo crudo', async ({ page }) => {
     await page.getByRole('button', { name: 'Portada', exact: true }).click()
     await page.getByRole('button', { name: 'Subir la mía' }).click()

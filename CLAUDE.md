@@ -4,6 +4,35 @@
 diplomas; empleos, estudios y certificaciones comparten UNA cronología; la caja significa
 «esto te toca»; y al postular ya no se vuelve a subir el currículum**
 
+## Cuatro cosas para que el perfil se sienta suyo (06/09/2026, noche)
+
+**El nombre está a `--t-portada`** (32-56px, peso 200), la escala de titular del
+sistema. Estaba a `--t-destacado`: 24px como máximo, **el mismo tamaño que la
+palabra «Idiomas»**. En una pantalla cuyo asunto es quién eres, la persona pesaba
+lo mismo que un rótulo de sección; y DESIGN.md pide «uno por pantalla y ninguno
+más», aquí había cero.
+
+**El disco de iniciales toma el tono de la portada elegida**, no de un hash del
+nombre. Eran dos identidades sueltas en la misma cabecera: una banda decidida a
+propósito y, al lado, un disco de 128px de un color sorteado. ⚠️ El violeta vuelve
+a ser posible aquí y **no rompe la regla del acento**: lo que la rompía era
+imponérselo a uno de cada cuatro. Elegir la portada violeta es deliberado. Sin
+portada de galería decide el nombre, como antes.
+
+**Confirmar tiene un momento.** `useLista().celebrar(id)` marca la fila 900ms y el
+CSS disuelve la caja donde estaba mientras la fila sube a su sitio. ⚠️ **Es el
+único movimiento de la pantalla, y por eso funciona**: confirmar es el trabajo que
+este perfil pide, y hasta ahora la recompensa era que la fila cambiaba en
+silencio. El temporizador se limpia al desmontar — la pantalla se sondea sola cada
+cinco segundos.
+
+**La portada puede salir de los colores de la foto.** Se muestrea en 16×16, se
+cogen el píxel más oscuro y el más claro, y se arma un degradado de 1600×400.
+⚠️ **Aclarados al 55% hacia `--cielo`**: los colores crudos de una fotografía dan
+una banda dura que no se parece a nada del portal y compiten con el nombre que va
+justo debajo. Se sube por la ruta de portada propia, así que no toca backend, y el
+botón solo aparece si hay foto.
+
 ## Una sola cronología, no tres listas (06/09/2026, tarde)
 
 Rediseño de estructura elegido por el usuario sobre el reparto del dado
