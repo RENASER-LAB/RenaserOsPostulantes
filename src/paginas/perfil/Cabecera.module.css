@@ -1,0 +1,531 @@
+/*
+ * La cabecera de identidad del perfil.
+ *
+ * ⚠️ **La portada no lleva texto encima.** Es la regla del canto: el color vive
+ * en el borde y el campo donde se lee se queda en nube. El nombre va debajo,
+ * sobre blanco, donde su contraste no depende de la imagen que suba nadie.
+ *
+ * ⚠️ **Aquí no hay violeta.** El acento significa «te toca a ti» y en esta
+ * pantalla lo tiene el panel de datos por revisar. «Editar perfil» es un botón
+ * secundario, y lo es a propósito: no es la acción que le toca a nadie.
+ */
+
+.cabecera {
+  margin-top: var(--e4);
+}
+
+/* ---------- La portada ---------- */
+
+.zonaPortada {
+  position: relative;
+}
+
+/*
+ * A sangre en el móvil y con las esquinas del bloque en escritorio.
+ *
+ * Los márgenes negativos son los del carril de la página: la portada rompe el
+ * ancho de lectura porque es lo único de la pantalla que puede hacerlo sin
+ * dejar una línea de prosa de dos metros.
+ */
+.portada {
+  height: 168px;
+  border-radius: var(--radio) var(--radio) 0 0;
+  background-color: var(--nube-hundida);
+  background-size: cover;
+  background-position: center;
+}
+
+@media (max-width: 700px) {
+  .portada {
+    height: 120px;
+    border-radius: 0;
+    /* La que declara `.pagina`, no un número copiado: ver el comentario de allí. */
+    margin-inline: calc(var(--margen-de-la-pagina) * -1);
+  }
+}
+
+/*
+ * Los cinco fondos de la casa.
+ *
+ * Cada uno es su tono del espectro difuminándose hacia la bruma. ⚠️ **Van
+ * difusos y sin tramos a propósito**: el mismo gradiente, escalonado, es el que
+ * dibuja el avance por etapas en «Mis procesos», y repetirlo aquí sugeriría un
+ * progreso que en el perfil no existe.
+ */
+/*
+ * Los tonos intermedios se DERIVAN del token, no se escriben a mano: así el día
+ * que el espectro cambie, cambian con él. Es el mismo color del canto abriéndose
+ * hacia la bruma, que es lo que hace la luz al alejarse del ángulo.
+ */
+.portada-CANTO_MENTA {
+  background-image: linear-gradient(
+    115deg,
+    var(--canto-menta) 0%,
+    color-mix(in oklab, var(--canto-menta) 45%, var(--cielo)) 45%,
+    var(--cielo) 100%
+  );
+}
+
+.portada-CANTO_AQUA {
+  background-image: linear-gradient(
+    115deg,
+    var(--canto-aqua) 0%,
+    color-mix(in oklab, var(--canto-aqua) 45%, var(--cielo)) 45%,
+    var(--cielo) 100%
+  );
+}
+
+.portada-CANTO_ROSA {
+  background-image: linear-gradient(
+    115deg,
+    var(--canto-rosa) 0%,
+    color-mix(in oklab, var(--canto-rosa) 45%, var(--cielo)) 45%,
+    var(--cielo) 100%
+  );
+}
+
+.portada-CANTO_VIOLETA {
+  background-image: linear-gradient(
+    115deg,
+    var(--canto-violeta) 0%,
+    color-mix(in oklab, var(--canto-violeta) 45%, var(--cielo)) 45%,
+    var(--cielo) 100%
+  );
+}
+
+.portada-BRUMA {
+  background-image: linear-gradient(115deg, var(--nube-honda) 0%, var(--cielo) 70%);
+}
+
+.botonPortada {
+  position: absolute;
+  right: var(--e4);
+  bottom: var(--e4);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  /* 44, como todos los controles del sistema. Encoger los que van sobre la
+     portada era la tentación —se ven más ligeros— y son justo los que se pulsan
+     con el pulgar sobre una imagen, sin nada alrededor que perdone el fallo. */
+  min-height: 44px;
+  padding: 0 var(--e4);
+  border: 1px solid var(--regla2);
+  border-radius: var(--radio-control);
+  /* Empañado, no macizo: la banda se sigue viendo detrás y el texto conserva su
+     fondo. Es el mismo material que la cabecera del armazón. */
+  background: rgb(255 255 255 / 0.82);
+  backdrop-filter: blur(12px) saturate(1.3);
+  color: var(--tinta);
+  font-size: var(--t-menor);
+  cursor: pointer;
+  transition: background 0.15s var(--salida);
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .botonPortada {
+    background: var(--nube);
+  }
+}
+
+.botonPortada:hover {
+  background: var(--nube);
+}
+
+.menuPortada {
+  position: absolute;
+  right: var(--e4);
+  top: calc(100% + var(--e2));
+  z-index: 5;
+  /* Nunca más ancho que la pantalla menos sus dos márgenes: con las muestras a
+     44px de alto la fila mide 312, que en un teléfono de 375 cabía por trece
+     píxeles. Un idioma más largo o una muestra más y se salía. */
+  max-width: calc(100vw - var(--e6));
+  padding: var(--e4);
+  border: 1px solid var(--regla);
+  border-radius: var(--radio);
+  background: var(--nube);
+  box-shadow: var(--sombra-aviso);
+}
+
+.tituloMenu {
+  margin: 0 0 var(--e3);
+  font-size: var(--t-micro);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tinta3);
+}
+
+.galeria {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e2);
+  margin: 0 0 var(--e4);
+  padding: 0;
+  list-style: none;
+}
+
+.muestra {
+  width: 56px;
+  height: 44px;
+  border: 2px solid transparent;
+  border-radius: var(--radio-menor);
+  background-size: cover;
+  cursor: pointer;
+  transition: transform 0.15s var(--salida);
+}
+
+.muestra:hover {
+  transform: translateY(-2px);
+}
+
+/*
+ * La elegida se marca con el contorno de tinta, no con el acento: cuál fondo
+ * tienes puesto no es una acción pendiente.
+ */
+.muestraElegida {
+  border-color: var(--tinta);
+}
+
+.accionesPortada {
+  display: flex;
+  gap: var(--e2);
+}
+
+/* Se aplica en el JSX: `composes` no vale en `.accionesPortada button`. */
+.accionMenor {
+  composes: secundario from '../../estilos/piezas.module.css';
+  padding: 0 var(--e4);
+  font-size: var(--t-menor);
+}
+
+/* ---------- La identidad ---------- */
+
+.identidad {
+  display: flex;
+  gap: var(--e5);
+  padding: 0 var(--e5) var(--e5);
+  border: 1px solid var(--regla);
+  border-top: none;
+  border-radius: 0 0 var(--radio) var(--radio);
+  background: var(--nube);
+}
+
+@media (max-width: 700px) {
+  .identidad {
+    flex-direction: column;
+    gap: var(--e3);
+    padding: 0 0 var(--e4);
+    border: none;
+    border-radius: 0;
+    background: transparent;
+  }
+}
+
+/* ---------- La foto ---------- */
+
+.zonaFoto {
+  position: relative;
+  flex: none;
+  /* Sin esto la caja se estira a lo alto de la fila —es un flex— y el botón de la
+     cámara, que se ancla a su borde inferior, aparecía a la altura de los enlaces
+     en vez de sobre el disco. */
+  align-self: flex-start;
+  /* Sube sobre la portada: es lo que ata las dos piezas en una sola cabecera. */
+  margin-top: -48px;
+}
+
+.disco {
+  width: 128px;
+  height: 128px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 4px solid var(--nube);
+  border-radius: 50%;
+  box-shadow: var(--sombra-nube);
+}
+
+@media (max-width: 700px) {
+  .zonaFoto {
+    margin-top: -40px;
+  }
+
+  .disco {
+    width: 96px;
+    height: 96px;
+  }
+}
+
+.imagen {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/*
+ * Las iniciales de quien no tiene foto. Los cuatro tonos son del espectro del
+ * canto y **no significan nada**: es identidad, no estado. Por eso puede tocar
+ * cualquiera y por eso el texto va en blanco sobre un tono que aguanta 4,5:1.
+ */
+.iniciales {
+  font-size: var(--t-cifra);
+  font-weight: 200;
+  letter-spacing: -0.02em;
+  color: var(--tinta-invertida);
+}
+
+/*
+ * El extremo oscuro sale del token, no de un hexadecimal aparte. Y va oscuro a
+ * propósito: el blanco de las iniciales tiene que aguantar 4,5:1 sobre TODO el
+ * disco, no solo sobre su lado claro.
+ */
+.tono-menta {
+  background: linear-gradient(
+    140deg,
+    var(--canto-menta),
+    color-mix(in oklab, var(--canto-menta) 78%, var(--tinta-pulsado))
+  );
+}
+
+.tono-aqua {
+  background: linear-gradient(
+    140deg,
+    var(--canto-aqua),
+    color-mix(in oklab, var(--canto-aqua) 78%, var(--tinta-pulsado))
+  );
+}
+
+.tono-rosa {
+  background: linear-gradient(
+    140deg,
+    var(--canto-rosa),
+    color-mix(in oklab, var(--canto-rosa) 78%, var(--tinta-pulsado))
+  );
+}
+
+.tono-violeta {
+  background: linear-gradient(
+    140deg,
+    var(--canto-violeta),
+    color-mix(in oklab, var(--canto-violeta) 78%, var(--tinta-pulsado))
+  );
+}
+
+.botonFoto {
+  position: absolute;
+  right: 0;
+  bottom: 4px;
+  display: grid;
+  place-items: center;
+  /* El disco de la cámara: 44 también. Es el que abre «añade tu foto», y en un
+     teléfono cae encima del avatar, donde fallar el toque abre otra cosa. */
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--regla2);
+  border-radius: 50%;
+  background: var(--nube);
+  color: var(--tinta);
+  cursor: pointer;
+  box-shadow: var(--sombra-nube);
+  transition: background 0.15s var(--salida);
+}
+
+.botonFoto:hover:not(:disabled) {
+  background: var(--nube-hundida);
+}
+
+.botonFoto:disabled {
+  color: var(--tinta3);
+  cursor: default;
+}
+
+.menuFoto {
+  position: absolute;
+  left: 0;
+  top: calc(100% + var(--e2));
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+  width: 15rem;
+  padding: var(--e4);
+  border: 1px solid var(--regla);
+  border-radius: var(--radio);
+  background: var(--nube);
+  box-shadow: var(--sombra-aviso);
+}
+
+.accionFoto {
+  composes: secundario from '../../estilos/piezas.module.css';
+  justify-content: flex-start;
+  font-size: var(--t-apoyo);
+}
+
+.pistaFoto {
+  margin: 0;
+  font-size: var(--t-menor);
+  line-height: 1.45;
+  color: var(--tinta3);
+}
+
+.entradaOculta {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ---------- Los datos ---------- */
+
+.datos {
+  flex: 1;
+  min-width: 0;
+  padding-top: var(--e4);
+}
+
+@media (max-width: 700px) {
+  .datos {
+    padding-top: var(--e2);
+  }
+}
+
+.nombreYAccion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--e3) var(--e5);
+}
+
+/*
+ * ⚠️ **Estrecho, el botón se va al final; no entre el nombre y el titular.**
+ * Al envolver, «Editar perfil» caía en su propia línea justo encima de
+ * «Analista de procesos» y partía en dos el bloque que presenta a la persona:
+ * nombre → botón → titular → señas. `display: contents` disuelve el envoltorio
+ * para que el nombre y el botón sean hijos directos de la columna, y ahí el
+ * `order` puede mandar el botón detrás de todo lo demás.
+ */
+@media (max-width: 640px) {
+  .datos {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .nombreYAccion {
+    display: contents;
+  }
+
+  .editar {
+    order: 9;
+    margin-top: var(--e4);
+  }
+}
+
+.nombre {
+  margin: 0;
+  font-size: var(--t-destacado);
+  font-weight: 700;
+  letter-spacing: -0.022em;
+  line-height: 1.2;
+  color: var(--tinta);
+}
+
+/*
+ * Secundario, nunca de acento. El violeta dice «te toca a ti» y editar tu perfil
+ * no le toca a nadie: está ahí por si quieres.
+ */
+.editar {
+  composes: secundario from '../../estilos/piezas.module.css';
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  flex: none;
+}
+
+.titular {
+  margin: var(--e2) 0 0;
+  font-size: var(--t-entradilla);
+  line-height: 1.4;
+  color: var(--tinta2);
+  max-width: var(--medida);
+}
+
+.senas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e2) var(--e4);
+  margin: var(--e3) 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--t-apoyo);
+  color: var(--tinta3);
+}
+
+.senas li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+}
+
+/*
+ * ⚠️ No lleva `--bien`. En todo el sistema ese verde significa «confirmado», y
+ * la disponibilidad no la ha confirmado nadie: la escribió la persona como
+ * escribió su titular. Un punto en tinta separa dos señas, que es su trabajo.
+ */
+.punto {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--tinta3);
+}
+
+.enlaces {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e2);
+  margin: var(--e4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+/*
+ * Píldoras, como cualquier control del mundo. Van en tinta y no en el acento:
+ * son enlaces, no la acción pendiente de nadie.
+ */
+.enlaces a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  /* 44, como todos los controles del sistema. Encoger los que van sobre la
+     portada era la tentación —se ven más ligeros— y son justo los que se pulsan
+     con el pulgar sobre una imagen, sin nada alrededor que perdone el fallo. */
+  min-height: 44px;
+  padding: 0 var(--e4);
+  border: 1px solid var(--regla2);
+  border-radius: var(--radio-control);
+  color: var(--tinta);
+  font-size: var(--t-menor);
+  text-decoration: none;
+  transition: background 0.15s var(--salida), border-color 0.15s var(--salida);
+}
+
+.enlaces a:hover {
+  border-color: var(--borde-control);
+  background: var(--nube-hundida);
+  text-decoration: none;
+}
+
+.soloLectores {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

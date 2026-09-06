@@ -33,6 +33,7 @@
 import { useRef, useState, type DragEvent, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { verPerfil } from '@/api/perfil'
 import { consentimientoDeVacante, postular, verVacante } from '@/api/portal'
 import type { RequisitoPublico } from '@/api/tipos'
 import { rutas } from '@/rutas'
@@ -53,6 +54,14 @@ export function Postular() {
   const dialogo = useRef<HTMLDialogElement>(null)
 
   const [cv, setCv] = useState<File | null>(null)
+  /**
+   * Si sube uno distinto **solo para esta vacante**.
+   *
+   * ⚠️ Y de verdad es solo para esta: el currículum del perfil no cambia. Es lo
+   * que permite mandar una versión a medida sin reescribir lo que la persona
+   * decidió dejar guardado.
+   */
+  const [otroCv, setOtroCv] = useState(false)
   const [encima, setEncima] = useState(false)
   const [resultado, setResultado] = useState('')
   const [portafolio, setPortafolio] = useState('')
@@ -84,6 +93,16 @@ export function Postular() {
     enabled: vacanteId !== '',
   })
 
+  /**
+   * El currículum que ya tiene guardado, si lo tiene.
+   *
+   * Un fallo aquí NO impide postular: se cae al camino de siempre, que es subir
+   * el archivo en el momento. Perder una postulación porque no se pudo leer el
+   * perfil sería exactamente al revés de para qué está el perfil.
+   */
+  const perfil = useQuery({ queryKey: ['perfil'], queryFn: verPerfil })
+  const elDelPerfil = perfil.data?.cv ?? null
+
   const envio = useMutation({
     mutationFn: postular,
     onSuccess: async () => {
@@ -98,7 +117,14 @@ export function Postular() {
       ),
   })
 
-  if (vacante.isPending) {
+  /*
+    ⚠️ **También se espera al perfil, no solo a la vacante.** Mientras su
+    consulta estaba pendiente, `elDelPerfil` era null y la pantalla pintaba la
+    zona de arrastrar; al llegar la respuesta saltaba a «Es el que tienes
+    guardado en tu perfil». Con conexión lenta daba tiempo a empezar a arrastrar
+    un archivo y que la interfaz cambiara debajo.
+  */
+  if (vacante.isPending || perfil.isPending) {
     return (
       <div className={estilos.pagina}>
         <div className={estilos.marco} aria-busy="true">
@@ -180,7 +206,11 @@ export function Postular() {
   /** Lo que falta por rellenar. Vacío significa que se puede enviar. */
   function revisar() {
     const nuevos: typeof errores = {}
-    if (!cv) nuevos.cv = 'Adjunta tu currículum para continuar.'
+    // Sin currículum guardado y sin adjuntar uno no hay postulación. Con uno
+    // guardado, no adjuntar nada es lo normal: se usa el suyo.
+    if (!cv && (otroCv || !elDelPerfil)) {
+      nuevos.cv = 'Adjunta tu currículum para continuar.'
+    }
     if (!resultado.trim()) {
       nuevos.resultado = 'Cuéntanos un resultado del que te sientas orgulloso.'
     }
@@ -227,7 +257,8 @@ export function Postular() {
     dialogo.current?.close()
     envio.mutate({
       vacanteId: v.id,
-      cv: cv!,
+      // null significa «usa el de mi perfil». Ver `postular` en `api/portal.ts`.
+      cv: otroCv || !elDelPerfil ? cv : null,
       resultadoOrgulloso: resultado.trim(),
       portafolio: portafolio.trim() || undefined,
       linkedin: linkedin.trim() || undefined,
@@ -257,7 +288,34 @@ export function Postular() {
         <section className={estilos.bloque}>
           <h2 className={estilos.tituloBloque}>Tu currículum</h2>
 
-          {cv ? (
+          {/*
+            ⚠️ **Con currículum guardado, esta pantalla no pide nada.** Es lo que
+            hace que la segunda postulación cueste un minuto y no media hora: se
+            usa el suyo salvo que diga lo contrario.
+
+            Y si dice lo contrario, se le dice EXPLÍCITAMENTE que su perfil no
+            cambia. Sin esa frase, cualquiera supondría que subir otro archivo
+            reemplaza el que tiene guardado — que es justo lo que no pasa.
+          */}
+          {elDelPerfil && !otroCv ? (
+            <div className={estilos.delPerfil}>
+              <div className={estilos.elegido}>
+                <span className={estilos.marcaElegido} aria-hidden="true" />
+                <span className={estilos.nombreArchivo}>{elDelPerfil.nombre}</span>
+                <span className={estilos.pesoArchivo}>{pesoLegible(elDelPerfil.tamano)}</span>
+              </div>
+              <p className={estilos.explicacionPerfil}>
+                Es el que tienes guardado en tu perfil. Lo mandaremos con esta postulación.
+              </p>
+              <button
+                type="button"
+                className={estilos.otroCv}
+                onClick={() => setOtroCv(true)}
+              >
+                Usar otro solo para esta vacante
+              </button>
+            </div>
+          ) : cv ? (
             <div className={estilos.elegido}>
               <span className={estilos.marcaElegido} aria-hidden="true" />
               <span className={estilos.nombreArchivo}>{cv.name}</span>
@@ -298,6 +356,7 @@ export function Postular() {
             ref={campoArchivo}
             className={estilos.oculto}
             type="file"
+            aria-label="Tu currículum para esta vacante"
             accept={FORMATOS.join(',')}
             tabIndex={-1}
             onChange={(e) => elegirArchivo(e.target.files?.[0])}
@@ -306,6 +365,23 @@ export function Postular() {
           {errores.cv && (
             <p className={estilos.resumenErrores} id="error-cv" role="alert">
               {errores.cv}
+            </p>
+          )}
+
+          {otroCv && elDelPerfil && (
+            <p className={estilos.avisoOtroCv}>
+              Este archivo vale <b>solo para esta vacante</b>. El de tu perfil se queda como
+              está.{' '}
+              <button
+                type="button"
+                className={estilos.volverAlDelPerfil}
+                onClick={() => {
+                  setOtroCv(false)
+                  setCv(null)
+                }}
+              >
+                Usar el de mi perfil
+              </button>
             </p>
           )}
 

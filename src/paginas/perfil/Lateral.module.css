@@ -1,0 +1,354 @@
+/*
+ * La columna lateral del perfil.
+ *
+ * ⚠️ **Ni un violeta.** El acento de esta pantalla es el panel de datos por
+ * revisar, que es lo único que de verdad le toca al candidato. Un medidor de
+ * progreso en violeta le robaría ese significado justo al lado.
+ *
+ * ⚠️ **Y ni un rojo.** Un perfil a medias no es un error: nada es obligatorio
+ * (RF-156). La barra va en tinta mientras se llena y en verde cuando está
+ * entera, que es el color de «lo confirmado» en todo el sistema.
+ */
+
+.lateral {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e4);
+  /* Acompaña mientras se recorre la columna larga. En pantallas cortas se suelta
+     sola: `position: sticky` no hace nada si no hay sitio donde pegarse. */
+  /*
+    ⚠️ **La columna NO se pega entera, y esto ya se hizo mal dos veces.**
+    Pegándola entera medía 885px: en una ventana de portátil su parte de abajo
+    quedaba fuera del borde y no volvía a subir, y las últimas entradas del
+    índice no se alcanzaban nunca. Acotarla con `overflow-y: auto` lo arreglaba
+    metiendo **una segunda barra de desplazamiento**: dos superficies que mover
+    para leer una página, que es peor que el problema.
+
+    Lo que se pega es solo el índice —lo único que hace falta continuamente—; el
+    medidor y el currículum se leen una vez al llegar y se van con la página.
+    Así nada es más alto que la ventana y no hay ninguna barra de más.
+  */
+}
+
+
+
+.bloque {
+  padding: var(--e5);
+  border: 1px solid var(--regla);
+  border-radius: var(--radio);
+  background: var(--nube);
+}
+
+.titulo {
+  margin: 0;
+  font-size: var(--t-micro);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tinta3);
+}
+
+.cifra {
+  margin: var(--e3) 0 0;
+  font-size: var(--t-cifra);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--tinta);
+}
+
+.porciento {
+  font-size: var(--t-titulo);
+  font-weight: 400;
+  color: var(--tinta3);
+}
+
+.barra {
+  height: 6px;
+  margin-top: var(--e3);
+  overflow: hidden;
+  border-radius: var(--radio-control);
+  background: var(--nube-honda);
+}
+
+/*
+ * Crece con `transform` y no con `width`: animar el ancho obliga al navegador a
+ * recalcular la maqueta en cada fotograma, y esta barra vive en una columna
+ * pegajosa que se repinta al desplazar. El extremo derecho queda recto —la
+ * pista lo redondea por el otro lado con su `overflow: hidden`—, que es como se
+ * comporta cualquier barra de progreso a medio llenar.
+ */
+.avance {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform-origin: left center;
+  background: var(--tinta);
+  transition: transform 0.4s var(--salida);
+}
+
+/* Verde solo al estar entero: es el color de lo confirmado en todo el sistema. */
+.avanceLleno {
+  background: var(--bien);
+}
+
+/*
+ * ⚠️ **Prosa, no flex.** Esto es una frase con palabras en negrita dentro, y un
+ * contenedor flex convierte cada trozo en un elemento suelto: la negrita dejaba
+ * de fluir con el resto y el punto final se quedaba solo en la línea de arriba.
+ * El que lleva icono es `.textoConIcono`, que sí lo necesita y no lleva negrita.
+ */
+.texto {
+  margin: var(--e3) 0 0;
+  font-size: var(--t-apoyo);
+  line-height: 1.5;
+  color: var(--tinta2);
+}
+
+.texto b {
+  font-weight: 600;
+  color: var(--tinta);
+}
+
+.textoConIcono {
+  composes: texto;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--e2);
+}
+
+.textoConIcono svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--bien);
+}
+
+.pista {
+  margin: var(--e2) 0 0;
+  font-size: var(--t-menor);
+  line-height: 1.45;
+  color: var(--tinta3);
+}
+
+/* ---------- El currículum ---------- */
+
+.archivo {
+  display: flex;
+  align-items: center;
+  gap: var(--e3);
+  margin-top: var(--e3);
+  padding: var(--e3);
+  border: 1px solid var(--regla);
+  border-radius: var(--radio-menor);
+  background: var(--nube-hundida);
+  color: var(--tinta2);
+}
+
+.archivo svg {
+  flex: none;
+}
+
+.datosArchivo {
+  min-width: 0;
+}
+
+/*
+ * El nombre no se parte ni empuja la columna: un currículum se puede llamar
+ * «CV-Juan-Perez-actualizado-septiembre-2026-final-v3.pdf» y eso no puede
+ * decidir el ancho de la lateral.
+ */
+.nombreArchivo {
+  margin: 0;
+  overflow: hidden;
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  color: var(--tinta);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pesoArchivo {
+  margin: 2px 0 0;
+  font-size: var(--t-menor);
+  color: var(--tinta3);
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e2);
+  margin-top: var(--e3);
+}
+
+/* La clase se aplica en el JSX: `composes` solo vale en un selector de clase
+   suelto, no en `.acciones button`. */
+.accionMenor {
+  composes: secundario from '../../estilos/piezas.module.css';
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  /* Sin `min-height` propio: los 44px vienen de `secundario`, que es el alto de
+     control del sistema. Bajarlo aquí era encoger a ojo lo que ya estaba fijado. */
+  padding: 0 var(--e4);
+  font-size: var(--t-menor);
+}
+
+.subir {
+  composes: acentoMenor from '../../estilos/piezas.module.css';
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  margin-top: var(--e3);
+  width: 100%;
+  justify-content: center;
+}
+
+/*
+ * ⚠️ Este SÍ lleva el acento, y es la única excepción de la pantalla junto al
+ * panel de por revisar — porque es el único sitio donde el portal le pide algo
+ * de verdad: sin currículum no puede leerle nada. En cuanto lo sube, el botón
+ * desaparece y con él el violeta.
+ */
+
+/*
+ * Se lee como un enlace y se pulsa como un botón. Sin alto propio medía 20px:
+ * la mitad que sus vecinos, para la única acción de este bloque que borra algo.
+ */
+.quitar {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  min-height: 36px;
+  margin-top: var(--e3);
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--tinta3);
+  font-size: var(--t-menor);
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: var(--regla2);
+  text-underline-offset: 3px;
+}
+
+.quitar:hover:not(:disabled) {
+  color: var(--mal);
+  text-decoration-color: var(--mal-regla);
+}
+
+.confirmar {
+  margin-top: var(--e4);
+  padding: var(--e3);
+  border: 1px solid var(--regla2);
+  border-radius: var(--radio-menor);
+  background: var(--nube-hundida);
+}
+
+.textoConfirmar {
+  margin: 0;
+  font-size: var(--t-menor);
+  line-height: 1.45;
+  color: var(--tinta2);
+}
+
+.entradaOculta {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ---------- El índice ---------- */
+
+/*
+ * ⚠️ **Ni un violeta aquí tampoco.** Marcar dónde estás es orientación, no una
+ * tarea pendiente: la sección activa se distingue por peso y por una barra en
+ * tinta, y lo que de verdad espera algo lleva la palabra «por revisar» en ámbar
+ * —la misma que llevan sus filas—, que se lee sin color.
+ */
+/* El bloque que contiene el índice es el único pegajoso de la columna. */
+.bloqueIndice {
+  composes: bloque;
+  position: sticky;
+  top: calc(var(--alto-cabecera) + var(--e4));
+}
+
+@media (max-width: 900px) {
+  .bloqueIndice {
+    position: static;
+  }
+}
+
+.indice {
+  margin: var(--e3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.indice a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e3);
+  min-height: 36px;
+  padding: 0 var(--e2) 0 var(--e3);
+  border-left: 2px solid var(--regla);
+  color: var(--tinta2);
+  font-size: var(--t-apoyo);
+  text-decoration: none;
+}
+
+.indice a:hover {
+  border-left-color: var(--regla2);
+  color: var(--tinta);
+}
+
+.aqui {
+  border-left-color: var(--tinta) !important;
+  color: var(--tinta) !important;
+  font-weight: 600;
+}
+
+.nombreSeccion {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Cuántas hay: un dato de apoyo, no una nota. */
+.cuantas {
+  flex: none;
+  font-size: var(--t-menor);
+  font-variant-numeric: tabular-nums;
+  color: var(--tinta3);
+}
+
+/*
+ * La misma píldora que llevan las filas que cuenta. Iban en ámbar mientras las
+ * filas eran ámbar; al pasar estas al acento, el índice tenía que seguirlas o
+ * quedaba contando una cosa con el color de otra.
+ */
+.porRevisar {
+  flex: none;
+  padding: 2px var(--e2);
+  border-radius: var(--radio-control);
+  border: 1px solid var(--activo-regla);
+  background: var(--activo-bruma);
+  color: var(--activo-pulsado);
+  font-size: var(--t-micro);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/*
+ * En una columna, el índice sobra: la pantalla ya se recorre de arriba abajo y
+ * un índice justo encima de lo que indexa es un peldaño de más.
+ */
+@media (max-width: 900px) {
+  .bloqueIndice {
+    display: none;
+  }
+}

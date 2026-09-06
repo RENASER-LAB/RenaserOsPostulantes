@@ -69,18 +69,27 @@ test.describe('Regresión · «Mi perfil», lista por lista', () => {
   test.beforeEach(async ({ page }) => {
     await entrarAlPortal(page, CORREO, CLAVE_DE_CANDIDATO)
     await page.goto('/perfil')
-    await expect(page.getByRole('heading', { name: 'Tu perfil.' })).toBeVisible({ timeout: 20_000 })
+    // ⚠️ El `h1` es el NOMBRE del candidato desde el rediseño del 05/09/2026: la
+    // cabecera de identidad sustituyó al título «Tu perfil.». Esperar por él
+    // comprueba de paso que el nombre viaja en la sesión, que era el otro
+    // arreglo — antes venía de `localStorage` y quien entraba desde otro
+    // navegador se quedaba sin él.
+    await expect(page.getByRole('heading', { level: 1, name: 'Prueba Del Perfil' }))
+      .toBeVisible({ timeout: 20_000 })
   })
 
   test('un perfil recién creado se abre sin romperse y ofrece empezar', async ({ page }) => {
     // `GET /perfil` sin perfil responde 200 con todo vacío, no 404.
-    await expect(page.getByRole('button', { name: 'Escribir quién eres' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Escribir sobre ti' })).toBeVisible()
   })
 
   test('la cabecera se guarda entera', async ({ page }) => {
-    await page.getByRole('button', { name: 'Escribir quién eres' }).click()
+    await page.getByRole('button', { name: 'Escribir sobre ti' }).click()
     await page.getByLabel('Titular').fill('Analista de procesos')
     await page.getByLabel('En pocas palabras').fill('Ocho años ordenando operaciones.')
+    // Las aptitudes son etiquetas, y se pega la lista entera SIN pulsar Enter a
+    // propósito: es el caso que se perdía —quedaba una sola aptitud con comas
+    // dentro—, y quien rellena esto pega su lista y le da a Guardar.
     await page.getByLabel('Lo que sabes hacer').fill('Excel avanzado, Power BI, SQL')
     await page.getByLabel('Experiencia, en meses').fill('96')
     await page.getByLabel('Dónde estás').fill('Arequipa, Perú')
@@ -92,12 +101,15 @@ test.describe('Regresión · «Mi perfil», lista por lista', () => {
     const perfil = await pedirPerfil()
     expect(perfil.titular).toBe('Analista de procesos')
     expect(perfil.experienciaMeses).toBe(96)
-    expect(perfil.habilidades).toHaveLength(3)
+    expect(perfil.habilidades).toEqual(['Excel avanzado', 'Power BI', 'SQL'])
     expect(perfil.pretension).not.toBeNull()
+
+    // Y se ven como etiquetas, una por una.
+    await expect(page.getByText('Power BI', { exact: true })).toBeVisible()
   })
 
   test('LA TRAMPA: cambiar solo el titular no borra los otros seis campos', async ({ page }) => {
-    await page.getByRole('button', { name: 'Editar quién eres' }).click()
+    await page.getByRole('button', { name: 'Editar lo tuyo' }).click()
     await page.getByLabel('Titular').fill('Jefa de operaciones')
     await guardar(page)
 
@@ -112,7 +124,7 @@ test.describe('Regresión · «Mi perfil», lista por lista', () => {
   })
 
   test('la pretensión es todo o nada: un solo número se para en la pantalla', async ({ page }) => {
-    await page.getByRole('button', { name: 'Editar quién eres' }).click()
+    await page.getByRole('button', { name: 'Editar lo tuyo' }).click()
     await page.getByLabel('Hasta', { exact: true }).fill('')
     await page.getByRole('button', { name: 'Guardar' }).click()
     await expect(page.getByText(/pon también el máximo/i)).toBeVisible()
@@ -139,6 +151,60 @@ test.describe('Regresión · «Mi perfil», lista por lista', () => {
     expect(experiencia).toHaveLength(2)
     // Lo que escribe la persona no es un dato del currículum por validar.
     expect(experiencia.every((e) => e.origen === 'PERSONA' && e.confirmado)).toBe(true)
+  })
+
+  test('la trayectoria dice cuánto duró cada puesto, con palabras', async ({ page }) => {
+    // ⚠️ La duración se ESCRIBE. Se intentó codificarla en el alto de la fila y
+    // no se sostiene: el texto de la fila supera el mínimo por CSS, así que once
+    // años y cuatro miden lo mismo. Este test comprueba lo que la pantalla sí
+    // promete, no lo que se quiso hacer.
+    const filas = page.locator('[class*=trayectoria] li[class*=fila]')
+    await expect(filas).toHaveCount(2)
+
+    // «Analista senior» empezó en 2022-03 y sigue: años, no meses.
+    await expect(filas.first()).toContainText(/\d+ años?/)
+    // Y el periodo sigue estando: la duración lo acompaña, no lo sustituye.
+    await expect(filas.first()).toContainText('—')
+  })
+
+  test('la columna lateral no mete una segunda barra de desplazamiento', async ({ page }) => {
+    // ⚠️ Se intentó acotarla con `max-height` + `overflow-y: auto` para que el
+    // índice no se saliera de la ventana, y el remedio fue peor: dos superficies
+    // que mover para leer una página. Lo que se pega es solo el índice.
+    await page.setViewportSize({ width: 1280, height: 800 })
+    await page.locator('#seccion-certificaciones').evaluate((e) => e.scrollIntoView())
+
+    const lateral = page.locator('aside')
+    const dosBarras = await lateral.evaluate((e) => e.scrollHeight > e.clientHeight + 1)
+    expect(dosBarras, 'la lateral no puede tener barra propia').toBe(false)
+
+    // Y el índice sigue estando entero dentro de la ventana, que era el problema
+    // que aquella barra intentaba resolver.
+    const nav = page.getByRole('navigation', { name: 'Secciones de tu perfil' })
+    const caja = await nav.boundingBox()
+    expect(caja).not.toBeNull()
+    expect(caja!.y).toBeGreaterThanOrEqual(0)
+    expect(caja!.y + caja!.height).toBeLessThanOrEqual(800)
+  })
+
+  test('el índice lateral marca en qué sección estás', async ({ page }) => {
+    const indice = page.getByRole('navigation', { name: 'Secciones de tu perfil' })
+    await expect(indice).toBeVisible()
+
+    // `aria-current` y no solo una clase: la sección en la que estás se dice,
+    // no solo se pinta. Se usa Experiencia porque a estas alturas del recorrido
+    // ya tiene filas: una sección vacía es demasiado corta para entrar en la
+    // banda activa, y el test estaría midiendo el alto, no la marca.
+    await page.locator('#seccion-experiencia').evaluate((e) => e.scrollIntoView())
+    await expect(indice.getByRole('link', { name: /^Experiencia/ })).toHaveAttribute(
+      'aria-current',
+      'true',
+    )
+
+    // Y llevan a su sitio.
+    await page.locator('#seccion-enlaces').evaluate((e) => e.scrollIntoView())
+    await indice.getByRole('link', { name: /^Experiencia/ }).click()
+    await expect(page.locator('#seccion-experiencia')).toBeInViewport()
   })
 
   test('las flechas reordenan de verdad', async ({ page }) => {
@@ -199,8 +265,13 @@ test.describe('Regresión · «Mi perfil», lista por lista', () => {
     await expect(page.getByRole('button', { name: /^Confirmar el enlace/ })).toHaveCount(0)
   })
 
-  test('el enlace se quita', async ({ page }) => {
+  test('el enlace se quita, y la pantalla dice qué se quitó', async ({ page }) => {
     await page.getByRole('button', { name: /^Quitar el enlace de LinkedIn/ }).click()
     await expect.poll(async () => (await pedirPerfil()).enlaces.length).toBe(0)
+
+    // ⚠️ Borrar era mudo. La fila desaparecía sin una palabra: quien navega con
+    // lector de pantalla perdía el foco —el botón se desmonta con su fila— y no
+    // se enteraba de nada. El aviso es una región viva, así que lo anuncia.
+    await expect(page.getByRole('status')).toContainText('Quitado: el enlace de LinkedIn')
   })
 })

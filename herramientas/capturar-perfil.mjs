@@ -65,7 +65,7 @@ const LLENO = {
     },
     {
       id: 14, puesto: 'Practicante de mejora continua', empresa: 'Molinos del Norte',
-      desde: '2018-01-01', hasta: '2018-12-01', descripcion: null,
+      desde: '2017-02-01', hasta: '2017-11-01', descripcion: null,
       origen: 'CURRICULUM', confirmado: true,
     },
   ],
@@ -84,10 +84,13 @@ const LLENO = {
     {
       id: 5, nombre: 'Soporte Vital Básico (BLS)', entidad: 'American Heart Association',
       emitidaEn: '2022-05-01', venceEn: '2024-05-01', origen: 'PERSONA', confirmado: true,
+      // Una con diploma y otra sin él: las dos formas de la fila conviven.
+      tieneArchivo: true,
     },
     {
       id: 6, nombre: 'Power BI Data Analyst', entidad: 'Microsoft',
       emitidaEn: '2024-02-01', venceEn: null, origen: 'PERSONA', confirmado: true,
+      tieneArchivo: false,
     },
   ],
   enlaces: [
@@ -95,6 +98,13 @@ const LLENO = {
     { id: 9, tipo: 'PORTAFOLIO', url: 'https://ejemplo.pe/trabajo' },
   ],
   lecturaCv: { estado: 'LISTA', actualizadoEn: '2026-08-24T10:00:00Z' },
+  // Lo que el perfil guarda desde el 05/09/2026. `tieneFoto` va en false a
+  // propósito incluso en el caso lleno: la foto de una persona no se inventa
+  // para una captura, y el disco de iniciales ES la respuesta a no tenerla —así
+  // que es lo que hay que poder mirar.
+  tieneFoto: false,
+  portada: { tipo: 'GALERIA', codigo: 'CANTO_AQUA' },
+  cv: { nombre: 'CV-Lucia-Mendoza-2026.pdf', tamano: 284_531, subidoEn: '2026-08-24T09:40:00Z' },
 }
 
 const VACIO = {
@@ -102,6 +112,9 @@ const VACIO = {
   ubicacion: null, disponibilidad: null, pretension: null,
   experiencia: [], educacion: [], idiomas: [], certificaciones: [], enlaces: [],
   lecturaCv: { estado: 'SIN_CV', actualizadoEn: null },
+  tieneFoto: false,
+  portada: { tipo: 'NINGUNA', codigo: null },
+  cv: null,
 }
 
 const PERFILES = {
@@ -110,6 +123,14 @@ const PERFILES = {
   vacio: VACIO,
   leyendo: { ...VACIO, lecturaCv: { estado: 'EN_CURSO', actualizadoEn: '2026-08-26T10:00:00Z' } },
   ilegible: { ...VACIO, lecturaCv: { estado: 'NO_LEGIBLE', actualizadoEn: '2026-08-26T10:00:00Z' } },
+  // A medias: es el único caso donde se ve la barra del medidor a medio llenar
+  // y el texto de «puedes añadir». Ni el lleno ni el vacío la enseñan así.
+  'a-medias': {
+    ...LLENO,
+    idiomas: [], certificaciones: [], enlaces: [],
+    cv: null,
+    lecturaCv: { estado: 'SIN_CV', actualizadoEn: null },
+  },
 }
 
 const perfil = PERFILES[caso] ?? LLENO
@@ -138,6 +159,18 @@ for (const t of [
 
   await contexto.route('**/api/v1/portal/perfil', (r) =>
     r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(perfil) }))
+  // Quién es, que el portal lo pregunta al arrancar con un token guardado.
+  await contexto.route('**/api/v1/portal/auth/sesion', (r) =>
+    r.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ usuarioId: 1, nombre: 'Lucía', apellidos: 'Mendoza Ríos' }),
+    }))
+  // La foto y la portada se piden SIEMPRE, aunque no las haya: el 404 es la
+  // respuesta correcta y la pantalla la entiende. Se contesta aquí para que la
+  // captura no salga con errores de red que no son suyos.
+  await contexto.route('**/api/v1/portal/perfil/foto', (r) => r.fulfill({ status: 404, body: '' }))
+  await contexto.route('**/api/v1/portal/perfil/portada', (r) => r.fulfill({ status: 404, body: '' }))
   await contexto.route('**/api/v1/portal/catalogos/niveles-educativos', (r) =>
     r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(NIVELES_EDUCATIVOS) }))
   await contexto.route('**/api/v1/portal/catalogos/niveles-idioma', (r) =>

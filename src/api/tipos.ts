@@ -109,9 +109,31 @@ export interface Login {
   contrasena: string
 }
 
+/**
+ * Como se llama quien ya tiene token. Sin token dentro: quien pregunta ya lo tiene.
+ *
+ * Lo pide el portal cuando arranca con una sesion guardada y sin nombre — la
+ * segunda visita, otro navegador, o el almacenamiento vaciado.
+ */
+export interface QuienSoy {
+  usuarioId: number
+  nombre: string | null
+  apellidos: string | null
+}
+
 export interface Sesion {
   token: string
   usuarioId: number
+  /**
+   * Como se llama quien entra. **Puede venir vacio**: `persona` los admite en
+   * null, y una cuenta creada por un script puede no tenerlos.
+   *
+   * ⚠️ Antes esto no existia y el portal guardaba el nombre en `localStorage` al
+   * registrarse: quien entraba desde otro navegador —o por el enlace del correo,
+   * sin haberse registrado nunca— veia el portal sin su nombre.
+   */
+  nombre: string | null
+  apellidos: string | null
 }
 
 export interface PedirBorrado {
@@ -170,7 +192,14 @@ export interface MiPostulacionDetalle {
 /** Lo que se manda al postular. Va como multipart, no como JSON. */
 export interface DatosPostulacion {
   vacanteId: number
-  cv: File
+  /**
+   * El curriculum de ESTA postulacion.
+   *
+   * **Vacio significa «usa el de mi perfil»**, que es lo normal para quien ya lo
+   * subio una vez. Adjuntar uno lo usa solo para esta vacante: **el del perfil
+   * no cambia**. Sin ninguno de los dos, el backend responde 400.
+   */
+  cv: File | null
   resultadoOrgulloso: string
   portafolio?: string
   linkedin?: string
@@ -419,6 +448,8 @@ export interface IdiomaPerfil extends ConOrigen {
 }
 
 export interface CertificacionPerfil extends ConOrigen {
+  /** Si adjunto el diploma. Se abre con `/perfil/certificaciones/{id}/archivo`. */
+  tieneArchivo: boolean
   id: number
   nombre: string
   entidad: string | null
@@ -462,6 +493,30 @@ export interface PerfilCompleto {
   certificaciones: CertificacionPerfil[]
   enlaces: EnlacePerfil[]
   lecturaCv: LecturaCv
+  /**
+   * Si tiene foto. La imagen se pide aparte, a `/perfil/foto`, porque un
+   * `<img src>` no manda el token: se baja como blob.
+   *
+   * ⚠️ **Solo la ve el candidato.** No viaja al panel del equipo ni a la IA
+   * (RF-41): decidido el 05/09/2026.
+   */
+  tieneFoto: boolean
+  portada: PortadaDelPerfil
+  /** Su curriculum guardado, el que se reutiliza al postular. Null si no tiene. */
+  cv: CurriculumDelPerfil | null
+}
+
+/** O una del catalogo de la casa, o la suya, o ninguna. Nunca dos. */
+export interface PortadaDelPerfil {
+  tipo: 'GALERIA' | 'PROPIA' | 'NINGUNA'
+  /** Solo con `GALERIA`. Los cinco codigos estan en `PORTADAS_DE_LA_CASA`. */
+  codigo: string | null
+}
+
+export interface CurriculumDelPerfil {
+  nombre: string
+  tamano: number
+  subidoEn: FechaIso
 }
 
 /**

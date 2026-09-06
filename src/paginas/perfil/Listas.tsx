@@ -15,8 +15,14 @@
  * algo que confirmar. En gris se distinguen igual.
  */
 
-import { useState, type FormEvent, type ReactNode } from 'react'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import {
+  Fragment,
+  useRef,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   TIPOS_DE_ENLACE,
   borrarCertificacion,
@@ -39,7 +45,10 @@ import {
   editarIdioma,
   ordenarEducacion,
   ordenarExperiencia,
-} from '@/api/perfil'
+  descargarDiploma,
+  quitarDiploma,
+  subirDiploma,
+} from "@/api/perfil";
 import type {
   CertificacionPerfil,
   ConOrigen,
@@ -48,10 +57,12 @@ import type {
   ExperienciaPerfil,
   IdiomaPerfil,
   OpcionCatalogo,
-} from '@/api/tipos'
-import { ahora } from '@/dominio/reloj'
-import { AreaTexto, Campo } from '@/ui/campos/Campo'
-import estilos from './Perfil.module.css'
+} from "@/api/tipos";
+import { ahora } from "@/dominio/reloj";
+import { useAviso } from "@/ui/Avisos";
+import { AreaTexto, Campo } from "@/ui/campos/Campo";
+import { duracion, huecoEntre } from "./textos";
+import estilos from "./Perfil.module.css";
 
 // ---------- Piezas compartidas ----------
 
@@ -63,24 +74,38 @@ import estilos from './Perfil.module.css'
  * «febrero 2022» sin que nadie tocara nada.
  */
 const MESES = [
-  'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
-]
+  "enero",
+  "febrero",
+  "marzo",
+  "abril",
+  "mayo",
+  "junio",
+  "julio",
+  "agosto",
+  "septiembre",
+  "octubre",
+  "noviembre",
+  "diciembre",
+];
 
 function mesYAno(fecha: string | null): string | null {
-  if (!fecha) return null
-  const [ano, mes] = fecha.split('-')
-  const indice = Number(mes) - 1
-  if (!ano || Number.isNaN(indice) || !MESES[indice]) return fecha
-  return `${MESES[indice]} de ${ano}`
+  if (!fecha) return null;
+  const [ano, mes] = fecha.split("-");
+  const indice = Number(mes) - 1;
+  if (!ano || Number.isNaN(indice) || !MESES[indice]) return fecha;
+  return `${MESES[indice]} de ${ano}`;
 }
 
 /** «marzo de 2022 — Actualidad». `hasta: null` es «sigo aquí», no un hueco. */
-function periodo(desde: string | null, hasta: string | null, enCurso = false): string {
-  const inicio = mesYAno(desde)
-  const fin = enCurso || hasta === null ? 'Actualidad' : mesYAno(hasta)
-  if (!inicio) return fin ?? ''
-  return `${inicio} — ${fin}`
+function periodo(
+  desde: string | null,
+  hasta: string | null,
+  enCurso = false,
+): string {
+  const inicio = mesYAno(desde);
+  const fin = enCurso || hasta === null ? "Actualidad" : mesYAno(hasta);
+  if (!inicio) return fin ?? "";
+  return `${inicio} — ${fin}`;
 }
 
 /**
@@ -95,29 +120,29 @@ function periodo(desde: string | null, hasta: string | null, enCurso = false): s
  * máquina no puede mover un vencimiento.
  */
 function hoyEnLocal(): string {
-  const d = new Date(ahora())
-  const mes = String(d.getMonth() + 1).padStart(2, '0')
-  const dia = String(d.getDate()).padStart(2, '0')
-  return `${d.getFullYear()}-${mes}-${dia}`
+  const d = new Date(ahora());
+  const mes = String(d.getMonth() + 1).padStart(2, "0");
+  const dia = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${mes}-${dia}`;
 }
 
 function estaVencida(venceEn: string | null): boolean {
-  if (!venceEn) return false
-  return venceEn < hoyEnLocal()
+  if (!venceEn) return false;
+  return venceEn < hoyEnLocal();
 }
 
 /** Cómo se llama cada campo cuando hay que echarlo en falta en voz alta. */
 const COMO_SE_LLAMA: Record<string, string> = {
-  puesto: 'el puesto',
-  empresa: 'la empresa',
-  desde: 'la fecha de inicio',
-  titulo: 'qué estudiaste',
-  institucion: 'dónde lo estudiaste',
-  idioma: 'el idioma',
-  nivel: 'el nivel',
-  nombre: 'el nombre',
-  url: 'la dirección',
-}
+  puesto: "el puesto",
+  empresa: "la empresa",
+  desde: "la fecha de inicio",
+  titulo: "qué estudiaste",
+  institucion: "dónde lo estudiaste",
+  idioma: "el idioma",
+  nivel: "el nivel",
+  nombre: "el nombre",
+  url: "la dirección",
+};
 
 /**
  * Qué falta de lo que el backend exige, dicho en palabras.
@@ -128,27 +153,49 @@ const COMO_SE_LLAMA: Record<string, string> = {
  * vez de un aviso al lado del campo. Los obligatorios salen de las anotaciones
  * `@NotBlank` y `@NotNull` de `DtosPerfil.java`.
  */
-function queFalta(valores: Record<string, unknown>, obligatorios: string[]): string | null {
-  const vacios = obligatorios.filter((c) => String(valores[c] ?? '').trim() === '')
-  if (vacios.length === 0) return null
-  const nombres = vacios.map((c) => COMO_SE_LLAMA[c] ?? c)
-  if (nombres.length === 1) return `Falta ${nombres[0]}.`
-  const ultimo = nombres.pop()
-  return `Faltan ${nombres.join(', ')} y ${ultimo}.`
+function queFalta(
+  valores: Record<string, unknown>,
+  obligatorios: string[],
+): string | null {
+  const vacios = obligatorios.filter(
+    (c) => String(valores[c] ?? "").trim() === "",
+  );
+  if (vacios.length === 0) return null;
+  const nombres = vacios.map((c) => COMO_SE_LLAMA[c] ?? c);
+  if (nombres.length === 1) return `Falta ${nombres[0]}.`;
+  const ultimo = nombres.pop();
+  return `Faltan ${nombres.join(", ")} y ${ultimo}.`;
 }
 
 function Marca({ dato }: { dato: ConOrigen }) {
-  if (dato.origen === 'PERSONA') return null
+  if (dato.origen === "PERSONA") return null;
   if (!dato.confirmado) {
-    return <span className={`${estilos.marca} ${estilos.duda}`}>Sin confirmar</span>
+    return (
+      <span className={`${estilos.marca} ${estilos.porRevisar}`}>Sin confirmar</span>
+    );
   }
-  return <span className={`${estilos.marca} ${estilos.delCv}`}>Del currículum</span>
+  return (
+    <span className={`${estilos.marca} ${estilos.delCv}`}>Del currículum</span>
+  );
+}
+
+/** Los meses sin nada entre dos empleos. Sin hueco no pinta nada. */
+function Hueco({ meses }: { meses: number | null }) {
+  if (meses === null) return null;
+  const anios = Math.round(meses / 12);
+  return (
+    <li className={estilos.hueco}>
+      {meses >= 12
+        ? `${anios} ${anios === 1 ? "año" : "años"} sin empleo registrado`
+        : `${meses} meses sin empleo registrado`}
+    </li>
+  );
 }
 
 interface PropsFila {
-  dato: ConOrigen
+  dato: ConOrigen;
   /** Lo que se lee: el título de la fila y su detalle. */
-  children: ReactNode
+  children: ReactNode;
   /**
    * Con qué se nombra esta fila en los `aria-label` de sus botones.
    *
@@ -157,20 +204,33 @@ interface PropsFila {
    * de empresa manteniendo el cargo es lo normal— dejaban dos botones «Quitar
    * Analista de procesos» idénticos en la lista de un lector de pantalla.
    */
-  queEs: string
-  onConfirmar: () => void
-  onEditar: () => void
-  onQuitar: () => void
-  ocupado: boolean
+  queEs: string;
+  /** Cuánto duró, para darle su alto al tramo. Solo en la trayectoria. */
+  meses?: number | null;
+  onConfirmar: () => void;
+  onEditar: () => void;
+  onQuitar: () => void;
+  ocupado: boolean;
   /** Las flechas, solo donde el backend deja reordenar. */
-  mover?: { arriba: (() => void) | null; abajo: (() => void) | null }
+  mover?: { arriba: (() => void) | null; abajo: (() => void) | null };
 }
 
-function Fila({ dato, children, queEs, onConfirmar, onEditar, onQuitar, ocupado, mover }: PropsFila) {
-  const sinConfirmar = dato.origen === 'CURRICULUM' && !dato.confirmado
+function Fila({
+  dato,
+  children,
+  queEs,
+  onConfirmar,
+  onEditar,
+  onQuitar,
+  ocupado,
+  mover,
+}: PropsFila) {
+  const sinConfirmar = dato.origen === "CURRICULUM" && !dato.confirmado;
 
   return (
-    <li className={`${estilos.fila} ${sinConfirmar ? estilos.sinConfirmar : ''}`}>
+    <li
+      className={`${estilos.fila} ${sinConfirmar ? estilos.sinConfirmar : ""}`}
+    >
       {children}
       {/*
         Cada botón nombra sobre qué actúa con su `aria-label`. Sin eso, una
@@ -199,9 +259,9 @@ function Fila({ dato, children, queEs, onConfirmar, onEditar, onQuitar, ocupado,
           type="button"
           onClick={onEditar}
           disabled={ocupado}
-          aria-label={`${sinConfirmar ? 'Corregir' : 'Editar'} ${queEs}`}
+          aria-label={`${sinConfirmar ? "Corregir" : "Editar"} ${queEs}`}
         >
-          {sinConfirmar ? 'Corregir' : 'Editar'}
+          {sinConfirmar ? "Corregir" : "Editar"}
         </button>
         <button
           className={estilos.quitar}
@@ -236,18 +296,31 @@ function Fila({ dato, children, queEs, onConfirmar, onEditar, onQuitar, ocupado,
         )}
       </div>
     </li>
-  )
+  );
 }
 
 /** El armazón de una sección: título, explicación, filas y el botón de añadir. */
 interface PropsSeccion {
-  titulo: string
-  explicacion: string
-  cuantosSinConfirmar: number
-  vacia: string
-  hayAlgo: boolean
-  fallo: string | null
-  children: ReactNode
+  titulo: string;
+  explicacion: string;
+  cuantosSinConfirmar: number;
+  vacia: string;
+  hayAlgo: boolean;
+  fallo: string | null;
+  children: ReactNode;
+}
+
+/** El id de anclaje de una sección, derivado de su título. Ver `Indice`. */
+export function anclaDe(titulo: string): string {
+  return (
+    "seccion-" +
+    titulo
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "")
+  );
 }
 
 function Seccion({
@@ -260,13 +333,13 @@ function Seccion({
   children,
 }: PropsSeccion) {
   return (
-    <section className={estilos.seccion}>
+    <section className={estilos.seccion} id={anclaDe(titulo)}>
       <div className={estilos.tituloSeccion}>
         <h2>{titulo}</h2>
         {cuantosSinConfirmar > 0 && (
           <span className={estilos.cuantos}>
             {cuantosSinConfirmar === 1
-              ? '1 sin confirmar'
+              ? "1 sin confirmar"
               : `${cuantosSinConfirmar} sin confirmar`}
           </span>
         )}
@@ -280,7 +353,7 @@ function Seccion({
       {!hayAlgo && <p className={estilos.ninguna}>{vacia}</p>}
       {children}
     </section>
-  )
+  );
 }
 
 /**
@@ -290,22 +363,51 @@ function Seccion({
  * sola pieza. Cada `onSuccess` invalida `['perfil']`: el GET del perfil es la
  * única fuente, así que no hay estado que sincronizar a mano.
  */
+/** Lo que hace falta para quitar una fila: cuál, y cómo se llama para decirlo. */
+interface Baja {
+  id: number;
+  queEra: string;
+}
+
 function useLista() {
-  const cache = useQueryClient()
-  const [fallo, setFallo] = useState<string | null>(null)
+  const cache = useQueryClient();
+  const avisar = useAviso();
+  const [fallo, setFallo] = useState<string | null>(null);
 
   // ⚠️ **Refrescar limpia el fallo**, y por eso lo usan todos los `onSuccess`.
   // Sin esto, un borrado que fallaba dejaba su aviso rojo en pantalla mientras
   // la operación siguiente iba bien: el mensaje decía que algo estaba mal cuando
   // ya no lo estaba. Es la familia de «indicadores que mienten».
   const refrescar = () => {
-    setFallo(null)
-    return cache.invalidateQueries({ queryKey: ['perfil'] })
-  }
+    setFallo(null);
+    return cache.invalidateQueries({ queryKey: ["perfil"] });
+  };
   const alFallar = (causa: unknown) =>
-    setFallo(causa instanceof Error ? causa.message : 'No pudimos guardar el cambio.')
+    setFallo(
+      causa instanceof Error ? causa.message : "No pudimos guardar el cambio.",
+    );
 
-  return { fallo, setFallo, refrescar, alFallar }
+  /**
+   * Refresca y **dice qué se quitó**.
+   *
+   * ⚠️ **Borrar era mudo, y es la operación que más ansiedad da.** La fila
+   * desaparecía sin una palabra: quien navega con lector de pantalla perdía el
+   * foco —el botón se desmonta con su fila— y no se enteraba de nada, y quien
+   * mira tenía que buscar en una lista de once filas para comprobar que se fue
+   * la correcta. El aviso ya existe, ya es una región viva, y solo había que
+   * usarlo.
+   *
+   * No lleva «Deshacer», y no es pereza: recrear la fila le da un id nuevo y la
+   * manda al final de la lista, así que el botón prometería devolverla a su
+   * sitio y no lo haría. Un deshacer de verdad necesita que el backend sepa
+   * restaurar, y eso es trabajo aparte.
+   */
+  const anunciarBaja = (queEra: string) => async () => {
+    await refrescar();
+    avisar(`Quitado: ${queEra}.`);
+  };
+
+  return { fallo, setFallo, refrescar, alFallar, anunciarBaja };
 }
 
 /**
@@ -315,44 +417,60 @@ function useLista() {
  * todo el mundo, y arrastrar ahí va mal. Es la misma decisión que ya se tomó en
  * el SEC de la evaluación.
  */
-function conLaFilaMovida(ids: number[], indice: number, hacia: number): number[] {
-  const destino = indice + hacia
-  if (destino < 0 || destino >= ids.length) return ids
-  const copia = [...ids]
-  const sacado = copia[indice]
-  const otro = copia[destino]
-  if (sacado === undefined || otro === undefined) return ids
-  copia[indice] = otro
-  copia[destino] = sacado
-  return copia
+function conLaFilaMovida(
+  ids: number[],
+  indice: number,
+  hacia: number,
+): number[] {
+  const destino = indice + hacia;
+  if (destino < 0 || destino >= ids.length) return ids;
+  const copia = [...ids];
+  const sacado = copia[indice];
+  const otro = copia[destino];
+  if (sacado === undefined || otro === undefined) return ids;
+  copia[indice] = otro;
+  copia[destino] = sacado;
+  return copia;
 }
 
 // ---------- Experiencia ----------
 
-const EXPERIENCIA_VACIA = { puesto: '', empresa: '', desde: '', hasta: '', descripcion: '' }
+const EXPERIENCIA_VACIA = {
+  puesto: "",
+  empresa: "",
+  desde: "",
+  hasta: "",
+  descripcion: "",
+};
 
 export function Experiencia({ filas }: { filas: ExperienciaPerfil[] }) {
-  const { fallo, setFallo, refrescar, alFallar } = useLista()
-  const [editando, setEditando] = useState<number | 'nueva' | null>(null)
-  const [valores, setValores] = useState(EXPERIENCIA_VACIA)
+  const { fallo, setFallo, refrescar, alFallar, anunciarBaja } = useLista();
+  const [editando, setEditando] = useState<number | "nueva" | null>(null);
+  const [valores, setValores] = useState(EXPERIENCIA_VACIA);
 
   const cerrar = () => {
-    setEditando(null)
-    setValores(EXPERIENCIA_VACIA)
-    setFallo(null)
-  }
+    setEditando(null);
+    setValores(EXPERIENCIA_VACIA);
+    setFallo(null);
+  };
 
   const alta = useMutation({
     mutationFn: crearExperiencia,
     onSuccess: async () => {
-      cerrar()
-      await refrescar()
+      cerrar();
+      await refrescar();
     },
     onError: alFallar,
-  })
+  });
 
   const cambio = useMutation({
-    mutationFn: ({ id, datos }: { id: number; datos: typeof EXPERIENCIA_VACIA }) =>
+    mutationFn: ({
+      id,
+      datos,
+    }: {
+      id: number;
+      datos: typeof EXPERIENCIA_VACIA;
+    }) =>
       editarExperiencia(id, {
         puesto: datos.puesto.trim(),
         empresa: datos.empresa.trim(),
@@ -361,57 +479,67 @@ export function Experiencia({ filas }: { filas: ExperienciaPerfil[] }) {
         descripcion: datos.descripcion.trim() || null,
       }),
     onSuccess: async () => {
-      cerrar()
-      await refrescar()
+      cerrar();
+      await refrescar();
     },
     onError: alFallar,
-  })
+  });
 
   const baja = useMutation({
-    mutationFn: borrarExperiencia,
-    onSuccess: refrescar,
+    mutationFn: ({ id }: Baja) => borrarExperiencia(id),
+    onSuccess: (_, v) => anunciarBaja(v.queEra)(),
     onError: alFallar,
-  })
+  });
 
   const confirmacion = useMutation({
     mutationFn: confirmarExperiencia,
     onSuccess: refrescar,
     onError: alFallar,
-  })
+  });
 
   const orden = useMutation({
     mutationFn: ordenarExperiencia,
     onSuccess: refrescar,
     onError: alFallar,
-  })
+  });
 
   const ocupado =
-    alta.isPending || cambio.isPending || baja.isPending || confirmacion.isPending || orden.isPending
+    alta.isPending ||
+    cambio.isPending ||
+    baja.isPending ||
+    confirmacion.isPending ||
+    orden.isPending;
 
   function mover(indice: number, hacia: number) {
-    orden.mutate(conLaFilaMovida(filas.map((f) => f.id), indice, hacia))
+    orden.mutate(
+      conLaFilaMovida(
+        filas.map((f) => f.id),
+        indice,
+        hacia,
+      ),
+    );
   }
 
   function enviar(evento: FormEvent) {
-    evento.preventDefault()
-    setFallo(null)
+    evento.preventDefault();
+    setFallo(null);
     // Lo que el backend exige. Se para aquí para que el aviso salga junto al
     // formulario y no como un 400 después de ir y volver.
-    const falta = queFalta(valores, ['puesto', 'empresa', 'desde'])
+    const falta = queFalta(valores, ["puesto", "empresa", "desde"]);
     if (falta) {
-      setFallo(falta)
-      return
+      setFallo(falta);
+      return;
     }
-    if (editando === 'nueva') {
+    if (editando === "nueva") {
       alta.mutate({
         puesto: valores.puesto.trim(),
         empresa: valores.empresa.trim(),
         desde: valores.desde,
         hasta: valores.hasta || null,
         descripcion: valores.descripcion.trim() || null,
-      })
-    } else if (typeof editando === 'number') {
-      cambio.mutate({ id: editando, datos: valores })
+      });
+    } else if (typeof editando === "number") {
+      cambio.mutate({ id: editando, datos: valores });
     }
   }
 
@@ -419,44 +547,116 @@ export function Experiencia({ filas }: { filas: ExperienciaPerfil[] }) {
     <Seccion
       titulo="Experiencia"
       explicacion="Dónde has trabajado y qué hiciste. Lo más reciente arriba; puedes cambiar el orden con las flechas."
-      cuantosSinConfirmar={filas.filter((f) => f.origen === 'CURRICULUM' && !f.confirmado).length}
+      cuantosSinConfirmar={
+        filas.filter((f) => f.origen === "CURRICULUM" && !f.confirmado).length
+      }
       vacia="Todavía no hay nada aquí."
       hayAlgo={filas.length > 0}
       fallo={fallo}
     >
+      {/*
+        ⚠️ **Es una línea de tiempo, no una lista.** Una trayectoria tiene
+        duración y orden —eso es una figura— y dibujarla como tres cajas iguales
+        tiraba la única información con forma de toda la pantalla. El alto de
+        cada tramo sale de sus meses, así que seis años se ven como seis años y
+        un contrato de tres meses se ve como tres meses.
+
+        Y los huecos se ven como huecos: los meses sin nada entre dos empleos
+        son lo primero que mira quien contrata, y esconderlos no le ayuda a nadie
+        —quien tiene uno prefiere explicarlo a que se note que no está.
+      */}
       {filas.length > 0 && (
-        <ul className={estilos.filas} role="list">
+        <ul className={`${estilos.filas} ${estilos.trayectoria}`} role="list">
           {filas.map((f, i) => (
-            <Fila
-              key={f.id}
-              dato={f}
-              queEs={`${f.puesto} en ${f.empresa}`}
-              ocupado={ocupado}
-              onConfirmar={() => confirmacion.mutate(f.id)}
-              onEditar={() => {
-                setEditando(f.id)
-                setValores({
-                  puesto: f.puesto,
-                  empresa: f.empresa,
-                  desde: f.desde,
-                  hasta: f.hasta ?? '',
-                  descripcion: f.descripcion ?? '',
-                })
-              }}
-              onQuitar={() => baja.mutate(f.id)}
-              mover={{
-                arriba: i > 0 ? () => mover(i, -1) : null,
-                abajo: i < filas.length - 1 ? () => mover(i, 1) : null,
-              }}
-            >
-              <div className={estilos.cabeceraFila}>
-                <span className={estilos.queEs}>{f.puesto}</span>
-                <span className={estilos.donde}>{f.empresa}</span>
-                <Marca dato={f} />
-              </div>
-              <p className={estilos.cuando}>{periodo(f.desde, f.hasta)}</p>
-              {f.descripcion && <p className={estilos.detalleFila}>{f.descripcion}</p>}
-            </Fila>
+            <Fragment key={f.id}>
+              {/*
+                El hueco es su PROPIA entrada de la lista, no un rótulo dentro de
+                la fila de abajo: metido dentro, quedaba encerrado en la caja
+                ámbar de un empleo con el que no tiene nada que ver. Y para un
+                lector de pantalla vale que se lea como una entrada más — la
+                trayectoria dice «este empleo, un año sin nada, este otro».
+
+                Se compara con la de ABAJO, que es la más antigua: la lista va de
+                lo más reciente a lo más viejo.
+              */}
+              <Fila
+                dato={f}
+                queEs={`${f.puesto} en ${f.empresa}`}
+                ocupado={ocupado}
+                onConfirmar={() => confirmacion.mutate(f.id)}
+                onEditar={() => {
+                  setEditando(f.id);
+                  setValores({
+                    puesto: f.puesto,
+                    empresa: f.empresa,
+                    desde: f.desde,
+                    hasta: f.hasta ?? "",
+                    descripcion: f.descripcion ?? "",
+                  });
+                }}
+                onQuitar={() =>
+                  baja.mutate({
+                    id: f.id,
+                    queEra: `${f.puesto} en ${f.empresa}`,
+                  })
+                }
+                mover={{
+                  arriba: i > 0 ? () => mover(i, -1) : null,
+                  abajo: i < filas.length - 1 ? () => mover(i, 1) : null,
+                }}
+              >
+                {/*
+                  El «qué» a la izquierda y el «cuándo» a la derecha, en la misma
+                  línea: la fila mide 664px y el texto paraba en 420, así que la
+                  mitad derecha de las once filas estaba vacía mientras el
+                  periodo ocupaba un renglón entero por debajo. La prosa de la
+                  descripción se queda en su medida —ensancharla se lee peor—;
+                  lo que se reparte es el dato corto.
+                */}
+                <div className={estilos.conCuando}>
+                  <div className={estilos.queYDonde}>
+                    <span className={estilos.queEs}>{f.puesto}</span>
+                    <span className={estilos.donde}>{f.empresa}</span>
+                    <Marca dato={f} />
+                  </div>
+                  <p className={estilos.cuando}>
+                    {periodo(f.desde, f.hasta)}
+                    {duracion(f.desde, f.hasta) && (
+                      <span className={estilos.duracion}>
+                        {" · "}
+                        {duracion(f.desde, f.hasta)}
+                      </span>
+                    )}
+                  </p>
+                </div>
+                {/*
+                  ⚠️ **La duración se escribe.** Un raíl con nodos promete que se
+                  ve cuánto duró cada cosa, y el alto no lo cumplía: el texto de
+                  la fila casi siempre superaba el mínimo por CSS, así que once
+                  años y cuatro medían lo mismo. La cuenta ya existía y se perdía
+                  en una variable de estilo; ahora se lee.
+                */}
+                {f.descripcion && (
+                  <p className={estilos.detalleFila}>{f.descripcion}</p>
+                )}
+              </Fila>
+              {/*
+                ⚠️ **Va DEBAJO de su fila, y la posición es el dato.** El hueco
+                describe el salto entre esta fila y la de abajo —la más antigua—,
+                así que tiene que caer entre las dos. Emitido antes de la fila
+                quedaba un puesto más arriba: dibujaba un vacío laboral entre dos
+                empleos encadenados y lo escondía donde de verdad estaba. En un
+                portal de empleo eso no es un desajuste, es afirmar algo falso
+                sobre la vida de alguien.
+              */}
+              <Hueco
+                meses={
+                  i < filas.length - 1
+                    ? huecoEntre(filas[i + 1]!.hasta, f.desde)
+                    : null
+                }
+              />
+            </Fragment>
           ))}
         </ul>
       )}
@@ -468,13 +668,17 @@ export function Experiencia({ filas }: { filas: ExperienciaPerfil[] }) {
               etiqueta="Puesto"
               maxLength={200}
               value={valores.puesto}
-              onChange={(e) => setValores((v) => ({ ...v, puesto: e.target.value }))}
+              onChange={(e) =>
+                setValores((v) => ({ ...v, puesto: e.target.value }))
+              }
             />
             <Campo
               etiqueta="Empresa"
               maxLength={200}
               value={valores.empresa}
-              onChange={(e) => setValores((v) => ({ ...v, empresa: e.target.value }))}
+              onChange={(e) =>
+                setValores((v) => ({ ...v, empresa: e.target.value }))
+              }
             />
           </div>
           <div className={estilos.pareja}>
@@ -482,14 +686,18 @@ export function Experiencia({ filas }: { filas: ExperienciaPerfil[] }) {
               etiqueta="Desde"
               type="date"
               value={valores.desde}
-              onChange={(e) => setValores((v) => ({ ...v, desde: e.target.value }))}
+              onChange={(e) =>
+                setValores((v) => ({ ...v, desde: e.target.value }))
+              }
             />
             <Campo
               etiqueta="Hasta"
               ayuda="Déjalo en blanco si sigues ahí."
               type="date"
               value={valores.hasta}
-              onChange={(e) => setValores((v) => ({ ...v, hasta: e.target.value }))}
+              onChange={(e) =>
+                setValores((v) => ({ ...v, hasta: e.target.value }))
+              }
             />
           </div>
           <AreaTexto
@@ -497,13 +705,24 @@ export function Experiencia({ filas }: { filas: ExperienciaPerfil[] }) {
             ayuda="Opcional. Lo que estaba a tu cargo y qué cambió mientras estuviste."
             maximo={2000}
             value={valores.descripcion}
-            onChange={(e) => setValores((v) => ({ ...v, descripcion: e.target.value }))}
+            onChange={(e) =>
+              setValores((v) => ({ ...v, descripcion: e.target.value }))
+            }
           />
           <div className={estilos.pieFormulario}>
-            <button className={estilos.guardar} type="submit" disabled={ocupado}>
-              {ocupado ? 'Guardando…' : 'Guardar'}
+            <button
+              className={estilos.guardar}
+              type="submit"
+              disabled={ocupado}
+            >
+              {ocupado ? "Guardando…" : "Guardar"}
             </button>
-            <button className={estilos.cancelar} type="button" onClick={cerrar} disabled={ocupado}>
+            <button
+              className={estilos.cancelar}
+              type="button"
+              onClick={cerrar}
+              disabled={ocupado}
+            >
               Dejarlo
             </button>
           </div>
@@ -513,46 +732,46 @@ export function Experiencia({ filas }: { filas: ExperienciaPerfil[] }) {
           className={estilos.anadir}
           type="button"
           onClick={() => {
-            setValores(EXPERIENCIA_VACIA)
-            setEditando('nueva')
+            setValores(EXPERIENCIA_VACIA);
+            setEditando("nueva");
           }}
         >
           Añadir experiencia
         </button>
       )}
     </Seccion>
-  )
+  );
 }
 
 // ---------- Educación ----------
 
 const EDUCACION_VACIA = {
-  titulo: '',
-  institucion: '',
-  nivelCodigo: '',
-  desde: '',
-  hasta: '',
+  titulo: "",
+  institucion: "",
+  nivelCodigo: "",
+  desde: "",
+  hasta: "",
   enCurso: false,
-}
+};
 
 export function Educacion({
   filas,
   niveles,
   catalogoCaido = false,
 }: {
-  filas: EducacionPerfil[]
-  niveles: OpcionCatalogo[]
-  catalogoCaido?: boolean
+  filas: EducacionPerfil[];
+  niveles: OpcionCatalogo[];
+  catalogoCaido?: boolean;
 }) {
-  const { fallo, setFallo, refrescar, alFallar } = useLista()
-  const [editando, setEditando] = useState<number | 'nueva' | null>(null)
-  const [valores, setValores] = useState(EDUCACION_VACIA)
+  const { fallo, setFallo, refrescar, alFallar, anunciarBaja } = useLista();
+  const [editando, setEditando] = useState<number | "nueva" | null>(null);
+  const [valores, setValores] = useState(EDUCACION_VACIA);
 
   const cerrar = () => {
-    setEditando(null)
-    setValores(EDUCACION_VACIA)
-    setFallo(null)
-  }
+    setEditando(null);
+    setValores(EDUCACION_VACIA);
+    setFallo(null);
+  };
 
   const comoLaMandaElBackend = (v: typeof EDUCACION_VACIA) => ({
     titulo: v.titulo.trim(),
@@ -561,68 +780,89 @@ export function Educacion({
     desde: v.desde || null,
     hasta: v.hasta || null,
     enCurso: v.enCurso,
-  })
+  });
 
   const alta = useMutation({
     mutationFn: () => crearEducacion(comoLaMandaElBackend(valores)),
     onSuccess: async () => {
-      cerrar()
-      await refrescar()
+      cerrar();
+      await refrescar();
     },
     onError: alFallar,
-  })
+  });
 
   const cambio = useMutation({
-    mutationFn: (id: number) => editarEducacion(id, comoLaMandaElBackend(valores)),
+    mutationFn: (id: number) =>
+      editarEducacion(id, comoLaMandaElBackend(valores)),
     onSuccess: async () => {
-      cerrar()
-      await refrescar()
+      cerrar();
+      await refrescar();
     },
     onError: alFallar,
-  })
+  });
 
-  const baja = useMutation({ mutationFn: borrarEducacion, onSuccess: refrescar, onError: alFallar })
+  const baja = useMutation({
+    mutationFn: ({ id }: Baja) => borrarEducacion(id),
+    onSuccess: (_, v) => anunciarBaja(v.queEra)(),
+    onError: alFallar,
+  });
   const confirmacion = useMutation({
     mutationFn: confirmarEducacion,
     onSuccess: refrescar,
     onError: alFallar,
-  })
-  const orden = useMutation({ mutationFn: ordenarEducacion, onSuccess: refrescar, onError: alFallar })
+  });
+  const orden = useMutation({
+    mutationFn: ordenarEducacion,
+    onSuccess: refrescar,
+    onError: alFallar,
+  });
 
   const ocupado =
-    alta.isPending || cambio.isPending || baja.isPending || confirmacion.isPending || orden.isPending
+    alta.isPending ||
+    cambio.isPending ||
+    baja.isPending ||
+    confirmacion.isPending ||
+    orden.isPending;
 
   function mover(indice: number, hacia: number) {
-    orden.mutate(conLaFilaMovida(filas.map((f) => f.id), indice, hacia))
+    orden.mutate(
+      conLaFilaMovida(
+        filas.map((f) => f.id),
+        indice,
+        hacia,
+      ),
+    );
   }
 
   function enviar(evento: FormEvent) {
-    evento.preventDefault()
-    setFallo(null)
-    const falta = queFalta(valores, ['titulo', 'institucion'])
+    evento.preventDefault();
+    setFallo(null);
+    const falta = queFalta(valores, ["titulo", "institucion"]);
     if (falta) {
-      setFallo(falta)
-      return
+      setFallo(falta);
+      return;
     }
-    if (editando === 'nueva') alta.mutate()
-    else if (typeof editando === 'number') cambio.mutate(editando)
+    if (editando === "nueva") alta.mutate();
+    else if (typeof editando === "number") cambio.mutate(editando);
   }
 
   const nombreDelNivel = (codigo: string | null) =>
-    niveles.find((n) => n.codigo === codigo)?.nombre ?? codigo
+    niveles.find((n) => n.codigo === codigo)?.nombre ?? codigo;
 
   return (
     <Seccion
       titulo="Estudios"
       explicacion="Lo que estudiaste y dónde. Si sigues estudiando, márcalo y no hace falta poner una fecha de fin."
-      cuantosSinConfirmar={filas.filter((f) => f.origen === 'CURRICULUM' && !f.confirmado).length}
+      cuantosSinConfirmar={
+        filas.filter((f) => f.origen === "CURRICULUM" && !f.confirmado).length
+      }
       vacia="Todavía no hay nada aquí."
       hayAlgo={filas.length > 0}
       // Aquí el nivel es opcional, así que se puede seguir trabajando sin el
       // catálogo; lo único que se pierde es poder elegirlo, y se dice.
       fallo={
         catalogoCaido
-          ? 'No pudimos cargar la lista de niveles de estudio. Puedes añadir y editar igual; el nivel podrás elegirlo cuando vuelva.'
+          ? "No pudimos cargar la lista de niveles de estudio. Puedes añadir y editar igual; el nivel podrás elegirlo cuando vuelva."
           : fallo
       }
     >
@@ -636,33 +876,42 @@ export function Educacion({
               ocupado={ocupado}
               onConfirmar={() => confirmacion.mutate(f.id)}
               onEditar={() => {
-                setEditando(f.id)
+                setEditando(f.id);
                 setValores({
                   titulo: f.titulo,
                   institucion: f.institucion,
-                  nivelCodigo: f.nivelCodigo ?? '',
-                  desde: f.desde ?? '',
-                  hasta: f.hasta ?? '',
+                  nivelCodigo: f.nivelCodigo ?? "",
+                  desde: f.desde ?? "",
+                  hasta: f.hasta ?? "",
                   enCurso: f.enCurso,
-                })
+                });
               }}
-              onQuitar={() => baja.mutate(f.id)}
+              onQuitar={() =>
+                baja.mutate({
+                  id: f.id,
+                  queEra: `${f.titulo} en ${f.institucion}`,
+                })
+              }
               mover={{
                 arriba: i > 0 ? () => mover(i, -1) : null,
                 abajo: i < filas.length - 1 ? () => mover(i, 1) : null,
               }}
             >
-              <div className={estilos.cabeceraFila}>
-                <span className={estilos.queEs}>{f.titulo}</span>
-                <span className={estilos.donde}>{f.institucion}</span>
-                {f.nivelCodigo && (
-                  <span className={`${estilos.marca} ${estilos.delCv}`}>
-                    {nombreDelNivel(f.nivelCodigo)}
-                  </span>
-                )}
-                <Marca dato={f} />
+              <div className={estilos.conCuando}>
+                <div className={estilos.queYDonde}>
+                  <span className={estilos.queEs}>{f.titulo}</span>
+                  <span className={estilos.donde}>{f.institucion}</span>
+                  {f.nivelCodigo && (
+                    <span className={`${estilos.marca} ${estilos.atributo}`}>
+                      {nombreDelNivel(f.nivelCodigo)}
+                    </span>
+                  )}
+                  <Marca dato={f} />
+                </div>
+                <p className={estilos.cuando}>
+                  {periodo(f.desde, f.hasta, f.enCurso)}
+                </p>
               </div>
-              <p className={estilos.cuando}>{periodo(f.desde, f.hasta, f.enCurso)}</p>
             </Fila>
           ))}
         </ul>
@@ -675,13 +924,17 @@ export function Educacion({
               etiqueta="Qué estudiaste"
               maxLength={200}
               value={valores.titulo}
-              onChange={(e) => setValores((v) => ({ ...v, titulo: e.target.value }))}
+              onChange={(e) =>
+                setValores((v) => ({ ...v, titulo: e.target.value }))
+              }
             />
             <Campo
               etiqueta="Dónde"
               maxLength={200}
               value={valores.institucion}
-              onChange={(e) => setValores((v) => ({ ...v, institucion: e.target.value }))}
+              onChange={(e) =>
+                setValores((v) => ({ ...v, institucion: e.target.value }))
+              }
             />
           </div>
           <div className={estilos.campoSuelto}>
@@ -692,7 +945,9 @@ export function Educacion({
               className={estilos.seleccion}
               id="nivel-educativo"
               value={valores.nivelCodigo}
-              onChange={(e) => setValores((v) => ({ ...v, nivelCodigo: e.target.value }))}
+              onChange={(e) =>
+                setValores((v) => ({ ...v, nivelCodigo: e.target.value }))
+              }
             >
               <option value="">Sin especificar</option>
               {niveles.map((n) => (
@@ -707,29 +962,44 @@ export function Educacion({
               etiqueta="Desde"
               type="date"
               value={valores.desde}
-              onChange={(e) => setValores((v) => ({ ...v, desde: e.target.value }))}
+              onChange={(e) =>
+                setValores((v) => ({ ...v, desde: e.target.value }))
+              }
             />
             <Campo
               etiqueta="Hasta"
               type="date"
               value={valores.hasta}
               disabled={valores.enCurso}
-              onChange={(e) => setValores((v) => ({ ...v, hasta: e.target.value }))}
+              onChange={(e) =>
+                setValores((v) => ({ ...v, hasta: e.target.value }))
+              }
             />
           </div>
           <label className={estilos.casilla}>
             <input
               type="checkbox"
               checked={valores.enCurso}
-              onChange={(e) => setValores((v) => ({ ...v, enCurso: e.target.checked }))}
+              onChange={(e) =>
+                setValores((v) => ({ ...v, enCurso: e.target.checked }))
+              }
             />
             Sigo estudiando esto
           </label>
           <div className={estilos.pieFormulario}>
-            <button className={estilos.guardar} type="submit" disabled={ocupado}>
-              {ocupado ? 'Guardando…' : 'Guardar'}
+            <button
+              className={estilos.guardar}
+              type="submit"
+              disabled={ocupado}
+            >
+              {ocupado ? "Guardando…" : "Guardar"}
             </button>
-            <button className={estilos.cancelar} type="button" onClick={cerrar} disabled={ocupado}>
+            <button
+              className={estilos.cancelar}
+              type="button"
+              onClick={cerrar}
+              disabled={ocupado}
+            >
               Dejarlo
             </button>
           </div>
@@ -739,15 +1009,15 @@ export function Educacion({
           className={estilos.anadir}
           type="button"
           onClick={() => {
-            setValores(EDUCACION_VACIA)
-            setEditando('nueva')
+            setValores(EDUCACION_VACIA);
+            setEditando("nueva");
           }}
         >
           Añadir estudios
         </button>
       )}
     </Seccion>
-  )
+  );
 }
 
 // ---------- Idiomas ----------
@@ -761,90 +1031,102 @@ export function Educacion({
  * código que no esté aquí simplemente no lleva línea.
  */
 const QUE_SIGNIFICA: Record<string, string> = {
-  A1: 'Puedo presentarme y decir cosas muy sencillas.',
-  A2: 'Me apaño en situaciones cotidianas y frases cortas.',
-  B1: 'Sigo una conversación normal si no va muy rápido.',
-  B2: 'Me manejo en una reunión de trabajo sin perderme.',
-  C1: 'Trabajo en este idioma con soltura, también por escrito.',
-  C2: 'Lo uso como el mío, en cualquier contexto.',
-  NATIVO: 'Es mi lengua materna.',
-}
+  A1: "Puedo presentarme y decir cosas muy sencillas.",
+  A2: "Me apaño en situaciones cotidianas y frases cortas.",
+  B1: "Sigo una conversación normal si no va muy rápido.",
+  B2: "Me manejo en una reunión de trabajo sin perderme.",
+  C1: "Trabajo en este idioma con soltura, también por escrito.",
+  C2: "Lo uso como el mío, en cualquier contexto.",
+  NATIVO: "Es mi lengua materna.",
+};
 
 export function Idiomas({
   filas,
   niveles,
   catalogoCaido = false,
 }: {
-  filas: IdiomaPerfil[]
-  niveles: OpcionCatalogo[]
-  catalogoCaido?: boolean
+  filas: IdiomaPerfil[];
+  niveles: OpcionCatalogo[];
+  catalogoCaido?: boolean;
 }) {
-  const { fallo, setFallo, refrescar, alFallar } = useLista()
-  const [editando, setEditando] = useState<number | 'nueva' | null>(null)
-  const [idioma, setIdioma] = useState('')
-  const [nivel, setNivel] = useState('')
+  const { fallo, setFallo, refrescar, alFallar, anunciarBaja } = useLista();
+  const [editando, setEditando] = useState<number | "nueva" | null>(null);
+  const [idioma, setIdioma] = useState("");
+  const [nivel, setNivel] = useState("");
 
   const cerrar = () => {
-    setEditando(null)
-    setIdioma('')
-    setNivel('')
-    setFallo(null)
-  }
+    setEditando(null);
+    setIdioma("");
+    setNivel("");
+    setFallo(null);
+  };
 
   const alta = useMutation({
-    mutationFn: () => crearIdioma({ idioma: idioma.trim(), nivelCodigo: nivel }),
+    mutationFn: () =>
+      crearIdioma({ idioma: idioma.trim(), nivelCodigo: nivel }),
     onSuccess: async () => {
-      cerrar()
-      await refrescar()
+      cerrar();
+      await refrescar();
     },
     onError: alFallar,
-  })
+  });
 
   const cambio = useMutation({
-    mutationFn: (id: number) => editarIdioma(id, { idioma: idioma.trim(), nivelCodigo: nivel }),
+    mutationFn: (id: number) =>
+      editarIdioma(id, { idioma: idioma.trim(), nivelCodigo: nivel }),
     onSuccess: async () => {
-      cerrar()
-      await refrescar()
+      cerrar();
+      await refrescar();
     },
     onError: alFallar,
-  })
+  });
 
-  const baja = useMutation({ mutationFn: borrarIdioma, onSuccess: refrescar, onError: alFallar })
+  const baja = useMutation({
+    mutationFn: ({ id }: Baja) => borrarIdioma(id),
+    onSuccess: (_, v) => anunciarBaja(v.queEra)(),
+    onError: alFallar,
+  });
   const confirmacion = useMutation({
     mutationFn: confirmarIdioma,
     onSuccess: refrescar,
     onError: alFallar,
-  })
+  });
 
-  const ocupado = alta.isPending || cambio.isPending || baja.isPending || confirmacion.isPending
+  const ocupado =
+    alta.isPending ||
+    cambio.isPending ||
+    baja.isPending ||
+    confirmacion.isPending;
 
   function enviar(evento: FormEvent) {
-    evento.preventDefault()
-    setFallo(null)
+    evento.preventDefault();
+    setFallo(null);
     // El nivel es `@NotBlank` y la opción por defecto del selector vale '': sin
     // esta guarda, añadir un idioma sin elegir nivel rebotaba con un 400.
-    const falta = queFalta({ idioma, nivel }, ['idioma', 'nivel'])
+    const falta = queFalta({ idioma, nivel }, ["idioma", "nivel"]);
     if (falta) {
-      setFallo(falta)
-      return
+      setFallo(falta);
+      return;
     }
-    if (editando === 'nueva') alta.mutate()
-    else if (typeof editando === 'number') cambio.mutate(editando)
+    if (editando === "nueva") alta.mutate();
+    else if (typeof editando === "number") cambio.mutate(editando);
   }
 
   const nombreDelNivel = (codigo: string) =>
-    niveles.find((n) => n.codigo === codigo)?.nombre ?? codigo
+    niveles.find((n) => n.codigo === codigo)?.nombre ?? codigo;
 
   return (
     <Seccion
       titulo="Idiomas"
       explicacion="Qué idiomas hablas y hasta dónde. Al elegir el nivel verás qué significa cada uno."
-      cuantosSinConfirmar={filas.filter((f) => f.origen === 'CURRICULUM' && !f.confirmado).length}
+      cuantosSinConfirmar={
+        filas.filter((f) => f.origen === "CURRICULUM" && !f.confirmado).length
+      }
       vacia="Todavía no hay nada aquí."
       hayAlgo={filas.length > 0}
       fallo={
         catalogoCaido
-          ? 'No pudimos cargar la lista de niveles, así que ahora mismo no se puede añadir un idioma. Lo que ya tienes sigue guardado; vuelve a cargar la página en un momento.'
+          ? "No pudimos cargar la lista de niveles, así que ahora mismo no se puede añadir un idioma. Lo que ya tienes sigue guardado; vuelve a cargar la página en un momento."
           : fallo
       }
     >
@@ -858,19 +1140,23 @@ export function Idiomas({
               ocupado={ocupado}
               onConfirmar={() => confirmacion.mutate(f.id)}
               onEditar={() => {
-                setEditando(f.id)
-                setIdioma(f.idioma)
-                setNivel(f.nivelCodigo)
+                setEditando(f.id);
+                setIdioma(f.idioma);
+                setNivel(f.nivelCodigo);
               }}
-              onQuitar={() => baja.mutate(f.id)}
+              onQuitar={() => baja.mutate({ id: f.id, queEra: f.idioma })}
             >
               <div className={estilos.cabeceraFila}>
                 <span className={estilos.queEs}>{f.idioma}</span>
-                <span className={estilos.donde}>{nombreDelNivel(f.nivelCodigo)}</span>
+                <span className={estilos.donde}>
+                  {nombreDelNivel(f.nivelCodigo)}
+                </span>
                 <Marca dato={f} />
               </div>
               {QUE_SIGNIFICA[f.nivelCodigo] && (
-                <p className={estilos.detalleFila}>{QUE_SIGNIFICA[f.nivelCodigo]}</p>
+                <p className={estilos.detalleFila}>
+                  {QUE_SIGNIFICA[f.nivelCodigo]}
+                </p>
               )}
             </Fila>
           ))}
@@ -906,13 +1192,24 @@ export function Idiomas({
               La explicación va aquí, viva, y no en una tabla aparte: se lee
               justo cuando se está eligiendo, que es cuando sirve de algo.
             */}
-            {QUE_SIGNIFICA[nivel] && <p className={estilos.ayuda}>{QUE_SIGNIFICA[nivel]}</p>}
+            {QUE_SIGNIFICA[nivel] && (
+              <p className={estilos.ayuda}>{QUE_SIGNIFICA[nivel]}</p>
+            )}
           </div>
           <div className={estilos.pieFormulario}>
-            <button className={estilos.guardar} type="submit" disabled={ocupado}>
-              {ocupado ? 'Guardando…' : 'Guardar'}
+            <button
+              className={estilos.guardar}
+              type="submit"
+              disabled={ocupado}
+            >
+              {ocupado ? "Guardando…" : "Guardar"}
             </button>
-            <button className={estilos.cancelar} type="button" onClick={cerrar} disabled={ocupado}>
+            <button
+              className={estilos.cancelar}
+              type="button"
+              onClick={cerrar}
+              disabled={ocupado}
+            >
               Dejarlo
             </button>
           </div>
@@ -923,88 +1220,99 @@ export function Idiomas({
           type="button"
           disabled={catalogoCaido}
           onClick={() => {
-            setIdioma('')
-            setNivel('')
-            setEditando('nueva')
+            setIdioma("");
+            setNivel("");
+            setEditando("nueva");
           }}
         >
           Añadir idioma
         </button>
       )}
     </Seccion>
-  )
+  );
 }
 
 // ---------- Certificaciones ----------
 
-const CERTIFICACION_VACIA = { nombre: '', entidad: '', emitidaEn: '', venceEn: '' }
+const CERTIFICACION_VACIA = {
+  nombre: "",
+  entidad: "",
+  emitidaEn: "",
+  venceEn: "",
+};
 
 export function Certificaciones({ filas }: { filas: CertificacionPerfil[] }) {
-  const { fallo, setFallo, refrescar, alFallar } = useLista()
-  const [editando, setEditando] = useState<number | 'nueva' | null>(null)
-  const [valores, setValores] = useState(CERTIFICACION_VACIA)
+  const { fallo, setFallo, refrescar, alFallar, anunciarBaja } = useLista();
+  const [editando, setEditando] = useState<number | "nueva" | null>(null);
+  const [valores, setValores] = useState(CERTIFICACION_VACIA);
 
   const cerrar = () => {
-    setEditando(null)
-    setValores(CERTIFICACION_VACIA)
-    setFallo(null)
-  }
+    setEditando(null);
+    setValores(CERTIFICACION_VACIA);
+    setFallo(null);
+  };
 
   const comoLaManda = () => ({
     nombre: valores.nombre.trim(),
     entidad: valores.entidad.trim() || null,
     emitidaEn: valores.emitidaEn || null,
     venceEn: valores.venceEn || null,
-  })
+  });
 
   const alta = useMutation({
     mutationFn: () => crearCertificacion(comoLaManda()),
     onSuccess: async () => {
-      cerrar()
-      await refrescar()
+      cerrar();
+      await refrescar();
     },
     onError: alFallar,
-  })
+  });
 
   const cambio = useMutation({
     mutationFn: (id: number) => editarCertificacion(id, comoLaManda()),
     onSuccess: async () => {
-      cerrar()
-      await refrescar()
+      cerrar();
+      await refrescar();
     },
     onError: alFallar,
-  })
+  });
 
   const baja = useMutation({
-    mutationFn: borrarCertificacion,
-    onSuccess: refrescar,
+    mutationFn: ({ id }: Baja) => borrarCertificacion(id),
+    onSuccess: (_, v) => anunciarBaja(v.queEra)(),
     onError: alFallar,
-  })
+  });
   const confirmacion = useMutation({
     mutationFn: confirmarCertificacion,
     onSuccess: refrescar,
     onError: alFallar,
-  })
+  });
 
-  const ocupado = alta.isPending || cambio.isPending || baja.isPending || confirmacion.isPending
+  const ocupado =
+    alta.isPending ||
+    cambio.isPending ||
+    baja.isPending ||
+    confirmacion.isPending;
 
   function enviar(evento: FormEvent) {
-    evento.preventDefault()
-    setFallo(null)
-    const falta = queFalta(valores, ['nombre'])
+    evento.preventDefault();
+    setFallo(null);
+    const falta = queFalta(valores, ["nombre"]);
     if (falta) {
-      setFallo(falta)
-      return
+      setFallo(falta);
+      return;
     }
-    if (editando === 'nueva') alta.mutate()
-    else if (typeof editando === 'number') cambio.mutate(editando)
+    if (editando === "nueva") alta.mutate();
+    else if (typeof editando === "number") cambio.mutate(editando);
   }
 
   return (
     <Seccion
       titulo="Certificaciones"
       explicacion="Certificados, colegiaturas y cursos con constancia. Si alguno caduca, pon la fecha: te avisamos aquí antes de que te pille."
-      cuantosSinConfirmar={filas.filter((f) => f.origen === 'CURRICULUM' && !f.confirmado).length}
+      cuantosSinConfirmar={
+        filas.filter((f) => f.origen === "CURRICULUM" && !f.confirmado).length
+      }
       vacia="Todavía no hay nada aquí."
       hayAlgo={filas.length > 0}
       fallo={fallo}
@@ -1019,42 +1327,53 @@ export function Certificaciones({ filas }: { filas: CertificacionPerfil[] }) {
               ocupado={ocupado}
               onConfirmar={() => confirmacion.mutate(f.id)}
               onEditar={() => {
-                setEditando(f.id)
+                setEditando(f.id);
                 setValores({
                   nombre: f.nombre,
-                  entidad: f.entidad ?? '',
-                  emitidaEn: f.emitidaEn ?? '',
-                  venceEn: f.venceEn ?? '',
-                })
+                  entidad: f.entidad ?? "",
+                  emitidaEn: f.emitidaEn ?? "",
+                  venceEn: f.venceEn ?? "",
+                });
               }}
-              onQuitar={() => baja.mutate(f.id)}
+              onQuitar={() => baja.mutate({ id: f.id, queEra: f.nombre })}
             >
-              <div className={estilos.cabeceraFila}>
-                <span className={estilos.queEs}>{f.nombre}</span>
-                {f.entidad && <span className={estilos.donde}>{f.entidad}</span>}
-                {/*
+              <div className={estilos.conCuando}>
+                <div className={estilos.queYDonde}>
+                  <span className={estilos.queEs}>{f.nombre}</span>
+                  {f.entidad && (
+                    <span className={estilos.donde}>{f.entidad}</span>
+                  )}
+                  {/*
                   Una certificación vencida importa de verdad en salud
                   —colegiatura, primeros auxilios— y es mucho mejor verlo aquí
                   que descubrirlo tarde. Lleva la palabra dentro, como todo.
                 */}
-                {estaVencida(f.venceEn) && (
-                  <span className={`${estilos.marca} ${estilos.vencida}`}>Vencida</span>
-                )}
-                <Marca dato={f} />
-              </div>
-              {/*
+                  {estaVencida(f.venceEn) && (
+                    <span className={`${estilos.marca} ${estilos.vencida}`}>
+                      Vencida
+                    </span>
+                  )}
+                  <Marca dato={f} />
+                </div>
+                {/*
                 Se arma juntando los trozos que existen: encadenar condiciones
                 dejaba «Emitida en febrero de 2024No caduca» cuando no habia
                 fecha de vencimiento.
               */}
-              <p className={estilos.cuando}>
-                {[
-                  f.emitidaEn ? `Emitida en ${mesYAno(f.emitidaEn)}` : null,
-                  f.venceEn ? `Vence en ${mesYAno(f.venceEn)}` : 'No caduca',
-                ]
-                  .filter(Boolean)
-                  .join(' · ')}
-              </p>
+                <p className={estilos.cuando}>
+                  {[
+                    f.emitidaEn ? `Emitida en ${mesYAno(f.emitidaEn)}` : null,
+                    f.venceEn ? `Vence en ${mesYAno(f.venceEn)}` : "No caduca",
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </p>
+              </div>
+              <ElDiploma
+                certificacion={f}
+                ocupado={ocupado}
+                refrescar={refrescar}
+              />
             </Fila>
           ))}
         </ul>
@@ -1067,13 +1386,17 @@ export function Certificaciones({ filas }: { filas: CertificacionPerfil[] }) {
               etiqueta="Nombre"
               maxLength={200}
               value={valores.nombre}
-              onChange={(e) => setValores((v) => ({ ...v, nombre: e.target.value }))}
+              onChange={(e) =>
+                setValores((v) => ({ ...v, nombre: e.target.value }))
+              }
             />
             <Campo
               etiqueta="Quién la emitió"
               maxLength={200}
               value={valores.entidad}
-              onChange={(e) => setValores((v) => ({ ...v, entidad: e.target.value }))}
+              onChange={(e) =>
+                setValores((v) => ({ ...v, entidad: e.target.value }))
+              }
             />
           </div>
           <div className={estilos.pareja}>
@@ -1081,21 +1404,34 @@ export function Certificaciones({ filas }: { filas: CertificacionPerfil[] }) {
               etiqueta="Emitida en"
               type="date"
               value={valores.emitidaEn}
-              onChange={(e) => setValores((v) => ({ ...v, emitidaEn: e.target.value }))}
+              onChange={(e) =>
+                setValores((v) => ({ ...v, emitidaEn: e.target.value }))
+              }
             />
             <Campo
               etiqueta="Vence en"
               ayuda="Déjalo en blanco si no caduca."
               type="date"
               value={valores.venceEn}
-              onChange={(e) => setValores((v) => ({ ...v, venceEn: e.target.value }))}
+              onChange={(e) =>
+                setValores((v) => ({ ...v, venceEn: e.target.value }))
+              }
             />
           </div>
           <div className={estilos.pieFormulario}>
-            <button className={estilos.guardar} type="submit" disabled={ocupado}>
-              {ocupado ? 'Guardando…' : 'Guardar'}
+            <button
+              className={estilos.guardar}
+              type="submit"
+              disabled={ocupado}
+            >
+              {ocupado ? "Guardando…" : "Guardar"}
             </button>
-            <button className={estilos.cancelar} type="button" onClick={cerrar} disabled={ocupado}>
+            <button
+              className={estilos.cancelar}
+              type="button"
+              onClick={cerrar}
+              disabled={ocupado}
+            >
               Dejarlo
             </button>
           </div>
@@ -1105,47 +1441,182 @@ export function Certificaciones({ filas }: { filas: CertificacionPerfil[] }) {
           className={estilos.anadir}
           type="button"
           onClick={() => {
-            setValores(CERTIFICACION_VACIA)
-            setEditando('nueva')
+            setValores(CERTIFICACION_VACIA);
+            setEditando("nueva");
           }}
         >
           Añadir certificación
         </button>
       )}
     </Seccion>
-  )
+  );
+}
+
+/**
+ * El diploma escaneado de una certificación.
+ *
+ * ⚠️ **Solo lo ves tú.** Como la foto: el archivo no viaja al panel del equipo
+ * ni a la IA. Decidido el 05/09/2026. Sirve para tenerlo a mano cuando lo pidan
+ * en una entrevista, no para que decida nadie.
+ *
+ * ⚠️ **No es un requisito y no se pinta como un hueco.** La mayoría de la gente
+ * no tiene sus certificados escaneados, y una fila que grite «falta el diploma»
+ * convertiría en deber lo que es una comodidad. Sin archivo hay un enlace
+ * discreto; con archivo, la palabra «Diploma» y un botón para abrirlo.
+ */
+function ElDiploma({
+  certificacion,
+  ocupado,
+  refrescar,
+}: {
+  certificacion: CertificacionPerfil;
+  ocupado: boolean;
+  refrescar: () => Promise<unknown>;
+}) {
+  const avisar = useAviso();
+  const entrada = useRef<HTMLInputElement>(null);
+
+  const subida = useMutation({
+    mutationFn: (archivo: File) => subirDiploma(certificacion.id, archivo),
+    onSuccess: async () => {
+      await refrescar();
+      avisar("Diploma adjuntado.");
+    },
+    onError: (causa) =>
+      avisar(
+        causa instanceof Error
+          ? causa.message
+          : "No pudimos adjuntar el diploma.",
+      ),
+  });
+
+  const baja = useMutation({
+    mutationFn: () => quitarDiploma(certificacion.id),
+    onSuccess: async () => {
+      await refrescar();
+      avisar("Diploma quitado.");
+    },
+    onError: (causa) =>
+      avisar(causa instanceof Error ? causa.message : "No pudimos quitarlo."),
+  });
+
+  async function abrir() {
+    try {
+      const archivo = await descargarDiploma(certificacion.id);
+      const url = URL.createObjectURL(archivo.contenido);
+      // Se abre en otra pestaña en vez de descargarse: un diploma se mira, y
+      // bajar un archivo cada vez que quieres comprobar cuál subiste es peor.
+      window.open(url, "_blank", "noopener");
+      // El plazo le da al navegador tiempo de leer el blob antes de soltarlo;
+      // revocarlo en la misma vuelta deja la pestaña nueva en blanco.
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch (causa) {
+      avisar(
+        causa instanceof Error ? causa.message : "No pudimos abrir el diploma.",
+      );
+    }
+  }
+
+  const trabajando = ocupado || subida.isPending || baja.isPending;
+
+  return (
+    <div className={estilos.diploma}>
+      {/*
+        Los tres nombran su certificación, como el resto de las filas de este
+        archivo: en un perfil con cinco certificaciones hay cinco «Quitarlo»
+        idénticos, y uno más abajo —el del currículum— en la columna lateral.
+      */}
+      {certificacion.tieneArchivo ? (
+        <>
+          <button
+            type="button"
+            onClick={() => void abrir()}
+            disabled={trabajando}
+            aria-label={`Ver el diploma de ${certificacion.nombre}`}
+          >
+            Ver el diploma
+          </button>
+          <button
+            type="button"
+            onClick={() => baja.mutate()}
+            disabled={trabajando}
+            aria-label={`Quitar el diploma de ${certificacion.nombre}`}
+          >
+            {/*
+              «Quitar el diploma», no «Quitarlo». En la misma tarjeta y a cuatro
+              dedos está «Quitar», que borra la certificación entera: la acción
+              barata y la cara no se pueden llamar casi igual. El `aria-label` ya
+              lo decía bien; el texto visible se había quedado corto.
+            */}
+            Quitar el diploma
+          </button>
+        </>
+      ) : (
+        <button
+          type="button"
+          onClick={() => entrada.current?.click()}
+          disabled={trabajando}
+          aria-label={`Adjuntar el diploma de ${certificacion.nombre}`}
+        >
+          {subida.isPending ? "Subiendo…" : "Adjuntar el diploma"}
+        </button>
+      )}
+
+      <input
+        ref={entrada}
+        className={estilos.entradaOculta}
+        type="file"
+        aria-label={`El diploma de ${certificacion.nombre}`}
+        accept=".pdf,.jpg,.jpeg,.png,.webp"
+        onChange={(e) => {
+          const archivo = e.target.files?.[0];
+          e.target.value = "";
+          if (!archivo) return;
+          if (archivo.size > 10 * 1024 * 1024) {
+            avisar("El archivo no puede pesar más de 10 MB.");
+            return;
+          }
+          subida.mutate(archivo);
+        }}
+      />
+    </div>
+  );
 }
 
 // ---------- Enlaces ----------
 
 export function Enlaces({ filas }: { filas: EnlacePerfil[] }) {
-  const { fallo, setFallo, refrescar, alFallar } = useLista()
-  const [anadiendo, setAnadiendo] = useState(false)
-  const [tipo, setTipo] = useState<string>(TIPOS_DE_ENLACE[0].codigo)
-  const [url, setUrl] = useState('')
+  const { fallo, setFallo, refrescar, alFallar, anunciarBaja } = useLista();
+  const [anadiendo, setAnadiendo] = useState(false);
+  const [tipo, setTipo] = useState<string>(TIPOS_DE_ENLACE[0].codigo);
+  const [url, setUrl] = useState("");
 
   const cerrar = () => {
-    setAnadiendo(false)
-    setTipo(TIPOS_DE_ENLACE[0].codigo)
-    setUrl('')
-    setFallo(null)
-  }
+    setAnadiendo(false);
+    setTipo(TIPOS_DE_ENLACE[0].codigo);
+    setUrl("");
+    setFallo(null);
+  };
 
   const alta = useMutation({
     mutationFn: () => crearEnlace({ tipo, url: url.trim() }),
     onSuccess: async () => {
-      cerrar()
-      await refrescar()
+      cerrar();
+      await refrescar();
     },
     onError: alFallar,
-  })
+  });
 
-  const baja = useMutation({ mutationFn: borrarEnlace, onSuccess: refrescar, onError: alFallar })
+  const baja = useMutation({
+    mutationFn: ({ id }: Baja) => borrarEnlace(id),
+    onSuccess: (_, v) => anunciarBaja(v.queEra)(),
+    onError: alFallar,
+  });
 
-  const ocupado = alta.isPending || baja.isPending
+  const ocupado = alta.isPending || baja.isPending;
 
   const nombreDelTipo = (codigo: string) =>
-    TIPOS_DE_ENLACE.find((t) => t.codigo === codigo)?.nombre ?? codigo
+    TIPOS_DE_ENLACE.find((t) => t.codigo === codigo)?.nombre ?? codigo;
 
   return (
     <Seccion
@@ -1162,7 +1633,12 @@ export function Enlaces({ filas }: { filas: EnlacePerfil[] }) {
             <li className={estilos.fila} key={f.id}>
               <div className={estilos.cabeceraFila}>
                 <span className={estilos.queEs}>{nombreDelTipo(f.tipo)}</span>
-                <a className={estilos.donde} href={f.url} target="_blank" rel="noopener noreferrer">
+                <a
+                  className={estilos.donde}
+                  href={f.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   {f.url}
                 </a>
               </div>
@@ -1175,7 +1651,12 @@ export function Enlaces({ filas }: { filas: EnlacePerfil[] }) {
                 <button
                   className={estilos.quitar}
                   type="button"
-                  onClick={() => baja.mutate(f.id)}
+                  onClick={() =>
+                    baja.mutate({
+                      id: f.id,
+                      queEra: `el enlace de ${nombreDelTipo(f.tipo)}`,
+                    })
+                  }
                   disabled={ocupado}
                   aria-label={`Quitar el enlace de ${nombreDelTipo(f.tipo)}`}
                 >
@@ -1191,14 +1672,14 @@ export function Enlaces({ filas }: { filas: EnlacePerfil[] }) {
         <form
           className={estilos.formulario}
           onSubmit={(e) => {
-            e.preventDefault()
-            setFallo(null)
-            const falta = queFalta({ url }, ['url'])
+            e.preventDefault();
+            setFallo(null);
+            const falta = queFalta({ url }, ["url"]);
             if (falta) {
-              setFallo(falta)
-              return
+              setFallo(falta);
+              return;
             }
-            alta.mutate()
+            alta.mutate();
           }}
           noValidate
         >
@@ -1218,9 +1699,10 @@ export function Enlaces({ filas }: { filas: EnlacePerfil[] }) {
                 </option>
               ))}
             </select>
-            {(tipo === 'LINKEDIN' || tipo === 'GITHUB') && (
+            {(tipo === "LINKEDIN" || tipo === "GITHUB") && (
               <p className={estilos.ayuda}>
-                Tiene que ser una dirección de {nombreDelTipo(tipo)}; si no, se rechaza.
+                Tiene que ser una dirección de {nombreDelTipo(tipo)}; si no, se
+                rechaza.
               </p>
             )}
           </div>
@@ -1233,19 +1715,32 @@ export function Enlaces({ filas }: { filas: EnlacePerfil[] }) {
             onChange={(e) => setUrl(e.target.value)}
           />
           <div className={estilos.pieFormulario}>
-            <button className={estilos.guardar} type="submit" disabled={ocupado}>
-              {ocupado ? 'Guardando…' : 'Guardar'}
+            <button
+              className={estilos.guardar}
+              type="submit"
+              disabled={ocupado}
+            >
+              {ocupado ? "Guardando…" : "Guardar"}
             </button>
-            <button className={estilos.cancelar} type="button" onClick={cerrar} disabled={ocupado}>
+            <button
+              className={estilos.cancelar}
+              type="button"
+              onClick={cerrar}
+              disabled={ocupado}
+            >
               Dejarlo
             </button>
           </div>
         </form>
       ) : (
-        <button className={estilos.anadir} type="button" onClick={() => setAnadiendo(true)}>
+        <button
+          className={estilos.anadir}
+          type="button"
+          onClick={() => setAnadiendo(true)}
+        >
           Añadir enlace
         </button>
       )}
     </Seccion>
-  )
+  );
 }

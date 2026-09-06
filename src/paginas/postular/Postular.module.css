@@ -454,3 +454,71 @@
     flex: 1;
   }
 }
+
+/* ---------- El currículum que ya tiene guardado ---------- */
+
+/*
+ * Sin zona de arrastrar, sin botón grande y sin nada que pedir: quien ya guardó
+ * su currículum no tiene trabajo aquí. Es el bloque más silencioso del
+ * formulario a propósito.
+ */
+.delPerfil {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+  margin-top: var(--e4);
+}
+
+.explicacionPerfil {
+  margin: 0;
+  font-size: var(--t-apoyo);
+  line-height: 1.5;
+  color: var(--tinta2);
+  max-width: var(--medida);
+}
+
+.otroCv {
+  align-self: flex-start;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--tinta2);
+  font-size: var(--t-apoyo);
+  font-family: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: var(--regla2);
+  text-underline-offset: 3px;
+}
+
+.otroCv:hover {
+  color: var(--tinta);
+  text-decoration-color: var(--borde-control);
+}
+
+/*
+ * En bruma ámbar: `--duda` es «lo que cambia tu decisión», y saber que el
+ * archivo de esta vacante NO reemplaza el del perfil es exactamente eso. No es
+ * un error, así que no lleva rojo.
+ */
+.avisoOtroCv {
+  margin: var(--e4) 0 0;
+  padding: var(--e3) var(--e4);
+  border-radius: var(--radio-menor);
+  background: var(--duda-bruma);
+  font-size: var(--t-apoyo);
+  line-height: 1.5;
+  color: var(--duda-tinta);
+}
+
+.volverAlDelPerfil {
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font-size: inherit;
+  font-family: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

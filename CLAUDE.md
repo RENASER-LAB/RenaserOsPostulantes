@@ -1,12 +1,241 @@
 # Portal del candidato · contexto de trabajo
 
-Última actualización: 2026-09-04 · **la ficha dice QUÉ marcó la IA y no solo cuántos; lo que
-entregó el candidato se ve desde la ficha; el ranking se ordena, se filtra y se descarga; la
-cuenta nace con ciudad; las pruebas del puesto se escriben desde el panel; y el plazo se dice
-entero**
+Última actualización: 2026-09-06 · **«Mi perfil» tiene foto, portada, currículum propio y
+diplomas; la caja significa «esto te toca»; la experiencia es una línea de tiempo; y al
+postular ya no se vuelve a subir el currículum**
 
 Este archivo es para retomar el trabajo sin tener que reconstruir nada. Cuenta qué es este
 proyecto, con qué habla, qué se decidió y por qué, y qué está a medias.
+
+---
+
+## «Mi perfil» al estilo portal de empleo (05/09/2026)
+
+La clienta pidió que el perfil «se parezca a LinkedIn». El inventario
+—[docs/07-BRIEF-MI-PERFIL.md](docs/07-BRIEF-MI-PERFIL.md)— dijo que el 80 % ya existía y se
+veía mal, así que la rama es sobre todo forma, más cuatro capacidades nuevas: foto, portada,
+currículum en el perfil y diplomas.
+
+**El `h1` de `/perfil` es el NOMBRE del candidato**, no «Tu perfil.». Cualquier prueba que
+espere ese título viejo se cuelga. Lo mismo con los botones: «Escribir quién eres» pasó a
+«Escribir sobre ti» y «Editar quién eres» a «Editar lo tuyo».
+
+**Y el nombre viene del backend por DOS caminos, no uno.** Entrar devuelve `nombre` y
+`apellidos`; `GET /portal/auth/sesion` los devuelve cuando el portal arranca de un token ya
+guardado. ⚠️ El segundo es el que se olvida y es el caso normal: el portal solo entra una vez,
+y a partir de la segunda visita —u otro navegador, o el almacenamiento vaciado— no hay a quién
+preguntarle. Sin él la cabecera decía «Tu perfil» sobre un disco de iniciales vacío.
+`localStorage` se queda solo como respaldo entre recargas.
+
+### Al postular ya no se sube el currículum dos veces
+
+Con currículum en el perfil, la pantalla dice cuál va a mandar y ofrece «Usar otro solo para
+esta vacante». ⚠️ **El que se suba ahí NO cambia el del perfil**, y eso se dice con esas
+palabras en un aviso ámbar. El `input[type=file]` sigue en el DOM aunque no se pida nada: una
+prueba que compruebe «no hay dónde subir» tiene que mirar la zona de arrastrar, no el input.
+
+### Los `input[type=file]` ocultos llevan `aria-label`, y hace falta
+
+Son cinco —foto, portada, currículum del perfil, diploma, currículum de la vacante—, están
+escondidos con `clip-path` y **siguen siendo enfocables**. Sin nombre no se distinguen: dos de
+ellos aceptan imágenes, así que un `input[type=file][accept*="image"]` cogía el de la portada
+creyendo que era el de la foto. Se buscan por `input[aria-label="…"]`.
+
+⚠️ **Y un `<input type=file>` sale como `button` en el árbol de accesibilidad**, así que
+`getByRole('button', { name: 'Portada' })` casa también con el input de la portada. Va con
+`exact: true`.
+
+### Las aptitudes son etiquetas, y la coma cuenta en los tres sitios
+
+Enter, coma y **Guardar** tienen que entender lo mismo. `leerTodas` parte por comas igual que
+`anadir`: sin eso, pegar «Excel, Power BI, SQL» y darle a Guardar sin pulsar Enter guardaba
+**una** aptitud con comas dentro, que no la encuentra ninguna búsqueda.
+
+### El medidor no regaña, y no anima el ancho
+
+Nada del perfil es obligatorio (RF-156): el medidor no tiene rojo, ni candado, ni la palabra
+«incompleto». Verde solo al estar entero. Crece con `transform: scaleX()` y no con `width`,
+que obliga a recalcular la maqueta en cada fotograma dentro de una columna pegajosa.
+
+⚠️ **Y el párrafo que lo acompaña NO es un contenedor flex.** Es una frase con negrita dentro,
+y el flex convertía cada trozo en un elemento suelto: el punto final se quedaba solo en la
+línea de arriba. El que lleva icono es `.textoConIcono`.
+
+### jsdom no trae `scrollIntoView`
+
+Lo declara en el tipo y revienta al llamarlo, así que el efecto que trae el formulario a la
+vista tumbaba cuatro pruebas y funcionaba en el navegador. Se rellena una vez en
+`herramientas/arranque-de-pruebas.ts`, no con un `if` dentro del componente.
+
+### La caja significa «esto te toca», y la experiencia es una línea de tiempo (06/09/2026)
+
+La pantalla se veía plana, y la razón era estructural: **nueve secciones con la
+misma forma**, una pila de rectángulos blancos con el mismo borde y el mismo
+radio. Seis años en una clínica y una URL de LinkedIn pesaban lo mismo. Tres
+cambios, ninguno fuera del sistema:
+
+### La fila sin confirmar lleva el acento, no ámbar (06/09/2026)
+
+Era ámbar y **estaba usando el token equivocado**. DESIGN.md define `--duda`
+como «lo que no es un error del candidato pero le cambia la decisión» —un
+requisito que no cumple, la última plaza libre— y en sus «Don't» prohíbe
+expresamente usar verde, ámbar o rojo «para jerarquía o categoría». Una fila
+leída del currículum no es una duda sobre la candidatura: es un dato pendiente de
+que lo miren.
+
+Ahora lleva `--activo`, que significa exactamente eso: «te toca a ti». El panel
+de arriba lo dice con palabras y estas filas son lo que ese panel señala; hasta
+ahora el aviso era violeta y lo señalado ámbar. También se alineó la píldora del
+índice, que contaba lo mismo con el color de lo otro.
+
+⚠️ **Pero el violeta va en el CANTO, no en el relleno.** Un currículum recién
+leído puede dejar veinte filas sin confirmar de golpe: veinte rectángulos
+violetas macizos no son énfasis, son un fondo. Con borde y píldora sobre blanco,
+veinte filas siguen siendo veinte marcos. Es la estrella del sistema al pie de la
+letra.
+
+**El borde es `--activo-regla` a 2px, el mismo que el panel** — a propósito, para
+que el aviso y lo avisado sean idénticos. Da 1,65:1 contra la página, por debajo
+del 3:1 de WCAG 1.4.11, y **no se sube**: el estado va escrito en la píldora
+«Sin confirmar» (8:1), en el botón «Está bien» y en el «N sin confirmar» del
+título de sección, así que el borde es refuerzo y no el único portador. Subirlo
+obligaría a cambiar `--activo-regla` en todo el portal para engordar un filo que
+ya no hace falta que grite. La prueba en gris lo confirma.
+
+**Y el ámbar queda libre para lo suyo:** desde este cambio, la pretensión es el
+único `--duda` de la pantalla, que es lo que un token de estado debería ser.
+
+⚠️ **Una fila normal ya NO es una caja.** Lo confirmado es texto sobre la página
+con una regla fina entre hermanas; **la única caja que queda es la fila sin
+confirmar**. Cuando todas eran cajas, ser caja no significaba nada. Ahora el
+primer principio del producto —la pantalla dice de quién se espera algo— está
+dibujado en la forma en vez de escrito en un panel, y aguanta la prueba en gris
+mejor que antes: sin color, la fila con caja es la que te toca.
+
+Los botones de fila se apagan hasta que la fila recibe el ratón o el foco. ⚠️ **Se
+apagan con el TOKEN, nunca con `opacity`.** Un `opacity: 0.55` sobre `--tinta2`
+los dejaba en **2,5:1** —veintinueve controles por debajo del mínimo, y en
+Enlaces «Quitar» es el único control de la fila—: la transparencia no es un
+color, es una composición, y se come el contraste. Con `--tinta3` en reposo y
+`--tinta2` al hover dan 5,23:1 y se ven igual de discretos.
+
+⚠️ **La experiencia se dibuja sobre un raíl y la duración se ESCRIBE.** Se
+intentó codificarla en el alto de la fila (`--meses` + `min-height`) y **no
+funciona**: el texto de la fila casi siempre supera el mínimo, así que once años
+y cuatro medían lo mismo —190px y 186px, medido— y el alto acababa
+correlacionando con la longitud de la descripción. Una codificación que no se
+cumple es peor que ninguna. El raíl se queda con lo que sí sabe hacer —el orden y
+los huecos— y la duración va en palabras junto al periodo, con `duracion()`.
+
+⚠️ **El hueco va DEBAJO de su fila.** Describe el salto entre esa fila y la de
+abajo (la más antigua), así que cae entre las dos; emitido antes quedaba un
+puesto más arriba y dibujaba un vacío laboral entre dos empleos encadenados. Es
+su **propia entrada de la lista**: metido dentro del `<li>` quedaba encerrado en
+la caja ámbar de un empleo con el que no tiene nada que ver.
+
+`mesesDelTramo` y `huecoEntre` viven en `textos.ts` con sus pruebas. **Devuelven
+`null` en cuanto el dato no cuadra** —sin fecha de inicio, fin anterior al
+principio, o un par de filas reordenado a mano que no va seguido en el tiempo— y
+quien las llama pinta la fila sin duración. Estas fechas salen de un currículum
+que leyó un modelo: llegan mal más a menudo de lo que parece.
+
+**El índice de la lateral** llena el canalón que se moría a un tercio, y dice
+cuántas cosas tiene cada sección y cuántas esperan revisión.
+
+**Las filas reparten su ancho**: el «qué» a la izquierda y el «cuándo» pegado al
+borde derecho, con `.conCuando`. La cabecera medía 664px y el texto paraba en
+420, así que la mitad derecha de once filas estaba vacía mientras la fecha
+ocupaba un renglón entero debajo. ⚠️ **`.conCuando` es una variante, no el
+comportamiento de todas**: es una rejilla de dos columnas, y aplicada a una
+cabecera de hijos sueltos cada píldora cae en su propia celda y se estira a lo
+ancho. Quien la use tiene que agrupar el lado izquierdo en `.queYDonde` —lo usan
+Experiencia, Estudios y Certificaciones; Idiomas y Enlaces no tienen un «cuándo»
+que llevar a la derecha y se quedan con el flex de siempre.
+
+La prosa de la descripción **no** se ensancha: sigue en `--medida`. Lo que se
+reparte es el dato corto; una línea de texto larga se lee peor, no mejor.
+
+⚠️ **Lo pegajoso es el índice, y la lateral se ESTIRA a toda la fila.** Esto se
+hizo mal dos veces seguidas y las dos se veían razonables:
+
+1. Pegando la columna entera medía ~885px; en una ventana de portátil su parte de
+   abajo quedaba fuera del borde y no volvía a subir, así que las últimas
+   entradas del índice no se alcanzaban nunca.
+2. Acotándola con `max-height` + `overflow-y: auto` aparecía **una segunda barra
+   de desplazamiento**: dos superficies que mover para leer una página. Peor que
+   el problema.
+
+Lo correcto: `position: sticky` viaja dentro de la caja de su padre, así que el
+`aside` tiene que ser **tan alto como la fila** —por eso `.cuerpo` no lleva
+`align-items: start`— y dentro de él se pega solo el `<nav>`. El medidor y el
+currículum se leen una vez al llegar y se van con la página. No hace falta acotar
+nada. Hay un e2e que exige que la lateral no tenga barra propia.
+
+Y el ancla de «Acerca de ti» tiene que estar en las **dos** ramas de ese
+componente: puesta solo en la de edición, en el estado normal el enlace del
+índice no llevaba a ninguna parte.
+
+⚠️ **`tonoDe()` no reparte violeta.** El disco de iniciales sale de un hash del
+nombre, y con `--canto-violeta` en el sorteo **uno de cada cuatro candidatos**
+abría su perfil con un disco violeta de 128px que no eligió, dejando al panel que
+de verdad le reclama algo como el violeta más pálido de la pantalla. El acento no
+puede salir de un sorteo. En la galería de portadas sí sigue: ahí lo elige la
+persona. ⚠️ Su
+`IntersectionObserver` **lleva la cuenta de todas las secciones, no solo de las
+que cambiaron**: el observador solo avisa de las que cruzan el borde, así que
+quedarse con la primera de esa tanda dejaba la marca en la que acababa de salir.
+
+⚠️ **Y jsdom no tiene `IntersectionObserver`**, igual que no tiene
+`scrollIntoView`. Sin el relleno de `herramientas/arranque-de-pruebas.ts` el
+índice tumbaba **la pantalla entera** en los diez tests de `Perfil.test.tsx`.
+
+### Lo que cambió el `polish` del 05/09, y toca a todo el portal
+
+**`--tinta3` pasó de `#68727f` a `#5f6977`.** No es un retoque estético: a
+`#68727f` daba 4,31:1 sobre `--nube-hundida` y 4,40:1 sobre `--duda-bruma`, así
+que **pasaba la prueba de contraste en la página y la fallaba dentro de cualquier
+caja hundida**. Ahora el token es el gris más claro que aguanta 4,5:1 sobre todos
+los fondos claros del sistema (4,92 a 5,56:1). Cambia el gris de apoyo en todo el
+portal y el panel; no puede empeorar nada, pero es un token compartido.
+
+**Y hay `--duda-tinta2` (`#87632e`) para el texto de apoyo sobre el ámbar.** Sobre
+un fondo con color el secundario se tiñe de ese mismo tono; un gris encima del
+ámbar no llega al contraste y se lee como suciedad.
+
+⚠️ **El medidor cuenta confirmación, no presencia.** Antes solo miraba si la lista
+tenía filas, y un perfil rellenado entero por la lectura del CV marcaba **100 % en
+verde** mientras el panel violeta de al lado decía «te quedan 6 datos por revisar».
+`partes()` usa `comoVa()`, que devuelve `vacio | porRevisar | listo`, y el texto
+distingue «puedes añadir» de «falta que revises»: a quien tiene la experiencia
+sacada del currículum no se le pide que la escriba, se le pide que la mire.
+
+⚠️ **Borrar dice qué se borró.** `useLista().anunciarBaja(queEra)` lo anuncia en la
+región viva. **No lleva «Deshacer» a propósito**: recrear la fila le da un id nuevo
+y la manda al final de la lista, así que el botón prometería devolverla a su sitio
+y no lo haría. Un deshacer de verdad necesita que el backend sepa restaurar.
+
+**Los dos menús de la cabecera son excluyentes y se cierran de tres formas.**
+`useMenuFlotante(abierto, cerrar)` cubre Escape, el toque fuera y devolver el foco
+al disparador; el estado vive en `CabeceraDelPerfil` como `'foto' | 'portada' | null`
+para que no puedan taparse los dos sobre el nombre.
+
+**La portada también pasa por el lienzo.** `recortarAlCentro(archivo, ancho, alto)`
+sirve a las dos: la foto a 512×512 y la portada a 1600×400. El redibujado es lo que
+tira los metadatos EXIF, y una portada —que suele ser la foto de un sitio— es el
+archivo con más probabilidad de llevar coordenadas GPS.
+
+### Los e2e apuntan a donde se les diga
+
+`E2E_API` ya existía; ahora también `E2E_PORTAL` (el `baseURL`) y `E2E_PG` (el contenedor de
+Postgres que limpia las cuentas). Los tres van juntos cuando se corre contra un worktree:
+
+    E2E_PORTAL=http://localhost:5212 E2E_API=http://localhost:8088/api/v1 \
+    E2E_PG=renaser-pg-perfil npx playwright test
+
+⚠️ **`borrarCuentasDePrueba` hay que ampliarla con cada tabla nueva**, y lo dice su propio
+comentario. La V51 añadió `lectura_cv_perfil` —que además arrastra sus `trabajo_ia` sin
+postulación— y los archivos del perfil (foto, portada, currículum, diplomas). Sin eso la
+cuenta no se puede borrar y la base desechable se llena de archivos huérfanos.
 
 ---
 

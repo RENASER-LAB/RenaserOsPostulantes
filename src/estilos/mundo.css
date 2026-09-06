@@ -91,7 +91,11 @@
   --tinta2: #4a5563; /* 7,5:1  — la prosa que explica */
   /* No bajar de aqui: 4,81:1 sobre nube. Un escalon mas claro no llega al 4,5
      que pide el texto pequeño. */
-  --tinta3: #68727f;
+  /* ⚠️ Es el gris más claro que aguanta 4,5:1 sobre TODOS los fondos claros del
+     sistema, no solo sobre el blanco. A #68727f daba 4,31:1 sobre
+     `--nube-hundida` y 4,40:1 sobre `--duda-bruma`: pasaba la prueba en la
+     página y la fallaba dentro de cualquier caja hundida. */
+  --tinta3: #5f6977;
 
   --regla: #e3e7ee;
   --regla2: #cbd2dc;
@@ -125,6 +129,10 @@
   /* Sobre `--duda-bruma` el propio `--duda` se queda corto; este llega a 7,9:1
      y se sigue leyendo como el mismo ambar. */
   --duda-tinta: #6d4406;
+  /* El secundario del ámbar. Sobre un fondo con color, el texto de apoyo se tiñe
+     de ese mismo tono; un gris encima del ámbar no llega al contraste y además
+     se lee como suciedad. 4,91:1 sobre `--duda-bruma`. */
+  --duda-tinta2: #87632e;
   --mal: #c22a3f;         /* 5,4:1 — el error real y lo que borra */
   --mal-pulsado: #9e2134;
   --mal-bruma: #fdedf0;
