@@ -72,6 +72,9 @@ const PERFIL: PerfilCompleto = {
   certificaciones: [],
   enlaces: [],
   lecturaCv: { estado: 'LISTA', actualizadoEn: '2026-08-24T10:00:00Z' },
+  tieneFoto: false,
+  portada: { tipo: 'NINGUNA', codigo: null },
+  cv: null,
 }
 
 vi.mock('@/api/perfil', () => ({
@@ -104,6 +107,25 @@ vi.mock('@/api/perfil', () => ({
   confirmarCertificacion: () => Promise.resolve(undefined),
   crearEnlace: () => Promise.resolve({ id: 9 }),
   borrarEnlace: () => Promise.resolve(undefined),
+  // Lo de los archivos del perfil: la cabecera de identidad y la lateral los
+  // llaman al montar, y sin dobles el modulo simulado no los tendria.
+  PORTADAS_DE_LA_CASA: [
+    { codigo: 'CANTO_MENTA', nombre: 'Menta' },
+    { codigo: 'BRUMA', nombre: 'Bruma' },
+  ],
+  subirFoto: () => Promise.resolve(undefined),
+  quitarFoto: () => Promise.resolve(undefined),
+  urlDeLaFoto: () => Promise.resolve('blob:foto'),
+  subirPortada: () => Promise.resolve(undefined),
+  elegirPortada: () => Promise.resolve(undefined),
+  quitarPortada: () => Promise.resolve(undefined),
+  urlDeLaPortada: () => Promise.resolve('blob:portada'),
+  subirCurriculum: () => Promise.resolve(undefined),
+  quitarCurriculum: () => Promise.resolve(undefined),
+  descargarCurriculum: () => Promise.resolve({ contenido: new Blob(), nombre: 'cv.pdf' }),
+  subirDiploma: () => Promise.resolve(undefined),
+  quitarDiploma: () => Promise.resolve(undefined),
+  descargarDiploma: () => Promise.resolve({ contenido: new Blob(), nombre: 'diploma.pdf' }),
 }))
 
 function montar() {
@@ -124,7 +146,10 @@ function montar() {
 }
 
 async function abrirLaCabecera() {
-  const editar = await screen.findByRole('button', { name: 'Editar quién eres' })
+  // Hay dos puertas al mismo formulario: «Editar perfil», en la cabecera de
+  // identidad, y este de dentro de la sección. Se usa el de la sección porque el
+  // otro hace scroll, que en jsdom no existe.
+  const editar = await screen.findByRole('button', { name: 'Editar lo tuyo' })
   fireEvent.click(editar)
   await screen.findByRole('textbox', { name: /titular/i })
 }
@@ -264,13 +289,14 @@ describe('el origen de cada dato se lee sin color', () => {
 })
 
 describe('cerrar sesión vive en «Mi cuenta»', () => {
-  it('se ve al entrar, junto al titular', async () => {
+  it('sigue estando en la pantalla, ahora en el pie', async () => {
     montar()
     await screen.findByText('Analista senior')
 
-    // Antes estaba al final de «Privacidad y tratamiento de datos», detrás de
-    // tres acciones que no se deshacen. Aquí es la primera pantalla a la que
-    // lleva «Mi cuenta» de la cabecera, y el botón está arriba.
+    // ⚠️ Bajó de la primera línea al pie cuando la cabecera pasó a ser la
+    // identidad de la persona, pero NO puede desaparecer: antes vivía al final
+    // de «Privacidad», detrás de tres acciones que no se deshacen, y esta es la
+    // pantalla a la que lleva «Mi cuenta».
     expect(screen.getByRole('button', { name: 'Cerrar sesión' })).toBeTruthy()
   })
 

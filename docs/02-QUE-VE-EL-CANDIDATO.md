@@ -132,9 +132,14 @@ diseño cuya historia de entrada sea solo "correo y contraseña" deja fuera a es
 Errores que la pantalla tiene que saber pintar: **401** (mismo texto si el correo no existe o si
 la contraseña es otra) y **429** con `Retry-After` y `segundosDeEspera` tras 5 intentos.
 
-⚠️ **El backend no dice cómo se llama el candidato.** El login devuelve `{ token, usuarioId }` y
-nada más. El nombre solo se conoce si se registró en ese mismo navegador. Un diseño construido
-sobre "Hola, {nombre}" se degrada en silencio.
+El login devuelve `{ token, usuarioId, nombre, apellidos }` desde el 05/09/2026, y lo mismo el
+acceso por enlace. Los dos nombres pueden venir vacíos —`persona` los admite en null—, así que
+un «Hola, {nombre}» sigue necesitando su caso sin nombre.
+
+⚠️ **Y hace falta el otro camino: `GET /portal/auth/sesion`.** El portal solo entra una vez; a
+partir de la segunda visita arranca de un token guardado y nadie le ha dicho el nombre. Sin ese
+endpoint, la cabecera del perfil decía «Tu perfil» sobre un disco de iniciales vacío a quien
+volvía al día siguiente, cambiaba de navegador o vaciaba el almacenamiento.
 
 ### 2.5 Postular — con cuenta
 `POST /portal/postulaciones` (multipart): `cv` (PDF o Word, máx. 10 MB), `resultadoOrgulloso`

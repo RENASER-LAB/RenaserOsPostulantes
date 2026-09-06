@@ -11,44 +11,96 @@
  * gris se siguen leyendo los tres estados.
  *
  * ⚠️ **El violeta aparece UNA sola vez en la pantalla**: el panel de arriba que
- * dice cuántos datos hay por revisar. Un currículum recién leído puede dejar
- * veinte filas sin confirmar de golpe, y veinte filas violetas no son énfasis,
- * son un fondo — y de paso le quitarían el significado al violeta de «Mis
- * procesos», que es la única pregunta con la que el candidato entra al portal.
+ * dice cuántos datos hay por revisar.
  *
- * El ámbar de «sin confirmar» no es un color prestado: `--duda` está definido
- * como «lo que cambia tu decisión», y un dato que nadie verificó es exactamente
- * eso.
+ * **Y las filas sin confirmar llevan el mismo violeta que ese panel** (06/09):
+ * son justo lo que el panel señala, así que el aviso y lo señalado tenían que
+ * ser del mismo color. Antes eran ámbar, y eso además usaba mal el token:
+ * `--duda` significa «lo que no es un error pero te cambia la decisión» —un
+ * requisito que no cumples, la última plaza libre— y DESIGN.md prohíbe usar
+ * verde, ámbar o rojo para jerarquía o categoría.
+ *
+ * ⚠️ **Pero el violeta va en el CANTO, no en el relleno**, y ahí está el
+ * equilibrio: un currículum recién leído puede dejar veinte filas sin confirmar
+ * de golpe, y veinte rectángulos violetas macizos no son énfasis, son un fondo.
+ * Con borde y píldora sobre blanco, veinte filas siguen siendo veinte marcos.
  */
 
+/*
+ * ⚠️ **68 rem, que es el carril del portal.** No es «ensanchar por ensanchar»:
+ * ocho pantallas —vacantes, la ficha, mis procesos, la evaluación, la prueba—
+ * ya viven en `--ancho`, y el perfil era de las dos únicas que se quedaban en 48
+ * junto a los textos legales. Alineado con la cabecera del armazón, que usa el
+ * mismo token.
+ *
+ * ⚠️ **Se cambia AQUÍ, nunca el valor de `--ancho` en `mundo.css`**: de ese
+ * token cuelgan la cabecera y las otras ocho páginas.
+ */
+/*
+ * ⚠️ El margen lateral se declara UNA vez, como variable, porque la portada lo
+ * necesita para salirse a sangre. Escribirlo dos veces ya falló: la página
+ * bajaba a `--e4` en 640 y la portada seguía restando `--e5` en 700, así que en
+ * un teléfono se salía ocho píxeles por cada lado y la pantalla entera se
+ * desplazaba en horizontal.
+ */
 .pagina {
-  max-width: 48rem;
+  --margen-de-la-pagina: var(--e5);
+  max-width: var(--ancho);
   margin: 0 auto;
-  padding: var(--e5) var(--e5) var(--e8);
+  padding: var(--e5) var(--margen-de-la-pagina) var(--e8);
+}
+
+/*
+ * Dos columnas: lo que se lee y lo que acompaña.
+ *
+ * `minmax(0, 1fr)` y no `1fr` a secas: sin el mínimo en cero, una píldora larga
+ * —el nombre de un currículum, una aptitud escrita de corrido— empuja la
+ * columna y desborda la rejilla en vez de partirse.
+ */
+/*
+ * ⚠️ **`align-items: start`, y de esto ya van cuatro intentos.** La lateral se
+ * pega ENTERA —el usuario quiere que las tres tarjetas viajen juntas—, y para
+ * eso tiene que medir lo que mide su contenido: `position: sticky` con `top` no
+ * engancha en un elemento más alto que la ventana, así que una lateral estirada
+ * a toda la fila simplemente se desplaza como si nada.
+ *
+ * Que quepa dejó de ser un problema cuando la fusión de las tres listas bajó el
+ * índice de seis entradas a cuatro y el bloque del currículum de 347px a 250:
+ * las tres tarjetas suman unos 716px y entran en una ventana de portátil.
+ */
+.cuerpo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 20rem;
+  align-items: start;
+  gap: var(--e5);
+  margin-top: var(--e6);
+}
+
+.principal {
+  display: flex;
+  flex-direction: column;
+  /* Separadas con generosidad; por dentro, apretadas. */
+  gap: var(--e6);
+  min-width: 0;
+}
+
+/*
+ * Una sola columna en pantallas estrechas, **y la lateral arriba**: ahí van el
+ * medidor y el currículum, y dejarlos al final del todo obligaría a recorrer
+ * seis secciones para llegar a lo que de verdad hay que hacer.
+ */
+@media (max-width: 900px) {
+  .cuerpo {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .principal {
+    order: 2;
+  }
 }
 
 .volver {
   composes: volver from '../../estilos/piezas.module.css';
-}
-
-.encabezado {
-  margin-top: var(--e4);
-}
-
-/*
- * El titular y la salida comparten la primera linea: es la forma de que cerrar
- * sesion se vea al entrar, sin bajar y sin competir con el titular.
- *
- * `flex-end` alinea el boton con la base del titular, no con su caja: un
- * `--t-portada` de 56px con interlineado 1.06 deja aire arriba, y centrar
- * verticalmente dejaria el boton flotando alto.
- */
-.tituloYSalida {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: var(--e3) var(--e5);
 }
 
 .salir {
@@ -70,14 +122,6 @@
   align-items: center;
   gap: var(--e3);
   margin-top: var(--e5);
-}
-
-.bajada {
-  font-size: var(--t-base);
-  line-height: 1.55;
-  color: var(--tinta2);
-  margin-top: var(--e3);
-  max-width: var(--medida);
 }
 
 /* ---------- El panel de lo que hay que revisar ---------- */
@@ -212,18 +256,29 @@
   max-width: var(--medida);
 }
 
-/* ---------- Las secciones ---------- */
-
-.secciones {
-  display: flex;
-  flex-direction: column;
-  gap: var(--e6);
-  margin-top: var(--e7);
+/*
+ * Cada sección, su propia superficie.
+ *
+ * Iban separadas por una regla de 1px y se leían como un solo bloque largo:
+ * cuatro secciones de altura muy distinta, sin nada que dijera dónde acaba una
+ * y empieza la otra. La tarjeta es lo que ya usa la columna lateral, así que no
+ * es un material nuevo — es el mismo, aplicado donde hacía falta.
+ *
+ * ⚠️ **La tarjeta separa secciones, NO filas.** Dentro sigue sin haber cajas:
+ * la única de la pantalla es la fila que espera algo. Anidar tarjetas dentro de
+ * tarjetas es exactamente lo que convierte una pantalla en un acordeón.
+ */
+.seccion {
+  padding: var(--e5);
+  border: 1px solid var(--regla);
+  border-radius: var(--radio);
+  background: var(--nube);
 }
 
-.seccion {
-  border-top: 1px solid var(--regla);
-  padding-top: var(--e5);
+@media (max-width: 640px) {
+  .seccion {
+    padding: var(--e4);
+  }
 }
 
 .tituloSeccion {
@@ -255,15 +310,138 @@
 .filas {
   display: flex;
   flex-direction: column;
-  gap: var(--e3);
   margin-top: var(--e4);
 }
 
+/*
+ * ⚠️ **Una fila normal NO es una caja, y eso es el fondo de la pantalla.**
+ *
+ * Cuando todas las filas eran cajas iguales —mismo borde, mismo radio, mismo
+ * fondo blanco—, ser caja no significaba nada: seis años en una clínica y una
+ * URL de LinkedIn pesaban lo mismo, y las nueve secciones se leían como un
+ * formulario. Ahora lo confirmado es texto sobre la página, con aire, y **la
+ * única caja que queda es la fila que espera algo de la persona**.
+ *
+ * Es el primer principio del producto dibujado en la forma en vez de escrito en
+ * un panel: la pantalla dice de quién se espera algo antes de leer una palabra.
+ */
 .fila {
-  border: 1px solid var(--regla2);
-  border-radius: var(--radio);
-  background: var(--nube);
-  padding: var(--e4);
+  padding: var(--e3) 0;
+}
+
+/*
+ * Un pelo entre hermanas, no un marco alrededor de cada una.
+ *
+ * ⚠️ **Solo entre filas SIN caja, y la condición va aquí.** Antes el pelo se
+ * ponía a toda `.fila + .fila` y luego se quitaba con
+ * `.fila + .fila.sinConfirmar { border-top: none }`. Esa regla gana por
+ * especificidad al `border: 2px` de la caja ámbar, así que **le arrancaba su
+ * propio borde de arriba**: la caja aparecía abierta por el techo y se leía como
+ * si la fila no hubiera terminado de cargar. Con `:not()` en los dos lados el
+ * pelo nace ya donde tiene que estar y nadie tiene que quitarlo después.
+ */
+.fila:not(.sinConfirmar) + .fila:not(.sinConfirmar) {
+  border-top: 1px solid var(--regla);
+}
+
+/* ---------- La trayectoria ---------- */
+
+/*
+ * La experiencia se dibuja sobre un raíl, y **el alto de cada tramo son sus
+ * meses**. Es la única sección de la pantalla cuyos datos tienen forma —duran,
+ * van en orden, dejan huecos— y pintarla como una lista de cajas iguales tiraba
+ * esa información.
+ *
+ * El raíl es una sola línea del `ul`, no un borde por fila: así no se parte en
+ * la caja ámbar ni en los huecos, que es justo donde tiene que seguir.
+ */
+.trayectoria {
+  position: relative;
+  padding-left: var(--e6);
+}
+
+.trayectoria::before {
+  content: '';
+  position: absolute;
+  top: 10px;
+  bottom: 0;
+  left: 5px;
+  width: 2px;
+  border-radius: var(--radio-control);
+  background: var(--regla2);
+}
+
+/*
+ * ⚠️ **El alto NO codifica la duración, y no es un olvido.** Se intentó con un
+ * `min-height` sacado de los meses y no funciona: el texto de la fila casi
+ * siempre lo supera, así que once años y cuatro acababan midiendo lo mismo
+ * —190px y 186px, medido— y el alto correlacionaba con la longitud de la
+ * descripción, no con el tiempo. Una codificación que no se cumple es peor que
+ * ninguna: promete una lectura que la pantalla no sostiene.
+ *
+ * La duración se dice con palabras, junto al periodo. El raíl se queda con lo
+ * que sí sabe hacer: el orden y los huecos.
+ */
+.trayectoria .fila {
+  position: relative;
+  min-height: var(--e6);
+}
+
+/* El nodo, a la altura de la primera línea del título. */
+.trayectoria .fila::before {
+  content: '';
+  position: absolute;
+  top: 18px;
+  left: calc(var(--e6) * -1 + 1px);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--nube);
+  background: var(--tinta3);
+}
+
+/* La que espera algo tiene su nodo del color de su caja. */
+.trayectoria .fila.sinConfirmar::before {
+  background: var(--activo);
+  top: 34px;
+}
+
+/*
+ * Los meses sin nada. Van en el raíl y no dentro de una fila: no son un empleo,
+ * son su ausencia — por eso no llevan caja, ni acciones, ni nodo.
+ */
+.hueco {
+  position: relative;
+  margin: var(--e3) 0;
+  padding-left: var(--e3);
+  list-style: none;
+  font-size: var(--t-menor);
+  color: var(--tinta3);
+}
+
+.hueco::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: calc(var(--e6) * -1 + 2px);
+  width: var(--e4);
+  height: 1px;
+  background: var(--regla2);
+}
+
+@media (max-width: 640px) {
+  .trayectoria {
+    padding-left: var(--e5);
+  }
+
+  .trayectoria .fila::before {
+    left: calc(var(--e5) * -1 + 1px);
+  }
+
+  .hueco::before {
+    left: calc(var(--e5) * -1 + 2px);
+    width: var(--e3);
+  }
 }
 
 /*
@@ -271,17 +449,83 @@
  * en gris es la píldora con su palabra dentro y el botón de confirmar**, no el
  * color.
  */
+/*
+ * La que sí es caja, y **la única de la página**.
+ *
+ * ⚠️ **Ya no es ámbar, y el cambio es de token, no de gusto.** DESIGN.md dice
+ * que el ámbar significa «lo que no es un error del candidato pero le cambia la
+ * decisión» —un requisito que no cumple, la última plaza— y prohíbe
+ * expresamente usar verde, ámbar o rojo «para jerarquía o categoría». Una fila
+ * leída del currículum no es una duda sobre su candidatura: es un dato pendiente
+ * de que lo mire. Estaba usando el token equivocado.
+ *
+ * Lleva el acento porque el acento significa exactamente eso: «te toca a ti».
+ * El panel de arriba lo dice con palabras —«Te quedan 3 datos por revisar»— y
+ * estas filas son lo que ese panel señala; hasta ahora el aviso era violeta y lo
+ * señalado ámbar, que es una desconexión que nadie había notado. No diluye el
+ * acento: lo lleva a donde está el trabajo.
+ *
+ * Y **el color vive en el canto**, que es la estrella del sistema: borde y
+ * píldora, fondo blanco. Nada de prosa sobre color.
+ */
 .fila.sinConfirmar {
-  border: 2px solid var(--duda);
-  background: var(--duda-bruma);
-  padding: calc(var(--e4) - 1px);
+  border: 2px solid var(--activo-regla);
+  border-radius: var(--radio);
+  background: var(--nube);
+  padding: var(--e4);
+  /* Aire arriba y abajo, pero **dentro del carril**: sacarla con un margen
+     negativo la dejaba más ancha que el título de su propia sección y que la
+     regla que la cierra, y eso se lee como un desajuste, no como énfasis. */
+  margin: var(--e3) 0;
+  box-shadow: 0 1px 3px rgb(35 43 54 / 0.05);
 }
 
+
+
+/*
+ * El «qué» pegado a la izquierda y el «cuándo» al borde derecho de la fila.
+ * `min-width: 0` en la parte izquierda para que un puesto largo se parta en vez
+ * de empujar la fecha fuera de la fila.
+ */
 .cabeceraFila {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   gap: var(--e2) var(--e3);
+}
+
+/*
+ * Las filas que tienen un «cuándo» reparten la línea: el qué a la izquierda, la
+ * fecha pegada al borde derecho.
+ *
+ * ⚠️ **Rejilla, no `flex-wrap`.** Con flex la fecha se caía al renglón de abajo
+ * en cuanto la fila llevaba píldora —«Sin confirmar», «Del currículum»—, así que
+ * unas filas la tenían a la derecha y otras debajo sin ninguna diferencia real
+ * entre ellas. Y **la rejilla es una variante, no el comportamiento de todas**:
+ * aplicada a una cabecera de hijos sueltos, cada píldora cae en su propia celda
+ * y se estira a lo ancho de la columna. Quien la use tiene que agrupar el lado
+ * izquierdo en `.queYDonde`.
+ */
+.conCuando {
+  composes: cabeceraFila;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--e2) var(--e4);
+}
+
+.queYDonde {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--e2) var(--e3);
+  min-width: 0;
+}
+
+/* Estrecho no caben dos columnas: la fecha vuelve debajo, alineada con el título. */
+@media (max-width: 640px) {
+  .conCuando {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .queEs {
@@ -296,10 +540,30 @@
 }
 
 .cuando {
+  flex: none;
+  margin: 0;
   font-size: var(--t-menor);
   color: var(--tinta3);
   white-space: nowrap;
 }
+
+/* Lo que el raíl prometía enseñar y el alto no cumplía. */
+.duracion {
+  color: var(--tinta2);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.fila.sinConfirmar .duracion {
+  color: var(--activo-pulsado);
+}
+
+/*
+ * Con el fondo blanco el gris de apoyo ya llega: `--tinta3` da 5,56:1 sobre
+ * `--nube`. Se deja escrito porque la regla anterior teñía estas dos del ámbar
+ * de la caja, y al cambiar la caja había que quitarla o el texto se quedaba
+ * marrón sobre blanco sin motivo.
+ */
 
 .detalleFila {
   margin-top: var(--e2);
@@ -328,10 +592,10 @@
   white-space: nowrap;
 }
 
-.marca.duda {
-  border-color: var(--duda);
-  background: var(--nube);
-  color: var(--duda-tinta);
+.marca.porRevisar {
+  border-color: var(--activo-regla);
+  background: var(--activo-bruma);
+  color: var(--activo-pulsado);
 }
 
 /*
@@ -342,6 +606,20 @@
  * marca uno de los tres estados, así que no puede ser el texto más flojo de la
  * página.
  */
+/*
+ * ⚠️ **Un atributo no se viste de procedencia.** «Titulado» es un dato del
+ * estudio; «Del currículum» dice quién lo escribió. Con la misma silueta, una
+ * fila leía «[Universitaria (egresado)] [Del currículum]» y las dos píldoras
+ * pesaban lo mismo — justo la distinción que esta pantalla existe para sostener.
+ */
+.marca.atributo {
+  border-style: solid;
+  border-color: var(--regla2);
+  background: var(--nube-hundida);
+  color: var(--tinta2);
+  font-weight: 400;
+}
+
 .marca.delCv {
   border-color: var(--regla2);
   background: var(--nube-hundida);
@@ -393,11 +671,37 @@
   color: var(--tinta2);
 }
 
+/*
+ * Sin la caja que las contenía, estas tres palabras eran lo más pesado de cada
+ * sección: veinte botones oscuros repartidos por la página. Se apagan hasta que
+ * la fila recibe el ratón o el foco —dentro de la caja ámbar se quedan oscuras
+ * siempre, porque ahí sí son la acción principal.
+ *
+ * ⚠️ **Con el token, NUNCA con `opacity`.** Un `opacity: 0.55` sobre `--tinta2`
+ * deja el texto en 2,5:1, muy por debajo del mínimo: veintinueve controles que
+ * se leían como desactivados hasta que el ratón entraba en su fila, y en la
+ * sección de enlaces «Quitar» es el único control que hay. La transparencia se
+ * come el contraste porque no es un color, es una composición. `--tinta3` da
+ * 5,2:1 sobre el fondo de la página y se ve igual de discreto.
+ */
 .acciones {
   display: flex;
   flex-wrap: wrap;
   gap: var(--e2) var(--e3);
-  margin-top: var(--e4);
+  margin-top: var(--e3);
+}
+
+.acciones button {
+  color: var(--tinta3);
+  font-weight: 500;
+  transition: color 0.15s var(--salida);
+}
+
+.fila:hover .acciones button,
+.fila:focus-within .acciones button,
+.fila.sinConfirmar .acciones button {
+  color: var(--tinta2);
+  font-weight: 600;
 }
 
 /* ---------- Los botones de una fila ---------- */
@@ -654,7 +958,8 @@
 
 @media (max-width: 640px) {
   .pagina {
-    padding: var(--e5) var(--e4) var(--e7);
+    --margen-de-la-pagina: var(--e4);
+    padding: var(--e5) var(--margen-de-la-pagina) var(--e7);
   }
 
   .pareja {
@@ -677,4 +982,215 @@
   clip-path: inset(50%);
   white-space: nowrap;
   border: 0;
+}
+
+/* ---------- «Acerca de ti» ---------- */
+
+.acercaDe {
+  margin-top: var(--e4);
+}
+
+.resumen {
+  margin: 0;
+  font-size: var(--t-prosa);
+  line-height: 1.6;
+  color: var(--tinta2);
+  max-width: var(--medida);
+  /* Lo que escribió la persona conserva sus saltos de línea: si separó su
+     trayectoria en tres párrafos, tres párrafos se ven. */
+  white-space: pre-wrap;
+}
+
+.subtitulo {
+  margin: var(--e5) 0 var(--e3);
+  font-size: var(--t-micro);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tinta3);
+}
+
+/*
+ * La pretensión, apartada del resto.
+ *
+ * En bruma ámbar porque `--duda` está definido como «lo que cambia tu decisión»
+ * y esto es exactamente eso: un dato que no todo el mundo ve y que quien lo
+ * escribe tiene que saber que existe. No es un error ni un aviso rojo.
+ *
+ * Desde que las filas sin confirmar pasaron al violeta, **este es el único
+ * ámbar de la pantalla** — que es como debía haber sido desde el principio: un
+ * token de estado con un solo sitio donde significa algo.
+ */
+.pretension {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--e2) var(--e3);
+  margin: var(--e5) 0 0;
+  padding: var(--e3) var(--e4);
+  border-radius: var(--radio-menor);
+  background: var(--duda-bruma);
+  font-size: var(--t-apoyo);
+  color: var(--duda-tinta);
+}
+
+.etiquetaPretension {
+  font-size: var(--t-micro);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.notaPretension {
+  flex-basis: 100%;
+  font-size: var(--t-menor);
+  line-height: 1.45;
+}
+
+/* ---------- El diploma de una certificación ---------- */
+
+/*
+ * Discreto a propósito: casi nadie tiene sus certificados escaneados, y una
+ * fila que grite «falta el diploma» convertiría en deber lo que es una
+ * comodidad. Enlaces de texto, no botones con relleno.
+ */
+.diploma {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e3);
+  margin-top: var(--e2);
+}
+
+/*
+ * Se leen como enlaces pero se pulsan como botones: sin alto propio medían 20px,
+ * la mitad que «Editar» y «Quitar», que están en la misma fila y son el mismo
+ * gesto. El subrayado se queda; lo que cambia es dónde se puede tocar.
+ */
+.diploma button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--tinta2);
+  font-size: var(--t-menor);
+  font-family: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: var(--regla2);
+  text-underline-offset: 3px;
+}
+
+.diploma button:hover:not(:disabled) {
+  color: var(--tinta);
+  text-decoration-color: var(--borde-control);
+}
+
+.diploma button:disabled {
+  color: var(--tinta3);
+  cursor: default;
+}
+
+.entradaOculta {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ---------- La cronología ---------- */
+
+/*
+ * De qué especie es la entrada. Va arriba de la fila, pequeña y en tinta de
+ * apoyo: en una línea que mezcla empleos, estudios y certificaciones hay que
+ * poder decir cuál es cada una sin leerla entera.
+ */
+.especie {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  margin-bottom: 2px;
+  font-size: var(--t-micro);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tinta3);
+}
+
+.especie svg {
+  flex: none;
+}
+
+.fila.sinConfirmar .especie {
+  color: var(--activo-pulsado);
+}
+
+/*
+ * Lo que no tiene fecha no entra en la línea, y se dice por qué en vez de
+ * dejarlo caer al final sin explicación.
+ */
+.sinFecha {
+  margin: var(--e5) 0 var(--e2);
+  font-size: var(--t-menor);
+  font-style: italic;
+  color: var(--tinta3);
+  list-style: none;
+}
+
+/* Las tres puertas de entrada a la línea, del mismo peso: ninguna manda. */
+.anadirTres {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e3);
+  margin-top: var(--e5);
+}
+
+/*
+ * ---------- El momento de confirmar ----------
+ *
+ * ⚠️ **Es el ÚNICO movimiento de la pantalla, y por eso funciona.** Confirmar es
+ * el trabajo que este perfil pide —lo dice el panel de arriba y lo dice el
+ * índice— y hasta ahora la recompensa era que la fila cambiaba en silencio. La
+ * caja se disuelve donde estaba y la fila sube a su sitio: se ve que el trabajo
+ * se hizo, sin un confeti que celebre haber leído una fecha.
+ *
+ * `prefers-reduced-motion` lo apaga por la regla global de `mundo.css`, que
+ * corta `animation-duration` a 0,01ms en toda la aplicación.
+ */
+.recienConfirmada {
+  animation: seAsienta 0.5s var(--salida) both;
+}
+
+/* El fantasma de la caja, disolviéndose donde estaba. */
+.recienConfirmada::after {
+  content: '';
+  position: absolute;
+  inset: calc(var(--e3) * -1) calc(var(--e4) * -1);
+  border: 2px solid var(--activo-regla);
+  border-radius: var(--radio);
+  pointer-events: none;
+  animation: seDisuelve 0.5s var(--salida) both;
+}
+
+@keyframes seAsienta {
+  from {
+    transform: translateY(6px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes seDisuelve {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.01);
+  }
 }

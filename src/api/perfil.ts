@@ -24,7 +24,7 @@
  * del archivo y que la persona lo dio por bueno, que es informacion util.
  */
 
-import { pedir } from './cliente'
+import { pedir, pedirArchivo } from './cliente'
 import type {
   EditarCabeceraPerfil,
   EditarCertificacion,
@@ -150,3 +150,78 @@ export const nivelesEducativos = () =>
   pedir<OpcionCatalogo[]>('/catalogos/niveles-educativos')
 
 export const nivelesIdioma = () => pedir<OpcionCatalogo[]>('/catalogos/niveles-idioma')
+
+// ---------- La foto, la portada, el curriculum y los diplomas ----------
+
+/**
+ * ⚠️ **Estos cuatro se bajan en bytes, no por una url.**
+ *
+ * Un `<img src="/api/...">` no manda la cabecera `Authorization`, asi que una
+ * ruta con token no se puede poner en un `src` directamente. Y el enlace
+ * firmado tampoco vale: en local el almacen es el de memoria y devuelve una
+ * `memoria://` que ningun navegador abre. Se piden como blob y se pintan con
+ * `URL.createObjectURL`, que funciona igual en los dos sitios.
+ *
+ * ⚠️ **Quien llame a `urlDeLaFoto` o `urlDeLaPortada` tiene que revocar la url
+ * al desmontar** (`URL.revokeObjectURL`), o el blob se queda en memoria.
+ */
+
+/** Las cinco portadas del catalogo. Los degradados viven en el CSS, no aqui. */
+export const PORTADAS_DE_LA_CASA = [
+  { codigo: 'CANTO_MENTA', nombre: 'Menta' },
+  { codigo: 'CANTO_AQUA', nombre: 'Aqua' },
+  { codigo: 'CANTO_ROSA', nombre: 'Rosa' },
+  { codigo: 'CANTO_VIOLETA', nombre: 'Violeta' },
+  { codigo: 'BRUMA', nombre: 'Bruma' },
+] as const
+
+function conElArchivo(archivo: File): FormData {
+  const formulario = new FormData()
+  formulario.append('archivo', archivo)
+  return formulario
+}
+
+export const subirFoto = (archivo: File) =>
+  pedir<void>('/perfil/foto', { metodo: 'POST', formulario: conElArchivo(archivo) })
+
+export const quitarFoto = () => pedir<void>('/perfil/foto', { metodo: 'DELETE' })
+
+export const urlDeLaFoto = async (): Promise<string> =>
+  URL.createObjectURL((await pedirArchivo('/perfil/foto')).contenido)
+
+export const subirPortada = (archivo: File) =>
+  pedir<void>('/perfil/portada', { metodo: 'POST', formulario: conElArchivo(archivo) })
+
+export const elegirPortada = (codigo: string) =>
+  pedir<void>('/perfil/portada/galeria', { metodo: 'PUT', cuerpo: { codigo } })
+
+export const quitarPortada = () => pedir<void>('/perfil/portada', { metodo: 'DELETE' })
+
+export const urlDeLaPortada = async (): Promise<string> =>
+  URL.createObjectURL((await pedirArchivo('/perfil/portada')).contenido)
+
+/**
+ * Sube el curriculum al perfil y arranca su lectura.
+ *
+ * Al volver, `lecturaCv.estado` pasa a `EN_CURSO` y la pantalla ya sondea sola
+ * cada cinco segundos. Si ese mismo archivo ya se habia leido, vuelve `LISTA`
+ * de inmediato: no se paga dos veces (RF-161).
+ */
+export const subirCurriculum = (archivo: File) =>
+  pedir<void>('/perfil/cv', { metodo: 'POST', formulario: conElArchivo(archivo) })
+
+export const quitarCurriculum = () => pedir<void>('/perfil/cv', { metodo: 'DELETE' })
+
+export const descargarCurriculum = () => pedirArchivo('/perfil/cv')
+
+export const subirDiploma = (certificacionId: number, archivo: File) =>
+  pedir<void>(`/perfil/certificaciones/${certificacionId}/archivo`, {
+    metodo: 'POST',
+    formulario: conElArchivo(archivo),
+  })
+
+export const quitarDiploma = (certificacionId: number) =>
+  pedir<void>(`/perfil/certificaciones/${certificacionId}/archivo`, { metodo: 'DELETE' })
+
+export const descargarDiploma = (certificacionId: number) =>
+  pedirArchivo(`/perfil/certificaciones/${certificacionId}/archivo`)

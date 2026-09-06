@@ -10,6 +10,7 @@ import type {
   MiPostulacionDetalle,
   OpcionUbigeo,
   PedirBorrado,
+  QuienSoy,
   Sesion,
   TextoConsentimientoPublico,
   VacantePublica,
@@ -64,13 +65,22 @@ export const ingresar = (datos: Login) =>
 export const accederConEnlace = (token: string) =>
   pedir<Sesion>('/auth/acceso', { metodo: 'POST', cuerpo: { token }, sinToken: true })
 
+/** Como se llama quien tiene el token guardado. Ver `QuienSoy`. */
+export const quienSoy = () => pedir<QuienSoy>('/auth/sesion')
+
 // ---------- Postulaciones ----------
 
-/** Va como multipart porque lleva el CV. El navegador pone la cabecera. */
+/**
+ * Va como multipart porque puede llevar el CV. El navegador pone la cabecera.
+ *
+ * ⚠️ **`cv` en null NO es un olvido: significa «usa el de mi perfil».** El campo
+ * no se añade al formulario, y el backend busca entonces el curriculum guardado.
+ * Mandar uno lo usa **solo para esta vacante**: el del perfil no cambia.
+ */
 export function postular(datos: DatosPostulacion) {
   const formulario = new FormData()
   formulario.append('vacanteId', String(datos.vacanteId))
-  formulario.append('cv', datos.cv)
+  if (datos.cv) formulario.append('cv', datos.cv)
   formulario.append('resultadoOrgulloso', datos.resultadoOrgulloso)
   if (datos.portafolio) formulario.append('portafolio', datos.portafolio)
   if (datos.linkedin) formulario.append('linkedin', datos.linkedin)

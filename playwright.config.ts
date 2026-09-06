@@ -27,6 +27,16 @@ import { defineConfig, devices } from '@playwright/test'
 /** El Chrome de la máquina solo si se pide; si no, el Chromium clavado de Playwright. */
 const navegador = process.env.E2E_CHROME ? { channel: 'chrome' as const } : {}
 
+/**
+ * El portal contra el que se corre. Igual que `E2E_API` en `ayuda.ts`: cada
+ * worktree levanta el suyo en otro puerto, y sin esto la suite apuntaba siempre
+ * al 5174 —el de otra rama— sin que nada lo dijera. Los tres van juntos:
+ *
+ *     E2E_PORTAL=http://localhost:5212 E2E_API=http://localhost:8088/api/v1 \
+ *     E2E_PG=renaser-pg-perfil npx playwright test
+ */
+const portal = process.env.E2E_PORTAL ?? 'http://localhost:5174'
+
 export default defineConfig({
   testDir: './herramientas/e2e',
   fullyParallel: false,
@@ -36,7 +46,7 @@ export default defineConfig({
   expect: { timeout: 10_000 },
   reporter: [['list']],
   use: {
-    baseURL: 'http://localhost:5174',
+    baseURL: portal,
     trace: 'off',
     screenshot: 'only-on-failure',
     locale: 'es-PE',

@@ -14,6 +14,8 @@ export { ErrorApi } from './puerta'
 const puerta = crearPuerta('/api/v1/portal', 'renaser_portal_token')
 
 export const pedir = puerta.pedir
+/** Para lo que vuelve en bytes: el curriculum, la foto, la portada, un diploma. */
+export const pedirArchivo = puerta.pedirArchivo
 export const leerToken = puerta.leerToken
 export const guardarToken = puerta.guardarToken
 export const borrarToken = puerta.borrarToken

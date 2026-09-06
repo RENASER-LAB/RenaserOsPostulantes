@@ -1,10 +1,22 @@
 /**
  * Quien esta dentro.
  *
- * El backend devuelve solo `{ token, usuarioId }` al entrar: no hay ninguna
- * ruta que diga como se llama el candidato. Por eso el nombre se guarda al
- * crear la cuenta y, si no lo hay —por ejemplo si entra desde otro navegador—,
- * el portal saluda sin nombre en vez de inventarselo.
+ * **El backend dice como se llama, y por dos caminos.** Entrar —con contrasena
+ * o con el enlace del correo— devuelve `nombre` y `apellidos` junto al token.
+ * Pero el portal solo entra una vez: a partir de la segunda visita arranca de
+ * un token guardado, y entonces los pide con `quienSoy()`.
+ *
+ * ⚠️ **Los dos caminos hacen falta.** Con solo el primero, quien volvia al dia
+ * siguiente —o abria el portal en otro navegador, o vaciaba el almacenamiento—
+ * veia la cabecera de su perfil diciendo «Tu perfil» sobre un disco de
+ * iniciales vacio: el token seguia valiendo y el nombre no estaba en ningun
+ * sitio.
+ *
+ * Se sigue guardando en `localStorage`, pero ya solo como **respaldo**: es lo
+ * que evita que el portal se quede sin saludo entre la recarga de la pagina y
+ * la primera respuesta del servidor. Lo que manda es lo que dice el backend.
+ *
+ * Los dos pueden venir vacios: `persona` los admite en null.
  */
 
 import {
@@ -17,14 +29,16 @@ import {
   type ReactNode,
 } from 'react'
 import { alCaerLaSesion, borrarToken, guardarToken, leerToken } from '@/api/cliente'
-import { accederConEnlace, crearCuenta, ingresar } from '@/api/portal'
-import type { CrearCuenta, Login } from '@/api/tipos'
+import { accederConEnlace, crearCuenta, ingresar, quienSoy } from '@/api/portal'
+import type { CrearCuenta, Login, Sesion as SesionApi } from '@/api/tipos'
 
 const CLAVE_NOMBRE = 'renaser_portal_nombre'
+const CLAVE_APELLIDOS = 'renaser_portal_apellidos'
 
 interface Sesion {
   token: string | null
   nombre: string | null
+  apellidos: string | null
   /** El nombre de pila, para saludar. */
   saludo: string | null
   hayCuenta: boolean
@@ -45,9 +59,20 @@ function leerNombre(): string | null {
   }
 }
 
-function guardarNombre(nombre: string): void {
+function leerApellidos(): string | null {
   try {
-    localStorage.setItem(CLAVE_NOMBRE, nombre)
+    return localStorage.getItem(CLAVE_APELLIDOS)
+  } catch {
+    return null
+  }
+}
+
+function guardarNombre(nombre: string | null, apellidos: string | null): void {
+  try {
+    if (nombre) localStorage.setItem(CLAVE_NOMBRE, nombre)
+    else localStorage.removeItem(CLAVE_NOMBRE)
+    if (apellidos) localStorage.setItem(CLAVE_APELLIDOS, apellidos)
+    else localStorage.removeItem(CLAVE_APELLIDOS)
   } catch {
     /* almacenamiento bloqueado */
   }
@@ -56,6 +81,7 @@ function guardarNombre(nombre: string): void {
 function olvidarNombre(): void {
   try {
     localStorage.removeItem(CLAVE_NOMBRE)
+    localStorage.removeItem(CLAVE_APELLIDOS)
   } catch {
     /* almacenamiento bloqueado */
   }
@@ -64,38 +90,71 @@ function olvidarNombre(): void {
 export function ProveedorSesion({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(() => leerToken())
   const [nombre, setNombre] = useState<string | null>(() => leerNombre())
+  const [apellidos, setApellidos] = useState<string | null>(() => leerApellidos())
 
-  const entrar = useCallback(async (datos: Login) => {
-    const sesion = await ingresar(datos)
+  /** Lo que dice el servidor manda, y se deja de respaldo para la proxima carga. */
+  const asentar = useCallback((sesion: SesionApi) => {
     guardarToken(sesion.token)
+    guardarNombre(sesion.nombre, sesion.apellidos)
     setToken(sesion.token)
+    setNombre(sesion.nombre)
+    setApellidos(sesion.apellidos)
   }, [])
 
-  // El nombre no se toca: quien entra por enlace no lo trae, y borrar el que
-  // hubiera dejaria sin saludo a quien ya se habia registrado en este navegador.
-  const entrarConEnlace = useCallback(async (token: string) => {
-    const sesion = await accederConEnlace(token)
-    guardarToken(sesion.token)
-    setToken(sesion.token)
-  }, [])
+  const entrar = useCallback(
+    async (datos: Login) => asentar(await ingresar(datos)),
+    [asentar],
+  )
 
-  const registrar = useCallback(async (datos: CrearCuenta) => {
-    await crearCuenta(datos)
-    // El backend no devuelve sesion al crear la cuenta: hay que entrar despues.
-    const sesion = await ingresar({ correo: datos.correo, contrasena: datos.contrasena })
-    const completo = `${datos.nombre} ${datos.apellidos}`.trim()
-    guardarToken(sesion.token)
-    guardarNombre(completo)
-    setToken(sesion.token)
-    setNombre(completo)
-  }, [])
+  // Quien entra por el enlace del correo tampoco se queda sin nombre: desde que
+  // el backend lo devuelve, esta puerta trae lo mismo que la otra.
+  const entrarConEnlace = useCallback(
+    async (token: string) => asentar(await accederConEnlace(token)),
+    [asentar],
+  )
+
+  const registrar = useCallback(
+    async (datos: CrearCuenta) => {
+      await crearCuenta(datos)
+      // El backend no devuelve sesion al crear la cuenta: hay que entrar despues.
+      asentar(await ingresar({ correo: datos.correo, contrasena: datos.contrasena }))
+    },
+    [asentar],
+  )
 
   const salir = useCallback(() => {
     borrarToken()
     olvidarNombre()
     setToken(null)
     setNombre(null)
+    setApellidos(null)
   }, [])
+
+  // Con token guardado y sin nombre, se le pregunta al servidor.
+  //
+  // ⚠️ **Es el caso normal, no el raro.** Entrar trae el nombre una vez; a
+  // partir de la segunda visita el portal arranca de un token guardado, y sin
+  // esto no habia a quien preguntarselo: la cabecera del perfil decia «Tu
+  // perfil» sobre un disco de iniciales vacio. Pasa igual en otro navegador y
+  // tras vaciar el almacenamiento, que es lo que este respaldo no cubre.
+  //
+  // Si falla no se hace nada: quedarse sin saludo es peor que un portal que no
+  // abre, y un token caido ya lo cierra `alCaerLaSesion` por su cuenta.
+  useEffect(() => {
+    if (token === null || nombre !== null) return
+    let vigente = true
+    quienSoy()
+      .then((yo) => {
+        if (!vigente || yo.nombre === null) return
+        guardarNombre(yo.nombre, yo.apellidos)
+        setNombre(yo.nombre)
+        setApellidos(yo.apellidos)
+      })
+      .catch(() => {})
+    return () => {
+      vigente = false
+    }
+  }, [token, nombre])
 
   // Si el cliente descubre que el token ya no vale, la sesion se cierra sola y
   // el portal vuelve a enseñar «Ingresar».
@@ -104,6 +163,7 @@ export function ProveedorSesion({ children }: { children: ReactNode }) {
       olvidarNombre()
       setToken(null)
       setNombre(null)
+      setApellidos(null)
     })
   }, [])
 
@@ -111,6 +171,7 @@ export function ProveedorSesion({ children }: { children: ReactNode }) {
     () => ({
       token,
       nombre,
+      apellidos,
       saludo: nombre?.trim().split(/\s+/)[0] ?? null,
       hayCuenta: token !== null,
       entrar,
@@ -118,7 +179,7 @@ export function ProveedorSesion({ children }: { children: ReactNode }) {
       registrar,
       salir,
     }),
-    [token, nombre, entrar, entrarConEnlace, registrar, salir],
+    [token, nombre, apellidos, entrar, entrarConEnlace, registrar, salir],
   )
 
   return <Contexto value={valor}>{children}</Contexto>

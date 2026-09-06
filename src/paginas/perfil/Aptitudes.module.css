@@ -1,0 +1,116 @@
+/*
+ * Las aptitudes, en etiquetas.
+ *
+ * En tinta y no en el acento: son datos que la persona escribió, no una acción
+ * pendiente. El violeta de esta pantalla es el panel de «datos por revisar».
+ */
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+}
+
+.etiqueta {
+  font-size: var(--t-micro);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tinta2);
+}
+
+.ayuda {
+  margin: 0;
+  font-size: var(--t-menor);
+  line-height: 1.45;
+  color: var(--tinta3);
+}
+
+.lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e2);
+  margin: var(--e2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e1);
+  min-height: 32px;
+  padding: 0 var(--e1) 0 var(--e3);
+  border: 1px solid var(--regla2);
+  border-radius: var(--radio-control);
+  background: var(--nube-hundida);
+  font-size: var(--t-menor);
+  color: var(--tinta);
+}
+
+.quitar {
+  display: grid;
+  place-items: center;
+  /* 28 px dentro de una píldora de 32: el área táctil de la fila entera la da el
+     chip, y dos aspas contiguas no comparten objetivo. */
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--tinta3);
+  cursor: pointer;
+  transition: background 0.15s var(--salida), color 0.15s var(--salida);
+}
+
+.quitar:hover {
+  background: var(--mal-bruma);
+  color: var(--mal);
+}
+
+/* El mismo trazo del «más», girado: una pieza menos que mantener. */
+.aspa {
+  transform: rotate(45deg);
+}
+
+.entrada {
+  display: flex;
+  gap: var(--e2);
+  margin-top: var(--e2);
+}
+
+.entrada input {
+  flex: 1;
+  min-width: 0;
+  height: 48px;
+  padding: 0 var(--e3);
+  border: 1px solid var(--borde-control);
+  border-radius: var(--radio-menor);
+  background: var(--nube);
+  color: var(--tinta);
+  /* 16 px como mínimo: por debajo, iOS hace zoom al enfocar el campo. */
+  font-size: var(--t-base);
+  font-family: inherit;
+}
+
+.entrada input:focus-visible {
+  outline: 2px solid var(--tinta);
+  outline-offset: 1px;
+}
+
+.anadir {
+  composes: secundario from '../../estilos/piezas.module.css';
+  flex: none;
+  height: 48px;
+}
+
+.soloLectores {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

@@ -61,6 +61,13 @@ export async function tokenDelCandidato(correo: string, contrasena = CLAVE_DE_CA
 }
 
 /**
+ * El contenedor de Postgres contra el que se limpia. Por defecto el desechable
+ * del 5434; `E2E_PG` lo cambia, que es lo que necesita un worktree con base
+ * propia — ver el comentario de `E2E_PORTAL` en `playwright.config.ts`.
+ */
+const CONTENEDOR = process.env.E2E_PG ?? 'renaser-verifica'
+
+/**
  * Una consulta contra el Postgres **desechable del 5434**, como en `06-sin-ciudad`.
  *
  * Va por la entrada estándar y no por `-c` para poder mandar una transacción
@@ -71,7 +78,7 @@ export function sql(consulta: string): string {
   try {
     return execFileSync(
       'docker',
-      ['exec', '-i', 'renaser-verifica', 'psql', '-U', 'postgres', '-d', 'renaser_db', '-v', 'ON_ERROR_STOP=1'],
+      ['exec', '-i', CONTENEDOR, 'psql', '-U', 'postgres', '-d', 'renaser_db', '-v', 'ON_ERROR_STOP=1'],
       { input: consulta, stdio: ['pipe', 'pipe', 'pipe'] },
     ).toString()
   } catch (causa) {
@@ -133,6 +140,23 @@ create temporary table qa_talentos on commit drop as
 create temporary table qa_perfiles on commit drop as
   select id from perfil_candidato where persona_id in (select persona_id from qa_cuentas);
 
+-- Lo que el perfil guarda desde la V51: la lectura de su currículum —que no
+-- cuelga de ninguna postulación— y los archivos que son suyos y de nadie más.
+create temporary table qa_lecturas on commit drop as
+  select id, archivo_id from lectura_cv_perfil
+  where persona_id in (select persona_id from qa_cuentas);
+create temporary table qa_trabajos_perfil on commit drop as
+  select id from trabajo_ia
+  where referencia_tabla = 'lectura_cv_perfil'
+    and referencia_id in (select id from qa_lecturas);
+create temporary table qa_archivos_perfil on commit drop as
+  select foto_archivo_id as id from perfil_candidato where id in (select id from qa_perfiles)
+  union select portada_archivo_id from perfil_candidato where id in (select id from qa_perfiles)
+  union select cv_archivo_id from perfil_candidato where id in (select id from qa_perfiles)
+  union select archivo_id from certificacion_perfil
+        where perfil_candidato_id in (select id from qa_perfiles)
+  union select archivo_id from qa_lecturas;
+
 -- Lo que dejó la IA: la lectura del currículum y la calificación.
 delete from nota_respuesta
   where ejecucion_ia_id in (select id from qa_ejecuciones)
@@ -164,6 +188,11 @@ delete from afirmacion_cv
 delete from enlace_cv where cv_id in (select id from qa_cvs);
 delete from ejecucion_ia where id in (select id from qa_ejecuciones);
 delete from trabajo_ia where id in (select id from qa_trabajos);
+-- La lectura del currículum del perfil no tiene postulación detrás, así que sus
+-- trabajos no salen de qa_trabajos: se buscan por su referencia.
+delete from ejecucion_ia where trabajo_ia_id in (select id from qa_trabajos_perfil);
+delete from trabajo_ia where id in (select id from qa_trabajos_perfil);
+delete from lectura_cv_perfil where id in (select id from qa_lecturas);
 
 -- La postulación y lo suyo.
 delete from entregable where intento_prueba_id in (select id from qa_intentos);
@@ -205,6 +234,8 @@ delete from enlace_perfil where perfil_candidato_id in (select id from qa_perfil
 delete from experiencia_perfil where perfil_candidato_id in (select id from qa_perfiles);
 delete from idioma_perfil where perfil_candidato_id in (select id from qa_perfiles);
 delete from perfil_candidato where id in (select id from qa_perfiles);
+-- Ahora que nadie los referencia: la foto, la portada, el currículum y los diplomas.
+delete from archivo where id in (select id from qa_archivos_perfil where id is not null);
 delete from solicitud_borrado where persona_id in (select persona_id from qa_cuentas);
 delete from usuario where id in (select usuario_id from qa_cuentas);
 delete from persona where id in (select persona_id from qa_cuentas);

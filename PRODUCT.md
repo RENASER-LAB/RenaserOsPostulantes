@@ -64,6 +64,11 @@ bien.
 - Sin evaluación: postular → **espera sin ninguna acción** → prueba en forma de cuestionario.
   En este camino, la primera pantalla que ve alguien tras postular no tiene nada que hacer.
 
+**El backend sí dice cómo se llama el candidato, desde el 05/09/2026.** Entrar —con contraseña
+o con el enlace del correo— devuelve `nombre` y `apellidos` junto al token, y
+`GET /portal/auth/sesion` los da cuando el portal arranca de un token ya guardado. Las dos vías
+hacen falta: el portal solo entra una vez, y en la segunda visita no había a quién preguntar.
+
 **Hay dos formas de entrar, y las dos son normales:**
 
 - Con correo y contraseña, para quien se registró en el portal.
@@ -132,8 +137,6 @@ puntuó; y no ve la matriz, que es justamente lo que se espera que descubra o pr
 - **Decisión ámbar** y **Validación** están maquetadas completas, pero el backend **no tiene
   ninguna ruta** para ellas: ni para leer qué evidencia se pide, ni para enviarla, ni para
   consultar días, responsable o métricas.
-- **El backend no dice cómo se llama el candidato.** Al entrar devuelve solo un identificador.
-  Quien entre desde otro navegador verá el portal sin su nombre.
 - **El correo hoy no sale.** El backend lo tiene en modo registro por defecto, así que cada
   «te avisaremos por correo» es una promesa que el sistema desplegado puede no cumplir.
 - **Los textos de consentimiento van a crecer**: todavía no nombran a las empresas que

@@ -11,10 +11,10 @@
  * **El perfil no puntúa.** No entra en el ranking ni cambia notas. Por eso vive
  * lejos de «Mis procesos» y no se pinta junto a ningún resultado.
  *
- * ⚠️ **El currículum no se sube desde aquí, y no es un olvido**: no existe
- * ninguna ruta para eso. El archivo llega al postular, y de ahí sale la lectura.
- * Esta pantalla informa de en qué punto está esa lectura; no ofrece un botón que
- * no existe.
+ * **El currículum vive en el perfil desde el 05/09/2026.** Se sube en la columna
+ * lateral, se lee al subirlo —sin esperar a que la persona postule— y al postular
+ * se reutiliza. Esta pantalla enseña en qué punto está esa lectura y ofrece
+ * cambiarlo o quitarlo.
  *
  * ⚠️ **La cabecera es un PUT que reemplaza los siete campos de golpe.** Se
  * siembra del GET y se manda entera. Guardar campo a campo borraría los seis que
@@ -22,7 +22,7 @@
  * perdidas en la evaluación.
  */
 
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
@@ -37,7 +37,11 @@ import { useSesion } from '@/app/Sesion'
 import { rutas } from '@/rutas'
 import { useAviso } from '@/ui/Avisos'
 import { AreaTexto, Campo } from '@/ui/campos/Campo'
-import { Certificaciones, Educacion, Enlaces, Experiencia, Idiomas } from './Listas'
+import { anclaDe, Certificaciones, Enlaces, Idiomas } from './Listas'
+import { Trayectoria } from './Trayectoria'
+import { Aptitudes, leerTodas } from './Aptitudes'
+import { CabeceraDelPerfil } from './Cabecera'
+import { Lateral } from './Lateral'
 import estilos from './Perfil.module.css'
 
 /** Mientras la lectura corre de verdad. Ver `sondeo`. */
@@ -100,6 +104,9 @@ function SalirDeLaCuenta() {
 
 export function Perfil() {
   const avisar = useAviso()
+  // Vive aquí y no dentro de `Cabecera` porque quien abre el formulario es el
+  // botón «Editar perfil» de la cabecera de identidad, que es otro componente.
+  const [editandoCabecera, setEditandoCabecera] = useState(false)
 
   const consulta = useQuery({
     queryKey: ['perfil'],
@@ -193,16 +200,7 @@ export function Perfil() {
         ← Volver a mis procesos
       </Link>
 
-      <div className={estilos.encabezado}>
-        <div className={estilos.tituloYSalida}>
-          <h1>Tu perfil.</h1>
-          <SalirDeLaCuenta />
-        </div>
-        <p className={estilos.bajada}>
-          Lo llenas una vez y vale para todas las vacantes del portal. Nada es obligatorio, y
-          no tenerlo no te impide postular ni cambia ninguna nota.
-        </p>
-      </div>
+      <CabeceraDelPerfil perfil={perfil} onEditar={() => setEditandoCabecera(true)} />
 
       {/*
         Lo que se anuncia va en una región que existe SIEMPRE y cambia de
@@ -261,14 +259,30 @@ export function Perfil() {
 
       <EstadoDeLaLectura perfil={perfil} />
 
-      <div className={estilos.secciones}>
-        <Cabecera perfil={perfil} />
-        <Experiencia filas={perfil.experiencia} />
-        <Educacion
-          filas={perfil.educacion}
-          niveles={educativos.data ?? []}
-          catalogoCaido={educativos.isError}
+      {/*
+        Dos columnas: lo que se lee a la izquierda, lo que acompaña a la derecha.
+        Por debajo de 900 px se apilan y la lateral sube — el aviso de «te toca a
+        ti» no puede quedar al final del todo en un teléfono.
+      */}
+      <div className={estilos.cuerpo}>
+        <div className={estilos.principal}>
+        <Cabecera
+          perfil={perfil}
+          editando={editandoCabecera}
+          setEditando={setEditandoCabecera}
         />
+        {/*
+          ⚠️ **Una sola cronología, no tres listas.** Empleos, estudios y
+          certificaciones comparten el mismo raíl ordenado por fecha: es la
+          estructura que el usuario fijó el 06/09/2026. Ver `Trayectoria.tsx`.
+        */}
+        <Trayectoria
+          experiencia={perfil.experiencia}
+          educacion={perfil.educacion}
+          niveles={educativos.data ?? []}
+        />
+        <Certificaciones filas={perfil.certificaciones} />
+
         {/*
           ⚠️ Si el catálogo de niveles no llega, «Idiomas» queda **inservible**:
           el nivel es obligatorio en el backend y el selector se quedaría sin
@@ -280,15 +294,26 @@ export function Perfil() {
           niveles={idiomas.data ?? []}
           catalogoCaido={idiomas.isError}
         />
-        <Certificaciones filas={perfil.certificaciones} />
         <Enlaces filas={perfil.enlaces} />
+        </div>
+
+        <Lateral perfil={perfil} />
       </div>
 
+      {/*
+        ⚠️ **Cerrar sesión baja al pie, pero no se esconde.** Estaba en la primera
+        línea, al lado del titular, y ahí competía con el nombre por la mirada en
+        una cabecera que ahora es la identidad de la persona. Aquí abajo sigue
+        estando en la pantalla, a un clic desde la barra de arriba —«Mi cuenta»
+        lleva aquí— y sigue apareciendo también en la pantalla de fallo, que es
+        donde de verdad haría falta el día que algo se rompa.
+      */}
       <div className={estilos.pie}>
         <button className={estilos.descargar} type="button" onClick={() => void descargar()}>
           Descargar todos mis datos
         </button>
         <Link to={rutas.privacidad()}>Privacidad y tratamiento de datos</Link>
+        <SalirDeLaCuenta />
       </div>
     </div>
   )
@@ -312,9 +337,12 @@ function EstadoDeLaLectura({ perfil }: { perfil: PerfilCompleto }) {
 
   const textos: Record<string, { titulo: string; texto: string }> = {
     SIN_CV: {
+      // ⚠️ Este texto decía «cuando postules subirás tu currículum», y desde que
+      // se puede guardar aquí eso era mentira: mandaba a postular a alguien que
+      // tenía el botón de subirlo a la derecha de la misma pantalla.
       titulo: 'Todavía no hemos leído ningún currículum tuyo',
       texto:
-        'Cuando postules a una vacante subirás tu currículum, y de ahí sacaremos lo que podamos para ahorrarte escribirlo. Mientras tanto puedes llenar tu perfil a mano.',
+        'Súbelo en «Tu currículum» y sacaremos lo que podamos para ahorrarte escribirlo. También puedes llenar tu perfil a mano, o dejarlo para cuando postules.',
     },
     EN_CURSO: {
       titulo: 'Estamos leyendo tu currículum',
@@ -359,7 +387,6 @@ function EstadoDeLaLectura({ perfil }: { perfil: PerfilCompleto }) {
 interface CamposCabecera {
   titular: string
   resumen: string
-  habilidades: string
   experienciaMeses: string
   ubicacion: string
   disponibilidad: string
@@ -372,7 +399,6 @@ function sembrar(perfil: PerfilCompleto): CamposCabecera {
   return {
     titular: perfil.titular ?? '',
     resumen: perfil.resumen ?? '',
-    habilidades: (perfil.habilidades ?? []).join(', '),
     experienciaMeses: perfil.experienciaMeses === null ? '' : String(perfil.experienciaMeses),
     ubicacion: perfil.ubicacion ?? '',
     disponibilidad: perfil.disponibilidad ?? '',
@@ -382,11 +408,24 @@ function sembrar(perfil: PerfilCompleto): CamposCabecera {
   }
 }
 
-function Cabecera({ perfil }: { perfil: PerfilCompleto }) {
+function Cabecera({
+  perfil,
+  editando,
+  setEditando,
+}: {
+  perfil: PerfilCompleto
+  editando: boolean
+  setEditando: (abierto: boolean) => void
+}) {
   const cache = useQueryClient()
   const avisar = useAviso()
-  const [editando, setEditando] = useState(false)
+  const suSitio = useRef<HTMLElement>(null)
   const [valores, setValores] = useState<CamposCabecera>(() => sembrar(perfil))
+  // Las aptitudes salen del texto separado por «|» y vuelven a él al guardar. El
+  // `pendiente` vive aquí y no dentro del campo para que Guardar pueda recoger lo
+  // que quedó escrito sin pulsar Enter.
+  const [aptitudes, setAptitudes] = useState<string[]>(() => perfil.habilidades ?? [])
+  const [aptitudPendiente, setAptitudPendiente] = useState('')
   const [fallo, setFallo] = useState<string | null>(null)
   const [errores, setErrores] = useState<Partial<Record<keyof CamposCabecera, string>>>({})
 
@@ -394,8 +433,19 @@ function Cabecera({ perfil }: { perfil: PerfilCompleto }) {
   // editando, el formulario se resiembra. Mientras se edita NO se toca: pisar lo
   // que alguien está escribiendo es peor que enseñar un dato viejo.
   useEffect(() => {
-    if (!editando) setValores(sembrar(perfil))
+    if (!editando) {
+      setValores(sembrar(perfil))
+      setAptitudes(perfil.habilidades ?? [])
+      setAptitudPendiente('')
+    }
   }, [perfil, editando])
+
+  // El botón que abre esto vive arriba del todo, en la cabecera de identidad, y
+  // el formulario aparece más abajo: sin traer la vista, pulsar «Editar perfil»
+  // no parecía hacer nada.
+  useEffect(() => {
+    if (editando) suSitio.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [editando])
 
   const guardado = useMutation({
     mutationFn: guardarCabecera,
@@ -449,8 +499,15 @@ function Cabecera({ perfil }: { perfil: PerfilCompleto }) {
 
     if (Object.keys(nuevos).length > 0) {
       setErrores(nuevos)
+      // ⚠️ Se guarda el formulario ANTES del fotograma siguiente: React limpia
+      // `currentTarget` en cuanto el manejador termina, y dentro del
+      // `requestAnimationFrame` ya es null.
+      const formulario = evento.currentTarget
       requestAnimationFrame(() => {
-        document.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus()
+        // Dentro de ESTE formulario. Buscando en todo el documento, con otro
+        // formulario abierto y con error más arriba, el foco saltaba al campo
+        // equivocado de una sección que no se estaba enviando.
+        formulario.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus()
       })
       return
     }
@@ -460,10 +517,9 @@ function Cabecera({ perfil }: { perfil: PerfilCompleto }) {
     guardado.mutate({
       titular: valores.titular.trim() || null,
       resumen: valores.resumen.trim() || null,
-      habilidades: valores.habilidades
-        .split(',')
-        .map((h) => h.trim())
-        .filter((h) => h !== ''),
+      // `leerTodas` recoge lo que quedó escrito sin pulsar Enter: quien escribe
+      // «Power BI» y le da a Guardar espera que se guarde, no que se pierda.
+      habilidades: leerTodas(aptitudes, aptitudPendiente),
       experienciaMeses: meses === '' ? null : Number(meses),
       ubicacion: valores.ubicacion.trim() || null,
       disponibilidad: valores.disponibilidad.trim() || null,
@@ -490,32 +546,36 @@ function Cabecera({ perfil }: { perfil: PerfilCompleto }) {
 
   if (!editando) {
     return (
-      <section className={estilos.seccion}>
+      /* ⚠️ El ancla va en las DOS ramas. Estaba solo en la de edición, así que
+         en el estado normal —el que se ve— `#seccion-acerca-de-ti` no existía:
+         la primera entrada del índice era un enlace muerto y el observador
+         nunca podía marcarla. Solo se pinta una rama a la vez, así que el id
+         no se duplica. */
+      <section className={estilos.seccion} id={anclaDe('Acerca de ti')} ref={suSitio}>
         <div className={estilos.tituloSeccion}>
-          <h2>Quién eres</h2>
+          <h2>Acerca de ti</h2>
         </div>
-        <p className={estilos.explicacion}>
-          Lo primero que lee el equipo cuando abre tu candidatura.
-        </p>
 
+        {/*
+          ⚠️ El titular, la ubicación y los años ya NO se pintan aquí: viven en la
+          cabecera de identidad, arriba. Repetirlos hacía que la misma frase
+          apareciera dos veces en la misma pantalla, y la segunda parecía otro
+          dato distinto que no cuadraba.
+
+          Lo que se queda es lo que la cabecera no puede llevar: el texto largo,
+          las aptitudes y la pretensión.
+        */}
         {vacia ? (
-          <p className={estilos.ninguna}>Todavía no has escrito nada aquí.</p>
+          <p className={estilos.ninguna}>
+            Cuéntale al equipo qué sabes hacer y qué buscas. Dos o tres frases bastan.
+          </p>
         ) : (
-          <ul className={estilos.filas} role="list">
-            <li className={estilos.fila}>
-              {perfil.titular && (
-                <div className={estilos.cabeceraFila}>
-                  <span className={estilos.queEs}>{perfil.titular}</span>
-                  {perfil.ubicacion && <span className={estilos.donde}>{perfil.ubicacion}</span>}
-                </div>
-              )}
-              {perfil.resumen && <p className={estilos.detalleFila}>{perfil.resumen}</p>}
-              {/*
-                Las aptitudes van en píldoras y las condiciones en una línea de
-                pie: separadas por el mismo `·` y al mismo tamaño se leían como
-                una sola lista envuelta en dos renglones, y son dos cosas.
-              */}
-              {(perfil.habilidades ?? []).length > 0 && (
+          <div className={estilos.acercaDe}>
+            {perfil.resumen && <p className={estilos.resumen}>{perfil.resumen}</p>}
+
+            {(perfil.habilidades ?? []).length > 0 && (
+              <>
+                <h3 className={estilos.subtitulo}>Lo que sabes hacer</h3>
                 <ul className={estilos.habilidades} role="list">
                   {perfil.habilidades.map((h) => (
                     <li className={estilos.habilidad} key={h}>
@@ -523,19 +583,24 @@ function Cabecera({ perfil }: { perfil: PerfilCompleto }) {
                     </li>
                   ))}
                 </ul>
-              )}
-              <p className={estilos.cuando}>
-                {perfil.experienciaMeses !== null && `${aniosYMeses(perfil.experienciaMeses)}`}
-                {perfil.experienciaMeses !== null && perfil.disponibilidad && ' · '}
-                {perfil.disponibilidad}
-                {perfil.pretension && (perfil.experienciaMeses !== null || perfil.disponibilidad)
-                  ? ' · '
-                  : ''}
-                {perfil.pretension &&
-                  `${perfil.pretension.moneda} ${perfil.pretension.min}–${perfil.pretension.max}`}
+              </>
+            )}
+
+            {/*
+              La pretensión, apartada y con su aviso. Es el único dato del perfil
+              que no ve todo el equipo, y quien lo escribe merece saberlo antes de
+              escribirlo, no después.
+            */}
+            {perfil.pretension && (
+              <p className={estilos.pretension}>
+                <span className={estilos.etiquetaPretension}>Pretensión</span>
+                {perfil.pretension.moneda} {perfil.pretension.min}–{perfil.pretension.max}
+                <span className={estilos.notaPretension}>
+                  Solo la ve quien tiene permiso, y nunca sale en las listas.
+                </span>
               </p>
-            </li>
-          </ul>
+            )}
+          </div>
         )}
 
         {/*
@@ -544,19 +609,20 @@ function Cabecera({ perfil }: { perfil: PerfilCompleto }) {
           lector de pantalla todos serian la misma entrada.
         */}
         <button className={estilos.anadir} type="button" onClick={() => setEditando(true)}>
-          {vacia ? 'Escribir quién eres' : 'Editar quién eres'}
+          {vacia ? 'Escribir sobre ti' : 'Editar lo tuyo'}
         </button>
       </section>
     )
   }
 
   return (
-    <section className={estilos.seccion}>
+    <section className={estilos.seccion} id={anclaDe('Acerca de ti')} ref={suSitio}>
       <div className={estilos.tituloSeccion}>
-        <h2>Quién eres</h2>
+        <h2>Acerca de ti</h2>
       </div>
       <p className={estilos.explicacion}>
-        Lo primero que lee el equipo cuando abre tu candidatura.
+        Esto es lo primero que lee el equipo cuando abre tu candidatura. Lo de aquí arriba —tu
+        titular, dónde estás— también se edita en este formulario.
       </p>
 
       <form className={estilos.formulario} onSubmit={enviar} noValidate>
@@ -576,11 +642,11 @@ function Cabecera({ perfil }: { perfil: PerfilCompleto }) {
           onChange={(e) => cambiar('resumen', e.target.value)}
         />
 
-        <Campo
-          etiqueta="Lo que sabes hacer"
-          ayuda="Sepáralas con comas. Por ejemplo: Excel avanzado, Power BI, gestión de procesos."
-          value={valores.habilidades}
-          onChange={(e) => cambiar('habilidades', e.target.value)}
+        <Aptitudes
+          etiquetas={aptitudes}
+          onCambiar={setAptitudes}
+          pendiente={aptitudPendiente}
+          onPendiente={setAptitudPendiente}
         />
 
         <div className={estilos.pareja}>
@@ -685,12 +751,3 @@ function Cabecera({ perfil }: { perfil: PerfilCompleto }) {
   )
 }
 
-/** 96 meses son ocho años, y así es como lo dice una persona. */
-function aniosYMeses(meses: number): string {
-  const anios = Math.floor(meses / 12)
-  const resto = meses % 12
-  if (anios === 0) return resto === 1 ? '1 mes de experiencia' : `${resto} meses de experiencia`
-  const parteAnios = anios === 1 ? '1 año' : `${anios} años`
-  if (resto === 0) return `${parteAnios} de experiencia`
-  return `${parteAnios} y ${resto === 1 ? '1 mes' : `${resto} meses`} de experiencia`
-}
