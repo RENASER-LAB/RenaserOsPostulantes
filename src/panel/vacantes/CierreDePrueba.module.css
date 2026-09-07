@@ -305,3 +305,23 @@
     justify-content: center;
   }
 }
+
+/* En la convocatoria hay espacio para leer fecha y motivo juntos. */
+.cierreConvocatoria .campos {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  max-width: none;
+  gap: var(--e5);
+}
+.campoFecha {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+  min-width: 0;
+}
+@media (max-width: 640px) {
+  .cierreConvocatoria .campos {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--e3);
+  }
+}

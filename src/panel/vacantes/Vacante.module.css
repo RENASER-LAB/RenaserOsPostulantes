@@ -13,7 +13,7 @@
 .cabecera {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
   gap: var(--e4);
   margin-top: var(--e4);
@@ -198,7 +198,7 @@ thead .celdaCandidato {
  */
 .detalle {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--e6);
   align-items: start;
 }
@@ -211,6 +211,8 @@ thead .celdaCandidato {
 
 .columnaDetalle {
   min-width: 0;
+  container-type: inline-size;
+  overflow-wrap: anywhere;
 }
 
 .tituloDetalle {
@@ -247,15 +249,15 @@ thead .celdaCandidato {
 }
 
 .paso {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: var(--e3);
   font-size: var(--t-menor);
   line-height: 1.5;
 }
 
 .cuandoPaso {
-  flex: none;
-  width: 14rem;
+  min-width: 0;
   color: var(--tinta3);
   font-variant-numeric: tabular-nums;
 }
@@ -789,8 +791,8 @@ thead .celdaCandidato {
 
 .configuracion {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
-  gap: var(--e4);
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--e5);
 }
 
 .ajuste {
@@ -874,7 +876,7 @@ thead .celdaCandidato {
   padding: var(--e1);
   border-radius: var(--radio-control);
   background: var(--nube-hundida);
-  margin-bottom: var(--e5);
+  margin-bottom: var(--e3);
 }
 
 .pestana,
@@ -882,7 +884,7 @@ thead .celdaCandidato {
   font: inherit;
   font-size: var(--t-apoyo);
   padding: 0 var(--e4);
-  min-height: 40px;
+  min-height: 44px;
   display: inline-flex;
   align-items: center;
   border: 1px solid transparent;
@@ -952,7 +954,7 @@ thead .celdaCandidato {
   align-items: center;
   gap: var(--e2);
   /* 40 px, como las pestañas: se pulsa desde un teléfono. */
-  min-height: 40px;
+  min-height: 44px;
   padding: 0 var(--e3);
   border: 1px solid transparent;
   border-radius: var(--radio-control);
@@ -1025,6 +1027,31 @@ thead .celdaCandidato {
  */
 .tablaEvaluacion {
   table-layout: fixed;
+  min-width: 48rem;
+}
+
+.tablaEvaluacion th:first-child {
+  width: 37%;
+}
+
+.tablaEvaluacion td {
+  vertical-align: top;
+}
+
+.tablaEvaluacion td:nth-child(2) {
+  text-align: left;
+  white-space: normal;
+  font-variant-numeric: tabular-nums;
+}
+
+.tablaEvaluacion .senales,
+.tablaEvaluacion .sinSenales {
+  font-size: var(--t-menor);
+  color: var(--tinta2);
+}
+
+.tablaEvaluacion .senalNo {
+  color: var(--tinta2);
 }
 
 /*
@@ -1037,13 +1064,14 @@ thead .celdaCandidato {
   z-index: 1;
 }
 
-/* La nota son tres caracteres: no necesita un octavo de la tabla. */
-.celdaNota {
-  width: 5rem;
+/* La nota incluye señales y explicación: necesita espacio de lectura. */
+.tablaEvaluacion thead th.celdaNota {
+  width: 26%;
+  text-align: left;
 }
 
 .celdaRespuesta {
-  width: 46%;
+  width: 37%;
 }
 
 .respuestaDada {
@@ -1378,15 +1406,13 @@ thead .celdaCandidato {
 .cifrasDeLaTanda {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
-  gap: var(--e2);
+  gap: var(--e3);
   margin-bottom: var(--e3);
 }
 
 .cifraTanda {
-  padding: var(--e2) var(--e3);
-  border: 1px solid var(--regla);
-  border-radius: var(--radio-menor);
-  background: var(--nube);
+  padding: var(--e2) 0;
+  border-bottom: 1px solid var(--regla);
 }
 
 /*
@@ -1448,7 +1474,7 @@ thead .celdaCandidato {
   display: inline-flex;
   align-items: center;
   gap: var(--e2);
-  min-height: 32px;
+  min-height: 44px;
   padding: 0 var(--e3);
   border: 1px solid var(--borde-control);
   border-radius: var(--radio-control);
@@ -2057,3 +2083,290 @@ th.columnaCifra {
     margin-top: var(--e2);
   }
 }
+
+/* La entrada prioriza el seguimiento; los ajustes mantienen su propio lugar. */
+.identidadVacante {
+  flex: 1 1 32rem;
+  min-width: 0;
+}
+.identidadVacante h1 {
+  font-size: clamp(1.75rem, 3vw, 2.75rem);
+  line-height: 1.15;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+.accionSecundaria {
+  composes: secundario from '../../estilos/piezas.module.css';
+}
+.configuracionPlegable {
+  border-block: 1px solid var(--regla);
+  margin-block: var(--e4);
+}
+.resumenConfiguracion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e2) var(--e4);
+  padding-block: var(--e3);
+  min-height: 48px;
+  cursor: pointer;
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+}
+.resumenConfiguracion::before, .plazosPlegables > summary::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-right: 1px solid currentColor;
+  border-bottom: 1px solid currentColor;
+  transform: rotate(-45deg);
+  flex: none;
+  margin-inline: var(--e1);
+}
+.configuracionPlegable[open] > summary::before, .plazosPlegables[open] > summary::before {
+  transform: rotate(45deg);
+}
+.resumenConfiguracion::-webkit-details-marker, .plazosPlegables > summary::-webkit-details-marker {
+  display: none;
+}
+.alcanceConfiguracion {
+  color: var(--tinta2);
+  font-weight: 400;
+  margin-left: auto;
+}
+.cuerpoConfiguracion {
+  padding-bottom: var(--e5);
+}
+.cuerpoConfiguracion > section:first-child {
+  margin-top: var(--e3);
+}
+.grupoConfiguracion {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--e4) var(--e5);
+  min-width: 0;
+  border: 0;
+  padding: var(--e3) 0 0;
+  margin: 0;
+}
+.grupoConfiguracion legend {
+  font-size: var(--t-base);
+  font-weight: 600;
+  padding: 0;
+}
+.instrumentoTecnico {
+  grid-column: 1 / -1;
+}
+.grupoConfiguracion .eleccion {
+  width: 100%;
+  min-width: 0;
+}
+.plazosPlegables {
+  margin-top: var(--e4);
+  padding-block: var(--e2);
+  border-block: 1px solid var(--regla);
+}
+.plazosPlegables > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--e2);
+  min-height: 44px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: var(--t-base);
+}
+.resumenProceso {
+  margin-top: var(--e5);
+}
+.resumenProceso .tituloSeccion {
+  font-size: var(--t-base);
+}
+.tramoEmbudo {
+  border: 0;
+  border-radius: 0;
+  padding: var(--e1) var(--e3) var(--e1) 0;
+}
+.formularioCierre {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 1fr);
+  gap: var(--e3) var(--e5);
+  padding: var(--e4);
+  border: 1px solid var(--regla);
+  border-radius: var(--radio-menor);
+  background: var(--nube);
+}
+.formularioCierre h2 {
+  font-size: var(--t-base);
+}
+.accionesCierre {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e2);
+  justify-content: flex-end;
+}
+.campoMotivo {
+  flex: 1 1 18rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+  min-width: 0;
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+}
+.campoMotivo .entradaMotivo {
+  flex: auto;
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  font-weight: 400;
+}
+.avance, .altaRequisito {
+  align-items: flex-end;
+}
+.abrirCandidato {
+  display: inline-flex;
+  align-items: center;
+  text-align: left;
+  min-height: 44px;
+  background: none;
+  border: 0;
+  color: var(--tinta);
+  font: inherit;
+  font-weight: 600;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: var(--regla2);
+  text-underline-offset: 0.2em;
+}
+.abrirCandidato:hover {
+  text-decoration-color: currentColor;
+}
+.listaColumnas {
+  min-width: min(19rem, calc(100vw - 3rem));
+  max-width: calc(100vw - 3rem);
+}
+.listaColumnas .interruptorCriterios {
+  padding-bottom: var(--e3);
+  margin-bottom: var(--e2);
+  border-bottom: 1px solid var(--regla);
+}
+.listaColumnas label {
+  min-height: 44px;
+  white-space: normal;
+}
+.listaColumnas .interruptorCriterios > span {
+  color: var(--tinta2);
+  line-height: 1.45;
+}
+.resumenConfiguracion:focus-visible, .plazosPlegables > summary:focus-visible, .abrirCandidato:focus-visible {
+  outline: 2px solid var(--tinta);
+  outline-offset: 3px;
+}
+@media (max-width: 640px) {
+  .cabecera {
+    align-items: flex-start;
+    gap: var(--e3);
+  }
+  .alcanceConfiguracion {
+    flex-basis: 100%;
+    margin-left: var(--e4);
+  }
+  .grupoConfiguracion, .formularioCierre {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .cifrasDeLaTanda {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .pestanas {
+    display: flex;
+    border-radius: var(--radio-menor);
+  }
+  .pestana, .pestanaActiva {
+    padding-inline: var(--e3);
+  }
+  .filaFiltros {
+    gap: var(--e2);
+  }
+  .campoFiltro {
+    flex: 1 1 100%;
+  }
+  .buscador {
+    width: 100%;
+  }
+  .selectorColumnas {
+    margin-left: auto;
+  }
+  .listaColumnas {
+    right: 0;
+    left: auto;
+  }
+}
+
+/* Dos áreas explícitas: la banda inferior no debe crear columnas vacías. */
+@media (max-width: 900px) {
+  .detalle {
+    max-width: calc(100vw - 5rem);
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@container (min-width: 42rem) {
+  .retrato {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@container (max-width: 23rem) {
+  .paso {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--e1);
+  }
+}
+
+.columnaDetalle > .texto {
+  max-width: 75ch;
+}
+
+/* Identidad e historial terminan juntos; la evaluación usa la fila completa. */
+.cabeceraPostulante {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--e6);
+  padding-bottom: var(--e5);
+  border-bottom: 1px solid var(--regla2);
+}
+
+@container (min-width: 58rem) {
+  .criteriosPerfil {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--e4) var(--e6);
+    align-items: start;
+  }
+}
+
+@media (max-width: 900px) {
+  .cabeceraPostulante {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--e5);
+  }
+}
+
+.descargarCv {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.descargarCv:hover { color: var(--tinta); }
+.descargarCv:disabled { cursor: wait; }
+.errorCv { display: block; margin-top: var(--e2); color: var(--mal-pulsado); }

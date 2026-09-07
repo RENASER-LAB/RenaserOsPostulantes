@@ -243,7 +243,7 @@ export function CierreDeLaVacante({
   }
 
   return (
-    <div className={estilos.bloque}>
+    <div className={`${estilos.bloque} ${estilos.cierreConvocatoria}`}>
       <h3 className={estilos.titulo}>Cuándo cierra la prueba</h3>
       <p className={estilos.prosa}>
         Una sola fecha para toda la convocatoria: «hasta el domingo», igual para todos. Sin
@@ -256,6 +256,7 @@ export function CierreDeLaVacante({
       </p>
 
       <div className={estilos.campos}>
+        <div className={estilos.campoFecha}>
         <Campo
           etiqueta="Se cierra el"
           type="datetime-local"
@@ -274,6 +275,7 @@ export function CierreDeLaVacante({
           </p>
         )}
 
+        </div>
         <AreaTexto
           etiqueta="Por qué se fija esta fecha"
           value={motivo}
