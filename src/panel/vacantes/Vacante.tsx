@@ -64,6 +64,7 @@ import type {
 import { rutas } from '@/rutas'
 import { formatearFechaCorta, formatearFechaLarga } from '@/dominio/reloj'
 import tabla from '../ui/Tabla.module.css'
+import { DescargarCv } from './DescargarCv'
 import { EntregablesDePrueba } from './EntregablesDePrueba'
 import { RespuestasDePrueba } from './RespuestasDePrueba'
 import { CierreDeLaVacante, PlazoDeUnaPersona } from './CierreDePrueba'
@@ -293,9 +294,19 @@ export function VacantePanelDetalle() {
     onError: (c) => setFallo(c instanceof Error ? c.message : 'No se pudo publicar.'),
   })
   const [motivoCierre, setMotivoCierre] = useState('')
+  const [mostrarCierre, setMostrarCierre] = useState(false)
+  const botonCierre = useRef<HTMLButtonElement>(null)
+  const cancelarCierre = () => {
+    setMostrarCierre(false)
+    setMotivoCierre('')
+    botonCierre.current?.focus()
+  }
   const cierre = useMutation({
     mutationFn: () => cerrarVacante(vacanteId, motivoCierre.trim()),
-    onSuccess: () => cache.invalidateQueries({ queryKey: ['panel-vacante', vacanteId] }),
+    onSuccess: async () => {
+      cancelarCierre()
+      await cache.invalidateQueries({ queryKey: ['panel-vacante', vacanteId] })
+    },
     onError: (c) => setFallo(c instanceof Error ? c.message : 'No se pudo cerrar.'),
   })
 
@@ -364,8 +375,8 @@ export function VacantePanelDetalle() {
         ← Volver a las vacantes
       </Link>
 
-      <div className={estilos.cabecera}>
-        <div>
+      <header className={estilos.cabecera}>
+        <div className={estilos.identidadVacante}>
           <h1>{v.titulo}</h1>
           <p className={estilos.datosVacante}>
             {v.estado === 'PUBLICADA' && v.publicadaEn
@@ -396,25 +407,60 @@ export function VacantePanelDetalle() {
           </div>
         )}
         {v.estado === 'PUBLICADA' && (
-          <div className={estilos.cierre}>
+          <button
+            ref={botonCierre}
+            className={estilos.accionSecundaria}
+            type="button"
+            aria-expanded={mostrarCierre}
+            aria-controls="cerrar-vacante"
+            disabled={cierre.isPending}
+            onClick={() => mostrarCierre ? cancelarCierre() : setMostrarCierre(true)}
+          >
+            Cerrar vacante
+          </button>
+        )}
+      </header>
+
+      {v.estado === 'PUBLICADA' && mostrarCierre && (
+        <form
+          id="cerrar-vacante"
+          className={estilos.formularioCierre}
+          aria-labelledby="titulo-cerrar-vacante"
+          onSubmit={(e) => {
+            e.preventDefault()
+            if (motivoCierre.trim() && !cierre.isPending) cierre.mutate()
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape' && !cierre.isPending) cancelarCierre()
+          }}
+        >
+          <div>
+            <h2 id="titulo-cerrar-vacante">Cerrar esta vacante</h2>
+            <p className={estilos.datosVacante}>Revisa el motivo antes de confirmar el cierre de {v.titulo}.</p>
+          </div>
+          <label className={estilos.campoMotivo}>
+            <span>Motivo del cierre</span>
             <input
+              autoFocus
               className={estilos.entradaMotivo}
               type="text"
               placeholder="Motivo del cierre"
+              required
               value={motivoCierre}
+              disabled={cierre.isPending}
               onChange={(e) => setMotivoCierre(e.target.value)}
             />
-            <button
-              className={estilos.cerrar}
-              type="button"
-              onClick={() => cierre.mutate()}
-              disabled={cierre.isPending || motivoCierre.trim() === ''}
-            >
-              Cerrar vacante
+          </label>
+          <div className={estilos.accionesCierre}>
+            <button className={estilos.cerrar} type="submit" disabled={cierre.isPending || !motivoCierre.trim()}>
+              {cierre.isPending ? 'Cerrando…' : 'Confirmar cierre'}
+            </button>
+            <button className={estilos.accionSecundaria} type="button" disabled={cierre.isPending} onClick={cancelarCierre}>
+              Cancelar
             </button>
           </div>
-        )}
-      </div>
+        </form>
+      )}
 
       {fallo && (
         <p className={estilos.avisoMalo} role="alert">
@@ -422,11 +468,21 @@ export function VacantePanelDetalle() {
         </p>
       )}
 
-      <ConfiguracionDeLaVacante vacante={v} />
+      {/* Se conserva montada al plegar: editar y consultar no pierde los borradores. */}
+      <details className={estilos.configuracionPlegable} open={v.estado === 'BORRADOR'}>
+        <summary className={estilos.resumenConfiguracion}>
+          <span>Configuración de la vacante</span>
+          <span className={estilos.alcanceConfiguracion}>Evaluaciones, plazos y requisitos</span>
+        </summary>
+        <div className={estilos.cuerpoConfiguracion}>
+          <ConfiguracionDeLaVacante vacante={v} />
+          <Requisitos vacanteId={vacanteId} />
+        </div>
+      </details>
 
       {/* ---------- El embudo ---------- */}
       {embudo.data && Object.keys(embudo.data.porEstado).length > 0 && (
-        <section className={estilos.seccion}>
+        <section className={estilos.resumenProceso}>
           <h2 className={estilos.tituloSeccion}>En qué va la tanda</h2>
           <ul className={estilos.embudo} role="list">
             {Object.entries(embudo.data.porEstado)
@@ -448,11 +504,25 @@ export function VacantePanelDetalle() {
         {/* Una pestana por etapa: la tabla es la misma mesa de decidir, lo que
             cambia es de que etapa es la nota con la que se ordena. */}
         <div className={estilos.pestanas} role="tablist" aria-label="Etapa del ranking">
-          {ETAPAS_PANEL.map((e) => (
+          {ETAPAS_PANEL.map((e, indice) => (
             <button
               key={e.codigo}
               type="button"
               role="tab"
+              id={`etapa-${vacanteId}-${e.codigo}`}
+              aria-controls={`ranking-${vacanteId}`}
+              tabIndex={etapa === e.codigo ? 0 : -1}
+              onKeyDown={(evento) => {
+                const siguiente = evento.key === 'ArrowRight' ? (indice + 1) % ETAPAS_PANEL.length
+                  : evento.key === 'ArrowLeft' ? (indice - 1 + ETAPAS_PANEL.length) % ETAPAS_PANEL.length
+                  : evento.key === 'Home' ? 0
+                  : evento.key === 'End' ? ETAPAS_PANEL.length - 1 : null
+                if (siguiente === null) return
+                evento.preventDefault()
+                const codigo = ETAPAS_PANEL[siguiente]!.codigo
+                setEtapa(codigo)
+                document.getElementById(`etapa-${vacanteId}-${codigo}`)?.focus()
+              }}
               aria-selected={etapa === e.codigo}
               className={etapa === e.codigo ? estilos.pestanaActiva : estilos.pestana}
               onClick={() => setEtapa(e.codigo)}
@@ -462,6 +532,7 @@ export function VacantePanelDetalle() {
           ))}
         </div>
 
+        <div id={`ranking-${vacanteId}`} role="tabpanel" aria-labelledby={`etapa-${vacanteId}-${etapa}`} tabIndex={0}>
         {ranking.isPending && <p className={estilos.cargando}>Calculando el ranking…</p>}
         {ranking.isError && (
           <p className={estilos.avisoMalo} role="alert">
@@ -532,9 +603,9 @@ export function VacantePanelDetalle() {
             }}
           />
         )}
+        </div>
       </section>
 
-      <Requisitos vacanteId={vacanteId} />
     </div>
   )
 }
@@ -969,7 +1040,17 @@ function Ranking({
         columnas— y dice cuántas columnas va a añadir, para que encenderlo no
         sorprenda.
       */}
-      <div className={estilos.controlesDeColumnas}>
+
+      <BarraDeFiltros
+        columnas={
+        <details className={estilos.selectorColumnas}>
+          <summary>
+            Columnas
+            {apagadas.size > 0 && (
+              <span className={estilos.cuantasApagadas}>{apagadas.size} ocultas</span>
+            )}
+          </summary>
+          <div className={estilos.listaColumnas}>
         {criteriosQueSePintan(etapa, filas, true).length > 0 && (
           <p className={estilos.interruptorCriterios}>
             <label>
@@ -986,25 +1067,6 @@ function Ranking({
             </span>
           </p>
         )}
-
-        {/*
-          Qué columnas se ven.
-
-          ⚠️ **La marca de avance y el candidato no salen aquí**: sin la primera
-          no se puede avanzar a nadie, y sin el segundo la fila deja de ser de
-          alguien. Una tabla de cifras sin nombre no se puede leer ni corregir.
-
-          Es un `<details>` y no un menú a mano: se abre con teclado, se cierra
-          con Escape y no hace falta atrapar el foco.
-        */}
-        <details className={estilos.selectorColumnas}>
-          <summary>
-            Columnas
-            {apagadas.size > 0 && (
-              <span className={estilos.cuantasApagadas}>{apagadas.size} ocultas</span>
-            )}
-          </summary>
-          <div className={estilos.listaColumnas}>
             {todasLasColumnas
               .filter((c) => c.ocultable)
               .map((c) => (
@@ -1036,9 +1098,7 @@ function Ranking({
             )}
           </div>
         </details>
-      </div>
-
-      <BarraDeFiltros
+        }
         etapa={etapa}
         filtros={filtros}
         alCambiar={setFiltros}
@@ -1205,7 +1265,18 @@ function Ranking({
                   )}
                   {/* Clavada a la izquierda solo cuando hay algo que rodar. */}
                   <td className={criterios.length > 0 ? estilos.celdaCandidato : undefined}>
-                    <span className={estilos.candidato}>{fila.candidato}</span>
+                    <button
+                      type="button"
+                      className={estilos.abrirCandidato}
+                      aria-expanded={abierta === fila.postulacionId}
+                      aria-controls={abierta === fila.postulacionId ? `ficha-${fila.postulacionId}` : undefined}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setAbierta(abierta === fila.postulacionId ? null : fila.postulacionId)
+                      }}
+                    >
+                      {fila.candidato}
+                    </button>
                     <span className={estilos.correo}>{fila.correo}</span>
                   </td>
                   {/*
@@ -1409,7 +1480,7 @@ function Ranking({
                 </tr>
                 {abierta === fila.postulacionId && (
                   <tr>
-                    <td colSpan={columnas} className={estilos.celdaDetalle}>
+                    <td id={`ficha-${fila.postulacionId}`} colSpan={columnas} className={estilos.celdaDetalle}>
                       <DetalleDelPostulante fila={fila} etapa={etapa} />
                     </td>
                   </tr>
@@ -1535,6 +1606,8 @@ function Ranking({
 
       {/* La mesa de avance: un motivo para la tanda marcada. */}
       <div className={estilos.avance}>
+        <label className={estilos.campoMotivo}>
+          <span>Motivo del avance (obligatorio)</span>
         <input
           className={estilos.entradaMotivo}
           type="text"
@@ -1542,6 +1615,7 @@ function Ranking({
           value={motivo}
           onChange={(e) => setMotivo(e.target.value)}
         />
+        </label>
         <button
           className={estilos.avanzar}
           type="button"
@@ -1603,6 +1677,7 @@ function BarraDeFiltros({
   puedeDescargar,
   descargando,
   alDescargar,
+  columnas,
 }: {
   etapa: EtapaPanel
   filtros: Filtros
@@ -1616,6 +1691,7 @@ function BarraDeFiltros({
   puedeDescargar: boolean
   descargando: boolean
   alDescargar: () => void
+  columnas: ReactNode
 }) {
   const cambiar = <C extends keyof Filtros>(campo: C, valor: Filtros[C]) =>
     alCambiar({ ...filtros, [campo]: valor })
@@ -1780,6 +1856,8 @@ function BarraDeFiltros({
           </div>
         </details>
 
+        {columnas}
+
         {puesto && (
           <button
             type="button"
@@ -1868,7 +1946,8 @@ function DetalleDelPostulante({ fila, etapa }: { fila: FilaRanking; etapa: Etapa
 
   return (
     <div className={estilos.detalle}>
-      <div className={estilos.columnaDetalle}>
+      <div className={estilos.cabeceraPostulante}>
+        <section className={estilos.columnaDetalle}>
         <h3 className={estilos.tituloDetalle}>La ficha</h3>
         {ficha.data && (
           <>
@@ -1896,11 +1975,17 @@ function DetalleDelPostulante({ fila, etapa }: { fila: FilaRanking; etapa: Etapa
               </p>
             )}
             {fila.archivoNombre && (
-              <p className={estilos.dato}>Currículum: {fila.archivoNombre}</p>
+              <p className={estilos.dato}>
+                Currículum: {ficha.data.archivoCvId != null ? (
+                  <DescargarCv archivoId={ficha.data.archivoCvId} nombre={fila.archivoNombre} />
+                ) : fila.archivoNombre}
+              </p>
             )}
           </>
         )}
 
+        </section>
+        <section className={estilos.columnaDetalle}>
         <h3 className={estilos.tituloDetalle}>Cómo llegó hasta aquí</h3>
         {historial.data && (
           <ol className={estilos.historial} role="list">
@@ -1917,6 +2002,7 @@ function DetalleDelPostulante({ fila, etapa }: { fila: FilaRanking; etapa: Etapa
             ))}
           </ol>
         )}
+        </section>
       </div>
 
       <div className={estilos.columnaDetalle}>
@@ -2162,7 +2248,7 @@ function LoQueCalificoLaIA({ fila }: { fila: FilaRanking }) {
       {criteriosDeLaFicha.length > 0 && (
         <>
           <h4 className={estilos.subtitulo}>Criterio a criterio</h4>
-          <ul className={estilos.criterios} role="list">
+          <ul className={`${estilos.criterios} ${estilos.criteriosPerfil}`} role="list">
             {criteriosDeLaFicha.map((n) => {
               const cubre = cuantoCubre(n)
               return (
@@ -2313,7 +2399,7 @@ function TablaDeLaEvaluacion({ desglose }: { desglose: DesgloseEvaluacion }) {
                 <thead>
                   <tr>
                     <th>Pregunta y respuesta</th>
-                    <th className={`${tabla.cifra} ${estilos.celdaNota}`}>Nota</th>
+                    <th className={estilos.celdaNota}>Nota</th>
                     <th>Lo que vio la IA</th>
                   </tr>
                 </thead>
@@ -2911,6 +2997,8 @@ function Requisitos({ vacanteId }: { vacanteId: number }) {
       </ul>
 
       <div className={estilos.altaRequisito}>
+        <label className={estilos.campoMotivo}>
+          <span>Nuevo requisito indispensable</span>
         <input
           className={estilos.entradaMotivo}
           type="text"
@@ -2918,6 +3006,7 @@ function Requisitos({ vacanteId }: { vacanteId: number }) {
           value={descripcion}
           onChange={(e) => setDescripcion(e.target.value)}
         />
+        </label>
         <button
           className={estilos.anadir}
           type="button"
@@ -3207,6 +3296,8 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
       )}
 
       <div className={estilos.configuracion}>
+        <fieldset className={estilos.grupoConfiguracion}>
+          <legend>Evaluación del banco</legend>
         <label className={estilos.ajuste}>
           <span className={estilos.etiquetaAjuste}>La evaluación del banco</span>
           <span className={estilos.interruptor}>
@@ -3288,7 +3379,10 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
           </div>
         )}
 
-        <label className={estilos.ajuste}>
+        </fieldset>
+        <fieldset className={estilos.grupoConfiguracion}>
+          <legend>Prueba técnica</legend>
+        <label className={`${estilos.ajuste} ${estilos.instrumentoTecnico}`}>
           <span className={estilos.etiquetaAjuste}>Qué rendirá en la etapa técnica</span>
           <select
             className={estilos.eleccion}
@@ -3301,9 +3395,9 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
             }
             disabled={instrumento.isPending}
           >
-            <option value="PLANTILLA">Una prueba del puesto, de las que ya están escritas</option>
+            <option value="PLANTILLA">Prueba del puesto existente</option>
             <option value="CUESTIONARIO_TECNICO">
-              El cuestionario técnico que escribe la IA para esta vacante
+              Cuestionario técnico con IA
             </option>
           </select>
           <span className={estilos.ayudaAjuste}>
@@ -3313,11 +3407,7 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
           </span>
         </label>
 
-        <label className={estilos.ajuste}>
-          <span className={estilos.etiquetaAjuste}>Cuánto tiempo tendrá</span>
-          <MinutosDeLaEtapa vacante={vacante} alGuardar={instrumento.mutate}
-                            guardando={instrumento.isPending} />
-        </label>
+
 
         {/* Todo lo que no sea el cuestionario es la prueba del puesto, incluido un campo
             que no llegara: `PLANTILLA` es el valor por defecto del servidor, y esconder
@@ -3370,6 +3460,14 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
         )}
 
         <label className={estilos.ajuste}>
+          <span className={estilos.etiquetaAjuste}>Cuánto tiempo tendrá</span>
+          <MinutosDeLaEtapa vacante={vacante} alGuardar={instrumento.mutate}
+                            guardando={instrumento.isPending} />
+        </label>
+        </fieldset>
+        <fieldset className={estilos.grupoConfiguracion}>
+          <legend>Pesos de la decisión</legend>
+        <label className={estilos.ajuste}>
           <span className={estilos.etiquetaAjuste}>Qué pesos rigen la decisión</span>
           <select
             className={estilos.eleccion}
@@ -3402,6 +3500,7 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
             </span>
           )}
         </label>
+        </fieldset>
       </div>
 
       {/*
@@ -3445,7 +3544,10 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
           se calcula sobre la versión de la plantilla.
         </p>
       ) : (
-        <CierreDeLaVacante vacanteId={vacante.id} alGuardar={refrescar} />
+        <details className={estilos.plazosPlegables}>
+          <summary>Plazos de la prueba</summary>
+          <CierreDeLaVacante vacanteId={vacante.id} alGuardar={refrescar} />
+        </details>
       )}
 
       {fallo && (

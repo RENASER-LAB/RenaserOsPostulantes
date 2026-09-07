@@ -444,13 +444,13 @@ const cuantasEn = (empiezaPor: string) =>
 /**
  * Los nombres de la columna «Candidato», en el orden en el que se pintan.
  *
- * El primer `<span>` y no la celda entera: debajo del nombre va el correo, y
+ * El botón del nombre y no la celda entera: debajo del nombre va el correo, y
  * `textContent` de la celda los pegaría los dos en una cadena. (El grupo de
  * prioridad vivía aquí y ya no: subió a su propia columna, «Veredicto».)
  */
 const elOrdenDeLaTabla = () =>
   Array.from(laTabla().querySelectorAll('tbody tr')).map(
-    (f) => f.querySelector('td:nth-child(3) span')?.textContent ?? '',
+    (f) => f.querySelector('td:nth-child(3) button')?.textContent ?? '',
   )
 
 /** La cabecera pulsable de una columna: el `<th>`, que es quien lleva `aria-sort`. */
@@ -2086,5 +2086,51 @@ describe('los dos párrafos que explican la nota', () => {
     fireEvent.click(screen.getByText('Camila Reyes'))
     await waitFor(() => expect(screen.getByText(/Aún sin nota/)).toBeTruthy())
     expect(screen.queryByText('Lectura de la prueba')).toBeNull()
+  })
+})
+
+
+describe('la ficha de vacante prioriza el seguimiento y admite teclado', () => {
+  it('mantiene la configuración publicada plegada y permite abrirla sin perder la tabla', async () => {
+    await pintar()
+    const resumen = screen.getByText('Configuración de la vacante')
+    const detalles = resumen.closest('details')!
+    expect(detalles.open).toBe(false)
+    fireEvent.click(resumen)
+    expect(detalles.open).toBe(true)
+    expect(screen.getByRole('table')).toBeTruthy()
+    expect(screen.getByLabelText('Nuevo requisito indispensable')).toBeTruthy()
+  })
+
+  it('permite cancelar el cierre con Escape y devuelve el foco al botón', async () => {
+    await pintar()
+    const abrir = screen.getByRole('button', { name: 'Cerrar vacante' })
+    expect(screen.queryByLabelText('Motivo del cierre')).toBeNull()
+    fireEvent.click(abrir)
+    const motivo = screen.getByLabelText('Motivo del cierre')
+    expect((screen.getByRole('button', { name: 'Confirmar cierre' }) as HTMLButtonElement).disabled).toBe(true)
+    fireEvent.change(motivo, { target: { value: 'Proceso terminado' } })
+    expect((screen.getByRole('button', { name: 'Confirmar cierre' }) as HTMLButtonElement).disabled).toBe(false)
+    fireEvent.keyDown(motivo, { key: 'Escape' })
+    expect(screen.queryByLabelText('Motivo del cierre')).toBeNull()
+    expect(document.activeElement).toBe(abrir)
+  })
+
+  it('recorre las etapas con flechas y vincula la etapa activa al panel', async () => {
+    await pintar()
+    const perfil = screen.getByRole('tab', { name: 'Perfil integral' })
+    fireEvent.keyDown(perfil, { key: 'ArrowRight' })
+    const prueba = screen.getByRole('tab', { name: 'Prueba del puesto' })
+    expect(document.activeElement).toBe(prueba)
+    expect(prueba.getAttribute('aria-selected')).toBe('true')
+    expect(perfil.tabIndex).toBe(-1)
+    expect(screen.getByRole('tabpanel', { name: 'Prueba del puesto' }).id).toBe(prueba.getAttribute('aria-controls'))
+    fireEvent.keyDown(prueba, { key: 'Home' })
+    expect(document.activeElement).toBe(perfil)
+    const nombre = await screen.findByRole('button', { name: EN_PRUEBA.candidato })
+    expect(nombre.getAttribute('aria-expanded')).toBe('false')
+    fireEvent.click(nombre)
+    expect(nombre.getAttribute('aria-expanded')).toBe('true')
+    expect(document.getElementById(nombre.getAttribute('aria-controls')!)).toBeTruthy()
   })
 })
