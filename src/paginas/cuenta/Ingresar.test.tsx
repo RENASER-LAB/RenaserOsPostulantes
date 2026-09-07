@@ -12,19 +12,24 @@
 
 import { afterEach, describe, expect, it } from 'vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
 import { ProveedorSesion } from '@/app/Sesion'
 import { Ingresar } from './Ingresar'
 
 afterEach(cleanup)
 
+// `ProveedorSesion` vacía la caché al cerrar sesión, así que va por dentro del
+// `QueryClientProvider` — el mismo orden que `app/App`.
 function montar() {
   return render(
-    <ProveedorSesion>
-      <MemoryRouter initialEntries={['/ingresar']}>
-        <Ingresar />
-      </MemoryRouter>
-    </ProveedorSesion>,
+    <QueryClientProvider client={new QueryClient()}>
+      <ProveedorSesion>
+        <MemoryRouter initialEntries={['/ingresar']}>
+          <Ingresar />
+        </MemoryRouter>
+      </ProveedorSesion>
+    </QueryClientProvider>,
   )
 }
 

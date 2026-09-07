@@ -21,7 +21,13 @@
  */
 
 import { useEffect, useRef, useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type QueryClient,
+  type QueryKey,
+} from '@tanstack/react-query'
 import {
   elegirPortada,
   PORTADAS_DE_LA_CASA,
@@ -36,6 +42,7 @@ import type { PerfilCompleto } from '@/api/tipos'
 import { useSesion } from '@/app/Sesion'
 import { useAviso } from '@/ui/Avisos'
 import { IconoCamara, IconoDeEnlace, IconoLapiz, IconoReloj, IconoUbicacion } from '@/ui/Iconos'
+import { FORMATOS_IMAGEN, revisarImagen } from './archivos'
 import { aniosYMeses } from './textos'
 import estilos from './Cabecera.module.css'
 
@@ -135,10 +142,29 @@ async function portadaConLosColoresDe(url: string): Promise<File> {
   )
 }
 
-/** El tope del backend. Se comprueba aquí para no subir y rebotar. */
-const MAXIMO_IMAGEN = 2 * 1024 * 1024
-
-const FORMATOS_IMAGEN = ['image/jpeg', 'image/png', 'image/webp']
+/**
+ * Sustituir una imagen por otra: la url vieja se suelta cuando ya hay una nueva.
+ *
+ * ⚠️ **Es el único final de una url que no ve `soltarUrlsDeArchivos`.** Al
+ * refrescar, la url vieja se cae del `state.data` sin que la consulta se vaya
+ * de la caché, así que no hay `removed` que la recoja: se suelta aquí, y solo
+ * después de que la nueva esté dentro. Los otros tres finales —el recolector,
+ * quitar la consulta a mano y el `clear()` de cerrar sesión— los cubre la
+ * suscripción de `paginas/perfil/archivos`, enganchada en `app/App`.
+ *
+ * ⚠️ **Y no se revoca al desmontar, que es lo que fallaba.** La url es del dato
+ * que vive en la caché, no del componente que la pinta: soltarla al salir de la
+ * pantalla dejaba la consulta guardada apuntando a una url muerta, y quien
+ * volvía a «Mi perfil» antes de que el recolector pasara veía su foto rota y la
+ * banda gris de portada que esta pantalla no puede enseñar nunca.
+ */
+async function renovarLaUrl(cache: QueryClient, clave: QueryKey) {
+  const vieja = cache.getQueryData<string>(clave)
+  await cache.invalidateQueries({ queryKey: clave })
+  // Solo si de verdad hay otra: si el refresco falló, la vieja sigue pintada.
+  const nueva = cache.getQueryData<string>(clave)
+  if (vieja && vieja !== nueva) URL.revokeObjectURL(vieja)
+}
 
 /**
  * Recorta al centro y devuelve un JPEG.
@@ -407,21 +433,15 @@ function Foto({
   const { caja, disparador } = useMenuFlotante(abierto, onCerrar)
 
   // La imagen se baja como blob porque un `<img src>` no manda el token. La url
-  // se revoca al cambiar o al desmontar: sin eso, cada refresco deja un blob
-  // colgado en memoria — y esta pantalla se refresca sola mientras se lee el CV.
+  // que sale de ahí se suelta al sustituirla (`renovarLaUrl`) o cuando la caché
+  // suelta el dato (`soltarUrlsDeArchivos`), nunca al desmontar: la caché la
+  // sigue enseñando después — ver el comentario de arriba.
   const foto = useQuery({
     queryKey: ['perfil-foto'],
     queryFn: urlDeLaFoto,
     enabled: tieneFoto,
     staleTime: Infinity,
   })
-
-  useEffect(() => {
-    const url = foto.data
-    return () => {
-      if (url) URL.revokeObjectURL(url)
-    }
-  }, [foto.data])
 
   const subida = useMutation({
     mutationFn: async (archivo: File) => {
@@ -431,7 +451,7 @@ function Foto({
     onSuccess: async () => {
       onCerrar()
       await cache.invalidateQueries({ queryKey: ['perfil'] })
-      await cache.invalidateQueries({ queryKey: ['perfil-foto'] })
+      await renovarLaUrl(cache, ['perfil-foto'])
       avisar('Foto actualizada.')
     },
     onError: (causa) =>
@@ -442,8 +462,15 @@ function Foto({
     mutationFn: quitarFoto,
     onSuccess: async () => {
       onCerrar()
+      // Basta con refrescar el perfil: `tieneFoto` pasa a false y la consulta de
+      // la imagen se apaga por su `enabled`. Un `removeQueries` aquí la
+      // recrearía —la pantalla sigue mirándola— y pediría una foto que ya no
+      // existe.
+      //
+      // ⚠️ **Apagada no es recogida.** Un observador apagado sigue contando, así
+      // que la url se queda viva mientras no se salga de «Mi perfil»; el
+      // recolector se la lleva al desmontar, pasado el `gcTime`.
       await cache.invalidateQueries({ queryKey: ['perfil'] })
-      await cache.invalidateQueries({ queryKey: ['perfil-foto'] })
       avisar('Foto quitada.')
     },
     onError: (causa) =>
@@ -452,12 +479,9 @@ function Foto({
 
   function elegir(archivo: File | undefined) {
     if (!archivo) return
-    if (!FORMATOS_IMAGEN.includes(archivo.type)) {
-      avisar('La foto tiene que ser JPG, PNG o WebP.')
-      return
-    }
-    if (archivo.size > MAXIMO_IMAGEN) {
-      avisar('La foto no puede pesar más de 2 MB. Prueba a guardarla más pequeña.')
+    const reparo = revisarImagen(archivo, 'La foto')
+    if (reparo) {
+      avisar(reparo)
       return
     }
     subida.mutate(archivo)
@@ -565,17 +589,16 @@ function Portada({
     staleTime: Infinity,
   })
 
-  useEffect(() => {
-    const url = propia.data
-    return () => {
-      if (url) URL.revokeObjectURL(url)
-    }
-  }, [propia.data])
-
-  async function refrescar(mensaje: string) {
+  /**
+   * @param sigueSiendoSuya si la portada nueva vuelve a ser una imagen propia.
+   *        Solo entonces hay una url que sustituir. Con una de la galería, o sin
+   *        ninguna, el refresco del perfil apaga la consulta por su `enabled` y
+   *        el recolector se lleva la url con ella.
+   */
+  async function refrescar(mensaje: string, sigueSiendoSuya: boolean) {
     onCerrar()
     await cache.invalidateQueries({ queryKey: ['perfil'] })
-    await cache.invalidateQueries({ queryKey: ['perfil-portada'] })
+    if (sigueSiendoSuya) await renovarLaUrl(cache, ['perfil-portada'])
     avisar(mensaje)
   }
 
@@ -602,7 +625,8 @@ function Portada({
       const banda = await recortarAlCentro(accion.archivo, PORTADA.ancho, PORTADA.alto)
       return subirPortada(new File([banda], 'portada.jpg', { type: 'image/jpeg' }))
     },
-    onSuccess: () => refrescar('Portada actualizada.'),
+    onSuccess: (_, accion) =>
+      refrescar('Portada actualizada.', accion.tipo === 'propia' || accion.tipo === 'deLaFoto'),
     onError: (causa) =>
       avisar(causa instanceof Error ? causa.message : 'No pudimos cambiar tu portada.'),
   })
@@ -705,12 +729,9 @@ function Portada({
           const archivo = e.target.files?.[0]
           e.target.value = ''
           if (!archivo) return
-          if (!FORMATOS_IMAGEN.includes(archivo.type)) {
-            avisar('La portada tiene que ser JPG, PNG o WebP.')
-            return
-          }
-          if (archivo.size > MAXIMO_IMAGEN) {
-            avisar('La portada no puede pesar más de 2 MB.')
+          const reparo = revisarImagen(archivo, 'La portada')
+          if (reparo) {
+            avisar(reparo)
             return
           }
           cambio.mutate({ tipo: 'propia', archivo })

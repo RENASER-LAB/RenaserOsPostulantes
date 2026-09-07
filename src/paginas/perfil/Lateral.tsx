@@ -18,12 +18,9 @@ import { descargarCurriculum, quitarCurriculum, subirCurriculum } from '@/api/pe
 import type { PerfilCompleto } from '@/api/tipos'
 import { useAviso } from '@/ui/Avisos'
 import { IconoDescargar, IconoDocumento, IconoPapelera, IconoSubir, IconoVisto } from '@/ui/Iconos'
+import { FORMATOS_CV, revisarCurriculum } from './archivos'
 import { anclaDe } from './Listas'
 import estilos from './Lateral.module.css'
-
-/** Los mismos formatos que acepta postular. Se comprueba aquí para no rebotar. */
-const FORMATOS_CV = ['.pdf', '.doc', '.docx']
-const MAXIMO_CV = 10 * 1024 * 1024
 
 /**
  * En qué punto está una lista: vacía, con datos por revisar, o terminada.
@@ -298,13 +295,9 @@ function TuCurriculum({ perfil }: { perfil: PerfilCompleto }) {
 
   function elegir(archivo: File | undefined) {
     if (!archivo) return
-    const extension = archivo.name.slice(archivo.name.lastIndexOf('.')).toLowerCase()
-    if (!FORMATOS_CV.includes(extension)) {
-      avisar(`«${archivo.name}» no es un PDF ni un Word. Conviértelo a PDF y vuelve a intentarlo.`)
-      return
-    }
-    if (archivo.size > MAXIMO_CV) {
-      avisar('El archivo no puede pesar más de 10 MB.')
+    const reparo = revisarCurriculum(archivo)
+    if (reparo) {
+      avisar(reparo)
       return
     }
     subida.mutate(archivo)

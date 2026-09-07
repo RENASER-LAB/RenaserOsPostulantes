@@ -2,8 +2,9 @@
  * Las cinco listas del perfil.
  *
  * ⚠️ **No son cinco iguales**, y tratarlas como si lo fueran devuelve 404:
- * reordenar solo existe en experiencia y educación; confirmar, en las cuatro que
- * llevan origen; y los enlaces no tienen ni editar ni confirmar.
+ * confirmar existe en las cuatro que llevan origen, y los enlaces no tienen ni
+ * editar ni confirmar. (El backend además reordena experiencia y educación,
+ * pero la pantalla ya no lo usa: la trayectoria se ordena sola por fecha.)
  *
  * ⚠️ **Los enlaces son otra cosa a propósito.** No llevan `origen` porque una
  * dirección no es un dato que un modelo deduzca de un archivo y la persona tenga
@@ -43,8 +44,6 @@ import {
   editarEducacion,
   editarExperiencia,
   editarIdioma,
-  ordenarEducacion,
-  ordenarExperiencia,
   descargarDiploma,
   quitarDiploma,
   subirDiploma,
@@ -61,6 +60,7 @@ import type {
 import { ahora } from "@/dominio/reloj";
 import { useAviso } from "@/ui/Avisos";
 import { AreaTexto, Campo } from "@/ui/campos/Campo";
+import { revisarDiploma } from "./archivos";
 import estilos from "./Perfil.module.css";
 
 // ---------- Piezas compartidas ----------
@@ -485,19 +485,8 @@ export function useEmpleos() {
     onError: alFallar,
   });
 
-  const orden = useMutation({
-    mutationFn: ordenarExperiencia,
-    onSuccess: refrescar,
-    onError: alFallar,
-  });
-
   const ocupado =
-    alta.isPending ||
-    cambio.isPending ||
-    baja.isPending ||
-    confirmacion.isPending ||
-    orden.isPending;
-
+    alta.isPending || cambio.isPending || baja.isPending || confirmacion.isPending;
 
   function enviar(evento: FormEvent) {
     evento.preventDefault();
@@ -698,19 +687,9 @@ export function useEstudios({ niveles }: { niveles: OpcionCatalogo[] }) {
     },
     onError: alFallar,
   });
-  const orden = useMutation({
-    mutationFn: ordenarEducacion,
-    onSuccess: refrescar,
-    onError: alFallar,
-  });
 
   const ocupado =
-    alta.isPending ||
-    cambio.isPending ||
-    baja.isPending ||
-    confirmacion.isPending ||
-    orden.isPending;
-
+    alta.isPending || cambio.isPending || baja.isPending || confirmacion.isPending;
 
   function enviar(evento: FormEvent) {
     evento.preventDefault();
@@ -1440,8 +1419,12 @@ export function ElDiploma({
           const archivo = e.target.files?.[0];
           e.target.value = "";
           if (!archivo) return;
-          if (archivo.size > 10 * 1024 * 1024) {
-            avisar("El archivo no puede pesar más de 10 MB.");
+          // ⚠️ El tope depende de si es un PDF o la foto del papel: diez megas
+          // para el uno, dos para la otra. La pantalla prometía diez para las
+          // dos y el servidor devolvía «más de 2 MB» después de subirla entera.
+          const reparo = revisarDiploma(archivo);
+          if (reparo) {
+            avisar(reparo);
             return;
           }
           subida.mutate(archivo);
