@@ -16,9 +16,16 @@ const DEL_BACKEND = [
 ]
 
 test.describe('Nuevo · ordenar por las cuatro columnas', () => {
+  /*
+    La pantalla abre por «Por revisar», que solo trae a quien espera una
+    decisión. Lo que se mide aquí es otra cosa —los filtros, el orden, el
+    teclado—, así que se abre la tanda entera para tener filas con las que
+    trabajar; es lo que traía el corte de antes, «Con nota», en esta vacante.
+  */
   test.beforeEach(async ({ page }) => {
     await entrarAlPanel(page)
     await irAVacante(page, VACANTES.LLENA)
+    await corte(page, 'Toda la tanda').click()
   })
 
   test('los tres estados de Candidato, con aria-sort coherente', async ({ page }) => {

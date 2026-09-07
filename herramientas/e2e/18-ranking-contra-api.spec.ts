@@ -36,11 +36,21 @@ import { API, corte, entrarAlPanel, idDeVacante, nombresVisibles, pestana, token
  * segunda opinión.
  */
 const ETAPAS = [
-  { nombre: 'Perfil integral', codigo: 'PERFIL_INTEGRAL', prefijos: ['POSTULADA', 'PERFIL_'] },
-  { nombre: 'Prueba del puesto', codigo: 'PRUEBA_PUESTO', prefijos: ['PRUEBA_'] },
-  { nombre: 'Simulación', codigo: 'SIMULACION', prefijos: ['SIMULACION_'] },
-  { nombre: 'Validación', codigo: 'VALIDACION', prefijos: ['VALIDACION_'] },
-  { nombre: 'Decisión', codigo: 'DECISION', prefijos: ['DECISION_'] },
+  { nombre: 'Perfil integral', codigo: 'PERFIL_INTEGRAL', prefijos: ['POSTULADA', 'PERFIL_'],
+    porRevisar: ['PERFIL_POR_CONFIRMAR'],
+    leToca: ['PERFIL_TURNO_CANDIDATO'] },
+  { nombre: 'Prueba del puesto', codigo: 'PRUEBA_PUESTO', prefijos: ['PRUEBA_'],
+    porRevisar: ['PRUEBA_POR_CONFIRMAR'],
+    leToca: ['PRUEBA_TURNO_CANDIDATO'] },
+  { nombre: 'Simulación', codigo: 'SIMULACION', prefijos: ['SIMULACION_'],
+    porRevisar: ['SIMULACION_POR_HABILITAR', 'SIMULACION_POR_CONFIRMAR'],
+    leToca: ['SIMULACION_TURNO_CANDIDATO'] },
+  { nombre: 'Validación', codigo: 'VALIDACION', prefijos: ['VALIDACION_'],
+    porRevisar: ['VALIDACION_POR_HABILITAR', 'VALIDACION_POR_CONFIRMAR'],
+    leToca: ['VALIDACION_TURNO_CANDIDATO'] },
+  { nombre: 'Decisión', codigo: 'DECISION', prefijos: ['DECISION_'],
+    porRevisar: ['DECISION_POR_CONFIRMAR'],
+    leToca: ['DECISION_TURNO_CANDIDATO'] },
 ] as const
 
 interface Fila {
@@ -72,7 +82,7 @@ async function rankingPorApi(vacanteId: number, etapa?: string): Promise<{ estad
 
 // ---------- El panel ----------
 
-/** La cifra que lleva un corte al final de su nombre: «Está aquí ahora 1». */
+/** La cifra que lleva un corte al final de su nombre: «Por revisar 1». */
 const cifraDelCorte = async (page: Page, nombre: string) =>
   Number(((await corte(page, nombre).textContent()) ?? '').match(/(\d+)\s*$/)?.[1])
 
@@ -142,8 +152,8 @@ test.describe('El ranking contra la API · lo pintado es lo que el backend dijo'
     await page.goto(`/admin/vacantes/${contexto.vacanteId}`)
     await expect(page.getByRole('heading', { name: 'El ranking, etapa por etapa' })).toBeVisible({ timeout: 20_000 })
 
-    // Abre por quien ya tiene nota de la etapa, que es con lo que se decide.
-    await expect(corte(page, 'Con nota')).toHaveAttribute('aria-pressed', 'true')
+    // Abre por lo que espera una decisión de la empresa: la bandeja de trabajo.
+    await expect(corte(page, 'Por revisar')).toHaveAttribute('aria-pressed', 'true')
 
     let algunaVacia = false
     for (const etapa of ETAPAS) {
@@ -158,21 +168,39 @@ test.describe('El ranking contra la API · lo pintado es lo que el backend dijo'
       const suyas = (await rankingPorApi(contexto.vacanteId, etapa.codigo)).filas ?? []
       const conNota = suyas.filter((f) => f.notaEtapa !== null)
       const deLaEtapa = todas.filter((f) => etapaDe(f.estado) === etapa.nombre)
+      /*
+        ⚠️ **El corte NO es «con nota»: es el estado.** La nota no se borra al
+        avanzar, así que en el perfil integral «con nota» traía a quien ya
+        estaba rindiendo la prueba —gente sobre la que no hay nada que decidir—.
+      */
+      const porRevisar = todas.filter((f) => (etapa.porRevisar as readonly string[]).includes(f.estado))
+      const leToca = todas.filter((f) => (etapa.leToca as readonly string[]).includes(f.estado))
 
-      await expect(corte(page, 'Con nota'), `${etapa.nombre}: el corte «con nota» no dice ${conNota.length}`).toHaveText(
-        new RegExp(`${conNota.length}\\s*$`),
+      await expect(corte(page, 'Por revisar'), `${etapa.nombre}: el corte «por revisar» no dice ${porRevisar.length}`).toHaveText(
+        new RegExp(`${porRevisar.length}\\s*$`),
       )
-      expect(await cifraDelCorte(page, 'Está aquí ahora'), `${etapa.nombre}: «está aquí ahora» no dice ${deLaEtapa.length}`).toBe(
+      expect(await cifraDelCorte(page, 'Le toca al candidato'), `${etapa.nombre}: «le toca al candidato» no dice ${leToca.length}`).toBe(
+        leToca.length,
+      )
+      /*
+        Los dos primeros cortes son disjuntos —o espera a la empresa, o al
+        candidato— y juntos NO llegan a la etapa entera: quien está siendo
+        calificado por la IA no espera a ninguna persona y no sale en ninguno.
+      */
+      expect(porRevisar.length + leToca.length, `${etapa.nombre}: los dos cortes se solapan o se pasan de la etapa`).toBeLessThanOrEqual(
         deLaEtapa.length,
       )
       expect(await cifraDelCorte(page, 'Toda la tanda'), `${etapa.nombre}: «toda la tanda» no dice ${todas.length}`).toBe(
         todas.length,
       )
 
-      // Se pintan los que tienen nota de ESTA etapa, ni uno más.
+      // Se pintan los que esperan decisión en ESTA etapa, ni uno más.
       const pintados = await nombresVisibles(page)
-      expect(pintados.length, `${etapa.nombre}: la API dice ${conNota.length} con nota y la tabla enseña ${pintados.length}`).toBe(
-        conNota.length,
+      expect(
+        pintados.length,
+        `${etapa.nombre}: la API dice ${porRevisar.length} por revisar y la tabla enseña ${pintados.length}`,
+      ).toBe(
+        porRevisar.length,
       )
 
       /*
@@ -200,11 +228,11 @@ test.describe('El ranking contra la API · lo pintado es lo que el backend dijo'
         )
       }
 
-      if (conNota.length === 0) {
+      if (porRevisar.length === 0) {
         algunaVacia = true
         const dice = (await cuerpoDeLaTabla(page).textContent()) ?? ''
-        expect(dice, `${etapa.nombre}: sin ninguna nota, no dice qué falta ni nombra el escape`).toMatch(
-          /Nadie tiene todavía[\s\S]*Toda la tanda/,
+        expect(dice, `${etapa.nombre}: sin nadie que revisar, no lo dice ni nombra los escapes`).toMatch(
+          /Nadie espera tu decisión[\s\S]*Toda la tanda/,
         )
         expect(dice, `${etapa.nombre}: lo confunde con «todavía no hay postulaciones»`).not.toContain(
           'Todavía no hay postulaciones',
@@ -212,29 +240,29 @@ test.describe('El ranking contra la API · lo pintado es lo que el backend dijo'
       }
     }
     if (!algunaVacia) {
-      test.info().annotations.push({ type: 'aviso', description: 'ninguna etapa quedó sin notas: esa copia no se ejercitó' })
+      test.info().annotations.push({ type: 'aviso', description: 'ninguna etapa quedó sin nadie que revisar: esa copia no se ejercitó' })
     }
   })
 
-  test('«Está aquí ahora» en Decisión enseña a los que están, y quien terminó no se cuela', async ({ page }) => {
+  test('«Le toca al candidato» en Decisión enseña a los suyos, y quien terminó no se cuela', async ({ page }) => {
     test.skip(contexto.todas.length === 0, 'Sin postulaciones no hay nada que contrastar.')
     const todas = contexto.todas
     await entrarAlPanel(page)
     await page.goto(`/admin/vacantes/${contexto.vacanteId}`)
     await pestana(page, 'Decisión').click()
-    await corte(page, 'Está aquí ahora').click()
-    await expect(corte(page, 'Está aquí ahora')).toHaveAttribute('aria-pressed', 'true')
+    await corte(page, 'Le toca al candidato').click()
+    await expect(corte(page, 'Le toca al candidato')).toHaveAttribute('aria-pressed', 'true')
 
-    const enDecision = todas.filter((f) => etapaDe(f.estado) === 'Decisión')
+    const leToca = todas.filter((f) => f.estado === 'DECISION_TURNO_CANDIDATO')
     const terminadas = todas.filter((f) => etapaDe(f.estado) === null)
     await expect
       .poll(async () => (await nombresVisibles(page)).length, {
-        message: `en Decisión debía enseñar a los ${enDecision.length} que están ahí ahora`,
+        message: `en Decisión debía enseñar a los ${leToca.length} que tienen algo pendiente`,
       })
-      .toBe(enDecision.length)
+      .toBe(leToca.length)
     const aqui = await nombresVisibles(page)
     const coladas = terminadas.filter((f) => aqui.includes(f.candidato))
-    expect(coladas.map((f) => f.candidato), 'quien ya terminó se cuela en «está aquí ahora»').toEqual([])
+    expect(coladas.map((f) => f.candidato), 'quien ya terminó se cuela en «le toca al candidato»').toEqual([])
   })
 
   test('el escape a la tanda entera trae a todos, incluidos los que terminaron, y cada guion dice por qué', async ({ page }) => {

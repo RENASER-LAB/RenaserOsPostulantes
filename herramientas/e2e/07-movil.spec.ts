@@ -63,7 +63,7 @@ test.describe('Móvil 375px', () => {
 
   test('los tres cortes siguen pulsables en 375px', async ({ page }) => {
     await irAVacante(page, VACANTES.LLENA)
-    for (const nombre of ['Está aquí ahora', 'Toda la tanda', 'Con nota del perfil']) {
+    for (const nombre of ['Le toca al candidato', 'Toda la tanda', 'Por revisar']) {
       const boton = corte(page, nombre)
       await expect(boton).toBeVisible()
       await boton.click()

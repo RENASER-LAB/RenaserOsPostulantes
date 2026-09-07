@@ -10,9 +10,9 @@ import { test as base } from './ayuda-candidato'
  *
  * Lo que el arnés viejo miraba y YA cubren otros archivos no se repite aquí:
  * que el ranking abra en «Perfil integral» con sus cinco pestañas lo miran
- * `01-regresion-panel` y `04-filtros` (al recargar), y que «Está aquí ahora»
- * no enseñe más filas que «Toda la tanda» lo dejan clavado las cifras exactas
- * de los tres cortes en `01-regresion-panel`.
+ * `01-regresion-panel` y `04-filtros` (al recargar), y que «Le toca al
+ * candidato» no enseñe más filas que «Toda la tanda» lo dejan clavado las
+ * cifras exactas de los tres cortes en `01-regresion-panel`.
  *
  * ⚠️ **Tres de las comprobaciones dependen de datos que la siembra actual no
  * trae** —alguien con nota en prueba, simulación y validación; un periodo de
@@ -80,7 +80,7 @@ async function delPanel<T>(ruta: string): Promise<{ ok: boolean; cuerpo: T | nul
   return { ok: r.ok, cuerpo: r.ok ? ((await r.json()) as T) : null }
 }
 
-/** El número que lleva el botón de un corte: «Está aquí ahora 1» → 1. */
+/** El número que lleva el botón de un corte: «Por revisar 1» → 1. */
 const cifraDelCorte = async (texto: string | null) => Number((texto ?? '').match(/\d+/)?.[0] ?? NaN)
 
 /**
@@ -234,14 +234,14 @@ test.describe('Regresión · el ranking por etapas', () => {
       await expect(page.getByRole('heading', { name: 'Las métricas del periodo' })).toBeVisible()
     })
 
-    test('en Decisión, «Está aquí ahora» enseña exactamente a quien anuncia su contador, y nada más', async ({
+    test('en Decisión, «Le toca al candidato» enseña exactamente a quien anuncia su contador, y nada más', async ({
       page,
     }) => {
       await irAVacante(page, VACANTES.LLENA)
       await pestana(page, 'Decisión').click()
 
       const enLaTanda = await cifraDelCorte(await corte(page, 'Toda la tanda').textContent())
-      const boton = corte(page, 'Está aquí ahora')
+      const boton = corte(page, 'Le toca al candidato')
       const enDecision = await cifraDelCorte(await boton.textContent())
       expect(enDecision).not.toBeNaN()
       expect(enDecision).toBeLessThanOrEqual(enLaTanda)

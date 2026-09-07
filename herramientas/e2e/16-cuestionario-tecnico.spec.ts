@@ -265,18 +265,18 @@ test.describe('El ciclo 2 · la vacante elige el cuestionario y la candidata lo 
     }
 
     await pestana(page, 'Perfil integral').click()
-    await corte(page, 'Está aquí ahora').click()
+    await corte(page, 'Le toca al candidato').click()
     let saltos = 0
     while ((await camila().count()) > 0 && saltos < 5) {
       await avanzarUnPaso('lo del currículum está visto, que rinda la prueba técnica')
       saltos++
-      await corte(page, 'Está aquí ahora').click()
+      await corte(page, 'Le toca al candidato').click()
     }
     test.info().annotations.push({ type: 'saltos', description: `le faltaban ${saltos} para la etapa técnica` })
     expect(saltos, 'No hizo falta avanzarla: llegó sola a la etapa técnica sin que nadie la moviera').toBeGreaterThan(0)
 
     await pestana(page, 'Prueba del puesto').click()
-    await corte(page, 'Está aquí ahora').click()
+    await corte(page, 'Le toca al candidato').click()
     await expect(camila(), 'Tras avanzarla no aparece en la etapa de la prueba').toHaveCount(1)
     recorrido.enLaPrueba = true
   })
@@ -379,7 +379,7 @@ test.describe('El ciclo 2 · la vacante elige el cuestionario y la candidata lo 
     await entrarAlPanel(page)
     await irALaVacante(page, recorrido.vacanteId, recorrido.titulo)
     await pestana(page, 'Prueba del puesto').click()
-    await corte(page, 'Está aquí ahora').click()
+    await corte(page, 'Le toca al candidato').click()
 
     await filasDelRanking(page).filter({ hasText: 'Camila' }).first().click()
     await expect(page.getByText('Lo que escribió en la prueba')).toBeVisible({ timeout: 20_000 })

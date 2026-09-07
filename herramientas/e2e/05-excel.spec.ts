@@ -169,6 +169,8 @@ test.describe('Nuevo · la descarga del Excel', () => {
 
   test('Perfil integral: el archivo llega, pesa y lleva la fecha en el nombre', async ({ page }) => {
     await irAVacante(page, VACANTES.LLENA)
+    // El botón cuenta las filas del corte, y se abre por «Por revisar».
+    await corte(page, 'Toda la tanda').click()
     await expect(botonExcel(page)).toHaveText('Descargar Excel (4)')
 
     const { nombre, ruta, bytes } = await bajar(page)
@@ -230,7 +232,7 @@ test.describe('Nuevo · la descarga del Excel', () => {
     expect(texto).toContain('Filtro aplicado:')
     expect(texto).toContain('Ciudad: Lima — Lima')
     expect(texto).toContain('Perfil integral')
-    expect(texto).toContain('Con nota del perfil')
+    expect(texto).toContain('Por revisar')
   })
 
   test('EL EXCEL RESPETA EL ORDEN de la pantalla', async ({ page }) => {

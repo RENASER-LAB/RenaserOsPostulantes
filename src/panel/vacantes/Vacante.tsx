@@ -266,16 +266,16 @@ export function VacantePanelDetalle() {
     una vacante con treinta postulaciones repetía las treinta cinco veces y
     ninguna de las cinco listas era la mesa de decidir de su etapa.
 
-    **Por defecto, quien ya tiene nota de esta etapa**: es con lo que se decide.
-    «Está aquí ahora» es el otro trabajo —perseguir a quien falta— y fuera del
-    perfil integral casi no se solapan: en la prueba, quien está ahí ahora es
-    quien todavía NO la ha rendido.
+    **Por defecto, «Por revisar»**: lo que espera una decisión tuya, que es la
+    bandeja de trabajo. «Le toca al candidato» es el otro trabajo —perseguir a
+    quien no ha hecho lo suyo— y los dos no se solapan nunca: un estado espera
+    a la empresa o al candidato.
 
     ⚠️ Vive aquí y no dentro de `<Ranking>` porque aquel lleva `key={etapa}`:
     dentro, cambiar de pestaña lo remontaría y volvería al corte por defecto
     justo después de que alguien pidiera otro.
   */
-  const [vista, setVista] = useState<Vista>('con-nota')
+  const [vista, setVista] = useState<Vista>('por-revisar')
   const ranking = useQuery({
     queryKey: ['panel-ranking', vacanteId, etapa],
     queryFn: () => verRanking(vacanteId, etapa),
@@ -970,8 +970,8 @@ function Ranking({
                   cifras.hechasSinNota > 0
                     ? `${cifras.hechasSinNota} ya la hicieron y siguen sin nota`
                     : null,
-                  cifras.esperandoALaPersona > 0
-                    ? `${cifras.esperandoALaPersona} sin hacerla todavía`
+                  cifras.sinHacerla > 0
+                    ? `${cifras.sinHacerla} sin hacerla todavía`
                     : null,
                   cifras.enOtraEtapa > 0 ? `${cifras.enOtraEtapa} en otra etapa` : null,
                 ]
@@ -997,11 +997,13 @@ function Ranking({
         {/*
           Tres cortes del mismo listado, no tres peticiones.
 
-          ⚠️ **Los dos primeros casi no se solapan fuera del perfil**, y por eso
-          hacen falta los dos: quien «está aquí ahora» en la prueba es quien
-          TODAVÍA no la ha rendido —hay que perseguirlo— y quien ya tiene nota
-          pasó de largo —con él se decide—. En la vacante 3 son una fila cada
-          uno, sin una sola persona en común.
+          ⚠️ **Los dos primeros son las dos mitades de «de quién es la
+          pelota»**, y no se solapan: o espera tu decisión, o espera a que el
+          candidato haga algo. El primero abre la pantalla porque es la bandeja
+          de trabajo.
+
+          Sumados no dan la tanda: a quien está calificando la IA no le toca
+          nadie, y sale solo en el tercero. Por eso los dos vacíos mandan ahí.
 
           Cada posición lleva su cifra: sin ellas hay que pulsar las tres para
           saber si alguna tiene algo dentro.
@@ -1010,7 +1012,7 @@ function Ranking({
             Excel, para que la hoja no diga que salió de un corte con otro
             nombre que el que se pulsó. */}
         <div className={estilos.vistas} role="group" aria-label="Qué filas se ven">
-          {(['con-nota', 'aqui-ahora', 'toda'] as const).map((cual) => (
+          {(['por-revisar', 'le-toca', 'toda'] as const).map((cual) => (
             <button
               key={cual}
               className={vista === cual ? estilos.vistaActiva : estilos.vista}
@@ -1018,7 +1020,7 @@ function Ranking({
               aria-pressed={vista === cual}
               onClick={() => alCambiarVista(cual)}
             >
-              {rotuloDeVista(cual, etapa)}
+              {rotuloDeVista(cual)}
               <span className={estilos.cuantasEnLaVista}>{cuantas[cual]}</span>
             </button>
           ))}
@@ -1512,12 +1514,11 @@ function Ranking({
                       : delCorte.length > 0
                         ? `Ninguna de las ${delCorte.length} de este corte pasa los filtros que ` +
                           `hay puestos. Pulsa «Ver a todos» para quitarlos.`
-                        : vista === 'con-nota'
-                          ? `Nadie tiene todavía ${laEtapa.nota.toLowerCase()}: hace falta ` +
-                            `${laEtapa.loQueDejaNota}. Pulsa «Toda la tanda» para las ` +
-                            `${filas.length} de la vacante.`
-                          : `Nadie está en ${laEtapa.nombre} ahora mismo. Pulsa «Toda la ` +
-                            `tanda» para las ${filas.length} de la vacante.`}
+                        : vista === 'por-revisar'
+                          ? `Nadie espera tu decisión en ${laEtapa.nombre} ahora mismo. ` +
+                            `Pulsa «Toda la tanda» para las ${filas.length} de la vacante.`
+                          : `Nadie tiene nada pendiente en ${laEtapa.nombre} ahora mismo. ` +
+                            `Pulsa «Toda la tanda» para las ${filas.length} de la vacante.`}
                   </p>
                 </td>
               </tr>
