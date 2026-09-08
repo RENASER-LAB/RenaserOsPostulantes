@@ -33,6 +33,9 @@ test.describe('Móvil 375px', () => {
 
   test('ordenar y filtrar funcionan igual en el teléfono', async ({ page }) => {
     await irAVacante(page, VACANTES.LLENA)
+    // Lo que se mide aquí es el orden y el filtro, no el corte: hace falta la
+    // tanda entera para tener las cuatro filas con las que trabajar.
+    await corte(page, 'Toda la tanda').click()
     await cabecera(page, 'Pretensión').getByRole('button').click()
     await expect(cabecera(page, 'Pretensión')).toHaveAttribute('aria-sort', 'ascending')
     expect((await nombresVisibles(page)).at(-1)).toBe('Sebastián Cárdenas Rojo')

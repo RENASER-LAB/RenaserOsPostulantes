@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { corte, entrarAlPanel, filasDelRanking, irAVacante, pestana, VACANTES } from './ayuda'
+import { cabecera, corte, entrarAlPanel, filasDelRanking, irAVacante, pestana, VACANTES } from './ayuda'
 import { apiPanel, detail, detalleDe } from './ayuda-configuracion'
 
 /**
@@ -195,16 +195,29 @@ test.describe('La prueba · el panel', () => {
     await irAVacante(page, conRespuestas?.vacante.titulo ?? VACANTES.LLENA)
     const cabeceras = () => page.locator('table thead th').allTextContents()
 
+    /*
+      La etapa vive en el TÍTULO EMERGENTE, no en el rótulo, desde el #27
+      (02/09): la cabecera dice «Nota» a secas porque la pestaña activa ya
+      nombra la etapa justo encima, y el rótulo largo gastaba 167 px. Lo que
+      este test mide sigue siendo lo mismo —que la nota se llama por su etapa—
+      así que se lee de donde ahora está.
+    */
     const enPerfil = await cabeceras()
-    // Por su etapa y no «Nota de etapa».
-    expect(enPerfil, JSON.stringify(enPerfil)).toContain('Nota del perfil')
+    expect(enPerfil, JSON.stringify(enPerfil)).toContain('Nota')
+    await expect(cabecera(page, 'Nota').getByRole('button')).toHaveAttribute(
+      'title',
+      'Ordenar por Nota del perfil',
+    )
     expect(enPerfil).toContain('Adecuación')
     expect(enPerfil).toContain('Potencial')
 
     await pestana(page, 'Prueba del puesto').click()
-    await expect(page.locator('table thead th', { hasText: 'Nota de la prueba' })).toBeVisible({ timeout: 20_000 })
+    await expect(cabecera(page, 'Nota').getByRole('button')).toHaveAttribute(
+      'title',
+      'Ordenar por Nota de la prueba',
+      { timeout: 20_000 },
+    )
     const enPrueba = await cabeceras()
-    expect(enPrueba, JSON.stringify(enPrueba)).toContain('Nota de la prueba')
     // Era lo que hacía leer la tabla como si hablara del CV.
     expect(enPrueba).not.toContain('Adecuación')
     expect(enPrueba).not.toContain('Potencial')
@@ -276,6 +289,23 @@ test.describe('La prueba · el panel', () => {
   test('cuándo cierra la prueba: una cronometrada rechaza la fecha con el porqué del backend, y quitar el cierre no pinta undefined', async ({ page }) => {
     test.skip(!vacanteAbierta, 'no hay ninguna vacante abierta con su prueba elegida')
     await irAVacante(page, vacanteAbierta!.titulo)
+
+    /*
+      El control vive dentro del pliegue «Plazos de la prueba» y nace cerrado: sin
+      abrirlo, su <h3> está en el DOM pero oculto y `toBeVisible` espera en vano.
+
+      ⚠️ Se abre por la propiedad y NO con un clic: la pantalla se sondea sola, el
+      <summary> se mueve entre refrescos y Playwright no llega a considerarlo
+      «estable» — el clic reintenta hasta agotar el tiempo. Lo que este test mide es
+      el formulario de cierre, no el pliegue.
+    */
+    // Son DOS pliegues anidados —«Configuración de la vacante» contiene a «Plazos
+    // de la prueba»— y abrir solo el de dentro deja el contenido oculto igual.
+    await page
+      .locator('details')
+      .evaluateAll((todos) =>
+        todos.forEach((d) => ((d as HTMLDetailsElement).open = true)),
+      )
 
     // El control aparece en una vacante abierta con su prueba elegida.
     await expect(page.getByText('Cuándo cierra la prueba')).toBeVisible({ timeout: 20_000 })
@@ -417,7 +447,11 @@ test.describe('La prueba · el panel', () => {
 
     await irAVacante(page, elegida.titulo)
     await pestana(page, 'Prueba del puesto').click()
-    await expect(page.locator('table thead th', { hasText: 'Nota de la prueba' })).toBeVisible({ timeout: 20_000 })
+    await expect(cabecera(page, 'Nota').getByRole('button')).toHaveAttribute(
+      'title',
+      'Ordenar por Nota de la prueba',
+      { timeout: 20_000 },
+    )
 
     const bloque = page
       .locator('section')

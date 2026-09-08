@@ -57,7 +57,7 @@ test.describe('Teclado sin ratón', () => {
   })
 
   test('el pliegue de filtros abre con teclado desde su resumen', async ({ page }) => {
-    const resumen = page.locator('summary')
+    const resumen = page.locator('summary', { hasText: 'Ciudad, nota y pretensión' })
     await resumen.focus()
     await expect(resumen).toBeFocused()
     await page.keyboard.press('Enter')

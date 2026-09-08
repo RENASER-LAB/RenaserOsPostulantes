@@ -88,7 +88,7 @@ test.describe('Nuevo · filtros del ranking', () => {
     await expect(filasDelRanking(page)).toHaveCount(1)
 
     // Los chips llevan su recuento y salen de las filas, no del catálogo (4 ciudades).
-    await expect(page.locator('fieldset').first().getByRole('button')).toHaveCount(4)
+    await expect(page.getByRole('group', { name: 'Ciudad' }).getByRole('button')).toHaveCount(4)
   })
 
   test('rango de nota: quien no tiene nota queda fuera, y se dice', async ({ page }) => {
@@ -177,12 +177,16 @@ test.describe('Nuevo · filtros del ranking', () => {
   })
 
   test('el vacío SIN filtros sí dice que no hay a quién revisar', async ({ page }) => {
-    await pestana(page, 'Prueba del puesto').click()
-    // Corte «Por revisar»: nadie espera decisión en la prueba.
+    /*
+      Simulación y no la prueba: en la prueba SÍ hay alguien esperando decisión
+      —`PRUEBA_POR_CONFIRMAR`— y el vacío que este test mide no se daba. En
+      simulación nadie entra, que además es el estado normal de esa pestaña.
+    */
+    await pestana(page, 'Simulación').click()
     await corte(page, 'Por revisar').click()
     await expect(filasDelRanking(page)).toHaveCount(0)
     await expect(page.locator('table tbody tr').last()).toContainText(
-      'Nadie espera tu decisión en Prueba del puesto',
+      'Nadie espera tu decisión en Simulación',
     )
   })
 
