@@ -9,16 +9,21 @@
  *      Es literalmente el origen de la queja —«están calificados pero no se ve
  *      su nota»— y usarlo para explicarla seria repetir el fallo.
  *   2. **Contar de lo que se pinta.** El recuento de cada corte sale de las
- *      filas sin filtrar; derivarlo de lo visible haria que «Con nota» dijera
+ *      filas sin filtrar; derivarlo de lo visible haria que cada boton dijera
  *      siempre «12 de 12», la misma trampa del conteo de una sesion frente a la
  *      longitud de su lista de inscritos.
- *   3. **Dar por hecho que los dos primeros cortes se parecen.** No: fuera del
- *      perfil integral son casi disjuntos, y ese es el motivo de que hagan
+ *   3. **Dar por hecho que los dos primeros cortes se parecen.** No: son
+ *      disjuntos —de quien es la pelota—, y ese es el motivo de que hagan
  *      falta los dos.
  */
 
 import { describe, expect, it } from 'vitest'
+import { ESTADOS, momentoDe } from '../../dominio/estados'
 import {
+  ETAPAS_PANEL,
+  esperaALaEmpresa,
+  leTocaAlCandidato,
+  type EtapaPanel,
   alternarOrden,
   ciudadesDelRanking,
   cifrasDeLaEtapa,
@@ -327,41 +332,167 @@ describe('el veredicto, en el ancho de una columna', () => {
 
 describe('los tres cortes', () => {
   /*
-    El caso de verdad, medido en la vacante 3 contra el backend vivo: en la
-    prueba, quien está ahí ahora es quien TODAVÍA no la ha rendido, y quien
-    tiene nota ya pasó de largo. Sin una sola persona en común.
+    La primera fila es el caso que trajo «Por revisar»: sacó 62.7 en el perfil
+    integral y YA está rindiendo la prueba del puesto. Su nota no se borra al
+    avanzar, así que el corte viejo —«con nota», que solo miraba `notaEtapa`—
+    la sacaba en la pestaña del perfil, encima de todo, y no había nada que
+    decidir sobre ella.
   */
   const TANDA = [
-    fila('PRUEBA_TURNO_CANDIDATO', null), // aquí ahora, sin nota
-    fila('SIMULACION_TURNO_CANDIDATO', 75), // con nota de la prueba, ya pasó
-    fila('PERFIL_POR_CONFIRMAR', null), // ni una cosa ni la otra
+    fila('PRUEBA_TURNO_CANDIDATO', 62.7), // con nota del perfil, ya pasó de largo
+    fila('PERFIL_POR_CONFIRMAR', 9.98), // espera la decisión: esto es «por revisar»
+    fila('PERFIL_CALIFICANDO', null), // en la etapa, pero espera al sistema
+    fila('SIMULACION_POR_HABILITAR', 70), // por revisar sin ser «_POR_CONFIRMAR»
     fila('NO_CONTINUA', 40), // terminada, con nota
   ]
 
-  it('«con nota» y «está aquí ahora» no se solapan en la prueba', () => {
-    const conNota = filtrar(TANDA, 'PRUEBA_PUESTO', 'con-nota')
-    const aqui = filtrar(TANDA, 'PRUEBA_PUESTO', 'aqui-ahora')
-    expect(conNota).toHaveLength(2)
-    expect(aqui).toHaveLength(1)
-    expect(conNota.some((f) => aqui.includes(f))).toBe(false)
+  it('«por revisar» deja fuera a quien tiene nota pero ya avanzó', () => {
+    expect(filtrar(TANDA, 'PERFIL_INTEGRAL', 'por-revisar').map((f) => f.estado)).toEqual([
+      'PERFIL_POR_CONFIRMAR',
+    ])
+  })
+
+  /*
+    El segundo corte es la otra mitad de «de quién es la pelota»: quien tiene
+    algo que hacer. Perseguirlo es otro trabajo, y no se mezcla con decidir.
+  */
+  it('«le toca al candidato» trae a quien tiene algo pendiente', () => {
+    expect(filtrar(TANDA, 'PRUEBA_PUESTO', 'le-toca').map((f) => f.estado)).toEqual([
+      'PRUEBA_TURNO_CANDIDATO',
+    ])
+  })
+
+  /*
+    ⚠️ **Quien espera a la IA no cae en ninguno de los dos.** No le toca a
+    nadie: ni hay decisión que tomar ni nada que reclamarle. Solo está en
+    «toda la tanda», y por eso es el escape que nombran los dos vacíos.
+  */
+  it('quien está calificándose no sale en ninguno de los dos primeros', () => {
+    const enLaIa = (f: FilaRanking) => f.estado === 'PERFIL_CALIFICANDO'
+    expect(filtrar(TANDA, 'PERFIL_INTEGRAL', 'por-revisar').some(enLaIa)).toBe(false)
+    expect(filtrar(TANDA, 'PERFIL_INTEGRAL', 'le-toca').some(enLaIa)).toBe(false)
+    expect(filtrar(TANDA, 'PERFIL_INTEGRAL', 'toda').some(enLaIa)).toBe(true)
+  })
+
+  it('«por revisar» no es solo «_POR_CONFIRMAR»: en Simulación se habilita', () => {
+    expect(filtrar(TANDA, 'SIMULACION', 'por-revisar').map((f) => f.estado)).toEqual([
+      'SIMULACION_POR_HABILITAR',
+    ])
   })
 
   it('«toda la tanda» no filtra nada, ni a quien terminó', () => {
-    expect(filtrar(TANDA, 'PRUEBA_PUESTO', 'toda')).toHaveLength(4)
+    expect(filtrar(TANDA, 'PERFIL_INTEGRAL', 'toda')).toHaveLength(5)
+  })
+
+  /*
+    La propiedad que gobierna los dos primeros cortes: son disjuntos. Un estado
+    espera a la empresa o al candidato, nunca a los dos, así que una fila no
+    puede salir en los dos botones —y las dos cifras nunca cuentan a nadie dos
+    veces—.
+  */
+  it('los dos primeros cortes no comparten ni una fila, en las cinco pestañas', () => {
+    for (const { codigo } of ETAPAS_PANEL) {
+      const porRevisar = filtrar(TANDA, codigo, 'por-revisar')
+      const leToca = filtrar(TANDA, codigo, 'le-toca')
+      expect(porRevisar.some((f) => leToca.includes(f))).toBe(false)
+      expect(porRevisar.length + leToca.length).toBeLessThanOrEqual(TANDA.length)
+    }
   })
 
   it('los recuentos salen de las filas, no de lo que se ve', () => {
-    expect(recuentos(TANDA, 'PRUEBA_PUESTO')).toEqual({
-      'con-nota': 2,
-      'aqui-ahora': 1,
-      toda: 4,
+    expect(recuentos(TANDA, 'PERFIL_INTEGRAL')).toEqual({
+      'por-revisar': 1,
+      // Ni el que se está calificando ni el que ya avanzó: en el perfil no le
+      // toca hacer nada a nadie.
+      'le-toca': 0,
+      toda: 5,
     })
   })
 
   it('el mismo listado da recuentos distintos según la pestaña', () => {
-    expect(recuentos(TANDA, 'PERFIL_INTEGRAL')['aqui-ahora']).toBe(1)
-    expect(recuentos(TANDA, 'SIMULACION')['aqui-ahora']).toBe(1)
-    expect(recuentos(TANDA, 'VALIDACION')['aqui-ahora']).toBe(0)
+    expect(recuentos(TANDA, 'PRUEBA_PUESTO')['por-revisar']).toBe(0)
+    expect(recuentos(TANDA, 'PRUEBA_PUESTO')['le-toca']).toBe(1) // el que está rindiendo
+    expect(recuentos(TANDA, 'SIMULACION')['por-revisar']).toBe(1)
+    expect(recuentos(TANDA, 'DECISION')['por-revisar']).toBe(0)
+  })
+})
+
+/*
+  Los dos primeros cortes salen de `espera_a`, la columna que el backend tiene
+  en `estado_postulacion` y que el ranking NO manda: `FilaRanking` solo trae el
+  código del estado y su nombre. Por eso `ETAPAS_PANEL` lleva las listas a mano,
+  y por eso hace falta esto: que no se desvíen de lo que dice el catálogo.
+
+  El oráculo es `src/dominio/estados.ts`, que es la copia que el portal ya tiene
+  de los mismos 18 estados con su `esperaA`. Sus nombres son los del candidato
+  —EQUIPO y RESPONSABLE donde la base dice TALENTO y AREA— pero los códigos son
+  los mismos.
+
+  ⚠️ **Esto pilla que las dos copias del frontend se desvíen, NO que el backend
+  añada un estado nuevo.** Un estado que aparezca en una migración y que nadie
+  copie aquí no lo ve nadie: se caería de los dos cortes en silencio. La fuente
+  de verdad es `V9__semillas.sql` en el repositorio del backend.
+*/
+describe('los cortes cuadran con el catálogo de estados', () => {
+  /** De la etapa del portal a la pestaña del panel. */
+  const LA_PESTANA: Record<string, EtapaPanel> = {
+    PERFIL: 'PERFIL_INTEGRAL',
+    PRUEBA: 'PRUEBA_PUESTO',
+    SIMULACION: 'SIMULACION',
+    VALIDACION: 'VALIDACION',
+    DECISION: 'DECISION',
+  }
+
+  it('a quien espera a la empresa lo trae «por revisar», y a nadie más', () => {
+    for (const estado of ESTADOS) {
+      const { etapa, esperaA } = momentoDe(estado)
+      if (etapa === null) continue // los tres finales no viven en ninguna etapa
+      const pestana = LA_PESTANA[etapa]!
+      const deLaEmpresa = esperaA === 'EQUIPO' || esperaA === 'RESPONSABLE'
+      expect(
+        esperaALaEmpresa(estado, pestana),
+        `${estado} (espera a ${esperaA}) ${deLaEmpresa ? 'debería' : 'no debería'} estar en «por revisar» de ${pestana}`,
+      ).toBe(deLaEmpresa)
+    }
+  })
+
+  it('a quien espera al candidato lo trae «le toca», y a nadie más', () => {
+    for (const estado of ESTADOS) {
+      const { etapa, esperaA } = momentoDe(estado)
+      if (etapa === null) continue
+      const pestana = LA_PESTANA[etapa]!
+      expect(
+        leTocaAlCandidato(estado, pestana),
+        `${estado} (espera a ${esperaA}) ${esperaA === 'CANDIDATO' ? 'debería' : 'no debería'} estar en «le toca» de ${pestana}`,
+      ).toBe(esperaA === 'CANDIDATO')
+    }
+  })
+
+  /*
+    Lo que la pantalla promete con dos botones que se leen como una pregunta
+    sola: una fila cae en uno, en el otro o en ninguno. Nunca en los dos.
+  */
+  it('ningún estado está en las dos listas de una misma etapa', () => {
+    for (const etapa of ETAPAS_PANEL) {
+      const repetidos = etapa.porRevisar.filter((e) =>
+        (etapa.leToca as readonly string[]).includes(e),
+      )
+      expect(repetidos, `${etapa.codigo} clasifica dos veces: ${repetidos.join(', ')}`).toEqual([])
+    }
+  })
+
+  /*
+    Los que no son de nadie, escritos con nombre y apellido: es la consecuencia
+    que se aceptó al elegir dos botones y no cuatro. Si mañana alguien quiere
+    que POSTULADA salga en algún corte, este caso es el que hay que cambiar —y
+    no el filtro a escondidas—.
+  */
+  it('quien espera al sistema no sale en ninguno de los dos', () => {
+    for (const estado of ['POSTULADA', 'PERFIL_CALIFICANDO', 'PRUEBA_CALIFICANDO']) {
+      const pestana = LA_PESTANA[momentoDe(estado).etapa!]!
+      expect(esperaALaEmpresa(estado, pestana), `${estado} en «por revisar»`).toBe(false)
+      expect(leTocaAlCandidato(estado, pestana), `${estado} en «le toca»`).toBe(false)
+    }
   })
 })
 
@@ -378,7 +509,7 @@ describe('las cifras de la etapa', () => {
     expect(cifras).toEqual({
       conNota: 1,
       sinNota: 2,
-      esperandoALaPersona: 1,
+      sinHacerla: 1,
       hechasSinNota: 1,
       enOtraEtapa: 0,
     })
@@ -401,7 +532,7 @@ describe('las cifras de la etapa', () => {
       'PRUEBA_PUESTO',
     )
     expect(cifras.hechasSinNota).toBe(2)
-    expect(cifras.esperandoALaPersona).toBe(1)
+    expect(cifras.sinHacerla).toBe(1)
   })
 
   it('las tres categorías suman siempre las que no tienen nota', () => {
@@ -410,12 +541,43 @@ describe('las cifras de la etapa', () => {
       fila('PRUEBA_CALIFICANDO', null),
       fila('PRUEBA_POR_CONFIRMAR', null),
       fila('PERFIL_TURNO_CANDIDATO', null),
+      fila('POSTULADA', null),
       fila('NO_CONTINUA', null),
       fila('SIMULACION_TURNO_CANDIDATO', 75),
     ]
     const c = cifrasDeLaEtapa(tanda, 'PRUEBA_PUESTO')
-    expect(c.esperandoALaPersona + c.hechasSinNota + c.enOtraEtapa).toBe(c.sinNota)
+    // Y también en la pestaña donde POSTULADA sí es de la etapa.
+    const cp = cifrasDeLaEtapa(tanda, 'PERFIL_INTEGRAL')
+    expect(cp.sinHacerla + cp.hechasSinNota + cp.enOtraEtapa).toBe(cp.sinNota)
+    expect(c.sinHacerla + c.hechasSinNota + c.enOtraEtapa).toBe(c.sinNota)
     expect(c.conNota + c.sinNota).toBe(tanda.length)
+  })
+
+  /*
+    ⚠️ **Quien acaba de postular NO ha hecho nada.** `POSTULADA` es de la etapa
+    del perfil por prefijo y no lleva el sufijo `_TURNO_CANDIDATO`, así que caía
+    por descarte en «ya la hicieron»: una vacante recién abierta anunciaba que
+    varias habían respondido sin que nadie hubiera contestado una pregunta.
+
+    Espera al SISTEMA —comprobar los requisitos—, no a la persona, pero para
+    esta cifra eso da igual: lo que agrupa es si está hecha o no.
+  */
+  it('quien acaba de postular cuenta como «sin hacerla», no como hecha', () => {
+    const cifras = cifrasDeLaEtapa(
+      [fila('POSTULADA', null), fila('PERFIL_CALIFICANDO', null)],
+      'PERFIL_INTEGRAL',
+    )
+    expect(cifras.sinHacerla).toBe(1)
+    // El que se está calificando SÍ la hizo: esa parte no cambia.
+    expect(cifras.hechasSinNota).toBe(1)
+    expect(cifras.enOtraEtapa).toBe(0)
+  })
+
+  it('en las otras pestañas, quien acaba de postular está «en otra etapa»', () => {
+    const cifras = cifrasDeLaEtapa([fila('POSTULADA', null)], 'PRUEBA_PUESTO')
+    expect(cifras.enOtraEtapa).toBe(1)
+    expect(cifras.sinHacerla).toBe(0)
+    expect(cifras.hechasSinNota).toBe(0)
   })
 
   it('quien no está en la etapa no cuenta como espera de nadie', () => {
@@ -423,7 +585,7 @@ describe('las cifras de la etapa', () => {
     // mandaría al equipo a buscar una prueba que nadie va a rendir.
     const cifras = cifrasDeLaEtapa([fila('SIMULACION_TURNO_CANDIDATO', null)], 'PRUEBA_PUESTO')
     expect(cifras.sinNota).toBe(1)
-    expect(cifras.esperandoALaPersona).toBe(0)
+    expect(cifras.sinHacerla).toBe(0)
     expect(cifras.hechasSinNota).toBe(0)
     expect(cifras.enOtraEtapa).toBe(1)
   })
@@ -1680,14 +1842,14 @@ describe('de qué recorte salió la hoja', () => {
   const CIUDADES = [{ codigo: '1501', nombre: 'Lima — Lima', cuantas: 3 }]
 
   /*
-    ⚠️ **El corte de la botonera es lo que MÁS filas quita.** «Con nota del
-    perfil» esconde a media tanda; una descripción que solo dijera «Ciudad: Lima»
+    ⚠️ **El corte de la botonera es lo que MÁS filas quita.** «Por revisar»
+    esconde a casi toda la tanda; una descripción que solo dijera «Ciudad: Lima»
     haría leer la hoja como si trajera a todos los de Lima.
   */
   it('nombra la etapa y el corte, siempre', () => {
-    const dicho = describirFiltro('PERFIL_INTEGRAL', 'con-nota', SIN_FILTROS, null, [])
+    const dicho = describirFiltro('PERFIL_INTEGRAL', 'por-revisar', SIN_FILTROS, null, [])
     expect(dicho).toContain('Perfil integral')
-    expect(dicho).toContain('Con nota del perfil')
+    expect(dicho).toContain('Por revisar')
   })
 
   it('dice el orden, porque el backend escribe las filas como se las manden', () => {

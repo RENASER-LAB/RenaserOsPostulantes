@@ -1,6 +1,6 @@
 # De la solicitud a la decisión: el proceso entero
 
-Última actualización: 2026-09-04
+Última actualización: 2026-09-07
 
 **Los pasos 1 a 5 están corridos** contra el backend local con
 `herramientas/e2e/14-vacante.spec.ts`, y **la mitad del paso 0 que escribe una prueba**,
@@ -355,12 +355,41 @@ El ranking **es la mesa donde se decide**, no un informe que se mira. Tiene
 **cinco pestañas** —las cuatro etapas que puntúan y Decisión— y cada fila trae
 la nota de la etapa elegida, adecuación, potencial, alertas y riesgos críticos.
 
-A quién se mira lo eligen **tres cortes** con su cifra al lado: «Con nota del
-perfil» —el rótulo lleva el nombre de la nota de cada etapa—, «Está aquí ahora»,
-que deja la foto del presente, y «Toda la tanda». Fuera del perfil integral los
-dos primeros casi no se solapan: quien está aquí ahora es quien **todavía no ha
-rendido** —hay que perseguirlo— y quien tiene nota **ya pasó de largo** —con él
-se decide—.
+A quién se mira lo eligen **tres cortes** con su cifra al lado, y desde el
+07/09/2026 los tres contestan **una sola pregunta: de quién es la pelota**.
+
+- **«Por revisar»**, que es con lo que abre la pantalla. Trae a quien espera una
+  decisión de la empresa: el candidato ya hizo lo suyo y falta que alguien de
+  dentro —el equipo de Talento, o el responsable del área— lo mire y lo mueva. Es
+  la bandeja de trabajo: lo que se puede cerrar hoy.
+- **«Le toca al candidato»**. Tiene la evaluación o la prueba pendiente, y hasta
+  que no la haga no hay nada que decidir. Es el otro trabajo, el de perseguir.
+- **«Toda la tanda»**, sin filtrar y con los que ya terminaron dentro.
+
+Los dos primeros **son disjuntos**: un estado espera a la empresa o al candidato,
+nunca a los dos, así que nadie sale en los dos botones.
+
+⚠️ **Sumados NO dan la tanda entera, y se aceptó a propósito.** Quien está siendo
+calificado por la IA y quien acaba de postular no esperan a ninguna persona:
+esperan al sistema. No salen en ninguno de los dos primeros y se les encuentra en
+«Toda la tanda», que por eso es el escape que nombran los dos vacíos. La
+alternativa era un cuarto botón para un grupo sobre el que nadie puede hacer nada.
+
+⚠️ **Hasta el 07/09 el corte por defecto era «Con nota de esta etapa», y filtraba
+por la nota sin mirar el estado.** Como la nota no se borra al avanzar, en la
+pestaña de Perfil integral salían los que ya estaban rindiendo la prueba del
+puesto: gente calificada, con su nota puesta, y sobre la que no había ninguna
+decisión que tomar. La lista que se abre para decidir traía sobre todo a quien ya
+estaba decidido, y ese fue el motivo del cambio. Quien quiera ver a todo el que
+sacó nota alguna vez no ha perdido nada: está en «Toda la tanda» ordenando por la
+columna Nota, o con el filtro de nota mínima de la barra.
+
+Encima de la tabla, una línea reparte a los que **todavía no tienen nota** en
+tres: los que ya la hicieron y esperan la calificación, los que no la han hecho
+todavía y los que están parados en otra etapa. Hasta el 07/09/2026 quien acababa
+de postular caía en el primer grupo —se anunciaba que «ya la hicieron» sin que
+nadie hubiera contestado una sola pregunta—; ahora cuenta donde le corresponde,
+entre los que no la han hecho.
 
 Al abrir una fila, la ficha es de la etapa: en Perfil integral (y en Decisión)
 salen **las dos tablas** —el CV criterio a criterio y la evaluación del banco

@@ -133,7 +133,9 @@ const fila = (
 })
 
 const EN_PERFIL = fila(91, 'Rodrigo Ayala', 'PERFIL_POR_CONFIRMAR', 84)
-const RECIEN_POSTULADA = fila(92, 'Fátima Quispe', 'POSTULADA', null)
+/* La otra mitad de «de quién es la pelota»: tiene la evaluación pendiente y
+   hasta que no la entregue no hay nada que decidir sobre ella. */
+const LE_TOCA = fila(92, 'Fátima Quispe', 'PERFIL_TURNO_CANDIDATO', null)
 /*
  * El caso que provocó todo esto: el currículum calificado —tiene nota de
  * perfil— y ninguna nota de la prueba, que es donde está parada. En la pestaña
@@ -142,7 +144,7 @@ const RECIEN_POSTULADA = fila(92, 'Fátima Quispe', 'POSTULADA', null)
 const EN_PRUEBA = fila(93, 'Camila Reyes', 'PRUEBA_TURNO_CANDIDATO', 75)
 const TERMINADA = fila(94, 'Lucía Ferrer', 'NO_CONTINUA', 52)
 
-const TANDA = [EN_PERFIL, EN_PRUEBA, RECIEN_POSTULADA, TERMINADA]
+const TANDA = [EN_PERFIL, EN_PRUEBA, LE_TOCA, TERMINADA]
 
 /**
  * Qué nota tiene cada quien en cada etapa, como en la base de verdad: las
@@ -429,8 +431,8 @@ async function pintar(filas: FilaRanking[] = TANDA, puedeVerPretension = true) {
 const laTabla = () => screen.getAllByRole('table')[0]!
 const irA = (etapa: string) => fireEvent.click(screen.getByRole('tab', { name: etapa }))
 
-/* Los tres cortes. El de «con nota» lleva el nombre de la etapa dentro, asi que
-   se busca por lo que empieza, no por el texto entero. */
+/* Los tres cortes. Cada boton lleva su cifra pegada al rotulo, asi que se busca
+   por lo que empieza y no por el texto entero. */
 const losCortes = () => screen.getByRole('group', { name: 'Qué filas se ven' })
 const elCorte = (empiezaPor: string) =>
   within(losCortes())
@@ -486,50 +488,75 @@ beforeEach(() => {
 afterEach(() => cleanup())
 
 describe('el ranking filtra por la etapa de su pestaña', () => {
-  it('abre por quien ya tiene nota de esa etapa, que es con lo que se decide', async () => {
+  /*
+   * ⚠️ **Camila es el caso que trajo este corte.** Tiene nota del perfil —75— y
+   * ya está rindiendo la prueba del puesto: sobre ella no hay nada que decidir
+   * aquí, y el corte viejo la sacaba en esta misma pestaña por tener nota.
+   */
+  it('abre por quien espera una decisión, no por quien tiene nota', async () => {
     await pintar()
     const tabla = within(laTabla())
-    expect(elCorte('Con nota del perfil')).toHaveProperty('ariaPressed', 'true')
-    // Los tres con nota del perfil; Fátima acaba de postular y no tiene.
-    expect(tabla.queryByText('Rodrigo Ayala')).toBeTruthy()
-    expect(tabla.queryByText('Camila Reyes')).toBeTruthy()
-    expect(tabla.queryByText('Fátima Quispe')).toBeNull()
+    expect(elCorte('Por revisar')).toHaveProperty('ariaPressed', 'true')
+    expect(tabla.queryByText('Rodrigo Ayala')).toBeTruthy() // PERFIL_POR_CONFIRMAR
+    expect(tabla.queryByText('Camila Reyes')).toBeNull() // con nota, pero ya en la prueba
+    expect(tabla.queryByText('Fátima Quispe')).toBeNull() // en la etapa, pero le toca a ella
   })
 
-  it('«está aquí ahora» sigue enseñando a quien está parado en la etapa', async () => {
+  it('«le toca al candidato» enseña a quien tiene algo pendiente, y solo a ese', async () => {
     await pintar()
-    verCorte('Está aquí ahora')
+    verCorte('Le toca al candidato')
     await waitFor(() => expect(within(laTabla()).queryByText('Fátima Quispe')).toBeTruthy())
     const tabla = within(laTabla())
-    expect(tabla.queryByText('Rodrigo Ayala')).toBeTruthy() // POSTULADA es perfil integral
+    // Rodrigo ya hizo lo suyo: espera decisión, y eso es el OTRO corte.
+    expect(tabla.queryByText('Rodrigo Ayala')).toBeNull()
     expect(tabla.queryByText('Camila Reyes')).toBeNull()
   })
 
   /*
-   * El motivo de que hagan falta los dos cortes, medido contra el backend
-   * vivo: en la prueba, quien está ahí ahora es quien TODAVÍA no la ha
-   * rendido, y quien tiene nota ya pasó de largo.
+   * El motivo de que hagan falta los dos: son las dos mitades de «de quién es
+   * la pelota». «Por revisar» se vacía en cuanto decides; el otro no se mueve
+   * hasta que el candidato haga lo suyo, y perseguirlo es otro trabajo.
    */
-  it('los dos primeros cortes eligen gente distinta fuera del perfil', async () => {
+  it('los dos primeros cortes reparten a la gente, no la repiten', async () => {
     await pintar()
-    // En el perfil casi coinciden: los dos hablan de lo mismo.
-    expect(cuantasEn('Con nota del perfil')).toBe(3)
-    expect(cuantasEn('Está aquí ahora')).toBe(2)
+    expect(cuantasEn('Por revisar')).toBe(1) // Rodrigo, «por confirmar»
+    expect(cuantasEn('Le toca al candidato')).toBe(1) // Fátima, con su evaluación
 
     irA('Prueba del puesto')
-    await waitFor(() => expect(elCorte('Con nota de la prueba')).toBeTruthy())
-    // En la prueba se separan del todo: Camila está ahí y no tiene nota, y
-    // nadie la tiene. Un solo control no puede servir para los dos trabajos.
-    expect(cuantasEn('Con nota de la prueba')).toBe(0)
-    expect(cuantasEn('Está aquí ahora')).toBe(1)
-    verCorte('Está aquí ahora')
+    await waitFor(() => expect(screen.getByText(/con nota de la prueba/)).toBeTruthy())
+    // Camila está rindiendo: nadie espera decisión, pero hay a quién perseguir.
+    expect(cuantasEn('Por revisar')).toBe(0)
+    expect(cuantasEn('Le toca al candidato')).toBe(1)
+    verCorte('Le toca al candidato')
     await waitFor(() => expect(within(laTabla()).queryByText('Camila Reyes')).toBeTruthy())
     expect(within(laTabla()).queryByText('Rodrigo Ayala')).toBeNull()
   })
 
+  /*
+    ⚠️ **Una vacante recién abierta abre con los dos primeros cortes a cero**, y
+    eso es la consecuencia aceptada de tener dos botones y no cuatro: quien
+    acaba de postular espera al SISTEMA —que comprueba los requisitos—, así que
+    ni hay decisión que tomar ni hay nada que reclamarle.
+
+    Se pincha aquí para que sea una decisión y no un accidente: si un día se
+    quiere que POSTULADA salga en algún corte, este caso se pone en rojo y se
+    cambia a la vista, en vez de descubrirlo con una tanda de treinta que
+    parece vacía.
+  */
+  it('quien acaba de postular no sale en ninguno de los dos primeros cortes', async () => {
+    await pintar([fila(96, 'Recién Llegada', 'POSTULADA', null)])
+    expect(cuantasEn('Por revisar')).toBe(0)
+    expect(cuantasEn('Le toca al candidato')).toBe(0)
+    expect(cuantasEn('Toda la tanda')).toBe(1)
+    // Y el vacío manda al único sitio donde está.
+    expect(within(laTabla()).getByText(/Toda la tanda/)).toBeTruthy()
+    verCorte('Toda la tanda')
+    await waitFor(() => expect(within(laTabla()).queryByText('Recién Llegada')).toBeTruthy())
+  })
+
   it('cambia de gente al cambiar de pestaña', async () => {
     await pintar()
-    verCorte('Está aquí ahora')
+    verCorte('Le toca al candidato')
     await waitFor(() => expect(within(laTabla()).queryByText('Fátima Quispe')).toBeTruthy())
     irA('Prueba del puesto')
     await waitFor(() => expect(within(laTabla()).queryByText('Camila Reyes')).toBeTruthy())
@@ -538,13 +565,13 @@ describe('el ranking filtra por la etapa de su pestaña', () => {
 
   it('cada corte lleva su cifra, contada de las filas y no de lo que se pinta', async () => {
     await pintar()
-    expect(cuantasEn('Con nota del perfil')).toBe(3)
-    expect(cuantasEn('Está aquí ahora')).toBe(2)
+    expect(cuantasEn('Por revisar')).toBe(1)
+    expect(cuantasEn('Le toca al candidato')).toBe(1)
     expect(cuantasEn('Toda la tanda')).toBe(4)
     // Con el corte puesto, la cifra de los otros dos no se mueve: si saliera de
-    // lo visible, «Con nota» diría siempre lo mismo que la tabla.
+    // lo visible, «Por revisar» diría siempre lo mismo que la tabla.
     verCorte('Toda la tanda')
-    await waitFor(() => expect(cuantasEn('Con nota del perfil')).toBe(3))
+    await waitFor(() => expect(cuantasEn('Por revisar')).toBe(1))
   })
 
   /*
@@ -588,9 +615,9 @@ describe('el ranking filtra por la etapa de su pestaña', () => {
     )
   })
 
-  it('«está aquí ahora» deja fuera de las cinco pestañas a quien ya terminó', async () => {
+  it('«le toca al candidato» deja fuera de las cinco pestañas a quien ya terminó', async () => {
     await pintar()
-    verCorte('Está aquí ahora')
+    verCorte('Le toca al candidato')
     for (const etapa of [
       'Perfil integral',
       'Prueba del puesto',
@@ -608,7 +635,7 @@ describe('el ranking filtra por la etapa de su pestaña', () => {
 describe('el escape a la tanda entera', () => {
   it('trae de vuelta a todos, incluida la terminada', async () => {
     await pintar()
-    verCorte('Está aquí ahora')
+    verCorte('Le toca al candidato')
     await waitFor(() => expect(within(laTabla()).queryByText('Lucía Ferrer')).toBeNull())
     verCorte('Toda la tanda')
     await waitFor(() => expect(within(laTabla()).queryByText('Lucía Ferrer')).toBeTruthy())
@@ -631,29 +658,32 @@ describe('el escape a la tanda entera', () => {
 })
 
 describe('los tres vacíos no se confunden', () => {
-  it('sin nadie en la etapa nombra el escape y no dice que no haya postulaciones', async () => {
+  it('sin nadie a quien perseguir nombra el escape y no dice que no haya postulaciones', async () => {
     await pintar()
-    verCorte('Está aquí ahora')
+    verCorte('Le toca al candidato')
     irA('Validación')
-    await waitFor(() => expect(screen.getByText(/Nadie está en Validación/)).toBeTruthy())
+    await waitFor(() =>
+      expect(screen.getByText(/Nadie tiene nada pendiente en Validación/)).toBeTruthy(),
+    )
     // El escape, nombrado con las palabras que lleva escritas el botón.
     expect(within(laTabla()).getByText(/Toda la tanda/)).toBeTruthy()
     expect(screen.queryByText(/Todavía no hay postulaciones/)).toBeNull()
   })
 
   /*
-   * El tercero es nuevo y es el más frecuente al abrir: nadie tiene nota
-   * todavía. Mandar a «está aquí ahora» sería mandar al sitio equivocado, así
-   * que se dice qué hace falta para que aparezca una nota.
+   * El tercero es el más frecuente al abrir: nadie espera una decisión. No es
+   * lo mismo que «no hay a quién perseguir», así que cada vacío dice lo suyo y
+   * los dos mandan al mismo escape: la tanda entera, que es donde está quien no
+   * espera a ninguna persona.
    */
-  it('sin ninguna nota dice qué falta, y no que nadie esté en la etapa', async () => {
+  it('sin nadie que revisar lo dice, y no lo confunde con lo pendiente', async () => {
     await pintar()
     irA('Simulación')
     await waitFor(() =>
-      expect(screen.getByText(/Nadie tiene todavía nota de la simulación/)).toBeTruthy(),
+      expect(screen.getByText(/Nadie espera tu decisión en Simulación/)).toBeTruthy(),
     )
-    expect(screen.getByText(/la sesión asistida y calificada/)).toBeTruthy()
-    expect(screen.queryByText(/Nadie está en Simulación/)).toBeNull()
+    expect(within(laTabla()).getByText(/Toda la tanda/)).toBeTruthy()
+    expect(screen.queryByText(/Nadie tiene nada pendiente en Simulación/)).toBeNull()
   })
 
   it('sin ninguna postulación lo dice, y no culpa al filtro', async () => {
@@ -682,7 +712,7 @@ describe('las cinco cifras de la tanda', () => {
     expect(cifraDe(/ya calificados/)).toBe(3)
 
     irA('Prueba del puesto')
-    await waitFor(() => expect(elCorte('Con nota de la prueba')).toBeTruthy())
+    await waitFor(() => expect(screen.getByText(/con nota de la prueba/)).toBeTruthy())
     verCorte('Toda la tanda')
     // En la prueba nadie la tiene, aunque el backend siga diciendo «4 calificados».
     await waitFor(() => expect(cifraDe(/ya calificados/)).toBe(0))
@@ -818,7 +848,7 @@ describe('los criterios como columnas de color', () => {
   */
   it('el ponderado se ve en la prueba del puesto y en ninguna otra pestana', async () => {
     await pintar([
-      fila(95, 'Rodrigo Ayala', 'PRUEBA_CALIFICANDO', 73, {
+      fila(95, 'Rodrigo Ayala', 'PRUEBA_POR_CONFIRMAR', 73, {
         ponderado: { sobre100: 78.14, cv: 76.5, perfil: 82, prueba: 73 },
       }),
     ])
@@ -833,7 +863,7 @@ describe('los criterios como columnas de color', () => {
   /** El desglose no ocupa columnas: vive en el titulo de la celda. */
   it('el desglose de las tres notas viaja en el titulo, no en la tabla', async () => {
     await pintar([
-      fila(95, 'Rodrigo Ayala', 'PRUEBA_CALIFICANDO', 73, {
+      fila(95, 'Rodrigo Ayala', 'PRUEBA_POR_CONFIRMAR', 73, {
         ponderado: { sobre100: 78.14, cv: 76.5, perfil: 82, prueba: 73 },
       }),
     ])
@@ -851,10 +881,10 @@ describe('los criterios como columnas de color', () => {
     accionable: manda a la pestaña donde esa persona esta parada.
   */
   it('sin las dos notas pinta un guion que dice cual falta', async () => {
-    // Rindio la prueba —por eso tiene nota de etapa y no se cae del corte— y su
+    // Rindio la prueba y espera decision —por eso no se cae del corte— y su
     // perfil integral todavia no esta calificado: sin las dos no hay mezcla.
     await pintar([
-      fila(95, 'Rodrigo Ayala', 'PRUEBA_CALIFICANDO', 73, {
+      fila(95, 'Rodrigo Ayala', 'PRUEBA_POR_CONFIRMAR', 73, {
         ponderado: { sobre100: null, cv: null, perfil: null, prueba: 73 },
       }),
     ])
@@ -1275,8 +1305,8 @@ describe('lo que marcó la IA se lee en la ficha', () => {
       }),
     ])
     irA('Prueba del puesto')
-    await waitFor(() => expect(elCorte('Con nota de la prueba')).toBeTruthy())
-    verCorte('Está aquí ahora')
+    await waitFor(() => expect(screen.getByText(/con nota de la prueba/)).toBeTruthy())
+    verCorte('Le toca al candidato')
     fireEvent.click((await screen.findByText('Camila Reyes')).closest('tr')!)
 
     await screen.findByRole('heading', { name: 'La prueba del puesto, criterio a criterio' })
@@ -1296,8 +1326,9 @@ describe('avanzar en tanda', () => {
     await waitFor(() => expect(within(laTabla()).queryByText('Fátima Quispe')).toBeTruthy())
     fireEvent.click(screen.getByRole('checkbox', { name: 'Avanza Fátima Quispe' }))
     expect(screen.getByRole('button', { name: /Avanzar a 1 persona/ })).toBeTruthy()
-    // Fátima no tiene nota: al volver al corte por defecto desaparece de la tabla.
-    verCorte('Con nota del perfil')
+    // Fátima acaba de postular: nadie espera decisión sobre ella, así que al
+    // volver al corte por defecto desaparece de la tabla.
+    verCorte('Por revisar')
     await waitFor(() =>
       expect(screen.getByRole('button', { name: 'Marca a quienes avanzan' })).toBeTruthy(),
     )
@@ -1804,7 +1835,7 @@ describe('la descarga del Excel', () => {
     await waitFor(() => expect(pedirExcel).toHaveBeenCalledOnce())
     const descrito = (pedirExcel.mock.calls[0]?.[1] as { filtroDescrito: string }).filtroDescrito
     expect(descrito).toContain('Perfil integral')
-    expect(descrito).toContain('Con nota del perfil')
+    expect(descrito).toContain('Por revisar')
     expect(descrito).toContain('Orden del ranking')
   })
 
@@ -1853,7 +1884,7 @@ describe('la descarga del Excel', () => {
       expect(screen.queryByRole('button', { name: /Descargar Excel/ })).toBeNull(),
     )
     irA('Prueba del puesto')
-    await waitFor(() => expect(elCorte('Con nota de la prueba')).toBeTruthy())
+    await waitFor(() => expect(screen.getByText(/con nota de la prueba/)).toBeTruthy())
     verCorte('Toda la tanda')
     await waitFor(() =>
       expect(screen.queryByRole('button', { name: /Descargar Excel/ })).toBeTruthy(),
@@ -1943,10 +1974,10 @@ describe('calificar a mano un criterio de la prueba', () => {
       por «con nota de la prueba», y quien tiene la rúbrica a medias NO tiene
       nota de etapa todavía —es justo lo que falta calificar—, así que en el
       corte por defecto no sale. A quien hay que calificar se le encuentra en
-      «está aquí ahora».
+      «le toca al candidato», que es donde está mientras rinde.
     */
-    await waitFor(() => expect(elCorte('Con nota de la prueba')).toBeTruthy())
-    verCorte('Está aquí ahora')
+    await waitFor(() => expect(screen.getByText(/con nota de la prueba/)).toBeTruthy())
+    verCorte('Le toca al candidato')
     const fila = await screen.findByText('Camila Reyes')
     fireEvent.click(fila.closest('tr')!)
     await screen.findByRole('heading', {
@@ -2065,7 +2096,7 @@ describe('los dos párrafos que explican la nota', () => {
   it('salen en la ficha de la prueba del puesto', async () => {
     await pintar()
     irA('Prueba del puesto')
-    await waitFor(() => expect(elCorte('Con nota de la prueba')).toBeTruthy())
+    await waitFor(() => expect(screen.getByText(/con nota de la prueba/)).toBeTruthy())
     verCorte('Toda la tanda')
     await waitFor(() => expect(screen.getByText('Camila Reyes')).toBeTruthy())
     fireEvent.click(screen.getByText('Camila Reyes'))
@@ -2080,7 +2111,7 @@ describe('los dos párrafos que explican la nota', () => {
   it('sin nota de la prueba lo dicen, y no inventan una lectura', async () => {
     await pintar()
     irA('Prueba del puesto')
-    await waitFor(() => expect(elCorte('Con nota de la prueba')).toBeTruthy())
+    await waitFor(() => expect(screen.getByText(/con nota de la prueba/)).toBeTruthy())
     verCorte('Toda la tanda')
     await waitFor(() => expect(screen.getByText('Camila Reyes')).toBeTruthy())
     fireEvent.click(screen.getByText('Camila Reyes'))
@@ -2127,7 +2158,7 @@ describe('la ficha de vacante prioriza el seguimiento y admite teclado', () => {
     expect(screen.getByRole('tabpanel', { name: 'Prueba del puesto' }).id).toBe(prueba.getAttribute('aria-controls'))
     fireEvent.keyDown(prueba, { key: 'Home' })
     expect(document.activeElement).toBe(perfil)
-    const nombre = await screen.findByRole('button', { name: EN_PRUEBA.candidato })
+    const nombre = await screen.findByRole('button', { name: EN_PERFIL.candidato })
     expect(nombre.getAttribute('aria-expanded')).toBe('false')
     fireEvent.click(nombre)
     expect(nombre.getAttribute('aria-expanded')).toBe('true')

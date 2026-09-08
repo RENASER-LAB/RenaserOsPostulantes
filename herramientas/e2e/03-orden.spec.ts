@@ -16,9 +16,16 @@ const DEL_BACKEND = [
 ]
 
 test.describe('Nuevo · ordenar por las cuatro columnas', () => {
+  /*
+    La pantalla abre por «Por revisar», que solo trae a quien espera una
+    decisión. Lo que se mide aquí es otra cosa —los filtros, el orden, el
+    teclado—, así que se abre la tanda entera para tener filas con las que
+    trabajar; es lo que traía el corte de antes, «Con nota», en esta vacante.
+  */
   test.beforeEach(async ({ page }) => {
     await entrarAlPanel(page)
     await irAVacante(page, VACANTES.LLENA)
+    await corte(page, 'Toda la tanda').click()
   })
 
   test('los tres estados de Candidato, con aria-sort coherente', async ({ page }) => {
@@ -78,7 +85,7 @@ test.describe('Nuevo · ordenar por las cuatro columnas', () => {
     la propia nota, así que casi siempre iban en el mismo sentido.
   */
   test('Nota abre por la MAYOR y manda la nota, cruzando grupos', async ({ page }) => {
-    const th = cabecera(page, 'Nota del perfil')
+    const th = cabecera(page, 'Nota')
     await th.getByRole('button').click()
     // El primer clic de nota es descendente: el ranking ES eso.
     await expect(th).toHaveAttribute('aria-sort', 'descending')
@@ -108,9 +115,13 @@ test.describe('Nuevo · ordenar por las cuatro columnas', () => {
   })
 
   test('el grupo de prioridad se ve en la fila, para que el orden no parezca roto', async ({ page }) => {
-    await expect(page.getByText('Prioridad alta').first()).toBeVisible()
-    await expect(page.getByText('Incompatible')).toBeVisible()
-    await expect(page.getByText('No priorizado')).toBeVisible()
+    // Acotado a la TABLA: los mismos rótulos salen también en la leyenda que
+    // explica los grupos, así que sin acotar `getByText` resuelve dos elementos
+    // y el modo estricto lo rechaza. Y es lo que este test mide: la fila.
+    const tabla = page.getByRole('table')
+    await expect(tabla.getByTitle('Prioridad alta').first()).toBeVisible()
+    await expect(tabla.getByTitle('Incompatible')).toBeVisible()
+    await expect(tabla.getByTitle('No priorizado')).toBeVisible()
   })
 
   test('Pretensión: los vacíos al final SUBA O BAJE el orden', async ({ page }) => {
@@ -137,7 +148,7 @@ test.describe('Nuevo · ordenar por las cuatro columnas', () => {
   test('solo una columna a la vez lleva aria-sort distinto de none', async ({ page }) => {
     await cabecera(page, 'Ciudad').getByRole('button').click()
     await expect(cabecera(page, 'Ciudad')).toHaveAttribute('aria-sort', 'ascending')
-    for (const otra of ['Candidato', 'Nota del perfil', 'Pretensión']) {
+    for (const otra of ['Candidato', 'Nota', 'Pretensión']) {
       await expect(cabecera(page, otra)).toHaveAttribute('aria-sort', 'none')
     }
     await cabecera(page, 'Pretensión').getByRole('button').click()
@@ -164,7 +175,7 @@ test.describe('Nuevo · ordenar por las cuatro columnas', () => {
     const antes = await nombresVisibles(page)
     expect(antes).toHaveLength(4)
 
-    const th = cabecera(page, 'Nota de la prueba')
+    const th = cabecera(page, 'Nota')
     await th.getByRole('button').click()
     await expect(th).toHaveAttribute('aria-sort', 'descending')
     // Todas empatan a vacío, así que manda el grupo y luego el orden de origen.

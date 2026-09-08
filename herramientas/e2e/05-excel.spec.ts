@@ -169,6 +169,8 @@ test.describe('Nuevo · la descarga del Excel', () => {
 
   test('Perfil integral: el archivo llega, pesa y lleva la fecha en el nombre', async ({ page }) => {
     await irAVacante(page, VACANTES.LLENA)
+    // El botón cuenta las filas del corte, y se abre por «Por revisar».
+    await corte(page, 'Toda la tanda').click()
     await expect(botonExcel(page)).toHaveText('Descargar Excel (4)')
 
     const { nombre, ruta, bytes } = await bajar(page)
@@ -196,8 +198,9 @@ test.describe('Nuevo · la descarga del Excel', () => {
   test('Prueba del puesto también exporta (hay que abrir «Toda la tanda» antes)', async ({ page }) => {
     await irAVacante(page, VACANTES.LLENA)
     await pestana(page, 'Prueba del puesto').click()
-    // Con el corte por defecto no hay nadie con nota: el botón está apagado.
-    await expect(page.getByRole('button', { name: 'Nada que descargar' })).toBeDisabled()
+    // Con «Por revisar» solo sale quien espera decisión en esta etapa: una
+    // persona, así que el botón exporta esa. La tanda entera trae las cuatro.
+    await expect(botonExcel(page)).toHaveText('Descargar Excel (1)')
 
     await corte(page, 'Toda la tanda').click()
     await expect(botonExcel(page)).toHaveText('Descargar Excel (4)')
@@ -230,7 +233,7 @@ test.describe('Nuevo · la descarga del Excel', () => {
     expect(texto).toContain('Filtro aplicado:')
     expect(texto).toContain('Ciudad: Lima — Lima')
     expect(texto).toContain('Perfil integral')
-    expect(texto).toContain('Con nota del perfil')
+    expect(texto).toContain('Por revisar')
   })
 
   test('EL EXCEL RESPETA EL ORDEN de la pantalla', async ({ page }) => {
@@ -249,6 +252,7 @@ test.describe('Nuevo · la descarga del Excel', () => {
 
   test('un filtro que deja tres filas baja exactamente tres', async ({ page }) => {
     await irAVacante(page, VACANTES.LLENA)
+    await corte(page, 'Toda la tanda').click()
     await abrirMasFiltros(page)
     await page.getByLabel('Nota del perfil, desde').fill('56')
 

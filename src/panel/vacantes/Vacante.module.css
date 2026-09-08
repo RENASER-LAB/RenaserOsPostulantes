@@ -983,8 +983,8 @@ thead .celdaCandidato {
 /*
  * La cifra de cada corte, dentro de su propio boton.
  *
- * Va en pildora hundida y no suelta detras del texto: «Con nota de la prueba 12
- * / Está aquí ahora 3» sin separacion se lee como un solo rotulo con numeros
+ * Va en pildora hundida y no suelta detras del texto: «Por revisar 12
+ * / Le toca al candidato 3» sin separacion se lee como un solo rotulo con numeros
  * dentro. Y es lo que evita tener que pulsar los tres para saber si alguno
  * tiene algo.
  */

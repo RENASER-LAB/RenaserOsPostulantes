@@ -1,6 +1,23 @@
 /**
  * Las cinco etapas del ranking, y las tres formas de mirarlas.
  *
+ * Los tres cortes se leen con UNA pregunta: de quien es la pelota. «Por
+ * revisar» —espera una decision de la empresa, y es con lo que se abre la
+ * pantalla—, «Le toca al candidato» —tiene algo pendiente que hacer— y «Toda
+ * la tanda».
+ *
+ * ⚠️ **Los dos primeros no suman la tanda.** Quien esta siendo calificado por
+ * la IA no espera a ninguna persona, asi que no sale en ninguno de los dos: se
+ * le encuentra en «Toda la tanda», que por eso es el escape que nombran los
+ * dos vacios.
+ *
+ * Hasta el 07/09/2026 el primero era «Con nota», que filtraba `notaEtapa != null`
+ * sin mirar el estado. Como la nota no se borra al avanzar, en el perfil
+ * integral salian los que ya estaban rindiendo la prueba del puesto: gente
+ * sobre la que no habia nada que hacer. Quien quiera ver a todo el que saco
+ * nota alguna vez tiene «Toda la tanda» ordenada por la columna Nota, y el
+ * filtro de nota minima de la barra.
+ *
  * Esto vivia dentro de `Vacante.tsx`, pegado al JSX. Sale porque lo que decide
  * que fila se ve, que cifra se enseña y por que una nota esta vacia son reglas
  * con casos —no dibujo— y hay que poder ponerlas en rojo una a una.
@@ -27,6 +44,31 @@ export const ETAPAS_PANEL = [
     codigo: 'PERFIL_INTEGRAL',
     nombre: 'Perfil integral',
     prefijos: ['POSTULADA', 'PERFIL_'],
+    /**
+     * Los estados de esta etapa donde la pelota esta en el tejado de la
+     * empresa: el candidato ya hizo lo suyo y alguien de dentro tiene que
+     * mirar y decidir. Es el corte «Por revisar».
+     *
+     * Sale de `espera_a` del catalogo de estados del backend —TALENTO o AREA,
+     * nunca CANDIDATO ni SISTEMA—, escrito aqui porque el ranking no recibe
+     * esa columna: `FilaRanking` solo trae el codigo del estado y su nombre.
+     *
+     * ⚠️ **No vale deducirlo del sufijo `_POR_CONFIRMAR`.** En Simulacion y
+     * Validacion hay un segundo estado que tambien es trabajo de la empresa
+     * —`_POR_HABILITAR`— y no termina igual, asi que la lista se escribe
+     * entera y no se adivina.
+     */
+    porRevisar: ['PERFIL_POR_CONFIRMAR'],
+    /**
+     * Los estados de esta etapa en los que la pelota es del candidato: tiene
+     * algo pendiente y hasta que no lo haga no hay nada que decidir. Es el
+     * corte «Le toca al candidato».
+     *
+     * ⚠️ **Quien está siendo calificado por la IA no cae aquí NI en
+     * `porRevisar`.** No le toca a nadie: espera a la máquina. Aparece solo en
+     * «Toda la tanda», que es el escape de los dos cortes.
+     */
+    leToca: ['PERFIL_TURNO_CANDIDATO'],
     nota: 'Nota del perfil',
     /** Lo que hace falta para que esta etapa deje nota, dicho al candidato. */
     loQueDejaNota: 'el currículum leído y calificado',
@@ -37,6 +79,8 @@ export const ETAPAS_PANEL = [
     codigo: 'PRUEBA_PUESTO',
     nombre: 'Prueba del puesto',
     prefijos: ['PRUEBA_'],
+    porRevisar: ['PRUEBA_POR_CONFIRMAR'],
+    leToca: ['PRUEBA_TURNO_CANDIDATO'],
     nota: 'Nota de la prueba',
     loQueDejaNota: 'la prueba rendida y calificada',
     loCalificado: 'la prueba',
@@ -45,6 +89,8 @@ export const ETAPAS_PANEL = [
     codigo: 'SIMULACION',
     nombre: 'Simulación',
     prefijos: ['SIMULACION_'],
+    porRevisar: ['SIMULACION_POR_HABILITAR', 'SIMULACION_POR_CONFIRMAR'],
+    leToca: ['SIMULACION_TURNO_CANDIDATO'],
     nota: 'Nota de la simulación',
     loQueDejaNota: 'la sesión asistida y calificada',
     loCalificado: 'la simulación',
@@ -53,6 +99,8 @@ export const ETAPAS_PANEL = [
     codigo: 'VALIDACION',
     nombre: 'Validación',
     prefijos: ['VALIDACION_'],
+    porRevisar: ['VALIDACION_POR_HABILITAR', 'VALIDACION_POR_CONFIRMAR'],
+    leToca: ['VALIDACION_TURNO_CANDIDATO'],
     nota: 'Nota de la validación',
     loQueDejaNota: 'el periodo terminado y calificado',
     loCalificado: 'la validación',
@@ -61,6 +109,8 @@ export const ETAPAS_PANEL = [
     codigo: 'DECISION',
     nombre: 'Decisión',
     prefijos: ['DECISION_'],
+    porRevisar: ['DECISION_POR_CONFIRMAR'],
+    leToca: ['DECISION_TURNO_CANDIDATO'],
     nota: 'Nota de la decisión',
     loQueDejaNota: 'la decisión tomada',
     loCalificado: 'la decisión',
@@ -97,7 +147,7 @@ export function indiceDeLaEtapaDe(estado: string): number | null {
   return i === -1 ? null : i
 }
 
-export type Vista = 'con-nota' | 'aqui-ahora' | 'toda'
+export type Vista = 'por-revisar' | 'le-toca' | 'toda'
 
 /*
   ⚠️ **`!== null` no basta mientras el backend viaja en paralelo.** Un campo que
@@ -107,10 +157,24 @@ export type Vista = 'con-nota' | 'aqui-ahora' | 'toda'
 */
 export const tieneNota = (fila: FilaRanking) => fila.notaEtapa != null
 
+/**
+ * Le toca a la empresa: el candidato ya hizo lo suyo y esta fila espera a que
+ * alguien de dentro la mire y la mueva. Ver `porRevisar` en `ETAPAS_PANEL`.
+ */
+export const esperaALaEmpresa = (estado: string, etapa: EtapaPanel) =>
+  laEtapaDe(etapa).porRevisar.some((e) => e === estado)
+
+/**
+ * Le toca al candidato: tiene algo que hacer y hasta entonces no hay decisión
+ * que tomar. Ver `leToca` en `ETAPAS_PANEL`.
+ */
+export const leTocaAlCandidato = (estado: string, etapa: EtapaPanel) =>
+  laEtapaDe(etapa).leToca.some((e) => e === estado)
+
 export function filtrar(filas: FilaRanking[], etapa: EtapaPanel, vista: Vista): FilaRanking[] {
   if (vista === 'toda') return filas
-  if (vista === 'con-nota') return filas.filter(tieneNota)
-  return filas.filter((f) => estaAhoraEn(f.estado, etapa))
+  if (vista === 'por-revisar') return filas.filter((f) => esperaALaEmpresa(f.estado, etapa))
+  return filas.filter((f) => leTocaAlCandidato(f.estado, etapa))
 }
 
 /**
@@ -120,11 +184,11 @@ export function filtrar(filas: FilaRanking[], etapa: EtapaPanel, vista: Vista): 
  * veces, la hoja acabaria diciendo que salio de un corte con otro nombre que el
  * que se pulso.
  */
-export const rotuloDeVista = (vista: Vista, etapa: EtapaPanel): string =>
-  vista === 'con-nota'
-    ? `Con ${laEtapaDe(etapa).nota.toLowerCase()}`
-    : vista === 'aqui-ahora'
-      ? 'Está aquí ahora'
+export const rotuloDeVista = (vista: Vista): string =>
+  vista === 'por-revisar'
+    ? 'Por revisar'
+    : vista === 'le-toca'
+      ? 'Le toca al candidato'
       : 'Toda la tanda'
 
 /**
@@ -132,14 +196,16 @@ export const rotuloDeVista = (vista: Vista, etapa: EtapaPanel): string =>
  *
  * ⚠️ **Las tres se cuentan siempre, aunque solo una se este viendo.** Un
  * control segmentado sin sus cifras obliga a pulsar las tres para saber si
- * alguna tiene algo, y en «Prueba del puesto» los dos primeros cortes casi no
- * se solapan: quien esta ahi ahora es quien todavia NO la ha rendido, y quien
- * tiene nota ya paso de largo. Medido en la vacante 3: una fila cada uno, sin
- * una sola persona en comun.
+ * alguna tiene algo, y «Por revisar» es justo el que suele estar vacio: la
+ * cifra dice sin pulsar que hoy no hay nada que decidir.
+ *
+ * Los dos primeros NO se solapan: son las dos mitades de «de quien es la
+ * pelota», y un estado espera a la empresa o al candidato, nunca a los dos.
+ * Sumados tampoco dan la tanda: quien espera a la IA no es de nadie.
  */
 export const recuentos = (filas: FilaRanking[], etapa: EtapaPanel) => ({
-  'con-nota': filas.filter(tieneNota).length,
-  'aqui-ahora': filas.filter((f) => estaAhoraEn(f.estado, etapa)).length,
+  'por-revisar': filas.filter((f) => esperaALaEmpresa(f.estado, etapa)).length,
+  'le-toca': filas.filter((f) => leTocaAlCandidato(f.estado, etapa)).length,
   toda: filas.length,
 })
 
@@ -326,12 +392,27 @@ export function porQueNoHayNotaCorto(fila: FilaRanking, etapa: EtapaPanel): stri
 export interface CifrasDeLaEtapa {
   conNota: number
   sinNota: number
-  /** Le toca a la persona: todavía no la ha hecho. */
-  esperandoALaPersona: number
+  /**
+   * **Todavía no la ha hecho.** Agrupa por lo que se hizo, no por de quién es
+   * la pelota: entra quien la tiene pendiente (`_TURNO_CANDIDATO`) y quien
+   * acaba de postular (`POSTULADA`, que espera a que el sistema compruebe los
+   * requisitos). Los dos casos son lo mismo para quien lee la cifra: nadie ha
+   * respondido nada todavía.
+   *
+   * ⚠️ **Se llamaba `esperandoALaPersona` y por eso POSTULADA caía en el saco
+   * de al lado**, el de «ya la hicieron»: no termina en `_TURNO_CANDIDATO`, así
+   * que el filtro por sufijo la dejaba fuera y el resto caía por descarte. Una
+   * vacante recién abierta anunciaba que varias «ya la hicieron» sin que nadie
+   * hubiera contestado una sola pregunta.
+   */
+  sinHacerla: number
   /**
    * **Ya la hicieron y siguen sin nota.** Es la cifra accionable de la
    * cabecera: son las personas de las que el equipo tiene trabajo pendiente, y
    * exactamente a quienes alcanza el bloque de arriba de la tabla.
+   *
+   * Sale por descarte —lo de la etapa que no está sin hacer—, así que un estado
+   * mal clasificado arriba aterriza aquí y se lee como una promesa falsa.
    */
   hechasSinNota: number
   /** Ni una cosa ni la otra: su proceso está parado en otra etapa. */
@@ -361,12 +442,19 @@ export interface CifrasDeLaEtapa {
 export function cifrasDeLaEtapa(filas: FilaRanking[], etapa: EtapaPanel): CifrasDeLaEtapa {
   const sinNota = filas.filter((f) => !tieneNota(f))
   const aqui = sinNota.filter((f) => estaAhoraEn(f.estado, etapa))
-  const esperandoALaPersona = aqui.filter((f) => f.estado.endsWith('TURNO_CANDIDATO')).length
+  /*
+    `POSTULADA` va aquí a mano: es la única de la etapa que no lleva el sufijo
+    y aun así no ha hecho nada —el sistema está comprobando sus requisitos—.
+    Sin ella, caía por descarte en «ya la hicieron».
+  */
+  const sinHacerla = aqui.filter(
+    (f) => f.estado.endsWith('TURNO_CANDIDATO') || f.estado === 'POSTULADA',
+  ).length
   return {
     conNota: filas.length - sinNota.length,
     sinNota: sinNota.length,
-    esperandoALaPersona,
-    hechasSinNota: aqui.length - esperandoALaPersona,
+    sinHacerla,
+    hechasSinNota: aqui.length - sinHacerla,
     enOtraEtapa: sinNota.length - aqui.length,
   }
 }
@@ -1590,7 +1678,7 @@ const ROTULO_DE_COLUMNA: Record<ColumnaOrdenable, string> = {
  * De qué recorte salió la hoja, en una frase que se lea dentro del Excel.
  *
  * ⚠️ **Lleva el corte de la botonera además de los filtros.** El corte es lo que
- * más filas quita —«Con nota del perfil» esconde a media tanda— y una hoja que
+ * más filas quita —«Por revisar» deja fuera a casi toda la tanda— y una hoja que
  * solo dijera «Ciudad: Lima» se leería como si trajera a todos los de Lima.
  *
  * ⚠️ **Y lleva el orden.** El backend escribe las filas en el orden que se le
@@ -1615,7 +1703,7 @@ export function describirFiltro(
 
   const partes = [
     laEtapaDe(etapa).nombre,
-    rotuloDeVista(vista, etapa),
+    rotuloDeVista(vista),
     filtros.texto.trim() !== '' ? `Nombre contiene «${filtros.texto.trim()}»` : null,
     filtros.ciudades.length > 0
       ? `Ciudad: ${filtros.ciudades.map(nombreDeCiudad).join(', ')}`

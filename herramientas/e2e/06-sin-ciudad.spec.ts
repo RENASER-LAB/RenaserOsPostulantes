@@ -13,15 +13,47 @@ const sql = (consulta: string) =>
   execFileSync('docker', ['exec', 'renaser-verifica', 'psql', '-U', 'postgres', '-d', 'renaser_db', '-c', consulta])
     .toString()
 
-/** Las personas de la vacante 9 y su ubigeo original. */
-const PERSONAS_V9 = [4, 7, 10]
-const ORIGINAL: Record<number, string> = { 4: '1501', 7: '0701', 10: '2101' }
+/**
+ * Las personas de esta vacante y su ubigeo original, LEÍDOS de la base.
+ *
+ * ⚠️ La lista estaba escrita a mano —tres ids con sus tres ubigeos— y eso caducó:
+ * la base acumula cuentas de corridas anteriores del propio e2e, así que la vacante
+ * tiene hoy más gente que aquellos tres. Anular solo a los tres dejaba el resto con
+ * ciudad, la columna no desaparecía y el test fallaba afirmando que el panel estaba
+ * mal. Se preguntan al arrancar: quien esté en la vacante, esté desde cuando esté.
+ */
+const PERSONAS: number[] = []
+const ORIGINAL: Record<number, string | null> = {}
+
+const leerPersonas = () => {
+  const filas = sql(
+    `select pe.id, coalesce(pe.ciudad_ubigeo, '')
+     from postulacion p
+     join vacante v on v.id = p.vacante_id
+     join usuario u on u.id = p.usuario_id
+     join persona pe on pe.id = u.persona_id
+     where v.titulo = '${VACANTES.OTRA}';`,
+  )
+  for (const linea of filas.split('\n')) {
+    const [id, ubigeo] = linea.split('|').map((c) => c.trim())
+    if (!id || !/^\d+$/.test(id)) continue
+    PERSONAS.push(Number(id))
+    ORIGINAL[Number(id)] = ubigeo || null
+  }
+}
 
 const restaurar = () => {
   for (const [id, ubigeo] of Object.entries(ORIGINAL)) {
-    sql(`update persona set ciudad_ubigeo = '${ubigeo}' where id = ${id};`)
+    const valor = ubigeo === null ? 'null' : `'${ubigeo}'`
+    sql(`update persona set ciudad_ubigeo = ${valor} where id = ${id};`)
   }
 }
+
+const sinCiudad = (ids: number[]) => {
+  sql(`update persona set ciudad_ubigeo = null where id in (${ids.join(',')});`)
+}
+
+test.beforeAll(leerPersonas)
 
 test.afterAll(restaurar)
 
@@ -65,7 +97,7 @@ test.describe('Nuevo · cuando la ciudad falta', () => {
 
   test('TODA VACÍA: la columna Ciudad desaparece y se dice por qué', async ({ page }) => {
     restaurar()
-    sql(`update persona set ciudad_ubigeo = null where id in (${PERSONAS_V9.join(',')});`)
+    sinCiudad(PERSONAS)
 
     await irAVacante(page, VACANTES.OTRA)
     await corte(page, 'Toda la tanda').click()
@@ -74,7 +106,7 @@ test.describe('Nuevo · cuando la ciudad falta', () => {
     await expect(cabecera(page, 'Pretensión')).toHaveCount(0)
     // Candidato y Nota siguen ahí: no se cae toda la tabla.
     await expect(cabecera(page, 'Candidato')).toHaveCount(1)
-    await expect(cabecera(page, 'Nota del perfil')).toHaveCount(1)
+    await expect(cabecera(page, 'Nota')).toHaveCount(1)
 
     // El colSpan de la fila de detalle sigue cuadrando con menos columnas.
     // Se comprueba ANTES de desplegar los filtros: abiertos, el panel tapa la tabla.

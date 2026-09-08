@@ -55,10 +55,14 @@ test.describe('Regresión · el panel del equipo', () => {
   test('los tres cortes y sus contadores cuadran con las filas', async ({ page }) => {
     await irAVacante(page, VACANTES.LLENA)
 
-    // Perfil integral: 4 con nota, 1 aquí ahora (PERFIL_POR_CONFIRMAR), 4 en total.
+    /*
+      Perfil integral: 1 por revisar —el de PERFIL_POR_CONFIRMAR— y ninguno a
+      quien le toque hacer algo. Los dos cortes son disjuntos: no puede salir
+      la misma fila en los dos.
+    */
     const esperado: [string, number][] = [
-      ['Con nota del perfil', 4],
-      ['Está aquí ahora', 1],
+      ['Por revisar', 1],
+      ['Le toca al candidato', 0],
       ['Toda la tanda', 4],
     ]
     for (const [nombre, cuantas] of esperado) {
@@ -72,6 +76,8 @@ test.describe('Regresión · el panel del equipo', () => {
 
   test('el detalle de un candidato se despliega y se pliega', async ({ page }) => {
     await irAVacante(page, VACANTES.LLENA)
+    // Camila ya pasó de la preselección: con «Por revisar» no está en la tabla.
+    await corte(page, 'Toda la tanda').click()
     const fila = filasDelRanking(page).filter({ hasText: 'Camila Torres Rivas' })
     await fila.click()
     await expect(page.getByText('Camila Torres Rivas').first()).toBeVisible()

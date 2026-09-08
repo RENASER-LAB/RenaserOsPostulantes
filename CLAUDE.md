@@ -1,6 +1,7 @@
 # Portal del candidato · contexto de trabajo
 
-Última actualización: 2026-09-06 · **«Mi perfil» tiene foto, portada, currículum propio y
+Última actualización: 2026-09-07 · **El ranking se corta por de quién es la pelota;
+«Mi perfil» tiene foto, portada, currículum propio y
 diplomas; empleos, estudios y certificaciones comparten UNA cronología; la caja significa
 «esto te toca»; y al postular ya no se vuelve a subir el currículum**
 
@@ -549,10 +550,10 @@ banco con dos versiones publicadas, una prueba entregada, una sesión con inscri
 ## El ranking se ordena, se filtra y se descarga (01/09/2026)
 
 La mesa donde se decide dejó de ser una lista que solo se mira. **Todo pasa en el navegador**:
-ordenar o filtrar no le vuelve a pedir nada al servidor, y el corte de la botonera —«Con nota del
-perfil» (el rótulo lleva el nombre de la nota de cada etapa), «Está aquí ahora» y «Toda la
-tanda»— sigue mandando por encima de todo lo demás. Las reglas viven en
-`src/panel/vacantes/ranking.ts`, con sus tests al lado.
+ordenar o filtrar no le vuelve a pedir nada al servidor, y el corte de la botonera —«Por revisar»
+(por defecto), «Le toca al candidato» y «Toda la tanda»— sigue mandando por encima de todo lo
+demás. Las reglas viven en `src/panel/vacantes/ranking.ts`, con sus tests al lado, y el porqué de
+esos tres cortes está en `docs/06-FLUJO-COMPLETO.md`.
 
 ### Cuatro cabeceras, tres estados cada una
 
@@ -868,7 +869,7 @@ npm run test:e2e:chrome   # el Chrome de la máquina, con ventana, para mirar un
 ⚠️ **La suite no levanta nada**: da por hecho el Vite en 5174 y el Spring en 8081 ya arrancados,
 porque arrancarlos ella abriría un segundo backend contra la misma base. **Un solo worker y sin
 paralelo**: la base es compartida y la prueba de avance de etapa muta `estado`, que cambia los
-contadores de «Está aquí ahora» de cualquier otra que esté corriendo. El archivo de móvil lo
+contadores de los cortes de cualquier otra que esté corriendo. El archivo de móvil lo
 corre solo el proyecto `movil`, a 375 px.
 
 ---
@@ -1498,9 +1499,13 @@ arman sin mirar la etapa: los tres primeros vienen de la cola del CV, el resto d
 ### Un guion significaba cinco cosas y no decía cuál
 
 `porQueNoHayNota()` lo nombra debajo de la cifra, en palabras: «Le toca a la persona: aún no la
-ha hecho», «Calificándose ahora mismo», «Hecha, pendiente de que el equipo la cierre»,
-«Todavía no llega a esta etapa», «Pasó de esta etapa sin que quedara nota» y «Terminó su
-proceso sin nota de esta etapa».
+ha hecho», «Ya la hizo: su nota se calcula en la ficha», «Hecha, pendiente de que el equipo la
+cierre», «El equipo no la ha habilitado», «Terminó su proceso sin nota de esta etapa» y, para lo
+que no cae en ninguno, «Sin nota de esta etapa».
+
+⚠️ **Las frases se han reescrito desde que se documentaron aquí** —lo de arriba es lo que
+devuelve el código hoy—: el motivo dejó de ser dónde está parada la persona y pasó a ser qué
+falta para que haya nota, y se sumó el caso de las etapas que alguien tiene que habilitar.
 
 ⚠️ **`estadoCalificacion` NO sirve para explicarlo fuera del perfil.** Un `TERMINADA` en la
 pestaña de la prueba dice que el currículum está calificado y no dice nada de la prueba —es
@@ -1510,6 +1515,11 @@ persona**, y de ahí salen los seis motivos. Hay test: los seis son distintos en
 apoyarse en él.
 
 ### Tres cortes, no una casilla
+
+⚠️ **Los dos primeros dejaron de existir el 07/09/2026**: son «Por revisar» y «Le toca al
+candidato», y cortan por el estado y no por la nota. Lo que sigue es de cuando se hicieron —la
+forma de tres botones con su cifra sobrevive—. El porqué del cambio, en
+`docs/06-FLUJO-COMPLETO.md`.
 
 «Con nota de esta etapa» (por defecto), «Está aquí ahora» y «Toda la tanda», cada uno con su
 cifra dentro. El del PR #11 se queda: **los dos primeros eligen gente casi opuesta** fuera del
@@ -1568,7 +1578,8 @@ npx playwright test herramientas/e2e/18-ranking-contra-api.spec.ts
 **42 comprobaciones contra el backend vivo, solo lectura.** Además de lo que ya miraba, fija que
 **la cifra de cabecera es de la etapa y no de la criba del CV**, que la línea del currículum dice
 que no habla de esta etapa, y que cada guion trae su motivo. En la vacante 3 los dos primeros
-cortes divergen en las cuatro etapas que no son el perfil:
+cortes divergen en las cuatro etapas que no son el perfil (medido con los cortes de entonces,
+que ya no existen):
 
 | Pestaña | Con nota | Está aquí ahora |
 |---|---:|---:|

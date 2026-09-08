@@ -18,9 +18,16 @@ const pretDesde = (page: Page) => page.getByLabel('Pretensión, desde')
 const pretHasta = (page: Page) => page.getByLabel('Pretensión, hasta')
 
 test.describe('Nuevo · filtros del ranking', () => {
+  /*
+    La pantalla abre por «Por revisar», que solo trae a quien espera una
+    decisión. Lo que se mide aquí es otra cosa —los filtros, el orden, el
+    teclado—, así que se abre la tanda entera para tener filas con las que
+    trabajar; es lo que traía el corte de antes, «Con nota», en esta vacante.
+  */
   test.beforeEach(async ({ page }) => {
     await entrarAlPanel(page)
     await irAVacante(page, VACANTES.LLENA)
+    await corte(page, 'Toda la tanda').click()
   })
 
   test('el buscador encuentra CON y SIN tildes, en los dos sentidos', async ({ page }) => {
@@ -81,7 +88,7 @@ test.describe('Nuevo · filtros del ranking', () => {
     await expect(filasDelRanking(page)).toHaveCount(1)
 
     // Los chips llevan su recuento y salen de las filas, no del catálogo (4 ciudades).
-    await expect(page.locator('fieldset').first().getByRole('button')).toHaveCount(4)
+    await expect(page.getByRole('group', { name: 'Ciudad' }).getByRole('button')).toHaveCount(4)
   })
 
   test('rango de nota: quien no tiene nota queda fuera, y se dice', async ({ page }) => {
@@ -129,8 +136,8 @@ test.describe('Nuevo · filtros del ranking', () => {
     // El resumen del pliegue cuenta los filtros plegados (ciudad + nota = 2).
     await expect(page.getByText('Ciudad, nota y pretensión')).toContainText('2')
 
-    // Y el corte recorta encima: «Está aquí ahora» en Perfil es solo Camila.
-    await corte(page, 'Está aquí ahora').click()
+    // Y el corte recorta encima: a Lucía no le toca hacer nada, así que cae.
+    await corte(page, 'Le toca al candidato').click()
     await expect(filasDelRanking(page)).toHaveCount(0)
   })
 
@@ -169,12 +176,17 @@ test.describe('Nuevo · filtros del ranking', () => {
     await expect(page.locator('table tbody tr').last()).toContainText('pasa los filtros que hay puestos')
   })
 
-  test('el vacío SIN filtros sí dice por qué nadie tiene nota', async ({ page }) => {
-    await pestana(page, 'Prueba del puesto').click()
-    // Corte «Con nota de la prueba»: nadie la ha rendido.
+  test('el vacío SIN filtros sí dice que no hay a quién revisar', async ({ page }) => {
+    /*
+      Simulación y no la prueba: en la prueba SÍ hay alguien esperando decisión
+      —`PRUEBA_POR_CONFIRMAR`— y el vacío que este test mide no se daba. En
+      simulación nadie entra, que además es el estado normal de esa pestaña.
+    */
+    await pestana(page, 'Simulación').click()
+    await corte(page, 'Por revisar').click()
     await expect(filasDelRanking(page)).toHaveCount(0)
     await expect(page.locator('table tbody tr').last()).toContainText(
-      'Nadie tiene todavía nota de la prueba: hace falta la prueba rendida y calificada.',
+      'Nadie espera tu decisión en Simulación',
     )
   })
 
@@ -203,7 +215,7 @@ test.describe('Nuevo · filtros del ranking', () => {
     await page.reload()
     await expect(page.getByRole('tablist', { name: 'Etapa del ranking' })).toBeVisible()
     await expect(pestana(page, 'Perfil integral')).toHaveAttribute('aria-selected', 'true')
-    await expect(corte(page, 'Con nota del perfil')).toHaveAttribute('aria-pressed', 'true')
+    await expect(corte(page, 'Por revisar')).toHaveAttribute('aria-pressed', 'true')
     await expect(page.getByRole('searchbox')).toHaveValue('')
     await expect(cabecera(page, 'Candidato')).toHaveAttribute('aria-sort', 'none')
   })
