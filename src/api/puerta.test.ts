@@ -23,6 +23,13 @@ function respuestaVacia() {
   return new Response(null, { status: 204, headers: { date: CUANDO } })
 }
 
+function respuestaJson(datos: unknown, cabeceras: Record<string, string> = {}) {
+  return new Response(JSON.stringify(datos), {
+    status: 200,
+    headers: { date: CUANDO, 'Content-Type': 'application/json', ...cabeceras },
+  })
+}
+
 /** Tipado como el `fetch` de verdad, para poder mirar con que se le llamo. */
 function fetchDeMentira(responder: () => Response) {
   return vi.fn<typeof fetch>(async () => responder())
@@ -77,6 +84,15 @@ describe('a donde pide la puerta', () => {
     expect(espia).toHaveBeenCalledWith(
       'https://renaser-os-postulantes.vercel.app/api/v1/panel/vacantes',
       expect.anything(),
+    )
+  })
+
+  it('lee el JSON aunque la capa nativa marque Content-Length como cero', async () => {
+    const vacantes = [{ id: 19, titulo: 'Especialista en Gestión del Talento' }]
+    vi.stubGlobal('fetch', fetchDeMentira(() => respuestaJson(vacantes, { 'Content-Length': '0' })))
+
+    await expect(crearPuerta('/api/v1/portal', 'token_de_prueba').pedir('/vacantes')).resolves.toEqual(
+      vacantes,
     )
   })
 })
@@ -216,6 +232,14 @@ describe('pedir un archivo', () => {
     expect(archivo.nombre).toBeNull()
   })
 
+  it('con Content-Length cero conserva un archivo cuyo cuerpo sí llegó', async () => {
+    vi.stubGlobal('fetch', fetchDeMentira(() => excel({ 'Content-Length': '0' })))
+
+    const archivo = await crearPuerta('/api/v1/panel', 't').pedirArchivo('/x/ranking/excel')
+
+    expect(await archivo.contenido.text()).toBe('contenido')
+  })
+
   /*
    * ⚠️ **Un fallo NO viene como archivo.** Spring responde
    * `application/problem+json` aunque la ruta devuelva un `.xlsx`, asi que el
@@ -246,7 +270,21 @@ describe('pedir un archivo', () => {
    * guarde cero bytes con extension `.xlsx`.
    */
   it('un 200 sin cuerpo se dice, no se guarda vacio', async () => {
-    vi.stubGlobal('fetch', fetchDeMentira(respuestaVacia))
+    vi.stubGlobal(
+      'fetch',
+      fetchDeMentira(
+        () =>
+          new Response(null, {
+            status: 200,
+            headers: {
+              date: CUANDO,
+              'Content-Type':
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+              'Content-Length': '0',
+            },
+          }),
+      ),
+    )
 
     await expect(
       crearPuerta('/api/v1/panel', 't').pedirArchivo('/x/ranking/excel'),

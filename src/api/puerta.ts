@@ -277,11 +277,11 @@ export function crearPuerta(base: string, claveToken: string): Puerta {
 
     anotarHoraDelServidor(respuesta.headers.get('Date'))
 
-    // Muchas rutas devuelven 204 sin cuerpo, y un error tambien puede venir
-    // vacio. El estado manda: primero se mira si fallo, y solo despues si hay
-    // algo que leer. Al reves, un 500 sin cuerpo se colaba como exito.
-    const sinCuerpo =
-      respuesta.status === 204 || respuesta.headers.get('Content-Length') === '0'
+    // Muchas rutas devuelven 204 sin cuerpo. No usamos Content-Length para
+    // decidirlo: CapacitorHttp puede reconstruir una respuesta nativa con
+    // `Content-Length: 0` aunque el cuerpo JSON sí haya llegado completo.
+    // Confiar en esa cabecera hacía que React Query recibiera `undefined`.
+    const sinCuerpo = respuesta.status === 204
 
     if (!respuesta.ok) {
       const leido = sinCuerpo ? null : await leerCuerpo(respuesta)
@@ -316,8 +316,12 @@ export function crearPuerta(base: string, claveToken: string): Puerta {
     if (sinCuerpo) {
       throw new ErrorApi(respuesta.status, 'El servidor no devolvió ningún archivo.')
     }
+    const contenido = await respuesta.blob()
+    if (contenido.size === 0) {
+      throw new ErrorApi(respuesta.status, 'El servidor no devolvió ningún archivo.')
+    }
     return {
-      contenido: await respuesta.blob(),
+      contenido,
       nombre: nombreDelArchivo(respuesta.headers.get('Content-Disposition')),
     }
   }

@@ -37,7 +37,7 @@ android {
         // siquiera de una version retirada. Un `0.1.0` no se traduce a un
         // entero creciente sin inventar una regla que algun dia se salta. Se
         // sube a mano, y subirlo es parte de publicar.
-        versionCode 1
+        versionCode 4
         versionName versionDelPortal
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {

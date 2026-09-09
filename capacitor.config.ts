@@ -25,8 +25,8 @@ const config: CapacitorConfig = {
      *
      * Es lo que permite **no pedirle CORS al backend**: una peticion nativa no
      * tiene origen, asi que no hay comprobacion que superar. La regla de
-     * `CLAUDE.md` —no abrir el backend a otros origenes— queda intacta sin
-     * tocar Spring.
+     * `docs/REGLAS-DEL-CODIGO.md` —no abrir el backend a otros origenes— queda
+     * intacta sin tocar Spring.
      *
      * ⚠️ Parchea `fetch` globalmente, y de ahi salen las dos guardias de
      * `puerta.test.ts`: que la cabecera `Date` siga llegando (el cronometro de

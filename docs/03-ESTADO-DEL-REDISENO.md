@@ -16,7 +16,7 @@ el estilo son ya CSS Modules.
 
 **Desde el 25/08 hay una segunda cara en el mismo repositorio**: el panel del equipo, en
 `/admin`. Es provisional a sabiendas —debería estar en RENASER OS— y su estado vive en
-[CLAUDE.md](../CLAUDE.md), no aquí: este documento es del rediseño del portal, que ya
+[PANEL.md](PANEL.md), no aquí: este documento es del rediseño del portal, que ya
 terminó.
 
 | Pieza | Dónde |
@@ -24,7 +24,6 @@ terminó.
 | Maquetado publicado | https://claude.ai/code/artifact/7239da41-c745-472c-9b90-19df9d4ef666 |
 | Fuentes del maquetado | `maquetado/*.body.html`, se reensamblan con `node armar.mjs` |
 | Qué ve el candidato, pantalla por pantalla | [02-QUE-VE-EL-CANDIDATO.md](02-QUE-VE-EL-CANDIDATO.md) |
-| Análisis del portal viejo | [01-ANALISIS-PORTAL.md](01-ANALISIS-PORTAL.md) |
 
 El maquetado tiene 17 pantallas en dos páginas: las tres elegidas más el estudio de color,
 y las doce del recorrido.

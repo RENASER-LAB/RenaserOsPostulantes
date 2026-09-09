@@ -6,7 +6,7 @@ que sigue es medible y verificable, y no incluye juicios de UX —eso lo hace `c
 > **Es una foto del 24/08, no una lista de pendientes.** Los dos P1 —el título de la pestaña
 > y los trece tamaños de letra— se arreglaron ese mismo día, junto con los dos P0 de
 > `critique`. Se deja el informe entero porque el **cómo se midió** es lo que hay que repetir
-> la próxima vez; qué quedó arreglado y dónde está en [CLAUDE.md](../CLAUDE.md).
+> la próxima vez; qué quedó arreglado y dónde está en la [bitácora de agosto](BITACORA-2026-08.md).
 
 **Cómo se midió.** Un guion de Playwright recorrió **once rutas en dos anchos** (1280 y 375),
 con las respuestas del backend interceptadas —la base real es producción y no se toca—, y midió
@@ -140,8 +140,8 @@ Los tres que más importan:
   `<Modal>`.
 - **Categoría:** Integridad de implementación.
 - **Impacto:** Ninguno hoy: los seis están fuera de un `<form>`, así que el `type="submit"` de
-  fábrica no envía nada. Pero es exactamente la trampa que el `CLAUDE.md` de este proyecto tiene
-  anotada por haber costado un fallo real, y el día que uno de esos modales entre en un
+  fábrica no envía nada. Pero es exactamente la trampa que
+  [REGLAS-DEL-CODIGO.md](REGLAS-DEL-CODIGO.md) tiene anotada por haber costado un fallo real, y el día que uno de esos modales entre en un
   formulario, entrega la prueba sin querer.
 - **Cómo se arregla:** `type="button"` en los seis.
 - **Comando:** `/impeccable harden`

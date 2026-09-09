@@ -11,8 +11,9 @@ El panel debería vivir integrado en RENASER OS, y ese sigue siendo el plan. Est
 mientras se termina lo que permitirá a otras empresas crear sus propias vacantes; se
 sabe provisional y se construyó a sabiendas.
 
-Si vas a retomar el trabajo, empieza por [CLAUDE.md](CLAUDE.md): tiene el contexto
-completo — con qué habla el portal, qué se decidió y por qué, y qué está a medias.
+Si vas a retomar el trabajo, empieza por [CLAUDE.md](CLAUDE.md) —las reglas de trabajo y el
+mapa— y sigue por [docs/README.md](docs/README.md), que indexa todo lo demás: qué ve el
+candidato, el proceso entero, las reglas del código, qué se decidió y qué está a medias.
 
 ## Levantarlo
 
