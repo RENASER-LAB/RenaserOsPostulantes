@@ -253,11 +253,46 @@ test.describe.serial('El recorrido entero de una vacante', () => {
   })
 
   /**
+   * El interruptor del recorrido automático.
+   *
+   * Encendido, quien postule se califica solo y llega hasta la prueba del puesto
+   * sin que nadie confirme nada. Aquí solo se comprueba que el interruptor existe,
+   * que dice en palabras llanas qué implica y que el backend lo guarda: el
+   * recorrido entero lo prueba `FlujoCalificacionIaIT` en el backend, que puede
+   * esperar a la IA sin gastar dinero de verdad.
+   */
+  test('la vacante se puede poner en automático, y lo dice sin jerga', async ({ page }) => {
+    await abrirLaVacante(page)
+    await page.getByRole('button', { name: 'Configuración de la vacante' }).click()
+
+    const interruptor = page.getByRole('checkbox', { name: /Calificar y avanzar sola/i })
+    await expect(interruptor).toBeVisible({ timeout: 15_000 })
+    await expect(interruptor).not.toBeChecked()
+    // Apagado por defecto: en automático cada postulante cuesta una llamada al
+    // modelo, y esa decisión es de quien lleva la vacante.
+    await expect(page.locator('main')).toContainText(/cada paso lo pides tú/i)
+
+    await interruptor.check()
+    await expect(interruptor).toBeChecked({ timeout: 15_000 })
+    // Y lo que promete se dice sin nombrar modelos ni colas.
+    await expect(page.locator('main')).toContainText(/se califica sola y llega hasta la prueba/i)
+
+    // Se deja como estaba: la siguiente prueba cierra esta vacante.
+    await interruptor.uncheck()
+    await expect(interruptor).not.toBeChecked({ timeout: 15_000 })
+  })
+
+  /**
    * Recoger. Una vacante publicada la ve todo el que entre al portal, y no hay
    * forma de borrarla: lo más cerca que se puede dejar es cerrada.
    */
   test('se cierra: el e2e no deja vacantes sueltas en el portal', async ({ page }) => {
     await abrirLaVacante(page)
+    // Cerrar una vacante se hace una sola vez y no tiene vuelta atrás: desde la
+    // V53 vive dentro de la tuerca, la última de la configuración, y no en la
+    // cabecera compitiendo con lo que se hace todos los días.
+    await page.getByRole('button', { name: 'Configuración de la vacante' }).click()
+    await page.getByRole('button', { name: 'Cerrar vacante' }).click()
     await page.getByPlaceholder('Motivo del cierre').fill('Limpieza: la dejó el e2e')
     await page.getByRole('button', { name: 'Cerrar vacante' }).click()
     await expect(page.getByText(/^Cerrada/)).toBeVisible({ timeout: 15_000 })
