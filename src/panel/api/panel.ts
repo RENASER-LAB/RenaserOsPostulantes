@@ -743,17 +743,23 @@ export const calificarPerfilIntegralConIa = (postulacionId: number) =>
   )
 
 /**
- * La tanda entera de una vez.
+ * Calificar de una vez a todos los de la tanda a los que les falta la nota.
  *
- * La rapida es el modelo que no razona, en paralelo: ordena, no decide, y sus
- * notas quedan marcadas como provisionales. La fina vuelve sobre la parte alta
- * —cuanta, lo dice el parametro `porcentaje_criba_fina`— y **pisa** aquellas.
+ * Se salta a quien ya la tiene y a quien esta cerrado. No devuelve notas:
+ * encola, y tarda alrededor de minuto y medio por cada diez curriculums.
+ *
+ * Hasta la V53 eran dos llamadas —una pasada barata para ordenar y otra
+ * cuidadosa solo sobre la parte alta—. Nadie miraba las notas de la primera.
  */
-export const cribaRapida = (vacanteId: number) =>
-  pedir<PasadaEncolada>(`/vacantes/${vacanteId}/criba-rapida`, { metodo: 'POST' })
+export const calificarTanda = (vacanteId: number) =>
+  pedir<PasadaEncolada>(`/vacantes/${vacanteId}/calificar-tanda`, { metodo: 'POST' })
 
-export const cribaFina = (vacanteId: number) =>
-  pedir<PasadaEncolada>(`/vacantes/${vacanteId}/criba-fina`, { metodo: 'POST' })
+/** Encender o apagar el recorrido automatico de una vacante. */
+export const activarCalificacionAutomatica = (vacanteId: number, activa: boolean) =>
+  pedir<void>(`/vacantes/${vacanteId}/calificacion-automatica`, {
+    metodo: 'POST',
+    cuerpo: { activa },
+  })
 
 /**
  * Cuando cierra la prueba de esta vacante, para todos.

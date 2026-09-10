@@ -13,11 +13,12 @@
  *     fallar a medias; decir «fallo» a secas dejaria sin saber quien si paso.
  */
 
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
+  activarCalificacionAutomatica,
   aplicarEvaluacion,
   elegirInstrumentoTecnico,
   asignarPlantillaPrueba,
@@ -36,7 +37,6 @@ import {
   publicarVacante,
   quitarRequisito,
   verCatalogos,
-  verEmbudo,
   verFicha,
   verHistorial,
   verPerfilIntegral,
@@ -243,11 +243,6 @@ export function VacantePanelDetalle() {
     queryFn: () => verVacante(vacanteId),
     enabled: Number.isFinite(vacanteId),
   })
-  const embudo = useQuery({
-    queryKey: ['panel-embudo', vacanteId],
-    queryFn: () => verEmbudo(vacanteId),
-    enabled: Number.isFinite(vacanteId),
-  })
   /*
     ⚠️ Aqui arriba y no junto a `v`, que es donde se usa: abajo quedaria detras
     de los `return` de cargando y de fallo, y un hook que a veces no se llama
@@ -281,10 +276,6 @@ export function VacantePanelDetalle() {
     queryFn: () => verRanking(vacanteId, etapa),
     enabled: Number.isFinite(vacanteId),
   })
-  const catalogos = useQuery({
-    queryKey: ['panel-catalogos'],
-    queryFn: verCatalogos,
-  })
 
   const [fallo, setFallo] = useState<string | null>(null)
 
@@ -295,7 +286,23 @@ export function VacantePanelDetalle() {
   })
   const [motivoCierre, setMotivoCierre] = useState('')
   const [mostrarCierre, setMostrarCierre] = useState(false)
+  const [mostrarAjustes, setMostrarAjustes] = useState(false)
+  const botonAjustes = useRef<HTMLButtonElement>(null)
   const botonCierre = useRef<HTMLButtonElement>(null)
+  /*
+    Abierta sola en un borrador: ahí la vacante todavía se está montando y lo
+    que hace falta es justo lo de dentro. Publicada, lo que hace falta es la
+    tabla, y la tuerca se abre cuando alguien la pida.
+
+    Va en un efecto y no en el valor inicial del estado porque en el primer
+    render la vacante todavía no ha llegado: leerla ahí daría siempre `false`, y
+    un borrador recién creado abriría con la configuración escondida — que es
+    justo lo único que hay que hacer en él.
+  */
+  const estadoDeLaVacante = vacante.data?.estado
+  useEffect(() => {
+    if (estadoDeLaVacante === 'BORRADOR') setMostrarAjustes(true)
+  }, [estadoDeLaVacante])
   const cancelarCierre = () => {
     setMostrarCierre(false)
     setMotivoCierre('')
@@ -309,20 +316,6 @@ export function VacantePanelDetalle() {
     },
     onError: (c) => setFallo(c instanceof Error ? c.message : 'No se pudo cerrar.'),
   })
-
-  // El nombre legible de cada estado sale del catalogo del backend: una sola
-  // fuente, igual que en el portal.
-  const nombreDeEstado = useMemo(() => {
-    const mapa = new Map<string, string>()
-    for (const e of catalogos.data?.estados ?? []) mapa.set(e.codigo, e.nombre)
-    return (codigo: string) => mapa.get(codigo) ?? codigo
-  }, [catalogos.data])
-
-  const ordenDeEstado = useMemo(() => {
-    const mapa = new Map<string, number>()
-    for (const e of catalogos.data?.estados ?? []) mapa.set(e.codigo, e.orden)
-    return (codigo: string) => mapa.get(codigo) ?? 99
-  }, [catalogos.data])
 
   if (vacante.isPending) return <p className={estilos.cargando}>Cargando la vacante…</p>
   if (vacante.isError) {
@@ -406,19 +399,23 @@ export function VacantePanelDetalle() {
             )}
           </div>
         )}
-        {v.estado === 'PUBLICADA' && (
-          <button
-            ref={botonCierre}
-            className={estilos.accionSecundaria}
-            type="button"
-            aria-expanded={mostrarCierre}
-            aria-controls="cerrar-vacante"
-            disabled={cierre.isPending}
-            onClick={() => mostrarCierre ? cancelarCierre() : setMostrarCierre(true)}
-          >
-            Cerrar vacante
-          </button>
-        )}
+        {/*
+          La tuerca: todo lo que se configura de esta vacante entra por aquí, y
+          nada de eso compite ya con lo que se hace todos los días, que es mirar
+          la tabla y decidir.
+        */}
+        <button
+          ref={botonAjustes}
+          className={estilos.tuerca}
+          type="button"
+          aria-expanded={mostrarAjustes}
+          aria-controls="ajustes-vacante"
+          title="Configuración de la vacante"
+          onClick={() => setMostrarAjustes(!mostrarAjustes)}
+        >
+          <span aria-hidden="true">⚙</span>
+          <span className={estilos.soloLectores}>Configuración de la vacante</span>
+        </button>
       </header>
 
       {v.estado === 'PUBLICADA' && mostrarCierre && (
@@ -468,38 +465,43 @@ export function VacantePanelDetalle() {
         </p>
       )}
 
-      {/* Se conserva montada al plegar: editar y consultar no pierde los borradores. */}
-      <details className={estilos.configuracionPlegable} open={v.estado === 'BORRADOR'}>
-        <summary className={estilos.resumenConfiguracion}>
-          <span>Configuración de la vacante</span>
-          <span className={estilos.alcanceConfiguracion}>Evaluaciones, plazos y requisitos</span>
-        </summary>
-        <div className={estilos.cuerpoConfiguracion}>
-          <ConfiguracionDeLaVacante vacante={v} />
-          <Requisitos vacanteId={vacanteId} />
-        </div>
-      </details>
-
-      {/* ---------- El embudo ---------- */}
-      {embudo.data && Object.keys(embudo.data.porEstado).length > 0 && (
-        <section className={estilos.resumenProceso}>
-          <h2 className={estilos.tituloSeccion}>En qué va la tanda</h2>
-          <ul className={estilos.embudo} role="list">
-            {Object.entries(embudo.data.porEstado)
-              .sort(([a], [b]) => ordenDeEstado(a) - ordenDeEstado(b))
-              .map(([estado, cuantos]) => (
-                <li className={estilos.tramoEmbudo} key={estado}>
-                  <span className={estilos.cuantos}>{cuantos}</span>
-                  <span className={estilos.enQue}>{nombreDeEstado(estado)}</span>
-                </li>
-              ))}
-          </ul>
-        </section>
-      )}
+      {/*
+        ⚠️ **Se oculta, NUNCA se desmonta**, y esto no es una preferencia.
+        Dentro hay tres borradores a medio escribir que solo viven en memoria: el
+        requisito que se está redactando, los minutos de la etapa técnica —que se
+        guardan con botón, no al teclear— y las fechas del cierre de la prueba.
+        Un renderizado condicional los tiraría cada vez que se cierra la tuerca.
+      */}
+      <section
+        id="ajustes-vacante"
+        className={estilos.cuerpoConfiguracion}
+        hidden={!mostrarAjustes}
+        aria-label="Configuración de la vacante"
+      >
+        <ConfiguracionDeLaVacante vacante={v} />
+        <Requisitos vacanteId={vacanteId} />
+        {v.estado === 'PUBLICADA' && (
+          <div className={estilos.cierreDeLaVacante}>
+            {/* El mismo botón abre y cierra, y no se desmonta al abrir: cancelar
+                con Escape le devuelve el foco, y un botón nuevo no sería él. */}
+            <button
+              ref={botonCierre}
+              className={estilos.accionSecundaria}
+              type="button"
+              aria-expanded={mostrarCierre}
+              aria-controls="cerrar-vacante"
+              disabled={cierre.isPending}
+              onClick={() => (mostrarCierre ? cancelarCierre() : setMostrarCierre(true))}
+            >
+              Cerrar vacante
+            </button>
+          </div>
+        )}
+      </section>
 
       {/* ---------- El ranking ---------- */}
       <section className={estilos.seccion}>
-        <h2 className={estilos.tituloSeccion}>El ranking, etapa por etapa</h2>
+        <h2 className={estilos.tituloSeccion}>Ranking</h2>
 
         {/* Una pestana por etapa: la tabla es la misma mesa de decidir, lo que
             cambia es de que etapa es la nota con la que se ordena. */}
@@ -554,16 +556,6 @@ export function VacantePanelDetalle() {
           el sondeo. La peticion sigue viva en el servidor —el bloque nunca dice
           lo contrario— pero nadie volvera a refrescar solo.
         */}
-        {etapa === 'PERFIL_INTEGRAL' && ranking.data && (
-          <CalificarLaTanda
-            vacanteId={vacanteId}
-            total={ranking.data.total}
-            alTerminar={() => {
-              cache.invalidateQueries({ queryKey: ['panel-ranking', vacanteId] })
-              cache.invalidateQueries({ queryKey: ['panel-embudo', vacanteId] })
-            }}
-          />
-        )}
         {/*
           ⚠️ **Solo en la prueba, y encima de la tabla.** El equivalente del
           currículum —`CalificarLaTanda`— vive justo arriba y solo en Perfil
@@ -596,9 +588,6 @@ export function VacantePanelDetalle() {
             alAvanzar={async () => {
               await cache.invalidateQueries({
                 queryKey: ['panel-ranking', vacanteId],
-              })
-              await cache.invalidateQueries({
-                queryKey: ['panel-embudo', vacanteId],
               })
             }}
           />
@@ -1111,6 +1100,23 @@ function Ranking({
         puedeDescargar={seExportaAExcel(etapa)}
         descargando={descargando}
         alDescargar={() => void descargarExcel()}
+        calificar={
+          /*
+            Solo en Perfil integral: lo que califica es el curriculum, y en las
+            otras cuatro pestañas ese boton hablaria de otra etapa.
+
+            Hasta la V53 esto era una seccion entera encima de la tabla, con
+            titulo y un parrafo de tres lineas. Aqui ocupa una casilla al lado
+            de «Descargar Excel» y no baja la tabla ni una fila.
+          */
+          etapa === 'PERFIL_INTEGRAL' ? (
+            <CalificarLaTanda
+              vacanteId={vacanteId}
+              total={filas.length}
+              alTerminar={() => void alAvanzar()}
+            />
+          ) : null
+        }
       />
       {falloDescarga && (
         <p className={estilos.avisoMalo} role="alert">
@@ -1679,6 +1685,7 @@ function BarraDeFiltros({
   descargando,
   alDescargar,
   columnas,
+  calificar,
 }: {
   etapa: EtapaPanel
   filtros: Filtros
@@ -1693,6 +1700,13 @@ function BarraDeFiltros({
   descargando: boolean
   alDescargar: () => void
   columnas: ReactNode
+  /**
+   * El boton de calificar la tanda, o nada si esta etapa no se califica.
+   *
+   * Llega hecho desde arriba, igual que `columnas`: esta barra pinta acciones
+   * sobre la tabla y no sabe —ni tiene por que— de colas ni de sondeos.
+   */
+  calificar: ReactNode
 }) {
   const cambiar = <C extends keyof Filtros>(campo: C, valor: Filtros[C]) =>
     alCambiar({ ...filtros, [campo]: valor })
@@ -1878,6 +1892,8 @@ function BarraDeFiltros({
           ocho filas con su detalle tarda; un botón que no cambia invita a
           pulsarlo tres veces y a bajar tres archivos iguales.
         */}
+        {calificar}
+
         {puedeDescargar && (
           <button
             type="button"
@@ -3205,6 +3221,11 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
     onSuccess: refrescar,
     onError: alFallar,
   })
+  const automatica = useMutation({
+    mutationFn: (activa: boolean) => activarCalificacionAutomatica(vacante.id, activa),
+    onSuccess: refrescar,
+    onError: alFallar,
+  })
   /*
     Qué se rinde en la etapa técnica, y en cuántos minutos. Van juntos en la misma
     llamada porque el backend los recibe juntos: los minutos son parte de la vara, no un
@@ -3297,6 +3318,24 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
       )}
 
       <div className={estilos.configuracion}>
+        <fieldset className={estilos.grupoConfiguracion}>
+          <legend>Cómo avanza esta vacante</legend>
+          <label className={estilos.ajuste}>
+            <span className={estilos.etiquetaAjuste}>Calificar y avanzar sola</span>
+            <span className={estilos.interruptor}>
+              <input
+                type="checkbox"
+                checked={vacante.calificacionAutomatica}
+                onChange={(e) => automatica.mutate(e.target.checked)}
+                disabled={automatica.isPending}
+              />
+              {vacante.calificacionAutomatica
+                ? 'Encendido: cada persona que postule se califica sola y llega hasta la prueba del puesto sin que nadie intervenga. Tú decides al final, cuando ya tienes sus notas'
+                : 'Apagado: cada paso lo pides tú desde esta pantalla'}
+            </span>
+          </label>
+        </fieldset>
+
         <fieldset className={estilos.grupoConfiguracion}>
           <legend>Evaluación del banco</legend>
         <label className={estilos.ajuste}>
