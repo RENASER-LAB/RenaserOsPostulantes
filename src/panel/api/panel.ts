@@ -204,6 +204,41 @@ export const confirmarAvance = (postulacionId: number, motivo: string) =>
     cuerpo: { motivo },
   })
 
+/**
+ * Mover una postulacion a cualquier estado, con el motivo escrito que exige el
+ * backend en TODA transicion manual —lo comprueba el servicio y ademas un CHECK
+ * de la base, asi que mandarlo vacio no es un campo de relleno que se salte:
+ * es un 400.
+ *
+ * ⚠️ **Hacia un estado final esto avisa al candidato por correo.** `NO_CONTINUA`
+ * dispara la plantilla `POSTULACION_NO_CONTINUA` —«en esta ocasion tu
+ * postulacion no continua»— sin preguntar nada mas, y el motivo que se escriba
+ * aqui NO viaja en ese correo: queda en el historial y en la auditoria, que es
+ * donde lo leera alguien dentro de seis meses.
+ *
+ * ⚠️ **`avisar: false` calla ese correo, y solo eso.** El estado cambia igual, la transicion
+ * se guarda igual y la auditoria se escribe igual. Es para cuando el equipo ya habló con esa
+ * persona por otro lado y una carta automatica llegaria despues de la conversacion diciendo lo
+ * mismo peor. Que no se aviso queda escrito —el backend lo marca en el motivo y en la
+ * auditoria—, porque si no, un descarte silencioso y uno normal se leen igual seis meses
+ * despues.
+ *
+ * `motivoCierre` se deja fuera a proposito. Cuando el destino es un cierre y no
+ * llega, el backend lo rellena solo —`DECISION_PERSONA` para `NO_CONTINUA`,
+ * `CIERRE_MANUAL` para `CERRADA`—, que es exactamente lo que toca cuando cierra
+ * una persona desde el panel.
+ */
+export const transicionar = (
+  postulacionId: number,
+  estadoDestino: string,
+  motivo: string,
+  avisar = true,
+) =>
+  pedir<void>(`/postulaciones/${postulacionId}/transiciones`, {
+    metodo: 'POST',
+    cuerpo: { estadoDestino, motivo, avisar },
+  })
+
 // ---------- Simulacion ----------
 
 export const listarSesiones = () => pedir<SesionPanel[]>('/sesiones-simulacion')

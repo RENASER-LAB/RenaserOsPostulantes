@@ -59,6 +59,40 @@ evaluación entregada de verdad en la base local —sembrada con
 Verificarlo entero: `npx playwright test herramientas/e2e/13-etapas.spec.ts`
 (Chrome visible, solo lee).
 
+### Descartar a un candidato, desde su ficha (11/09)
+
+La ficha del ranking trae un botón **«Descartar»** con una ventana de un solo campo: el motivo
+escrito, obligatorio. Manda `NO_CONTINUA` a `POST /postulaciones/{id}/transiciones`.
+
+| Qué | Cómo se decide |
+|---|---|
+| Si el botón se ve | `puedeMoverPostulacion` de la ficha, no una lista de roles en el navegador. El login solo devuelve token e id: no hay endpoint de «mis permisos» |
+| Si la postulación ya terminó | `esFinal` del estado en `GET /panel/catalogos`. El botón no sale y una línea lo explica |
+| Qué se manda | Solo `estadoDestino` y `motivo`; el `motivoCierre` lo rellena el backend |
+
+⚠️ **Al confirmar sale un correo de rechazo al candidato**, al momento y sin vuelta atrás. La
+ventana lo avisa con su nombre antes de pedir el motivo. **El motivo no viaja en ese correo**: lo
+lee el equipo en el historial.
+
+⚠️ **Un 404 al pulsar no es que la ficha no exista.** El alcance se guarda por permiso: quien
+pueda abrir fichas de todos y mover solo las suyas verá el botón y recibirá un 404. Está
+traducido como lo que es, un límite del alcance del rol.
+
+**Y a varios a la vez, desde la mesa de la tabla (11/09).** Junto a «Avanzar a N personas» hay
+ahora «Descartar a N personas»: las mismas casillas, el mismo motivo. Por eso el campo dejó de
+llamarse «motivo del avance» —con el descarte al lado, ese nombre haría escribir un motivo de
+avance para acabar cerrando a seis personas con él—.
+
+⚠️ **El botón del lote NO actúa al pulsarlo**, al revés que el de avanzar: abre una ventana con
+los nombres escritos. El error real no es equivocarse de botón, es llegar con alguien marcado de
+una pestaña anterior, y la cifra sola no lo enseña. Va uno a uno; quien falle sale nombrado y no
+frena a los demás, así que la ventana promete «hasta N» correos.
+
+**La casilla «avisar por correo»**, en los dos sitios y encendida de salida, permite descartar
+sin que le llegue nada al candidato — para cuando ya se habló con esa persona por otro lado. Se
+manda como `avisar: false`; el backend calla solo el correo y **deja escrito que no se avisó**,
+en el motivo del historial y en la auditoría.
+
 ### Publicar una vacante exige tres cosas antes (25/08)
 
 Era el atasco: el backend rechaza publicar y el panel no tenía dónde resolverlo. Ahora las

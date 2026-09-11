@@ -656,6 +656,19 @@ export interface RankingVacante {
    * booleano es lo único que las separa desde el navegador.
    */
   puedeVerPretension: boolean
+  /**
+   * Si quien pide la tanda puede mover postulaciones.
+   *
+   * Está aquí por lo mismo que en la ficha: **el login solo devuelve token e
+   * id**, así que el panel no tiene otra forma de saber qué permisos trae la
+   * sesión. Lo usa la mesa de la tabla para decidir si ofrece descartar a la
+   * tanda marcada; sin él, ese botón saldría para todo el mundo y la mitad del
+   * equipo descubriría su rol chocando contra un 403 con seis marcadas.
+   *
+   * ⚠️ Dice si el permiso **está**, no hasta dónde llega su alcance. Es para
+   * decidir qué se pinta, nunca la defensa.
+   */
+  puedeMoverPostulacion: boolean
   filas: FilaRanking[]
 }
 
@@ -674,6 +687,19 @@ export interface FichaPostulacion {
   archivoCvId: number | null
   creadoEn: FechaIso
   movidoEn: FechaIso | null
+  /**
+   * Si quien abrio la ficha tiene `mover_postulacion`.
+   *
+   * No es un dato del candidato: es una facultad de quien mira, y viaja en la
+   * ficha por la misma razon que `puedeVerPretension` viaja en el ranking —el
+   * login solo devuelve token e id, asi que el panel no tiene ninguna otra
+   * forma de saber que permisos trae la sesion—. Sin el, la unica manera de
+   * averiguar si se puede descartar a alguien seria intentarlo y leer el 403.
+   *
+   * Es para decidir que se pinta, NUNCA la defensa: quien decide de verdad es
+   * el `@PreAuthorize` del backend.
+   */
+  puedeMoverPostulacion: boolean
 }
 
 export interface PasoHistorialPanel {
