@@ -6,7 +6,7 @@
  *
  * ⚠️ **Encolar no es calificar, y esa regla ordena todo lo que se lee aqui.**
  * Los cuatro endpoints contestan al momento; la llamada al modelo tarda decenas
- * de segundos —medio minuto por cada diez curriculums en la criba rapida—. Lo
+ * de segundos —minuto y medio por cada diez curriculums—. Lo
  * unico cierto tras un 200 es que **se pidio**. Por eso en este archivo no se
  * escribe nunca «calificado»: se escribe «se pidio», «esta calificando», «en
  * cola». Es la misma regla de los indicadores que mienten que ya costo
@@ -33,13 +33,11 @@
  * sigue su curso en el servidor y la tabla trae la nota cuando se vuelva a
  * abrir; lo unico que se pierde es que la traiga sola.
  *
- * **El violeta va en la criba rapida y en ningun otro sitio de este archivo.**
- * Es la que llena de notas un ranking vacio —sin ella la fina no tiene sobre
- * que volver— y ademas es la reversible de las dos: ponerlo en la fina
- * empujaria hacia la accion mas cara y la que pisa notas ya puestas. Y el boton
- * de una persona se queda en secundario aunque sea el unico de su ficha: el
- * bloque de la tanda esta siempre encima de la tabla, asi que un violeta en la
- * ficha significaria dos violetas en la misma pantalla.
+ * **Aqui no hay violeta, y no es un olvido.** En esta pantalla el violeta es
+ * «Avanzar a N personas», la accion principal. Hasta la V53 lo llevaba la criba
+ * rapida, que era el primer paso de todo; al quedar un solo boton de calificar
+ * se devolvio a donde toca, y este baja a secundario. El de una persona
+ * tambien: dos violetas en la misma pantalla no dicen cual es la accion.
  *
  * ⚠️ **`estado` SI se mira, y el `mensaje` del backend SI se pinta cuando dice
  * que no.** La primera version no hacia ninguna de las dos cosas: los valores
@@ -64,8 +62,7 @@ import { ErrorApi } from '../api/cliente'
 import {
   calificarPerfilIntegralConIa,
   calificarPruebaConIa,
-  cribaFina,
-  cribaRapida,
+  calificarTanda,
 } from '../api/panel'
 import { useSondeoAcotado } from './useSondeoAcotado'
 import estilos from './CalificarConIa.module.css'
@@ -97,7 +94,6 @@ const COMO_SE_PIDE: Record<EtapaQueSeCalifica, { boton: string; que: string }> =
   },
 }
 
-type Criba = 'RAPIDA' | 'FINA'
 
 /**
  * Cuanta gente hay en la tanda, dicho como se lee.
@@ -111,43 +107,6 @@ const cuantos = (total?: number) =>
     : total === 1
       ? 'la única persona de la tanda'
       : `las ${total} personas de la tanda`
-
-/**
- * Lo que se pregunta antes de cada criba.
- *
- * Las dos preguntan, y no solo la fina: las dos cambian de golpe los datos de
- * mucha gente, y la pregunta tiene que decir **a cuantos alcanza y que se
- * pierde**. Lo que no dice es lo que no sabemos: la rapida vuelve a puntuar a
- * todo el mundo, pero nadie ha comprobado si tambien pisa una nota de la fina,
- * asi que no se afirma.
- *
- * ⚠️ **El tamaño de la tanda se nombra en la rapida y NO en la fina**, aunque
- * el dato este ahi en las dos. En la rapida el numero **es** el alcance. En la
- * fina no: la fina va sobre la parte alta y cuanta es lo decide un parametro
- * del backend que esta pantalla no conoce. Metido ahi seria el unico numero de
- * la frase, y un numero gana siempre a la salvedad que lo rodea: se leeria
- * «pisa las notas de 24 personas», que es justo lo que no sabemos.
- */
-const CRIBAS: Record<
-  Criba,
-  { boton: string; confirmar: string; queSePierde: (total?: number) => string }
-> = {
-  RAPIDA: {
-    boton: 'Criba rápida',
-    confirmar: 'Sí, criba rápida',
-    queSePierde: (total) =>
-      `Alcanza a ${cuantos(total)}, también a quien ya tiene nota: se le vuelve a ` +
-      'puntuar y su nota queda marcada como provisional. Ordena la tanda, no decide por ti.',
-  },
-  FINA: {
-    boton: 'Criba fina',
-    confirmar: 'Sí, criba fina',
-    queSePierde: () =>
-      'Alcanza solo a la parte alta de la tanda —cuánta gente es lo decide un parámetro ' +
-      'del backend, no esta pantalla— y pisa las notas provisionales de la criba rápida ' +
-      'de quienes alcance.',
-  },
-}
 
 /** El unico valor de `estado` que significa que hay trabajo en marcha. */
 const ENCOLADA = 'ENCOLADA'
@@ -360,12 +319,19 @@ export function CalificarAUno({
 }
 
 /**
- * Pedirle notas a la tanda entera. Va encima de la tabla del ranking.
+ * Calificar de una vez a toda la tanda que le falte la nota.
  *
- * ⚠️ **Las dos cribas preguntan antes**, y la pregunta va aqui mismo y no en un
- * `<dialog>`: cabe en dos lineas, se lee pegada al boton que la abrio, y en una
- * pantalla donde ya hay una tabla larga un modal solo tapa lo que se esta a
- * punto de cambiar.
+ * Vive en la fila de filtros, al lado de «Descargar Excel»: es una accion sobre
+ * la tabla y ese es el sitio de las acciones sobre la tabla.
+ *
+ * ⚠️ **Pregunta antes**, y la pregunta va aqui mismo y no en un `<dialog>`:
+ * cabe en dos lineas, se lee pegada al boton que la abrio, y en una pantalla
+ * donde ya hay una tabla larga un modal solo tapa lo que se esta a punto de
+ * cambiar.
+ *
+ * ⚠️ **Y no lleva violeta.** En esta pantalla el violeta es «Avanzar a N
+ * personas», la accion principal. Hasta la V53 el violeta estaba aqui, en la
+ * criba rapida; al quedarse un solo boton se devolvio a donde toca.
  */
 export function CalificarLaTanda({
   vacanteId,
@@ -384,29 +350,27 @@ export function CalificarLaTanda({
   /** Refrescar el ranking. Las notas nuevas las trae el, no este bloque. */
   alTerminar: () => void
 }) {
-  const [preguntando, setPreguntando] = useState<Criba | null>(null)
+  const [preguntando, setPreguntando] = useState(false)
   const [fase, setFase] = useState<Fase>('reposo')
   const [fallo, setFallo] = useState<{ texto: string; permiso: boolean } | null>(null)
   // Cuanta gente dijo el servidor que entraba en la pasada. Es su numero, no
   // uno calculado aqui: por eso solo existe despues de la respuesta.
   const [encolados, setEncolados] = useState<number | null>(null)
-  const [pedida, setPedida] = useState<Criba | null>(null)
   const [noSeEncolo, setNoSeEncolo] = useState<NoSeEncolo | null>(null)
   const sondeo = useSondeoAcotado(PASOS_TANDA, alTerminar)
 
-  async function lanzar(criba: Criba) {
-    setPreguntando(null)
+  async function lanzar() {
+    setPreguntando(false)
     setFase('pidiendo')
     setFallo(null)
     setEncolados(null)
     setNoSeEncolo(null)
-    setPedida(criba)
     try {
-      const respuesta = await (criba === 'RAPIDA' ? cribaRapida(vacanteId) : cribaFina(vacanteId))
-      // Las dos cribas devuelven hoy `ENCOLADA` siempre, pero se comprueba
-      // igual: es la misma forma de respuesta que la de una persona, donde el
-      // segundo valor si existe, y el fallo que se arregla aqui consistio en
-      // dar por hecho lo que el servidor no habia dicho.
+      const respuesta = await calificarTanda(vacanteId)
+      // Hoy devuelve `ENCOLADA` siempre, pero se comprueba igual: es la misma
+      // forma de respuesta que la de una persona, donde el segundo valor si
+      // existe, y el fallo que se arregla aqui consistio en dar por hecho lo
+      // que el servidor no habia dicho.
       const paso = loQuePaso(respuesta)
       if (!paso.encolado) {
         setFase('reposo')
@@ -429,50 +393,27 @@ export function CalificarLaTanda({
 
   const pidiendo = fase === 'pidiendo'
 
-  /*
-   * La criba que se esta esperando se apaga; la otra no.
-   *
-   * Volver a pulsar la misma reiniciaria la cuenta de vueltas —«4 de 6» a «0 de
-   * 6»— con la pasada anterior todavia viva, y encima pagaria una segunda
-   * llamada al modelo por los mismos curriculums. La otra se deja pulsable a
-   * proposito: encadenar la fina detras de la rapida es una secuencia normal.
-   *
-   * ⚠️ **El sondeo sigue a la ultima peticion, no a las dos.** Si se lanza la
-   * fina con la rapida en marcha, la cuenta pasa a ser la de la fina. Es la
-   * simplificacion honesta que se puede hacer sin endpoint de estado.
-   */
-  const enVuelo = (criba: Criba) => sondeo.mirando && pedida === criba
-
   return (
     <div className={estilos.tanda}>
-      <h3 className={estilos.titulo}>Pedirle notas a la IA</h3>
-      {/* Tres frases y no cinco: esto vive encima de la tabla del ranking, que
-          es la mesa de trabajo de la jornada entera, y cada linea de aqui es una
-          linea que la tabla baja. Lo que se pierde al recortar lo repite la
-          pregunta de la confirmacion, que es donde de verdad hace falta. */}
-      <p className={estilos.explica}>
-        La rápida ordena la tanda entera con el modelo que no razona, y sus notas quedan
-        provisionales. La fina vuelve sobre la parte alta con el modelo que razona y las
-        sustituye. Ninguna de las dos devuelve la nota al momento: encolan.
-      </p>
-
       {preguntando ? (
         <div className={estilos.pregunta} role="status">
           <p className={estilos.queSePierde}>
-            {CRIBAS[preguntando].queSePierde(total)} ¿Seguimos?
+            Alcanza a quien todavía no tenga nota, de {cuantos(total)}. A quien ya la
+            tiene no se le toca. Tarda un rato y no devuelve las notas al momento.
+            ¿Seguimos?
           </p>
           <div className={estilos.acciones}>
             <button
               className={estilos.confirmar}
               type="button"
-              onClick={() => lanzar(preguntando)}
+              onClick={() => lanzar()}
             >
-              {CRIBAS[preguntando].confirmar}
+              Sí, calificar
             </button>
             <button
               className={estilos.cancelar}
               type="button"
-              onClick={() => setPreguntando(null)}
+              onClick={() => setPreguntando(false)}
             >
               Mejor no
             </button>
@@ -481,22 +422,13 @@ export function CalificarLaTanda({
       ) : (
         <div className={estilos.acciones}>
           <button
-            className={estilos.rapida}
+            className={estilos.calificar}
             type="button"
-            onClick={() => setPreguntando('RAPIDA')}
-            disabled={pidiendo || enVuelo('RAPIDA')}
-            aria-busy={pidiendo && pedida === 'RAPIDA'}
+            onClick={() => setPreguntando(true)}
+            disabled={pidiendo || sondeo.mirando}
+            aria-busy={pidiendo}
           >
-            {pidiendo && pedida === 'RAPIDA' ? 'Pidiéndolo…' : CRIBAS.RAPIDA.boton}
-          </button>
-          <button
-            className={estilos.fina}
-            type="button"
-            onClick={() => setPreguntando('FINA')}
-            disabled={pidiendo || enVuelo('FINA')}
-            aria-busy={pidiendo && pedida === 'FINA'}
-          >
-            {pidiendo && pedida === 'FINA' ? 'Pidiéndolo…' : CRIBAS.FINA.boton}
+            {pidiendo ? 'Pidiéndolo…' : 'Revisar y calificar pendientes'}
           </button>
           {fase === 'encolado' && sondeo.mirando && (
             <span className={estilos.calificando}>Está calificando</span>
@@ -514,25 +446,24 @@ export function CalificarLaTanda({
         />
       )}
 
-      {/* Aceptada y vacia. Sin esta rama se leia «Se pidió la criba rápida para
-          0 personas. Están en cola», con el sondeo mirando una cola que no
-          existe. Que el servidor acepte no quiere decir que hubiera trabajo. */}
+      {/* Aceptada y vacia. Sin esta rama se leia «Se pidio para 0 personas.
+          Estan en cola», con el sondeo mirando una cola que no existe. Que el
+          servidor acepte no quiere decir que hubiera trabajo. */}
       {fase === 'encolado' && encolados === 0 && (
         <p className={estilos.esperando} role="status">
-          <b>La pasada no alcanzó a nadie.</b> El servidor aceptó la petición y dice que en
-          esta tanda no hay ahora mismo nadie a quien pasarle la criba{' '}
-          {pedida === 'FINA' ? 'fina' : 'rápida'}. No hay nada esperando y el ranking no va
-          a cambiar por esto.
+          <b>No alcanzó a nadie.</b> El servidor aceptó la petición y dice que en esta tanda
+          no queda ahora mismo nadie sin nota. No hay nada esperando y el ranking no va a
+          cambiar por esto.
         </p>
       )}
 
       {fase === 'encolado' && sondeo.mirando && (
         <p className={estilos.esperando} role="status">
           <b>
-            Se pidió la criba {pedida === 'FINA' ? 'fina' : 'rápida'} para{' '}
+            Se pidió la nota de{' '}
             {encolados === 1 ? '1 persona' : `${encolados ?? 0} personas`}.
           </b>{' '}
-          Están en cola: la IA tarda alrededor de medio minuto por cada diez currículums.
+          Están en cola: la IA tarda alrededor de minuto y medio por cada diez currículums.
           Refrescamos el ranking por ti: {sondeo.vueltas} de {sondeo.total} veces. Las notas
           que aparezcan en la tabla salen del servidor.
         </p>
@@ -544,6 +475,7 @@ export function CalificarLaTanda({
     </div>
   )
 }
+
 
 /**
  * Cuando el sondeo se agota.

@@ -60,6 +60,8 @@ export interface VacantePanel {
   instrumentoEtapaTecnica: InstrumentoTecnico
   /** Minutos del candidato en esa etapa. `null` = los que traiga el instrumento elegido. */
   minutosEtapaTecnica: number | null
+  /** Encendido, la postulacion se califica y avanza sola hasta la prueba (V53). */
+  calificacionAutomatica: boolean
 }
 
 export type InstrumentoTecnico = 'PLANTILLA' | 'CUESTIONARIO_TECNICO'

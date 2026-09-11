@@ -218,6 +218,7 @@ const VACANTE: {
   versionPlantillaPruebaId: number | null
   versionPesosId: number | null
   instrumentoEtapaTecnica: string
+  calificacionAutomatica: boolean
   minutosEtapaTecnica: number | null
 } = {
   id: 1,
@@ -231,6 +232,7 @@ const VACANTE: {
   // Lo que trae toda vacante que ya existía: la prueba del puesto de siempre, con el
   // tiempo que diga su plantilla.
   instrumentoEtapaTecnica: 'PLANTILLA',
+  calificacionAutomatica: false,
   minutosEtapaTecnica: null,
 }
 
@@ -423,8 +425,22 @@ async function pintar(filas: FilaRanking[] = TANDA, puedeVerPretension = true) {
       </MemoryRouter>
     </QueryClientProvider>,
   )
-  await screen.findByRole('heading', { name: 'El ranking, etapa por etapa' })
+  await screen.findByRole('heading', { name: 'Ranking' })
   await waitFor(() => expect(losCortes()).toBeTruthy())
+
+  /*
+    La tuerca se abre aquí, para todas las pruebas.
+
+    Desde la V53 la configuración vive detrás de un botón y se oculta con
+    `hidden`, que sí saca su contenido del árbol accesible. Antes era un
+    `<details>` cerrado, cuyo contenido jsdom deja igualmente accesible: las
+    pruebas de la configuración funcionaban sin abrir nada, y en un navegador de
+    verdad ese contenido no estaba a la vista. Abrirla aquí las deja probando lo
+    mismo que ve una persona. Lo que la tuerca hace por sí misma —abrirse y
+    cerrarse— se prueba aparte.
+  */
+  const tuerca = screen.getByRole('button', { name: 'Configuración de la vacante' })
+  if (tuerca.getAttribute('aria-expanded') === 'false') fireEvent.click(tuerca)
 }
 
 /** La del ranking es la primera de la pantalla; el `!` es de `noUncheckedIndexedAccess`. */
@@ -2122,14 +2138,24 @@ describe('los dos párrafos que explican la nota', () => {
 
 
 describe('la ficha de vacante prioriza el seguimiento y admite teclado', () => {
-  it('mantiene la configuración publicada plegada y permite abrirla sin perder la tabla', async () => {
+  it('la tuerca esconde la configuración sin perderla, y sin perder la tabla', async () => {
     await pintar()
-    const resumen = screen.getByText('Configuración de la vacante')
-    const detalles = resumen.closest('details')!
-    expect(detalles.open).toBe(false)
-    fireEvent.click(resumen)
-    expect(detalles.open).toBe(true)
+    const tuerca = screen.getByRole('button', { name: 'Configuración de la vacante' })
+    // `pintar` la deja abierta; aquí se comprueba el gesto entero.
+    expect(tuerca.getAttribute('aria-expanded')).toBe('true')
+    expect(screen.getByLabelText('Nuevo requisito indispensable')).toBeTruthy()
+
+    fireEvent.click(tuerca)
+    expect(tuerca.getAttribute('aria-expanded')).toBe('false')
+    // La tabla nunca se va: es lo que se está mirando cuando se toca la tuerca.
     expect(screen.getByRole('table')).toBeTruthy()
+
+    /*
+      ⚠️ Y lo que se estuviera escribiendo sigue ahí. El panel se OCULTA, no se
+      desmonta: dentro hay tres borradores que solo viven en memoria, y un
+      renderizado condicional los tiraría cada vez que alguien cierra la tuerca.
+    */
+    fireEvent.click(tuerca)
     expect(screen.getByLabelText('Nuevo requisito indispensable')).toBeTruthy()
   })
 

@@ -122,7 +122,7 @@ test.describe('Regresión · el ranking por etapas', () => {
     test('en las cinco pestañas, la celda de la nota empieza por la cifra o por su guion', async ({ page }) => {
       await irAVacante(page, VACANTES.LLENA)
       await corte(page, 'Toda la tanda').click()
-      await expect(page.getByRole('heading', { name: 'El ranking, etapa por etapa' })).toBeVisible()
+      await expect(page.getByRole('heading', { name: 'Ranking' })).toBeVisible()
 
       for (const etapa of ETAPAS) {
         await pestana(page, etapa).click()

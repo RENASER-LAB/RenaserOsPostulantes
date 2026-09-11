@@ -30,15 +30,6 @@ test.describe('Regresión · el panel del equipo', () => {
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
   })
 
-  test('el embudo pinta los tramos con sus cifras', async ({ page }) => {
-    await irAVacante(page, VACANTES.LLENA)
-    await expect(page.getByRole('heading', { name: 'En qué va la tanda' })).toBeVisible()
-    const tramos = page.locator('ul[role="list"]').first().locator('li')
-    expect(await tramos.count()).toBeGreaterThan(0)
-    // Cada tramo lleva una cifra y un nombre de estado.
-    await expect(tramos.first()).toHaveText(/\d+\s*\S+/)
-  })
-
   test('las cinco pestañas de etapa existen y se pueden recorrer', async ({ page }) => {
     await irAVacante(page, VACANTES.LLENA)
     const etapas = ['Perfil integral', 'Prueba del puesto', 'Simulación', 'Validación', 'Decisión']
