@@ -14,6 +14,154 @@ no se vuelve a subir el currículum. Lo del 07/09 se documentó en
 
 ---
 
+## El modal compartido solo dejaba escribir una letra (11/09/2026, tarde)
+
+Lo encontró una persona probando el descarte a mano: escribía una letra en el campo del motivo y
+**el foco saltaba al aspa**; la segunda letra ya no entraba en ningún sitio.
+
+No era del componente nuevo. Era de `src/ui/Modal.tsx`, y afectaba **a los cinco modales del
+proyecto con campos** desde siempre.
+
+El efecto que pone el foco, atrapa el tabulador y bloquea el scroll del fondo llevaba `onCerrar`
+en sus dependencias. Y `onCerrar` lo pasa cada pantalla como una función declarada dentro de su
+propio componente, o sea **una función distinta en cada render**: el efecto se limpiaba y se
+volvía a montar cada vez que el padre se renderizaba. Como ese efecto **mueve el foco** —su
+limpieza lo devuelve a donde estaba antes de abrir, y su cuerpo lo lleva al primer enfocable del
+modal, que es el aspa de la cabecera—, cada tecla lo mandaba fuera del campo.
+
+Ahora `onCerrar` va por `useRef` y las dependencias son solo `[abierto]`: el efecto corre al
+abrir y al cerrar, que es cuando el foco tiene algo que hacer, y el manejador de Escape sigue
+llamando a la versión más reciente.
+
+⚠️ **Un test con un `onCerrar` estable NO lo detecta.** Con `const cerrar = vi.fn()` declarado
+fuera del render, la identidad no cambia, el efecto no se remonta y el fallo no aparece — el test
+pasa con el bug puesto. Por eso `src/ui/Modal.test.tsx` monta un **padre de verdad**, con estado
+propio y su `onCerrar` declarado dentro, que es como lo usa todo el proyecto. Comprobado además
+al revés: devolviendo `onCerrar` a las dependencias, el test se pone en rojo.
+
+---
+
+## Descartar a una tanda, y poder no avisar (11/09/2026, tarde)
+
+Con el botón de la ficha ya puesto, descartar a seis personas eran seis fichas abiertas y seis
+ventanas. La mesa de la tabla ya tenía lo que hacía falta —las casillas y el motivo con que se
+hace avanzar a una tanda—, así que al lado de «Avanzar a N personas» va ahora **«Descartar a N
+personas»**: se marca a quien sea y **después** se elige qué hacer.
+
+El campo de la mesa dejó de llamarse «motivo del avance». Con el descarte al lado, ese nombre
+haría escribir un motivo de avance para acabar cerrando a seis personas con él.
+
+⚠️ **Ese botón NO actúa al pulsarlo, y el de avanzar sí.** Son dos botones pegados que hacen
+cosas opuestas, y aquí un clic manda N cartas de rechazo que no se recogen. Abre una ventana con
+**los nombres escritos**, enteros y sin «y 4 más»: el error que de verdad ocurre no es
+equivocarse de botón, es llegar ahí con alguien marcado de una pestaña anterior — y «descartar a
+6» parece correcto hasta que se leen los seis nombres.
+
+⚠️ **Va uno a uno y a los ya cerrados no se les filtra antes.** Se les deja fallar y salir
+nombrados en «No se descartaron», que es lo que hace el avance; filtrarlos en silencio haría que
+la cuenta del botón y la del resultado no cuadraran sin explicación. Por eso la ventana promete
+**«hasta N»** correos y no «N».
+
+### La casilla de no avisar
+
+En los dos sitios —la ficha y la tanda— hay una casilla **«avisar por correo»**, encendida de
+salida. Quitarla descarta sin que al candidato le llegue nada. Es para cuando el equipo ya habló
+con esa persona por teléfono o en la entrevista: la carta automática llega después de esa
+conversación y dice lo mismo peor.
+
+⚠️ **La casilla dice lo que HACE, no lo que deja de hacer.** «Avisar» encendida es el estado
+normal; una casilla «no avisar» que hay que marcar para lo de siempre invierte la lectura y se
+marca por error. Y el aviso ámbar de arriba **cambia con ella**: un texto que sigue prometiendo
+un correo mientras la casilla dice lo contrario es peor que no decir nada. El nombre del botón
+también — «Descartar sin avisar».
+
+⚠️ **Callar el correo no puede ser callarlo todo.** El backend lo deja escrito en los dos sitios
+donde alguien lo va a buscar: al final del motivo guardado —que es lo único de la transición que
+pinta el historial de la ficha— y en la auditoría, como `avisoAlCandidato: NO_ENVIADO`. Sin eso,
+quien abra esa ficha dentro de seis meses ve «no continúa» con su motivo y da por hecho que se
+le dijo; si el candidato llama preguntando, nadie en el equipo sabría que nunca se le avisó.
+
+⚠️ **El «sin avisar» no se arrastra.** Vuelve a encenderse en cada apertura, en los dos sitios:
+haberlo apagado para una persona no puede callar los correos de la siguiente sin que nadie lo
+mire.
+
+**Del backend, lo mínimo:** `MaquinaEstados.transicionar` gana una sobrecarga con `avisar`, y la
+firma de siempre —la que usan los veintitantos sitios que mueven una postulación— delega con
+`true`. Sin la sobrecarga habría que tocar 46 llamadores para un caso que usa uno. Y el ranking
+gana `puedeMoverPostulacion`, igual que la ficha: la mesa vive fuera de cualquier ficha abierta y
+pedir una solo para saber un permiso sería una consulta de más por una casilla.
+
+---
+
+## Ya se puede descartar a alguien desde la ficha (11/09/2026)
+
+El panel podía calificar, mover fechas y confirmar avances, pero **no tenía forma de decir
+«esta persona no sigue»**. El verbo estaba en el backend desde el principio
+—`POST /postulaciones/{id}/transiciones`, con su motivo obligatorio— y ninguna pantalla lo
+llamaba: para descartar a alguien había que pedírselo a quien supiera llamar al sistema por
+debajo.
+
+Ahora la ficha del ranking trae un botón **«Descartar»** y una ventana con **un solo campo**: el
+motivo escrito. Al confirmar, la postulación pasa a `NO_CONTINUA` y el backend rellena solo su
+`motivoCierre` (`DECISION_PERSONA`).
+
+⚠️ **Esto manda un correo real a una persona real.** `NO_CONTINUA` dispara la plantilla
+`POSTULACION_NO_CONTINUA` en la misma transacción, sin preguntar nada más: no es un cambio de
+estado interno que alguien vaya a revisar después, es la carta de rechazo. Por eso la ventana lo
+avisa **con su nombre y antes del campo**, y no como letra pequeña debajo del botón.
+
+⚠️ **El motivo NO viaja en ese correo.** El texto que le llega al candidato es siempre el mismo;
+lo que se escribe aquí lo lee el equipo en el historial. La ayuda del campo lo dice, porque la
+suposición contraria es fácil y cara: alguien redactaría una devolución personal creyendo que la
+lee quien la merece.
+
+⚠️ **El botón se pinta con un dato del backend, no con una lista de roles en el navegador.** La
+ficha gana `puedeMoverPostulacion`, calculado con el permiso de quien pregunta —igual que
+`puedeVerPretension` en el ranking—. Hacía falta porque **el login solo devuelve token e id**: no
+hay ningún endpoint que diga qué permisos trae la sesión, así que la única alternativa era
+enseñar el botón a todo el mundo y que la mitad del equipo descubriera su rol chocando contra un
+403. Es para decidir qué se pinta, nunca la defensa.
+
+⚠️ **Y `tiene(permiso)` no dice hasta dónde llega.** El alcance se guarda POR permiso, así que un
+rol puede abrir la ficha de cualquiera y mover solo las de sus vacantes. En esa franja el botón
+sale y el backend contesta **404 y no 403** —un 403 confirmaría que esa postulación existe—, así
+que ese 404 se traduce como límite del alcance del rol y no como «no encontramos eso».
+
+**Sobre alguien ya cerrado el botón no sale**, y en su lugar va una línea que dice que esa
+postulación ya terminó su recorrido: un control que solo puede fallar es peor que no ofrecerlo,
+pero desaparecer sin explicación deja pensando si falta un permiso. Si es final o no lo dice
+`esFinal` del catálogo, no una lista de estados escrita en el navegador.
+
+### Lo que encontró el QA el mismo día, y se corrigió
+
+⚠️ **Cerrar la ventana mientras la petición volaba se tragaba el error.** El modal se cierra con
+Escape, con un clic en el fondo y con el aspa; la llamada tarda —el correo va dentro de la misma
+transacción—, así que quien se impacientaba dejaba el modal desmontado y **el fallo que llegaba
+después no se pintaba en ninguna parte**. Como al descartar bien tampoco salía nada, un descarte
+que rebotó y uno que salió se veían exactamente igual: la persona seguía en el proceso y nadie se
+enteraba. Ahora las tres salidas están bloqueadas mientras dura, y **al terminar se dice que
+salió** —«Descartada. A Fulano ya le salió el correo»—, que es la señal que no había.
+
+⚠️ **`esFinal` sin catálogo valía `false`, o sea «se puede descartar».** La ficha y el catálogo
+son dos consultas en paralelo y el bloque se pinta en cuanto llega la de la ficha: en ese hueco
+—y para siempre si el catálogo falla— el botón salía sobre alguien ya cerrado, prometía un correo
+y el backend contestaba 409 con el motivo ya escrito. El `?? false` invertía el fallo seguro:
+ante la duda ofrecía la acción. Ahora «todavía no se sabe» es su propio caso y no se pinta nada.
+
+También: el fallo de un intento ya no aparece al abrir el siguiente, el error de validación se va
+al empezar a escribir en vez de al volver a pulsar, y el foco del error se busca **dentro del
+modal** y no en la página entera —esta ficha monta además los campos de nota y de plazo, que usan
+la misma pieza, y un `aria-invalid` suyo se llevaba el foco fuera de un modal que atrapa el
+tabulador; que hoy ganara el campo bueno era orden del DOM, no diseño—.
+
+⚠️ **Queda abierto y no es de este cambio:** el correo de rechazo sale con un **enlace de entrada
+sin contraseña** recién creado (lo genera `avisarAlCandidato` para todos los avisos por igual), y
+el propio código se contradice sobre si el enlace nuevo invalida los anteriores. Es una credencial
+viva pegada a un rechazo, sobre una postulación ya cerrada. Existía antes; lo que cambia es que
+ahora se dispara desde un botón del panel.
+
+---
+
 ## Cuatro cosas para que el perfil se sienta suyo (06/09/2026, noche)
 
 **El nombre está a `--t-portada`** (32-56px, peso 200), la escala de titular del

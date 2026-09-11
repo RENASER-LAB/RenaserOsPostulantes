@@ -65,6 +65,8 @@ import { rutas } from '@/rutas'
 import { formatearFechaCorta, formatearFechaLarga } from '@/dominio/reloj'
 import tabla from '../ui/Tabla.module.css'
 import { DescargarCv } from './DescargarCv'
+import { DescartarPostulacion } from './DescartarPostulacion'
+import { DescartarEnLote } from './DescartarEnLote'
 import { EntregablesDePrueba } from './EntregablesDePrueba'
 import { RespuestasDePrueba } from './RespuestasDePrueba'
 import { CierreDeLaVacante, PlazoDeUnaPersona } from './CierreDePrueba'
@@ -691,6 +693,12 @@ function Ranking({
 }) {
   const [marcados, setMarcados] = useState<Set<number>>(new Set())
   const [abierta, setAbierta] = useState<number | null>(null)
+  /*
+    Sale de la tanda y no de la ficha: la mesa vive fuera de cualquier ficha
+    abierta, y pedir una solo para saber un permiso sería una consulta de más
+    por una casilla. Es el mismo dato y el mismo patrón que `puedeVerPretension`.
+  */
+  const puedeMoverEnLote = cabeceraDelCv.puedeMoverPostulacion
   const [filtros, setFiltros] = useState<Filtros>(SIN_FILTROS)
   /*
     Sin orden puesto manda el del backend —grupo de prioridad y, dentro, nota—,
@@ -1611,14 +1619,23 @@ function Ranking({
         </p>
       )}
 
-      {/* La mesa de avance: un motivo para la tanda marcada. */}
+      {/*
+        La mesa: un motivo para la tanda marcada, y las dos cosas que se pueden
+        hacer con ella.
+
+        ⚠️ **El motivo es UNO y vale para las dos.** Antes se llamaba «motivo del
+        avance» porque avanzar era lo único que había; con el descarte al lado,
+        ese nombre haría escribir un motivo de avance para acabar cerrando a seis
+        personas con él. Se marca a quien sea y después se elige qué hacer, que
+        es el orden en que se trabaja la tabla.
+      */}
       <div className={estilos.avance}>
         <label className={estilos.campoMotivo}>
-          <span>Motivo del avance (obligatorio)</span>
+          <span>Motivo (obligatorio) · queda en el historial de cada una</span>
         <input
           className={estilos.entradaMotivo}
           type="text"
-          placeholder="Motivo del avance (obligatorio)"
+          placeholder="Motivo (obligatorio)"
           value={motivo}
           onChange={(e) => setMotivo(e.target.value)}
         />
@@ -1635,6 +1652,30 @@ function Ranking({
               ? 'Marca a quienes avanzan'
               : `Avanzar a ${marcadosVisibles.length} ${marcadosVisibles.length === 1 ? 'persona' : 'personas'}`}
         </button>
+        {/*
+          ⚠️ **Al lado del de avanzar y no escondido, pero NO actúa al pulsarlo.**
+          Son dos botones pegados que hacen cosas opuestas: este abre una ventana
+          con los nombres escritos, que es donde se atrapa haber dejado marcada a
+          una persona de una pestaña anterior.
+
+          Solo para quien puede mover postulaciones. `puedeMoverEnLote` sale de la
+          ficha de alguien de la tanda, que es de donde el panel sabe qué permisos
+          trae la sesión: no hay endpoint que lo diga.
+        */}
+        {puedeMoverEnLote && (
+          <DescartarEnLote
+            marcados={marcadosVisibles.map((f) => ({
+              postulacionId: f.postulacionId,
+              candidato: f.candidato,
+            }))}
+            motivo={motivo}
+            alTerminar={() => {
+              setMarcados(new Set())
+              setMotivo('')
+              void alAvanzar()
+            }}
+          />
+        )}
       </div>
       {resultado && (
         <p className={estilos.resultadoAvance} role="status">
@@ -1998,6 +2039,49 @@ function DetalleDelPostulante({ fila, etapa }: { fila: FilaRanking; etapa: Etapa
                 ) : fila.archivoNombre}
               </p>
             )}
+            {/*
+              Al final de la ficha y no arriba, y ese orden es el de la
+              decision: quien es, como llego, que entrego —y solo entonces, si
+              sigue o no. Un boton de descartar junto al nombre invita a cerrar
+              a alguien antes de haber leido por que estaba ahi.
+
+              ⚠️ **`esFinal` sale del catalogo y no de un campo de la ficha.**
+              `FichaPostulacion` trae el codigo del estado, no si ese estado
+              cierra el recorrido; preguntarselo al catalogo —que esta pedido
+              aqui al lado para traducir los nombres del historial— evita
+              inventarse una lista de estados finales en el navegador que se
+              quede vieja el dia que se añada uno.
+            */}
+            <DescartarPostulacion
+              postulacionId={fila.postulacionId}
+              candidato={ficha.data.candidato}
+              /*
+                ⚠️ **Sin catálogo se manda `undefined`, no `false`.** Son dos
+                consultas en paralelo y esta ficha se pinta en cuanto llega la
+                suya: dando por «no terminada» la que todavia no se sabe, el
+                boton sale sobre alguien ya cerrado —se lee que le va a salir un
+                correo, se escribe el motivo y el backend contesta 409—. El `??`
+                aqui invertia el fallo seguro: ante la duda ofrecia la accion.
+              */
+              yaTermino={
+                catalogos.isSuccess
+                  ? (catalogos.data.estados.find((e) => e.codigo === ficha.data.estado)?.esFinal ??
+                    false)
+                  : undefined
+              }
+              puedeMover={ficha.data.puedeMoverPostulacion}
+              /*
+                Los tres se invalidan porque el estado cambia en los tres: la
+                ficha lo pinta, el historial gana un paso y el ranking reparte
+                las filas por etapa. Sin el ranking, quien acaba de descartar
+                sigue viendo a esa persona en la tabla de la que la sacó.
+              */
+              alDescartar={() => {
+                cache.invalidateQueries({ queryKey: ['panel-ficha', fila.postulacionId] })
+                cache.invalidateQueries({ queryKey: ['panel-historial', fila.postulacionId] })
+                cache.invalidateQueries({ queryKey: ['panel-ranking'] })
+              }}
+            />
           </>
         )}
 

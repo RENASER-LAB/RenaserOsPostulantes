@@ -431,6 +431,48 @@ página: comparar es la razón de estar ahí, y perder la tabla para ver un
 detalle rompe la comparación. Dentro va el perfil integral, con lo que la
 calificación tuvo en cuenta y por qué.
 
+### Y ahora también se puede decir que no (11/09/2026)
+
+Al final de esa ficha —después del nombre, del recorrido y de lo que entregó, que
+es el orden en que se decide— hay un botón **«Descartar»**. Hasta hoy la mesa
+podía calificar, mover fechas y hacer avanzar a alguien, pero **no tenía forma de
+cerrar el otro lado**: para decir que una persona no sigue había que salirse del
+panel.
+
+Pide **una sola cosa**: por qué no continúa, escrito a mano. Con eso la
+postulación pasa a «no continúa» y el motivo queda en su recorrido, que es lo que
+contesta dentro de seis meses a «¿por qué se cerró esto?».
+
+⚠️ **Al confirmar le llega un correo al candidato**, al momento y sin vuelta
+atrás: es la carta de rechazo, no un cambio de estado que alguien vaya a revisar
+después. La ventana lo dice con su nombre delante y **antes** de pedir el motivo,
+porque decirlo después sería decirlo cuando ya salió.
+
+⚠️ **Lo que se escribe no se lo mandamos a él.** El correo que recibe es siempre
+el mismo; el motivo lo lee el equipo. Sin avisarlo, alguien redactaría una
+devolución personal creyendo que la lee quien la merece.
+
+El botón solo lo ve quien puede mover postulaciones —Talento y Dirección—, y
+sobre alguien que ya terminó su recorrido no sale: en su lugar va una línea que lo
+dice, porque un botón que desaparece sin explicación deja pensando si lo que falta
+es un permiso.
+
+**Y a varios de golpe, sin abrir sus fichas.** En la mesa de la tabla, al lado de
+«Avanzar», está «Descartar a N personas»: se marcan las casillas de siempre, se
+escribe un motivo que vale para todas y se elige qué hacer con ellas. Ese botón no
+actúa al pulsarlo — abre una ventana **con los nombres escritos**, que es donde se
+ve si quedó marcada alguien de una pestaña anterior. Va una a una: quien no se
+pueda descartar sale nombrada al final y no frena a las demás.
+
+**Y se puede descartar sin avisar.** Una casilla, encendida de salida, en los dos
+sitios. Quitarla cierra la postulación sin que al candidato le llegue nada. Es para
+cuando ya se habló con esa persona: una carta automática detrás de esa conversación
+dice lo mismo pero peor.
+
+⚠️ **Callar el correo no borra el rastro.** Que no se le avisó queda escrito en su
+recorrido, para que quien lo lea dentro de seis meses no dé por hecho que se le
+dijo — y sepa qué contestar si esa persona llama preguntando.
+
 ### El ponderado de lo ya rendido (04/09/2026)
 
 En la pestaña **Prueba del puesto**, y solo en ella, la tabla trae una columna
