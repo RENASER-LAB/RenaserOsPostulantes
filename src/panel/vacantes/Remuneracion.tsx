@@ -19,6 +19,7 @@
 
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { COMO_SE_ESCRIBE, aCifra } from '@/dominio/dinero'
 import { actualizarRemuneracion } from '@/panel/api/panel'
 import type { RemuneracionDeLaVacante as Datos, VacantePanel } from '@/panel/api/tipos'
 import estilos from './Remuneracion.module.css'
@@ -63,13 +64,19 @@ export function comoCuerpo(f: FormularioRemuneracion): { datos: Datos } | { erro
   if (f.tipo === 'OCULTA') {
     return { datos: { tipo: 'OCULTA', min: null, max: null, moneda: null } }
   }
-  const min = Number(f.min.replace(/\s/g, '').replace(',', '.'))
-  if (f.min.trim() === '' || !Number.isFinite(min) || min <= 0) {
+  // `aCifra` y no `Number`: `Number('3,500')` vale 3.5 y pasaria las validaciones
+  // de abajo. Un monto fijo mal leido en una vacante publicada dispara cuarenta
+  // correos que dicen «Ahora: S/ 3.50». Ver `dominio/dinero`.
+  const min = aCifra(f.min)
+  if (f.min.trim() === '') {
     return {
       error: f.tipo === 'FIJA'
         ? 'Escribe el monto que ofreces.'
         : 'Escribe el mínimo del rango.',
     }
+  }
+  if (min === null || min <= 0) {
+    return { error: COMO_SE_ESCRIBE }
   }
   if (min > 1_000_000) {
     return { error: 'Ese monto parece un error de tecleo: revísalo.' }
@@ -77,9 +84,12 @@ export function comoCuerpo(f: FormularioRemuneracion): { datos: Datos } | { erro
   if (f.tipo === 'FIJA') {
     return { datos: { tipo: 'FIJA', min, max: null, moneda: f.moneda } }
   }
-  const max = Number(f.max.replace(/\s/g, '').replace(',', '.'))
-  if (f.max.trim() === '' || !Number.isFinite(max) || max <= 0) {
+  const max = aCifra(f.max)
+  if (f.max.trim() === '') {
     return { error: 'Escribe el máximo del rango, o cámbialo a monto fijo.' }
+  }
+  if (max === null || max <= 0) {
+    return { error: COMO_SE_ESCRIBE }
   }
   if (max < min) {
     return { error: 'El máximo del rango no puede ser menor que el mínimo.' }

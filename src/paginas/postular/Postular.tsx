@@ -36,6 +36,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { verPerfil } from '@/api/perfil'
 import { consentimientoDeVacante, postular, verVacante } from '@/api/portal'
 import type { Pretension, RequisitoPublico } from '@/api/tipos'
+import { COMO_SE_ESCRIBE, aCifra } from '@/dominio/dinero'
 import { rutas } from '@/rutas'
 import { AreaTexto, Campo, Consentimiento } from '@/ui/campos/Campo'
 import { Remuneracion } from '@/ui/Remuneracion'
@@ -65,8 +66,26 @@ const FORMATOS = ['.pdf', '.doc', '.docx']
 
 type Respuesta = 'si' | 'no'
 
+/**
+ * La puerta, y el unico motivo por el que existe: la `key`.
+ *
+ * ⚠️ **React Router NO remonta el elemento cuando solo cambia el parametro de
+ * la ruta.** `/vacantes/7/postular` y `/vacantes/8/postular` son el mismo
+ * `element`, asi que sin esta linea el estado del formulario sobrevivia al
+ * cambio de vacante: quien tecleaba 4200 para un puesto en soles, volvia atras y
+ * abria otro en dolares se encontraba su 4200 intacto bajo una etiqueta que
+ * decia «(USD)» — y `tocoLaPretension` seguia en true, asi que el prellenado del
+ * perfil tampoco corregia nada.
+ *
+ * La `key` con el id de la vacante lo resuelve entero: cada convocatoria estrena
+ * formulario, que es lo que cualquiera espera al abrir otra.
+ */
 export function Postular() {
   const { vacanteId = '' } = useParams()
+  return <FormularioDePostular key={vacanteId} vacanteId={vacanteId} />
+}
+
+function FormularioDePostular({ vacanteId }: { vacanteId: string }) {
   const navegar = useNavigate()
   const cache = useQueryClient()
   const campoArchivo = useRef<HTMLInputElement>(null)
@@ -281,11 +300,14 @@ export function Postular() {
       nuevos.resultado = 'Cuéntanos un resultado del que te sientas orgulloso.'
     }
     if (exigePretension) {
-      const numero = Number(pretension.replace(/\s/g, '').replace(',', '.'))
+      // `aCifra` y no `Number`: `Number('3,500')` vale 3.5, y pasaria las tres
+      // comprobaciones de abajo dejando registrado que pide S/ 3.50. Ver
+      // `dominio/dinero`.
+      const numero = aCifra(pretension)
       if (pretension.trim() === '') {
         nuevos.pretension = 'Dinos cuánto quieres ganar: la empresa ya dijo lo suyo.'
-      } else if (!Number.isFinite(numero) || numero <= 0) {
-        nuevos.pretension = 'Escribe una cifra mensual, solo números.'
+      } else if (numero === null || numero <= 0) {
+        nuevos.pretension = COMO_SE_ESCRIBE
       } else if (numero > 1_000_000) {
         // El mismo techo que aplica el backend. Que salte aqui evita que descubra
         // el dedo de mas despues de haber subido 10 MB de curriculum.
@@ -349,7 +371,9 @@ export function Postular() {
       // mandarlo escribiria en su registro un numero que nadie le pidio.
       ...(exigePretension
         ? {
-            pretensionMonto: Number(pretension.replace(/\s/g, '').replace(',', '.')),
+            // El `??` no puede saltar: `revisar()` ya cortó el envío si no es
+            // una cifra. Está para que el tipo sea `number` y no `number | null`.
+            pretensionMonto: aCifra(pretension) ?? 0,
             pretensionMoneda: v.remuneracion.moneda ?? 'PEN',
           }
         : {}),

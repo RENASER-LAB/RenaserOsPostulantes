@@ -171,7 +171,7 @@ describe('cuando la vacante publica lo que paga', () => {
 
     fireEvent.change(campoPretension(), { target: { value: '0' } })
     enviar()
-    await screen.findByText(/solo números/i)
+    await screen.findByText(/cifras enteras|soles enteros/i)
     expect(enviados).toHaveLength(0)
 
     // El dedo de mas: 35 000 000 donde queria 3 500.
@@ -179,6 +179,20 @@ describe('cuando la vacante publica lo que paga', () => {
     enviar()
     await screen.findByText(/error de tecleo/i)
     expect(enviados).toHaveLength(0)
+  })
+
+  it('«3,500» vale tres mil quinientos, no tres soles con cincuenta', async () => {
+    // El bug que traia `Number('3,500')` → 3.5, que pasaba las tres validaciones
+    // y dejaba registrado que esta persona pide S/ 3.50. Ver `dominio/dinero`.
+    montar()
+    await screen.findByRole('checkbox')
+    rellenarLoDemas()
+    fireEvent.change(campoPretension(), { target: { value: '3,500' } })
+
+    enviar()
+
+    await waitFor(() => expect(enviados).toHaveLength(1))
+    expect(enviados[0]!.pretensionMonto).toBe(3500)
   })
 
   it('manda el monto y la moneda de la vacante', async () => {

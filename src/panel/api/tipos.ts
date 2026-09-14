@@ -774,6 +774,26 @@ export interface FichaPostulacion {
    * el `@PreAuthorize` del backend.
    */
   puedeMoverPostulacion: boolean
+  /**
+   * Lo que pidio al postular a ESTA vacante, ya escrito («S/ 3 800»).
+   *
+   * ⚠️ **Solo con el permiso `ver_pretension`; sin el llega `null`.** El mismo
+   * trato que en el ranking y en el perfil: si apareciera junto a la nota para
+   * todo el mundo, pesaria en la decision.
+   *
+   * `null` **no** significa que no la declarara: `porQueSinPretension` dice cual
+   * de los tres motivos es.
+   */
+  pretensionDeclarada: string | null
+  /**
+   * Por que no hay pretension que enseñar, cuando no la hay.
+   *
+   * Tres motivos y solo uno es verdad cada vez: sin permiso, la vacante no
+   * publicaba su sueldo —y entonces a nadie se le exigio—, o de verdad no la
+   * declaro. Un hueco a secas se lee siempre como el tercero, que es el unico
+   * que acusa al candidato.
+   */
+  porQueSinPretension: string | null
 }
 
 export interface PasoHistorialPanel {

@@ -2036,6 +2036,28 @@ function DetalleDelPostulante({ fila, etapa }: { fila: FilaRanking; etapa: Etapa
               Postuló el {formatearFechaCorta(ficha.data.creadoEn)} ·{' '}
               {ficha.data.estadoNombre}
             </p>
+            {/*
+              Lo que pidió, o por qué no hay nada que enseñar.
+
+              Aquí y no solo en la tabla: esta es la pantalla donde se decide
+              sobre UNA persona, y decidir sin saber si su cifra entra en el
+              presupuesto es descubrirlo en la llamada.
+
+              El motivo del hueco viene escrito del servidor porque son tres y
+              solo uno es verdad cada vez — y el único que el panel podría
+              deducir por su cuenta es justo el que acusa al candidato.
+            */}
+            {ficha.data.pretensionDeclarada ? (
+              <p className={estilos.dato}>
+                <b>Pide {ficha.data.pretensionDeclarada}</b> al mes
+              </p>
+            ) : (
+              ficha.data.porQueSinPretension && (
+                <p className={estilos.porQueSinPretensionFicha}>
+                  {ficha.data.porQueSinPretension}
+                </p>
+              )
+            )}
             {ficha.data.resultadoOrgulloso && (
               <>
                 <h4 className={estilos.subtitulo}>El resultado del que está orgulloso</h4>

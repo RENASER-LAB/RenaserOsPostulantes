@@ -45,12 +45,21 @@ describe('del formulario al cuerpo', () => {
     })
   })
 
-  it('acepta la coma decimal y los espacios de los miles', () => {
-    // Nadie escribe «3500.50»: se escribe «3 500,50», que es como se lee en un
-    // recibo. Rechazarlo obligaria a reescribirlo sin decir por que.
-    expect(comoCuerpo(forma({ tipo: 'FIJA', min: '3 500,50' }))).toEqual({
-      datos: { tipo: 'FIJA', min: 3500.5, max: null, moneda: 'PEN' },
-    })
+  it('acepta las tres grafías del separador de miles', () => {
+    // «3,500», «3.500» y «3 500» son el mismo sueldo y las tres se escriben.
+    // Antes `Number` leía las dos primeras como 3.5. Ver `dominio/dinero`.
+    for (const escrito of ['3,500', '3.500', '3 500', '3500']) {
+      expect(comoCuerpo(forma({ tipo: 'FIJA', min: escrito }))).toEqual({
+        datos: { tipo: 'FIJA', min: 3500, max: null, moneda: 'PEN' },
+      })
+    }
+  })
+
+  it('no acepta céntimos: un sueldo mensual no los tiene', () => {
+    // Y admitirlos es admitir la ambigüedad entera: con decimales no hay forma
+    // de saber si «3,50» son tres soles y medio o un 3500 mal tecleado.
+    expect(comoCuerpo(forma({ tipo: 'FIJA', min: '3 500,50' }))).toHaveProperty('error')
+    expect(comoCuerpo(forma({ tipo: 'FIJA', min: '3500.50' }))).toHaveProperty('error')
   })
 })
 
@@ -73,10 +82,14 @@ describe('lo que no se deja guardar', () => {
     })
   })
 
-  it('cero, negativo y texto', () => {
+  it('cero, negativo, texto, y lo que antes se colaba', () => {
     expect(comoCuerpo(forma({ tipo: 'FIJA', min: '0' }))).toHaveProperty('error')
     expect(comoCuerpo(forma({ tipo: 'FIJA', min: '-100' }))).toHaveProperty('error')
     expect(comoCuerpo(forma({ tipo: 'FIJA', min: 'mucho' }))).toHaveProperty('error')
+    // `Number('1e5')` valía 100 000 y `Number('0x1f')` valía 31, los dos
+    // atravesando la validación entera.
+    expect(comoCuerpo(forma({ tipo: 'FIJA', min: '1e5' }))).toHaveProperty('error')
+    expect(comoCuerpo(forma({ tipo: 'FIJA', min: '0x1f' }))).toHaveProperty('error')
   })
 
   it('la cifra que es un dedo de más', () => {

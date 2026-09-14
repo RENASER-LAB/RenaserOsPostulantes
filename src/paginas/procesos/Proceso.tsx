@@ -170,9 +170,17 @@ export function Proceso() {
             Y aqui se dice POR QUE no hay nada, en lugar de dejar un hueco.
             Un guion se leeria como que no quiso decirlo; la verdad es que no se
             le pidio, porque la empresa tampoco enseñaba lo suyo.
+
+            ⚠️ **En pasado si la vacante la publica HOY.** El trato se juzga con
+            las reglas del dia en que postulo, y la empresa puede haberlo
+            encendido despues: sin este matiz, la pantalla decia «esta vacante no
+            publicaba la suya» tres centimetros debajo del monto que si estaba
+            pintando, y quien lo leia no sabia a cual de las dos creer.
           */
           <p className={estilos.sinPretension}>
-            No te pedimos tu pretensión: esta vacante no publicaba la suya.
+            {resumen.remuneracion?.tipo && resumen.remuneracion.tipo !== 'OCULTA'
+              ? 'No te pedimos tu pretensión: cuando postulaste, esta vacante todavía no publicaba la suya.'
+              : 'No te pedimos tu pretensión: esta vacante no publica la suya.'}
           </p>
         )}
       </section>
