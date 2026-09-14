@@ -38,8 +38,39 @@ export interface VacantePublica {
   modalidad: string | null
   horario: string | null
   ubicacion: string | null
-  compensacionPublica: string | null
+  remuneracion: RemuneracionPublica
   requisitosObjetivos: RequisitoPublico[]
+}
+
+/**
+ * Lo que una vacante paga, tal como el candidato puede verlo.
+ *
+ * ⚠️ **`OCULTA` viaja igual, no llega como `null`.** El portal tiene que decir
+ * en voz alta que la empresa no publica el sueldo: un hueco donde deberia estar
+ * el numero se lee como un fallo de carga. Y ademas es el dato que explica por
+ * que el formulario de postular no le va a exigir declarar el suyo.
+ *
+ * `texto` llega **ya escrito** desde el servidor —«S/ 3 500 a 4 200»— para que
+ * la frase del dinero se arme una sola vez y el portal, el panel y el correo
+ * digan exactamente lo mismo. Los montos sueltos siguen ahi para quien quiera
+ * pintarlos de otra forma; la regla de la casa es preferir `texto`.
+ */
+export interface RemuneracionPublica {
+  tipo: 'OCULTA' | 'FIJA' | 'RANGO'
+  /** Con `FIJA`, este es EL monto. Con `RANGO`, el suelo. */
+  min: number | null
+  /** Solo con `RANGO`. */
+  max: number | null
+  moneda: string | null
+  texto: string
+  /**
+   * Cuando cambio por ultima vez. `null` = nunca desde que se publico.
+   *
+   * Es lo que pinta el «actualizado el …» junto al monto. Quien postulo con
+   * otro numero delante merece enterarse de que cambio, y no descubrirlo en la
+   * negociacion.
+   */
+  actualizadaEn: FechaIso | null
 }
 
 export interface TextoConsentimientoPublico {
@@ -175,6 +206,64 @@ export interface MiPostulacion {
    * la prueba de siempre, que es lo que hacían todas las vacantes.
    */
   instrumentoEtapaTecnica: string | null
+  /**
+   * Cuantos avisos de ESTE proceso siguen sin ver. Cero = sin punto.
+   *
+   * Es lo que enciende el punto de la fila en «Mis procesos». Se apaga al abrir
+   * la campana, no al abrir la postulacion: enterarse de que hay algo es lo que
+   * lo apaga.
+   */
+  avisosSinLeer: number
+  /** Lo que la vacante paga HOY, con la marca de cuando cambio. */
+  remuneracion: RemuneracionPublica
+  /**
+   * Lo que EL dijo que queria ganar al postular aqui.
+   *
+   * ⚠️ **`null` no significa que no quisiera decirlo.** Significa que la vacante
+   * tenia el sueldo oculto y no se le exigio —el trato cumpliendose— o que
+   * postulo antes de que esto existiera. Quien lo pinte tiene que decirlo con
+   * esas palabras, nunca con un guion a secas.
+   *
+   * Es SUYO, asi que en el portal viaja siempre. En el panel hace falta el
+   * permiso `ver_pretension`.
+   */
+  miPretension: PretensionDeclarada | null
+}
+
+/** Un monto con su moneda, y la frase ya escrita para pintarla sin traducir. */
+export interface PretensionDeclarada {
+  monto: number
+  moneda: string
+  texto: string
+}
+
+/**
+ * Un aviso de la campana.
+ *
+ * El texto va **ya armado** y no se reconstruye al leerlo: un aviso que dijera
+ * el sueldo de hoy en vez del que cambio aquel dia dejaria de ser la noticia
+ * para volverse un espejo del estado actual.
+ */
+export interface AvisoDelPortal {
+  id: number
+  /** Hoy solo `REMUNERACION_ACTUALIZADA`. Los siguientes entran aqui al lado. */
+  tipo: string
+  titulo: string
+  cuerpo: string
+  /** A donde lleva al pulsarlo. Puede faltar: no todo aviso cuelga de un proceso. */
+  postulacionUuid: string | null
+  vacanteId: number | null
+  leidoEn: FechaIso | null
+  creadoEn: FechaIso
+}
+
+export interface MisAvisos {
+  /**
+   * El numero del punto. Sale de la consulta y no de contar la lista: la lista
+   * podria venir recortada algun dia, y entonces el punto diria de menos.
+   */
+  sinLeer: number
+  avisos: AvisoDelPortal[]
 }
 
 export interface PasoHistorial {
@@ -205,6 +294,16 @@ export interface DatosPostulacion {
   linkedin?: string
   github?: string
   requisitosConfirmados?: number[]
+  /**
+   * Cuanto quiere ganar en ESTA vacante.
+   *
+   * ⚠️ **Obligatorio si la vacante publica lo que paga**, ignorado si no. Es el
+   * trato: la empresa ensena su presupuesto, el candidato ensena su precio, y
+   * pedirselo a quien no ha recibido nada a cambio seria el desequilibrio que
+   * esto vino a romper.
+   */
+  pretensionMonto?: number
+  pretensionMoneda?: string
   /**
    * Aceptar que la empresa de esta vacante trate los datos. **Obligatorio**:
    * sin el, el backend responde 400 y no hay postulacion.

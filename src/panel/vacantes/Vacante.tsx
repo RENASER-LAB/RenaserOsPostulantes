@@ -123,6 +123,7 @@ import {
   type QueTraeLaTanda,
   type Vista,
 } from './ranking'
+import { RemuneracionDeLaVacante } from './Remuneracion'
 import estilos from './Vacante.module.css'
 
 /**
@@ -480,6 +481,15 @@ export function VacantePanelDetalle() {
         hidden={!mostrarAjustes}
         aria-label="Configuración de la vacante"
       >
+        {/*
+          El sueldo va PRIMERO, antes de lo que responderá quien postule.
+
+          Es lo unico de esta pantalla que le llega al candidato en el momento
+          —correo y aviso en su portal—, y ademas decide si al postular se le va
+          a exigir su pretension. Debajo de los desplegables de plantillas se
+          encontraria buscandolo.
+        */}
+        <RemuneracionDeLaVacante vacante={v} />
         <ConfiguracionDeLaVacante vacante={v} />
         <Requisitos vacanteId={vacanteId} />
         {v.estado === 'PUBLICADA' && (
@@ -756,7 +766,14 @@ function Ranking({
     El motivo NO se adivina mirando los nulos: `puedeVerPretension` viaja en la
     respuesta justamente para poder decir cuál de los dos es.
   */
-  const trae = queTraeLaTanda(filas, cabeceraDelCv.puedeVerPretension)
+  const trae = queTraeLaTanda(
+    filas,
+    cabeceraDelCv.puedeVerPretension,
+    // El tercer motivo por el que la columna puede venir vacía, y el único que
+    // se arregla desde el panel: esta vacante no publica lo que paga, así que a
+    // nadie se le exigió decir lo suyo. Ver `porQueNoHayPretension`.
+    cabeceraDelCv.vacanteMuestraSueldo !== false,
+  )
   /*
     Adecuacion y potencial son dimensiones del retrato que sale del curriculum,
     no de la prueba ni de la simulacion. Enseñarlas en las cinco pestañas hacia
@@ -1874,7 +1891,10 @@ function BarraDeFiltros({
               */}
               {!trae.hayPretension ? (
                 <p className={estilos.porQueNoSale}>
-                  {porQueNoHayPretension(trae.puedeVerPretension)}
+                  {porQueNoHayPretension(
+                    trae.puedeVerPretension,
+                    trae.vacanteMuestraSueldo,
+                  )}
                 </p>
               ) : (
                 <>

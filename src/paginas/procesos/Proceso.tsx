@@ -30,6 +30,7 @@ import {
 } from '@/dominio/estados'
 import { formatearFechaCorta, formatearFechaLarga } from '@/dominio/reloj'
 import { rutas } from '@/rutas'
+import { Remuneracion } from '@/ui/Remuneracion'
 import { Seguimiento } from './Seguimiento'
 import estilos from './Proceso.module.css'
 
@@ -120,6 +121,10 @@ export function Proceso() {
   const final = esFinal(resumen.estado)
   const termino = COMO_TERMINO[resumen.estado]
 
+  // Si tiene algo sin ver de este proceso: es lo que resalta el sueldo. Ver
+  // `Remuneracion` — la fecha del cambio por si sola no basta.
+  const hayNovedad = (resumen.avisosSinLeer ?? 0) > 0
+
   const pasos = Array.isArray(historial) ? historial : []
   const fechas = fechasDelRecorrido(pasos)
   // Solo hace falta en las terminadas: en las vivas, el propio estado dice la
@@ -139,6 +144,38 @@ export function Proceso() {
           <time dateTime={resumen.creadoEn}>{formatearFechaCorta(resumen.creadoEn)}</time>
         </span>
       </div>
+
+      {/*
+        El trato del sueldo, las dos mitades juntas.
+
+        Va arriba y no al final: si llego aqui desde el aviso de que cambio la
+        remuneracion, esto es LO que vino a ver, y hacerselo buscar debajo del
+        recorrido convierte una noticia en una busqueda.
+
+        `resaltado` se enciende con los avisos sin leer, no con la fecha del
+        cambio: una vacante que se movio hace un año y a la que postulo ayer no
+        tiene ninguna novedad que contarle, y marcarla le haria buscar un cambio
+        que para el no existe.
+      */}
+      <section className={estilos.trato}>
+        <Remuneracion remuneracion={resumen.remuneracion} resaltado={hayNovedad} />
+
+        {resumen.miPretension ? (
+          <p className={estilos.miPretension}>
+            <span className={estilos.etiquetaPretension}>Lo que pediste</span>
+            <span className={estilos.montoPretension}>{resumen.miPretension.texto}</span>
+          </p>
+        ) : (
+          /*
+            Y aqui se dice POR QUE no hay nada, en lugar de dejar un hueco.
+            Un guion se leeria como que no quiso decirlo; la verdad es que no se
+            le pidio, porque la empresa tampoco enseñaba lo suyo.
+          */
+          <p className={estilos.sinPretension}>
+            No te pedimos tu pretensión: esta vacante no publicaba la suya.
+          </p>
+        )}
+      </section>
 
       {/*
         Solo cuando el proceso termino.

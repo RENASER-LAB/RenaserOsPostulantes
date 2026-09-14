@@ -9,6 +9,7 @@ import { Link, NavLink, Outlet, matchPath, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
 import { patrones, rutas } from '@/rutas'
 import { useSesion } from './Sesion'
+import { Campana } from '@/ui/Campana'
 import { Marca } from '@/ui/Marca'
 import estilos from './Armazon.module.css'
 
@@ -107,6 +108,12 @@ export function Armazon() {
             >
               {hayCuenta ? 'Mi cuenta' : 'Ingresar'}
             </NavLink>
+            {/*
+              La campana va al final de la barra y solo con sesion: sin cuenta no
+              hay nada que contarle, y un icono muerto en la cabecera de quien
+              todavia esta mirando vacantes solo ocupa sitio.
+            */}
+            <Campana />
           </nav>
         </div>
       </header>

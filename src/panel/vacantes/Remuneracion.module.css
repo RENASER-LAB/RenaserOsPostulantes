@@ -1,0 +1,224 @@
+/*
+ * La remuneracion, desde el panel.
+ *
+ * Las tres formas se eligen con tarjetas y no con un desplegable: en un
+ * desplegable «No publicarlo» es una linea mas, y no lo es — arrastra consigo
+ * que al candidato tampoco se le pida la suya. La tarjeta tiene sitio para
+ * decirlo debajo del titulo, donde se lee ANTES de elegir.
+ */
+
+.seccion {
+  margin-top: var(--e6);
+}
+
+.tituloSeccion {
+  margin-bottom: var(--e3);
+}
+
+.campos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e4);
+}
+
+.tipos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: var(--e3);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.leyenda {
+  padding: 0;
+  margin-bottom: var(--e3);
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  color: var(--tinta);
+}
+
+.tipo {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas:
+    'radio titulo'
+    '.     ayuda';
+  align-items: start;
+  gap: var(--e1) var(--e3);
+  padding: var(--e3) var(--e4);
+  border: 1px solid var(--regla2);
+  border-radius: var(--radio-menor);
+  background: var(--nube);
+  cursor: pointer;
+}
+
+.tipo:hover {
+  border-color: var(--borde-control);
+}
+
+/*
+ * La elegida. Aqui SI va el violeta, y no contradice la regla del mundo: en el
+ * panel el violeta es el color de la interfaz, no la banda viva del recorrido
+ * del candidato. La regla de «te toca a ti» rige el portal, que es donde el
+ * candidato lee su avance.
+ */
+.elegido {
+  border-color: var(--activo);
+  background: var(--activo-bruma);
+}
+
+.radio {
+  grid-area: radio;
+  /* Alineado con la primera linea del titulo, no con el borde de la tarjeta. */
+  margin-top: 2px;
+  accent-color: var(--activo);
+}
+
+.tipoTitulo {
+  grid-area: titulo;
+  font-weight: 600;
+  color: var(--tinta);
+}
+
+.tipoAyuda {
+  grid-area: ayuda;
+  font-size: var(--t-menor);
+  color: var(--tinta2);
+}
+
+.montos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: var(--e4);
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+  min-width: 0;
+}
+
+.etiqueta {
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+}
+
+.entrada {
+  min-height: 44px;
+  padding: 0 var(--e3);
+  background-color: var(--nube);
+  color: var(--tinta);
+  border: 1px solid var(--borde-control);
+  font: inherit;
+  font-size: var(--t-base);
+  border-radius: var(--radio-menor);
+  font-variant-numeric: tabular-nums;
+}
+
+.entrada:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--activo) 28%, transparent);
+  outline-offset: 2px;
+  border-color: var(--activo);
+}
+
+/*
+ * El simbolo de la moneda dentro del campo.
+ *
+ * Fuera, como etiqueta, se pierde entre «Minimo mensual» y la cifra; dentro,
+ * pegado al numero, no hay forma de escribir 3500 creyendo que son dolares.
+ */
+.conSimbolo {
+  position: relative;
+  display: flex;
+}
+
+.conSimbolo .entrada {
+  flex: 1;
+  padding-left: 2.6rem;
+}
+
+.simbolo {
+  position: absolute;
+  top: 50%;
+  left: var(--e3);
+  transform: translateY(-50%);
+  font-weight: 700;
+  color: var(--tinta3);
+  pointer-events: none;
+}
+
+/*
+ * La consecuencia de lo que se acaba de elegir.
+ *
+ * Fondo de nube hundida y no bruma de color: es informacion, no una alarma, y
+ * pintarla de ambar la haria competir con el aviso de «esto le llega a
+ * cuarenta personas», que si lo es.
+ */
+.consecuencia {
+  margin: 0;
+  padding: var(--e3) var(--e4);
+  border-radius: var(--radio-menor);
+  background: var(--nube-hundida);
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+  max-width: var(--medida);
+}
+
+/*
+ * Lo que va a pasar al pulsar el boton, en ambar: `--duda` es «lo que cambia tu
+ * decision», y aqui la decision es si pulsar o no.
+ */
+.consecuenciaFuerte {
+  margin: 0;
+  padding: var(--e3) var(--e4);
+  border-left: 3px solid var(--duda);
+  border-radius: 0 var(--radio-menor) var(--radio-menor) 0;
+  background: var(--duda-bruma);
+  font-size: var(--t-apoyo);
+  color: var(--duda-tinta);
+  max-width: var(--medida);
+}
+
+.ultimoCambio {
+  margin: 0 0 var(--e4);
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+}
+
+.ayudaMotivo {
+  font-size: var(--t-menor);
+  color: var(--tinta2);
+}
+
+.guardar {
+  composes: acentoMenor from '../../estilos/piezas.module.css';
+  align-self: flex-start;
+}
+
+.aviso {
+  margin: var(--e4) 0 0;
+  padding: var(--e3) var(--e4);
+  border-radius: var(--radio-menor);
+  background: var(--nube-hundida);
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+}
+
+.malo {
+  background: var(--mal-bruma);
+  color: var(--mal);
+}
+
+.bueno {
+  background: var(--bien-bruma);
+  color: var(--bien);
+}
+
+/* Los campos y el boton, apilados: la seccion es una columna. */
+.seccion > .campo,
+.seccion > .consecuenciaFuerte,
+.seccion > .guardar {
+  margin-top: var(--e4);
+}

@@ -121,6 +121,8 @@ const fila = (
   pretensionMin: null,
   pretensionMax: null,
   pretensionMoneda: null,
+  pretensionDeclarada: null,
+  pretensionDeclaradaMoneda: null,
   notaEtapa,
   notaCurriculum: null,
   adecuacion: null,
@@ -1931,6 +1933,7 @@ describe('una columna entera vacía no se pinta: se dice por qué', () => {
       hayCiudad: false,
       hayPretension: false,
       puedeVerPretension: true,
+      vacanteMuestraSueldo: true,
     })
   })
 
@@ -1939,6 +1942,7 @@ describe('una columna entera vacía no se pinta: se dice por qué', () => {
       hayCiudad: true,
       hayPretension: true,
       puedeVerPretension: true,
+      vacanteMuestraSueldo: true,
     })
   })
 
@@ -1971,7 +1975,7 @@ describe('una columna entera vacía no se pinta: se dice por qué', () => {
   })
 
   it('sin las dos, la tabla baja de ocho a seis columnas', () => {
-    const nada = { hayCiudad: false, hayPretension: false, puedeVerPretension: true }
+    const nada = { hayCiudad: false, hayPretension: false, puedeVerPretension: true, vacanteMuestraSueldo: true }
     expect(columnasDelRanking('PERFIL_INTEGRAL', nada)).toHaveLength(6)
     // Una más en la prueba del puesto: el Ponderado no depende de lo que traiga
     // la tanda, sino de la pestaña, así que no se va con la ciudad y la pretensión.
@@ -1984,12 +1988,14 @@ describe('una columna entera vacía no se pinta: se dice por qué', () => {
         hayCiudad: true,
         hayPretension: false,
         puedeVerPretension: true,
+        vacanteMuestraSueldo: true,
       }),
     ).toHaveLength(7)
     const claves = columnasDelRanking('PRUEBA_PUESTO', {
       hayCiudad: false,
       hayPretension: true,
       puedeVerPretension: true,
+      vacanteMuestraSueldo: true,
     }).map((c) => c.clave)
     expect(claves).not.toContain('ciudad')
     expect(claves).toContain('pretension')
@@ -2000,6 +2006,7 @@ describe('una columna entera vacía no se pinta: se dice por qué', () => {
       hayCiudad: false,
       hayPretension: false,
       puedeVerPretension: true,
+      vacanteMuestraSueldo: true,
     })
       .filter((c) => c.ordenable)
       .map((c) => c.ordenable)
@@ -2016,6 +2023,7 @@ describe('una columna entera vacía no se pinta: se dice por qué', () => {
       hayCiudad: false,
       hayPretension: false,
       puedeVerPretension: false,
+      vacanteMuestraSueldo: true,
     })
     expect(sinPermiso).toContain(POR_QUE_NO_HAY_CIUDAD)
     expect(sinPermiso).toContain(porQueNoHayPretension(false))
@@ -2026,6 +2034,7 @@ describe('una columna entera vacía no se pinta: se dice por qué', () => {
       hayCiudad: false,
       hayPretension: false,
       puedeVerPretension: true,
+      vacanteMuestraSueldo: true,
     })
     expect(conPermiso).toContain(porQueNoHayPretension(true))
     expect(conPermiso).not.toContain(porQueNoHayPretension(false))
@@ -2036,6 +2045,7 @@ describe('una columna entera vacía no se pinta: se dice por qué', () => {
       hayCiudad: true,
       hayPretension: true,
       puedeVerPretension: true,
+      vacanteMuestraSueldo: true,
     })
     expect(dicho).not.toContain('no pudiera verla')
     expect(dicho).not.toContain('Todavía no hay ninguna ciudad')

@@ -522,3 +522,31 @@
   text-decoration: underline;
   text-underline-offset: 3px;
 }
+
+/*
+ * El bloque del trato: lo que ofrecen, y lo que pides.
+ *
+ * Lo de ellos va en nube hundida, un escalon por debajo de la superficie del
+ * formulario: es un recordatorio, no un campo. Que se distinga de un vistazo de
+ * la casilla donde SI hay que escribir evita el segundo de duda de «¿esto lo
+ * relleno yo?».
+ */
+.loQueOfrecen {
+  margin: var(--e4) 0;
+  padding: var(--e3) var(--e4);
+  border-radius: var(--radio-control);
+  background: var(--nube-hundida);
+}
+
+/*
+ * Quien lo va a ver. Se dice AQUI, junto al campo, y no en una politica que
+ * nadie abre: es la pregunta que se hace cualquiera antes de escribir una cifra
+ * —«¿esto se lo enseñan a quien me evalua?»— y contestarla en el momento es lo
+ * que hace que se conteste con la verdad.
+ */
+.notaPretension {
+  margin-top: var(--e3);
+  font-size: var(--t-menor);
+  color: var(--tinta2);
+  max-width: var(--medida);
+}

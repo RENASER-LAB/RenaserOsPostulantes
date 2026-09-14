@@ -1,0 +1,168 @@
+/*
+ * La campana de la cabecera.
+ *
+ * El punto es `--duda` y no `--activo`: en «El canto» el violeta significa una
+ * sola cosa, «te toca a ti», y un aviso no le da ningun turno — le cuenta algo
+ * que puede cambiar su decision, que es exactamente lo que ese token nombra.
+ */
+
+.contenedor {
+  position: relative;
+  display: inline-flex;
+}
+
+.boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* 44px: el minimo con el que un pulgar acierta sin mirar. */
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--tinta2);
+  cursor: pointer;
+}
+
+.boton:hover {
+  background: var(--nube-hundida);
+  color: var(--tinta);
+}
+
+.boton:focus-visible {
+  outline: 2px solid var(--activo);
+  outline-offset: 2px;
+}
+
+/*
+ * El punto lleva el numero dentro.
+ *
+ * Un circulo a secas dice «hay algo»; con la cifra dice «hay tres», y eso
+ * cambia si abre ahora o luego. Cabe hasta «9+», que es donde el numero deja de
+ * significar nada util.
+ */
+.punto {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 9px;
+  /* Anillo del color del fondo: separa el punto del icono sin dibujar un borde. */
+  box-shadow: 0 0 0 2px var(--nube);
+  background: var(--duda);
+  color: var(--tinta-invertida);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 17px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.panel {
+  position: absolute;
+  top: calc(100% + var(--e2));
+  right: 0;
+  z-index: 40;
+  width: min(22rem, calc(100vw - var(--e5) * 2));
+  max-height: 26rem;
+  overflow-y: auto;
+  padding: var(--e3) 0;
+  border: 1px solid var(--regla);
+  border-radius: var(--radio-control);
+  background: var(--nube);
+  box-shadow: 0 12px 32px rgb(35 43 54 / 14%);
+}
+
+.tituloPanel {
+  margin: 0;
+  padding: 0 var(--e4) var(--e3);
+  border-bottom: 1px solid var(--regla);
+  font-size: var(--t-micro);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tinta3);
+}
+
+.vacio {
+  margin: 0;
+  padding: var(--e4);
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+}
+
+.lista {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.aviso + .aviso {
+  border-top: 1px solid var(--regla);
+}
+
+/*
+ * El que todavia no habia visto.
+ *
+ * Filete en el canto izquierdo, no relleno bajo el texto: la regla 4 del mundo
+ * dice que el color vive en el borde. Y se queda puesto aunque abrir la campana
+ * los marque leidos — si se apagaran en el acto, la persona veria desaparecer
+ * bajo el raton la señal de qué era lo nuevo, justo al ir a leerlo.
+ */
+.nuevo {
+  border-left: 3px solid var(--duda);
+  background: var(--duda-bruma);
+}
+
+.enlaceAviso {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e1);
+  padding: var(--e3) var(--e4);
+  color: inherit;
+  text-decoration: none;
+}
+
+a.enlaceAviso:hover {
+  background: var(--nube-hundida);
+}
+
+a.enlaceAviso:focus-visible {
+  outline: 2px solid var(--activo);
+  outline-offset: -2px;
+}
+
+.tituloAviso {
+  font-size: var(--t-apoyo);
+  font-weight: 700;
+  color: var(--tinta);
+}
+
+.cuerpoAviso {
+  font-size: var(--t-menor);
+  color: var(--tinta2);
+}
+
+.cuando {
+  font-size: var(--t-menor);
+  color: var(--tinta3);
+}
+
+/*
+ * En el telefono el panel se va de lado a lado.
+ *
+ * Anclado a la derecha del boton, en una pantalla estrecha se sale del borde y
+ * la mitad de cada aviso queda fuera.
+ */
+@media (max-width: 30rem) {
+  .panel {
+    position: fixed;
+    top: 56px;
+    right: var(--e3);
+    left: var(--e3);
+    width: auto;
+  }
+}

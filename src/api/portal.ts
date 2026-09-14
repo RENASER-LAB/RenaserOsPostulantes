@@ -8,6 +8,7 @@ import type {
   Login,
   MiPostulacion,
   MiPostulacionDetalle,
+  MisAvisos,
   OpcionUbigeo,
   PedirBorrado,
   QuienSoy,
@@ -92,6 +93,12 @@ export function postular(datos: DatosPostulacion) {
   // porque omitirlo y mandar false son la misma cosa para el servidor pero no
   // para quien lea esto: el campo dice que la pantalla lo tuvo en cuenta.
   formulario.append('aceptaTratamiento', String(datos.aceptaTratamiento))
+  // Solo si la vacante publica lo que paga. Si no, el backend los ignora, y
+  // mandarlos igual escribiria en el registro un numero que nadie pidio.
+  if (datos.pretensionMonto !== undefined) {
+    formulario.append('pretensionMonto', String(datos.pretensionMonto))
+    formulario.append('pretensionMoneda', datos.pretensionMoneda ?? 'PEN')
+  }
   return pedir<{ codigo: string }>('/postulaciones', { metodo: 'POST', formulario })
 }
 
@@ -103,6 +110,24 @@ export const verPostulacion = (uuid: string) =>
 /** Retirarse no borra los datos: eso se pide aparte. */
 export const retirarPostulacion = (uuid: string) =>
   pedir<void>(`/postulaciones/${uuid}/retiro`, { metodo: 'POST' })
+
+// ---------- La campana ----------
+
+/** Mis avisos, los nuevos arriba, y cuantos me quedan sin ver. */
+export const misAvisos = () => pedir<MisAvisos>('/avisos')
+
+/**
+ * Apaga el punto de todos.
+ *
+ * Se llama al ABRIR la campana, no al abrir cada proceso: enterarse de que hay
+ * algo es lo que lo apaga. El aviso sigue ahi para releerlo, solo deja de contar.
+ */
+export const marcarAvisosLeidos = () =>
+  pedir<{ marcados: number }>('/avisos/lectura', { metodo: 'POST' })
+
+/** Apaga uno. Si no es suyo, el backend lo ignora en silencio. */
+export const marcarAvisoLeido = (id: number) =>
+  pedir<void>(`/avisos/${id}/lectura`, { metodo: 'POST' })
 
 // ---------- Privacidad ----------
 
