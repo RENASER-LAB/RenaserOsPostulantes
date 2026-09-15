@@ -13,11 +13,12 @@
  *     fallar a medias; decir «fallo» a secas dejaria sin saber quien si paso.
  */
 
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
+  activarCalificacionAutomatica,
   aplicarEvaluacion,
   elegirInstrumentoTecnico,
   asignarPlantillaPrueba,
@@ -36,7 +37,6 @@ import {
   publicarVacante,
   quitarRequisito,
   verCatalogos,
-  verEmbudo,
   verFicha,
   verHistorial,
   verPerfilIntegral,
@@ -65,6 +65,8 @@ import { rutas } from '@/rutas'
 import { formatearFechaCorta, formatearFechaLarga } from '@/dominio/reloj'
 import tabla from '../ui/Tabla.module.css'
 import { DescargarCv } from './DescargarCv'
+import { DescartarPostulacion } from './DescartarPostulacion'
+import { DescartarEnLote } from './DescartarEnLote'
 import { EntregablesDePrueba } from './EntregablesDePrueba'
 import { RespuestasDePrueba } from './RespuestasDePrueba'
 import { CierreDeLaVacante, PlazoDeUnaPersona } from './CierreDePrueba'
@@ -121,6 +123,7 @@ import {
   type QueTraeLaTanda,
   type Vista,
 } from './ranking'
+import { RemuneracionDeLaVacante } from './Remuneracion'
 import estilos from './Vacante.module.css'
 
 /**
@@ -243,11 +246,6 @@ export function VacantePanelDetalle() {
     queryFn: () => verVacante(vacanteId),
     enabled: Number.isFinite(vacanteId),
   })
-  const embudo = useQuery({
-    queryKey: ['panel-embudo', vacanteId],
-    queryFn: () => verEmbudo(vacanteId),
-    enabled: Number.isFinite(vacanteId),
-  })
   /*
     ⚠️ Aqui arriba y no junto a `v`, que es donde se usa: abajo quedaria detras
     de los `return` de cargando y de fallo, y un hook que a veces no se llama
@@ -281,10 +279,6 @@ export function VacantePanelDetalle() {
     queryFn: () => verRanking(vacanteId, etapa),
     enabled: Number.isFinite(vacanteId),
   })
-  const catalogos = useQuery({
-    queryKey: ['panel-catalogos'],
-    queryFn: verCatalogos,
-  })
 
   const [fallo, setFallo] = useState<string | null>(null)
 
@@ -295,7 +289,23 @@ export function VacantePanelDetalle() {
   })
   const [motivoCierre, setMotivoCierre] = useState('')
   const [mostrarCierre, setMostrarCierre] = useState(false)
+  const [mostrarAjustes, setMostrarAjustes] = useState(false)
+  const botonAjustes = useRef<HTMLButtonElement>(null)
   const botonCierre = useRef<HTMLButtonElement>(null)
+  /*
+    Abierta sola en un borrador: ahí la vacante todavía se está montando y lo
+    que hace falta es justo lo de dentro. Publicada, lo que hace falta es la
+    tabla, y la tuerca se abre cuando alguien la pida.
+
+    Va en un efecto y no en el valor inicial del estado porque en el primer
+    render la vacante todavía no ha llegado: leerla ahí daría siempre `false`, y
+    un borrador recién creado abriría con la configuración escondida — que es
+    justo lo único que hay que hacer en él.
+  */
+  const estadoDeLaVacante = vacante.data?.estado
+  useEffect(() => {
+    if (estadoDeLaVacante === 'BORRADOR') setMostrarAjustes(true)
+  }, [estadoDeLaVacante])
   const cancelarCierre = () => {
     setMostrarCierre(false)
     setMotivoCierre('')
@@ -309,20 +319,6 @@ export function VacantePanelDetalle() {
     },
     onError: (c) => setFallo(c instanceof Error ? c.message : 'No se pudo cerrar.'),
   })
-
-  // El nombre legible de cada estado sale del catalogo del backend: una sola
-  // fuente, igual que en el portal.
-  const nombreDeEstado = useMemo(() => {
-    const mapa = new Map<string, string>()
-    for (const e of catalogos.data?.estados ?? []) mapa.set(e.codigo, e.nombre)
-    return (codigo: string) => mapa.get(codigo) ?? codigo
-  }, [catalogos.data])
-
-  const ordenDeEstado = useMemo(() => {
-    const mapa = new Map<string, number>()
-    for (const e of catalogos.data?.estados ?? []) mapa.set(e.codigo, e.orden)
-    return (codigo: string) => mapa.get(codigo) ?? 99
-  }, [catalogos.data])
 
   if (vacante.isPending) return <p className={estilos.cargando}>Cargando la vacante…</p>
   if (vacante.isError) {
@@ -406,19 +402,23 @@ export function VacantePanelDetalle() {
             )}
           </div>
         )}
-        {v.estado === 'PUBLICADA' && (
-          <button
-            ref={botonCierre}
-            className={estilos.accionSecundaria}
-            type="button"
-            aria-expanded={mostrarCierre}
-            aria-controls="cerrar-vacante"
-            disabled={cierre.isPending}
-            onClick={() => mostrarCierre ? cancelarCierre() : setMostrarCierre(true)}
-          >
-            Cerrar vacante
-          </button>
-        )}
+        {/*
+          La tuerca: todo lo que se configura de esta vacante entra por aquí, y
+          nada de eso compite ya con lo que se hace todos los días, que es mirar
+          la tabla y decidir.
+        */}
+        <button
+          ref={botonAjustes}
+          className={estilos.tuerca}
+          type="button"
+          aria-expanded={mostrarAjustes}
+          aria-controls="ajustes-vacante"
+          title="Configuración de la vacante"
+          onClick={() => setMostrarAjustes(!mostrarAjustes)}
+        >
+          <span aria-hidden="true">⚙</span>
+          <span className={estilos.soloLectores}>Configuración de la vacante</span>
+        </button>
       </header>
 
       {v.estado === 'PUBLICADA' && mostrarCierre && (
@@ -468,38 +468,52 @@ export function VacantePanelDetalle() {
         </p>
       )}
 
-      {/* Se conserva montada al plegar: editar y consultar no pierde los borradores. */}
-      <details className={estilos.configuracionPlegable} open={v.estado === 'BORRADOR'}>
-        <summary className={estilos.resumenConfiguracion}>
-          <span>Configuración de la vacante</span>
-          <span className={estilos.alcanceConfiguracion}>Evaluaciones, plazos y requisitos</span>
-        </summary>
-        <div className={estilos.cuerpoConfiguracion}>
-          <ConfiguracionDeLaVacante vacante={v} />
-          <Requisitos vacanteId={vacanteId} />
-        </div>
-      </details>
+      {/*
+        ⚠️ **Se oculta, NUNCA se desmonta**, y esto no es una preferencia.
+        Dentro hay tres borradores a medio escribir que solo viven en memoria: el
+        requisito que se está redactando, los minutos de la etapa técnica —que se
+        guardan con botón, no al teclear— y las fechas del cierre de la prueba.
+        Un renderizado condicional los tiraría cada vez que se cierra la tuerca.
+      */}
+      <section
+        id="ajustes-vacante"
+        className={estilos.cuerpoConfiguracion}
+        hidden={!mostrarAjustes}
+        aria-label="Configuración de la vacante"
+      >
+        {/*
+          El sueldo va PRIMERO, antes de lo que responderá quien postule.
 
-      {/* ---------- El embudo ---------- */}
-      {embudo.data && Object.keys(embudo.data.porEstado).length > 0 && (
-        <section className={estilos.resumenProceso}>
-          <h2 className={estilos.tituloSeccion}>En qué va la tanda</h2>
-          <ul className={estilos.embudo} role="list">
-            {Object.entries(embudo.data.porEstado)
-              .sort(([a], [b]) => ordenDeEstado(a) - ordenDeEstado(b))
-              .map(([estado, cuantos]) => (
-                <li className={estilos.tramoEmbudo} key={estado}>
-                  <span className={estilos.cuantos}>{cuantos}</span>
-                  <span className={estilos.enQue}>{nombreDeEstado(estado)}</span>
-                </li>
-              ))}
-          </ul>
-        </section>
-      )}
+          Es lo unico de esta pantalla que le llega al candidato en el momento
+          —correo y aviso en su portal—, y ademas decide si al postular se le va
+          a exigir su pretension. Debajo de los desplegables de plantillas se
+          encontraria buscandolo.
+        */}
+        <RemuneracionDeLaVacante vacante={v} />
+        <ConfiguracionDeLaVacante vacante={v} />
+        <Requisitos vacanteId={vacanteId} />
+        {v.estado === 'PUBLICADA' && (
+          <div className={estilos.cierreDeLaVacante}>
+            {/* El mismo botón abre y cierra, y no se desmonta al abrir: cancelar
+                con Escape le devuelve el foco, y un botón nuevo no sería él. */}
+            <button
+              ref={botonCierre}
+              className={estilos.accionSecundaria}
+              type="button"
+              aria-expanded={mostrarCierre}
+              aria-controls="cerrar-vacante"
+              disabled={cierre.isPending}
+              onClick={() => (mostrarCierre ? cancelarCierre() : setMostrarCierre(true))}
+            >
+              Cerrar vacante
+            </button>
+          </div>
+        )}
+      </section>
 
       {/* ---------- El ranking ---------- */}
       <section className={estilos.seccion}>
-        <h2 className={estilos.tituloSeccion}>El ranking, etapa por etapa</h2>
+        <h2 className={estilos.tituloSeccion}>Ranking</h2>
 
         {/* Una pestana por etapa: la tabla es la misma mesa de decidir, lo que
             cambia es de que etapa es la nota con la que se ordena. */}
@@ -554,16 +568,6 @@ export function VacantePanelDetalle() {
           el sondeo. La peticion sigue viva en el servidor —el bloque nunca dice
           lo contrario— pero nadie volvera a refrescar solo.
         */}
-        {etapa === 'PERFIL_INTEGRAL' && ranking.data && (
-          <CalificarLaTanda
-            vacanteId={vacanteId}
-            total={ranking.data.total}
-            alTerminar={() => {
-              cache.invalidateQueries({ queryKey: ['panel-ranking', vacanteId] })
-              cache.invalidateQueries({ queryKey: ['panel-embudo', vacanteId] })
-            }}
-          />
-        )}
         {/*
           ⚠️ **Solo en la prueba, y encima de la tabla.** El equivalente del
           currículum —`CalificarLaTanda`— vive justo arriba y solo en Perfil
@@ -596,9 +600,6 @@ export function VacantePanelDetalle() {
             alAvanzar={async () => {
               await cache.invalidateQueries({
                 queryKey: ['panel-ranking', vacanteId],
-              })
-              await cache.invalidateQueries({
-                queryKey: ['panel-embudo', vacanteId],
               })
             }}
           />
@@ -702,6 +703,12 @@ function Ranking({
 }) {
   const [marcados, setMarcados] = useState<Set<number>>(new Set())
   const [abierta, setAbierta] = useState<number | null>(null)
+  /*
+    Sale de la tanda y no de la ficha: la mesa vive fuera de cualquier ficha
+    abierta, y pedir una solo para saber un permiso sería una consulta de más
+    por una casilla. Es el mismo dato y el mismo patrón que `puedeVerPretension`.
+  */
+  const puedeMoverEnLote = cabeceraDelCv.puedeMoverPostulacion
   const [filtros, setFiltros] = useState<Filtros>(SIN_FILTROS)
   /*
     Sin orden puesto manda el del backend —grupo de prioridad y, dentro, nota—,
@@ -759,7 +766,14 @@ function Ranking({
     El motivo NO se adivina mirando los nulos: `puedeVerPretension` viaja en la
     respuesta justamente para poder decir cuál de los dos es.
   */
-  const trae = queTraeLaTanda(filas, cabeceraDelCv.puedeVerPretension)
+  const trae = queTraeLaTanda(
+    filas,
+    cabeceraDelCv.puedeVerPretension,
+    // El tercer motivo por el que la columna puede venir vacía, y el único que
+    // se arregla desde el panel: esta vacante no publica lo que paga, así que a
+    // nadie se le exigió decir lo suyo. Ver `porQueNoHayPretension`.
+    cabeceraDelCv.vacanteMuestraSueldo !== false,
+  )
   /*
     Adecuacion y potencial son dimensiones del retrato que sale del curriculum,
     no de la prueba ni de la simulacion. Enseñarlas en las cinco pestañas hacia
@@ -1111,6 +1125,23 @@ function Ranking({
         puedeDescargar={seExportaAExcel(etapa)}
         descargando={descargando}
         alDescargar={() => void descargarExcel()}
+        calificar={
+          /*
+            Solo en Perfil integral: lo que califica es el curriculum, y en las
+            otras cuatro pestañas ese boton hablaria de otra etapa.
+
+            Hasta la V53 esto era una seccion entera encima de la tabla, con
+            titulo y un parrafo de tres lineas. Aqui ocupa una casilla al lado
+            de «Descargar Excel» y no baja la tabla ni una fila.
+          */
+          etapa === 'PERFIL_INTEGRAL' ? (
+            <CalificarLaTanda
+              vacanteId={vacanteId}
+              total={filas.length}
+              alTerminar={() => void alAvanzar()}
+            />
+          ) : null
+        }
       />
       {falloDescarga && (
         <p className={estilos.avisoMalo} role="alert">
@@ -1605,14 +1636,23 @@ function Ranking({
         </p>
       )}
 
-      {/* La mesa de avance: un motivo para la tanda marcada. */}
+      {/*
+        La mesa: un motivo para la tanda marcada, y las dos cosas que se pueden
+        hacer con ella.
+
+        ⚠️ **El motivo es UNO y vale para las dos.** Antes se llamaba «motivo del
+        avance» porque avanzar era lo único que había; con el descarte al lado,
+        ese nombre haría escribir un motivo de avance para acabar cerrando a seis
+        personas con él. Se marca a quien sea y después se elige qué hacer, que
+        es el orden en que se trabaja la tabla.
+      */}
       <div className={estilos.avance}>
         <label className={estilos.campoMotivo}>
-          <span>Motivo del avance (obligatorio)</span>
+          <span>Motivo (obligatorio) · queda en el historial de cada una</span>
         <input
           className={estilos.entradaMotivo}
           type="text"
-          placeholder="Motivo del avance (obligatorio)"
+          placeholder="Motivo (obligatorio)"
           value={motivo}
           onChange={(e) => setMotivo(e.target.value)}
         />
@@ -1629,6 +1669,30 @@ function Ranking({
               ? 'Marca a quienes avanzan'
               : `Avanzar a ${marcadosVisibles.length} ${marcadosVisibles.length === 1 ? 'persona' : 'personas'}`}
         </button>
+        {/*
+          ⚠️ **Al lado del de avanzar y no escondido, pero NO actúa al pulsarlo.**
+          Son dos botones pegados que hacen cosas opuestas: este abre una ventana
+          con los nombres escritos, que es donde se atrapa haber dejado marcada a
+          una persona de una pestaña anterior.
+
+          Solo para quien puede mover postulaciones. `puedeMoverEnLote` sale de la
+          ficha de alguien de la tanda, que es de donde el panel sabe qué permisos
+          trae la sesión: no hay endpoint que lo diga.
+        */}
+        {puedeMoverEnLote && (
+          <DescartarEnLote
+            marcados={marcadosVisibles.map((f) => ({
+              postulacionId: f.postulacionId,
+              candidato: f.candidato,
+            }))}
+            motivo={motivo}
+            alTerminar={() => {
+              setMarcados(new Set())
+              setMotivo('')
+              void alAvanzar()
+            }}
+          />
+        )}
       </div>
       {resultado && (
         <p className={estilos.resultadoAvance} role="status">
@@ -1679,6 +1743,7 @@ function BarraDeFiltros({
   descargando,
   alDescargar,
   columnas,
+  calificar,
 }: {
   etapa: EtapaPanel
   filtros: Filtros
@@ -1693,6 +1758,13 @@ function BarraDeFiltros({
   descargando: boolean
   alDescargar: () => void
   columnas: ReactNode
+  /**
+   * El boton de calificar la tanda, o nada si esta etapa no se califica.
+   *
+   * Llega hecho desde arriba, igual que `columnas`: esta barra pinta acciones
+   * sobre la tabla y no sabe —ni tiene por que— de colas ni de sondeos.
+   */
+  calificar: ReactNode
 }) {
   const cambiar = <C extends keyof Filtros>(campo: C, valor: Filtros[C]) =>
     alCambiar({ ...filtros, [campo]: valor })
@@ -1819,7 +1891,10 @@ function BarraDeFiltros({
               */}
               {!trae.hayPretension ? (
                 <p className={estilos.porQueNoSale}>
-                  {porQueNoHayPretension(trae.puedeVerPretension)}
+                  {porQueNoHayPretension(
+                    trae.puedeVerPretension,
+                    trae.vacanteMuestraSueldo,
+                  )}
                 </p>
               ) : (
                 <>
@@ -1878,6 +1953,8 @@ function BarraDeFiltros({
           ocho filas con su detalle tarda; un botón que no cambia invita a
           pulsarlo tres veces y a bajar tres archivos iguales.
         */}
+        {calificar}
+
         {puedeDescargar && (
           <button
             type="button"
@@ -1959,6 +2036,28 @@ function DetalleDelPostulante({ fila, etapa }: { fila: FilaRanking; etapa: Etapa
               Postuló el {formatearFechaCorta(ficha.data.creadoEn)} ·{' '}
               {ficha.data.estadoNombre}
             </p>
+            {/*
+              Lo que pidió, o por qué no hay nada que enseñar.
+
+              Aquí y no solo en la tabla: esta es la pantalla donde se decide
+              sobre UNA persona, y decidir sin saber si su cifra entra en el
+              presupuesto es descubrirlo en la llamada.
+
+              El motivo del hueco viene escrito del servidor porque son tres y
+              solo uno es verdad cada vez — y el único que el panel podría
+              deducir por su cuenta es justo el que acusa al candidato.
+            */}
+            {ficha.data.pretensionDeclarada ? (
+              <p className={estilos.dato}>
+                <b>Pide {ficha.data.pretensionDeclarada}</b> al mes
+              </p>
+            ) : (
+              ficha.data.porQueSinPretension && (
+                <p className={estilos.porQueSinPretensionFicha}>
+                  {ficha.data.porQueSinPretension}
+                </p>
+              )
+            )}
             {ficha.data.resultadoOrgulloso && (
               <>
                 <h4 className={estilos.subtitulo}>El resultado del que está orgulloso</h4>
@@ -1982,6 +2081,49 @@ function DetalleDelPostulante({ fila, etapa }: { fila: FilaRanking; etapa: Etapa
                 ) : fila.archivoNombre}
               </p>
             )}
+            {/*
+              Al final de la ficha y no arriba, y ese orden es el de la
+              decision: quien es, como llego, que entrego —y solo entonces, si
+              sigue o no. Un boton de descartar junto al nombre invita a cerrar
+              a alguien antes de haber leido por que estaba ahi.
+
+              ⚠️ **`esFinal` sale del catalogo y no de un campo de la ficha.**
+              `FichaPostulacion` trae el codigo del estado, no si ese estado
+              cierra el recorrido; preguntarselo al catalogo —que esta pedido
+              aqui al lado para traducir los nombres del historial— evita
+              inventarse una lista de estados finales en el navegador que se
+              quede vieja el dia que se añada uno.
+            */}
+            <DescartarPostulacion
+              postulacionId={fila.postulacionId}
+              candidato={ficha.data.candidato}
+              /*
+                ⚠️ **Sin catálogo se manda `undefined`, no `false`.** Son dos
+                consultas en paralelo y esta ficha se pinta en cuanto llega la
+                suya: dando por «no terminada» la que todavia no se sabe, el
+                boton sale sobre alguien ya cerrado —se lee que le va a salir un
+                correo, se escribe el motivo y el backend contesta 409—. El `??`
+                aqui invertia el fallo seguro: ante la duda ofrecia la accion.
+              */
+              yaTermino={
+                catalogos.isSuccess
+                  ? (catalogos.data.estados.find((e) => e.codigo === ficha.data.estado)?.esFinal ??
+                    false)
+                  : undefined
+              }
+              puedeMover={ficha.data.puedeMoverPostulacion}
+              /*
+                Los tres se invalidan porque el estado cambia en los tres: la
+                ficha lo pinta, el historial gana un paso y el ranking reparte
+                las filas por etapa. Sin el ranking, quien acaba de descartar
+                sigue viendo a esa persona en la tabla de la que la sacó.
+              */
+              alDescartar={() => {
+                cache.invalidateQueries({ queryKey: ['panel-ficha', fila.postulacionId] })
+                cache.invalidateQueries({ queryKey: ['panel-historial', fila.postulacionId] })
+                cache.invalidateQueries({ queryKey: ['panel-ranking'] })
+              }}
+            />
           </>
         )}
 
@@ -3205,6 +3347,11 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
     onSuccess: refrescar,
     onError: alFallar,
   })
+  const automatica = useMutation({
+    mutationFn: (activa: boolean) => activarCalificacionAutomatica(vacante.id, activa),
+    onSuccess: refrescar,
+    onError: alFallar,
+  })
   /*
     Qué se rinde en la etapa técnica, y en cuántos minutos. Van juntos en la misma
     llamada porque el backend los recibe juntos: los minutos son parte de la vara, no un
@@ -3297,6 +3444,24 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
       )}
 
       <div className={estilos.configuracion}>
+        <fieldset className={estilos.grupoConfiguracion}>
+          <legend>Cómo avanza esta vacante</legend>
+          <label className={estilos.ajuste}>
+            <span className={estilos.etiquetaAjuste}>Calificar y avanzar sola</span>
+            <span className={estilos.interruptor}>
+              <input
+                type="checkbox"
+                checked={vacante.calificacionAutomatica}
+                onChange={(e) => automatica.mutate(e.target.checked)}
+                disabled={automatica.isPending}
+              />
+              {vacante.calificacionAutomatica
+                ? 'Encendido: cada persona que postule se califica sola y llega hasta la prueba del puesto sin que nadie intervenga. Tú decides al final, cuando ya tienes sus notas'
+                : 'Apagado: cada paso lo pides tú desde esta pantalla'}
+            </span>
+          </label>
+        </fieldset>
+
         <fieldset className={estilos.grupoConfiguracion}>
           <legend>Evaluación del banco</legend>
         <label className={estilos.ajuste}>

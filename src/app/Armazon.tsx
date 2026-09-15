@@ -9,6 +9,7 @@ import { Link, NavLink, Outlet, matchPath, useLocation } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { patrones, rutas } from '@/rutas'
 import { useSesion } from './Sesion'
+import { Campana } from '@/ui/Campana'
 import { Marca } from '@/ui/Marca'
 import estilos from './Armazon.module.css'
 import { PantallaConEntrada } from '@/ui/movimiento'
@@ -151,9 +152,16 @@ export function Armazon() {
             y desde el pie. Y con cuenta no hay accion, solo navegacion: vuelve a
             ser un enlace de texto como los otros tres.
 
-            El <span> de dentro de «Ingresar» NO es decorativo y no se puede
-            quitar: el enlace es el marco rosa y el hijo es la cara con la rampa.
-            Ver `.entrar` en la hoja.
+            El <span> de dentro de «Iniciar sesión» NO es decorativo y no se
+            puede quitar: el enlace es el marco rosa y el hijo es la cara con la
+            rampa. Ver `.entrar` en la hoja.
+
+            La campana va aqui y no dentro del `<nav>`, que es donde nacio: no es
+            un destino, es lo unico —con «Mi cuenta»— que se pulsa sin cambiar de
+            pantalla, y metida en el `<nav>` descentraba los tres destinos, que
+            es justo lo que la rejilla de tres columnas existe para evitar. Se
+            protege sola: sin sesion devuelve `null`, asi que no hace falta
+            envolverla.
           */}
           <div className={estilos.acciones}>
             {hayCuenta ? (
@@ -167,6 +175,7 @@ export function Armazon() {
                 </span>
               </Link>
             )}
+            <Campana />
           </div>
         </div>
       </header>

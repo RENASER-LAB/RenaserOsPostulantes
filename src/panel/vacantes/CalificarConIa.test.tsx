@@ -7,7 +7,7 @@
  *      demuestra que **se pidio**. Es la regla de los indicadores que mienten,
  *      la que ya costo respuestas de candidatos perdidas en la evaluacion.
  *   1. **Lanzar una criba sin preguntar.** Cambia de golpe las notas de mucha
- *      gente, y la fina ademas pisa las provisionales de la rapida. Sin la
+ *      gente. Sin la
  *      pregunta se pulsa por curiosidad y no queda ni rastro de que se perdio.
  *   2. **Preguntar sin decir a cuantos alcanza.** Un «¿seguro?» a secas no es
  *      una pregunta: no hay forma de contestarla bien.
@@ -27,14 +27,12 @@ import { CalificarAUno, CalificarLaTanda } from './CalificarConIa'
 
 const pedirPrueba = vi.fn()
 const pedirPerfil = vi.fn()
-const rapida = vi.fn()
-const fina = vi.fn()
+const tanda = vi.fn()
 
 vi.mock('../api/panel', () => ({
   calificarPruebaConIa: (id: number) => pedirPrueba(id),
   calificarPerfilIntegralConIa: (id: number) => pedirPerfil(id),
-  cribaRapida: (id: number) => rapida(id),
-  cribaFina: (id: number) => fina(id),
+  calificarTanda: (id: number) => tanda(id),
 }))
 
 /** Las palabras que este bloque no puede decir nunca despues de un 200. */
@@ -47,12 +45,10 @@ function loQueSeLee() {
 beforeEach(() => {
   pedirPrueba.mockReset()
   pedirPerfil.mockReset()
-  rapida.mockReset()
-  fina.mockReset()
+  tanda.mockReset()
   pedirPrueba.mockResolvedValue({ estado: 'ENCOLADA', mensaje: 'En cola' })
   pedirPerfil.mockResolvedValue({ estado: 'ENCOLADA', mensaje: 'En cola' })
-  rapida.mockResolvedValue({ estado: 'ENCOLADA', candidatos: 24, mensaje: 'En cola' })
-  fina.mockResolvedValue({ estado: 'ENCOLADA', candidatos: 6, mensaje: 'En cola' })
+  tanda.mockResolvedValue({ estado: 'ENCOLADA', candidatos: 24, mensaje: 'En cola' })
 })
 
 afterEach(() => {
@@ -202,167 +198,101 @@ describe('pedirle la nota a la IA de una persona', () => {
   })
 })
 
-describe('pedirle notas a la tanda entera', () => {
-  it('la criba fina pregunta antes de llamar, y dice a cuánta gente alcanza', async () => {
-    render(<CalificarLaTanda vacanteId={3} alTerminar={() => {}} />)
+describe('calificar la tanda entera', () => {
+  const elBoton = () =>
+    screen.getByRole('button', { name: 'Revisar y calificar pendientes' })
 
-    fireEvent.click(screen.getByRole('button', { name: 'Criba fina' }))
+  it('pregunta antes de llamar, y dice a cuánta gente alcanza', async () => {
+    render(<CalificarLaTanda vacanteId={7} total={24} alTerminar={() => {}} />)
+    fireEvent.click(elBoton())
 
-    // Nada se ha mandado: primero se dice el alcance y lo que se pierde.
-    expect(fina).not.toHaveBeenCalled()
-    expect(screen.getByText(/solo a la parte alta de la tanda/i)).toBeTruthy()
-    expect(screen.getByText(/pisa las notas provisionales/i)).toBeTruthy()
-
-    fireEvent.click(screen.getByRole('button', { name: 'Sí, criba fina' }))
-    await waitFor(() => expect(fina).toHaveBeenCalledWith(3))
+    expect(loQueSeLee()).toContain('las 24 personas de la tanda')
+    expect(tanda).not.toHaveBeenCalled()
   })
 
-  it('la criba rápida también pregunta, y con el tamaño de la tanda dice el número', async () => {
-    render(<CalificarLaTanda vacanteId={3} total={24} alTerminar={() => {}} />)
+  it('sin el tamaño de la tanda la pregunta sigue diciendo el alcance', async () => {
+    render(<CalificarLaTanda vacanteId={7} alTerminar={() => {}} />)
+    fireEvent.click(elBoton())
 
-    fireEvent.click(screen.getByRole('button', { name: 'Criba rápida' }))
-
-    expect(rapida).not.toHaveBeenCalled()
-    // En la rápida el número ES el alcance: alcanza a la tanda entera.
-    expect(screen.getByText(/alcanza a las 24 personas de la tanda/i)).toBeTruthy()
-    expect(screen.getByText(/también a quien ya tiene nota/i)).toBeTruthy()
-
-    fireEvent.click(screen.getByRole('button', { name: 'Sí, criba rápida' }))
-    await waitFor(() => expect(rapida).toHaveBeenCalledWith(3))
+    expect(loQueSeLee()).toContain('toda la tanda')
   })
 
-  it('sin el tamaño de la tanda la pregunta sigue diciendo el alcance', () => {
-    // La rama seguirá existiendo el día que alguien monte esto desde otro sitio
-    // sin el ranking a mano. Sin número no se calla el alcance: se dice en
-    // palabras. Lo que no se hace nunca es inventarse una cifra.
-    render(<CalificarLaTanda vacanteId={3} alTerminar={() => {}} />)
-
-    fireEvent.click(screen.getByRole('button', { name: 'Criba rápida' }))
-
-    expect(screen.getByText(/alcanza a toda la tanda/i)).toBeTruthy()
-    expect(screen.getByText(/también a quien ya tiene nota/i)).toBeTruthy()
-  })
-
-  it('la criba fina no nombra el tamaño de la tanda, aunque lo tenga', () => {
-    // El número de la tanda no es el alcance de la fina, que va sobre la parte
-    // alta y la decide un parámetro del backend. Metido en esa frase sería el
-    // único número, y un número gana a la salvedad que lo rodea: se leería
-    // «pisa las notas de 24 personas», que es justo lo que no sabemos.
-    render(<CalificarLaTanda vacanteId={3} total={24} alTerminar={() => {}} />)
-
-    fireEvent.click(screen.getByRole('button', { name: 'Criba fina' }))
-
-    expect(screen.getByText(/solo a la parte alta de la tanda/i)).toBeTruthy()
-    expect(loQueSeLee()).not.toMatch(/24/)
-  })
-
-  it('«mejor no» no manda nada y devuelve los dos botones', () => {
-    render(<CalificarLaTanda vacanteId={3} alTerminar={() => {}} />)
-
-    fireEvent.click(screen.getByRole('button', { name: 'Criba fina' }))
+  it('«mejor no» no manda nada y devuelve el botón', async () => {
+    render(<CalificarLaTanda vacanteId={7} total={3} alTerminar={() => {}} />)
+    fireEvent.click(elBoton())
     fireEvent.click(screen.getByRole('button', { name: 'Mejor no' }))
 
-    expect(fina).not.toHaveBeenCalled()
-    expect(rapida).not.toHaveBeenCalled()
-    expect(screen.getByRole('button', { name: 'Criba fina' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Criba rápida' })).toBeTruthy()
+    expect(tanda).not.toHaveBeenCalled()
+    expect(elBoton()).toBeTruthy()
   })
 
   it('a cuánta gente alcanzó lo dice el servidor, no la pantalla', async () => {
-    rapida.mockResolvedValue({ estado: 'ENCOLADA', candidatos: 24, mensaje: '' })
-    render(<CalificarLaTanda vacanteId={3} alTerminar={() => {}} />)
+    tanda.mockResolvedValue({ estado: 'ENCOLADA', candidatos: 5, mensaje: '' })
+    render(<CalificarLaTanda vacanteId={7} total={40} alTerminar={() => {}} />)
+    fireEvent.click(elBoton())
+    fireEvent.click(screen.getByRole('button', { name: 'Sí, calificar' }))
 
-    fireEvent.click(screen.getByRole('button', { name: 'Criba rápida' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Sí, criba rápida' }))
-
-    expect(await screen.findByText(/se pidió la criba rápida para 24 personas/i)).toBeTruthy()
-    for (const mentira of MENTIRAS) {
-      expect(loQueSeLee()).not.toMatch(mentira)
-    }
+    // 5, que es lo que contestó el servidor, y no 40, que es lo que la pantalla
+    // creía. Lo que se pidió lo sabe quien lo encoló.
+    await waitFor(() => expect(loQueSeLee()).toContain('5 personas'))
+    expect(tanda).toHaveBeenCalledWith(7)
   })
 
   it('una pasada que no alcanza a nadie lo dice, y no se queda esperando', async () => {
-    // Aceptada y vacia: el 200 no demuestra que hubiera trabajo. Sin esta rama
-    // se leia «para 0 personas. Están en cola» con el sondeo mirando la nada.
-    rapida.mockResolvedValue({ estado: 'ENCOLADA', candidatos: 0, mensaje: '' })
-    render(<CalificarLaTanda vacanteId={3} alTerminar={() => {}} />)
+    tanda.mockResolvedValue({ estado: 'ENCOLADA', candidatos: 0, mensaje: '' })
+    render(<CalificarLaTanda vacanteId={7} total={2} alTerminar={() => {}} />)
+    fireEvent.click(elBoton())
+    fireEvent.click(screen.getByRole('button', { name: 'Sí, calificar' }))
 
-    fireEvent.click(screen.getByRole('button', { name: 'Criba rápida' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Sí, criba rápida' }))
-
-    expect(await screen.findByText(/no alcanzó a nadie/i)).toBeTruthy()
-    expect(loQueSeLee()).not.toMatch(/están en cola/i)
-    expect(screen.queryByText('Está calificando')).toBeNull()
+    await waitFor(() => expect(loQueSeLee()).toContain('No alcanzó a nadie'))
+    expect(loQueSeLee()).not.toContain('Refrescamos el ranking')
   })
 
-  it('la criba que se está esperando no se puede volver a pedir; la otra sí', async () => {
-    render(<CalificarLaTanda vacanteId={3} alTerminar={() => {}} />)
+  it('mientras se espera no se puede volver a pedir', async () => {
+    tanda.mockResolvedValue({ estado: 'ENCOLADA', candidatos: 3, mensaje: '' })
+    render(<CalificarLaTanda vacanteId={7} total={9} alTerminar={() => {}} />)
+    fireEvent.click(elBoton())
+    fireEvent.click(screen.getByRole('button', { name: 'Sí, calificar' }))
 
-    fireEvent.click(screen.getByRole('button', { name: 'Criba rápida' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Sí, criba rápida' }))
-    await screen.findByText(/se pidió la criba rápida/i)
-
-    // Repetirla reiniciaria la cuenta de vueltas con la pasada anterior viva, y
-    // pagaria una segunda llamada al modelo por los mismos currículums.
-    expect((screen.getByRole('button', { name: 'Criba rápida' }) as HTMLButtonElement).disabled).toBe(true)
-    // Encadenar la fina detrás de la rápida sí es una secuencia normal.
-    expect((screen.getByRole('button', { name: 'Criba fina' }) as HTMLButtonElement).disabled).toBe(false)
+    // Volver a pulsarlo reiniciaría la cuenta de vueltas con la pasada anterior
+    // todavía viva, y pagaría una segunda llamada al modelo por los mismos
+    // currículums.
+    await waitFor(() => expect((elBoton() as HTMLButtonElement).disabled).toBe(true))
   })
 
-  it('una criba que no encola tampoco dice que se pidió', async () => {
-    // Hoy las dos cribas contestan siempre `ENCOLADA`, pero la comprobación es
-    // la misma y vive en el mismo sitio: el fallo que se arregló aquí fue dar
-    // por hecho lo que el servidor no había dicho.
-    rapida.mockResolvedValue({ estado: 'SIN_CAMBIOS', candidatos: 0, mensaje: 'Ya está todo.' })
-    render(<CalificarLaTanda vacanteId={3} alTerminar={() => {}} />)
+  it('lo que no encola tampoco dice que se pidió', async () => {
+    tanda.mockResolvedValue({
+      estado: 'SIN_CAMBIOS',
+      candidatos: 0,
+      mensaje: 'No quedaba nadie sin nota.',
+    })
+    render(<CalificarLaTanda vacanteId={7} total={4} alTerminar={() => {}} />)
+    fireEvent.click(elBoton())
+    fireEvent.click(screen.getByRole('button', { name: 'Sí, calificar' }))
 
-    fireEvent.click(screen.getByRole('button', { name: 'Criba rápida' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Sí, criba rápida' }))
-
-    expect(await screen.findByText(/no se encoló nada/i)).toBeTruthy()
-    expect(screen.getByText(/ya está todo/i)).toBeTruthy()
-    expect(loQueSeLee()).not.toMatch(/se pidió/i)
-    expect(screen.queryByText('Está calificando')).toBeNull()
+    await waitFor(() => expect(loQueSeLee()).toContain('No se encoló nada'))
+    expect(loQueSeLee()).toContain('No quedaba nadie sin nota.')
+    for (const mentira of MENTIRAS) expect(loQueSeLee()).not.toMatch(mentira)
   })
 
   it('un 403 habla del permiso y no ofrece reintentar', async () => {
-    rapida.mockRejectedValue(new ErrorApi(403, 'Forbidden', null))
-    render(<CalificarLaTanda vacanteId={3} alTerminar={() => {}} />)
+    tanda.mockRejectedValue(new ErrorApi(403, 'Sin permiso'))
+    render(<CalificarLaTanda vacanteId={7} total={4} alTerminar={() => {}} />)
+    fireEvent.click(elBoton())
+    fireEvent.click(screen.getByRole('button', { name: 'Sí, calificar' }))
 
-    fireEvent.click(screen.getByRole('button', { name: 'Criba rápida' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Sí, criba rápida' }))
-
-    expect(await screen.findByText(/ajustar nota/i)).toBeTruthy()
+    await waitFor(() => expect(loQueSeLee()).toMatch(/permiso/i))
     expect(loQueSeLee()).not.toMatch(/vuelve a intentarlo/i)
-    // No es una avería, así que no se anuncia como tal.
-    expect(screen.queryByRole('alert')).toBeNull()
   })
 
-  it('un 500 dice que no quedó nada en cola y que se reintente', async () => {
-    rapida.mockRejectedValue(new ErrorApi(500, 'Internal Server Error', null))
-    render(<CalificarLaTanda vacanteId={3} alTerminar={() => {}} />)
+  it('un 500 dice que no quedó nada en cola, y el botón vuelve a estar pulsable', async () => {
+    tanda.mockRejectedValue(new ErrorApi(500, 'Se cayó'))
+    render(<CalificarLaTanda vacanteId={7} total={4} alTerminar={() => {}} />)
+    fireEvent.click(elBoton())
+    fireEvent.click(screen.getByRole('button', { name: 'Sí, calificar' }))
 
-    fireEvent.click(screen.getByRole('button', { name: 'Criba rápida' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Sí, criba rápida' }))
-
-    const aviso = await screen.findByRole('alert')
-    expect(aviso.textContent).toMatch(/error 500/i)
-    // Lo que distingue este caso del 403: aquí no hay nada esperando y sí hay
-    // algo que hacer. Sin decirlo, quien mira no sabe si esperar o repetir.
-    expect(aviso.textContent).toMatch(/no quedó nada en cola/i)
-    expect(aviso.textContent).toMatch(/vuelve a intentarlo/i)
-    expect(aviso.textContent).not.toMatch(/permiso/i)
-  })
-
-  it('el botón vuelve a estar pulsable tras un fallo', async () => {
-    rapida.mockRejectedValue(new ErrorApi(500, 'Internal Server Error', null))
-    render(<CalificarLaTanda vacanteId={3} alTerminar={() => {}} />)
-
-    fireEvent.click(screen.getByRole('button', { name: 'Criba rápida' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Sí, criba rápida' }))
-    await screen.findByRole('alert')
-
-    const boton = screen.getByRole('button', { name: 'Criba rápida' }) as HTMLButtonElement
-    expect(boton.disabled).toBe(false)
+    await waitFor(() => expect(loQueSeLee()).toMatch(/no.*cola|no se pidió|no damos por hecho/i))
+    expect((elBoton() as HTMLButtonElement).disabled).toBe(false)
+    for (const mentira of MENTIRAS) expect(loQueSeLee()).not.toMatch(mentira)
   })
 })

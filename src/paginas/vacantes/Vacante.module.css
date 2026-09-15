@@ -232,3 +232,14 @@
     align-items: start;
   }
 }
+
+/*
+ * El sueldo, debajo de las pastillas de donde y como.
+ *
+ * Separado del grupo a proposito: «Hibrido» y «Arequipa» se comparan de un
+ * vistazo entre vacantes, pero el dinero no es un metadato mas — es la mitad de
+ * lo que la persona ha venido a averiguar.
+ */
+.sueldo {
+  margin-top: var(--e4);
+}

@@ -43,6 +43,8 @@ const fila = (postulacionId: number, candidato: string, estado: string): FilaRan
   pretensionMin: null,
   pretensionMax: null,
   pretensionMoneda: null,
+  pretensionDeclarada: null,
+  pretensionDeclaradaMoneda: null,
   notaEtapa: null,
   notaCurriculum: null,
   adecuacion: null,

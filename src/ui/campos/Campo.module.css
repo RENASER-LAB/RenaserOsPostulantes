@@ -211,42 +211,9 @@
   max-width: var(--medida);
 }
 
-/* El texto legal completo, plegado. Va a crecer: todavia no nombra a las
-   empresas que procesan los datos y tiene que hacerlo. */
-.legal {
-  margin-top: var(--e2);
-}
-
-.legalResumen {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  font-size: var(--t-menor);
-  color: var(--tinta2);
-  cursor: pointer;
-  list-style: none;
-  text-decoration: underline;
-  text-decoration-color: var(--regla2);
-  text-underline-offset: 0.22em;
-}
-
-.legalResumen::-webkit-details-marker {
-  display: none;
-}
-
-.legalTexto {
-  margin-top: var(--e2);
-  padding: var(--e3);
-  border: 1px solid var(--regla);
-  background: var(--nube-hundida);
-  font-size: var(--t-menor);
-  line-height: 1.55;
-  color: var(--tinta2);
-  max-height: 15rem;
-  overflow-y: auto;
-  white-space: pre-line;
-  border-radius: var(--radio-menor);
-}
+/* Aqui vivia el plegable del texto legal completo, con su scroll propio. Se
+   retiro: el documento entero se lee en /politica-de-privacidad, que lo enseña
+   publicado palabra por palabra, y la casilla solo lleva su enlace. */
 
 /* ---------- Área de texto ---------- */
 

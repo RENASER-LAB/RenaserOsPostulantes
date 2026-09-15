@@ -1,0 +1,304 @@
+/*
+ * Descartar a un candidato desde la ficha.
+ *
+ * ⚠️ **El violeta no aparece aqui.** En este portal `--activo` significa «te
+ * toca a ti» y nada mas; un boton de acento en esta caja diria que descartar es
+ * el siguiente paso natural de leer una ficha, y no lo es.
+ *
+ * El rojo tampoco se gasta en el boton que abre. `--mal` es «el error real y lo
+ * que borra», y en la ficha este es un boton entre otros: pintado en rojo desde
+ * fuera, el ojo lo encuentra antes que la nota y el historial, que es lo que la
+ * gente viene a mirar. El rojo espera al modal, donde ya se sabe a quien se
+ * descarta y se ha leido que sale un correo.
+ */
+
+.bloque {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+  margin-top: var(--e4);
+}
+
+/*
+ * Nube con contorno, como el resto de lo secundario del panel, pero con la
+ * tinta en `--mal`: la palabra ya dice lo que hace y el color la confirma sin
+ * convertirla en la pieza mas llamativa de la ficha.
+ *
+ * El contorno sube a `--mal-regla` al pasar por encima —no el fondo entero— para
+ * que el cambio se note tambien en escala de grises, que es como lo ve quien no
+ * distingue el rojo del gris.
+ */
+.descartar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-start;
+  min-height: 44px;
+  padding: 0 var(--e5);
+  border-radius: var(--radio-control);
+  background: var(--nube);
+  color: var(--mal);
+  border: 1px solid var(--borde-control);
+  font: inherit;
+  font-size: var(--t-prosa);
+  font-weight: 600;
+  letter-spacing: -0.004em;
+  cursor: pointer;
+  transition:
+    border-color 160ms var(--salida),
+    background 160ms var(--salida);
+}
+
+.descartar:hover:not(:disabled) {
+  border-color: var(--mal);
+  background: var(--mal-bruma);
+}
+
+/*
+ * Lo que se dice cuando la postulacion ya termino.
+ *
+ * Tinta floja y sin caja: es el limite de la pantalla explicado, no una alerta.
+ * Una caja con contorno aqui pondria un aviso permanente en la ficha de cada
+ * persona ya cerrada, que son justamente las que se abren para leer con calma.
+ */
+.cerrada {
+  font-size: var(--t-menor);
+  line-height: 1.5;
+  color: var(--tinta3);
+  max-width: var(--medida);
+  margin: var(--e4) 0 0;
+}
+
+/* ---------- Dentro del modal ---------- */
+
+/*
+ * La consecuencia, antes del campo.
+ *
+ * Ambar y no rojo: no es un error ni algo que salio mal, es una decision que
+ * sale del sistema y llega a una persona —justo lo que `--duda` significa en
+ * este portal, «lo que cambia tu decision»—. En rojo se leeria como que algo ya
+ * fallo, y quien lo ve todavia no ha pulsado nada.
+ *
+ * Contorno de un pixel sobre bruma, que es la silueta que el panel usa para
+ * todos sus avisos. Una forma nueva para decir lo mismo se lee como otra cosa.
+ */
+.consecuencia {
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--duda-tinta);
+  background: var(--duda-bruma);
+  border: 1px solid var(--duda);
+  border-radius: var(--radio-menor);
+  padding: var(--e3) var(--e4);
+  max-width: var(--medida);
+  margin: 0 0 var(--e4);
+}
+
+/*
+ * El fallo del servidor, debajo del campo y dentro del modal.
+ *
+ * Aqui si es rojo: esto es que algo salio mal de verdad. Tiene `role="alert"`
+ * en el marcado, asi que quien navega con lector de pantalla lo oye sin tener
+ * que volver a recorrer el modal buscando que paso.
+ */
+.fallo {
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--mal);
+  background: var(--mal-bruma);
+  border: 1px solid var(--mal-regla);
+  border-radius: var(--radio-menor);
+  padding: var(--e3) var(--e4);
+  max-width: var(--medida);
+  margin: var(--e4) 0 0;
+}
+
+.cancelar {
+  composes: secundario from '../../estilos/piezas.module.css';
+}
+
+/*
+ * El unico relleno rojo de todo el flujo, y esta al final del todo: dentro del
+ * modal, debajo del aviso del correo y de un campo que hay que rellenar a mano.
+ * Para cuando se ve, ya no puede pulsarse sin querer.
+ */
+.confirmar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 var(--e5);
+  border-radius: var(--radio-control);
+  background: var(--mal);
+  color: var(--tinta-invertida);
+  border: 1px solid transparent;
+  font: inherit;
+  font-size: var(--t-prosa);
+  font-weight: 600;
+  letter-spacing: -0.004em;
+  cursor: pointer;
+  transition: background 160ms var(--salida);
+}
+
+.confirmar:hover:not(:disabled) {
+  background: var(--mal-pulsado);
+}
+
+/* El fondo tambien se apaga: sin el, un boton deshabilitado en rojo pleno
+   sigue pareciendo el sitio donde hay que pulsar. */
+.confirmar:disabled,
+.cancelar:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/*
+ * Lo que salio bien.
+ *
+ * Verde y no ambar ni rojo: `--bien` es «lo confirmado» en este portal, y esto
+ * es un hecho consumado, no una advertencia. Aunque lo que confirme sea un
+ * rechazo —el color dice «pasó lo que pediste», no «qué bien»—.
+ *
+ * Contorno de un pixel sobre bruma, la misma silueta que el aviso del correo y
+ * que la del fallo: tres cajas con la misma forma y distinto color se leen como
+ * la misma pieza diciendo cosas distintas, que es lo que son.
+ */
+.hecho {
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--bien);
+  background: var(--bien-bruma);
+  border: 1px solid var(--bien);
+  border-radius: var(--radio-menor);
+  padding: var(--e3) var(--e4);
+  max-width: var(--medida);
+  margin: var(--e4) 0 0;
+}
+
+/* ---------- La casilla del aviso ---------- */
+
+/*
+ * Va debajo del aviso ambar y encima del campo, que es el orden de la decision:
+ * primero lo que va a pasar, luego si se avisa, y al final por que.
+ *
+ * `align-items: flex-start` y no `center`: la etiqueta lleva dos lineas —el
+ * nombre y su porque— y centrada dejaba la casilla a media altura del parrafo,
+ * sin relacion visible con la primera linea, que es la que la nombra.
+ */
+.avisar {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--e3);
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta);
+  max-width: var(--medida);
+  margin: 0 0 var(--e4);
+  cursor: pointer;
+}
+
+/* 18px y no el tamaño de fábrica: la casilla de fábrica mide 13 px y queda por
+   debajo de lo que un dedo acierta. El `margin-top` la alinea con la primera
+   línea del texto, no con la caja entera. */
+.avisar input {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  accent-color: var(--activo);
+  cursor: pointer;
+}
+
+/* El porqué, en tinta más floja y en su propia línea: es la nota al pie de la
+   casilla, no parte de su nombre. */
+.ayudaAvisar {
+  display: block;
+  font-size: var(--t-menor);
+  line-height: 1.5;
+  color: var(--tinta2);
+  margin-top: var(--e1, 4px);
+}
+
+/* ---------- El descarte en lote, en la mesa de avance ---------- */
+
+/*
+ * Mismo alto y mismo peso que el boton de avanzar —son dos controles de la
+ * misma barra—, pero en nube con tinta roja: el relleno violeta del avance dice
+ * «el camino esperado» y este no lo es. El rojo pleno se reserva, igual que en
+ * el descarte de uno, para el boton del final de la ventana.
+ */
+.descartarLote {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 var(--e5);
+  border-radius: var(--radio-control);
+  background: var(--nube);
+  color: var(--mal);
+  border: 1px solid var(--borde-control);
+  font: inherit;
+  font-size: var(--t-prosa);
+  font-weight: 600;
+  letter-spacing: -0.004em;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    border-color 160ms var(--salida),
+    background 160ms var(--salida);
+}
+
+.descartarLote:hover:not(:disabled) {
+  border-color: var(--mal);
+  background: var(--mal-bruma);
+}
+
+.descartarLote:disabled {
+  color: var(--tinta3);
+  background: var(--nube-hundida);
+  cursor: not-allowed;
+}
+
+.resultadoLote {
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+  max-width: var(--medida);
+  margin: var(--e3) 0 0;
+}
+
+/* ---------- La lista de la ventana del lote ---------- */
+
+.tituloLista {
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  color: var(--tinta);
+  margin: 0 0 var(--e2);
+}
+
+/*
+ * Entera y sin recortar. Un «y 4 más» esconde justamente a los que nadie
+ * repaso, que son los que traen el error. Si la lista es larga, la ventana ya
+ * tiene su propio scroll.
+ */
+.lista {
+  font-size: var(--t-apoyo);
+  line-height: 1.6;
+  color: var(--tinta);
+  max-width: var(--medida);
+  margin: 0 0 var(--e4);
+  padding-left: var(--e5);
+}
+
+/* El motivo, citado tal cual se escribio arriba: se confirma lo que va a
+   quedar escrito, no una parafrasis. */
+.motivoLote {
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+  background: var(--nube-hundida);
+  border-radius: var(--radio-menor);
+  padding: var(--e3) var(--e4);
+  max-width: var(--medida);
+  margin: 0 0 var(--e4);
+}

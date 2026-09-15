@@ -360,3 +360,24 @@
 .desplegado {
   padding-top: var(--e5);
 }
+
+/*
+ * El punto de «hay algo nuevo en este proceso».
+ *
+ * Ambar y no violeta: el violeta significa una sola cosa en este portal, «te
+ * toca a ti», y un aviso no le da ningun turno — le cuenta algo que puede
+ * cambiar su decision, que es lo que `--duda` nombra.
+ *
+ * Nunca va solo: al lado hay un texto en `.solo-lectores` que dice cuantos
+ * avisos hay. Un circulo de CSS no existe para quien no ve la pantalla.
+ */
+.puntoNovedad {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-left: var(--e2);
+  border-radius: 50%;
+  background: var(--duda);
+  /* Alineado con la x del titulo y no con su base: pegado al texto, no colgando. */
+  vertical-align: middle;
+}

@@ -200,11 +200,16 @@ export const Seleccion = forwardRef<HTMLSelectElement, PropsSeleccion>(function 
 
 interface PropsConsentimiento extends InputHTMLAttributes<HTMLInputElement> {
   titulo: string
-  /** Qué se está aceptando, en una frase que se entienda sin abrir el legal. */
+  /**
+   * Que se esta aceptando, en dos lineas y con el enlace al documento entero.
+   *
+   * ⚠️ **Lo esencial va aqui, no detras del enlace.** La ley 29733 pide que el
+   * consentimiento sea informado ANTES de marcar, asi que quien trata los datos,
+   * para que, y que salen del pais tienen que leerse sin abrir nada. Esto es la
+   * primera capa del aviso; el documento completo es la segunda.
+   */
   explicacion: ReactNode
   obligatorio?: boolean
-  /** El texto legal vigente que sirve el backend. Se pliega. */
-  legal?: string
   error?: string
   marcado?: boolean
 }
@@ -212,17 +217,20 @@ interface PropsConsentimiento extends InputHTMLAttributes<HTMLInputElement> {
 /**
  * Un consentimiento.
  *
- * Son dos y distintos: aceptar el tratamiento para este proceso es obligatorio,
+ * Son dos y distintos: aceptar el tratamiento de datos es obligatorio,
  * y querer avisos de futuras vacantes es aparte y opcional. Nunca se juntan en
  * una sola casilla.
  *
- * El bloque del texto legal esta plegado y con su propio scroll a proposito:
- * los textos vigentes todavia no nombran a las empresas que procesan los datos y
- * tienen que hacerlo antes del primer candidato real, asi que va a crecer.
+ * ⚠️ **Aqui habia un plegable con el texto legal entero** —«Leer el texto
+ * completo», con su propio scroll— y se quito. Ninguna pagina del mundo mete un
+ * documento de 4.600 caracteres en una caja de 15rem dentro de un formulario, y
+ * nadie lo leia ahi. Lo que hacen todas es casilla + hipervinculo, y desde que
+ * `/politica-de-privacidad` enseña los textos publicados palabra por palabra, el
+ * enlace lleva al mismo sitio y se lee mejor.
  */
 export const Consentimiento = forwardRef<HTMLInputElement, PropsConsentimiento>(
   function Consentimiento(
-    { titulo, explicacion, obligatorio, legal, error, marcado, id, ...resto },
+    { titulo, explicacion, obligatorio, error, marcado, id, ...resto },
     ref,
   ) {
     const propio = useId()
@@ -257,12 +265,6 @@ export const Consentimiento = forwardRef<HTMLInputElement, PropsConsentimiento>(
               </span>
             </label>
             <p className={estilos.textoConsentimiento}>{explicacion}</p>
-            {legal && (
-              <details className={estilos.legal}>
-                <summary className={estilos.legalResumen}>Leer el texto completo</summary>
-                <div className={estilos.legalTexto}>{legal}</div>
-              </details>
-            )}
           </div>
         </div>
         {error && (

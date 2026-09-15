@@ -17,7 +17,9 @@ import type {
   CrearSesion,
   FichaPostulacion,
   InscritoEnSesion,
+  ActualizarRemuneracion,
   GuardarVacante,
+  RemuneracionActualizadaResponse,
   GuardarPuesto,
   EnlaceArchivo,
   EntregaDeLaPrueba,
@@ -134,6 +136,18 @@ export const crearVacante = (datos: GuardarVacante) =>
   pedir<VacantePanel>('/vacantes', { metodo: 'POST', cuerpo: datos })
 export const editarVacante = (id: number, datos: GuardarVacante) =>
   pedir<VacantePanel>(`/vacantes/${id}`, { metodo: 'PUT', cuerpo: datos })
+/**
+ * Definir o cambiar lo que la vacante paga.
+ *
+ * Verbo propio y no un campo del PUT general: si la vacante esta publicada, este
+ * cambio le manda un correo y un aviso a cada candidato que sigue en carrera.
+ */
+export const actualizarRemuneracion = (id: number, datos: ActualizarRemuneracion) =>
+  pedir<RemuneracionActualizadaResponse>(`/vacantes/${id}/remuneracion`, {
+    metodo: 'POST',
+    cuerpo: datos,
+  })
+
 export const publicarVacante = (id: number) =>
   pedir<void>(`/vacantes/${id}/publicacion`, { metodo: 'POST' })
 export const cerrarVacante = (id: number, motivo: string) =>
@@ -202,6 +216,41 @@ export const confirmarAvance = (postulacionId: number, motivo: string) =>
   pedir<void>(`/postulaciones/${postulacionId}/confirmacion-avance`, {
     metodo: 'POST',
     cuerpo: { motivo },
+  })
+
+/**
+ * Mover una postulacion a cualquier estado, con el motivo escrito que exige el
+ * backend en TODA transicion manual —lo comprueba el servicio y ademas un CHECK
+ * de la base, asi que mandarlo vacio no es un campo de relleno que se salte:
+ * es un 400.
+ *
+ * ⚠️ **Hacia un estado final esto avisa al candidato por correo.** `NO_CONTINUA`
+ * dispara la plantilla `POSTULACION_NO_CONTINUA` —«en esta ocasion tu
+ * postulacion no continua»— sin preguntar nada mas, y el motivo que se escriba
+ * aqui NO viaja en ese correo: queda en el historial y en la auditoria, que es
+ * donde lo leera alguien dentro de seis meses.
+ *
+ * ⚠️ **`avisar: false` calla ese correo, y solo eso.** El estado cambia igual, la transicion
+ * se guarda igual y la auditoria se escribe igual. Es para cuando el equipo ya habló con esa
+ * persona por otro lado y una carta automatica llegaria despues de la conversacion diciendo lo
+ * mismo peor. Que no se aviso queda escrito —el backend lo marca en el motivo y en la
+ * auditoria—, porque si no, un descarte silencioso y uno normal se leen igual seis meses
+ * despues.
+ *
+ * `motivoCierre` se deja fuera a proposito. Cuando el destino es un cierre y no
+ * llega, el backend lo rellena solo —`DECISION_PERSONA` para `NO_CONTINUA`,
+ * `CIERRE_MANUAL` para `CERRADA`—, que es exactamente lo que toca cuando cierra
+ * una persona desde el panel.
+ */
+export const transicionar = (
+  postulacionId: number,
+  estadoDestino: string,
+  motivo: string,
+  avisar = true,
+) =>
+  pedir<void>(`/postulaciones/${postulacionId}/transiciones`, {
+    metodo: 'POST',
+    cuerpo: { estadoDestino, motivo, avisar },
   })
 
 // ---------- Simulacion ----------
@@ -743,17 +792,23 @@ export const calificarPerfilIntegralConIa = (postulacionId: number) =>
   )
 
 /**
- * La tanda entera de una vez.
+ * Calificar de una vez a todos los de la tanda a los que les falta la nota.
  *
- * La rapida es el modelo que no razona, en paralelo: ordena, no decide, y sus
- * notas quedan marcadas como provisionales. La fina vuelve sobre la parte alta
- * —cuanta, lo dice el parametro `porcentaje_criba_fina`— y **pisa** aquellas.
+ * Se salta a quien ya la tiene y a quien esta cerrado. No devuelve notas:
+ * encola, y tarda alrededor de minuto y medio por cada diez curriculums.
+ *
+ * Hasta la V53 eran dos llamadas —una pasada barata para ordenar y otra
+ * cuidadosa solo sobre la parte alta—. Nadie miraba las notas de la primera.
  */
-export const cribaRapida = (vacanteId: number) =>
-  pedir<PasadaEncolada>(`/vacantes/${vacanteId}/criba-rapida`, { metodo: 'POST' })
+export const calificarTanda = (vacanteId: number) =>
+  pedir<PasadaEncolada>(`/vacantes/${vacanteId}/calificar-tanda`, { metodo: 'POST' })
 
-export const cribaFina = (vacanteId: number) =>
-  pedir<PasadaEncolada>(`/vacantes/${vacanteId}/criba-fina`, { metodo: 'POST' })
+/** Encender o apagar el recorrido automatico de una vacante. */
+export const activarCalificacionAutomatica = (vacanteId: number, activa: boolean) =>
+  pedir<void>(`/vacantes/${vacanteId}/calificacion-automatica`, {
+    metodo: 'POST',
+    cuerpo: { activa },
+  })
 
 /**
  * Cuando cierra la prueba de esta vacante, para todos.

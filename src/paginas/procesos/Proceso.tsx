@@ -30,6 +30,7 @@ import {
 } from '@/dominio/estados'
 import { formatearFechaCorta, formatearFechaLarga } from '@/dominio/reloj'
 import { rutas } from '@/rutas'
+import { Remuneracion } from '@/ui/Remuneracion'
 import { Seguimiento } from './Seguimiento'
 import estilos from './Proceso.module.css'
 
@@ -121,6 +122,25 @@ export function Proceso() {
   const final = esFinal(resumen.estado)
   const termino = COMO_TERMINO[resumen.estado]
 
+  /**
+   * Si el sueldo cambio DESPUES de que esta persona postulo.
+   *
+   * ⚠️ **No sale de los avisos sin leer, y la diferencia importa.** Se probo asi
+   * y se auto-anulaba: pulsar el aviso de la campana lo marca leido y navega
+   * aqui, asi que el resaltado se apagaba en el mismo gesto que traia a la
+   * persona a verlo. El recorrido entero para el que se construyo terminaba en
+   * una pantalla sin ninguna marca.
+   *
+   * Comparar las dos fechas es estable y ademas mas correcto: una vacante que se
+   * movio hace un año y a la que postulo ayer NO tiene novedad para el —el
+   * cambio es anterior a su candidatura—, y una que cambio anteayer la sigue
+   * teniendo aunque ya leyera el aviso. Lo que se resalta es «esto no es lo que
+   * habia cuando dijiste que si», que es verdad mientras dure el proceso.
+   */
+  const cambioEn = resumen.remuneracion?.actualizadaEn
+  const hayNovedad =
+    cambioEn != null && new Date(cambioEn) > new Date(resumen.creadoEn)
+
   const pasos = Array.isArray(historial) ? historial : []
   const fechas = fechasDelRecorrido(pasos)
   // Solo hace falta en las terminadas: en las vivas, el propio estado dice la
@@ -140,6 +160,46 @@ export function Proceso() {
           <time dateTime={resumen.creadoEn}>{formatearFechaCorta(resumen.creadoEn)}</time>
         </span>
       </div>
+
+      {/*
+        El trato del sueldo, las dos mitades juntas.
+
+        Va arriba y no al final: si llego aqui desde el aviso de que cambio la
+        remuneracion, esto es LO que vino a ver, y hacerselo buscar debajo del
+        recorrido convierte una noticia en una busqueda.
+
+        `resaltado` se enciende con los avisos sin leer, no con la fecha del
+        cambio: una vacante que se movio hace un año y a la que postulo ayer no
+        tiene ninguna novedad que contarle, y marcarla le haria buscar un cambio
+        que para el no existe.
+      */}
+      <section className={estilos.trato}>
+        <Remuneracion remuneracion={resumen.remuneracion} resaltado={hayNovedad} />
+
+        {resumen.miPretension ? (
+          <p className={estilos.miPretension}>
+            <span className={estilos.etiquetaPretension}>Lo que pediste</span>
+            <span className={estilos.montoPretension}>{resumen.miPretension.texto}</span>
+          </p>
+        ) : (
+          /*
+            Y aqui se dice POR QUE no hay nada, en lugar de dejar un hueco.
+            Un guion se leeria como que no quiso decirlo; la verdad es que no se
+            le pidio, porque la empresa tampoco enseñaba lo suyo.
+
+            ⚠️ **En pasado si la vacante la publica HOY.** El trato se juzga con
+            las reglas del dia en que postulo, y la empresa puede haberlo
+            encendido despues: sin este matiz, la pantalla decia «esta vacante no
+            publicaba la suya» tres centimetros debajo del monto que si estaba
+            pintando, y quien lo leia no sabia a cual de las dos creer.
+          */
+          <p className={estilos.sinPretension}>
+            {resumen.remuneracion?.tipo && resumen.remuneracion.tipo !== 'OCULTA'
+              ? 'No te pedimos tu pretensión: cuando postulaste, esta vacante todavía no publicaba la suya.'
+              : 'No te pedimos tu pretensión: esta vacante no publica la suya.'}
+          </p>
+        )}
+      </section>
 
       {/*
         Solo cuando el proceso termino.

@@ -299,8 +299,11 @@ test.describe('La prueba · el panel', () => {
       «estable» — el clic reintenta hasta agotar el tiempo. Lo que este test mide es
       el formulario de cierre, no el pliegue.
     */
-    // Son DOS pliegues anidados —«Configuración de la vacante» contiene a «Plazos
-    // de la prueba»— y abrir solo el de dentro deja el contenido oculto igual.
+    // Desde la V53 el de fuera ya no es un pliegue sino una tuerca, y esa sí se
+    // pulsa: es un botón fijo de la cabecera, no se mueve con los refrescos. El
+    // de dentro —«Plazos de la prueba»— sigue siendo un <details> y se abre por
+    // la propiedad, como antes.
+    await page.getByRole('button', { name: 'Configuración de la vacante' }).click()
     await page
       .locator('details')
       .evaluateAll((todos) =>
@@ -511,16 +514,16 @@ test.describe('La prueba · el panel', () => {
     }
   })
 
-  test('calificar la tanda: la criba rápida pregunta antes, dice a quién alcanza y se puede echar atrás', async ({ page }) => {
+  test('calificar la tanda: pregunta antes, dice a quién alcanza y se puede echar atrás', async ({ page }) => {
     await irAVacante(page, VACANTES.LLENA)
 
-    const rapida = page.getByRole('button', { name: 'Criba rápida' })
-    await expect(rapida).toHaveCount(1)
+    const calificar = page.getByRole('button', { name: 'Revisar y calificar pendientes' })
+    await expect(calificar).toHaveCount(1)
 
-    await rapida.click()
+    await calificar.click()
     await expect(page.locator('main')).toContainText(/¿Seguimos\?/)
     const pregunta = await page.locator('main').innerText()
-    expect(pregunta).toMatch(/Alcanza a/i)
+    expect(pregunta).toMatch(/Alcanza a quien/i)
     expect(pregunta).toMatch(/¿Seguimos\?/)
     // Nombrando cuánta gente es.
     expect(pregunta).toMatch(/\d+ personas de la tanda|toda la tanda/)
@@ -528,7 +531,8 @@ test.describe('La prueba · el panel', () => {
     // No se confirma: pedir la criba de una tanda entera dispara llamadas al
     // modelo para todo el mundo, y esta prueba no tiene por qué costar eso.
     await page.getByRole('button', { name: /Mejor no|Cancelar/ }).first().click()
-    await expect(page.getByRole('button', { name: 'Criba rápida' })).toHaveCount(1)
+    await expect(page.getByRole('button', { name: 'Revisar y calificar pendientes' }))
+      .toHaveCount(1)
   })
 })
 

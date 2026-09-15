@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test'
 import { API, corte, entrarAlPanel, idDeVacante, nombresVisibles, pestana, tokenDelPanel, VACANTES } from './ayuda'
 
 /**
- * El ranking, etapa por etapa, CONTRASTADO con lo que dice la API.
+ * El ranking, CONTRASTADO con lo que dice la API.
  *
  * ⚠️ **Solo lee.** Ni un POST: entra, mira las cinco pestañas y compara lo
  * pintado con la respuesta del backend.
@@ -150,7 +150,7 @@ test.describe('El ranking contra la API · lo pintado es lo que el backend dijo'
     const todas = contexto.todas
     await entrarAlPanel(page)
     await page.goto(`/admin/vacantes/${contexto.vacanteId}`)
-    await expect(page.getByRole('heading', { name: 'El ranking, etapa por etapa' })).toBeVisible({ timeout: 20_000 })
+    await expect(page.getByRole('heading', { name: 'Ranking' })).toBeVisible({ timeout: 20_000 })
 
     // Abre por lo que espera una decisión de la empresa: la bandeja de trabajo.
     await expect(corte(page, 'Por revisar')).toHaveAttribute('aria-pressed', 'true')

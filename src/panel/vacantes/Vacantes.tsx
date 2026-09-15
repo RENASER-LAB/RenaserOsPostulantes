@@ -38,6 +38,11 @@ import type {
 import { rutas } from '@/rutas'
 import { formatearFechaCorta } from '@/dominio/reloj'
 import tabla from '../ui/Tabla.module.css'
+import {
+  CamposDeRemuneracion,
+  REMUNERACION_VACIA,
+  comoCuerpo,
+} from './Remuneracion'
 import estilos from './Vacantes.module.css'
 
 /** Como se dice cada estado de vacante. Los codigos son del backend. */
@@ -192,11 +197,13 @@ function FormularioDeAlta({ alCrear }: { alCrear: () => Promise<void> }) {
     modalidad: '',
     horario: '',
     ubicacion: '',
-    compensacionPublica: '',
     tipoCierre: 'PERMANENTE',
     plazas: '',
     cierraEn: '',
   })
+  // El sueldo va aparte del resto de campos: es un objeto con cuatro partes que
+  // tienen que cuadrar entre si, no una cadena mas. Ver `./Remuneracion`.
+  const [remuneracion, setRemuneracion] = useState(REMUNERACION_VACIA)
   const [fallo, setFallo] = useState<string | null>(null)
 
   const poner = (campo: keyof typeof datos) => (valor: string) =>
@@ -250,6 +257,11 @@ function FormularioDeAlta({ alCrear }: { alCrear: () => Promise<void> }) {
       setFallo('El título y la descripción son lo mínimo que ve quien postula.')
       return
     }
+    const sueldo = comoCuerpo(remuneracion)
+    if ('error' in sueldo) {
+      setFallo(sueldo.error)
+      return
+    }
     creacion.mutate({
       solicitudTalentoId: Number(datos.solicitudTalentoId),
       puestoId: solicitudSeleccionada?.puestoId
@@ -264,7 +276,7 @@ function FormularioDeAlta({ alCrear }: { alCrear: () => Promise<void> }) {
       modalidad: datos.modalidad.trim() || undefined,
       horario: datos.horario.trim() || undefined,
       ubicacion: datos.ubicacion.trim() || undefined,
-      compensacionPublica: datos.compensacionPublica.trim() || undefined,
+      remuneracion: sueldo.datos,
       tipoCierre: datos.tipoCierre,
       plazas:
         datos.tipoCierre === 'PLAZAS' && datos.plazas ? Number(datos.plazas) : undefined,
@@ -421,12 +433,6 @@ function FormularioDeAlta({ alCrear }: { alCrear: () => Promise<void> }) {
           valor={datos.ubicacion}
           alCambiar={poner('ubicacion')}
         />
-        <Campo
-          etiqueta="Compensación pública (si se publica)"
-          valor={datos.compensacionPublica}
-          alCambiar={poner('compensacionPublica')}
-        />
-
         <Selector
           etiqueta="Cómo se cierra"
           valor={datos.tipoCierre}
@@ -454,6 +460,18 @@ function FormularioDeAlta({ alCrear }: { alCrear: () => Promise<void> }) {
             tipo="date"
           />
         )}
+      </div>
+
+      {/*
+        El sueldo, fuera de la rejilla de campos y con su propio bloque.
+
+        No es un campo mas: decide si a quien postule se le va a exigir declarar
+        cuanto quiere ganar, y esa consecuencia necesita sitio para explicarse
+        debajo de cada opcion. Metido entre «Horario» y «Como se cierra» seria
+        una linea que nadie lee.
+      */}
+      <div className={estilos.bloqueRemuneracion}>
+        <CamposDeRemuneracion valor={remuneracion} alCambiar={setRemuneracion} />
       </div>
 
       {fallo && (

@@ -60,6 +60,50 @@ export interface VacantePanel {
   instrumentoEtapaTecnica: InstrumentoTecnico
   /** Minutos del candidato en esa etapa. `null` = los que traiga el instrumento elegido. */
   minutosEtapaTecnica: number | null
+  /** Encendido, la postulacion se califica y avanza sola hasta la prueba (V53). */
+  calificacionAutomatica: boolean
+  /** Lo que esta vacante dice que paga (V54). */
+  remuneracion: RemuneracionDeLaVacante
+  /** Cuando se toco el sueldo por ultima vez. `null` = nunca desde que se creo. */
+  remuneracionActualizadaEn: FechaIso | null
+}
+
+/**
+ * Lo que la vacante dice sobre el dinero.
+ *
+ * ⚠️ **Esconderlo no es un detalle de presentacion.** Decide si quien postula
+ * esta obligado a declarar cuanto quiere ganar: si la empresa enseña lo suyo,
+ * el candidato tiene que enseñar el suyo; si lo calla, no se le pide nada. Las
+ * dos mitades del trato viven en este campo.
+ *
+ * Con `FIJA` el monto va en `min` y `max` se queda vacio. Con `OCULTA` los tres
+ * van vacios.
+ */
+export interface RemuneracionDeLaVacante {
+  tipo: 'OCULTA' | 'FIJA' | 'RANGO'
+  min: number | null
+  max: number | null
+  moneda: string | null
+}
+
+/**
+ * Cambiar el sueldo de una vacante, con el motivo de por que.
+ *
+ * El motivo no es burocracia: este cambio le manda un correo y un aviso a cada
+ * persona con una postulacion viva, y la auditoria tiene que poder contestar
+ * «¿por que le dijimos a cuarenta candidatos que el sueldo bajo?» con algo mas
+ * que una marca de tiempo.
+ */
+export interface ActualizarRemuneracion {
+  remuneracion: RemuneracionDeLaVacante
+  motivo: string
+}
+
+/** A cuanta gente le llego el cambio, para decirlo en voz alta. */
+export interface RemuneracionActualizadaResponse {
+  antes: string
+  ahora: string
+  candidatosAvisados: number
 }
 
 export type InstrumentoTecnico = 'PLANTILLA' | 'CUESTIONARIO_TECNICO'
@@ -82,7 +126,16 @@ export interface GuardarVacante {
   modalidad?: string
   horario?: string
   ubicacion?: string
-  compensacionPublica?: string
+  /**
+   * Lo que paga, si se dice ya. Vacio = `OCULTA`, que es como nacen todas las
+   * vacantes que no digan lo contrario.
+   *
+   * ⚠️ **Solo se lee al CREAR.** Al editar, el backend lo ignora a proposito:
+   * cambiar el sueldo avisa por correo y por la campana a cada candidato vivo, y
+   * eso no puede dispararse al corregir una falta de ortografia en la
+   * descripcion. Para cambiarlo esta `actualizarRemuneracion`, con su motivo.
+   */
+  remuneracion?: RemuneracionDeLaVacante
   tipoCierre: string
   plazas?: number
   abreEn?: FechaIso
@@ -433,6 +486,21 @@ export interface FilaRanking {
   pretensionMax: number | null
   /** `PEN`, `USD` o nulo. */
   pretensionMoneda: string | null
+  /**
+   * Lo que pidio AL POSTULAR A ESTA VACANTE (V54), bajo el mismo permiso.
+   *
+   * ⚠️ **No es lo mismo que la del perfil, y por eso son dos campos.** La del
+   * perfil es su expectativa general —escrita una vez, quiza hace meses—; esta
+   * la confirmo mirando lo que ESTA vacante ofrece. Cuando difieren, la
+   * diferencia es informacion: quien pide menos de su banda habitual en una
+   * vacante concreta esta diciendo algo.
+   *
+   * ⚠️ **Vacio no significa que no quisiera decirlo.** Con
+   * `vacanteMuestraSueldo` en false, la vacante tenia el sueldo oculto y no se
+   * le exigio — el trato cumpliendose, no un candidato esquivo.
+   */
+  pretensionDeclarada: number | null
+  pretensionDeclaradaMoneda: string | null
   notaEtapa: number | null
   notaCurriculum: number | null
   adecuacion: number | null
@@ -654,6 +722,27 @@ export interface RankingVacante {
    * booleano es lo único que las separa desde el navegador.
    */
   puedeVerPretension: boolean
+  /**
+   * Si ESTA vacante publica lo que paga (V54).
+   *
+   * Es lo que le da sentido a la columna de la pretension: con el sueldo oculto
+   * nadie estaba obligado a decir el suyo, y una columna entera vacia significa
+   * que el trato funciono — no que la tanda sea de gente reservada.
+   */
+  vacanteMuestraSueldo: boolean
+  /**
+   * Si quien pide la tanda puede mover postulaciones.
+   *
+   * Está aquí por lo mismo que en la ficha: **el login solo devuelve token e
+   * id**, así que el panel no tiene otra forma de saber qué permisos trae la
+   * sesión. Lo usa la mesa de la tabla para decidir si ofrece descartar a la
+   * tanda marcada; sin él, ese botón saldría para todo el mundo y la mitad del
+   * equipo descubriría su rol chocando contra un 403 con seis marcadas.
+   *
+   * ⚠️ Dice si el permiso **está**, no hasta dónde llega su alcance. Es para
+   * decidir qué se pinta, nunca la defensa.
+   */
+  puedeMoverPostulacion: boolean
   filas: FilaRanking[]
 }
 
@@ -672,6 +761,39 @@ export interface FichaPostulacion {
   archivoCvId: number | null
   creadoEn: FechaIso
   movidoEn: FechaIso | null
+  /**
+   * Si quien abrio la ficha tiene `mover_postulacion`.
+   *
+   * No es un dato del candidato: es una facultad de quien mira, y viaja en la
+   * ficha por la misma razon que `puedeVerPretension` viaja en el ranking —el
+   * login solo devuelve token e id, asi que el panel no tiene ninguna otra
+   * forma de saber que permisos trae la sesion—. Sin el, la unica manera de
+   * averiguar si se puede descartar a alguien seria intentarlo y leer el 403.
+   *
+   * Es para decidir que se pinta, NUNCA la defensa: quien decide de verdad es
+   * el `@PreAuthorize` del backend.
+   */
+  puedeMoverPostulacion: boolean
+  /**
+   * Lo que pidio al postular a ESTA vacante, ya escrito («S/ 3 800»).
+   *
+   * ⚠️ **Solo con el permiso `ver_pretension`; sin el llega `null`.** El mismo
+   * trato que en el ranking y en el perfil: si apareciera junto a la nota para
+   * todo el mundo, pesaria en la decision.
+   *
+   * `null` **no** significa que no la declarara: `porQueSinPretension` dice cual
+   * de los tres motivos es.
+   */
+  pretensionDeclarada: string | null
+  /**
+   * Por que no hay pretension que enseñar, cuando no la hay.
+   *
+   * Tres motivos y solo uno es verdad cada vez: sin permiso, la vacante no
+   * publicaba su sueldo —y entonces a nadie se le exigio—, o de verdad no la
+   * declaro. Un hueco a secas se lee siempre como el tercero, que es el unico
+   * que acusa al candidato.
+   */
+  porQueSinPretension: string | null
 }
 
 export interface PasoHistorialPanel {

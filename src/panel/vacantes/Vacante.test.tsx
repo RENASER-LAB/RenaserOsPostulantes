@@ -42,6 +42,7 @@ const verRanking = vi.fn()
 const elegirInstrumento = vi.fn()
 const pedirExcel = vi.fn()
 const ponerNotaPrueba = vi.fn()
+const mover = vi.fn()
 
 /**
  * La rubrica de la prueba, con UN criterio sin nota.
@@ -117,6 +118,8 @@ const fila = (
   pretensionMin: null,
   pretensionMax: null,
   pretensionMoneda: null,
+  pretensionDeclarada: null,
+  pretensionDeclaradaMoneda: null,
   notaEtapa,
   notaCurriculum: null,
   adecuacion: null,
@@ -218,6 +221,7 @@ const VACANTE: {
   versionPlantillaPruebaId: number | null
   versionPesosId: number | null
   instrumentoEtapaTecnica: string
+  calificacionAutomatica: boolean
   minutosEtapaTecnica: number | null
 } = {
   id: 1,
@@ -231,6 +235,7 @@ const VACANTE: {
   // Lo que trae toda vacante que ya existía: la prueba del puesto de siempre, con el
   // tiempo que diga su plantilla.
   instrumentoEtapaTecnica: 'PLANTILLA',
+  calificacionAutomatica: false,
   minutosEtapaTecnica: null,
 }
 
@@ -277,7 +282,19 @@ const sinRuido = {
       patrones: [],
     }),
   verEmbudo: () => Promise.resolve({ porEstado: {} }),
-  verCatalogos: () => Promise.resolve({ areas: [], puestos: [], nivelesPuesto: [], estados: [] }),
+  /*
+    `estados` va tipado y no inferido: como lista vacia sale `never[]`, y
+    entonces el doble que SI trae estados —el de descartar sobre una postulacion
+    ya cerrada— no le encaja al tipo del campo. Es el `esFinal` de ese catalogo
+    lo que decide si se ofrece descartar.
+  */
+  verCatalogos: () =>
+    Promise.resolve({
+      areas: [],
+      puestos: [],
+      nivelesPuesto: [],
+      estados: [] as { codigo: string; nombre: string; esFinal: boolean }[],
+    }),
   /*
     ⚠️ **Las tres listas van vacías, no ausentes.** El componente las recorre en
     cuanto `perfil.data` existe, y un `{}` pelado revienta con «no es iterable»
@@ -303,6 +320,19 @@ const PERFIL_PELADO = {
 }
 
 let PERFIL: typeof PERFIL_PELADO = PERFIL_PELADO
+
+/**
+ * La ficha que devuelve el doble.
+ *
+ * ⚠️ **`enlaces` tiene que ser una lista** —la ficha hace `.length` sin guarda—
+ * y `puedeMoverPostulacion` se deja **fuera** del caso por defecto a proposito:
+ * asi el boton de descartar no aparece en los noventa y tantos tests que abren
+ * una ficha para mirar otra cosa, que es tambien lo que pasa de verdad con un
+ * rol que no puede mover a nadie. Los tests que lo quieren lo encienden.
+ */
+const FICHA_PELADA = { candidato: 'Rodrigo Ayala', estado: 'PERFIL_POR_CONFIRMAR', enlaces: [] }
+
+let FICHA: Record<string, unknown> = FICHA_PELADA
 
 vi.mock('../api/panel', () => ({
   verVacante: () => sinRuido.verVacante(),
@@ -351,7 +381,9 @@ vi.mock('../api/panel', () => ({
     —y con ella la columna donde vive la rúbrica—. Estuvo así todo este tiempo
     porque hasta ahora ningún test abría una ficha.
   */
-  verFicha: () => Promise.resolve({ enlaces: [] }),
+  verFicha: () => Promise.resolve(FICHA),
+  transicionar: (postulacionId: number, estadoDestino: string, motivo: string) =>
+    mover(postulacionId, estadoDestino, motivo),
   verHistorial: () => Promise.resolve([]),
   verPerfilIntegral: () => sinRuido.verPerfilIntegral(),
   verDesgloseEvaluacion: () => sinRuido.verDesgloseEvaluacion(),
@@ -423,8 +455,22 @@ async function pintar(filas: FilaRanking[] = TANDA, puedeVerPretension = true) {
       </MemoryRouter>
     </QueryClientProvider>,
   )
-  await screen.findByRole('heading', { name: 'El ranking, etapa por etapa' })
+  await screen.findByRole('heading', { name: 'Ranking' })
   await waitFor(() => expect(losCortes()).toBeTruthy())
+
+  /*
+    La tuerca se abre aquí, para todas las pruebas.
+
+    Desde la V53 la configuración vive detrás de un botón y se oculta con
+    `hidden`, que sí saca su contenido del árbol accesible. Antes era un
+    `<details>` cerrado, cuyo contenido jsdom deja igualmente accesible: las
+    pruebas de la configuración funcionaban sin abrir nada, y en un navegador de
+    verdad ese contenido no estaba a la vista. Abrirla aquí las deja probando lo
+    mismo que ve una persona. Lo que la tuerca hace por sí misma —abrirse y
+    cerrarse— se prueba aparte.
+  */
+  const tuerca = screen.getByRole('button', { name: 'Configuración de la vacante' })
+  if (tuerca.getAttribute('aria-expanded') === 'false') fireEvent.click(tuerca)
 }
 
 /** La del ranking es la primera de la pantalla; el `!` es de `noUncheckedIndexedAccess`. */
@@ -483,6 +529,16 @@ beforeEach(() => {
   ponerNotaPrueba.mockResolvedValue(undefined)
   VERSIONES_PRUEBA = VERSIONES_DE_SIEMPRE
   PERFIL = PERFIL_PELADO
+  FICHA = FICHA_PELADA
+  mover.mockReset()
+  mover.mockResolvedValue(undefined)
+  sinRuido.verCatalogos = () =>
+    Promise.resolve({
+      areas: [],
+      puestos: [],
+      nivelesPuesto: [],
+      estados: [] as { codigo: string; nombre: string; esFinal: boolean }[],
+    })
   sinRuido.verVacante = () => Promise.resolve(VACANTE)
 })
 afterEach(() => cleanup())
@@ -2122,14 +2178,24 @@ describe('los dos párrafos que explican la nota', () => {
 
 
 describe('la ficha de vacante prioriza el seguimiento y admite teclado', () => {
-  it('mantiene la configuración publicada plegada y permite abrirla sin perder la tabla', async () => {
+  it('la tuerca esconde la configuración sin perderla, y sin perder la tabla', async () => {
     await pintar()
-    const resumen = screen.getByText('Configuración de la vacante')
-    const detalles = resumen.closest('details')!
-    expect(detalles.open).toBe(false)
-    fireEvent.click(resumen)
-    expect(detalles.open).toBe(true)
+    const tuerca = screen.getByRole('button', { name: 'Configuración de la vacante' })
+    // `pintar` la deja abierta; aquí se comprueba el gesto entero.
+    expect(tuerca.getAttribute('aria-expanded')).toBe('true')
+    expect(screen.getByLabelText('Nuevo requisito indispensable')).toBeTruthy()
+
+    fireEvent.click(tuerca)
+    expect(tuerca.getAttribute('aria-expanded')).toBe('false')
+    // La tabla nunca se va: es lo que se está mirando cuando se toca la tuerca.
     expect(screen.getByRole('table')).toBeTruthy()
+
+    /*
+      ⚠️ Y lo que se estuviera escribiendo sigue ahí. El panel se OCULTA, no se
+      desmonta: dentro hay tres borradores que solo viven en memoria, y un
+      renderizado condicional los tiraría cada vez que alguien cierra la tuerca.
+    */
+    fireEvent.click(tuerca)
     expect(screen.getByLabelText('Nuevo requisito indispensable')).toBeTruthy()
   })
 
@@ -2163,5 +2229,69 @@ describe('la ficha de vacante prioriza el seguimiento y admite teclado', () => {
     fireEvent.click(nombre)
     expect(nombre.getAttribute('aria-expanded')).toBe('true')
     expect(document.getElementById(nombre.getAttribute('aria-controls')!)).toBeTruthy()
+  })
+})
+
+/*
+ * ⚠️ **El verbo existia en el backend desde el principio y ninguna pantalla lo
+ * llamaba.** Estos tests cubren el cableado —que el boton aparezca en la ficha
+ * con lo que dice la ficha, y no con lo que el navegador se invente— porque el
+ * comportamiento del control ya lo prueba `DescartarPostulacion.test.tsx`.
+ */
+describe('descartar desde la ficha', () => {
+  const abrirLaFichaDe = async (candidato: string) => {
+    fireEvent.click(await screen.findByRole('button', { name: candidato }))
+  }
+
+  it('sin «mover_postulacion» la ficha no ofrece descartar', async () => {
+    // El caso por defecto del doble, que es el de un rol que solo mira.
+    await pintar()
+    await abrirLaFichaDe(EN_PERFIL.candidato)
+    await screen.findByText(/Cómo llegó hasta aquí/)
+    expect(screen.queryByRole('button', { name: 'Descartar' })).toBeNull()
+  })
+
+  it('con el permiso, el botón sale en la ficha y manda el motivo a esa postulación', async () => {
+    FICHA = { ...FICHA_PELADA, puedeMoverPostulacion: true }
+    await pintar()
+    await abrirLaFichaDe(EN_PERFIL.candidato)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Descartar' }))
+    fireEvent.change(screen.getByLabelText(/Por qué no continúa/), {
+      target: { value: 'No cumple el requisito de colegiatura.' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Descartar y avisarle' }))
+
+    // El id es el de la fila abierta, no el de la primera de la tanda: abrir una
+    // ficha y descartar a otra persona es el fallo que este test persigue.
+    await waitFor(() =>
+      expect(mover).toHaveBeenCalledWith(
+        EN_PERFIL.postulacionId,
+        'NO_CONTINUA',
+        'No cumple el requisito de colegiatura.',
+      ),
+    )
+  })
+
+  it('sobre un estado final no se ofrece, y «final» lo dice el catálogo', async () => {
+    // ⚠️ **La lista de estados finales NO vive en el navegador.** Sale de
+    // `esFinal` del catálogo: inventarla aquí la deja vieja el día que se añada
+    // uno, y el botón seguiría ofreciéndose sobre algo que el backend rechaza.
+    FICHA = { ...FICHA_PELADA, estado: 'NO_CONTINUA', puedeMoverPostulacion: true }
+    sinRuido.verCatalogos = () =>
+      Promise.resolve({
+        areas: [],
+        puestos: [],
+        nivelesPuesto: [],
+        estados: [
+          { codigo: 'PERFIL_POR_CONFIRMAR', nombre: 'Perfil · por confirmar', esFinal: false },
+          { codigo: 'NO_CONTINUA', nombre: 'No continúa', esFinal: true },
+        ],
+      })
+    await pintar()
+    await abrirLaFichaDe(EN_PERFIL.candidato)
+
+    expect(await screen.findByText(/ya terminó su recorrido/)).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Descartar' })).toBeNull()
   })
 })

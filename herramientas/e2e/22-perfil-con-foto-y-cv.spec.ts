@@ -378,5 +378,6 @@ async function rellenarLoDemas(page: Page) {
     await grupo.getByText('Sí', { exact: true }).click()
     await expect(grupo.getByRole('radio', { name: 'Sí' })).toBeChecked()
   }
-  await page.getByLabel(/acepto|tratamiento/i).first().check()
+  // Aquí se marcaba la casilla del tratamiento de datos. Se retiró de la pantalla:
+  // enviar la postulación es el acto, y encima del botón se dice quién la recibe.
 }

@@ -42,7 +42,7 @@ export async function crearCuentaDeCandidato(datos: {
       correo: datos.correo,
       contrasena: datos.contrasena ?? CLAVE_DE_CANDIDATO,
       ciudadUbigeo: '1501', // Lima — Lima
-      aceptaProceso: true,
+      aceptaPlataforma: true,
       aceptaFuturosContactos: false,
     }),
   })
@@ -213,6 +213,14 @@ delete from transicion_estado
   where postulacion_id in (select id from qa_postulaciones)
      or usuario_id in (select usuario_id from qa_cuentas);
 delete from validacion where postulacion_id in (select id from qa_postulaciones);
+-- La campana del portal (V55). Cuelga del usuario y, cuando el aviso nace de una
+-- postulación, también de ella: por eso se borra por las dos vías y ANTES que las dos.
+-- Sin esto, una cuenta de prueba a la que le cambiaron el sueldo de su vacante no se
+-- puede borrar —la clave ajena lo impide— y, con ON_ERROR_STOP, la limpieza entera se
+-- deshace y deja en la base todo lo que venía a quitar.
+delete from aviso_portal
+  where usuario_id in (select usuario_id from qa_cuentas)
+     or postulacion_id in (select id from qa_postulaciones);
 delete from postulacion where id in (select id from qa_postulaciones);
 
 -- La evaluación del banco.

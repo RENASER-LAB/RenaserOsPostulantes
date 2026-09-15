@@ -278,8 +278,22 @@ function Vacante({ vacante }: { vacante: VacantePublica }) {
         {resumen && <p className={estilos.queSeHace}>{resumen}</p>}
         <span className={estilos.pieVacante}>
           {vacante.horario && <span>{vacante.horario}</span>}
+          {/*
+            ⚠️ **Aqui NO va el `<Remuneracion>` compartido, y es a proposito.**
+            Esa pieza es un bloque con su etiqueta, su matiz y su «actualizado
+            el …»: lo que hace falta en la ficha, donde el sueldo es la mitad de
+            un trato. En la tarjeta de la lista el sueldo es un dato mas del pie,
+            al lado del horario, y el bloque entero rompe la fila.
+
+            Lo que si se respeta es la regla de esa pieza: **`OCULTA` se nombra,
+            no se esconde** —un hueco donde deberia ir el numero se lee como un
+            fallo de carga—, y el monto **llega escrito del servidor**, asi que
+            aqui no se formatea ningun numero.
+          */}
           <span className={estilos.paga}>
-            {vacante.compensacionPublica ?? 'Rango no publicado'}
+            {!vacante.remuneracion || vacante.remuneracion.tipo === 'OCULTA'
+              ? 'Sueldo sin publicar'
+              : vacante.remuneracion.texto}
           </span>
         </span>
       </Link>
