@@ -222,3 +222,24 @@
 .seccion > .guardar {
   margin-top: var(--e4);
 }
+
+/*
+ * La opcion que ya no se puede elegir.
+ *
+ * Apagada pero legible: sigue diciendo que existe y, en su linea de ayuda, por
+ * que esta cerrada. Esconderla del todo dejaria la pregunta «¿y si quisiera no
+ * publicarlo?» sin respuesta en ninguna parte de la pantalla.
+ */
+.bloqueada {
+  cursor: not-allowed;
+  border-color: var(--regla);
+  background: var(--nube-hundida);
+}
+
+.bloqueada .tipoTitulo {
+  color: var(--tinta3);
+}
+
+.bloqueada .tipoAyuda {
+  color: var(--tinta3);
+}

@@ -107,12 +107,37 @@ const SIMBOLO: Record<string, string> = { PEN: 'S/', USD: 'US$' }
 export function CamposDeRemuneracion({
   valor,
   alCambiar,
+  /**
+   * Si ya no se puede cambiar la decision de publicar el sueldo o no.
+   *
+   * Lo enciende la seccion de configuracion de una vacante PUBLICADA. En el alta
+   * va apagado: ahi es justo la decision que se viene a tomar.
+   */
+  visibilidadCongelada = false,
+  /** Que lado esta congelado: publicaba (true) o no publicaba (false). */
+  laEnsenaba = false,
 }: {
   valor: FormularioRemuneracion
   alCambiar: (v: FormularioRemuneracion) => void
+  visibilidadCongelada?: boolean
+  laEnsenaba?: boolean
 }) {
   const poner = (parte: Partial<FormularioRemuneracion>) =>
     alCambiar({ ...valor, ...parte })
+
+  /**
+   * Bloqueada solo la tarjeta que cruzaria la linea, no las tres.
+   *
+   * Una vacante publicada con rango puede pasar a monto fijo sin problema: las
+   * dos publican, y el trato sigue en pie. Lo que no puede es apagarlo. Bloquear
+   * las tres seria impedir un cambio que si es legitimo — y de los que mas se
+   * hacen: cerrar un rango en una cifra cuando ya se sabe el numero.
+   */
+  const bloqueada = (tipo: TipoRemuneracion) => {
+    if (!visibilidadCongelada) return false
+    const esaEnsena = tipo !== 'OCULTA'
+    return laEnsenaba !== esaEnsena
+  }
 
   return (
     <div className={estilos.campos}>
@@ -132,17 +157,35 @@ export function CamposDeRemuneracion({
         ).map(([tipo, titulo, ayuda]) => (
           <label
             key={tipo}
-            className={valor.tipo === tipo ? `${estilos.tipo} ${estilos.elegido}` : estilos.tipo}
+            className={[
+              estilos.tipo,
+              valor.tipo === tipo ? estilos.elegido : '',
+              bloqueada(tipo) ? estilos.bloqueada : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
           >
             <input
               type="radio"
               name="tipo-remuneracion"
               className={estilos.radio}
               checked={valor.tipo === tipo}
+              disabled={bloqueada(tipo)}
               onChange={() => poner({ tipo })}
             />
             <span className={estilos.tipoTitulo}>{titulo}</span>
-            <span className={estilos.tipoAyuda}>{ayuda}</span>
+            {/*
+              Bloqueada, la tarjeta cambia de texto: decir POR QUE no se puede es
+              lo unico que distingue una regla de un fallo. Un radio gris sin
+              explicacion se lee como que la pantalla esta rota.
+            */}
+            <span className={estilos.tipoAyuda}>
+              {bloqueada(tipo)
+                ? laEnsenaba
+                  ? 'No se puede: esta vacante ya salió publicando lo que paga, y a quienes postularon se les exigió su cifra a cambio.'
+                  : 'No se puede: se publicó sin enseñar el sueldo, y a quienes ya postularon no hay forma de pedirles la suya ahora.'
+                : ayuda}
+            </span>
           </label>
         ))}
       </fieldset>
@@ -237,6 +280,26 @@ export function RemuneracionDeLaVacante({ vacante }: { vacante: VacantePanel }) 
   const cerrada = vacante.estado === 'CERRADA'
   const publicada = vacante.estado === 'PUBLICADA'
 
+  /**
+   * Publicar el sueldo, o no publicarlo, se decide ANTES de publicar la vacante.
+   *
+   * Una vacante publicada enseñando lo que paga le exigio su cifra a cada
+   * persona que postulo. Dejar de publicarla ahora seria quedarse con lo que
+   * dijeron sin dar nada a cambio — y encenderla en una que se publico sin ella
+   * deja media tanda con cifra y media sin, porque a los de antes no hay forma de
+   * volver a pedirsela.
+   *
+   * El **monto** si se cambia, y es justo lo que les llega por correo y campana.
+   * Por eso se congela solo la eleccion de publicar o no, y moverse entre «rango»
+   * y «monto fijo» sigue estando abierto: las dos publican.
+   *
+   * El backend lo hace cumplir igual; esto es para que no se descubra pulsando.
+   */
+  const laEnsenaba = vacante.remuneracion?.tipo
+    ? vacante.remuneracion.tipo !== 'OCULTA'
+    : false
+  const visibilidadCongelada = publicada
+
   const guardar = useMutation({
     mutationFn: () => {
       const salida = comoCuerpo(forma)
@@ -279,6 +342,22 @@ export function RemuneracionDeLaVacante({ vacante }: { vacante: VacantePanel }) 
       setFallo(salida.error)
       return
     }
+    // La misma guarda que el backend, dicha antes de pulsar. Las tarjetas ya
+    // salen bloqueadas, asi que esto solo salta si algo las esquiva — pero el
+    // mensaje tiene que existir de todos modos, no un 409 opaco.
+    const iraAEnsenarla = salida.datos.tipo !== 'OCULTA'
+    if (visibilidadCongelada && laEnsenaba !== iraAEnsenarla) {
+      setFallo(
+        laEnsenaba
+          ? 'Esta vacante ya está publicada enseñando lo que paga, y a cada persona que ' +
+            'postuló se le exigió decir cuánto quiere ganar. El monto sí se puede cambiar; ' +
+            'para esconderlo habría que cerrarla y abrir otra.'
+          : 'Esta vacante se publicó sin enseñar lo que paga, así que a quienes ya postularon ' +
+            'no se les pidió su pretensión y no hay forma de volver atrás a pedírsela. ' +
+            'Para publicarlo habría que cerrarla y abrir otra.',
+      )
+      return
+    }
     if (motivoObligatorio && motivo.trim() === '') {
       setFallo('Escribe por qué cambia el sueldo: queda en la auditoría de la vacante.')
       return
@@ -306,7 +385,12 @@ export function RemuneracionDeLaVacante({ vacante }: { vacante: VacantePanel }) 
         <p className={estilos.aviso}>Una vacante cerrada no cambia de sueldo.</p>
       ) : (
         <>
-          <CamposDeRemuneracion valor={forma} alCambiar={setForma} />
+          <CamposDeRemuneracion
+            valor={forma}
+            alCambiar={setForma}
+            visibilidadCongelada={visibilidadCongelada}
+            laEnsenaba={laEnsenaba}
+          />
 
           {publicada && (
             <label className={estilos.campo}>

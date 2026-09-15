@@ -25,7 +25,12 @@ test.describe('Regresión · avanzar de etapa', () => {
     await expect(avanzar).toHaveText('Avanzar a 1 persona')
     await expect(avanzar).toBeDisabled()
 
-    await page.getByPlaceholder('Motivo del avance (obligatorio)').fill('Verificación QA de la rama')
+    // ⚠️ «Motivo (obligatorio)» y no «Motivo del avance (obligatorio)»: la barra dejó de ser
+    // solo la de avanzar cuando aprendió a descartar a la tanda marcada (PR #42, 7b0eb66), y
+    // el texto se acortó con ella. Este spec se quedó con el nombre viejo y desde entonces
+    // moría aquí por tiempo de espera, sin llegar nunca a comprobar el avance que da nombre
+    // al archivo.
+    await page.getByPlaceholder('Motivo (obligatorio)').fill('Verificación QA de la rama')
     await expect(avanzar).toBeEnabled()
     await avanzar.click()
 
