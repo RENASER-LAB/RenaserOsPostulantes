@@ -22,9 +22,14 @@ import {
  * y crea una cuenta. Lo primero es lo delicado: cambiar el sueldo de una vacante
  * publicada le deja aviso y correo a CADA candidato sembrado que siga en carrera, y esos
  * no llevan correo `@example.com`, así que `borrarCuentasDePrueba` no los alcanza. Por
- * eso `afterAll` los borra a mano y devuelve la vacante a OCULTA con la marca en vacío:
- * la base tiene que quedar como se encontró, o `18-ranking-contra-api` empieza a ver una
- * columna de pretensión que antes explicaba de otra forma.
+ * eso `afterAll` los borra a mano y devuelve la vacante a su monto fijo con la marca en
+ * vacío: la base tiene que quedar como se encontró, o `18-ranking-contra-api` empieza a
+ * ver una columna de pretensión que antes explicaba de otra forma.
+ *
+ * ⚠️ **Lo que NO se puede es apagarle el sueldo.** Publicar o no publicar la remuneración
+ * se congela al publicar la vacante, así que el caso «no la publica» va sobre `OTRA`, que
+ * el sembrador deja oculta de nacimiento. Entre monto fijo y rango sí se mueve: las dos
+ * publican, y el trato sigue en pie.
  *
  * Va sobre `SIN_PRETENSION` y no sobre `LLENA` por lo mismo que `12-postular`: la llena
  * es el banco de pruebas de orden, filtros y Excel, y sus cifras exactas no se tocan.
@@ -68,7 +73,13 @@ test.describe('Regresión · el sueldo se ve y se pide', () => {
     // El orden importa: primero se devuelve la vacante a como estaba —eso genera un
     // segundo aviso— y solo después se barren TODOS los avisos y correos de esta vacante.
     try {
-      await ponerRemuneracion({ tipo: 'OCULTA' }, 'Fin de la prueba de punta a punta')
+      // A FIJA, que es como la deja el sembrador — NO a OCULTA: desde la V54 esconder el
+      // sueldo de una vacante publicada está prohibido, y el intento devolvería 409
+      // tumbando con él toda la limpieza que va detrás.
+      await ponerRemuneracion(
+        { tipo: 'FIJA', min: 6500, moneda: 'PEN' },
+        'Fin de la prueba de punta a punta',
+      )
       // ⚠️ `auditoria` NO se toca: es inmutable por trigger (`auditoria_inmutable`, V8) y el
       // `delete` revienta ahí, tumbando con ON_ERROR_STOP toda la limpieza que iba detrás.
       // Y está bien que se quede: que la empresa cambió el sueldo cuatro veces esta tarde es
@@ -154,10 +165,22 @@ commit;`)
     await expect(page).toHaveURL(new RegExp(`/vacantes/${vacanteId}/postular`))
   })
 
+  /**
+   * El otro lado del trato, sobre una vacante que NACE sin sueldo publicado.
+   *
+   * ⚠️ **Y no apagándole el sueldo a la de arriba, que ya no se puede.** Publicar o no
+   * publicar la remuneración se congela al publicar la vacante: quien la sacó enseñando lo
+   * que paga le exigió su cifra a cada persona que postuló, y esconderla después sería
+   * quedarse con lo que dijeron sin dar nada a cambio. El backend responde 409.
+   *
+   * Sale más barato además: el sembrador deja una vacante de cada clase, así que esta
+   * prueba no escribe NADA — ni cambia un sueldo, ni le deja avisos a los candidatos
+   * sembrados, ni tiene nada que devolver a su sitio.
+   */
   test('una vacante que no lo publica lo DICE, y entonces no pide la pretensión', async ({ page }) => {
-    await ponerRemuneracion({ tipo: 'OCULTA' }, 'La empresa decide no publicar el sueldo')
+    const sinSueldo = await idDeVacante(VACANTES.OTRA)
 
-    await page.goto(`/vacantes/${vacanteId}`)
+    await page.goto(`/vacantes/${sinSueldo}`)
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible({ timeout: 15_000 })
     // El hueco se lee como un fallo de carga. Y además es el dato que explica por qué el
     // formulario de postular no le va a exigir la suya.
@@ -165,13 +188,18 @@ commit;`)
     await expect(page.getByText(BANDA_ESCRITA)).toHaveCount(0)
 
     await entrarAlPortal(page, CORREO, CLAVE_DE_CANDIDATO)
-    await page.goto(`/vacantes/${vacanteId}/postular`)
+    await page.goto(`/vacantes/${sinSueldo}/postular`)
     await expect(page.locator('input[type=file]')).toBeAttached({ timeout: 15_000 })
     // El bloque del trato sale solo cuando hay trato: sin sueldo publicado no hay campo,
     // ni siquiera opcional.
     await expect(page.getByLabel(/Tu pretensión mensual/)).toHaveCount(0)
+  })
 
-    // Se deja puesta otra vez para el afterAll, que es quien la devuelve a OCULTA y limpia.
-    await ponerRemuneracion(BANDA, 'Se vuelve a publicar para cerrar la prueba')
+  test('y el backend NO deja esconder el sueldo de una vacante ya publicada', async () => {
+    // La otra mitad de la regla, comprobada donde se hace cumplir. Es lo que hace que la
+    // prueba de arriba tenga que ir sobre otra vacante en vez de apagarle el sueldo a esta.
+    await expect(
+      ponerRemuneracion({ tipo: 'OCULTA' }, 'Intento de revocar el trato'),
+    ).rejects.toThrow(/no se pudo cambiar la remuneración: 4\d\d/)
   })
 })
