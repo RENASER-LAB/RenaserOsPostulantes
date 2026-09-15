@@ -534,7 +534,7 @@
 .loQueOfrecen {
   margin: var(--e4) 0;
   padding: var(--e3) var(--e4);
-  border-radius: var(--radio-control);
+  border-radius: var(--radio-menor);
   background: var(--nube-hundida);
 }
 

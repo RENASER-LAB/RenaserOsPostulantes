@@ -1,9 +1,15 @@
 /*
  * La campana de la cabecera.
  *
- * El punto es `--duda` y no `--activo`: en «El canto» el violeta significa una
- * sola cosa, «te toca a ti», y un aviso no le da ningun turno — le cuenta algo
- * que puede cambiar su decision, que es exactamente lo que ese token nombra.
+ * La forma sigue el popover de notificaciones de Origin UI —boton de icono con
+ * pildora numerada, panel de 20rem, cabecera con accion, separador, filas con el
+ * punto de no leido a la derecha y la hora debajo— traducido a los tokens de «El
+ * canto». Las medidas del original se conservan en la escala de la casa: `p-1`
+ * es `--e1`, `px-3 py-2` es `--e3`/`--e2`, `w-80` son 20rem.
+ *
+ * La pildora y el punto son `--duda` y no `--activo`: en este portal el violeta
+ * significa una sola cosa, «te toca a ti», y un aviso no le da ningun turno — le
+ * cuenta algo que puede cambiar su decision, que es lo que ese token nombra.
  */
 
 .contenedor {
@@ -11,11 +17,18 @@
   display: inline-flex;
 }
 
+/*
+ * El disparador, con la forma de un boton de icono del sistema: cuadrado,
+ * esquinas de control, borde solo al pasar por encima.
+ *
+ * 44px y no los 36 del original: es el minimo con el que un pulgar acierta sin
+ * mirar, y esta barra se usa mas desde el telefono que desde el raton.
+ */
 .boton {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  /* 44px: el minimo con el que un pulgar acierta sin mirar. */
   width: 44px;
   height: 44px;
   border: 0;
@@ -36,27 +49,27 @@
 }
 
 /*
- * El punto lleva el numero dentro.
+ * La pildora con la cuenta, montada sobre el borde del boton.
  *
- * Un circulo a secas dice «hay algo»; con la cifra dice «hay tres», y eso
- * cambia si abre ahora o luego. Cabe hasta «9+», que es donde el numero deja de
+ * Un circulo a secas dice «hay algo»; con la cifra dice «hay tres», y eso cambia
+ * si abre ahora o luego. Cabe hasta «99+», que es donde el numero deja de
  * significar nada util.
  */
-.punto {
+.pildora {
   position: absolute;
-  top: 6px;
-  right: 6px;
-  min-width: 17px;
-  height: 17px;
-  padding: 0 4px;
-  border-radius: 9px;
-  /* Anillo del color del fondo: separa el punto del icono sin dibujar un borde. */
+  top: 4px;
+  left: 50%;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 999px;
+  /* Anillo del color del fondo: separa la pildora del icono sin dibujar un borde. */
   box-shadow: 0 0 0 2px var(--nube);
   background: var(--duda);
   color: var(--tinta-invertida);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
-  line-height: 17px;
+  line-height: 20px;
   text-align: center;
   font-variant-numeric: tabular-nums;
 }
@@ -66,73 +79,142 @@
   top: calc(100% + var(--e2));
   right: 0;
   z-index: 40;
-  width: min(22rem, calc(100vw - var(--e5) * 2));
+  width: min(20rem, calc(100vw - var(--e5) * 2));
   max-height: 26rem;
   overflow-y: auto;
-  padding: var(--e3) 0;
+  overflow-x: hidden;
+  padding: var(--e1);
   border: 1px solid var(--regla);
-  border-radius: var(--radio-control);
+  /*
+   * `--radio-menor` y NO `--radio-control`: el de control son 999px, la pildora
+   * de los botones de la casa. Sobre una caja de 320px eso no redondea, arquea —
+   * las esquinas se comen el titulo y la hora de cada aviso.
+   */
+  border-radius: var(--radio-menor);
   background: var(--nube);
   box-shadow: 0 12px 32px rgb(35 43 54 / 14%);
 }
 
+.cabecera {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--e4);
+  padding: var(--e2) var(--e3);
+}
+
 .tituloPanel {
-  margin: 0;
-  padding: 0 var(--e4) var(--e3);
-  border-bottom: 1px solid var(--regla);
-  font-size: var(--t-micro);
+  font-size: var(--t-apoyo);
   font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--tinta3);
+  color: var(--tinta);
+}
+
+/*
+ * «Marcar todos como leidos», como enlace y no como boton relleno: es la accion
+ * secundaria de un panel pequeño, y un boton de verdad aqui pesaria mas que
+ * cualquiera de los avisos que hay debajo.
+ */
+.marcarTodos {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: var(--t-menor);
+  font-weight: 600;
+  color: var(--tinta2);
+  cursor: pointer;
+}
+
+.marcarTodos:hover:not(:disabled) {
+  color: var(--tinta);
+  text-decoration: underline;
+}
+
+.marcarTodos:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.marcarTodos:focus-visible {
+  outline: 2px solid var(--activo);
+  outline-offset: 2px;
+  border-radius: var(--radio-menor);
+}
+
+/* Los margenes negativos del original: la regla cruza el panel de lado a lado. */
+.separador {
+  height: 1px;
+  margin: var(--e1) calc(var(--e1) * -1);
+  background: var(--regla);
 }
 
 .vacio {
   margin: 0;
-  padding: var(--e4);
+  padding: var(--e3);
   font-size: var(--t-apoyo);
   color: var(--tinta2);
 }
 
-.lista {
-  margin: 0;
-  padding: 0;
-  list-style: none;
+.aviso {
+  border-radius: var(--radio-menor);
+  padding: var(--e2) var(--e3);
+  transition: background-color 120ms ease;
 }
 
-.aviso + .aviso {
-  border-top: 1px solid var(--regla);
-}
-
-/*
- * El que todavia no habia visto.
- *
- * Filete en el canto izquierdo, no relleno bajo el texto: la regla 4 del mundo
- * dice que el color vive en el borde. Y se queda puesto aunque abrir la campana
- * los marque leidos — si se apagaran en el acto, la persona veria desaparecer
- * bajo el raton la señal de qué era lo nuevo, justo al ir a leerlo.
- */
-.nuevo {
-  border-left: 3px solid var(--duda);
-  background: var(--duda-bruma);
-}
-
-.enlaceAviso {
-  display: flex;
-  flex-direction: column;
-  gap: var(--e1);
-  padding: var(--e3) var(--e4);
-  color: inherit;
-  text-decoration: none;
-}
-
-a.enlaceAviso:hover {
+.aviso:hover {
   background: var(--nube-hundida);
 }
 
-a.enlaceAviso:focus-visible {
+/*
+ * `position: relative` aqui y no en `.aviso`: es el ancla del `::after` que
+ * estira el enlace, y del punto de no leido. `padding-right` deja el sitio del
+ * punto para que el texto no se le meta debajo.
+ */
+.filaAviso {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  padding-right: var(--e3);
+}
+
+.textoAviso {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e1);
+  flex: 1;
+  min-width: 0;
+}
+
+/*
+ * El enlace se estira sobre la tarjeta entera.
+ *
+ * Es el truco del original y resuelve una tension real: se quiere que toda la
+ * fila sea pulsable, pero envolverla en un `<a>` metería la hora y el punto
+ * dentro del nombre del enlace, y anidar dos interactivos es peor todavia. Con
+ * el `::after` hay un solo elemento en el arbol de accesibilidad, con el texto
+ * que le corresponde, y toda el area para el raton.
+ */
+.enlaceAviso {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  text-align: left;
+  color: var(--tinta2);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.enlaceAviso::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+
+.enlaceAviso:focus-visible {
   outline: 2px solid var(--activo);
-  outline-offset: -2px;
+  outline-offset: 2px;
+  border-radius: var(--radio-menor);
 }
 
 .tituloAviso {
@@ -141,14 +223,34 @@ a.enlaceAviso:focus-visible {
   color: var(--tinta);
 }
 
+.enlaceAviso:hover .tituloAviso {
+  text-decoration: underline;
+}
+
 .cuerpoAviso {
-  font-size: var(--t-menor);
+  font-size: var(--t-apoyo);
   color: var(--tinta2);
 }
 
 .cuando {
   font-size: var(--t-menor);
   color: var(--tinta3);
+}
+
+/*
+ * El punto de no leido: a la derecha y centrado con la fila, no un filete en el
+ * canto izquierdo.
+ *
+ * Asi el ojo baja por una sola columna de puntos para ver que hay nuevo, en vez
+ * de comparar fondos. Y nunca va solo: al lado hay un texto en `.solo-lectores`
+ * que dice «Sin leer» — un circulo de 6px no existe para quien no ve la pantalla.
+ */
+.marcaNoLeido {
+  position: absolute;
+  right: 0;
+  align-self: center;
+  display: flex;
+  color: var(--duda);
 }
 
 /*
@@ -164,5 +266,12 @@ a.enlaceAviso:focus-visible {
     right: var(--e3);
     left: var(--e3);
     width: auto;
+  }
+}
+
+/* Quien pidio menos animacion no recibe ninguna. */
+@media (prefers-reduced-motion: reduce) {
+  .aviso {
+    transition: none;
   }
 }

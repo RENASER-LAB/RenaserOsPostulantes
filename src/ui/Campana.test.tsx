@@ -5,10 +5,11 @@
  *
  *   1. **Pedir los avisos sin sesion.** El tablon se sirve sin cuenta, y una
  *      consulta con token vacio serian 401 en cada visita anonima.
- *   2. **Marcar leido al cargar la pagina en vez de al abrirla.** El punto se
- *      apagaria solo, sin que nadie hubiera visto nada.
- *   3. **Llamar a marcar-leidos cada vez que se pulsa**, tambien con la campana
- *      vacia: trafico por una casilla que no apaga nada.
+ *   2. **Apagar los avisos por abrir la campana.** Es lo que hacia antes, y el
+ *      punto de cada fila de «Mis procesos» se apagaba con ellos sin que nadie
+ *      hubiera leido nada. Ahora lo decide la persona: el que pulsa, o todos con
+ *      el boton de la cabecera.
+ *   3. **Marcar leido lo que ya lo estaba**: trafico por un clic que no apaga nada.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -26,6 +27,8 @@ vi.mock('@/app/Sesion', () => ({
   useSesion: () => ({ hayCuenta }),
 }))
 
+const marcadosUnoAUno: number[] = []
+
 vi.mock('@/api/portal', () => ({
   misAvisos: () => {
     vecesQueSePidio += 1
@@ -34,6 +37,10 @@ vi.mock('@/api/portal', () => ({
   marcarAvisosLeidos: () => {
     vecesQueSeMarco += 1
     return Promise.resolve({ marcados: 1 })
+  },
+  marcarAvisoLeido: (id: number) => {
+    marcadosUnoAUno.push(id)
+    return Promise.resolve()
   },
 }))
 
@@ -66,6 +73,7 @@ beforeEach(() => {
   avisos = { sinLeer: 0, avisos: [] }
   vecesQueSeMarco = 0
   vecesQueSePidio = 0
+  marcadosUnoAUno.length = 0
 })
 afterEach(cleanup)
 
@@ -78,7 +86,7 @@ describe('la campana', () => {
     await waitFor(() => expect(vecesQueSePidio).toBe(0))
   })
 
-  it('el punto lleva la cuenta, y el lector de pantalla también la oye', async () => {
+  it('la píldora lleva la cuenta, y el lector de pantalla también la oye', async () => {
     avisos = { sinLeer: 3, avisos: [UN_AVISO] }
     montar()
 
@@ -87,26 +95,66 @@ describe('la campana', () => {
     await screen.findByRole('button', { name: /3 sin leer/i })
   })
 
-  it('no marca nada leído hasta que se abre', async () => {
+  it('abrir la campana NO apaga nada: lo decide la persona', async () => {
+    // Antes se marcaban todos al abrir, y con ellos se apagaba el punto de cada
+    // fila de «Mis procesos» — sin que nadie hubiera leido nada.
     avisos = { sinLeer: 2, avisos: [UN_AVISO] }
     montar()
     await screen.findByRole('button', { name: /2 sin leer/i })
 
-    // Cargar la pagina no es haber visto nada.
-    expect(vecesQueSeMarco).toBe(0)
-
     fireEvent.click(screen.getByRole('button'))
+    await screen.findByRole('dialog')
+
+    expect(vecesQueSeMarco).toBe(0)
+    expect(marcadosUnoAUno).toHaveLength(0)
+  })
+
+  it('pulsar un aviso apaga ESE, no todos', async () => {
+    avisos = { sinLeer: 2, avisos: [UN_AVISO] }
+    montar()
+    await screen.findByRole('button', { name: /2 sin leer/i })
+    fireEvent.click(screen.getByRole('button'))
+
+    fireEvent.click(await screen.findByRole('link', { name: /cambió la remuneración/i }))
+
+    await waitFor(() => expect(marcadosUnoAUno).toEqual([10]))
+    expect(vecesQueSeMarco).toBe(0)
+  })
+
+  it('«marcar todos» solo sale si hay algo sin leer, y los apaga de una vez', async () => {
+    avisos = { sinLeer: 2, avisos: [UN_AVISO] }
+    montar()
+    await screen.findByRole('button', { name: /2 sin leer/i })
+    fireEvent.click(screen.getByRole('button'))
+
+    fireEvent.click(await screen.findByRole('button', { name: /marcar todos como leídos/i }))
+
     await waitFor(() => expect(vecesQueSeMarco).toBe(1))
   })
 
-  it('con la campana vacía, abrirla no llama a marcar nada', async () => {
+  it('con la campana vacía no se ofrece marcar nada', async () => {
     montar()
     await screen.findByRole('button', { name: 'Avisos' })
 
     fireEvent.click(screen.getByRole('button'))
 
     await screen.findByText(/nada nuevo por ahora/i)
+    expect(screen.queryByRole('button', { name: /marcar todos/i })).toBeNull()
     expect(vecesQueSeMarco).toBe(0)
+  })
+
+  it('un aviso ya leído no se vuelve a marcar al pulsarlo', async () => {
+    avisos = {
+      sinLeer: 0,
+      avisos: [{ ...UN_AVISO, leidoEn: '2026-09-14T10:00:00Z' }],
+    }
+    montar()
+    await screen.findByRole('button', { name: 'Avisos' })
+    fireEvent.click(screen.getByRole('button'))
+
+    fireEvent.click(await screen.findByRole('link', { name: /cambió la remuneración/i }))
+
+    await waitFor(() => expect(marcadosUnoAUno).toHaveLength(0))
   })
 
   it('cada aviso enseña lo que pasó y lleva a su proceso', async () => {
@@ -119,11 +167,15 @@ describe('la campana', () => {
     const enlace = await screen.findByRole('link', { name: /cambió la remuneración/i })
     expect(enlace.getAttribute('href')).toBe('/procesos/uuid-1')
     expect(screen.getByText(/antes: s\/ 3 000/i)).toBeTruthy()
+    // El punto de «sin leer» lleva su texto: un circulo de 6px no existe para
+    // quien no ve la pantalla.
+    expect(screen.getByText('Sin leer')).toBeTruthy()
   })
 
   it('un aviso sin proceso detrás no se pinta como enlace', async () => {
     // Un enlace que no lleva a ninguna parte es peor que no tenerlo: se pulsa,
-    // no pasa nada, y la proxima vez ya no se pulsa ninguno.
+    // no pasa nada, y la proxima vez ya no se pulsa ninguno. Sigue siendo
+    // pulsable —es un boton— para poder apagarlo.
     avisos = { sinLeer: 1, avisos: [{ ...UN_AVISO, postulacionUuid: null }] }
     montar()
     await screen.findByRole('button', { name: /1 sin leer/i })

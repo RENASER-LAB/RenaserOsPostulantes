@@ -368,7 +368,12 @@
   margin-top: var(--e5);
   padding: var(--e4);
   border: 1px solid var(--regla);
-  border-radius: var(--radio-control);
+  /*
+   * `--radio-menor` y NO `--radio-control`: el de control son 999px, la pildora
+   * de los botones de la casa. Sobre una caja ancha eso no redondea, la convierte
+   * en una capsula que arquea el texto de dentro.
+   */
+  border-radius: var(--radio-menor);
   background: var(--nube);
 }
 

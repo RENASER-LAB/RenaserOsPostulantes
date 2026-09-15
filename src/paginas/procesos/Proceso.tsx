@@ -121,9 +121,24 @@ export function Proceso() {
   const final = esFinal(resumen.estado)
   const termino = COMO_TERMINO[resumen.estado]
 
-  // Si tiene algo sin ver de este proceso: es lo que resalta el sueldo. Ver
-  // `Remuneracion` — la fecha del cambio por si sola no basta.
-  const hayNovedad = (resumen.avisosSinLeer ?? 0) > 0
+  /**
+   * Si el sueldo cambio DESPUES de que esta persona postulo.
+   *
+   * ⚠️ **No sale de los avisos sin leer, y la diferencia importa.** Se probo asi
+   * y se auto-anulaba: pulsar el aviso de la campana lo marca leido y navega
+   * aqui, asi que el resaltado se apagaba en el mismo gesto que traia a la
+   * persona a verlo. El recorrido entero para el que se construyo terminaba en
+   * una pantalla sin ninguna marca.
+   *
+   * Comparar las dos fechas es estable y ademas mas correcto: una vacante que se
+   * movio hace un año y a la que postulo ayer NO tiene novedad para el —el
+   * cambio es anterior a su candidatura—, y una que cambio anteayer la sigue
+   * teniendo aunque ya leyera el aviso. Lo que se resalta es «esto no es lo que
+   * habia cuando dijiste que si», que es verdad mientras dure el proceso.
+   */
+  const cambioEn = resumen.remuneracion?.actualizadaEn
+  const hayNovedad =
+    cambioEn != null && new Date(cambioEn) > new Date(resumen.creadoEn)
 
   const pasos = Array.isArray(historial) ? historial : []
   const fechas = fechasDelRecorrido(pasos)

@@ -76,7 +76,7 @@
 .resaltado {
   padding: var(--e3) var(--e4);
   border-left: 3px solid var(--duda);
-  border-radius: 0 var(--radio-control) var(--radio-control) 0;
+  border-radius: 0 var(--radio-menor) var(--radio-menor) 0;
   background: var(--duda-bruma);
 }
 
