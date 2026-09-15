@@ -1863,3 +1863,33 @@ token: existe solo ahí.
 
 Los tres grises de texto sobre el cielo nuevo: tinta 11,35 · tinta2 6,10 · tinta3 4,79. Los tres
 pasan. 620 pruebas en verde, typecheck limpio.
+
+### El resplandor sale de la tarjeta y se pone detrás
+
+Pedido del cliente: que el neón esté detrás de la tarjeta y ya no dentro. Es mejor decisión de
+la que parece, porque resuelve de raíz lo que llevaba dos sesiones dando guerra: la tarjeta es
+lo único que hay que leer en la portada, y meterle luz por debajo del texto obligaba a pelear
+cada tono. Con la luz fuera, el interior vuelve a ser blanco limpio y **`.numeroEtapa` y
+`.queEsEtapa` vuelven a `--tinta3`**, que es donde el diseño las quería.
+
+Lo que hubo que mover: la tarjeta pierde su fondo propio —lo pinta `.escaparateDentro`, que
+gana su propio radio— y pierde el `overflow: hidden`, que estaba ahí para recortar la luz de
+dentro y ahora recortaría la de fuera.
+
+⚠️ **Y volví a tropezar con `z-index: -1`.** Lo puse por reflejo y la luz no aparecía. Es la
+misma trampa de la sesión del 11/09: `mundo.css` pinta el cielo en `html` **y** en `body`, y el
+fondo de `body` se pinta DESPUÉS de los descendientes de z negativo. Lo confirmé poniendo la luz
+en rojo plano y sin desenfoque — seguía sin verse, lo que descartaba que fuera cuestión de
+sutileza. **La segunda vez que caigo en lo mismo**; queda escrito en los dos sitios.
+
+La solución no necesita z: el `::before` va antes que `.escaparateDentro` en el árbol, los dos
+están posicionados, y sin `z-index` gana el último. La luz cae detrás del blanco sin salirse del
+apilamiento.
+
+620 pruebas en verde, typecheck limpio. Comprobado a 390 y 800 px, sin desbordamiento.
+
+⚠️ **Y salió demasiado grande a la primera.** El cliente lo dijo antes que yo: «está muy grande,
+siempre usa el navegador para que veas en vivo, no solo código». Tenía razón en el diagnóstico
+—lo había estado juzgando en capturas reducidas, donde un baño de color y un halo se parecen—.
+Quedó ceñido al pie: arranca al 58 % de la altura de la tarjeta en escritorio y al 80 % en
+teléfono, asoma 30 px por debajo y 2 % por los lados, con 24 px de desenfoque en vez de 40.

@@ -697,6 +697,157 @@ La pieza grande de la portada: una tarjeta blanca de **borde de 12 px en blanco 
 radio 20 px, con `background-clip: padding-box` —sin él, el blanco de dentro se cuela por
 debajo del borde y lo anula—. Dentro va el recorrido del candidato.
 
+**Detrás de la tarjeta, no dentro**, hay un neón de dos colores: cálido `#FF7C61` por la
+izquierda y frío `#FF47B8` por la derecha. **Es un halo ceñido al pie, no un baño**: arranca al
+58 % de la altura de la tarjeta, asoma 30 px por debajo y 2 % por los lados, con 24 px de
+desenfoque. En teléfono arranca al 80 %, porque ahí la tarjeta mide el doble. La tarjeta no tiene fondo propio —lo pinta `.escaparateDentro`—, así que la luz
+cabe entre las dos capas, y su borde translúcido de 12 px la deja intuir por el canto.
+
+⚠️ **Estuvo dentro de la tarjeta hasta el 15/09/2026 y ahí tenía un problema de fondo**: la
+tarjeta es lo único que hay que leer en la portada, y meterle luz bajo el texto obligaba a
+pelear cada tono —las cuatro capas se suman, `--tinta3` caía a 3,85:1, hubo que subir el texto
+de las etapas—. Fuera, el interior vuelve a ser blanco limpio y el problema no existe.
+
+⚠️ **El rosa `#FF47B8` es el único tono del portal fuera de la familia coral.** No es un token
+y no debe serlo: existe solo aquí, como luz, y no significa nada.
+
+⚠️ **NO lleva `z-index: -1`, y se intentó.** Es la misma trampa que en el armazón: `mundo.css`
+pinta el cielo en `html` **y** en `body`, y el fondo de `body` se pinta después de los
+descendientes de z negativo, así que la luz quedaba enterrada —se comprobó poniéndola en rojo
+plano y sin desenfoque: no aparecía—. Lo que la coloca bien es el orden natural: el `::before`
+va antes que `.escaparateDentro` en el árbol, los dos están posicionados, y sin `z-index` gana
+el último.
+
+### El fondo
+
+El cielo es `#FFFFFF`, el mismo blanco que las superficies. **Lo que dibuja una superficie es su
+contorno de 1 px, no su fondo**: `.bloque` lleva `border: 1px solid var(--regla)` y todo lo que
+se apoya en él la hereda. Una superficie nueva sin contorno no existe.
+
+⚠️ **Esto cambia la regla 4 del mundo.** Decía que la profundidad es tono y que una superficie
+se separa del fondo «porque está un punto más clara». Con página y superficie en el mismo
+blanco eso ya no se sostiene: la separación es el contorno.
+
+El fondo va limpio, sin decoración. El 11/09/2026 se probaron dos resplandores corales
+desenfocados —primero solo arriba, luego repetidos de arriba abajo con una baldosa de 1100 px— y
+se retiraron. Lo que dejaron escrito y conviene no volver a aprender:
+
+- **Un degradado que todavía tiene color al llegar al borde de su baldosa se corta en seco
+  ahí**, y la repetición convierte ese corte en una raya horizontal visible. La regla es que
+  cada degradado se apague dentro de su baldosa: centro = radio, y los dos radios juntos = la
+  baldosa.
+- **Un tinte de fondo le pone techo al gris más claro del sistema.** Con el coral al 28 %,
+  `--tinta3` caía a 3,99:1; el máximo que lo mantenía en 4,5:1 era 0,146.
+- **`z-index: -1` no sirve para poner algo detrás**, porque `mundo.css` pinta el cielo en `html`
+  **y** en `body`: la de `html` es el lienzo y la de `body` pasa a ser el fondo de una caja de
+  bloque normal, que se pinta después de los descendientes de z negativo.
+
+### Navigation
+
+Cabecera fija de 68 px, pegajosa: una barra **insertada 8 px del borde**, con radio
+`--radio-menor`, que **en reposo no se ve** —solo la marca y los enlaces sobre el cielo— y saca
+su superficie de nube maciza, contorno de `--regla` y `--sombra-nube` **en cuanto la página se
+mueve**. La marca a la izquierda; a la derecha, cuatro destinos.
+
+El aire de arriba va de relleno y no de margen: así la barra guarda los mismos 8 px en reposo
+y pegada, porque el relleno viaja con la caja pegajosa y un margen se quedaría arriba.
+
+**Tres columnas: marca a la izquierda, destinos al centro, acción a la derecha.** La rejilla es
+`1fr auto 1fr` y no `space-between`, porque los destinos tienen que quedar centrados respecto a
+la barra y no repartidos: con `space-between` el centro se mueve cada vez que cambia el ancho de
+la marca o el texto de la acción —«Ingresar» y «Mi cuenta» no miden lo mismo—. Medido, la
+desviación es de 0 px.
+
+**Los enlaces son texto haciendo de botón**, a **18 px y peso 500** en **tinta plena**
+(12,63:1): sin contorno, sin relleno y sin pastilla; lo único que dibuja el área táctil de 44 px
+es el `min-height`. **La página en la que estás se dice con el color del texto
+—`--activo-regla`—, el peso 700 y un filete coral de 2 px que se abre desde el centro** en
+300 ms; al pasar por encima de los demás, ese filete se abre en gris.
+
+⚠️ **El peso es lo que los sostiene, no el tamaño.** A 14 px y peso normal los cuatro destinos
+se perdían: son lo único que hay en medio de una barra muy ancha y blanca, sin nada debajo. En
+teléfono bajan a 14 px pero **el 500 se queda**. Figtree es variable de 400 a 700, así que el
+500 no cuesta una descarga más.
+
+⚠️ **El filete anima `left` y `right`, no `transform: scaleX()`.** Un filete de 2 px escalado
+en X sigue midiendo 2 px de alto, pero el navegador lo compone desde una caja de ancho completo
+y en pantallas densas se ve un pelo más grueso al arrancar; así la caja es de 2 px reales en
+todo momento.
+
+WCAG 1.4.1 pide que el color no vaya solo, y no va: le acompañan el peso 700 y el filete.
+
+«Ingresar» es la excepción y la única acción de la barra: **rampa magenta a rojo
+`#E0218A → #FF3B5C`, texto blanco, radio `--radio-menor`**, con sombra de desplazamiento más
+halo del mismo tono.
+
+⚠️ **El texto blanco sobre esa rampa da entre 4,42:1 y 3,48:1**, y WCAG 1.4.3 pide 4,5:1 a
+14 px. Es una decisión tomada mirando el número: se midió también `#D81B7E → #C4304B`, el mismo
+magenta-a-rojo un paso más oscuro, que da 4,80:1 y 5,42:1. Si algún día hay que cumplirlo, el
+cambio son esos dos valores y nada más. El límite del control sí cumple 1.4.11: 4,42 y 3,48
+contra la nube, los dos por encima de 3.
+
+⚠️ **El enlace activo en coral da 2,53:1 sobre la nube**, donde 1.4.3 pide 4,5. Se eligió así
+**a sabiendas y mirando el número**: se probó también `#bf4526` —el mismo tono con la luz
+bajada, 5,13:1— y se prefirió el coral de marca. El peso 700 acompaña al color, así que la
+segunda señal que pide 1.4.1 está; lo que no se cumple es el contraste del texto.
+
+**El coral en la cabecera ya no es solo un filete.** Era la única excepción a «el coral solo
+marca te toca a ti» y era pequeña; ahora el coral es el texto activo y el relleno de la
+acción. Dentro de las pantallas el coral sigue significando turno y solo turno.
+
+**«Inicio» y «Vacantes» no son lo mismo.** `rutas.vacantes()` es `/`, así que los dos irían
+al mismo sitio: «Inicio» es la portada y «Vacantes» es un ancla a `#vacantes-abiertas`, la
+sección que ya existe ahí. Por eso «Vacantes» va de `Link` y no de `NavLink` —dos `NavLink`
+con la misma ruta se encienden a la vez— y **por debajo de 400 px desaparece**: a 320 px los
+cuatro piden 42 px más de los que hay, y es el único que no es una pantalla propia.
+
+**El movimiento de la barra son tres cosas y ninguna más.** La cascada de entrada, 420 ms con
+60 ms de desfase entre destinos, que corre **una vez por carga de página** porque `Armazon` se
+queda montado mientras el candidato navega. El filete del enlace, que **se abre desde el centro
+hacia los dos lados** en 300 ms —gris al pasar por encima, coral en el que está activo—. Y el
+destello del botón «Ingresar»: un reflejo blanco al 45 % que lo cruza en 1,17 s y descansa
+hasta completar 4,5 s.
+
+⚠️ **El destello es lo único que se mueve solo en todo el portal**, y solo existe para quien no
+ha entrado: con sesión, «Ingresar» no se pinta.
+
+⚠️ **`--salida` no vale para el destello, y se vio midiendo.** Esa curva es para lo que llega y
+se posa; con ella el reflejo recorría el 90 % del botón en los primeros 400 ms de un tramo de
+1,17 s —un salto, no un cruce—. Lleva `ease-in-out`, que acelera y frena por igual. Medido a
+lo largo del ciclo: −121 %, −107 %, −62 %, +5 %, +71 %, +121 %.
+
+El filete anima `left` y `right`, no `transform: scaleX()`: un filete de 2 px escalado en X se
+compone desde una caja de ancho completo y en pantallas densas se ve un pelo más grueso al
+arrancar.
+
+Con `prefers-reduced-motion` se van la cascada, el destello y los desplazamientos; **se quedan
+el color del activo y su filete**, que son los que dicen dónde estás.
+
+⚠️ **`--alto-cabecera` se mide, no se calcula.** Son 68 px —8 de aire + 60 de barra—. El
+11/09/2026 pasaron por 61 (barra a sangre) y 76 (vaina ovalada flotante) antes de quedarse
+aquí. Seis reglas de cuatro hojas se pinchan debajo de ese número.
+
+⚠️ **La barra es transparente mientras no se baja**, así que lo que se pincha bajo
+`--alto-cabecera` aparece sobre el cielo hasta el primer scroll. No es un problema: en cuanto
+hay scroll —que es cuando algo pasaría por debajo— la barra ya tiene su velo puesto. Medido:
+el carril pegajoso se posa exactamente en 68, sin hueco ni solape.
+
+⚠️ **El velo es nube MACIZA, y se probó traslúcida.** Nube al 85 % con `backdrop-filter:
+blur(12px)` dejaba leer entero el botón negro de la portada al pasar por debajo: un 15 % de
+transparencia no perdona una pieza de máximo contraste. Y el desenfoque detrás de un relleno
+opaco no pinta nada, que es por lo que se quitó el vidrio empañado el 10/09/2026.
+
+⚠️ **Aquí hubo un vidrio empañado y se fue el 10/09/2026.** Existía para que la cabecera
+dejara ver el canto irisado por detrás; sin canto, desenfocaba un `--cielo` plano en las
+diecisiete pantallas a cambio de una capa de compositor en cada una. Quitarlo arregló además
+que las barras pegajosas del examen se transparentaran a través de ella al hacer scroll.
+
+### Signature Component — el escaparate
+
+La pieza grande de la portada: una tarjeta blanca de **borde de 12 px en blanco al 40 %** y
+radio 20 px, con `background-clip: padding-box` —sin él, el blanco de dentro se cuela por
+debajo del borde y lo anula—. Dentro va el recorrido del candidato.
+
 Detrás, **dos luces de colores distintos**: una cálida `#FF7C61` y una fría `#FF47B8`. Las dos
 nacen cerca del centro —al 36 % y al 64 %— y se abren hacia fuera: separándolas más se leían
 como dos focos en las esquinas, y así se lee como una sola luz que se descompone. Un solo foco

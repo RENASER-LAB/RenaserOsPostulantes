@@ -113,116 +113,93 @@
  * debajo del borde y lo anule.
  */
 .escaparate {
+  position: relative;
   margin: var(--e7) auto 0;
   max-width: 1066px;
-  background-color: var(--nube);
-  background-clip: padding-box;
+  /*
+   * ⚠️ **Sin fondo propio, y eso es lo que deja sitio a la luz.** El blanco lo
+   * pinta `.escaparateDentro`; aqui solo quedan el borde, el radio y la sombra.
+   * Asi el resplandor puede vivir entre los dos: detras del blanco y delante de
+   * nada. De paso, el borde translucido de 12 px deja intuir la luz por el canto,
+   * que es lo que lo hace parecer un neon y no una sombra de color.
+   */
   border: 12px solid rgb(255 255 255 / 0.4);
   border-radius: 20px;
-  overflow: hidden;
   box-shadow: var(--sombra-nube);
+}
+
+/*
+ * El resplandor, DETRAS de la tarjeta y no dentro.
+ *
+ * ⚠️ **Estuvo dentro hasta el 15/09/2026 y ahi tenia un problema de fondo**: la
+ * tarjeta es lo unico que hay que leer en la portada, y meterle luz por debajo del
+ * texto obligaba a pelear cada tono —las cuatro capas se suman, el gris mas claro
+ * del sistema caia a 3,85:1, hubo que subir el texto de las etapas a `--tinta2`—.
+ * Fuera, el interior vuelve a ser blanco limpio y el problema no existe.
+ *
+ * ⚠️ **NO lleva `z-index: -1`, y se intento.** Es la misma trampa que en el
+ * armazon: `mundo.css` pinta el cielo en `html` **y** en `body`, y el fondo de
+ * `body` se pinta DESPUES de los descendientes de z negativo, asi que la luz
+ * quedaba enterrada. Se comprobo poniendola en rojo plano y sin desenfoque: no
+ * aparecia.
+ *
+ * Lo que la coloca bien es el orden natural: este `::before` va antes que
+ * `.escaparateDentro` en el arbol, los dos estan posicionados, y sin `z-index`
+ * gana el ultimo. La luz cae detras del blanco sin salirse del apilamiento.
+ *
+ * Por eso tambien se fue el `overflow: hidden` de la tarjeta: estaba ahi para
+ * recortar la luz de dentro, y ahora recortaria la de fuera. Lo que mantiene el
+ * blanco dentro de las esquinas redondas es el radio propio de
+ * `.escaparateDentro`.
+ *
+ * El desenfoque es grande —40 px— porque lo que se busca es un neon, no un
+ * degradado con borde.
+ */
+.escaparate::before {
+  content: '';
+  position: absolute;
+  left: -2%;
+  right: -2%;
+  top: 58%;
+  bottom: -30px;
+  background:
+    /* El nucleo, centrado y por debajo del suelo de la tarjeta. */
+    radial-gradient(
+      40% 60% at 50% 96%,
+      rgb(255 120 150 / 0.62) 0%,
+      rgb(255 120 150 / 0.26) 46%,
+      rgb(255 120 150 / 0) 78%
+    ),
+    /* La calida, saliendo por la izquierda. */
+    radial-gradient(
+      42% 64% at 10% 92%,
+      rgb(255 124 97 / 0.54) 0%,
+      rgb(255 124 97 / 0.22) 46%,
+      rgb(255 124 97 / 0) 78%
+    ),
+    /* La fria, saliendo por la derecha. Un punto mas apagada: el rosa pesa mas
+       que el coral a igual opacidad y si van iguales se come la izquierda. */
+    radial-gradient(
+      42% 64% at 90% 92%,
+      rgb(255 71 184 / 0.48) 0%,
+      rgb(255 71 184 / 0.2) 46%,
+      rgb(255 71 184 / 0) 78%
+    );
+  filter: blur(24px);
+  pointer-events: none;
 }
 
 .escaparateDentro {
   position: relative;
   /* Abajo una talla mas que arriba, y solo una: la caja tiene que leerse
-     equilibrada, y con 150 px el contenido quedaba arrinconado arriba. Ese
-     escalon de mas es el sitio que el resplandor necesita. */
+     equilibrada. */
   padding: var(--e7) var(--e6) var(--e8);
   background-color: var(--nube);
-  overflow: hidden;
+  /* El radio de la tarjeta menos su borde de 12 px. Lo lleva el interior porque
+     la tarjeta ya no recorta: sin esto, el blanco asoma por las esquinas. */
+  border-radius: 8px;
 }
 
-/*
- * El resplandor del fondo del escaparate.
- *
- * ⚠️ **Son DOS luces de colores distintos, no una.** Era un solo foco coral
- * centrado y se quedaba plano: una mancha rosa y ya. Ahora hay una luz calida a
- * la izquierda y una fria a la derecha, que se abren desde el centro — que es lo
- * que hace que se lea como iluminacion y no como un degradado pintado.
- *
- * ⚠️ **El rosa de la derecha, `#ff47b8`, es el unico tono del portal fuera de la
- * familia coral.** `--activo-regla` es #ff7c61 y `--canto` acaba en #ff5d6e; este
- * sigue esa rampa un paso mas alla. No es un token y no debe serlo: existe solo
- * aqui, como luz, y no significa nada. Si empieza a aparecer en otra pantalla,
- * hay que pararlo.
- *
- * ⚠️ **La luz va en DOS ALTURAS, y es lo que permite que llene la tarjeta sin
- * dejar el texto ilegible.**
- *
- *   · **El velo** es enorme y flojo —tope 0,16— y sube hasta media tarjeta. Ese
- *     tope no es estetico: sobre blanco, el gris mas claro del sistema aguanta
- *     4,54:1 con 0,18 encima y cae a 4,45 con 0,20. Como nunca pasa de 0,16, da
- *     igual por donde caiga el texto.
- *   · **El nucleo y las dos luces de color** son fuertes —0,5 y 0,36— y viven
- *     pegados al suelo, por debajo del ultimo parrafo.
- *
- * Con una sola capa no se puede tener las dos cosas: o la luz llega arriba y se
- * come el texto, o respeta el texto y se queda en una franja del pie. Se probaron
- * las dos y las dos estaban mal.
- *
- * La cuenta que hay que rehacer si se toca algo: el degradado se apaga al 74-80 %
- * de su radio, asi que **lo que se ve empieza en `centro - 0,78 x radio`**. Para
- * las capas fuertes, ese punto tiene que caer por debajo del ultimo parrafo; para
- * el velo da igual, porque su tope ya es legible.
- *
- * El alto va en PIXELES y no en porcentaje: con un porcentaje, la tarjeta de un
- * telefono —donde las cinco etapas se apilan en dos columnas y mide el triple—
- * estiraba la luz hasta meterla detras de «Etapa 5».
- *
- * Se sale por los lados y por el pie: `overflow: hidden` del padre la recorta, y
- * por eso se lee como luz que entra y no como circulos dentro de una caja.
- */
-.escaparateDentro::before {
-  content: '';
-  position: absolute;
-  left: -12%;
-  right: -12%;
-  bottom: -20px;
-  height: 340px;
-  background:
-    /*
-     * El nucleo, en el centro y pegado al suelo. Va el primero, o sea encima.
-     */
-    radial-gradient(
-      38% 24% at 50% 104%,
-      rgb(255 120 150 / 0.6) 0%,
-      rgb(255 120 150 / 0.24) 44%,
-      rgb(255 120 150 / 0) 76%
-    ),
-    /* La calida, entrando por la izquierda. */
-    radial-gradient(
-      54% 30% at 12% 102%,
-      rgb(255 124 97 / 0.48) 0%,
-      rgb(255 124 97 / 0.2) 44%,
-      rgb(255 124 97 / 0) 78%
-    ),
-    /* La fria, entrando por la derecha. Un punto mas apagada: el rosa pesa mas
-       que el coral a igual opacidad y si van iguales se come la izquierda. */
-    radial-gradient(
-      54% 30% at 88% 102%,
-      rgb(255 71 184 / 0.42) 0%,
-      rgb(255 71 184 / 0.17) 44%,
-      rgb(255 71 184 / 0) 78%
-    ),
-    /*
-     * El velo. Es el que hace el trabajo de llenar: enorme, muy flojo y subiendo
-     * hasta media tarjeta. Va el ultimo, o sea debajo de todo.
-     */
-    radial-gradient(
-      92% 66% at 50% 100%,
-      rgb(255 130 165 / 0.16) 0%,
-      rgb(255 130 165 / 0.11) 42%,
-      rgb(255 130 165 / 0) 80%
-    );
-  /* Mas desenfoque que antes: lo que se busca es luz, y una luz con el borde
-     definido deja de parecerlo. */
-  filter: blur(26px);
-  pointer-events: none;
-}
-
-/* El unico de la tarjeta que se queda en `--tinta3`: vive arriba del todo, por
-   encima de donde empieza el velo. Comprobado midiendo su fondo compuesto. */
 .pieEscaparate {
   position: relative;
   margin: 0 0 var(--e5);
@@ -265,22 +242,12 @@
   background-color: var(--activo);
 }
 
-/*
- * ⚠️ **Era `--tinta3` y subio a `--tinta2` el 15/09/2026, con la luz del fondo.**
- * Las cuatro capas del resplandor se SUMAN, y eso es lo que se paso por alto al
- * medirlas de una en una: cada una respetaba su tope pero el fondo compuesto bajo
- * el ultimo parrafo salia #ffcfda, donde `--tinta3` cae a 3,85:1 y no llega a los
- * 4,5 de WCAG 1.4.3. `--tinta2` da 4,91:1 ahi.
- *
- * Es la misma regla que DESIGN.md ya tenia escrita para los bloques ambar: sobre
- * un fondo con tinte, el gris mas claro del sistema no vale.
- */
 .numeroEtapa {
   margin: 0;
   font-size: var(--t-micro);
   font-weight: 600;
   letter-spacing: 0.04em;
-  color: var(--tinta2);
+  color: var(--tinta3);
 }
 
 .nombreEtapa {
@@ -291,13 +258,11 @@
   color: var(--tinta);
 }
 
-/* Tambien a `--tinta2`, y por el mismo motivo: es el texto que mas abajo cae,
-   o sea el que mas luz tiene encima. */
 .queEsEtapa {
   margin: 0;
   font-size: var(--t-menor);
   line-height: 1.45;
-  color: var(--tinta2);
+  color: var(--tinta3);
 }
 
 /* ---------- la cinta de cifras ---------- */
@@ -609,12 +574,12 @@
     padding: var(--e6) var(--e4) var(--e7);
   }
 
-  /* Menos relleno abajo, luz mas corta: la cuenta es la misma y las capas
-     fuertes tienen que seguir cayendo por debajo del ultimo parrafo. */
-  .escaparateDentro::before {
-    bottom: -16px;
-    height: 240px;
-    filter: blur(20px);
+  /* En un telefono la tarjeta es mucho mas alta, asi que la luz arranca mas
+     abajo o se convierte en un halo por todo el borde. */
+  .escaparate::before {
+    top: 80%;
+    bottom: -22px;
+    filter: blur(18px);
   }
 
   .cinta {
