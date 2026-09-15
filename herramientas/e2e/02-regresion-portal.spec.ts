@@ -39,7 +39,7 @@ test.describe('Regresión · el portal del candidato', () => {
 test.describe('Regresión · crear cuenta, que ahora exige ciudad', () => {
   test('el catálogo de ubigeo llega y el desplegable se puebla agrupado', async ({ page }) => {
     await page.goto('/registro')
-    const select = page.getByLabel('Dónde vives')
+    const select = page.getByLabel('Ubicación')
     await expect(select).toBeEnabled()
     // 196 provincias + `EXT` + la opción vacía.
     const opciones = await select.locator('option').count()
@@ -62,7 +62,7 @@ test.describe('Regresión · crear cuenta, que ahora exige ciudad', () => {
     await page.getByRole('button', { name: /Crear cuenta/i }).click()
 
     await expect(page.getByText('Elige dónde vives.')).toBeVisible()
-    await expect(page.getByLabel('Dónde vives')).toHaveAttribute('aria-invalid', 'true')
+    await expect(page.getByLabel('Ubicación')).toHaveAttribute('aria-invalid', 'true')
     // Y no navegó a ningún sitio.
     await expect(page).toHaveURL(/\/registro/)
   })
@@ -75,7 +75,7 @@ test.describe('Regresión · crear cuenta, que ahora exige ciudad', () => {
     await page.getByLabel('Correo', { exact: true }).fill(correo)
     await page.getByLabel('Contraseña', { exact: true }).fill('Demo12345!')
     await page.getByLabel(/Repetir|Repite/i).fill('Demo12345!')
-    await page.getByLabel('Dónde vives').selectOption('1501') // Lima — Lima
+    await page.getByLabel('Ubicación').selectOption('1501') // Lima — Lima
     await page.locator('input[type="checkbox"]').first().check()
 
     await page.getByRole('button', { name: /Crear cuenta/i }).click()
@@ -100,7 +100,7 @@ test.describe('Regresión · crear cuenta, que ahora exige ciudad', () => {
     await page.getByLabel('Correo', { exact: true }).fill(correo)
     await page.getByLabel('Contraseña', { exact: true }).fill('Demo12345!')
     await page.getByLabel(/Repetir|Repite/i).fill('Demo12345!')
-    await page.getByLabel('Dónde vives').selectOption('EXT')
+    await page.getByLabel('Ubicación').selectOption('EXT')
     await page.locator('input[type="checkbox"]').first().check()
     await page.getByRole('button', { name: /Crear cuenta/i }).click()
     await expect(page).not.toHaveURL(/\/registro/, { timeout: 15_000 })
@@ -108,7 +108,7 @@ test.describe('Regresión · crear cuenta, que ahora exige ciudad', () => {
 
   test('el desplegable de ciudad se maneja solo con teclado', async ({ page }) => {
     await page.goto('/registro')
-    const select = page.getByLabel('Dónde vives')
+    const select = page.getByLabel('Ubicación')
     await expect(select).toBeEnabled()
     await select.focus()
     await expect(select).toBeFocused()

@@ -64,8 +64,6 @@ const enviados: Record<string, unknown>[] = []
 
 vi.mock('@/api/portal', () => ({
   verVacante: () => Promise.resolve(vacante),
-  consentimientoDeVacante: () =>
-    Promise.resolve({ nombreEmpresa: 'Clínica San Juan', version: '1.0', texto: 'Legal.' }),
   postular: (datos: Record<string, unknown>) => {
     enviados.push(datos)
     return Promise.resolve({ codigo: 'uuid-de-prueba' })
@@ -113,13 +111,21 @@ function montar() {
 
 const campoPretension = () => screen.getByLabelText(/tu pretensión mensual/i)
 
-/** Lo obligatorio que no es el sueldo. */
+/**
+ * Lo obligatorio que no es el sueldo.
+ *
+ * Ya no marca ninguna casilla: el consentimiento dejó de pedirse aparte (PR #43),
+ * porque enviar la candidatura ES el acto.
+ */
 function rellenarLoDemas() {
   fireEvent.change(screen.getByRole('textbox', { name: /cuéntalo con tus palabras/i }), {
     target: { value: 'Ordené el reporte semanal que antes tardaba tres horas.' },
   })
-  fireEvent.click(screen.getByRole('checkbox'))
 }
+
+/** Que la pantalla ya cargó: el botón de enviar es lo último que se pinta. */
+const laPantallaEstaLista = () =>
+  screen.findByRole('button', { name: /enviar mi postulación/i })
 
 const enviar = () =>
   fireEvent.click(screen.getByRole('button', { name: /enviar mi postulación/i }))
@@ -144,7 +150,7 @@ afterEach(cleanup)
 describe('cuando la vacante publica lo que paga', () => {
   it('pide la pretensión, y enseña al lado lo que ofrece la empresa', async () => {
     montar()
-    await screen.findByRole('checkbox')
+    await laPantallaEstaLista()
 
     expect(campoPretension()).toBeTruthy()
     // La cifra de la empresa se repite aqui: estaba en la pantalla anterior y ya
@@ -155,7 +161,7 @@ describe('cuando la vacante publica lo que paga', () => {
 
   it('no deja enviar sin la cifra, y lo dice antes de tocar el servidor', async () => {
     montar()
-    await screen.findByRole('checkbox')
+    await laPantallaEstaLista()
     rellenarLoDemas()
 
     enviar()
@@ -166,7 +172,7 @@ describe('cuando la vacante publica lo que paga', () => {
 
   it('rechaza el cero y la cifra absurda sin llamar al servidor', async () => {
     montar()
-    await screen.findByRole('checkbox')
+    await laPantallaEstaLista()
     rellenarLoDemas()
 
     fireEvent.change(campoPretension(), { target: { value: '0' } })
@@ -185,7 +191,7 @@ describe('cuando la vacante publica lo que paga', () => {
     // El bug que traia `Number('3,500')` → 3.5, que pasaba las tres validaciones
     // y dejaba registrado que esta persona pide S/ 3.50. Ver `dominio/dinero`.
     montar()
-    await screen.findByRole('checkbox')
+    await laPantallaEstaLista()
     rellenarLoDemas()
     fireEvent.change(campoPretension(), { target: { value: '3,500' } })
 
@@ -197,7 +203,7 @@ describe('cuando la vacante publica lo que paga', () => {
 
   it('manda el monto y la moneda de la vacante', async () => {
     montar()
-    await screen.findByRole('checkbox')
+    await laPantallaEstaLista()
     rellenarLoDemas()
     fireEvent.change(campoPretension(), { target: { value: '3800' } })
 
@@ -215,7 +221,7 @@ describe('cuando la vacante NO publica lo que paga', () => {
   it('no pide la pretensión, ni siquiera como opcional', async () => {
     vacante = SIN_SUELDO
     montar()
-    await screen.findByRole('checkbox')
+    await laPantallaEstaLista()
 
     expect(screen.queryByLabelText(/tu pretensión mensual/i)).toBeNull()
   })
@@ -223,7 +229,7 @@ describe('cuando la vacante NO publica lo que paga', () => {
   it('deja enviar sin ella, y no manda ningún monto', async () => {
     vacante = SIN_SUELDO
     montar()
-    await screen.findByRole('checkbox')
+    await laPantallaEstaLista()
     rellenarLoDemas()
 
     enviar()
@@ -242,7 +248,7 @@ describe('el prellenado desde el perfil', () => {
     // vez que alguien pulsa enviar sin mirar.
     pretensionDelPerfil = { min: 3000, max: 4000, moneda: 'PEN' }
     montar()
-    await screen.findByRole('checkbox')
+    await laPantallaEstaLista()
 
     await waitFor(() =>
       expect((campoPretension() as HTMLInputElement).value).toBe('3500'),
@@ -251,7 +257,7 @@ describe('el prellenado desde el perfil', () => {
 
   it('sin nada guardado, el campo sale vacío', async () => {
     montar()
-    await screen.findByRole('checkbox')
+    await laPantallaEstaLista()
 
     expect((campoPretension() as HTMLInputElement).value).toBe('')
   })
@@ -259,7 +265,7 @@ describe('el prellenado desde el perfil', () => {
   it('no pisa lo que la persona ya escribió', async () => {
     pretensionDelPerfil = { min: 3000, max: 4000, moneda: 'PEN' }
     montar()
-    await screen.findByRole('checkbox')
+    await laPantallaEstaLista()
     await waitFor(() =>
       expect((campoPretension() as HTMLInputElement).value).toBe('3500'),
     )

@@ -9,10 +9,11 @@ import { borrarCuentasDePrueba, CLAVE_DE_CANDIDATO, correoDePrueba, test } from 
  *
  *   1. El tablón dice de qué empresa es cada vacante.
  *   2. La ficha también, y no como un metadato más.
- *   3. **Postular sin aceptar el tratamiento de datos se para en la pantalla**,
- *      no en el servidor. Es el candado: sin él, el backend responde 400 y el
- *      candidato se entera después de subir su currículum.
- *   4. Aceptando, la postulación entra y sale en «Mis procesos» con su empresa.
+ *   3. **Antes del botón se dice quién va a recibir la candidatura**, con enlace
+ *      al texto que se acepta. Aquí había una casilla obligatoria y se retiró:
+ *      enviar la postulación a una empresa que el candidato eligió, después de
+ *      leer quién la recibe, ya es el acto afirmativo que pide la ley 29733.
+ *   4. La postulación entra y sale en «Mis procesos» con su empresa.
  *
  * ⚠️ **ESCRIBE**: crea una cuenta `e2e.postular.<instante>@example.com` y una
  * postulación. Va sobre la vacante `SIN_PRETENSION`, como el avance de etapa de
@@ -119,7 +120,7 @@ test.describe('Regresión · postular de punta a punta', () => {
     await page.getByLabel('Contraseña', { exact: true }).fill(CLAVE_DE_CANDIDATO)
     await page.getByLabel('Repite la contraseña').fill(CLAVE_DE_CANDIDATO)
     // El registro exige ciudad desde que la pide el alta (ver `02-regresion-portal`).
-    await page.getByLabel('Dónde vives').selectOption('1501') // Lima — Lima
+    await page.getByLabel('Ubicación').selectOption('1501') // Lima — Lima
     // El consentimiento de la plataforma, que es distinto del de la empresa.
     await page.locator('input[type=checkbox]').first().check()
     await page.getByRole('button', { name: /crear/i }).click()
@@ -131,29 +132,33 @@ test.describe('Regresión · postular de punta a punta', () => {
     await expect(page.getByText(vacante.nombreEmpresa).first()).toBeVisible()
   })
 
-  test('sin aceptar el tratamiento, la pantalla lo para, explica por qué, y no llega ni una petición al servidor', async ({
+  test('antes del botón se dice quién recibe la candidatura, con enlace al texto', async ({
     page,
   }) => {
+    // Lo único que la casilla aportaba de verdad era el nombre de quien trata los
+    // datos. Sin ella, esa frase es lo que sostiene que el consentimiento esté
+    // informado, y el enlace tiene que llevar al texto de ESTA vacante, no al
+    // general: una empresa puede publicar el suyo y entonces es el que se firma.
     await entrarAlPortal(page, CORREO, CLAVE_DE_CANDIDATO)
     await page.goto(`/vacantes/${vacante.id}/postular`)
-    await rellenarElFormulario(page)
 
-    const peticiones: string[] = []
-    page.on('request', (r) => {
-      if (r.url().includes('/postulaciones') && r.method() === 'POST') peticiones.push(r.url())
-    })
+    const aviso = page.getByText(/Al enviar,/)
+    await expect(aviso).toBeVisible()
+    await expect(aviso).toContainText(vacante.nombreEmpresa)
 
-    await page.getByRole('button', { name: /enviar mi postulación/i }).click()
-    await expect(page.getByText(/sin este permiso/i)).toBeVisible()
-    await expect(page).toHaveURL(/\/postular$/)
-    expect(peticiones, 'el candado tiene que pararlo antes de salir').toEqual([])
+    const enlace = page.getByRole('link', { name: /política de privacidad/i })
+    await expect(enlace).toHaveAttribute(
+      'href',
+      `/politica-de-privacidad?vacante=${vacante.id}#el-texto-que-aceptas`,
+    )
+    // Y no queda ninguna casilla que marcar en esta pantalla.
+    await expect(page.getByRole('checkbox')).toHaveCount(0)
   })
 
-  test('aceptando, la postulación entra y sale en «Mis procesos» con su empresa', async ({ page }) => {
+  test('la postulación entra y sale en «Mis procesos» con su empresa', async ({ page }) => {
     await entrarAlPortal(page, CORREO, CLAVE_DE_CANDIDATO)
     await page.goto(`/vacantes/${vacante.id}/postular`)
     await rellenarElFormulario(page)
-    await page.getByRole('checkbox').check()
     await page.getByRole('button', { name: /enviar mi postulación/i }).click()
 
     // Si dijo que sí a todos los requisitos no sale el aviso; si saliera, se cierra.

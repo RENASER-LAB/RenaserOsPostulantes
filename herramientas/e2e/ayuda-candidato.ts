@@ -42,7 +42,7 @@ export async function crearCuentaDeCandidato(datos: {
       correo: datos.correo,
       contrasena: datos.contrasena ?? CLAVE_DE_CANDIDATO,
       ciudadUbigeo: '1501', // Lima — Lima
-      aceptaProceso: true,
+      aceptaPlataforma: true,
       aceptaFuturosContactos: false,
     }),
   })
