@@ -6,11 +6,12 @@
  */
 
 import { Link, NavLink, Outlet, matchPath, useLocation } from 'react-router-dom'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { patrones, rutas } from '@/rutas'
 import { useSesion } from './Sesion'
 import { Marca } from '@/ui/Marca'
 import estilos from './Armazon.module.css'
+import { PantallaConEntrada } from '@/ui/movimiento'
 
 /**
  * El titulo de la pestaña, por pantalla.
@@ -38,6 +39,7 @@ const TITULOS: Array<[string, string]> = [
   [patrones.proceso, 'Mi proceso'],
   [patrones.evaluacion, 'Evaluación'],
   [patrones.prueba, 'La prueba del puesto'],
+  [patrones.cuestionarioTecnico, 'La prueba del puesto'],
   [patrones.simulacion, 'Simulación de trabajo'],
   [patrones.validacion, 'Validación práctica'],
   [patrones.decision, 'Decisión'],
@@ -74,15 +76,43 @@ function claseDelEnlace({ isActive }: { isActive: boolean }) {
   return isActive ? `${estilos.enlace} ${estilos.enlaceActivo}` : estilos.enlace
 }
 
+/**
+ * Si la pagina ya se movio de arriba.
+ *
+ * Es lo unico que separa la cabecera en reposo —solo la marca y los enlaces
+ * sobre el cielo— de la cabecera posada, que saca su superficie para que el
+ * contenido no se le mezcle por debajo.
+ *
+ * ⚠️ **Se lee una vez al montar, ademas de escuchar.** Al volver a una pantalla
+ * con el navegador ya desplazado, un oyente que solo reacciona a `scroll` deja
+ * la barra transparente sobre contenido.
+ *
+ * El oyente va en `passive`: no llama a `preventDefault` y sin la marca el
+ * navegador tiene que esperar a saber si lo hara antes de desplazar.
+ */
+function usarPosada() {
+  const [posada, setPosada] = useState(false)
+
+  useEffect(() => {
+    const mirar = () => setPosada(window.scrollY > 4)
+    mirar()
+    window.addEventListener('scroll', mirar, { passive: true })
+    return () => window.removeEventListener('scroll', mirar)
+  }, [])
+
+  return posada
+}
+
 export function Armazon() {
   const { hayCuenta } = useSesion()
+  const posada = usarPosada()
 
   return (
     <div className={estilos.armazon}>
       <ArribaAlCambiarDePagina />
       <TituloDeLaPagina />
 
-      <header className={estilos.cabecera}>
+      <header className={`${estilos.cabecera} ${posada ? estilos.posada : ''}`}>
         <div className={estilos.cabeceraDentro}>
           <Link className={estilos.marca} to={rutas.vacantes()} aria-label="EX, inicio">
             <Marca tamano={22} />
@@ -90,29 +120,56 @@ export function Armazon() {
 
           <nav className={estilos.navegacion}>
             <NavLink className={claseDelEnlace} to={rutas.vacantes()} end>
-              Vacantes
+              Inicio
             </NavLink>
+            {/*
+              «Vacantes» no es una pantalla: es una seccion de la portada, la
+              misma `#vacantes-abiertas` a la que apunta el boton principal de
+              arriba. Por eso va de `Link` y no de `NavLink`: un `NavLink` aqui
+              comparte ruta con «Inicio» y los dos se encenderian a la vez.
+            */}
+            <Link
+              className={`${estilos.enlace} ${estilos.enlaceSeccion}`}
+              to={{ pathname: rutas.vacantes(), hash: '#vacantes-abiertas' }}
+            >
+              Vacantes
+            </Link>
             <NavLink className={claseDelEnlace} to={rutas.procesos()}>
               Mis procesos
             </NavLink>
-            {/*
-              Con cuenta, «Mi cuenta» lleva al perfil y no a privacidad: aquella
-              es la pantalla de retirar consentimientos y pedir el borrado, que
-              es una cosa que se hace una vez, no «mi cuenta». Privacidad se
-              enlaza desde dentro del perfil y desde el pie.
-            */}
-            <NavLink
-              className={claseDelEnlace}
-              to={hayCuenta ? rutas.perfil() : rutas.ingresar()}
-            >
-              {hayCuenta ? 'Mi cuenta' : 'Ingresar'}
-            </NavLink>
           </nav>
+
+          {/*
+            La accion sale del `<nav>` y vive en su propia celda a la derecha.
+            No es navegacion: es lo unico que se pulsa en la barra, y la rejilla
+            de tres columnas necesita que sea un hermano para poder dejar los
+            destinos centrados de verdad.
+
+            Con cuenta, «Mi cuenta» lleva al perfil y no a privacidad: aquella es
+            la pantalla de retirar consentimientos y pedir el borrado, que se hace
+            una vez, no «mi cuenta». Privacidad se enlaza desde dentro del perfil
+            y desde el pie. Y con cuenta no hay accion, solo navegacion: vuelve a
+            ser un enlace de texto como los otros tres.
+          */}
+          <div className={estilos.acciones}>
+            {hayCuenta ? (
+              <NavLink className={claseDelEnlace} to={rutas.perfil()}>
+                Mi cuenta
+              </NavLink>
+            ) : (
+              <Link className={estilos.entrar} to={rutas.ingresar()}>
+                Ingresar
+              </Link>
+            )}
+          </div>
         </div>
       </header>
 
       <main className={estilos.principal}>
-        <Outlet />
+        {/* A · cada pantalla entra desplazandose. Ver `src/ui/movimiento.tsx`. */}
+        <PantallaConEntrada>
+          <Outlet />
+        </PantallaConEntrada>
       </main>
 
       <footer className={estilos.pie}>

@@ -137,21 +137,21 @@
   display: block;
 }
 
+/*
+ * El mensaje de error, debajo del campo y atado a el con `aria-describedby`.
+ *
+ * ⚠️ **Llevaba un filete rojo de 3 px a la izquierda y se fue el 10/09/2026.**
+ * La barra de acento lateral esta prohibida en este mundo, y aqui ademas
+ * sobraba: el campo ya engorda su borde a 2 px y lo pone rojo, que es la senal
+ * de forma, y el mensaje ya va en `--mal` a 5,68:1. Eran tres senales para una
+ * cosa.
+ *
+ * ⚠️ Esta hoja la comparte el panel. El cambio le llega tambien, y es
+ * estrictamente mas correcto alli.
+ */
 .error {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--e2);
   font-size: var(--t-menor);
   color: var(--mal);
-}
-
-.error::before {
-  content: '';
-  flex: none;
-  width: 3px;
-  align-self: stretch;
-  background: var(--mal);
-  border-radius: var(--radio-control);
 }
 
 /* ---------- Consentimientos ---------- */

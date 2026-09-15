@@ -89,7 +89,7 @@ export function Acceso() {
           <span className={estilos.marcaEntrada} aria-hidden="true">
             <Marca tamano={40} />
           </span>
-          <h1>Entrando…</h1>
+          <h1 className={estilos.titular}>Entrando…</h1>
           <p className={estilos.bajada}>Un momento, estamos abriendo tu proceso.</p>
         </div>
       </div>
@@ -102,7 +102,7 @@ export function Acceso() {
         <span className={estilos.marcaEntrada} aria-hidden="true">
           <Marca tamano={40} />
         </span>
-        <h1>No pudimos abrir tu enlace.</h1>
+        <h1 className={estilos.titular}>No pudimos abrir tu enlace.</h1>
         <p className={estilos.bajada}>{error}</p>
 
         <p className={estilos.aparte}>

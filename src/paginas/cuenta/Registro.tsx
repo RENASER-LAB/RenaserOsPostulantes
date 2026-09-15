@@ -178,14 +178,14 @@ export function Registro() {
   }
 
   return (
-    <div className={`${estilos.pagina} ${estilos.paginaAncha}`}>
+    <div className={estilos.paginaAncha}>
       {vacante && (
         <Link className={estilos.volver} to={rutas.vacante(vacante)}>
           ← Volver al puesto
         </Link>
       )}
 
-      <h1>Crea tu cuenta.</h1>
+      <h1 className={estilos.titular}>Crea tu cuenta.</h1>
       <p className={estilos.bajada}>
         {vacante
           ? 'Al terminar seguimos con tu postulación, justo donde la dejaste.'

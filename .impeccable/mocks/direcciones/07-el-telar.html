@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EX · Portal del candidato — dirección «El Telar»</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Alegreya:wght@400;500;700;800&family=Alegreya+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+/*
+  THESIS: Un puesto se teje banda por banda, cada una mas dificil que la
+    anterior, y al pie va la firma y la fecha. La pagina no son bloques
+    apilados sobre un fondo: son bandas tejidas a lo ancho, de arriba abajo.
+  OWN-WORLD: Lino crudo #EDE6D5 con la trama a la vista, y dos unicos hilos
+    tenidos: granza #9E3B2A e indigo #2B4470. Alegreya y Alegreya Sans, de
+    Huerta Tipografica. Ninguna sombra, ningun recuadro flotando: lo que
+    separa una banda de otra es el hilo, no la elevacion.
+  STORY: Quien entra ve cinco bandas que se van cerrando y entiende, sin que
+    se lo digan, que la ultima no la teje el.
+  FIRST VIEWPORT: Orillo con la marca; la banda del titulo con el paño
+    abierto; y la primera banda del recorrido ya empezando debajo.
+  FORM: candidato 3 de la lista propia (la faja y el telar de cintura),
+    subido con la disciplina del dechado bordado que le disputo el sitio;
+    semilla 76fbfbe1, re-roll 3.
+  FINISH: unreviewed and undocumented is unfinished; this build ends with the
+    finish review, the verdict, DESIGN.md, and every shipping raster carrying
+    its provenance.
+*/
+
+:root {
+  --lino: #ede6d5;
+  --lino-hondo: #e2d8c2;
+  --lino-claro: #f5f0e4;
+  --tinta: #221c14;
+  --tinta2: #4a4033;
+  --tinta3: #6b6051;
+  --hilo-granza: #9e3b2a;
+  --hilo-indigo: #2b4470;
+  --hilo-indigo-hondo: #1d3054;
+  --orillo: #b9ad93;
+
+  --e1: 4px; --e2: 8px; --e3: 12px; --e4: 16px;
+  --e5: 24px; --e6: 32px; --e7: 48px; --e8: 72px;
+  --ancho: 1120px;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background-color: var(--lino);
+  background-image:
+    repeating-linear-gradient(0deg, rgba(34,28,20,0.045) 0 1px, transparent 1px 4px),
+    repeating-linear-gradient(90deg, rgba(34,28,20,0.035) 0 1px, transparent 1px 4px);
+  color: var(--tinta);
+  font-family: 'Alegreya Sans', system-ui, sans-serif;
+  font-size: 17px;
+  line-height: 1.55;
+}
+
+::selection { background: var(--hilo-granza); color: var(--lino-claro); }
+:focus-visible { outline: 3px solid var(--hilo-granza); outline-offset: 3px; }
+
+* { scrollbar-color: var(--orillo) var(--lino-hondo); scrollbar-width: thin; }
+::-webkit-scrollbar { width: 12px; }
+::-webkit-scrollbar-track { background: var(--lino-hondo); }
+::-webkit-scrollbar-thumb { background: var(--orillo); border: 3px solid var(--lino-hondo); }
+
+a { color: inherit; text-underline-offset: 4px; text-decoration-color: var(--orillo); }
+a:hover { text-decoration-color: var(--hilo-granza); }
+
+.paño { max-width: var(--ancho); margin-inline: auto; padding-inline: var(--e5); }
+
+.hilado {
+  font-family: 'Alegreya Sans', sans-serif;
+  font-size: 12px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--tinta3);
+}
+
+/* ---------- orillo ---------- */
+
+.orillo-sup {
+  border-bottom: 3px solid var(--hilo-indigo);
+  background-image: repeating-linear-gradient(90deg, var(--hilo-indigo) 0 5px, transparent 5px 11px);
+  background-size: 100% 3px;
+  background-repeat: no-repeat;
+  background-position: bottom;
+}
+.orillo-sup .paño {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: var(--e4); min-height: 60px;
+}
+.marca { display: flex; align-items: center; gap: var(--e3); text-decoration: none; }
+.marca svg { display: block; }
+.orillo-sup nav ul { display: flex; gap: var(--e1); list-style: none; margin: 0; padding: 0; }
+.orillo-sup nav a {
+  display: inline-flex; align-items: center; min-height: 44px; padding-inline: var(--e3);
+  font-size: 16px; color: var(--tinta2); text-decoration: none;
+  border-bottom: 3px solid transparent;
+}
+.orillo-sup nav a:hover { color: var(--tinta); border-bottom-color: var(--orillo); }
+.orillo-sup nav a[aria-current] { color: var(--tinta); font-weight: 700; border-bottom-color: var(--hilo-granza); }
+
+/* ---------- banda del titulo ---------- */
+
+.banda-titulo {
+  padding-block: var(--e8) var(--e7);
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(220px, 0.65fr);
+  gap: var(--e7);
+  align-items: start;
+}
+.muestrario { border: 1px solid var(--orillo); }
+.muestrario .titulo-muestra { padding: var(--e3) var(--e4); border-bottom: 1px solid var(--orillo); }
+.muestra { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: var(--e3); padding: var(--e2) var(--e4); }
+.muestra + .muestra { border-top: 1px solid var(--lino-hondo); }
+.muestra .tira { height: 22px; border: 1px solid var(--orillo); }
+.muestra:nth-child(2) .tira { background-image: repeating-linear-gradient(45deg, var(--hilo-indigo) 0 2px, transparent 2px 14px); }
+.muestra:nth-child(3) .tira { background-image: repeating-linear-gradient(45deg, var(--hilo-indigo) 0 3px, transparent 3px 10px); }
+.muestra:nth-child(4) .tira { background-image: repeating-linear-gradient(45deg, var(--hilo-indigo) 0 4px, transparent 4px 8px), repeating-linear-gradient(-45deg, var(--hilo-granza) 0 1px, transparent 1px 12px); }
+.muestra:nth-child(5) .tira { background-image: repeating-linear-gradient(45deg, var(--hilo-indigo) 0 5px, transparent 5px 7px), repeating-linear-gradient(-45deg, var(--hilo-granza) 0 2px, transparent 2px 8px); }
+.muestra:nth-child(6) .tira { background-image: repeating-linear-gradient(45deg, var(--hilo-granza) 0 6px, transparent 6px 6px), repeating-linear-gradient(-45deg, var(--hilo-indigo) 0 3px, transparent 3px 6px); }
+@media (max-width: 900px) { .banda-titulo { grid-template-columns: 1fr; gap: var(--e6); } }
+h1 {
+  margin: 0;
+  font-family: Alegreya, Georgia, serif;
+  font-size: clamp(38px, 5.6vw, 74px);
+  font-weight: 800;
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+  max-width: 17ch;
+  text-wrap: balance;
+}
+h1 em { font-style: italic; font-weight: 500; color: var(--hilo-granza); }
+.banda-titulo p {
+  margin: var(--e5) 0 0;
+  max-width: 52ch;
+  font-size: 19px;
+  color: var(--tinta2);
+}
+.empezar {
+  display: inline-flex; align-items: center; gap: var(--e3);
+  margin-top: var(--e6);
+  min-height: 54px; padding-inline: var(--e6);
+  background: var(--hilo-indigo);
+  color: var(--lino-claro);
+  font-family: 'Alegreya Sans', sans-serif;
+  font-size: 17px; font-weight: 700; letter-spacing: 0.02em;
+  text-decoration: none;
+  transition: background 160ms;
+}
+.empezar:hover { background: var(--hilo-indigo-hondo); }
+
+/* ---------- las cinco bandas ---------- */
+
+.bandas { list-style: none; margin: 0; padding: 0; border-top: 3px solid var(--hilo-indigo); }
+
+.banda { border-bottom: 1px solid var(--orillo); }
+.banda .paño {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr) minmax(0, 220px);
+  gap: var(--e6);
+  align-items: center;
+  padding-block: var(--e6);
+}
+
+.trama { height: 62px; border: 1px solid var(--orillo); }
+.banda:nth-child(1) .trama { background-image: repeating-linear-gradient(45deg, var(--hilo-indigo) 0 2px, transparent 2px 14px); }
+.banda:nth-child(2) .trama { background-image: repeating-linear-gradient(45deg, var(--hilo-indigo) 0 3px, transparent 3px 10px); }
+.banda:nth-child(3) .trama { background-image: repeating-linear-gradient(45deg, var(--hilo-indigo) 0 4px, transparent 4px 8px), repeating-linear-gradient(-45deg, var(--hilo-granza) 0 1px, transparent 1px 12px); }
+.banda:nth-child(4) .trama { background-image: repeating-linear-gradient(45deg, var(--hilo-indigo) 0 5px, transparent 5px 7px), repeating-linear-gradient(-45deg, var(--hilo-granza) 0 2px, transparent 2px 8px); }
+.banda:nth-child(5) .trama { background-image: repeating-linear-gradient(45deg, var(--hilo-granza) 0 6px, transparent 6px 6px), repeating-linear-gradient(-45deg, var(--hilo-indigo) 0 3px, transparent 3px 6px); }
+
+.banda h2 {
+  margin: 0 0 var(--e2);
+  font-family: Alegreya, Georgia, serif;
+  font-size: clamp(23px, 2.5vw, 30px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.banda h2 .orden { font-family: 'Alegreya Sans', sans-serif; font-size: 14px; font-weight: 700; color: var(--hilo-granza); letter-spacing: 0.1em; margin-right: var(--e3); vertical-align: 4px; }
+.banda p { margin: 0; max-width: 56ch; color: var(--tinta2); }
+.banda .medida { text-align: right; }
+.banda .medida .dato { font-family: Alegreya, Georgia, serif; font-size: 21px; font-weight: 700; letter-spacing: -0.01em; margin-top: 2px; }
+
+/* ---------- la firma al pie ---------- */
+
+.firma-pie { padding-block: var(--e7) var(--e8); }
+.firma-pie .caja {
+  border: 1px solid var(--hilo-indigo);
+  padding: var(--e6);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 300px);
+  gap: var(--e6);
+  align-items: end;
+}
+.firma-pie h2 { margin: 0 0 var(--e3); font-family: Alegreya, Georgia, serif; font-size: 26px; font-weight: 700; letter-spacing: -0.02em; }
+.firma-pie p { margin: 0; max-width: 54ch; color: var(--tinta2); }
+.renglones { display: grid; gap: var(--e4); }
+.renglon { border-bottom: 1px solid var(--tinta); padding-bottom: var(--e1); }
+
+/* ---------- los paños empezados ---------- */
+
+.paños-abiertos { border-top: 3px solid var(--hilo-indigo); padding-block: var(--e6) var(--e8); }
+.paños-abiertos h2 {
+  margin: 0 0 var(--e5);
+  font-family: Alegreya, Georgia, serif;
+  font-size: clamp(24px, 2.6vw, 32px);
+  font-weight: 700; letter-spacing: -0.025em;
+}
+.lista-paños { list-style: none; margin: 0; padding: 0; }
+.paño-item {
+  position: relative;
+  display: grid;
+  grid-template-columns: 10px minmax(0, 2fr) minmax(0, 1fr) auto;
+  gap: var(--e5);
+  align-items: center;
+  padding: var(--e5) var(--e3) var(--e5) 0;
+  border-bottom: 1px solid var(--orillo);
+  transition: background 160ms;
+}
+.paño-item:hover { background: var(--lino-claro); }
+.hilo-marca { align-self: stretch; }
+.paño-item:nth-child(odd) .hilo-marca { background: repeating-linear-gradient(0deg, var(--hilo-indigo) 0 6px, transparent 6px 10px); }
+.paño-item:nth-child(even) .hilo-marca { background: repeating-linear-gradient(0deg, var(--hilo-granza) 0 6px, transparent 6px 10px); }
+.paño-item h3 { margin: 0; font-family: Alegreya, Georgia, serif; font-size: clamp(20px, 2.1vw, 26px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; }
+.paño-item h3 a { text-decoration: none; }
+.paño-item h3 a::after { content: ''; position: absolute; inset: 0; }
+.paño-item .quien { margin-top: 3px; color: var(--tinta2); font-size: 16px; }
+.paño-item .cond { font-size: 16px; line-height: 1.5; color: var(--tinta2); }
+.paño-item .cond b { display: block; color: var(--tinta); font-weight: 700; }
+.tejer {
+  display: inline-flex; align-items: center; min-height: 46px; padding-inline: var(--e5);
+  border: 2px solid var(--hilo-indigo); color: var(--hilo-indigo);
+  font-weight: 700; font-size: 16px; white-space: nowrap;
+  transition: background 160ms, color 160ms;
+}
+.paño-item:hover .tejer { background: var(--hilo-indigo); color: var(--lino-claro); }
+
+/* ---------- orillo inferior ---------- */
+
+.orillo-inf { border-top: 3px solid var(--hilo-indigo); padding-block: var(--e5); background: var(--lino-hondo); }
+.orillo-inf .paño { display: flex; flex-wrap: wrap; gap: var(--e4); justify-content: space-between; font-size: 15px; color: var(--tinta2); }
+.orillo-inf ul { display: flex; flex-wrap: wrap; gap: var(--e5); list-style: none; margin: 0; padding: 0; }
+
+/* ---------- adaptacion ---------- */
+
+@media (max-width: 900px) {
+  .banda .paño { grid-template-columns: 72px minmax(0, 1fr); row-gap: var(--e3); }
+  .banda .medida { grid-column: 2; text-align: left; }
+  .firma-pie .caja { grid-template-columns: 1fr; }
+  .paño-item { grid-template-columns: 10px 1fr; row-gap: var(--e3); }
+  .paño-item .cond, .tejer { grid-column: 2; }
+  .tejer { justify-self: start; }
+}
+@media (max-width: 620px) {
+  :root { --e8: 48px; --e7: 32px; }
+  .banda .paño { grid-template-columns: 1fr; gap: var(--e3); }
+  .banda .medida, .paño-item .cond, .tejer { grid-column: 1; }
+  .trama { height: 34px; }
+  .paño-item { grid-template-columns: 1fr; }
+  .hilo-marca { height: 8px; }
+  .orillo-sup nav a { padding-inline: var(--e2); font-size: 15px; }
+}
+</style>
+</head>
+<body>
+
+<header class="orillo-sup">
+  <div class="paño">
+    <a class="marca" href="#" aria-label="EX, portal del candidato">
+      <svg width="30" height="24" viewBox="0 0 30 24" fill="none" aria-hidden="true">
+        <path d="M1.5 2.5h9M1.5 12h7.5M1.5 21.5h9" stroke="#221c14" stroke-width="2.6" stroke-linecap="square"/>
+        <path d="M15 2.5l13 19M28 2.5l-13 19" stroke="#221c14" stroke-width="2.6" stroke-linecap="square"/>
+        <circle cx="21.5" cy="12" r="2.4" fill="#9e3b2a"/>
+      </svg>
+    </a>
+    <nav aria-label="Principal">
+      <ul>
+        <li><a href="#" aria-current="page">Paños abiertos</a></li>
+        <li><a href="#">Mi tejido</a></li>
+        <li><a href="#">Entrar</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<section class="paño banda-titulo">
+  <div>
+  <h1>Aquí un puesto <em>se teje</em>, banda por banda.</h1>
+  <p>
+    Cinco bandas, cada una más difícil que la anterior. Ninguna se salta y ninguna se
+    deshace: lo que ya tejiste queda. Al pie va tu firma y la fecha, cuando el paño esté
+    terminado.
+  </p>
+  <a class="empezar" href="#abiertos">
+    Ver los paños abiertos
+    <svg width="18" height="12" viewBox="0 0 18 12" fill="none" aria-hidden="true">
+      <path d="M1 6h15M11 1l5 5-5 5" stroke="currentColor" stroke-width="2.2" stroke-linecap="square"/>
+    </svg>
+  </a>
+  </div>
+
+  <div class="muestrario">
+    <div class="titulo-muestra hilado">Las cinco tramas, de menor a mayor</div>
+    <div class="muestra"><span class="tira"></span><span class="hilado">I</span></div>
+    <div class="muestra"><span class="tira"></span><span class="hilado">II</span></div>
+    <div class="muestra"><span class="tira"></span><span class="hilado">III</span></div>
+    <div class="muestra"><span class="tira"></span><span class="hilado">IV</span></div>
+    <div class="muestra"><span class="tira"></span><span class="hilado">V</span></div>
+  </div>
+</section>
+
+<ol class="bandas">
+  <li class="banda">
+    <div class="paño">
+      <div class="trama" aria-hidden="true"></div>
+      <div>
+        <h2><span class="orden">Banda I</span>Perfil</h2>
+        <p>La más sencilla, y la única que puedes deshacer entera: tu currículum y una evaluación escrita sobre cómo trabajas. Se responde en varias sesiones y se puede volver atrás a corregir.</p>
+      </div>
+      <div class="medida"><span class="hilado">Plazo</span><div class="dato">14 días</div></div>
+    </div>
+  </li>
+
+  <li class="banda">
+    <div class="paño">
+      <div class="trama" aria-hidden="true"></div>
+      <div>
+        <h2><span class="orden">Banda II</span>Prueba del puesto</h2>
+        <p>Un encargo real, con el reloj corriendo desde que lo abres. No se detiene al cerrar el navegador, y a mitad puede cambiar algo.</p>
+      </div>
+      <div class="medida"><span class="hilado">Reloj</span><div class="dato">No se detiene</div></div>
+    </div>
+  </li>
+
+  <li class="banda">
+    <div class="paño">
+      <div class="trama" aria-hidden="true"></div>
+      <div>
+        <h2><span class="orden">Banda III</span>Simulación</h2>
+        <p>Dos horas tejiendo con el equipo, en una fecha que eliges tú. Es una sesión de trabajo de verdad, no una entrevista.</p>
+      </div>
+      <div class="medida"><span class="hilado">Sesión</span><div class="dato">2 horas</div></div>
+    </div>
+  </li>
+
+  <li class="banda">
+    <div class="paño">
+      <div class="trama" aria-hidden="true"></div>
+      <div>
+        <h2><span class="orden">Banda IV</span>Validación</h2>
+        <p>Un periodo corto trabajando de verdad, con acuerdo y con un responsable que te acompaña.</p>
+      </div>
+      <div class="medida"><span class="hilado">Periodo</span><div class="dato">Corto</div></div>
+    </div>
+  </li>
+
+  <li class="banda">
+    <div class="paño">
+      <div class="trama" aria-hidden="true"></div>
+      <div>
+        <h2><span class="orden">Banda V</span>Decisión</h2>
+        <p>Esta banda no la tejes tú. La teje quien decide, mirando el paño entero y no el último renglón.</p>
+      </div>
+      <div class="medida"><span class="hilado">Decide</span><div class="dato">Una persona</div></div>
+    </div>
+  </li>
+</ol>
+
+<section class="paño firma-pie">
+  <div class="caja">
+    <div>
+      <h2>Firmado y fechado al terminar</h2>
+      <p>
+        Mientras tanto, ninguna banda se pierde y ninguna se atenúa. Trece de los dieciocho
+        estados del proceso no te piden nada: en esos no estás olvidado, estás esperando, y
+        la pantalla dice a quién le toca mover.
+      </p>
+    </div>
+    <div class="renglones">
+      <div class="renglon"><span class="hilado">Nombre</span></div>
+      <div class="renglon"><span class="hilado">Fecha</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="paño paños-abiertos" id="abiertos">
+  <h2>Cinco paños empezados</h2>
+  <ul class="lista-paños">
+
+    <li class="paño-item">
+      <span class="hilo-marca" aria-hidden="true"></span>
+      <div>
+        <h3><a href="#">Analista de Datos</a></h3>
+        <div class="quien">Clínica San Juan · Que los reportes semanales salgan solos y sean confiables.</div>
+      </div>
+      <div class="cond"><b>Híbrido · Lima</b>L a V, 9 a 18 h · S/ 3 800 – 4 500</div>
+      <span class="tejer">Empezar</span>
+    </li>
+
+    <li class="paño-item">
+      <span class="hilo-marca" aria-hidden="true"></span>
+      <div>
+        <h3><a href="#">Coordinador/a de Operaciones</a></h3>
+        <div class="quien">Transportes del Sur · Proveedores, rutas, caja chica y que lo comprometido se cumpla.</div>
+      </div>
+      <div class="cond"><b>Presencial · Arequipa</b>Lunes a sábado</div>
+      <span class="tejer">Empezar</span>
+    </li>
+
+    <li class="paño-item">
+      <span class="hilo-marca" aria-hidden="true"></span>
+      <div>
+        <h3><a href="#">Especialista en Mejora Continua</a></h3>
+        <div class="quien">Molinos del Norte · Bajar el desperdicio del envasado sin parar la producción.</div>
+      </div>
+      <div class="cond"><b>Presencial · Trujillo</b></div>
+      <span class="tejer">Empezar</span>
+    </li>
+
+    <li class="paño-item">
+      <span class="hilo-marca" aria-hidden="true"></span>
+      <div>
+        <h3><a href="#">Analista de Planeamiento</a></h3>
+        <div class="quien">Andes Retail · Que la reposición de tiendas deje de decidirse por corazonada.</div>
+      </div>
+      <div class="cond"><b>Remoto · Lima</b>Horario flexible</div>
+      <span class="tejer">Empezar</span>
+    </li>
+
+    <li class="paño-item">
+      <span class="hilo-marca" aria-hidden="true"></span>
+      <div>
+        <h3><a href="#">Jefe/a de Servicio al Cliente</a></h3>
+        <div class="quien">Clínica San Juan · Que una queja se resuelva en el primer contacto y quede aprendida.</div>
+      </div>
+      <div class="cond"><b>Presencial · Lima</b>Turnos rotativos</div>
+      <span class="tejer">Empezar</span>
+    </li>
+
+  </ul>
+</section>
+
+<footer class="orillo-inf">
+  <div class="paño">
+    <span>© 2026 Renaser Consulting · Para mirar no hace falta cuenta</span>
+    <ul>
+      <li><a href="#">Política de privacidad</a></li>
+      <li><a href="#">Privacidad y control</a></li>
+      <li><a href="#">Panel de empresas</a></li>
+    </ul>
+  </div>
+</footer>
+
+</body>
+</html>

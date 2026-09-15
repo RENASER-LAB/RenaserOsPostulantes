@@ -81,7 +81,7 @@ export function Simulacion() {
         </Link>
 
         <div className={estilos.encabezado}>
-          <h1>Tu fecha está reservada.</h1>
+          <h1 className={estilos.titular}>Tu fecha está reservada.</h1>
           <p className={estilos.bajada}>
             La simulación de trabajo es la cuarta etapa de tu proceso.
           </p>
@@ -158,7 +158,7 @@ export function Simulacion() {
       </Link>
 
       <div className={estilos.encabezado}>
-        <h1>Elige tu fecha.</h1>
+        <h1 className={estilos.titular}>Elige tu fecha.</h1>
         <p className={estilos.bajada}>
           La simulación de trabajo es una sesión grupal, y trabajarás en tu propia pantalla
           dentro del sistema.

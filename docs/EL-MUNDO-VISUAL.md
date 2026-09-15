@@ -30,46 +30,81 @@ nombre **EX** y su logotipo: la palabra con la hormiga dentro de la X.
 **Solo tema claro.** Es petición del cliente. Desaparecen el bloque `html[data-theme="dark"]`
 y el proveedor de tema; el `index.html` deja de abrir en oscuro.
 
-**Fondo blanco puro y acento índigo `#4338CA`**, en lugar del champagne `#816220`. La razón
-no es estética: verde, ámbar y rojo ya tienen significado fijo en el sistema —aprobado, en
-duda, error— así que el acento no podía ser ninguno de esos, ni un verde azulado, que junto a
-una etiqueta verde real se lee como «aprobado». Al cliente le gusta la estética de Apple pero
-pidió que no fuera su azul.
+~~**Fondo blanco puro y acento índigo `#4338CA`**~~ — decidido el 23/08/2026 y **sustituido
+el 10/09/2026** por el fondo gris `#F5F5F5` con la acción en negro, que el 11/09 acabó en
+blanco puro. Lo que sigue vigente de
+aquella decisión es el porqué: verde, ámbar y rojo ya tienen significado fijo en el sistema
+—aprobado, en duda, error—, así que ni el acento ni la acción podían ser ninguno de esos.
 
-**El acento significa una sola cosa: «te toca a ti».** Marca el panel de la acción pendiente
-y el tramo del recorrido donde está el candidato. Si empieza a aparecer en botones sueltos,
-titulares o iconos, deja de leerse.
+**El color significa una sola cosa: «te toca a ti».** Marca el panel de la acción pendiente y
+el tramo del recorrido donde está el candidato. Si empieza a aparecer en botones sueltos,
+titulares o iconos, deja de leerse — y por eso la acción va en negro y no en color.
 
-### El mundo visual: «El seguimiento»
+### El mundo visual: «El escaparate» (desde el 10/09/2026)
 
-Tu postulación como algo que va en camino: hitos cumplidos y un siguiente hito siempre
-nombrado. **La acción vive dentro del hito abierto**, no en un botón suelto al pie, para que
-«dónde estoy» y «qué hago» sean la misma mirada.
+⚠️ **Este documento tuvo dos mundos anteriores.** Primero «El seguimiento» —hitos impresos,
+cero radios, Libre Franklin—, después «El canto» —nube difractando luz, espectro, violeta
+`#5638d6`, Mulish—. Los dos se fueron. Si encuentras alguno nombrado en `docs/`, está viejo.
 
-Lo que lo separa de un rastreo de paquete cualquiera: **lo cumplido no se apaga**. Una etapa
-cerrada se sigue leyendo con el mismo peso, porque el producto trata de acumular evidencia.
+Un cuarto de luz cálida con una sola pieza iluminada. El fondo es un pastel anaranjado y las
+superficies de encima son nube blanca, así que se leen como objetos puestos sobre una mesa. En
+medio hay una vitrina —tarjeta de borde grueso y sombra— y dentro está el producto: el
+recorrido del candidato y lo que le toca ahora.
 
-Cuatro reglas de forma que vienen de ahí y no se negocian por comodidad:
+⚠️ **El fondo pasó por tres valores en una semana**: gris `#F5F5F5` hasta el 11/09/2026,
+blanco puro ese mismo día, y `#FBF1E9` desde el 15/09. La separación entre página y superficie
+es de **1,113:1**, un punto mejor que la del gris con el que empezó.
 
-- **El estado se lee en la forma antes que en el color** —relleno, contorno grueso, contorno
-  fino, tachado—. Quien no distingue colores lee el mismo recorrido.
-- **Cero radios** y las reglas a un píxel. Los estados son marcas impresas, no cromo.
+Las reglas de forma que vienen de ahí:
+
+- **La acción es negra** (`#0A0A0A`), no de color. Un botón de color compite con lo único que
+  tiene permiso para llamar la atención, que es el turno del candidato.
+- **El color aparece una vez por pantalla**: el coral `#FF7C61` y su bruma rosa, y significan
+  «te toca a ti». Dos ya es ninguno.
+- **El estado se lee en la forma antes que en el color.** Quien no distingue colores lee el
+  mismo recorrido.
+- **Esquina corta**: los controles llevan 4 px. ⚠️ **Ya no son píldoras**; `--radio-control`
+  valía `999px` y ahora vale `4px`.
 - **La tipografía hace la jerarquía.** Ningún recuadro ni sombra crea un nivel que el tamaño
   ya crea.
-- **Un solo momento con movimiento**: la marca que se asienta al cerrarse una etapa.
+- **El movimiento sirve a la continuidad y al cambio de estado**, nunca a la decoración, y
+  respeta `prefers-reduced-motion`. ⚠️ Con el reloj corriendo —evaluación, prueba,
+  cuestionario— **no se mueve nada**, y eso lo aplica el armazón: la única pieza que una
+  pantalla no puede rechazar es la que le pone su contenedor.
 
-Tipografía **Libre Franklin**, servida desde Google Fonts. No usar Inter, Roboto, Geist,
-Instrument Sans ni Space Grotesk: el detector de `impeccable` las marca como sobreexpuestas.
+Tipografía **Figtree**, variable y **servida por el propio sitio** desde
+`public/tipografia/` — una app instalada no puede quedarse sin titulares por falta de
+cobertura. Rango 400–700: **el peso 200 ya no existe** y los titulares van en 600. No usar
+Inter, Roboto, Geist, Instrument Sans ni Space Grotesk: el detector de `impeccable` las marca
+como sobreexpuestas.
 
-El brief completo está en [04-BRIEF-MIS-PROCESOS.md](04-BRIEF-MIS-PROCESOS.md), y
-los tokens con su porqué en [src/estilos/mundo.css](../src/estilos/mundo.css).
+El sistema entero, con sus reglas nombradas y sus componentes, está en
+[DESIGN.md](../DESIGN.md); los tokens con su porqué en
+[src/estilos/mundo.css](../src/estilos/mundo.css), que es la verdad cuando algo no cuadre.
+
+**Va migrada la portada, y desde el 10/09/2026 también el suelo que comparten las
+diecisiete**: la especificación única de botón, los tres paneles, el velo de los modales y la
+cabecera. En el código del candidato **ya no queda ningún color del mundo anterior escrito a
+mano** —la pizarra `#232b36` y el violeta `#5638d6` desaparecieron de las trece hojas que los
+tenían—.
+
+**«El canto» ya no se ve en ninguna parte.** `src/ui/Canto.tsx` se borró el 10/09/2026, el
+recorrido de «Mis procesos» dice el estado con la forma de cada franja —grosor y relleno— en
+vez de con el espectro irisado, y la galería de portadas de «Mi perfil» se repintó con neutros.
+Los tokens `--canto-*` siguen declarados porque son los códigos que el backend tiene guardados
+en cada perfil; sus valores ya no se usan.
+
+**La migración está completa: las diecisiete pantallas del candidato están compuestas.** Lo que
+queda son decisiones de producto anotadas en [PENDIENTES](PENDIENTES.md), no trabajo de
+diseño.
 
 ### Dónde está el código nuevo
 
 | Pieza | Estado |
 |---|---|
 | `src/estilos/mundo.css` | **La única hoja global que queda.** Todo lo demás son CSS Modules, uno por pantalla |
-| `src/estilos/piezas.module.css` | Lo que se repite: los cuatro botones y el enlace de volver. **No se escribe en el JSX**, se trae con `composes` desde la hoja de cada pantalla |
+| `src/estilos/piezas.module.css` | **La única especificación de botón del portal**, más los tres paneles (`.turno`, `.panelDeEspera`, `.indispensable`), la cabecera de sección y el plegable. **No se escribe en el JSX**, se trae con `composes` desde la hoja de cada pantalla. Si hace falta una forma que no está ahí, se añade ahí — ninguna pantalla se dibuja la suya |
+| `src/estilos/pagina.module.css` | **El esqueleto de una pantalla**: el carril, el encabezado, el reparto en columnas, el bloque y el hueco declarado. Se separa de `piezas.module.css` porque son dos preguntas: una pantalla puede componerse entera sin usar ni un botón |
 | `src/paginas/vacantes/` | La portada y la ficha de vacante. **Públicas**, se ven sin cuenta |
 | `src/paginas/cuenta/` | Entrar —un solo formulario desde el 28/08— y crear cuenta. Comparten `Cuenta.module.css` |
 | `src/paginas/postular/` | Postular. **Aquí vive el único descarte automático del sistema** |

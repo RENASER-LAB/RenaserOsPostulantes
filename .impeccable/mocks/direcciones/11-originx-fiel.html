@@ -1,0 +1,768 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EX · Portal del candidato — dirección «OriginX» (fiel)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/*
+  THESIS: El mundo de OriginX (TailGrids) ejecutado a su detalle real, no a
+    ojo: cajas de esquina viva con sus cuatro marcas de 5px, borde blanco
+    sobre degradado de blanco a blanco-20%, antetitulo coral en versalitas y
+    titular de seccion a 48/600 con tracking -1.44px. Direccion fijada por el
+    cliente. Version 11: la 10 tenia las tarjetas redondeadas y sin marcas.
+  OWN-WORLD: Fondo #F5F5F5, secciones alternas #F4F4F4, cajas con borde
+    blanco de 1px y relleno degradado; marcas de esquina #CBCBCB de 5px (7px
+    en la caja grande). Figtree: h1 60/600/-0.03em, h2 de seccion 48/600/
+    -1.44px, h2 de fila 30/700, h3 de tarjeta 24/600 #404040, cuerpo 16 #6b6b6b.
+    Boton negro #0A0A0A radio 4px 12/20. Coral #FF7C61 solo en antetitulos y
+    resplandores; la accion siempre negra, como en la referencia.
+  STORY: Quien entra reconoce una portada de producto moderno, entiende el
+    proceso, y baja a las vacantes reales sin que se le prometa nada falso.
+  FIRST VIEWPORT: Barra pegajosa con menu centrado y boton con resplandor
+    rosa; titular centrado con la pieza coral; dos botones; y la tarjeta de
+    borde blanco de 12px con el panel del proceso dentro.
+  FORM: direccion fijada por el usuario (originx.demos.tailgrids.com), fuera
+    del reparto; semilla 76fbfbe1.
+  FINISH: unreviewed and undocumented is unfinished; this build ends with the
+    finish review, the verdict, DESIGN.md, and every shipping raster carrying
+    its provenance.
+*/
+
+:root {
+  --fondo: #f5f5f5;
+  --fondo-alt: #f4f4f4;
+  --blanco: #ffffff;
+  --negro: #0a0a0a;
+  --negro-hover: #404040;
+  --titulo: #333333;
+  --tarjeta-titulo: #404040;
+  --prosa: #5b5b5b;
+  --apoyo: #6b6b6b;
+  --tick: #cbcbcb;
+  --linea: #e5e5e5;
+  --coral: #ff7c61;
+  --rosa-bruma: rgba(255, 136, 150, 0.2);
+
+  --r: 4px;
+  --ancho: 1280px;
+  --sombra: 0 1px 2px rgba(10,10,10,0.05), 0 8px 24px rgba(10,10,10,0.06);
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  background: var(--fondo);
+  color: var(--titulo);
+  font-family: Figtree, system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+::selection { background: var(--coral); color: #fff; }
+:focus-visible { outline: 2px solid var(--negro); outline-offset: 3px; }
+
+* { scrollbar-color: var(--tick) var(--fondo-alt); scrollbar-width: thin; }
+::-webkit-scrollbar { width: 12px; }
+::-webkit-scrollbar-track { background: var(--fondo-alt); }
+::-webkit-scrollbar-thumb { background: var(--tick); border: 3px solid var(--fondo-alt); }
+
+a { color: inherit; text-underline-offset: 3px; }
+
+.marco { max-width: var(--ancho); margin-inline: auto; padding-inline: 24px; }
+section { padding-block: 40px; }
+@media (min-width: 1024px) { section { padding-block: 80px; } }
+
+p { margin: 0; color: var(--prosa); }
+
+/* la firma del mundo: caja de esquina viva con sus cuatro marcas */
+.caja {
+  position: relative;
+  border: 1px solid var(--blanco);
+  background: linear-gradient(to bottom, #ffffff 0%, rgba(255,255,255,0.2) 100%);
+  padding: 28px;
+}
+.caja::after {
+  content: '';
+  position: absolute; inset: -1px;
+  pointer-events: none;
+  background:
+    linear-gradient(var(--tick), var(--tick)) left    top    / 5px 5px no-repeat,
+    linear-gradient(var(--tick), var(--tick)) right   top    / 5px 5px no-repeat,
+    linear-gradient(var(--tick), var(--tick)) left    bottom / 5px 5px no-repeat,
+    linear-gradient(var(--tick), var(--tick)) right   bottom / 5px 5px no-repeat;
+}
+.caja--grande::after {
+  inset: -3px;
+  background:
+    linear-gradient(var(--tick), var(--tick)) left    top    / 7px 7px no-repeat,
+    linear-gradient(var(--tick), var(--tick)) right   top    / 7px 7px no-repeat,
+    linear-gradient(var(--tick), var(--tick)) left    bottom / 7px 7px no-repeat,
+    linear-gradient(var(--tick), var(--tick)) right   bottom / 7px 7px no-repeat;
+}
+
+/* cabeceras de seccion */
+.antetitulo {
+  display: block;
+  font-size: 14px; font-weight: 500;
+  text-transform: uppercase;
+  color: var(--coral);
+  margin-bottom: 16px;
+}
+.cabecera-seccion { max-width: 576px; margin: 0 auto 64px; text-align: center; }
+.cabecera-seccion h2 {
+  margin: 0;
+  font-size: clamp(30px, 3.6vw, 48px);
+  font-weight: 600;
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+  color: var(--titulo);
+  text-wrap: balance;
+}
+.cabecera-seccion p { margin-top: 16px; font-size: 16px; color: var(--apoyo); }
+
+/* ---------- botones ---------- */
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 44px; padding: 12px 20px;
+  border-radius: var(--r);
+  font-size: 14px; font-weight: 500;
+  text-decoration: none;
+  transition: background 300ms ease, box-shadow 300ms ease;
+}
+.btn-negro { background: var(--negro); color: #fff; }
+.btn-negro:hover { background: var(--negro-hover); }
+.btn-blanco { background: var(--blanco); color: var(--negro); box-shadow: var(--sombra); }
+.btn-blanco:hover { box-shadow: 0 2px 4px rgba(10,10,10,0.08), 0 10px 28px rgba(10,10,10,0.11); }
+.btn-glow { box-shadow: 0 0 0 4px var(--rosa-bruma); }
+.btn-glow:hover { box-shadow: 0 0 0 6px var(--rosa-bruma); }
+
+/* ---------- barra ---------- */
+
+.barra { position: sticky; top: 0; z-index: 30; background: rgba(245,245,245,0.85); backdrop-filter: blur(14px); }
+.barra .marco { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 16px; min-height: 72px; }
+.logo { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; font-size: 18px; font-weight: 700; letter-spacing: -0.02em; color: var(--negro); }
+.logo svg { display: block; }
+.menu { display: flex; justify-content: center; gap: 4px; list-style: none; margin: 0; padding: 0; }
+.menu a {
+  display: inline-flex; align-items: center; min-height: 40px; padding-inline: 12px;
+  font-size: 14px; font-weight: 500; color: var(--prosa); text-decoration: none;
+  transition: color 200ms;
+}
+.menu a:hover { color: var(--negro); }
+.menu a[aria-current] { color: var(--negro); font-weight: 600; box-shadow: inset 0 -2px 0 var(--coral); }
+.barra-fin { display: flex; justify-content: flex-end; }
+
+/* ---------- portada ---------- */
+
+.portada { padding-top: 64px; padding-bottom: 0; }
+h1 {
+  margin: 0 auto;
+  max-width: 15ch;
+  font-size: clamp(36px, 5.2vw, 60px);
+  font-weight: 600;
+  line-height: 1.13;
+  letter-spacing: -0.03em;
+  text-align: center;
+  color: var(--titulo);
+  text-wrap: balance;
+}
+.pieza {
+  display: inline-block;
+  width: 0.72em; height: 0.72em;
+  vertical-align: -0.06em;
+  margin-inline: 0.08em;
+  border-radius: 26%;
+  background: radial-gradient(120% 120% at 30% 25%, #ffd0c4 0%, #ff8f7a 38%, #ff5d6e 72%, #e8447f 100%);
+  box-shadow: 0 6px 18px rgba(255, 93, 110, 0.35);
+}
+.portada .bajada { max-width: 44ch; margin: 20px auto 0; text-align: center; color: var(--apoyo); }
+.acciones { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 32px; }
+
+/* la tarjeta grande del heroe */
+.escaparate {
+  margin: 56px auto 0;
+  max-width: 1066px;
+  background: var(--blanco);
+  border: 12px solid rgba(255,255,255,0.4);
+  background-clip: padding-box;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: var(--sombra);
+}
+.escaparate-interior {
+  position: relative;
+  padding: 72px 40px;
+  background: var(--blanco);
+  overflow: hidden;
+}
+.escaparate-interior::before {
+  content: '';
+  position: absolute; left: 50%; bottom: -52%;
+  width: 76%; height: 104%;
+  transform: translateX(-50%);
+  background:
+    radial-gradient(46% 44% at 50% 46%, rgba(255,93,110,0.5) 0%, rgba(255,124,97,0.3) 46%, rgba(255,136,150,0) 74%),
+    radial-gradient(72% 62% at 50% 62%, rgba(255,196,180,0.5) 0%, rgba(255,196,180,0) 78%);
+  filter: blur(10px);
+  pointer-events: none;
+}
+
+/* el panel del producto que va dentro */
+.panel { position: relative; max-width: 720px; margin-inline: auto; }
+.panel-barra {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  border: 1px solid var(--linea); border-bottom: 0;
+  padding: 12px 16px;
+  font-size: 13px; color: var(--apoyo);
+}
+.panel-barra b { color: var(--titulo); font-weight: 600; }
+.panel-cuerpo { border: 1px solid var(--linea); background: var(--blanco); padding: 24px 20px; }
+.panel-titulo { font-size: 20px; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 18px; }
+.tramos-panel { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.tramo-p .barra-t { height: 6px; border-radius: 999px; background: var(--linea); margin-bottom: 10px; }
+.tramo-p:nth-child(1) .barra-t { background: var(--negro); }
+.tramo-p .et { font-size: 11px; font-weight: 600; color: var(--apoyo); text-transform: uppercase; letter-spacing: 0.05em; }
+.tramo-p .nm { font-size: 14px; font-weight: 600; margin-top: 2px; }
+.panel-aviso {
+  margin-top: 20px; border-top: 1px solid var(--linea); padding-top: 16px;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;
+  font-size: 13.5px; color: var(--apoyo);
+}
+.panel-aviso .chip { background: var(--rosa-bruma); color: var(--negro); font-weight: 600; font-size: 12.5px; padding: 4px 10px; border-radius: 999px; }
+
+/* ---------- banda de cinco cajas ---------- */
+
+.banda-cajas { padding-block: 40px; }
+.banda-cabeza { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+.banda-cabeza .rot { flex: none; font-size: 14px; color: var(--apoyo); }
+.banda-cabeza .hilo { flex: 1; height: 1px; background: var(--linea); }
+.banda-cabeza .fin { flex: none; display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--apoyo); }
+.cinco { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; }
+.cinco .caja { min-height: 104px; padding: 20px 16px; display: flex; flex-direction: column; justify-content: center; text-align: center; }
+.cinco .n { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--apoyo); }
+.cinco .t { font-size: 17px; font-weight: 600; letter-spacing: -0.015em; margin-top: 4px; color: var(--tarjeta-titulo); }
+.cinco .d { font-size: 12.5px; color: var(--apoyo); margin-top: 4px; line-height: 1.4; }
+
+/* ---------- filas alternas ---------- */
+
+.fila {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 80px;
+  margin-bottom: 80px;
+}
+.fila:last-child { margin-bottom: 0; }
+.fila--invertida { flex-direction: row-reverse; }
+.fila > * { flex: 1 1 380px; min-width: 0; }
+.fila h2 { margin: 0 0 16px; font-size: 30px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.2; color: var(--titulo); }
+.fila .intro { margin-bottom: 32px; max-width: 52ch; color: var(--apoyo); }
+.lista-check { list-style: none; margin: 40px 0 0; padding: 0; display: grid; gap: 8px; }
+.lista-check li { display: flex; align-items: flex-start; gap: 10px; font-size: 15.5px; color: var(--prosa); }
+.lista-check svg { flex: none; margin-top: 4px; color: var(--negro); }
+.fichas { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 40px; }
+.ficha {
+  border: 1px solid var(--linea); background: var(--blanco);
+  border-radius: 999px; padding: 6px 14px;
+  font-size: 13.5px; color: var(--prosa);
+}
+.ilustra { position: relative; }
+.ilustra .caja { padding: 24px; }
+.estado-fila { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--linea); font-size: 14.5px; }
+.estado-fila:last-child { border-bottom: 0; }
+.estado-fila .quien { color: var(--apoyo); font-size: 13px; }
+.punto { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; color: var(--tarjeta-titulo); }
+.punto i { width: 8px; height: 8px; border-radius: 50%; background: var(--linea); display: inline-block; }
+.punto.tuyo i { background: var(--negro); }
+
+/* ---------- rejilla de seis ---------- */
+
+.seis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.seis .caja { display: flex; flex-direction: column; }
+.icono { width: 48px; height: 48px; margin-bottom: 40px; display: grid; place-items: center; border: 1px solid var(--linea); background: var(--blanco); color: var(--negro); }
+.seis h3 { margin: 0 0 8px; font-size: 24px; font-weight: 600; letter-spacing: -0.02em; color: var(--tarjeta-titulo); }
+.seis p { font-size: 16px; color: var(--apoyo); }
+
+/* ---------- reglas (carrusel de la referencia, sin inventar testimonios) ---------- */
+
+.reglas-lista { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.regla-caja h3 { margin: 0 0 10px; font-size: 20px; font-weight: 600; letter-spacing: -0.02em; color: var(--tarjeta-titulo); }
+.regla-caja p { font-size: 15px; color: var(--apoyo); }
+.regla-caja .sello { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--coral); margin-bottom: 14px; display: block; }
+.contador { display: flex; align-items: center; gap: 24px; margin-top: 32px; }
+.contador .num { font-size: 20px; font-weight: 500; color: var(--apoyo); flex: none; }
+.contador .hilo { flex: 1; height: 1px; background: var(--linea); position: relative; }
+.contador .hilo::after { content: ''; position: absolute; left: 0; top: 0; height: 1px; width: 33%; background: var(--negro); }
+
+/* ---------- preguntas ---------- */
+
+.preguntas { max-width: 800px; margin: 0 auto; }
+.pregunta { border-bottom: 1px solid var(--linea); }
+.pregunta summary {
+  list-style: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 22px 0;
+  font-size: 18px; font-weight: 600; letter-spacing: -0.015em; color: var(--titulo);
+}
+.pregunta summary::-webkit-details-marker { display: none; }
+.pregunta .mas { flex: none; width: 24px; height: 24px; display: grid; place-items: center; color: var(--apoyo); transition: transform 300ms ease; }
+.pregunta[open] .mas { transform: rotate(45deg); }
+.pregunta p { padding-bottom: 22px; max-width: 68ch; font-size: 15.5px; color: var(--apoyo); }
+
+/* ---------- vacantes ---------- */
+
+.vacantes { background: var(--fondo-alt); }
+.rejilla-vacantes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.vacante { display: flex; flex-direction: column; }
+.vacante .etiqueta {
+  align-self: flex-start;
+  font-size: 12px; font-weight: 600;
+  color: var(--negro); background: var(--rosa-bruma);
+  padding: 4px 10px; margin-bottom: 20px;
+}
+.vacante h3 { margin: 0 0 4px; font-size: 22px; font-weight: 600; letter-spacing: -0.02em; color: var(--tarjeta-titulo); }
+.vacante h3 a { text-decoration: none; }
+.vacante h3 a::after { content: ''; position: absolute; inset: 0; z-index: 2; }
+.vacante .empresa { font-size: 14px; color: var(--apoyo); }
+.vacante .encargo { margin-top: 16px; font-size: 15px; color: var(--apoyo); }
+.vacante .pie-v {
+  margin-top: auto; padding-top: 20px;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px;
+  font-size: 13.5px; color: var(--apoyo);
+}
+.vacante .pie-v .sueldo { font-weight: 600; color: var(--titulo); }
+.vacante:hover { background: linear-gradient(to bottom, #ffffff 0%, rgba(255,255,255,0.55) 100%); }
+
+/* ---------- llamada final ---------- */
+
+.final .caja { padding: 32px 24px; text-align: center; background: var(--blanco); }
+@media (min-width: 768px) { .final .caja { padding: 64px; } }
+.final h2 { margin: 0; font-size: clamp(28px, 3.4vw, 44px); font-weight: 600; letter-spacing: -0.03em; line-height: 1.1; color: var(--titulo); position: relative; }
+.final p { position: relative; margin: 16px auto 0; max-width: 46ch; color: var(--apoyo); }
+.final .acciones { position: relative; margin-top: 28px; }
+.final .halo {
+  position: absolute; left: 50%; top: -30%;
+  width: 62%; height: 90%;
+  transform: translateX(-50%);
+  background: radial-gradient(50% 50% at 50% 50%, rgba(255,124,97,0.26) 0%, rgba(255,136,150,0) 72%);
+  pointer-events: none;
+}
+
+/* ---------- pie ---------- */
+
+.pie { border-top: 1px solid var(--linea); padding-block: 56px 24px; }
+.pie-alto { display: flex; flex-wrap: wrap; gap: 40px; justify-content: space-between; margin-bottom: 56px; }
+.pie-marca { max-width: 370px; }
+.pie-marca p { margin-top: 16px; font-size: 15px; color: var(--apoyo); }
+.pie-cols { display: grid; grid-template-columns: repeat(3, minmax(140px, 1fr)); gap: 32px; }
+.pie-cols h4 { margin: 0 0 14px; font-size: 14px; font-weight: 600; color: var(--titulo); }
+.pie-cols ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.pie-cols a { font-size: 14.5px; color: var(--apoyo); text-decoration: none; }
+.pie-cols a:hover { color: var(--negro); text-decoration: underline; }
+.pie-bajo {
+  display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between;
+  border-top: 1px solid var(--linea); padding-top: 24px;
+  font-size: 14px; color: var(--apoyo);
+}
+.pie-bajo .legales { display: flex; align-items: center; gap: 10px; color: var(--prosa); }
+.pie-bajo a { text-decoration: none; }
+.pie-bajo a:hover { text-decoration: underline; }
+
+/* ---------- adaptacion ---------- */
+
+@media (max-width: 1000px) {
+  .cinco { grid-template-columns: repeat(3, 1fr); }
+  .seis, .reglas-lista, .rejilla-vacantes { grid-template-columns: repeat(2, 1fr); }
+  .tramos-panel { grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .fila { gap: 40px; margin-bottom: 56px; }
+  .barra nav { display: none; }
+  .barra .marco { grid-template-columns: 1fr auto; }
+}
+@media (max-width: 640px) {
+  .cinco { grid-template-columns: repeat(2, 1fr); }
+  .seis, .reglas-lista, .rejilla-vacantes { grid-template-columns: 1fr; }
+  .tramos-panel { grid-template-columns: 1fr 1fr; }
+  .escaparate { border-width: 8px; }
+  .escaparate-interior { padding: 40px 20px; }
+  .portada { padding-top: 36px; }
+  .cabecera-seccion { margin-bottom: 40px; }
+  .pie-cols { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+
+<header class="barra">
+  <div class="marco">
+    <a class="logo" href="#">
+      <svg width="26" height="26" viewBox="0 0 26 26" fill="none" aria-hidden="true">
+        <circle cx="13" cy="13" r="12" fill="#0a0a0a"/>
+        <path d="M6.5 8.5h5M6.5 13h4M6.5 17.5h5" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/>
+        <path d="M15 8.5l5 9M20 8.5l-5 9" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/>
+      </svg>
+      EX
+    </a>
+    <nav aria-label="Principal">
+      <ul class="menu">
+        <li><a href="#vacantes" aria-current="page">Vacantes</a></li>
+        <li><a href="#proceso">El proceso</a></li>
+        <li><a href="#reglas">Cómo funciona</a></li>
+        <li><a href="#preguntas">Preguntas</a></li>
+      </ul>
+    </nav>
+    <div class="barra-fin">
+      <a class="btn btn-negro btn-glow" href="#vacantes">Ver vacantes</a>
+    </div>
+  </div>
+</header>
+
+<section class="portada">
+  <div class="marco">
+    <h1>Tu próximo trabajo <span class="pieza" aria-hidden="true"></span> puede empezar aquí</h1>
+    <p class="bajada">
+      Aquí no se decide por el currículum: se mira cómo trabajas. Cinco etapas, unas
+      semanas, y en todo momento sabes en qué punto estás.
+    </p>
+    <div class="acciones">
+      <a class="btn btn-negro" href="#vacantes">Ver las vacantes abiertas</a>
+      <a class="btn btn-blanco" href="#">Ya postulé antes</a>
+    </div>
+
+    <div class="escaparate">
+      <div class="escaparate-interior">
+        <div class="panel">
+          <div class="panel-barra">
+            <span><b>Mis procesos</b> · Analista de Datos</span>
+            <span>Clínica San Juan</span>
+          </div>
+          <div class="panel-cuerpo">
+            <div class="panel-titulo">Tienes 1 cosa pendiente.</div>
+            <div class="tramos-panel">
+              <div class="tramo-p"><div class="barra-t"></div><div class="et">Etapa 1</div><div class="nm">Perfil</div></div>
+              <div class="tramo-p"><div class="barra-t"></div><div class="et">Etapa 2</div><div class="nm">Prueba</div></div>
+              <div class="tramo-p"><div class="barra-t"></div><div class="et">Etapa 3</div><div class="nm">Simulación</div></div>
+              <div class="tramo-p"><div class="barra-t"></div><div class="et">Etapa 4</div><div class="nm">Validación</div></div>
+              <div class="tramo-p"><div class="barra-t"></div><div class="et">Etapa 5</div><div class="nm">Decisión</div></div>
+            </div>
+            <div class="panel-aviso">
+              <span class="chip">Te toca a ti</span>
+              <span>Prueba del puesto habilitada · el cronómetro empieza cuando confirmes</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="marco banda-cajas">
+  <div class="banda-cabeza">
+    <span class="rot">El recorrido, completo desde el primer día</span>
+    <span class="hilo"></span>
+    <span class="fin">Cinco etapas · unas semanas</span>
+  </div>
+  <div class="cinco">
+    <div class="caja"><span class="n">Etapa 1</span><span class="t">Perfil</span><span class="d">CV y evaluación escrita · 14 días</span></div>
+    <div class="caja"><span class="n">Etapa 2</span><span class="t">Prueba</span><span class="d">Un encargo real, con reloj</span></div>
+    <div class="caja"><span class="n">Etapa 3</span><span class="t">Simulación</span><span class="d">Dos horas con el equipo</span></div>
+    <div class="caja"><span class="n">Etapa 4</span><span class="t">Validación</span><span class="d">Periodo corto trabajando</span></div>
+    <div class="caja"><span class="n">Etapa 5</span><span class="t">Decisión</span><span class="d">Decide una persona</span></div>
+  </div>
+</div>
+
+<section id="proceso">
+  <div class="marco">
+
+    <div class="fila">
+      <div>
+        <h2>Pensado para que no tengas que preguntar</h2>
+        <p class="intro">
+          De los dieciocho estados que puede tener tu postulación, trece no te piden nada.
+          En esos no estás olvidado: estás esperando, y la pantalla dice a quién le toca.
+        </p>
+        <a class="btn btn-negro" href="#vacantes">Ver las vacantes abiertas</a>
+        <ul class="lista-check">
+          <li><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2.5 8.5l3.5 3.5L13.5 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Cada estado dice de quién se espera algo</li>
+          <li><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2.5 8.5l3.5 3.5L13.5 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Ninguna etapa superada se atenúa después</li>
+          <li><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2.5 8.5l3.5 3.5L13.5 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>No hace falta escribir para saber cómo va</li>
+        </ul>
+      </div>
+      <div class="ilustra">
+        <div class="caja">
+          <div class="estado-fila"><span class="punto tuyo"><i></i>Prueba del puesto habilitada</span><span class="quien">Te toca a ti</span></div>
+          <div class="estado-fila"><span class="punto"><i></i>Estamos calificando tus respuestas</span><span class="quien">Nos toca a nosotros</span></div>
+          <div class="estado-fila"><span class="punto"><i></i>Esperando fecha de simulación</span><span class="quien">Te toca a ti</span></div>
+          <div class="estado-fila"><span class="punto"><i></i>Validación en curso</span><span class="quien">En marcha</span></div>
+          <div class="estado-fila"><span class="punto"><i></i>Decisión final</span><span class="quien">Nos toca a nosotros</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="fila fila--invertida">
+      <div class="ilustra">
+        <div class="caja">
+          <div class="estado-fila"><span class="punto"><i></i>Tus puntajes</span><span class="quien">No se muestran</span></div>
+          <div class="estado-fila"><span class="punto"><i></i>Las claves de las preguntas</span><span class="quien">No se muestran</span></div>
+          <div class="estado-fila"><span class="punto"><i></i>La matriz de la simulación</span><span class="quien">No se muestra</span></div>
+          <div class="estado-fila"><span class="punto"><i></i>Tu currículum como filtro</span><span class="quien">No se usa</span></div>
+        </div>
+      </div>
+      <div>
+        <h2>Lo que nunca vas a ver, y por qué</h2>
+        <p class="intro">
+          No verás notas ni claves: la evaluación se responde, no se estudia. Y la matriz de
+          la simulación es justamente lo que se espera que descubras o preguntes durante la
+          sesión. Decirlo por adelantado arruinaría el ejercicio.
+        </p>
+        <div class="fichas">
+          <span class="ficha">Sin descartes silenciosos</span>
+          <span class="ficha">Sin puntajes a la vista</span>
+          <span class="ficha">Sin cartas que no llegan</span>
+          <span class="ficha">Un solo descarte automático</span>
+          <span class="ficha">Requisitos escritos enteros</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section>
+  <div class="marco">
+    <div class="cabecera-seccion">
+      <span class="antetitulo">Por qué EX</span>
+      <h2>Se mira cómo trabajas, no cómo te describes</h2>
+      <p>Un proceso construido sobre evidencia real: un encargo con reloj, una sesión observada y un periodo trabajando de verdad.</p>
+    </div>
+
+    <div class="seis">
+      <article class="caja">
+        <div class="icono" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="8.5" stroke="currentColor" stroke-width="1.7"/><path d="M11 6v5.2l3.4 2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <h3>La hora la manda el servidor</h3>
+        <p>El cronómetro descuenta el desfase entre relojes y sigue corriendo si cierras la pestaña. Se te avisa antes de empezar, no después.</p>
+      </article>
+
+      <article class="caja">
+        <div class="icono" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M3.5 11.5l5 5L18.5 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <h3>Nada se da por guardado</h3>
+        <p>Una respuesta no se marca como guardada hasta que el servidor lo confirma, y no se deja entregar mientras quede algo en la cola.</p>
+      </article>
+
+      <article class="caja">
+        <div class="icono" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M11 2.5l7.5 3.7v5.3c0 4.2-3.2 7-7.5 8-4.3-1-7.5-3.8-7.5-8V6.2L11 2.5z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></div>
+        <h3>Un solo descarte automático</h3>
+        <p>No cumplir un requisito indispensable. Están escritos enteros en cada vacante y se confirman antes de empezar.</p>
+      </article>
+
+      <article class="caja">
+        <div class="icono" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M3.5 17.5V9M9 17.5V4.5M14.5 17.5v-6M20 17.5V7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></div>
+        <h3>El currículum entra, pero no filtra</h3>
+        <p>Se lee, y por diseño no descarta a nadie. Lo que decide es el trabajo que entregas durante el proceso.</p>
+      </article>
+
+      <article class="caja">
+        <div class="icono" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><rect x="3" y="4.5" width="16" height="13" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M3 8.5h16M7.5 2.5v4M14.5 2.5v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></div>
+        <h3>La fecha de la simulación la eliges tú</h3>
+        <p>Son dos horas de trabajo con el equipo. Eliges entre las fechas disponibles y queda confirmada en pantalla.</p>
+      </article>
+
+      <article class="caja">
+        <div class="icono" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="7.5" r="3.5" stroke="currentColor" stroke-width="1.7"/><path d="M4 18.5c0-3.6 3.1-5.5 7-5.5s7 1.9 7 5.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></div>
+        <h3>Decide una persona</h3>
+        <p>Al final del recorrido decide alguien mirando todo lo que hiciste, no un puntaje agregado ni un algoritmo.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section id="reglas">
+  <div class="marco">
+    <div class="cabecera-seccion">
+      <span class="antetitulo">Reglas de la casa</span>
+      <h2>Tres cosas que ya costaron un fallo</h2>
+      <p>No son promesas de marketing: son reglas escritas en el código porque una vez fallaron.</p>
+    </div>
+
+    <div class="reglas-lista">
+      <article class="caja regla-caja">
+        <span class="sello">Regla 01</span>
+        <h3>La cola de guardado</h3>
+        <p>Lo escrito no sale de la cola hasta que el servidor lo confirma, y no se deja entregar mientras quede algo sin guardar. Se perdieron respuestas por no cumplirlo.</p>
+      </article>
+      <article class="caja regla-caja">
+        <span class="sello">Regla 02</span>
+        <h3>El indicador honesto</h3>
+        <p>Ningún «guardado» es texto fijo: sale de comparar con el servidor. Y una pregunta en blanco está sin responder, que no es lo mismo que guardada.</p>
+      </article>
+      <article class="caja regla-caja">
+        <span class="sello">Regla 03</span>
+        <h3>La hora del servidor</h3>
+        <p>El reloj de la prueba no es el de tu equipo. El cronómetro descuenta el desfase, para que nadie gane ni pierda minutos por tener mal la hora.</p>
+      </article>
+    </div>
+
+    <div class="contador">
+      <span class="num">3 / 3</span>
+      <span class="hilo"></span>
+    </div>
+  </div>
+</section>
+
+<section class="vacantes" id="vacantes">
+  <div class="marco">
+    <div class="cabecera-seccion">
+      <span class="antetitulo">Abiertas ahora</span>
+      <h2>Cinco puestos, tres ciudades</h2>
+      <p>Con el encargo real escrito por quien va a trabajar contigo, no por una plantilla.</p>
+    </div>
+
+    <div class="rejilla-vacantes">
+      <article class="caja vacante">
+        <span class="etiqueta">Lima · Híbrido</span>
+        <h3><a href="#">Analista de Datos</a></h3>
+        <div class="empresa">Clínica San Juan</div>
+        <p class="encargo">Que los reportes semanales salgan solos y sean confiables, y que el área comercial deje de pedir números por chat cada lunes.</p>
+        <div class="pie-v"><span>L a V, 9 a 18 h</span><span class="sueldo">S/ 3 800 – 4 500</span></div>
+      </article>
+
+      <article class="caja vacante">
+        <span class="etiqueta">Arequipa · Presencial</span>
+        <h3><a href="#">Coordinador/a de Operaciones</a></h3>
+        <div class="empresa">Transportes del Sur</div>
+        <p class="encargo">Llevar la operación del día a día: proveedores, rutas, caja chica y el control de que lo comprometido se cumpla.</p>
+        <div class="pie-v"><span>Lunes a sábado</span><span>Rango no publicado</span></div>
+      </article>
+
+      <article class="caja vacante">
+        <span class="etiqueta">Trujillo · Presencial</span>
+        <h3><a href="#">Especialista en Mejora Continua</a></h3>
+        <div class="empresa">Molinos del Norte</div>
+        <p class="encargo">Bajar el desperdicio de la línea de envasado sin parar la producción.</p>
+        <div class="pie-v"><span>Jornada completa</span><span>Rango no publicado</span></div>
+      </article>
+
+      <article class="caja vacante">
+        <span class="etiqueta">Lima · Remoto</span>
+        <h3><a href="#">Analista de Planeamiento</a></h3>
+        <div class="empresa">Andes Retail</div>
+        <p class="encargo">Que la reposición de tiendas deje de decidirse por corazonada.</p>
+        <div class="pie-v"><span>Horario flexible</span><span>Rango no publicado</span></div>
+      </article>
+
+      <article class="caja vacante">
+        <span class="etiqueta">Lima · Presencial</span>
+        <h3><a href="#">Jefe/a de Servicio al Cliente</a></h3>
+        <div class="empresa">Clínica San Juan</div>
+        <p class="encargo">Que una queja se resuelva en el primer contacto y quede aprendida.</p>
+        <div class="pie-v"><span>Turnos rotativos</span><span>Rango no publicado</span></div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section id="preguntas">
+  <div class="marco">
+    <div class="cabecera-seccion">
+      <span class="antetitulo">Preguntas</span>
+      <h2>Lo que casi todos preguntan antes de postular</h2>
+    </div>
+
+    <div class="preguntas">
+      <details class="pregunta" open>
+        <summary>¿Necesito cuenta para mirar?<span class="mas" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2v12M2 8h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span></summary>
+        <p>No. Puedes ver las vacantes abiertas, leer una ficha completa y leer los textos legales sin registrarte. La cuenta se crea recién cuando decides postular.</p>
+      </details>
+
+      <details class="pregunta">
+        <summary>¿Cuánto dura todo el proceso?<span class="mas" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2v12M2 8h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span></summary>
+        <p>Semanas, no días. La evaluación tiene catorce días por defecto; la simulación son dos horas en la fecha que elijas; la validación es un periodo corto. Los plazos que todavía no están definidos no te los inventamos.</p>
+      </details>
+
+      <details class="pregunta">
+        <summary>¿Mi currículum me puede descartar?<span class="mas" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2v12M2 8h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span></summary>
+        <p>No. Entra al proceso, pero por diseño no descarta a nadie. Lo único que cierra una postulación en el acto es no cumplir un requisito indispensable, y esos están escritos enteros en cada vacante.</p>
+      </details>
+
+      <details class="pregunta">
+        <summary>¿Cómo entro si no tengo contraseña?<span class="mas" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2v12M2 8h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span></summary>
+        <p>Con el enlace que te llega al correo. Es la vía normal para quien llegó por una carpeta de currículums y nunca creó cuenta aquí; lleva al mismo sitio que entrar con contraseña.</p>
+      </details>
+
+      <details class="pregunta">
+        <summary>¿Veo mi puntaje?<span class="mas" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2v12M2 8h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span></summary>
+        <p>No. Verás en qué etapa estás y de quién se espera algo, pero no las notas ni las claves de las preguntas. La decisión final la toma una persona mirando todo el recorrido.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section class="final">
+  <div class="marco">
+    <div class="caja caja--grande">
+      <span class="halo" aria-hidden="true"></span>
+      <h2>¿Empezamos?</h2>
+      <p>Elige un puesto, lee sus requisitos y postula. Lo demás te lo vamos contando en pantalla, paso a paso.</p>
+      <div class="acciones">
+        <a class="btn btn-negro" href="#vacantes">Ver las vacantes abiertas</a>
+        <a class="btn btn-blanco" href="#">Entrar a mis procesos</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="pie">
+  <div class="marco">
+    <div class="pie-alto">
+      <div class="pie-marca">
+        <a class="logo" href="#">
+          <svg width="26" height="26" viewBox="0 0 26 26" fill="none" aria-hidden="true">
+            <circle cx="13" cy="13" r="12" fill="#0a0a0a"/>
+            <path d="M6.5 8.5h5M6.5 13h4M6.5 17.5h5" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/>
+            <path d="M15 8.5l5 9M20 8.5l-5 9" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/>
+          </svg>
+          EX
+        </a>
+        <p>El portal donde se mira cómo trabajas. Un proceso largo de evidencia, contado sin letra chica.</p>
+      </div>
+
+      <div class="pie-cols">
+        <div>
+          <h4>Postular</h4>
+          <ul>
+            <li><a href="#vacantes">Vacantes abiertas</a></li>
+            <li><a href="#proceso">Cómo es el proceso</a></li>
+            <li><a href="#preguntas">Preguntas frecuentes</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Mi cuenta</h4>
+          <ul>
+            <li><a href="#">Entrar</a></li>
+            <li><a href="#">Mis procesos</a></li>
+            <li><a href="#">Mi perfil</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Datos</h4>
+          <ul>
+            <li><a href="#">Privacidad y control</a></li>
+            <li><a href="#">Política de privacidad</a></li>
+            <li><a href="#">Panel de empresas</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="pie-bajo">
+      <span>© 2026 Renaser Consulting. Todos los derechos reservados.</span>
+      <span class="legales"><a href="#">Términos y condiciones</a> | <a href="#">Política de privacidad</a></span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

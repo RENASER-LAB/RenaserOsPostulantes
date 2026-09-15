@@ -1,15 +1,19 @@
 /*
  * La ficha de una vacante.
  *
- * Los requisitos indispensables llevan el acento porque son lo unico que decide
- * el sistema solo: no confirmarlos cierra la postulacion en el acto. Es «esto
- * depende de ti» en su forma mas literal.
+ * El esqueleto viene de `estilos/pagina.module.css`. Es un documento, no una
+ * rejilla de tarjetas: sus secciones van a sangre sobre el cielo y lo unico con
+ * superficie propia es el bloque ambar y los estados de carga.
+ *
+ * ⚠️ **Los requisitos indispensables son ambar, y antes eran coral.** Aqui
+ * todavia no hay ninguna postulacion y por tanto ningun turno: quien llega no
+ * tiene turno, tiene curiosidad. Lo que dice ese bloque es «esto te cambia la
+ * decision», que es la definicion del ambar. Sigue siendo lo unico que decide
+ * el sistema solo.
  */
 
 .pagina {
-  max-width: var(--ancho);
-  margin: 0 auto;
-  padding: var(--e5) var(--e5) var(--e8);
+  composes: hoja from '../../estilos/pagina.module.css';
 }
 
 .volver {
@@ -17,7 +21,11 @@
 }
 
 .encabezado {
-  margin-top: var(--e4);
+  composes: encabezado from '../../estilos/pagina.module.css';
+}
+
+.titular {
+  composes: titular from '../../estilos/pagina.module.css';
 }
 
 /*
@@ -59,7 +67,7 @@
 }
 
 .tituloBloque {
-  margin-bottom: var(--e3);
+  composes: tituloBloque from '../../estilos/pagina.module.css';
 }
 
 .texto {
@@ -97,20 +105,24 @@
 /* ---------- Requisitos indispensables ---------- */
 
 .requisitos {
+  composes: indispensable from '../../estilos/piezas.module.css';
   margin-top: var(--e7);
-  border: 2px solid var(--activo-regla);
-  background: var(--nube);
   padding: var(--e5);
-  border-radius: var(--radio);
-  box-shadow:
-    0 2px 6px rgb(35 43 54 / 0.05),
-    0 14px 40px rgb(86 56 214 / 0.14);
+}
+
+/*
+ * Todo lo de dentro va en la tinta del ambar, incluido el titulo. Con `--tinta`
+ * se leia igual de bien pero se veia como texto normal metido en una caja de
+ * color; en la tinta de la familia, el bloque es una sola cosa.
+ */
+.requisitos h2 {
+  color: var(--duda-tinta);
 }
 
 .avisoRequisitos {
   font-size: var(--t-prosa);
   line-height: 1.55;
-  color: var(--tinta);
+  color: var(--duda-tinta);
   margin-top: var(--e2);
   max-width: var(--medida);
 }
@@ -128,7 +140,7 @@
   column-gap: var(--e3);
   font-size: var(--t-prosa);
   line-height: 1.5;
-  color: var(--tinta);
+  color: var(--duda-tinta);
 }
 
 .requisito::before {
@@ -136,7 +148,7 @@
   width: 7px;
   height: 7px;
   margin-top: 0.5em;
-  background: var(--activo);
+  background: var(--duda);
 }
 
 /* ---------- Postular ---------- */
@@ -164,10 +176,8 @@
 /* ---------- Estados ---------- */
 
 .marco {
+  composes: bloqueHolgado from '../../estilos/pagina.module.css';
   margin-top: var(--e6);
-  border: 1px solid var(--regla);
-  padding: var(--e6);
-  border-radius: var(--radio);
 }
 
 .marcoTexto {
@@ -198,10 +208,6 @@
 }
 
 @media (max-width: 640px) {
-  .pagina {
-    padding: var(--e4) var(--e4) var(--e7);
-  }
-
   .boton {
     width: 100%;
   }

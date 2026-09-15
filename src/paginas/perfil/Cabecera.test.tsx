@@ -34,7 +34,7 @@ const espia = vi.hoisted(() => ({ tieneFoto: true, pedidas: 0 }))
 
 vi.mock('@/api/perfil', () => ({
   PORTADAS_DE_LA_CASA: [
-    { codigo: 'CANTO_MENTA', nombre: 'Menta' },
+    { codigo: 'CANTO_MENTA', nombre: 'Arena' },
     { codigo: 'BRUMA', nombre: 'Bruma' },
   ],
   subirFoto: () => Promise.resolve(undefined),

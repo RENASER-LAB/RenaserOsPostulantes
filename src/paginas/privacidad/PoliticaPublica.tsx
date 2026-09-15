@@ -57,7 +57,7 @@ export function PoliticaPublica() {
           acceso distinto se leerian como la misma y la de la sesion parecerian
           un error.
         */}
-        <h1>Política de privacidad</h1>
+        <h1 className={estilos.titular}>Política de privacidad</h1>
         <p className={estilos.bajada}>
           Qué datos te pedimos cuando postulas a una vacante, para qué los usamos y cómo pides
           que los borremos.

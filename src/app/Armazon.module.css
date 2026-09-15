@@ -10,46 +10,121 @@
 }
 
 /*
- * Vidrio empañado, no un panel opaco.
+ * El andamio de la cabecera: solo se ocupa de pegarla arriba y de apartarla del
+ * borde. La superficie la pone `.cabeceraDentro`.
  *
- * La cabecera se pega encima del canto irisado, y una barra blanca maciza
- * partiria la nube en dos justo donde tiene que verse entera. Empañada, la
- * banda se sigue leyendo detras y el texto de arriba conserva su fondo. Es el
- * material del mundo haciendo un trabajo, no un cristal por gusto.
+ * ⚠️ **Tres formas en un dia, y esta es la tercera.** Barra a sangre con filete
+ * de regla; luego una vaina ovalada flotante, descartada por tapar la pagina
+ * desde el primer pixel; y ahora una barra insertada que **en reposo no se ve** y
+ * saca su superficie al bajar. La diferencia con la vaina no es la forma: es que
+ * esta no existe hasta que estorba.
+ *
+ * ⚠️ **Aqui hubo un vidrio empañado y se fue el 10/09/2026.** Desenfocaba un
+ * `--cielo` plano en las diecisiete pantallas a cambio de una capa de compositor
+ * en cada una. No ha vuelto: el velo es nube maciza.
+ *
+ * Se queda pegajosa: al bajar, la barra baja con el contenido y los cuatro
+ * destinos siguen a un clic sin volver arriba.
+ *
+ * Lo que mide la cabecera vive en `mundo.css` como `--alto-cabecera`, para que
+ * la barra de avance del examen pueda pegarse justo debajo sin adivinarlo. Aqui
+ * habia una segunda declaracion que nadie leia —sus consumidores no son
+ * descendientes de `.cabecera`— y se fue con el vidrio. **Al cambiar el relleno
+ * de esta pieza hay que volver a medirlo en el navegador, no calcularlo.**
  */
 .cabecera {
-  /* Lo que mide la cabecera, para que la barra de avance del examen pueda
-     pegarse justo debajo sin adivinarlo. */
-  --alto-cabecera: 61px;
-  border-bottom: 1px solid rgb(203 210 220 / 0.5);
-  background: rgb(255 255 255 / 0.72);
-  backdrop-filter: blur(18px) saturate(1.4);
   position: sticky;
   top: 0;
   z-index: 10;
+  /*
+   * El hueco que la separa del borde va de relleno y no de margen: asi la barra
+   * guarda los mismos 8 px arriba en reposo y pegada, porque el relleno viaja
+   * con la caja pegajosa y un margen se quedaria arriba.
+   */
+  padding: var(--e2) var(--e2) 0;
 }
 
-/* Donde el navegador no empaña, se cierra el fondo: con 0,72 de opacidad y sin
-   desenfoque, el texto de la cabecera se leeria sobre la banda de color. */
-@supports not (backdrop-filter: blur(1px)) {
-  .cabecera {
-    background: var(--nube);
-  }
-}
-
+/*
+ * La barra en si. **En reposo no existe**: solo se ven la marca y los enlaces
+ * sobre el cielo, y la superficie aparece al bajar.
+ *
+ * Es lo contrario de la vaina ovalada que se probo y se descarto esta misma
+ * mañana: aquella tapaba la pagina desde el primer pixel.
+ */
 .cabeceraDentro {
+  position: relative;
   max-width: var(--ancho);
   margin: 0 auto;
   padding: var(--e2) var(--e5);
-  display: flex;
+  border-radius: var(--radio-menor);
+  /*
+   * Tres columnas y no `space-between`: los destinos tienen que quedar centrados
+   * respecto a la BARRA, no repartidos entre la marca y el boton. Con
+   * `space-between` el centro se mueve cada vez que cambia el ancho de la marca
+   * o el texto del boton —«Ingresar» y «Mi cuenta» no miden lo mismo—, y se nota.
+   *
+   * Las dos columnas de los lados son `1fr` justamente para eso: valen lo mismo
+   * pese a llevar cosas de anchos distintos, asi que la del medio cae en el eje.
+   */
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: space-between;
   gap: var(--e4);
+}
+
+.acciones {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+/*
+ * El velo que aparece al bajar.
+ *
+ * Va en `::before` y no en un `<div>`: no hay nada que anunciar a un lector de
+ * pantalla y un elemento mas en el arbol solo habria que esconderlo.
+ *
+ * `z-index: -1` lo deja detras de la marca y los enlaces sin sacarlo de la
+ * cabecera, que ya es contexto de apilamiento por su `z-index: 10`.
+ *
+ * ⚠️ **Nube maciza, y se probo la otra.** Se probo nube al 85 % con
+ * `backdrop-filter: blur(12px)`, y mirandolo con contenido pasando por debajo el
+ * boton negro de la portada se leia entero a traves del velo: un 15 % de
+ * transparencia no perdona una pieza de maximo contraste.
+ *
+ * ⚠️ **Y ahora la pagina es blanca, asi que el velo es del mismo color que el
+ * fondo.** Lo que dice donde acaba la barra es su contorno de `--regla` y su
+ * sombra, no el relleno. Por eso los dos son obligatorios aqui.
+ */
+.cabeceraDentro::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--nube);
+  border: 1px solid var(--regla);
+  box-shadow: var(--sombra-nube);
+  opacity: 0;
+  transition: opacity 200ms var(--salida);
+}
+
+.posada .cabeceraDentro::before {
+  opacity: 1;
+}
+
+/* Quien pide menos movimiento igual necesita ver donde acaba la barra cuando
+   el contenido pasa por debajo: el velo deja de aparecer y se queda puesto. */
+@media (prefers-reduced-motion: reduce) {
+  .cabeceraDentro::before {
+    transition: none;
+  }
 }
 
 .marca {
   display: inline-flex;
   align-items: center;
+  justify-self: start;
   min-height: 44px;
   color: var(--tinta);
   text-decoration: none;
@@ -60,56 +135,383 @@
   text-decoration: none;
 }
 
+/*
+ * ⚠️ **18 px y peso 500, no 14 y 400.** Con la tipografia de apoyo y peso normal
+ * los cuatro destinos se perdian: son lo unico que hay en medio de una barra muy
+ * ancha y blanca, sin contorno ni relleno que los sostenga. Figtree es variable
+ * de 400 a 700, asi que el 500 no cuesta una descarga mas.
+ */
 .navegacion {
   display: flex;
   align-items: center;
   gap: var(--e2);
-  font-size: var(--t-apoyo);
+  font-size: var(--t-entradilla);
 }
 
 /*
- * Pildoras, como cualquier control del mundo. El area tactil llega a 44 px por
- * el `min-height`, y el relleno horizontal separa lo justo para que dos
- * enlaces contiguos no compartan objetivo.
+ * Los destinos entran en cascada, 60 ms uno detras de otro.
+ *
+ * Corre **una vez por carga de pagina, no en cada navegacion**: `Armazon` es la
+ * ruta de disposicion y se queda montado mientras el candidato se mueve por el
+ * portal. La cascada dice «esto es una lista de sitios a los que ir», que es lo
+ * unico que la cabecera tiene que explicar.
+ *
+ * `both` conserva el estado final: si algo interrumpe la animacion, el enlace se
+ * queda visible y no invisible.
+ */
+.navegacion > * {
+  animation: entraEnCascada 420ms var(--salida) both;
+}
+
+.navegacion > *:nth-child(2) {
+  animation-delay: 60ms;
+}
+
+.navegacion > *:nth-child(3) {
+  animation-delay: 120ms;
+}
+
+/* El cuarto ya no es hermano de los otros tres: vive en `.acciones`. */
+.acciones > * {
+  animation: entraEnCascada 420ms var(--salida) both;
+  animation-delay: 180ms;
+}
+
+@keyframes entraEnCascada {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/*
+ * El area tactil llega a 44 px por el `min-height`, y el relleno horizontal
+ * separa lo justo para que dos enlaces contiguos no compartan objetivo.
+ */
+/*
+ * Texto que hace de boton: sin contorno, sin relleno y sin pastilla. Lo unico
+ * que dibuja el area tactil de 44 px es el `min-height`, invisible hasta que se
+ * toca.
  */
 .enlace {
+  position: relative;
   display: inline-flex;
   align-items: center;
   min-height: 44px;
-  padding: 0 var(--e3);
-  border-radius: var(--radio-control);
-  color: var(--tinta2);
-  text-decoration: none;
-  transition:
-    background 160ms var(--salida),
-    color 160ms var(--salida);
-}
-
-.enlace:hover {
+  padding: 0 var(--e4);
+  font-weight: 500;
+  /* Sin esto «Mis procesos» se parte en dos lineas en un telefono y la barra
+     pasa de 61 a 85 px, justo el numero que `--alto-cabecera` promete fijo. */
+  white-space: nowrap;
+  /*
+   * En tinta plena y no en `--tinta2`. Son cuatro destinos y nada mas en la
+   * barra: no hay jerarquia que establecer entre ellos, asi que apagarlos solo
+   * los hacia mas dificiles de leer. Da 12,63:1 sobre la nube.
+   */
   color: var(--tinta);
   text-decoration: none;
-  background: rgb(35 43 54 / 0.05);
+  transition: color 180ms var(--salida);
 }
 
 /*
- * La pagina en la que estas se marca con el peso y con un fondo de bruma, no
- * con el violeta: el violeta significa «te toca a ti» y nada mas.
+ * El filete se abre desde el centro hacia los dos lados.
+ *
+ * Se anima `left` y `right` y no `transform: scaleX()` a proposito: un filete de
+ * 2 px escalado en X sigue midiendo 2 px de alto, pero el navegador lo compone
+ * desde una caja de ancho completo y en pantallas densas se ve un pelo mas
+ * grueso al arrancar. Aqui la caja es de 2 px reales en todo momento.
+ *
+ * ⚠️ **Se quito una vez y volvio.** Estuvo fuera un rato del 11/09/2026 —el
+ * estado se decia solo con color y peso— y se echo de menos: sin el, pasar por
+ * encima no respondia nada y el activo no tenia donde apoyarse.
+ */
+.enlace::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  right: 50%;
+  bottom: 10px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--activo-regla);
+  transition:
+    left 300ms var(--salida),
+    right 300ms var(--salida);
+}
+
+.enlace:hover {
+  color: var(--tinta-pulsado);
+  text-decoration: none;
+}
+
+/* Al pasar por encima el filete se abre en gris: anuncia el gesto sin robarle
+   el coral al que de verdad esta activo. */
+.enlace:hover::after {
+  left: var(--e4);
+  right: var(--e4);
+  background: var(--regla2);
+}
+
+/*
+ * La pagina en la que estas se dice con el color del texto y con el peso 700.
+ *
+ * ⚠️ **`--activo-regla` como TEXTO da 2,53:1 sobre nube, donde WCAG 1.4.3 pide
+ * 4,5:1.** Es una decision tomada a sabiendas el 11/09/2026, mirando el numero:
+ * se probo tambien `#bf4526` —el mismo tono con la luz bajada, 5,13:1— y se
+ * eligio el coral de marca. El peso 700 acompaña al color, asi que quien no
+ * distingue el naranja tiene la segunda señal que pide 1.4.1; lo que no se
+ * cumple es el contraste del texto.
+ *
+ * WCAG 1.4.1 pide que el color no vaya solo, y no va: le acompañan el peso 700 y
+ * el filete de abajo, que es decoracion y no le aplica el 3:1 de un control.
+ *
+ * El coral de texto amplia la excepcion a «el coral solo marca te toca a ti»: en
+ * la cabecera pasa a significar tambien «estas aqui».
  */
 .enlaceActivo {
-  color: var(--tinta);
+  color: var(--activo-regla);
   font-weight: 700;
-  background: rgb(35 43 54 / 0.06);
+}
+
+.enlaceActivo::after,
+.enlaceActivo:hover::after {
+  left: var(--e4);
+  right: var(--e4);
+  background: var(--activo-regla);
 }
 
 .enlaceActivo:hover {
-  background: rgb(35 43 54 / 0.09);
+  color: var(--activo-regla);
 }
 
+/*
+ * «Ingresar» es la unica accion de la barra: rampa magenta a rojo, texto blanco
+ * y esquina de `--radio-menor`, copiada de la referencia que pidio el cliente.
+ *
+ * ⚠️ **El texto blanco sobre esta rampa da entre 4,42:1 y 3,48:1**, y WCAG 1.4.3
+ * pide 4,5:1 para texto de 14 px. Es una decision tomada mirando el numero: se
+ * midio tambien la pareja `#d81b7e → #c4304b`, que es el mismo magenta-a-rojo un
+ * paso mas oscuro y da 4,80:1 y 5,42:1, y se prefirio el color de la referencia.
+ * Si algun dia hay que cumplirlo, ese es el cambio: dos valores, nada mas.
+ *
+ * El limite del control si cumple 1.4.11: 4,42:1 por la izquierda y 3,48:1 por
+ * la derecha contra la nube, los dos por encima de 3.
+ */
+.entrar {
+  position: relative;
+  /* Recorta el destello a la pieza. No recorta el anillo de foco: `outline` no
+     lo limita `overflow`. */
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-left: var(--e2);
+  padding: 0 var(--e5);
+  border-radius: var(--radio-menor);
+  background: linear-gradient(90deg, #e0218a 0%, #f5317a 48%, #ff3b5c 100%);
+  background-size: 160% 100%;
+  color: var(--tinta-invertida);
+  font-weight: 600;
+  text-decoration: none;
+  /* La sombra lleva desplazamiento ademas del halo de color: un halo a cero es
+     decoracion, el desplazamiento es lo que apoya el boton sobre la barra. */
+  box-shadow:
+    0 1px 2px rgb(10 10 10 / 0.12),
+    0 6px 18px rgb(236 45 135 / 0.32);
+  transition:
+    transform 180ms var(--salida),
+    background-position 320ms var(--salida),
+    box-shadow 180ms var(--salida);
+}
+
+/*
+ * El destello que lo cruza cada 4,5 s.
+ *
+ * ⚠️ **Es lo unico que se mueve solo en todo el portal, y solo existe para quien
+ * no ha entrado**: con sesion, «Ingresar» no se pinta. Cruza en poco mas de un
+ * segundo y descansa el resto del ciclo, para que sea un reflejo y no un
+ * parpadeo. Se para entero con `prefers-reduced-motion`.
+ */
+.entrar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 38%,
+    rgb(255 255 255 / 0.55) 50%,
+    transparent 62%
+  );
+  transform: translateX(-120%);
+  /*
+   * ⚠️ **`--salida` NO sirve aqui, y se vio midiendo.** Esa curva es para lo que
+   * llega y se posa: con ella el destello recorria el 90 % del boton en los
+   * primeros 400 ms de un tramo de 1,17 s, o sea daba un salto en vez de cruzar
+   * —medido a 1200 ms: -120 %; a 1600 ms: +98 %—. Un reflejo que pasa por encima
+   * acelera y frena por igual, y eso es `ease-in-out`.
+   */
+  animation: cruzaElDestello 4.5s ease-in-out 1.2s infinite;
+}
+
+.entrar:hover {
+  color: var(--tinta-invertida);
+  text-decoration: none;
+  transform: translateY(-1px);
+  background-position: 100% 0;
+  box-shadow:
+    0 2px 4px rgb(10 10 10 / 0.14),
+    0 10px 26px rgb(236 45 135 / 0.4);
+}
+
+.entrar:active {
+  transform: translateY(0) scale(0.98);
+}
+
+@keyframes cruzaElDestello {
+  0% {
+    transform: translateX(-120%);
+  }
+
+  26%,
+  100% {
+    transform: translateX(120%);
+  }
+}
+
+/*
+ * Menos movimiento, no menos informacion.
+ *
+ * Se van la cascada, el destello y los desplazamientos; se quedan el color del
+ * activo y su filete, que son los que dicen donde estas. Es lo que pide la
+ * regla: reducir el movimiento sin borrar la respuesta.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .navegacion > * {
+    animation: none;
+  }
+
+  .entrar::after {
+    animation: none;
+    opacity: 0;
+  }
+
+  .entrar:hover,
+  .entrar:active {
+    transform: none;
+  }
+
+  .enlace::after {
+    transition-duration: 1ms;
+  }
+}
+
+/*
+ * En un telefono son cuatro destinos, una marca y un boton relleno: con el
+ * relleno de escritorio la barra desborda a lo ancho. Medido a 362 px: con esto
+ * cabe justo en una linea y la cabecera se queda en sus 61 px.
+ */
+/*
+ * ⚠️ **Toda la cabecera de telefono cabe AQUI, en una sola media query.** Llego a
+ * haber tres —620, 560 y 640— de las tres formas que la barra tuvo el
+ * 11/09/2026, y la ultima del archivo pisaba a las otras dos: el relleno que se
+ * escribia en la de 620 nunca llegaba a aplicarse. Si hace falta otro escalon,
+ * se añade debajo de esta y no en otro sitio del archivo.
+ */
+@media (max-width: 620px) {
+  /*
+   * Aqui no cabe una columna central: con la marca a un lado y el boton al otro,
+   * los destinos se quedan sin sitio. Vuelve al reparto simple, que es lo que
+   * hace cualquier barra de telefono.
+   */
+  .cabeceraDentro {
+    display: flex;
+    justify-content: space-between;
+    padding-inline: var(--e3);
+    gap: var(--e2);
+  }
+
+  /* Un punto menos que en escritorio, pero **el peso 500 se queda**: es el peso,
+     no el tamaño, lo que hacia que los destinos se perdieran. */
+  .navegacion {
+    gap: 0;
+    font-size: var(--t-apoyo);
+  }
+
+  .enlace {
+    padding: 0 var(--e2);
+  }
+
+  .enlace:hover::after,
+  .enlaceActivo::after,
+  .enlaceActivo:hover::after {
+    left: var(--e2);
+    right: var(--e2);
+  }
+
+  .entrar {
+    margin-left: var(--e2);
+    padding: 0 var(--e4);
+  }
+}
+
+/*
+ * Por debajo de 360 px la marca, dos destinos y un boton relleno van al limite:
+ * se aprieta lo unico que se puede apretar sin bajar de los 44 px tactiles.
+ */
+@media (max-width: 360px) {
+  .cabeceraDentro {
+    padding-inline: var(--e2);
+  }
+
+  .enlace {
+    padding: 0 var(--e1);
+  }
+
+  .enlace:hover::after,
+  .enlaceActivo::after,
+  .enlaceActivo:hover::after {
+    left: var(--e1);
+    right: var(--e1);
+  }
+
+  .entrar {
+    margin-left: var(--e1);
+    padding: 0 var(--e3);
+  }
+}
+
+/*
+ * ⚠️ **Por debajo de 400 px se cae «Vacantes», y es lo unico que se puede
+ * caer.** A 320 px los cuatro destinos piden 42 px mas de los que hay, y de los
+ * cuatro este es el unico que no es una pantalla: es un ancla a la seccion
+ * `#vacantes-abiertas` de la portada, a la que se llega tocando «Inicio» y el
+ * boton grande que hay ahi. Los otros tres son destinos propios y no se tocan.
+ */
+@media (max-width: 400px) {
+  .enlaceSeccion {
+    display: none;
+  }
+}
+
+/*
+ * En un telefono los tres enlaces y la marca no caben con el relleno de
+ * escritorio: el ovalo se parte en dos lineas y deja de ser un ovalo.
+ */
+/*
+ * Aqui hubo un `position: relative` que existia solo para atrapar el `<Canto>`,
+ * que iba en `absolute` dentro de la pagina y sin contexto de apilamiento se
+ * colaba por encima del pie. Se fue con el 10/09/2026: `Modal` y `Avisos` van
+ * en `fixed` —que un ancestro relativo no cambia— y los unicos `absolute` sin
+ * ancestro posicionado son los recortes de solo-lectores, que no dependen del
+ * bloque contenedor.
+ */
 .principal {
   flex: 1;
-  /* El canto va en `position: absolute` dentro de la pagina; sin contexto de
-     apilamiento aqui, se colaria por encima del pie. */
-  position: relative;
 }
 
 .pie {
@@ -150,17 +552,8 @@
 }
 
 @media (max-width: 640px) {
-  .cabeceraDentro,
   .pieDentro {
     padding-left: var(--e4);
     padding-right: var(--e4);
-  }
-
-  .navegacion {
-    gap: var(--e1);
-  }
-
-  .enlace {
-    padding: 0 var(--e2);
   }
 }

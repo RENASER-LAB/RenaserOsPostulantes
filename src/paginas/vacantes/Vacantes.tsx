@@ -2,103 +2,150 @@
  * La portada: qué es este proceso y qué vacantes hay abiertas.
  *
  * Es la única pantalla en modo Persuade —quien llega todavía no ha postulado y
- * tiene que decidir si le merece la pena— pero el mundo no cambia: el proceso se
- * dibuja como recorrido, igual que dentro del portal. Lo que ve antes de entrar
- * es lo mismo que verá después.
+ * tiene que decidir si le merece la pena—, y desde el rediseño de 09/2026 la
+ * compone el mundo nuevo: fondo blanco, titular centrado, acción en negro y dos
+ * piezas de color —la loseta con el maletín incrustada en el titular y el
+ * resplandor coral dentro del escaparate—.
+ *
+ * La pieza grande es el escaparate: una tarjeta blanca de borde grueso con el
+ * recorrido dentro, que enseña el producto en vez de decorar la pantalla. En su
+ * sitio hubo una banda irisada, que se fue con el mundo anterior.
+ *
+ * Lo que no cambia es la promesa: lo que ve antes de entrar es lo mismo que verá
+ * después, porque el recorrido se dibuja igual aquí que dentro del portal.
  *
  * Se ve sin cuenta. `GET /vacantes` es público.
  */
 
-import type { CSSProperties } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { listarVacantes } from '@/api/portal'
 import type { VacantePublica } from '@/api/tipos'
 import { ETAPAS } from '@/dominio/estados'
 import { rutas } from '@/rutas'
-import { Canto } from '@/ui/Canto'
+import {
+  FranjaQueSeLlena,
+  TarjetaQueResponde,
+  TituloQueViaja,
+} from '@/ui/movimiento'
 import estilos from './Vacantes.module.css'
 
 /** Qué hace el candidato en cada etapa. Es texto de producto, no dato. */
 const QUE_ES: Record<string, string> = {
-  PERFIL: 'Subes tu currículum y respondes una evaluación escrita sobre cómo trabajas.',
-  PRUEBA: 'Un encargo real del puesto, con el tiempo medido.',
-  SIMULACION: 'Una sesión de trabajo con el equipo, en una fecha que eliges tú.',
-  VALIDACION: 'Un periodo corto trabajando de verdad, con acuerdo y responsable.',
-  DECISION: 'Una persona decide, mirando todo el recorrido.',
+  PERFIL: 'Currículum y evaluación escrita. 14 días.',
+  PRUEBA: 'Un encargo real, con el reloj corriendo.',
+  SIMULACION: 'Dos horas con el equipo, fecha que eliges.',
+  VALIDACION: 'Un periodo corto trabajando de verdad.',
+  DECISION: 'Decide una persona, no un puntaje.',
 }
+
+/** Lo que casi todo el mundo pregunta antes de postular. */
+const PREGUNTAS = [
+  {
+    q: '¿Necesito cuenta para mirar?',
+    a: 'No. Puedes ver las vacantes abiertas, leer una ficha completa y leer los textos legales sin registrarte. La cuenta se crea recién cuando decides postular.',
+  },
+  {
+    q: '¿Cuánto dura todo el proceso?',
+    a: 'Semanas, no días. La evaluación tiene catorce días por defecto y la simulación son dos horas en la fecha que elijas. Los plazos que todavía no están definidos no te los inventamos.',
+  },
+  {
+    q: '¿Mi currículum me puede descartar?',
+    a: 'No. Entra al proceso, pero por diseño no descarta a nadie. Lo único que cierra una postulación en el acto es no cumplir un requisito indispensable.',
+  },
+  {
+    q: '¿Veo mi puntaje?',
+    a: 'No. Verás en qué etapa estás y de quién se espera algo, pero no las notas ni las claves de las preguntas. La decisión final la toma una persona mirando todo el recorrido.',
+  },
+]
 
 export function Vacantes() {
   const consulta = useQuery({ queryKey: ['vacantes'], queryFn: listarVacantes })
   // Lo que llegue por la red no puede dar por hecho que tiene la forma
   // prometida: un cuerpo que no sea lista reventaba la pantalla entera.
   const vacantes = Array.isArray(consulta.data) ? consulta.data : []
+  const ciudades = new Set(vacantes.map((v) => v.ubicacion).filter(Boolean)).size
 
   return (
     <div className={estilos.pagina}>
-      {/*
-        Otra semilla y menos luz que en «Mis procesos», y no por variar: alli la
-        banda esta formada porque hay un proceso en marcha, y aqui todavia no ha
-        empezado nada. Es la misma luz formandose.
-      */}
-      <Canto semilla={7} intensidad={0.6} />
+      <section className={estilos.portada}>
+        <h1 className={estilos.entrada}>
+          Tu próximo trabajo{' '}
+          <img className={estilos.pieza} src="/pieza-trabajo.png" alt="" aria-hidden="true" />{' '}
+          puede
+          empezar aquí
+        </h1>
+        <p className={estilos.bajada}>
+          Aquí no se decide por el currículum: se mira cómo trabajas. Cinco etapas, unas
+          semanas, y en todo momento sabes en qué punto estás.
+        </p>
 
-      {/*
-        El primer golpe de vista no promete: enseña. A la izquierda lo que se
-        dice, a la derecha las cinco etapas con su tramo del espectro. Lo que
-        distingue a este proceso de una bolsa de empleo es justamente que hay
-        cinco etapas y en todas se mira cómo trabajas, así que eso tiene que
-        estar arriba, no detrás de una regla.
-      */}
-      <div className={estilos.portada}>
-        <div className={estilos.dicho}>
-          <h1 className={estilos.entrada}>Tu próximo trabajo puede empezar aquí.</h1>
-          <p className={estilos.bajada}>
-            El proceso son cinco etapas, y en todas se mira cómo trabajas. Tu currículum
-            entra, pero por diseño no descarta a nadie.
-          </p>
-
-          {/*
-            La accion va en tinta y no en violeta. El violeta significa «te toca
-            a ti» dentro de un proceso, y aqui todavia no hay ninguno: quien
-            llega no tiene turno, tiene curiosidad.
-          */}
-          <a className={estilos.verVacantes} href="#vacantes-abiertas">
+        {/*
+          La accion va en negro y no en color. En este mundo el negro es la
+          accion y el coral solo marca «te toca a ti», que aqui todavia no
+          existe: quien llega no tiene turno, tiene curiosidad.
+        */}
+        <div className={estilos.acciones}>
+          <a className={estilos.accionPrincipal} href="#vacantes-abiertas">
             Ver las vacantes abiertas
           </a>
+          <Link className={estilos.accionSecundaria} to={rutas.procesos()}>
+            Ya postulé antes
+          </Link>
         </div>
 
-        <section className={estilos.proceso} aria-labelledby="lo-que-te-espera">
-          <h2 className={estilos.tituloProceso} id="lo-que-te-espera">
-            Lo que te espera
-          </h2>
-          <ol className={estilos.etapas} role="list">
-            {ETAPAS.map((etapa, indice) => (
-              <li
-                className={estilos.etapa}
-                key={etapa.clave}
-                style={{ '--i': indice } as CSSProperties}
-              >
-                {/* La rebanada del espectro que le toca a esta etapa por su sitio. */}
-                <div className={estilos.marca} aria-hidden="true" />
-                <div>
+        {/*
+          El escaparate: la pieza grande del mundo. Dentro va el recorrido, que
+          es el producto, no un adorno. El resplandor coral es lo unico de color
+          en toda la pantalla.
+        */}
+        <div className={estilos.escaparate}>
+          <div className={estilos.escaparateDentro}>
+            <p className={estilos.pieEscaparate}>
+              Así se ve tu recorrido desde el primer día. Nada de esto se te oculta.
+            </p>
+            <ol className={estilos.recorrido} role="list">
+              {ETAPAS.map((etapa, indice) => (
+                <li className={estilos.tramo} key={etapa.clave}>
+                  {/* C · la franja se dibuja, escalonada por etapa. */}
+                  <FranjaQueSeLlena
+                    orden={indice}
+                    className={indice === 0 ? estilos.barraViva : estilos.barraTramo}
+                  />
+                  <p className={estilos.numeroEtapa}>Etapa {indice + 1}</p>
                   <p className={estilos.nombreEtapa}>{etapa.etiqueta}</p>
                   <p className={estilos.queEsEtapa}>{QUE_ES[etapa.clave]}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
-        </section>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </div>
+      </section>
+
+      {/*
+        La cinta dice cifras verdaderas y solo verdaderas. No hay testimonios ni
+        numero de contratados: el sistema todavia no ha pasado por su primer
+        candidato real y inventarlos seria mentir en la portada.
+      */}
+      <div className={estilos.cinta}>
+        <span>
+          <b>{vacantes.length}</b> {vacantes.length === 1 ? 'puesto abierto' : 'puestos abiertos'}
+        </span>
+        {ciudades > 0 && (
+          <span>
+            <b>{ciudades}</b> {ciudades === 1 ? 'ciudad' : 'ciudades'}
+          </span>
+        )}
+        <span>
+          <b>0</b> descartes por currículum
+        </span>
+        <span>Mirar no exige cuenta</span>
       </div>
 
-      <section className={estilos.seccionVacantes}>
-        <div className={estilos.cabeceraVacantes}>
+      <section className={estilos.seccionVacantes} aria-labelledby="vacantes-abiertas">
+        <div className={estilos.cabeceraSeccion}>
           <h2 id="vacantes-abiertas">Vacantes abiertas</h2>
-          {vacantes.length > 0 && (
-            <span className={estilos.cuantas}>
-              {vacantes.length} {vacantes.length === 1 ? 'puesto' : 'puestos'}
-            </span>
-          )}
+          <p>Con el encargo real escrito por quien va a trabajar contigo.</p>
         </div>
 
         {consulta.isPending && (
@@ -145,37 +192,80 @@ export function Vacantes() {
           </div>
         )}
       </section>
+
+      <section className={estilos.seccion} aria-labelledby="preguntas-frecuentes">
+        <div className={estilos.cabeceraSeccion}>
+          <h2 id="preguntas-frecuentes">Preguntas frecuentes</h2>
+          <p>Lo que casi todo el mundo pregunta antes de postular.</p>
+        </div>
+
+        {/*
+          `<details>` nativo: el plegable, el teclado y el lector de pantalla
+          vienen gratis, y la regla de la plataforma primero dice que se mire el
+          HTML antes de traer una libreria.
+        */}
+        <div className={estilos.preguntas}>
+          {PREGUNTAS.map((p, indice) => (
+            <details className={estilos.pregunta} key={p.q} open={indice === 0}>
+              <summary>
+                {p.q}
+                <span className={estilos.mas} aria-hidden="true" />
+              </summary>
+              <p>{p.a}</p>
+            </details>
+          ))}
+        </div>
+      </section>
+
+      <section className={estilos.cierre}>
+        <div className={estilos.cajaCierre}>
+          <span className={estilos.halo} aria-hidden="true" />
+          <h2>¿Empezamos?</h2>
+          <p>
+            Elige un puesto, lee sus requisitos y postula. Lo demás te lo vamos contando en
+            pantalla, paso a paso.
+          </p>
+          <div className={estilos.acciones}>
+            <a className={estilos.accionPrincipal} href="#vacantes-abiertas">
+              Ver las vacantes abiertas
+            </a>
+            <Link className={estilos.accionSecundaria} to={rutas.procesos()}>
+              Entrar a mis procesos
+            </Link>
+          </div>
+        </div>
+      </section>
     </div>
   )
 }
 
 function Vacante({ vacante }: { vacante: VacantePublica }) {
-  const donde = [vacante.modalidad, vacante.ubicacion, vacante.horario]
-    .filter(Boolean)
-    .join(' · ')
+  const destino = rutas.vacante(vacante.id)
+  const donde = [vacante.modalidad, vacante.ubicacion].filter(Boolean).join(' · ')
   // Casi todos los campos de la vacante pueden venir vacios, asi que se elige
   // el primero que traiga algo en vez de dar por hecho ninguno.
   const resumen = vacante.proposito ?? vacante.descripcion
 
+  // D · la tarjeta se levanta al pasar por encima.
   return (
-    <article className={estilos.vacante}>
-      <Link className={estilos.enlaceVacante} to={rutas.vacante(vacante.id)}>
-        {/*
-          El puesto y quien lo ofrece van juntos y en un solo envoltorio: en
-          escritorio esto es una rejilla de areas nombradas, y un cuarto hijo
-          suelto caeria en colocacion automatica y partiria la composicion.
-        */}
-        {/* `div` y no `span`: lleva un `h3` dentro, que es contenido de flujo. */}
-        <div className={estilos.identidad}>
-          <h3 className={estilos.tituloVacante}>{vacante.titulo}</h3>
-          {vacante.nombreEmpresa && (
-            <span className={estilos.empresa}>{vacante.nombreEmpresa}</span>
-          )}
-        </div>
-        {donde && <span className={estilos.donde}>{donde}</span>}
+    <TarjetaQueResponde className={estilos.vacante}>
+      <Link className={estilos.enlaceVacante} to={destino}>
+        {donde && <span className={estilos.etiqueta}>{donde}</span>}
+        {/* B · este titulo viaja hasta el titular de la ficha. */}
+        <TituloQueViaja id={vacante.id} className={estilos.tituloVacante}>
+          {vacante.titulo}
+        </TituloQueViaja>
+        {vacante.nombreEmpresa && (
+          <span className={estilos.empresa}>{vacante.nombreEmpresa}</span>
+        )}
         {resumen && <p className={estilos.queSeHace}>{resumen}</p>}
-        <span className={estilos.ver}>Ver el puesto y postular →</span>
+        <span className={estilos.pieVacante}>
+          {vacante.horario && <span>{vacante.horario}</span>}
+          <span className={estilos.paga}>
+            {vacante.compensacionPublica ?? 'Rango no publicado'}
+          </span>
+        </span>
       </Link>
-    </article>
+    </TarjetaQueResponde>
   )
 }

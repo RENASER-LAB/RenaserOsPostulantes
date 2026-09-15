@@ -673,6 +673,9 @@ export function Prueba() {
                   alAgotarse={refrescar}
                   className={estilos.tiempo}
                   classNamePoco={estilos.poco}
+                  /* La frase del umbral se ve: el rojo del numero es color, y
+                     el color solo no es una señal. */
+                  classNameAviso={estilos.avisoDelReloj}
                 />
                 {prueba.venceEn && (
                   <span className={estilos.hasta}>

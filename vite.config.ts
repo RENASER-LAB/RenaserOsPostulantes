@@ -15,6 +15,13 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     resolve: {
       alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
+      /*
+       * ⚠️ Sin esto, `motion` resuelve SU copia de React y todo componente que
+       * use un hook suyo revienta con «Invalid hook call... more than one copy
+       * of React». Costo una tarde: el sintoma aparece en el componente propio,
+       * no en la libreria.
+       */
+      dedupe: ['react', 'react-dom'],
     },
     server: {
       port: 5174,

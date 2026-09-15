@@ -1,110 +1,52 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-08-25T00:00:00Z",
+  "generatedAt": "2026-09-10T21:41:44Z",
   "title": "Design System: EX · Portal del candidato",
   "extensions": {
     "colorMeta": {
       "activo": {
         "role": "primary",
-        "displayName": "Violeta de la banda viva",
-        "canonical": "#5638d6",
+        "displayName": "Tinta plena",
+        "canonical": "#0a0a0a",
         "tonalRamp": [
-          "#efecfd",
-          "#c6bcf7",
-          "#9c8bee",
-          "#7360e2",
-          "#5638d6",
-          "#4429b8",
-          "#331e8c"
+          "#000000",
+          "#0a0a0a",
+          "#1f1f1f",
+          "#404040",
+          "#6b6b6b",
+          "#8a8a8a",
+          "#cbcbcb",
+          "#f5f5f5"
         ]
       },
-      "canto-menta": {
-        "role": "secondary",
-        "displayName": "Menta del canto",
-        "canonical": "#16a184",
+      "activo-regla": {
+        "role": "primary",
+        "displayName": "Coral de turno",
+        "canonical": "#ff7c61",
         "tonalRamp": [
-          "#e6f5f0",
-          "#9fded0",
-          "#4dc0a8",
-          "#16a184",
-          "#0f7a63"
-        ]
-      },
-      "canto-aqua": {
-        "role": "secondary",
-        "displayName": "Aqua del canto",
-        "canonical": "#4f8ac9",
-        "tonalRamp": [
-          "#e7f0f9",
-          "#a9c8e8",
-          "#4f8ac9",
-          "#3a679b"
-        ]
-      },
-      "canto-rosa": {
-        "role": "secondary",
-        "displayName": "Rosa del canto",
-        "canonical": "#d2497e",
-        "tonalRamp": [
-          "#fbe8f0",
-          "#eeaac6",
-          "#d2497e",
-          "#a13560"
-        ]
-      },
-      "canto-violeta": {
-        "role": "secondary",
-        "displayName": "Violeta del canto",
-        "canonical": "#6b4be0",
-        "tonalRamp": [
-          "#ede9fc",
-          "#b9a7f2",
-          "#6b4be0",
-          "#5138ab"
-        ]
-      },
-      "bien": {
-        "role": "tertiary",
-        "displayName": "Verde de hecho",
-        "canonical": "#0b7a63",
-        "tonalRamp": [
-          "#e6f5f0",
-          "#8ed3c2",
-          "#0b7a63",
-          "#075c4a"
-        ]
-      },
-      "duda": {
-        "role": "tertiary",
-        "displayName": "Ámbar de duda",
-        "canonical": "#8f5a0a",
-        "tonalRamp": [
-          "#fbf2e4",
-          "#e5c68c",
-          "#8f5a0a",
-          "#6d4406"
-        ]
-      },
-      "mal": {
-        "role": "tertiary",
-        "displayName": "Rojo de fallo",
-        "canonical": "#c22a3f",
-        "tonalRamp": [
-          "#fdedf0",
-          "#f3c3cc",
-          "#c22a3f",
-          "#9e2134"
+          "#4d1d10",
+          "#7a2f1a",
+          "#a84226",
+          "#d55a38",
+          "#ff7c61",
+          "#ff9d86",
+          "#ffc4b4",
+          "#ffe8e1"
         ]
       },
       "cielo": {
         "role": "neutral",
-        "displayName": "Cielo",
-        "canonical": "#f6f8fb",
+        "displayName": "Cielo gris",
+        "canonical": "#f5f5f5",
         "tonalRamp": [
-          "#ffffff",
-          "#f6f8fb",
-          "#eef1f6",
-          "#dfe4ec"
+          "#1a1a1a",
+          "#333333",
+          "#5b5b5b",
+          "#8a8a8a",
+          "#cbcbcb",
+          "#e6e6e6",
+          "#f5f5f5",
+          "#ffffff"
         ]
       },
       "nube": {
@@ -112,275 +54,388 @@
         "displayName": "Nube",
         "canonical": "#ffffff",
         "tonalRamp": [
+          "#333333",
+          "#5b5b5b",
+          "#8a8a8a",
+          "#cbcbcb",
+          "#e6e6e6",
+          "#f4f4f4",
+          "#f5f5f5",
           "#ffffff"
         ]
       },
       "tinta": {
         "role": "neutral",
-        "displayName": "Pizarra",
-        "canonical": "#232b36",
+        "displayName": "Tinta",
+        "canonical": "#333333",
         "tonalRamp": [
-          "#68727f",
-          "#4a5563",
-          "#232b36",
-          "#11161d"
+          "#0a0a0a",
+          "#1f1f1f",
+          "#333333",
+          "#4a4a4a",
+          "#5b5b5b",
+          "#6b6b6b",
+          "#8a8a8a",
+          "#cbcbcb"
+        ]
+      },
+      "bien": {
+        "role": "tertiary",
+        "displayName": "Verde de hecho",
+        "canonical": "#0b7a63",
+        "tonalRamp": [
+          "#03251e",
+          "#053f33",
+          "#075c4a",
+          "#0b7a63",
+          "#12a084",
+          "#3cc4a8",
+          "#8fdcca",
+          "#e6f5f0"
+        ]
+      },
+      "duda": {
+        "role": "tertiary",
+        "displayName": "Ambar de duda",
+        "canonical": "#8f5a0a",
+        "tonalRamp": [
+          "#2c1c03",
+          "#4a2f05",
+          "#6d4406",
+          "#8f5a0a",
+          "#b8760f",
+          "#d99a2e",
+          "#eec27a",
+          "#fbf2e4"
+        ]
+      },
+      "mal": {
+        "role": "tertiary",
+        "displayName": "Rojo de fallo",
+        "canonical": "#c22a3f",
+        "tonalRamp": [
+          "#3d0d14",
+          "#65151f",
+          "#9e2134",
+          "#c22a3f",
+          "#dc4f62",
+          "#ea8391",
+          "#f3c3cc",
+          "#fdedf0"
         ]
       }
     },
     "typographyMeta": {
       "display": {
-        "displayName": "Titular",
-        "purpose": "Uno por pantalla. Peso 200 y nunca por debajo de 30 px: es el peso del mundo y también su suelo de legibilidad."
+        "displayName": "Portada",
+        "purpose": "El titular de cada pantalla. Uno por pantalla y ninguno mas."
       },
       "cifra": {
         "displayName": "Cifra",
-        "purpose": "El cronómetro y las cifras que se leen de un vistazo. Siempre tabular-nums."
+        "purpose": "El cronometro y las cifras que se leen de un vistazo. Siempre tabular-nums."
       },
       "headline": {
         "displayName": "Destacado",
-        "purpose": "Lo mayor dentro de una pantalla: el nombre de una vacante, el enunciado de una pregunta."
+        "purpose": "El titular de una seccion dentro de una pantalla."
       },
       "title": {
-        "displayName": "Título de bloque",
-        "purpose": "El valor de h2. Casi siempre llega por el elemento, no por una clase."
+        "displayName": "Titulo",
+        "purpose": "El titulo de un bloque. Es el valor de h2."
       },
       "entradilla": {
         "displayName": "Entradilla",
-        "purpose": "La frase que presenta una pantalla y el título del tramo abierto."
+        "purpose": "El titulo de una pregunta plegable y el del tramo abierto."
       },
       "body": {
-        "displayName": "Cuerpo",
-        "purpose": "El cuerpo y los campos. Nunca por debajo en un campo: a menos de 16 px iOS hace zoom."
+        "displayName": "Base",
+        "purpose": "El cuerpo y los campos. Nunca por debajo en un campo: iOS hace zoom."
       },
       "prosa": {
         "displayName": "Prosa",
-        "purpose": "La prosa que explica dentro de un panel."
+        "purpose": "La prosa que explica."
       },
       "apoyo": {
         "displayName": "Apoyo",
-        "purpose": "El texto secundario de la interfaz. El tamaño más usado del portal."
+        "purpose": "El texto de los controles y la interfaz secundaria."
       },
       "menor": {
         "displayName": "Menor",
-        "purpose": "Pies, unidades, plazos, pistas bajo un campo."
+        "purpose": "Pies, unidades, pistas bajo un campo."
       },
       "label": {
-        "displayName": "Etiqueta",
-        "purpose": "Título de bloque en versalitas dentro de una pantalla densa. Nunca antetítulo encima de un titular."
+        "displayName": "Micro",
+        "purpose": "Etiquetas de bloque y pildoras de estado."
       }
     },
     "shadows": [
       {
-        "name": "sombra-nube",
-        "value": "0 1px 2px rgb(35 43 54 / 0.04), 0 8px 24px rgb(35 43 54 / 0.05)",
-        "purpose": "Toda superficie de contenido sobre el cielo. Difusa y fría: la profundidad es aire, no papel levantado."
+        "name": "nube",
+        "value": "0 1px 2px rgb(10 10 10 / 0.05), 0 8px 24px rgb(10 10 10 / 0.06)",
+        "purpose": "El escaparate, el panel que reclama y la tarjeta al pasar por encima. Nunca en reposo sobre una superficie corriente: la regla del plano por defecto."
       },
       {
-        "name": "sombra-aviso",
-        "value": "0 12px 24px rgb(35 43 54 / 0.10), 0 32px 64px rgb(35 43 54 / 0.14)",
+        "name": "aviso",
+        "value": "0 12px 24px rgb(10 10 10 / 0.10), 0 32px 64px rgb(10 10 10 / 0.14)",
         "purpose": "El modal, para que se despegue del fondo apagado."
       },
       {
-        "name": "banda-viva",
-        "value": "0 0 0 1px rgb(255 255 255 / 0.9), 0 4px 18px rgb(86 56 214 / 0.35)",
-        "purpose": "El resplandor bajo el tramo del recorrido donde está el candidato."
-      },
-      {
         "name": "bruma-viva",
-        "value": "0 0 0 4px #efecfd",
-        "purpose": "El halo que abre la acción principal al pasar por encima. Es un ensanche, no una sombra."
+        "value": "0 0 0 4px var(--activo-bruma)",
+        "purpose": "El halo coral al pasar por encima de un boton de accion. Es un ensanche, no una sombra, y no rompe la regla del color: aparece y se va con el puntero."
       },
       {
-        "name": "panel-reclama",
-        "value": "0 2px 6px rgb(35 43 54 / 0.05), 0 14px 40px rgb(86 56 214 / 0.14)",
-        "purpose": "El panel que pide algo al candidato."
+        "name": "velo",
+        "value": "rgb(10 10 10 / 0.4)",
+        "purpose": "Lo que se apaga detras de un modal. Es token y no pieza porque sus cuatro consumidores no pueden compartir clase: tres son el ::backdrop de un <dialog>."
       }
     ],
     "motion": [
       {
         "name": "salida",
         "value": "cubic-bezier(0.16, 1, 0.3, 1)",
-        "purpose": "Salida exponencial desde algo que ya se ve. Todas las transiciones de estado, a 160 ms."
+        "purpose": "La curva del mundo. La misma en CSS y en las piezas de motion."
       },
       {
-        "name": "formarse",
-        "value": "clip-path inset(0 100% 0 0) → inset(0 0 0 0), 900ms",
-        "purpose": "El único momento con movimiento que se dispara solo: la franja del tramo vivo formándose de izquierda a derecha."
+        "name": "franja",
+        "value": "500ms, escalonada 80ms por etapa",
+        "purpose": "La barra del recorrido dibujandose. Es el unico movimiento que significa algo del producto: dice hasta donde llegaste. Se anima con `animate()` imperativo y no con `initial`/`animate`, porque el `AnimatePresence initial={false}` del armazon suprime por contexto la entrada de todos sus descendientes."
       },
       {
-        "name": "deriva",
-        "value": "translate3d(-2%,0,0) → translate3d(2%,-1%,0), 52s alternate",
-        "purpose": "La deriva del canto. Material, no efecto. Solo traslada: escalar estira el mapa de bits."
+        "name": "pantalla",
+        "value": "280ms, opacidad y 12px de desplazamiento",
+        "purpose": "Cada pantalla al cambiar de ruta. ⚠️ No corre en la evaluacion, la prueba ni el cuestionario tecnico: con el reloj corriendo no se mueve nada."
+      },
+      {
+        "name": "tarjeta",
+        "value": "muelle, rigidez 400, amortiguacion 30",
+        "purpose": "La tarjeta que se levanta al pasar por encima. Con muelle y no con duracion: al pulsar y soltar rapido, una duracion fija se siente pegajosa."
       }
     ],
     "breakpoints": [
       {
-        "name": "movil",
-        "value": "640px"
+        "name": "1066",
+        "value": "1066px",
+        "purpose": "Solo la portada: la rejilla de vacantes pasa de tres a dos."
       },
       {
-        "name": "recorrido",
-        "value": "760px"
+        "name": "900",
+        "value": "900px",
+        "purpose": "El que manda: las rejillas de tres pasan a dos y el reparto en columnas se apila."
       },
       {
-        "name": "composicion",
-        "value": "900px"
+        "name": "860",
+        "value": "860px",
+        "purpose": "Solo la prueba: el encargo y el trabajo dejan de ir en paralelo."
       },
       {
-        "name": "mapa-examen",
-        "value": "1100px"
+        "name": "760",
+        "value": "760px",
+        "purpose": "El recorrido de cinco tramos se pone de pie. Lo usan «Mis procesos», el detalle y la evaluacion."
+      },
+      {
+        "name": "700",
+        "value": "700px",
+        "purpose": "Solo «Mi perfil»: la portada de la cabecera se sale a sangre y baja de 168 a 120 px."
+      },
+      {
+        "name": "640",
+        "value": "640px",
+        "purpose": "El otro que manda: todo cae a una columna y los carriles estrechan su relleno."
       }
     ]
   },
   "components": [
     {
-      "name": "Acción de la banda viva",
+      "name": "Accion",
       "kind": "button",
-      "refersTo": "button-acento-grande",
-      "description": "La acción principal de una pantalla. Rellena y no con filete espectral: es la afordancia más importante del producto.",
-      "html": "<button class=\"ds-activo\">Continuar evaluación</button>",
-      "css": ".ds-activo { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 32px; border-radius: 999px; background: #5638d6; color: #fff; border: 1px solid #5638d6; font: 600 16px/1.5 Mulish, system-ui, sans-serif; letter-spacing: -0.004em; cursor: pointer; transition: background 160ms cubic-bezier(.16,1,.3,1), box-shadow 160ms cubic-bezier(.16,1,.3,1); } .ds-activo:hover { background: #4429b8; border-color: #4429b8; box-shadow: 0 0 0 4px #efecfd; }"
+      "refersTo": "button-accion",
+      "description": "La accion principal de una pantalla. Negro pleno, esquina de 4 px, 48 px de alto. Hay una hermana de 44 px para cuando vive dentro de un tramo o un aviso.",
+      "html": "<button class=\"ds-accion\">Ver las vacantes abiertas</button>",
+      "css": ".ds-accion { background: var(--activo, #0a0a0a); color: var(--tinta-invertida, #fff); min-height: 48px; padding: 0 32px; border: 1px solid var(--activo, #0a0a0a); border-radius: var(--radio-control, 4px); font: 600 16px/1.5 Figtree, system-ui, sans-serif; letter-spacing: -.004em; cursor: pointer; transition: background 160ms cubic-bezier(0.16,1,0.3,1), box-shadow 160ms cubic-bezier(0.16,1,0.3,1); } .ds-accion:hover:not(:disabled) { background: var(--activo-pulsado, #404040); border-color: var(--activo-pulsado, #404040); box-shadow: 0 0 0 4px rgba(255,136,150,.2); } .ds-accion:focus-visible { outline: 2px solid var(--activo, #0a0a0a); outline-offset: 3px; } .ds-accion:disabled { background: var(--nube-honda, #e6e6e6); border-color: var(--nube-honda, #e6e6e6); color: var(--tinta3, #6b6b6b); cursor: default; }"
     },
     {
-      "name": "Acción secundaria",
+      "name": "Accion secundaria",
       "kind": "button",
       "refersTo": "button-secundario",
-      "description": "Todo lo demás que se puede pulsar. El contorno es borde-control y no regla: un control pide 3:1 contra el fondo, una caja no.",
-      "html": "<button class=\"ds-secundario\">Intentar de nuevo</button>",
-      "css": ".ds-secundario { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 24px; border-radius: 999px; background: #fff; color: #232b36; border: 1px solid #848e9c; font: 600 15px/1.5 Mulish, system-ui, sans-serif; cursor: pointer; transition: border-color 160ms cubic-bezier(.16,1,.3,1); } .ds-secundario:hover { border-color: #232b36; }"
+      "description": "Todo lo demas que se puede pulsar. Lleva contorno de --borde-control, que da 3,45:1: una sombra no da contraste medible al limite de un control.",
+      "html": "<button class=\"ds-secundario\">Ya postule antes</button>",
+      "css": ".ds-secundario { background: var(--nube, #fff); color: var(--tinta, #333); min-height: 48px; padding: 0 32px; border: 1px solid var(--borde-control, #8a8a8a); border-radius: var(--radio-control, 4px); font: 600 16px/1.5 Figtree, system-ui, sans-serif; letter-spacing: -.004em; cursor: pointer; transition: border-color 160ms cubic-bezier(0.16,1,0.3,1), background 160ms cubic-bezier(0.16,1,0.3,1); } .ds-secundario:hover:not(:disabled) { border-color: var(--tinta, #333); } .ds-secundario:focus-visible { outline: 2px solid var(--activo, #0a0a0a); outline-offset: 3px; } .ds-secundario:disabled { background: var(--nube-honda, #e6e6e6); border-color: var(--nube-honda, #e6e6e6); color: var(--tinta3, #6b6b6b); cursor: default; }"
     },
     {
       "name": "Campo de texto",
       "kind": "input",
       "refersTo": "input",
       "description": "48 px de alto y 16 px de letra: por debajo iOS hace zoom al enfocarlo.",
-      "html": "<input class=\"ds-campo\" placeholder=\"tu@correo.com\">",
-      "css": ".ds-campo { height: 48px; padding: 0 12px; border-radius: 10px; background: #fff; color: #232b36; border: 1px solid #848e9c; font: 400 16px/1.5 Mulish, system-ui, sans-serif; } .ds-campo:focus-visible { outline: 2px solid #5638d6; outline-offset: 3px; }"
+      "html": "<input class=\"ds-campo\" type=\"text\" placeholder=\"Tu correo\">",
+      "css": ".ds-campo { height: 48px; padding: 0 12px; background: var(--nube, #fff); color: var(--tinta, #333); border: 1px solid var(--borde-control, #8a8a8a); border-radius: var(--radio-menor, 8px); font: 400 16px/1.5 Figtree, system-ui, sans-serif; } .ds-campo::placeholder { color: var(--tinta3, #6b6b6b); } .ds-campo:focus-visible { outline: 2px solid var(--activo, #0a0a0a); outline-offset: 3px; } .ds-campo[aria-invalid=\"true\"] { border-width: 2px; border-color: var(--mal, #c22a3f); }"
     },
     {
-      "name": "Superficie de nube",
+      "name": "Superficie",
       "kind": "card",
-      "refersTo": "superficie-nube",
-      "description": "El contenedor de contenido. Se separa del cielo porque está un punto más clara, no por un contorno grueso. Nunca se anidan dos con sombra.",
-      "html": "<article class=\"ds-nube\"><h2>Analista de Datos</h2><p>Postulaste el 4 de agosto de 2026</p></article>",
-      "css": ".ds-nube { background: #fff; border: 1px solid #e3e7ee; border-radius: 14px; box-shadow: 0 1px 2px rgb(35 43 54 / .04), 0 8px 24px rgb(35 43 54 / .05); padding: 32px; } .ds-nube h2 { font: 700 clamp(20px,2.1vw,24px)/1.2 Mulish, system-ui, sans-serif; letter-spacing: -.022em; color: #232b36; margin: 0; } .ds-nube p { font: 400 14px/1.5 Mulish, system-ui, sans-serif; color: #68727f; margin: 8px 0 0; }"
+      "refersTo": "superficie",
+      "description": "Blanco sobre el cielo gris. Se separa por tono, no por contorno grueso.",
+      "html": "<div class=\"ds-superficie\"><h3>Analista de Datos</h3><p>Clinica San Juan</p></div>",
+      "css": ".ds-superficie { background: var(--nube, #fff); border: 1px solid var(--regla, #e6e6e6); border-radius: var(--radio, 12px); padding: 24px; color: var(--tinta, #333); font-family: Figtree, system-ui, sans-serif; } .ds-superficie h3 { margin: 0 0 4px; font: 600 20px/1.25 inherit; letter-spacing: -.02em; } .ds-superficie p { margin: 0; font-size: 14px; color: var(--tinta3, #6b6b6b); }"
     },
     {
       "name": "Panel que reclama",
-      "kind": "card",
-      "refersTo": "panel-te-toca",
-      "description": "La única superficie que cambia de piel: contorno de 2 px de regla viva y resplandor violeta. El campo de dentro se queda en nube — el color vive en el canto.",
-      "html": "<div class=\"ds-reclama\"><h3>Tienes una evaluación pendiente</h3><p>Tus respuestas se guardan solas.</p></div>",
-      "css": ".ds-reclama { background: #fff; border: 2px solid #c6bcf7; border-radius: 14px; box-shadow: 0 2px 6px rgb(35 43 54 / .05), 0 14px 40px rgb(86 56 214 / .14); padding: 24px; } .ds-reclama h3 { font: 700 18px/1.4 Mulish, system-ui, sans-serif; letter-spacing: -.014em; color: #232b36; margin: 0; } .ds-reclama p { font: 400 14px/1.55 Mulish, system-ui, sans-serif; color: #4a5563; margin: 8px 0 0; }"
-    },
-    {
-      "name": "Cabecera de vidrio empañado",
-      "kind": "nav",
-      "description": "Se pega encima del canto irisado. Una barra blanca maciza partiría la nube en dos justo donde tiene que verse entera.",
-      "html": "<header class=\"ds-cabecera\"><span>EX</span><nav><a class=\"ds-nav ds-nav-activo\">Mis procesos</a><a class=\"ds-nav\">Vacantes</a></nav></header>",
-      "css": ".ds-cabecera { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 8px 24px; background: rgb(255 255 255 / .72); backdrop-filter: blur(18px) saturate(1.4); border-bottom: 1px solid rgb(203 210 220 / .5); font-family: Mulish, system-ui, sans-serif; } .ds-nav { display: inline-flex; align-items: center; min-height: 44px; padding: 0 12px; border-radius: 999px; color: #4a5563; font-size: 14px; text-decoration: none; } .ds-nav-activo { color: #232b36; font-weight: 700; background: rgb(35 43 54 / .06); }"
-    },
-    {
-      "name": "El recorrido",
       "kind": "custom",
-      "description": "La pieza que sostiene el mundo: cinco tramos del espectro. El color es posicional y el estado se lee en el grosor de la franja.",
-      "html": "<ol class=\"ds-banda\"><li class=\"ds-tramo\"><span class=\"ds-franja ds-formada\" style=\"--i:0\"></span><p>Tu perfil</p></li><li class=\"ds-tramo\"><span class=\"ds-franja ds-viva\" style=\"--i:1\"></span><p>La prueba del puesto</p></li><li class=\"ds-tramo\"><span class=\"ds-franja ds-ausente\" style=\"--i:2\"></span><p>La simulación de trabajo</p></li></ol>",
-      "css": ".ds-banda { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; list-style: none; margin: 0; padding: 0; font-family: Mulish, system-ui, sans-serif; } .ds-franja { display: flex; align-items: center; justify-content: center; height: 14px; } .ds-franja::before { content: ''; display: block; width: 100%; height: 8px; border-radius: 999px; background-image: linear-gradient(90deg, #16a184 0%, #4f8ac9 34%, #d2497e 68%, #6b4be0 100%); background-size: 300% 100%; background-position-x: calc(var(--i) * 50%); } .ds-viva::before { height: 12px; background-image: none; background-color: #5638d6; box-shadow: 0 0 0 1px rgb(255 255 255 / .9), 0 4px 18px rgb(86 56 214 / .35); } .ds-ausente::before { height: 2px; background-image: none; background-color: #cbd2dc; } .ds-tramo p { margin: 12px 0 0; font-size: 15px; font-weight: 600; letter-spacing: -.008em; color: #232b36; } .ds-ausente ~ p, .ds-tramo:has(.ds-ausente) p { font-weight: 400; color: #68727f; }"
+      "refersTo": "panel-te-toca",
+      "description": "El unico panel con color: contorno coral de 2 px y la etiqueta de bruma rosa. Significa te toca a ti.",
+      "html": "<div class=\"ds-reclama\"><span class=\"ds-etiqueta\">Te toca a ti</span><h3>Prueba del puesto habilitada</h3><p>El cronometro empieza cuando confirmes.</p></div>",
+      "css": ".ds-reclama { background: var(--nube, #fff); border: 2px solid var(--activo-regla, #ff7c61); border-radius: var(--radio, 12px); box-shadow: 0 1px 2px rgb(10 10 10 / .05), 0 8px 24px rgb(10 10 10 / .06); padding: 24px; color: var(--tinta, #333); font-family: Figtree, system-ui, sans-serif; } .ds-etiqueta { display: inline-block; margin-bottom: 12px; padding: 4px 10px; border-radius: 4px; background: rgba(255,136,150,.2); color: var(--tinta-pulsado, #0a0a0a); font: 600 12px/1.4 inherit; letter-spacing: .04em; } .ds-reclama h3 { margin: 0 0 4px; font: 600 20px/1.25 inherit; letter-spacing: -.02em; } .ds-reclama p { margin: 0; font-size: 15px; color: var(--tinta3, #6b6b6b); }"
+    },
+    {
+      "name": "Panel de espera",
+      "kind": "custom",
+      "refersTo": "panel-espera",
+      "description": "Lo que espera a otra persona: nube hundida, sin coral y sin boton.",
+      "html": "<div class=\"ds-espera\"><h3>Estamos calificando tus respuestas</h3><p>No tienes que hacer nada.</p></div>",
+      "css": ".ds-espera { background: var(--nube-hundida, #f4f4f4); border: 1px solid var(--regla, #e6e6e6); border-radius: var(--radio, 12px); padding: 24px; color: var(--tinta, #333); font-family: Figtree, system-ui, sans-serif; } .ds-espera h3 { margin: 0 0 4px; font: 600 20px/1.25 inherit; letter-spacing: -.02em; } .ds-espera p { margin: 0; font-size: 15px; color: var(--tinta3, #6b6b6b); }"
+    },
+    {
+      "name": "Escaparate",
+      "kind": "custom",
+      "refersTo": "superficie",
+      "description": "La pieza grande de la portada: borde blanco al 40 por ciento de 12 px y el resplandor coral detras. background-clip es obligatorio.",
+      "html": "<div class=\"ds-escaparate\"><div class=\"ds-escaparate-dentro\"><p>Asi se ve tu recorrido desde el primer dia.</p></div></div>",
+      "css": ".ds-escaparate { background: #fff; background-clip: padding-box; border: 12px solid rgb(255 255 255 / .4); border-radius: 20px; overflow: hidden; box-shadow: 0 1px 2px rgb(10 10 10 / .05), 0 8px 24px rgb(10 10 10 / .06); } .ds-escaparate-dentro { position: relative; padding: 48px 32px 96px; background: #fff; overflow: hidden; font-family: Figtree, system-ui, sans-serif; text-align: center; } .ds-escaparate-dentro::before { content: ''; position: absolute; left: 50%; bottom: -46%; width: 78%; height: 96%; transform: translateX(-50%); background: radial-gradient(48% 46% at 50% 46%, rgb(255 93 110 / .55) 0%, rgb(255 124 97 / .34) 45%, rgb(255 136 150 / 0) 74%); filter: blur(10px); } .ds-escaparate-dentro p { position: relative; margin: 0; font-size: 13px; color: var(--tinta3, #6b6b6b); }"
+    },
+    {
+      "name": "Accion peligrosa",
+      "kind": "button",
+      "refersTo": "button-peligroso",
+      "description": "Lo que no se puede deshacer. Relleno cuando es la accion destructiva principal de donde esta; de contorno cuando es una entre varias, como el Retirarme de cada fila.",
+      "html": "<button class=\"ds-peligroso\">Pedir el borrado</button>\n<button class=\"ds-peligroso-contorno\">Retirarme</button>",
+      "css": ".ds-peligroso { background: var(--mal, #c22a3f); color: var(--tinta-invertida, #fff); min-height: 48px; padding: 0 32px; border: 1px solid var(--mal, #c22a3f); border-radius: var(--radio-control, 4px); font: 600 16px/1.5 Figtree, system-ui, sans-serif; cursor: pointer; transition: background 160ms cubic-bezier(0.16,1,0.3,1); } .ds-peligroso:hover:not(:disabled) { background: var(--mal-pulsado, #9e2134); border-color: var(--mal-pulsado, #9e2134); } .ds-peligroso-contorno { background: var(--nube, #fff); color: var(--mal, #c22a3f); min-height: 44px; padding: 0 24px; border: 1px solid var(--mal, #c22a3f); border-radius: var(--radio-control, 4px); font: 600 15px/1.5 Figtree, system-ui, sans-serif; cursor: pointer; transition: background 160ms cubic-bezier(0.16,1,0.3,1); } .ds-peligroso-contorno:hover:not(:disabled) { background: var(--mal-bruma, #fdedf0); } .ds-peligroso:focus-visible, .ds-peligroso-contorno:focus-visible { outline: 2px solid var(--activo, #0a0a0a); outline-offset: 3px; }"
+    },
+    {
+      "name": "Panel en duda",
+      "kind": "custom",
+      "refersTo": "panel-en-duda",
+      "description": "La tercera cosa que puede decir un panel: ni te toca a ti, ni esperas a otro — mirate esto antes de seguir. Sus dos casos son los requisitos indispensables de una vacante (borde al doble, porque es el unico descarte automatico) y el aviso de que el formulario de la decision todavia no envia.",
+      "html": "<div class=\"ds-en-duda\"><p>Todavia no puedes mandarla desde el portal: estamos terminando esta parte.</p></div>\n<div class=\"ds-en-duda ds-indispensable\"><h3>Requisitos indispensables</h3><p>No cumplir uno cierra tu postulacion en el acto.</p></div>",
+      "css": ".ds-en-duda { background: var(--duda-bruma, #fbf2e4); border: 1px solid var(--duda, #8f5a0a); border-radius: var(--radio, 12px); padding: 16px; color: var(--duda-tinta, #6d4406); font-family: Figtree, system-ui, sans-serif; font-size: 15px; line-height: 1.55; } .ds-indispensable { border-width: 2px; padding: 24px; } .ds-indispensable h3 { margin: 0 0 4px; font: 600 20px/1.25 inherit; letter-spacing: -.02em; } .ds-indispensable p { margin: 0; color: var(--duda-tinta2, #87632e); }"
+    },
+    {
+      "name": "Recorrido",
+      "kind": "custom",
+      "refersTo": "recorrido",
+      "description": "Cinco tramos, uno por etapa. El estado se dice con el grosor y el relleno de la franja, nunca con el color: con la pantalla en gris se distinguen los cinco. La viva no lleva coral — eso lo lleva el panel que cuelga debajo.",
+      "html": "<ol class=\"ds-recorrido\"><li class=\"ds-cumplida\"><span></span><p>Tu perfil</p></li><li class=\"ds-viva\"><span></span><p>La prueba del puesto</p></li><li class=\"ds-pendiente\"><span></span><p>La simulacion</p></li></ol>",
+      "css": ".ds-recorrido { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; list-style: none; margin: 0; padding: 0; font-family: Figtree, system-ui, sans-serif; } .ds-recorrido span { display: block; height: 8px; border-radius: var(--radio-control, 4px); background: var(--activo, #0a0a0a); } .ds-viva span { height: 12px; box-shadow: 0 0 0 1px rgb(255 255 255 / .9); } .ds-pendiente span { height: 2px; background: var(--regla2, #cbcbcb); } .ds-recorrido p { margin: 12px 0 0; font: 600 15px/1.4 inherit; letter-spacing: -.008em; }"
+    },
+    {
+      "name": "Hueco declarado",
+      "kind": "custom",
+      "refersTo": "hueco",
+      "description": "Lo que el portal no sabe todavia y dice en vez de rellenar. Un nombre de responsable puesto a ojo vale menos que el hueco escrito. Va neutro y sin filete lateral: un hueco no es una alarma.",
+      "html": "<p class=\"ds-hueco\">Quien es tu responsable todavia no llega al portal. Lo tienes en el acuerdo que firmaste.</p>",
+      "css": ".ds-hueco { border: 1px solid var(--regla2, #cbcbcb); border-radius: var(--radio, 12px); background: var(--nube-hundida, #f4f4f4); padding: 16px; margin: 0; font: 400 14px/1.55 Figtree, system-ui, sans-serif; color: var(--tinta2, #5b5b5b); }"
+    },
+    {
+      "name": "Carriles",
+      "kind": "custom",
+      "refersTo": "hoja",
+      "description": "Los cuatro anchos legales de una pantalla, y ninguno mas: 68rem para lo que se compone en columnas, 48 para un documento, 44 para un formulario largo y 34 para uno de tres campos. Son variantes con nombre y no un max-width que cada pantalla se escribe encima: pisarlo funciona por el orden del bundle, no porque nadie lo haya decidido.",
+      "html": "<div class=\"ds-hoja\">componer</div>\n<div class=\"ds-hoja ds-hoja-prosa\">documento</div>",
+      "css": ".ds-hoja { max-width: 68rem; margin: 0 auto; padding: 48px 24px 72px; font-family: Figtree, system-ui, sans-serif; } .ds-hoja-prosa { max-width: 48rem; } .ds-hoja-formulario { max-width: 44rem; } .ds-hoja-corta { max-width: 34rem; }"
     }
   ],
   "narrative": {
-    "northStar": "El canto",
-    "overview": "Una nube recién formada difracta la luz del sol cuando sus gotas son de tamaño parecido, y aparece en su borde una banda estrecha de color. Tu candidatura es esa banda: se forma tramo a tramo a lo largo de semanas. Del fenómeno viene el vocabulario de estado entero —ausente, formándose, vívido, disperso— y el material: fondo de bruma fría, superficies de nube blanca encima, y el color viviendo en los cantos.\n\nHay una inversión deliberada respecto al fenómeno, y de ella cuelga el resto. En el cielo el canto se deshace cuando las gotas engordan; aquí lo que se formó se queda formado, porque el producto trata de acumular evidencia y lo que el candidato ya demostró es suyo.\n\nSe rechazaron el papel blanco con tinta negra del portal anterior —correcto pero sin carácter, que fue el motivo del rediseño—, el azul de Apple, y la rendición pastel y fina de este mismo mundo, que pinta exactamente el problema que se venía a resolver.",
+    "northStar": "El escaparate",
+    "overview": "Un cuarto gris con una sola pieza iluminada. El fondo no es blanco: es un gris claro y neutro que hace que las superficies blancas de encima se lean como objetos puestos sobre una mesa, no como mas pagina. En medio de ese cuarto hay una vitrina —una tarjeta blanca de borde grueso— y dentro esta el producto: el recorrido del candidato, sus cinco etapas, lo que le toca ahora.\n\nDe ahi sale la disciplina entera. La accion es negra, no de color, porque el negro pleno sobre gris claro es el contraste mas alto disponible y no compite con nada. El color aparece una sola vez: el resplandor coral detras del escaparate, y la bruma rosa que marca lo que reclama tu turno. Y las superficies no flotan: se separan del fondo porque estan un punto mas claras, no porque tengan sombra.\n\nSe reemplazo a «El canto» el 10/09/2026. El motivo no fue el concepto sino su rendicion: el fondo y las superficies quedaban a un 2 % de diferencia, el espectro salia pastel, y el portal entero se leia apagado.",
     "keyCharacteristics": [
-      "El color es posicional, no categórico: dice cuánto has avanzado, no qué etapa es.",
-      "El violeta pleno significa una sola cosa, «te toca a ti», y aparece poco.",
-      "El estado se lee en la forma —el grosor de la franja— antes que en el color.",
-      "El color vive en el canto; el campo donde se lee se queda en nube.",
-      "Superficies redondeadas y controles píldora: la nube no tiene esquinas.",
+      "La accion es negra; el color no es nunca una accion.",
+      "Un solo color en toda la pantalla, y significa «te toca a ti».",
+      "El fondo es gris claro, no blanco: las superficies blancas son objetos encima.",
+      "Los controles tienen esquina corta (4 px), no son pildoras.",
+      "El estado se lee en la forma antes que en el color.",
       "Solo tema claro."
     ],
     "rules": [
       {
-        "name": "La regla de una sola voz",
-        "body": "El violeta significa «te toca a ti» y nada más. En cuanto aparece en un botón secundario, en un enlace o en un titular, el candidato deja de poder fiarse del color y tiene que leerlo todo.",
-        "section": "colors"
+        "name": "La regla de la accion negra",
+        "section": "colors",
+        "body": "Lo que se pulsa para empezar algo va en #0a0a0a. Un boton de color compite con la unica cosa que tiene permiso para llamar la atencion, que es el turno del candidato."
       },
       {
-        "name": "La regla del color en el canto",
-        "body": "El color vive en cantos, filetes, franjas y cabeceras. El campo donde hay prosa se queda en nube. Es lo que hace el mundo y también lo que resuelve el contraste. De ahí sale la forma del panel que reclama: nube blanca, perímetro de 2 px de regla viva y resplandor violeta. Un relleno de bruma viva detrás de un párrafo es la versión equivocada de esa idea. Las dos superficies que sí llevan ese relleno —la fecha elegida y la zona de soltar— no tienen prosa dentro: son un estado momentáneo y una elección.",
-        "section": "colors"
+        "name": "La regla del color que aparece una vez",
+        "section": "colors",
+        "body": "Por pantalla hay un sitio con color: el resplandor del escaparate, o la etiqueta que dice «te toca a ti». Dos ya es ninguno."
       },
       {
-        "name": "La regla del color posicional",
-        "body": "El espectro dice avance, no categoría. Si un color del canto empieza a significar «esto es la prueba», el recorrido deja de poder leerse.",
-        "section": "colors"
+        "name": "La regla del semaforo prestado",
+        "section": "colors",
+        "body": "Verde, ambar y rojo ya significan hecho, duda y error. No se usan para jerarquia, para categorizar ni para decorar."
       },
       {
-        "name": "La regla del semáforo prestado",
-        "body": "Verde, ámbar y rojo ya significan hecho, duda y error. No se usan para jerarquía, para categorizar ni para decorar.",
-        "section": "colors"
-      },
-      {
-        "name": "La regla del peso fino con suelo",
-        "body": "El 200 es el peso del mundo, y solo se usa de 30 px para arriba. Por debajo una Mulish de 200 deja de leerse cómoda, y este es un portal de empleo donde una barrera de lectura impide postular.",
-        "section": "typography"
+        "name": "La regla de la jerarquia tipografica",
+        "section": "typography",
+        "body": "El tamano y el peso hacen los niveles. Ningun recuadro, sombra ni fondo existe para crear un nivel que el tamano ya crea."
       },
       {
         "name": "La regla de la frase entera",
-        "body": "No se parten frases con elementos dentro para enfatizar un número: la frase deja de leerse de una pieza, para el ojo y para un lector de pantalla.",
-        "section": "typography"
-      },
-      {
-        "name": "La regla del panel con dueño",
-        "body": "El tope de línea va en el panel, no en los párrafos de dentro. Así la medida tiene un solo dueño y el bloque no se queda con medio relleno vacío al ensanchar la ventana.",
-        "section": "layout"
-      },
-      {
-        "name": "La regla del desfase medido",
-        "body": "Un elemento pegajoso que se pega debajo de otro no adivina su altura: la mide y la guarda en un token junto a la barra que la produce.",
-        "section": "layout"
+        "section": "typography",
+        "body": "No se parten frases con elementos dentro para enfatizar un numero: la frase deja de leerse de una pieza."
       },
       {
         "name": "La regla del plano por defecto",
-        "body": "Una sombra aparece como respuesta a un estado —señalar el turno, interrumpir, pasar por encima—, nunca para sugerir que una tarjeta flota.",
-        "section": "elevation"
+        "section": "elevation",
+        "body": "Una sombra aparece como respuesta a un estado —pasar por encima, interrumpir, reclamar—, nunca para sugerir que una tarjeta flota."
       },
       {
         "name": "La regla de la forma primero",
-        "body": "Todo estado tiene que leerse en la forma antes que en el color. Si al quitarle el color a una pantalla deja de saberse qué pasa, la pantalla está mal.",
-        "section": "shapes"
+        "section": "shapes",
+        "body": "Todo estado tiene que leerse en la forma antes que en el color. Si al quitarle el color a una pantalla deja de saberse que pasa, la pantalla esta mal."
       },
       {
         "name": "La regla de la caja constante",
-        "body": "La caja de una franja mide siempre lo mismo aunque la franja de dentro cambie de grosor, o los nombres de las etapas caen a alturas distintas y la fila deja de leerse como fila.",
-        "section": "shapes"
+        "section": "shapes",
+        "body": "La caja de una franja mide siempre lo mismo aunque la franja de dentro cambie. Sin eso, las cinco etapas dejan de leerse como una fila."
       },
       {
-        "name": "La regla del antetítulo único",
-        "body": "Las versalitas nombran bloques y estados, nunca van encima de un titular. La única excepción registrada es «DECISIÓN · TE PEDIMOS UNA COSA MÁS», que sitúa el momento del proceso: sin él, «Queremos resolver una duda antes de decidir» se lee como un rechazo. Cualquier otro antetítulo es un descuido, no un precedente.",
-        "section": "typography"
+        "name": "La regla del indicador honesto",
+        "section": "components",
+        "body": "Si algo dice que esta guardado, tiene que salir de comparar con el servidor. Una pregunta en blanco no esta guardada: esta sin responder."
+      },
+      {
+        "name": "La regla de la plataforma primero",
+        "section": "components",
+        "body": "Antes de traer una libreria, se mira si el HTML ya lo resuelve: details, dialog y fieldset disabled traen foco, escape y teclado gratis."
+      },
+      {
+        "name": "La regla del movimiento con trabajo",
+        "section": "components",
+        "body": "El movimiento sirve a la continuidad y al cambio de estado, no a la decoracion. La franja del recorrido se llena cuando el estado cambio desde la ultima visita, no en cada carga; dentro de la prueba del puesto no se mueve nada salvo el aviso de tiempo."
       }
     ],
     "dos": [
-      "Do reservar el violeta #5638d6 para «te toca a ti»: el tramo vivo, el borde del panel que reclama y el botón que lo empieza.",
-      "Do codificar cada estado en la forma antes que en el color, y comprobarlo con la pantalla en gris.",
-      "Do dejar el color en los cantos: filetes, franjas, cabeceras. El campo donde hay prosa se queda en nube.",
-      "Do traer los botones con composes desde piezas.module.css, dejando en la hoja local solo lo que depende de dónde está el botón.",
-      "Do dar 44 px de alto mínimo a todo lo que se pueda tocar, y 48 px con 16 px de letra a los campos de texto.",
-      "Do usar el peso 200 solo de 30 px para arriba.",
+      "Do poner la accion en #0a0a0a con esquina de 4 px. Es la afordancia mas importante del producto.",
+      "Do reservar el coral #ff7c61 y la bruma rosa para «te toca a ti»: el borde del panel que reclama y la etiqueta que lo dice.",
+      "Do codificar cada estado en la forma —grosor, relleno, punteado— antes que en el color, y comprobarlo con la pantalla en gris.",
+      "Do separar una superficie del fondo subiendola de tono, no poniendole contorno grueso.",
+      "Do traer los botones con composes desde piezas.module.css.",
+      "Do dar 44 px de alto minimo a todo lo que se pueda tocar, y 48 px con 16 px de letra a los campos de texto.",
       "Do usar tabular-nums en fechas, cuentas y plazos.",
-      "Do decir en voz alta lo que el sistema todavía no puede hacer, en vez de fingir un formulario."
+      "Do decir en voz alta lo que el sistema todavia no puede hacer.",
+      "Do respetar prefers-reduced-motion en cada transicion que escribas.",
+      "Do adelantarle a la pantalla siguiente el dato que la actual ya tiene, para que abra con su contenido en vez de con su esqueleto."
     ],
     "donts": [
-      "Don't poner el violeta en enlaces, titulares, iconos, etiquetas de estado o botones secundarios.",
-      "Don't dar a un color del espectro el significado de una etapa concreta: el color es posicional.",
-      "Don't usar verde, ámbar o rojo para jerarquía o categoría.",
-      "Don't meter un filtro SVG que cubra el ancho de la página: Chrome lo rasteriza a resolución CSS y el pixelado vuelve.",
-      "Don't anidar superficies con sombra, ni crear un nivel de jerarquía con un recuadro cuando el tamaño de letra ya lo crea.",
-      "Don't añadir un segundo momento con movimiento que se dispare solo, ni ningún movimiento dentro del examen.",
-      "Don't volver a introducir el tema oscuro. Es petición expresa del cliente.",
-      "Don't partir una frase con elementos dentro para enfatizar un número.",
-      "Don't rellenar de bruma viva un panel que tiene prosa dentro: el perímetro violeta sobre nube dice lo mismo y deja el campo de lectura limpio."
+      "Don't poner color en un boton. El color no es una accion en este mundo.",
+      "Don't usar el coral como texto sobre fondo claro: da 2,3:1.",
+      "Don't usar #cbcbcb como contorno de un control: da 1,6:1. Para eso esta --borde-control.",
+      "Don't volver a hacer pildoras: --radio-control vale 4 px.",
+      "Don't usar verde, ambar o rojo para jerarquia o categoria.",
+      "Don't usar los tokens --canto* ni el componente Canto en nada nuevo.",
+      "Don't anidar superficies con sombra, ni crear un nivel de jerarquia con un recuadro cuando el tamano de letra ya lo crea.",
+      "Don't mover nada dentro de la prueba del puesto, salvo el aviso de que queda poco tiempo.",
+      "Don't animar por decorar: si el movimiento no dice un cambio de estado ni sostiene la continuidad entre dos pantallas, sobra.",
+      "Don't repetir en cada carga una animacion que significa «algo cambio». Se dispara cuando cambio, y solo entonces.",
+      "Don't volver a introducir el tema oscuro. Es peticion expresa del cliente.",
+      "Don't partir una frase con elementos dentro para enfatizar un numero.",
+      "Don't marcar un aviso con un filete de acento a la izquierda: es la barra lateral de siempre, y el bloque ya se distingue por su fondo y su contorno enteros."
     ]
   }
 }

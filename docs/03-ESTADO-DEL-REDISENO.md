@@ -1,6 +1,12 @@
 # Estado del rediseño del portal del candidato
 
-Última actualización: 2026-08-25 · el rediseño está cerrado; lo que sigue es el panel
+Última actualización: 2026-09-11
+
+⚠️ **Este documento cuenta el rediseño de agosto de 2026, y su mundo visual ya no es el
+actual.** Aquél se llamaba «El seguimiento»; después vino «El canto» y desde el 10/09/2026
+rige **«El escaparate»**, cuya migración está completa. Lo que sigue vigente de aquí son las
+decisiones de producto y las reglas del código, no el color. Para el diseño de hoy:
+[EL-MUNDO-VISUAL.md](EL-MUNDO-VISUAL.md) y [DESIGN.md](../DESIGN.md).
 
 Este documento es el punto de arranque para retomar el rediseño. Cuenta qué se decidió,
 qué queda por hacer y en qué orden.
@@ -40,8 +46,11 @@ y las doce del recorrido.
 | Evaluación | **A · Una pregunta por pantalla, con mapa** | Mapa lateral con todas las preguntas y su estado. Resuelve el problema conocido: saltarse una y no poder volver |
 | Sin nada que hacer | **A · La espera no ocupa sitio** | Se dice claro que no hay nada pendiente y se ofrece algo útil mientras tanto |
 
-**Color.** Fondo blanco puro. Acento **índigo `#4338CA`**, que sustituye al champagne
-`#816220`. La razón no es estética: verde, ámbar y rojo ya tienen significado fijo en el
+**Color.** ⚠️ Esta decisión es del 23/08/2026 y quedó **sustituida el 10/09/2026**: hoy el
+fondo es un pastel cálido `#FBF1E9` y la acción va en negro pleno `#0A0A0A`, con el coral `#FF7C61`
+como único color. Ver [EL-MUNDO-VISUAL.md](EL-MUNDO-VISUAL.md) y [DESIGN.md](../DESIGN.md).
+Lo que sigue vigente **no son los colores de aquel día** —el índigo `#4338CA` que sustituía al
+champagne `#816220` se fue con ellos—, sino el razonamiento: verde, ámbar y rojo ya tienen significado fijo en el
 sistema —aprobado, en duda, error— así que el acento no podía ser ninguno de esos ni un
 verde azulado, que junto a una etiqueta verde real se lee como «aprobado». Al cliente le
 gusta la estética de Apple pero pidió que no fuera su azul.
@@ -50,8 +59,8 @@ gusta la estética de Apple pero pidió que no fuera su azul.
 pendiente y el tramo del recorrido donde está el candidato. Si empieza a salir en botones
 sueltos o titulares, deja de leerse.
 
-**Solo hay tema claro.** Es petición del cliente. Desaparecen el bloque `data-theme="dark"`
-y el proveedor de tema.
+**Solo hay tema claro.** Es petición del cliente. El bloque `data-theme="dark"` y el proveedor
+de tema **ya desaparecieron**.
 
 **Lo único que se conserva del portal viejo** es el nombre **EX** y su logotipo: la palabra
 con la hormiga dentro de la X.
@@ -67,7 +76,7 @@ caro y no ve lo que importa, que es la consistencia entre ellas.
 
 | Comando | Resultado |
 |---|---|
-| `extract` | Cincuenta bloques con forma de botón repartidos por dieciséis hojas quedaron en **cuatro piezas** en `piezas.module.css`. El CSS pasó de 79,9 kB a 68,9 kB |
+| `extract` | Cincuenta bloques con forma de botón repartidos por dieciséis hojas quedaron en cuatro piezas en `piezas.module.css`. El CSS pasó de 79,9 kB a 68,9 kB. **Se quedó corto**: la portada del rediseño volvió a escribirse los suyos a mano y cinco botones de peligro nunca entraron. Cerrado el 10/09/2026 — ver la bitácora |
 | `document` | `DESIGN.md` en la raíz y `.impeccable/design.json` al lado. **Se regeneran juntos, nunca uno solo** |
 | `audit` | 17/20. El informe, en [05-AUDITORIA.md](05-AUDITORIA.md) |
 | `critique` | 27/40. Dos P0: el cronómetro sin estilo ni aviso, y la contraseña sin recuperación. Los dos, arreglados |
@@ -118,8 +127,8 @@ Cada una costó un fallo real. Los archivos pueden morir; estas no:
 
 ### 4 · Decisiones pendientes que salieron de la crítica (24/08/2026)
 
-**Las fechas por hito en la lista de postulaciones.** La dirección visual se llama «El
-seguimiento», pero no hay una sola fecha por etapa en «Mis procesos»: `GET /portal/postulaciones`
+**Las fechas por hito en la lista de postulaciones.** No hay una sola fecha por etapa en «Mis
+procesos»: `GET /portal/postulaciones`
 solo trae `estado`, `diasSinCambio` y `creadoEn`. El historial fechado existe, pero únicamente
 en el detalle. Sin fechas, la línea de hitos es un stepper vertical con buen texto.
 

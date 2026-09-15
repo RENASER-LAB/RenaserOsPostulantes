@@ -33,7 +33,7 @@ export function Clave() {
         ← Volver a entrar
       </Link>
 
-      <h1>Te ayudamos a entrar.</h1>
+      <h1 className={estilos.titular}>Te ayudamos a entrar.</h1>
       <p className={estilos.bajada}>
         Todavía no podemos restablecer una contraseña desde aquí. Pero hay dos formas de
         que vuelvas a tu proceso hoy mismo, y ninguna te hace empezar de cero.

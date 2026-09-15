@@ -6,11 +6,67 @@ por qué llegó a ser así y qué se probó por el camino.
 
 Sigue en [BITACORA-2026-08.md](BITACORA-2026-08.md).
 
-**Al 07/09/2026, el titular del mes:** el ranking se corta por de quién es la pelota; «Mi
+**Al 10/09/2026, el titular del mes:** el portal cambió de mundo visual —«El canto» se fue
+y entró «El escaparate»: fondo gris, acción en negro, Figtree y esquina corta—. Antes de eso: el ranking se corta por de quién es la pelota; «Mi
 perfil» tiene foto, portada, currículum propio y diplomas; empleos, estudios y
 certificaciones comparten UNA cronología; la caja significa «esto te toca»; y al postular ya
 no se vuelve a subir el currículum. Lo del 07/09 se documentó en
 [06-FLUJO-COMPLETO.md](06-FLUJO-COMPLETO.md), no aquí.
+
+---
+
+## «El canto» se va: el portal cambia de mundo visual (10/09/2026)
+
+**El motivo no fue el concepto, fue su rendición.** El encargo empezó con «lo siento muy
+apagado», y al medirlo salió por qué: el fondo `#f6f8fb` y las superficies `#ffffff` estaban
+a un **2 % de diferencia de luminancia**, así que ninguna superficie se despegaba y la
+pantalla entera se leía como un solo plano; el espectro del canto salía pastel —exactamente
+la rendición que el propio DESIGN.md había rechazado por escrito—; y la portada se quedaba
+sin ningún foco cromático porque su acción iba en tinta, no en violeta.
+
+**Se exploraron once direcciones antes de elegir.** Están en
+`.impeccable/mocks/direcciones/` con su índice `00-indice.html`, cada una con mundo,
+estructura y palabras propias: la hoja de laboratorio, la rotulación popular peruana, la piel
+de cefalópodo, la página de avisos del diario, el fotocheck sin emitir, el álbum de láminas,
+el telar, la parrilla de emisión y la libreta en primera persona. Ninguna se eligió. El
+cliente trajo una referencia propia —la plantilla **OriginX de TailGrids**— y de ahí salió la
+décima, que es la que se implementó. ⚠️ Es una plantilla comercial: hay que mirar su licencia
+antes de lanzar.
+
+**El mundo nuevo es «El escaparate».** Fondo gris claro `#F5F5F5` —la regla de negocio era
+tema claro, «no necesariamente blanco»—, superficies blancas que ahora sí se despegan,
+**la acción en negro pleno `#0A0A0A`** con esquina de 4 px, y el color apareciendo una sola
+vez por pantalla: el coral `#FF7C61` y su bruma rosa, que siguen significando «te toca a ti».
+El semáforo verde/ámbar/rojo no se tocó: significaba algo en el producto antes que en el
+diseño.
+
+**Los controles dejaron de ser píldoras.** `--radio-control` valía `999px` y vale `4px`.
+Cualquier hoja que dé por hecho una píldora está desactualizada.
+
+**Mulish salió, entró Figtree**, variable y servida por el propio sitio como lo estaba la
+anterior — una app instalada no puede quedarse sin titulares por falta de cobertura. Su rango
+es 400–700, así que **el peso 200 del mundo anterior ya no existe** y los titulares pasaron
+a 600.
+
+**Se re-vistieron las 17 pantallas de una vez** cambiando los valores de `src/estilos/mundo.css`,
+porque todas consumen esos tokens. Lo que **no** cambió es la composición: solo la portada se
+reescribió, y «Mis procesos» todavía pinta el `<Canto>`, que quedó como resto con su degradado
+retargeteado a coral para que no desentone mientras siga en pantalla.
+
+**Dos errores propios, corregidos en el sitio:**
+
+- Copiar `#CBCBCB` de la referencia a `--borde-control` dejaba el contorno de los campos en
+  **1,62:1**, cuando un control pide 3:1. Está en `#8A8A8A` (3,45:1). La referencia tiene ese
+  fallo; no había por qué heredarlo.
+- La primera versión de la portada llevaba tarjetas redondeadas y sin las marcas de esquina de
+  5 px, que son la firma del mundo de referencia. Se midieron sus tokens en el sitio en vivo
+  en vez de a ojo, y salió una segunda versión fiel — aunque el cliente prefirió la primera.
+
+**La documentación se actualizó a la vez, no al final**, a petición del usuario y con razón:
+con el `design.json` viejo el detector de impeccable daba doce falsos positivos justo cuando
+hay dieciséis pantallas por migrar. Ahora da cero. Se tocaron `DESIGN.md`,
+`.impeccable/design.json`, `PRODUCT.md`, [EL-MUNDO-VISUAL.md](EL-MUNDO-VISUAL.md) —que estaba
+**dos mundos atrás**, todavía en «El seguimiento»— y `CLAUDE.md`.
 
 ---
 
@@ -657,3 +713,1153 @@ ciudad y su columna nazcan de las filas y no del catálogo.
 
 ⚠️ **Un fallo del catálogo se dice, no se disimula.** El campo es obligatorio: un desplegable
 apagado y mudo deja a la persona pulsando «Crear cuenta» contra un error que no explica nada.
+
+---
+
+## 10/09 · El suelo compartido de «El escaparate» (tanda 0 de la migración)
+
+La migración del mundo visual va por pantallas, pero antes de recomponer ninguna se arregló lo
+que todas comparten. Once archivos, y mueven las diecisiete pantallas.
+
+### Había dos especificaciones de botón, y ganó el kit
+
+La portada escribía los suyos a mano —44 px, 14 px de letra en peso 500, secundario sin
+contorno— mientras `piezas.module.css` decía otra cosa y lo consumían las otras dieciséis hojas
+en 62 sitios. **Cada pantalla que se migrara heredaba la contradicción.**
+
+Gana el kit, y el argumento es medible, no de gusto: el secundario de la portada se sostenía
+con una sombra de 0,05 de alfa, que no da contraste en el límite del control. `--borde-control`
+da 3,45:1, que es lo que WCAG 1.4.11 pide. La portada ahora compone del kit, así que sus dos
+botones pasan a 48 px y 16/600, y el secundario gana contorno.
+
+El kit gana además lo que le faltaba para ser una especificación completa: `.secundarioGrande`
+—no había un secundario de 48 px con el que emparejar `.acentoGrande`— y la familia de peligro
+`.peligroso` / `.peligrosoMenor` / `.peligrosoContorno`, que estaba copiada en cinco sitios de
+tres pantallas.
+
+⚠️ **Cinco de esos botones redondeaban a `--radio`,** que es 12 px y el radio de una caja, no el
+de un control. El grep de píldoras no lo veía porque buscaba `999px`. Al componer del kit se
+corrigió de paso.
+
+### Las siete copias de un panel
+
+`0 2px 6px rgb(35 43 54 / 0.05), 0 14px 40px rgb(86 56 214 / 0.14)` estaba escrito **literal en
+siete hojas**: la pizarra y el violeta de «El canto», dos colores que ya no existen en ningún
+token. No era una sombra repetida, era un componente copiado, así que subió como pieza y no
+como token.
+
+Y al mirarlas una a una, las siete no significaban lo mismo. Cinco dicen «te toca a ti» y dos
+—los requisitos indispensables de la ficha de la vacante y de postular— dicen «esto te
+descarta». Esas dos **pasan a ámbar**: donde aparecen todavía no hay ninguna postulación y por
+tanto ningún turno, y lo que dicen es exactamente la definición del ámbar. El coral queda libre
+para discriminar donde hace falta, que es «Mis procesos».
+
+Quedan tres paneles en `piezas.module.css`: `.turno`, `.panelDeEspera` y `.indispensable`.
+
+### El vidrio empañado de la cabecera
+
+`backdrop-filter: blur(18px) saturate(1.4)` existía porque la cabecera se pegaba encima del
+canto irisado. Sin canto, desenfocaba un `--cielo` plano en las diecisiete pantallas a cambio
+de una capa de compositor en cada una. Se fue, y con él su bloque `@supports` y una segunda
+declaración de `--alto-cabecera` que nadie leía —sus seis consumidores no son descendientes de
+`.cabecera`, así que ya tomaban la de `:root`—.
+
+Quitarlo arregló algo que no se veía venir: **las barras pegajosas del examen se pinchan bajo
+`--alto-cabecera` y se transparentaban a través de la cabecera al hacer scroll.**
+
+El enlace activo pasa de un relleno de bruma escrito con la pizarra vieja a peso 700 más un
+filete coral, que es lo que DESIGN.md ya documentaba.
+
+### Dos cosas que aparecieron al mirar
+
+**`composes` no funciona en un selector compuesto.** `Proceso.module.css` tenía
+`.estadoActual.turno`, y al componer ahí, PostCSS devuelve un 500 y **la aplicación entera deja
+de montar**: «composition is only allowed when selector is single :local class name». Al ir a
+arreglarlo resultó que `estilos.turno` no se aplica en ningún sitio de `Proceso.tsx`: la regla
+era CSS muerto y lo único que hacía era arrastrar la sombra violeta. Se borró sin cambiar un
+píxel. Cuando se recomponga la pantalla habrá que decidir de verdad si ahí va un panel coral.
+
+**El examen sí se movía.** DESIGN.md prohíbe cualquier movimiento con el reloj corriendo y las
+piezas lo respetaban, pero `PantallaConEntrada` envuelve el `<Outlet>` del armazón: la
+evaluación, la prueba y el cuestionario entraban desplazándose igual que las demás. **La única
+pieza que una pantalla no puede rechazar es la que le pone su contenedor.** El rechazo vive
+ahora en `movimiento.tsx`, comparando la ruta contra los tres patrones cronometrados.
+
+De paso, `cuestionarioTecnico` no estaba en `TITULOS` del armazón: esa pantalla no cambiaba el
+`document.title`, que es WCAG 2.4.2.
+
+### Lo que se puede comprobar y lo que no
+
+620 unitarias en verde y typecheck limpio, pero **eso no valida nada de esta tanda**: ninguna
+prueba del portal asserta sobre clase, estilo, sombra o color —todas localizan por rol y nombre
+accesible—. Que pasen dice que no se rompió el marcado, no que se vea bien.
+
+De ahí sale la regla de la migración: **se cambia la clase, nunca el elemento.** Poner
+`.acentoGrande` en un `<a>` donde había un `<button>` cambia el rol y mata
+`getByRole('button', …)`, que es como localizan las 620.
+
+---
+
+## 10/09 · El entierro del canto (tanda 1)
+
+`src/ui/Canto.tsx` y su hoja **están borrados**. Eran 282 líneas con el degradado del mundo
+anterior al anterior —teal, aqua, azul, púrpura, violeta— **hardcodeado dentro del SVG**, de
+modo que ni siquiera leía `var(--canto)`. Su único consumidor era «Mis procesos», que lo
+pintaba en sus tres estados.
+
+**No lo sustituye nada.** El escaparate enseña el producto a quien no ha comprado; en «Mis
+procesos» el candidato ya tiene procesos reales, y la pieza iluminada del cuarto gris es el
+panel que reclama, no un adorno arriba.
+
+Con él se fueron tres cosas que solo existían para hacerle sitio en `Procesos.module.css`: un
+`padding-top` de `clamp(184px, 25vh, 272px)`, el `position: relative` de la página y la regla
+que subía todo lo legible a `z-index: 1`. Y una cuarta en el armazón: `.principal` tenía
+`position: relative` para atrapar el canto, que iba en `absolute`. **Se comprobó antes de
+borrarla**: `Modal` y `Avisos` van en `fixed` —que un ancestro relativo no cambia— y los únicos
+`absolute` sin ancestro posicionado del portal son los recortes de solo-lectores, que no
+dependen del bloque contenedor. En pantalla, el modal sigue cubriendo el viewport.
+
+### El recorrido dice el estado con la forma
+
+`Seguimiento.module.css` era el último sitio del portal que pintaba `--canto`: cada tramo
+enseñaba su rebanada del espectro con `background-position-x: calc(var(--i) * 25%)`, así que
+avanzar cambiaba de color. Adoptó las formas que DESIGN.md ya tenía tabuladas:
+
+| Tramo | Antes | Ahora |
+|---|---|---|
+| Formada | su rebanada del espectro | 8 px maciza en tinta |
+| Viva | violeta pleno con resplandor | 12 px maciza en tinta, con filete blanco |
+| Formándose | espectro desvanecido a la mitad | igual, sobre tinta |
+| Ausente | filete de 2 px | igual |
+| Dispersa | punteada | igual |
+
+Medido en pantalla con cuatro postulaciones: 7 formadas, 4 vivas, 13 ausentes y 1 formándose,
+todas sin `background-image`. Las cinco se distinguen en gris.
+
+⚠️ **La viva no lleva coral aunque sea el tramo que te reclama.** El panel `.turno` cuelga
+justo debajo y ya lo dice con palabras; dos corales en la misma postulación no marcan el doble.
+
+El `--i` que llevaba cada `<li>` desapareció del TSX: solo servía para posicionar el espectro.
+
+### Dos cosas que aparecieron al verlo
+
+**El anillo de foco redondeaba el elemento.** `:focus-visible` en `mundo.css` declaraba
+`border-radius: var(--radio-menor)`, y el contorno del navegador ya sigue el radio del
+elemento: la declaración no cambiaba el anillo, cambiaba el botón. Un botón de 4 px saltaba a
+8 al recibir foco, y en el aviso de retirarse se veían **dos esquinas distintas en dos botones
+contiguos**. Se quitó; ahora cada cosa se anilla con la forma que tiene.
+
+**El backend simulado no arrancaba.** `herramientas/backend-simulado.mjs` tenía el puerto fijo
+en 8080, que es justo donde vive `postgresql-adminer-1`. Ahora lee `PUERTO` del entorno:
+`PUERTO=8082 node herramientas/backend-simulado.mjs`. Eso desbloqueó ver las pantallas con
+datos sin tocar ninguna base.
+
+⚠️ **`02-regresion-portal` no vale contra el simulado.** Espera las vacantes sembradas del
+backend real —«Desarrollador web»— y el simulado sirve otras tres. Sus fallos son de datos,
+no de código: la pantalla renderiza entera. (Los siete que se contaron el 10/09 incluían el
+hueco del catálogo de ubigeo, que ya está tapado.) Lo que sí vale es `23-movimiento`, que no
+depende de datos concretos.
+
+**Al simulado le faltaba el catálogo de provincias, y el registro lo decía bien.** El
+desplegable de «Dónde vives» pide `/catalogos/ubigeo`, que se añadió al backend real después
+de escribir el simulado; contra el simulado devolvía 404 y la pantalla mostraba «No pudimos
+cargar la lista de provincias» en vez de dejar un desplegable muerto, que es el comportamiento
+correcto. Se le añadió la constante `UBIGEO` con **quince provincias de muestra, no las 196**:
+las suficientes para ver el desplegable agrupado por departamento y comprobar que «Fuera del
+Perú» va suelto al final.
+
+---
+
+## 10/09 · El vocabulario de página (tanda 2)
+
+«El caso ámbar» y «La validación práctica» son las dos pantallas más baratas del portal donde
+equivocarse —sin backend detrás, sin una sola prueba, y a una no se llega desde ningún sitio—,
+así que son donde se fija el vocabulario que van a consumir las trece hojas restantes.
+
+Al ponerlas una al lado de otra resultó que **tenían el mismo CSS escrito dos veces**, palabra
+por palabra, en once reglas: el carril, el reparto en columnas, el bloque, el título de bloque,
+el texto y sus dos puntos de corte. Eso es lo que subió a **`src/estilos/pagina.module.css`**.
+
+Va aparte de `piezas.module.css` porque son dos preguntas distintas: aquél tiene las cosas
+—botones, paneles—, éste tiene el sitio donde se ponen. Una pantalla puede componerse entera
+con esta hoja sin usar ni un botón.
+
+### Tres trampas de `composes`, y las tres se ven en pantalla
+
+**Un selector de descendiente que llega por `composes` le gana a la clase del consumidor.**
+`.encabezado h1` pesa (0,1,1) y `.titulo` pesa (0,1,0), así que la primera versión de la hoja
+dejaba a «El caso ámbar» sin poder pintar su explicación en tinta plena. **Se rehízo con clases
+sueltas** —`.encabezado`, `.titular`, `.bajada`— antes de que la consumiera nadie más. Quien
+compone decide.
+
+**`composes` en una lista de selectores tumba la aplicación.** `.enviar, .enviar:hover { composes: … }`
+devuelve un 500 de PostCSS y React no monta. Es el mismo fallo que `.estadoActual.turno` de la
+tanda 0: **solo se admite una clase simple**.
+
+**Y el `:hover` del kit pesa más que el tuyo.** `.acentoGrande:hover:not(:disabled)` es (0,3,0)
+y `.enviar:hover` es (0,2,0). Importa porque «Enviar respuesta» es un `<span>` —no hay nada que
+pulsar—, así que nunca casa `:disabled` y el hover del kit **sí** le aplicaba: el botón muerto
+se ponía negro y sacaba su halo coral al pasar por encima. Se ató a
+`[aria-disabled='true']`, que el marcado ya tenía, y así no depende del orden de las hojas.
+
+### Las dos pierden el coral
+
+Las dos lo tenían con un argumento razonable —en las dos la espera es del candidato—, y las dos
+lo pierden por el mismo motivo: **el coral sirve para *encontrar* tu turno entre cosas que no lo
+son**, y a estas pantallas se llega porque te tocaba y no hay más que una cosa. No hay nada
+contra lo que discriminar. Lo que separa el panel de arriba es el titular, que es lo primero que
+se lee.
+
+En «El caso ámbar» hay además un conteo: la pantalla **ya pinta ámbar**, en el aviso de que el
+formulario todavía no envía, y ese no es negociable porque es lo único que impide perder lo
+escrito. Dos colores no marcan el doble.
+
+Medido: cero corales en las dos.
+
+### El ámbar es una pieza, no un caso
+
+`.indispensable` se quedaba corto de nombre: lo que comparten los requisitos de una vacante y
+el aviso del formulario apagado no es «esto te descarta», es **«esto te cambia la decisión»**,
+que es la definición del ámbar. Ahora el kit tiene `.enDuda` (1 px) e `.indispensable`, que es
+el mismo ámbar con el borde al doble para el único descarte automático del producto.
+
+### La barra lateral prohibida
+
+Los dos avisos —`.todaviaNo` y `.falta`— llevaban un filete de 3 px a la izquierda hecho con
+`::before`. Es la barra de acento lateral, que está prohibida en este mundo y que ya costó dos
+correcciones en los prototipos. Fuera; el bloque se distingue por su fondo y su contorno
+enteros, y el hueco declarado subió a la hoja como `.hueco`.
+
+⚠️ **Quedan trece en pantallas sin migrar** —cuenta, postular, evaluación, prueba,
+cuestionario, simulación, privacidad, perfil y el `Campo` compartido—. Cada tanda se lleva las
+suyas.
+
+---
+
+## 10/09 · Las dos pantallas públicas (tanda 3)
+
+La ficha de una vacante y la política de privacidad: lo que se ve sin cuenta, y lo primero que
+consume el vocabulario fijado en la tanda anterior.
+
+### Los cuatro anchos pasan a ser variantes con nombre
+
+La ficha quiere 68rem y la política 48. La forma obvia es que cada hoja se escriba su
+`max-width` encima del de `.hoja` — y funciona, pero **funciona por el orden en que se juntan
+las hojas**, no porque nadie lo haya decidido: las dos reglas pesan (0,1,0) y gana la última
+del bundle. Ahora los cuatro anchos legales son variantes declaradas —`.hoja`, `.hojaProsa`,
+`.hojaFormulario`, `.hojaCorta`— y gana la que se nombra.
+
+### El ritmo de sección no sube al vocabulario
+
+La ficha separa sus secciones a `--e7` y la política a `--e6`, y es a propósito: la política
+tiene ocho seguidas, y con 48 px entre cada una el documento se convierte en un desfiladero.
+Dos consumidores no bastan si lo quieren distinto. Se quedan locales.
+
+### El bloque ámbar es una sola cosa
+
+Los requisitos indispensables ya eran ámbar desde la tanda 0, pero por dentro seguían en
+`--tinta` con viñetas negras: se leía como texto normal metido en una caja de color. Ahora el
+titular, la prosa y las viñetas van en la tinta de la familia —`--duda-tinta` a 7,9:1 y
+`--duda` a 5,2:1 para las viñetas, las dos medidas contra `--duda-bruma`—. El bloque se lee
+como una unidad y no como una advertencia pegada encima de un párrafo.
+
+### Lo que se comprobó
+
+Cero corales en las dos pantallas. Carril de 1088 px en la ficha y 768 px en la política, las
+dos con 48 px de aire arriba y la prosa cortada a 512 px por `--medida`. A 375 px ninguna
+desborda y el botón de postular ocupa el ancho entero a 48 px de alto.
+
+`23-movimiento` sigue en 6/6: el título que viaja de la tarjeta al titular de la ficha
+—`layoutId`, pieza B— sobrevivió a que el `h1` reciba ahora una clase.
+
+### DESIGN.md iba por detrás de su propio frontmatter
+
+El bloque `components` seguía describiendo el botón viejo —44 px, `12px 24px`, 14 px— que se
+sustituyó en la tanda 0, y la nota de estado decía que «Mis procesos» todavía pinta el
+`<Canto>`, borrado en la tanda 1. **El frontmatter es lo que lee el detector**, así que un
+frontmatter viejo no es una errata: es una regla falsa que el detector defiende. Corregido, y
+con `button-accion-menor` y `panel-en-duda` añadidos.
+
+---
+
+## 10/09 · Los cuatro caminos de entrada (tanda 4)
+
+Entrar, crear cuenta, canjear el enlace del correo y la salida de quien no puede: cuatro
+pantallas sobre **una sola hoja de 206 líneas**, que es el mejor ratio de toda la migración.
+
+### El formulario pasa a vivir en una superficie
+
+Flotaba directamente sobre el cielo. En un mundo donde el fondo es gris y lo blanco son objetos
+puestos encima, **un formulario sin superficie no se lee como una cosa: se lee como página**.
+Ahora es un bloque de nube con 32 px dentro; el titular y el pie se quedan fuera, porque sitúan
+la pantalla y no forman parte de lo que se rellena.
+
+Lo mismo para el momento de canjear el enlace del correo, que es el mismo momento —una sola
+cosa sobre la mesa— pero sin nada que rellenar, y para las dos salidas de `/clave`.
+
+### El `composes` entre archivos no gana por escribirlo después
+
+Aquí es donde se vio de verdad. `.formulario { composes: bloque; padding: var(--e6) }`
+**daba 24 px, no 32**: las dos reglas pesan (0,1,0) y cuál gana lo decide el orden en que Vite
+inyecta las hojas, que no es el orden en que se escriben. Dentro de una misma hoja el orden sí
+está garantizado —por eso `.indispensable { composes: enDuda; border-width: 2px }` sí funciona—,
+así que la respuesta es la misma que con los carriles: **una variante con nombre**,
+`.bloqueHolgado`.
+
+Con eso ya son tres sitios donde la regla se aplica: los cuatro anchos, los dos rellenos de
+bloque, y `.paginaAncha` de crear cuenta, que era `.pagina` **más** `.paginaAncha` en el mismo
+elemento —dos carriles peleando— y ahora es una clase entera.
+
+### Tres barras laterales menos, una de ellas compartida con el panel
+
+Se fueron las de `.falloEnvio` y `.resumenErrores`, y **la de `ui/campos/Campo`**, que es la
+tercera excepción documentada al «nada del panel». El argumento es el mismo que con el velo del
+modal: el filete rojo se ve en cinco pantallas del candidato, y dejarlo conserva el defecto.
+Ahí además sobraba por triplicado — el campo ya engorda su borde a 2 px y lo pone rojo, y el
+mensaje ya va en `--mal` a 5,68:1. Eran tres señales para una cosa.
+
+**Quedan diez**, todas en pantallas sin migrar: postular, evaluación, prueba, cuestionario,
+simulación, privacidad y perfil.
+
+### Lo que se comprobó a mano, porque no hay pruebas
+
+Acceso y Clave no tienen ni una prueba, y Acceso es el canje del enlace por correo: si se
+rompe, nadie entra. Se recorrieron los cuatro caminos en el navegador contra el backend
+simulado. **Entrar funciona de principio a fin**: se rellena, se envía, el token queda guardado
+y se llega a «Mis procesos».
+
+Carriles medidos: 544 px entrar, 704 px crear cuenta. A 375 px ninguna desborda, las parejas de
+campos caen a una columna y los campos de texto siguen a 16 px, que es lo que evita que iOS
+haga zoom al enfocar.
+
+Y se vio algo que el simulado regaló: entonces **no tenía `/catalogos/ubigeo`**, así que el
+desplegable de provincias falló de verdad. La pantalla lo dijo —«No pudimos cargar la lista de
+provincias. Recarga la página e inténtalo otra vez»— en vez de dejar un desplegable apagado y
+mudo, que es justo lo que pide el aviso escrito en la bitácora del 07/09. *El 11/09 se le
+añadió el catálogo al simulado, con quince provincias de muestra.*
+
+---
+
+## 10/09 · El centro del portal (tanda 5)
+
+«Mis procesos» y el detalle de una postulación: las dos pantallas más visitadas, y donde se
+fija la regla del coral que hereda todo lo demás.
+
+### Un fallo de la tanda 1 que solo se veía en el teléfono
+
+Al borrar el `<Canto>` se quitó el relleno que le hacía sitio **en escritorio y no en móvil**.
+La media query de 760 px conservaba `clamp(168px, 24vh, 220px)`: **195 px de gris vacío antes
+del titular en un teléfono**, un tercio de la pantalla. Se vio mirándolo a 375 px, no leyendo
+el CSS. Medido después del arreglo: el titular pasó de empezar a 256 px a empezar a 93.
+
+Es el argumento de mirar cada tanda en las dos anchuras y no solo en una.
+
+### Las tarjetas dejan de flotar
+
+`.proceso`, `.vacio` y `.estado` repetían `nube + regla + radio + sombra + 32 px`, y la sombra
+iba **en reposo**. Eso contradice la regla del plano por defecto —una sombra responde a un
+estado— y además hacía daño: si la caja entera flota, el panel coral de dentro, que sí lleva
+sombra porque sí reclama, deja de distinguirse. Ahora las tres son `.bloqueHolgado` planas y
+la única cosa que flota en la pantalla es lo que te toca.
+
+### La pregunta del coral en el detalle ya estaba contestada, y no por mí
+
+Quedó anotada en la tanda 0: `Proceso.tsx` nunca aplicaba su panel de turno, así que había que
+decidir si esa pantalla pinta coral. **La respuesta está en la condición de render**: ese panel
+solo se dibuja cuando `final && termino`, o sea cuando el proceso ya acabó — y un proceso
+terminado no es nunca «te toca a ti».
+
+El porqué está escrito en el propio TSX desde antes: mientras el proceso vive, quien reclama es
+el hito abierto del recorrido, que `Seguimiento` ya pinta con su panel coral, y repetirlo
+arriba daba **dos paneles idénticos con dos botones «Abrir prueba»**, en móvil a pantalla y
+media de distancia. Duplicar el arranque de una prueba cronometrada e irreversible es el peor
+sitio donde hacerlo.
+
+Así que el panel pasa a hundido, como el cierre de «Mis procesos»: es la misma cosa dicha en la
+otra pantalla. **Cero corales en `/procesos/:uuid`.**
+
+### Lo que se comprobó
+
+Cuatro paneles coral en «Mis procesos» con cuatro postulaciones que reclaman: uno por cada una,
+que es la regla. Cero en el detalle de una terminada. Tarjetas con `box-shadow: none`. Carril
+de 1088 px y 48 px de aire en las dos. A 375 px ninguna desborda.
+
+### Lo que decidí no hacer
+
+**El vacío de «Mis procesos» no converge en `ui/Vacio`.** El plan lo pedía por deduplicación,
+pero son tres reglas contra un cambio de DOM en una pantalla que cubre `02-regresion-portal`,
+que hoy no se puede correr —espera los datos sembrados del backend real—. Deduplicar a ciegas
+una pantalla de las dos más visitadas no sale a cuenta.
+
+---
+
+## 10/09 · Una columna, una acción (tanda 6)
+
+Postular, la simulación y privacidad y control. Las tres son de una columna con una sola acción
+negra, y las tres soltaron un coral que no era un turno.
+
+### Dónde estaba el coral decorativo
+
+| Sitio | Qué marcaba | Ahora |
+|---|---|---|
+| `Postular` → `.zona.encima` | El currículum arrastrándose encima de la zona | Nube honda; el borde macizo de 2 px ya lo dice |
+| `Simulacion` → `.fecha.elegida` | La fecha que elegiste | Nube hundida con borde de 2 px |
+
+Los dos son **estados de interfaz**, no turnos: uno responde al puntero y el otro a una
+selección. El coral significa «te toca a ti» y sirve para *encontrar* tu turno entre cosas que
+no lo son — gastarlo aquí lo deja sin significar nada donde sí hace falta. Y a las dos
+pantallas se llega precisamente porque te tocaba, así que dentro no queda nada contra lo que
+discriminar.
+
+Medido: **cero corales en las tres pantallas**.
+
+### Cuatro barras laterales menos
+
+`.consecuencia` de postular y de privacidad pasan a la pieza `.enDuda`, y los `.fallo` y
+`.resumenErrores` de las tres pierden su filete rojo. **Quedan cinco**, todas en el examen y en
+«Mi perfil».
+
+### La distinción que hacía falta escribir
+
+En la tanda 4 el formulario de entrar pasó a vivir en una superficie de nube. Postular **no**,
+y no es incoherencia: entrar es una cosa pequeña sobre la mesa —tres campos y un botón—,
+mientras que postular son 610 líneas de secciones separadas por reglas. Un documento largo
+metido entero en una tarjeta blanca es una losa, no un objeto.
+
+La regla: **una superficie envuelve una cosa, no un recorrido.** Si el contenido se lee de
+arriba abajo en varias secciones, es un documento y va sobre el cielo.
+
+### Un rato perdido con la caché de Vite
+
+Después de un 500 de PostCSS —de los de `composes` mal puesto—, Vite se quedó sirviendo un
+`Simulacion.tsx` **vacío**: el módulo compilaba a nada y la ruta reventaba con «does not
+provide an export named 'Simulacion'». El archivo en disco estaba entero, 259 líneas. Se
+arregla con `rm -rf node_modules/.vite` y un servidor nuevo.
+
+⚠️ **Si una pantalla desaparece sin motivo después de un error de CSS, mira el disco antes de
+buscar el fallo en el código.** El grafo de módulos de Vite se envenena y no se recupera solo.
+
+---
+
+## 10/09 · El examen (tanda 7)
+
+Evaluación, la prueba y el cuestionario técnico: las tres pantallas con el reloj corriendo, y
+las tres con reglas propias.
+
+### La frase del umbral se hace visible
+
+`Prueba.module.css:63` marcaba «queda poco» **solo con `color: var(--mal)`**. El color solo no
+es una señal —WCAG 1.4.1—: quien no distingue el rojo no tenía ninguna.
+
+Lo que había que arreglar no era escribir un aviso: **la frase ya existía en el DOM**.
+`Cronometro` la emite en un `<p role="status">` con cuatro umbrales —media hora, diez minutos,
+cinco, uno— y estaba en `.solo-lectores`, o sea que llegaba al lector de pantalla y a nadie
+más. Se le añadió al componente un `classNameAviso` opcional que por defecto sigue siendo
+`solo-lectores`; la prueba y el cuestionario le pasan una clase visible. **No es texto nuevo,
+es texto que ya se decía y no se veía.**
+
+### El desfase medido, y por qué el número es el peor caso
+
+Al hacer visible la frase, la barra del reloj cambia de alto. **Medido en el navegador con la
+prueba arrancada: 77 px en reposo, 111 px con la frase puesta.** El token decía 71, de cuando
+la barra no tenía frase.
+
+Se pone **111, que es el máximo**, y no los 77 del caso común. El encargo se pega justo debajo
+con `top: calc(--alto-cabecera + --alto-reloj)`: con 77 sobrarían 34 px en reposo, pero con la
+frase puesta **el encargo quedaría tapado durante los últimos diez minutos de una prueba
+cronometrada**, que es el peor momento posible para tapar algo. Un hueco de más no molesta.
+
+`--alto-avance` de la evaluación se volvió a medir también: **116 px, exactamente lo que
+decía**. Nada dentro de esa barra cambió.
+
+### La última barra lateral que el barrido no cazó
+
+`.cambio::before` de la prueba —el bloque «CAMBIO EN EL ENCARGO»— llevaba un filete de **4 px**,
+no de 3, así que el grep de `width: 3px` pasó por encima cinco tandas seguidas. Se vio en la
+captura, no en el código. Fuera, junto con los de `.aviso` (prueba y evaluación), `.pendiente`
+(formatos) y `.error` (cuestionario).
+
+**Queda una sola en todo el candidato**, en «Mi perfil».
+
+### Lo que ya estaba bien
+
+La jerarquía del examen no hubo que invertirla: el `h1` de la evaluación **ya es la pregunta**,
+y mide 30 px, no los 60 de un titular de portada. Y el opt-out de movimiento de la tanda 0
+sigue en pie — medido en la evaluación arrancada: **cero animaciones**.
+
+### Lo que no se hizo, y va a PENDIENTES
+
+**La cabecera no se queda solo con la marca durante el examen.** Los tres enlaces de navegación
+siguen ahí. Quitarlos es la misma decisión de producto que quitar el «← Volver» —una salida
+menos a mitad de una prueba cronometrada—, y esas se deciden, no se cuelan en una tanda de
+diseño.
+
+---
+
+## 10/09 · Mi perfil (tanda 8) · la migración visual termina
+
+Seis archivos, 6205 líneas, y la última pantalla del portal del candidato.
+
+### La galería de portadas ofrecía cuatro corales
+
+Las cinco opciones de fondo se guardan en el backend con códigos `CANTO_*`, bautizados por el
+mundo visual anterior. Al retargetear los tokens el 10/09, **cuatro de las cinco se volvieron
+tonos del mismo coral** —melocotón, salmón, coral, coral rojizo— y la quinta gris: la galería
+dejó de ofrecer colores distintos. Y una era exactamente `#FF7C61`, **el coral que significa
+«te toca a ti»**, así que un candidato podía ponerse de fondo el color del turno.
+
+Se repintaron las cinco con neutros que se distinguen por **temperatura y profundidad**, no por
+tono: arena, pizarra, humo, carbón y bruma. Los códigos del backend **no se tocaron** —
+renombrarlos rompería la portada guardada de cualquier perfil existente—; lo que cambió es el
+nombre visible.
+
+⚠️ **Las bases son más oscuras de lo que parece la banda, y es obligatorio.** El disco de las
+iniciales sale del mismo token y ahí el blanco tiene que aguantar 4,5:1. Medidos contra blanco:
+arena 5,78:1, pizarra 5,85:1, humo 5,33:1, carbón 8,86:1. La banda es un lavado porque mezcla
+la base hacia el cielo; el disco va al revés, hacia la tinta.
+
+De paso, diez degradados de cinco líneas idénticos salvo el token quedaron en **dos degradados
+y nueve líneas de `--tono-base`**.
+
+⚠️ **Los selectores se escriben uno a uno, no con `[class*='portada-']`.** Ese atajo depende
+de que el hash de CSS Modules conserve el nombre local, y en producción no está garantizado.
+
+### Catorce marcas coral en una pantalla
+
+Con seis datos sin confirmar, «Mi perfil» pintaba coral **catorce veces**: el panel del
+resumen, el borde de cada fila, una píldora en cada fila, la cuenta de cada sección del índice
+y el fantasma de la fila recién confirmada.
+
+Queda **una por fila que reclama**, que es la misma regla que «Mis procesos» aplica a cada
+postulación. Lo demás pasa a tinta:
+
+- **El panel del resumen** es un recuento, no una de las cosas que reclaman. Lo dice con
+  palabras, que para un recuento es lo que sirve.
+- **La píldora de la fila** repetía sobre el mismo elemento lo que ya dice su borde.
+- **La cuenta del índice** cuenta; no señala.
+- **El fantasma de la recién confirmada** marcaba lo que **acaba de dejar** de reclamar:
+  pintarlo del color del turno decía lo contrario de lo que pasaba.
+
+### Un borrado por regex que se llevó seis reglas
+
+Al quitar los diez degradados viejos con una expresión regular, se fueron también `.botonFoto`,
+`.menuFoto`, `.accionFoto`, `.pistaFoto`, **`.entradaOculta`** y `.datos`, más dos bloques
+`@media`. En pantalla se vio enseguida: **dos `Choose File` del navegador en crudo** encima de
+la cabecera, porque `.entradaOculta` era lo que escondía los `input[type=file]`.
+
+Se recuperaron del original y se comprobó con un diff de selectores: **cero perdidos, cero
+nuevos**. La lección es la de siempre: una regex que borra bloques de CSS no sabe dónde
+terminan, y el typecheck no la ve. Lo vio la captura.
+
+### La única pantalla que no compone `hoja`
+
+`Perfil.module.css` declara su relleno lateral como `--margen-de-la-pagina` porque **la portada
+se sale a sangre restándolo**, y el archivo ya documenta el fallo que costó escribirlo en dos
+sitios. Traerlo de `pagina.module.css` mete un tercer sitio y lo empeora. Se alinearon los
+números —`--e7` arriba, `--e5` a los lados, `--e8` abajo— y se dejó escrito que si `hoja`
+cambia, esto cambia con ella.
+
+### Lo que se verificó
+
+**25 pruebas e2e contra el backend local en verde**, antes y después: `11-perfil` (13) y
+`22-perfil-con-foto-y-cv` (12), más las 620 unitarias. Y capturas de la pantalla real, que es
+lo que encontró el borrado accidental.
+
+⚠️ **Dos specs buscaban el botón «Aqua» por su nombre visible.** Al renombrarlo a «Pizarra»
+fallaron, que es exactamente lo que tenían que hacer: son las que sostienen que **el nombre que
+se ve y el código que se guarda son cosas distintas**. Se actualizó el nombre y se dejó intacta
+la aserción sobre `CANTO_AQUA`.
+
+### Lo que había que arreglar antes de poder verificar
+
+El `<script src="http://localhost:8400/live.js">` que `/impeccable live` inyectó en
+`index.html` seguía ahí, y **rompía el e2e**: inyecta un `<aside class="panel">` propio, así
+que `locator('aside')` casaba con dos elementos y `11-perfil` fallaba por violación de modo
+estricto. Fuera del `index.html` —no es algo que deba acabar en un commit—, y la spec pasó a
+13/13.
+
+⚠️ **Y una corrección a lo que dije en tandas anteriores:** el backend local **nunca estuvo
+caído**. Su ruta base es `/api/v1/portal`, y yo estaba sondeando `/vacantes` y
+`/actuator/health`, que no existen ahí — devuelve 500 en vez de 404 para lo que no conoce. El
+backend simulado del 8082 sirvió igual para trabajar aislado, pero no hacía falta.
+
+---
+
+## 10/09 · Cierre · lo que la verificación encontró
+
+### La pieza C no animaba, y la prueba que decía comprobarlo no comprobaba nada
+
+Lo peor de la sesión, y mío por partida doble.
+
+`23-movimiento` contaba `document.getAnimations()` para saber si algo se movía. **`motion` no
+usa la API de animaciones del navegador** para estas piezas —las mueve escribiendo estilos
+frame a frame—, así que esa lista devolvía cero incluso mientras la franja se dibujaba. Las
+pruebas pasaban contando transiciones CSS de otras cosas, y las dos de movimiento reducido
+pasaban por comprobar que una lista **siempre vacía** seguía vacía.
+
+Debajo de eso había un fallo real: **la franja no se dibujaba en la primera carga**, que es
+justo como casi todo el mundo ve la portada. `PantallaConEntrada` envuelve el `<Outlet>` en un
+`AnimatePresence` con `initial={false}` —para que la primera pantalla no entre deslizándose— y
+**esa bandera viaja por contexto a todos los `motion` que haya debajo**. Al navegar dentro del
+portal sí animaba, así que solo se veía entrando de cero.
+
+Se arregló animando la franja con `animate()` imperativo, que no lee el contexto de presencia.
+Es la misma lección que las pantallas cronometradas: **una pieza no puede depender de lo que
+decida su contenedor**.
+
+Y la spec se reescribió entera para medir el `transform` del elemento. Siete pruebas, tres
+pasadas seguidas en verde. ⚠️ **Tampoco vale muestrear desde fuera con `expect.poll`**: la
+franja dura medio segundo y, si terminó antes de la primera lectura, ya no vuelve. El
+observador se instala antes de cargar.
+
+### El backend local nunca estuvo caído
+
+Corrección a lo que dije en tres tandas. Su ruta base es `/api/v1/portal`; yo sondeaba
+`/vacantes` y `/actuator/health`, que ahí no existen, y devuelve **500 en vez de 404** para lo
+que no conoce. El backend simulado del 8082 sirvió para trabajar aislado, pero no hacía falta.
+
+### `E2E_PG` casi nunca es su valor por defecto
+
+La limpieza de cuentas de prueba busca un contenedor `renaser-verifica` —el Postgres desechable
+del 5434— que en una máquina de desarrollo normal no existe. Las pruebas pasan igual y avisan
+en una línea que se pierde, así que **cada pasada dejaba cuentas en la base**: había 40
+acumuladas. El contenedor real se llama `renaser-postgres`. Documentado en
+`playwright.config.ts`.
+
+Con él puesto, el barrido dejó 40 en 22. Las 22 restantes tienen postulación, y
+`transicion_estado` es inmutable por trigger: el propio limpiador ya avisa de que apagarlo es
+decisión de quien administra la base, no de una prueba.
+
+### El maquetado y el sistema, puestos al día
+
+`maquetado/LEEME.md` seguía dando el índigo `#4338CA` por indiscutible. **No se borró**: lo que
+dice sobre qué información y qué palabras van en cada pantalla sigue siendo cierto y es su
+razón de ser. Se le puso un aviso arriba, se tachó el índigo con su fecha, y se anotó que «Mi
+perfil» no está ahí.
+
+`mundo.css` —el archivo que más se lee del sistema— **narraba «El canto» entero** en su
+cabecera: la nube difractando luz, el color posicional, el violeta pleno, Mulish de peso 200 y
+los controles en píldora. Reescrito. Con él se fueron cinco tokens muertos:
+`--canto-vertical` y los cuatro tonos del espectro. `--canto` sobrevive por **un solo
+consumidor**, `src/panel/Armazon.module.css`, que no se ha migrado.
+
+El detector, sobre `src/`: **dos hallazgos en el candidato y los dos deliberados** —el
+`#ff5d6e` de `--canto` y el degradado de la pieza firma de la portada—. Los otros ocho están
+todos en `src/panel/` y son el mundo anterior intacto: la pizarra `rgb(35 43 54)` y el violeta
+`rgb(86 56 214)`.
+
+### Estado final
+
+620 unitarias, typecheck limpio y **43 pruebas e2e del candidato en verde** contra el backend
+de casa: `02-regresion-portal`, `07-movil`, `11-perfil`, `12-postular`,
+`22-perfil-con-foto-y-cv` y `23-movimiento`.
+
+`16-cuestionario-tecnico` no corre: su `dev-login` del panel devuelve 400 y hace falta
+`app.seguridad.dev-login-activo=true` en el backend.
+
+**Las cuatro piezas de movimiento se quedan.** Estaban puestas «para elegir» desde antes de la
+migración y la decisión se cerró el 10/09/2026: las cuatro. Ninguna es decoración — C dice
+hasta dónde llegaste, B sostiene la continuidad al abrir una ficha, D es la respuesta al
+puntero y A liga las pantallas.
+
+### El `dev-login` del panel nunca estuvo apagado
+
+Corrección a lo que dije al cerrar la verificación. `16-cuestionario-tecnico` fallaba con **400**
+y lo diagnostiqué como «falta `app.seguridad.dev-login-activo=true`» **sin leer el cuerpo de la
+respuesta**. La propiedad ya estaba en `true` —`application-local.yaml`, y `local` es el perfil
+por defecto—. Lo que decía el 400 era otra cosa: *«Ese id de RENASER OS no está registrado en
+el sistema»*.
+
+El `dev-login` exige que el id **ya exista** en la base. `herramientas/e2e/ayuda.ts` lo tenía
+escrito a mano como `dev-equipo`, y los usuarios de equipo de esta base son
+`5b71813c-…` y `andy-dev`. Ahora es `E2E_EQUIPO`, con el mismo argumento que ya tenían `E2E_API`
+y `E2E_PG`: cada base local trae lo que trae.
+
+Con él puesto, la spec corre: **7 pasan y 6 se saltan**, y el salto es deliberado — la prueba 7
+necesita que la IA escriba el cuestionario y se salta con su motivo cuando el trabajo no se
+encola; las 8 a 12 dependen de ella. Eso es del entorno, no del portal.
+
+⚠️ **Un código de estado no es un diagnóstico.** Es la segunda vez en la misma sesión que leo
+un número y no el mensaje: antes fueron los 500 del backend, que eran rutas inexistentes.
+
+---
+
+## 11/09 · La documentación auditada y una crítica de diseño con hallazgos
+
+### Se comprobó la documentación contra el código, no leyéndola
+
+Un barrido mecánico sobre los 19 documentos: cada ruta citada, cada enlace, cada token y cada
+color presentado como vigente, contrastado con lo que hay en `src/`. Salieron 25 avisos, y la
+mayoría eran correctos —una bitácora **debe** nombrar lo que ya se borró—. Tres eran mentiras
+de verdad:
+
+**El `README.md` de la raíz estaba dos mundos atrás.** Decía que el mundo visual se llama «El
+seguimiento» —el anterior a «El canto», que es el anterior a «El escaparate»— y daba el índigo
+`#4338CA` como el acento actual. Es lo primero que lee cualquiera. Reescrito, con los tres
+archivos del sistema y un aviso de que los dos nombres viejos siguen apareciendo en documentos
+antiguos.
+
+**`docs/02-QUE-VE-EL-CANDIDATO.md` describía como pendiente algo hecho hace semanas**: «falta
+limpiar `index.html`», «`variables.css` conserva el bloque oscuro», «en el rediseño desaparecen
+`ProveedorTema` y el bloque `data-theme="dark"`». Todo eso ya pasó. Tachado, con una nota de
+que lo vigente de ese documento es el contrato de datos y no el color.
+
+**`docs/03-ESTADO-DEL-REDISENO.md`** decía «lo que sigue vigente es el porqué de aquel día:
+fondo blanco puro y acento índigo», que mezclaba el razonamiento —que sí sigue— con los colores
+—que no—.
+
+### El `audit` de impeccable: cero violaciones, una afirmación falsa
+
+Barrido medido sobre las 17 pantallas a 1280 y a 375: cero desbordamientos horizontales, cero
+controles sin nombre accesible, cero saltos de jerarquía de encabezado, un solo `h1` por
+pantalla, los cuatro *landmarks* en todas.
+
+Los cuatro avisos de contraste a 4,27:1 son **botones deshabilitados**, que WCAG 1.4.3 exime
+expresamente. Pero al medirlo salió que el comentario de `--tinta3` en `mundo.css` afirmaba ser
+«el gris más claro que aguanta 4,5:1 sobre **TODOS** los fondos claros del sistema», y eso es
+falso: pasa en seis de siete y falla justo en `--nube-honda`. El valor está bien; la afirmación
+no. Corregida, con los siete números y con la única salida si algún día hace falta texto activo
+sobre ese fondo (`#5a5a5a`, más oscuro que `--tinta2`).
+
+### El `critique`: dos evaluaciones aisladas, y convergieron
+
+Se corrió con sus dos agentes separados, como exige el comando. La revisión de diseño y la
+evidencia medida llegaron por su cuenta al mismo hallazgo principal:
+
+**El coral estaba gastado en «Híbrido · Lima».** Las etiquetas de modalidad de la portada
+llevaban `--activo-bruma` —el token que el sistema define como «lo que reclama tu turno»— tres
+veces en la primera pantalla que ve cualquiera, para decir una categoría. Todo el mundo visual
+apuesta a que un solo color signifique una sola cosa, y la portada lo gastaba antes de que
+llegara a significarla. Ahora van en nube hundida con tinta segunda: 6,04:1. **Medido después:
+cero brumas corales en la portada.**
+
+### Contratado y descartado eran la misma pantalla
+
+El segundo hallazgo, y el más caro para el candidato. `CONTRATADO`, `NO_CONTINUA` y `CERRADA`
+compartían clase, fondo y **el mismo glifo punteado**, que en el vocabulario del propio
+recorrido significa «aquí se detuvo»: al contratado se le pintaba la forma de detenido. Son los
+dos estados más distintos que el sistema puede producir y son el final de semanas de trabajo
+real.
+
+`--bien` estaba declarado y **no lo usaba nadie**. Ahora el cierre en positivo va en verde sobre
+su bruma con el glifo macizo; el negativo se queda neutro y punteado. Se distinguen en color y
+en forma, que es lo que pide la regla del gris.
+
+Y el descarte **llevaba a ninguna parte**: daba la noticia y terminaba. Ahora ofrece «Ver las
+vacantes abiertas» dentro del propio cierre, no en el pie.
+
+### Dos fallos reales más
+
+**`class="_tramo_xxx undefined"` llegaba al DOM.** `estilos['cumplida']` devuelve `undefined`
+—y es correcto que no exista esa clase, porque la franja maciza es el estado por defecto—, pero
+la plantilla lo escribía literal.
+
+**El botón muerto de la decisión no existía para el teclado.** Era un `<span aria-disabled>`
+fuera del `<fieldset disabled>`: quien tabula pasaba del correo al pie sin que nada explicara
+por qué 630 px de formulario no hacen nada. Ahora es un `<button disabled>` atado con
+`aria-describedby` al aviso ámbar, que además pasa a `role="status"`.
+
+### Una mentira mía en DESIGN.md
+
+Decía que la franja del recorrido se llena «cuando el estado cambió desde la última visita, no
+en cada carga». **Eso nunca existió en el código**: no hay nada que recuerde la visita anterior.
+Se corrigió el texto y no el código, porque comparar exige guardar el estado por postulación en
+el navegador y eso es una decisión de producto. Anotado en PENDIENTES.
+
+### Lo que se dejó decidir, no se decidió
+
+**El recorrido escondido tras un `<details>` en la tarjeta de espera.** La revisión lo puso como
+problema número uno —trece de dieciocho estados son esperas, y es justo ahí donde el mapa se
+pide con un clic extra—, pero el código lleva escrito su contraargumento: con siete esperas,
+siete recorridos completos llenan la pantalla de algo que nadie pidió ver. Las dos razones son
+buenas y la decisión es de producto.
+
+### La cabecera, en dos vueltas de `/impeccable live`
+
+**Primera vuelta: una vaina ovalada flotante.** Se pidió «que sea flotante ovalada» y se
+probaron tres formas —una vaina ancha, dos islas separadas, y una cápsula centrada que se ciñe
+a su contenido—. Ganó la primera y se escribió entera: radio 999 px, `--sombra-nube`, 14 px de
+aire por arriba puestos de **relleno y no de margen**, que es lo que hacía que guardara la misma
+distancia al borde en reposo y pegado. `--alto-cabecera` pasó a 76 px, medido.
+
+**Segunda vuelta, una hora después: vuelve la barra.** Se pidió devolverla a como estaba, más
+cuatro cosas concretas. Así quedó, y así se queda:
+
+- **Vuelve la barra a sangre**, nube maciza con filete de regla, pegajosa con `top: 0`.
+  `--alto-cabecera` vuelve a 61 px, medido otra vez.
+- **Un destino nuevo, «Inicio».** Y con él un problema: `rutas.vacantes()` es `/`, así que
+  «Inicio» y «Vacantes» irían al mismo sitio. Se resolvió dejando «Inicio» en la portada y
+  apuntando «Vacantes» al ancla `#vacantes-abiertas` que ya existe ahí, **de `Link` y no de
+  `NavLink`**, porque dos `NavLink` con la misma ruta se encienden a la vez.
+- **Los enlaces pierden la pastilla**: texto haciendo de botón, con los 44 px táctiles en un
+  `min-height` invisible.
+- **El activo se dice con el color del texto**, `--activo-regla`, más el peso 700.
+- **«Ingresar» pasa a botón de relleno coral con el texto en `--activo`.**
+
+⚠️ **Dos contrastes medidos, y uno no pasa.** El botón está bien: `--activo` sobre coral da
+**7,83:1**. El enlace activo no: coral como **texto** sobre nube da **2,53:1** donde WCAG 1.4.3
+pide 4,5:1. Se ofreció `#bf4526` —el mismo tono con la luz bajada, 5,13:1— en una de las tres
+variantes y se eligió el coral de marca a sabiendas. El peso 700 cubre 1.4.1; el contraste del
+texto no se cumple. El límite del botón contra la nube marca también 2,53:1 frente a los 3:1 de
+1.4.11, y se arregla con 1 px de borde en `#bf4526` si algún día se quiere.
+
+⚠️ **Cuatro destinos y un botón no caben en un teléfono.** Medido: a 362 px la barra pedía
+justo 362, y a 320 px le faltaban 42. Se apretó el relleno y la tipografía por debajo de 620 px,
+y **por debajo de 400 px se cae «Vacantes»**, que es el único de los cuatro que no es una
+pantalla propia. Sin eso «Mis procesos» se partía en dos líneas y la barra pasaba de 61 a 85 px
+— justo el número que `--alto-cabecera` promete fijo. De ahí el `white-space: nowrap`.
+
+Comprobado a 320, 414 y 1280: 61 px de alto en las tres, sin desbordamiento horizontal, los
+enlaces a 44 px, y el activo siguiendo la ruta (en `/procesos` se enciende «Mis procesos»).
+620 pruebas en verde y typecheck limpio; los dos e2e que tocan la cabecera piden «Mis procesos»
+y «Mi cuenta», que no cambiaron.
+
+### Tercera vuelta: la barra se mueve
+
+Se pidieron animaciones al seleccionar del menú, y sobre todo para «Ingresar», «de paso
+modifica su fondo que es estático a algo más llamativo». Se probaron tres vocabularios
+distintos —un barrido que pinta el coral sobre la palabra con `background-clip: text`; un
+acercamiento con escala y bruma; y una cascada con un destello que cruza el botón—. Ganó la
+tercera.
+
+Lo que quedó: los cuatro destinos entran en cascada con 60 ms de desfase, **una vez por carga
+de página**; el filete de cada enlace se abre desde el centro hacia fuera en 300 ms, gris en
+hover y coral en el activo; y «Ingresar» cambia el coral plano por la rampa del mundo a 105°
+con un reflejo blanco que lo cruza cada 4,5 s.
+
+**El negro sobre la rampa entera se lee:** 13,02:1 en la parada más clara, 6,64:1 en la más
+oscura. Ese era el riesgo de cambiar un color plano por un degradado y no lo es.
+
+⚠️ **`--salida` no servía para el destello, y solo se vio midiendo el recorrido fotograma a
+fotograma.** Esa curva es para lo que llega y se posa: con ella el reflejo hacía el 90 % del
+camino en los primeros 400 ms de un tramo de 1,17 s, o sea daba un salto en vez de cruzar
+—medido: a 1200 ms estaba en −121 %, a 1600 ms ya en +98 %—. Con `ease-in-out` el recorrido
+queda −121, −107, −62, +5, +71, +121: un cruce de verdad. **El token del mundo no es la
+respuesta por defecto; es la respuesta para las llegadas.**
+
+Una trampa que costó entenderla: al medir con el panel del navegador oculto, los cuatro
+enlaces daban opacidad 0 y las animaciones `playState: running` con `currentTime: 0`. No era un
+fallo — **una pestaña que no se pinta tiene la línea de tiempo suspendida**, y con
+`animation-fill-mode: both` el elemento se queda en su fotograma inicial hasta que alguien la
+mira. Se comprobó forzando `finish()`: los cuatro terminan en opacidad 1 y sin desplazamiento.
+
+Con `prefers-reduced-motion` se van la cascada, el destello y los desplazamientos, y se quedan
+el color y el filete del activo. 620 pruebas en verde, typecheck limpio.
+
+### Cuarta vuelta: el fondo se aclara y la cabecera aprende a desaparecer
+
+Llegó una referencia —`next-elite-boilerplate.vercel.app`— con el encargo de copiarle el fondo
+cambiando el morado por el coral, aclarar el gris, y replicar su cabecera sin los botones de
+idioma ni de tema. Se midió la referencia antes de tocar nada: base blanca, dos discos de
+480 px a `blur(133px)` en `rgba(118,99,255,0.28)`, y una cabecera pegajosa a `top: 8px` con
+márgenes laterales, radio 8 px y un velo `opacity: 0` que aparece al bajar.
+
+Lo que quedó aquí: `--cielo` de `#f5f5f5` a **`#fafafa`**, los dos resplandores en
+`--activo-regla` al 28 %, y la cabecera insertada que en reposo no existe.
+
+**El cambio de cielo era el punto de riesgo y no lo fue.** La separación página/superficie baja
+de 1,090:1 a 1,044:1, pero en este mundo **una superficie se dibuja con su contorno de 1 px**,
+no con su fondo: `.bloque` lleva `border: 1px solid var(--regla)` y todo hereda de ahí.
+`--nube-hundida` ni se tocó, porque lo hundido vive dentro de una superficie de nube y su
+pareja de contraste es `#ffffff`, no el cielo. Los tres grises de texto además ganan: tinta
+12,10 (era 11,59), tinta2 6,51 (6,23), tinta3 5,11 (4,89).
+
+⚠️ **Los resplandores no se veían, y el motivo tardó en aparecer.** Estaban en `z-index: -1`,
+que es lo natural para un fondo. Pero `mundo.css` pinta el cielo en `html` **y** en `body`: con
+las dos declaraciones, la de `html` se convierte en el lienzo y la de `body` pasa a ser el
+fondo de una caja de bloque normal, que se pinta **después** de los descendientes de z
+negativo. Se encontró subiéndolos al 90 % de opacidad y quitándoles el desenfoque: seguían sin
+verse, lo que descartaba que fuera cuestión de sutileza. Ahora van en `z-index: 0` y son
+`.principal` y `.pie` los que suben a 1.
+
+⚠️ **Encoger un resplandor lo hace más fuerte.** En móvil se bajaron a 280 px con `blur(90px)`
+por coste de pintado, y el mismo 28 % concentrado en 280 px sobre un ancho de 375 teñía la
+pantalla entera de rosa. Se vio a 375 px.
+
+### Y el resplandor pasa a cubrir la página entera
+
+Cubría los primeros 620 px y abajo la página se quedaba en gris plano. Repetir discos hasta el
+pie no vale: una página mide 900 px o 3200 según el contenido, así que un número fijo de piezas
+sale espeso en una corta y ralo en una larga. Ahora son **dos degradados radiales repetidos en
+vertical** con baldosa de 1100 px, uno a cada lado, sobre un único elemento vacío: cubren
+cualquier alto y se pintan directos, sin la textura intermedia que un `blur(133px)` obliga a
+crear por pieza.
+
+⚠️ **Y eso le puso un techo de opacidad que antes no tenía.** Mientras el color vivía solo
+arriba, el único texto encima era la bajada de la portada. Al bajarlo por toda la página se le
+pusieron debajo diez sitios más —subtítulos de sección, respuestas del desplegable, el pie—, y
+casi todos van en `--tinta3`, que es el gris más claro que el sistema permite para texto y por
+tanto el primero en caer. Medido:
+
+| opacidad | `--tinta3` encima | |
+|---|---|---|
+| 0,14 | **4,51:1** | ✓ |
+| 0,16 | 4,45:1 | ✗ |
+| 0,20 | 4,29:1 | ✗ |
+| 0,28 (lo que usa la referencia) | 3,99:1 | ✗ |
+
+El tope exacto es 0,146. Se tomó 0,14 y se ensancharon los degradados para compensar: presencia
+sin concentrar color. **La referencia puede permitirse el 28 % porque su fondo no lleva texto de
+apoyo encima.** Comprobado después sobre el peor punto posible del fondo, `#FBE8E5`: `--tinta3`
+4,51 · `--tinta2` 5,75 · `--tinta` 10,69 · `--activo` 16,76. El único que no pasa es el coral
+del destino activo, 2,14:1, que ya era una decisión tomada a sabiendas.
+
+⚠️ **Y el mosaico dejaba una raya naranja, que es como se descubrió la regla que faltaba.** Los
+degradados tenían el centro al 8 % y un radio del 52 %, así que el de arriba **todavía tenía
+color al llegar al borde de su baldosa**: se cortaba en seco ahí, y la repetición convertía ese
+corte en una línea horizontal visible cruzando la página. La regla es que cada degradado se
+apague a cero dentro de su baldosa —**centro = radio, y los dos radios juntos = la baldosa**—:
+radio vertical 25 %, centros al 25 % y al 75 %, de modo que uno ocupa de 0 a 550 y el otro de
+550 a 1100, tocando los bordes justo en cero. En horizontal sí se salen, y eso es lo buscado:
+el centro va fuera (108 % y −8 %) para que el color entre por los lados en vez de dibujar un
+círculo dentro de la página.
+
+⚠️ **La bajada de la portada subió de `--tinta3` a `--tinta2`.** Buscando qué texto cae
+directamente sobre un resplandor sin superficie debajo, salió exactamente uno: ese. `--tinta3`
+da 3,99:1 sobre el resplandor al 28 % y no llega a 4,5; `--tinta2` da 5,08:1.
+
+⚠️ **El velo de la cabecera se probó traslúcido y no aguanta.** Nube al 85 % con
+`backdrop-filter: blur(12px)` dejaba leer entero el botón negro de la portada por debajo. Es
+nube maciza, como la referencia — y el desenfoque detrás de un relleno opaco no pinta nada, que
+es justo por lo que este proyecto quitó el vidrio empañado el 10/09/2026.
+
+Y otra vez la trampa del panel oculto: **un documento que no se pinta no despacha `scroll` ni
+avanza las transiciones**. El oyente parecía muerto y el velo parecía no responder. Se
+comprobó lanzando `new Event('scroll')` a mano —la clase `posada` entra y sale bien— y
+anulando la transición para leer el valor al que apunta la regla, no el fotograma congelado.
+
+`--alto-cabecera`: **68 px**, medidos. 620 pruebas en verde, typecheck limpio.
+
+### Y al final el fondo se quedó en blanco
+
+Los resplandores se miraron con la página entera delante y no gustaron: se retiraron, y el
+cielo pasó de `#fafafa` a **blanco puro**. Con ellos se fueron el `position: relative` y el
+`overflow-x: clip` del armazón y los `z-index` de `.principal` y `.pie`, que solo existían para
+sostenerlos; y la bajada de la portada vuelve a `--tinta3`, que sobre blanco da 5,33:1.
+
+⚠️ **Esto cambia la regla 4 del mundo, escrita en la cabecera de `mundo.css`.** Decía que la
+profundidad es tono y que una superficie se separa del fondo «porque está un punto más clara».
+Con página y superficie en el mismo blanco eso dejó de ser cierto: **lo que dibuja una
+superficie es su contorno de 1 px**. Se comprobó buscando en el DOM superficies blancas sin
+contorno ni sombra: sale una, `.escaparateDentro`, y vive dentro del escaparate, que sí tiene
+sombra. El borde de 12 px translúcido del escaparate queda invisible y solo aporta aire; se
+deja porque el aire es correcto.
+
+Lo que las dos vueltas del fondo dejaron aprendido, y está escrito en DESIGN.md para no volver
+a descubrirlo:
+
+- Un degradado que **todavía tiene color al llegar al borde de su baldosa** se corta en seco
+  ahí, y la repetición convierte ese corte en una raya horizontal. Regla: centro = radio, y los
+  dos radios juntos = la baldosa.
+- **Un tinte de fondo le pone techo al gris más claro del sistema.** Con el coral al 28 %,
+  `--tinta3` caía a 3,99:1; el máximo que lo dejaba en 4,5:1 era 0,146.
+- **`z-index: -1` no pone nada detrás** cuando `html` y `body` declaran los dos el fondo: la de
+  `html` es el lienzo y la de `body` pasa a ser el fondo de una caja de bloque normal, que se
+  pinta después de los descendientes de z negativo.
+
+620 pruebas en verde, typecheck limpio.
+
+### El cuadrado del titular pasa a ser el maletín
+
+Primero intenté redibujar en SVG la imagen de referencia, y estuvo mal por dos motivos: quedó
+feo, y sobre todo **presenté como decisión de diseño lo que era una limitación mía**. Las
+imágenes que llegan adjuntas al chat no tocan el disco, así que no tenía el archivo. Lo correcto
+era decirlo antes de ponerme a dibujar. Se revirtió, se pidió el PNG y se montó el de verdad.
+
+El original venía a 1312×1199 y **692 KB** para una pieza que se ve a 45 px. Se preparó así:
+
+- **Recortado por alfa.** La loseta opaca ocupaba de (359,316) a (952,894) dentro de un lienzo
+  casi el doble de grande: casi todo era halo transparente. Se recortó dejando un 18 % de la
+  loseta por lado, que es halo suficiente.
+- **256×256**, que cubre pantallas de hasta 4× para un tamaño de 45 px.
+- **Sin paleta.** El primer intento lo pasó a 200 colores y bajaba a 14 KB, pero el degradado
+  salía con bandas visibles. En RGBA con `optimize` se queda en unas decenas de KB y limpio.
+
+La imagen se actualizó una vez más el mismo día —la flecha ganó una estela de puntos y unas
+líneas de destello—, y **la preparación no hubo que tocarla**: el recorte se calcula del canal
+alfa, así que se adapta solo. La versión que está montada pesa **60 KB**.
+
+⚠️ **La loseta ocupa el 73 % del lado de la imagen**, así que el tamaño declarado no es el que
+se ve: hacen falta 1,32em de imagen para una loseta de 45 px, que es lo que medía el cuadrado
+anterior.
+
+⚠️ **Alinearla costó dos intentos y una medición.** Con `vertical-align: -0.34em` colgaba 20 px
+por debajo de la línea base y la fuente solo desciende 13: el titular crecía de 106 a 111 px.
+Los márgenes negativos no lo arreglaban, porque el problema no era la caja sino el descuelgue.
+Con `middle` a secas se iba a 115. **Las dos cosas juntas —`middle` y margen vertical
+negativo— dan 106, exactamente lo mismo que sin imagen.**
+
+Y con esto se cae una afirmación que llevaba escrita desde el 10/09: `.pieza` decía que «no es
+un icono ni significa nada». Ahora es un maletín con una flecha ascendente, la única figura
+literal del portal.
+
+620 pruebas en verde, typecheck limpio.
+
+### El resplandor del escaparate pasa a tener dos colores
+
+Con una referencia delante —una sección cuyo pie se ilumina con dos luces distintas— se pidió
+lo mismo aquí: donde había un foco coral centrado, ahora hay una luz cálida `#FF7C61` a la
+izquierda y una fría `#FF47B8` a la derecha, más un tercer foco bajo y ancho que une las dos
+por el suelo. Sin ese tercero se veía la juntura entre una luz y otra.
+
+⚠️ **El rosa es el único tono del portal fuera de la familia coral**, y queda anotado como tal
+en DESIGN.md: existe solo ahí, como luz, y no es un token.
+
+⚠️ **Y por poco se carga una regla que llevaba escrita desde el principio: «el resplandor nunca
+va debajo de prosa».** La primera versión daba el alto en porcentaje, y en un teléfono —donde
+las cinco etapas se apilan en dos columnas y la tarjeta mide el triple— la luz se estiraba
+hasta quedar detrás de «Etapa 5». Ahí el texto no se lee: sobre el núcleo, `--tinta3` da
+**3,0:1** y `--tinta2` **3,8:1**.
+
+Se arregló con geometría, no bajando el color:
+
+- **El alto en píxeles**, no en porcentaje, para que la franja sea la misma mida lo que mida la
+  tarjeta.
+- **Los focos centrados en el borde inferior o por debajo**, con radios cortos: lo intenso se
+  queda pegado al suelo y lo que sube hasta el texto es solo la cola del degradado.
+- **Más relleno inferior en la tarjeta**, pero **una talla más que el superior y solo una**:
+  `--e8` contra `--e7`. El primer intento le puso 150 px y la caja se leía descompensada, con
+  el contenido arrinconado arriba y un páramo debajo. Ese escalón de más es el sitio de la luz.
+- **Los dos focos nacen cerca del centro**, al 36 % y al 64 %, y se abren hacia fuera. Puestos
+  al 24 % y al 76 % se leían como dos luces en las esquinas en vez de una que se descompone.
+- **Radio vertical corto (37 %) y centro justo EN el borde**, no muy por debajo: así entra en
+  la tarjeta la mitad de cada foco en vez de una esquirla, y la luz se ve sin tener que subirla
+  al texto.
+
+La cuenta, para no volver a tantear: **el degradado se apaga al 74 % de su radio, así que lo
+visible empieza en `centro − 0,74 × radio`**. Medido, ese punto cae 0 px por debajo del último
+párrafo en escritorio y 1 px en teléfono.
+
+620 pruebas en verde, typecheck limpio.
+
+### La cabecera se centra, el botón copia la referencia y la luz gana cúpula
+
+Tres cosas de una referencia que trajo el cliente.
+
+**Los destinos al centro.** La barra pasa a rejilla de tres columnas `1fr auto 1fr`, con la
+marca a la izquierda, los destinos en medio y la acción a la derecha —que sale del `<nav>`,
+porque no es navegación—. No vale `space-between`: ahí el centro se mueve cada vez que cambia
+el ancho de la marca o el texto de la acción, y «Ingresar» y «Mi cuenta» no miden lo mismo.
+Medido, la desviación respecto al eje de la barra es de **0 px**. En teléfono vuelve a
+`flex`: con la marca a un lado y el botón al otro no queda sitio para una columna central.
+
+**Los enlaces en tinta plena**, no en `--tinta2`. Son cuatro destinos y nada más: no hay
+jerarquía que establecer entre ellos, y apagarlos solo los hacía más difíciles de leer.
+
+**El botón, igual que la referencia**: rampa magenta a rojo `#E0218A → #FF3B5C`, texto blanco,
+radio `--radio-menor`, sombra con desplazamiento más halo del mismo tono.
+
+⚠️ **Y ese blanco sobre esa rampa da entre 4,42:1 y 3,48:1**, por debajo de los 4,5 que pide
+WCAG 1.4.3 a 14 px. Se midió antes de montarlo y se ofreció la alternativa: `#D81B7E → #C4304B`
+es el mismo magenta-a-rojo un paso más oscuro y da 4,80 y 5,42. Se eligió el color de la
+referencia a sabiendas. Si hay que cumplirlo algún día, son dos valores.
+
+**La cúpula del escaparate.** El resplandor seguía sin leerse como que nace del centro. La
+solución fue darle al foco central **más altura que a las laterales**: radio vertical 70 %
+contra 34 %, lo que produce un perfil que sube 51 px por el medio y se aplana hacia los lados.
+Con las tres iguales salía una franja; con 20 px de diferencia no se notaba.
+
+⚠️ **Eso mete la cúpula por detrás de la última línea de texto**, así que su segunda parada
+está topada en **0,18**: ahí `--tinta3` da 4,54:1, y a 0,20 ya cae a 4,45. La parada va al 40 %
+del radio y el texto queda al 45 %, de modo que lo que le toca encima es siempre igual o más
+flojo que ese tope.
+
+620 pruebas en verde, typecheck limpio. Los dos e2e que tocan la cabecera piden «Mis procesos»
+y «Mi cuenta» por su nombre accesible, que no cambió al moverlos de sitio en el árbol.
+
+### Los destinos de la cabecera ganan peso, y aparecen tres media queries peleando
+
+Los enlaces se perdían: eran 14 px con el peso normal de la fuente, y son lo único que hay en
+medio de una barra muy ancha y blanca, sin contorno ni relleno que los sostenga. Pasan a
+**16 px y peso 500**. En teléfono bajan a 14 px, pero **el 500 se queda**: era el peso y no el
+tamaño lo que faltaba. Figtree es variable de 400 a 700, así que el 500 no cuesta una descarga.
+
+⚠️ **Y al subirlos se rompió el ancho a 320 px**, que es lo que destapó el problema de verdad:
+había **tres media queries distintas tocando la cabecera** —620, 560 y 640—, restos de las tres
+formas que la barra tuvo hoy. La de 640 es la última del archivo y pisaba a las otras dos, así
+que **el relleno que se escribía en la de 620 nunca llegaba a aplicarse**: se pedía `--e3` y se
+computaba `--e4`. Se encontró midiendo el `padding-inline` real y viendo que no coincidía con
+ninguno de los dos valores escritos.
+
+Ahora la cabecera de teléfono vive en **una sola media query** a 620 px, con un escalón más a
+360 px para los teléfonos estrechos; el bloque de 640 se queda solo con el pie, que es lo único
+suyo que había ahí. Medido a 320, 360, 375, 414, 640 y 1280: el botón no se sale de su
+contenedor en ninguno y la barra se queda en 68 px.
+
+620 pruebas en verde, typecheck limpio.
+
+### Los destinos a 18 px, sin filete, y fuera la sección de garantías
+
+Tres retoques del cliente sobre la cabecera y la portada.
+
+**18 px en los destinos**, un punto más que los 16 de hace un rato.
+
+**El filete del activo se quitó y volvió el mismo día.** Se retiró a petición —el estado se
+decía solo con color y peso— y al verlo así se echó de menos: sin él, pasar por encima no
+respondía nada y el activo no tenía dónde apoyarse. Vuelve el que se abre desde el centro en
+300 ms, coral en el activo y gris en el hover. Queda anotado en el CSS que ya se probó fuera,
+para que no se vuelva a quitar por tercera vez.
+
+**Fuera la sección «Pensado para que no tengas que preguntar»**, entera: título, párrafo y las
+tres tarjetas de garantías. Con ella se van la constante `GARANTIAS`, las reglas `.garantias` y
+`.garantia`, y sus dos entradas en las media queries. La portada pasa ahora de la cinta de
+cifras directamente a «Vacantes abiertas».
+
+⚠️ **Lo que contaban esas tarjetas sigue siendo cierto** —la hora la manda el servidor, nada se
+da por guardado, un solo descarte automático— y sigue escrito en `docs/REGLAS-DEL-CODIGO.md`.
+Lo que ya no está es la promesa en la portada. Queda anotado en la cabecera de `Vacantes.tsx`
+para que nadie lo lea como un olvido.
+
+620 pruebas en verde, typecheck limpio.
+
+## 15/09 · La luz del escaparate llena la tarjeta
+
+Con una referencia delante —una tarjeta cuya mitad inferior es un resplandor amplio y difuso—
+se pidió lo mismo aquí. La luz del escaparate era una franja estrecha pegada al pie; ahora sube
+hasta media tarjeta y entra por los dos lados.
+
+**La solución fue partirla en dos alturas.** Un **velo** enorme y flojo —techo 0,16— que hace el
+trabajo de llenar, y debajo el **núcleo y las dos luces de color** —0,60 y 0,48— pegados al
+suelo, por debajo del último párrafo. Con una sola capa no se puede: o llega arriba y se come el
+texto, o respeta el texto y se queda en una franja. Se probaron las dos.
+
+⚠️ **Y aquí estuvo el error propio: medí las capas de una en una.** Cada una respetaba su techo,
+así que di la legibilidad por buena. Pero **se suman**: el fondo compuesto bajo el último
+párrafo salía `#FFCFDA`, donde `--tinta3` cae a **3,85:1**, por debajo de los 4,5 de WCAG 1.4.3.
+Se vio al calcular la mezcla de las cuatro, no mirando la pantalla.
+
+El arreglo no fue bajar la luz sino subir el texto: `.numeroEtapa` y `.queEsEtapa` pasan a
+`--tinta2`. Es la regla que DESIGN.md ya tenía escrita para los bloques ámbar —sobre un fondo
+con tinte, el gris más claro del sistema no vale— aplicada donde ahora hace falta.
+`.pieEscaparate` se queda en `--tinta3`: vive por encima de donde empieza el velo, y su fondo
+compuesto sale blanco puro.
+
+Medido el compuesto bajo cada texto de la tarjeta: **el peor es 4,98:1 en escritorio y 4,61:1 en
+teléfono**. 620 pruebas en verde, typecheck limpio.
+
+### El fondo vuelve a tener tono, y esta vez cálido
+
+Con `originx.demos.tailgrids.com` delante, el cliente pidió «el mismo color de fondo, tipo
+anaranjado pastel, cosa que el header también se distingue porque es blanco puro».
+
+⚠️ **Se midió esa página antes de copiarla, y su fondo NO es naranja: es `#F5F5F5`, gris
+neutro.** Lo que se ve cálido ahí son sus resplandores corales sobre el gris, no el fondo. Se
+dijo y se hizo lo que describía, no lo que medía: `--cielo` pasa a **`#FBF1E9`**, un pastel
+anaranjado de verdad. Queda anotado en `mundo.css` que si algún día se quiere el gris literal,
+es cambiar ese valor y nada más.
+
+Lo que el cambio recupera es **la regla 4 del mundo**, que había caído el 11/09 cuando la página
+se volvió blanca: una superficie se separa del fondo **por tono**, no solo por su contorno de
+1 px. La separación página/superficie queda en **1,113:1** — un punto mejor que la del gris con
+el que empezó todo. Y la cabecera, que es nube blanca, se distingue sola, que era justo lo que
+se pedía.
+
+⚠️ **Y aparece un sitio donde el gris frío se notaba: la cinta de cifras.** Es el único elemento
+del portal que apoya algo hundido directamente en el cielo —todo lo demás que usa
+`--nube-hundida` vive dentro de una superficie blanca, donde el gris frío es lo correcto—. Sobre
+el cielo cálido se leía como una mancha sucia cruzando la página. Lleva ahora un hundido cálido
+propio, `#F7EBE1`: 1,052:1 contra el cielo, donde el gris daba 1,012, o sea casi nada. No es un
+token: existe solo ahí.
+
+Los tres grises de texto sobre el cielo nuevo: tinta 11,35 · tinta2 6,10 · tinta3 4,79. Los tres
+pasan. 620 pruebas en verde, typecheck limpio.

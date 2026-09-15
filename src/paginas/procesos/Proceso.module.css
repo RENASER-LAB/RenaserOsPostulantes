@@ -7,9 +7,7 @@
  */
 
 .pagina {
-  max-width: var(--ancho);
-  margin: 0 auto;
-  padding: var(--e5) var(--e5) var(--e8);
+  composes: hoja from '../../estilos/pagina.module.css';
 }
 
 .volver {
@@ -17,7 +15,11 @@
 }
 
 .encabezado {
-  margin-top: var(--e4);
+  composes: encabezado from '../../estilos/pagina.module.css';
+}
+
+.titular {
+  composes: titular from '../../estilos/pagina.module.css';
 }
 
 .desde {
@@ -29,20 +31,27 @@
 
 /* ---------- El estado, arriba del todo ---------- */
 
+/*
+ * El cierre de una postulacion terminada.
+ *
+ * ⚠️ **Esta pantalla no pinta coral, y no es una decision de gusto.** Este panel
+ * **solo se renderiza cuando el proceso termino** —ver `Proceso.tsx`—, y un
+ * proceso terminado no es nunca «te toca a ti». Mientras esta vivo, quien
+ * reclama es el hito abierto del recorrido, que `Seguimiento` ya pinta con su
+ * panel coral: repetirlo aqui daba dos paneles identicos con dos botones
+ * «Abrir prueba», y en movil a pantalla y media de distancia.
+ *
+ * Aqui hubo ademas un `.estadoActual.turno` que **nadie aplicaba**: `estilos.turno`
+ * no aparece en el TSX, asi que ese panel coral no se llego a ver nunca y lo
+ * unico que hacia la regla era arrastrar la sombra violeta del mundo anterior.
+ *
+ * Va hundido, como el cierre de «Mis procesos»: es la misma cosa dicha en la
+ * otra pantalla.
+ */
 .estadoActual {
+  composes: bloque from '../../estilos/pagina.module.css';
+  composes: bloqueHundido from '../../estilos/pagina.module.css';
   margin-top: var(--e6);
-  border: 1px solid var(--regla);
-  background: var(--nube-hundida);
-  padding: var(--e5);
-  border-radius: var(--radio);
-}
-
-.estadoActual.turno {
-  border: 2px solid var(--activo-regla);
-  background: var(--nube);
-  box-shadow:
-    0 2px 6px rgb(35 43 54 / 0.05),
-    0 14px 40px rgb(86 56 214 / 0.14);
 }
 
 .estadoTitulo {
@@ -176,23 +185,7 @@
 }
 
 .botonRetirar {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 44px;
-  padding: 0 var(--e5);
-  background: var(--nube);
-  color: var(--mal);
-  border: 1px solid var(--mal-regla);
-  font-size: var(--t-prosa);
-  font-weight: 600;
-  cursor: pointer;
-  transition: border-color 140ms var(--salida);
-  border-radius: var(--radio);
-}
-
-.botonRetirar:hover {
-  border-color: var(--mal);
+  composes: peligrosoContorno from '../../estilos/piezas.module.css';
 }
 
 /* ---------- El aviso de confirmacion ---------- */
@@ -210,7 +203,7 @@
 }
 
 .aviso::backdrop {
-  background: rgb(35 43 54 / 0.4);
+  background: var(--velo);
 }
 
 .avisoTitulo {
@@ -236,22 +229,7 @@
 }
 
 .confirmarRetiro {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 44px;
-  padding: 0 var(--e5);
-  background: var(--nube);
-  color: var(--mal);
-  border: 1px solid var(--mal-regla);
-  font-size: var(--t-prosa);
-  font-weight: 600;
-  cursor: pointer;
-  border-radius: var(--radio);
-}
-
-.confirmarRetiro:hover:not(:disabled) {
-  border-color: var(--mal);
+  composes: peligrosoMenor from '../../estilos/piezas.module.css';
 }
 
 .confirmarRetiro:disabled {
@@ -272,10 +250,8 @@
 /* ---------- Cargando y fallo de la pagina ---------- */
 
 .marco {
+  composes: bloqueHolgado from '../../estilos/pagina.module.css';
   margin-top: var(--e6);
-  border: 1px solid var(--regla);
-  padding: var(--e6);
-  border-radius: var(--radio);
 }
 
 .marcoTexto {
@@ -318,10 +294,6 @@
 }
 
 @media (max-width: 640px) {
-  .pagina {
-    padding: var(--e4) var(--e4) var(--e7);
-  }
-
   .retirada {
     align-items: flex-start;
   }

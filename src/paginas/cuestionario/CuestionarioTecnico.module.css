@@ -5,10 +5,14 @@
  * con detalle, y una caja de tres líneas dice «respóndeme corto» sin decirlo.
  */
 
+/*
+ * El carril mas estrecho del portal, y es el correcto: aqui se lee una pregunta
+ * cada vez. `--medida` corta a 50 caracteres, que es lo que se lee sin perder
+ * el renglon — con el reloj corriendo, mas todavia.
+ */
 .pagina {
+  composes: hoja from '../../estilos/pagina.module.css';
   max-width: var(--medida);
-  margin: 0 auto;
-  padding: var(--e5) var(--e5) var(--e8);
 }
 
 .cabecera {
@@ -55,6 +59,24 @@
   color: var(--duda-tinta);
   border-color: var(--duda);
   background: var(--duda-bruma);
+}
+
+/*
+ * La frase del umbral, **visible y no solo para el lector de pantalla**.
+ *
+ * ⚠️ El rojo del numero era la unica señal de que queda poco, y el color solo
+ * no vale. La frase ya existia en el DOM —`Cronometro` la emite en un
+ * `role="status"`— y solo habia que dejarla ver. No es texto nuevo.
+ */
+.avisoDelReloj {
+  margin: var(--e1) 0 0;
+  font-size: var(--t-menor);
+  font-weight: 600;
+  color: var(--mal);
+}
+
+.avisoDelReloj:empty {
+  display: none;
 }
 
 /* ---------- La pregunta ---------- */
@@ -153,13 +175,6 @@
   line-height: 1.5;
   color: var(--mal);
   margin: 0 0 var(--e4);
-}
-
-.error::before {
-  content: '';
-  flex: none;
-  width: 3px;
-  background: var(--mal);
 }
 
 @media (max-width: 640px) {

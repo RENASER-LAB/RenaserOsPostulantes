@@ -18,9 +18,7 @@
  */
 
 .pagina {
-  max-width: var(--ancho);
-  margin: 0 auto;
-  padding: var(--e4) var(--e5) var(--e8);
+  composes: hoja from '../../estilos/pagina.module.css';
 }
 
 .volver {
@@ -369,12 +367,6 @@
   border-radius: var(--radio);
 }
 
-.aviso::before {
-  content: '';
-  flex: none;
-  width: 3px;
-  background: var(--regla2);
-}
 
 .aviso.malo {
   border-color: var(--mal-regla);
@@ -382,9 +374,6 @@
   color: var(--mal);
 }
 
-.aviso.malo::before {
-  background: var(--mal);
-}
 
 .enlaceAviso {
   background: none;
@@ -536,7 +525,7 @@
 }
 
 .confirmacion::backdrop {
-  background: rgb(35 43 54 / 0.4);
+  background: var(--velo);
 }
 
 .confirmacionTitulo {

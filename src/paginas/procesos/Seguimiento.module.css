@@ -1,23 +1,26 @@
 /*
  * El recorrido de una postulacion: la pieza que sostiene el mundo entero.
  *
- * Es un canto de nube difractando la luz. El espectro corre **una sola vez** de
- * la primera etapa a la quinta, y cada tramo enseña la rebanada que le toca por
- * su sitio: por eso avanzar cambia de color sin que ningun color signifique una
- * etapa concreta. El color dice «hasta aqui llego la luz», no «esto es la
- * prueba».
+ * **Lo que se formo se queda formado**, porque lo que el candidato ya demostro
+ * es suyo. Avanzar engorda la fila de tramos macizos que llevas detras.
  *
- * En el cielo el canto se deshace cuando las gotas engordan. Aqui no: **lo que
- * se formo se queda formado**, porque lo que el candidato ya demostro es suyo.
+ * ⚠️ **Aqui vivia el ultimo `--canto` del portal.** Cada tramo enseñaba su
+ * rebanada del espectro irisado, de modo que avanzar cambiaba de color. Era del
+ * mundo anterior y se fue el 10/09/2026: en «El escaparate» el estado se dice
+ * con la forma, y el unico color que queda pintado es el coral del panel que
+ * reclama.
  *
- * El estado se lee en la FORMA antes que en el color, y la forma es el GROSOR
- * de la franja mas su relleno:
+ * El estado se lee en el GROSOR y el RELLENO, y en nada mas:
  *
- *   formada    franja gruesa, maciza, en su color del espectro
- *   viva       franja mas gruesa aun, violeta pleno y con resplandor
- *   formandose franja gruesa que se desvanece a la mitad
+ *   formada    ocho pixeles, maciza en tinta
+ *   viva       doce pixeles, maciza en tinta, con filete blanco alrededor
+ *   formandose ocho pixeles que se desvanecen a la mitad
  *   ausente    filete de dos pixeles
- *   dispersa   franja gruesa punteada
+ *   dispersa   ocho pixeles punteados
+ *
+ * ⚠️ **La viva no lleva coral, aunque sea el tramo que te reclama.** El coral ya
+ * lo lleva el panel `.abierto` que va justo debajo, y que ademas lo dice con
+ * palabras: dos corales en la misma postulacion no marcan el doble.
  *
  * Con la pantalla en gris se distinguen las cinco. Es la comprobacion, y hay
  * que volver a hacerla si se toca esta hoja.
@@ -28,9 +31,8 @@
 }
 
 /*
- * Cinco tramos en fila: el canto es una tirada horizontal de luz, y leerlo de
- * izquierda a derecha es lo que dice «esto va avanzando». En vertical seria una
- * lista de etapas, que es otra cosa.
+ * Cinco tramos en fila, y leerlos de izquierda a derecha es lo que dice «esto
+ * va avanzando». En vertical seria una lista de etapas, que es otra cosa.
  */
 .banda {
   display: grid;
@@ -68,21 +70,12 @@
   width: 100%;
   height: 8px;
   border-radius: var(--radio-control);
-  /*
-   * Cada tramo enseña su rebanada del espectro completo. Con el fondo a cinco
-   * veces el ancho del tramo, la tirada entera mide justo los cinco tramos, y
-   * `--i` elige cual se ve.
-   */
-  background-image: var(--canto);
-  background-size: 500% 100%;
-  background-position-x: calc(var(--i) * 25%);
-  background-repeat: no-repeat;
+  background-color: var(--activo);
 }
 
 /* Ausente: la luz todavia no ha llegado aqui. Filete, no franja. */
 .pendiente .franja::before {
   height: 2px;
-  background-image: none;
   background-color: var(--regla2);
 }
 
@@ -107,34 +100,27 @@
 }
 
 /*
- * Viva: violeta pleno, mas gruesa que ninguna y con resplandor.
+ * Viva: mas gruesa que ninguna, con un filete blanco que la separa de lo que
+ * tenga detras.
  *
- * Aqui el violeta le gana al color posicional a proposito. El espectro dice
- * cuanto has avanzado, pero «te toca a ti» es la unica pregunta con la que el
- * candidato entra a esta pantalla, y si su tramo sale verde porque va por la
- * primera etapa, el portal ha contestado otra cosa. El avance ya se lee en los
- * tramos cerrados que tiene detras.
+ * Doce contra ocho es la mitad mas de grosor, y el filete es la segunda señal:
+ * las dos funcionan con la pantalla en gris, que es la comprobacion de esta
+ * hoja. Antes era violeta pleno, y el violeta se fue con el mundo anterior.
  */
 .viva .franja::before {
   height: 12px;
-  background-image: none;
-  background-color: var(--activo);
-  box-shadow:
-    0 0 0 1px rgb(255 255 255 / 0.9),
-    0 4px 18px rgb(86 56 214 / 0.35);
-  /*
-   * El unico momento con movimiento que se dispara solo: la banda formandose de
-   * izquierda a derecha al entrar. Por eso significa algo cuando ocurre.
-   */
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.9);
+  /* La banda se dibuja de izquierda a derecha al entrar. Es lo mismo que hace
+     la pieza C en la portada, escrito en CSS porque aqui no hay motion. */
   animation: formarse 900ms var(--salida) both;
 }
 
 @keyframes formarse {
   from {
-    clip-path: inset(0 100% 0 0 round 999px);
+    clip-path: inset(0 100% 0 0 round var(--radio-control));
   }
   to {
-    clip-path: inset(0 0 0 0 round 999px);
+    clip-path: inset(0 0 0 0 round var(--radio-control));
   }
 }
 
@@ -187,14 +173,9 @@
  * se queda en nube blanca — el color vive en el canto, nunca bajo la prosa.
  */
 .abierto {
+  composes: turno from '../../estilos/piezas.module.css';
   margin-top: var(--e2);
   padding: var(--e5);
-  border: 2px solid var(--activo-regla);
-  border-radius: var(--radio);
-  background: var(--nube);
-  box-shadow:
-    0 2px 6px rgb(35 43 54 / 0.05),
-    0 14px 40px rgb(86 56 214 / 0.14);
   /* Ver `Procesos.module.css` → `.espera`: el tope de linea es del panel. */
   max-width: 44rem;
 }
@@ -237,11 +218,9 @@
  * bruma y filete corriente — nada aqui pide nada al candidato.
  */
 .espera {
+  composes: panelDeEspera from '../../estilos/piezas.module.css';
   margin-top: var(--e2);
   padding: var(--e5);
-  border: 1px solid var(--regla);
-  border-radius: var(--radio);
-  background: var(--nube-hundida);
   max-width: 44rem;
 }
 
@@ -261,11 +240,11 @@
 }
 
 /*
- * Por debajo de 760 px el canto se pone de pie.
+ * Por debajo de 760 px el recorrido se pone de pie.
  *
  * Cinco tramos en fila en un telefono dejan 60 px para «La simulación de
- * trabajo», y el nombre de la etapa es justo lo que hay que leer. En vertical,
- * el espectro corre de arriba abajo y el orden se sigue leyendo igual.
+ * trabajo», y el nombre de la etapa es justo lo que hay que leer. En vertical
+ * el orden se sigue leyendo igual.
  */
 @media (max-width: 760px) {
   .banda {
@@ -289,10 +268,6 @@
   .franja::before {
     width: 8px;
     height: 100%;
-    background-image: var(--canto-vertical);
-    background-size: 100% 500%;
-    background-position-x: 0;
-    background-position-y: calc(var(--i) * 25%);
   }
 
   .pendiente .franja::before {
@@ -331,10 +306,10 @@
 
 @keyframes formarseVertical {
   from {
-    clip-path: inset(0 0 100% 0 round 999px);
+    clip-path: inset(0 0 100% 0 round var(--radio-control));
   }
   to {
-    clip-path: inset(0 0 0 0 round 999px);
+    clip-path: inset(0 0 0 0 round var(--radio-control));
   }
 }
 

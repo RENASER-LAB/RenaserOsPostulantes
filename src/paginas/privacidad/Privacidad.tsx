@@ -87,7 +87,7 @@ export function Privacidad() {
       </Link>
 
       <div className={estilos.encabezado}>
-        <h1>Tus datos, tus decisiones.</h1>
+        <h1 className={estilos.titular}>Tus datos, tus decisiones.</h1>
         <p className={estilos.bajada}>
           Son tres cosas distintas y se parecen mucho. Léelas antes de elegir:{' '}
           <b>solo una borra tus datos</b>.

@@ -13,7 +13,13 @@
 import { createServer } from 'node:http'
 import { RESPUESTAS as PANEL } from './datos-panel.mjs'
 
-const PUERTO = 8080
+/*
+ * ⚠️ **El 8080 esta ocupado.** Ahi vive `postgresql-adminer-1`, que responde 200
+ * y hace creer que hay un backend. Se deja como valor por defecto porque es
+ * adonde apunta el proxy de Vite sin configurar, pero para levantarlo de verdad
+ * hay que darle un puerto libre: `PUERTO=8082 node herramientas/backend-simulado.mjs`.
+ */
+const PUERTO = Number(process.env.PUERTO ?? 8080)
 const ahora = () => new Date()
 const enMinutos = (m) => new Date(Date.now() + m * 60_000).toISOString()
 
@@ -69,6 +75,35 @@ const VACANTES = [
     compensacionPublica: null,
     requisitosObjetivos: [],
   },
+]
+
+/**
+ * El catalogo de provincias del registro.
+ *
+ * ⚠️ **Es una MUESTRA, no las 196.** El backend de verdad las trae todas; aqui
+ * caben las suficientes para que el desplegable se vea agrupado por
+ * departamento, se pueda elegir una, y se compruebe que «Fuera del Peru» va
+ * suelto al final. Los codigos son ubigeos reales de nivel 2.
+ *
+ * `departamento` va nulo solo en `EXT`, que no es de ningun sitio del Peru.
+ */
+const UBIGEO = [
+  { codigo: '1501', nombre: 'Lima', departamento: 'Lima' },
+  { codigo: '1507', nombre: 'Huaral', departamento: 'Lima' },
+  { codigo: '1508', nombre: 'Huarochirí', departamento: 'Lima' },
+  { codigo: '0701', nombre: 'Callao', departamento: 'Callao' },
+  { codigo: '0401', nombre: 'Arequipa', departamento: 'Arequipa' },
+  { codigo: '0407', nombre: 'Islay', departamento: 'Arequipa' },
+  { codigo: '0801', nombre: 'Cusco', departamento: 'Cusco' },
+  { codigo: '0808', nombre: 'La Convención', departamento: 'Cusco' },
+  { codigo: '1301', nombre: 'Trujillo', departamento: 'La Libertad' },
+  { codigo: '1401', nombre: 'Chiclayo', departamento: 'Lambayeque' },
+  { codigo: '2001', nombre: 'Piura', departamento: 'Piura' },
+  { codigo: '2101', nombre: 'Puno', departamento: 'Puno' },
+  { codigo: '1201', nombre: 'Huancayo', departamento: 'Junín' },
+  { codigo: '0501', nombre: 'Huamanga', departamento: 'Ayacucho' },
+  { codigo: '1601', nombre: 'Maynas', departamento: 'Loreto' },
+  { codigo: 'EXT', nombre: 'Fuera del Perú', departamento: null },
 ]
 
 const CONSENTIMIENTOS = [
@@ -333,6 +368,7 @@ const servidor = createServer(async (req, res) => {
   if (ruta === '/consentimientos/textos') return responder(res, 200, CONSENTIMIENTOS)
 
   // Cuenta
+  if (ruta === '/catalogos/ubigeo') return responder(res, 200, UBIGEO)
   if (ruta === '/cuentas' && metodo === 'POST') return responder(res, 201)
   if (ruta === '/auth/login' && metodo === 'POST') return responder(res, 200, { token: 'token-de-mentira', usuarioId: 1 })
 

@@ -1,24 +1,21 @@
 /**
  * El recorrido de una postulacion, tramo por tramo.
  *
- * Es la pieza que define el mundo del portal: tu candidatura como un canto de
- * nube que se va formando. El espectro corre una sola vez de la primera etapa a
- * la quinta y cada tramo enseña su rebanada, asi que el color dice cuanto has
- * avanzado y no que etapa es. La diferencia con el fenomeno real es deliberada
- * —alli el canto se deshace, aqui **lo formado se queda formado**— porque lo
- * que el candidato ya demostro es suyo.
+ * Es la pieza que define el mundo del portal: cinco tramos en fila, y **lo
+ * formado se queda formado**, porque lo que el candidato ya demostro es suyo.
+ * El estado de cada tramo se dice con el grosor y el relleno de su franja, no
+ * con el color — el porque de cada forma esta en `Seguimiento.module.css`.
  *
- * La accion vive en el panel que cuelga del tramo abierto, marcado con su
- * misma señal violeta: asi «donde estoy» y «que hago» son la misma mirada. No
- * va dentro del tramo porque un tramo mide una quinta parte del ancho y ahi no
- * cabe ni el titulo.
+ * La accion vive en el panel que cuelga del tramo abierto, y ese panel es el
+ * unico coral de la pantalla: asi «donde estoy» y «que hago» son la misma
+ * mirada. No va dentro del tramo porque un tramo mide una quinta parte del
+ * ancho y ahi no cabe ni el titulo.
  *
  * Aqui no hay fechas por etapa, y no es un olvido: la lista de postulaciones no
  * trae historial —eso solo llega en el detalle— y una fecha inventada seria
  * peor que ninguna.
  */
 
-import type { CSSProperties } from 'react'
 import { Link } from 'react-router-dom'
 import type { MiPostulacion } from '@/api/tipos'
 import {
@@ -85,11 +82,10 @@ export function Seguimiento({ postulacion, fechas, etapaDeCorte }: Props) {
   return (
     <div className={estilos.recorrido}>
       <ol className={estilos.banda} role="list">
-        {hitos.map((hito, indice) => (
+        {hitos.map((hito) => (
           <Tramo
             key={hito.clave}
             hito={hito}
-            indice={indice}
             esSiguiente={hito.clave === siguiente}
             fecha={fechas?.[hito.clave]}
             leToca={leToca}
@@ -132,14 +128,12 @@ export function Seguimiento({ postulacion, fechas, etapaDeCorte }: Props) {
 
 function Tramo({
   hito,
-  indice,
   esSiguiente,
   fecha,
   leToca,
   final,
 }: {
   hito: Hito
-  indice: number
   esSiguiente: boolean
   fecha?: string
   leToca: boolean
@@ -147,12 +141,18 @@ function Tramo({
 }) {
   const enCurso = hito.paso === 'en_curso'
   // Un tramo en curso que no le toca al candidato espera a otra persona: la
-  // banda se queda a medias, sin violeta y sin boton.
+  // banda se queda a medias, y sin boton.
+  /*
+   * ⚠️ **`cumplida` no tiene clase, y es correcto**: la franja maciza en tinta
+   * es el estado por defecto de `.franja::before`. Pero `estilos['cumplida']`
+   * devuelve `undefined` y la plantilla lo escribia literal, asi que el DOM
+   * llevaba `class="_tramo_1a2b3 undefined"`. Se filtra.
+   */
   const forma = enCurso ? (leToca ? estilos.viva : estilos.esperando) : estilos[hito.paso]
-  const clases = `${estilos.tramo} ${forma}`
+  const clases = [estilos.tramo, forma].filter(Boolean).join(' ')
 
   return (
-    <li className={clases} style={{ '--i': indice } as CSSProperties}>
+    <li className={clases}>
       {/* La franja es decorativa para un lector de pantalla: su estado va en el
           texto de abajo, no en la forma. */}
       <span className={estilos.franja} aria-hidden="true" />

@@ -108,7 +108,7 @@ vi.mock('@/api/perfil', () => ({
   // Lo de los archivos del perfil: la cabecera de identidad y la lateral los
   // llaman al montar, y sin dobles el modulo simulado no los tendria.
   PORTADAS_DE_LA_CASA: [
-    { codigo: 'CANTO_MENTA', nombre: 'Menta' },
+    { codigo: 'CANTO_MENTA', nombre: 'Arena' },
     { codigo: 'BRUMA', nombre: 'Bruma' },
   ],
   subirFoto: () => Promise.resolve(undefined),

@@ -40,9 +40,24 @@ interface Props {
   className?: string
   /** La clase que se añade por debajo de `QUEDA_POCO`. */
   classNamePoco?: string
+  /**
+   * La clase de la frase del umbral.
+   *
+   * Por defecto va solo para el lector de pantalla. Una pantalla que quiera
+   * **verla** pasa aqui su clase, y entonces la frase es la segunda señal de
+   * que queda poco: la primera —el numero en rojo— es color, y el color solo
+   * no vale (WCAG 1.4.1).
+   */
+  classNameAviso?: string
 }
 
-export function Cronometro({ venceEn, alAgotarse, className, classNamePoco }: Props) {
+export function Cronometro({
+  venceEn,
+  alAgotarse,
+  className,
+  classNamePoco,
+  classNameAviso,
+}: Props) {
   const [restante, setRestante] = useState(() => segundosHasta(venceEn))
   const [aviso, setAviso] = useState('')
 
@@ -80,10 +95,11 @@ export function Cronometro({ venceEn, alAgotarse, className, classNamePoco }: Pr
         {restante === null ? '--:--:--' : formatearTiempo(restante)}
       </div>
       {/*
-        Y la frase, que es lo que se oye. Fuera de la vista pero no oculta al
-        lector: `display: none` la haria invisible tambien para el.
+        Y la frase, que es lo que se oye —y, si la pantalla lo pide, tambien lo
+        que se ve—. Fuera de la vista pero no oculta al lector: `display: none`
+        la haria invisible tambien para el.
       */}
-      <p role="status" aria-live="polite" className="solo-lectores">
+      <p role="status" aria-live="polite" className={classNameAviso ?? 'solo-lectores'}>
         {aviso}
       </p>
     </>

@@ -10,7 +10,7 @@
 .fondo {
   position: fixed;
   inset: 0;
-  background: rgb(35 43 54 / 0.4);
+  background: var(--velo);
   z-index: 80;
 }
 

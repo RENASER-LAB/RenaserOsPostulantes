@@ -277,7 +277,7 @@ export function Postular() {
       </Link>
 
       <div className={estilos.encabezado}>
-        <h1>Postula a este puesto.</h1>
+        <h1 className={estilos.titular}>Postula a este puesto.</h1>
         <span className={estilos.puesto}>
           {v.titulo}
           {v.nombreEmpresa ? ` · ${v.nombreEmpresa}` : ''}

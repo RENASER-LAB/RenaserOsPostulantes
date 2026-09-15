@@ -1,0 +1,509 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EX · Portal del candidato — dirección «La Serie»</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;500;600;700&family=Faustina:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/*
+  THESIS: Los puestos son una serie numerada y fija, con laminas publicadas y
+    huecos que todavia no salen; la cara ilustra y el dorso, siempre mas
+    apretado, lo cuenta todo. Rechaza el heroe con slogan y la lista de filas.
+  OWN-WORLD: Carton de album #EFE9DC, lamina #FCFAF4, tinta #1F1B16 y dos
+    tintas litograficas: azul #2F6E8F y ciruela #8E4A6B. Familjen Grotesk en
+    las caras, Faustina apretada en los dorsos. Sin sombras de tarjeta: la
+    unica profundidad es la lamina girando sobre su eje.
+  STORY: Quien entra ve cinco laminas y tres huecos, voltea la que le
+    interesa y lee el dorso entero sin cambiar de pagina.
+  FIRST VIEWPORT: Faja del album con edicion y cuenta; debajo, la serie
+    completa en huecos del mismo tamano, publicadas y por publicar juntas.
+  FORM: retador del catalogo, veredicto competitivo (serie numerada de
+    laminas de sobre), sin su mecanica de escasez, que aqui seria mentira;
+    semilla 76fbfbe1, re-roll 2.
+  FINISH: unreviewed and undocumented is unfinished; this build ends with the
+    finish review, the verdict, DESIGN.md, and every shipping raster carrying
+    its provenance.
+*/
+
+:root {
+  --carton: #efe9dc;
+  --carton-hondo: #e3dbc9;
+  --lamina: #fcfaf4;
+  --tinta: #1f1b16;
+  --tinta2: #453e35;
+  --tinta3: #655c50;
+  --linea: #cfc7b4;
+  --linea-fuerte: #8a8271;
+  --azul: #2f6e8f;
+  --azul-hondo: #235madd;
+  --ciruela: #8e4a6b;
+
+  --e1: 4px; --e2: 8px; --e3: 12px; --e4: 16px;
+  --e5: 24px; --e6: 32px; --e7: 48px; --e8: 68px;
+  --ancho: 1200px;
+}
+:root { --azul-hondo: #235772; }
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background-color: var(--carton);
+  background-image:
+    repeating-linear-gradient(45deg, rgba(31,27,22,0.020) 0 2px, transparent 2px 6px);
+  color: var(--tinta);
+  font-family: 'Familjen Grotesk', system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+::selection { background: var(--ciruela); color: var(--lamina); }
+:focus-visible { outline: 3px solid var(--ciruela); outline-offset: 3px; }
+
+* { scrollbar-color: var(--linea-fuerte) var(--carton-hondo); scrollbar-width: thin; }
+::-webkit-scrollbar { width: 12px; }
+::-webkit-scrollbar-track { background: var(--carton-hondo); }
+::-webkit-scrollbar-thumb { background: var(--linea-fuerte); border: 3px solid var(--carton-hondo); }
+
+a { color: inherit; text-underline-offset: 3px; }
+
+.pliego { max-width: var(--ancho); margin-inline: auto; padding-inline: var(--e5); }
+
+.impreso {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--tinta3);
+}
+
+/* ---------- faja del album ---------- */
+
+.faja { border-bottom: 2px solid var(--tinta); }
+.faja .pliego {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: var(--e4); padding-block: var(--e4);
+}
+.rotulo-album { display: flex; align-items: center; gap: var(--e3); }
+.rotulo-album svg { display: block; }
+.rotulo-album h1 {
+  margin: 0;
+  font-size: clamp(23px, 2.6vw, 31px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+.faja nav ul { display: flex; gap: var(--e1); list-style: none; margin: 0; padding: 0; }
+.faja nav a {
+  display: inline-flex; align-items: center; min-height: 44px; padding-inline: var(--e3);
+  font-size: 15px; color: var(--tinta2); text-decoration: none;
+  border-bottom: 3px solid transparent;
+}
+.faja nav a:hover { color: var(--tinta); border-bottom-color: var(--linea-fuerte); }
+.faja nav a[aria-current] { color: var(--tinta); font-weight: 600; border-bottom-color: var(--ciruela); }
+
+.cuenta {
+  display: flex; flex-wrap: wrap; gap: var(--e5);
+  padding-block: var(--e3);
+  border-bottom: 1px solid var(--linea-fuerte);
+}
+
+/* ---------- la serie ---------- */
+
+.serie { padding-block: var(--e6) var(--e8); }
+.huecos {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--e5);
+  list-style: none; margin: 0; padding: 0;
+}
+
+.hueco { perspective: 1400px; }
+.giro { position: absolute; opacity: 0; pointer-events: none; }
+
+.lamina {
+  display: block;
+  position: relative;
+  aspect-ratio: 3 / 4.2;
+  transform-style: preserve-3d;
+  transition: transform 520ms cubic-bezier(0.22, 1, 0.28, 1);
+  cursor: pointer;
+}
+.giro:checked + .lamina { transform: rotateY(180deg); }
+.giro:focus-visible + .lamina { outline: 3px solid var(--ciruela); outline-offset: 4px; }
+@media (prefers-reduced-motion: reduce) { .lamina { transition: none; } }
+
+.cara, .dorso {
+  position: absolute; inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  background: var(--lamina);
+  border: 1px solid var(--linea-fuerte);
+  display: flex; flex-direction: column;
+}
+.dorso { transform: rotateY(180deg); }
+
+/* cara */
+.cara-num {
+  display: flex; align-items: baseline; justify-content: space-between;
+  padding: var(--e3) var(--e3) 0;
+}
+.cara-num .n { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; color: var(--ciruela); }
+.grabado { flex: 1; display: block; width: 100%; }
+.cara-texto { padding: 0 var(--e3) var(--e4); }
+.cara-texto h2 {
+  margin: 0 0 3px;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+}
+.cara-texto .donde { font-size: 13.5px; color: var(--tinta2); }
+.voltear {
+  margin: var(--e3) var(--e3) var(--e3);
+  border-top: 1px solid var(--linea);
+  padding-top: var(--e2);
+  font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--tinta3);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.lamina:hover .voltear { color: var(--ciruela); }
+
+/* dorso, siempre mas apretado que la cara */
+.dorso { padding: var(--e4) var(--e3); font-family: Faustina, Georgia, serif; }
+.dorso h3 {
+  margin: 0 0 var(--e2);
+  font-family: 'Familjen Grotesk', sans-serif;
+  font-size: 14px; font-weight: 700; letter-spacing: -0.01em;
+  border-bottom: 1px solid var(--tinta); padding-bottom: 3px;
+}
+.dorso dl { margin: 0 0 var(--e2); font-size: 12.5px; line-height: 1.45; }
+.dorso dt { font-family: 'Familjen Grotesk', sans-serif; font-size: 9.5px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--tinta3); }
+.dorso dd { margin: 0 0 var(--e2); color: var(--tinta); }
+.dorso p { margin: 0 0 var(--e2); font-size: 13px; line-height: 1.42; color: var(--tinta2); }
+.dorso .llamada {
+  margin-top: auto;
+  font-family: 'Familjen Grotesk', sans-serif;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--azul);
+  border-top: 1px solid var(--linea); padding-top: var(--e2);
+}
+
+/* hueco sin publicar */
+.vacante-por-salir {
+  aspect-ratio: 3 / 4.2;
+  border: 2px dashed var(--linea-fuerte);
+  display: grid; place-items: center; text-align: center;
+  padding: var(--e4);
+  color: var(--tinta3);
+}
+.vacante-por-salir .n { display: block; font-size: 26px; font-weight: 700; color: var(--linea-fuerte); margin-bottom: var(--e2); }
+.vacante-por-salir span.txt { font-size: 12.5px; line-height: 1.45; display: block; }
+
+/* ---------- instrucciones del album ---------- */
+
+.instrucciones { border-top: 2px solid var(--tinta); padding-block: var(--e6) var(--e8); }
+.instrucciones h2 {
+  margin: 0 0 var(--e2);
+  font-size: clamp(24px, 2.6vw, 32px);
+  font-weight: 700; letter-spacing: -0.03em;
+}
+.instrucciones .entrada {
+  font-family: Faustina, Georgia, serif;
+  font-size: 17px; line-height: 1.5; color: var(--tinta2);
+  max-width: 62ch; margin: 0 0 var(--e5);
+}
+.reglas {
+  columns: 3; column-gap: var(--e6); column-rule: 1px solid var(--linea);
+  font-family: Faustina, Georgia, serif;
+  list-style: none; margin: 0; padding: 0;
+}
+.regla { break-inside: avoid; margin-bottom: var(--e4); padding-left: 30px; position: relative; }
+.regla .cifra {
+  position: absolute; left: 0; top: 1px;
+  font-family: 'Familjen Grotesk', sans-serif;
+  font-size: 13px; font-weight: 700; color: var(--lamina);
+  background: var(--azul);
+  width: 21px; height: 21px; border-radius: 50%;
+  display: grid; place-items: center;
+}
+.regla b { font-family: 'Familjen Grotesk', sans-serif; font-size: 15px; letter-spacing: -0.01em; display: block; margin-bottom: 1px; }
+.regla span { font-size: 14.5px; line-height: 1.45; color: var(--tinta2); }
+
+.aviso-cuenta {
+  margin-top: var(--e5);
+  border: 2px solid var(--tinta);
+  padding: var(--e4) var(--e5);
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--e4);
+}
+.aviso-cuenta p { margin: 0; font-family: Faustina, Georgia, serif; font-size: 16px; max-width: 56ch; color: var(--tinta2); }
+.boton-album {
+  display: inline-flex; align-items: center; gap: var(--e2);
+  min-height: 48px; padding-inline: var(--e5);
+  background: var(--ciruela); color: var(--lamina);
+  font-size: 15px; font-weight: 700; letter-spacing: 0.02em;
+  text-decoration: none;
+  transition: background 150ms;
+  white-space: nowrap;
+}
+.boton-album:hover { background: #723a55; }
+
+/* ---------- pie ---------- */
+
+.pie { border-top: 1px solid var(--linea-fuerte); background: var(--carton-hondo); padding-block: var(--e5); }
+.pie .pliego { display: flex; flex-wrap: wrap; gap: var(--e4); justify-content: space-between; font-size: 14px; color: var(--tinta2); }
+.pie ul { display: flex; flex-wrap: wrap; gap: var(--e5); list-style: none; margin: 0; padding: 0; }
+
+/* ---------- adaptacion ---------- */
+
+@media (max-width: 1040px) {
+  .huecos { grid-template-columns: repeat(3, 1fr); }
+  .reglas { columns: 2; }
+}
+@media (max-width: 720px) {
+  :root { --e8: 48px; }
+  .huecos { grid-template-columns: repeat(2, 1fr); gap: var(--e4); }
+  .reglas { columns: 1; }
+  .cara-texto h2 { font-size: 16px; }
+  .faja nav a { padding-inline: var(--e2); font-size: 14px; }
+}
+</style>
+</head>
+<body>
+
+<header class="faja">
+  <div class="pliego">
+    <div class="rotulo-album">
+      <svg width="32" height="26" viewBox="0 0 32 26" fill="none" aria-hidden="true">
+        <path d="M1.5 2.5h10M1.5 13h8M1.5 23.5h10" stroke="#1f1b16" stroke-width="3" stroke-linecap="square"/>
+        <path d="M16 2.5l14 21M30 2.5l-14 21" stroke="#1f1b16" stroke-width="3" stroke-linecap="square"/>
+        <circle cx="23" cy="13" r="2.8" fill="#8e4a6b"/>
+      </svg>
+      <h1>Álbum de puestos</h1>
+    </div>
+    <nav aria-label="Principal">
+      <ul>
+        <li><a href="#" aria-current="page">La serie</a></li>
+        <li><a href="#">Mis procesos</a></li>
+        <li><a href="#">Ingresar</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<div class="pliego cuenta impreso">
+  <span>Edición 2026 · Renaser Consulting</span>
+  <span>5 láminas publicadas</span>
+  <span>3 huecos por salir</span>
+  <span>Lima · Arequipa · Trujillo</span>
+</div>
+
+<main class="pliego serie">
+  <ul class="huecos">
+
+    <li class="hueco">
+      <input type="checkbox" id="l1" class="giro">
+      <label class="lamina" for="l1">
+        <div class="cara">
+          <div class="cara-num"><span class="n">N.º 01</span><span class="impreso">Lima</span></div>
+          <svg class="grabado" viewBox="0 0 120 90" aria-hidden="true">
+            <rect x="14" y="52" width="14" height="26" fill="#2f6e8f"/>
+            <rect x="34" y="38" width="14" height="40" fill="#2f6e8f" opacity="0.7"/>
+            <rect x="54" y="24" width="14" height="54" fill="#8e4a6b"/>
+            <rect x="74" y="44" width="14" height="34" fill="#2f6e8f" opacity="0.45"/>
+            <path d="M10 20h100" stroke="#1f1b16" stroke-width="1.4"/>
+            <path d="M10 78h100" stroke="#1f1b16" stroke-width="1.4"/>
+          </svg>
+          <div class="cara-texto">
+            <h2>Analista de Datos</h2>
+            <div class="donde">Clínica San Juan</div>
+          </div>
+          <div class="voltear"><span>Voltear la lámina</span><span>↻</span></div>
+        </div>
+        <div class="dorso">
+          <h3>Analista de Datos</h3>
+          <dl>
+            <dt>Empresa</dt><dd>Clínica San Juan</dd>
+            <dt>Modalidad</dt><dd>Híbrido · Lima · L a V, 9 a 18 h</dd>
+            <dt>Rango</dt><dd>S/ 3 800 – 4 500</dd>
+          </dl>
+          <p>Que los reportes semanales salgan solos y sean confiables, y que el área comercial deje de pedir números por chat cada lunes por la mañana.</p>
+          <p>Se pide experiencia con SQL, saber explicarle un número a quien no es técnico, y haber ordenado algo que antes se hacía a mano.</p>
+          <div class="llamada">Abrir la lámina completa →</div>
+        </div>
+      </label>
+    </li>
+
+    <li class="hueco">
+      <input type="checkbox" id="l2" class="giro">
+      <label class="lamina" for="l2">
+        <div class="cara">
+          <div class="cara-num"><span class="n">N.º 02</span><span class="impreso">Arequipa</span></div>
+          <svg class="grabado" viewBox="0 0 120 90" aria-hidden="true">
+            <path d="M14 66 L40 40 L66 56 L96 26" stroke="#2f6e8f" stroke-width="3" fill="none"/>
+            <circle cx="14" cy="66" r="5" fill="#8e4a6b"/>
+            <circle cx="40" cy="40" r="4" fill="#1f1b16"/>
+            <circle cx="66" cy="56" r="4" fill="#1f1b16"/>
+            <circle cx="96" cy="26" r="5" fill="#8e4a6b"/>
+            <path d="M10 78h100" stroke="#1f1b16" stroke-width="1.4"/>
+          </svg>
+          <div class="cara-texto">
+            <h2>Coordinador/a de Operaciones</h2>
+            <div class="donde">Transportes del Sur</div>
+          </div>
+          <div class="voltear"><span>Voltear la lámina</span><span>↻</span></div>
+        </div>
+        <div class="dorso">
+          <h3>Coordinador/a de Operaciones</h3>
+          <dl>
+            <dt>Empresa</dt><dd>Transportes del Sur</dd>
+            <dt>Modalidad</dt><dd>Presencial · Arequipa · L a S</dd>
+          </dl>
+          <p>Llevar la operación del día a día: proveedores, rutas, caja chica y el control de que lo comprometido se cumpla.</p>
+          <div class="llamada">Abrir la lámina completa →</div>
+        </div>
+      </label>
+    </li>
+
+    <li class="hueco">
+      <input type="checkbox" id="l3" class="giro">
+      <label class="lamina" for="l3">
+        <div class="cara">
+          <div class="cara-num"><span class="n">N.º 03</span><span class="impreso">Trujillo</span></div>
+          <svg class="grabado" viewBox="0 0 120 90" aria-hidden="true">
+            <circle cx="46" cy="50" r="22" fill="none" stroke="#2f6e8f" stroke-width="3"/>
+            <circle cx="46" cy="50" r="8" fill="#8e4a6b"/>
+            <path d="M74 34h32M74 50h24M74 66h32" stroke="#1f1b16" stroke-width="2.4"/>
+            <path d="M10 78h100" stroke="#1f1b16" stroke-width="1.4"/>
+          </svg>
+          <div class="cara-texto">
+            <h2>Especialista en Mejora Continua</h2>
+            <div class="donde">Molinos del Norte</div>
+          </div>
+          <div class="voltear"><span>Voltear la lámina</span><span>↻</span></div>
+        </div>
+        <div class="dorso">
+          <h3>Especialista en Mejora Continua</h3>
+          <dl>
+            <dt>Empresa</dt><dd>Molinos del Norte</dd>
+            <dt>Modalidad</dt><dd>Presencial · Trujillo</dd>
+          </dl>
+          <p>Bajar el desperdicio de la línea de envasado sin parar la producción.</p>
+          <div class="llamada">Abrir la lámina completa →</div>
+        </div>
+      </label>
+    </li>
+
+    <li class="hueco">
+      <input type="checkbox" id="l4" class="giro">
+      <label class="lamina" for="l4">
+        <div class="cara">
+          <div class="cara-num"><span class="n">N.º 04</span><span class="impreso">Lima</span></div>
+          <svg class="grabado" viewBox="0 0 120 90" aria-hidden="true">
+            <rect x="18" y="26" width="84" height="12" fill="#2f6e8f" opacity="0.55"/>
+            <rect x="18" y="44" width="60" height="12" fill="#8e4a6b"/>
+            <rect x="18" y="62" width="84" height="12" fill="#2f6e8f" opacity="0.35"/>
+            <path d="M10 20h100" stroke="#1f1b16" stroke-width="1.4"/>
+          </svg>
+          <div class="cara-texto">
+            <h2>Analista de Planeamiento</h2>
+            <div class="donde">Andes Retail</div>
+          </div>
+          <div class="voltear"><span>Voltear la lámina</span><span>↻</span></div>
+        </div>
+        <div class="dorso">
+          <h3>Analista de Planeamiento</h3>
+          <dl>
+            <dt>Empresa</dt><dd>Andes Retail</dd>
+            <dt>Modalidad</dt><dd>Remoto · Lima · Horario flexible</dd>
+          </dl>
+          <p>Que la reposición de tiendas deje de decidirse por corazonada.</p>
+          <div class="llamada">Abrir la lámina completa →</div>
+        </div>
+      </label>
+    </li>
+
+    <li class="hueco">
+      <input type="checkbox" id="l5" class="giro">
+      <label class="lamina" for="l5">
+        <div class="cara">
+          <div class="cara-num"><span class="n">N.º 05</span><span class="impreso">Lima</span></div>
+          <svg class="grabado" viewBox="0 0 120 90" aria-hidden="true">
+            <path d="M22 24h58a8 8 0 0 1 8 8v22a8 8 0 0 1-8 8H46l-16 14V62h-8a8 8 0 0 1-8-8V32a8 8 0 0 1 8-8z" fill="none" stroke="#2f6e8f" stroke-width="3"/>
+            <circle cx="42" cy="43" r="3.4" fill="#8e4a6b"/><circle cx="54" cy="43" r="3.4" fill="#8e4a6b"/><circle cx="66" cy="43" r="3.4" fill="#8e4a6b"/>
+          </svg>
+          <div class="cara-texto">
+            <h2>Jefe/a de Servicio al Cliente</h2>
+            <div class="donde">Clínica San Juan</div>
+          </div>
+          <div class="voltear"><span>Voltear la lámina</span><span>↻</span></div>
+        </div>
+        <div class="dorso">
+          <h3>Jefe/a de Servicio al Cliente</h3>
+          <dl>
+            <dt>Empresa</dt><dd>Clínica San Juan</dd>
+            <dt>Modalidad</dt><dd>Presencial · Lima · Turnos rotativos</dd>
+          </dl>
+          <p>Que una queja se resuelva en el primer contacto y quede aprendida.</p>
+          <div class="llamada">Abrir la lámina completa →</div>
+        </div>
+      </label>
+    </li>
+
+    <li class="hueco">
+      <div class="vacante-por-salir"><span class="n">06</span><span class="txt">Todavía no publicada</span></div>
+    </li>
+    <li class="hueco">
+      <div class="vacante-por-salir"><span class="n">07</span><span class="txt">Todavía no publicada</span></div>
+    </li>
+    <li class="hueco">
+      <div class="vacante-por-salir"><span class="n">08</span><span class="txt">Todavía no publicada</span></div>
+    </li>
+
+  </ul>
+</main>
+
+<section class="pliego instrucciones">
+  <h2>Cómo se llena este álbum</h2>
+  <p class="entrada">
+    Una lámina no se consigue con el currículum. Se consigue trabajando: cinco etapas
+    seguidas, unas semanas de por medio, y una persona decidiendo al final. Trece de los
+    dieciocho estados del proceso no te piden nada — en esos estás esperando, y la
+    pantalla te dice a quién le toca mover.
+  </p>
+
+  <ol class="reglas">
+    <li class="regla"><span class="cifra">1</span><b>Perfil</b><span>Tu currículum y una evaluación escrita sobre cómo trabajas. Catorce días, y puedes volver atrás a corregir.</span></li>
+    <li class="regla"><span class="cifra">2</span><b>Prueba del puesto</b><span>Un encargo real con el reloj corriendo. No se detiene al cerrar el navegador.</span></li>
+    <li class="regla"><span class="cifra">3</span><b>Simulación</b><span>Dos horas de trabajo con el equipo, en una fecha que eliges tú.</span></li>
+    <li class="regla"><span class="cifra">4</span><b>Validación</b><span>Un periodo corto trabajando de verdad, con acuerdo y con responsable.</span></li>
+    <li class="regla"><span class="cifra">5</span><b>Decisión</b><span>La toma una persona mirando todo el recorrido, no un puntaje.</span></li>
+    <li class="regla"><span class="cifra">!</span><b>Lo único que cierra una postulación</b><span>No cumplir un requisito indispensable. Se leen enteros en el dorso de cada lámina, antes de postular.</span></li>
+  </ol>
+
+  <div class="aviso-cuenta">
+    <p>
+      Voltear láminas y leer los textos legales no exige cuenta. La cuenta se crea recién
+      cuando decides postular, y ahí se pregunta dónde vives; una sola vez.
+    </p>
+    <a class="boton-album" href="#">Entrar a mis procesos</a>
+  </div>
+</section>
+
+<footer class="pie">
+  <div class="pliego">
+    <span>© 2026 Renaser Consulting</span>
+    <ul>
+      <li><a href="#">Política de privacidad</a></li>
+      <li><a href="#">Privacidad y control</a></li>
+      <li><a href="#">Panel de empresas</a></li>
+    </ul>
+  </div>
+</footer>
+
+</body>
+</html>

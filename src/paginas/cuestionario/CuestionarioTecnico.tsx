@@ -220,6 +220,8 @@ export function CuestionarioTecnico() {
             venceEn={cuestionario.venceEn}
             className={estilos.reloj}
             classNamePoco={estilos.relojPoco}
+            /* La frase del umbral se ve: el color solo no es una señal. */
+            classNameAviso={estilos.avisoDelReloj}
             alAgotarse={() => {
               cola.mandarYa()
               void cache.invalidateQueries({ queryKey: ['cuestionario-tecnico', uuid] })

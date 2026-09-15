@@ -169,12 +169,23 @@ export const nivelesIdioma = () => pedir<OpcionCatalogo[]>('/catalogos/niveles-i
  * eso se encargan `renovarLaUrl` y `olvidarLaUrl` en `paginas/perfil/Cabecera`.
  */
 
-/** Las cinco portadas del catalogo. Los degradados viven en el CSS, no aqui. */
+/**
+ * Las cinco portadas del catalogo. Los degradados viven en el CSS, no aqui.
+ *
+ * ⚠️ **Los codigos son del backend y no se tocan.** Dicen `CANTO_` porque los
+ * bautizo el mundo visual anterior, y renombrarlos romperia la portada guardada
+ * de cualquier perfil existente. Lo que si cambio el 10/09/2026 es **lo que ve
+ * y oye el candidato**: los cuatro tonos del espectro se volvieron cuatro
+ * corales casi identicos al retargetear los tokens, y uno era exactamente el
+ * coral que significa «te toca a ti». Ahora son neutros que se distinguen por
+ * temperatura y profundidad. El nombre visible no tiene por que coincidir con
+ * el codigo que guarda el backend.
+ */
 export const PORTADAS_DE_LA_CASA = [
-  { codigo: 'CANTO_MENTA', nombre: 'Menta' },
-  { codigo: 'CANTO_AQUA', nombre: 'Aqua' },
-  { codigo: 'CANTO_ROSA', nombre: 'Rosa' },
-  { codigo: 'CANTO_VIOLETA', nombre: 'Violeta' },
+  { codigo: 'CANTO_MENTA', nombre: 'Arena' },
+  { codigo: 'CANTO_AQUA', nombre: 'Pizarra' },
+  { codigo: 'CANTO_ROSA', nombre: 'Humo' },
+  { codigo: 'CANTO_VIOLETA', nombre: 'Carbón' },
   { codigo: 'BRUMA', nombre: 'Bruma' },
 ] as const
 

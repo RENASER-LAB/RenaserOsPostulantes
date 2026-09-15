@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EX · Portal del candidato — dirección «Al Aire»</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/*
+  THESIS: La parrilla de una emisora aplicada al tiempo real del proceso: los
+    cinco tramos dibujados a escala sobre un eje de semanas, y lo que no tiene
+    fecha rayado y dicho como tal. Rechaza el heroe con slogan y la fila de
+    cinco tarjetas iguales que esconde que esto dura semanas.
+  OWN-WORLD: Papel de programacion #F2F0E9, tinta #17181C y un unico azul de
+    dial #1B4D8F para lo que esta al aire. Schibsted Grotesk y Spline Sans
+    Mono; toda hora, plazo y fecha en monoespaciada tabular. El rayado
+    diagonal significa una sola cosa: aqui no hay fecha comprometida.
+  STORY: Quien entra ve de un golpe que esto dura semanas, cuanto dura lo
+    unico que tiene plazo fijo, y que lo demas no se le promete.
+  FIRST VIEWPORT: Dial con la marca; el titular; y la parrilla completa con
+    el eje de semanas y el cursor de AHORA en el origen.
+  FORM: candidato 1 de la lista propia (la parrilla de la radio);
+    semilla 76fbfbe1, re-roll 3.
+  FINISH: unreviewed and undocumented is unfinished; this build ends with the
+    finish review, the verdict, DESIGN.md, and every shipping raster carrying
+    its provenance.
+*/
+
+:root {
+  --papel: #f2f0e9;
+  --papel-hondo: #e6e3d9;
+  --blanco: #fbfaf6;
+  --tinta: #17181c;
+  --tinta2: #41444d;
+  --tinta3: #62666f;
+  --linea: #cdcabd;
+  --linea-fuerte: #8a887c;
+  --dial: #1b4d8f;
+  --dial-hondo: #133866;
+  --dial-bruma: #dfe8f4;
+
+  --e1: 4px; --e2: 8px; --e3: 12px; --e4: 16px;
+  --e5: 24px; --e6: 32px; --e7: 48px; --e8: 68px;
+  --ancho: 1200px;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--papel);
+  color: var(--tinta);
+  font-family: 'Schibsted Grotesk', system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+::selection { background: var(--dial); color: #fff; }
+:focus-visible { outline: 2px solid var(--dial); outline-offset: 3px; }
+
+* { scrollbar-color: var(--linea-fuerte) var(--papel-hondo); scrollbar-width: thin; }
+::-webkit-scrollbar { width: 12px; height: 12px; }
+::-webkit-scrollbar-track { background: var(--papel-hondo); }
+::-webkit-scrollbar-thumb { background: var(--linea-fuerte); border: 3px solid var(--papel-hondo); }
+
+a { color: inherit; text-underline-offset: 3px; text-decoration-color: var(--linea-fuerte); }
+
+.emision { max-width: var(--ancho); margin-inline: auto; padding-inline: var(--e5); }
+
+.mono { font-family: 'Spline Sans Mono', monospace; font-variant-numeric: tabular-nums; }
+.rotulo {
+  font-family: 'Spline Sans Mono', monospace;
+  font-size: 11px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--tinta3);
+}
+
+/* ---------- el dial ---------- */
+
+.dial-barra { border-bottom: 1px solid var(--linea-fuerte); background: var(--papel); }
+.dial-barra .emision {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: var(--e4); min-height: 56px;
+}
+.marca { display: flex; align-items: center; gap: var(--e3); text-decoration: none; }
+.marca svg { display: block; }
+.dial-barra nav ul { display: flex; gap: var(--e1); list-style: none; margin: 0; padding: 0; }
+.dial-barra nav a {
+  display: inline-flex; align-items: center; min-height: 44px; padding-inline: var(--e3);
+  font-size: 15px; color: var(--tinta2); text-decoration: none; border-bottom: 2px solid transparent;
+}
+.dial-barra nav a:hover { color: var(--tinta); border-bottom-color: var(--linea-fuerte); }
+.dial-barra nav a[aria-current] { color: var(--tinta); font-weight: 600; border-bottom-color: var(--dial); }
+
+.regleta-dial {
+  border-bottom: 1px solid var(--linea);
+  background: var(--papel-hondo);
+  overflow: hidden;
+}
+.regleta-dial .emision { display: flex; align-items: flex-end; gap: 0; height: 26px; }
+.regleta-dial i { flex: 1; border-left: 1px solid var(--linea-fuerte); height: 7px; }
+.regleta-dial i:nth-child(5n+1) { height: 15px; border-left-color: var(--tinta3); }
+
+/* ---------- titular ---------- */
+
+.encabezado { padding-block: var(--e7) var(--e6); display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(260px, 0.7fr); gap: var(--e7); align-items: end; }
+h1 {
+  margin: 0;
+  font-size: clamp(36px, 5vw, 66px);
+  font-weight: 800;
+  line-height: 1.0;
+  letter-spacing: -0.04em;
+  max-width: 16ch;
+  text-wrap: balance;
+}
+h1 span { color: var(--tinta2); font-weight: 400; }
+.encabezado p { margin: 0; font-size: 17px; color: var(--tinta2); max-width: 46ch; }
+
+/* ---------- la parrilla ---------- */
+
+.parrilla { padding-bottom: var(--e8); }
+.parrilla-cabeza {
+  display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--e3);
+  border-bottom: 2px solid var(--tinta); padding-bottom: var(--e2); margin-bottom: 0;
+}
+.parrilla-cabeza h2 { margin: 0; font-size: clamp(20px, 2.1vw, 26px); font-weight: 700; letter-spacing: -0.025em; }
+
+.eje {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  border-bottom: 1px solid var(--linea-fuerte);
+}
+.eje span { padding: var(--e2) 0 var(--e2) var(--e2); border-left: 1px solid var(--linea); }
+.eje span:first-child { border-left: 0; padding-left: 0; }
+
+.tramos { list-style: none; margin: 0; padding: 0; position: relative; }
+.tramos::before {
+  content: '';
+  position: absolute; left: 0; top: 0; bottom: 0; width: 2px;
+  background: var(--dial);
+}
+.tramo {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  gap: var(--e5);
+  align-items: center;
+  padding-block: var(--e4);
+  border-bottom: 1px solid var(--linea);
+}
+.tramo .nombre { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; }
+.tramo .nombre .n { color: var(--dial); font-family: 'Spline Sans Mono', monospace; font-size: 13px; margin-right: var(--e2); }
+.tramo .detalle { margin: 2px 0 0; font-size: 14px; color: var(--tinta2); }
+
+.pista { position: relative; height: 46px; }
+.bloque {
+  position: absolute; top: 6px; bottom: 6px;
+  min-width: 96px;
+  border: 1px solid var(--tinta);
+  background: var(--blanco);
+  display: flex; align-items: center; padding-inline: var(--e3);
+  font-family: 'Spline Sans Mono', monospace;
+  font-size: 12.5px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.bloque.fijo { background: var(--dial); border-color: var(--dial); color: #fff; }
+.bloque.sin-fecha {
+  background-image: repeating-linear-gradient(-45deg, var(--linea) 0 3px, transparent 3px 9px);
+  border-style: dashed;
+  color: var(--tinta2);
+}
+.bloque.abierto { border-right: 0; }
+
+/* ---------- quien transmite ---------- */
+
+.transmiten { padding-bottom: var(--e8); }
+.transmiten-cabeza {
+  display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--e3);
+  border-bottom: 2px solid var(--tinta); padding-bottom: var(--e2);
+}
+.transmiten-cabeza h2 { margin: 0; font-size: clamp(20px, 2.1vw, 26px); font-weight: 700; letter-spacing: -0.025em; }
+
+.emisoras { list-style: none; margin: 0; padding: 0; }
+.emisora {
+  position: relative;
+  display: grid;
+  grid-template-columns: 118px minmax(0, 2fr) minmax(0, 1fr) auto;
+  gap: var(--e5);
+  align-items: center;
+  padding: var(--e5) var(--e3);
+  margin-inline: calc(var(--e3) * -1);
+  border-bottom: 1px solid var(--linea);
+  transition: background 160ms;
+}
+.emisora:hover { background: var(--blanco); }
+.al-aire {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--tinta); color: var(--papel);
+  font-family: 'Spline Sans Mono', monospace;
+  font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase;
+  padding: 4px 8px;
+}
+.al-aire::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--dial-bruma); }
+.emisora h3 { margin: 0; font-size: clamp(18px, 1.9vw, 23px); font-weight: 700; letter-spacing: -0.025em; line-height: 1.15; }
+.emisora h3 a { text-decoration: none; }
+.emisora h3 a::after { content: ''; position: absolute; inset: 0; }
+.emisora .quien { margin-top: 3px; font-size: 14.5px; color: var(--tinta2); }
+.emisora .datos { font-family: 'Spline Sans Mono', monospace; font-size: 13px; line-height: 1.6; color: var(--tinta2); }
+.emisora .datos b { display: block; color: var(--tinta); font-weight: 600; }
+.sintonizar {
+  display: inline-flex; align-items: center; min-height: 46px; padding-inline: var(--e5);
+  border: 1px solid var(--dial); color: var(--dial);
+  font-size: 15px; font-weight: 600; white-space: nowrap;
+  transition: background 160ms, color 160ms;
+}
+.emisora:hover .sintonizar { background: var(--dial); color: #fff; }
+
+/* ---------- cierre ---------- */
+
+.cierre { border-top: 1px solid var(--linea-fuerte); background: var(--papel-hondo); padding-block: var(--e5); }
+.cierre .emision { display: flex; flex-wrap: wrap; gap: var(--e4); justify-content: space-between; font-size: 14.5px; color: var(--tinta2); }
+.cierre ul { display: flex; flex-wrap: wrap; gap: var(--e5); list-style: none; margin: 0; padding: 0; }
+
+/* ---------- adaptacion ---------- */
+
+@media (max-width: 940px) {
+  .encabezado { grid-template-columns: 1fr; gap: var(--e5); align-items: start; }
+  .tramo { grid-template-columns: 1fr; gap: var(--e2); }
+  .eje { display: none; }
+  .pista { height: 38px; }
+  .emisora { grid-template-columns: 118px 1fr; row-gap: var(--e3); }
+  .emisora .datos, .sintonizar { grid-column: 2; }
+  .sintonizar { justify-self: start; }
+}
+@media (max-width: 620px) {
+  :root { --e8: 48px; --e7: 32px; }
+  .emisora { grid-template-columns: 1fr; }
+  .emisora .datos, .sintonizar { grid-column: 1; }
+  .dial-barra nav a { padding-inline: var(--e2); font-size: 14px; }
+}
+</style>
+</head>
+<body>
+
+<header class="dial-barra">
+  <div class="emision">
+    <a class="marca" href="#" aria-label="EX, portal del candidato">
+      <svg width="30" height="24" viewBox="0 0 30 24" fill="none" aria-hidden="true">
+        <path d="M1.5 2.5h9M1.5 12h7.5M1.5 21.5h9" stroke="#17181c" stroke-width="2.6" stroke-linecap="square"/>
+        <path d="M15 2.5l13 19M28 2.5l-13 19" stroke="#17181c" stroke-width="2.6" stroke-linecap="square"/>
+        <circle cx="21.5" cy="12" r="2.4" fill="#1b4d8f"/>
+      </svg>
+      <span class="rotulo">Programación de empleo</span>
+    </a>
+    <nav aria-label="Principal">
+      <ul>
+        <li><a href="#" aria-current="page">Al aire</a></li>
+        <li><a href="#">Mi proceso</a></li>
+        <li><a href="#">Entrar</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<div class="regleta-dial" aria-hidden="true">
+  <div class="emision">
+    <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+    <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+    <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+    <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+  </div>
+</div>
+
+<section class="emision encabezado">
+  <h1>Esto dura semanas. <span>Aquí está cuántas.</span></h1>
+  <p>
+    Solo un tramo tiene plazo fijo y está dibujado a escala. Los demás dependen de cuándo
+    te toque, y por eso van rayados: preferimos decir «no hay fecha» a inventarte una.
+  </p>
+</section>
+
+<section class="emision parrilla">
+  <div class="parrilla-cabeza">
+    <h2>La programación de tu proceso</h2>
+    <span class="rotulo">Eje en semanas · el cursor azul es hoy</span>
+  </div>
+
+  <div class="eje rotulo" aria-hidden="true">
+    <span>Sem 1</span><span>Sem 2</span><span>Sem 3</span><span>Sem 4</span>
+    <span>Sem 5</span><span>Sem 6</span><span>Sem 7</span><span>Sem 8</span>
+  </div>
+
+  <ol class="tramos">
+    <li class="tramo">
+      <div>
+        <div class="nombre"><span class="n">01</span>Perfil</div>
+        <p class="detalle">Currículum y evaluación escrita. Se puede volver atrás a corregir.</p>
+      </div>
+      <div class="pista">
+        <div class="bloque fijo" style="left:0; width:25%;">14 días</div>
+      </div>
+    </li>
+
+    <li class="tramo">
+      <div>
+        <div class="nombre"><span class="n">02</span>Prueba del puesto</div>
+        <p class="detalle">Encargo real. El reloj arranca al abrirla y no se detiene al cerrar.</p>
+      </div>
+      <div class="pista">
+        <div class="bloque sin-fecha" style="left:25%; width:16%;">Con reloj</div>
+      </div>
+    </li>
+
+    <li class="tramo">
+      <div>
+        <div class="nombre"><span class="n">03</span>Simulación</div>
+        <p class="detalle">Dos horas de trabajo con el equipo, en la fecha que elijas.</p>
+      </div>
+      <div class="pista">
+        <div class="bloque sin-fecha" style="left:41%; width:14%;">2 horas</div>
+      </div>
+    </li>
+
+    <li class="tramo">
+      <div>
+        <div class="nombre"><span class="n">04</span>Validación</div>
+        <p class="detalle">Periodo corto trabajando de verdad, con acuerdo y responsable.</p>
+      </div>
+      <div class="pista">
+        <div class="bloque sin-fecha" style="left:55%; width:25%;">Sin duración fija</div>
+      </div>
+    </li>
+
+    <li class="tramo">
+      <div>
+        <div class="nombre"><span class="n">05</span>Decisión</div>
+        <p class="detalle">La toma una persona mirando todo el recorrido, no un puntaje.</p>
+      </div>
+      <div class="pista">
+        <div class="bloque sin-fecha abierto" style="left:80%; right:0;">Sin plazo</div>
+      </div>
+    </li>
+  </ol>
+</section>
+
+<section class="emision transmiten">
+  <div class="transmiten-cabeza">
+    <h2>Quién está transmitiendo</h2>
+    <span class="rotulo">5 puestos · Lima, Arequipa, Trujillo</span>
+  </div>
+
+  <ul class="emisoras">
+    <li class="emisora">
+      <span class="al-aire">Al aire</span>
+      <div>
+        <h3><a href="#">Analista de Datos</a></h3>
+        <div class="quien">Clínica San Juan · Que los reportes semanales salgan solos y sean confiables.</div>
+      </div>
+      <div class="datos"><b>Híbrido · Lima</b>L a V, 9–18 h<br>S/ 3 800 – 4 500</div>
+      <span class="sintonizar">Sintonizar</span>
+    </li>
+    <li class="emisora">
+      <span class="al-aire">Al aire</span>
+      <div>
+        <h3><a href="#">Coordinador/a de Operaciones</a></h3>
+        <div class="quien">Transportes del Sur · Proveedores, rutas, caja chica y que lo comprometido se cumpla.</div>
+      </div>
+      <div class="datos"><b>Presencial · Arequipa</b>L a S</div>
+      <span class="sintonizar">Sintonizar</span>
+    </li>
+    <li class="emisora">
+      <span class="al-aire">Al aire</span>
+      <div>
+        <h3><a href="#">Especialista en Mejora Continua</a></h3>
+        <div class="quien">Molinos del Norte · Bajar el desperdicio del envasado sin parar la producción.</div>
+      </div>
+      <div class="datos"><b>Presencial · Trujillo</b></div>
+      <span class="sintonizar">Sintonizar</span>
+    </li>
+    <li class="emisora">
+      <span class="al-aire">Al aire</span>
+      <div>
+        <h3><a href="#">Analista de Planeamiento</a></h3>
+        <div class="quien">Andes Retail · Que la reposición de tiendas deje de decidirse por corazonada.</div>
+      </div>
+      <div class="datos"><b>Remoto · Lima</b>Flexible</div>
+      <span class="sintonizar">Sintonizar</span>
+    </li>
+    <li class="emisora">
+      <span class="al-aire">Al aire</span>
+      <div>
+        <h3><a href="#">Jefe/a de Servicio al Cliente</a></h3>
+        <div class="quien">Clínica San Juan · Que una queja se resuelva en el primer contacto y quede aprendida.</div>
+      </div>
+      <div class="datos"><b>Presencial · Lima</b>Turnos rotativos</div>
+      <span class="sintonizar">Sintonizar</span>
+    </li>
+  </ul>
+</section>
+
+<footer class="cierre">
+  <div class="emision">
+    <span>© 2026 Renaser Consulting · Escuchar no exige cuenta</span>
+    <ul>
+      <li><a href="#">Política de privacidad</a></li>
+      <li><a href="#">Privacidad y control</a></li>
+      <li><a href="#">Panel de empresas</a></li>
+    </ul>
+  </div>
+</footer>
+
+</body>
+</html>

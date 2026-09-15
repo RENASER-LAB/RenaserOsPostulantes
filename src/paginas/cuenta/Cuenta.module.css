@@ -1,18 +1,26 @@
 /*
- * Entrar y crear cuenta.
+ * Los cuatro caminos de entrada: entrar, crear cuenta, canjear el enlace del
+ * correo y la salida de quien no puede.
  *
  * Comparten hoja porque comparten forma: una columna estrecha, un formulario, y
  * ninguna decoracion que distraiga de escribir.
+ *
+ * ⚠️ **El formulario vive en una superficie de nube, y antes no.** Flotaba
+ * directamente sobre el cielo, y en un mundo donde el fondo es gris y lo blanco
+ * son objetos puestos encima, un formulario sin superficie no se lee como una
+ * cosa: se lee como pagina. El titular y el pie se quedan fuera de la
+ * superficie, porque situan la pantalla y no forman parte de lo que se rellena.
  */
 
 .pagina {
-  max-width: 34rem;
-  margin: 0 auto;
-  padding: var(--e7) var(--e5) var(--e8);
+  composes: hojaCorta from '../../estilos/pagina.module.css';
 }
 
+/* Crear cuenta pide muchos mas datos y necesita las parejas de campos en dos
+   columnas. Es su propia clase entera y no un anadido sobre `.pagina`: dos
+   carriles en el mismo elemento los resolveria el orden del bundle. */
 .paginaAncha {
-  max-width: 44rem;
+  composes: hojaFormulario from '../../estilos/pagina.module.css';
 }
 
 .volver {
@@ -20,19 +28,24 @@
   margin-bottom: var(--e3);
 }
 
+.titular {
+  composes: titular from '../../estilos/pagina.module.css';
+}
+
 .bajada {
-  font-size: var(--t-base);
-  line-height: 1.55;
-  color: var(--tinta2);
-  margin-top: var(--e3);
+  composes: bajada from '../../estilos/pagina.module.css';
   max-width: var(--medida-corta);
 }
 
+/* ---------- El formulario ---------- */
+
 .formulario {
+  composes: bloqueHolgado from '../../estilos/pagina.module.css';
   display: flex;
   flex-direction: column;
   gap: var(--e5);
   margin-top: var(--e6);
+  background: var(--nube);
 }
 
 .pareja {
@@ -42,6 +55,13 @@
   align-items: end;
 }
 
+/*
+ * Un grupo dentro del formulario: los dos consentimientos de crear cuenta.
+ *
+ * Se separa con una regla y no con otra superficie. Anidar una caja con borde
+ * dentro de la caja del formulario pondria los dos permisos al mismo nivel
+ * visual que el formulario entero, y son una parte de el.
+ */
 .bloque {
   display: flex;
   flex-direction: column;
@@ -58,31 +78,26 @@
   composes: acentoGrande from '../../estilos/piezas.module.css';
 }
 
-/* El fallo del envio, arriba del boton y no como aviso flotante: si desaparece
-   solo, quien lee despacio no llega a enterarse. */
+/*
+ * El fallo del envio, arriba del boton y no como aviso flotante: si desaparece
+ * solo, quien lee despacio no llega a enterarse.
+ *
+ * ⚠️ **Llevaba un filete de 3 px a la izquierda y se fue.** La barra de acento
+ * lateral esta prohibida en este mundo; el bloque se distingue por su fondo y su
+ * contorno enteros.
+ */
 .falloEnvio {
-  display: flex;
-  gap: var(--e3);
   border: 1px solid var(--mal-regla);
+  border-radius: var(--radio);
   background: var(--mal-bruma);
   padding: var(--e4);
   font-size: var(--t-apoyo);
   line-height: 1.5;
   color: var(--mal);
-  border-radius: var(--radio);
-}
-
-.falloEnvio::before {
-  content: '';
-  flex: none;
-  width: 3px;
-  background: var(--mal);
 }
 
 .pie {
   margin-top: var(--e6);
-  padding-top: var(--e5);
-  border-top: 1px solid var(--regla);
   font-size: var(--t-prosa);
   color: var(--tinta2);
 }
@@ -92,14 +107,13 @@
 .caminos {
   display: flex;
   flex-direction: column;
-  gap: var(--e6);
+  gap: var(--e5);
   margin-top: var(--e6);
 }
 
 .camino {
-  border: 1px solid var(--regla);
-  padding: var(--e5);
-  border-radius: var(--radio);
+  composes: bloque from '../../estilos/pagina.module.css';
+  background: var(--nube);
 }
 
 .tituloCamino {
@@ -114,10 +128,6 @@
 }
 
 @media (max-width: 640px) {
-  .pagina {
-    padding: var(--e5) var(--e4) var(--e7);
-  }
-
   .pareja {
     grid-template-columns: 1fr;
   }
@@ -132,25 +142,16 @@
  *
  * Con seis errores repartidos por un formulario largo, quien usa lector de
  * pantalla no tiene forma de saber cuantos hay ni donde. Esto lo dice y el foco
- * salta al primero.
+ * salta al primero. Mismo filete lateral que el fallo de envio, y se fue igual.
  */
 .resumenErrores {
-  display: flex;
-  gap: var(--e3);
   border: 1px solid var(--mal-regla);
+  border-radius: var(--radio);
   background: var(--mal-bruma);
   padding: var(--e4);
   font-size: var(--t-prosa);
   line-height: 1.5;
   color: var(--mal);
-  border-radius: var(--radio);
-}
-
-.resumenErrores::before {
-  content: '';
-  flex: none;
-  width: 3px;
-  background: var(--mal);
 }
 
 /* El hueco del resumen cuando no hay errores: la region viva tiene que existir
@@ -171,10 +172,14 @@
 
 /*
  * Aqui no hay formulario que mirar, asi que la marca hace de ancla mientras se
- * canjea el token y la pagina esta, por un momento, casi vacia.
+ * canjea el token y la pagina esta, por un momento, casi vacia. Va en una
+ * superficie como el formulario: es el mismo momento —una sola cosa sobre la
+ * mesa—, solo que sin nada que rellenar.
  */
 .entrada {
-  margin-top: var(--e7);
+  composes: bloqueHolgado from '../../estilos/pagina.module.css';
+  margin-top: var(--e6);
+  background: var(--nube);
 }
 
 .marcaEntrada {
@@ -184,9 +189,9 @@
 }
 
 .aparte {
-  margin-top: var(--e6);
-  border-top: 1px solid var(--regla);
+  margin-top: var(--e5);
   padding-top: var(--e5);
+  border-top: 1px solid var(--regla);
   font-size: var(--t-prosa);
   line-height: 1.6;
   color: var(--tinta2);
@@ -198,7 +203,7 @@
  *
  * Va pegada al formulario y no al pie de la pagina: quien la necesita esta
  * mirando el campo de la contraseña, no el resto de la pantalla. Por eso su
- * separacion es la corta y la del pie es la larga, con regla.
+ * separacion es la corta y la del pie es la larga.
  */
 .olvidada {
   margin-top: var(--e4);

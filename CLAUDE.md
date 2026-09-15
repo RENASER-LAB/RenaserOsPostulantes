@@ -32,7 +32,29 @@ Solo commitea si te lo pido explícitamente.
 
 ## Antes de tocar nada
 
-Dos avisos que no se ponen detrás de un enlace, porque llegan tarde:
+Tres avisos que no se ponen detrás de un enlace, porque llegan tarde:
+
+⚠️ **El mundo visual es «El escaparate» desde el 10/09/2026, y la migración del portal del
+candidato está completa.** Fondo **pastel cálido `#FBF1E9`** con las superficies en nube blanca
+encima, que es lo que las separa. **Acción en negro `#0A0A0A`** con radio 4 px, coral `#FF7C61`
+para «te toca a ti» —y, en la
+cabecera, también para el destino actual y el botón «Ingresar»—, Figtree. Las diecisiete
+pantallas están compuestas; `/admin` queda fuera por alcance y conserva la disposición
+anterior.
+
+⚠️ **La cabecera no se ve hasta que bajas.** Es una barra insertada 8 px del borde que saca su
+superficie al primer scroll. `--alto-cabecera` son **68 px medidos**, y el 11/09/2026 pasó por
+61 y por 76: si tocas su relleno, vuelve a medirlo en el navegador.
+
+Lo que se toca al componer una pantalla nueva vive en tres sitios y **ninguno se escribe a
+mano en la hoja de la pantalla**: los tokens en [`mundo.css`](src/estilos/mundo.css), los
+botones y paneles en [`piezas.module.css`](src/estilos/piezas.module.css), y el carril, el
+encabezado y los bloques en [`pagina.module.css`](src/estilos/pagina.module.css).
+
+⚠️ **`composes` solo admite una clase simple** —ni `.a.b`, ni listas—: PostCSS devuelve un 500
+y la aplicación entera deja de montar. Y **un `composes` entre archivos no gana por escribirlo
+después**: si necesitas una variante, se declara con nombre en la hoja compartida. Si migras
+una pantalla, **actualiza DESIGN.md en la misma tanda**.
 
 ⚠️ **A qué base escribes depende de a dónde apunte `API_URL` en `.env.local`.** Con
 `https://18-204-177-210.nip.io` el portal habla con el Spring de AWS y **registrarse o postular
@@ -53,7 +75,7 @@ El detalle, en [docs/TRABAJAR-EN-LOCAL.md](docs/TRABAJAR-EN-LOCAL.md).
 | Orientarte en los documentos | [docs/README.md](docs/README.md) |
 | Levantarlo, elegir backend, saber a qué base escribes, mirar pantallas sin tocar la base | [TRABAJAR-EN-LOCAL](docs/TRABAJAR-EN-LOCAL.md), [README.md](README.md) |
 | Tocar código: los 18 estados, la hora del servidor, la única puerta al backend, `grupoPrioridad`, las trampas que costaron un fallo, cómo se nombra aquí | [REGLAS-DEL-CODIGO](docs/REGLAS-DEL-CODIGO.md) |
-| Tocar diseño: el mundo visual, sus cuatro reglas de forma, la tipografía, el mapa de `src/` | [EL-MUNDO-VISUAL](docs/EL-MUNDO-VISUAL.md), [DESIGN.md](DESIGN.md) |
+| Tocar diseño: el mundo visual, sus reglas nombradas, la tipografía, el mapa de `src/` | [DESIGN.md](DESIGN.md) y [EL-MUNDO-VISUAL](docs/EL-MUNDO-VISUAL.md); los tokens con su porqué en [`src/estilos/mundo.css`](src/estilos/mundo.css) |
 | Entender qué ve y qué hace quien postula, pantalla por pantalla | [02-QUE-VE-EL-CANDIDATO](docs/02-QUE-VE-EL-CANDIDATO.md) |
 | Seguir el proceso entero, los dos lados, con lo que desbloquea cada paso | [06-FLUJO-COMPLETO](docs/06-FLUJO-COMPLETO.md) |
 | Tocar el panel: entrar, las tres pestañas, el ranking por etapas, qué exige publicar una vacante, los huecos del backend | [PANEL](docs/PANEL.md) |

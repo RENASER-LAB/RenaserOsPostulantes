@@ -1,359 +1,623 @@
 /*
- * La portada: que es este proceso y que vacantes hay abiertas.
+ * La portada, en el mundo de 09/2026.
  *
- * Es la unica pantalla del portal en modo Persuade: quien llega todavia no ha
- * postulado y tiene que decidir si le merece la pena. Aun asi el mundo es el
- * mismo — el proceso se dibuja como recorrido, no como cinco tarjetas iguales.
+ * Todo sale de los tokens de `mundo.css`; esta hoja solo compone. Las tres
+ * cosas que la distinguen de cualquier portada de esta categoria:
+ *
+ *   1. **La accion es negra, el color no.** `--activo` es tinta plena y el
+ *      unico color de la pantalla es el resplandor coral del escaparate. El
+ *      coral —`--activo-regla`— sigue queriendo decir «te toca a ti», y aqui
+ *      no hay turno de nadie, asi que no aparece.
+ *   2. **El escaparate ensena el producto.** Es la pieza grande del mundo: una
+ *      tarjeta blanca de borde grueso con el recorrido dentro, no un adorno.
+ *   3. **Ninguna cifra inventada.** La cinta cuenta vacantes y ciudades del
+ *      dato real, y el «0 descartes por curriculum» es una regla del producto,
+ *      no una metrica de resultados: de esas no hay ninguna todavia.
  */
 
-/*
- * El relleno de arriba no es aire: es el sitio del canto, igual que en «Mis
- * procesos». Si baja, el titular se mete en la banda y acaba habiendo prosa
- * sobre color.
- */
 .pagina {
-  position: relative;
+  width: 100%;
   max-width: var(--ancho);
-  margin: 0 auto;
-  padding: clamp(184px, 25vh, 272px) var(--e5) var(--e8);
+  margin-inline: auto;
+  padding-inline: var(--e5);
 }
 
-/* Todo lo que se lee va por encima del canto. */
-.pagina > *:not([aria-hidden]) {
-  position: relative;
-  z-index: 1;
-}
+/* ---------- portada ---------- */
 
-/*
- * El tope es de la frase, no de la columna: a 56 px, «Tu próximo trabajo puede
- * empezar aquí.» parte en dos renglones parejos con 19ch, y `balance` evita que
- * el segundo se quede con una sola palabra.
- */
-.entrada {
-  max-width: 19ch;
-  text-wrap: balance;
-}
-
-.bajada {
-  font-size: var(--t-entradilla);
-  line-height: 1.5;
-  color: var(--tinta2);
-  margin-top: var(--e4);
-  max-width: var(--medida);
-}
-
-/* ---------- El primer golpe de vista ---------- */
-
-/*
- * La portada y «Mis procesos» tenian la misma receta —banda, titular fino a dos
- * renglones, parrafo, contenido— y se leian como la misma pantalla. Se separan
- * aqui, y por lo que cada una tiene que hacer:
- *
- *   «Mis procesos» contesta UNA pregunta en tres segundos, «¿me toca algo?», y
- *   por eso es una sola columna que va directa a la respuesta.
- *
- *   Esta convence a alguien que todavia no ha postulado y que va a invertir
- *   semanas. No le basta con prometer: tiene que enseñar el proceso. Por eso el
- *   primer golpe de vista se parte en dos —lo que se dice, y las cinco etapas
- *   con su tramo del espectro— y las etapas suben a la portada en vez de vivir
- *   detras de una regla.
- *
- * De ahi sale tambien que aqui el espectro corra en VERTICAL y en «Mis
- * procesos» en horizontal: la misma tirada de luz puesta de dos maneras, que es
- * lo que hace que las dos pantallas no se confundan de un vistazo.
- */
 .portada {
-  display: grid;
-  gap: var(--e7);
+  padding-block: var(--e8) 0;
+  text-align: center;
 }
 
-@media (min-width: 900px) {
-  .portada {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 25rem);
-    gap: var(--e8);
-    align-items: start;
-  }
-}
-
-/*
- * La unica accion del primer golpe de vista. Sin ella habia que desplazarse
- * para descubrir que hay vacantes, que es lo que esta pantalla viene a vender.
- */
-.verVacantes {
-  composes: solido from '../../estilos/piezas.module.css';
-  margin-top: var(--e6);
-  align-self: flex-start;
-}
-
-.dicho {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-}
-
-/* ---------- El proceso, como recorrido ---------- */
-
-.proceso {
-  border-top: 1px solid var(--regla);
-  padding-top: var(--e5);
-}
-
-@media (min-width: 900px) {
-  /* En la columna, la regla de arriba sobra: la separacion la hace el hueco. */
-  .proceso {
-    border-top: 0;
-    padding-top: 0;
-  }
-}
-
-.tituloProceso {
-  margin-bottom: var(--e5);
-}
-
-/*
- * Cada etapa es su propia fila, con hueco entre ellas.
- *
- * Antes las cinco compartian una sola rejilla y el espacio lo hacia el relleno
- * de abajo del texto, asi que los cinco railes se tocaban por los extremos y se
- * leian como una linea rota, no como cinco bandas. Con la etapa duenna de su
- * fila y `--e6` de hueco, cada banda tiene principio y fin.
- */
-.etapas {
-  display: grid;
-  gap: var(--e6);
-}
-
-.etapa {
-  display: grid;
-  grid-template-columns: 14px 1fr;
-  column-gap: var(--e4);
-  align-items: start;
-}
-
-/*
- * La rebanada del espectro de esta etapa. Ocupa el alto de su fila, con un
- * suelo para que «Prueba» —que solo tiene un renglon de texto— no se quede con
- * una marca de doce pixeles al lado de otra de sesenta.
- */
-.marca {
-  justify-self: center;
-  width: 8px;
-  height: 100%;
-  min-height: 40px;
-  border-radius: var(--radio-control);
-  background-image: var(--canto-vertical);
-  background-size: 100% 500%;
-  background-position-y: calc(var(--i) * 25%);
-}
-
-.nombreEtapa {
-  font-size: var(--t-prosa);
-  font-weight: 600;
-  letter-spacing: -0.008em;
-  margin: 0;
-}
-
-.queEsEtapa {
-  font-size: var(--t-apoyo);
-  line-height: 1.5;
-  color: var(--tinta2);
-  margin-top: 2px;
-  max-width: var(--medida);
-}
-
-/*
- * El recorrido se queda de pie a cualquier ancho.
- *
- * Antes se tumbaba a partir de 900 px, y eso hacia dos cosas malas: dibujaba
- * exactamente la misma banda horizontal que «Mis procesos», y en la columna
- * nueva de la portada cada etapa se quedaba en 90 px con los nombres partidos.
- */
-
-/* ---------- Las vacantes ---------- */
-
-.seccionVacantes {
-  margin-top: var(--e7);
-  border-top: 1px solid var(--regla);
-  padding-top: var(--e5);
-}
-
-.cabeceraVacantes {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--e2) var(--e4);
-  margin-bottom: var(--e5);
-}
-
-.cuantas {
-  font-size: var(--t-apoyo);
-  color: var(--tinta3);
-}
-
-.lista {
-  display: flex;
-  flex-direction: column;
-}
-
-/*
- * Una vacante es una fila, no una tarjeta: con cuatro puestos, cuatro cajas
- * iguales son mas ruido que informacion. La regla separa; el titulo manda.
- */
-.vacante {
-  border-top: 1px solid var(--regla);
-}
-
-.vacante:first-child {
-  border-top: none;
-}
-
-.enlaceVacante {
-  display: block;
-  padding: var(--e5) 0;
-  text-decoration: none;
+.entrada {
+  margin: 0 auto;
+  max-width: 15ch;
   color: var(--tinta);
 }
 
-.enlaceVacante:hover .tituloVacante {
-  text-decoration: underline;
-  text-decoration-color: var(--regla2);
-  text-underline-offset: 0.18em;
+/*
+ * La pieza incrustada en el titular: la loseta con el maletin y la flecha.
+ *
+ * Va DENTRO de la frase y no suelta encima: fuera seria una decoracion colgando.
+ *
+ * ⚠️ **El resplandor rosa viene dentro del PNG, no de CSS.** La imagen es
+ * cuadrada y **la loseta ocupa solo el 73 % del lado**; el resto es el halo. Por
+ * eso el ancho de aqui no es el tamaño que se ve: **con 1,32em de imagen la
+ * loseta mide 0,96em**, que es lo que se ve. Si algun dia se recorta el PNG mas
+ * ajustado, este numero cambia.
+ *
+ * ⚠️ **Se alinea con `middle` y no con un desplazamiento desde la linea base.**
+ * Con `vertical-align: -0.34em` la imagen colgaba 20 px por debajo de la base y
+ * la fuente solo desciende 13: la caja de la linea crecia y el titular pasaba de
+ * 106 a 111 px de alto. Los margenes negativos no lo arreglaban —el problema no
+ * era la caja, era el descuelgue—. Con `middle` la pieza no toca la linea:
+ * medido, 106 px con imagen y sin ella.
+ *
+ * ⚠️ **Y hacen falta LAS DOS COSAS: `middle` y el margen negativo.** Con
+ * `middle` a secas el titular se va a 115 px, peor que antes; con margen negativo
+ * pero descolgada de la base, a 111. Juntas, 106 —lo mismo que sin imagen—.
+ *
+ * Los margenes negativos horizontales recuperan el aire que el halo transparente
+ * añade a los lados.
+ */
+.pieza {
+  display: inline-block;
+  width: 1.32em;
+  height: 1.32em;
+  margin-block: -0.3em;
+  margin-inline: -0.08em;
+  vertical-align: middle;
+}
+
+.bajada {
+  margin: var(--e4) auto 0;
+  max-width: 44ch;
+  font-size: var(--t-base);
+  line-height: 1.5;
+  color: var(--tinta3);
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e3);
+  justify-content: center;
+  margin-top: var(--e6);
+}
+
+.accionPrincipal {
+  composes: acentoGrande from '../../estilos/piezas.module.css';
 }
 
 /*
- * El puesto y quien lo ofrece, en un solo bloque.
- *
- * Van juntos porque son una sola pregunta —«que es esto y de quien es»— y
- * porque el tablon mezcla empresas: sin el nombre, dos vacantes iguales de dos
- * empresas distintas se leen como la misma.
+ * ⚠️ **Lleva contorno, y antes no.** Se sostenia con una sombra de 0,05 de
+ * alfa, que no da contraste medible: el limite del control desaparecia para
+ * quien no distingue matices claros. El contorno de `--borde-control` da 3,45:1
+ * y es lo que WCAG 1.4.11 pide al limite visible de un control.
  */
-.identidad {
-  display: block;
-  min-width: 0;
+.accionSecundaria {
+  composes: secundarioGrande from '../../estilos/piezas.module.css';
 }
 
-.tituloVacante {
-  font-size: var(--t-destacado);
-  letter-spacing: -0.022em;
+/* ---------- el escaparate ---------- */
+
+/*
+ * El borde de 12 px es blanco translucido y no un contorno.
+ *
+ * ⚠️ **Con el fondo gris separaba la pieza sin dibujar una linea; desde que la
+ * pagina es blanca (11/09/2026) es invisible y solo aporta aire.** Se queda
+ * porque el aire es correcto y porque el dia que la pagina vuelva a tener tono
+ * recupera su trabajo. Lo que separa el escaparate del fondo hoy es la sombra.
+ *
+ * `background-clip: padding-box` impide que el blanco de dentro se cuele por
+ * debajo del borde y lo anule.
+ */
+.escaparate {
+  margin: var(--e7) auto 0;
+  max-width: 1066px;
+  background-color: var(--nube);
+  background-clip: padding-box;
+  border: 12px solid rgb(255 255 255 / 0.4);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: var(--sombra-nube);
+}
+
+.escaparateDentro {
+  position: relative;
+  /* Abajo una talla mas que arriba, y solo una: la caja tiene que leerse
+     equilibrada, y con 150 px el contenido quedaba arrinconado arriba. Ese
+     escalon de mas es el sitio que el resplandor necesita. */
+  padding: var(--e7) var(--e6) var(--e8);
+  background-color: var(--nube);
+  overflow: hidden;
+}
+
+/*
+ * El resplandor del fondo del escaparate.
+ *
+ * ⚠️ **Son DOS luces de colores distintos, no una.** Era un solo foco coral
+ * centrado y se quedaba plano: una mancha rosa y ya. Ahora hay una luz calida a
+ * la izquierda y una fria a la derecha, que se abren desde el centro — que es lo
+ * que hace que se lea como iluminacion y no como un degradado pintado.
+ *
+ * ⚠️ **El rosa de la derecha, `#ff47b8`, es el unico tono del portal fuera de la
+ * familia coral.** `--activo-regla` es #ff7c61 y `--canto` acaba en #ff5d6e; este
+ * sigue esa rampa un paso mas alla. No es un token y no debe serlo: existe solo
+ * aqui, como luz, y no significa nada. Si empieza a aparecer en otra pantalla,
+ * hay que pararlo.
+ *
+ * ⚠️ **La luz va en DOS ALTURAS, y es lo que permite que llene la tarjeta sin
+ * dejar el texto ilegible.**
+ *
+ *   · **El velo** es enorme y flojo —tope 0,16— y sube hasta media tarjeta. Ese
+ *     tope no es estetico: sobre blanco, el gris mas claro del sistema aguanta
+ *     4,54:1 con 0,18 encima y cae a 4,45 con 0,20. Como nunca pasa de 0,16, da
+ *     igual por donde caiga el texto.
+ *   · **El nucleo y las dos luces de color** son fuertes —0,5 y 0,36— y viven
+ *     pegados al suelo, por debajo del ultimo parrafo.
+ *
+ * Con una sola capa no se puede tener las dos cosas: o la luz llega arriba y se
+ * come el texto, o respeta el texto y se queda en una franja del pie. Se probaron
+ * las dos y las dos estaban mal.
+ *
+ * La cuenta que hay que rehacer si se toca algo: el degradado se apaga al 74-80 %
+ * de su radio, asi que **lo que se ve empieza en `centro - 0,78 x radio`**. Para
+ * las capas fuertes, ese punto tiene que caer por debajo del ultimo parrafo; para
+ * el velo da igual, porque su tope ya es legible.
+ *
+ * El alto va en PIXELES y no en porcentaje: con un porcentaje, la tarjeta de un
+ * telefono —donde las cinco etapas se apilan en dos columnas y mide el triple—
+ * estiraba la luz hasta meterla detras de «Etapa 5».
+ *
+ * Se sale por los lados y por el pie: `overflow: hidden` del padre la recorta, y
+ * por eso se lee como luz que entra y no como circulos dentro de una caja.
+ */
+.escaparateDentro::before {
+  content: '';
+  position: absolute;
+  left: -12%;
+  right: -12%;
+  bottom: -20px;
+  height: 340px;
+  background:
+    /*
+     * El nucleo, en el centro y pegado al suelo. Va el primero, o sea encima.
+     */
+    radial-gradient(
+      38% 24% at 50% 104%,
+      rgb(255 120 150 / 0.6) 0%,
+      rgb(255 120 150 / 0.24) 44%,
+      rgb(255 120 150 / 0) 76%
+    ),
+    /* La calida, entrando por la izquierda. */
+    radial-gradient(
+      54% 30% at 12% 102%,
+      rgb(255 124 97 / 0.48) 0%,
+      rgb(255 124 97 / 0.2) 44%,
+      rgb(255 124 97 / 0) 78%
+    ),
+    /* La fria, entrando por la derecha. Un punto mas apagada: el rosa pesa mas
+       que el coral a igual opacidad y si van iguales se come la izquierda. */
+    radial-gradient(
+      54% 30% at 88% 102%,
+      rgb(255 71 184 / 0.42) 0%,
+      rgb(255 71 184 / 0.17) 44%,
+      rgb(255 71 184 / 0) 78%
+    ),
+    /*
+     * El velo. Es el que hace el trabajo de llenar: enorme, muy flojo y subiendo
+     * hasta media tarjeta. Va el ultimo, o sea debajo de todo.
+     */
+    radial-gradient(
+      92% 66% at 50% 100%,
+      rgb(255 130 165 / 0.16) 0%,
+      rgb(255 130 165 / 0.11) 42%,
+      rgb(255 130 165 / 0) 80%
+    );
+  /* Mas desenfoque que antes: lo que se busca es luz, y una luz con el borde
+     definido deja de parecerlo. */
+  filter: blur(26px);
+  pointer-events: none;
+}
+
+/* El unico de la tarjeta que se queda en `--tinta3`: vive arriba del todo, por
+   encima de donde empieza el velo. Comprobado midiendo su fondo compuesto. */
+.pieEscaparate {
+  position: relative;
+  margin: 0 0 var(--e5);
+  font-size: var(--t-menor);
+  color: var(--tinta3);
+}
+
+.recorrido {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--e3);
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0;
+  list-style: none;
+}
+
+.tramo {
+  text-align: center;
+}
+
+/*
+ * La barra dice el estado en la FORMA y no en el color: la primera va maciza en
+ * tinta porque es la que empieza, y las otras cuatro en regla. Con la pantalla
+ * en gris se distinguen igual, que es la comprobacion.
+ */
+.barraTramo,
+.barraViva {
+  height: 6px;
+  border-radius: 999px;
+  margin-bottom: var(--e3);
+}
+
+.barraTramo {
+  background-color: var(--regla);
+}
+
+.barraViva {
+  background-color: var(--activo);
+}
+
+/*
+ * ⚠️ **Era `--tinta3` y subio a `--tinta2` el 15/09/2026, con la luz del fondo.**
+ * Las cuatro capas del resplandor se SUMAN, y eso es lo que se paso por alto al
+ * medirlas de una en una: cada una respetaba su tope pero el fondo compuesto bajo
+ * el ultimo parrafo salia #ffcfda, donde `--tinta3` cae a 3,85:1 y no llega a los
+ * 4,5 de WCAG 1.4.3. `--tinta2` da 4,91:1 ahi.
+ *
+ * Es la misma regla que DESIGN.md ya tenia escrita para los bloques ambar: sobre
+ * un fondo con tinte, el gris mas claro del sistema no vale.
+ */
+.numeroEtapa {
   margin: 0;
+  font-size: var(--t-micro);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--tinta2);
 }
 
-/* Debajo del puesto y en tinta segunda: importa, pero el puesto manda. */
-.empresa {
-  display: block;
-  margin-top: var(--e1);
-  font-size: var(--t-prosa);
+.nombreEtapa {
+  margin: var(--e1) 0;
+  font-size: var(--t-base);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--tinta);
+}
+
+/* Tambien a `--tinta2`, y por el mismo motivo: es el texto que mas abajo cae,
+   o sea el que mas luz tiene encima. */
+.queEsEtapa {
+  margin: 0;
+  font-size: var(--t-menor);
+  line-height: 1.45;
+  color: var(--tinta2);
+}
+
+/* ---------- la cinta de cifras ---------- */
+
+.cinta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--e3) var(--e7);
+  margin-top: var(--e8);
+  padding-block: var(--e5);
+  border-block: 1px solid var(--regla);
+  /*
+   * ⚠️ **Hundida en calido y no en `--nube-hundida`, que es gris frio.** Es el
+   * UNICO sitio del portal donde algo hundido se apoya directamente en el cielo:
+   * todo lo demas que usa `--nube-hundida` vive dentro de una superficie blanca,
+   * donde el gris frio es lo correcto. Desde que el cielo es calido (15/09/2026),
+   * ese gris se leia como una mancha sucia cruzando la pagina.
+   *
+   * 1,052:1 contra el cielo —el gris daba 1,012, o sea casi nada— y el texto que
+   * lleva encima va en `--tinta2` (5,80:1) y `--tinta` (10,78:1).
+   *
+   * No es un token: existe solo aqui. Si algun dia hace falta en otra pantalla,
+   * entonces se nombra.
+   */
+  background-color: #f7ebe1;
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+}
+
+.cinta b {
+  color: var(--tinta);
+  font-weight: 600;
+}
+
+/* ---------- secciones ---------- */
+
+.seccion,
+.seccionVacantes {
+  padding-block: var(--e8);
+}
+
+/*
+ * La forma vive en el kit. Lo que se queda aqui es el centrado, que es la voz
+ * de la portada —es una landing— y no la del resto del portal, donde las
+ * pantallas son documentos alineados a la izquierda.
+ */
+.cabeceraSeccion {
+  composes: cabeceraDeSeccion from '../../estilos/piezas.module.css';
+  max-width: 40rem;
+  margin: 0 auto var(--e7);
+  text-align: center;
+}
+
+.cabeceraSeccion p {
+  margin-inline: auto;
+}
+
+/* ---------- las vacantes ---------- */
+
+.lista {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--e3);
+}
+
+/*
+ * ⚠️ **El levantarse es de `motion`, no de aqui.** Hasta el 10/09/2026 esta
+ * hoja subia la tarjeta 2 px y la pieza D la subia 4: dos animaciones peleando
+ * por el mismo `transform`, con dos curvas distintas. Se queda la de motion,
+ * que va con muelle. Aqui solo la sombra. Ver `src/ui/movimiento.tsx`.
+ */
+.vacante {
+  position: relative;
+  border: 1px solid var(--regla);
+  border-radius: var(--radio);
+  background-color: var(--nube);
+  transition: box-shadow 300ms var(--salida);
+}
+
+.vacante:hover {
+  box-shadow: var(--sombra-nube);
+}
+
+.enlaceVacante {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: var(--e5);
+  color: inherit;
+  text-decoration: none;
+}
+
+/*
+ * Donde esta el puesto: el primer filtro que aplica cualquiera que busca trabajo.
+ *
+ * ⚠️ **Llevaba la bruma coral y se fue el 11/09/2026.** Era el peor sitio
+ * posible para gastarla: la bruma es lo que marca «te toca a ti», y aqui decia
+ * «Hibrido · Lima» **tres veces en la primera pantalla que ve cualquiera**, para
+ * una categoria. Cuando mas tarde llegue el coral que si significa tu turno, ya
+ * se ha visto como decoracion.
+ *
+ * Y no habia nada que discriminar: en la portada nadie tiene turno todavia.
+ */
+.etiqueta {
+  align-self: flex-start;
+  margin-bottom: var(--e4);
+  padding: 4px 10px;
+  border-radius: var(--radio-marca);
+  background-color: var(--nube-hundida);
+  font-size: var(--t-micro);
   font-weight: 600;
   color: var(--tinta2);
 }
 
-.donde {
-  display: block;
-  margin-top: var(--e2);
+.tituloVacante {
+  margin: 0 0 var(--e1);
+  font-size: var(--t-titulo);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--tinta);
+}
+
+.empresa {
   font-size: var(--t-apoyo);
   color: var(--tinta3);
 }
 
 .queSeHace {
+  margin: var(--e4) 0 0;
   font-size: var(--t-prosa);
   line-height: 1.5;
-  color: var(--tinta2);
-  margin-top: var(--e3);
-  max-width: var(--medida);
+  color: var(--tinta3);
 }
 
-.ver {
-  display: inline-block;
-  margin-top: var(--e3);
-  font-size: var(--t-apoyo);
+.pieVacante {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e2);
+  /* `auto` pega el pie abajo aunque las tarjetas tengan textos de largos distintos. */
+  margin-top: auto;
+  padding-top: var(--e5);
+  font-size: var(--t-menor);
+  color: var(--tinta3);
+}
+
+.paga {
   font-weight: 600;
+  color: var(--tinta);
 }
 
-/*
- * En escritorio, cada vacante usa las dos mitades.
- *
- * A la izquierda lo que se lee —el puesto y para que existe—; a la derecha lo
- * que se compara de un vistazo entre varias vacantes —donde y en que
- * modalidad— y la entrada al puesto. Apilado, todo caia a la izquierda y la
- * mitad derecha de la pantalla se quedaba en blanco.
- *
- * El texto sigue cortado por `--medida`: ensanchar la columna no alarga la
- * linea, solo deja sitio al lado.
- */
-@media (min-width: 900px) {
-  .enlaceVacante {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-areas:
-      'titulo donde'
-      'resumen ver';
-    column-gap: var(--e7);
-    align-items: start;
-  }
-
-  /* El area la ocupa el envoltorio; el titulo ya vive dentro de el. */
-  .identidad {
-    grid-area: titulo;
-  }
-
-  .donde {
-    grid-area: donde;
-    margin-top: 0;
-    text-align: right;
-    /* A la altura del titulo, no de su primera linea. */
-    padding-top: 0.4em;
-  }
-
-  .queSeHace {
-    grid-area: resumen;
-  }
-
-  .ver {
-    grid-area: ver;
-    justify-self: end;
-    align-self: end;
-    white-space: nowrap;
-  }
-}
-
-/* ---------- Estados ---------- */
+/* ---------- los estados de carga, error y vacio ---------- */
 
 .marco {
-  border: 1px solid var(--regla);
   padding: var(--e6);
+  border: 1px solid var(--regla);
   border-radius: var(--radio);
+  background-color: var(--nube);
+  text-align: center;
+}
+
+.marco h3 {
+  margin: 0;
+  font-size: var(--t-titulo);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--tinta);
 }
 
 .marcoTexto {
+  margin: var(--e3) auto 0;
+  max-width: var(--medida);
   font-size: var(--t-prosa);
-  line-height: 1.55;
-  color: var(--tinta2);
-  margin-top: var(--e3);
-  max-width: var(--medida-corta);
-}
-
-.reintentar {
-  composes: secundario from '../../estilos/piezas.module.css';
-  margin-top: var(--e5);
+  color: var(--tinta3);
 }
 
 .barra {
   height: 12px;
-  background: var(--nube-honda);
-  margin-top: var(--e3);
-}
-
-.barraCorta {
-  width: 42%;
+  margin: var(--e4) auto 0;
+  max-width: 28rem;
+  border-radius: var(--radio-marca);
+  background-color: var(--nube-honda);
 }
 
 .barraMedia {
-  width: 68%;
+  max-width: 22rem;
+}
+
+.barraCorta {
+  max-width: 14rem;
+}
+
+.reintentar {
+  composes: acentoMenor from '../../estilos/piezas.module.css';
+  margin-top: var(--e5);
+}
+
+/* ---------- las preguntas ---------- */
+
+.preguntas {
+  max-width: 48rem;
+  margin-inline: auto;
+}
+
+.pregunta {
+  composes: plegable from '../../estilos/piezas.module.css';
+}
+
+.mas {
+  composes: signoMas from '../../estilos/piezas.module.css';
+}
+
+.pregunta p {
+  margin: 0;
+  padding-bottom: var(--e5);
+  max-width: var(--medida);
+  font-size: var(--t-prosa);
+  line-height: 1.55;
+  color: var(--tinta3);
+}
+
+/* ---------- el cierre ---------- */
+
+.cierre {
+  padding-bottom: var(--e8);
+}
+
+.cajaCierre {
+  position: relative;
+  padding: var(--e8) var(--e5);
+  border: 1px solid var(--regla);
+  border-radius: 20px;
+  background-color: var(--nube);
+  overflow: hidden;
+  text-align: center;
+}
+
+.cajaCierre h2 {
+  position: relative;
+  margin: 0;
+  font-size: var(--t-destacado);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  color: var(--tinta);
+}
+
+.cajaCierre p {
+  position: relative;
+  margin: var(--e4) auto 0;
+  max-width: 44ch;
+  color: var(--tinta3);
+}
+
+.halo {
+  position: absolute;
+  left: 50%;
+  top: -30%;
+  width: 62%;
+  height: 90%;
+  transform: translateX(-50%);
+  background: radial-gradient(
+    50% 50% at 50% 50%,
+    rgb(255 124 97 / 0.26) 0%,
+    rgb(255 136 150 / 0) 72%
+  );
+  pointer-events: none;
+}
+
+/* ---------- adaptacion ---------- */
+
+@media (max-width: 900px) {
+  .lista {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .recorrido {
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--e5);
+  }
 }
 
 @media (max-width: 640px) {
   .pagina {
-    padding: clamp(168px, 24vh, 220px) var(--e4) var(--e7);
+    padding-inline: var(--e4);
+  }
+
+  .portada {
+    padding-top: var(--e7);
+  }
+
+  .lista {
+    grid-template-columns: 1fr;
+  }
+
+  .recorrido {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .escaparate {
+    border-width: 8px;
+  }
+
+  .escaparateDentro {
+    padding: var(--e6) var(--e4) var(--e7);
+  }
+
+  /* Menos relleno abajo, luz mas corta: la cuenta es la misma y las capas
+     fuertes tienen que seguir cayendo por debajo del ultimo parrafo. */
+  .escaparateDentro::before {
+    bottom: -16px;
+    height: 240px;
+    filter: blur(20px);
+  }
+
+  .cinta {
+    gap: var(--e2) var(--e5);
   }
 }

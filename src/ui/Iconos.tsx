@@ -2,7 +2,7 @@
  * Los iconos del portal, dibujados a mano.
  *
  * **Sin librería, y es una decisión.** El proyecto ya dibuja sus SVG así
- * (`Marca.tsx`, `Canto.tsx`), y una dependencia nueva por catorce iconos añade
+ * (`Marca.tsx`), y una dependencia nueva por catorce iconos añade
  * un paquete que hay que actualizar, un estilo que no es el de la casa y peso
  * en un portal que se abre desde el teléfono.
  *

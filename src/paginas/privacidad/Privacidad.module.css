@@ -11,9 +11,7 @@
  */
 
 .pagina {
-  max-width: 48rem;
-  margin: 0 auto;
-  padding: var(--e5) var(--e5) var(--e8);
+  composes: hojaProsa from '../../estilos/pagina.module.css';
 }
 
 .volver {
@@ -21,16 +19,16 @@
 }
 
 .encabezado {
-  margin-top: var(--e4);
+  composes: encabezado from '../../estilos/pagina.module.css';
+}
+
+.titular {
+  composes: titular from '../../estilos/pagina.module.css';
 }
 
 
 .bajada {
-  font-size: var(--t-base);
-  line-height: 1.55;
-  color: var(--tinta2);
-  margin-top: var(--e3);
-  max-width: var(--medida);
+  composes: bajada from '../../estilos/pagina.module.css';
 }
 
 /* ---------- Las tres acciones ---------- */
@@ -155,29 +153,8 @@
 /* ---------- Botones ---------- */
 
 .retirar {
+  composes: peligrosoContorno from '../../estilos/piezas.module.css';
   flex: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 44px;
-  padding: 0 var(--e4);
-  background: var(--nube);
-  border: 1px solid var(--mal);
-  color: var(--mal);
-  font-size: var(--t-apoyo);
-  font-weight: 600;
-  cursor: pointer;
-  border-radius: var(--radio);
-}
-
-.retirar:hover:not(:disabled) {
-  background: var(--mal-bruma);
-}
-
-.retirar:disabled {
-  border-color: var(--regla2);
-  color: var(--tinta3);
-  cursor: default;
 }
 
 .secundario {
@@ -186,46 +163,20 @@
 }
 
 .peligroso {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 48px;
-  padding: 0 var(--e5);
+  composes: peligroso from '../../estilos/piezas.module.css';
   margin-top: var(--e5);
-  background: var(--mal);
-  color: var(--tinta-invertida);
-  border: 1px solid var(--mal);
-  font-size: var(--t-prosa);
-  font-weight: 600;
-  cursor: pointer;
-  border-radius: var(--radio);
-}
-
-.peligroso:hover:not(:disabled) {
-  background: var(--mal-pulsado);
-  border-color: var(--mal-pulsado);
 }
 
 /* ---------- Errores y pie ---------- */
 
 .fallo {
-  display: flex;
-  gap: var(--e3);
-  margin-top: var(--e4);
   border: 1px solid var(--mal-regla);
-  background: var(--nube);
-  padding: var(--e3) var(--e4);
+  border-radius: var(--radio);
+  background: var(--mal-bruma);
+  padding: var(--e4);
   font-size: var(--t-apoyo);
   line-height: 1.5;
   color: var(--mal);
-  border-radius: var(--radio);
-}
-
-.fallo::before {
-  content: '';
-  flex: none;
-  width: 3px;
-  background: var(--mal);
 }
 
 /* ---------- Dentro de los avisos ---------- */
@@ -241,23 +192,10 @@
 }
 
 .consecuencia {
-  display: flex;
-  gap: var(--e3);
-  margin-bottom: var(--e4);
-  border: 1px solid var(--mal);
-  background: var(--mal-bruma);
+  composes: enDuda from '../../estilos/piezas.module.css';
   padding: var(--e4);
   font-size: var(--t-prosa);
   line-height: 1.55;
-  color: var(--mal);
-  border-radius: var(--radio);
-}
-
-.consecuencia::before {
-  content: '';
-  flex: none;
-  width: 3px;
-  background: var(--mal);
 }
 
 .motivo {
@@ -291,25 +229,7 @@
 }
 
 .confirmarPeligro {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 44px;
-  padding: 0 var(--e5);
-  background: var(--mal);
-  color: var(--tinta-invertida);
-  border: 1px solid var(--mal);
-  font-size: var(--t-prosa);
-  font-weight: 600;
-  cursor: pointer;
-  border-radius: var(--radio);
-}
-
-.confirmarPeligro:disabled {
-  background: var(--nube-honda);
-  border-color: var(--regla2);
-  color: var(--tinta3);
-  cursor: default;
+  composes: peligrosoMenor from '../../estilos/piezas.module.css';
 }
 
 @media (max-width: 640px) {

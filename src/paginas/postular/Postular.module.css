@@ -8,9 +8,7 @@
  */
 
 .pagina {
-  max-width: 44rem;
-  margin: 0 auto;
-  padding: var(--e5) var(--e5) var(--e8);
+  composes: hojaFormulario from '../../estilos/pagina.module.css';
 }
 
 .volver {
@@ -18,7 +16,11 @@
 }
 
 .encabezado {
-  margin-top: var(--e4);
+  composes: encabezado from '../../estilos/pagina.module.css';
+}
+
+.titular {
+  composes: titular from '../../estilos/pagina.module.css';
 }
 
 .puesto {
@@ -68,12 +70,19 @@
   border-radius: var(--radio-menor);
 }
 
-/* Mientras se arrastra encima: la forma cambia, no solo el color. */
+/*
+ * Mientras se arrastra encima: la forma cambia, no solo el color.
+ *
+ * ⚠️ **El relleno era la bruma coral y se fue.** El coral significa «te toca a
+ * ti» y esto es un estado del puntero, no un turno: gastarlo aqui lo deja sin
+ * significar nada donde si hace falta. El borde macizo de 2 px ya dice que el
+ * archivo va a caer aqui, que es lo que el comentario de arriba promete.
+ */
 .zona.encima {
   border-style: solid;
   border-width: 2px;
   border-color: var(--activo);
-  background: var(--activo-bruma);
+  background: var(--nube-honda);
 }
 
 .zona.conError {
@@ -182,13 +191,8 @@
 /* ---------- Requisitos: el descarte automático ---------- */
 
 .requisitos {
-  border: 2px solid var(--activo-regla);
-  background: var(--nube);
+  composes: indispensable from '../../estilos/piezas.module.css';
   padding: var(--e5);
-  border-radius: var(--radio);
-  box-shadow:
-    0 2px 6px rgb(35 43 54 / 0.05),
-    0 14px 40px rgb(86 56 214 / 0.14);
 }
 
 .avisoRequisitos {
@@ -286,23 +290,11 @@
 
 /* Lo que pasa si dijo «no» en alguno. Ambar, no rojo: no es un error suyo. */
 .consecuencia {
-  display: flex;
-  gap: var(--e3);
+  composes: enDuda from '../../estilos/piezas.module.css';
   margin-top: var(--e5);
-  border: 1px solid var(--duda);
-  background: var(--duda-bruma);
   padding: var(--e4);
   font-size: var(--t-prosa);
   line-height: 1.55;
-  color: var(--duda-tinta);
-  border-radius: var(--radio);
-}
-
-.consecuencia::before {
-  content: '';
-  flex: none;
-  width: 3px;
-  background: var(--duda);
 }
 
 .faltaResponder {
@@ -325,22 +317,13 @@
 }
 
 .resumenErrores {
-  display: flex;
-  gap: var(--e3);
   border: 1px solid var(--mal-regla);
+  border-radius: var(--radio);
   background: var(--mal-bruma);
   padding: var(--e4);
   font-size: var(--t-prosa);
   line-height: 1.5;
   color: var(--mal);
-  border-radius: var(--radio);
-}
-
-.resumenErrores::before {
-  content: '';
-  flex: none;
-  width: 3px;
-  background: var(--mal);
 }
 
 /* ---------- El aviso antes de enviar sin cumplir ---------- */
@@ -355,7 +338,7 @@
 }
 
 .aviso::backdrop {
-  background: rgb(35 43 54 / 0.4);
+  background: var(--velo);
 }
 
 .avisoTitulo {

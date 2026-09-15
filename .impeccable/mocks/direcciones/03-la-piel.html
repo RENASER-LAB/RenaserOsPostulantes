@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EX · Portal del candidato — dirección «La Piel»</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,300..800&display=swap" rel="stylesheet">
+<style>
+/*
+  THESIS: Una sola senal encendida a la vez, y el peso de la letra crece con
+    ella: el estado se lee en la expansion, no en el color. Rechaza el portal
+    que pinta seis avisos de colores compitiendo por la misma atencion.
+  OWN-WORLD: Crema de manto #F4EFE6 con densidad de cromatoforos en tinta
+    parda #7A3A2E, crestas dermicas como separadores, y un unico destello
+    iridoforo #0E7C8C que marca lo activo. Bricolage Grotesque variable: el
+    peso es el pigmento expandiendose, de 300 a 800. El semaforo del producto
+    conserva sus tintas.
+  STORY: Quien entra ve una superficie en calma con una sola cosa encendida,
+    y entiende sin leer que eso es lo que le toca mirar.
+  FIRST VIEWPORT: Campo de densidad a sangre con el titular en peso expandido
+    sobre el; el unico destello es el boton. Debajo, la onda que recorre los
+    cinco pasos ganando densidad, y la lista de puestos apagada hasta que
+    pasas por encima.
+  FORM: retador del catalogo, veredicto competitivo (piel de cefalopodo como
+    pantalla viva); semilla 76fbfbe1, re-roll 1.
+  FINISH: unreviewed and undocumented is unfinished; this build ends with the
+    finish review, the verdict, DESIGN.md, and every shipping raster carrying
+    its provenance.
+*/
+
+:root {
+  --manto: #f4efe6;
+  --manto-perla: #e9e2d5;
+  --sustrato: #dccdba;
+  --cromo-tinta: #7a3a2e;
+  --cresta: #2b1e1a;
+  --cresta-prosa: #4a3830;
+  --sombra-tinta: #665c50;
+  --irido: #0e7c8c;
+  --irido-hondo: #0a606d;
+  --irido-bruma: #dff0f2;
+
+  --hecho: #0b7a63;
+  --duda: #8f5a0a;
+  --error: #c22a3f;
+
+  --e1: 4px; --e2: 8px; --e3: 12px; --e4: 16px;
+  --e5: 24px; --e6: 32px; --e7: 48px; --e8: 72px;
+  --ancho: 1140px;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--manto);
+  color: var(--cresta);
+  font-family: 'Bricolage Grotesque', system-ui, sans-serif;
+  font-variation-settings: 'wght' 400, 'wdth' 100, 'opsz' 14;
+  font-size: 17px;
+  line-height: 1.55;
+}
+
+::selection { background: var(--irido); color: var(--manto); }
+:focus-visible { outline: 2px solid var(--irido); outline-offset: 4px; }
+
+* { scrollbar-color: var(--cromo-tinta) var(--manto-perla); scrollbar-width: thin; }
+::-webkit-scrollbar { width: 12px; height: 12px; }
+::-webkit-scrollbar-track { background: var(--manto-perla); }
+::-webkit-scrollbar-thumb { background: var(--cromo-tinta); border: 3px solid var(--manto-perla); }
+
+a { color: inherit; text-underline-offset: 4px; text-decoration-thickness: 1px; text-decoration-color: var(--sustrato); }
+a:hover { text-decoration-color: var(--cromo-tinta); }
+
+.limite { max-width: var(--ancho); margin-inline: auto; padding-inline: var(--e5); }
+
+.micro {
+  font-size: 12px;
+  font-variation-settings: 'wght' 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--sombra-tinta);
+}
+
+/* ---------- cabecera ---------- */
+
+.cabecera { border-bottom: 1px solid var(--sustrato); background: var(--manto); }
+.cabecera .limite {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--e5); min-height: 62px;
+}
+.marca { display: flex; align-items: center; text-decoration: none; }
+.marca svg { display: block; }
+.nav { display: flex; gap: var(--e2); list-style: none; margin: 0; padding: 0; }
+.nav a {
+  display: inline-flex; align-items: center; min-height: 44px;
+  padding-inline: var(--e3);
+  font-size: 15px;
+  color: var(--cresta-prosa);
+  text-decoration: none;
+  transition: font-variation-settings 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.nav a:hover { font-variation-settings: 'wght' 650; color: var(--cresta); }
+.nav a[aria-current] { font-variation-settings: 'wght' 700; color: var(--cresta); }
+
+/* ---------- la piel de arriba ---------- */
+
+.piel { position: relative; overflow: hidden; }
+.piel::before {
+  content: '';
+  position: absolute; inset: -10% -20%;
+  background-color: transparent;
+  background-image:
+    radial-gradient(circle at 50% 50%, rgba(122,58,46,0.40) 0 1.5px, transparent 2px),
+    radial-gradient(circle at 50% 50%, rgba(122,58,46,0.22) 0 2.6px, transparent 3.4px),
+    radial-gradient(circle at 50% 50%, rgba(43,30,26,0.10) 0 4px, transparent 5.2px);
+  background-size: 14px 14px, 31px 31px, 53px 53px;
+  -webkit-mask-image: radial-gradient(145% 130% at 16% 0%, #000 14%, rgba(0,0,0,0.62) 48%, rgba(0,0,0,0.28) 82%, rgba(0,0,0,0.12) 100%);
+  mask-image: radial-gradient(145% 130% at 16% 0%, #000 14%, rgba(0,0,0,0.62) 48%, rgba(0,0,0,0.28) 82%, rgba(0,0,0,0.12) 100%);
+  animation: viajar 1100ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes viajar {
+  from { background-position: -34px 0, -12px 8px, -22px 4px; }
+  to   { background-position: 0 0, 7px 11px, 19px 3px; }
+}
+@media (prefers-reduced-motion: reduce) { .piel::before { animation: none; } }
+
+.piel .limite { position: relative; padding-block: var(--e8) var(--e7); }
+
+h1 {
+  margin: 0;
+  max-width: 15ch;
+  font-size: clamp(42px, 7vw, 92px);
+  font-variation-settings: 'wght' 780, 'opsz' 96;
+  line-height: 1.0;
+  letter-spacing: -0.035em;
+  color: var(--cresta);
+  text-wrap: balance;
+}
+h1 span {
+  font-variation-settings: 'wght' 320, 'opsz' 96;
+  color: var(--cromo-tinta);
+}
+
+.bajada {
+  margin: var(--e5) 0 0;
+  max-width: 48ch;
+  font-size: 19px;
+  line-height: 1.55;
+  color: var(--cresta-prosa);
+}
+
+.acciones {
+  margin-top: var(--e7);
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--e5);
+}
+.senal {
+  display: inline-flex; align-items: center; gap: var(--e3);
+  min-height: 54px; padding-inline: var(--e6);
+  border-radius: 999px;
+  background: var(--irido);
+  color: #fff;
+  font-size: 17px;
+  font-variation-settings: 'wght' 650;
+  text-decoration: none;
+  box-shadow: 0 0 0 0 var(--irido-bruma), 0 6px 18px rgba(14,124,140,0.28);
+  transition: background 200ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.senal:hover { background: var(--irido-hondo); box-shadow: 0 0 0 7px var(--irido-bruma), 0 8px 22px rgba(14,124,140,0.30); }
+.sin-cuenta { font-size: 16px; color: var(--cresta-prosa); max-width: 30ch; }
+
+/* ---------- la onda de los cinco pasos ---------- */
+
+.onda { padding-block: var(--e8); }
+.onda h2 {
+  margin: 0 0 var(--e6);
+  font-size: clamp(24px, 2.7vw, 32px);
+  font-variation-settings: 'wght' 700, 'opsz' 32;
+  letter-spacing: -0.025em;
+}
+
+.cresta-linea { display: block; width: 100%; height: 22px; margin-bottom: var(--e5); color: var(--cromo-tinta); opacity: 0.55; }
+
+.pasos { display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--e5); list-style: none; margin: 0; padding: 0; }
+.paso { display: flex; flex-direction: column; }
+.mancha {
+  height: 54px;
+  margin-bottom: var(--e4);
+  background-color: transparent;
+  background-image: radial-gradient(circle at 50% 50%, var(--cromo-tinta) 0 var(--r), transparent calc(var(--r) + 0.9px));
+  background-size: 11px 11px;
+  border-bottom: 1px solid var(--sustrato);
+}
+.paso:nth-child(1) .mancha { --r: 0.9px; }
+.paso:nth-child(2) .mancha { --r: 1.5px; }
+.paso:nth-child(3) .mancha { --r: 2.1px; }
+.paso:nth-child(4) .mancha { --r: 2.8px; }
+.paso:nth-child(5) .mancha { --r: 3.5px; }
+
+.paso h3 {
+  margin: 0 0 var(--e2);
+  font-size: 21px;
+  font-variation-settings: 'wght' 700, 'opsz' 24;
+  letter-spacing: -0.02em;
+}
+.paso p { margin: 0 0 var(--e5); font-size: 15px; line-height: 1.5; color: var(--cresta-prosa); }
+.paso .medida { margin-top: auto; padding-top: var(--e2); border-top: 1px solid var(--sustrato); }
+.paso .medida .dato { margin-top: 2px; font-size: 15px; font-variation-settings: 'wght' 600; }
+
+/* ---------- los puestos ---------- */
+
+.puestos-envoltura { padding-bottom: var(--e8); }
+.puestos-cab {
+  display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between;
+  gap: var(--e4);
+  padding-bottom: var(--e3);
+  border-bottom: 1px solid var(--cresta);
+}
+.puestos-cab h2 {
+  margin: 0;
+  font-size: clamp(24px, 2.7vw, 32px);
+  font-variation-settings: 'wght' 700, 'opsz' 32;
+  letter-spacing: -0.025em;
+}
+
+.puestos { list-style: none; margin: 0; padding: 0; }
+.puestos li {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(150px, 0.6fr) auto;
+  gap: var(--e5);
+  align-items: center;
+  padding: var(--e5) var(--e4);
+  margin-inline: calc(var(--e4) * -1);
+  border-bottom: 1px solid var(--sustrato);
+  background-color: transparent;
+  background-image: radial-gradient(circle at 50% 50%, rgba(122,58,46,0) 0 2px, transparent 2.8px);
+  background-size: 13px 13px;
+  transition: background-image 260ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.puestos li:hover {
+  background-image: radial-gradient(circle at 50% 50%, rgba(122,58,46,0.16) 0 2px, transparent 2.8px);
+}
+.nombre {
+  font-size: clamp(21px, 2.1vw, 27px);
+  font-variation-settings: 'wght' 500, 'opsz' 28;
+  letter-spacing: -0.025em;
+  line-height: 1.12;
+  transition: font-variation-settings 260ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.puestos li:hover .nombre { font-variation-settings: 'wght' 800, 'opsz' 28; }
+.nombre a { text-decoration: none; }
+.nombre a::after { content: ''; position: absolute; inset: 0; }
+.quien { margin-top: var(--e2); font-size: 15px; color: var(--cromo-tinta); font-variation-settings: 'wght' 600; }
+.encargo { margin: var(--e3) 0 0; font-size: 15px; line-height: 1.5; color: var(--cresta-prosa); max-width: 54ch; }
+
+.condicion { font-size: 15px; line-height: 1.5; color: var(--cresta-prosa); }
+.condicion b { display: block; font-variation-settings: 'wght' 700; color: var(--cresta); }
+.sueldo { display: block; margin-top: var(--e3); font-size: 17px; font-variation-settings: 'wght' 700; color: var(--cresta); font-variant-numeric: tabular-nums; }
+
+.mirar {
+  display: inline-flex; align-items: center; gap: var(--e2);
+  min-height: 46px; padding-inline: var(--e5);
+  border: 1px solid var(--sombra-tinta);
+  border-radius: 999px;
+  font-size: 15px;
+  font-variation-settings: 'wght' 600;
+  white-space: nowrap;
+  transition: border-color 200ms, color 200ms;
+}
+.puestos li:hover .mirar { border-color: var(--cresta); color: var(--cresta); }
+
+/* ---------- pie ---------- */
+
+.pie { border-top: 1px solid var(--sustrato); background: var(--manto-perla); padding-block: var(--e5); }
+.pie .limite { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--e4); font-size: 15px; color: var(--cresta-prosa); }
+.pie ul { display: flex; flex-wrap: wrap; gap: var(--e5); list-style: none; margin: 0; padding: 0; }
+
+/* ---------- adaptacion ---------- */
+
+@media (max-width: 1000px) {
+  .pasos { grid-template-columns: repeat(2, 1fr); gap: var(--e6); }
+  .puestos li { grid-template-columns: 1fr; gap: var(--e4); }
+  .mirar { justify-self: start; }
+}
+@media (max-width: 700px) {
+  :root { --e8: 48px; --e7: 32px; }
+  .pasos { grid-template-columns: 1fr; }
+  .paso p { margin-bottom: var(--e3); }
+  .piel .limite { padding-block: var(--e7) var(--e6); }
+  .acciones { margin-top: var(--e6); gap: var(--e4); }
+  .nav a { padding-inline: var(--e2); font-size: 14px; }
+}
+</style>
+</head>
+<body>
+
+<header class="cabecera">
+  <div class="limite">
+    <a class="marca" href="#" aria-label="EX, portal del candidato">
+      <svg width="32" height="25" viewBox="0 0 32 25" fill="none" aria-hidden="true">
+        <path d="M1.5 2.5h9.5M1.5 12.5h8M1.5 22.5h9.5" stroke="#2b1e1a" stroke-width="2.8" stroke-linecap="round"/>
+        <path d="M16 2.5l13.5 20M29.5 2.5L16 22.5" stroke="#2b1e1a" stroke-width="2.8" stroke-linecap="round"/>
+        <circle cx="22.7" cy="12.5" r="2.6" fill="#0e7c8c"/>
+      </svg>
+    </a>
+    <nav aria-label="Principal">
+      <ul class="nav">
+        <li><a href="#" aria-current="page">Vacantes</a></li>
+        <li><a href="#">Mis procesos</a></li>
+        <li><a href="#">Ingresar</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<section class="piel">
+  <div class="limite">
+    <h1>Tu próximo trabajo <span>puede empezar aquí.</span></h1>
+    <p class="bajada">
+      El proceso son cinco etapas, y en todas se mira cómo trabajas.
+      Tu currículum entra, pero por diseño no descarta a nadie.
+    </p>
+    <div class="acciones">
+      <a class="senal" href="#puestos">
+        Ver las vacantes abiertas
+        <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+          <path d="M1 6h14M10.5 1.5L15 6l-4.5 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </a>
+      <p class="sin-cuenta">Para mirar no hace falta cuenta. Se crea recién cuando decides postular.</p>
+    </div>
+  </div>
+</section>
+
+<section class="onda">
+  <div class="limite">
+    <h2>El recorrido completo, de principio a fin</h2>
+
+    <svg class="cresta-linea" viewBox="0 0 1200 22" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M0 15 C 60 4, 120 4, 180 15 S 300 26, 360 15 S 480 4, 540 15 S 660 26, 720 15 S 840 4, 900 15 S 1020 26, 1080 15 S 1160 6, 1200 12"
+            fill="none" stroke="currentColor" stroke-width="2"/>
+      <path d="M0 19 C 60 8, 120 8, 180 19 S 300 30, 360 19 S 480 8, 540 19 S 660 30, 720 19 S 840 8, 900 19 S 1020 30, 1080 19 S 1160 10, 1200 16"
+            fill="none" stroke="currentColor" stroke-width="1" opacity="0.6"/>
+    </svg>
+
+    <ol class="pasos">
+      <li class="paso">
+        <div class="mancha" aria-hidden="true"></div>
+        <h3>Perfil</h3>
+        <p>Subes tu currículum y respondes una evaluación escrita sobre cómo trabajas.</p>
+        <div class="medida"><span class="micro">Plazo</span><div class="dato">14 días para responder</div></div>
+      </li>
+      <li class="paso">
+        <div class="mancha" aria-hidden="true"></div>
+        <h3>Prueba</h3>
+        <p>Un encargo real del puesto, con el tiempo medido.</p>
+        <div class="medida"><span class="micro">Reloj</span><div class="dato">Corre aunque cierres</div></div>
+      </li>
+      <li class="paso">
+        <div class="mancha" aria-hidden="true"></div>
+        <h3>Simulación</h3>
+        <p>Una sesión de trabajo con el equipo, en una fecha que eliges tú.</p>
+        <div class="medida"><span class="micro">Sesión</span><div class="dato">2 horas, fecha que eliges</div></div>
+      </li>
+      <li class="paso">
+        <div class="mancha" aria-hidden="true"></div>
+        <h3>Validación</h3>
+        <p>Un periodo corto trabajando de verdad, con acuerdo y responsable.</p>
+        <div class="medida"><span class="micro">Periodo</span><div class="dato">Corto, con responsable</div></div>
+      </li>
+      <li class="paso">
+        <div class="mancha" aria-hidden="true"></div>
+        <h3>Decisión</h3>
+        <p>Una persona decide, mirando todo el recorrido.</p>
+        <div class="medida"><span class="micro">Decide</span><div class="dato">Una persona, no un puntaje</div></div>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<section class="puestos-envoltura" id="puestos">
+  <div class="limite">
+    <div class="puestos-cab">
+      <h2>Vacantes abiertas</h2>
+      <span class="micro">5 puestos · 3 ciudades</span>
+    </div>
+
+    <ul class="puestos">
+      <li>
+        <div>
+          <div class="nombre"><a href="#">Analista de Datos</a></div>
+          <div class="quien">Clínica San Juan</div>
+          <p class="encargo">Que los reportes semanales salgan solos y sean confiables, y que el área comercial deje de pedir números por chat cada lunes por la mañana.</p>
+        </div>
+        <div class="condicion">
+          <b>Híbrido · Lima</b>
+          Lunes a viernes, de 9 a 18
+          <span class="sueldo">S/ 3 800 – 4 500</span>
+        </div>
+        <span class="mirar">Ver el puesto</span>
+      </li>
+
+      <li>
+        <div>
+          <div class="nombre"><a href="#">Coordinador/a de Operaciones</a></div>
+          <div class="quien">Transportes del Sur</div>
+          <p class="encargo">Llevar la operación del día a día: proveedores, rutas, caja chica y el control de que lo comprometido se cumpla.</p>
+        </div>
+        <div class="condicion">
+          <b>Presencial · Arequipa</b>
+          Lunes a sábado
+        </div>
+        <span class="mirar">Ver el puesto</span>
+      </li>
+
+      <li>
+        <div>
+          <div class="nombre"><a href="#">Especialista en Mejora Continua</a></div>
+          <div class="quien">Molinos del Norte</div>
+          <p class="encargo">Bajar el desperdicio de la línea de envasado sin parar la producción.</p>
+        </div>
+        <div class="condicion">
+          <b>Presencial · Trujillo</b>
+        </div>
+        <span class="mirar">Ver el puesto</span>
+      </li>
+
+      <li>
+        <div>
+          <div class="nombre"><a href="#">Analista de Planeamiento</a></div>
+          <div class="quien">Andes Retail</div>
+          <p class="encargo">Que la reposición de tiendas deje de decidirse por corazonada.</p>
+        </div>
+        <div class="condicion">
+          <b>Remoto · Lima</b>
+          Flexible
+        </div>
+        <span class="mirar">Ver el puesto</span>
+      </li>
+
+      <li>
+        <div>
+          <div class="nombre"><a href="#">Jefe/a de Servicio al Cliente</a></div>
+          <div class="quien">Clínica San Juan</div>
+          <p class="encargo">Que una queja se resuelva en el primer contacto y quede aprendida.</p>
+        </div>
+        <div class="condicion">
+          <b>Presencial · Lima</b>
+          Turnos rotativos
+        </div>
+        <span class="mirar">Ver el puesto</span>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<footer class="pie">
+  <div class="limite">
+    <span>© 2026 Renaser Consulting</span>
+    <ul>
+      <li><a href="#">Política de privacidad</a></li>
+      <li><a href="#">Privacidad y control</a></li>
+      <li><a href="#">Entrar al panel de empresas</a></li>
+    </ul>
+  </div>
+</footer>
+
+</body>
+</html>

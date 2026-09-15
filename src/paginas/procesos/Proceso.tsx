@@ -133,7 +133,7 @@ export function Proceso() {
       </Link>
 
       <div className={estilos.encabezado}>
-        <h1>{resumen.vacante}</h1>
+        <h1 className={estilos.titular}>{resumen.vacante}</h1>
         <span className={estilos.desde}>
           Postulaste el{' '}
           <time dateTime={resumen.creadoEn}>{formatearFechaCorta(resumen.creadoEn)}</time>

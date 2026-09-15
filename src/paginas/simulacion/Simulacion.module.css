@@ -9,9 +9,7 @@
 /* 44rem, la misma medida que `Estados.module.css`: si no, el recuadro de «no
    hay fechas» queda ocho pixeles metido respecto al titular de encima. */
 .pagina {
-  max-width: 44rem;
-  margin: 0 auto;
-  padding: var(--e5) var(--e5) var(--e8);
+  composes: hojaFormulario from '../../estilos/pagina.module.css';
 }
 
 .volver {
@@ -19,16 +17,16 @@
 }
 
 .encabezado {
-  margin-top: var(--e4);
+  composes: encabezado from '../../estilos/pagina.module.css';
+}
+
+.titular {
+  composes: titular from '../../estilos/pagina.module.css';
 }
 
 
 .bajada {
-  font-size: var(--t-base);
-  line-height: 1.55;
-  color: var(--tinta2);
-  margin-top: var(--e3);
-  max-width: var(--medida);
+  composes: bajada from '../../estilos/pagina.module.css';
 }
 
 /* ---------- Momento 1 · elegir fecha ---------- */
@@ -65,10 +63,17 @@
   border-color: var(--tinta2);
 }
 
-/* Elegida: contorno grueso y papel del acento. Es «te toca a ti» resuelto. */
+/*
+ * Elegida: contorno grueso y fondo hundido.
+ *
+ * ⚠️ **El relleno era la bruma coral y se fue.** Elegir una fecha es una
+ * seleccion, no un turno — y a esta pantalla se llega justamente porque te
+ * tocaba, asi que el coral no discrimina nada aqui. El borde macizo de 2 px y
+ * la marca ya dicen cual esta elegida sin depender del color.
+ */
 .fecha.elegida {
   border: 2px solid var(--activo);
-  background: var(--activo-bruma);
+  background: var(--nube-hundida);
   padding: calc(var(--e4) - 1px) calc(var(--e5) - 1px);
 }
 
@@ -187,23 +192,13 @@
 }
 
 .fallo {
-  display: flex;
-  gap: var(--e3);
-  margin-top: var(--e4);
   border: 1px solid var(--mal-regla);
+  border-radius: var(--radio);
   background: var(--mal-bruma);
   padding: var(--e4);
-  font-size: var(--t-prosa);
+  font-size: var(--t-apoyo);
   line-height: 1.5;
   color: var(--mal);
-  border-radius: var(--radio);
-}
-
-.fallo::before {
-  content: '';
-  flex: none;
-  width: 3px;
-  background: var(--mal);
 }
 
 /* ---------- Momento 2 · la fecha ya elegida ---------- */

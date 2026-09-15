@@ -77,7 +77,7 @@ export function Ingresar() {
 
   return (
     <div className={estilos.pagina}>
-      <h1>Entra a tu proceso.</h1>
+      <h1 className={estilos.titular}>Entra a tu proceso.</h1>
 
       {/*
         Sin caja alrededor y sin subtítulo encima: con un solo camino, el
