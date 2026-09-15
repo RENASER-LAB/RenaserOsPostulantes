@@ -522,3 +522,20 @@
   text-decoration: underline;
   text-underline-offset: 3px;
 }
+
+/*
+ * El aviso de tratamiento de datos, justo encima del boton de enviar.
+ *
+ * Aqui habia una casilla y ahora es una frase: enviar la candidatura es el acto,
+ * y lo que la ley pide en este punto es que se sepa QUIEN la recibe. Va pegado al
+ * boton a proposito — leerlo y pulsarlo tienen que ser el mismo gesto.
+ */
+.avisoDatos {
+  margin: 0 0 var(--e4);
+  padding: var(--e3) 0 0;
+  border-top: 1px solid var(--regla);
+  font-size: var(--t-menor);
+  line-height: 1.55;
+  color: var(--tinta2);
+  max-width: var(--medida);
+}

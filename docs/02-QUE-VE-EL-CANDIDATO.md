@@ -89,17 +89,42 @@ no dato del backend).
 
 ### 2.3 Crear cuenta — pública
 `POST /portal/cuentas` — `nombre`, `apellidos`, `correo`, `contrasena` (mín. 8),
-`ciudadUbigeo` (obligatorio desde el 01/09/2026), `aceptaProceso` (obligatorio),
+`ciudadUbigeo` (obligatorio desde el 01/09/2026), `aceptaPlataforma` (obligatorio),
 `aceptaFuturosContactos` (opcional).
 
-`GET /portal/consentimientos/textos` devuelve los textos vigentes (`tipo`, `version`, `texto`).
+`aceptaPlataforma` se llamaba `aceptaProceso` hasta la V54 del backend. Cambió con el nombre
+lo que se firma: antes era el texto de una vacante —que habla de «esta vacante» cuando en el
+registro todavía no hay ninguna— y ahora es el de la **plataforma**, el permiso con Renaser
+que cubre la cuenta, el perfil, la IA y los proveedores. El de cada empresa se firma al
+postular, en su formulario.
 
-⚠️ **Los textos de consentimiento van a crecer.** Hoy no nombran a ningún tercero, y el backend
-marca como urgente que nombren a DeepSeek y Google antes del primer candidato real. El bloque de
-consentimientos necesita sitio para un texto bastante más largo que el actual: dos casillas, dos
-textos, uno obligatorio y otro opcional.
+**Dos casillas, y esta pantalla ya no pide ningún texto al backend** (15/09/2026). Cada casilla
+lleva **un título corto y un enlace**: «Acepto el tratamiento de mis datos», con un enlace a
+`/politica-de-privacidad#el-texto-que-aceptas`, y «Quiero que me avisen de futuras vacantes».
+Antes cada una traía el texto legal entero plegado bajo un «Leer el texto completo», con su
+propio scroll: **ese plegable se quitó**. Nadie lee un documento de miles de caracteres dentro de
+una caja en un formulario, y lo que hace todo el mundo es casilla más hipervínculo. Con eso se
+fue también la llamada a `GET /portal/consentimientos/textos` desde el registro — una petición
+menos en el peor sitio para esperar.
 
-**Dónde vives (01/09/2026).** `ciudadUbigeo` es el ubigeo de nivel 2 —la provincia— o `EXT` si
+⚠️ **Al acortar la explicación, todo el peso informativo pasó al enlace.** La versión anterior
+nombraba ahí mismo la inteligencia artificial y los proveedores de fuera del Perú, que es la
+primera capa del aviso por capas: lo que hace defendible que el resto viva detrás de un enlace.
+Se acortó a una línea por decisión de producto. **Si ese enlace se rompe o la política se
+recorta, el consentimiento deja de estar informado** aunque la casilla siga ahí. Es lo primero
+que hay que mirar antes de tocar cualquiera de los dos.
+
+**Otros retoques del mismo día**: se quitaron las ayudas de campo del correo y de la ubicación,
+la bajada bajo el título solo sale cuando se llega desde una vacante —ahí dice algo, que la
+postulación no se pierde—, y la etiqueta «Dónde vives» pasó a **«Ubicación»**.
+
+⚠️ **Los textos siguen sin revisión de un abogado.** Lo que cambió es que ya no falta
+información; falta la firma. Y **quien creó su cuenta antes del 14/09 nunca firmó el texto
+nuevo**: la migración no toca las aceptaciones ya hechas y no hay ninguna pantalla de
+re-aceptación. Si algún día se decide pedírsela, es pantalla nueva y no existe.
+
+**Ubicación (01/09/2026; se llamaba «Dónde vives» hasta el 15/09).** `ciudadUbigeo` es el ubigeo
+de nivel 2 —la provincia— o `EXT` si
 vive fuera del Perú, y el backend lo valida contra su catálogo: un código que no exista sale con
 400. Las opciones llegan de `GET /portal/catalogos/ubigeo`, ya ordenadas por departamento y
 nombre, con `departamento` en nulo únicamente en `EXT`.
@@ -147,7 +172,35 @@ volvía al día siguiente, cambiaba de navegador o vaciaba el almacenamiento.
 
 ⚠️ **La confirmación de requisitos es el único descarte automático del sistema.** Un requisito
 activo sin confirmar cierra la postulación en el acto (`NO_CONTINUA`). Tiene que leerse como una
-decisión seria, no como una casilla más del formulario.
+decisión seria, no como una casilla más del formulario. Desde el 14/09/2026 es también una de las
+tres cosas que el texto legal enumera como «pasan sin que intervenga una persona», junto al
+cierre por plazo vencido y el pase automático de las vacantes que avanzan solas.
+
+**El permiso se firma con la empresa, no con Renaser**, y desde el 14/09/2026 su texto **ya no
+repite lo técnico**: la inteligencia artificial y los proveedores se aceptaron al crear la
+cuenta. Lo que queda es lo de esa empresa —que ella publica la vacante, que ella decide, y que el
+permiso no alcanza a las demás del portal—, y es **el mismo texto para todas**, con el nombre de
+la suya puesto dentro.
+
+⚠️ **Aquí ya no hay casilla de consentimiento** (15/09/2026). Se retiró. Lo último antes del
+botón es una frase que dice quién va a recibir la candidatura y enlaza el texto entero, en
+`/politica-de-privacidad?vacante={id}#el-texto-que-aceptas` —con el `?vacante=` para que se lea
+con el nombre de esa empresa y no con un genérico—. Enviar la candidatura a una empresa que se
+eligió, después de leer quién la recibe, es el acto afirmativo; una casilla encima no añade
+voluntad, añade fricción, y el candidato ya viene de marcar dos en el registro.
+
+**Lo que no se retiró es la constancia**: al enviar se sigue guardando la firma a nombre de esa
+empresa con el texto, la fecha y la dirección, y el backend **sigue exigiendo `aceptaTratamiento`
+en `true`** para cortarle el paso a quien llame a la API por su cuenta. Lo que cambió es cómo se
+da el permiso, no que se dé.
+
+⚠️ **Y es la pieza que más necesita el visto bueno del abogado**: se pasa de «consentimiento
+expreso por casilla» a «consentimiento por acto inequívoco». Las dos se defienden y no son lo
+mismo.
+
+Lo que la pantalla sí necesita es el nombre de la empresa, y **ese ya viene con la vacante**: la
+llamada a `GET /portal/vacantes/{id}/consentimiento` se fue de aquí y vive ahora en la política
+de privacidad, que es donde se lee el texto.
 
 ### 2.6 Mis procesos — el centro del portal
 `GET /portal/postulaciones` → por postulación: `uuid`, `vacante`, `estado`, `estadoNombre`,
@@ -328,6 +381,39 @@ que ese contacto se hace fuera del portal.
 Se parecen y no son lo mismo. Es un sitio donde el candidato se equivoca si el diseño no las
 separa con claridad.
 
+### 2.14 Política de privacidad — pública, y no es la misma pantalla que la de arriba
+`/politica-de-privacidad` **solo cuenta**: quién responde por los datos con su RUC y su
+domicilio, qué se recoge, para qué, quién más lo ve —los cinco proveedores en una tabla, con lo
+que recibe cada uno—, que los datos salen del Perú, cuánto se conservan y cómo se pide el
+borrado. La de 2.13 es el panel de acciones y vive dentro de la sesión; esta se lee sin cuenta,
+que es lo que exige Google Play.
+
+**El último bloque no lo escribe la pantalla**: son los **tres** textos publicados que sirve
+`GET /portal/consentimientos/textos`, enseñados **palabra por palabra**. Un documento que los
+resume a mano se desvía del que la gente firma de verdad, y el que vale es el firmado. Si esa
+petición falla, lo de arriba se lee igual y abajo se dice que el texto no cargó, con la dirección
+para pedirlo — y lo mismo si llega la lista a medias, que es el fallo silencioso: un 200 con un
+texto de menos dejaría el bloque con su título y el vacío debajo.
+
+Ese bloque lleva el ancla **`el-texto-que-aceptas`**, que es a donde apuntan los enlaces de las
+casillas del registro y la frase de postular: quien pulsa desde ahí no quiere la política entera,
+quiere el párrafo que está a punto de firmar.
+
+⚠️ **Con `?vacante={id}` el texto de postular sale con el nombre de esa empresa.** Es lo que
+enlaza la pantalla de postular. Sin ese parámetro el mismo texto se enseña con «la empresa que
+publica la vacante», que sirve para leerlo en frío, y la pantalla lo dice: es el mismo para todas
+y en cada vacante aparece el nombre de la suya.
+
+⚠️ **El número de versión no se enseña, y el versionado sigue intacto.** Cada aceptación queda
+amarrada en la base a la versión exacta que se firmó, con su huella — eso es lo que sostiene la
+prueba. Pero a quien lee, un «versión 1.0» no le dice nada y lo único que sugiere es que hay
+otras versiones que no puede ver. Lo que le importa es el texto, y el texto está entero.
+
+La página también identifica al responsable con **razón social, RUC y domicilio**, y lista a los
+encargados uno a uno —DeepSeek, Google, Supabase, Amazon Web Services y Vercel— con lo que recibe
+cada uno. Y enumera **las tres cosas que pasan sin que intervenga una persona**, porque la
+versión anterior prometía lo contrario y era falso.
+
 ---
 
 ## 3. Qué es público y qué no (frontera del backend)
@@ -362,7 +448,7 @@ falla, pero el 403 es posible y las pantallas de simulación deberían saber pin
 | 5 | Tres acciones de privacidad que suenan iguales | Riesgo de borrar datos por error |
 | 6 | "Te avisaremos por correo" | ⚠️ El correo sale con `transporte: log` **por defecto**: hoy no sale. Es una promesa que el sistema puede no cumplir |
 | 7 | El saludo depende de un nombre que puede no existir | Se degrada en silencio en otro navegador |
-| 8 | Consentimientos con poco sitio | Van a crecer al nombrar a DeepSeek y Google |
+| 8 | Consentimientos con poco sitio | **Resuelto de otra manera** (15/09/2026): el texto ya no se pinta dentro del formulario. Las casillas llevan un título corto y un enlace a la política, que los enseña enteros. Lo que hay que vigilar ahora es el enlace: si se rompe, el consentimiento deja de estar informado |
 
 ---
 

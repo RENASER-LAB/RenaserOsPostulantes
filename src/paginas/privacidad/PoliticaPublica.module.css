@@ -74,3 +74,122 @@
 .contacto p:last-child {
   margin-bottom: 0;
 }
+
+/* ---------- Quien responde: la ficha del responsable ---------- */
+
+/*
+ * Una lista de definiciones y no un parrafo: la ley 29733 pide identificar al
+ * responsable con su nombre y su domicilio, y quien viene a comprobarlo busca
+ * un dato concreto, no una frase donde encontrarlo.
+ */
+.identidad {
+  margin: 0 0 var(--e4);
+  padding: var(--e4);
+  background: var(--nube-hundida);
+  border-radius: var(--radio);
+  display: grid;
+  gap: var(--e3);
+}
+
+.identidad > div {
+  display: grid;
+  grid-template-columns: 8rem 1fr;
+  gap: var(--e3);
+}
+
+.identidad dt {
+  font-size: var(--t-menor);
+  font-weight: 600;
+  color: var(--tinta);
+}
+
+.identidad dd {
+  margin: 0;
+  font-size: var(--t-base);
+  line-height: 1.55;
+  color: var(--tinta2);
+}
+
+/* En pantalla estrecha el dato no cabe al lado de su etiqueta: va debajo. */
+@media (max-width: 34rem) {
+  .identidad > div {
+    grid-template-columns: 1fr;
+    gap: var(--e1);
+  }
+}
+
+/* ---------- Los encargados ---------- */
+
+/*
+ * Con su envoltorio de scroll propio: es la unica cosa de la pagina que no
+ * puede encogerse mas, y sin el la tabla empuja el documento entero a lo ancho.
+ */
+.tablaEnvoltorio {
+  overflow-x: auto;
+  margin: 0 0 var(--e3);
+}
+
+.tabla {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 34rem;
+  font-size: var(--t-menor);
+  text-align: left;
+}
+
+.tabla th,
+.tabla td {
+  padding: var(--e3);
+  border-bottom: 1px solid var(--regla);
+  vertical-align: top;
+  line-height: 1.5;
+  color: var(--tinta2);
+}
+
+.tabla thead th {
+  font-weight: 600;
+  color: var(--tinta);
+  border-bottom-width: 2px;
+}
+
+.tabla tbody th {
+  font-weight: 600;
+  color: var(--tinta);
+  white-space: nowrap;
+}
+
+/* ---------- El texto que se firma, tal cual ---------- */
+
+.textoLegal {
+  margin: 0 0 var(--e4);
+  padding: var(--e4);
+  border: 1px solid var(--regla);
+  border-radius: var(--radio);
+}
+
+.textoLegal h3 {
+  font-size: var(--t-base);
+  font-weight: 600;
+  margin: 0 0 var(--e3);
+}
+
+/*
+ * `pre-line` porque el texto llega del backend con sus parrafos separados por
+ * saltos de linea; sin esto el navegador los colapsa en un ladrillo seguido.
+ * Es la misma razon que en el bloque plegable de `Campo.module.css`.
+ */
+.literal {
+  white-space: pre-line;
+  margin: 0;
+  font-size: var(--t-menor);
+  line-height: 1.6;
+  color: var(--tinta2);
+}
+
+/* El aviso de que el hueco se rellena con el nombre de cada empresa. */
+.nota {
+  margin: 0 0 var(--e3);
+  font-size: var(--t-menor);
+  line-height: 1.5;
+  color: var(--tinta2);
+}

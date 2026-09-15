@@ -1,19 +1,19 @@
 /**
- * El permiso de tratamiento de datos es un candado, no un aviso.
+ * El permiso de tratamiento de datos, ahora sin casilla.
  *
- * Sin `aceptaTratamiento` el backend responde 400 y no hay postulacion. Eso lo
- * hace distinto de todo lo demas de esta pantalla, y son justo las diferencias
- * que compilan perfectamente estando mal:
+ * Aqui habia una casilla obligatoria y se retiro: enviar la candidatura a una
+ * empresa que la persona eligio, despues de leer quien la recibe, es el acto
+ * afirmativo que la ley 29733 pide. Lo que sigue es lo que una edicion de estilo
+ * puede llevarse por delante sin que nada deje de compilar:
  *
- *   1. **Que se pueda enviar sin marcarlo.** El envio llegaria al servidor, el
- *      servidor lo rechazaria, y el candidato veria un error que la pantalla
- *      pudo haberle evitado — despues de subir su curriculum.
- *   2. **Que se mande siempre `true`.** El valor tiene que salir de la casilla,
- *      no de una constante: el backend firma ese dato con la fecha y la IP, y
- *      firmar algo que la persona no marco es peor que no firmarlo.
- *   3. **Que el candado se salte por el aviso de los requisitos.** Los dos
- *      interceptan el envio, y si el aviso gana, se le pregunta si quiere
- *      postular igual cuando no hay ninguna postulacion posible.
+ *   1. **Que el aviso nombre a la empresa.** Sin eso, la persona envia su
+ *      curriculum sin saber a quien. Es lo unico que la casilla aportaba de
+ *      verdad, y por eso el aviso va pegado al boton y no al principio.
+ *   2. **Que el enlace lleve al texto** que se esta a punto de firmar.
+ *   3. **Que se siga mandando el permiso.** El backend guarda la firma a nombre
+ *      de esa empresa, con el texto, la fecha y la IP: sin este dato no hay
+ *      constancia, y la constancia es lo que NO se retiro.
+ *   4. **Que la casilla no vuelva sola.**
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -64,8 +64,8 @@ function montar() {
   )
 }
 
-/** Todo lo obligatorio menos el permiso. */
-async function rellenarSinAceptar() {
+/** Todo lo obligatorio para poder enviar. */
+async function rellenarElFormulario() {
   const archivo = new File(['%PDF-1.4'], 'cv.pdf', { type: 'application/pdf' })
   const campoArchivo = document.querySelector<HTMLInputElement>('input[type=file]')!
   fireEvent.change(campoArchivo, { target: { files: [archivo] } })
@@ -75,10 +75,6 @@ async function rellenarSinAceptar() {
   })
 
   fireEvent.click(screen.getByRole('radio', { name: 'Sí' }))
-}
-
-function laCasilla() {
-  return screen.getByRole('checkbox')
 }
 
 beforeEach(() => {
@@ -101,60 +97,52 @@ beforeEach(() => {
 afterEach(cleanup)
 
 describe('el permiso de tratamiento de datos', () => {
-  it('no deja enviar sin marcarlo, aunque todo lo demás esté completo', async () => {
+  it('dice quién va a recibir la candidatura, justo encima del botón', async () => {
     montar()
-    await screen.findByRole('checkbox')
-    await rellenarSinAceptar()
+    await screen.findByRole('button', { name: /enviar mi postulación/i })
 
-    fireEvent.click(screen.getByRole('button', { name: /enviar mi postulación/i }))
+    // El nombre de la empresa es lo único que la casilla aportaba de verdad, y
+    // sigue ahí: sin él, la persona manda su currículum sin saber a quién.
+    const aviso = screen.getByText(/Al enviar,/)
+    expect(aviso.textContent).toContain('Clínica San Juan')
+    expect(aviso.textContent).toContain('quedará registrado tu permiso')
 
-    await waitFor(() => {
-      expect(screen.getByText(/sin este permiso/i)).toBeTruthy()
-    })
-    expect(enviados).toHaveLength(0)
+    const enlace = screen.getByRole('link', { name: /política de privacidad/i })
+    // Con la vacante dentro: la política tiene que enseñar el texto de ESTA empresa,
+    // que puede haber publicado el suyo y entonces es el que se firma. Sin esto, el
+    // enlace llevaría al general y no habría dónde leer el de verdad.
+    expect(enlace.getAttribute('href')).toBe(
+      '/politica-de-privacidad?vacante=7#el-texto-que-aceptas',
+    )
   })
 
-  it('manda el valor de la casilla, no un true fijo', async () => {
+  it('ya no hay casilla que marcar', async () => {
     montar()
-    await screen.findByRole('checkbox')
-    await rellenarSinAceptar()
-    fireEvent.click(laCasilla())
+    await screen.findByRole('button', { name: /enviar mi postulación/i })
+
+    expect(screen.queryByRole('checkbox')).toBeNull()
+    expect(screen.queryByText(/Permiso para tratar tus datos/i)).toBeNull()
+  })
+
+  it('el permiso viaja igual: sin él no hay constancia de quién consintió', async () => {
+    montar()
+    await screen.findByRole('button', { name: /enviar mi postulación/i })
+    await rellenarElFormulario()
 
     fireEvent.click(screen.getByRole('button', { name: /enviar mi postulación/i }))
 
     await waitFor(() => expect(enviados).toHaveLength(1))
-    expect((enviados[0] as { aceptaTratamiento: boolean }).aceptaTratamiento).toBe(true)
+    // El backend firma con este dato la fecha y la IP, y guarda el texto que se
+    // enseñó. Quitar la casilla cambió CÓMO se da el permiso, no que se dé.
+    expect(enviados[0]).toMatchObject({ aceptaTratamiento: true })
   })
 
-  it('ata el error a la casilla para que el foco pueda encontrarla', async () => {
+  it('el aviso de los requisitos sigue interceptando el envío', async () => {
+    // Era la prueba de que el permiso ganaba a este aviso. Sin casilla, este aviso
+    // es el único que se interpone, y tiene que seguir haciéndolo: quien dice que
+    // no cumple un indispensable merece saber que su postulación se cerrará.
     montar()
-    await screen.findByRole('checkbox')
-    await rellenarSinAceptar()
-
-    fireEvent.click(screen.getByRole('button', { name: /enviar mi postulación/i }))
-
-    await waitFor(() => {
-      expect(laCasilla().getAttribute('aria-invalid')).toBe('true')
-    })
-  })
-
-  it('el error desaparece en cuanto se marca', async () => {
-    montar()
-    await screen.findByRole('checkbox')
-    await rellenarSinAceptar()
-    fireEvent.click(screen.getByRole('button', { name: /enviar mi postulación/i }))
-    await waitFor(() => expect(screen.getByText(/sin este permiso/i)).toBeTruthy())
-
-    fireEvent.click(laCasilla())
-
-    await waitFor(() => {
-      expect(screen.queryByText(/sin este permiso/i)).toBeNull()
-    })
-  })
-
-  it('gana al aviso de los requisitos: sin permiso no se pregunta si quiere enviarla igual', async () => {
-    montar()
-    await screen.findByRole('checkbox')
+    await screen.findByRole('button', { name: /enviar mi postulación/i })
 
     const archivo = new File(['%PDF-1.4'], 'cv.pdf', { type: 'application/pdf' })
     fireEvent.change(document.querySelector<HTMLInputElement>('input[type=file]')!, {
@@ -163,14 +151,13 @@ describe('el permiso de tratamiento de datos', () => {
     fireEvent.change(screen.getByRole('textbox', { name: /cuéntalo con tus palabras/i }), {
       target: { value: 'Ordené el reporte semanal que antes tardaba tres horas.' },
     })
-    // Dice que NO cumple el requisito: eso normalmente abre el aviso del
-    // descarte automatico. Sin el permiso, no debe abrirse.
     fireEvent.click(screen.getByRole('radio', { name: 'No' }))
 
     fireEvent.click(screen.getByRole('button', { name: /enviar mi postulación/i }))
 
-    await waitFor(() => expect(screen.getByText(/sin este permiso/i)).toBeTruthy())
-    expect(screen.queryByRole('button', { name: /enviarla de todos modos/i })).toBeNull()
+    await waitFor(() =>
+      expect(screen.getByText(/Esta postulación se va a cerrar/i)).toBeTruthy(),
+    )
     expect(enviados).toHaveLength(0)
   })
 })

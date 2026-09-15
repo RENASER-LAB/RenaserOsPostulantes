@@ -1,6 +1,6 @@
 # De la solicitud a la decisión: el proceso entero
 
-Última actualización: 2026-09-07
+Última actualización: 2026-09-15
 
 **Los pasos 1 a 5 están corridos** contra el backend local con
 `herramientas/e2e/14-vacante.spec.ts`, y **la mitad del paso 0 que escribe una prueba**,
@@ -274,12 +274,28 @@ tenía cuenta no se le pide nunca, ni al postular ni después. Por eso las
 postulaciones anteriores a esa fecha no traen ciudad, y el ranking cuenta con
 ello en vez de fingir que la tiene.
 
+⚠️ **Al crear la cuenta se marcan dos casillas, y desde el 15/09/2026 llevan solo
+un título corto y un enlace** a la política de privacidad, que enseña los textos
+publicados palabra por palabra. Antes cada una traía el texto legal plegado
+debajo; ese plegable se quitó, y con él la llamada que lo pedía.
+
 En el formulario van los requisitos indispensables como preguntas de sí o no.
 Responder «no» **no impide enviar**: la pantalla nombra los requisitos que dijo
 no cumplir, avisa de que la postulación se cerrará de inmediato, y deja
 elegir. La opción por defecto del aviso es volver y revisar.
 
-Aquí vive **el único descarte automático de todo el sistema**.
+Aquí vive **el único descarte automático de todo el sistema**. Pero no es lo
+único que se mueve sin que intervenga una persona: también se cierra el proceso
+de quien deja pasar su plazo, y avanzan solas las vacantes configuradas para
+ello. Las tres están enumeradas en el texto que el candidato acepta.
+
+⚠️ **Y aquí ya no hay casilla de consentimiento** (15/09/2026). Lo último antes
+del botón es una frase que dice **qué empresa va a recibir la candidatura** y
+enlaza el texto entero, con el nombre de esa empresa dentro. Enviar es el acto.
+La firma se sigue guardando igual —texto, fecha e IP, a nombre de esa empresa— y
+el backend sigue exigiendo el dato, así que lo que cambió es cómo se da el
+permiso, no que se dé. **Es un cambio de figura legal pendiente del visto bueno
+de un abogado**; está en [PENDIENTES.md](PENDIENTES.md).
 
 ### 7 · La evaluación
 
