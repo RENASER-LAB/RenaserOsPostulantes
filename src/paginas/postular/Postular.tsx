@@ -35,15 +35,35 @@
  * inequivoco». Las dos se defienden y no son lo mismo.
  */
 
-import { useRef, useState, type DragEvent, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type DragEvent, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { verPerfil } from '@/api/perfil'
 import { postular, verVacante } from '@/api/portal'
-import type { RequisitoPublico } from '@/api/tipos'
+import type { Pretension, RequisitoPublico } from '@/api/tipos'
+import { COMO_SE_ESCRIBE, aCifra } from '@/dominio/dinero'
 import { rutas } from '@/rutas'
 import { AreaTexto, Campo } from '@/ui/campos/Campo'
+import { Remuneracion } from '@/ui/Remuneracion'
 import estilos from './Postular.module.css'
+
+/**
+ * El centro de la banda del perfil, que es lo que se le propone.
+ *
+ * Mismo criterio que el backend (`Remuneracion.sugerirDesdeElPerfil`): con la
+ * banda entera, el punto medio redondeado; con media banda, lo que haya; sin
+ * nada, nada — y entonces el campo sale vacio, que es el caso de casi todo el
+ * mundo.
+ */
+function sugerirDelPerfil(p: Pretension | null | undefined): number | undefined {
+  if (!p) return undefined
+  const min = typeof p.min === 'number' ? p.min : undefined
+  const max = typeof p.max === 'number' ? p.max : undefined
+  if (min === undefined && max === undefined) return undefined
+  if (min === undefined) return max
+  if (max === undefined) return min
+  return Math.round((min + max) / 2)
+}
 
 /** El mismo tope que aplica el backend: pasarlo devuelve 413. */
 const MAXIMO_CV = 10 * 1024 * 1024
@@ -51,8 +71,26 @@ const FORMATOS = ['.pdf', '.doc', '.docx']
 
 type Respuesta = 'si' | 'no'
 
+/**
+ * La puerta, y el unico motivo por el que existe: la `key`.
+ *
+ * ⚠️ **React Router NO remonta el elemento cuando solo cambia el parametro de
+ * la ruta.** `/vacantes/7/postular` y `/vacantes/8/postular` son el mismo
+ * `element`, asi que sin esta linea el estado del formulario sobrevivia al
+ * cambio de vacante: quien tecleaba 4200 para un puesto en soles, volvia atras y
+ * abria otro en dolares se encontraba su 4200 intacto bajo una etiqueta que
+ * decia «(USD)» — y `tocoLaPretension` seguia en true, asi que el prellenado del
+ * perfil tampoco corregia nada.
+ *
+ * La `key` con el id de la vacante lo resuelve entero: cada convocatoria estrena
+ * formulario, que es lo que cualquiera espera al abrir otra.
+ */
 export function Postular() {
   const { vacanteId = '' } = useParams()
+  return <FormularioDePostular key={vacanteId} vacanteId={vacanteId} />
+}
+
+function FormularioDePostular({ vacanteId }: { vacanteId: string }) {
   const navegar = useNavigate()
   const cache = useQueryClient()
   const campoArchivo = useRef<HTMLInputElement>(null)
@@ -72,11 +110,21 @@ export function Postular() {
   const [portafolio, setPortafolio] = useState('')
   const [linkedin, setLinkedin] = useState('')
   const [github, setGithub] = useState('')
+  /**
+   * Cuanto quiere ganar aqui.
+   *
+   * Nace vacio y lo rellena un efecto cuando llega su perfil: ver `sugerido`.
+   * Un `useState(calculo)` no serviria — el perfil todavia no ha llegado cuando
+   * este componente se monta, y el valor inicial se calcula una sola vez.
+   */
+  const [pretension, setPretension] = useState('')
+  const [tocoLaPretension, setTocoLaPretension] = useState(false)
   const [respuestas, setRespuestas] = useState<Record<number, Respuesta>>({})
   const [errores, setErrores] = useState<{
     cv?: string
     resultado?: string
     requisitos?: string
+    pretension?: string
   }>({})
   const [fallo, setFallo] = useState<string | null>(null)
 
@@ -102,6 +150,33 @@ export function Postular() {
    */
   const perfil = useQuery({ queryKey: ['perfil'], queryFn: verPerfil })
   const elDelPerfil = perfil.data?.cv ?? null
+
+  /**
+   * Lo que se le propone, sacado de la banda de su perfil.
+   *
+   * **El centro de la banda, no el borde bajo.** Quien puso «3000 a 4000» no
+   * esta diciendo que quiera 3000: esta diciendo que su expectativa vive ahi
+   * dentro. Prellenar con el minimo le regalaria a la empresa el borde bajo de
+   * su propia expectativa cada vez que alguien pulsa enviar sin mirar.
+   *
+   * `undefined` si no tiene nada guardado, que es el caso de casi todo el
+   * mundo: entonces el campo sale vacio y lo escribe el.
+   */
+  const sugerido = sugerirDelPerfil(perfil.data?.pretension)
+
+  /*
+    Se rellena UNA vez, cuando llega el perfil, y nunca vuelve a pisarlo.
+
+    `tocoLaPretension` es lo que lo garantiza: sin esa bandera, una revalidacion
+    de react-query —cambiar de pestaña y volver— reescribiria encima del numero
+    que la persona acaba de teclear. Es el mismo fallo que el CV tuvo y que
+    arreglo esperar al perfil antes de pintar.
+  */
+  useEffect(() => {
+    if (!tocoLaPretension && pretension === '' && sugerido !== undefined) {
+      setPretension(String(sugerido))
+    }
+  }, [sugerido, tocoLaPretension, pretension])
 
   const envio = useMutation({
     mutationFn: postular,
@@ -166,6 +241,16 @@ export function Postular() {
   const requisitos: RequisitoPublico[] = Array.isArray(v.requisitosObjetivos)
     ? v.requisitosObjetivos
     : []
+  /**
+   * El trato: si la empresa publica lo que paga, el tiene que decir lo suyo.
+   *
+   * Y si no lo publica, no se le pide **ni como opcional**: aceptarle un numero
+   * mientras la empresa esconde el suyo es justo el desequilibrio que esto vino
+   * a romper. El campo no sale en absoluto.
+   */
+  const exigePretension = v.remuneracion?.tipo !== undefined
+    && v.remuneracion.tipo !== 'OCULTA'
+
   const sinResponder = requisitos.filter((r) => respuestas[r.id] === undefined)
   const noCumple = requisitos.filter((r) => respuestas[r.id] === 'no')
 
@@ -213,6 +298,21 @@ export function Postular() {
     }
     if (!resultado.trim()) {
       nuevos.resultado = 'Cuéntanos un resultado del que te sientas orgulloso.'
+    }
+    if (exigePretension) {
+      // `aCifra` y no `Number`: `Number('3,500')` vale 3.5, y pasaria las tres
+      // comprobaciones de abajo dejando registrado que pide S/ 3.50. Ver
+      // `dominio/dinero`.
+      const numero = aCifra(pretension)
+      if (pretension.trim() === '') {
+        nuevos.pretension = 'Dinos cuánto quieres ganar: la empresa ya dijo lo suyo.'
+      } else if (numero === null || numero <= 0) {
+        nuevos.pretension = COMO_SE_ESCRIBE
+      } else if (numero > 1_000_000) {
+        // El mismo techo que aplica el backend. Que salte aqui evita que descubra
+        // el dedo de mas despues de haber subido 10 MB de curriculum.
+        nuevos.pretension = 'Esa cifra parece un error de tecleo: revísala.'
+      }
     }
     if (sinResponder.length > 0) {
       nuevos.requisitos =
@@ -268,6 +368,16 @@ export function Postular() {
         para cortarle el paso a quien llame a la API a pelo.
       */
       aceptaTratamiento: true,
+      // Solo si la vacante lo pide. El backend lo ignoraria igualmente, pero
+      // mandarlo escribiria en su registro un numero que nadie le pidio.
+      ...(exigePretension
+        ? {
+            // El `??` no puede saltar: `revisar()` ya cortó el envío si no es
+            // una cifra. Está para que el tipo sea `number` y no `number | null`.
+            pretensionMonto: aCifra(pretension) ?? 0,
+            pretensionMoneda: v.remuneracion.moneda ?? 'PEN',
+          }
+        : {}),
     })
   }
 
@@ -403,6 +513,46 @@ export function Postular() {
           />
         </section>
 
+        {/*
+          El bloque del trato, y solo si hay trato.
+
+          Va DESPUES del resultado del que se siente orgulloso y ANTES de los
+          enlaces, que es donde encaja: lo del dinero se decide con el puesto
+          fresco en la cabeza, no al final, junto al boton, cuando lo unico que
+          se quiere es terminar.
+
+          Lo que la empresa ofrece se repite aqui, arriba del campo. Estaba en
+          la pantalla anterior y ya no se ve: pedirle su cifra sin recordarle la
+          de ellos le obliga a volver atras o a decidir de memoria.
+        */}
+        {exigePretension && (
+          /*
+            Sin encabezado, a diferencia de los otros bloques: es un `<div>` y no
+            una `<section>` a proposito. Una region sin nombre es ruido en el
+            arbol de accesibilidad —se anuncia como «region» y no dice de que—,
+            y aqui la etiqueta del campo ya dice lo que se pide.
+          */
+          <div className={estilos.bloque}>
+            <div className={estilos.loQueOfrecen}>
+              <Remuneracion remuneracion={v.remuneracion} />
+            </div>
+
+            <Campo
+              etiqueta={`Tu pretensión mensual (${v.remuneracion.moneda ?? 'PEN'})`}
+              ayuda="Una cifra mensual, bruta. Puedes cambiarla en cada vacante."
+              type="text"
+              inputMode="decimal"
+              value={pretension}
+              onChange={(e) => {
+                setTocoLaPretension(true)
+                setPretension(e.target.value)
+                setErrores((x) => ({ ...x, pretension: undefined }))
+              }}
+              error={errores.pretension}
+            />
+          </div>
+        )}
+
         <section className={estilos.bloque}>
           <h2 className={estilos.tituloBloque}>Enlaces</h2>
           <p className={estilos.explicacion}>
@@ -439,12 +589,6 @@ export function Postular() {
         {requisitos.length > 0 && (
           <section className={estilos.requisitos}>
             <h2>Requisitos indispensables</h2>
-            <p className={estilos.avisoRequisitos}>
-              Léelos con calma y responde con sinceridad.{' '}
-              <b>Es lo único que el sistema decide solo</b>: si no cumples alguno, tu
-              postulación se cierra al enviarla y no podrás volver a postular a este puesto.
-            </p>
-
             <div className={estilos.listaRequisitos}>
               {requisitos.map((r) => (
                 <Requisito

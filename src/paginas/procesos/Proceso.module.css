@@ -351,3 +351,70 @@
     margin-top: var(--e7);
   }
 }
+
+/*
+ * El trato del sueldo: lo que ofrecen y lo que pediste, juntos.
+ *
+ * Juntos y no en dos sitios: son las dos mitades de lo mismo, y verlas a la vez
+ * es lo unico que permite leer de un vistazo si sigue habiendo trato posible
+ * despues de que la empresa moviera su cifra.
+ */
+.trato {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--e4);
+  margin-top: var(--e5);
+  padding: var(--e4);
+  border: 1px solid var(--regla);
+  /*
+   * `--radio-menor` y NO `--radio-control`: el de control son 999px, la pildora
+   * de los botones de la casa. Sobre una caja ancha eso no redondea, la convierte
+   * en una capsula que arquea el texto de dentro.
+   */
+  border-radius: var(--radio-menor);
+  background: var(--nube);
+}
+
+.miPretension {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e1);
+  margin: 0;
+}
+
+.etiquetaPretension {
+  font-size: var(--t-micro);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tinta3);
+}
+
+/*
+ * Lo suyo se pinta con peso, pero un escalon por debajo del monto de la
+ * empresa: el de ellos es el dato de la convocatoria, el suyo es un recordatorio
+ * de lo que dijo. Dos cifras del mismo tamaño competirian por la mirada.
+ */
+.montoPretension {
+  font-size: var(--t-entradilla);
+  font-weight: 700;
+  color: var(--tinta);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Por que no hay nada que enseñar. Nunca un guion: ver el comentario del JSX. */
+.sinPretension {
+  margin: 0;
+  max-width: var(--medida-corta);
+  font-size: var(--t-menor);
+  color: var(--tinta2);
+}
+
+/* En el telefono, uno debajo del otro y a la izquierda los dos. */
+@media (max-width: 34rem) {
+  .trato {
+    flex-direction: column;
+  }
+}

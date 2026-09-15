@@ -118,6 +118,8 @@ const fila = (
   pretensionMin: null,
   pretensionMax: null,
   pretensionMoneda: null,
+  pretensionDeclarada: null,
+  pretensionDeclaradaMoneda: null,
   notaEtapa,
   notaCurriculum: null,
   adecuacion: null,

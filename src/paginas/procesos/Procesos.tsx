@@ -165,10 +165,31 @@ function Proceso({ postulacion }: { postulacion: MiPostulacion }) {
   const momento = momentoDeLaEtapa(postulacion.estado, postulacion.instrumentoEtapaTecnica)
   const idTitulo = `vacante-${postulacion.uuid}`
 
+  // Si tiene algo sin ver de ESTE proceso. Es lo que enciende el punto de la
+  // fila, y tambien lo que resalta el sueldo en su detalle: la fecha del cambio
+  // por si sola no sirve —una vacante que cambio hace un año y a la que postulo
+  // ayer no tiene ninguna novedad que contarle—.
+  const hayNovedad = (postulacion.avisosSinLeer ?? 0) > 0
+
   const cabecera = (
     <div className={estilos.cabeceraProceso}>
       <h2 className={estilos.vacante} id={idTitulo}>
         {postulacion.vacante}
+        {/*
+          El punto de la fila. Lleva texto para el lector de pantalla: quien no
+          ve la marca necesita que el titulo diga que aqui hay algo nuevo, y un
+          circulo pintado con CSS no dice nada.
+        */}
+        {hayNovedad && (
+          <>
+            <span className={estilos.puntoNovedad} aria-hidden="true" />
+            <span className="solo-lectores">
+              {' '}
+              ({postulacion.avisosSinLeer} aviso
+              {postulacion.avisosSinLeer === 1 ? '' : 's'} sin leer)
+            </span>
+          </>
+        )}
       </h2>
       {/*
         La cuenta es una sola pero los procesos son de cada empresa, asi que dos

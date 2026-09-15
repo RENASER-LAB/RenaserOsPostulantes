@@ -26,6 +26,7 @@ import { ErrorApi } from '@/api/cliente'
 import { verVacante } from '@/api/portal'
 import { useSesion } from '@/app/Sesion'
 import { rutas } from '@/rutas'
+import { Remuneracion } from '@/ui/Remuneracion'
 import estilos from './Vacante.module.css'
 
 export function Vacante() {
@@ -90,7 +91,10 @@ export function Vacante() {
 
   const v = consulta.data
   const requisitos = Array.isArray(v.requisitosObjetivos) ? v.requisitosObjetivos : []
-  const datos = [v.modalidad, v.ubicacion, v.horario, v.compensacionPublica].filter(Boolean)
+  // El sueldo sale del grupo de pastillas y se pinta aparte, debajo: es lo
+  // primero que se busca en una convocatoria, y como una pastilla mas junto a
+  // «Hibrido» y «Arequipa» se pierde. Ver `ui/Remuneracion`.
+  const datos = [v.modalidad, v.ubicacion, v.horario].filter(Boolean)
 
   return (
     <div className={estilos.pagina}>
@@ -115,6 +119,14 @@ export function Vacante() {
             ))}
           </div>
         )}
+        {/*
+          Aqui arriba y no en un bloque de mas abajo. Si la empresa lo publica,
+          es la segunda cosa que se mira despues del titulo; y si no lo publica,
+          decirlo pronto ahorra leer la convocatoria entera buscandolo.
+        */}
+        <div className={estilos.sueldo}>
+          <Remuneracion remuneracion={v.remuneracion} />
+        </div>
       </div>
 
       {v.proposito && (

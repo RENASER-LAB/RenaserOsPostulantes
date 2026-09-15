@@ -2411,3 +2411,17 @@ th.columnaCifra {
   padding-top: var(--e4);
   margin-top: var(--e2);
 }
+
+/*
+ * Por que esta ficha no enseña ninguna pretension.
+ *
+ * Con la tinta secundaria y no con la del dato: es una explicacion, no un valor.
+ * Pintarla igual que «Pide S/ 3 800» haria que la frase compitiera con las
+ * cifras que si hay, en la pantalla donde se decide.
+ */
+.porQueSinPretensionFicha {
+  margin: var(--e2) 0 0;
+  max-width: var(--medida-corta);
+  font-size: var(--t-menor);
+  color: var(--tinta2);
+}

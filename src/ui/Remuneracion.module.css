@@ -1,0 +1,91 @@
+/*
+ * El sueldo de una vacante.
+ *
+ * El monto es lo mayor del bloque —por debajo del titular, por encima de todo
+ * lo demas— porque es lo primero que se busca en una convocatoria y fingir lo
+ * contrario solo obliga a buscarlo dos veces.
+ *
+ * El resaltado es `--duda`, «lo que cambia tu decision», y nunca `--activo`: en
+ * «El canto» el violeta significa una sola cosa, «te toca a ti», y que le
+ * cambien el sueldo no le da ningun turno.
+ */
+
+.bloque,
+.oculta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--e1) var(--e3);
+  margin: 0;
+}
+
+/*
+ * La etiqueta ocupa la fila entera. Sin esto, «Remuneración» y «S/ 3 500» se
+ * leen como una linea sola y el monto pierde el tamaño que se le dio.
+ */
+.etiqueta {
+  flex-basis: 100%;
+  font-size: var(--t-micro);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tinta3);
+}
+
+.monto {
+  font-size: var(--t-destacado);
+  font-weight: 700;
+  color: var(--tinta);
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * «Segun experiencia», solo en los rangos.
+ *
+ * Un rango sin esta frase invita a leer el maximo como la oferta, y el minimo
+ * como letra pequeña. Decirlo evita la conversacion incomoda de mas adelante.
+ */
+.matiz {
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+}
+
+/* Lo que la empresa decidio no decir, dicho. */
+.sinPublicar {
+  font-size: var(--t-prosa);
+  color: var(--tinta2);
+}
+
+/*
+ * «Actualizado el …». Fila propia: es un pie del monto, no un dato a su lado.
+ */
+.actualizado {
+  flex-basis: 100%;
+  font-size: var(--t-menor);
+  font-weight: 600;
+  color: var(--duda-tinta);
+}
+
+/*
+ * Lo que cambio desde la ultima vez que entro.
+ *
+ * Filete en el canto izquierdo y bruma tenue: la regla 4 del mundo dice que el
+ * color vive en el borde y el campo donde se lee se queda en nube. Un relleno
+ * ambar bajo una cifra de 24px la haria ilegible y gritaria mas que el titular.
+ */
+.resaltado {
+  padding: var(--e3) var(--e4);
+  border-left: 3px solid var(--duda);
+  border-radius: 0 var(--radio-menor) var(--radio-menor) 0;
+  background: var(--duda-bruma);
+}
+
+.resaltado .etiqueta,
+.resaltado .actualizado {
+  color: var(--duda-tinta);
+}
+
+/*
+ * Quien pidio menos animacion no recibe ninguna: este bloque no se mueve nunca.
+ * Se deja escrito para que nadie le añada un parpadeo «para que se note».
+ */

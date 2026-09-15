@@ -123,6 +123,7 @@ import {
   type QueTraeLaTanda,
   type Vista,
 } from './ranking'
+import { RemuneracionDeLaVacante } from './Remuneracion'
 import estilos from './Vacante.module.css'
 
 /**
@@ -480,6 +481,15 @@ export function VacantePanelDetalle() {
         hidden={!mostrarAjustes}
         aria-label="Configuración de la vacante"
       >
+        {/*
+          El sueldo va PRIMERO, antes de lo que responderá quien postule.
+
+          Es lo unico de esta pantalla que le llega al candidato en el momento
+          —correo y aviso en su portal—, y ademas decide si al postular se le va
+          a exigir su pretension. Debajo de los desplegables de plantillas se
+          encontraria buscandolo.
+        */}
+        <RemuneracionDeLaVacante vacante={v} />
         <ConfiguracionDeLaVacante vacante={v} />
         <Requisitos vacanteId={vacanteId} />
         {v.estado === 'PUBLICADA' && (
@@ -756,7 +766,14 @@ function Ranking({
     El motivo NO se adivina mirando los nulos: `puedeVerPretension` viaja en la
     respuesta justamente para poder decir cuál de los dos es.
   */
-  const trae = queTraeLaTanda(filas, cabeceraDelCv.puedeVerPretension)
+  const trae = queTraeLaTanda(
+    filas,
+    cabeceraDelCv.puedeVerPretension,
+    // El tercer motivo por el que la columna puede venir vacía, y el único que
+    // se arregla desde el panel: esta vacante no publica lo que paga, así que a
+    // nadie se le exigió decir lo suyo. Ver `porQueNoHayPretension`.
+    cabeceraDelCv.vacanteMuestraSueldo !== false,
+  )
   /*
     Adecuacion y potencial son dimensiones del retrato que sale del curriculum,
     no de la prueba ni de la simulacion. Enseñarlas en las cinco pestañas hacia
@@ -1874,7 +1891,10 @@ function BarraDeFiltros({
               */}
               {!trae.hayPretension ? (
                 <p className={estilos.porQueNoSale}>
-                  {porQueNoHayPretension(trae.puedeVerPretension)}
+                  {porQueNoHayPretension(
+                    trae.puedeVerPretension,
+                    trae.vacanteMuestraSueldo,
+                  )}
                 </p>
               ) : (
                 <>
@@ -2016,6 +2036,28 @@ function DetalleDelPostulante({ fila, etapa }: { fila: FilaRanking; etapa: Etapa
               Postuló el {formatearFechaCorta(ficha.data.creadoEn)} ·{' '}
               {ficha.data.estadoNombre}
             </p>
+            {/*
+              Lo que pidió, o por qué no hay nada que enseñar.
+
+              Aquí y no solo en la tabla: esta es la pantalla donde se decide
+              sobre UNA persona, y decidir sin saber si su cifra entra en el
+              presupuesto es descubrirlo en la llamada.
+
+              El motivo del hueco viene escrito del servidor porque son tres y
+              solo uno es verdad cada vez — y el único que el panel podría
+              deducir por su cuenta es justo el que acusa al candidato.
+            */}
+            {ficha.data.pretensionDeclarada ? (
+              <p className={estilos.dato}>
+                <b>Pide {ficha.data.pretensionDeclarada}</b> al mes
+              </p>
+            ) : (
+              ficha.data.porQueSinPretension && (
+                <p className={estilos.porQueSinPretensionFicha}>
+                  {ficha.data.porQueSinPretension}
+                </p>
+              )
+            )}
             {ficha.data.resultadoOrgulloso && (
               <>
                 <h4 className={estilos.subtitulo}>El resultado del que está orgulloso</h4>

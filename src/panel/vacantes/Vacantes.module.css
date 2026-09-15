@@ -373,3 +373,16 @@
 .resultados .rejilla {
   width: 100%;
 }
+
+/*
+ * El bloque del sueldo en el alta.
+ *
+ * Fuera de la rejilla de campos a proposito: las tres formas se eligen con
+ * tarjetas que llevan su consecuencia escrita debajo, y eso no cabe en una
+ * celda junto a «Horario».
+ */
+.bloqueRemuneracion {
+  margin-top: var(--e5);
+  padding-top: var(--e5);
+  border-top: 1px solid var(--regla);
+}

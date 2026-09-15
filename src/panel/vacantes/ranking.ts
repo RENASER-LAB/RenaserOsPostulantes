@@ -1100,6 +1100,21 @@ const CIFRA = new Intl.NumberFormat('es-PE', { maximumFractionDigits: 2 })
  * Una moneda que no se conozca viaja con su código delante (`EUR 3,000`).
  */
 export function pretensionDicha(fila: FilaRanking): string | null {
+  /*
+    La declarada AL POSTULAR AQUI manda sobre la del perfil, y no es un matiz.
+
+    La del perfil es su expectativa general, escrita una vez y quiza hace meses,
+    sin mirar esta vacante. La declarada la confirmo delante del sueldo de ESTE
+    puesto — es la cifra con la que se va a negociar. Enseñar la del perfil
+    teniendo la otra seria decidir con el numero equivocado.
+  */
+  if (fila.pretensionDeclarada != null) {
+    const moneda = fila.pretensionDeclaradaMoneda ?? null
+    const simbolo = moneda == null ? '' : (SIMBOLO_DE_MONEDA[moneda] ?? moneda)
+    const cifra = CIFRA.format(fila.pretensionDeclarada)
+    return simbolo === '' ? cifra : `${simbolo} ${cifra}`
+  }
+
   const min = fila.pretensionMin ?? null
   const max = fila.pretensionMax ?? null
   if (min == null && max == null) return null
@@ -1438,6 +1453,12 @@ export interface QueTraeLaTanda {
    * pinte el aviso necesita las dos cosas a la vez, esté donde esté.
    */
   puedeVerPretension: boolean
+  /**
+   * Si ESTA vacante publica lo que paga (V54). Viaja por lo mismo que el
+   * anterior: es el tercer motivo por el que la columna puede estar vacía, y el
+   * único que es una decisión de la empresa y no del candidato.
+   */
+  vacanteMuestraSueldo: boolean
 }
 
 /** Lo que se supone cuando nadie ha mirado las filas: que están las dos. */
@@ -1445,17 +1466,25 @@ const TRAE_TODO: QueTraeLaTanda = {
   hayCiudad: true,
   hayPretension: true,
   puedeVerPretension: true,
+  vacanteMuestraSueldo: true,
 }
 
 export const queTraeLaTanda = (
   filas: FilaRanking[],
   puedeVerPretension = true,
+  vacanteMuestraSueldo = true,
 ): QueTraeLaTanda => ({
   hayCiudad: filas.some((f) => f.ciudad != null || f.ciudadCodigo != null),
   hayPretension:
     puedeVerPretension &&
-    filas.some((f) => f.pretensionMin != null || f.pretensionMax != null),
+    filas.some(
+      (f) =>
+        f.pretensionDeclarada != null ||
+        f.pretensionMin != null ||
+        f.pretensionMax != null,
+    ),
   puedeVerPretension,
+  vacanteMuestraSueldo,
 })
 
 /**
@@ -1474,13 +1503,40 @@ export const POR_QUE_NO_HAY_CIUDAD =
  * viaja: sin esa señal la frase tenía que nombrar los dos motivos sin afirmar
  * ninguno, y una pantalla que enumera hipótesis no está informando.
  */
-export const porQueNoHayPretension = (puedeVerPretension: boolean): string =>
-  puedeVerPretension
-    ? 'Ninguno de estos candidatos declaró pretensión salarial. La columna no sale ' +
-      'porque no hay nada que poner en ella, no porque esté oculta.'
-    : 'Tu rol no puede ver la pretensión salarial —solo Dirección la ve, para que el ' +
+export const porQueNoHayPretension = (
+  puedeVerPretension: boolean,
+  /**
+   * Si esta vacante publica lo que paga (V54). `undefined` contra un backend
+   * anterior: entonces se cae al texto de siempre, que sigue siendo cierto.
+   */
+  vacanteMuestraSueldo?: boolean,
+): string => {
+  if (!puedeVerPretension) {
+    return (
+      'Tu rol no puede ver la pretensión salarial —solo Dirección la ve, para que el ' +
       'sueldo no pese al calificar—. El dato ni se consultó: que no salga NO quiere ' +
       'decir que estos candidatos no pidieran sueldo.'
+    )
+  }
+  /*
+    El tercer motivo, y el unico que es una decision de la empresa y no del
+    candidato: esta vacante no publica lo que paga, asi que a nadie se le exigio
+    decir lo suyo. Sin esta frase, una columna vacia se lee como una tanda de
+    gente reservada — cuando en realidad es el trato funcionando como se diseño.
+  */
+  if (vacanteMuestraSueldo === false) {
+    return (
+      'Esta vacante no publica su remuneración, así que a nadie se le pidió la suya: ' +
+      'es el trato: quien no enseña lo que paga tampoco pregunta lo que piden. ' +
+      'Publícala en la configuración de la vacante y quien postule desde entonces ' +
+      'tendrá que declararla.'
+    )
+  }
+  return (
+    'Ninguno de estos candidatos declaró pretensión salarial. La columna no sale ' +
+    'porque no hay nada que poner en ella, no porque esté oculta.'
+  )
+}
 
 /**
  * Las columnas de la tabla, en su orden, y **la única fuente del `colSpan`**.

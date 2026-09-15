@@ -61,6 +61,22 @@ async function rellenarElFormulario(page: Page) {
     await grupo.getByText('Sí', { exact: true }).click()
     await expect(grupo.getByRole('radio', { name: 'Sí' })).toBeChecked()
   }
+  /*
+    La pretensión, si esta vacante la pide.
+
+    Sale SOLO cuando la vacante publica lo que paga (V54), y el sembrador crea
+    una de cada clase — así que este mismo recorrido pasa por las dos según a
+    qué vacante apunte. Con el campo delante y sin rellenar, el envío se queda
+    en la misma página y el fallo se lee como «postular está roto» cuando lo que
+    pasa es que falta un dato obligatorio.
+
+    Prellenado suele venir del perfil, pero estas cuentas nacen sin él: se
+    escribe siempre, que además es lo que hace de verdad una persona.
+  */
+  const pretension = page.getByLabel(/Tu pretensión mensual/)
+  if (await pretension.isVisible().catch(() => false)) {
+    await pretension.fill('3500')
+  }
 }
 
 test.describe('Regresión · postular de punta a punta', () => {

@@ -17,7 +17,9 @@ import type {
   CrearSesion,
   FichaPostulacion,
   InscritoEnSesion,
+  ActualizarRemuneracion,
   GuardarVacante,
+  RemuneracionActualizadaResponse,
   GuardarPuesto,
   EnlaceArchivo,
   EntregaDeLaPrueba,
@@ -134,6 +136,18 @@ export const crearVacante = (datos: GuardarVacante) =>
   pedir<VacantePanel>('/vacantes', { metodo: 'POST', cuerpo: datos })
 export const editarVacante = (id: number, datos: GuardarVacante) =>
   pedir<VacantePanel>(`/vacantes/${id}`, { metodo: 'PUT', cuerpo: datos })
+/**
+ * Definir o cambiar lo que la vacante paga.
+ *
+ * Verbo propio y no un campo del PUT general: si la vacante esta publicada, este
+ * cambio le manda un correo y un aviso a cada candidato que sigue en carrera.
+ */
+export const actualizarRemuneracion = (id: number, datos: ActualizarRemuneracion) =>
+  pedir<RemuneracionActualizadaResponse>(`/vacantes/${id}/remuneracion`, {
+    metodo: 'POST',
+    cuerpo: datos,
+  })
+
 export const publicarVacante = (id: number) =>
   pedir<void>(`/vacantes/${id}/publicacion`, { metodo: 'POST' })
 export const cerrarVacante = (id: number, motivo: string) =>
