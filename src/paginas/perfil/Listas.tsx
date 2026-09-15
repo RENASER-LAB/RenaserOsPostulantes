@@ -261,6 +261,7 @@ export function Fila({
             onClick={onConfirmar}
             disabled={ocupado}
             aria-label={`Confirmar ${queEs}`}
+            data-rotulo="Está bien"
           >
             Está bien
           </button>
@@ -565,6 +566,7 @@ export function useEmpleos() {
                 className={estilos.guardar}
                 type="submit"
                 disabled={ocupado}
+                data-rotulo={ocupado ? "Guardando…" : "Guardar"}
               >
                 {ocupado ? "Guardando…" : "Guardar"}
               </button>
@@ -573,6 +575,7 @@ export function useEmpleos() {
                 type="button"
                 onClick={cerrar}
                 disabled={ocupado}
+                data-rotulo="Dejarlo"
               >
                 Dejarlo
               </button>
@@ -586,6 +589,7 @@ export function useEmpleos() {
               setValores(EXPERIENCIA_VACIA);
               setEditando("nueva");
             }}
+            data-rotulo="Añadir experiencia"
           >
             Añadir experiencia
           </button>
@@ -779,6 +783,7 @@ export function useEstudios({ niveles }: { niveles: OpcionCatalogo[] }) {
                 className={estilos.guardar}
                 type="submit"
                 disabled={ocupado}
+                data-rotulo={ocupado ? "Guardando…" : "Guardar"}
               >
                 {ocupado ? "Guardando…" : "Guardar"}
               </button>
@@ -787,6 +792,7 @@ export function useEstudios({ niveles }: { niveles: OpcionCatalogo[] }) {
                 type="button"
                 onClick={cerrar}
                 disabled={ocupado}
+                data-rotulo="Dejarlo"
               >
                 Dejarlo
               </button>
@@ -800,6 +806,7 @@ export function useEstudios({ niveles }: { niveles: OpcionCatalogo[] }) {
               setValores(EDUCACION_VACIA);
               setEditando("nueva");
             }}
+            data-rotulo="Añadir estudios"
           >
             Añadir estudios
           </button>
@@ -1096,6 +1103,7 @@ export function Idiomas({
               className={estilos.guardar}
               type="submit"
               disabled={ocupado}
+              data-rotulo={ocupado ? "Guardando…" : "Guardar"}
             >
               {ocupado ? "Guardando…" : "Guardar"}
             </button>
@@ -1104,6 +1112,7 @@ export function Idiomas({
               type="button"
               onClick={cerrar}
               disabled={ocupado}
+              data-rotulo="Dejarlo"
             >
               Dejarlo
             </button>
@@ -1119,6 +1128,7 @@ export function Idiomas({
             setNivel("");
             setEditando("nueva");
           }}
+          data-rotulo="Añadir idioma"
         >
           Añadir idioma
         </button>
@@ -1250,6 +1260,7 @@ export function useCertificados() {
                 className={estilos.guardar}
                 type="submit"
                 disabled={ocupado}
+                data-rotulo={ocupado ? "Guardando…" : "Guardar"}
               >
                 {ocupado ? "Guardando…" : "Guardar"}
               </button>
@@ -1258,6 +1269,7 @@ export function useCertificados() {
                 type="button"
                 onClick={cerrar}
                 disabled={ocupado}
+                data-rotulo="Dejarlo"
               >
                 Dejarlo
               </button>
@@ -1271,6 +1283,7 @@ export function useCertificados() {
               setValores(CERTIFICACION_VACIA);
               setEditando("nueva");
             }}
+            data-rotulo="Añadir certificación"
           >
             Añadir certificación
           </button>
@@ -1571,6 +1584,7 @@ export function Enlaces({ filas }: { filas: EnlacePerfil[] }) {
               className={estilos.guardar}
               type="submit"
               disabled={ocupado}
+              data-rotulo={ocupado ? "Guardando…" : "Guardar"}
             >
               {ocupado ? "Guardando…" : "Guardar"}
             </button>
@@ -1579,6 +1593,7 @@ export function Enlaces({ filas }: { filas: EnlacePerfil[] }) {
               type="button"
               onClick={cerrar}
               disabled={ocupado}
+              data-rotulo="Dejarlo"
             >
               Dejarlo
             </button>
@@ -1589,6 +1604,7 @@ export function Enlaces({ filas }: { filas: EnlacePerfil[] }) {
           className={estilos.anadir}
           type="button"
           onClick={() => setAnadiendo(true)}
+          data-rotulo="Añadir enlace"
         >
           Añadir enlace
         </button>

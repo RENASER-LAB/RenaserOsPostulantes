@@ -154,6 +154,7 @@ export function Postular() {
             type="button"
             className={estilos.reintentar}
             onClick={() => void vacante.refetch()}
+            data-rotulo="Intentar de nuevo"
           >
             Intentar de nuevo
           </button>
@@ -346,6 +347,7 @@ export function Postular() {
                 onClick={() => campoArchivo.current?.click()}
                 aria-invalid={errores.cv ? true : undefined}
                 aria-describedby={errores.cv ? 'error-cv' : undefined}
+                data-rotulo="Buscar en mi equipo"
               >
                 Buscar en mi equipo
               </button>
@@ -517,7 +519,12 @@ export function Postular() {
               {fallo}
             </p>
           )}
-          <button type="submit" className={estilos.enviar} disabled={envio.isPending}>
+          <button
+            type="submit"
+            className={estilos.enviar}
+            disabled={envio.isPending}
+            data-rotulo={envio.isPending ? 'Enviando…' : 'Enviar mi postulación'}
+          >
             {envio.isPending ? 'Enviando…' : 'Enviar mi postulación'}
           </button>
         </div>
@@ -553,6 +560,7 @@ export function Postular() {
             className={estilos.enviarIgual}
             onClick={mandar}
             disabled={envio.isPending}
+            data-rotulo="Enviarla de todos modos"
           >
             Enviarla de todos modos
           </button>

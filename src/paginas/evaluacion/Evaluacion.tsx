@@ -443,6 +443,7 @@ export function Evaluacion() {
             type="button"
             className={estilos.reintentar}
             onClick={() => void consulta.refetch()}
+            data-rotulo="Intentar de nuevo"
           >
             Intentar de nuevo
           </button>
@@ -518,6 +519,7 @@ export function Evaluacion() {
             className={estilos.empezar}
             onClick={() => inicio.mutate()}
             disabled={inicio.isPending}
+            data-rotulo={inicio.isPending ? 'Abriendo…' : 'Empezar evaluación'}
           >
             {inicio.isPending ? 'Abriendo…' : 'Empezar evaluación'}
           </button>
@@ -532,7 +534,11 @@ export function Evaluacion() {
         <div className={estilos.marco}>
           <h1>No hay preguntas pendientes.</h1>
           <p className={estilos.marcoTexto}>Tu evaluación no tiene preguntas que mostrar.</p>
-          <Link className={estilos.reintentar} to={rutas.proceso(uuid)}>
+          <Link
+            className={estilos.reintentar}
+            to={rutas.proceso(uuid)}
+            data-rotulo="Volver a mi proceso"
+          >
             Volver a mi proceso
           </Link>
         </div>
@@ -856,6 +862,7 @@ export function Evaluacion() {
                 className={estilos.anterior}
                 onClick={() => navegarA(indice - 1)}
                 disabled={indice === 0}
+                data-rotulo="Anterior"
               >
                 Anterior
               </button>
@@ -892,7 +899,12 @@ export function Evaluacion() {
         onCerrar={() => setConfirmarEntrega(false)}
         pie={
           <>
-            <button type="button" className={estilos.seguir} onClick={() => setConfirmarEntrega(false)}>
+            <button
+              type="button"
+              className={estilos.seguir}
+              onClick={() => setConfirmarEntrega(false)}
+              data-rotulo="Seguir revisando"
+            >
               Seguir revisando
             </button>
             <button
@@ -902,6 +914,7 @@ export function Evaluacion() {
               // Entregar con algo sin guardar es entregar sin esa respuesta, y
               // el backend ademas rechaza la entrega si falta alguna.
               disabled={entrega.isPending || sinConfirmar.length > 0 || faltan > 0}
+              data-rotulo={entrega.isPending ? 'Entregando…' : 'Entregar'}
             >
               {entrega.isPending ? 'Entregando…' : 'Entregar'}
             </button>

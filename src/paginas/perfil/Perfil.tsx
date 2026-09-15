@@ -96,6 +96,7 @@ function SalirDeLaCuenta() {
         salir()
         navegar(rutas.vacantes())
       }}
+      data-rotulo="Cerrar sesión"
     >
       Cerrar sesión
     </button>
@@ -181,6 +182,7 @@ export function Perfil() {
               type="button"
               className={estilos.reintentar}
               onClick={() => void consulta.refetch()}
+              data-rotulo="Intentar de nuevo"
             >
               Intentar de nuevo
             </button>
@@ -608,7 +610,12 @@ function Cabecera({
           «Editar» por cada fila de cada lista, y en la lista de botones de un
           lector de pantalla todos serian la misma entrada.
         */}
-        <button className={estilos.anadir} type="button" onClick={() => setEditando(true)}>
+        <button
+          className={estilos.anadir}
+          type="button"
+          onClick={() => setEditando(true)}
+          data-rotulo={vacia ? 'Escribir sobre ti' : 'Editar lo tuyo'}
+        >
           {vacia ? 'Escribir sobre ti' : 'Editar lo tuyo'}
         </button>
       </section>
@@ -729,7 +736,12 @@ function Cabecera({
         )}
 
         <div className={estilos.pieFormulario}>
-          <button className={estilos.guardar} type="submit" disabled={guardado.isPending}>
+          <button
+            className={estilos.guardar}
+            type="submit"
+            disabled={guardado.isPending}
+            data-rotulo={guardado.isPending ? 'Guardando…' : 'Guardar'}
+          >
             {guardado.isPending ? 'Guardando…' : 'Guardar'}
           </button>
           <button
@@ -742,6 +754,7 @@ function Cabecera({
               setEditando(false)
             }}
             disabled={guardado.isPending}
+            data-rotulo="Dejarlo"
           >
             Dejarlo
           </button>

@@ -38,13 +38,13 @@ Tres avisos que no se ponen detrás de un enlace, porque llegan tarde:
 candidato está completa.** Fondo **pastel cálido `#FBF1E9`** con las superficies en nube blanca
 encima, que es lo que las separa. **Acción en negro `#0A0A0A`** con radio 4 px, coral `#FF7C61`
 para «te toca a ti» —y, en la
-cabecera, también para el destino actual y el botón «Ingresar»—, Figtree. Las diecisiete
+cabecera, también para el destino actual y el botón «Iniciar sesión»—, Figtree. Las diecisiete
 pantallas están compuestas; `/admin` queda fuera por alcance y conserva la disposición
 anterior.
 
 ⚠️ **La cabecera no se ve hasta que bajas.** Es una barra insertada 8 px del borde que saca su
-superficie al primer scroll. `--alto-cabecera` son **68 px medidos**, y el 11/09/2026 pasó por
-61 y por 76: si tocas su relleno, vuelve a medirlo en el navegador.
+superficie al primer scroll. `--alto-cabecera` son **70 px medidos**, y ha pasado por 61, 76 y
+68: si tocas su relleno **o el alto del botón «Iniciar sesión»**, vuelve a medirlo en el navegador.
 
 Lo que se toca al componer una pantalla nueva vive en tres sitios y **ninguno se escribe a
 mano en la hoja de la pantalla**: los tokens en [`mundo.css`](src/estilos/mundo.css), los

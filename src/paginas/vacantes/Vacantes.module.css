@@ -40,11 +40,17 @@
  *
  * Va DENTRO de la frase y no suelta encima: fuera seria una decoracion colgando.
  *
- * ⚠️ **El resplandor rosa viene dentro del PNG, no de CSS.** La imagen es
- * cuadrada y **la loseta ocupa solo el 73 % del lado**; el resto es el halo. Por
- * eso el ancho de aqui no es el tamaño que se ve: **con 1,32em de imagen la
- * loseta mide 0,96em**, que es lo que se ve. Si algun dia se recorta el PNG mas
- * ajustado, este numero cambia.
+ * ⚠️ **El ancho de aqui NO es el tamaño que se ve.** La imagen es cuadrada y el
+ * dibujo no la llena: **la loseta de delante ocupa el 78,5 % del lado** y el
+ * resto lo ocupa la loseta girada de detras y el aire. Con 1,08em de imagen se
+ * ven 45 px de loseta, que es la medida con la que se compuso el titular.
+ *
+ * ⚠️ **Esa fraccion cambia con el archivo, y ya cambio una vez.** El PNG del
+ * 11/09/2026 traia un halo rosa pintado dentro y la loseta era el 73 %: 1,32em
+ * de imagen para los mismos 45 px. El del 15/09 va recortado al ras, asi que la
+ * misma anchura lo dejaba en 55 px y la loseta se metia dentro de la palabra
+ * «trabajo». Si se vuelve a cambiar la imagen, **se mide la fraccion y se vuelve
+ * a sacar el ancho**, no se deja el numero de antes.
  *
  * ⚠️ **Se alinea con `middle` y no con un desplazamiento desde la linea base.**
  * Con `vertical-align: -0.34em` la imagen colgaba 20 px por debajo de la base y
@@ -57,15 +63,17 @@
  * `middle` a secas el titular se va a 115 px, peor que antes; con margen negativo
  * pero descolgada de la base, a 111. Juntas, 106 —lo mismo que sin imagen—.
  *
- * Los margenes negativos horizontales recuperan el aire que el halo transparente
- * añade a los lados.
+ * ⚠️ **El margen horizontal es POSITIVO desde el 15/09/2026**, y antes era
+ * negativo. Con el PNG anterior habia que recuperar el aire que el halo
+ * transparente metia a los lados; el de ahora va al ras y lo que hace falta es
+ * justo lo contrario, separarlo de la palabra que tiene al lado.
  */
 .pieza {
   display: inline-block;
-  width: 1.32em;
-  height: 1.32em;
-  margin-block: -0.3em;
-  margin-inline: -0.08em;
+  width: 1.08em;
+  height: 1.08em;
+  margin-block: -0.18em;
+  margin-inline: 0.06em;
   vertical-align: middle;
 }
 

@@ -127,6 +127,7 @@ export function Privacidad() {
                 className={estilos.secundario}
                 type="button"
                 onClick={() => void consulta.refetch()}
+                data-rotulo="Intentar de nuevo"
               >
                 Intentar de nuevo
               </button>
@@ -173,6 +174,7 @@ export function Privacidad() {
             type="button"
             onClick={() => futuros.mutate()}
             disabled={futuros.isPending}
+            data-rotulo={futuros.isPending ? 'Retirando…' : 'Retirar el permiso'}
           >
             {futuros.isPending ? 'Retirando…' : 'Retirar el permiso'}
           </button>
@@ -220,6 +222,7 @@ export function Privacidad() {
               className={estilos.cancelar}
               type="button"
               onClick={() => setPorRetirar(null)}
+              data-rotulo="Cancelar"
             >
               Cancelar
             </button>
@@ -258,6 +261,7 @@ export function Privacidad() {
               className={estilos.cancelar}
               type="button"
               onClick={() => setConfirmarBorrado(false)}
+              data-rotulo="Cancelar"
             >
               Cancelar
             </button>

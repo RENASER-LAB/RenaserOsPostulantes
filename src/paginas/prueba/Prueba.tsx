@@ -205,6 +205,7 @@ function Entregable({
               type="button"
               onClick={() => url.mutate(enlace.trim())}
               disabled={bloqueado || !enlace.trim() || url.isPending}
+              data-rotulo={url.isPending ? 'Guardando…' : 'Guardar enlace'}
             >
               {url.isPending ? 'Guardando…' : 'Guardar enlace'}
             </button>
@@ -227,6 +228,7 @@ function Entregable({
               type="button"
               onClick={() => campoArchivo.current?.click()}
               disabled={bloqueado || archivo.isPending}
+              data-rotulo={archivo.isPending ? 'Subiendo…' : 'Seleccionar archivo'}
             >
               {archivo.isPending ? 'Subiendo…' : 'Seleccionar archivo'}
             </button>
@@ -479,6 +481,7 @@ export function Prueba() {
             type="button"
             className={estilos.reintentar}
             onClick={() => void consulta.refetch()}
+            data-rotulo="Intentar de nuevo"
           >
             Intentar de nuevo
           </button>
@@ -511,7 +514,11 @@ export function Prueba() {
             {hayEntregables &&
               ` Recibimos ${prueba.entregables.filter((e) => e.entregado).length} de ${prueba.entregables.length} entregables.`}
           </p>
-          <Link className={estilos.volverAlProceso} to={rutas.proceso(uuid)}>
+          <Link
+            className={estilos.volverAlProceso}
+            to={rutas.proceso(uuid)}
+            data-rotulo="Volver a mi proceso"
+          >
             Volver a mi proceso
           </Link>
         </div>
@@ -649,6 +656,7 @@ export function Prueba() {
                 className={estilos.empezar}
                 style={{ width: '100%', marginTop: 'var(--e4)' }}
                 onClick={() => setConfirmarInicio(true)}
+                data-rotulo="Empezar prueba"
               >
                 Empezar prueba
               </button>
@@ -818,6 +826,7 @@ export function Prueba() {
                   type="button"
                   className={estilos.entregar}
                   onClick={() => setConfirmarEntrega(true)}
+                  data-rotulo="Entregar prueba"
                 >
                   Entregar prueba
                 </button>
@@ -833,7 +842,12 @@ export function Prueba() {
         onCerrar={() => setConfirmarInicio(false)}
         pie={
           <>
-            <button type="button" className={estilos.cancelar} onClick={() => setConfirmarInicio(false)}>
+            <button
+              type="button"
+              className={estilos.cancelar}
+              onClick={() => setConfirmarInicio(false)}
+              data-rotulo="Aún no"
+            >
               Aún no
             </button>
             <button
@@ -841,6 +855,7 @@ export function Prueba() {
               className={estilos.confirmar}
               onClick={() => inicio.mutate()}
               disabled={inicio.isPending}
+              data-rotulo={inicio.isPending ? 'Abriendo…' : 'Sí, empezar'}
             >
               {inicio.isPending ? 'Abriendo…' : 'Sí, empezar'}
             </button>
@@ -868,7 +883,12 @@ export function Prueba() {
         onCerrar={() => setConfirmarEntrega(false)}
         pie={
           <>
-            <button type="button" className={estilos.cancelar} onClick={() => setConfirmarEntrega(false)}>
+            <button
+              type="button"
+              className={estilos.cancelar}
+              onClick={() => setConfirmarEntrega(false)}
+              data-rotulo="Seguir revisando"
+            >
               Seguir revisando
             </button>
             <button
@@ -877,6 +897,7 @@ export function Prueba() {
               onClick={() => entrega.mutate()}
               // Entregar con algo sin guardar es entregar sin esa respuesta.
               disabled={entrega.isPending || sinGuardar.length > 0}
+              data-rotulo={entrega.isPending ? 'Entregando…' : 'Entregar'}
             >
               {entrega.isPending ? 'Entregando…' : 'Entregar'}
             </button>

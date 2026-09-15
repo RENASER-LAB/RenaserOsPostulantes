@@ -80,7 +80,12 @@ export function Modal({ abierto, titulo, onCerrar, children, pie }: Props) {
         <div className={estilos.cuerpo}>{children}</div>
         <div className={estilos.pie}>
           {pie ?? (
-            <button className={estilos.cerrarPie} type="button" onClick={onCerrar}>
+            <button
+              className={estilos.cerrarPie}
+              type="button"
+              onClick={onCerrar}
+              data-rotulo="Cerrar"
+            >
               Cerrar
             </button>
           )}

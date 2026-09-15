@@ -109,7 +109,12 @@ export function Ingresar() {
           </p>
         )}
 
-        <button type="submit" className={estilos.enviar} disabled={entrando}>
+        <button
+          type="submit"
+          className={estilos.enviar}
+          disabled={entrando}
+          data-rotulo={entrando ? 'Entrando…' : 'Entrar'}
+        >
           {entrando ? 'Entrando…' : 'Entrar'}
         </button>
       </form>

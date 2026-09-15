@@ -104,7 +104,11 @@ export function Seguimiento({ postulacion, fechas, etapaDeCorte }: Props) {
           <h3 className={estilos.abiertoTitulo}>{momento.titulo}</h3>
           <p className={estilos.abiertoAyuda}>{momento.ayuda}</p>
           <div className={estilos.abiertoPie}>
-            <Link className={estilos.accion} to={momento.accion.destino(postulacion.uuid)}>
+            <Link
+              className={estilos.accion}
+              to={momento.accion.destino(postulacion.uuid)}
+              data-rotulo={momento.accion.etiqueta}
+            >
               {momento.accion.etiqueta}
             </Link>
             <span className={estilos.plazo}>

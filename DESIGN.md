@@ -109,18 +109,24 @@ spacing:
   e6: "32px"
   e7: "48px"
   e8: "72px"
+shadows:
+  nube: "0 1px 2px rgba(10,10,10,.05), 0 8px 24px rgba(10,10,10,.06)"
+  aviso: "0 12px 24px rgba(10,10,10,.10), 0 32px 64px rgba(10,10,10,.14)"
+  control: "0 3px 7px rgba(130,130,130,.15), 0 12px 12px rgba(130,130,130,.13), 0 27px 16px rgba(130,130,130,.08), 0 48px 19px rgba(130,130,130,.02)"
+  control-alta: "0 10px 15px -3px rgba(10,10,10,.1), 0 4px 6px -4px rgba(10,10,10,.1)"
 components:
   button-accion:
     backgroundColor: "{colors.activo}"
     textColor: "{colors.tinta-invertida}"
     borderColor: "{colors.activo}"
     rounded: "{rounded.control}"
-    padding: "0 32px"
-    height: "48px"
-    typography: "{typography.body}"
+    padding: "12px 20px"
+    height: "44px"
+    typography: "{typography.apoyo}"
   button-accion-hover:
     backgroundColor: "{colors.activo-pulsado}"
     textColor: "{colors.tinta-invertida}"
+    shadow: "{shadows.control-alta}"
   button-accion-disabled:
     backgroundColor: "{colors.nube-honda}"
     textColor: "{colors.tinta3}"
@@ -128,17 +134,17 @@ components:
     backgroundColor: "{colors.activo}"
     textColor: "{colors.tinta-invertida}"
     rounded: "{rounded.control}"
-    padding: "0 24px"
+    padding: "12px 16px"
     height: "44px"
-    typography: "{typography.prosa}"
+    typography: "{typography.apoyo}"
   button-secundario:
     backgroundColor: "{colors.nube}"
     textColor: "{colors.tinta}"
-    borderColor: "{colors.borde-control}"
+    shadow: "{shadows.control}"
     rounded: "{rounded.control}"
-    padding: "0 32px"
-    height: "48px"
-    typography: "{typography.body}"
+    padding: "12px 20px"
+    height: "44px"
+    typography: "{typography.apoyo}"
   button-peligroso:
     backgroundColor: "{colors.mal}"
     textColor: "{colors.tinta-invertida}"
@@ -465,33 +471,85 @@ escriben en el JSX**: cada pantalla los trae con `composes` desde su propia hoja
 el botón conserva el nombre de lo que hace y comparte la forma. Ninguna pantalla se dibuja el
 suyo.
 
-Dos alturas, y cada una con sus pesos. La de 48 px abre una pantalla; la de 44 px vive dentro
-de algo —un tramo, un aviso, una fila— y no puede pesar más que su contenedor. 44 px es el
-suelo: es el área que hace falta para acertarle con el pulgar.
+**Desde el 15/09/2026 la cara del botón es la de `originx.demos.tailgrids.com`**, medida en el
+navegador. Una sola altura, **44 px**, que además es el suelo táctil: 20 px de línea más 12 y 12
+de relleno. Lo que distingue a la pieza grande de la menor es el relleno horizontal, 20 px contra
+16, y nada más.
 
-| | 48 px | 44 px |
+| | grande | menor |
 |---|---|---|
 | **Acción** — negro pleno, texto blanco | `.acentoGrande` | `.acentoMenor` |
-| **Secundario** — nube con contorno | `.secundarioGrande` | `.secundario` |
+| **Secundario** — nube con sombra, **sin contorno** | `.secundarioGrande` | `.secundario` |
 | **Firme** — relleno de tinta | — | `.solido` |
 | **Peligroso** — rojo | `.peligroso` | `.peligrosoMenor`, `.peligrosoContorno` |
 
-- **Shape:** esquina de 4 px (`--radio-control`), sin contorno propio cuando va relleno. El
-  relleno horizontal es `--e6` a 48 px y `--e5` a 44 px; la letra, `--t-base`/600 y
-  `--t-prosa`/600.
-- **El secundario lleva contorno de `--borde-control`, y eso no es negociable.** Un control
-  pide 3:1 contra el fondo: `--borde-control` da 3,45:1 y `--regla2` se queda en 1,62:1. Una
-  sombra de 0,05 de alfa no da contraste medible.
+- **Shape:** esquina de 4 px (`--radio-control`), sin contorno, letra de **14 px y peso 500** con
+  línea fija de 20 px. Sin `letter-spacing` propio.
+- **Hover:** el de acción aclara a `#404040` y levanta `--sombra-control-alta`; el secundario
+  **no cambia nada**, igual que en la referencia: lo único que se mueve es el rótulo. Todo a
+  `300ms` con `--curva-control`, y siempre bajo `:not(:disabled)`.
 - **Peligroso:** relleno cuando es la acción destructiva principal de donde está —de la
   pantalla, o del aviso que la confirma—; de contorno cuando es una entre varias, como el
   «Retirarme» de cada fila. El contorno es `--mal` pleno y no `--mal-regla`, que da 1,56:1.
-- **Hover:** el de acción va a `#404040` y añade el halo coral; el secundario oscurece su
-  contorno a tinta; el peligroso va a `--mal-pulsado`. Siempre `160ms` con
-  `cubic-bezier(0.16, 1, 0.3, 1)` y siempre bajo `:not(:disabled)`.
+  **No gira el rótulo**: un rótulo que juega no es el gesto de algo que no se puede deshacer.
 - **Disabled:** fondo de nube honda, sin contorno propio, tinta tercera, cursor normal.
 
-⚠️ **El halo coral del hover no rompe la regla del color.** Aparece y se va con el puntero;
-la regla habla de lo que se queda pintado en la pantalla.
+⚠️ **El secundario PERDIÓ su contorno, y eso empeora el contraste.** `--borde-control` daba
+3,45:1 contra el fondo, que es lo que WCAG 1.4.11 pide al límite visible de un control; lo que
+lo sostiene ahora es `--sombra-control`, cuatro capas de gris de 3 a 48 px que ni se acercan a
+medirse. Este documento decía, literalmente, que el contorno no era negociable. Se cambió el
+15/09/2026 a petición expresa, con el número delante: la vuelta atrás es una línea,
+`border: 1px solid var(--borde-control)`.
+
+⚠️ **Se fue también el halo coral del hover**, que era un anillo de 4 px en `--activo-bruma`.
+La referencia levanta la pieza con una sombra neutra, y de paso el coral deja de aparecer en
+pantallas donde no hay ningún turno que marcar.
+
+#### El rótulo que gira
+
+Al pasar por encima, el rótulo sale por arriba y entra otro idéntico por abajo, en 300 ms. Es el
+gesto de todos los botones de la referencia.
+
+⚠️ **Hacen falta dos copias del rótulo, y ninguna es el texto real.** La referencia duplica la
+etiqueta en el árbol, y eso deja el nombre accesible del botón como «Enviar Enviar» — que además
+rompería las 620 pruebas, porque todas localizan por rol y nombre. Aquí las dos copias son
+`::before` y `::after`: el texto real se queda, sigue dando el ancho y sigue siendo el nombre
+accesible, pero se pinta transparente.
+
+⚠️ **La barra de `content: attr(data-rotulo) / ''` no es un adorno:** le da al pseudoelemento un
+texto alternativo **vacío**. Sin ella, las dos copias se sumarían al nombre accesible y
+estaríamos donde la referencia. Comprobado leyendo el árbol de accesibilidad del navegador: el
+enlace se anuncia una sola vez.
+
+⚠️ **El texto real se apaga con `-webkit-text-fill-color`, no con `color`, y esto costó un
+fallo.** Con `color: transparent` a secas el texto real **reaparecía al pasar por encima** y se
+veían tres rótulos a la vez: el fijo más los dos que giran. El motivo es especificidad —
+`.acentoGrande:hover:not(:disabled)` es (0,3,0) y declara `color`, por encima del (0,2,0) de
+`.acentoGrande[data-rotulo]`—, y lo mismo haría cualquier pantalla que le ponga color a su botón
+desde su propia hoja, donde además el orden entre archivos no es fiable. Con qué se pinta el
+glifo lo decide `-webkit-text-fill-color`, que **nadie más declara en todo el proyecto**: no hay
+pelea de cascada posible. `color` se queda también, porque es lo único que entiende un navegador
+que no llegue al `@supports`.
+
+⚠️ **Y por eso va todo dentro de un `@supports (content: 'a' / '')`.** Si el navegador no
+entiende esa sintaxis la declaración entera es inválida, no habría pseudoelementos y el botón se
+quedaría con su texto real transparente, o sea en blanco. Fuera del bloque no se toca nada.
+
+**El giro se activa con `data-rotulo` en el elemento, y eso es deliberado.** Un botón cuyo
+rótulo cambia solo —«Guardando…», «Entregando…»— recibe el atributo con la misma expresión, así
+que las dos copias cambian a la vez; los cuatro que llevan un icono dentro del rótulo no lo
+llevan y se quedan quietos, porque girar texto y dejar el icono parado se ve mal. De 88 botones,
+82 giran.
+
+**«Iniciar sesión» también gira, y su regla está escrita aparte.** Esa pieza son dos cajas —el marco
+rosa y la cara con la rampa—, así que quien recorta y lleva las dos copias es la cara mientras
+quien recibe el ratón es el marco: `.entrar:hover .entrarCara::before`. Es la misma técnica, no
+la misma regla, y por eso vive en `Armazon.module.css` y no se compone de `piezas.module.css`.
+
+**Si una pantalla necesita otro color de rótulo, lo pone en `--rotulo-tinta`, no en `color`.**
+`color` ya no pinta nada en un botón que gira. Dos lo hacían —`.enviarIgual` y
+`.volverAlProceso`— y ahora declaran las dos cosas: la variable para el giro, y `color` para el
+navegador que se quede con el texto real.
 
 ### Inputs / Fields
 
@@ -557,10 +615,20 @@ maletín blanco y una flecha que sube dejando una estela. Es un PNG,
 un icono ni significa nada».** Ya no: ahora significa trabajo que progresa, y es **la única
 figura literal de todo el portal**. El resto del sistema dice las cosas con forma y color.
 
-⚠️ **El resplandor rosa viene dentro del PNG, no de CSS**, y la loseta ocupa solo el **73 % del
-lado** de la imagen: el resto es halo. Por eso el ancho declarado no es el tamaño que se ve
-—1,32em de imagen dan una loseta de 45 px, que es lo que medía el cuadrado anterior—. Si algún
-día se recorta el PNG más ajustado, ese número cambia.
+⚠️ **El ancho declarado no es el tamaño que se ve**, porque el dibujo no llena la imagen: la
+loseta de delante ocupa el **78,5 % del lado** y el resto lo ocupan la loseta girada de detrás y
+el aire. Con **1,08em** de imagen se ven 45 px de loseta, que es la medida con la que se compuso
+el titular.
+
+⚠️ **Esa fracción cambia con el archivo, y ya cambió una vez.** El PNG del 11/09/2026 traía un
+halo rosa pintado dentro y la loseta era el 73 %, así que hacían falta 1,32em para los mismos
+45 px. El del 15/09 va recortado al ras: con la anchura de antes la loseta salía a 55 px y se
+metía dentro de la palabra «trabajo». **Si se cambia la imagen, se mide la fracción y se vuelve a
+sacar el ancho**, no se hereda el número.
+
+⚠️ **Y por lo mismo el margen horizontal pasó de negativo a positivo.** Con el PNG anterior había
+que recuperar el aire que el halo transparente metía a los lados; con el de ahora hace falta justo
+lo contrario, separarlo de la palabra que tiene al lado.
 
 ⚠️ **Se alinea con `vertical-align: middle` Y margen vertical negativo, las dos cosas.** Con un
 descuelgue desde la línea base la imagen caía 20 px por debajo y la fuente solo desciende 13:
@@ -569,16 +637,19 @@ sin imagen—.
 
 ### El fondo
 
-El cielo es `#FFFFFF`, el mismo blanco que las superficies. **Lo que dibuja una superficie es su
-contorno de 1 px, no su fondo**: `.bloque` lleva `border: 1px solid var(--regla)` y todo lo que
-se apoya en él la hereda. Una superficie nueva sin contorno no existe.
+El cielo es `#FBF1E9`, un pastel cálido, y las superficies de encima son nube blanca: la
+separación es de **1,113:1** y vuelve a ser de tono, no solo de contorno. Los contornos de 1 px
+se quedan y son los que sostienen lo que va DENTRO de otra superficie.
 
-⚠️ **Esto cambia la regla 4 del mundo.** Decía que la profundidad es tono y que una superficie
-se separa del fondo «porque está un punto más clara». Con página y superficie en el mismo
-blanco eso ya no se sostiene: la separación es el contorno.
+⚠️ **Está plano a propósito, y el grano procedural se probó y se fue.** Una capa de
+`feTurbulence` mezclada con `background-blend-mode: overlay` funciona técnicamente —conserva el
+tono cálido, tesela sin costura, pesa ~300 bytes— pero **a tamaño real, en este color tan claro
+y sobre una página llena de superficies blancas, no se ve**. Se subió hasta donde se veía y ahí
+ya se leía como pantalla sucia, no como papel. No vale la pena volver a intentarlo por CSS: si
+el fondo tiene que tener materia, tiene que venir de una imagen con estructura, no de ruido por
+píxel.
 
-El fondo va limpio, sin decoración. El 11/09/2026 se probaron dos resplandores corales
-desenfocados —primero solo arriba, luego repetidos de arriba abajo con una baldosa de 1100 px— y
+El 11/09/2026 se probaron además dos resplandores corales desenfocados por toda la página —primero solo arriba, luego repetidos de arriba abajo con una baldosa de 1100 px— y
 se retiraron. Lo que dejaron escrito y conviene no volver a aprender:
 
 - **Un degradado que todavía tiene color al llegar al borde de su baldosa se corta en seco
@@ -593,7 +664,7 @@ se retiraron. Lo que dejaron escrito y conviene no volver a aprender:
 
 ### Navigation
 
-Cabecera fija de 68 px, pegajosa: una barra **insertada 8 px del borde**, con radio
+Cabecera fija de 70 px, pegajosa: una barra **insertada 8 px del borde**, con radio
 `--radio-menor`, que **en reposo no se ve** —solo la marca y los enlaces sobre el cielo— y saca
 su superficie de nube maciza, contorno de `--regla` y `--sombra-nube` **en cuanto la página se
 mueve**. La marca a la izquierda; a la derecha, cuatro destinos.
@@ -604,18 +675,24 @@ y pegada, porque el relleno viaja con la caja pegajosa y un margen se quedaría 
 **Tres columnas: marca a la izquierda, destinos al centro, acción a la derecha.** La rejilla es
 `1fr auto 1fr` y no `space-between`, porque los destinos tienen que quedar centrados respecto a
 la barra y no repartidos: con `space-between` el centro se mueve cada vez que cambia el ancho de
-la marca o el texto de la acción —«Ingresar» y «Mi cuenta» no miden lo mismo—. Medido, la
+la marca o el texto de la acción —«Iniciar sesión» y «Mi cuenta» no miden lo mismo—. Medido, la
 desviación es de 0 px.
 
-**Los enlaces son texto haciendo de botón**, a **18 px y peso 500** en **tinta plena**
-(12,63:1): sin contorno, sin relleno y sin pastilla; lo único que dibuja el área táctil de 44 px
+**Los enlaces son texto haciendo de botón**, a **16 px, peso 500 y 32 px de separación de texto
+a texto** en **tinta plena** (12,63:1): sin contorno, sin relleno y sin pastilla; lo único que dibuja el área táctil de 44 px
 es el `min-height`. **La página en la que estás se dice con el color del texto
 —`--activo-regla`—, el peso 700 y un filete coral de 2 px que se abre desde el centro** en
 300 ms; al pasar por encima de los demás, ese filete se abre en gris.
 
 ⚠️ **El peso es lo que los sostiene, no el tamaño.** A 14 px y peso normal los cuatro destinos
-se perdían: son lo único que hay en medio de una barra muy ancha y blanca, sin nada debajo. En
-teléfono bajan a 14 px pero **el 500 se queda**. Figtree es variable de 400 a 700, así que el
+se perdían: son lo único que hay en medio de una barra muy ancha y blanca, sin nada debajo. Por
+eso subieron a 18 px el 11/09/2026 y **pudieron volver a 16 px el 15/09** —la medida de la
+referencia— sin perderse: lo que los sostiene es el 500. En teléfono bajan a 14 px pero **el 500
+se queda**.
+
+⚠️ **Los 32 px de separación salen del relleno, no de un `gap`.** `.navegacion` lleva `gap: 0` a
+propósito: cada `.enlace` pone 16 px por lado, así que dos contiguos dejan exactamente los 32 px
+de la referencia. Un hueco declarado aquí se sumaría al relleno y la barra dejaría de coincidir. Figtree es variable de 400 a 700, así que el
 500 no cuesta una descarga más.
 
 ⚠️ **El filete anima `left` y `right`, no `transform: scaleX()`.** Un filete de 2 px escalado
@@ -625,15 +702,35 @@ todo momento.
 
 WCAG 1.4.1 pide que el color no vaya solo, y no va: le acompañan el peso 700 y el filete.
 
-«Ingresar» es la excepción y la única acción de la barra: **rampa magenta a rojo
-`#E0218A → #FF3B5C`, texto blanco, radio `--radio-menor`**, con sombra de desplazamiento más
-halo del mismo tono.
+«Iniciar sesión» es la excepción y la única acción de la barra, y desde el 15/09/2026 es **la pieza de
+`originx.demos.tailgrids.com` copiada al valor**, medida en el navegador y no sacada a ojo de una
+captura.
 
-⚠️ **El texto blanco sobre esa rampa da entre 4,42:1 y 3,48:1**, y WCAG 1.4.3 pide 4,5:1 a
-14 px. Es una decisión tomada mirando el número: se midió también `#D81B7E → #C4304B`, el mismo
-magenta-a-rojo un paso más oscuro, que da 4,80:1 y 5,42:1. Si algún día hay que cumplirlo, el
-cambio son esos dos valores y nada más. El límite del control sí cumple 1.4.11: 4,42 y 3,48
-contra la nube, los dos por encima de 3.
+Son **dos cajas**, y por eso el enlace lleva un `<span>` dentro que no se puede quitar:
+
+- **El marco** —el `<a>`— es rosa translúcido `rgba(255,136,150,.20)`, 4 px de relleno y esquina
+  viva, con **cuatro cuadrados de 3×3 px en las esquinas** en rampa `#FF8268 → #FE7EB2`.
+- **La cara** —el `<span>`— lleva la rampa `#FF7C61 → #FF68A5` a 270°, radio 4 px, texto blanco a
+  14 px/600, y **dos luces interiores blancas al 20 %**, una arriba y otra abajo, que son las que
+  la abomban. Sin ellas la rampa se ve plana y deja de parecerse.
+
+⚠️ **Los cuatro puntos de las esquinas son parte del botón.** En la captura de referencia parecen
+marcas de selección de una herramienta de diseño; no lo son. En el original son cuatro `<span>`
+absolutos a −1 px. Aquí son cuatro capas de fondo, sin tocar el árbol: el elemento lleva un
+**borde transparente de 1 px** para que puedan asomar por fuera del marco —un fondo no se sale de
+su caja, pero la caja de borde va 1 px más allá— y `background-clip` mixto, porque **el color de
+fondo usa siempre el último valor de esa lista**.
+
+⚠️ **El texto blanco sobre esta rampa da entre 2,70:1 y 2,53:1**, donde WCAG 1.4.3 pide 4,5:1 a
+14 px, y **tampoco cumple el 3:1 de 1.4.11** para el límite del control. Es **peor que la rampa
+magenta que hubo antes** —`#E0218A → #FF3B5C`, que daba 4,42:1 y 3,48:1— y va así **por petición
+expresa del cliente**, que quería la pieza de la referencia igual. El marco rosa se ve, pero al
+20 % sobre nube da 1,18:1 y no lo salva. Si algún día hay que cumplirlo, el cambio es de dos
+valores: la misma rampa con la luz bajada, `#D81B7E → #C4304B`, que da 4,80:1 y 5,42:1.
+
+⚠️ **Se fue el destello que cruzaba el botón**, y con él lo único que se movía solo en todo el
+portal. La pieza de la referencia no lo tiene, y sobre esta rampa un reflejo blanco al 45 %
+bajaba todavía más un contraste que ya no llega.
 
 ⚠️ **El enlace activo en coral da 2,53:1 sobre la nube**, donde 1.4.3 pide 4,5. Se eligió así
 **a sabiendas y mirando el número**: se probó también `#bf4526` —el mismo tono con la luz
@@ -650,36 +747,33 @@ sección que ya existe ahí. Por eso «Vacantes» va de `Link` y no de `NavLink`
 con la misma ruta se encienden a la vez— y **por debajo de 400 px desaparece**: a 320 px los
 cuatro piden 42 px más de los que hay, y es el único que no es una pantalla propia.
 
-**El movimiento de la barra son tres cosas y ninguna más.** La cascada de entrada, 420 ms con
+**El movimiento de la barra son dos cosas y ninguna más.** La cascada de entrada, 420 ms con
 60 ms de desfase entre destinos, que corre **una vez por carga de página** porque `Armazon` se
-queda montado mientras el candidato navega. El filete del enlace, que **se abre desde el centro
-hacia los dos lados** en 300 ms —gris al pasar por encima, coral en el que está activo—. Y el
-destello del botón «Ingresar»: un reflejo blanco al 45 % que lo cruza en 1,17 s y descansa
-hasta completar 4,5 s.
+queda montado mientras el candidato navega. Y el filete del enlace, que **se abre desde el centro
+hacia los dos lados** en 300 ms —gris al pasar por encima, coral en el que está activo—.
 
-⚠️ **El destello es lo único que se mueve solo en todo el portal**, y solo existe para quien no
-ha entrado: con sesión, «Ingresar» no se pinta.
-
-⚠️ **`--salida` no vale para el destello, y se vio midiendo.** Esa curva es para lo que llega y
-se posa; con ella el reflejo recorría el 90 % del botón en los primeros 400 ms de un tramo de
-1,17 s —un salto, no un cruce—. Lleva `ease-in-out`, que acelera y frena por igual. Medido a
-lo largo del ciclo: −121 %, −107 %, −62 %, +5 %, +71 %, +121 %.
+⚠️ **Eran tres hasta el 15/09/2026.** La tercera era un reflejo blanco que cruzaba «Iniciar sesión»
+cada 4,5 s, y se fue con la pieza nueva. Costó acertarle la curva —`--salida` lo hacía saltar en
+vez de cruzar—, y esa nota se queda aquí porque el problema vuelve con cualquier destello: una
+curva de entrada no sirve para algo que pasa por encima y sale por el otro lado.
 
 El filete anima `left` y `right`, no `transform: scaleX()`: un filete de 2 px escalado en X se
 compone desde una caja de ancho completo y en pantallas densas se ve un pelo más grueso al
 arrancar.
 
-Con `prefers-reduced-motion` se van la cascada, el destello y los desplazamientos; **se quedan
-el color del activo y su filete**, que son los que dicen dónde estás.
+Con `prefers-reduced-motion` se van la cascada y los desplazamientos; **se quedan el color del
+activo y su filete**, que son los que dicen dónde estás.
 
-⚠️ **`--alto-cabecera` se mide, no se calcula.** Son 68 px —8 de aire + 60 de barra—. El
-11/09/2026 pasaron por 61 (barra a sangre) y 76 (vaina ovalada flotante) antes de quedarse
-aquí. Seis reglas de cuatro hojas se pinchan debajo de ese número.
+⚠️ **`--alto-cabecera` se mide, no se calcula.** Son 70 px —8 de aire + 62 de barra—. El
+11/09/2026 pasaron por 61 (barra a sangre) y 76 (vaina ovalada flotante), y el 15/09/2026 de 68
+a 70, **porque cambió el botón**: «Iniciar sesión» copió la pieza de la referencia y pasó de 44 a
+46 px. Seis reglas de cuatro hojas se pinchan debajo de ese número, así que la lista de lo que
+obliga a volver a medir incluye el alto del botón, no solo los rellenos.
 
 ⚠️ **La barra es transparente mientras no se baja**, así que lo que se pincha bajo
 `--alto-cabecera` aparece sobre el cielo hasta el primer scroll. No es un problema: en cuanto
 hay scroll —que es cuando algo pasaría por debajo— la barra ya tiene su velo puesto. Medido:
-el carril pegajoso se posa exactamente en 68, sin hueco ni solape.
+el carril pegajoso se posa exactamente en 70, sin hueco ni solape.
 
 ⚠️ **El velo es nube MACIZA, y se probó traslúcida.** Nube al 85 % con `backdrop-filter:
 blur(12px)` dejaba leer entero el botón negro de la portada al pasar por debajo: un 15 % de
@@ -717,181 +811,6 @@ descendientes de z negativo, así que la luz quedaba enterrada —se comprobó p
 plano y sin desenfoque: no aparecía—. Lo que la coloca bien es el orden natural: el `::before`
 va antes que `.escaparateDentro` en el árbol, los dos están posicionados, y sin `z-index` gana
 el último.
-
-### El fondo
-
-El cielo es `#FFFFFF`, el mismo blanco que las superficies. **Lo que dibuja una superficie es su
-contorno de 1 px, no su fondo**: `.bloque` lleva `border: 1px solid var(--regla)` y todo lo que
-se apoya en él la hereda. Una superficie nueva sin contorno no existe.
-
-⚠️ **Esto cambia la regla 4 del mundo.** Decía que la profundidad es tono y que una superficie
-se separa del fondo «porque está un punto más clara». Con página y superficie en el mismo
-blanco eso ya no se sostiene: la separación es el contorno.
-
-El fondo va limpio, sin decoración. El 11/09/2026 se probaron dos resplandores corales
-desenfocados —primero solo arriba, luego repetidos de arriba abajo con una baldosa de 1100 px— y
-se retiraron. Lo que dejaron escrito y conviene no volver a aprender:
-
-- **Un degradado que todavía tiene color al llegar al borde de su baldosa se corta en seco
-  ahí**, y la repetición convierte ese corte en una raya horizontal visible. La regla es que
-  cada degradado se apague dentro de su baldosa: centro = radio, y los dos radios juntos = la
-  baldosa.
-- **Un tinte de fondo le pone techo al gris más claro del sistema.** Con el coral al 28 %,
-  `--tinta3` caía a 3,99:1; el máximo que lo mantenía en 4,5:1 era 0,146.
-- **`z-index: -1` no sirve para poner algo detrás**, porque `mundo.css` pinta el cielo en `html`
-  **y** en `body`: la de `html` es el lienzo y la de `body` pasa a ser el fondo de una caja de
-  bloque normal, que se pinta después de los descendientes de z negativo.
-
-### Navigation
-
-Cabecera fija de 68 px, pegajosa: una barra **insertada 8 px del borde**, con radio
-`--radio-menor`, que **en reposo no se ve** —solo la marca y los enlaces sobre el cielo— y saca
-su superficie de nube maciza, contorno de `--regla` y `--sombra-nube` **en cuanto la página se
-mueve**. La marca a la izquierda; a la derecha, cuatro destinos.
-
-El aire de arriba va de relleno y no de margen: así la barra guarda los mismos 8 px en reposo
-y pegada, porque el relleno viaja con la caja pegajosa y un margen se quedaría arriba.
-
-**Tres columnas: marca a la izquierda, destinos al centro, acción a la derecha.** La rejilla es
-`1fr auto 1fr` y no `space-between`, porque los destinos tienen que quedar centrados respecto a
-la barra y no repartidos: con `space-between` el centro se mueve cada vez que cambia el ancho de
-la marca o el texto de la acción —«Ingresar» y «Mi cuenta» no miden lo mismo—. Medido, la
-desviación es de 0 px.
-
-**Los enlaces son texto haciendo de botón**, a **18 px y peso 500** en **tinta plena**
-(12,63:1): sin contorno, sin relleno y sin pastilla; lo único que dibuja el área táctil de 44 px
-es el `min-height`. **La página en la que estás se dice con el color del texto
-—`--activo-regla`—, el peso 700 y un filete coral de 2 px que se abre desde el centro** en
-300 ms; al pasar por encima de los demás, ese filete se abre en gris.
-
-⚠️ **El peso es lo que los sostiene, no el tamaño.** A 14 px y peso normal los cuatro destinos
-se perdían: son lo único que hay en medio de una barra muy ancha y blanca, sin nada debajo. En
-teléfono bajan a 14 px pero **el 500 se queda**. Figtree es variable de 400 a 700, así que el
-500 no cuesta una descarga más.
-
-⚠️ **El filete anima `left` y `right`, no `transform: scaleX()`.** Un filete de 2 px escalado
-en X sigue midiendo 2 px de alto, pero el navegador lo compone desde una caja de ancho completo
-y en pantallas densas se ve un pelo más grueso al arrancar; así la caja es de 2 px reales en
-todo momento.
-
-WCAG 1.4.1 pide que el color no vaya solo, y no va: le acompañan el peso 700 y el filete.
-
-«Ingresar» es la excepción y la única acción de la barra: **rampa magenta a rojo
-`#E0218A → #FF3B5C`, texto blanco, radio `--radio-menor`**, con sombra de desplazamiento más
-halo del mismo tono.
-
-⚠️ **El texto blanco sobre esa rampa da entre 4,42:1 y 3,48:1**, y WCAG 1.4.3 pide 4,5:1 a
-14 px. Es una decisión tomada mirando el número: se midió también `#D81B7E → #C4304B`, el mismo
-magenta-a-rojo un paso más oscuro, que da 4,80:1 y 5,42:1. Si algún día hay que cumplirlo, el
-cambio son esos dos valores y nada más. El límite del control sí cumple 1.4.11: 4,42 y 3,48
-contra la nube, los dos por encima de 3.
-
-⚠️ **El enlace activo en coral da 2,53:1 sobre la nube**, donde 1.4.3 pide 4,5. Se eligió así
-**a sabiendas y mirando el número**: se probó también `#bf4526` —el mismo tono con la luz
-bajada, 5,13:1— y se prefirió el coral de marca. El peso 700 acompaña al color, así que la
-segunda señal que pide 1.4.1 está; lo que no se cumple es el contraste del texto.
-
-**El coral en la cabecera ya no es solo un filete.** Era la única excepción a «el coral solo
-marca te toca a ti» y era pequeña; ahora el coral es el texto activo y el relleno de la
-acción. Dentro de las pantallas el coral sigue significando turno y solo turno.
-
-**«Inicio» y «Vacantes» no son lo mismo.** `rutas.vacantes()` es `/`, así que los dos irían
-al mismo sitio: «Inicio» es la portada y «Vacantes» es un ancla a `#vacantes-abiertas`, la
-sección que ya existe ahí. Por eso «Vacantes» va de `Link` y no de `NavLink` —dos `NavLink`
-con la misma ruta se encienden a la vez— y **por debajo de 400 px desaparece**: a 320 px los
-cuatro piden 42 px más de los que hay, y es el único que no es una pantalla propia.
-
-**El movimiento de la barra son tres cosas y ninguna más.** La cascada de entrada, 420 ms con
-60 ms de desfase entre destinos, que corre **una vez por carga de página** porque `Armazon` se
-queda montado mientras el candidato navega. El filete del enlace, que **se abre desde el centro
-hacia los dos lados** en 300 ms —gris al pasar por encima, coral en el que está activo—. Y el
-destello del botón «Ingresar»: un reflejo blanco al 45 % que lo cruza en 1,17 s y descansa
-hasta completar 4,5 s.
-
-⚠️ **El destello es lo único que se mueve solo en todo el portal**, y solo existe para quien no
-ha entrado: con sesión, «Ingresar» no se pinta.
-
-⚠️ **`--salida` no vale para el destello, y se vio midiendo.** Esa curva es para lo que llega y
-se posa; con ella el reflejo recorría el 90 % del botón en los primeros 400 ms de un tramo de
-1,17 s —un salto, no un cruce—. Lleva `ease-in-out`, que acelera y frena por igual. Medido a
-lo largo del ciclo: −121 %, −107 %, −62 %, +5 %, +71 %, +121 %.
-
-El filete anima `left` y `right`, no `transform: scaleX()`: un filete de 2 px escalado en X se
-compone desde una caja de ancho completo y en pantallas densas se ve un pelo más grueso al
-arrancar.
-
-Con `prefers-reduced-motion` se van la cascada, el destello y los desplazamientos; **se quedan
-el color del activo y su filete**, que son los que dicen dónde estás.
-
-⚠️ **`--alto-cabecera` se mide, no se calcula.** Son 68 px —8 de aire + 60 de barra—. El
-11/09/2026 pasaron por 61 (barra a sangre) y 76 (vaina ovalada flotante) antes de quedarse
-aquí. Seis reglas de cuatro hojas se pinchan debajo de ese número.
-
-⚠️ **La barra es transparente mientras no se baja**, así que lo que se pincha bajo
-`--alto-cabecera` aparece sobre el cielo hasta el primer scroll. No es un problema: en cuanto
-hay scroll —que es cuando algo pasaría por debajo— la barra ya tiene su velo puesto. Medido:
-el carril pegajoso se posa exactamente en 68, sin hueco ni solape.
-
-⚠️ **El velo es nube MACIZA, y se probó traslúcida.** Nube al 85 % con `backdrop-filter:
-blur(12px)` dejaba leer entero el botón negro de la portada al pasar por debajo: un 15 % de
-transparencia no perdona una pieza de máximo contraste. Y el desenfoque detrás de un relleno
-opaco no pinta nada, que es por lo que se quitó el vidrio empañado el 10/09/2026.
-
-⚠️ **Aquí hubo un vidrio empañado y se fue el 10/09/2026.** Existía para que la cabecera
-dejara ver el canto irisado por detrás; sin canto, desenfocaba un `--cielo` plano en las
-diecisiete pantallas a cambio de una capa de compositor en cada una. Quitarlo arregló además
-que las barras pegajosas del examen se transparentaran a través de ella al hacer scroll.
-
-### Signature Component — el escaparate
-
-La pieza grande de la portada: una tarjeta blanca de **borde de 12 px en blanco al 40 %** y
-radio 20 px, con `background-clip: padding-box` —sin él, el blanco de dentro se cuela por
-debajo del borde y lo anula—. Dentro va el recorrido del candidato.
-
-Detrás, **dos luces de colores distintos**: una cálida `#FF7C61` y una fría `#FF47B8`. Las dos
-nacen cerca del centro —al 36 % y al 64 %— y se abren hacia fuera: separándolas más se leían
-como dos focos en las esquinas, y así se lee como una sola luz que se descompone. Un solo foco
-centrado se leía como una mancha.
-
-⚠️ **El rosa `#FF47B8` es el único tono del portal fuera de la familia coral.** `--activo-regla`
-es `#FF7C61` y `--canto` acaba en `#FF5D6E`; este sigue esa rampa un paso más allá. **No es un
-token y no debe serlo**: existe solo aquí, como luz, y no significa nada. Si empieza a aparecer
-en otra pantalla, hay que pararlo.
-
-⚠️ **El resplandor no pasa por debajo de la prosa, y eso hay que sostenerlo con geometría.**
-Sobre el núcleo de la luz `--tinta3` cae a **3,0:1** y `--tinta2` a **3,8:1**, los dos por
-debajo de los 4,5 de WCAG 1.4.3. Dos cosas lo evitan: el alto de la capa va en **píxeles y no
-en porcentaje** —con porcentaje, la tarjeta de un teléfono, que mide el triple porque las
-etapas se apilan, estiraba la luz hasta detrás de «Etapa 5»—, y los focos se centran **en el
-borde inferior o por debajo**, con radios cortos, de modo que lo intenso queda pegado al suelo.
-
-**La luz va en DOS ALTURAS, y es lo que le permite llenar la tarjeta sin dejar el texto
-ilegible.**
-
-- **El velo** es enorme y flojo —tope **0,16**— y sube hasta media tarjeta.
-- **El núcleo y las dos luces de color** son fuertes —0,60 y 0,48— y viven pegados al suelo,
-  por debajo del último párrafo.
-
-Con una sola capa no se pueden tener las dos cosas: o la luz llega arriba y se come el texto, o
-respeta el texto y se queda en una franja del pie. Se probaron las dos y las dos estaban mal.
-
-⚠️ **Las cuatro capas se SUMAN, y medirlas de una en una engaña.** Cada una respetaba su techo
-y aun así el fondo compuesto bajo el último párrafo salía `#FFCFDA`, donde `--tinta3` cae a
-**3,85:1**. Por eso `.numeroEtapa` y `.queEsEtapa` subieron a `--tinta2`. Medido el compuesto
-bajo cada texto de la tarjeta, el peor caso es **4,98:1** en escritorio y **4,61:1** en
-teléfono.
-
-La cuenta que hay que rehacer si se toca algo: **el degradado se apaga al 74-80 % de su radio,
-así que lo que se ve empieza en `centro − 0,78 × radio`**; para las capas fuertes ese punto
-tiene que caer por debajo del último párrafo, y para el velo da igual porque su techo ya es
-legible.
-
-El relleno inferior es **una talla más que el superior y solo una** —`--e8` contra `--e7`—: ese
-escalón es el sitio de la luz. Se probó con 150 px y la caja se leía descompensada, con el
-contenido arrinconado arriba.
-
-⚠️ **El resplandor nunca queda debajo de prosa.** El pie del escaparate va encima del
-recorrido, no sobre el degradado: sobre el coral, un texto de apoyo cae a 3,4:1.
 
 ### El recorrido — cinco tramos, y el estado en la forma
 

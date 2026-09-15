@@ -89,6 +89,7 @@ export function Procesos() {
             type="button"
             className={estilos.reintentar}
             onClick={() => void consulta.refetch()}
+            data-rotulo="Intentar de nuevo"
           >
             Intentar de nuevo
           </button>

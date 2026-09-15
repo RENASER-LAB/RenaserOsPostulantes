@@ -244,6 +244,7 @@ export function Simulacion() {
                   if (elegida === null) return
                   inscripcionNueva.mutate(elegida)
                 }}
+                data-rotulo={inscripcionNueva.isPending ? 'Confirmando…' : 'Confirmar asistencia'}
               >
                 {inscripcionNueva.isPending ? 'Confirmando…' : 'Confirmar asistencia'}
               </button>

@@ -66,7 +66,11 @@ export function Decision() {
           punto que queremos ver mejor. <b>No es un rechazo</b>: si no nos interesaras, no
           te lo pediríamos.
         </p>
-        <a className={estilos.escribir} href={`mailto:${CORREO}?subject=${asunto}`}>
+        <a
+          className={estilos.escribir}
+          href={`mailto:${CORREO}?subject=${asunto}`}
+          data-rotulo="Escribirle al equipo"
+        >
           Escribirle al equipo
         </a>
       </section>
@@ -120,10 +124,10 @@ export function Decision() {
                     Un documento, una captura, un enlace.
                   </span>
                   <span className={estilos.botones}>
-                    <button className={estilos.boton} type="button">
+                    <button className={estilos.boton} type="button" data-rotulo="Subir archivo">
                       Subir archivo
                     </button>
-                    <button className={estilos.boton} type="button">
+                    <button className={estilos.boton} type="button" data-rotulo="Pegar enlace">
                       Pegar enlace
                     </button>
                   </span>
@@ -147,6 +151,7 @@ export function Decision() {
                 className={estilos.enviar}
                 disabled
                 aria-describedby="por-que-no-envia"
+                data-rotulo="Enviar respuesta"
               >
                 Enviar respuesta
               </button>

@@ -86,10 +86,18 @@ export function Vacantes() {
           existe: quien llega no tiene turno, tiene curiosidad.
         */}
         <div className={estilos.acciones}>
-          <a className={estilos.accionPrincipal} href="#vacantes-abiertas">
+          <a
+            className={estilos.accionPrincipal}
+            href="#vacantes-abiertas"
+            data-rotulo="Ver las vacantes abiertas"
+          >
             Ver las vacantes abiertas
           </a>
-          <Link className={estilos.accionSecundaria} to={rutas.procesos()}>
+          <Link
+            className={estilos.accionSecundaria}
+            to={rutas.procesos()}
+            data-rotulo="Ya postulé antes"
+          >
             Ya postulé antes
           </Link>
         </div>
@@ -169,6 +177,7 @@ export function Vacantes() {
               type="button"
               className={estilos.reintentar}
               onClick={() => void consulta.refetch()}
+              data-rotulo="Intentar de nuevo"
             >
               Intentar de nuevo
             </button>
@@ -226,10 +235,18 @@ export function Vacantes() {
             pantalla, paso a paso.
           </p>
           <div className={estilos.acciones}>
-            <a className={estilos.accionPrincipal} href="#vacantes-abiertas">
+            <a
+              className={estilos.accionPrincipal}
+              href="#vacantes-abiertas"
+              data-rotulo="Ver las vacantes abiertas"
+            >
               Ver las vacantes abiertas
             </a>
-            <Link className={estilos.accionSecundaria} to={rutas.procesos()}>
+            <Link
+              className={estilos.accionSecundaria}
+              to={rutas.procesos()}
+              data-rotulo="Entrar a mis procesos"
+            >
               Entrar a mis procesos
             </Link>
           </div>

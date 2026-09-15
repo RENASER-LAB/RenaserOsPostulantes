@@ -1893,3 +1893,198 @@ siempre usa el navegador para que veas en vivo, no solo código». Tenía razón
 —lo había estado juzgando en capturas reducidas, donde un baño de color y un halo se parecen—.
 Quedó ceñido al pie: arranca al 58 % de la altura de la tarjeta en escritorio y al 80 % en
 teléfono, asoma 30 px por debajo y 2 % por los lados, con 24 px de desenfoque en vez de 40.
+
+### Grano en el fondo: probado, medido y RETIRADO
+
+El fondo cálido estaba plano, y lo plano en pantalla grande se lee como «sin terminar», no como
+sobrio. Se probó una capa de grano y **se ha quitado**. Queda anotado porque el camino entero es
+lo útil, no el resultado.
+
+**No tiene sentido como archivo.** El ruido es incompresible por definición: una tesela PNG de
+256 px pesaba **78 KB**. Va en `feTurbulence` dentro del propio CSS —unos 300 bytes, sin
+petición al servidor— y `stitchTiles` hace que tesele sin costura. Un generador de imágenes
+tampoco sirve para esto: devuelve algo que no tesela y con artefactos de compresión encima.
+
+**Se superpuso y estaba mal.** `feTurbulence` devuelve gris medio; pintado encima con opacidad
+baja hace dos cosas a la vez: verse poquísimo **y agrisar el color**. Al 22 % ya se veía, pero
+el fondo había dejado de ser cálido. Se intentó fijar el valor midiendo la amplitud en un
+canvas, y el número era correcto **de la operación equivocada** —medía la superposición, no la
+mezcla—, así que dio un 9 % invisible.
+
+Lo correcto es mezclar: `background-blend-mode: overlay`, donde el gris medio es el neutro de la
+operación. Deja el color intacto y solo las desviaciones aclaran u oscurecen, lo que permite
+subir el ruido al 85 % sin tocar el tono. Hacen falta dos capas de fondo en vez de color +
+imagen, porque el blend mezcla capas entre sí.
+
+⚠️ **Y con todo eso resuelto, seguía sin verse.** El cliente, dos veces: «¿pusiste un grano?
+porque no se ve nada» y «no se ve tampoco». En un cielo tan claro y con la página llena de
+superficies blancas encima, el grano por píxel no tiene dónde leerse — y donde sí se lee, ya es
+suciedad de pantalla y no papel.
+
+**La conclusión, para no repetirlo:** si el fondo tiene que tener materia, viene de una imagen
+con estructura —fibra, veladura, grumo, algo con escala—, no de ruido sin correlación espacial.
+
+Y la conclusión de la conclusión, que llegó después: para «minimalista y profesional» **no es una
+imagen**. Se probaron en vivo cuatro fondos sobre la portada —rejilla, puntos, icono gigante de
+marca de agua y líneas del carril— y los dos que funcionan son geometría en CSS. El icono gigante
+se descartó midiéndolo: al 16 % desaparece y subiéndolo deja de ser una marca y se pelea con el
+neón rosa de la tarjeta. Sin decidir todavía cuál entra.
+
+### El botón «Ingresar» y la cabecera se copian de OriginX, al valor
+
+El cliente pasó una captura del botón «Get Started» de `originx.demos.tailgrids.com` pidiendo
+«los mismos colores, ese degradado, así como el contorno». Y luego, la tipografía de la cabecera
+entera: mismo tamaño y misma separación.
+
+⚠️ **No se sacó de la captura, se midió en el sitio.** Una miniatura no da un `#FF7C61` ni un
+`inset 0 -4px 8px rgba(255,255,255,.20)`, y ya hubo un intento anterior este mes de reconstruir a
+ojo una imagen del cliente que acabó en «no bro, está feo». Se abrió la referencia en el
+navegador y se leyeron los estilos calculados del `<a>` y de sus hijos.
+
+Lo que apareció al leerlos:
+
+- **Los cuatro puntos rosas de las esquinas son parte del botón.** En la captura parecían las
+  marcas de selección de una herramienta de diseño. Son cuatro `<span>` de 3×3 px a −1 px, en
+  rampa `#FF8268 → #FE7EB2`. Aquí se hacen con cuatro capas de fondo y un **borde transparente de
+  1 px**, que es lo que permite que un fondo asome por fuera de su propia caja.
+- **El botón es dos cajas**, no una: marco rosa translúcido al 20 % con 4 px de relleno, y dentro
+  la cara con la rampa `#FF7C61 → #FF68A5`, radio 4 px y dos luces interiores blancas al 20 %.
+  Esas luces son lo que lo abomba; sin ellas la rampa se ve plana.
+- **OriginX usa Figtree**, la misma fuente del portal, y su enlace activo es `#FF7C61`, que es
+  exactamente `--coral`. No hubo nada que adaptar.
+- La cabecera: **16 px, peso 500, 32 px de texto a texto**. Aquí los 32 px salen del relleno de
+  cada enlace (16 por lado) con `gap: 0`, no de un hueco declarado, o se sumarían los dos.
+
+⚠️ **El tamaño de la navegación BAJA de 18 a 16 px**, deshaciendo lo que se pidió el 11/09. Se
+sostiene porque lo que evitaba que los destinos se perdieran era el peso 500, no el tamaño.
+
+⚠️ **Y el contraste empeora, a sabiendas.** El blanco sobre la rampa nueva da **2,70:1 y 2,53:1**;
+la rampa magenta que había daba 4,42:1 y 3,48:1. Ninguna llega a los 4,5:1 de 1.4.3, pero la
+nueva tampoco llega al 3:1 de 1.4.11 para el límite del control. El marco rosa se ve, pero al
+20 % sobre nube da 1,18:1 y no lo salva. Va así por petición expresa y con el número escrito al
+lado; el arreglo, si hace falta, son dos valores: `#D81B7E → #C4304B`.
+
+Se fue con el cambio **el destello que cruzaba el botón cada 4,5 s**, que era lo único que se
+movía solo en todo el portal. La pieza de la referencia no lo tiene, y sobre esta rampa un
+reflejo blanco al 45 % hundía todavía más un contraste que ya no llega.
+
+⚠️ **`--alto-cabecera` pasa de 68 a 70 px, MEDIDO.** El botón creció de 44 a 46 px de alto —36 de
+cara + 4 de marco + 1 de borde por lado— y arrastró la barra. Seis reglas de cuatro hojas se
+pinchan debajo de ese número. A partir de ahora la lista de lo que obliga a volver a medirlo
+incluye el alto del botón, no solo los rellenos.
+
+620 pruebas en verde y typecheck limpio. Comprobado a 1:1 en 800 px y en 390, sin desborde
+horizontal.
+
+### Los botones del portal copian los de OriginX, y el rotulo gira
+
+Segunda tanda del mismo encargo. El cliente: «los botones en general de la pagina tienen un
+efecto o animacion al poner el cursor encima», y sobre la pareja de la portada, «el blanco no
+tiene bordes y ademas tiene como una sombra».
+
+Los dos son ciertos y los dos se midieron en el sitio, no en la captura.
+
+**La cara.** Una sola altura, 44 px —20 de linea mas 12 y 12 de relleno—, esquina de 4 px, letra
+de 14 px y peso 500, sin contorno. El negro aclara a `#404040` al pasar por encima y levanta una
+sombra; el blanco **no hace nada**, porque en la referencia tampoco: lo unico que se mueve es el
+rotulo. Dos casualidades buenas: `--radio-control` ya era 4 px y `--activo-pulsado` ya era
+`#404040`, asi que no hubo nada que ajustar ahi.
+
+⚠️ **El secundario pierde su contorno y eso empeora el contraste, a sabiendas.**
+`--borde-control` daba 3,45:1, que es lo que WCAG 1.4.11 pide al limite de un control; lo que
+queda es una sombra de cuatro capas que ni se acerca. `DESIGN.md` decia literalmente que ese
+contorno «no es negociable». Se cambio a peticion expresa, con el numero escrito al lado y la
+vuelta atras en una linea.
+
+Se fue tambien el halo coral del hover del boton negro. La referencia levanta la pieza con una
+sombra neutra, y de paso el coral deja de aparecer en pantallas donde no hay turno que marcar.
+
+**El giro del rotulo, que es lo que costo.** La referencia duplica la etiqueta en el arbol: dos
+`<span>` identicos, uno que sube y otro que entra por abajo. Copiar eso deja el nombre accesible
+del boton como «Enviar Enviar» y **rompe las 620 pruebas**, que localizan por rol y nombre.
+
+La solucion son dos pseudoelementos con `content: attr(data-rotulo) / ''`. La barra da al
+pseudoelemento un texto alternativo **vacio**, asi que no entra en el nombre accesible; el texto
+real se queda donde esta —sigue dando el ancho y sigue siendo el nombre— y se pinta transparente.
+Comprobado en el arbol de accesibilidad del navegador: el enlace se anuncia una sola vez. Va todo
+dentro de un `@supports`, porque si esa sintaxis no se entiende la declaracion es invalida y el
+boton se quedaria con su texto real transparente, o sea en blanco.
+
+El atributo se puso con un escaner, no a mano: **82 de 88 botones**. Los 6 que no son un rotulo
+de texto fijo se quedan quietos —cuatro llevan un icono dentro y girar el texto dejando el icono
+parado se ve mal—. Los que cambian solos, «Guardando…» y compañia, reciben la misma expresion en
+el atributo, asi que las dos copias cambian a la vez.
+
+⚠️ **Y a la primera se veian TRES rotulos, no dos.** El cliente lo vio antes: «las animaciones
+no funcionan bien, se ven como duplicadas». El texto real, que iba en `color: transparent`,
+**reaparecia al pasar por encima**: `.acentoGrande:hover:not(:disabled)` es (0,3,0) y declara
+`color`, por encima del (0,2,0) de `.acentoGrande[data-rotulo]`. Medido a mitad del hover:
+`rgba(255,255,255,0.694)`, o sea el texto fijo entrando en blanco mientras las dos copias
+giraban.
+
+Subir la especificidad no valia: cualquier pantalla que le ponga color a su boton desde su hoja
+volveria a ganar, y entre archivos el orden no es fiable —eso ya esta escrito en `CLAUDE.md`
+para `composes`—. La salida es cambiar de propiedad: `-webkit-text-fill-color`, que decide con
+que se pinta el glifo y que **no declara nadie mas en todo el proyecto**. No hay pelea de
+cascada posible. `color` se queda como respaldo.
+
+Comprobado a camara lenta, alargando la transicion a 4 s y mirando el boton a 3 aumentos a mitad
+de recorrido: un solo rotulo, subiendo.
+
+⚠️ **Y un efecto colateral que hay que saber:** en un boton que gira, un `color` a nivel de
+pantalla ya no pinta nada. Dos lo hacian —`.enviarIgual` y `.volverAlProceso`— y ahora declaran
+tambien `--rotulo-tinta`.
+
+⚠️ **Media hora perdida contra una hoja en cache.** El navegador servia
+`_acentoGrande_1i5h0_42` mientras Vite servia `_acentoGrande_kpfqi_42`: recargar, recargar sin
+cache y navegar de nuevo no lo arreglaron, porque las URL de los modulos no cambian. Lo que si
+funciona es **tocar los archivos CSS** —`find src -name '*.module.css' -exec touch {} +`—: Vite
+empuja el HMR con una URL nueva y el navegador no puede reusar nada. Si un cambio de estilo «no
+se aplica» y el `curl` al servidor dice que si, es esto.
+
+620 pruebas en verde y typecheck limpio. Comprobado en vivo a 800 y a 390 px, con el giro medido
+a mitad de recorrido: `::before` de 0 a -44 px, `::after` de +44 a 0.
+
+**Y «Ingresar» tambien gira**, con su regla propia en `Armazon.module.css`. No se compone de
+`piezas.module.css` porque esa pieza son dos cajas: quien recorta y lleva las dos copias es la
+cara con la rampa, y quien recibe el raton es el marco rosa de fuera. Misma tecnica, distinta
+regla.
+
+⚠️ **El arbol de accesibilidad del panel lo enseña raro y no es un fallo.** Como el rotulo va
+dentro de un `<span>`, la herramienta atribuye el texto al hijo y pinta el enlace sin nombre. El
+nombre esta: se comprobo montando el marcado con Testing Library, que usa la misma computacion
+que el navegador, y `getByRole('link', { name: 'Ingresar' })` lo encuentra.
+
+### La loseta del titular cambia de PNG
+
+El cliente subio `public/iconoMaleta.png` para reemplazar la del titular: el mismo maletin, pero
+sobre dos losetas magenta —una girada detras de otra— en vez del cuadrado con halo rosa.
+
+⚠️ **`getbbox()` de Pillow devolvia una caja falsa.** El archivo trae pixeles de alfa casi cero
+por todo el lienzo, restos del exportador, y `getbbox()` los cuenta: decia 1225x1198 cuando el
+dibujo mide **1112x1097**. Se recorta con umbral, que ademas da la misma caja entre alfa>10 y
+alfa>220. Luego se cuadra centrando y se baja a 256 px con LANCZOS. Sin cuantizar la paleta: la
+version anterior se probo a 200 colores y la rampa rosa salia a bandas.
+
+⚠️ **Y la anchura del CSS hubo que volver a sacarla.** El PNG anterior traia halo transparente y
+su loseta ocupaba el 73 % del lado, de ahi el `1,32em`. El nuevo va al ras y su loseta es el
+**78,5 %**: con la misma anchura la loseta pasaba de 45 a 55 px y se metia dentro de la palabra
+«trabajo». Queda en **1,08em**, y el margen horizontal **pasa de negativo a positivo** —antes
+recuperaba el aire del halo, ahora hace falta separar—.
+
+Medido en el navegador, que es lo unico que vale aqui: el titular mide **120 px con la imagen y
+120 sin ella**, y la loseta visible son los 45 px de siempre.
+
+620 pruebas en verde y typecheck limpio.
+
+**El boton de la cabecera pasa a decir «Iniciar sesión».** Decia «Ingresar». La clase se sigue
+llamando `.entrar`: renombrarla tocaria la hoja, el JSX y tres comentarios sin añadir nada.
+
+El rotulo es 31 px mas ancho —125 en escritorio, 109 en telefono— asi que se comprobo el rango
+estrecho. A 390 y 360 sobra sitio; **a 320 quedan 12 px** entre «Mis procesos» y el boton, contra
+los 35 de antes. Cabe, la cabecera sigue midiendo 70 px y no hay desborde horizontal, pero ese es
+el limite: si algun dia el rotulo crece mas, lo que se cae es «Mis procesos».
+
+El otro «Ingresar» del portal, el de la tarjeta de acceso necesario (`ui/Mensajes.tsx`), **no se
+toca**: ahi el boton esta dentro de una frase que ya explica que hay que entrar, y es una pieza
+distinta.

@@ -150,6 +150,10 @@ export function Armazon() {
             una vez, no «mi cuenta». Privacidad se enlaza desde dentro del perfil
             y desde el pie. Y con cuenta no hay accion, solo navegacion: vuelve a
             ser un enlace de texto como los otros tres.
+
+            El <span> de dentro de «Ingresar» NO es decorativo y no se puede
+            quitar: el enlace es el marco rosa y el hijo es la cara con la rampa.
+            Ver `.entrar` en la hoja.
           */}
           <div className={estilos.acciones}>
             {hayCuenta ? (
@@ -158,7 +162,9 @@ export function Armazon() {
               </NavLink>
             ) : (
               <Link className={estilos.entrar} to={rutas.ingresar()}>
-                Ingresar
+                <span className={estilos.entrarCara} data-rotulo="Iniciar sesión">
+                  Iniciar sesión
+                </span>
               </Link>
             )}
           </div>

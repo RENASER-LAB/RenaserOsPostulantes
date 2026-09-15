@@ -330,7 +330,12 @@ export function Registro() {
           </p>
         )}
 
-        <button type="submit" className={estilos.enviar} disabled={enviando}>
+        <button
+          type="submit"
+          className={estilos.enviar}
+          disabled={enviando}
+          data-rotulo={enviando ? 'Creando tu cuenta…' : 'Crear cuenta y seguir'}
+        >
           {enviando ? 'Creando tu cuenta…' : 'Crear cuenta y seguir'}
         </button>
       </form>

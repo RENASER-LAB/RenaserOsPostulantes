@@ -61,7 +61,7 @@
    * Tres columnas y no `space-between`: los destinos tienen que quedar centrados
    * respecto a la BARRA, no repartidos entre la marca y el boton. Con
    * `space-between` el centro se mueve cada vez que cambia el ancho de la marca
-   * o el texto del boton —«Ingresar» y «Mi cuenta» no miden lo mismo—, y se nota.
+   * o el texto del boton —«Iniciar sesión» y «Mi cuenta» no miden lo mismo—, y se nota.
    *
    * Las dos columnas de los lados son `1fr` justamente para eso: valen lo mismo
    * pese a llevar cosas de anchos distintos, asi que la del medio cae en el eje.
@@ -144,8 +144,20 @@
 .navegacion {
   display: flex;
   align-items: center;
-  gap: var(--e2);
-  font-size: var(--t-entradilla);
+  /*
+   * ⚠️ **Cero, y es a proposito.** La separacion entre destinos la pone el
+   * relleno de `.enlace` —16 px por lado—, asi que dos contiguos dejan 32 px de
+   * texto a texto, que es la medida exacta de la referencia. Un hueco aqui se
+   * sumaria al relleno y la barra dejaria de coincidir.
+   */
+  gap: 0;
+  /*
+   * 16 px, medido en `originx.demos.tailgrids.com` el 15/09/2026 junto con el
+   * peso 500 y los 32 px de separacion. Estuvo en 18 px desde el 11/09/2026 y
+   * baja por peticion expresa: lo que evita que los destinos se pierdan es el
+   * peso, no el tamaño.
+   */
+  font-size: var(--t-base);
 }
 
 /*
@@ -290,114 +302,177 @@
 }
 
 /*
- * «Ingresar» es la unica accion de la barra: rampa magenta a rojo, texto blanco
- * y esquina de `--radio-menor`, copiada de la referencia que pidio el cliente.
+ * ⚠️ **El rotulo es «Iniciar sesión» desde el 15/09/2026**; antes decia
+ * «Ingresar». La clase se sigue llamando `.entrar` a proposito: renombrarla no
+ * añade nada y sale en la hoja, en el JSX y en este comentario. El boton mide
+ * 125 px en escritorio y 109 en telefono, 31 mas que antes; se comprobo a 390,
+ * 360 y 320 px y en el peor caso —320— quedan **12 px** entre «Mis procesos» y
+ * el boton, sin desborde.
  *
- * ⚠️ **El texto blanco sobre esta rampa da entre 4,42:1 y 3,48:1**, y WCAG 1.4.3
- * pide 4,5:1 para texto de 14 px. Es una decision tomada mirando el numero: se
- * midio tambien la pareja `#d81b7e → #c4304b`, que es el mismo magenta-a-rojo un
- * paso mas oscuro y da 4,80:1 y 5,42:1, y se prefirio el color de la referencia.
- * Si algun dia hay que cumplirlo, ese es el cambio: dos valores, nada mas.
+ * «Iniciar sesión» es la unica accion de la barra, y es la pieza de
+ * `originx.demos.tailgrids.com` copiada al valor: medida en el navegador el
+ * 15/09/2026, no sacada a ojo de una captura.
  *
- * El limite del control si cumple 1.4.11: 4,42:1 por la izquierda y 3,48:1 por
- * la derecha contra la nube, los dos por encima de 3.
+ * Son DOS cajas, y de ahi `.entrarCara`: el enlace es el marco rosa translucido
+ * de 4 px con los cuatro cuadraditos de las esquinas, y el hijo es la cara con
+ * la rampa. En un solo elemento no salen las dos capas.
+ *
+ * ⚠️ **Los cuatro puntos de las esquinas son parte del boton, no marcas de
+ * seleccion de una captura.** En la referencia son cuatro `<span>` de 3x3 px a
+ * -1 px; aqui son cuatro capas de fondo, sin tocar el arbol.
+ *
+ * ⚠️ **El texto blanco sobre esta rampa da entre 2,70:1 y 2,53:1**, y WCAG 1.4.3
+ * pide 4,5:1 a los 14 px. Es PEOR que la rampa magenta que habia antes —aquella
+ * daba 4,42:1 y 3,48:1— y va asi por peticion expresa del cliente, que queria la
+ * pieza de la referencia igual. **Tampoco cumple el 3:1 de 1.4.11** para el
+ * limite del control: 2,70:1 y 2,53:1 contra la nube. El marco rosa se ve, pero
+ * al 20 % sobre nube da 1,18:1, asi que no lo salva.
+ *
+ * Si algun dia hay que cumplirlo, el cambio es de dos valores: la misma rampa
+ * con la luz bajada. `#d81b7e → #c4304b` da 4,80:1 y 5,42:1.
  */
 .entrar {
-  position: relative;
-  /* Recorta el destello a la pieza. No recorta el anillo de foco: `outline` no
-     lo limita `overflow`. */
-  overflow: hidden;
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
+  display: block;
   margin-left: var(--e2);
-  padding: 0 var(--e5);
-  border-radius: var(--radio-menor);
-  background: linear-gradient(90deg, #e0218a 0%, #f5317a 48%, #ff3b5c 100%);
-  background-size: 160% 100%;
-  color: var(--tinta-invertida);
-  font-weight: 600;
+  /* El marco rosa: 4 px de relleno y esquina viva, como la referencia. */
+  padding: 4px;
+  /*
+   * ⚠️ **Un borde transparente de 1 px, y hace falta.** Los cuadrados de las
+   * esquinas tienen que asomar 1 px POR FUERA del marco, y un fondo no se puede
+   * salir de su caja: lo que se hace es agrandar la caja de pintado con un borde
+   * invisible y colocarlos en su esquina.
+   */
+  border: 1px solid transparent;
+  background-color: rgb(255 136 150 / 0.2);
+  background-image:
+    linear-gradient(270deg, #ff8268 0%, #fe7eb2 100%),
+    linear-gradient(270deg, #ff8268 0%, #fe7eb2 100%),
+    linear-gradient(270deg, #ff8268 0%, #fe7eb2 100%),
+    linear-gradient(270deg, #ff8268 0%, #fe7eb2 100%);
+  background-repeat: no-repeat;
+  background-size: 3px 3px;
+  background-position: 0 0, 100% 0, 0 100%, 100% 100%;
+  background-origin: border-box;
+  /*
+   * Los cuatro cuadrados llegan al borde; el rosa del marco se queda en el
+   * relleno, o el marco mediria 5 px en vez de 4. **El color de fondo usa
+   * siempre el ULTIMO valor de esta lista**, y por eso `padding-box` va al final.
+   */
+  background-clip: border-box, border-box, border-box, border-box, padding-box;
   text-decoration: none;
-  /* La sombra lleva desplazamiento ademas del halo de color: un halo a cero es
-     decoracion, el desplazamiento es lo que apoya el boton sobre la barra. */
-  box-shadow:
-    0 1px 2px rgb(10 10 10 / 0.12),
-    0 6px 18px rgb(236 45 135 / 0.32);
-  transition:
-    transform 180ms var(--salida),
-    background-position 320ms var(--salida),
-    box-shadow 180ms var(--salida);
+  transition: transform 180ms var(--salida);
 }
 
 /*
- * El destello que lo cruza cada 4,5 s.
- *
- * ⚠️ **Es lo unico que se mueve solo en todo el portal, y solo existe para quien
- * no ha entrado**: con sesion, «Ingresar» no se pinta. Cruza en poco mas de un
- * segundo y descansa el resto del ciclo, para que sea un reflejo y no un
- * parpadeo. Se para entero con `prefers-reduced-motion`.
+ * La cara. De aqui sale el area tactil: 20 de linea + 16 de relleno = 36, mas
+ * 4+1 de marco por lado = 46 px, por encima de los 44 que pide 2.5.5.
  */
-.entrar::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    105deg,
-    transparent 38%,
-    rgb(255 255 255 / 0.55) 50%,
-    transparent 62%
-  );
-  transform: translateX(-120%);
+.entrarCara {
+  display: block;
+  position: relative;
+  /* Recorta el rotulo que gira. No recorta el anillo de foco, que va en el
+     `<a>` de fuera y ademas es `outline`. */
+  overflow: hidden;
+  padding: 8px 16px;
+  border-radius: 4px;
+  background: linear-gradient(270deg, #ff7c61 0%, #ff68a5 100%);
   /*
-   * ⚠️ **`--salida` NO sirve aqui, y se vio midiendo.** Esa curva es para lo que
-   * llega y se posa: con ella el destello recorria el 90 % del boton en los
-   * primeros 400 ms de un tramo de 1,17 s, o sea daba un salto en vez de cruzar
-   * —medido a 1200 ms: -120 %; a 1600 ms: +98 %—. Un reflejo que pasa por encima
-   * acelera y frena por igual, y eso es `ease-in-out`.
+   * Las dos luces interiores de la referencia, blancas al 20 %: una arriba y
+   * otra abajo. Son lo que abomba la pieza; sin ellas la rampa se ve plana y
+   * deja de parecerse.
    */
-  animation: cruzaElDestello 4.5s ease-in-out 1.2s infinite;
+  box-shadow:
+    inset 0 -4px 8px rgb(255 255 255 / 0.2),
+    inset 0 4px 4px rgb(255 255 255 / 0.2);
+  color: var(--tinta-invertida);
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  line-height: 20px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/*
+ * El rotulo que gira, igual que en los botones del kit.
+ *
+ * ⚠️ **Se escribe aqui y no se compone de `piezas.module.css` a proposito.**
+ * Alli el giro vive en la propia pieza; aqui la pieza son dos cajas —el marco y
+ * la cara— y quien recorta y lleva las copias es la cara, mientras quien recibe
+ * el raton es el marco. Es la misma tecnica, no la misma regla.
+ *
+ * El porque de cada decision —las dos copias en pseudoelementos, la barra del
+ * `content` que deja el texto alternativo vacio, el `@supports` que lo envuelve
+ * y por que el texto real se apaga con `-webkit-text-fill-color` y no con
+ * `color`— esta escrito una sola vez, en `piezas.module.css`.
+ */
+@supports (content: 'a' / '') {
+  .entrarCara[data-rotulo] {
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .entrarCara[data-rotulo]::before,
+  .entrarCara[data-rotulo]::after {
+    content: attr(data-rotulo) / '';
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--tinta-invertida);
+    -webkit-text-fill-color: var(--tinta-invertida);
+    transition: transform 300ms var(--curva-control);
+  }
+
+  /* La copia que espera fuera, justo debajo del suelo de la cara. */
+  .entrarCara[data-rotulo]::after {
+    transform: translateY(100%);
+  }
+
+  .entrar:hover .entrarCara[data-rotulo]::before {
+    transform: translateY(-100%);
+  }
+
+  .entrar:hover .entrarCara[data-rotulo]::after {
+    transform: translateY(0);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .entrarCara[data-rotulo]::before,
+    .entrarCara[data-rotulo]::after {
+      transition: none;
+    }
+
+    .entrar:hover .entrarCara[data-rotulo]::before {
+      transform: none;
+    }
+
+    .entrar:hover .entrarCara[data-rotulo]::after {
+      transform: none;
+      opacity: 0;
+    }
+  }
 }
 
 .entrar:hover {
-  color: var(--tinta-invertida);
   text-decoration: none;
   transform: translateY(-1px);
-  background-position: 100% 0;
-  box-shadow:
-    0 2px 4px rgb(10 10 10 / 0.14),
-    0 10px 26px rgb(236 45 135 / 0.4);
 }
 
 .entrar:active {
   transform: translateY(0) scale(0.98);
 }
 
-@keyframes cruzaElDestello {
-  0% {
-    transform: translateX(-120%);
-  }
-
-  26%,
-  100% {
-    transform: translateX(120%);
-  }
-}
-
 /*
  * Menos movimiento, no menos informacion.
  *
- * Se van la cascada, el destello y los desplazamientos; se quedan el color del
- * activo y su filete, que son los que dicen donde estas. Es lo que pide la
+ * Se van la cascada y los desplazamientos; se quedan el color del activo y su
+ * filete, que son los que dicen donde estas. Es lo que pide la
  * regla: reducir el movimiento sin borrar la respuesta.
  */
 @media (prefers-reduced-motion: reduce) {
   .navegacion > * {
     animation: none;
-  }
-
-  .entrar::after {
-    animation: none;
-    opacity: 0;
   }
 
   .entrar:hover,
@@ -455,7 +530,10 @@
 
   .entrar {
     margin-left: var(--e2);
-    padding: 0 var(--e4);
+  }
+
+  .entrarCara {
+    padding-inline: var(--e3);
   }
 }
 
@@ -481,7 +559,10 @@
 
   .entrar {
     margin-left: var(--e1);
-    padding: 0 var(--e3);
+  }
+
+  .entrarCara {
+    padding-inline: var(--e2);
   }
 }
 

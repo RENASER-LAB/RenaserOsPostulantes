@@ -262,6 +262,7 @@ export function CuestionarioTecnico() {
           type="button"
           onClick={() => setIndice((i) => Math.max(0, i - 1))}
           disabled={indice === 0}
+          data-rotulo="← Anterior"
         >
           ← Anterior
         </button>
@@ -270,6 +271,7 @@ export function CuestionarioTecnico() {
           type="button"
           onClick={() => setIndice((i) => Math.min(preguntas.length - 1, i + 1))}
           disabled={indice >= preguntas.length - 1}
+          data-rotulo="Siguiente →"
         >
           Siguiente →
         </button>
@@ -295,6 +297,7 @@ export function CuestionarioTecnico() {
           type="button"
           onClick={() => setConfirmarEntrega(true)}
           disabled={faltan > 0 || sinGuardar > 0 || entrega.isPending}
+          data-rotulo="Entregar"
         >
           Entregar
         </button>
@@ -318,6 +321,7 @@ export function CuestionarioTecnico() {
               type="button"
               onClick={() => entrega.mutate()}
               disabled={entrega.isPending}
+              data-rotulo={entrega.isPending ? 'Entregando…' : 'Sí, entregar'}
             >
               {entrega.isPending ? 'Entregando…' : 'Sí, entregar'}
             </button>
@@ -325,6 +329,7 @@ export function CuestionarioTecnico() {
               className={estilos.secundario}
               type="button"
               onClick={() => setConfirmarEntrega(false)}
+              data-rotulo="Mejor no"
             >
               Mejor no
             </button>

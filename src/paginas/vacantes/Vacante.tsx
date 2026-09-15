@@ -73,7 +73,11 @@ export function Vacante() {
                 : 'No pudimos conectar con el servidor.'}
           </p>
           {noExiste ? (
-            <Link className={estilos.reintentar} to={rutas.vacantes()}>
+            <Link
+              className={estilos.reintentar}
+              to={rutas.vacantes()}
+              data-rotulo="Ver los puestos abiertos"
+            >
               Ver los puestos abiertos
             </Link>
           ) : (
@@ -81,6 +85,7 @@ export function Vacante() {
               type="button"
               className={estilos.reintentar}
               onClick={() => void consulta.refetch()}
+              data-rotulo="Intentar de nuevo"
             >
               Intentar de nuevo
             </button>
@@ -175,6 +180,7 @@ export function Vacante() {
         <Link
           className={estilos.boton}
           to={hayCuenta ? rutas.postular(v.id) : rutas.registro(v.id)}
+          data-rotulo="Postular a este puesto"
         >
           Postular a este puesto
         </Link>

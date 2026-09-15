@@ -281,20 +281,30 @@
   /* Lo que mide la cabecera fija. Lo consume la barra de avance del examen,
      que se pega justo debajo.
 
-     Son 68 px MEDIDOS en el navegador, no calculados: 8 de aire arriba + 60 de
-     barra. El 11/09/2026 pasaron por 61 (barra a sangre) y 76 (vaina ovalada)
-     antes de quedarse aqui. Si cambia el relleno de `.cabecera` o
-     `.cabeceraDentro`, se vuelve a medir — seis reglas de cuatro hojas se pinchan
-     debajo de este numero y ninguna lo puede adivinar.
+     Son 70 px MEDIDOS en el navegador, no calculados: 8 de aire arriba + 62 de
+     barra. El 11/09/2026 pasaron por 61 (barra a sangre) y 76 (vaina ovalada), y
+     el 15/09/2026 de 68 a 70, porque «Ingresar» copio la pieza de la referencia y
+     paso de 44 a 46 px de alto. Si cambia el relleno de `.cabecera`, el de
+     `.cabeceraDentro` o el ALTO DEL BOTON, se vuelve a medir — seis reglas de
+     cuatro hojas se pinchan debajo de este numero y ninguna lo puede adivinar.
 
      ⚠️ **Y ahora la barra es transparente mientras no se baja.** Lo que se pincha
      aqui aparece sobre el cielo, no bajo una barra opaca, hasta el primer scroll.
      En cuanto hay scroll —que es cuando algo pasaria por debajo— la barra ya tiene
      su velo puesto. */
-  --alto-cabecera: 68px;
+  --alto-cabecera: 70px;
 
   /* El movimiento: salida exponencial desde algo que ya se ve */
   --salida: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /*
+   * La curva de los botones, medida en `originx.demos.tailgrids.com` el
+   * 15/09/2026. Acelera y frena por igual, que es lo que pide un rotulo que
+   * entra por abajo y sale por arriba: con `--salida` el recorrido se gasta en
+   * el primer tercio y se ve un salto, no un giro. Es la misma razon por la que
+   * `--salida` tampoco valia para el destello que hubo en «Ingresar».
+   */
+  --curva-control: cubic-bezier(0.4, 0, 0.2, 1);
 
   /*
    * Las tres sombras del portal, y ninguna es decorativa.
@@ -306,6 +316,28 @@
   --sombra-nube: 0 1px 2px rgb(10 10 10 / 0.05), 0 8px 24px rgb(10 10 10 / 0.06);
   --sombra-aviso: 0 12px 24px rgb(10 10 10 / 0.10), 0 32px 64px rgb(10 10 10 / 0.14);
   --bruma-viva: 0 0 0 4px var(--activo-bruma);
+
+  /*
+   * Las dos sombras del boton, copiadas al valor de
+   * `originx.demos.tailgrids.com` el 15/09/2026.
+   *
+   * `--sombra-control` es lo unico que separa del fondo al boton claro desde
+   * que perdio su contorno: cuatro capas de gris que van de 3 a 48 px, cada una
+   * con menos opacidad cuanto mas lejos. La quinta capa del original —76 px a
+   * alfa 0— no se copia porque no pinta nada.
+   *
+   * ⚠️ **No da los 3:1 que WCAG 1.4.11 pide al limite de un control**, y el
+   * contorno que habia si los daba (3,45:1). Ver `.secundario` en
+   * `piezas.module.css`, donde esta la decision y su numero.
+   */
+  --sombra-control:
+    0 3px 7px rgb(130 130 130 / 0.15),
+    0 12px 12px rgb(130 130 130 / 0.13),
+    0 27px 16px rgb(130 130 130 / 0.08),
+    0 48px 19px rgb(130 130 130 / 0.02);
+  --sombra-control-alta:
+    0 10px 15px -3px rgb(10 10 10 / 0.1),
+    0 4px 6px -4px rgb(10 10 10 / 0.1);
 
   /*
    * Lo que se apaga detras de un modal.
