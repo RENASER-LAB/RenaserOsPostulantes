@@ -525,25 +525,20 @@ function FormularioDePostular({ vacanteId }: { vacanteId: string }) {
           de ellos le obliga a volver atras o a decidir de memoria.
         */}
         {exigePretension && (
-          <section className={estilos.bloque}>
-            <h2 className={estilos.tituloBloque}>Cuánto quieres ganar</h2>
-            <p className={estilos.explicacion}>
-              <b>{v.nombreEmpresa || 'La empresa'} publicó lo que paga</b>, así que aquí
-              te toca decir lo tuyo. Es la misma información para los dos, y desde el
-              principio: así nadie descubre al final que no había trato posible.
-            </p>
-
+          /*
+            Sin encabezado, a diferencia de los otros bloques: es un `<div>` y no
+            una `<section>` a proposito. Una region sin nombre es ruido en el
+            arbol de accesibilidad —se anuncia como «region» y no dice de que—,
+            y aqui la etiqueta del campo ya dice lo que se pide.
+          */
+          <div className={estilos.bloque}>
             <div className={estilos.loQueOfrecen}>
               <Remuneracion remuneracion={v.remuneracion} />
             </div>
 
             <Campo
               etiqueta={`Tu pretensión mensual (${v.remuneracion.moneda ?? 'PEN'})`}
-              ayuda={
-                sugerido !== undefined
-                  ? 'Lo hemos rellenado con lo que tienes en tu perfil. Cámbialo si para este puesto pides otra cosa.'
-                  : 'Una cifra mensual, bruta. Puedes cambiarla en cada vacante.'
-              }
+              ayuda="Una cifra mensual, bruta. Puedes cambiarla en cada vacante."
               type="text"
               inputMode="decimal"
               value={pretension}
@@ -554,12 +549,7 @@ function FormularioDePostular({ vacanteId }: { vacanteId: string }) {
               }}
               error={errores.pretension}
             />
-
-            <p className={estilos.notaPretension}>
-              Solo la ve quien decide el sueldo, nunca quien te evalúa. Y la guardamos
-              en tu perfil para no volver a preguntártela desde cero.
-            </p>
-          </section>
+          </div>
         )}
 
         <section className={estilos.bloque}>
@@ -598,12 +588,6 @@ function FormularioDePostular({ vacanteId }: { vacanteId: string }) {
         {requisitos.length > 0 && (
           <section className={estilos.requisitos}>
             <h2>Requisitos indispensables</h2>
-            <p className={estilos.avisoRequisitos}>
-              Léelos con calma y responde con sinceridad.{' '}
-              <b>Es lo único que el sistema decide solo</b>: si no cumples alguno, tu
-              postulación se cierra al enviarla y no podrás volver a postular a este puesto.
-            </p>
-
             <div className={estilos.listaRequisitos}>
               {requisitos.map((r) => (
                 <Requisito
