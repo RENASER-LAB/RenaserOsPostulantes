@@ -167,9 +167,24 @@ describe('la campana', () => {
     const enlace = await screen.findByRole('link', { name: /cambió la remuneración/i })
     expect(enlace.getAttribute('href')).toBe('/procesos/uuid-1')
     expect(screen.getByText(/antes: s\/ 3 000/i)).toBeTruthy()
-    // El punto de «sin leer» lleva su texto: un circulo de 6px no existe para
-    // quien no ve la pantalla.
-    expect(screen.getByText('Sin leer')).toBeTruthy()
+    // «Sin leer» va DENTRO del nombre del enlace, no suelto al lado: asi quien
+    // navega por la lista de enlaces oye que ese aviso es nuevo sin tener que
+    // encontrar un punto de 5px que para el no existe. `name` de `getByRole` es
+    // el nombre accesible calculado, que es exactamente lo que se quiere probar.
+    expect(screen.getByRole('link', { name: /sin leer/i })).toBe(enlace)
+  })
+
+  it('un aviso ya leído no anuncia «sin leer»', async () => {
+    avisos = {
+      sinLeer: 0,
+      avisos: [{ ...UN_AVISO, leidoEn: '2026-09-14T10:00:00Z' }],
+    }
+    montar()
+    await screen.findByRole('button', { name: 'Avisos' })
+    fireEvent.click(screen.getByRole('button'))
+
+    await screen.findByRole('link', { name: /cambió la remuneración/i })
+    expect(screen.queryByRole('link', { name: /sin leer/i })).toBeNull()
   })
 
   it('un aviso sin proceso detrás no se pinta como enlace', async () => {

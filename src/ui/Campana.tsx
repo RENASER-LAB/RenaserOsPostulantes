@@ -8,53 +8,66 @@
  *
  * ## De donde sale la forma
  *
- * Sigue el patron de popover de notificaciones de Origin UI: boton de icono con
- * una **pildora numerada** encima, panel de 20rem, cabecera con «Notificaciones»
- * y «Marcar todas como leidas», separador, y una fila por aviso con su punto de
- * no leido **a la derecha** y la hora debajo.
+ * Sigue el `NotificationPopover`: boton de icono con el contador en circulo
+ * sobre la esquina, panel de 20rem que entra con escala, cabecera con
+ * «Marcar todos como leidos», y una lista con divisores donde cada aviso lleva
+ * su punto a la izquierda del titulo, la hora a la derecha y el detalle debajo.
+ *
+ * Los avisos entran **escalonados y desenfocandose**: `x: 20, blur(10px)` con
+ * un retraso por posicion. Es la unica animacion del portal que dibuja una
+ * entrada, y aqui se gana el sitio — la campana se abre sobre contenido que ya
+ * estaba, asi que el movimiento es lo que dice cual es la parte nueva.
  *
  * ⚠️ **Lo que se copio es el diseño, no el stack.** El original viene en
- * shadcn + Tailwind + Radix, y este portal no tiene ninguno de los tres: tiene
- * modulos CSS y los tokens de «El canto». Meter Tailwind al lado seria tener dos
- * sistemas de diseño discutiendo en la misma cabecera. Asi que la estructura, las
- * medidas y el comportamiento son los del original, y los colores salen de los
- * tokens de la casa.
+ * shadcn + Tailwind + lucide, y este portal no tiene ninguno de los tres: tiene
+ * modulos CSS y los tokens de «El canto». Lo que si se usa tal cual es `motion`,
+ * que ya estaba en el proyecto — esta es la primera pantalla que la estrena.
+ *
+ * ⚠️ **Y la superficie se queda clara.** El original va en negro translucido con
+ * desenfoque de fondo, pensado para flotar sobre una imagen. Aqui flota sobre la
+ * cabecera blanca del portal: no hay nada detras que desenfocar, y seria el unico
+ * elemento oscuro de todo el mundo visual. La forma es la suya; el color, el de
+ * la casa.
  *
  * Dos decisiones que el diseño trae y valen mas que la forma:
  *
  *   - **Marcar leido lo decide la persona, no el hecho de abrir.** Antes se
  *     apagaban todos al abrir la campana, y con ellos el punto de cada fila de
- *     «Mis procesos» — sin que nadie hubiera leido nada. Ahora se apaga el que
- *     se pulsa, o todos con el boton de la cabecera.
- *   - **La fila entera es pulsable sin anidar interactivos.** El boton se estira
- *     con un `::after` sobre toda la tarjeta: un solo elemento en el arbol de
- *     accesibilidad y toda el area para el raton.
- *
- * Y una que NO se copia: el punto es ambar, no del color primario. En «El canto»
- * el violeta significa una sola cosa, «te toca a ti», y un aviso no le da ningun
- * turno — es `--duda`, «lo que cambia tu decision».
+ *     «Mis procesos» — sin que nadie hubiera leido nada.
+ *   - **El aviso entero es pulsable.** El original lo hace con un `onClick` en el
+ *     `div`, que no es alcanzable con el tabulador ni responde a Enter; aqui hay
+ *     un enlace de verdad estirado con un `::after` sobre la tarjeta: mismo area
+ *     para el raton, y un elemento real para el teclado.
  */
 
 import { useEffect, useRef, useState } from 'react'
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { marcarAvisoLeido, marcarAvisosLeidos, misAvisos } from '@/api/portal'
 import { useSesion } from '@/app/Sesion'
 import { rutas } from '@/rutas'
+import type { AvisoDelPortal } from '@/api/tipos'
 import estilos from './Campana.module.css'
 
-/** Cuando paso, en palabras. Para un aviso, «hace dos dias» dice mas que la fecha. */
+/**
+ * Cuando paso, corto.
+ *
+ * Va a la derecha del titulo y comparte linea con el, asi que tiene que caber en
+ * dos o tres palabras: «hace 3 min», «ayer», «12 sept». El original escribia la
+ * fecha entera, que en un aviso de hace un rato dice menos y ocupa mas.
+ */
 function hace(iso: string): string {
   const cuando = new Date(iso).getTime()
   if (Number.isNaN(cuando)) return ''
   const minutos = Math.floor((Date.now() - cuando) / 60000)
-  if (minutos < 1) return 'ahora mismo'
+  if (minutos < 1) return 'ahora'
   if (minutos < 60) return `hace ${minutos} min`
   const horas = Math.floor(minutos / 60)
   if (horas < 24) return `hace ${horas} h`
   const dias = Math.floor(horas / 24)
   if (dias === 1) return 'ayer'
-  if (dias < 30) return `hace ${dias} días`
+  if (dias < 7) return `hace ${dias} días`
   return new Date(iso).toLocaleDateString('es-PE', { day: 'numeric', month: 'short' })
 }
 
@@ -64,6 +77,15 @@ export function Campana() {
   const [abierta, setAbierta] = useState(false)
   const contenedor = useRef<HTMLDivElement>(null)
   const boton = useRef<HTMLButtonElement>(null)
+  /*
+    Quien pidio menos movimiento no recibe ninguno.
+
+    `motion` lo respeta si se le pregunta, y aqui importa mas que en otros sitios:
+    la entrada escalonada con desenfoque es justo el tipo de animacion que provoca
+    mareo a quien es sensible a ella. Sin esto, la unica forma de leer sus avisos
+    seria esperar a que pararan de moverse.
+  */
+  const sinMovimiento = useReducedMotion()
 
   const consulta = useQuery({
     queryKey: ['avisos'],
@@ -131,126 +153,152 @@ export function Campana() {
         onClick={() => setAbierta((estaba) => !estaba)}
         aria-expanded={abierta}
         aria-haspopup="dialog"
-        // El nombre lleva la cuenta: quien usa lector de pantalla no ve la
-        // pildora, y «Avisos» a secas no le dice que hay algo nuevo.
+        // El nombre lleva la cuenta: quien usa lector de pantalla no ve el
+        // contador, y «Avisos» a secas no le dice que hay algo nuevo.
         aria-label={sinLeer > 0 ? `Avisos, ${sinLeer} sin leer` : 'Avisos'}
       >
         <IconoCampana />
         {sinLeer > 0 && (
-          <span className={estilos.pildora} aria-hidden="true">
-            {sinLeer > 99 ? '99+' : sinLeer}
+          <span className={estilos.contador} aria-hidden="true">
+            {sinLeer > 9 ? '9+' : sinLeer}
           </span>
         )}
       </button>
 
-      {abierta && (
-        <div className={estilos.panel} role="dialog" aria-label="Tus avisos">
-          <div className={estilos.cabecera}>
-            <span className={estilos.tituloPanel}>Avisos</span>
-            {sinLeer > 0 && (
-              <button
-                type="button"
-                className={estilos.marcarTodos}
-                onClick={() => marcarTodos.mutate()}
-                disabled={marcarTodos.isPending}
-              >
-                Marcar todos como leídos
-              </button>
+      <AnimatePresence>
+        {abierta && (
+          <motion.div
+            className={estilos.panel}
+            role="dialog"
+            aria-label="Tus avisos"
+            initial={sinMovimiento ? false : { opacity: 0, y: 10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={sinMovimiento ? { opacity: 1 } : { opacity: 0, y: 10, scale: 0.95 }}
+            transition={{ duration: sinMovimiento ? 0 : 0.2 }}
+          >
+            <div className={estilos.cabecera}>
+              <h3 className={estilos.tituloPanel}>Avisos</h3>
+              {sinLeer > 0 && (
+                <button
+                  type="button"
+                  className={estilos.marcarTodos}
+                  onClick={() => marcarTodos.mutate()}
+                  disabled={marcarTodos.isPending}
+                >
+                  Marcar todos como leídos
+                </button>
+              )}
+            </div>
+
+            {consulta.isPending && <p className={estilos.vacio}>Buscando…</p>}
+
+            {consulta.isError && (
+              <p className={estilos.vacio} role="alert">
+                No pudimos cargar tus avisos. Vuelve a intentarlo en un momento.
+              </p>
             )}
-          </div>
 
-          <div role="separator" aria-orientation="horizontal" className={estilos.separador} />
+            {consulta.isSuccess && avisos.length === 0 && (
+              <p className={estilos.vacio}>
+                Nada nuevo por ahora. Aquí te contaremos lo que cambie en los procesos
+                en los que estás.
+              </p>
+            )}
 
-          {consulta.isPending && <p className={estilos.vacio}>Buscando…</p>}
-
-          {consulta.isError && (
-            <p className={estilos.vacio} role="alert">
-              No pudimos cargar tus avisos. Vuelve a intentarlo en un momento.
-            </p>
-          )}
-
-          {consulta.isSuccess && avisos.length === 0 && (
-            <p className={estilos.vacio}>
-              Nada nuevo por ahora. Aquí te contaremos lo que cambie en los procesos
-              en los que estás.
-            </p>
-          )}
-
-          {avisos.map((aviso) => {
-            const cuerpo = (
-              <>
-                <span className={estilos.tituloAviso}>{aviso.titulo}</span>{' '}
-                <span className={estilos.cuerpoAviso}>{aviso.cuerpo}</span>
-              </>
-            )
-            return (
-              <div key={aviso.id} className={estilos.aviso}>
-                <div className={estilos.filaAviso}>
-                  <div className={estilos.textoAviso}>
-                    {/*
-                      Con proceso detras es un enlace; sin el, un boton. Los dos
-                      se estiran sobre la tarjeta entera con el mismo `::after`:
-                      un solo elemento en el arbol de accesibilidad, y toda el
-                      area para el raton.
-
-                      Un enlace que no lleva a ninguna parte seria peor que no
-                      tenerlo: se pulsa, no pasa nada, y la proxima vez ya no se
-                      pulsa ninguno.
-                    */}
-                    {aviso.postulacionUuid ? (
-                      <Link
-                        className={estilos.enlaceAviso}
-                        to={rutas.proceso(aviso.postulacionUuid)}
-                        onClick={() => {
-                          if (!aviso.leidoEn) marcarUno.mutate(aviso.id)
-                          setAbierta(false)
-                        }}
-                      >
-                        {cuerpo}
-                      </Link>
-                    ) : (
-                      <button
-                        type="button"
-                        className={estilos.enlaceAviso}
-                        onClick={() => {
-                          if (!aviso.leidoEn) marcarUno.mutate(aviso.id)
-                        }}
-                      >
-                        {cuerpo}
-                      </button>
-                    )}
-                    <div className={estilos.cuando}>{hace(aviso.creadoEn)}</div>
-                  </div>
-
-                  {!aviso.leidoEn && (
-                    <div className={estilos.marcaNoLeido}>
-                      <span className="solo-lectores">Sin leer</span>
-                      <Punto />
-                    </div>
-                  )}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      )}
+            <div className={estilos.lista}>
+              {avisos.map((aviso, posicion) => (
+                <Aviso
+                  key={aviso.id}
+                  aviso={aviso}
+                  posicion={posicion}
+                  sinMovimiento={Boolean(sinMovimiento)}
+                  alAbrir={() => {
+                    if (!aviso.leidoEn) marcarUno.mutate(aviso.id)
+                  }}
+                  alNavegar={() => setAbierta(false)}
+                />
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
 
-/** El punto de «sin leer». Seis pixeles, a la derecha y centrado con la fila. */
-function Punto() {
+/**
+ * Un aviso de la lista.
+ *
+ * Entra desde la derecha desenfocandose, con un retraso proporcional a su
+ * posicion: los de arriba primero. El tope de retraso existe porque quien lleva
+ * meses sin entrar puede tener veinte, y sin el, el ultimo tardaria dos segundos
+ * en aparecer sobre un panel que ya se puede desplazar.
+ */
+function Aviso({
+  aviso,
+  posicion,
+  sinMovimiento,
+  alAbrir,
+  alNavegar,
+}: {
+  aviso: AvisoDelPortal
+  posicion: number
+  sinMovimiento: boolean
+  alAbrir: () => void
+  alNavegar: () => void
+}) {
+  const retraso = Math.min(posicion * 0.06, 0.5)
+
+  const cuerpo = (
+    <>
+      <span className={estilos.lineaTitulo}>
+        {!aviso.leidoEn && (
+          <>
+            <span className={estilos.punto} aria-hidden="true" />
+            <span className="solo-lectores">Sin leer. </span>
+          </>
+        )}
+        <span className={estilos.tituloAviso}>{aviso.titulo}</span>
+      </span>
+      <span className={estilos.cuando}>{hace(aviso.creadoEn)}</span>
+    </>
+  )
+
   return (
-    <svg
-      width="6"
-      height="6"
-      fill="currentColor"
-      viewBox="0 0 6 6"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden="true"
+    <motion.div
+      className={estilos.aviso}
+      initial={sinMovimiento ? false : { opacity: 0, x: 20, filter: 'blur(10px)' }}
+      animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
+      transition={{ duration: sinMovimiento ? 0 : 0.3, delay: sinMovimiento ? 0 : retraso }}
     >
-      <circle cx="3" cy="3" r="3" />
-    </svg>
+      {/*
+        Con proceso detras es un enlace; sin el, un boton. Los dos se estiran
+        sobre la tarjeta entera con el mismo `::after`: un solo elemento en el
+        arbol de accesibilidad, con el texto que le corresponde, y toda el area
+        para el raton.
+
+        El original resuelve esto con un `onClick` en el `div`, que no es
+        alcanzable con el tabulador ni responde a Enter. Se ve igual y funciona
+        para mas gente.
+      */}
+      {aviso.postulacionUuid ? (
+        <Link
+          className={estilos.zona}
+          to={rutas.proceso(aviso.postulacionUuid)}
+          onClick={() => {
+            alAbrir()
+            alNavegar()
+          }}
+        >
+          {cuerpo}
+        </Link>
+      ) : (
+        <button type="button" className={estilos.zona} onClick={alAbrir}>
+          {cuerpo}
+        </button>
+      )}
+      <p className={estilos.detalle}>{aviso.cuerpo}</p>
+    </motion.div>
   )
 }
 
@@ -258,7 +306,7 @@ function Punto() {
  * La campana, dibujada.
  *
  * El mismo trazo que `Bell` de lucide —16 px, grosor 2— para no traerse la
- * libreria entera por un icono. Hereda el color: la pildora se pinta aparte.
+ * libreria entera por un icono. Hereda el color: el contador se pinta aparte.
  */
 function IconoCampana() {
   return (

@@ -1,15 +1,22 @@
 /*
  * La campana de la cabecera.
  *
- * La forma sigue el popover de notificaciones de Origin UI —boton de icono con
- * pildora numerada, panel de 20rem, cabecera con accion, separador, filas con el
- * punto de no leido a la derecha y la hora debajo— traducido a los tokens de «El
- * canto». Las medidas del original se conservan en la escala de la casa: `p-1`
- * es `--e1`, `px-3 py-2` es `--e3`/`--e2`, `w-80` son 20rem.
+ * La forma sigue el `NotificationPopover` —contador en circulo sobre la esquina
+ * del boton, panel de 20rem con esquinas de 12px, cabecera con linea inferior,
+ * lista con divisores, y cada aviso con su punto a la izquierda del titulo y la
+ * hora a la derecha— traducido a los tokens de «El canto». Las medidas del
+ * original se conservan: `p-4` es `--e4`, `w-80` son 20rem, `max-h-[400px]` son
+ * 25rem.
  *
- * La pildora y el punto son `--duda` y no `--activo`: en este portal el violeta
- * significa una sola cosa, «te toca a ti», y un aviso no le da ningun turno — le
- * cuenta algo que puede cambiar su decision, que es lo que ese token nombra.
+ * ⚠️ **La superficie se queda clara.** El original va en negro translucido con
+ * desenfoque de fondo, pensado para flotar sobre una imagen; aqui flota sobre la
+ * cabecera blanca del portal, donde no hay nada que desenfocar y seria el unico
+ * elemento oscuro de todo el mundo visual.
+ *
+ * El contador y el punto son `--duda` y no el color primario: en este portal el
+ * violeta significa una sola cosa, «te toca a ti», y un aviso no le da ningun
+ * turno — le cuenta algo que puede cambiar su decision, que es lo que ese token
+ * nombra.
  */
 
 .contenedor {
@@ -18,10 +25,9 @@
 }
 
 /*
- * El disparador, con la forma de un boton de icono del sistema: cuadrado,
- * esquinas de control, borde solo al pasar por encima.
+ * El disparador.
  *
- * 44px y no los 36 del original: es el minimo con el que un pulgar acierta sin
+ * 44px y no los 40 del original: es el minimo con el que un pulgar acierta sin
  * mirar, y esta barra se usa mas desde el telefono que desde el raton.
  */
 .boton {
@@ -49,21 +55,23 @@
 }
 
 /*
- * La pildora con la cuenta, montada sobre el borde del boton.
+ * El contador, en circulo sobre la esquina del boton.
  *
  * Un circulo a secas dice «hay algo»; con la cifra dice «hay tres», y eso cambia
- * si abre ahora o luego. Cabe hasta «99+», que es donde el numero deja de
+ * si abre ahora o luego. Cabe hasta «9+», que es donde el numero deja de
  * significar nada util.
+ *
+ * El anillo del color del fondo hace de borde: separa el contador del icono sin
+ * dibujar una linea que compita con el.
  */
-.pildora {
+.contador {
   position: absolute;
   top: 4px;
-  left: 50%;
+  right: 4px;
   min-width: 20px;
   height: 20px;
   padding: 0 5px;
   border-radius: 999px;
-  /* Anillo del color del fondo: separa la pildora del icono sin dibujar un borde. */
   box-shadow: 0 0 0 2px var(--nube);
   background: var(--duda);
   color: var(--tinta-invertida);
@@ -80,54 +88,60 @@
   right: 0;
   z-index: 40;
   width: min(20rem, calc(100vw - var(--e5) * 2));
-  max-height: 26rem;
+  max-height: 25rem;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: var(--e1);
-  border: 1px solid var(--regla);
   /*
-   * `--radio-menor` y NO `--radio-control`: el de control son 999px, la pildora
-   * de los botones de la casa. Sobre una caja de 320px eso no redondea, arquea —
-   * las esquinas se comen el titulo y la hora de cada aviso.
+   * 12px: las esquinas del original (`rounded-xl`). NO `--radio-control`, que
+   * son 999px —la pildora de los botones de la casa— y sobre una caja de 320px
+   * no redondea sino que arquea, comiendose el titulo y la hora de cada aviso.
    */
-  border-radius: var(--radio-menor);
+  border-radius: 12px;
+  border: 1px solid var(--regla);
   background: var(--nube);
   box-shadow: 0 12px 32px rgb(35 43 54 / 14%);
+  /* El origen de la escala: el panel crece desde la esquina del boton, no del centro. */
+  transform-origin: top right;
 }
 
 .cabecera {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
-  gap: var(--e4);
-  padding: var(--e2) var(--e3);
+  gap: var(--e3);
+  padding: var(--e3) var(--e4);
+  border-bottom: 1px solid var(--regla);
 }
 
 .tituloPanel {
+  margin: 0;
   font-size: var(--t-apoyo);
   font-weight: 700;
   color: var(--tinta);
 }
 
 /*
- * «Marcar todos como leidos», como enlace y no como boton relleno: es la accion
- * secundaria de un panel pequeño, y un boton de verdad aqui pesaria mas que
- * cualquiera de los avisos que hay debajo.
+ * «Marcar todos como leidos», como el boton fantasma del original: sin relleno
+ * ni borde hasta que se pasa por encima. Es la accion secundaria de un panel
+ * pequeño, y un boton macizo aqui pesaria mas que cualquiera de los avisos.
  */
 .marcarTodos {
-  padding: 0;
+  padding: var(--e1) var(--e2);
+  margin: calc(var(--e1) * -1) calc(var(--e2) * -1);
   border: 0;
+  border-radius: var(--radio-menor);
   background: none;
   font: inherit;
   font-size: var(--t-menor);
   font-weight: 600;
   color: var(--tinta2);
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .marcarTodos:hover:not(:disabled) {
+  background: var(--nube-hundida);
   color: var(--tinta);
-  text-decoration: underline;
 }
 
 .marcarTodos:disabled {
@@ -138,26 +152,27 @@
 .marcarTodos:focus-visible {
   outline: 2px solid var(--activo);
   outline-offset: 2px;
-  border-radius: var(--radio-menor);
-}
-
-/* Los margenes negativos del original: la regla cruza el panel de lado a lado. */
-.separador {
-  height: 1px;
-  margin: var(--e1) calc(var(--e1) * -1);
-  background: var(--regla);
 }
 
 .vacio {
   margin: 0;
-  padding: var(--e3);
+  padding: var(--e4);
   font-size: var(--t-apoyo);
   color: var(--tinta2);
 }
 
+/* Los divisores del original (`divide-y`): una regla entre avisos, ninguna al final. */
+.lista > * + * {
+  border-top: 1px solid var(--regla);
+}
+
+/*
+ * `position: relative` es el ancla del `::after` que estira el enlace sobre la
+ * tarjeta entera.
+ */
 .aviso {
-  border-radius: var(--radio-menor);
-  padding: var(--e2) var(--e3);
+  position: relative;
+  padding: var(--e3) var(--e4);
   transition: background-color 120ms ease;
 }
 
@@ -166,91 +181,97 @@
 }
 
 /*
- * `position: relative` aqui y no en `.aviso`: es el ancla del `::after` que
- * estira el enlace, y del punto de no leido. `padding-right` deja el sitio del
- * punto para que el texto no se le meta debajo.
+ * La zona pulsable: el titulo con su punto a la izquierda, y la hora a la
+ * derecha, en una sola linea.
+ *
+ * Es un enlace de verdad (o un boton) y no un `div` con `onClick` como el
+ * original: se ve igual, y ademas se alcanza con el tabulador y responde a Enter.
  */
-.filaAviso {
-  position: relative;
+.zona {
   display: flex;
   align-items: flex-start;
-  padding-right: var(--e3);
-}
-
-.textoAviso {
-  display: flex;
-  flex-direction: column;
-  gap: var(--e1);
-  flex: 1;
-  min-width: 0;
-}
-
-/*
- * El enlace se estira sobre la tarjeta entera.
- *
- * Es el truco del original y resuelve una tension real: se quiere que toda la
- * fila sea pulsable, pero envolverla en un `<a>` metería la hora y el punto
- * dentro del nombre del enlace, y anidar dos interactivos es peor todavia. Con
- * el `::after` hay un solo elemento en el arbol de accesibilidad, con el texto
- * que le corresponde, y toda el area para el raton.
- */
-.enlaceAviso {
+  justify-content: space-between;
+  gap: var(--e3);
+  width: 100%;
   padding: 0;
   border: 0;
   background: none;
   font: inherit;
   text-align: left;
-  color: var(--tinta2);
+  color: inherit;
   text-decoration: none;
   cursor: pointer;
 }
 
-.enlaceAviso::after {
+.zona::after {
   content: '';
   position: absolute;
   inset: 0;
 }
 
-.enlaceAviso:focus-visible {
+.zona:focus-visible {
   outline: 2px solid var(--activo);
   outline-offset: 2px;
   border-radius: var(--radio-menor);
 }
 
-.tituloAviso {
-  font-size: var(--t-apoyo);
-  font-weight: 700;
-  color: var(--tinta);
-}
-
-.enlaceAviso:hover .tituloAviso {
-  text-decoration: underline;
-}
-
-.cuerpoAviso {
-  font-size: var(--t-apoyo);
-  color: var(--tinta2);
-}
-
-.cuando {
-  font-size: var(--t-menor);
-  color: var(--tinta3);
+/*
+ * `flex-start` y no `center`: casi todos estos titulos ocupan dos lineas, y
+ * centrado el punto quedaba flotando en el hueco entre ellas en vez de marcar
+ * donde empieza el aviso.
+ */
+.lineaTitulo {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--e2);
+  min-width: 0;
 }
 
 /*
- * El punto de no leido: a la derecha y centrado con la fila, no un filete en el
- * canto izquierdo.
+ * El punto de «sin leer», a la izquierda del titulo.
  *
- * Asi el ojo baja por una sola columna de puntos para ver que hay nuevo, en vez
- * de comparar fondos. Y nunca va solo: al lado hay un texto en `.solo-lectores`
- * que dice «Sin leer» — un circulo de 6px no existe para quien no ve la pantalla.
+ * `flex-shrink: 0` porque si no, con un titulo largo el punto se aplasta hasta
+ * desaparecer y el aviso pierde justo la marca que dice que es nuevo.
+ *
+ * Nunca va solo: al lado hay un «Sin leer.» en `.solo-lectores`, dentro del
+ * nombre del enlace. Un circulo de 5px no existe para quien no ve la pantalla.
  */
-.marcaNoLeido {
-  position: absolute;
-  right: 0;
-  align-self: center;
-  display: flex;
-  color: var(--duda);
+.punto {
+  flex-shrink: 0;
+  width: 5px;
+  height: 5px;
+  /* A la altura de la x de la primera linea, no de su borde superior. */
+  margin-top: 0.45em;
+  border-radius: 50%;
+  background: var(--duda);
+}
+
+.tituloAviso {
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  color: var(--tinta);
+  min-width: 0;
+}
+
+.zona:hover .tituloAviso {
+  text-decoration: underline;
+}
+
+/*
+ * La hora. `flex-shrink: 0` por lo mismo que el punto: es corta y tiene que
+ * caber entera, y lo que cede espacio con un titulo largo es el titulo.
+ */
+.cuando {
+  flex-shrink: 0;
+  font-size: var(--t-menor);
+  color: var(--tinta3);
+  white-space: nowrap;
+}
+
+.detalle {
+  margin: var(--e1) 0 0;
+  font-size: var(--t-menor);
+  color: var(--tinta2);
 }
 
 /*
@@ -269,7 +290,12 @@
   }
 }
 
-/* Quien pidio menos animacion no recibe ninguna. */
+/*
+ * Quien pidio menos movimiento no recibe ninguno.
+ *
+ * Las animaciones de entrada las apaga `useReducedMotion` en el componente —es
+ * donde viven—; esto se lleva la transicion del hover, que es de CSS.
+ */
 @media (prefers-reduced-motion: reduce) {
   .aviso {
     transition: none;
