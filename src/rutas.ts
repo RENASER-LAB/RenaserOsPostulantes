@@ -92,8 +92,20 @@ export const rutas = {
   validacion: (uuid: string) => `/procesos/${uuid}/validacion`,
   decision: (uuid: string) => `/procesos/${uuid}/decision`,
   privacidad: () => '/privacidad',
-  /** La politica que se lee sin cuenta. La que Play necesita enlazar. */
-  politica: () => '/politica-de-privacidad',
+  /**
+   * La politica que se lee sin cuenta. La que Play necesita enlazar.
+   *
+   * Con `ancla` lleva directo a un bloque. Las casillas de consentimiento la
+   * enlazan con `'el-texto-que-aceptas'`: quien pulsa desde una casilla no quiere
+   * la politica entera, quiere el parrafo que esta a punto de firmar.
+   */
+  politica: (ancla?: string, vacanteId?: number | string) => {
+    const base = '/politica-de-privacidad'
+    const query = vacanteId === undefined ? '' : `?vacante=${vacanteId}`
+    return ancla === undefined ? base + query : `${base}${query}#${ancla}`
+  },
+  /** El bloque con los textos publicados, palabra por palabra. */
+  anclaDeLosTextos: 'el-texto-que-aceptas',
 
   // ---------- El panel del equipo ----------
   adminEntrar: () => '/admin/entrar',

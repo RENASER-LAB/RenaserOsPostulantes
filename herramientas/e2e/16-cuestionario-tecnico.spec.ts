@@ -212,7 +212,7 @@ test.describe('El ciclo 2 · la vacante elige el cuestionario y la candidata lo 
     await page.getByLabel('Contraseña', { exact: true }).fill(CLAVE)
     await page.getByLabel('Repite la contraseña').fill(CLAVE)
     // El alta exige ciudad desde que existe el filtro por ciudad del ranking.
-    await page.getByLabel('Dónde vives').selectOption('1501') // Lima — Lima
+    await page.getByLabel('Ubicación').selectOption('1501') // Lima — Lima
     await page.locator('input[type="checkbox"]').first().check()
     await page.getByRole('button', { name: /crear cuenta/i }).click()
     await page.waitForURL(/\/vacantes\/\d+\/postular/, { timeout: 25_000 })

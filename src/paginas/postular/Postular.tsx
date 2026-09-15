@@ -18,26 +18,31 @@
  *   - **El currículum se valida antes de salir** —formato y tamaño— porque un
  *     rebote del servidor después de subir 10 MB es la peor forma de enterarse.
  *
- * ⚠️ **La casilla del tratamiento de datos SÍ bloquea, y no contradice lo de
- * arriba.** Los requisitos son preguntas porque una respuesta equivocada
- * descarta a la persona, y ahí decidir por ella sería peor. El consentimiento es
- * otra cosa: es la ley 29733, el backend responde 400 sin él, y no hay nada que
- * el candidato pueda elegir — o acepta que esa empresa trate sus datos, o no hay
- * postulación. El precedente de la casa es `Registro.tsx`, que ya usa esta misma
- * pieza para el consentimiento obligatorio de la plataforma.
+ * ⚠️ **Aqui habia una casilla de consentimiento y se retiro.** Enviar tu
+ * candidatura a una empresa que TU elegiste, despues de que la pantalla te diga
+ * quien la recibe, ya es el acto afirmativo que la ley 29733 pide: una casilla
+ * encima no añade voluntad, añade friccion. Es lo que hacen las bolsas de empleo
+ * —el permiso se da al crear la cuenta y postular es el acto—, y aqui el
+ * candidato ya venia de marcar dos casillas en el registro.
  *
- * Se acepta **por vacante y no una vez en la cuenta** porque quien trata los
- * datos es la empresa de esa vacante, y el tablón mezcla empresas.
+ * **Lo que NO se retiro es la constancia.** Al enviar se sigue guardando la
+ * firma a nombre de ESA empresa, con el texto que se le enseño, la fecha y la
+ * IP: cada empresa es responsable de su propio proceso y su consentimiento
+ * tiene que estar a su nombre. Lo que cambio es como se da, no que se dé.
+ *
+ * ⚠️ **Es la unica pieza del rediseño que necesita el visto bueno del abogado**:
+ * pasa de «consentimiento expreso por casilla» a «consentimiento por acto
+ * inequivoco». Las dos se defienden y no son lo mismo.
  */
 
 import { useRef, useState, type DragEvent, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { verPerfil } from '@/api/perfil'
-import { consentimientoDeVacante, postular, verVacante } from '@/api/portal'
+import { postular, verVacante } from '@/api/portal'
 import type { RequisitoPublico } from '@/api/tipos'
 import { rutas } from '@/rutas'
-import { AreaTexto, Campo, Consentimiento } from '@/ui/campos/Campo'
+import { AreaTexto, Campo } from '@/ui/campos/Campo'
 import estilos from './Postular.module.css'
 
 /** El mismo tope que aplica el backend: pasarlo devuelve 413. */
@@ -68,12 +73,10 @@ export function Postular() {
   const [linkedin, setLinkedin] = useState('')
   const [github, setGithub] = useState('')
   const [respuestas, setRespuestas] = useState<Record<number, Respuesta>>({})
-  const [acepta, setAcepta] = useState(false)
   const [errores, setErrores] = useState<{
     cv?: string
     resultado?: string
     requisitos?: string
-    acepta?: string
   }>({})
   const [fallo, setFallo] = useState<string | null>(null)
 
@@ -83,15 +86,12 @@ export function Postular() {
     enabled: vacanteId !== '',
   })
 
-  // El texto legal de la empresa de esta vacante. Si no llega, la casilla sigue
-  // saliendo y sigue bloqueando: lo que se pierde es poder leer el texto, no el
-  // consentimiento. Al reves —dejar postular porque el texto no cargo— seria
-  // firmar algo que nadie enseño.
-  const consentimiento = useQuery({
-    queryKey: ['consentimiento-vacante', vacanteId],
-    queryFn: () => consentimientoDeVacante(vacanteId),
-    enabled: vacanteId !== '',
-  })
+  /*
+    Aqui se pedia el texto legal de esta vacante para pintarlo bajo la casilla. La
+    casilla se retiro y el texto se lee en `/politica-de-privacidad?vacante=…`, a
+    donde lleva el enlace de encima del boton. El nombre de la empresa, que es lo
+    unico que esta pantalla necesita, ya viene con la vacante.
+  */
 
   /**
    * El currículum que ya tiene guardado, si lo tiene.
@@ -173,7 +173,7 @@ export function Postular() {
   // legal porque es el que quedara firmado; el de la vacante es el respaldo, y
   // «la empresa» solo si ninguno llego — la frase tiene que seguir teniendo
   // sentido aunque falte el dato.
-  const quienTrata = consentimiento.data?.nombreEmpresa ?? v.nombreEmpresa ?? 'la empresa'
+  const quienTrata = v.nombreEmpresa ?? 'la empresa'
 
   function elegirArchivo(archivo: File | undefined) {
     setErrores((e) => ({ ...e, cv: undefined }))
@@ -220,12 +220,6 @@ export function Postular() {
           ? 'Falta responder un requisito.'
           : `Faltan ${sinResponder.length} requisitos por responder.`
     }
-    // Aqui, y no en el aviso de los requisitos, para que se resuelva ANTES: sin
-    // el permiso no hay postulacion posible, asi que preguntarle si quiere
-    // enviarla igual seria ofrecer algo que no existe.
-    if (!acepta) {
-      nuevos.acepta = 'Sin este permiso no podemos recibir tu postulación.'
-    }
     return nuevos
   }
 
@@ -266,7 +260,14 @@ export function Postular() {
       requisitosConfirmados: requisitos
         .filter((r) => respuestas[r.id] === 'si')
         .map((r) => r.id),
-      aceptaTratamiento: acepta,
+      /*
+        `true` porque el acto ES este: la persona leyo encima del boton quien va a
+        recibir su candidatura y lo pulso. No es una constante que se cuela en
+        lugar de una decision —esa era la casilla— sino el valor que corresponde
+        al unico camino por el que se llega aqui. El backend lo sigue exigiendo
+        para cortarle el paso a quien llame a la API a pelo.
+      */
+      aceptaTratamiento: true,
     })
   }
 
@@ -480,36 +481,21 @@ export function Postular() {
 
         {/*
           Lo último antes del botón, que es donde la ley espera encontrarlo: se
-          acepta justo antes de mandar los datos, no al principio del formulario.
+          informa justo antes de mandar los datos, no al principio del formulario.
         */}
-        <section className={estilos.bloque}>
-          <h2 className={estilos.tituloBloque}>Permiso para tratar tus datos</h2>
-          <Consentimiento
-            titulo={`Acepto que ${quienTrata} trate mis datos para este proceso`}
-            explicacion={
-              <>
-                Tu currículum y tus respuestas los va a leer{' '}
-                <b>{quienTrata}</b>, que es quien publica esta vacante y quien decide.
-                Es un permiso por vacante: no cubre a las demás empresas del portal.
-              </>
-            }
-            obligatorio
-            legal={consentimiento.data?.texto}
-            marcado={acepta}
-            checked={acepta}
-            error={errores.acepta}
-            onChange={(e) => {
-              setAcepta(e.target.checked)
-              setErrores((x) => ({ ...x, acepta: undefined }))
-            }}
-          />
-          {consentimiento.isError && (
-            <p className={estilos.explicacion}>
-              No pudimos cargar el texto completo. Puedes pedírselo al equipo antes de
-              aceptar, o continuar: el permiso es el mismo.
-            </p>
-          )}
-        </section>
+        <p className={estilos.avisoDatos}>
+          Al enviar, <b>{quienTrata}</b> —que es quien publica esta vacante y quien
+          decide— recibirá tu currículum y tus respuestas, y quedará registrado tu
+          permiso para este proceso. Puedes leerlo entero en la{' '}
+          <Link
+            to={rutas.politica(rutas.anclaDeLosTextos, vacanteId)}
+            target="_blank"
+            rel="noreferrer"
+          >
+            política de privacidad
+          </Link>
+          .
+        </p>
 
         <div className={estilos.envio}>
           {fallo && (

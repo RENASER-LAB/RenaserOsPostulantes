@@ -1,16 +1,28 @@
 /**
  * Crear cuenta.
  *
- * Dos cosas que no son negociables aquí:
+ * Tres cosas que no son negociables aquí:
  *
- *   - **Son dos consentimientos distintos.** Aceptar el tratamiento de datos
- *     para este proceso es obligatorio; querer avisos de futuras vacantes es
- *     aparte y opcional, y se retira por otra ruta. Juntarlos en una sola
- *     casilla sería pedir un permiso que nadie dio.
- *   - **El texto legal va a crecer.** Los textos vigentes todavía no nombran a
- *     las empresas que procesan los datos, y tienen que hacerlo antes del primer
- *     candidato real. Por eso el bloque los sirve del backend y les da su propio
- *     espacio con scroll, en vez de resumirlos aquí.
+ *   - **Son dos consentimientos distintos.** Aceptar el tratamiento de datos por
+ *     Renaser es obligatorio; querer avisos de futuras vacantes es aparte y
+ *     opcional, y se retira por otra ruta. Juntarlos en una sola casilla sería
+ *     pedir un permiso que nadie dio.
+ *   - **Aquí no se acepta ninguna vacante.** Lo que se firma es el permiso con
+ *     Renaser —la cuenta, el perfil, la inteligencia artificial, los proveedores
+ *     de fuera del país, el plazo—. El permiso de cada empresa se firma al
+ *     postular a la suya, en `Postular`. Hasta la V54 esta pantalla pedía el
+ *     texto de la vacante y quien postulaba luego a una de Renaser firmaba dos
+ *     veces lo mismo.
+ *   - **El texto legal no se resume aquí**, se enlaza. El que vale es el que está
+ *     publicado en `/politica-de-privacidad`, no el que copió una pantalla.
+ *
+ * ⚠️ **Las explicaciones son deliberadamente cortas, por decisión del producto**
+ * (15/09/2026). La version anterior nombraba aquí la inteligencia artificial y
+ * los proveedores de fuera del Perú, que es la primera capa del aviso por capas:
+ * lo que hace defendible que el resto viva detrás de un enlace. Al quitarla, TODO
+ * el peso informativo recae en la política — si ese enlace se rompe o el documento
+ * se recorta, el consentimiento deja de estar informado. Es lo que hay que mirar
+ * antes de tocar cualquiera de los dos.
  *
  * El registro recuerda a qué vacante se estaba postulando: quien llega desde una
  * ficha sigue con su postulación al terminar, no vuelve a la portada a buscarla.
@@ -20,7 +32,7 @@ import { useMemo, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { z } from 'zod'
-import { catalogoUbigeo, textosConsentimiento } from '@/api/portal'
+import { catalogoUbigeo } from '@/api/portal'
 import type { OpcionUbigeo } from '@/api/tipos'
 import { useSesion } from '@/app/Sesion'
 import { rutas } from '@/rutas'
@@ -76,8 +88,8 @@ const Datos = z
       del perfil.
     */
     ciudadUbigeo: z.string().min(1, 'Elige dónde vives.'),
-    aceptaProceso: z.literal(true, {
-      message: 'Sin este permiso no podemos evaluar tu candidatura.',
+    aceptaPlataforma: z.literal(true, {
+      message: 'Sin este permiso no podemos crear tu cuenta.',
     }),
     aceptaFuturosContactos: z.boolean(),
   })
@@ -96,7 +108,7 @@ const VACIO = {
   contrasena: '',
   repetir: '',
   ciudadUbigeo: '',
-  aceptaProceso: false,
+  aceptaPlataforma: false,
   aceptaFuturosContactos: false,
 }
 
@@ -122,11 +134,12 @@ export function Registro() {
     [ubigeo.data],
   )
 
-  // Los textos legales vigentes los sirve el backend, y son públicos.
-  const textos = useQuery({ queryKey: ['consentimientos'], queryFn: textosConsentimiento })
-  const legales = Array.isArray(textos.data) ? textos.data : []
-  const legalDe = (tipo: string) =>
-    legales.find((t) => t.tipo?.toUpperCase().includes(tipo))?.texto
+  /*
+    Aqui se pedian los textos legales al backend para pintarlos plegados bajo cada
+    casilla. Ya no: esta pantalla no necesita el documento, solo el enlace a
+    `/politica-de-privacidad`, que los enseña publicados palabra por palabra. Una
+    peticion menos en el formulario de alta, que es el peor sitio para esperar.
+  */
 
   function cambiar<C extends keyof typeof VACIO>(campo: C, valor: (typeof VACIO)[C]) {
     setValores((v) => ({ ...v, [campo]: valor }))
@@ -162,7 +175,11 @@ export function Registro() {
         correo: revision.data.correo,
         contrasena: revision.data.contrasena,
         ciudadUbigeo: revision.data.ciudadUbigeo,
-        aceptaProceso: true,
+        // Del formulario y no un `true` a pelo: hoy el esquema solo deja pasar `true`
+        // —`z.literal(true)`—, pero el backend firma este dato con la fecha y la IP, y
+        // firmar una constante en vez de lo que la persona marcó es la clase de atajo que
+        // sobrevive al día en que la casilla deje de ser obligatoria.
+        aceptaPlataforma: revision.data.aceptaPlataforma,
         aceptaFuturosContactos: revision.data.aceptaFuturosContactos,
       })
       navegar(vacante ? rutas.postular(vacante) : rutas.procesos())
@@ -186,11 +203,17 @@ export function Registro() {
       )}
 
       <h1>Crea tu cuenta.</h1>
-      <p className={estilos.bajada}>
-        {vacante
-          ? 'Al terminar seguimos con tu postulación, justo donde la dejaste.'
-          : 'Con ella podrás postular y seguir el estado de tu proceso.'}
-      </p>
+      {/*
+        Solo cuando se viene de una vacante: ahi la frase hace un trabajo —dice
+        que la postulacion no se pierde por crear la cuenta en medio—. Llegando
+        por tu cuenta no habia nada que contar, y un parrafo de relleno bajo el
+        titulo solo aleja el primer campo.
+      */}
+      {vacante && (
+        <p className={estilos.bajada}>
+          Al terminar seguimos con tu postulación, justo donde la dejaste.
+        </p>
+      )}
 
       <form className={estilos.formulario} onSubmit={enviar} noValidate>
         {/* Cuantos faltan, antes de que empiece a buscarlos por su cuenta. */}
@@ -222,7 +245,6 @@ export function Registro() {
           etiqueta="Correo"
           type="email"
           autoComplete="email"
-          ayuda="Aquí te escribiremos cuando tu proceso avance."
           value={valores.correo}
           onChange={(e) => cambiar('correo', e.target.value)}
           error={errores.correo}
@@ -238,12 +260,7 @@ export function Registro() {
           producto donde entra el dato.
         */}
         <Seleccion
-          etiqueta="Dónde vives"
-          ayuda={
-            ubigeo.isError
-              ? undefined
-              : 'La provincia donde vives ahora. Sirve para avisarte de vacantes cerca de ti.'
-          }
+          etiqueta="Ubicación"
           value={valores.ciudadUbigeo}
           onChange={(e) => cambiar('ciudadUbigeo', e.target.value)}
           disabled={ubigeo.isPending || ubigeo.isError}
@@ -304,20 +321,26 @@ export function Registro() {
           <h2 className={estilos.tituloBloque}>Antes de seguir, dos permisos</h2>
 
           <Consentimiento
-            titulo="Tratamiento de mis datos para este proceso"
+            titulo="Acepto el tratamiento de mis datos"
             obligatorio
-            explicacion="Para evaluar tu candidatura, tu currículum y tus respuestas se procesan con servicios de terceros."
-            legal={legalDe('PROCESO')}
-            marcado={valores.aceptaProceso}
-            checked={valores.aceptaProceso}
-            onChange={(e) => cambiar('aceptaProceso', e.target.checked)}
-            error={errores.aceptaProceso}
+            explicacion={
+              <>
+                Puedes leer el permiso entero en la{' '}
+                <Link to={rutas.politica(rutas.anclaDeLosTextos)} target="_blank" rel="noreferrer">
+                  política de privacidad
+                </Link>
+                .
+              </>
+            }
+            marcado={valores.aceptaPlataforma}
+            checked={valores.aceptaPlataforma}
+            onChange={(e) => cambiar('aceptaPlataforma', e.target.checked)}
+            error={errores.aceptaPlataforma}
           />
 
           <Consentimiento
             titulo="Quiero que me avisen de futuras vacantes"
-            explicacion="Es un permiso aparte y puedes retirarlo cuando quieras. Si no lo marcas, tu postulación sigue igual de válida."
-            legal={legalDe('FUTUROS')}
+            explicacion="Conserva tu perfil para avisarte de otras vacantes. Es un permiso aparte y lo retiras cuando quieras."
             marcado={valores.aceptaFuturosContactos}
             checked={valores.aceptaFuturosContactos}
             onChange={(e) => cambiar('aceptaFuturosContactos', e.target.checked)}

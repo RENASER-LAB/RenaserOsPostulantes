@@ -76,7 +76,7 @@ test.describe('Móvil 375px', () => {
 
   test('el registro con su desplegable de ciudad se rellena en el teléfono', async ({ page }) => {
     await page.goto('/registro')
-    const select = page.getByLabel('Dónde vives')
+    const select = page.getByLabel('Ubicación')
     await expect(select).toBeVisible()
     await select.selectOption('1501')
     await expect(select).toHaveValue('1501')

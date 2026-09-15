@@ -42,6 +42,14 @@ export interface VacantePublica {
   requisitosObjetivos: RequisitoPublico[]
 }
 
+/**
+ * Uno de los dos textos legales **de la plataforma**: el `PLATAFORMA` que se
+ * acepta al crear la cuenta y el `FUTUROS_CONTACTOS` opcional.
+ *
+ * Los usa la pantalla de registro y tambien la politica publica, que los enseña
+ * enteros en vez de reescribirlos: un documento copiado a mano se desvia del que
+ * la gente firma de verdad, y el que vale es el firmado.
+ */
 export interface TextoConsentimientoPublico {
   tipo: string
   version: string
@@ -49,15 +57,15 @@ export interface TextoConsentimientoPublico {
 }
 
 /**
- * El texto de tratamiento de datos de LA EMPRESA de una vacante.
+ * El texto de tratamiento de datos **compuesto para una vacante**.
  *
- * Distinto de `TextoConsentimientoPublico`, que son los de la plataforma —los
- * que se aceptan al crear la cuenta—. Este se acepta al postular, y hay uno
- * por empresa: la ley 29733 pide que se sepa quien va a tratar los datos, y
- * quien los trata es la empresa de la vacante, no Renaser.
+ * Es el mismo texto para todas las empresas —uno solo, de la plataforma— con el
+ * nombre de la que publica esa vacante ya puesto dentro. La ley 29733 pide que se
+ * sepa quien va a tratar los datos, y quien los trata es la empresa de la vacante,
+ * no Renaser; lo que no hace falta es que cada una tenga su propio texto.
  *
  * La ruta es publica a proposito: hay que poder leer lo que se acepta antes de
- * decidir postular.
+ * decidir postular, y sin cuenta.
  */
 export interface ConsentimientoDeVacante {
   nombreEmpresa: string
@@ -82,9 +90,16 @@ export interface CrearCuenta {
    * postulacion vieja trae ciudad.
    */
   ciudadUbigeo: string
-  /** Obligatorio: sin esto no se puede postular. */
-  aceptaProceso: boolean
-  /** Opcional y distinto del anterior: entrar al Radar de Talento. */
+  /**
+   * Obligatorio: sin esto no hay cuenta.
+   *
+   * Es el permiso que se firma **con Renaser**, y cubre la cuenta, el perfil, la
+   * inteligencia artificial, los proveedores de fuera del pais y el plazo de
+   * conservacion. Se llamaba `aceptaProceso` y firmaba el texto de una vacante
+   * que en el registro todavia no existe; el de la vacante se firma al postular.
+   */
+  aceptaPlataforma: boolean
+  /** Opcional y distinto del anterior: que te avisen de futuras vacantes. */
   aceptaFuturosContactos?: boolean
 }
 
