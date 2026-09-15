@@ -111,14 +111,13 @@ commit;`)
     await page.goto(`/vacantes/${vacanteId}/postular`)
     await expect(page.locator('input[type=file]')).toBeAttached({ timeout: 15_000 })
 
-    await expect(page.getByRole('heading', { name: 'Cuánto quieres ganar' })).toBeVisible()
     // La cifra de la empresa se repite aquí: estaba en la pantalla anterior y ya no se ve,
     // y nadie decide cuánto pedir sin tenerla delante.
     await expect(page.getByText(BANDA_ESCRITA)).toBeVisible()
+    // El campo, que es lo que de verdad dice que se está pidiendo la pretensión. El bloque
+    // ya no lleva encabezado ni textos explicativos: se quitaron a propósito, así que
+    // buscarlos aquí ataría la prueba a una decisión de redacción en vez de al contrato.
     await expect(page.getByLabel(/Tu pretensión mensual/)).toBeVisible()
-    // Y se dice quién la va a leer, que es la pregunta que se hace cualquiera antes de
-    // escribir una cifra.
-    await expect(page.getByText(/Solo la ve quien decide el sueldo/)).toBeVisible()
   })
 
   test('sin cifra la pantalla lo para, y no llega ni una petición al servidor', async ({ page }) => {
@@ -168,8 +167,8 @@ commit;`)
     await entrarAlPortal(page, CORREO, CLAVE_DE_CANDIDATO)
     await page.goto(`/vacantes/${vacanteId}/postular`)
     await expect(page.locator('input[type=file]')).toBeAttached({ timeout: 15_000 })
-    // El bloque del trato sale solo cuando hay trato.
-    await expect(page.getByRole('heading', { name: 'Cuánto quieres ganar' })).toHaveCount(0)
+    // El bloque del trato sale solo cuando hay trato: sin sueldo publicado no hay campo,
+    // ni siquiera opcional.
     await expect(page.getByLabel(/Tu pretensión mensual/)).toHaveCount(0)
 
     // Se deja puesta otra vez para el afterAll, que es quien la devuelve a OCULTA y limpia.
