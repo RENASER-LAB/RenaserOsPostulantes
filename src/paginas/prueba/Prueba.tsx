@@ -257,13 +257,17 @@ function PreguntaPrueba({
   uuid,
   pregunta,
   bloqueado,
-  onPendiente,
+  registrarEnvio,
 }: {
   uuid: string
   pregunta: { id: number; enunciado: string; respuestaTexto: string | null }
   /** Con el tiempo agotado ya no se escribe ni se reintenta nada. */
   bloqueado: boolean
-  onPendiente: (preguntaId: number, pendiente: boolean) => void
+  /**
+   * Deja en manos del padre la forma de forzar el envio de esta pregunta y **esperarlo**.
+   * Sin esto, entregar solo podia mirar si quedaba algo pendiente y negarse; ahora lo manda.
+   */
+  registrarEnvio: (preguntaId: number, mandar: () => Promise<unknown>) => void
 }) {
   const [texto, setTexto] = useState(pregunta.respuestaTexto ?? '')
   const [estado, setEstado] = useState<'limpio' | 'guardando' | 'pendiente'>('limpio')
@@ -291,45 +295,82 @@ function PreguntaPrueba({
     onError: () => setEstado('pendiente'),
   })
 
-  const guardarTexto = guardar.mutate
+  const guardarTexto = guardar.mutateAsync
 
-  const mandarPendiente = useCallback(() => {
+  const mandarPendiente = useCallback(async () => {
     window.clearTimeout(temporizador.current)
     if (pendiente.current === null || yaNoSeAdmite.current) return
-    guardarTexto(pendiente.current)
+    // Se traga el rechazo a proposito: quien llama solo quiere saber cuando termino el
+    // intento, y de reintentar ya se ocupa el reloj de abajo.
+    await guardarTexto(pendiente.current).catch(() => {})
   }, [guardarTexto])
 
+  /**
+   * Lo escrito queda pendiente **en el mismo turno que la tecla**, no en un efecto.
+   *
+   * ⚠️ React agenda los efectos, asi que entre la ultima tecla y el efecto que la habria
+   * anotado cabe un clic en «Entregar». Anotandolo aqui, lo escrito ya cuenta como pendiente
+   * antes de que nada pueda pasar, y la entrega lo manda en vez de ignorarlo.
+   */
+  const escribir = useCallback(
+    (nuevo: string) => {
+      setTexto(nuevo)
+      if (nuevo === (pregunta.respuestaTexto ?? '')) {
+        pendiente.current = null
+        setEstado('limpio')
+        return
+      }
+      pendiente.current = nuevo
+      setEstado('pendiente')
+      window.clearTimeout(temporizador.current)
+      temporizador.current = window.setTimeout(() => void mandarPendiente(), ESPERA_ANTES_DE_GUARDAR)
+    },
+    [pregunta.respuestaTexto, mandarPendiente],
+  )
+
+  // Lo que el servidor confirma por su cuenta —una recarga— tambien limpia el estado.
   useEffect(() => {
     if (texto === (pregunta.respuestaTexto ?? '')) {
       pendiente.current = null
       setEstado('limpio')
-      return
     }
-    pendiente.current = texto
-    setEstado('pendiente')
-    window.clearTimeout(temporizador.current)
-    temporizador.current = window.setTimeout(mandarPendiente, ESPERA_ANTES_DE_GUARDAR)
-  }, [texto, pregunta.respuestaTexto, mandarPendiente])
+  }, [texto, pregunta.respuestaTexto])
 
   // Mientras quede algo sin confirmar se sigue intentando solo.
   useEffect(() => {
     if (estado !== 'pendiente' || bloqueado) return
-    const reloj = window.setInterval(mandarPendiente, ESPERA_ANTES_DE_REINTENTAR)
+    const reloj = window.setInterval(() => void mandarPendiente(), ESPERA_ANTES_DE_REINTENTAR)
     return () => window.clearInterval(reloj)
   }, [estado, bloqueado, mandarPendiente])
+
+  // Al ocultar la pestaña —cambiar de aplicacion, bloquear el telefono, cerrar— se manda lo
+  // que quede. En una prueba con cronometro, esos segundos son los que no se recuperan.
+  useEffect(() => {
+    const alOcultarse = () => {
+      if (document.visibilityState === 'hidden') void mandarPendiente()
+    }
+    const alIrse = () => void mandarPendiente()
+    document.addEventListener('visibilitychange', alOcultarse)
+    window.addEventListener('pagehide', alIrse)
+    return () => {
+      document.removeEventListener('visibilitychange', alOcultarse)
+      window.removeEventListener('pagehide', alIrse)
+    }
+  }, [mandarPendiente])
 
   // Al desmontarse se manda lo que quede, no se cancela.
   useEffect(() => {
     return () => {
-      mandarPendiente()
+      void mandarPendiente()
     }
   }, [mandarPendiente])
 
-  // El padre necesita saberlo para no dejar entregar sin esta respuesta.
+  // El padre necesita poder forzar el envio antes de entregar. Lo que ya no necesita es
+  // llevar la cuenta de lo pendiente: eso servia para bloquear el boton de entregar con un
+  // cartel, y ahora la entrega simplemente manda lo que quede.
   useEffect(() => {
-    onPendiente(pregunta.id, estado !== 'limpio')
-    return () => onPendiente(pregunta.id, false)
-  }, [estado, pregunta.id, onPendiente])
+    registrarEnvio(pregunta.id, mandarPendiente)
+  }, [registrarEnvio, pregunta.id, mandarPendiente])
 
   // Con el tiempo agotado, «limpio» significa que no quedo nada en la cola —no
   // que hubiera algo que guardar—. Sin comprobar el texto, una pregunta que
@@ -344,7 +385,7 @@ function PreguntaPrueba({
     : estado === 'guardando'
       ? 'Guardando…'
       : estado === 'pendiente'
-        ? 'Sin guardar. Seguimos intentándolo.'
+        ? 'Guardando…'
         : texto.trim() === ''
           ? 'Sin responder.'
           : 'Guardado.'
@@ -364,7 +405,7 @@ function PreguntaPrueba({
         maxLength={MAXIMO_DEL_TEXTO}
         readOnly={bloqueado}
         aria-disabled={bloqueado}
-        onChange={(e) => setTexto(e.target.value)}
+        onChange={(e) => escribir(e.target.value)}
       />
       <span
         className={`${estilos.estadoRespuesta}${
@@ -387,17 +428,21 @@ export function Prueba() {
 
   const [confirmarInicio, setConfirmarInicio] = useState(false)
   const [confirmarEntrega, setConfirmarEntrega] = useState(false)
-  // Que respuestas no ha confirmado el servidor. Entregar con alguna pendiente
-  // es entregar sin ella.
-  const [sinGuardar, setSinGuardar] = useState<number[]>([])
+  // Como forzar el envio de cada pregunta. Se llena solo, segun se montan.
+  const envios = useRef<Map<number, () => Promise<unknown>>>(new Map())
+  const registrarEnvio = useCallback(
+    (preguntaId: number, mandar: () => Promise<unknown>) => {
+      envios.current.set(preguntaId, mandar)
+    },
+    [],
+  )
 
-  const marcarPendiente = useCallback((preguntaId: number, pendiente: boolean) => {
-    setSinGuardar((antes) => {
-      const estaba = antes.includes(preguntaId)
-      if (pendiente === estaba) return antes
-      return pendiente ? [...antes, preguntaId] : antes.filter((id) => id !== preguntaId)
-    })
-  }, [])
+  /** Manda lo que quede sin confirmar y espera a que llegue. */
+  const vaciarLaCola = useCallback(
+    () => Promise.allSettled([...envios.current.values()].map((mandar) => mandar())),
+    [],
+  )
+
 
   const consulta = useQuery({
     queryKey: ['prueba', uuid],
@@ -438,7 +483,13 @@ export function Prueba() {
   })
 
   const entrega = useMutation({
-    mutationFn: () => entregarPrueba(uuid),
+    // ⚠️ **Primero se manda lo que quede sin confirmar.** Antes esto era un cartel rojo que
+    // bloqueaba el boton y dejaba al candidato esperando a que un aviso desapareciera solo,
+    // en una prueba con cronometro corriendo. Ahora se manda y se espera.
+    mutationFn: async () => {
+      await vaciarLaCola()
+      return entregarPrueba(uuid)
+    },
     onSuccess: async () => {
       setConfirmarEntrega(false)
       await cache.invalidateQueries({ queryKey: ['postulaciones'] })
@@ -766,7 +817,7 @@ export function Prueba() {
                         uuid={uuid}
                         pregunta={p}
                         bloqueado={tiempoAgotado}
-                        onPendiente={marcarPendiente}
+                        registrarEnvio={registrarEnvio}
                       />
                     ))}
                   </div>
@@ -872,31 +923,23 @@ export function Prueba() {
               type="button"
               className={estilos.confirmar}
               onClick={() => entrega.mutate()}
-              // Entregar con algo sin guardar es entregar sin esa respuesta.
-              disabled={entrega.isPending || sinGuardar.length > 0}
+              // Ya no depende de la cola: la propia entrega manda lo que quede antes de nada.
+              disabled={entrega.isPending}
             >
               {entrega.isPending ? 'Entregando…' : 'Entregar'}
             </button>
           </>
         }
       >
-        {sinGuardar.length > 0 ? (
-          <p className={`${estilos.aviso} ${estilos.malo}`}>
-            <span>
-              <b>
-                {sinGuardar.length === 1
-                  ? 'Una respuesta aún no ha llegado al servidor.'
-                  : `${sinGuardar.length} respuestas aún no han llegado al servidor.`}
-              </b>{' '}
-              Estamos reintentándolo. Si entregas ahora se quedarían fuera. En cuanto se
-              guarden podrás entregar.
-            </span>
-          </p>
-        ) : (
-          <p className={estilos.confirmacionTexto}>
-            Después de entregar no podrás modificar archivos, enlaces ni respuestas.
-          </p>
-        )}
+        {/*
+          ⚠️ **Aqui no va ningun aviso de «respuestas sin guardar», y es a proposito.** Le
+          contaba una averia nuestra a quien tiene el cronometro corriendo y no podia hacer
+          nada con ella salvo esperar a que el cartel se fuera solo. Lo que hay que hacer con
+          lo pendiente es mandarlo, y eso es justo lo que hace ahora `entrega`.
+        */}
+        <p className={estilos.confirmacionTexto}>
+          Después de entregar no podrás modificar archivos, enlaces ni respuestas.
+        </p>
         {entrega.isError && (
           <p className={`${estilos.aviso} ${estilos.malo}`} role="alert">
             <span>

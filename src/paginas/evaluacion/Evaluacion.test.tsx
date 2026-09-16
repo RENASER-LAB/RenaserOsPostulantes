@@ -19,6 +19,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import type { EvaluacionCandidato, PreguntaEvaluacion } from '@/api/tipos'
 import { ProveedorAvisos } from '@/ui/Avisos'
+import { responderEvaluacion } from '@/api/evaluacion'
 import { Evaluacion } from './Evaluacion'
 import { estadoDePregunta, siguienteIncompleta } from './bancoV3'
 
@@ -134,6 +135,10 @@ const botonVolver = () => screen.queryByRole('button', { name: /^Volver a la/ })
 afterEach(cleanup)
 
 beforeEach(() => {
+  // ⚠️ La cola apunta lo pendiente en `localStorage` para que cerrar la pestaña no cueste una
+  // respuesta, y la clave sale del uuid —que aqui es el mismo en todas las pruebas—. Sin
+  // limpiarlo, lo que una prueba deja a medias lo reenvia la siguiente al montar.
+  window.localStorage.clear()
   guardadas = new Map()
   totalDeclarado = TOTAL
   opcionesGuardadas = new Map()
@@ -157,59 +162,109 @@ describe('la evaluacion no pierde respuestas', () => {
     await waitFor(() => expect(guardadas.get(1)).toBe('Primera respuesta.'))
   })
 
-  it('no da por guardado lo que el servidor rechazo, y lo reintenta', async () => {
+  it('no da por guardado lo que el servidor rechazo, y lo reintenta solo', async () => {
     fallanUnaVez.add(1)
     await empezar()
 
     responder('Primera respuesta.')
     siguiente()
 
-    // El guardado se cayo: la pantalla lo dice en vez de seguir como si nada.
-    expect(await screen.findByText(/Hay 1 respuesta sin guardar/)).toBeTruthy()
+    // El primer intento se cayo, asi que no esta guardada...
+    await waitFor(() => expect(responderEvaluacion).toHaveBeenCalled())
     expect(guardadas.has(1)).toBe(false)
 
-    fireEvent.click(screen.getAllByRole('button', { name: /Reintentar ahora/ })[0]!)
-
-    await waitFor(() => expect(guardadas.get(1)).toBe('Primera respuesta.'))
-    await waitFor(() => expect(screen.queryByText(/sin guardar/)).toBeNull())
+    // ...pero la cola vuelve sola, sin que nadie pulse nada. Antes hacia falta un boton
+    // rojo de «Reintentar ahora» en mitad del examen.
+    await waitFor(() => expect(guardadas.get(1)).toBe('Primera respuesta.'), { timeout: 4000 })
   })
 
-  it('el aviso sobrevive al cambio de pregunta', async () => {
-    // Que no llegue nunca: si solo fallara una vez, el reintento del cambio de
-    // pregunta la salvaria y no habria aviso que comprobar.
+  it('lo que no llego sigue en la cola al cambiar de pregunta', async () => {
+    // Que no llegue nunca: si solo fallara una vez, el reintento la salvaria y no habria
+    // nada pendiente que comprobar.
     fallanSiempre.add(1)
     await empezar()
 
     responder('Primera respuesta.')
     siguiente()
-    await screen.findByText(/Hay 1 respuesta sin guardar/)
 
-    // Antes el error se limpiaba al pasar de pregunta y no quedaba ni rastro.
+    // Antes el error se limpiaba al pasar de pregunta y no quedaba ni rastro. Ahora lo que
+    // no llego sigue pendiente —la 1 no cuenta como respondida— mientras las demas van.
     siguiente() // la 2 es de opciones: se salta
     responder('Tercera respuesta.')
     siguiente()
 
     await waitFor(() => expect(guardadas.get(3)).toBe('Tercera respuesta.'))
-    expect(screen.getByText(/sin guardar/)).toBeTruthy()
     expect(guardadas.has(1)).toBe(false)
+
+    // Y no se le enseña ningun cartel rojo por ello: la cola sigue a lo suyo.
+    expect(screen.queryByText(/sin guardar/i)).toBeNull()
+    expect(screen.queryByText(/Reintentar ahora/i)).toBeNull()
   })
 
-  it('no deja entregar mientras una respuesta no haya llegado', async () => {
-    fallanSiempre.add(1)
+  it('entregar manda antes lo que quede en la cola', async () => {
+    await empezar()
+
+    // La ultima respuesta se escribe y se pulsa «Entregar» de inmediato: antes del
+    // temporizador, que es justo cuando se perdia.
+    responder('Primera respuesta.')
+    siguiente()
+    siguiente()
+    siguiente()
+    responder('Cuarta respuesta.')
+    fireEvent.click(screen.getByRole('button', { name: /Entregar evaluación/ }))
+
+    // El modal no abre hasta que lo pendiente ha llegado, asi que lo que cuenta ya es lo
+    // que el servidor tiene de verdad.
+    await screen.findByRole('button', { name: 'Entregar' })
+    expect(guardadas.get(4)).toBe('Cuarta respuesta.')
+  })
+
+  it('lo escrito justo antes de «Siguiente» no se pierde', async () => {
+    // ⚠️ **El fallo que motivo la reescritura.** Encolar desde un efecto dejaba un hueco
+    // entre la ultima tecla y el envio, y en ese hueco cabia el clic: cuando el efecto por
+    // fin corria, el borrador ya era de otra pregunta y se iba sin hacer nada. Aqui no se
+    // deja pasar ni un tick entre escribir y navegar.
     await empezar()
 
     responder('Primera respuesta.')
     siguiente()
-    await screen.findByText(/Hay 1 respuesta sin guardar/)
-
-    // Hasta la ultima pregunta, donde aparece el boton de entregar.
+    siguiente() // la 2 es de opciones: no tiene donde escribir
+    responder('Y esta es la tercera.')
     siguiente()
-    siguiente()
-    fireEvent.click(screen.getByRole('button', { name: /Entregar evaluación/ }))
 
-    const entregar = await screen.findByRole('button', { name: 'Entregar' })
-    expect((entregar as HTMLButtonElement).disabled).toBe(true)
-    expect(screen.getByText(/aún no ha llegado al servidor/)).toBeTruthy()
+    await waitFor(() => expect(guardadas.get(1)).toBe('Primera respuesta.'))
+    await waitFor(() => expect(guardadas.get(3)).toBe('Y esta es la tercera.'))
+  })
+
+  it('borrar lo escrito deja la pregunta sin responder, y no da error', async () => {
+    guardadas.set(1, 'Algo que ya estaba guardado.')
+    await empezar()
+
+    await screen.findByDisplayValue('Algo que ya estaba guardado.')
+    responder('')
+
+    // El servidor recibe el vacio y borra la respuesta. Antes esto era un 400 «Hay que
+    // escribir una respuesta» en pantalla, y encima el texto viejo se quedaba en el
+    // servidor: el recuadro vacio y el contador diciendo «respondida».
+    await waitFor(() => expect(guardadas.get(1)).toBe(''))
+    expect(screen.queryByText(/Hay que escribir una respuesta/)).toBeNull()
+    await waitFor(() => expect(screen.getByText('Sin responder')).toBeTruthy())
+  })
+
+  it('lo pendiente al cerrar la pestaña se manda al volver a abrir', async () => {
+    fallanUnaVez.add(1)
+    const { unmount } = montar()
+    fireEvent.click(await screen.findByRole('button', { name: /Empezar evaluación/ }))
+    await screen.findByLabelText('Tu respuesta')
+
+    responder('Lo que escribí antes de que se cortara.')
+    await waitFor(() => expect(responderEvaluacion).toHaveBeenCalled())
+    expect(guardadas.has(1)).toBe(false)
+    unmount()
+
+    // Al volver, lo apuntado en el navegador sale solo hacia el servidor.
+    montar()
+    await waitFor(() => expect(guardadas.get(1)).toBe('Lo que escribí antes de que se cortara.'))
   })
 
   it('la opción marcada se ve marcada aunque el servidor la rechace', async () => {
@@ -221,9 +276,10 @@ describe('la evaluacion no pierde respuestas', () => {
     fireEvent.click(opcion)
 
     // Antes el radio salia del servidor: si el guardado se caia, no se marcaba
-    // y parecia que la pregunta no dejaba elegir.
+    // y parecia que no se podia elegir nada.
     await waitFor(() => expect((opcion as HTMLInputElement).checked).toBe(true))
-    expect(await screen.findByText(/sin guardar/)).toBeTruthy()
+    // Y el candidato no ve ningun cartel por ello: la cola lo reintenta sola.
+    expect(screen.queryByText(/sin guardar/i)).toBeNull()
   })
 
   it('no deja entregar con preguntas en blanco, porque el servidor la rechaza', async () => {

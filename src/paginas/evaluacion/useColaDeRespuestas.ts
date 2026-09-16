@@ -1,123 +1,334 @@
 /**
  * Lo escrito no sale de la cola hasta que el servidor lo confirma.
  *
- * Nació dentro de `Evaluacion.tsx` y sale aquí sin cambiar de comportamiento, porque el
- * cuestionario técnico necesita exactamente la misma regla y **dos copias de esto se
- * arreglan en una y no en la otra**. Es la regla que ya costó respuestas de candidatos
- * perdidas, y la razón de cada línea está escrita:
+ * Es la unica cola de guardado del portal: la usan la evaluacion del Perfil Integral y el
+ * cuestionario tecnico. **Dos copias de esto se arreglan en una y no en la otra**, y esa ya
+ * fue la causa de respuestas de candidatos perdidas.
+ *
+ * ## Por que se reescribio
+ *
+ * La version anterior metia lo escrito en la cola **desde un efecto**, y ahi estaba la
+ * perdida que reportaban los candidatos que iban rapido:
+ *
+ * 1. El candidato termina de escribir en la 10. React programa el efecto que encolaria ese
+ *    texto, pero los efectos no corren a la vez que el teclazo: se agendan.
+ * 2. El candidato pulsa «Siguiente» antes de que el efecto corra. La navegacion manda lo
+ *    que hay en la cola —que todavia **no** incluye ese texto— y cambia de pregunta.
+ * 3. Ahora si corre el efecto, ve que el borrador ya no es de la pregunta en pantalla y
+ *    **se va sin hacer nada**. Ese texto no llego a la cola, no se mando y no se reintento.
+ *    Desaparecio sin dejar rastro, y el contador decia «9 de 18» sin decir cual faltaba.
+ *
+ * Por eso ahora `encolar` se llama **desde el manejador del cambio**, en el mismo turno que
+ * la tecla. Lo escrito esta en la cola antes de que nada pueda navegar.
+ *
+ * ## Las reglas, y lo que costo cada una
  *
  * - **Lo pendiente no se borra al mandarlo, solo al confirmarlo.** Un 500 o una red que
- *   parpadea se lo comían: el candidato llegaba al final con «16 de 20 respondidas» sin
- *   saber cuáles faltaban.
- * - **Solo se da por guardado lo que de verdad se mandó.** Si siguió escribiendo mientras
- *   la petición viajaba, lo nuevo sigue en la cola y se manda después.
- * - **Se reintenta solo mientras quede algo.** Un fallo de un momento no debería costarle
- *   una respuesta a nadie.
- * - **Al salir de la pantalla se manda lo que quede.** Volver atrás o cerrar la pestaña no
- *   puede ser la forma de perder lo escrito.
+ *   parpadea se lo comian.
+ * - **Solo se da por guardado lo que de verdad se mando.** Si siguio escribiendo mientras
+ *   la peticion viajaba, lo nuevo sigue en la cola y se manda despues.
+ * - **Un temporizador por pregunta.** Con uno solo y compartido, escribir en la 11 aplazaba
+ *   el envio de la 10: yendo rapido, la cola entera se quedaba esperando a la ultima tecla.
+ * - **Una peticion por pregunta a la vez.** El backend documenta el choque contra la clave
+ *   unica `(evaluacion_id, pregunta_id)` cuando llegan dos guardados juntos; aqui no se
+ *   lanza el segundo hasta que vuelve el primero.
+ * - **Se reintenta con espera creciente.** El intervalo fijo de antes no se reiniciaba
+ *   cuando la cola cambiaba de tamaño y podia tardar una eternidad en volver a intentarlo.
+ * - **Lo pendiente sobrevive a cerrar la pestaña.** Se apunta en `localStorage` y se
+ *   recupera al volver. Antes, cerrar el portatil con algo sin confirmar lo perdia.
+ * - **Al ocultar la pestaña se manda lo que quede**, con `keepalive` para que el navegador
+ *   no corte la peticion al cerrarla.
  *
- * Lo que NO hace: decidir qué es una respuesta completa. Eso lo sabe cada pantalla —el
- * banco tiene ocho formatos y el cuestionario técnico solo texto— y por eso `encolar` se
- * llama desde fuera, ya con la decisión tomada.
+ * Lo que NO hace: decidir que es una respuesta completa. Eso lo sabe cada pantalla —el
+ * banco tiene ocho formatos y el cuestionario tecnico solo texto— y por eso `encolar` se
+ * llama desde fuera, ya con la decision tomada.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-/** Cuánto se espera desde la última tecla antes de mandar. */
+/** Cuanto se espera desde la ultima tecla antes de mandar. */
 export const ESPERA_ANTES_DE_GUARDAR = 800
-/** Cada cuánto se reintenta lo que no llegó. */
-export const ESPERA_ANTES_DE_REINTENTAR = 5000
+/** La primera espera tras un fallo. Se va doblando. */
+export const ESPERA_TRAS_EL_PRIMER_FALLO = 1000
+/** El techo de la espera entre reintentos: pasado esto no se separa mas. */
+export const ESPERA_MAXIMA_ENTRE_REINTENTOS = 30_000
+/** Lo apuntado en el navegador caduca: replicar una respuesta de anteayer seria peor. */
+export const CADUCA_LO_APUNTADO = 24 * 60 * 60 * 1000
+
+/** Una entrada de la cola: el valor y como le ha ido. */
+interface Entrada<T> {
+  valor: T
+  /** Fallos seguidos. De aqui sale cuanto se espera antes del siguiente intento. */
+  fallos: number
+  /** Cuando se encolo, para poder caducar lo apuntado en el navegador. */
+  en: number
+}
 
 export interface ColaDeRespuestas<T> {
-  /** Lo que todavía no confirmó el servidor, para poder pintarlo. */
+  /** Lo que todavia no confirmo el servidor, para poder pintarlo. */
   sinConfirmar: { id: number; valor: T }[]
   /** Lo pendiente de una pregunta, si lo hay: lo suyo manda sobre lo que el servidor cree. */
   pendienteDe: (preguntaId: number) => T | undefined
-  /** Deja algo pendiente y programa el envío. */
-  encolar: (preguntaId: number, valor: T) => void
+  /**
+   * Deja algo pendiente y programa el envio.
+   *
+   * **Llamalo desde el manejador del cambio, nunca desde un efecto.** Es la unica forma de
+   * que lo escrito este a salvo antes de que el candidato pueda pulsar «Siguiente».
+   *
+   * @param yaMismo sin esperar al temporizador: para lo que se marca de un toque —una
+   *   opcion, una casilla—, donde no hay «dejar de escribir» al que esperar.
+   */
+  encolar: (preguntaId: number, valor: T, opciones?: { yaMismo?: boolean }) => void
   /** Quita lo pendiente de una pregunta: lo que hay ya es lo del servidor. */
   olvidar: (preguntaId: number) => void
-  /** Manda ya todo lo pendiente, sin esperar. */
+  /** Manda ya todo lo pendiente, sin esperar. No espera respuesta. */
   mandarYa: () => void
+  /**
+   * Manda lo que quede y **espera** a que llegue. Devuelve si la cola quedo vacia.
+   *
+   * Es lo que se usa antes de entregar: entregar con algo sin confirmar es entregar sin esa
+   * respuesta, asi que primero se vacia y despues se decide.
+   */
+  vaciar: () => Promise<boolean>
+  /** Hay algo esperando a que el servidor lo confirme. */
+  guardando: boolean
 }
 
 /**
- * @param mandar qué hacer con cada pendiente. Debe ser estable (`useMutation.mutate` lo es).
+ * @param mandar manda una respuesta y **resuelve cuando el servidor la acepta**. Un rechazo
+ *   debe ser una promesa rota: de eso vive el reintento. Debe ser estable.
  * @param loMismo si lo que se acaba de confirmar sigue siendo lo que hay en la cola. Sin
- *   esto, una respuesta escrita mientras la anterior viajaba se daría por guardada.
+ *   esto, una respuesta escrita mientras la anterior viajaba se daria por guardada.
+ * @param clave donde apuntar lo pendiente en el navegador. Lleva el uuid del examen para
+ *   que dos procesos abiertos no se pisen. Sin clave no se apunta nada.
  */
 export function useColaDeRespuestas<T>(
-  mandar: (preguntaId: number, valor: T) => void,
+  mandar: (preguntaId: number, valor: T) => Promise<unknown>,
   loMismo: (enCola: T, confirmado: T) => boolean,
-): ColaDeRespuestas<T> & { confirmar: (preguntaId: number, valor: T) => void } {
-  // Referencia para poder mandarlo al vuelo desde cualquier sitio, y además copiado a
-  // estado para poder pintarlo: sin eso, el candidato no tiene forma de saber que algo no
-  // llegó.
-  const cola = useRef<Map<number, T>>(new Map())
+  clave?: string,
+): ColaDeRespuestas<T> {
+  // Referencia para poder mandarla al vuelo desde cualquier sitio, y ademas copiada a
+  // estado para poder pintarla: sin eso, el candidato no tiene forma de saber que algo no
+  // llego.
+  const cola = useRef<Map<number, Entrada<T>>>(new Map())
   const [sinConfirmar, setSinConfirmar] = useState<{ id: number; valor: T }[]>([])
-  const temporizador = useRef<number | undefined>(undefined)
+  /** Un temporizador por pregunta: el de la 11 no puede aplazar el de la 10. */
+  const relojes = useRef<Map<number, number>>(new Map())
+  /** La peticion en curso de cada pregunta, para no lanzar dos a la vez. */
+  const enVuelo = useRef<Map<number, Promise<void>>>(new Map())
+  const desmontado = useRef(false)
+
+  // `mandar` y `loMismo` se guardan en una referencia para que reprogramar un reintento no
+  // dependa de su identidad: una pantalla que los recree en cada render reiniciaria la cola
+  // entera en cada tecla.
+  const mandarRef = useRef(mandar)
+  mandarRef.current = mandar
+  const loMismoRef = useRef(loMismo)
+  loMismoRef.current = loMismo
+
+  const apuntar = useCallback(() => {
+    if (!clave) return
+    try {
+      const vivas = [...cola.current].map(([id, e]) => ({ id, valor: e.valor, en: e.en }))
+      if (vivas.length === 0) window.localStorage.removeItem(clave)
+      else window.localStorage.setItem(clave, JSON.stringify(vivas))
+    } catch {
+      // Sin sitio, en incognito o con el almacenamiento capado. Que no se pueda apuntar no
+      // puede costar el examen: la cola en memoria sigue funcionando igual.
+    }
+  }, [clave])
 
   const refrescar = useCallback(() => {
-    setSinConfirmar([...cola.current].map(([id, valor]) => ({ id, valor })))
+    setSinConfirmar([...cola.current].map(([id, e]) => ({ id, valor: e.valor })))
+    apuntar()
+  }, [apuntar])
+
+  /** Cuanto se espera antes del siguiente intento, doblando y con techo. */
+  const esperaTras = (fallos: number) =>
+    Math.min(ESPERA_TRAS_EL_PRIMER_FALLO * 2 ** (fallos - 1), ESPERA_MAXIMA_ENTRE_REINTENTOS)
+
+  // `mandarUna` se programa a si misma tras un fallo, asi que `programar` tiene que poder
+  // llamarla antes de que exista. La referencia rompe ese circulo sin volver inestable a
+  // ninguna de las dos.
+  const mandarUnaRef = useRef<(preguntaId: number) => Promise<void>>(async () => {})
+
+  const programar = useCallback((preguntaId: number, espera: number) => {
+    window.clearTimeout(relojes.current.get(preguntaId))
+    const reloj = window.setTimeout(() => {
+      relojes.current.delete(preguntaId)
+      void mandarUnaRef.current(preguntaId)
+    }, espera)
+    relojes.current.set(preguntaId, reloj)
   }, [])
 
+  /**
+   * Manda lo pendiente de una pregunta y decide que hacer con la respuesta.
+   *
+   * Si mientras viajaba el candidato escribio otra cosa, lo confirmado **no** es lo que hay
+   * en la cola: no se borra, se vuelve a mandar. Es la regla que impide dar por guardada
+   * una respuesta que el servidor nunca vio.
+   */
+  const mandarUna = useCallback(
+    async (preguntaId: number): Promise<void> => {
+      const entrada = cola.current.get(preguntaId)
+      if (!entrada) return
+      // Ya hay una peticion de esta pregunta en el aire. La cola guarda lo ultimo, y al
+      // volver la que viaja se comprobara contra ello y se remandara si cambio.
+      const yaVa = enVuelo.current.get(preguntaId)
+      if (yaVa) return yaVa
+
+      const mandado = entrada.valor
+      const viaje = (async () => {
+        try {
+          await mandarRef.current(preguntaId, mandado)
+          const ahora = cola.current.get(preguntaId)
+          if (!ahora) return
+          if (loMismoRef.current(ahora.valor, mandado)) {
+            cola.current.delete(preguntaId)
+            window.clearTimeout(relojes.current.get(preguntaId))
+            relojes.current.delete(preguntaId)
+          } else {
+            // Cambio mientras viajaba: lo nuevo sale ya, sin castigo de espera.
+            ahora.fallos = 0
+            programar(preguntaId, 0)
+          }
+        } catch {
+          // No se toca el valor: si no llego, se vuelve a intentar, cada vez mas separado.
+          const ahora = cola.current.get(preguntaId)
+          if (ahora) {
+            ahora.fallos += 1
+            programar(preguntaId, esperaTras(ahora.fallos))
+          }
+        } finally {
+          enVuelo.current.delete(preguntaId)
+          if (!desmontado.current) refrescar()
+        }
+      })()
+
+      enVuelo.current.set(preguntaId, viaje)
+      return viaje
+    },
+    [programar, refrescar],
+  )
+  mandarUnaRef.current = mandarUna
+
   const mandarYa = useCallback(() => {
-    window.clearTimeout(temporizador.current)
-    for (const [preguntaId, valor] of cola.current) {
-      mandar(preguntaId, valor)
+    for (const preguntaId of [...cola.current.keys()]) {
+      window.clearTimeout(relojes.current.get(preguntaId))
+      relojes.current.delete(preguntaId)
+      void mandarUna(preguntaId)
     }
-  }, [mandar])
+  }, [mandarUna])
 
   const encolar = useCallback(
-    (preguntaId: number, valor: T) => {
-      cola.current.set(preguntaId, valor)
+    (preguntaId: number, valor: T, opciones?: { yaMismo?: boolean }) => {
+      const previa = cola.current.get(preguntaId)
+      cola.current.set(preguntaId, {
+        valor,
+        // Corregir despues de un fallo no arrastra el castigo del anterior: lo que se acaba
+        // de escribir sale enseguida.
+        fallos: 0,
+        en: previa?.en ?? Date.now(),
+      })
       refrescar()
-      window.clearTimeout(temporizador.current)
-      temporizador.current = window.setTimeout(mandarYa, ESPERA_ANTES_DE_GUARDAR)
+      programar(preguntaId, opciones?.yaMismo ? 0 : ESPERA_ANTES_DE_GUARDAR)
     },
-    [mandarYa, refrescar],
+    [programar, refrescar],
   )
 
   const olvidar = useCallback(
     (preguntaId: number) => {
-      if (cola.current.delete(preguntaId)) {
-        refrescar()
-      }
+      if (!cola.current.delete(preguntaId)) return
+      window.clearTimeout(relojes.current.get(preguntaId))
+      relojes.current.delete(preguntaId)
+      refrescar()
     },
     [refrescar],
   )
 
-  /** Lo confirmó el servidor: sale de la cola **solo** si sigue siendo lo mismo. */
-  const confirmar = useCallback(
-    (preguntaId: number, valor: T) => {
-      const enCola = cola.current.get(preguntaId)
-      if (enCola !== undefined && loMismo(enCola, valor)) {
-        cola.current.delete(preguntaId)
-        refrescar()
-      }
-    },
-    [loMismo, refrescar],
+  /**
+   * Manda lo que quede y espera.
+   *
+   * Da varias vueltas porque una respuesta puede cambiar mientras viaja —y entonces vuelve
+   * a la cola—, pero con tope: si el servidor esta caido, esto no puede dejar al candidato
+   * mirando un boton que no responde.
+   */
+  const vaciar = useCallback(async (): Promise<boolean> => {
+    for (let vuelta = 0; vuelta < 3 && cola.current.size > 0; vuelta += 1) {
+      mandarYa()
+      await Promise.allSettled([...enVuelo.current.values()])
+    }
+    return cola.current.size === 0
+  }, [mandarYa])
+
+  const pendienteDe = useCallback(
+    (preguntaId: number) => cola.current.get(preguntaId)?.valor,
+    [],
   )
 
-  // Mientras quede algo sin confirmar se sigue intentando solo.
+  // Lo que quedo apuntado de la vez anterior: cerrar la pestaña con algo sin confirmar ya no
+  // lo pierde. Se recupera antes de nada y sale hacia el servidor en cuanto monta.
   useEffect(() => {
-    if (sinConfirmar.length === 0) {
-      return
+    if (!clave) return
+    let apuntado: { id: number; valor: T; en: number }[] = []
+    try {
+      apuntado = JSON.parse(window.localStorage.getItem(clave) ?? '[]')
+    } catch {
+      apuntado = []
     }
-    const reloj = window.setInterval(mandarYa, ESPERA_ANTES_DE_REINTENTAR)
-    return () => {
-      window.clearInterval(reloj)
+    if (!Array.isArray(apuntado)) return
+    const limite = Date.now() - CADUCA_LO_APUNTADO
+    let recuperado = false
+    for (const fila of apuntado) {
+      if (typeof fila?.id !== 'number' || fila.valor === undefined) continue
+      if (typeof fila.en !== 'number' || fila.en < limite) continue
+      if (cola.current.has(fila.id)) continue
+      cola.current.set(fila.id, { valor: fila.valor, fallos: 0, en: fila.en })
+      recuperado = true
     }
-  }, [sinConfirmar.length, mandarYa])
-
-  // Al salir de la pantalla, lo que quede sin mandar se manda.
-  useEffect(() => {
-    return () => {
+    if (recuperado) {
+      refrescar()
       mandarYa()
+    }
+  }, [clave, refrescar, mandarYa])
+
+  // Al ocultar la pestaña —cambiar de aplicacion en el movil, bloquear la pantalla, cerrar—
+  // se manda lo que quede. `visibilitychange` es el unico evento que el movil garantiza:
+  // `beforeunload` no llega en iOS ni cuando el sistema mata la pestaña en segundo plano.
+  useEffect(() => {
+    const alOcultarse = () => {
+      if (document.visibilityState === 'hidden') mandarYa()
+    }
+    document.addEventListener('visibilitychange', alOcultarse)
+    window.addEventListener('pagehide', mandarYa)
+    return () => {
+      document.removeEventListener('visibilitychange', alOcultarse)
+      window.removeEventListener('pagehide', mandarYa)
     }
   }, [mandarYa])
 
-  const pendienteDe = useCallback((preguntaId: number) => cola.current.get(preguntaId), [])
+  // Al salir de la pantalla, lo que quede sin mandar se manda. Los temporizadores se apagan
+  // despues: si no, el ultimo envio se iria con ellos.
+  useEffect(() => {
+    desmontado.current = false
+    return () => {
+      desmontado.current = true
+      mandarYa()
+      for (const reloj of relojes.current.values()) window.clearTimeout(reloj)
+      relojes.current.clear()
+    }
+  }, [mandarYa])
 
-  return { sinConfirmar, pendienteDe, encolar, olvidar, mandarYa, confirmar }
+  return {
+    sinConfirmar,
+    pendienteDe,
+    encolar,
+    olvidar,
+    mandarYa,
+    vaciar,
+    // Mientras quede algo en la cola hay algo guardandose: o esta viajando, o le toca
+    // enseguida. Para el candidato es lo mismo, y dos estados distintos aqui solo servirian
+    // para parpadear.
+    guardando: sinConfirmar.length > 0,
+  }
 }
