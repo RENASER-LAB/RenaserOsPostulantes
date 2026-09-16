@@ -74,6 +74,10 @@ export function CuestionarioTecnico() {
     queryKey: ['cuestionario-tecnico', uuid],
     queryFn: () => verCuestionarioTecnico(uuid),
     enabled: uuid !== '',
+    // El único que escribe aquí es esta pantalla, y lo que confirma lo refleja en la copia
+    // local. Una recarga al volver a la pestaña puede haber arrancado antes de un guardado y
+    // aterrizar después, pisando lo confirmado con una foto anterior.
+    refetchOnWindowFocus: false,
   })
 
   const preguntas = useMemo(() => consulta.data?.preguntas ?? [], [consulta.data])
@@ -151,7 +155,13 @@ export function CuestionarioTecnico() {
     // Primero se vacía la cola: entregar con algo sin confirmar es entregar sin esa
     // respuesta, y el backend rechaza la entrega si falta alguna.
     mutationFn: async () => {
-      await cola.vaciar()
+      // Si no se consigue, se para y se dice: una respuesta corregida que no llegó se
+      // entregaría con el texto viejo y nadie se enteraría.
+      if (!(await cola.vaciar())) {
+        throw new Error(
+          'No pudimos guardar todo lo que escribiste. Revisa tu conexión e inténtalo otra vez.',
+        )
+      }
       return entregarCuestionarioTecnico(uuid)
     },
     onSuccess: async () => {
@@ -315,11 +325,13 @@ export function CuestionarioTecnico() {
             />
           </label>
           <p className={estilos.pista}>
-            {cola.sinConfirmar.some((p) => p.id === pregunta.id)
-              ? 'Guardando lo que escribiste…'
-              : pregunta.respuestaTexto
-                ? 'Guardada. Puedes seguir corrigiéndola hasta que entregues.'
-                : 'Todavía sin responder.'}
+            {cola.atascadas.includes(pregunta.id)
+              ? 'No se pudo guardar. Revisa tu conexión y vuelve a escribirla.'
+              : cola.sinConfirmar.some((p) => p.id === pregunta.id)
+                ? 'Guardando lo que escribiste…'
+                : pregunta.respuestaTexto
+                  ? 'Guardada. Puedes seguir corrigiéndola hasta que entregues.'
+                  : 'Todavía sin responder.'}
           </p>
         </section>
       )}

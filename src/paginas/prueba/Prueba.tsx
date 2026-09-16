@@ -267,12 +267,24 @@ function PreguntaPrueba({
    * Deja en manos del padre la forma de forzar el envio de esta pregunta y **esperarlo**.
    * Sin esto, entregar solo podia mirar si quedaba algo pendiente y negarse; ahora lo manda.
    */
-  registrarEnvio: (preguntaId: number, mandar: () => Promise<unknown>) => void
+  registrarEnvio: (preguntaId: number, mandar: (() => Promise<unknown>) | null) => void
 }) {
   const [texto, setTexto] = useState(pregunta.respuestaTexto ?? '')
   const [estado, setEstado] = useState<'limpio' | 'guardando' | 'pendiente'>('limpio')
   const pendiente = useRef<string | null>(null)
   const temporizador = useRef<number | undefined>(undefined)
+  /**
+   * Lo ultimo que el servidor confirmo de esta pregunta.
+   *
+   * ⚠️ **Antes esto se leia de `pregunta.respuestaTexto`, que no se refresca nunca**: guardar
+   * una respuesta no invalida `['prueba', uuid]`. Con la pregunta llegando sin responder, el
+   * candidato escribia algo y lo borraba en la misma sesion, y la comparacion decia
+   * `'' === (null ?? '')` → no se mandaba nada: la pantalla en blanco y el texto guardado en
+   * el servidor. Recordandolo aqui, la comparacion es contra lo que de verdad hay.
+   */
+  const confirmado = useRef(pregunta.respuestaTexto ?? '')
+  /** La peticion en curso, para no lanzar dos de la misma pregunta a la vez. */
+  const enVuelo = useRef<Promise<unknown> | null>(null)
 
   // Los reintentos corren desde temporizadores, y un temporizador ve la prop
   // del momento en que se armo. Por eso lo mira por referencia: si no, seguiria
@@ -286,6 +298,7 @@ function PreguntaPrueba({
     mutationFn: (valor: string) => responderPrueba(uuid, pregunta.id, valor),
     onMutate: () => setEstado('guardando'),
     onSuccess: (_resultado, valor) => {
+      confirmado.current = valor
       // Si siguio escribiendo mientras viajaba, lo nuevo sigue pendiente.
       if (pendiente.current === valor) {
         pendiente.current = null
@@ -300,9 +313,19 @@ function PreguntaPrueba({
   const mandarPendiente = useCallback(async () => {
     window.clearTimeout(temporizador.current)
     if (pendiente.current === null || yaNoSeAdmite.current) return
+    // ⚠️ Una sola peticion por pregunta a la vez. Dos juntas —al ocultar la pestaña mientras
+    // una viaja, o al entregar— chocan contra la clave unica `(intento, pregunta)` que el
+    // backend documenta, y el candidato ve un error por una respuesta que si estaba guardada.
+    if (enVuelo.current) return enVuelo.current
     // Se traga el rechazo a proposito: quien llama solo quiere saber cuando termino el
     // intento, y de reintentar ya se ocupa el reloj de abajo.
-    await guardarTexto(pendiente.current).catch(() => {})
+    const viaje = guardarTexto(pendiente.current)
+      .catch(() => {})
+      .finally(() => {
+        enVuelo.current = null
+      })
+    enVuelo.current = viaje
+    return viaje
   }, [guardarTexto])
 
   /**
@@ -315,7 +338,7 @@ function PreguntaPrueba({
   const escribir = useCallback(
     (nuevo: string) => {
       setTexto(nuevo)
-      if (nuevo === (pregunta.respuestaTexto ?? '')) {
+      if (nuevo === confirmado.current) {
         pendiente.current = null
         setEstado('limpio')
         return
@@ -325,16 +348,14 @@ function PreguntaPrueba({
       window.clearTimeout(temporizador.current)
       temporizador.current = window.setTimeout(() => void mandarPendiente(), ESPERA_ANTES_DE_GUARDAR)
     },
-    [pregunta.respuestaTexto, mandarPendiente],
+    [mandarPendiente],
   )
 
-  // Lo que el servidor confirma por su cuenta —una recarga— tambien limpia el estado.
+  // Una recarga de la prueba trae lo que el servidor tiene: pasa a ser lo confirmado.
   useEffect(() => {
-    if (texto === (pregunta.respuestaTexto ?? '')) {
-      pendiente.current = null
-      setEstado('limpio')
-    }
-  }, [texto, pregunta.respuestaTexto])
+    confirmado.current = pregunta.respuestaTexto ?? ''
+    if (pendiente.current === null) setTexto(pregunta.respuestaTexto ?? '')
+  }, [pregunta.respuestaTexto])
 
   // Mientras quede algo sin confirmar se sigue intentando solo.
   useEffect(() => {
@@ -370,6 +391,9 @@ function PreguntaPrueba({
   // cartel, y ahora la entrega simplemente manda lo que quede.
   useEffect(() => {
     registrarEnvio(pregunta.id, mandarPendiente)
+    // Sin esto, `envios` acumulaba cierres de preguntas ya desmontadas y entregar los
+    // invocaba todos.
+    return () => registrarEnvio(pregunta.id, null)
   }, [registrarEnvio, pregunta.id, mandarPendiente])
 
   // Con el tiempo agotado, «limpio» significa que no quedo nada en la cola —no
@@ -431,8 +455,9 @@ export function Prueba() {
   // Como forzar el envio de cada pregunta. Se llena solo, segun se montan.
   const envios = useRef<Map<number, () => Promise<unknown>>>(new Map())
   const registrarEnvio = useCallback(
-    (preguntaId: number, mandar: () => Promise<unknown>) => {
-      envios.current.set(preguntaId, mandar)
+    (preguntaId: number, mandar: (() => Promise<unknown>) | null) => {
+      if (mandar === null) envios.current.delete(preguntaId)
+      else envios.current.set(preguntaId, mandar)
     },
     [],
   )

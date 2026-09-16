@@ -15,6 +15,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, renderHook } from '@testing-library/react'
+import { ErrorApi } from '@/api/cliente'
 import { useColaDeRespuestas } from './useColaDeRespuestas'
 
 const loMismo = (a: { texto: string }, b: { texto: string }) => a.texto === b.texto
@@ -216,6 +217,117 @@ describe('la cola de respuestas', () => {
     })
 
     // Dice la verdad —no llego— en vez de dejar al candidato mirando un boton muerto.
+    expect(quedoVacia).toBe(false)
+  })
+
+  it('⚠️ lo que se confirma al salir de la pantalla deja de estar apuntado', async () => {
+    // El fallo que encontró QA. Al desmontar se manda lo que queda, y esa confirmación llega
+    // cuando ya no hay pantalla: el borrado de la nota iba colgado del repintado, así que no
+    // se hacía. La respuesta quedaba apuntada como pendiente **aunque estuviera guardada**, y
+    // al volver a abrir el examen se remandaba pisando cualquier corrección posterior.
+    const CLAVE = 'renaser_prueba_al_salir'
+    let soltar: () => void = () => {}
+    const mandar = vi.fn(() => new Promise<void>((r) => { soltar = r }))
+    const { result, unmount } = renderHook(() => useColaDeRespuestas(mandar, loMismo, CLAVE))
+
+    act(() => result.current.encolar(3, { texto: 'lo último' }))
+    unmount() // manda lo que queda y apaga los relojes
+    await pasan(0)
+    expect(mandar).toHaveBeenCalledWith(3, { texto: 'lo último' })
+
+    // El servidor responde cuando la pantalla ya no está.
+    await act(async () => { soltar() })
+    await pasan(0)
+
+    expect(window.localStorage.getItem(CLAVE)).toBeNull()
+  })
+
+  it('⚠️ tras salir de la pantalla no se programa ningún reintento', async () => {
+    // Un rechazo que aterriza después de desmontar volvía a programar: montaba un reloj nuevo
+    // que ya nadie iba a apagar, disparando contra el servidor desde una pantalla que ya no
+    // existe. Lo pendiente no se pierde por no reprogramarlo: queda apuntado y sale al volver.
+    const mandar = vi.fn(async () => { throw new Error('se cayó la red') })
+    const { result, unmount } = renderHook(() => useColaDeRespuestas(mandar, loMismo))
+
+    act(() => result.current.encolar(1, { texto: 'lo que sea' }))
+    unmount()
+    await pasan(0)
+    const alSalir = mandar.mock.calls.length
+
+    await pasan(30_000)
+    expect(mandar.mock.calls.length).toBe(alSalir)
+  })
+
+  it('⚠️ un rechazo que no se arregla esperando deja de reintentarse', async () => {
+    // Un 4xx es el servidor diciendo que esa respuesta nunca va a entrar. Reintentarlo cada
+    // pocos segundos —y otra vez mañana, desde lo apuntado— no la acerca a guardarse: solo
+    // hace ruido y deja al candidato mirando un «Guardando…» que no termina nunca.
+    const CLAVE = 'renaser_prueba_atascada'
+    const mandar = vi.fn(async () => {
+      throw new ErrorApi(404, 'Esa pregunta no es de este examen')
+    })
+    const { result } = renderHook(() => useColaDeRespuestas(mandar, loMismo, CLAVE))
+
+    act(() => result.current.encolar(9, { texto: 'a ninguna parte' }, { yaMismo: true }))
+    await pasan(0)
+    expect(mandar).toHaveBeenCalledTimes(1)
+
+    await pasan(60_000)
+    expect(mandar).toHaveBeenCalledTimes(1)
+    // Y no queda apuntada: si no, volvería a intentarlo en cada visita durante un día.
+    expect(window.localStorage.getItem(CLAVE)).toBeNull()
+    // La pantalla puede decirlo en vez de prometer un guardado que no llega.
+    expect(result.current.atascadas).toContain(9)
+  })
+
+  it('corregir una atascada le da otra oportunidad', async () => {
+    let falla = true
+    const mandar = vi.fn(async () => {
+      if (falla) throw new ErrorApi(400, 'La respuesta es demasiado larga')
+    })
+    const { result } = renderHook(() => useColaDeRespuestas(mandar, loMismo))
+
+    act(() => result.current.encolar(1, { texto: 'x'.repeat(50) }, { yaMismo: true }))
+    await pasan(0)
+    expect(result.current.atascadas).toContain(1)
+
+    falla = false
+    act(() => result.current.encolar(1, { texto: 'más corta' }, { yaMismo: true }))
+    await pasan(0)
+
+    expect(mandar).toHaveBeenLastCalledWith(1, { texto: 'más corta' })
+    expect(result.current.atascadas).not.toContain(1)
+  })
+
+  it('un corte de red sí se reintenta: estado 0 no es un 4xx', async () => {
+    const mandar = vi.fn(async () => {
+      throw new ErrorApi(0, 'No pudimos conectar. Revisa tu conexión.')
+    })
+    const { result } = renderHook(() => useColaDeRespuestas(mandar, loMismo))
+
+    act(() => result.current.encolar(1, { texto: 'sin red' }, { yaMismo: true }))
+    await pasan(0)
+    await pasan(1100)
+
+    expect(mandar).toHaveBeenCalledTimes(2)
+    expect(result.current.atascadas).toHaveLength(0)
+  })
+
+  it('vaciar no se queda colgado contra una petición que no vuelve', async () => {
+    // Esto lo espera el botón de entregar: una petición colgada —no que falle— dejaría al
+    // candidato mirando un botón muerto con el plazo corriendo.
+    const mandar = vi.fn(() => new Promise<void>(() => {}))
+    const { result } = renderHook(() => useColaDeRespuestas(mandar, loMismo))
+
+    act(() => result.current.encolar(1, { texto: 'a ninguna parte' }))
+
+    let quedoVacia = true
+    const esperando = act(async () => {
+      quedoVacia = await result.current.vaciar()
+    })
+    await pasan(9000)
+    await esperando
+
     expect(quedoVacia).toBe(false)
   })
 

@@ -154,6 +154,16 @@ export function Evaluacion() {
     queryKey: ['evaluacion', uuid],
     queryFn: () => verEvaluacion(uuid),
     enabled: uuid !== '',
+    /*
+      ⚠️ **No se recarga al volver a la pestaña.**
+
+      El unico que escribe en este examen es esta pantalla, y lo que confirma lo refleja en la
+      copia local. Una recarga al recuperar el foco no traeria nada nuevo, pero **puede haber
+      arrancado antes de un guardado y aterrizar despues**: entonces pisa lo confirmado con
+      una foto anterior y la pregunta vuelve a salir sin responder por un momento. Y volver a
+      la pestaña es justo cuando pasa, porque al ocultarla la cola manda lo que quede.
+    */
+    refetchOnWindowFocus: false,
   })
 
   const preguntas = useMemo(() => consulta.data?.preguntas ?? [], [consulta.data])
@@ -204,25 +214,32 @@ export function Evaluacion() {
       // Lo que se escribe aqui es **exactamente lo que el servidor acaba de guardar**: el
       // backend sobreescribe los tres campos con lo que le mandaron, asi que dejar los otros
       // dos en nulo no es una simplificacion, es lo que hay en la base.
-      cache.setQueryData<EvaluacionCandidato>(['evaluacion', uuid], (previo) =>
-        previo === undefined
-          ? previo
-          : {
-              ...previo,
-              preguntas: previo.preguntas.map((p) =>
-                p.id === preguntaId
-                  ? {
-                      ...p,
-                      // Un texto en blanco es una respuesta borrada, no un texto vacio
-                      // guardado: el servidor tampoco deja fila.
-                      respuestaTexto: valor.texto?.trim() ? valor.texto : null,
-                      respuestaOpcionId: valor.opcionId ?? null,
-                      respuestaDetalle: valor.detalle ?? null,
-                    }
-                  : p,
-              ),
-            },
-      )
+      cache.setQueryData<EvaluacionCandidato>(['evaluacion', uuid], (previo) => {
+        if (previo === undefined) return previo
+        const antes = previo.preguntas.find((p) => p.id === preguntaId)
+        if (antes === undefined) return previo
+        const ahora: PreguntaEvaluacion = {
+          ...antes,
+          // Un texto en blanco es una respuesta borrada, no un texto vacio guardado: el
+          // servidor tampoco deja fila.
+          respuestaTexto: valor.texto?.trim() ? valor.texto : null,
+          respuestaOpcionId: valor.opcionId ?? null,
+          respuestaDetalle: valor.detalle ?? null,
+        }
+        const eraRespuesta = estadoDePregunta(antes) === 'lista'
+        const esRespuesta = estadoDePregunta(ahora) === 'lista'
+        return {
+          ...previo,
+          preguntas: previo.preguntas.map((p) => (p.id === preguntaId ? ahora : p)),
+          // La cabecera tambien cuenta. La pantalla saca su contador de `estados`, asi que
+          // aqui no se nota, pero dejar `respondidas` congelado toda la sesion es un numero
+          // que miente esperando a que alguien lo lea.
+          respondidas: Math.max(
+            0,
+            previo.respondidas + (esRespuesta ? 1 : 0) - (eraRespuesta ? 1 : 0),
+          ),
+        }
+      })
     },
     [guardar.mutateAsync, cache, uuid],
   )
@@ -277,7 +294,17 @@ export function Evaluacion() {
     // resolvia con un cartel rojo que bloqueaba el boton y dejaba al candidato esperando a
     // que un aviso desapareciera solo; ahora simplemente se manda lo que queda y se espera.
     mutationFn: async () => {
-      await cola.vaciar()
+      // Si no se consigue —servidor caido, red que no vuelve—, se para aqui y se dice. El
+      // backend rechaza la entrega si falta alguna respuesta **nueva**, pero una respuesta
+      // **corregida** que no llego se entregaria con el texto viejo y nadie se enteraria.
+      // Este mensaje sale dentro del modal, despues de que el candidato pulse: no es un
+      // cartel que aparezca solo ni que mueva nada de sitio.
+      if (!(await cola.vaciar())) {
+        throw new Error(
+          'No pudimos guardar todo lo que escribiste. Revisa tu conexión e inténtalo otra vez: ' +
+            'entregar ahora dejaría fuera lo último que corregiste.',
+        )
+      }
       return entregarEvaluacion(uuid)
     },
     onSuccess: async () => {
@@ -305,8 +332,17 @@ export function Evaluacion() {
       setBorrador({ preguntaId: laPregunta.id, texto: nuevo })
 
       // Ya es lo que el servidor tiene: no hay nada que mandar.
+      //
+      // ⚠️ Salvo que haya una peticion de esta pregunta **viajando**: esa lleva lo de en
+      // medio, y borrarla de la cola dejaria ese valor intermedio guardado en el servidor
+      // mientras la pantalla enseña el original. Encolando lo del servidor, el ultimo en
+      // escribir vuelve a ser el que manda y las dos versiones acaban diciendo lo mismo.
       if (nuevo === (laPregunta.respuestaTexto ?? '')) {
-        cola.olvidar(laPregunta.id)
+        if (cola.estaViajando(laPregunta.id)) {
+          cola.encolar(laPregunta.id, { texto: nuevo, segundos: segundosAqui() })
+        } else {
+          cola.olvidar(laPregunta.id)
+        }
         return
       }
 
@@ -612,7 +648,9 @@ export function Evaluacion() {
   // cubre tanto lo que esta viajando como lo que espera turno o se esta reintentando. Para
   // quien responde es el mismo estado —todavia no esta— y partirlo en dos solo serviria para
   // parpadear.
-  const indicador = esteSinConfirmar
+  const indicador = cola.atascadas.includes(pregunta.id)
+    ? { texto: 'No se pudo guardar', pendiente: true }
+    : esteSinConfirmar
     ? { texto: 'Guardando…', pendiente: true }
     : estaVacia
       ? { texto: 'Sin responder', pendiente: false }

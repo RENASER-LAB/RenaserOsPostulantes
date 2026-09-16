@@ -132,7 +132,13 @@ const botonVolver = () => screen.queryByRole('button', { name: /^Volver a la/ })
 
 // Sin `globals`, la libreria no limpia sola entre pruebas y los arboles se
 // van apilando: la segunda prueba encontraria dos de cada cosa.
-afterEach(cleanup)
+afterEach(async () => {
+  cleanup()
+  // ⚠️ Al desmontar, la cola manda lo que le quede, y esa peticion **aterriza despues**. Sin
+  // esperarla aqui, la respuesta de una prueba acaba contada en la siguiente, que ya reseteo
+  // `guardadas`: un fallo que no tiene nada que ver con lo que esa prueba mira.
+  await new Promise((seguir) => setTimeout(seguir, 0))
+})
 
 beforeEach(() => {
   // ⚠️ La cola apunta lo pendiente en `localStorage` para que cerrar la pestaña no cueste una
@@ -252,7 +258,9 @@ describe('la evaluacion no pierde respuestas', () => {
   })
 
   it('lo pendiente al cerrar la pestaña se manda al volver a abrir', async () => {
-    fallanUnaVez.add(1)
+    // Que no llegue ni siquiera el envio de salida: si llegara, no habria nada apuntado que
+    // recuperar y la prueba pasaria sin comprobar lo que dice comprobar.
+    fallanSiempre.add(1)
     const { unmount } = montar()
     fireEvent.click(await screen.findByRole('button', { name: /Empezar evaluación/ }))
     await screen.findByLabelText('Tu respuesta')
@@ -261,10 +269,40 @@ describe('la evaluacion no pierde respuestas', () => {
     await waitFor(() => expect(responderEvaluacion).toHaveBeenCalled())
     expect(guardadas.has(1)).toBe(false)
     unmount()
+    await new Promise((seguir) => setTimeout(seguir, 0))
+    expect(guardadas.has(1)).toBe(false)
 
-    // Al volver, lo apuntado en el navegador sale solo hacia el servidor.
+    // Vuelve la red. Al abrir otra vez, lo apuntado sale solo sin que nadie escriba nada.
+    fallanSiempre.delete(1)
     montar()
     await waitFor(() => expect(guardadas.get(1)).toBe('Lo que escribí antes de que se cortara.'))
+  })
+
+  it('⚠️ lo que sí llegó al salir no vuelve a mandarse, ni pisa una corrección', async () => {
+    // El fallo que encontró QA. Al salir de la pantalla se manda lo que queda, y esa
+    // confirmacion llega cuando ya no hay pantalla: el borrado de la nota del navegador iba
+    // colgado del repintado, asi que no se hacia. La respuesta se quedaba apuntada como
+    // pendiente aunque estuviera guardada, y al volver a abrir el examen se remandaba
+    // **pisando cualquier correccion posterior**. Perdia respuestas justo la pieza cuyo
+    // trabajo es no perderlas.
+    const { unmount } = montar()
+    fireEvent.click(await screen.findByRole('button', { name: /Empezar evaluación/ }))
+    await screen.findByLabelText('Tu respuesta')
+
+    responder('Lo que escribí al salir.')
+    unmount()
+    await waitFor(() => expect(guardadas.get(1)).toBe('Lo que escribí al salir.'))
+
+    // Alguien corrige esa respuesta desde otro sitio —otra pestaña, el telefono—.
+    guardadas.set(1, 'Lo corregido después.')
+
+    // Ya esta empezada: al volver se entra directo a la pregunta.
+    montar()
+    await screen.findByLabelText('Tu respuesta')
+    await new Promise((seguir) => setTimeout(seguir, 100))
+
+    // No se remanda nada: la correccion sobrevive.
+    expect(guardadas.get(1)).toBe('Lo corregido después.')
   })
 
   it('la opción marcada se ve marcada aunque el servidor la rechace', async () => {

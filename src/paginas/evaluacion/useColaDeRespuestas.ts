@@ -36,8 +36,9 @@
  *   cuando la cola cambiaba de tamaño y podia tardar una eternidad en volver a intentarlo.
  * - **Lo pendiente sobrevive a cerrar la pestaña.** Se apunta en `localStorage` y se
  *   recupera al volver. Antes, cerrar el portatil con algo sin confirmar lo perdia.
- * - **Al ocultar la pestaña se manda lo que quede**, con `keepalive` para que el navegador
- *   no corte la peticion al cerrarla.
+ * - **Al ocultar la pestaña se manda lo que quede.** El navegador puede cortar esa peticion
+ *   si la pestaña se cierra del todo, y por eso el seguro de verdad es lo apuntado: lo que no
+ *   llego a salir sale sola la proxima vez que se abre el examen.
  *
  * Lo que NO hace: decidir que es una respuesta completa. Eso lo sabe cada pantalla —el
  * banco tiene ocho formatos y el cuestionario tecnico solo texto— y por eso `encolar` se
@@ -45,6 +46,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { ErrorApi } from '@/api/cliente'
 
 /** Cuanto se espera desde la ultima tecla antes de mandar. */
 export const ESPERA_ANTES_DE_GUARDAR = 800
@@ -54,6 +56,25 @@ export const ESPERA_TRAS_EL_PRIMER_FALLO = 1000
 export const ESPERA_MAXIMA_ENTRE_REINTENTOS = 30_000
 /** Lo apuntado en el navegador caduca: replicar una respuesta de anteayer seria peor. */
 export const CADUCA_LO_APUNTADO = 24 * 60 * 60 * 1000
+/** Lo que `vaciar` espera como mucho antes de rendirse y decir que no lo consiguio. */
+export const TOPE_PARA_VACIAR = 8000
+
+/**
+ * Si este rechazo no va a arreglarse esperando.
+ *
+ * Un 4xx que no sea «espera y reintenta» es el servidor diciendo que **esa respuesta nunca
+ * va a entrar**: la pregunta no es suya, el texto pasa del maximo, la sesion ya no vale.
+ * Reintentarlo cada pocos segundos hasta que cierre la pestaña —y otra vez mañana, desde lo
+ * apuntado— no lo acerca a guardarse; solo hace ruido contra el servidor y deja al candidato
+ * mirando un «Guardando…» que no termina nunca.
+ *
+ * Sin conexion, `ErrorApi` trae estado 0, que si se reintenta.
+ */
+function noVaARecuperarse(causa: unknown): boolean {
+  if (!(causa instanceof ErrorApi)) return false
+  const { estado } = causa
+  return estado >= 400 && estado < 500 && estado !== 408 && estado !== 429
+}
 
 /** Una entrada de la cola: el valor y como le ha ido. */
 interface Entrada<T> {
@@ -69,6 +90,8 @@ export interface ColaDeRespuestas<T> {
   sinConfirmar: { id: number; valor: T }[]
   /** Lo pendiente de una pregunta, si lo hay: lo suyo manda sobre lo que el servidor cree. */
   pendienteDe: (preguntaId: number) => T | undefined
+  /** Si hay una peticion de esa pregunta viajando ahora mismo. */
+  estaViajando: (preguntaId: number) => boolean
   /**
    * Deja algo pendiente y programa el envio.
    *
@@ -92,6 +115,13 @@ export interface ColaDeRespuestas<T> {
   vaciar: () => Promise<boolean>
   /** Hay algo esperando a que el servidor lo confirme. */
   guardando: boolean
+  /**
+   * Las que el servidor rechazo de una forma que no se arregla esperando.
+   *
+   * Existe para que la pantalla no prometa un «Guardando…» eterno. No lleva cartel: se dice
+   * en la misma linea del pie donde ya se dice todo lo demas, que no mueve nada de sitio.
+   */
+  atascadas: number[]
 }
 
 /**
@@ -99,8 +129,11 @@ export interface ColaDeRespuestas<T> {
  *   debe ser una promesa rota: de eso vive el reintento. Debe ser estable.
  * @param loMismo si lo que se acaba de confirmar sigue siendo lo que hay en la cola. Sin
  *   esto, una respuesta escrita mientras la anterior viajaba se daria por guardada.
- * @param clave donde apuntar lo pendiente en el navegador. Lleva el uuid del examen para
- *   que dos procesos abiertos no se pisen. Sin clave no se apunta nada.
+ * @param clave donde apuntar lo pendiente en el navegador. Lleva el uuid del examen, asi que
+ *   distingue **examenes**, no pestañas: dos pestañas del mismo examen comparten la nota y al
+ *   montar se leen lo pendiente la una a la otra. Como lo apuntado se borra en cuanto el
+ *   servidor confirma, ahi solo queda lo que de verdad no llego, y remandarlo es justo lo que
+ *   se quiere. Sin clave no se apunta nada.
  */
 export function useColaDeRespuestas<T>(
   mandar: (preguntaId: number, valor: T) => Promise<unknown>,
@@ -112,6 +145,8 @@ export function useColaDeRespuestas<T>(
   // llego.
   const cola = useRef<Map<number, Entrada<T>>>(new Map())
   const [sinConfirmar, setSinConfirmar] = useState<{ id: number; valor: T }[]>([])
+  /** Las que el servidor no va a aceptar por mucho que se insista. */
+  const [atascadas, setAtascadas] = useState<number[]>([])
   /** Un temporizador por pregunta: el de la 11 no puede aplazar el de la 10. */
   const relojes = useRef<Map<number, number>>(new Map())
   /** La peticion en curso de cada pregunta, para no lanzar dos a la vez. */
@@ -138,9 +173,21 @@ export function useColaDeRespuestas<T>(
     }
   }, [clave])
 
+  /**
+   * ⚠️ **Apuntar va siempre; repintar, solo si queda pantalla.**
+   *
+   * Separarlos no es un detalle. Al salir de la pantalla se manda lo que quede, y esa
+   * peticion vuelve **despues** de desmontar: si el borrado de la nota viajara con el
+   * repintado, un guardado que si llego se quedaba apuntado como pendiente. La siguiente vez
+   * que el candidato abria el examen, lo apuntado se remandaba y **pisaba con la respuesta
+   * vieja cualquier correccion posterior**. Perdia respuestas justo la pieza cuyo trabajo es
+   * no perderlas.
+   */
   const refrescar = useCallback(() => {
-    setSinConfirmar([...cola.current].map(([id, e]) => ({ id, valor: e.valor })))
     apuntar()
+    if (!desmontado.current) {
+      setSinConfirmar([...cola.current].map(([id, e]) => ({ id, valor: e.valor })))
+    }
   }, [apuntar])
 
   /** Cuanto se espera antes del siguiente intento, doblando y con techo. */
@@ -153,6 +200,12 @@ export function useColaDeRespuestas<T>(
   const mandarUnaRef = useRef<(preguntaId: number) => Promise<void>>(async () => {})
 
   const programar = useCallback((preguntaId: number, espera: number) => {
+    // ⚠️ **Nada se programa despues de salir de la pantalla.** Al desmontar se manda lo que
+    // queda y se apagan los relojes, pero esas peticiones **vuelven despues**: si una se caia,
+    // su reintento montaba un reloj nuevo que ya nadie iba a apagar. Seguia disparando contra
+    // el servidor desde una pantalla que ya no existe, y doblando la espera para siempre.
+    // Lo pendiente no se pierde por no reprogramarlo: queda apuntado y sale al volver a abrir.
+    if (desmontado.current) return
     window.clearTimeout(relojes.current.get(preguntaId))
     const reloj = window.setTimeout(() => {
       relojes.current.delete(preguntaId)
@@ -192,16 +245,25 @@ export function useColaDeRespuestas<T>(
             ahora.fallos = 0
             programar(preguntaId, 0)
           }
-        } catch {
-          // No se toca el valor: si no llego, se vuelve a intentar, cada vez mas separado.
+        } catch (causa) {
           const ahora = cola.current.get(preguntaId)
-          if (ahora) {
-            ahora.fallos += 1
-            programar(preguntaId, esperaTras(ahora.fallos))
+          if (!ahora) return
+          if (noVaARecuperarse(causa)) {
+            // Insistir no lo va a guardar. Sale de la cola y de lo apuntado —si no, volveria
+            // a intentarlo en cada visita durante un dia— y se anota como atascada, para que
+            // la pantalla pueda decirlo en vez de prometer un guardado que no llega.
+            cola.current.delete(preguntaId)
+            window.clearTimeout(relojes.current.get(preguntaId))
+            relojes.current.delete(preguntaId)
+            setAtascadas((antes) => (antes.includes(preguntaId) ? antes : [...antes, preguntaId]))
+            return
           }
+          // No se toca el valor: si no llego, se vuelve a intentar, cada vez mas separado.
+          ahora.fallos += 1
+          programar(preguntaId, esperaTras(ahora.fallos))
         } finally {
           enVuelo.current.delete(preguntaId)
-          if (!desmontado.current) refrescar()
+          refrescar()
         }
       })()
 
@@ -230,6 +292,8 @@ export function useColaDeRespuestas<T>(
         fallos: 0,
         en: previa?.en ?? Date.now(),
       })
+      // Corregirla le da otra oportunidad: lo que el servidor rechazo era lo de antes.
+      setAtascadas((antes) => (antes.includes(preguntaId) ? antes.filter((id) => id !== preguntaId) : antes))
       refrescar()
       programar(preguntaId, opciones?.yaMismo ? 0 : ESPERA_ANTES_DE_GUARDAR)
     },
@@ -254,9 +318,18 @@ export function useColaDeRespuestas<T>(
    * mirando un boton que no responde.
    */
   const vaciar = useCallback(async (): Promise<boolean> => {
+    const hastaCuando = Date.now() + TOPE_PARA_VACIAR
     for (let vuelta = 0; vuelta < 3 && cola.current.size > 0; vuelta += 1) {
       mandarYa()
-      await Promise.allSettled([...enVuelo.current.values()])
+      // ⚠️ **Con tope.** Esto lo espera el boton de entregar, y una peticion que se queda
+      // colgada —no que falle— dejaria al candidato mirando un boton muerto con el plazo
+      // corriendo. Pasado el tope se devuelve `false` y quien llama decide; lo pendiente
+      // sigue en la cola y en lo apuntado, asi que no se pierde nada por rendirse aqui.
+      await Promise.race([
+        Promise.allSettled([...enVuelo.current.values()]),
+        new Promise((seguir) => window.setTimeout(seguir, Math.max(0, hastaCuando - Date.now()))),
+      ])
+      if (Date.now() >= hastaCuando) break
     }
     return cola.current.size === 0
   }, [mandarYa])
@@ -265,6 +338,8 @@ export function useColaDeRespuestas<T>(
     (preguntaId: number) => cola.current.get(preguntaId)?.valor,
     [],
   )
+
+  const estaViajando = useCallback((preguntaId: number) => enVuelo.current.has(preguntaId), [])
 
   // Lo que quedo apuntado de la vez anterior: cerrar la pestaña con algo sin confirmar ya no
   // lo pierde. Se recupera antes de nada y sale hacia el servidor en cuanto monta.
@@ -322,6 +397,7 @@ export function useColaDeRespuestas<T>(
   return {
     sinConfirmar,
     pendienteDe,
+    estaViajando,
     encolar,
     olvidar,
     mandarYa,
@@ -330,5 +406,6 @@ export function useColaDeRespuestas<T>(
     // enseguida. Para el candidato es lo mismo, y dos estados distintos aqui solo servirian
     // para parpadear.
     guardando: sinConfirmar.length > 0,
+    atascadas,
   }
 }
