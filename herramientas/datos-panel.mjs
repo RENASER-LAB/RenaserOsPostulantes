@@ -20,19 +20,19 @@
  * escribio para evitar—. Ahora es la 1, que existe y esta publicada.
  */
 export const VACANTES = [
-  { id: 1, titulo: 'Ingeniero/a de Infraestructura', estado: 'PUBLICADA', tipoCierre: 'MANUAL',
+  { id: 1, titulo: 'Desarrollador web', estado: 'PUBLICADA', tipoCierre: 'MANUAL',
     puestoId: 1, solicitudTalentoId: 7, responsableUsuarioId: 1,
     publicadaEn: '2026-07-02T09:00:00Z', cerradaEn: null, aplicaEvaluacion: true,
     plantillaEvaluacionId: 1, versionPlantillaPruebaId: 1, versionPesosId: 2 },
-  { id: 2, titulo: 'Analista de Datos', estado: 'PUBLICADA', tipoCierre: 'MANUAL',
+  { id: 2, titulo: 'Líder de operaciones', estado: 'PUBLICADA', tipoCierre: 'MANUAL',
     puestoId: 2, solicitudTalentoId: 8, responsableUsuarioId: 1,
     publicadaEn: '2026-07-19T09:00:00Z', cerradaEn: null, aplicaEvaluacion: true,
     plantillaEvaluacionId: 1, versionPlantillaPruebaId: 1, versionPesosId: 2 },
-  { id: 3, titulo: 'Coordinador de Proyectos', estado: 'BORRADOR', tipoCierre: 'MANUAL',
+  { id: 3, titulo: 'Analista de experiencia del cliente', estado: 'BORRADOR', tipoCierre: 'MANUAL',
     puestoId: 3, solicitudTalentoId: 9, responsableUsuarioId: 1,
     publicadaEn: null, cerradaEn: null, aplicaEvaluacion: false,
     plantillaEvaluacionId: null, versionPlantillaPruebaId: null, versionPesosId: null },
-  { id: 4, titulo: 'Especialista en Servicio', estado: 'CERRADA', tipoCierre: 'MANUAL',
+  { id: 4, titulo: 'Coordinador de Proyectos', estado: 'CERRADA', tipoCierre: 'MANUAL',
     puestoId: 4, solicitudTalentoId: 10, responsableUsuarioId: 1,
     publicadaEn: '2026-05-04T09:00:00Z', cerradaEn: '2026-08-01T09:00:00Z',
     aplicaEvaluacion: true, plantillaEvaluacionId: 1, versionPlantillaPruebaId: 1,

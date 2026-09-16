@@ -20,7 +20,7 @@
  *
  * ⚠️ **Lo que se copio es el diseño, no el stack.** El original viene en
  * shadcn + Tailwind + lucide, y este portal no tiene ninguno de los tres: tiene
- * modulos CSS y los tokens de «El canto». Lo que si se usa tal cual es `motion`,
+ * modulos CSS y los tokens de «El escaparate». Lo que si se usa tal cual es `motion`,
  * que ya estaba en el proyecto — esta es la primera pantalla que la estrena.
  *
  * ⚠️ **Y la superficie se queda clara.** El original va en negro translucido con

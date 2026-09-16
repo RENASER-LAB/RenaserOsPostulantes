@@ -4,7 +4,7 @@
  * La forma sigue el `NotificationPopover` —contador en circulo sobre la esquina
  * del boton, panel de 20rem con esquinas de 12px, cabecera con linea inferior,
  * lista con divisores, y cada aviso con su punto a la izquierda del titulo y la
- * hora a la derecha— traducido a los tokens de «El canto». Las medidas del
+ * hora a la derecha— traducido a los tokens de «El escaparate». Las medidas del
  * original se conservan: `p-4` es `--e4`, `w-80` son 20rem, `max-h-[400px]` son
  * 25rem.
  *
@@ -13,10 +13,14 @@
  * cabecera blanca del portal, donde no hay nada que desenfocar y seria el unico
  * elemento oscuro de todo el mundo visual.
  *
- * El contador y el punto son `--duda` y no el color primario: en este portal el
- * violeta significa una sola cosa, «te toca a ti», y un aviso no le da ningun
- * turno — le cuenta algo que puede cambiar su decision, que es lo que ese token
- * nombra.
+ * El contador y el punto son `--duda` y no el coral: en este portal el coral
+ * significa una sola cosa, «te toca a ti», y un aviso no le da ningun turno — le
+ * cuenta algo que puede cambiar su decision, que es lo que ese token nombra.
+ *
+ * ⚠️ **Llego de `main` escrita contra «El canto» y se migro el 15/09/2026.**
+ * Tenia la pastilla de 999 px, un radio de 12 px a mano, la sombra en la pizarra
+ * `#232b36` que ya no existe, tres anillos de foco propios y el alto de la
+ * cabecera escrito a mano. Nada de eso era decision: era el mundo anterior.
  */
 
 .contenedor {
@@ -38,7 +42,9 @@
   width: 44px;
   height: 44px;
   border: 0;
-  border-radius: 50%;
+  /* Cuadrado de 4 px como cualquier otro control del mundo. Llego con `50%`, del
+     mundo de las pastillas. */
+  border-radius: var(--radio-control);
   background: transparent;
   color: var(--tinta2);
   cursor: pointer;
@@ -47,11 +53,6 @@
 .boton:hover {
   background: var(--nube-hundida);
   color: var(--tinta);
-}
-
-.boton:focus-visible {
-  outline: 2px solid var(--activo);
-  outline-offset: 2px;
 }
 
 /*
@@ -71,11 +72,13 @@
   min-width: 20px;
   height: 20px;
   padding: 0 5px;
-  border-radius: 999px;
+  /* `--radio-marca`, que es el unico redondeo que le queda al mundo, en
+     avatares y marcas. Llego con 999 px, que era la pastilla de «El canto». */
+  border-radius: var(--radio-marca);
   box-shadow: 0 0 0 2px var(--nube);
   background: var(--duda);
   color: var(--tinta-invertida);
-  font-size: 11px;
+  font-size: var(--t-micro);
   font-weight: 700;
   line-height: 20px;
   text-align: center;
@@ -92,14 +95,16 @@
   overflow-y: auto;
   overflow-x: hidden;
   /*
-   * 12px: las esquinas del original (`rounded-xl`). NO `--radio-control`, que
-   * son 999px —la pildora de los botones de la casa— y sobre una caja de 320px
-   * no redondea sino que arquea, comiendose el titulo y la hora de cada aviso.
+   * `--radio`, el radio de una caja, que vale justo los 12 px del original
+   * (`rounded-xl`). Llego escrito a mano con un comentario que decia que
+   * `--radio-control` eran 999 px: eso era cierto en «El canto» y hoy vale 4.
    */
-  border-radius: 12px;
+  border-radius: var(--radio);
   border: 1px solid var(--regla);
   background: var(--nube);
-  box-shadow: 0 12px 32px rgb(35 43 54 / 14%);
+  /* La sombra de lo que flota sobre la pagina. Llego con la pizarra `#232b36`
+     del mundo anterior, que ya no es un token de nada. */
+  box-shadow: var(--sombra-aviso);
   /* El origen de la escala: el panel crece desde la esquina del boton, no del centro. */
   transform-origin: top right;
 }
@@ -147,11 +152,6 @@
 .marcarTodos:disabled {
   opacity: 0.5;
   cursor: default;
-}
-
-.marcarTodos:focus-visible {
-  outline: 2px solid var(--activo);
-  outline-offset: 2px;
 }
 
 .vacio {
@@ -209,9 +209,10 @@
   inset: 0;
 }
 
+/* Solo el radio: el anillo lo pone el `:focus-visible` global de `mundo.css`,
+   con su separacion de 3 px. Aqui hace falta decirle que se redondee, porque el
+   enlace estirado no tiene forma propia. */
 .zona:focus-visible {
-  outline: 2px solid var(--activo);
-  outline-offset: 2px;
   border-radius: var(--radio-menor);
 }
 
@@ -242,7 +243,7 @@
   height: 5px;
   /* A la altura de la x de la primera linea, no de su borde superior. */
   margin-top: 0.45em;
-  border-radius: 50%;
+  border-radius: var(--radio-marca);
   background: var(--duda);
 }
 
@@ -283,7 +284,10 @@
 @media (max-width: 30rem) {
   .panel {
     position: fixed;
-    top: 56px;
+    /* ⚠️ **Llego con `56px` a mano y ya era falso.** La cabecera mide lo que diga
+       `--alto-cabecera`, que el 15/09/2026 paso de 68 a 70: escrito a mano, el
+       panel se le metia debajo. */
+    top: var(--alto-cabecera);
     right: var(--e3);
     left: var(--e3);
     width: auto;

@@ -12,6 +12,7 @@
 
 import { createServer } from 'node:http'
 import { RESPUESTAS as PANEL } from './datos-panel.mjs'
+import { UBIGEO } from './ubigeo-simulado.mjs'
 
 /*
  * ⚠️ **El 8080 esta ocupado.** Ahi vive `postgresql-adminer-1`, que responde 200
@@ -28,7 +29,7 @@ const enMinutos = (m) => new Date(Date.now() + m * 60_000).toISOString()
 const VACANTES = [
   {
     id: 1,
-    titulo: 'Ingeniero/a de Infraestructura',
+    titulo: 'Desarrollador web',
     nombreEmpresa: 'Renaser Consulting',
     descripcion: 'Sostener una plataforma que no se cae y que el equipo entiende.',
     proposito:
@@ -40,7 +41,18 @@ const VACANTES = [
     modalidad: 'Híbrido',
     horario: 'Jornada completa',
     ubicacion: 'Lima',
-    compensacionPublica: 'Rango acordado en la conversación final',
+    /*
+     * RANGO y con fecha de cambio: es la unica que enciende el «Actualizado
+     * el …» en ambar y la unica que tiene un aviso en la campana.
+     */
+    remuneracion: {
+      tipo: 'RANGO',
+      min: 3000,
+      max: 4500,
+      moneda: 'PEN',
+      texto: 'S/ 3 000 a 4 500',
+      actualizadaEn: '2026-09-14T10:00:00Z',
+    },
     requisitosObjetivos: [
       { id: 11, descripcion: 'Tres años o más en infraestructura o plataforma.' },
       { id: 12, descripcion: 'Experiencia con contenedores en producción.' },
@@ -49,7 +61,7 @@ const VACANTES = [
   },
   {
     id: 2,
-    titulo: 'Analista de Datos',
+    titulo: 'Líder de operaciones',
     nombreEmpresa: 'Clínica San Juan',
     descripcion: 'Convertir datos dispersos en decisiones que alguien toma el lunes.',
     proposito: 'Que las decisiones del comité dejen de apoyarse en intuición.',
@@ -58,12 +70,20 @@ const VACANTES = [
     modalidad: 'Presencial',
     horario: 'Jornada completa',
     ubicacion: 'Lima',
-    compensacionPublica: null,
+    /* FIJA y sin cambios: el monto a secas, sin pie. */
+    remuneracion: {
+      tipo: 'FIJA',
+      min: 6500,
+      max: null,
+      moneda: 'PEN',
+      texto: 'S/ 6 500',
+      actualizadaEn: null,
+    },
     requisitosObjetivos: [{ id: 21, descripcion: 'Dos años o más analizando datos de negocio.' }],
   },
   {
     id: 3,
-    titulo: 'Especialista en Servicio',
+    titulo: 'Analista de experiencia del cliente',
     nombreEmpresa: 'Transportes del Sur',
     descripcion: 'Resolver antes de que el cliente tenga que insistir.',
     proposito: 'Que un cliente con un problema termine la conversación mejor de lo que la empezó.',
@@ -72,39 +92,23 @@ const VACANTES = [
     modalidad: 'Presencial',
     horario: 'Jornada completa',
     ubicacion: 'Lima',
-    compensacionPublica: null,
+    /*
+     * OCULTA, que es el caso que hay que poder mirar: el portal tiene que
+     * DECIRLO —«La empresa no publica el sueldo»— y no dejar un hueco, y ademas
+     * es lo que explica que al postular aqui no se le pida su pretension.
+     */
+    remuneracion: {
+      tipo: 'OCULTA',
+      min: null,
+      max: null,
+      moneda: null,
+      texto: '',
+      actualizadaEn: null,
+    },
     requisitosObjetivos: [],
   },
 ]
 
-/**
- * El catalogo de provincias del registro.
- *
- * ⚠️ **Es una MUESTRA, no las 196.** El backend de verdad las trae todas; aqui
- * caben las suficientes para que el desplegable se vea agrupado por
- * departamento, se pueda elegir una, y se compruebe que «Fuera del Peru» va
- * suelto al final. Los codigos son ubigeos reales de nivel 2.
- *
- * `departamento` va nulo solo en `EXT`, que no es de ningun sitio del Peru.
- */
-const UBIGEO = [
-  { codigo: '1501', nombre: 'Lima', departamento: 'Lima' },
-  { codigo: '1507', nombre: 'Huaral', departamento: 'Lima' },
-  { codigo: '1508', nombre: 'Huarochirí', departamento: 'Lima' },
-  { codigo: '0701', nombre: 'Callao', departamento: 'Callao' },
-  { codigo: '0401', nombre: 'Arequipa', departamento: 'Arequipa' },
-  { codigo: '0407', nombre: 'Islay', departamento: 'Arequipa' },
-  { codigo: '0801', nombre: 'Cusco', departamento: 'Cusco' },
-  { codigo: '0808', nombre: 'La Convención', departamento: 'Cusco' },
-  { codigo: '1301', nombre: 'Trujillo', departamento: 'La Libertad' },
-  { codigo: '1401', nombre: 'Chiclayo', departamento: 'Lambayeque' },
-  { codigo: '2001', nombre: 'Piura', departamento: 'Piura' },
-  { codigo: '2101', nombre: 'Puno', departamento: 'Puno' },
-  { codigo: '1201', nombre: 'Huancayo', departamento: 'Junín' },
-  { codigo: '0501', nombre: 'Huamanga', departamento: 'Ayacucho' },
-  { codigo: '1601', nombre: 'Maynas', departamento: 'Loreto' },
-  { codigo: 'EXT', nombre: 'Fuera del Perú', departamento: null },
-]
 
 const CONSENTIMIENTOS = [
   {
@@ -123,13 +127,71 @@ const CONSENTIMIENTOS = [
 
 // Una postulacion por situacion, para poder recorrer todas las pantallas.
 const POSTULACIONES = [
-  { uuid: 'a1', vacante: 'Ingeniero/a de Infraestructura', empresa: 'Renaser Consulting', estado: 'PRUEBA_TURNO_CANDIDATO', estadoNombre: 'Prueba habilitada', grupoPrioridad: 'A', diasSinCambio: 1, creadoEn: '2026-08-12T11:02:00Z' },
-  { uuid: 'b2', vacante: 'Analista de Datos', empresa: 'Clínica San Juan', estado: 'PERFIL_TURNO_CANDIDATO', estadoNombre: 'Evaluación pendiente', grupoPrioridad: 'B', diasSinCambio: 2, creadoEn: '2026-08-15T09:20:00Z' },
-  { uuid: 'c3', vacante: 'Especialista en Servicio', empresa: 'Transportes del Sur', estado: 'SIMULACION_TURNO_CANDIDATO', estadoNombre: 'Simulación por confirmar', grupoPrioridad: 'A', diasSinCambio: 0, creadoEn: '2026-08-01T15:40:00Z' },
-  { uuid: 'd4', vacante: 'Analista de Datos', empresa: 'Clínica San Juan', estado: 'PERFIL_CALIFICANDO', estadoNombre: 'Calificando', grupoPrioridad: 'B', diasSinCambio: 0, creadoEn: '2026-08-18T08:00:00Z' },
-  { uuid: 'e5', vacante: 'Ingeniero/a de Infraestructura', empresa: 'Renaser Consulting', estado: 'DECISION_TURNO_CANDIDATO', estadoNombre: 'Evidencia adicional', grupoPrioridad: 'A', diasSinCambio: 3, creadoEn: '2026-07-20T10:00:00Z' },
-  { uuid: 'f6', vacante: 'Especialista en Servicio', empresa: 'Transportes del Sur', estado: 'CONTRATADO', estadoNombre: 'Contratado', grupoPrioridad: 'A', diasSinCambio: 5, creadoEn: '2026-06-10T10:00:00Z' },
-  { uuid: 'g7', vacante: 'Analista de Datos', empresa: 'Clínica San Juan', estado: 'NO_CONTINUA', estadoNombre: 'No continúa', grupoPrioridad: 'C', diasSinCambio: 9, creadoEn: '2026-06-02T10:00:00Z' },
+  { uuid: 'a1', vacante: 'Desarrollador web', empresa: 'Renaser Consulting', estado: 'PRUEBA_TURNO_CANDIDATO', estadoNombre: 'Prueba habilitada', grupoPrioridad: 'A', diasSinCambio: 1, creadoEn: '2026-08-12T11:02:00Z', avisosSinLeer: 1, remuneracion: VACANTES[0].remuneracion, miPretension: { monto: 7000, moneda: 'PEN', texto: 'S/ 7 000' } },
+  { uuid: 'b2', vacante: 'Líder de operaciones', empresa: 'Clínica San Juan', estado: 'PERFIL_TURNO_CANDIDATO', estadoNombre: 'Evaluación pendiente', grupoPrioridad: 'B', diasSinCambio: 2, creadoEn: '2026-08-15T09:20:00Z', avisosSinLeer: 0, remuneracion: VACANTES[1].remuneracion, miPretension: { monto: 5000, moneda: 'PEN', texto: 'S/ 5 000' } },
+  /* Sin pretension declarada, y NO porque no quisiera decirlo: su vacante tenia
+     el sueldo oculto y no se le exigio. Es el caso que el portal tiene que saber
+     contar con esas palabras, nunca con un guion. */
+  { uuid: 'c3', vacante: 'Analista de experiencia del cliente', empresa: 'Transportes del Sur', estado: 'SIMULACION_TURNO_CANDIDATO', estadoNombre: 'Simulación por confirmar', grupoPrioridad: 'A', diasSinCambio: 0, creadoEn: '2026-08-01T15:40:00Z', avisosSinLeer: 2, remuneracion: VACANTES[2].remuneracion, miPretension: null },
+  { uuid: 'd4', vacante: 'Líder de operaciones', empresa: 'Clínica San Juan', estado: 'PERFIL_CALIFICANDO', estadoNombre: 'Calificando', grupoPrioridad: 'B', diasSinCambio: 0, creadoEn: '2026-08-18T08:00:00Z', avisosSinLeer: 0, remuneracion: VACANTES[1].remuneracion, miPretension: null },
+  { uuid: 'e5', vacante: 'Desarrollador web', empresa: 'Renaser Consulting', estado: 'DECISION_TURNO_CANDIDATO', estadoNombre: 'Evidencia adicional', grupoPrioridad: 'A', diasSinCambio: 3, creadoEn: '2026-07-20T10:00:00Z', avisosSinLeer: 0, remuneracion: VACANTES[0].remuneracion, miPretension: null },
+  { uuid: 'f6', vacante: 'Analista de experiencia del cliente', empresa: 'Transportes del Sur', estado: 'CONTRATADO', estadoNombre: 'Contratado', grupoPrioridad: 'A', diasSinCambio: 5, creadoEn: '2026-06-10T10:00:00Z', avisosSinLeer: 0, remuneracion: VACANTES[2].remuneracion, miPretension: null },
+  { uuid: 'g7', vacante: 'Líder de operaciones', empresa: 'Clínica San Juan', estado: 'NO_CONTINUA', estadoNombre: 'No continúa', grupoPrioridad: 'C', diasSinCambio: 9, creadoEn: '2026-06-02T10:00:00Z', avisosSinLeer: 0, remuneracion: VACANTES[1].remuneracion, miPretension: null },
+]
+
+/*
+ * Los avisos de la campana.
+ *
+ * Son cuatro y no uno porque lo que hay que poder mirar es la lista: el panel
+ * con sus divisores, el punto de los que no se han leido, el escalonado de la
+ * entrada y como queda cuando ya no queda ninguno sin leer.
+ *
+ * ⚠️ **Va en un `let` y se muta.** Marcar leido es la mitad de esta pantalla
+ * —el punto de cada fila de «Mis procesos» se apaga con el—, y con una constante
+ * el boton no haria nada y pareceria roto.
+ */
+let AVISOS = [
+  {
+    id: 1,
+    tipo: 'REMUNERACION_ACTUALIZADA',
+    titulo: 'Cambió el sueldo de Desarrollador web',
+    cuerpo: 'Ahora dice S/ 3 000 a 4 500. Cuando postulaste decía S/ 2 800 a 4 000.',
+    postulacionUuid: 'a1',
+    vacanteId: 1,
+    leidoEn: null,
+    creadoEn: new Date(Date.now() - 9 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 2,
+    tipo: 'REMUNERACION_ACTUALIZADA',
+    titulo: 'Cambió el sueldo de Analista de experiencia del cliente',
+    cuerpo: 'La empresa dejó de publicarlo. Tu postulación sigue igual.',
+    postulacionUuid: 'c3',
+    vacanteId: 3,
+    leidoEn: null,
+    creadoEn: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 3,
+    tipo: 'REMUNERACION_ACTUALIZADA',
+    titulo: 'Cambió el sueldo de Analista de experiencia del cliente',
+    cuerpo: 'Antes decía S/ 3 200. La empresa lo actualizó mientras tu proceso seguía abierto.',
+    postulacionUuid: 'c3',
+    vacanteId: 3,
+    leidoEn: null,
+    creadoEn: new Date(Date.now() - 30 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    /* Ya leido: sin punto, y no cuenta para el numero de la campana. */
+    id: 4,
+    tipo: 'REMUNERACION_ACTUALIZADA',
+    titulo: 'Cambió el sueldo de Líder de operaciones',
+    cuerpo: 'Ahora dice S/ 6 500.',
+    postulacionUuid: 'b2',
+    vacanteId: 2,
+    leidoEn: '2026-09-13T12:00:00Z',
+    creadoEn: '2026-09-12T18:30:00Z',
+  },
 ]
 
 const HISTORIALES = {
@@ -140,6 +202,20 @@ const HISTORIALES = {
     { estadoAnterior: 'PERFIL_CALIFICANDO', estadoNuevo: 'PERFIL_POR_CONFIRMAR', fueElSistema: true, ocurridaEn: '2026-08-16T17:40:00Z' },
     { estadoAnterior: 'PERFIL_POR_CONFIRMAR', estadoNuevo: 'PRUEBA_TURNO_CANDIDATO', fueElSistema: false, ocurridaEn: '2026-08-18T09:12:00Z' },
   ],
+}
+
+/*
+ * Cuantos avisos sin leer tiene cada postulacion, contados AHORA.
+ *
+ * ⚠️ **No se guarda en la fixtura.** Con el numero escrito a mano, marcar leido
+ * apagaba la campana y dejaba encendido el punto de la fila en «Mis procesos»,
+ * que es justo el desajuste que la campana existe para no tener.
+ */
+function conAvisos(p) {
+  return {
+    ...p,
+    avisosSinLeer: AVISOS.filter((a) => a.postulacionUuid === p.uuid && a.leidoEn === null).length,
+  }
 }
 
 const evaluaciones = new Map()
@@ -299,9 +375,54 @@ async function leerCuerpo(req) {
  *
  * El dev-login acepta cualquier id: aquí no hay usuarios que validar.
  */
-function atenderPanel(ruta, metodo, res) {
+function atenderPanel(ruta, metodo, res, cuerpo) {
   if (ruta === '/auth/dev-login') {
     return responder(res, 200, { token: 'panel-de-mentira', usuarioId: 1, roles: ['TALENTO'] })
+  }
+
+  /*
+   * Cambiar el sueldo de una vacante, que es lo unico que el panel escribe y el
+   * portal tiene que enseñar acto seguido.
+   *
+   * ⚠️ **La frase se arma AQUI, como en el backend de verdad**, y no en la
+   * pantalla: `texto` viaja ya escrito para que el portal, el panel y el correo
+   * digan el mismo sueldo caracter a caracter. Si el simulado dejara que lo
+   * escribiera cada uno, la prueba que fija justo eso pasaria en falso.
+   */
+  const remu = ruta.match(/^\/vacantes\/(\d+)\/remuneracion$/)
+  if (remu && metodo !== 'GET') {
+    const v = VACANTES.find((x) => String(x.id) === remu[1])
+    if (!v) return responder(res, 404, { detail: 'No existe esa vacante' })
+    const nueva = cuerpo?.remuneracion ?? {}
+    /*
+     * ⚠️ **Esconder el sueldo de una vacante PUBLICADA se rechaza (V54).** Es
+     * media regla del trato: quien postulo lo hizo con una cifra delante, y
+     * quitarla despues la borra de la pantalla que el ya vio. El backend
+     * devuelve 4xx y hay una prueba que lo fija, asi que el simulado tiene que
+     * negarse igual o la prueba pasaria contra un doble mas permisivo que el
+     * original — que es la forma mas silenciosa de que un doble mienta.
+     */
+    if (nueva.tipo === 'OCULTA' && v.remuneracion?.tipo !== 'OCULTA') {
+      return responder(res, 409, {
+        detail: 'No se puede dejar de publicar el sueldo de una vacante ya publicada',
+      })
+    }
+    const moneda = nueva.moneda ?? 'PEN'
+    const cifra = (n) => `${moneda === 'PEN' ? 'S/' : moneda} ${String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ')}`
+    v.remuneracion = {
+      tipo: nueva.tipo ?? 'OCULTA',
+      min: nueva.min ?? null,
+      max: nueva.max ?? null,
+      moneda: nueva.tipo === 'OCULTA' ? null : moneda,
+      texto:
+        nueva.tipo === 'RANGO'
+          ? `${cifra(nueva.min)} a ${String(nueva.max).replace(/\B(?=(\d{3})+(?!\d))/g, ' ')}`
+          : nueva.tipo === 'FIJA'
+            ? cifra(nueva.min)
+            : '',
+      actualizadaEn: ahora().toISOString(),
+    }
+    return responder(res, 200, v.remuneracion)
   }
 
   if (metodo !== 'GET') return responder(res, 200, { ok: true })
@@ -324,7 +445,8 @@ const servidor = createServer(async (req, res) => {
   if (pathname.startsWith('/api/v1/panel')) {
     const rutaPanel = pathname.replace(/^\/api\/v1\/panel/, '') || '/'
     console.log(`${req.method} /panel${rutaPanel}`)
-    return atenderPanel(rutaPanel, req.method, res)
+    const cuerpoPanel = req.method === 'GET' ? null : await leerCuerpo(req)
+    return atenderPanel(rutaPanel, req.method, res, cuerpoPanel)
   }
 
   const ruta = pathname.replace(/^\/api\/v1\/portal/, '').replace(/^\/api/, '')
@@ -371,20 +493,51 @@ const servidor = createServer(async (req, res) => {
   if (ruta === '/catalogos/ubigeo') return responder(res, 200, UBIGEO)
   if (ruta === '/cuentas' && metodo === 'POST') return responder(res, 201)
   if (ruta === '/auth/login' && metodo === 'POST') return responder(res, 200, { token: 'token-de-mentira', usuarioId: 1 })
+  /*
+   * Como se llama quien tiene el token guardado. Faltaba, y el portal la pide en
+   * cada carga: eran dos 404 en la consola en toda pantalla con sesion.
+   *
+   * El simulado no valida el token —no hay usuarios que validar— asi que siempre
+   * es la misma persona.
+   */
+  if (ruta === '/auth/sesion' && metodo === 'GET') {
+    return responder(res, 200, { usuarioId: 1, nombre: 'Nando', apellidos: 'Pérez' })
+  }
 
   // Postulaciones
   if (ruta === '/postulaciones' && metodo === 'POST') return responder(res, 201, { codigo: 'a1' })
-  if (ruta === '/postulaciones' && metodo === 'GET') return responder(res, 200, POSTULACIONES)
+  if (ruta === '/postulaciones' && metodo === 'GET')
+    return responder(res, 200, POSTULACIONES.map(conAvisos))
   if (partes[0] === 'postulaciones' && partes[1] && partes[2] === 'retiro') return responder(res, 200)
   if (partes[0] === 'postulaciones' && partes[1] && metodo === 'GET') {
-    const resumen = POSTULACIONES.find((p) => p.uuid === partes[1])
-    if (!resumen) return responder(res, 404, { mensaje: 'No existe esa postulación' })
+    const crudo = POSTULACIONES.find((p) => p.uuid === partes[1])
+    if (!crudo) return responder(res, 404, { mensaje: 'No existe esa postulación' })
+    const resumen = conAvisos(crudo)
     const historial = HISTORIALES[resumen.uuid] ?? [
       { estadoAnterior: null, estadoNuevo: 'POSTULADA', fueElSistema: true, ocurridaEn: resumen.creadoEn },
       { estadoAnterior: 'POSTULADA', estadoNuevo: resumen.estado, fueElSistema: true, ocurridaEn: resumen.creadoEn },
     ]
     return responder(res, 200, { resumen, historial })
   }
+  // Avisos (la campana)
+  if (ruta === '/avisos' && metodo === 'GET') {
+    return responder(res, 200, {
+      sinLeer: AVISOS.filter((a) => a.leidoEn === null).length,
+      avisos: AVISOS,
+    })
+  }
+  if (ruta === '/avisos/lectura' && metodo === 'POST') {
+    const marcados = AVISOS.filter((a) => a.leidoEn === null).length
+    AVISOS = AVISOS.map((a) => (a.leidoEn ? a : { ...a, leidoEn: ahora().toISOString() }))
+    return responder(res, 200, { marcados })
+  }
+  if (partes[0] === 'avisos' && partes[1] && partes[2] === 'lectura' && metodo === 'POST') {
+    AVISOS = AVISOS.map((a) =>
+      String(a.id) === partes[1] && !a.leidoEn ? { ...a, leidoEn: ahora().toISOString() } : a,
+    )
+    return responder(res, 200)
+  }
+
   if (ruta === '/consentimientos/futuros/retiro') return responder(res, 200)
   if (ruta === '/solicitudes-borrado') return responder(res, 200)
 

@@ -11,7 +11,7 @@
  *   - **`OCULTA` se nombra, no se esconde.** «La empresa no publica el sueldo»
  *     en lugar de un hueco. El hueco se lee como un fallo de carga, y ademas es
  *     el dato que explica por que al postular no le van a pedir el suyo.
- *   - **El «actualizado el …» es ambar, no violeta.** En «El canto» el violeta
+ *   - **El «actualizado el …» es ambar, no coral.** En «El escaparate» el coral
  *     significa una sola cosa, «te toca a ti», y que le cambien el sueldo no es
  *     un turno suyo: no hay nada que hacer. Es `--duda`, que es exactamente «lo
  *     que cambia tu decision».
