@@ -32,10 +32,10 @@ import estilos from './Vacantes.module.css'
 
 /** Qué hace el candidato en cada etapa. Es texto de producto, no dato. */
 const QUE_ES: Record<string, string> = {
-  PERFIL: 'Currículum y evaluación escrita. 14 días.',
-  PRUEBA: 'Un encargo real, con el reloj corriendo.',
+  PERFIL: 'Currículum y preguntas para conocerte.',
+  PRUEBA: 'Demuestra tus habilidades.',
   SIMULACION: 'Dos horas con el equipo, fecha que eliges.',
-  VALIDACION: 'Un periodo corto trabajando de verdad.',
+  VALIDACION: 'Un periodo corto trabajando de verdad. Pagado.',
   DECISION: 'Decide una persona, no un puntaje.',
 }
 
@@ -47,7 +47,7 @@ const PREGUNTAS = [
   },
   {
     q: '¿Cuánto dura todo el proceso?',
-    a: 'Semanas, no días. La evaluación tiene catorce días por defecto y la simulación son dos horas en la fecha que elijas. Los plazos que todavía no están definidos no te los inventamos.',
+    a: 'Depende de la vacante: cada empresa pone sus propios plazos, y los que todavía no están definidos no te los inventamos. No tienes que estar pendiente — cada vez que te toque algo te avisamos, y hasta entonces no hay nada que hacer de tu lado.',
   },
   {
     q: '¿Mi currículum me puede descartar?',
@@ -55,7 +55,7 @@ const PREGUNTAS = [
   },
   {
     q: '¿Veo mi puntaje?',
-    a: 'No. Verás en qué etapa estás y de quién se espera algo, pero no las notas ni las claves de las preguntas. La decisión final la toma una persona mirando todo el recorrido.',
+    a: 'No. Verás en qué etapa estás y si tienes algo pendiente, nada más. La decisión final la toma una persona mirando todo el recorrido.',
   },
 ]
 
@@ -75,11 +75,6 @@ export function Vacantes() {
           puede
           empezar aquí
         </h1>
-        <p className={estilos.bajada}>
-          Aquí no se decide por el currículum: se mira cómo trabajas. Cinco etapas, unas
-          semanas, y en todo momento sabes en qué punto estás.
-        </p>
-
         {/*
           La accion va en negro y no en color. En este mundo el negro es la
           accion y el coral solo marca «te toca a ti», que aqui todavia no
@@ -110,7 +105,7 @@ export function Vacantes() {
         <div className={estilos.escaparate}>
           <div className={estilos.escaparateDentro}>
             <p className={estilos.pieEscaparate}>
-              Así se ve tu recorrido desde el primer día. Nada de esto se te oculta.
+              Cinco etapas para conocer cómo trabajas
             </p>
             <ol className={estilos.recorrido} role="list">
               {ETAPAS.map((etapa, indice) => (
@@ -153,7 +148,6 @@ export function Vacantes() {
       <section className={estilos.seccionVacantes} aria-labelledby="vacantes-abiertas">
         <div className={estilos.cabeceraSeccion}>
           <h2 id="vacantes-abiertas">Vacantes abiertas</h2>
-          <p>Con el encargo real escrito por quien va a trabajar contigo.</p>
         </div>
 
         {consulta.isPending && (
@@ -214,8 +208,14 @@ export function Vacantes() {
           HTML antes de traer una libreria.
         */}
         <div className={estilos.preguntas}>
-          {PREGUNTAS.map((p, indice) => (
-            <details className={estilos.pregunta} key={p.q} open={indice === 0}>
+          {/*
+            Todas cerradas de entrada. La primera venia abierta para enseñar de
+            que va el plegable, y a cambio dejaba la seccion empezando por una
+            respuesta: lo que se ve primero tiene que ser la lista de preguntas,
+            que es lo que permite buscar la propia de un vistazo.
+          */}
+          {PREGUNTAS.map((p) => (
+            <details className={estilos.pregunta} key={p.q}>
               <summary>
                 {p.q}
                 <span className={estilos.mas} aria-hidden="true" />

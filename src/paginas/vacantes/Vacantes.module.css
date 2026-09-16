@@ -77,14 +77,6 @@
   vertical-align: middle;
 }
 
-.bajada {
-  margin: var(--e4) auto 0;
-  max-width: 44ch;
-  font-size: var(--t-base);
-  line-height: 1.5;
-  color: var(--tinta3);
-}
-
 .acciones {
   display: flex;
   flex-wrap: wrap;
@@ -487,10 +479,20 @@
   composes: signoMas from '../../estilos/piezas.module.css';
 }
 
+/*
+ * ⚠️ **La respuesta llega hasta donde llega su pregunta, y antes no.** Tenía el
+ * tope de `--medida` —50ch— dentro de un carril de 48rem, así que cortaba a poco
+ * más de media anchura y se leía como un texto desalineado bajo un título que sí
+ * cruzaba entero.
+ *
+ * El relleno de la derecha es la columna del signo «+»: 16 px de signo más los
+ * 16 del hueco que le deja el `summary`. Sin él la respuesta pasaría por debajo
+ * del signo y las dos líneas dejarían de terminar en el mismo sitio.
+ */
 .pregunta p {
   margin: 0;
   padding-bottom: var(--e5);
-  max-width: var(--medida);
+  padding-right: calc(16px + var(--e4));
   font-size: var(--t-prosa);
   line-height: 1.55;
   color: var(--tinta3);
