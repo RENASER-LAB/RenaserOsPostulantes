@@ -331,6 +331,51 @@ describe('la cola de respuestas', () => {
     expect(quedoVacia).toBe(false)
   })
 
+  it('⚠️ deshacer hasta lo que el servidor tiene quita la marca de atascada', async () => {
+    // El pie se quedaba clavado en «No se pudo guardar» sobre una respuesta que SI estaba
+    // guardada: `encolar` limpiaba la marca, pero `olvidar` no. El candidato que escribia
+    // algo rechazado y lo deshacia se quedaba con el aviso puesto hasta recargar.
+    const mandar = vi.fn(async () => {
+      throw new ErrorApi(400, 'La respuesta es demasiado larga')
+    })
+    const { result } = renderHook(() => useColaDeRespuestas(mandar, loMismo))
+
+    act(() => result.current.encolar(1, { texto: 'x'.repeat(50) }, { yaMismo: true }))
+    await pasan(0)
+    expect(result.current.atascadas).toContain(1)
+
+    // Deshace hasta lo que el servidor ya tiene: no hay nada que mandar, ni nada que avisar.
+    act(() => result.current.olvidar(1))
+    await pasan(0)
+
+    expect(result.current.atascadas).not.toContain(1)
+  })
+
+  it('⚠️ una petición que no vuelve no bloquea esa pregunta para siempre', async () => {
+    // Sin red el navegador rechaza al instante y la cola reintenta; pero contra un servidor o
+    // un proxy que acepta y no contesta, la promesa se queda abierta. Como no sale una segunda
+    // peticion de la misma pregunta mientras hay una viajando, esa pregunta se quedaba
+    // bloqueada: ni se guardaba, ni se reintentaba, y el pie decia «Guardando…» sin fin.
+    const mandar = vi.fn(() => new Promise<void>(() => {}))
+    const { result } = renderHook(() => useColaDeRespuestas(mandar, loMismo))
+
+    act(() => result.current.encolar(1, { texto: 'a ninguna parte' }, { yaMismo: true }))
+    await pasan(0)
+    expect(mandar).toHaveBeenCalledTimes(1)
+
+    // Ni a los diez segundos: el tope es generoso porque no es un plazo de respuesta
+    // razonable, es el punto en que se asume que esa peticion ya no vuelve.
+    await pasan(10_000)
+    expect(mandar).toHaveBeenCalledTimes(1)
+
+    // Pasado el tope se da por perdida y vuelve a intentarse.
+    await pasan(11_000)
+    await pasan(1100)
+    expect(mandar.mock.calls.length).toBeGreaterThan(1)
+    // Y sigue pendiente: no se ha dado por guardado nada.
+    expect(result.current.sinConfirmar).toHaveLength(1)
+  })
+
   it('olvidar quita lo pendiente y su temporizador', async () => {
     const mandar = vi.fn(async () => {})
     const { result } = renderHook(() => useColaDeRespuestas(mandar, loMismo))

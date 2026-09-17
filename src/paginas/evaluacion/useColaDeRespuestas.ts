@@ -58,6 +58,19 @@ export const ESPERA_MAXIMA_ENTRE_REINTENTOS = 30_000
 export const CADUCA_LO_APUNTADO = 24 * 60 * 60 * 1000
 /** Lo que `vaciar` espera como mucho antes de rendirse y decir que no lo consiguio. */
 export const TOPE_PARA_VACIAR = 8000
+/**
+ * Lo que se espera a una peticion antes de darla por perdida.
+ *
+ * ⚠️ **Una peticion que no vuelve no es lo mismo que una que falla.** Sin red, el navegador
+ * rechaza al instante y la cola reintenta; pero contra un servidor o un proxy que acepta la
+ * conexion y no contesta, la promesa se queda abierta para siempre. Como no se manda una
+ * segunda peticion de la misma pregunta mientras hay una viajando, esa pregunta se quedaba
+ * bloqueada: ni se guardaba, ni se reintentaba, y el pie decia «Guardando…» indefinidamente.
+ *
+ * Generoso a proposito: esto no es un plazo de respuesta razonable, es el punto a partir del
+ * cual se asume que esa peticion ya no va a volver.
+ */
+export const TOPE_POR_PETICION = 20_000
 
 /**
  * Si este rechazo no va a arreglarse esperando.
@@ -232,8 +245,17 @@ export function useColaDeRespuestas<T>(
 
       const mandado = entrada.valor
       const viaje = (async () => {
+        let reloj: number | undefined
         try {
-          await mandarRef.current(preguntaId, mandado)
+          await Promise.race([
+            mandarRef.current(preguntaId, mandado),
+            new Promise((_, romper) => {
+              reloj = window.setTimeout(
+                () => romper(new Error('La petición no volvió')),
+                TOPE_POR_PETICION,
+              )
+            }),
+          ])
           const ahora = cola.current.get(preguntaId)
           if (!ahora) return
           if (loMismoRef.current(ahora.valor, mandado)) {
@@ -262,6 +284,7 @@ export function useColaDeRespuestas<T>(
           ahora.fallos += 1
           programar(preguntaId, esperaTras(ahora.fallos))
         } finally {
+          window.clearTimeout(reloj)
           enVuelo.current.delete(preguntaId)
           refrescar()
         }
@@ -302,6 +325,13 @@ export function useColaDeRespuestas<T>(
 
   const olvidar = useCallback(
     (preguntaId: number) => {
+      // ⚠️ La marca se quita **aunque no hubiera nada en la cola**. Deshacer hasta volver a
+      // lo que el servidor ya tiene es dejar de tener nada pendiente, y ahi no hay nada que
+      // guardar: seguir diciendo «No se pudo guardar» sobre una respuesta que si esta
+      // guardada es exactamente la clase de indicador que miente.
+      setAtascadas((antes) =>
+        antes.includes(preguntaId) ? antes.filter((id) => id !== preguntaId) : antes,
+      )
       if (!cola.current.delete(preguntaId)) return
       window.clearTimeout(relojes.current.get(preguntaId))
       relojes.current.delete(preguntaId)

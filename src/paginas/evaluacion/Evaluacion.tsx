@@ -155,15 +155,22 @@ export function Evaluacion() {
     queryFn: () => verEvaluacion(uuid),
     enabled: uuid !== '',
     /*
-      ⚠️ **No se recarga al volver a la pestaña.**
+      **Si se recarga al volver a la pestaña**, y es una decision entre dos males.
 
-      El unico que escribe en este examen es esta pantalla, y lo que confirma lo refleja en la
-      copia local. Una recarga al recuperar el foco no traeria nada nuevo, pero **puede haber
-      arrancado antes de un guardado y aterrizar despues**: entonces pisa lo confirmado con
-      una foto anterior y la pregunta vuelve a salir sin responder por un momento. Y volver a
-      la pestaña es justo cuando pasa, porque al ocultarla la cola manda lo que quede.
+      Apagarlo evitaba un parpadeo: una recarga puede haber arrancado antes de un guardado y
+      aterrizar despues, y entonces pisa lo confirmado con una foto anterior y la pregunta
+      sale sin responder por un momento.
+
+      Pero apagarlo abria algo peor. **Dos pestañas del mismo examen** —o el telefono y el
+      portatil— dejaban de enterarse la una de la otra: la vieja seguia enseñando su version
+      con el pie diciendo «Respuesta guardada», y en cuanto alguien tocaba ahi **pisaba en
+      silencio lo que se habia escrito en la otra**. Eso es perder trabajo del candidato; el
+      parpadeo solo es feo, no se pierde nada —lo que aun no ha llegado sigue en la cola, que
+      manda sobre lo que el servidor cree— y se corrige en la siguiente recarga.
+
+      Entre perder respuestas y parpadear, parpadea.
     */
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
   })
 
   const preguntas = useMemo(() => consulta.data?.preguntas ?? [], [consulta.data])

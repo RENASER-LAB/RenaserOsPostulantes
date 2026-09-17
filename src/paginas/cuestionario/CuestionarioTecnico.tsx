@@ -74,10 +74,10 @@ export function CuestionarioTecnico() {
     queryKey: ['cuestionario-tecnico', uuid],
     queryFn: () => verCuestionarioTecnico(uuid),
     enabled: uuid !== '',
-    // El único que escribe aquí es esta pantalla, y lo que confirma lo refleja en la copia
-    // local. Una recarga al volver a la pestaña puede haber arrancado antes de un guardado y
-    // aterrizar después, pisando lo confirmado con una foto anterior.
-    refetchOnWindowFocus: false,
+    // Se recarga al volver a la pestaña, por lo mismo que la evaluación: apagarlo evitaba un
+    // parpadeo, pero dejaba que dos pestañas del mismo examen se pisaran en silencio. Perder
+    // trabajo del candidato es peor que un parpadeo que se corrige solo.
+    refetchOnWindowFocus: true,
   })
 
   const preguntas = useMemo(() => consulta.data?.preguntas ?? [], [consulta.data])
