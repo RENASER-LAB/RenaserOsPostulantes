@@ -258,6 +258,7 @@ function PreguntaPrueba({
   pregunta,
   bloqueado,
   registrarEnvio,
+  registrarSiTieneTexto,
 }: {
   uuid: string
   pregunta: { id: number; enunciado: string; respuestaTexto: string | null }
@@ -268,6 +269,15 @@ function PreguntaPrueba({
    * Sin esto, entregar solo podia mirar si quedaba algo pendiente y negarse; ahora lo manda.
    */
   registrarEnvio: (preguntaId: number, mandar: (() => Promise<unknown>) | null) => void
+  /**
+   * Dice si esta pregunta tiene algo escrito ahora mismo.
+   *
+   * ⚠️ Hace falta desde que vaciar el recuadro **borra de verdad** la respuesta. El servidor
+   * deja entregar esta prueba aunque falten preguntas —lo que exige son los entregables—, asi
+   * que si nadie cuenta esto, quien borra una respuesta sin querer la entrega sin ella y no se
+   * entera nadie. No bloquea: avisa antes de un gesto que no tiene vuelta atras.
+   */
+  registrarSiTieneTexto: (preguntaId: number, tiene: boolean | null) => void
 }) {
   const [texto, setTexto] = useState(pregunta.respuestaTexto ?? '')
   const [estado, setEstado] = useState<'limpio' | 'guardando' | 'pendiente'>('limpio')
@@ -402,6 +412,11 @@ function PreguntaPrueba({
     return () => registrarEnvio(pregunta.id, null)
   }, [registrarEnvio, pregunta.id, mandarPendiente])
 
+  useEffect(() => {
+    registrarSiTieneTexto(pregunta.id, texto.trim() !== '')
+    return () => registrarSiTieneTexto(pregunta.id, null)
+  }, [registrarSiTieneTexto, pregunta.id, texto])
+
   // Con el tiempo agotado, «limpio» significa que no quedo nada en la cola —no
   // que hubiera algo que guardar—. Sin comprobar el texto, una pregunta que
   // nunca se contesto decia que se habia guardado, en el peor minuto posible y
@@ -467,6 +482,19 @@ export function Prueba() {
     },
     [],
   )
+
+  /** Que preguntas tienen algo escrito. Se llena solo, segun se montan y se escriben. */
+  const [conTexto, setConTexto] = useState<Record<number, boolean>>({})
+  const registrarSiTieneTexto = useCallback((preguntaId: number, tiene: boolean | null) => {
+    setConTexto((antes) => {
+      if (tiene === null) {
+        if (!(preguntaId in antes)) return antes
+        const { [preguntaId]: _fuera, ...resto } = antes
+        return resto
+      }
+      return antes[preguntaId] === tiene ? antes : { ...antes, [preguntaId]: tiene }
+    })
+  }, [])
 
   /** Manda lo que quede sin confirmar y espera a que llegue. */
   const vaciarLaCola = useCallback(
@@ -576,6 +604,9 @@ export function Prueba() {
   const faltanObligatorios = prueba.entregables.filter(
     (e) => e.esObligatorio && !e.entregado,
   ).length
+  // Lo que cada recuadro tiene puesto **ahora**, no lo que el servidor mandó al cargar: si
+  // saliera de ahí, una respuesta recién borrada seguiría contando como respondida.
+  const preguntasSinResponder = prueba.preguntas.filter((p) => conTexto[p.id] === false).length
 
   return (
     <div className={estilos.pagina}>
@@ -849,6 +880,7 @@ export function Prueba() {
                         pregunta={p}
                         bloqueado={tiempoAgotado}
                         registrarEnvio={registrarEnvio}
+                        registrarSiTieneTexto={registrarSiTieneTexto}
                       />
                     ))}
                   </div>
@@ -968,6 +1000,22 @@ export function Prueba() {
           nada con ella salvo esperar a que el cartel se fuera solo. Lo que hay que hacer con
           lo pendiente es mandarlo, y eso es justo lo que hace ahora `entrega`.
         */}
+        {/*
+          El servidor deja entregar esta prueba con preguntas en blanco: lo que exige son los
+          entregables obligatorios. Se avisa y no se bloquea, porque puede ser a proposito
+          —hay pruebas donde lo que de verdad se evalua es el entregable—, pero entregar no
+          tiene vuelta atras y borrar una respuesta sin querer no puede salir gratis.
+        */}
+        {preguntasSinResponder > 0 && (
+          <p className={estilos.confirmacionTexto}>
+            <b>
+              {preguntasSinResponder === 1
+                ? 'Hay 1 pregunta sin responder.'
+                : `Hay ${preguntasSinResponder} preguntas sin responder.`}
+            </b>{' '}
+            Se entregará así. Si la dejaste en blanco a propósito, adelante.
+          </p>
+        )}
         <p className={estilos.confirmacionTexto}>
           Después de entregar no podrás modificar archivos, enlaces ni respuestas.
         </p>

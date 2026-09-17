@@ -14,7 +14,7 @@
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import type { MiPrueba } from '@/api/tipos'
@@ -173,5 +173,46 @@ describe('la consigna', () => {
 
     expect(await screen.findByText(/90 minutos desde que empieces/)).toBeTruthy()
     expect(screen.queryByText(/la convocatoria cierra el/i)).toBeNull()
+  })
+})
+
+/**
+ * Entregar con preguntas en blanco.
+ *
+ * ⚠️ Esto hace falta **desde que vaciar el recuadro borra de verdad la respuesta**. El servidor
+ * deja entregar esta prueba aunque falten preguntas —lo que exige son los entregables
+ * obligatorios—, asi que si la pantalla no lo dice, quien borra una respuesta sin querer la
+ * entrega sin ella y no se entera nadie.
+ *
+ * Avisa y no impide, a proposito: en una prueba cuyo peso esta en el entregable, dejar una
+ * pregunta sin responder puede ser una decision.
+ */
+describe('entregar con preguntas en blanco', () => {
+  it('lo dice antes de confirmar, y deja entregar igual', async () => {
+    respuesta = pruebaEnCurso(enUnaHora(), 'ARCHIVO')
+    montar()
+
+    await screen.findByRole('button', { name: 'Entregar prueba' })
+    fireEvent.click(screen.getByRole('button', { name: 'Entregar prueba' }))
+
+    const dialogo = await screen.findByRole('dialog')
+    expect(dialogo.textContent).toMatch(/Hay 1 pregunta sin responder/)
+    // Avisa, no bloquea: el boton sigue vivo.
+    const entregar = screen.getByRole('button', { name: 'Entregar' })
+    expect((entregar as HTMLButtonElement).disabled).toBe(false)
+  })
+
+  it('no lo dice cuando estan todas respondidas', async () => {
+    respuesta = pruebaEnCurso(enUnaHora(), 'ARCHIVO')
+    montar()
+
+    const area = await screen.findByLabelText('Por qué lo hiciste así')
+    fireEvent.change(area, { target: { value: 'Porque el cuadre diario lo exigia.' } })
+    await waitFor(() => expect(area).toHaveProperty('value', 'Porque el cuadre diario lo exigia.'))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Entregar prueba' }))
+
+    const dialogo = await screen.findByRole('dialog')
+    expect(dialogo.textContent).not.toMatch(/sin responder/)
   })
 })
