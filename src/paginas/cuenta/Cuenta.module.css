@@ -209,3 +209,234 @@
   margin-top: var(--e4);
   font-size: var(--t-apoyo);
 }
+
+/* ---------- Entrar, con la composicion de la referencia ---------- */
+
+/*
+ * Una columna centrada y SIN tarjeta, como la referencia que paso el cliente:
+ * titular y bajada al centro, etiquetas a la izquierda, el error arriba, el
+ * boton a todo el ancho, y una regla con texto que abre la salida de quien
+ * todavia no tiene cuenta.
+ *
+ * Registro, clave y acceso no se tocan: piden mas datos y siguen con el carril.
+ *
+ * ⚠️ **Sin tarjeta, y la hoja decia lo contrario.** Arriba esta escrito que un
+ * formulario sin superficie «se lee como pagina, no como cosa»; se escribio
+ * cuando el fondo era gris. Aqui la pantalla entera es el formulario, y un
+ * recuadro alrededor de lo unico que hay no separa de nada.
+ */
+/*
+ * Centrada en lo que se ve, entre la cabecera y el pie.
+ *
+ * ⚠️ **`justify-content: center` solo es seguro porque nada de la cadena lleva
+ * `min-height: 0`.** Centrar en un hueco mas corto que el contenido desborda por
+ * los DOS lados, y a lo que se sale por arriba el navegador no deja llegar: el
+ * titular queda cortado y fuera de alcance. No pasa aqui porque ningun eslabon
+ * encoge por debajo de su contenido —ver `.armazonJusto` en
+ * `Armazon.module.css`—: cuando la tarjeta no cabe, crece la pagina y aparece el
+ * scroll. Si alguna vez se añade ese `min-height: 0`, esto pasa a ser un fallo.
+ */
+.paginaEntrar {
+  /*
+   * Crece hasta llenar el hueco entre la cabecera y el pie —lo prepara
+   * `.armazonJusto` en `Armazon.module.css`— y centra la tarjeta dentro. Sin
+   * numeros magicos: el pie no tiene UNA altura —mide 61 px o 133 segun el
+   * ancho— y cualquier resta a mano salia mal en uno de los dos.
+   */
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 100%;
+  max-width: 26rem;
+  margin-inline: auto;
+  padding: var(--e4);
+  animation: llegaEntrar 420ms var(--salida) both;
+}
+
+/*
+ * La tarjeta.
+ *
+ * ⚠️ **La hoja decia lo contrario mas arriba** —que un formulario sin superficie
+ * «se lee como pagina, no como cosa»—, y se escribio cuando el fondo era gris.
+ * Aqui la superficie hace lo de siempre: darle a la tarea un sitio con principio
+ * y fin en una pantalla por lo demas vacia.
+ */
+.tarjetaEntrar {
+  width: 100%;
+  /*
+   * ⚠️ **`--e6` arriba y abajo, y no `--e7`.** Con 48 la tarjeta medía 590 px y
+   * entre cabecera y pie no cabía en una ventana de 768: quedaban 17 px de
+   * scroll. Con 32 mide 558 y entra con holgura, que es lo que esta pantalla
+   * pide — se abre, se rellena y se sale, sin nada que buscar más abajo.
+   */
+  padding: var(--e6);
+  background: var(--nube);
+  border: 1px solid var(--regla);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra-nube);
+}
+
+@keyframes llegaEntrar {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .paginaEntrar {
+    animation: none;
+  }
+}
+
+/*
+ * ⚠️ **30 px, y es una excepcion local a sabiendas.** La escala del mundo salta
+ * de `--t-titulo` (20) a `--t-portada` (clamp 36-60), que en una columna de
+ * 26 rem sale a 53 px y pesa mas que la tarea. No se promueve a token porque lo
+ * pide UNA pantalla: registro, clave y acceso llevan su titular en el carril,
+ * donde `--t-portada` es justo lo que hace falta.
+ *
+ * Y NO compone `.titular`: esa pieza trae `margin: 0` —que entre archivos gana
+ * por orden del bundle y se come el aire de debajo— y `max-width: 22ch`.
+ */
+.titularEntrar {
+  margin: 0;
+  font-size: 30px;
+  text-align: center;
+}
+
+.bajadaEntrar {
+  margin: var(--e2) 0 0;
+  text-align: center;
+  font-size: var(--t-prosa);
+  color: var(--tinta2);
+}
+
+/*
+ * El error, centrado y con su icono.
+ *
+ * Sin recuadro ni relleno de bloque: en la referencia es una linea, y aqui el
+ * bloque ambar de `.falloEnvio` pesaria mas que el formulario que lo provoca.
+ * El icono es decorativo —va con `aria-hidden` y pinta en `currentColor`—, asi
+ * que quien no lo ve oye el texto igual, y `role="alert"` lo anuncia al llegar.
+ */
+.falloEntrar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--e2);
+  margin: var(--e5) 0 0;
+  font-size: var(--t-apoyo);
+  line-height: 1.45;
+  color: var(--mal);
+  text-wrap: balance;
+}
+
+/*
+ * ⚠️ **El hueco es `--e4` y no `--e5`, y sale de una medida.** Con 24 la tarjeta
+ * media 558 px y entre cabecera y pie no cabia en una ventana de 768: quedaban
+ * unos 25 px de scroll. Dos campos no necesitan mas aire entre ellos que el que
+ * separa la etiqueta de su caja; lo que necesitaba sitio era la pantalla.
+ */
+.formularioEntrar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e4);
+  margin-top: var(--e5);
+}
+
+/*
+ * El campo de la contraseña y su salida son UN grupo: el hueco del formulario
+ * separa campos, y entre un campo y su nota tiene que ser mas corto o la nota
+ * parece pertenecer a lo de abajo.
+ */
+.grupoClave {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+}
+
+.olvidadaEntrar {
+  margin: 0;
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+}
+
+.enviarEntrar {
+  composes: acentoGrande from '../../estilos/piezas.module.css';
+  width: 100%;
+  margin-top: var(--e2);
+}
+
+/*
+ * La regla con su texto en medio.
+ *
+ * Es una linea de fondo cortada por el texto, no dos `<span>` con una raya cada
+ * uno: asi el hueco se ajusta solo a lo que mida la frase, en cualquier idioma y
+ * a cualquier tamaño de letra.
+ */
+.separador {
+  display: flex;
+  align-items: center;
+  margin-top: var(--e5);
+  color: var(--tinta3);
+  font-size: var(--t-apoyo);
+}
+
+.separador::before,
+.separador::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--regla);
+}
+
+.separador span {
+  padding-inline: var(--e3);
+}
+
+.crearCuenta {
+  composes: secundarioGrande from '../../estilos/piezas.module.css';
+  width: 100%;
+  margin-top: var(--e3);
+}
+
+/*
+ * En un telefono la tarjeta pierde contorno y sombra.
+ *
+ * A ese ancho ocupa la pantalla entera menos el aire de los lados, asi que el
+ * recuadro deja de rodear una cosa dentro de una pagina y pasa a dibujar un
+ * marco alrededor de la pantalla. Se queda el relleno, que es lo que separa.
+ */
+@media (max-width: 480px) {
+  .tarjetaEntrar {
+    padding: 0;
+    border: 0;
+    box-shadow: none;
+    background: none;
+  }
+}
+
+/*
+ * ⚠️ **El autorrelleno del navegador, que es lo que delata a un formulario de
+ * acceso.** Chrome pinta el campo autorrellenado de amarillo palido con su
+ * propio color de texto, por encima de cualquier fondo. No se cambia con
+ * `background`: lo unico que lo mueve es una sombra interior del tamaño del
+ * campo, y el color del texto va por `-webkit-text-fill-color`. La transicion
+ * larguisima es el truco para el resto: el amarillo se aplica con una animacion
+ * propia y solo se le gana retrasandola mas alla de lo que dura la pantalla.
+ */
+.formularioEntrar input:-webkit-autofill,
+.formularioEntrar input:-webkit-autofill:hover,
+.formularioEntrar input:-webkit-autofill:focus {
+  box-shadow: 0 0 0 100px var(--nube) inset;
+  -webkit-text-fill-color: var(--tinta);
+  caret-color: var(--activo);
+  transition: background-color 100000s ease-in-out 0s;
+}

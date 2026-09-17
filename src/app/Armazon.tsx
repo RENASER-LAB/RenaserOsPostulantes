@@ -107,9 +107,15 @@ function usarPosada() {
 export function Armazon() {
   const { hayCuenta } = useSesion()
   const posada = usarPosada()
+  const { pathname } = useLocation()
+
+  // «Entrar» es una tarjeta sola en la pantalla y se centra en lo que se ve, no
+  // fluye desde arriba. Eso cambia el armazon —la cadena de altos y el aire del
+  // pie—, asi que la decision se toma aqui. Ver `.armazonJusto` en la hoja.
+  const justo = matchPath(patrones.ingresar, pathname) !== null
 
   return (
-    <div className={estilos.armazon}>
+    <div className={`${estilos.armazon} ${justo ? estilos.armazonJusto : ''}`}>
       <ArribaAlCambiarDePagina />
       <TituloDeLaPagina />
 

@@ -43,6 +43,17 @@ function Icono({ tamano = 20, className, children }: PropsIcono & { children: Re
   )
 }
 
+/** Un aviso. Va al lado del texto del error, nunca solo. */
+export function IconoAviso(props: PropsIcono) {
+  return (
+    <Icono {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7.6v5" />
+      <path d="M12 16.1h.01" />
+    </Icono>
+  )
+}
+
 export function IconoMaletin(props: PropsIcono) {
   return (
     <Icono {...props}>

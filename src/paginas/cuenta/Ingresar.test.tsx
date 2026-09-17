@@ -50,8 +50,11 @@ describe('la pantalla de entrar', () => {
     expect(screen.getByLabelText('Correo')).toBeTruthy()
     expect(screen.getByLabelText('Contraseña')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Entrar' })).toBeTruthy()
-    expect(screen.getByRole('link', { name: /olvidaste tu contraseña/i })).toBeTruthy()
-    expect(screen.getByRole('link', { name: /créala aquí/i })).toBeTruthy()
+    // Las dos salidas, por su NOMBRE ACCESIBLE y no por el rotulo visible: el de
+    // restablecer es corto en pantalla —«Restablecer», junto a la frase que le da
+    // contexto— y lleva `aria-label` para sostenerse solo en una lista de enlaces.
+    expect(screen.getByRole('link', { name: /restablecer tu contraseña/i })).toBeTruthy()
+    expect(screen.getByRole('link', { name: /crear cuenta/i })).toBeTruthy()
   })
 
   it('la contraseña se puede mirar desde aquí', () => {

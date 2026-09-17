@@ -10,6 +10,45 @@
 }
 
 /*
+ * El armazon ajustado a la ventana, que hoy usa una sola pantalla: «Entrar».
+ *
+ * Una pantalla que es UNA tarjeta y nada mas no se lee desde arriba: se mira de
+ * golpe. Para centrarla hacen falta dos cosas que desde su propia hoja no se
+ * pueden conseguir, y por eso viven aqui:
+ *
+ * 1. **Un alto contra el que medir.** `main` ya recibe por `flex: 1` el hueco
+ *    exacto que queda entre la cabecera y el pie, pero ese alto es *usado*, no
+ *    *especificado*: un `height: 100%` dentro de el no resuelve —medido: el
+ *    envoltorio 565 px y la pagina 554— porque `.armazon` solo declara
+ *    `min-height`. Lo que si baja es el estiramiento del flex, asi que la cadena
+ *    se hace de contenedores flexibles y cada hijo crece con `flex: 1`.
+ * 2. **Que el pie no reserve aire.** `.pie` se separa 72 px de lo que tiene
+ *    encima, que es justo lo que una pagina con contenido necesita y lo que aqui
+ *    descentra: con ese hueco reservado, el centro del hueco util cae 36 px por
+ *    encima del centro de lo que se ve, y no hay forma de repartirlo a mano
+ *    porque el pie mide 61 px o 133 segun el ancho.
+ *
+ * ⚠️ **Ninguna de las dos reglas pone `min-height: 0`, y es a proposito.** Sin
+ * el, un hijo flexible no encoge por debajo de su contenido: si la tarjeta no
+ * cabe —una ventana baja, la letra del sistema mas grande—, `main` crece, el
+ * armazon crece y la pagina hace scroll, que es lo correcto. Con `min-height: 0`
+ * encogeria, la tarjeta se saldria por arriba y esa parte no se podria alcanzar.
+ */
+.armazonJusto .principal,
+.armazonJusto .principal > * {
+  display: flex;
+  flex-direction: column;
+}
+
+.armazonJusto .principal > * {
+  flex: 1;
+}
+
+.armazonJusto .pie {
+  margin-top: 0;
+}
+
+/*
  * El andamio de la cabecera: solo se ocupa de pegarla arriba y de apartarla del
  * borde. La superficie la pone `.cabeceraDentro`.
  *
