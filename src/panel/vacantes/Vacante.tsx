@@ -837,12 +837,13 @@ function Ranking({
         etapa,
         postulacionIds: visibles.map((f) => f.postulacionId),
         /*
-          `trae` viaja dentro de la descripción: la hoja se descarga, se reenvía
-          y se abre fuera del panel, donde ya no hay ninguna pantalla que pueda
-          explicar que una columna de pretensión en blanco puede ser un permiso
-          y no un candidato que no pidió sueldo.
+          La frase que la hoja escribe en su pie: de qué corte salió, con qué
+          filtros y en qué orden. Ya NO lleva `trae`: desde el formato resumido
+          del cliente, el Excel no tiene columnas de Ciudad ni de Pretensión, y
+          explicar por qué salió vacía una columna que no está desorienta más
+          que callar. La tabla, que sí las tiene, las sigue explicando.
         */
-        filtroDescrito: describirFiltro(etapa, vista, filtros, orden, ciudades, trae),
+        filtroDescrito: describirFiltro(etapa, vista, filtros, orden, ciudades),
       })
       const url = URL.createObjectURL(archivo.contenido)
       const enlace = document.createElement('a')
