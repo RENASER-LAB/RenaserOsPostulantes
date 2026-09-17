@@ -2014,41 +2014,20 @@ describe('una columna entera vacía no se pinta: se dice por qué', () => {
   })
 
   /*
-    ⚠️ **Y va dentro del Excel.** La hoja se descarga, se reenvía y se abre fuera
-    del panel, donde ya no hay pantalla que explique que un blanco en Pretensión
-    puede ser un permiso y no un candidato que no pidió sueldo.
+    ⚠️ **La hoja ya NO explica Ciudad ni Pretensión, y es a propósito.** Desde el
+    formato resumido del cliente el Excel no tiene esas dos columnas, así que una
+    frase explicando por qué salieron vacías hablaría de algo que no está en el
+    archivo. Las explicaciones siguen vivas para la tabla, que sí las tiene; esta
+    prueba existe para que volver a colarlas en el pie no pase inadvertido.
   */
-  it('el motivo viaja en la descripción que lleva la hoja', () => {
-    const sinPermiso = describirFiltro('PERFIL_INTEGRAL', 'toda', SIN_FILTROS, null, [], {
-      hayCiudad: false,
-      hayPretension: false,
-      puedeVerPretension: false,
-      vacanteMuestraSueldo: true,
-    })
-    expect(sinPermiso).toContain(POR_QUE_NO_HAY_CIUDAD)
-    expect(sinPermiso).toContain(porQueNoHayPretension(false))
+  it('la descripción de la hoja no explica columnas que el Excel ya no tiene', () => {
+    const dicho = describirFiltro('PERFIL_INTEGRAL', 'toda', SIN_FILTROS, null, [])
 
-    // Con permiso, la MISMA columna vacía lleva el otro motivo. Es el punto
-    // entero de que `puedeVerPretension` viaje: la hoja afirma cuál es.
-    const conPermiso = describirFiltro('PERFIL_INTEGRAL', 'toda', SIN_FILTROS, null, [], {
-      hayCiudad: false,
-      hayPretension: false,
-      puedeVerPretension: true,
-      vacanteMuestraSueldo: true,
-    })
-    expect(conPermiso).toContain(porQueNoHayPretension(true))
-    expect(conPermiso).not.toContain(porQueNoHayPretension(false))
-  })
-
-  it('y no aparece cuando las columnas sí traen algo', () => {
-    const dicho = describirFiltro('PERFIL_INTEGRAL', 'toda', SIN_FILTROS, null, [], {
-      hayCiudad: true,
-      hayPretension: true,
-      puedeVerPretension: true,
-      vacanteMuestraSueldo: true,
-    })
-    expect(dicho).not.toContain('no pudiera verla')
-    expect(dicho).not.toContain('Todavía no hay ninguna ciudad')
+    expect(dicho).not.toContain(POR_QUE_NO_HAY_CIUDAD)
+    expect(dicho).not.toContain(porQueNoHayPretension(false))
+    expect(dicho).not.toContain(porQueNoHayPretension(true))
+    // Y lo que sí tiene que seguir llevando: el corte y el orden.
+    expect(dicho).toContain('Orden del ranking')
   })
 
   it('la frase de la pretensión afirma UN motivo, y son distintos', () => {
