@@ -219,6 +219,12 @@ export function Evaluacion() {
       //
       // Cancelarla no pierde nada: la peticion ya salio, simplemente se descarta su resultado,
       // y la proxima vez que toque recargar saldra una con los datos de verdad.
+      //
+      // El precio, medido: si esa recarga traia lo escrito desde **otra pestaña**, esa noticia
+      // tambien se descarta, y llega en la siguiente vuelta a la pestaña en vez de en esta.
+      // Es el lado bueno del trato —entre pisar una respuesta confirmada y retrasar una
+      // noticia, se retrasa la noticia—, pero significa que enterarse de la otra pestaña puede
+      // costar dos vueltas si el candidato escribe nada mas volver.
       await cache.cancelQueries({ queryKey: ['evaluacion', uuid] })
       // Lo confirmado se escribe en la copia local en vez de volver a pedir el examen
       // entero. Antes, cada guardado disparaba una recarga de las sesenta preguntas: con un
