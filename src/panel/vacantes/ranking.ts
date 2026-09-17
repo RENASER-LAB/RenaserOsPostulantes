@@ -1741,10 +1741,12 @@ const ROTULO_DE_COLUMNA: Record<ColumnaOrdenable, string> = {
  * manda y nada más; sin decirlo, quien abra la hoja dentro de un mes no sabrá si
  * ese orden significa algo.
  *
- * ⚠️ **Y dice si la columna de pretensión salió vacía, y por qué.** Es donde más
- * falta hace: la hoja se descarga, se reenvía y se abre fuera del panel, donde
- * ya no hay ninguna pantalla que pueda explicar que un blanco ahí puede ser un
- * permiso y no un candidato que no pidió sueldo.
+ * ⚠️ **Ya NO explica las columnas de Ciudad y Pretensión**, y no es un descuido:
+ * desde que la hoja pasó al formato resumido del cliente esas dos columnas no
+ * están en el archivo. Una frase que explique por qué salió vacía una columna
+ * que no existe no informa, desorienta. Las dos explicaciones siguen vivas
+ * —`POR_QUE_NO_HAY_CIUDAD` y `porQueNoHayPretension`— y las sigue pintando la
+ * tabla, que es donde esas columnas sí están.
  */
 export function describirFiltro(
   etapa: EtapaPanel,
@@ -1752,7 +1754,6 @@ export function describirFiltro(
   filtros: Filtros,
   orden: Orden | null,
   ciudades: CiudadDelRanking[],
-  trae: QueTraeLaTanda = TRAE_TODO,
 ): string {
   const nombreDeCiudad = (codigo: string) =>
     ciudades.find((c) => c.codigo === codigo)?.nombre ?? codigo
@@ -1773,8 +1774,6 @@ export function describirFiltro(
     orden === null
       ? 'Orden del ranking (grupo de prioridad y nota)'
       : `Orden: ${ROTULO_DE_COLUMNA[orden.columna]}, ${orden.sentido === 'asc' ? 'de menor a mayor' : 'de mayor a menor'}`,
-    trae.hayCiudad ? null : POR_QUE_NO_HAY_CIUDAD,
-    trae.hayPretension ? null : porQueNoHayPretension(trae.puedeVerPretension),
   ]
 
   return partes.filter(Boolean).join(' · ')
