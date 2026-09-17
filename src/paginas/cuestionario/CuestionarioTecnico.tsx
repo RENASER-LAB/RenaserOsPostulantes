@@ -13,8 +13,11 @@
  *
  * Tres reglas de la casa que aquí se cumplen igual:
  *
- * - **Lo escrito no sale de la cola hasta que el servidor lo confirma**, se reintenta solo,
- *   se dice cuántas quedan sin guardar y no se deja entregar mientras quede alguna.
+ * - **Lo escrito no sale de la cola hasta que el servidor lo confirma**, se reintenta solo
+ *   con espera creciente, y la entrega vacía la cola antes de mandar nada. Lo que no se hace
+ *   es colgar un cartel de «quedan N sin guardar» en mitad de la prueba: es una avería
+ *   nuestra contada a quien no puede hacer nada con ella, y lo que sí necesita saber cabe en
+ *   la línea de debajo del recuadro.
  * - **Una pregunta en blanco no está «guardada»: está sin responder**, que es otra cosa.
  * - **La hora la manda el servidor**: el cronómetro cuenta hasta la fecha de vencimiento
  *   que él dice, no desde un número.
@@ -29,7 +32,7 @@ import {
   responderCuestionarioTecnico,
   verCuestionarioTecnico,
 } from '@/api/cuestionarioTecnico'
-import type { PreguntaEvaluacion } from '@/api/tipos'
+import type { EvaluacionCandidato, PreguntaEvaluacion } from '@/api/tipos'
 import { rutas } from '@/rutas'
 import { useAviso } from '@/ui/Avisos'
 import { Cronometro } from '@/ui/Cronometro'
@@ -41,6 +44,12 @@ import estilos from './CuestionarioTecnico.module.css'
 /** Lo que el backend acepta por respuesta aquí: texto y nada más. */
 interface Pendiente {
   texto: string
+  /**
+   * Cuánto tardó en responderla, medido al encolar y no al mandar: con reintentos que se van
+   * separando, un corte de red de cuatro minutos se convertiría en «tardó cuatro minutos en
+   * pensarla», y eso alguien lo lee después como si dijera algo del candidato.
+   */
+  segundos: number
 }
 
 export function CuestionarioTecnico() {
@@ -65,37 +74,77 @@ export function CuestionarioTecnico() {
     queryKey: ['cuestionario-tecnico', uuid],
     queryFn: () => verCuestionarioTecnico(uuid),
     enabled: uuid !== '',
+    // Se recarga al volver a la pestaña, por lo mismo que la evaluación: sin ella, dos
+    // pestañas del mismo examen se pisan en silencio. Lo que la hace segura es que `mandar`
+    // cancela cualquier recarga en vuelo antes de escribir lo confirmado.
+    refetchOnWindowFocus: true,
   })
 
   const preguntas = useMemo(() => consulta.data?.preguntas ?? [], [consulta.data])
   const pregunta: PreguntaEvaluacion | undefined = preguntas[indice]
 
+  /**
+   * Manda una respuesta y **resuelve solo cuando el servidor la acepta**: que un rechazo sea
+   * una promesa rota es lo que hace que la cola lo reintente en vez de darlo por guardado.
+   */
   const guardar = useMutation({
-    mutationFn: (datos: { preguntaId: number; texto: string }) =>
+    mutationFn: (datos: { preguntaId: number; texto: string; segundos: number }) =>
       responderCuestionarioTecnico(uuid, datos.preguntaId, {
         texto: datos.texto,
-        segundos: Math.round((Date.now() - abiertaEn.current) / 1000),
+        segundos: datos.segundos,
       }),
-    onSuccess: async (_resultado, datos) => {
-      cola.confirmar(datos.preguntaId, { texto: datos.texto })
-      setError(null)
-      await cache.invalidateQueries({ queryKey: ['cuestionario-tecnico', uuid] })
-    },
-    onError: (causa) => {
-      // No se toca la cola: si no llegó, se vuelve a intentar.
-      setError(causa instanceof Error ? causa.message : 'No pudimos guardar tu respuesta.')
-    },
   })
 
   const mandar = useCallback(
-    (preguntaId: number, valor: Pendiente) => guardar.mutate({ preguntaId, texto: valor.texto }),
-    [guardar.mutate],
+    async (preguntaId: number, valor: Pendiente) => {
+      await guardar.mutateAsync({ preguntaId, texto: valor.texto, segundos: valor.segundos })
+      // Primero se cancela lo que esté viajando: una recarga que arrancó antes de este
+      // guardado trae una foto sin esta respuesta, y si aterriza después pisa lo confirmado y
+      // se queda así. Ver el comentario largo en `Evaluacion.tsx`.
+      await cache.cancelQueries({ queryKey: ['cuestionario-tecnico', uuid] })
+      // Lo confirmado se escribe en la copia local en vez de volver a pedir la prueba entera
+      // en cada guardado. Con alguien escribiendo deprisa, aquello eran decenas de peticiones
+      // compitiendo, y la pantalla se ponía a pensar justo cuando él se movía.
+      cache.setQueryData<EvaluacionCandidato>(
+        ['cuestionario-tecnico', uuid],
+        (previo) => {
+          if (previo === undefined) return previo
+          const antes = previo.preguntas.find((p) => p.id === preguntaId)
+          const eraRespuesta = (antes?.respuestaTexto ?? '').trim() !== ''
+          // Vaciar el recuadro es dejarla sin responder, y el servidor borra la fila: la
+          // cuenta de respondidas tiene que bajar igual que sube.
+          const esRespuesta = valor.texto.trim() !== ''
+          return {
+            ...previo,
+            respondidas:
+              previo.respondidas + (esRespuesta ? 1 : 0) - (eraRespuesta ? 1 : 0),
+            preguntas: previo.preguntas.map((p) =>
+              p.id === preguntaId
+                ? { ...p, respuestaTexto: esRespuesta ? valor.texto : null }
+                : p,
+            ),
+          }
+        },
+      )
+    },
+    [guardar.mutateAsync, cache, uuid],
   )
+  /**
+   * ⚠️ `segundos` no entra en la comparación: es telemetría, no parte de la respuesta. Si
+   * entrara, un reintento con otro cronómetro parecería una respuesta distinta y la cola no
+   * se vaciaría nunca.
+   */
   const loMismo = useCallback(
     (enCola: Pendiente, confirmado: Pendiente) => enCola.texto === confirmado.texto,
     [],
   )
-  const cola = useColaDeRespuestas<Pendiente>(mandar, loMismo)
+  // La clave lleva el uuid: lo pendiente sobrevive a cerrar la pestaña, y dos procesos
+  // abiertos en la misma máquina no se pisan.
+  const cola = useColaDeRespuestas<Pendiente>(
+    mandar,
+    loMismo,
+    uuid === '' ? undefined : `renaser_tecnica_pendiente_${uuid}`,
+  )
 
   const inicio = useMutation({
     mutationFn: () => iniciarCuestionarioTecnico(uuid),
@@ -107,7 +156,18 @@ export function CuestionarioTecnico() {
   })
 
   const entrega = useMutation({
-    mutationFn: () => entregarCuestionarioTecnico(uuid),
+    // Primero se vacía la cola: entregar con algo sin confirmar es entregar sin esa
+    // respuesta, y el backend rechaza la entrega si falta alguna.
+    mutationFn: async () => {
+      // Si no se consigue, se para y se dice: una respuesta corregida que no llegó se
+      // entregaría con el texto viejo y nadie se enteraría.
+      if (!(await cola.vaciar())) {
+        throw new Error(
+          'No pudimos guardar todo lo que escribiste. Revisa tu conexión e inténtalo otra vez.',
+        )
+      }
+      return entregarCuestionarioTecnico(uuid)
+    },
     onSuccess: async () => {
       setConfirmarEntrega(false)
       await cache.invalidateQueries({ queryKey: ['postulaciones'] })
@@ -133,18 +193,41 @@ export function CuestionarioTecnico() {
       texto: cola.pendienteDe(pregunta.id)?.texto ?? pregunta.respuestaTexto ?? '',
     })
     abiertaEn.current = Date.now()
-  }, [pregunta?.id, cola.pendienteDe])
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- solo el id: si dependiera del
+    // texto guardado, una recarga en segundo plano pisaría lo que se está escribiendo.
+  }, [pregunta?.id])
 
-  // Se guarda cuando deja de escribir, no en cada tecla. Y lo que quedó igual que en el
-  // servidor sale de la cola: no hay nada que mandar.
-  useEffect(() => {
-    if (!pregunta || borrador.preguntaId !== pregunta.id) return
-    if (borrador.texto === (pregunta.respuestaTexto ?? '')) {
-      cola.olvidar(pregunta.id)
-      return
-    }
-    cola.encolar(pregunta.id, { texto: borrador.texto })
-  }, [borrador, pregunta, cola.encolar, cola.olvidar])
+  /**
+   * Lo que el candidato escribe, puesto a salvo **en el mismo turno que la tecla**.
+   *
+   * ⚠️ **Esto no puede volver a ser un efecto.** React los agenda, así que entre la última
+   * tecla y el efecto que la habría encolado cabe un clic en «Siguiente»; cuando por fin
+   * corría, el borrador ya era de otra pregunta y se iba sin hacer nada. Ese texto no llegaba
+   * a existir para nadie: ni se mandaba, ni se reintentaba, ni se contaba como pendiente.
+   */
+  const escribir = useCallback(
+    (laPregunta: PreguntaEvaluacion, nuevo: string) => {
+      setBorrador({ preguntaId: laPregunta.id, texto: nuevo })
+      if (nuevo === (laPregunta.respuestaTexto ?? '')) {
+        cola.olvidar(laPregunta.id)
+        return
+      }
+      cola.encolar(laPregunta.id, {
+        texto: nuevo,
+        segundos: Math.round((Date.now() - abiertaEn.current) / 1000),
+      })
+    },
+    [cola.encolar, cola.olvidar],
+  )
+
+  /** Cambiar de pregunta manda lo pendiente: no hay por qué esperar al temporizador. */
+  const irA = useCallback(
+    (siguiente: number) => {
+      cola.mandarYa()
+      setIndice(Math.max(0, Math.min(preguntas.length - 1, siguiente)))
+    },
+    [cola.mandarYa, preguntas.length],
+  )
 
   if (consulta.isPending) return <Cargando que="Abriendo tu prueba técnica…" />
   if (consulta.isError) {
@@ -154,7 +237,6 @@ export function CuestionarioTecnico() {
   const cuestionario = consulta.data
   const sinEmpezar = cuestionario.iniciadaEn === null
   const entregado = cuestionario.estado === 'TERMINADA'
-  const sinGuardar = cola.sinConfirmar.length
   // ⚠️ Se cuenta desde el servidor, no desde lo que hay en pantalla: un indicador que
   // saliera del borrador diría «respondidas» de cosas que no llegaron.
   const respondidas = cuestionario.respondidas
@@ -235,21 +317,25 @@ export function CuestionarioTecnico() {
             <span className={estilos.etiqueta}>Tu respuesta</span>
             <textarea
               className={estilos.area}
-              value={borrador.preguntaId === pregunta.id ? borrador.texto : ''}
-              onChange={(e) =>
-                setBorrador({ preguntaId: pregunta.id, texto: e.target.value })
+              value={
+                borrador.preguntaId === pregunta.id
+                  ? borrador.texto
+                  : (pregunta.respuestaTexto ?? '')
               }
+              onChange={(e) => escribir(pregunta, e.target.value)}
               rows={10}
               maxLength={20_000}
               placeholder="Cuenta un caso concreto: qué pasó, qué hiciste tú, con qué cifras."
             />
           </label>
           <p className={estilos.pista}>
-            {cola.sinConfirmar.some((p) => p.id === pregunta.id)
-              ? 'Guardando lo que escribiste…'
-              : pregunta.respuestaTexto
-                ? 'Guardada. Puedes seguir corrigiéndola hasta que entregues.'
-                : 'Todavía sin responder.'}
+            {cola.atascadas.includes(pregunta.id)
+              ? 'No se pudo guardar. Revisa tu conexión y vuelve a escribirla.'
+              : cola.sinConfirmar.some((p) => p.id === pregunta.id)
+                ? 'Guardando lo que escribiste…'
+                : pregunta.respuestaTexto
+                  ? 'Guardada. Puedes seguir corrigiéndola hasta que entregues.'
+                  : 'Todavía sin responder.'}
           </p>
         </section>
       )}
@@ -258,7 +344,7 @@ export function CuestionarioTecnico() {
         <button
           className={estilos.secundario}
           type="button"
-          onClick={() => setIndice((i) => Math.max(0, i - 1))}
+          onClick={() => irA(indice - 1)}
           disabled={indice === 0}
         >
           ← Anterior
@@ -266,7 +352,7 @@ export function CuestionarioTecnico() {
         <button
           className={estilos.secundario}
           type="button"
-          onClick={() => setIndice((i) => Math.min(preguntas.length - 1, i + 1))}
+          onClick={() => irA(indice + 1)}
           disabled={indice >= preguntas.length - 1}
         >
           Siguiente →
@@ -279,20 +365,20 @@ export function CuestionarioTecnico() {
         </p>
       )}
 
-      {sinGuardar > 0 && (
-        <p className={estilos.aviso} role="status">
-          {sinGuardar === 1
-            ? 'Queda 1 respuesta sin guardar. Lo seguimos intentando.'
-            : `Quedan ${sinGuardar} respuestas sin guardar. Lo seguimos intentando.`}
-        </p>
-      )}
-
+      {/*
+        ⚠️ **Aquí no va ningún cartel de «respuestas sin guardar», y es a propósito.** Le
+        contaba una avería nuestra a quien está en mitad de su prueba y no puede hacer nada
+        con ella. Lo que sí necesita saber está en la línea de debajo del recuadro
+        —«Guardando lo que escribiste…», «Guardada»—, que no mueve nada de sitio. Del resto se
+        ocupa la cola: reintenta sola, apunta lo pendiente por si se cierra la pestaña, y se
+        vacía antes de entregar.
+      */}
       <div className={estilos.entrega}>
         <button
           className={estilos.entregar}
           type="button"
           onClick={() => setConfirmarEntrega(true)}
-          disabled={faltan > 0 || sinGuardar > 0 || entrega.isPending}
+          disabled={faltan > 0 || entrega.isPending}
         >
           Entregar
         </button>

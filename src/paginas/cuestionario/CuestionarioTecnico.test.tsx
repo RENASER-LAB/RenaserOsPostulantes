@@ -64,7 +64,7 @@ const examen = (parte: Partial<EvaluacionCandidato> = {}): EvaluacionCandidato =
 
 function pintar() {
   const cliente = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-  render(
+  return render(
     <QueryClientProvider client={cliente}>
       <MemoryRouter initialEntries={[`/procesos/${UUID}/prueba-tecnica`]}>
         <Routes>
@@ -78,6 +78,9 @@ function pintar() {
 const loQueSeLee = () => document.body.textContent ?? ''
 
 beforeEach(() => {
+  // La cola apunta lo pendiente en `localStorage` con una clave sacada del uuid, que aqui es
+  // el mismo siempre: sin limpiarlo, lo que una prueba deja a medias lo reenvia la siguiente.
+  window.localStorage.clear()
   ver.mockReset()
   iniciar.mockReset()
   responder.mockReset()
@@ -141,9 +144,11 @@ describe('respondiendo', () => {
     await act(async () => { await vi.advanceTimersByTimeAsync(900) })
     expect(responder).toHaveBeenCalledTimes(1)
 
-    // Viajando: se dice, y no se afirma que esté guardada.
+    // Viajando: se dice bajo el recuadro, y no se afirma que esté guardada.
     expect(loQueSeLee()).toMatch(/guardando lo que escribiste/i)
-    expect(loQueSeLee()).toMatch(/1 respuesta sin guardar/i)
+    // ⚠️ Y **no** hay ningún cartel de «quedan N sin guardar»: es una avería nuestra contada
+    // a quien está en mitad de su prueba y no puede hacer nada con ella.
+    expect(loQueSeLee()).not.toMatch(/sin guardar/i)
 
     soltar()
     await act(async () => { await vi.advanceTimersByTimeAsync(0) })
@@ -179,12 +184,66 @@ describe('respondiendo', () => {
     })
     await act(async () => { await vi.advanceTimersByTimeAsync(900) })
     expect(responder).toHaveBeenCalledTimes(1)
-    expect(screen.getByRole('alert').textContent).toMatch(/se cayó la red/)
+    // No se le enseña el fallo: no puede hacer nada con él y la cola ya se está ocupando.
+    expect(screen.queryByRole('alert')).toBeNull()
 
     // Sigue intentándolo sin que nadie pulse nada: un fallo de un momento no puede
-    // costarle una respuesta a nadie.
-    await act(async () => { await vi.advanceTimersByTimeAsync(5100) })
-    expect(responder.mock.calls.length).toBeGreaterThan(1)
+    // costarle una respuesta a nadie. La primera espera es de un segundo.
+    await act(async () => { await vi.advanceTimersByTimeAsync(1100) })
+    expect(responder).toHaveBeenCalledTimes(2)
+
+    // Y las siguientes se van separando: al segundo no vuelve a intentarlo, a los dos sí.
+    await act(async () => { await vi.advanceTimersByTimeAsync(1100) })
+    expect(responder).toHaveBeenCalledTimes(2)
+    await act(async () => { await vi.advanceTimersByTimeAsync(1000) })
+    expect(responder).toHaveBeenCalledTimes(3)
+  })
+
+  it('lo escrito justo antes de cambiar de pregunta no se pierde', async () => {
+    // ⚠️ El fallo que motivó la reescritura: encolar desde un efecto dejaba un hueco entre
+    // la última tecla y el envío, y en ese hueco cabía un clic en «Siguiente». Aquí no se
+    // deja pasar ni un tick entre las dos cosas.
+    pintar()
+    await screen.findByRole('textbox', { name: /tu respuesta/i })
+
+    fireEvent.change(screen.getByRole('textbox', { name: /tu respuesta/i }), {
+      target: { value: 'Tres cajas de 40 mil soles al día' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /siguiente/i }))
+
+    await waitFor(() =>
+      expect(responder).toHaveBeenCalledWith(
+        UUID,
+        101,
+        expect.objectContaining({ texto: 'Tres cajas de 40 mil soles al día' }),
+      ),
+    )
+  })
+
+  it('lo que quedó sin mandar al cerrar la pestaña se manda al volver', async () => {
+    // Cerrar el portátil con algo sin confirmar costaba esa respuesta. Ahora queda apuntado
+    // en el navegador y sale hacia el servidor en cuanto se vuelve a abrir la prueba.
+    responder.mockRejectedValueOnce(new Error('se cayó la red'))
+    const { unmount } = pintar()
+    await screen.findByRole('textbox', { name: /tu respuesta/i })
+
+    fireEvent.change(screen.getByRole('textbox', { name: /tu respuesta/i }), {
+      target: { value: 'Lo que escribí antes de que se cortara' },
+    })
+    await waitFor(() => expect(responder).toHaveBeenCalledTimes(1))
+    unmount()
+
+    responder.mockReset()
+    responder.mockResolvedValue(undefined)
+    pintar()
+
+    await waitFor(() =>
+      expect(responder).toHaveBeenCalledWith(
+        UUID,
+        101,
+        expect.objectContaining({ texto: 'Lo que escribí antes de que se cortara' }),
+      ),
+    )
   })
 })
 

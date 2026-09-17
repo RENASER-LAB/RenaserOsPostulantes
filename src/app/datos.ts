@@ -33,10 +33,29 @@ export function crearClienteDeDatos(): QueryClient {
         networkMode: 'always',
       },
 
-      // Al escribir es al reves, y por eso se deja el comportamiento de fabrica:
-      // si no hay red, la libreria espera y reintenta sola cuando vuelve. Para el
-      // guardado automatico de una respuesta a media evaluacion, que se guarde
-      // tarde es mejor que fallar y perderla.
+      mutations: {
+        /*
+          ⚠️ **Al escribir tambien se intenta siempre, y esto cambio.**
+
+          Antes se dejaba el modo de fabrica —`online`— con un argumento razonable: sin red,
+          la libreria deja la mutacion «en pausa» y la reintenta sola al volver, y para el
+          guardado automatico de una respuesta a media evaluacion guardar tarde es mejor que
+          fallar. El argumento dejo de valer cuando `useColaDeRespuestas` se quedo con esa
+          responsabilidad, y **hace lo mismo mejor**: reintenta con espera creciente y ademas
+          apunta lo pendiente en el navegador, asi que sobrevive a recargar y a cerrar la
+          pestaña —cosa que una mutacion en pausa no hace—.
+
+          Con las dos a la vez, la pausa de la libreria se tragaba el rechazo: la cola nunca
+          se enteraba de que no habia llegado, no reintentaba, y `vaciar()` —que espera a que
+          la cola quede limpia antes de entregar— **no resolvia nunca**. El candidato sin red
+          se quedaba con «Entregar» en «Guardando…» y deshabilitado, sin nada que lo
+          explicara y con el plazo corriendo.
+
+          Intentandolo siempre, un corte de red es un rechazo normal: la cola lo ve, lo apunta
+          y lo reintenta ella.
+        */
+        networkMode: 'always',
+      },
     },
   })
 
