@@ -282,6 +282,7 @@ function PreguntaPrueba({
    * `'' === (null ?? '')` → no se mandaba nada: la pantalla en blanco y el texto guardado en
    * el servidor. Recordandolo aqui, la comparacion es contra lo que de verdad hay.
    */
+  const cache = useQueryClient()
   const confirmado = useRef(pregunta.respuestaTexto ?? '')
   /** La peticion en curso, para no lanzar dos de la misma pregunta a la vez. */
   const enVuelo = useRef<Promise<unknown> | null>(null)
@@ -297,7 +298,12 @@ function PreguntaPrueba({
   const guardar = useMutation({
     mutationFn: (valor: string) => responderPrueba(uuid, pregunta.id, valor),
     onMutate: () => setEstado('guardando'),
-    onSuccess: (_resultado, valor) => {
+    onSuccess: async (_resultado, valor) => {
+      // Una recarga de la prueba que arranco **antes** de este guardado trae una foto en la
+      // que esta respuesta todavia no existe; si aterriza despues, devuelve el recuadro a lo
+      // de antes delante del candidato. Cancelarla no pierde nada: la proxima recarga traera
+      // los datos de verdad. Ver el comentario largo en `Evaluacion.tsx`.
+      await cache.cancelQueries({ queryKey: ['prueba', uuid] })
       confirmado.current = valor
       // Si siguio escribiendo mientras viajaba, lo nuevo sigue pendiente.
       if (pendiente.current === valor) {

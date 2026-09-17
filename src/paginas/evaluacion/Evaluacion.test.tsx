@@ -19,7 +19,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import type { EvaluacionCandidato, PreguntaEvaluacion } from '@/api/tipos'
 import { ProveedorAvisos } from '@/ui/Avisos'
-import { responderEvaluacion } from '@/api/evaluacion'
+import { responderEvaluacion, verEvaluacion } from '@/api/evaluacion'
 import { Evaluacion } from './Evaluacion'
 import { estadoDePregunta, siguienteIncompleta } from './bancoV3'
 
@@ -92,10 +92,14 @@ vi.mock('@/api/evaluacion', () => ({
 
 // ---------- Montaje ----------
 
+/** La cache del ultimo montaje, para las pruebas que necesitan forzar una recarga. */
+let cache: QueryClient
+
 function montar() {
   const datos = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   })
+  cache = datos
   return render(
     <QueryClientProvider client={datos}>
       <ProveedorAvisos>
@@ -255,6 +259,39 @@ describe('la evaluacion no pierde respuestas', () => {
     await waitFor(() => expect(guardadas.get(1)).toBe(''))
     expect(screen.queryByText(/Hay que escribir una respuesta/)).toBeNull()
     await waitFor(() => expect(screen.getByText('Sin responder')).toBeTruthy())
+  })
+
+  it('⚠️ una recarga que arrancó antes del guardado no pisa lo confirmado', async () => {
+    // La carrera que midió QA, con los tiempos que vio: la recarga del examen sale al volver
+    // a la pestaña, el backend le contesta una foto **sin** la respuesta nueva, y esa foto
+    // aterriza DESPUÉS de que el guardado se confirme. React Query la mete en la caché encima
+    // de lo confirmado: la pregunta vuelve a salir sin responder, el contador retrocede y el
+    // mapa la pinta en blanco. Y no se arreglaba solo —la copia ya está escrita—: seguía mal
+    // noventa segundos después.
+    await empezar()
+
+    // Una recarga que se queda a medio camino, con la foto de antes de responder.
+    const fotoVieja = evaluacionActual(true)
+    let aterrizar: () => void = () => {}
+    vi.mocked(verEvaluacion).mockImplementationOnce(
+      () => new Promise((cumplir) => { aterrizar = () => cumplir(fotoVieja) }),
+    )
+    const recarga = cache.refetchQueries({ queryKey: ['evaluacion', 'x1'] })
+
+    // Mientras viaja, el candidato responde y se mueve: ya no hay borrador que la tape.
+    responder('Primera respuesta.')
+    siguiente()
+    await waitFor(() => expect(guardadas.get(1)).toBe('Primera respuesta.'))
+    await waitFor(() => expect(screen.getByText('1 de 4 respondidas')).toBeTruthy())
+
+    // Ahora aterriza la foto vieja.
+    aterrizar()
+    await recarga
+    await new Promise((seguir) => setTimeout(seguir, 50))
+
+    // El contador NO retrocede, y la respuesta sigue estando.
+    expect(screen.getByText('1 de 4 respondidas')).toBeTruthy()
+    expect(guardadas.get(1)).toBe('Primera respuesta.')
   })
 
   it('lo pendiente al cerrar la pestaña se manda al volver a abrir', async () => {

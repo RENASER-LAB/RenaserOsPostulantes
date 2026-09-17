@@ -155,20 +155,16 @@ export function Evaluacion() {
     queryFn: () => verEvaluacion(uuid),
     enabled: uuid !== '',
     /*
-      **Si se recarga al volver a la pestaña**, y es una decision entre dos males.
+      **Si se recarga al volver a la pestaña.** Hace falta: sin ella, dos pestañas del mismo
+      examen —o el telefono y el portatil— dejan de enterarse la una de la otra, la vieja
+      sigue enseñando su version con el pie diciendo «Respuesta guardada», y en cuanto alguien
+      toca ahi **pisa en silencio lo que se escribio en la otra**.
 
-      Apagarlo evitaba un parpadeo: una recarga puede haber arrancado antes de un guardado y
-      aterrizar despues, y entonces pisa lo confirmado con una foto anterior y la pregunta
-      sale sin responder por un momento.
-
-      Pero apagarlo abria algo peor. **Dos pestañas del mismo examen** —o el telefono y el
-      portatil— dejaban de enterarse la una de la otra: la vieja seguia enseñando su version
-      con el pie diciendo «Respuesta guardada», y en cuanto alguien tocaba ahi **pisaba en
-      silencio lo que se habia escrito en la otra**. Eso es perder trabajo del candidato; el
-      parpadeo solo es feo, no se pierde nada —lo que aun no ha llegado sigue en la cola, que
-      manda sobre lo que el servidor cree— y se corrige en la siguiente recarga.
-
-      Entre perder respuestas y parpadear, parpadea.
+      ⚠️ Lo que hace que se pueda tener encendida sin romper nada esta en `mandarAlServidor`:
+      antes de escribir lo confirmado se **cancela** cualquier recarga en vuelo. Sin eso, una
+      recarga que arranco antes de un guardado y aterriza despues pisa lo confirmado con una
+      foto anterior, **y se queda asi**: la pregunta vuelve a salir sin responder, el contador
+      retrocede y el mapa miente, hasta que el candidato vuelva a cambiar de pestaña o recargue.
     */
     refetchOnWindowFocus: true,
   })
@@ -213,6 +209,17 @@ export function Evaluacion() {
   const mandarAlServidor = useCallback(
     async (preguntaId: number, valor: Pendiente) => {
       await guardar.mutateAsync({ preguntaId, ...valor })
+      // ⚠️ **Primero se cancela lo que este viajando, despues se escribe.**
+      //
+      // Una recarga del examen que arranco **antes** de este guardado trae una foto en la que
+      // esta respuesta todavia no existe. Si aterriza despues, React Query la mete en la
+      // cache encima de lo que acabamos de confirmar: la pregunta sale sin responder, el
+      // contador retrocede y el mapa la pinta en blanco. Y no se arregla solo —la copia ya
+      // esta escrita— hasta que algo dispare otra recarga.
+      //
+      // Cancelarla no pierde nada: la peticion ya salio, simplemente se descarta su resultado,
+      // y la proxima vez que toque recargar saldra una con los datos de verdad.
+      await cache.cancelQueries({ queryKey: ['evaluacion', uuid] })
       // Lo confirmado se escribe en la copia local en vez de volver a pedir el examen
       // entero. Antes, cada guardado disparaba una recarga de las sesenta preguntas: con un
       // candidato escribiendo deprisa eso son decenas de peticiones compitiendo entre si, y

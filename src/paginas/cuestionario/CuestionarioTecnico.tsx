@@ -74,9 +74,9 @@ export function CuestionarioTecnico() {
     queryKey: ['cuestionario-tecnico', uuid],
     queryFn: () => verCuestionarioTecnico(uuid),
     enabled: uuid !== '',
-    // Se recarga al volver a la pestaña, por lo mismo que la evaluación: apagarlo evitaba un
-    // parpadeo, pero dejaba que dos pestañas del mismo examen se pisaran en silencio. Perder
-    // trabajo del candidato es peor que un parpadeo que se corrige solo.
+    // Se recarga al volver a la pestaña, por lo mismo que la evaluación: sin ella, dos
+    // pestañas del mismo examen se pisan en silencio. Lo que la hace segura es que `mandar`
+    // cancela cualquier recarga en vuelo antes de escribir lo confirmado.
     refetchOnWindowFocus: true,
   })
 
@@ -98,6 +98,10 @@ export function CuestionarioTecnico() {
   const mandar = useCallback(
     async (preguntaId: number, valor: Pendiente) => {
       await guardar.mutateAsync({ preguntaId, texto: valor.texto, segundos: valor.segundos })
+      // Primero se cancela lo que esté viajando: una recarga que arrancó antes de este
+      // guardado trae una foto sin esta respuesta, y si aterriza después pisa lo confirmado y
+      // se queda así. Ver el comentario largo en `Evaluacion.tsx`.
+      await cache.cancelQueries({ queryKey: ['cuestionario-tecnico', uuid] })
       // Lo confirmado se escribe en la copia local en vez de volver a pedir la prueba entera
       // en cada guardado. Con alguien escribiendo deprisa, aquello eran decenas de peticiones
       // compitiendo, y la pantalla se ponía a pensar justo cuando él se movía.
