@@ -19,7 +19,7 @@ import {
  * perfil**. En la pantalla las dos cosas se ven igual de bien; la diferencia
  * está en el servidor, así que se pregunta por API antes y después.
  *
- * ⚠️ **ESCRIBE**: crea `e2e.archivos.<instante>@example.com`, le sube archivos y
+ * ⚠️ **ESCRIBE**: crea `e2e.archivos.<uuid>@example.com`, le sube archivos y
  * postula a dos vacantes. Al terminar borra lo suyo.
  *
  * En serie a propósito: cada paso cuenta con lo que dejó el anterior —la foto
@@ -60,13 +60,7 @@ test.describe('Regresión · el perfil guarda tu foto, tu portada y tu currícul
     token = await tokenDelCandidato(CORREO)
   })
 
-  test.afterAll(() => {
-    try {
-      borrarCuentasDePrueba('e2e.archivos')
-    } catch (causa) {
-      console.warn(`[22-perfil] No se pudo borrar ${CORREO}: ${String(causa).split('\n')[0]}`)
-    }
-  })
+  test.afterAll(() => borrarCuentasDePrueba([CORREO]))
 
   test.beforeEach(async ({ page }) => {
     await entrarAlPortal(page, CORREO, CLAVE_DE_CANDIDATO)

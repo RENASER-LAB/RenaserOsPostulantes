@@ -15,7 +15,7 @@ import { borrarCuentasDePrueba, correoDePrueba, test } from './ayuda-candidato'
  * para local. Del canje en adelante todo va por las rutas de verdad.
  *
  * ⚠️ **ESCRIBE**: crea una invitación y una cuenta de equipo, con correo
- * `e2e.equipo.<instante>@example.com`, y las borra al terminar.
+ * `e2e.equipo.<uuid>@example.com`, y las borra al terminar.
  *
  * Los pasos van en serie porque cada uno deja al siguiente donde lo necesita:
  * sin el canje no hay cuenta con la que fallar el login, y sin el canje el
@@ -65,13 +65,7 @@ test.describe('Regresión · entrar al panel: invitación, canje y login', () =>
     expect(tokenDeLaInvitacion, 'el enlace de la invitación lleva su token').not.toBe('')
   })
 
-  test.afterAll(() => {
-    try {
-      borrarCuentasDePrueba('e2e.equipo')
-    } catch (causa) {
-      console.warn(`[10-panel-entrar] No se pudo borrar la cuenta ${CORREO}: ${String(causa).split('\n')[0]}`)
-    }
-  })
+  test.afterAll(() => borrarCuentasDePrueba([CORREO]))
 
   const enlaceDelCorreo = () => `${rutaDelCorreo}?token=${encodeURIComponent(tokenDeLaInvitacion)}`
 

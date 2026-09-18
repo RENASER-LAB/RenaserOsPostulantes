@@ -21,7 +21,7 @@ import {
  *   UN solo campo, se vuelve a guardar, y se pide el perfil al servidor. Si
  *   volvió con los otros seis vacíos, el guardado los borró.
  *
- * ⚠️ **ESCRIBE**: crea una cuenta `e2e.perfil.<instante>@example.com`, llena su
+ * ⚠️ **ESCRIBE**: crea una cuenta `e2e.perfil.<uuid>@example.com`, llena su
  * perfil, y la borra al terminar. La cuenta se crea por la API: lo que se
  * prueba aquí es el perfil, no el alta.
  *
@@ -58,13 +58,7 @@ test.describe('Regresión · «Mi perfil», lista por lista', () => {
     token = await tokenDelCandidato(CORREO)
   })
 
-  test.afterAll(() => {
-    try {
-      borrarCuentasDePrueba('e2e.perfil')
-    } catch (causa) {
-      console.warn(`[11-perfil] No se pudo borrar la cuenta ${CORREO}: ${String(causa).split('\n')[0]}`)
-    }
-  })
+  test.afterAll(() => borrarCuentasDePrueba([CORREO]))
 
   test.beforeEach(async ({ page }) => {
     await entrarAlPortal(page, CORREO, CLAVE_DE_CANDIDATO)

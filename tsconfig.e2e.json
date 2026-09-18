@@ -5,5 +5,5 @@
     "jsx": "preserve",
     "noEmit": true
   },
-  "include": ["herramientas/e2e", "playwright.config.ts"]
+  "include": ["herramientas/e2e", "herramientas/pruebas-e2e", "playwright.config.ts"]
 }
