@@ -14,6 +14,40 @@ no se vuelve a subir el currículum. Lo del 07/09 se documentó en
 
 ---
 
+## Una prueba sin nota ya no se lee de una sola manera (18/09/2026)
+
+En la pestaña de la prueba del puesto, «sin cerrar» valía igual para quien no había abierto su
+prueba que para quien la había entregado hacía días. Los dos casos piden lo contrario: a uno se le
+persigue, al otro se le califica.
+
+Ahora la celda dice **«Prueba incompleta»** o **«Pendiente de calificación»**, y la nota manda
+sobre las dos: **un cero es una nota** y se pinta como número. Cómo queda hoy, en
+[06-FLUJO-COMPLETO.md](06-FLUJO-COMPLETO.md).
+
+⚠️ **No se deduce aquí.** Desde el navegador los tres casos son lo mismo, una nota que no está. Lo
+que los separa —si hubo entrega y si la hizo la persona o el reloj— solo lo sabe el backend, que
+manda el dato ya decidido en cada fila y **solo en esa pestaña**. Sacarlo del estado de la
+postulación habría repetido el fallo que se venía a arreglar: `PRUEBA_POR_CONFIRMAR` no dice si
+hubo entrega.
+
+### Y el primer corte se llama «Pendiente»
+
+El botón con el que abre la pantalla se llamaba «Por revisar». **Cambió el rótulo y nada más**:
+las mismas filas, la misma cifra y el mismo orden. La clave interna sigue siendo `por-revisar`,
+porque es una clave y no un texto de pantalla. El nombre nuevo viaja también dentro del Excel, que
+lo recibe del panel y no lo redacta.
+
+### Tres decisiones de ese día
+
+- **Sin intento se conserva «sin cerrar».** Se propuso sustituirlo y se decidió que no: sin prueba
+  de la que hablar, el texto nuevo prometería una distinción que ahí no existe.
+- **Las vacantes con cuestionario técnico se quedan fuera.** No crean intentos, así que todas sus
+  filas sin nota siguen diciendo «sin cerrar», incluso las ya entregadas. Pendiente conocido.
+- **El Excel no hereda la distinción.** Su columna de nota sigue diciendo «rúbrica incompleta»
+  para cualquier fila sin nota.
+
+---
+
 ## El modal compartido solo dejaba escribir una letra (11/09/2026, tarde)
 
 Lo encontró una persona probando el descarte a mano: escribía una letra en el campo del motivo y

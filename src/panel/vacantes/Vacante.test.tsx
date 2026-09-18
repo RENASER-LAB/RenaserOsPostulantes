@@ -552,7 +552,7 @@ describe('el ranking filtra por la etapa de su pestaña', () => {
   it('abre por quien espera una decisión, no por quien tiene nota', async () => {
     await pintar()
     const tabla = within(laTabla())
-    expect(elCorte('Por revisar')).toHaveProperty('ariaPressed', 'true')
+    expect(elCorte('Pendiente')).toHaveProperty('ariaPressed', 'true')
     expect(tabla.queryByText('Rodrigo Ayala')).toBeTruthy() // PERFIL_POR_CONFIRMAR
     expect(tabla.queryByText('Camila Reyes')).toBeNull() // con nota, pero ya en la prueba
     expect(tabla.queryByText('Fátima Quispe')).toBeNull() // en la etapa, pero le toca a ella
@@ -570,18 +570,18 @@ describe('el ranking filtra por la etapa de su pestaña', () => {
 
   /*
    * El motivo de que hagan falta los dos: son las dos mitades de «de quién es
-   * la pelota». «Por revisar» se vacía en cuanto decides; el otro no se mueve
+   * la pelota». «Pendiente» se vacía en cuanto decides; el otro no se mueve
    * hasta que el candidato haga lo suyo, y perseguirlo es otro trabajo.
    */
   it('los dos primeros cortes reparten a la gente, no la repiten', async () => {
     await pintar()
-    expect(cuantasEn('Por revisar')).toBe(1) // Rodrigo, «por confirmar»
+    expect(cuantasEn('Pendiente')).toBe(1) // Rodrigo, «por confirmar»
     expect(cuantasEn('Le toca al candidato')).toBe(1) // Fátima, con su evaluación
 
     irA('Prueba del puesto')
     await waitFor(() => expect(screen.getByText(/con nota de la prueba/)).toBeTruthy())
     // Camila está rindiendo: nadie espera decisión, pero hay a quién perseguir.
-    expect(cuantasEn('Por revisar')).toBe(0)
+    expect(cuantasEn('Pendiente')).toBe(0)
     expect(cuantasEn('Le toca al candidato')).toBe(1)
     verCorte('Le toca al candidato')
     await waitFor(() => expect(within(laTabla()).queryByText('Camila Reyes')).toBeTruthy())
@@ -601,7 +601,7 @@ describe('el ranking filtra por la etapa de su pestaña', () => {
   */
   it('quien acaba de postular no sale en ninguno de los dos primeros cortes', async () => {
     await pintar([fila(96, 'Recién Llegada', 'POSTULADA', null)])
-    expect(cuantasEn('Por revisar')).toBe(0)
+    expect(cuantasEn('Pendiente')).toBe(0)
     expect(cuantasEn('Le toca al candidato')).toBe(0)
     expect(cuantasEn('Toda la tanda')).toBe(1)
     // Y el vacío manda al único sitio donde está.
@@ -621,13 +621,13 @@ describe('el ranking filtra por la etapa de su pestaña', () => {
 
   it('cada corte lleva su cifra, contada de las filas y no de lo que se pinta', async () => {
     await pintar()
-    expect(cuantasEn('Por revisar')).toBe(1)
+    expect(cuantasEn('Pendiente')).toBe(1)
     expect(cuantasEn('Le toca al candidato')).toBe(1)
     expect(cuantasEn('Toda la tanda')).toBe(4)
     // Con el corte puesto, la cifra de los otros dos no se mueve: si saliera de
-    // lo visible, «Por revisar» diría siempre lo mismo que la tabla.
+    // lo visible, «Pendiente» diría siempre lo mismo que la tabla.
     verCorte('Toda la tanda')
-    await waitFor(() => expect(cuantasEn('Por revisar')).toBe(1))
+    await waitFor(() => expect(cuantasEn('Pendiente')).toBe(1))
   })
 
   /*
@@ -710,6 +710,88 @@ describe('el escape a la tanda entera', () => {
     irA('Decisión')
     await waitFor(() => expect(elCorte('Toda la tanda')).toHaveProperty('ariaPressed', 'true'))
     expect(within(laTabla()).queryByText('Lucía Ferrer')).toBeTruthy()
+  })
+})
+
+describe('la celda de la prueba del puesto dice en qué punto está', () => {
+  /*
+    ⚠️ **El guion de esta columna tenía tres significados y escribía uno solo:
+    «sin cerrar».** No se parecen: no la terminó, el sistema la cerró al vencer
+    el plazo, o la entregó una persona y falta calificarla. Solo la última es
+    trabajo del equipo, y confundirlas manda a perseguir a quien ya hizo lo suyo.
+
+    ⚠️ **El caso no se deduce aquí**: llega decidido del backend en
+    `estadoPrueba`, porque desde el navegador los tres se ven igual —una nota
+    vacía—. Estas filas traen el campo y ninguna nota, que es la situación real.
+  */
+  const enLaPrueba = (
+    id: number,
+    nombre: string,
+    estado: string,
+    estadoPrueba: FilaRanking['estadoPrueba'],
+    notaEtapa: number | null = null,
+  ) => fila(id, nombre, estado, notaEtapa, { estadoPrueba })
+
+  /** La tabla de la pestaña de la prueba, con la tanda entera a la vista. */
+  const laPestanaDeLaPrueba = async (filas: FilaRanking[]) => {
+    await pintar(filas)
+    irA('Prueba del puesto')
+    // La tabla se remonta entera al cambiar de pestaña (`key={etapa}`): hasta que
+    // no vuelve la botonera no hay corte que pulsar.
+    await waitFor(() => expect(losCortes()).toBeTruthy())
+    verCorte('Toda la tanda')
+    await waitFor(() => expect(within(laTabla()).queryByText(filas[0]!.candidato)).toBeTruthy())
+    return within(laTabla())
+  }
+
+  it('separa la que nadie terminó de la que espera al equipo', async () => {
+    const tabla = await laPestanaDeLaPrueba([
+      enLaPrueba(95, 'Sin Terminar', 'PRUEBA_TURNO_CANDIDATO', 'INCOMPLETA'),
+      enLaPrueba(96, 'Entregada A Mano', 'PRUEBA_POR_CONFIRMAR', 'PENDIENTE_CALIFICACION'),
+    ])
+
+    expect(tabla.getByText('Prueba incompleta')).toBeTruthy()
+    expect(tabla.getByText('Pendiente de calificación')).toBeTruthy()
+    // Y la copia anterior no sobrevive en ninguna fila.
+    expect(tabla.queryByText('sin cerrar')).toBeNull()
+  })
+
+  /*
+    La que cerró el sistema al vencer el plazo NO es una entrega: mientras no
+    tenga nota se lee igual que una prueba a medias, que es lo que es.
+  */
+  it('la que cerró el sistema al vencer el plazo no pasa por entrega', async () => {
+    const tabla = await laPestanaDeLaPrueba([
+      enLaPrueba(95, 'Se Le Acabó', 'PRUEBA_POR_CONFIRMAR', 'INCOMPLETA'),
+    ])
+
+    expect(tabla.getByText('Prueba incompleta')).toBeTruthy()
+    expect(tabla.queryByText('Pendiente de calificación')).toBeNull()
+  })
+
+  /*
+    Quien no llegó a la etapa técnica conserva el indicador de siempre —el que
+    dice dónde está parado— y nunca aparece como trabajo del equipo.
+  */
+  it('quien no ha llegado a la etapa técnica no entra en la bandeja del equipo', async () => {
+    const tabla = await laPestanaDeLaPrueba([
+      enLaPrueba(95, 'Aún En Perfil', 'PERFIL_POR_CONFIRMAR', 'NO_APLICA'),
+    ])
+
+    expect(tabla.getByText('en otra etapa')).toBeTruthy()
+    expect(tabla.queryByText('Pendiente de calificación')).toBeNull()
+    expect(tabla.queryByText('Prueba incompleta')).toBeNull()
+  })
+
+  /* Con nota se pinta la nota, y un cero es una nota. */
+  it('una prueba calificada enseña su número, aunque sea un cero', async () => {
+    const tabla = await laPestanaDeLaPrueba([
+      enLaPrueba(95, 'Sacó Cero', 'PRUEBA_POR_CONFIRMAR', 'CALIFICADA', 0),
+    ])
+
+    expect(tabla.getByText('0')).toBeTruthy()
+    expect(tabla.queryByText('Prueba incompleta')).toBeNull()
+    expect(tabla.queryByText('Pendiente de calificación')).toBeNull()
   })
 })
 
@@ -1384,7 +1466,7 @@ describe('avanzar en tanda', () => {
     expect(screen.getByRole('button', { name: /Avanzar a 1 persona/ })).toBeTruthy()
     // Fátima acaba de postular: nadie espera decisión sobre ella, así que al
     // volver al corte por defecto desaparece de la tabla.
-    verCorte('Por revisar')
+    verCorte('Pendiente')
     await waitFor(() =>
       expect(screen.getByRole('button', { name: 'Marca a quienes avanzan' })).toBeTruthy(),
     )
@@ -1891,7 +1973,9 @@ describe('la descarga del Excel', () => {
     await waitFor(() => expect(pedirExcel).toHaveBeenCalledOnce())
     const descrito = (pedirExcel.mock.calls[0]?.[1] as { filtroDescrito: string }).filtroDescrito
     expect(descrito).toContain('Perfil integral')
-    expect(descrito).toContain('Por revisar')
+    expect(descrito).toContain('Pendiente')
+    // El rótulo viejo no puede sobrevivir dentro de la hoja.
+    expect(descrito).not.toContain('Por revisar')
     expect(descrito).toContain('Orden del ranking')
   })
 
