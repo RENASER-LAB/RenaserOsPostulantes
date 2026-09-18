@@ -1,17 +1,20 @@
 import { expect, test } from '@playwright/test'
-import { execFileSync } from 'node:child_process'
 import { abrirMasFiltros, cabecera, corte, entrarAlPanel, irAVacante, nombresVisibles, VACANTES } from './ayuda'
+import { sql } from './ayuda-candidato'
 
 /**
  * El caso «la tanda no trae ciudad», que con los datos sembrados NO se da: las
  * seis postulaciones de las vacantes 8 y 9 tienen ubigeo.
  *
- * ⚠️ Se fabrica escribiendo en el Postgres **desechable del 5434** y solo sobre
- * la vacante 9; la 8 se deja intacta. Al terminar se restaura.
+ * ⚠️ Se fabrica escribiendo en la base y solo sobre la vacante 9; la 8 se deja
+ * intacta. Al terminar se restaura.
+ *
+ * ⚠️ **El destino ya no está escrito aquí.** Tenía el contenedor, el rol y la
+ * base a mano —`renaser-verifica`, `postgres`, `renaser_db`—, de modo que la
+ * prueba escribía siempre en el Postgres del 5434 aunque el portal y la API
+ * fueran los de otro worktree: anulaba la ciudad de gente de otra base. Ahora
+ * usa el `sql` de `ayuda-candidato`, que lee `E2E_PG`, `PGUSER` y `PGDATABASE`.
  */
-const sql = (consulta: string) =>
-  execFileSync('docker', ['exec', 'renaser-verifica', 'psql', '-U', 'postgres', '-d', 'renaser_db', '-c', consulta])
-    .toString()
 
 /**
  * Las personas de esta vacante y su ubigeo original, LEÍDOS de la base.

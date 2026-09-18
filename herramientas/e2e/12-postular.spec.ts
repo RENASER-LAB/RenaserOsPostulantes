@@ -114,13 +114,13 @@ test.describe('Regresión · postular de punta a punta', () => {
     page,
   }) => {
     await page.goto(`/registro?vacante=${vacante.id}`)
-    await page.getByLabel('Nombre', { exact: true }).fill('Prueba')
+    await page.getByLabel(/^Nombre/).fill('Prueba')
     await page.getByLabel('Apellidos').fill('De Punta a Punta')
     await page.getByLabel('Correo').fill(CORREO)
-    await page.getByLabel('Contraseña', { exact: true }).fill(CLAVE_DE_CANDIDATO)
+    await page.getByLabel(/^Contraseña/).fill(CLAVE_DE_CANDIDATO)
     await page.getByLabel('Repite la contraseña').fill(CLAVE_DE_CANDIDATO)
     // El registro exige ciudad desde que la pide el alta (ver `02-regresion-portal`).
-    await page.getByLabel('Ubicación').selectOption('1501') // Lima — Lima
+    await page.getByLabel('Ciudad').selectOption('1501') // Lima — Lima
     // El consentimiento de la plataforma, que es distinto del de la empresa.
     await page.locator('input[type=checkbox]').first().check()
     await page.getByRole('button', { name: /crear/i }).click()

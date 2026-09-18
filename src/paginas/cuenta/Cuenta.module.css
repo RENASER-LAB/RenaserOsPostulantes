@@ -204,3 +204,37 @@
   margin-top: var(--e4);
   font-size: var(--t-apoyo);
 }
+
+/* ---------- El reintento del catalogo de ciudades ---------- */
+
+/*
+ * Cuando la lista de ciudades no carga, la salida es reintentar sin perder lo
+ * escrito. Va secundario y suelto a la izquierda, pegado al desplegable que
+ * fallo: la accion de esta pantalla sigue siendo crear la cuenta, y dos botones
+ * con el mismo peso harian dudar de cual es cual.
+ */
+.reintentarCatalogo {
+  composes: secundario from '../../estilos/piezas.module.css';
+  align-self: flex-start;
+  margin-top: calc(-1 * var(--e3));
+}
+
+/* ---------- La leyenda del asterisco ---------- */
+
+/*
+ * Qué quiere decir el `*`, una vez y antes del primer campo. Pequeña y en tinta
+ * secundaria: es una nota al pie que se lee de camino, no un aviso. Sin recuadro
+ * ni color, que aquí la jerarquia la hace la tipografia.
+ */
+.leyendaObligatorios {
+  font-size: var(--t-menor);
+  color: var(--tinta2);
+  margin: 0;
+}
+
+/* El asterisco de la leyenda se pinta como el de las etiquetas: si se vieran
+   distintos, nadie ataria una frase con la otra. */
+.obligatorioEnLaLeyenda {
+  color: var(--tinta);
+  font-weight: 700;
+}

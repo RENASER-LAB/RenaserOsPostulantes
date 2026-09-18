@@ -267,12 +267,22 @@ Pasa a `PUBLICADA` y sale en la portada del portal el mismo instante.
 
 Se ve sin cuenta. Postular sí la exige: entrar o crearla.
 
-⚠️ **Crear la cuenta pide dónde vive, desde el 01/09/2026.** Un desplegable
+⚠️ **Crear la cuenta pide la ciudad, desde el 01/09/2026.** Un desplegable
 obligatorio con las 196 provincias del Perú agrupadas por departamento, y «Fuera
 del Perú» suelto al final. Se pregunta ahí y en ningún otro sitio: a quien ya
-tenía cuenta no se le pide nunca, ni al postular ni después. Por eso las
-postulaciones anteriores a esa fecha no traen ciudad, y el ranking cuenta con
-ello en vez de fingir que la tiene.
+tenía cuenta no se le pide nunca, ni al postular ni después, y quien la tenga sin
+ciudad sigue entrando y postulando como siempre. Por eso las postulaciones
+anteriores a esa fecha no traen ciudad, y el ranking cuenta con ello en vez de
+fingir que la tiene.
+
+⚠️ **Y desde el 17/09/2026 se dice antes de pulsar, no al rebotar.** El campo se
+llama **«Ciudad»** —se llamó «Dónde vives» y luego «Ubicación»— y lleva un
+asterisco, igual que los otros seis datos que el formulario exige; una línea
+sobre los campos explica qué significa. Sin elegir ciudad no se crea la cuenta:
+sale «Selecciona tu ciudad» junto al campo y se conserva todo lo demás escrito,
+y el texto de ayuda del desplegable no cuenta como elección. Si la lista de
+ciudades no carga se dice con palabras y un botón la vuelve a pedir, también sin
+perder lo escrito.
 
 ⚠️ **Al crear la cuenta se marcan dos casillas, y desde el 15/09/2026 llevan solo
 un título corto y un enlace** a la política de privacidad, que enseña los textos

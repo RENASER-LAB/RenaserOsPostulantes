@@ -61,14 +61,26 @@ export async function tokenDelCandidato(correo: string, contrasena = CLAVE_DE_CA
 }
 
 /**
- * El contenedor de Postgres contra el que se limpia. Por defecto el desechable
- * del 5434; `E2E_PG` lo cambia, que es lo que necesita un worktree con base
- * propia — ver el comentario de `E2E_PORTAL` en `playwright.config.ts`.
+ * A qué Postgres se escribe: contenedor, rol y base, los tres por entorno.
+ *
+ * ⚠️ **Los tres, y no solo el contenedor.** El rol y la base estaban escritos a
+ * mano —`postgres` y `renaser_db`—, así que apuntar `E2E_PG` al Postgres de un
+ * worktree no bastaba: si esa base se llama de otra forma, `psql` rebota, y si
+ * por casualidad también tiene una `renaser_db`, la limpieza borra cuentas de
+ * otra rama. Van juntos con `E2E_PORTAL`, `E2E_API` y `E2E_PG`:
+ *
+ *     E2E_PG=mi-contenedor PGUSER=mi_rol PGDATABASE=mi_base npx playwright test
+ *
+ * Los valores por defecto siguen siendo el desechable del 5434, que es donde
+ * corre esta suite cuando nadie dice nada.
  */
 const CONTENEDOR = process.env.E2E_PG ?? 'renaser-verifica'
+const ROL = process.env.PGUSER ?? 'postgres'
+const BASE = process.env.PGDATABASE ?? 'renaser_db'
 
 /**
- * Una consulta contra el Postgres **desechable del 5434**, como en `06-sin-ciudad`.
+ * Una consulta contra ese Postgres, como en `06-sin-ciudad` —que usa esta misma
+ * función para no volver a escribir el destino a mano.
  *
  * Va por la entrada estándar y no por `-c` para poder mandar una transacción
  * entera; `ON_ERROR_STOP` hace que un fallo a mitad reviente aquí en vez de
@@ -78,7 +90,7 @@ export function sql(consulta: string): string {
   try {
     return execFileSync(
       'docker',
-      ['exec', '-i', CONTENEDOR, 'psql', '-U', 'postgres', '-d', 'renaser_db', '-v', 'ON_ERROR_STOP=1'],
+      ['exec', '-i', CONTENEDOR, 'psql', '-U', ROL, '-d', BASE, '-v', 'ON_ERROR_STOP=1'],
       { input: consulta, stdio: ['pipe', 'pipe', 'pipe'] },
     ).toString()
   } catch (causa) {
