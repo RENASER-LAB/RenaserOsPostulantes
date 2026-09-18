@@ -206,13 +206,13 @@ test.describe('El ciclo 2 · la vacante elige el cuestionario y la candidata lo 
     expect(laVacante, 'La vacante publicada no sale en el tablón del portal').toBeTruthy()
 
     await page.goto(`/registro?vacante=${laVacante!.id}`)
-    await page.getByLabel('Nombre', { exact: true }).fill('Camila')
-    await page.getByLabel('Apellidos', { exact: true }).fill('Reyes Quispe')
-    await page.getByLabel('Correo', { exact: true }).fill(recorrido.correo)
-    await page.getByLabel('Contraseña', { exact: true }).fill(CLAVE)
+    await page.getByLabel(/^Nombre/).fill('Camila')
+    await page.getByLabel(/^Apellidos/).fill('Reyes Quispe')
+    await page.getByLabel(/^Correo/).fill(recorrido.correo)
+    await page.getByLabel(/^Contraseña/).fill(CLAVE)
     await page.getByLabel('Repite la contraseña').fill(CLAVE)
     // El alta exige ciudad desde que existe el filtro por ciudad del ranking.
-    await page.getByLabel('Ubicación').selectOption('1501') // Lima — Lima
+    await page.getByLabel('Ciudad').selectOption('1501') // Lima — Lima
     await page.locator('input[type="checkbox"]').first().check()
     await page.getByRole('button', { name: /crear cuenta/i }).click()
     await page.waitForURL(/\/vacantes\/\d+\/postular/, { timeout: 25_000 })

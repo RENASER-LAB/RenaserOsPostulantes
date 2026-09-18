@@ -83,7 +83,7 @@ los tokens con su porqué en [src/estilos/mundo.css](../src/estilos/mundo.css).
 | `src/ui/Estados.module.css` | Cargando, fallo, acceso necesario, vacío y el salvavidas. Comparten hoja porque comparten forma |
 | `src/ui/Modal.tsx` | El aviso compartido: entrega de la evaluación, de la prueba, y las dos confirmaciones de privacidad |
 | `src/ui/TextoPlano.tsx` | El texto del backend con sus enlaces. Ya no usa `--acento` |
-| `src/ui/campos/` | Campo, AreaTexto y Consentimiento: etiqueta atada al campo, error atado al campo, y el error dicho en palabras |
+| `src/ui/campos/` | Campo, Seleccion, AreaTexto y Consentimiento: etiqueta atada al campo, error atado al campo, y el error dicho en palabras. La marca de obligatorio —asterisco para quien mira, «obligatorio» para quien escucha— sale de aquí y está en [REGLAS-DEL-CODIGO.md](REGLAS-DEL-CODIGO.md) |
 | `src/app/Armazon.tsx` | Cabecera y pie nuevos, ya globales |
 
 `src/estilos/base.css` y `src/estilos/variables.css` **están borradas**, y con ellas su import
