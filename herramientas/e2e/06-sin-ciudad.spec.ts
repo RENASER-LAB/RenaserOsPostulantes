@@ -1,63 +1,36 @@
 import { expect, test } from '@playwright/test'
 import { abrirMasFiltros, cabecera, corte, entrarAlPanel, irAVacante, nombresVisibles, VACANTES } from './ayuda'
-import { sql } from './ayuda-candidato'
+import { sql, literal } from './base-de-datos'
 
-/**
- * El caso «la tanda no trae ciudad», que con los datos sembrados NO se da: las
- * seis postulaciones de las vacantes 8 y 9 tienen ubigeo.
- *
- * ⚠️ Se fabrica escribiendo en la base y solo sobre la vacante 9; la 8 se deja
- * intacta. Al terminar se restaura.
- *
- * ⚠️ **El destino ya no está escrito aquí.** Tenía el contenedor, el rol y la
- * base a mano —`renaser-verifica`, `postgres`, `renaser_db`—, de modo que la
- * prueba escribía siempre en el Postgres del 5434 aunque el portal y la API
- * fueran los de otro worktree: anulaba la ciudad de gente de otra base. Ahora
- * usa el `sql` de `ayuda-candidato`, que lee `E2E_PG`, `PGUSER` y `PGDATABASE`.
- */
-
-/**
- * Las personas de esta vacante y su ubigeo original, LEÍDOS de la base.
- *
- * ⚠️ La lista estaba escrita a mano —tres ids con sus tres ubigeos— y eso caducó:
- * la base acumula cuentas de corridas anteriores del propio e2e, así que la vacante
- * tiene hoy más gente que aquellos tres. Anular solo a los tres dejaba el resto con
- * ciudad, la columna no desaparecía y el test fallaba afirmando que el panel estaba
- * mal. Se preguntan al arrancar: quien esté en la vacante, esté desde cuando esté.
- */
-const PERSONAS: number[] = []
-const ORIGINAL: Record<number, string | null> = {}
+/** Se guardan los datos existentes antes de escribir, siempre dentro de la vacante esperada. */
+type Persona = { id: number; ciudad: string | null; nombre: string; apellidos: string }
+let originales: Persona[] = []
+let mateo: number
 
 const leerPersonas = () => {
-  const filas = sql(
-    `select pe.id, coalesce(pe.ciudad_ubigeo, '')
-     from postulacion p
-     join vacante v on v.id = p.vacante_id
-     join usuario u on u.id = p.usuario_id
-     join persona pe on pe.id = u.persona_id
-     where v.titulo = '${VACANTES.OTRA}';`,
-  )
-  for (const linea of filas.split('\n')) {
-    const [id, ubigeo] = linea.split('|').map((c) => c.trim())
-    if (!id || !/^\d+$/.test(id)) continue
-    PERSONAS.push(Number(id))
-    ORIGINAL[Number(id)] = ubigeo || null
-  }
+  const vacantes: { id: number }[] = JSON.parse(sql(`select coalesce(json_agg(v), '[]') from
+    (select id from vacante where titulo = ${literal(VACANTES.OTRA)}) v;`))
+  if (vacantes.length !== 1) throw new Error('Se esperaba una única vacante para probar la ciudad; no se modificó nada.')
+  const filas: Persona[] = JSON.parse(sql(`select coalesce(json_agg(p), '[]') from (
+    select distinct pe.id, pe.ciudad_ubigeo as ciudad, pe.nombre, pe.apellidos
+    from postulacion p join usuario u on u.id = p.usuario_id join persona pe on pe.id = u.persona_id
+    where p.vacante_id = ${vacantes[0]!.id}) p;`))
+  const candidatos = filas.filter(p => p.nombre === 'Mateo' && p.apellidos === 'Ibáñez Flores')
+  if (!filas.length || candidatos.length !== 1) throw new Error('Falta Mateo en la vacante esperada o es ambiguo; no se modificó nada.')
+  originales = filas
+  mateo = candidatos[0]!.id
 }
-
 const restaurar = () => {
-  for (const [id, ubigeo] of Object.entries(ORIGINAL)) {
-    const valor = ubigeo === null ? 'null' : `'${ubigeo}'`
-    sql(`update persona set ciudad_ubigeo = ${valor} where id = ${id};`)
-  }
+  if (!originales.length) return
+  sql(`begin; ${originales.map(p => `update persona set ciudad_ubigeo = ${literal(p.ciudad)} where id = ${p.id};`).join('\n')} commit;`)
 }
-
 const sinCiudad = (ids: number[]) => {
-  sql(`update persona set ciudad_ubigeo = null where id in (${ids.join(',')});`)
+  if (!ids.length || ids.some(id => !originales.some(p => p.id === id))) throw new Error('Personas fuera de la selección original.')
+  sql(`begin; update persona set ciudad_ubigeo = null where id in (${ids.join(',')}); commit;`)
 }
 
 test.beforeAll(leerPersonas)
-
+test.afterEach(restaurar)
 test.afterAll(restaurar)
 
 test.describe('Nuevo · cuando la ciudad falta', () => {
@@ -67,7 +40,7 @@ test.describe('Nuevo · cuando la ciudad falta', () => {
 
   test('MEZCLA: una sola fila sin ciudad se va al final, suba o baje el orden', async ({ page }) => {
     restaurar()
-    sql('update persona set ciudad_ubigeo = null where id = 7;') // Mateo
+    sinCiudad([mateo])
 
     await irAVacante(page, VACANTES.OTRA)
     await corte(page, 'Toda la tanda').click()
@@ -100,7 +73,7 @@ test.describe('Nuevo · cuando la ciudad falta', () => {
 
   test('TODA VACÍA: la columna Ciudad desaparece y se dice por qué', async ({ page }) => {
     restaurar()
-    sinCiudad(PERSONAS)
+    sinCiudad(originales.map(p => p.id))
 
     await irAVacante(page, VACANTES.OTRA)
     await corte(page, 'Toda la tanda').click()

@@ -72,3 +72,76 @@ Al comprobar el backend a mano, la base es `/api/v1/portal`, **no** `/api`. Pedi
 `/api/vacantes` devuelve 500 y parece que el backend esté caído cuando no lo está.
 
 ---
+
+## E2E con un clon aislado
+
+`herramientas/e2e/base-de-datos.ts` es el helper compartido por todos los worktrees.
+Requiere **seis variables explícitas**, sin destinos por defecto:
+
+| Variable | Valor |
+|---|---|
+| `E2E_PG` | Nombre o ID del contenedor PostgreSQL activo |
+| `PGUSER` | Rol de pruebas del clon |
+| `PGDATABASE` | Base del clon |
+| `E2E_CLONE_ID` | Identidad que figura en la etiqueta del contenedor |
+| `E2E_API` | URL de loopback de la API, incluida `/api/v1` |
+| `E2E_PORTAL` | URL de loopback del frontend |
+
+En el harness, el adaptador exporta `E2E_CLONE_ID` desde `DB_RESOURCE_KEY`, la
+identidad `resourceKey` ya registrada en el trabajo. La configuración E2E recibe
+`E2E_PG=${DB_CONTAINER}`, `PGUSER=${DB_USER}`, `PGDATABASE=${DB_NAME}`,
+`E2E_CLONE_ID=${DB_RESOURCE_KEY}`, `E2E_API=${URL_API}/api/v1` y
+`E2E_PORTAL=${URL_WEB}`. No hay que editar helpers en cada worktree.
+
+Para un clon independiente, su creador debe asignar al contenedor la etiqueta
+`renaser.e2e.clone=mi-prueba-01`. El harness usa `claude-harness.job`.
+Con el clon ya restaurado y el backend ya conectado a él, por ejemplo:
+
+```bash
+# Terminal del frontend: API_URL debe apuntar al backend de ese mismo clon.
+API_URL=http://127.0.0.1:9081 VITE_ORIGEN_API= npm run dev -- --host 127.0.0.1 --port 5274 --strictPort
+
+# Terminal de pruebas: adapta todos estos valores a tu clon.
+export E2E_PG=mi-postgres-pruebas PGUSER=mi_rol PGDATABASE=mi_base
+export E2E_CLONE_ID=mi-prueba-01
+export E2E_API=http://127.0.0.1:9081/api/v1 E2E_PORTAL=http://127.0.0.1:5274
+npm run test:e2e -- --project=escritorio
+```
+
+El helper **no crea, restaura ni sincroniza bases**, ni arranca el preview. Las
+URLs locales no prueban por sí solas qué base usa la API: quien arranca el preview
+debe configurar ambos contra el mismo clon. Antes de ejecutar escenarios se
+comprueban las URLs, la etiqueta, el estado del contenedor y la base/usuario
+SQL efectivos. Las consultas usan el ID resuelto; si cambia el contenedor,
+la ejecución falla sin reconectar. `E2E_CONTAINER_ID` lo propaga internamente
+Playwright a sus workers; no es una variable que deba configurar el usuario.
+
+Se admite un worker y una ejecución E2E por clon. Una reserva atómica dentro del
+contenedor impide que otros worktrees ejecuten la suite simultáneamente. Cada
+trabajo necesita su propio clon. Si se mata el runner sin cierre, la reserva
+`/tmp/renaser-e2e-en-ejecucion` permanece: antes de retirarla manualmente,
+comprueba que ya no hay pruebas activas y revisa las escrituras pendientes.
+
+La limpieza recibe listas de correos únicos completos o IDs capturados durante
+la prueba; no barre prefijos ni plantillas. Ciudad y remuneración guardan los
+valores existentes y los restauran incluso tras fallos. Los registros de auditoría
+inmutable se conservan. Si una restricción impide limpiar una cuenta, el error
+hace fallar el cierre y **se conserva el clon para inspección**; no se apagan
+triggers. No se cambiaron los candidatos, vacantes ni expectativas heredadas:
+un snapshot distinto puede seguir haciendo fallar esos escenarios.
+
+Los unitarios del helper viven fuera del directorio de escenarios y corren con
+`npm test`; `npm run typecheck:e2e` comprueba el tipado. Para comprobar aislamiento
+real, prepara dos clones temporales del mismo snapshot autorizado, con la misma
+base y rol, y ejecuta:
+
+```bash
+# Conserva las seis variables del primer clon y declara la identidad del segundo.
+export E2E_OTHER_PG=otro-postgres-pruebas E2E_OTHER_CLONE_ID=mi-prueba-02
+npm run test:e2e:aislamiento
+```
+
+Esta integración comprueba limpieza exacta, preservación de registros previos,
+restauración tras un fallo y las huellas de todas las tablas del segundo clon.
+También provoca una restricción real de auditoría, verifica el rollback y deja
+la cuenta de diagnóstico en el primer clon para inspección. No usa bases de trabajo.

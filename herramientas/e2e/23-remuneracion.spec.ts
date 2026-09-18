@@ -1,3 +1,5 @@
+import { guardarRemuneracion } from './estado-remuneracion'
+import { limpiarSiempre } from './base-de-datos'
 import { expect } from '@playwright/test'
 import { API, entrarAlPortal, idDeVacante, tokenDelPanel, VACANTES } from './ayuda'
 import {
@@ -5,7 +7,6 @@ import {
   CLAVE_DE_CANDIDATO,
   correoDePrueba,
   crearCuentaDeCandidato,
-  sql,
   test,
 } from './ayuda-candidato'
 
@@ -22,8 +23,8 @@ import {
  * y crea una cuenta. Lo primero es lo delicado: cambiar el sueldo de una vacante
  * publicada le deja aviso y correo a CADA candidato sembrado que siga en carrera, y esos
  * no llevan correo `@example.com`, así que `borrarCuentasDePrueba` no los alcanza. Por
- * eso `afterAll` los borra a mano y devuelve la vacante a su monto fijo con la marca en
- * vacío: la base tiene que quedar como se encontró, o `18-ranking-contra-api` empieza a
+ * eso se capturan sus IDs y `afterAll` restaura los valores originales. De lo contrario,
+ * `18-ranking-contra-api` empieza a
  * ver una columna de pretensión que antes explicaba de otra forma.
  *
  * ⚠️ **Lo que NO se puede es apagarle el sueldo.** Publicar o no publicar la remuneración
@@ -43,24 +44,29 @@ const BANDA = { tipo: 'RANGO', min: 3000, max: 4000, moneda: 'PEN' }
 const BANDA_ESCRITA = 'S/ 3 000 a 4 000'
 
 let vacanteId: number
+let estado: ReturnType<typeof guardarRemuneracion> | undefined
 
 /** Le pone (o le quita) el sueldo a la vacante por el verbo propio de la V54. */
 async function ponerRemuneracion(remuneracion: Record<string, unknown>, motivo: string) {
-  const r = await fetch(`${API}/panel/vacantes/${vacanteId}/remuneracion`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${await tokenDelPanel()}`,
-    },
-    body: JSON.stringify({ remuneracion, motivo }),
+  if (!estado) throw new Error('Falta guardar el estado original de remuneración.')
+  return estado.registrar(async () => {
+    const r = await fetch(`${API}/panel/vacantes/${vacanteId}/remuneracion`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${await tokenDelPanel()}`,
+      },
+      body: JSON.stringify({ remuneracion, motivo }),
+    })
+    if (!r.ok) throw new Error(`no se pudo cambiar la remuneración: ${r.status} ${await r.text()}`)
+    return r.json()
   })
-  if (!r.ok) throw new Error(`no se pudo cambiar la remuneración: ${r.status} ${await r.text()}`)
-  return r.json()
 }
 
 test.describe('Regresión · el sueldo se ve y se pide', () => {
   test.beforeAll(async () => {
     vacanteId = await idDeVacante(VACANTES.SIN_PRETENSION)
+    estado = guardarRemuneracion(vacanteId)
     await crearCuentaDeCandidato({
       nombre: 'Remu',
       apellidos: 'De Prueba',
@@ -69,39 +75,10 @@ test.describe('Regresión · el sueldo se ve y se pide', () => {
     await ponerRemuneracion(BANDA, 'Prueba de punta a punta de la remuneración')
   })
 
-  test.afterAll(async () => {
-    // El orden importa: primero se devuelve la vacante a como estaba —eso genera un
-    // segundo aviso— y solo después se barren TODOS los avisos y correos de esta vacante.
-    try {
-      // A FIJA, que es como la deja el sembrador — NO a OCULTA: desde la V54 esconder el
-      // sueldo de una vacante publicada está prohibido, y el intento devolvería 409
-      // tumbando con él toda la limpieza que va detrás.
-      await ponerRemuneracion(
-        { tipo: 'FIJA', min: 6500, moneda: 'PEN' },
-        'Fin de la prueba de punta a punta',
-      )
-      // ⚠️ `auditoria` NO se toca: es inmutable por trigger (`auditoria_inmutable`, V8) y el
-      // `delete` revienta ahí, tumbando con ON_ERROR_STOP toda la limpieza que iba detrás.
-      // Y está bien que se quede: que la empresa cambió el sueldo cuatro veces esta tarde es
-      // exactamente lo que la auditoría existe para recordar.
-      sql(`
-begin;
-delete from aviso_portal where vacante_id = ${vacanteId};
-delete from correo_enviado where plantilla_correo_codigo = 'REMUNERACION_ACTUALIZADA';
-update vacante set remuneracion_actualizada_en = null where id = ${vacanteId};
-commit;`)
-    } catch (causa) {
-      console.warn(
-        `[23-remuneracion] No se pudo devolver «${VACANTES.SIN_PRETENSION}» a su estado: ` +
-          String(causa).split('\n')[0],
-      )
-    }
-    try {
-      borrarCuentasDePrueba('e2e.remuneracion')
-    } catch (causa) {
-      console.warn(`[23-remuneracion] No se pudo borrar ${CORREO}: ` + String(causa).split('\n')[0])
-    }
-  })
+  test.afterAll(() => limpiarSiempre([
+    () => estado?.restaurar(),
+    () => borrarCuentasDePrueba([CORREO]),
+  ]))
 
   test('la vacante enseña lo que paga arriba, escrito de una sola forma', async ({ page }) => {
     await page.goto(`/vacantes/${vacanteId}`)

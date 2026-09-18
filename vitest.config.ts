@@ -19,7 +19,7 @@ export default defineConfig({
     environment: 'jsdom',
     // Lo que jsdom no trae: ver el archivo.
     setupFiles: ['./herramientas/arranque-de-pruebas.ts'],
-    include: ['src/**/*.test.{ts,tsx}'],
+    include: ['src/**/*.test.{ts,tsx}', 'herramientas/pruebas-e2e/**/*.test.ts'],
     // Sin `globals`: cada prueba importa lo que usa, y asi el tipado del
     // proyecto sigue funcionando sin añadir tipos sueltos al tsconfig.
     globals: false,

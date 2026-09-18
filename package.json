@@ -16,7 +16,8 @@
     "test:mirar": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:chrome": "E2E_CHROME=1 playwright test --headed",
-    "test:e2e:ui": "playwright test --ui"
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:aislamiento": "vite-node herramientas/pruebas-e2e/aislamiento.integracion.ts"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.0",

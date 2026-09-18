@@ -21,13 +21,19 @@ import {
  * mensajes de este formulario acaban en punto, así que un `contains` dejaría pasar
  * el «arreglo» de añadírselo.
  *
- * ⚠️ **Cada prueba que crea una cuenta usa su propio correo** —`qa.ciudadui.<instante>@example.com`—
- * y al terminar se borran todas por ese prefijo: una cuenta de prueba que se queda
+ * ⚠️ **Cada prueba que crea una cuenta usa su propio correo** —`qa.ciudadui.<uuid>@example.com`—
+ * y al terminar se limpian solo los correos registrados por esta ejecución. Una cuenta que se queda
  * mueve los recuentos exactos de `05-excel` y `06-sin-ciudad` en la corrida
  * siguiente. El destino de la base sale de `E2E_PG`, `PGUSER` y `PGDATABASE`.
  */
 
 const PREFIJO = 'qa.ciudadui'
+const correos: string[] = []
+const nuevoCorreo = () => {
+  const correo = correoDePrueba(PREFIJO)
+  correos.push(correo)
+  return correo
+}
 const EL_ERROR = 'Selecciona tu ciudad'
 const FALLO_DEL_CATALOGO = 'No pudimos cargar la lista de ciudades. Vuelve a intentarlo.'
 const CATALOGO = '**/portal/catalogos/ubigeo'
@@ -75,7 +81,7 @@ async function elErrorDelCampo(page: Page): Promise<Locator> {
 }
 
 test.afterAll(() => {
-  borrarCuentasDePrueba(PREFIJO)
+  borrarCuentasDePrueba(correos)
 })
 
 test.describe('AC-01 · la pantalla dice que la ciudad es obligatoria antes de pulsar', () => {
@@ -116,7 +122,7 @@ test.describe('AC-02 · sin ciudad no se crea la cuenta y se dice junto al campo
   test('con el botón: no navega, marca el campo, conserva lo escrito y no nace ninguna cuenta', async ({
     page,
   }) => {
-    const correo = correoDePrueba(PREFIJO)
+    const correo = nuevoCorreo()
     await page.goto('/registro')
     await rellenarTodoMenosLaCiudad(page, correo)
 
@@ -154,7 +160,7 @@ test.describe('AC-02 · sin ciudad no se crea la cuenta y se dice junto al campo
   test('con la tecla Enter: el mismo rechazo, que el formulario también se manda así', async ({
     page,
   }) => {
-    const correo = correoDePrueba(PREFIJO)
+    const correo = nuevoCorreo()
     await page.goto('/registro')
     await rellenarTodoMenosLaCiudad(page, correo)
 
@@ -169,7 +175,7 @@ test.describe('AC-02 · sin ciudad no se crea la cuenta y se dice junto al campo
   })
 
   test('el doble envío tampoco cuela: cada intento vuelve a validar la ciudad', async ({ page }) => {
-    const correo = correoDePrueba(PREFIJO)
+    const correo = nuevoCorreo()
     await page.goto('/registro')
     await rellenarTodoMenosLaCiudad(page, correo)
 
@@ -183,7 +189,7 @@ test.describe('AC-02 · sin ciudad no se crea la cuenta y se dice junto al campo
   })
 
   test('recargar no deja la ciudad puesta ni el error colgado', async ({ page }) => {
-    const correo = correoDePrueba(PREFIJO)
+    const correo = nuevoCorreo()
     await page.goto('/registro')
     await rellenarTodoMenosLaCiudad(page, correo)
     await page.getByRole('button', { name: /Crear cuenta/i }).click()
@@ -203,7 +209,7 @@ test.describe('AC-03 · al elegir ciudad el aviso se retira y el registro contin
   test('el error se va al corregirlo, el registro termina y la ciudad queda guardada', async ({
     page,
   }) => {
-    const correo = correoDePrueba(PREFIJO)
+    const correo = nuevoCorreo()
     await page.goto('/registro')
     await rellenarTodoMenosLaCiudad(page, correo)
     await page.getByRole('button', { name: /Crear cuenta/i }).click()
@@ -231,7 +237,7 @@ test.describe('AC-03 · al elegir ciudad el aviso se retira y el registro contin
   test('el doble clic en «Crear cuenta» con la ciudad puesta crea UNA cuenta, no dos', async ({
     page,
   }) => {
-    const correo = correoDePrueba(PREFIJO)
+    const correo = nuevoCorreo()
     await page.goto('/registro')
     await rellenarTodoMenosLaCiudad(page, correo)
     await elDesplegable(page).selectOption('EXT')
@@ -247,7 +253,7 @@ test.describe('AC-03 · al elegir ciudad el aviso se retira y el registro contin
   })
 
   test('«Fuera del Perú» (EXT) es una elección válida y se guarda tal cual', async ({ page }) => {
-    const correo = correoDePrueba(PREFIJO)
+    const correo = nuevoCorreo()
     await page.goto('/registro')
     await rellenarTodoMenosLaCiudad(page, correo)
     await elDesplegable(page).selectOption('EXT')
@@ -259,7 +265,7 @@ test.describe('AC-03 · al elegir ciudad el aviso se retira y el registro contin
   })
 
   test('se elige y se envía solo con el teclado, sin tocar el ratón', async ({ page }) => {
-    const correo = correoDePrueba(PREFIJO)
+    const correo = nuevoCorreo()
     await page.goto('/registro')
     await rellenarTodoMenosLaCiudad(page, correo)
 
@@ -286,7 +292,7 @@ test.describe('AC-03 · al elegir ciudad el aviso se retira y el registro contin
 
   test('en pantalla de teléfono (375 px) el campo, su marca y su error se ven', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 })
-    const correo = correoDePrueba(PREFIJO)
+    const correo = nuevoCorreo()
     await page.goto('/registro')
     const ciudad = elDesplegable(page)
     const id = await ciudad.getAttribute('id')
@@ -316,7 +322,7 @@ test.describe('Caso límite · el catálogo de ciudades no carga', () => {
   test('se informa el fallo, se puede reintentar y no se crea ninguna cuenta sin ciudad', async ({
     page,
   }) => {
-    const correo = correoDePrueba(PREFIJO)
+    const correo = nuevoCorreo()
     let fallar = true
     await page.route(CATALOGO, async (ruta) => {
       if (fallar) await ruta.fulfill({ status: 500, contentType: 'application/json', body: '{}' })
@@ -400,7 +406,7 @@ test.describe('Caso límite · el catálogo de ciudades no carga', () => {
 
 test.describe('AC-05 · a quien ya tenía cuenta sin ciudad no se le pide nada', () => {
   test('entra con su contraseña, ve su perfil y sigue sin ciudad', async ({ page }) => {
-    const correo = correoDePrueba(PREFIJO)
+    const correo = nuevoCorreo()
     await crearCuentaDeCandidato({ nombre: 'Antigua', apellidos: 'Sin Ciudad', correo })
 
     /*
