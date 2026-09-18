@@ -80,7 +80,7 @@ async function delPanel<T>(ruta: string): Promise<{ ok: boolean; cuerpo: T | nul
   return { ok: r.ok, cuerpo: r.ok ? ((await r.json()) as T) : null }
 }
 
-/** El número que lleva el botón de un corte: «Por revisar 1» → 1. */
+/** El número que lleva el botón de un corte: «Pendiente 1» → 1. */
 const cifraDelCorte = async (texto: string | null) => Number((texto ?? '').match(/\d+/)?.[0] ?? NaN)
 
 /**

@@ -48,6 +48,8 @@ import {
   ordenar,
   porQueNoHayNota,
   porQueNoHayNotaCorto,
+  loDeLaPrueba,
+  rotuloDeVista,
   rotuloCortoDelGrupo,
   veredictosDeLaTanda,
   porPilar,
@@ -242,6 +244,12 @@ describe('el motivo del guion, en dos palabras', () => {
     de más adelante sale en casi todas las filas. Los dos tienen que hablar del
     mismo caso, o la celda dirá una cosa y su título otra.
   */
+  /*
+    ⚠️ **Estas filas NO traen `estadoPrueba`**, y por eso siguen cayendo en los
+    motivos de siempre: son el camino de respaldo para un backend anterior al
+    cambio. Con el campo puesto, la pestaña de la prueba escribe «Prueba
+    incompleta» o «Pendiente de calificación» —ver el bloque de abajo—.
+  */
   it('cada caso tiene su rótulo corto y su frase entera', () => {
     const casos = [
       ['PRUEBA_TURNO_CANDIDATO', 'no la ha hecho'],
@@ -272,6 +280,126 @@ describe('el motivo del guion, en dos palabras', () => {
     expect(porQueNoHayNotaCorto(fila('NO_CONTINUA', null), 'PRUEBA_PUESTO')).toBe(
       'proceso cerrado',
     )
+  })
+})
+
+describe('lo que dice la celda de la prueba del puesto', () => {
+  /*
+    ⚠️ **El hueco de la nota tenía tres causas y la tabla escribía una sola
+    frase: «sin cerrar».** No se parecen en nada:
+
+      1. No la terminó —ni la abrió, o la dejó a medias—.
+      2. El sistema la cerró al vencer el plazo, con lo que hubiera.
+      3. La entregó una persona y su rúbrica todavía no tiene nota.
+
+    Solo la tercera es trabajo del equipo. Las dos primeras son la misma cosa
+    —no hubo entrega— y por eso comparten texto.
+
+    ⚠️ **Y no se deduce aquí**: llega decidido en `estadoPrueba`, porque desde
+    el navegador los tres casos se ven idénticos —una nota vacía—.
+  */
+  const enLaPrueba = (estadoPrueba: FilaRanking['estadoPrueba']) =>
+    fila('PRUEBA_POR_CONFIRMAR', null, { estadoPrueba })
+
+  it('sin entrega del candidato, la prueba está incompleta', () => {
+    expect(porQueNoHayNotaCorto(enLaPrueba('INCOMPLETA'), 'PRUEBA_PUESTO')).toBe(
+      'Prueba incompleta',
+    )
+  })
+
+  it('entregada por una persona y todavía sin nota, espera al equipo', () => {
+    expect(porQueNoHayNotaCorto(enLaPrueba('PENDIENTE_CALIFICACION'), 'PRUEBA_PUESTO')).toBe(
+      'Pendiente de calificación',
+    )
+  })
+
+  /*
+    Los dos casos que NO producen texto propio: con nota se pinta la nota, y sin
+    intento no hay prueba de la que hablar, así que la fila conserva el motivo
+    de siempre —el que dice dónde está parada esa persona—.
+  */
+  it('quien no llegó a la etapa técnica conserva su indicador y nunca espera al equipo', () => {
+    const suya = enLaPrueba('NO_APLICA')
+    expect(loDeLaPrueba(suya, 'PRUEBA_PUESTO')).toBeNull()
+    expect(porQueNoHayNotaCorto(suya, 'PRUEBA_PUESTO')).toBe('sin cerrar')
+    expect(porQueNoHayNotaCorto(suya, 'PRUEBA_PUESTO')).not.toBe('Pendiente de calificación')
+  })
+
+  it('con la prueba ya calificada no hay texto de ausencia que dar', () => {
+    expect(loDeLaPrueba(fila('PRUEBA_POR_CONFIRMAR', 73, { estadoPrueba: 'CALIFICADA' }), 'PRUEBA_PUESTO')).toBeNull()
+  })
+
+  /* Un cero es una nota: la celda pinta el número y no pregunta por el estado. */
+  it('un cero se pinta como nota y no como ausencia', () => {
+    const suya = fila('PRUEBA_POR_CONFIRMAR', 0, { estadoPrueba: 'CALIFICADA' })
+    expect(suya.notaEtapa).toBe(0)
+    expect(loDeLaPrueba(suya, 'PRUEBA_PUESTO')).toBeNull()
+  })
+
+  /*
+    ⚠️ **Fuera de la pestaña de la prueba el estado no habla**, aunque llegue:
+    ahí la columna Nota es de otra etapa y el texto se leería como suyo.
+  */
+  it('en las otras pestañas el estado de la prueba no dice nada', () => {
+    for (const etapa of ['PERFIL_INTEGRAL', 'SIMULACION', 'DECISION'] as const) {
+      expect(loDeLaPrueba(enLaPrueba('PENDIENTE_CALIFICACION'), etapa)).toBeNull()
+    }
+  })
+
+  /* Un backend que todavía no manda el campo no deja la celda vacía. */
+  it('sin el campo manda el motivo de siempre', () => {
+    expect(loDeLaPrueba(fila('PRUEBA_POR_CONFIRMAR', null), 'PRUEBA_PUESTO')).toBeNull()
+    expect(porQueNoHayNotaCorto(fila('PRUEBA_POR_CONFIRMAR', null), 'PRUEBA_PUESTO')).toBe(
+      'sin cerrar',
+    )
+  })
+
+  /*
+    La celda y su título tienen que hablar del mismo caso, como el resto de los
+    motivos: el título explica, la celda responde. Y ninguno de los dos puede
+    arrastrar la copia vieja.
+  */
+  it('el título explica el mismo caso, sin rastro del texto viejo', () => {
+    for (const estado of ['INCOMPLETA', 'PENDIENTE_CALIFICACION'] as const) {
+      const corto = porQueNoHayNotaCorto(enLaPrueba(estado), 'PRUEBA_PUESTO')
+      const entero = porQueNoHayNota(enLaPrueba(estado), 'PRUEBA_PUESTO')
+      expect(entero.startsWith(corto)).toBe(true)
+      expect(entero.length).toBeGreaterThan(corto.length)
+      expect(entero).not.toContain('sin cerrar')
+    }
+  })
+})
+
+describe('cómo se llama cada corte', () => {
+  /*
+    ⚠️ **El primero se llama «Pendiente» y antes «Por revisar»: cambió el
+    rótulo, no el corte.** El mismo nombre lo leen los tres botones y la
+    descripción que viaja dentro del Excel.
+  */
+  it('el primero se llama «Pendiente», sin rastro del nombre viejo', () => {
+    expect(rotuloDeVista('por-revisar')).toBe('Pendiente')
+    expect(rotuloDeVista('le-toca')).toBe('Le toca al candidato')
+    expect(rotuloDeVista('toda')).toBe('Toda la tanda')
+    for (const vista of ['por-revisar', 'le-toca', 'toda'] as const) {
+      expect(rotuloDeVista(vista)).not.toContain('Por revisar')
+    }
+  })
+
+  /*
+    ⚠️ **Y las filas son exactamente las mismas.** El rótulo es lo único que
+    cambia: el corte sigue saliendo de `porRevisar` de `ETAPAS_PANEL`, con el
+    mismo conteo y en el mismo orden.
+  */
+  it('el corte trae las mismas filas y el mismo conteo que antes del rótulo nuevo', () => {
+    const filas = [
+      fila('PERFIL_POR_CONFIRMAR', 80),
+      fila('PERFIL_TURNO_CANDIDATO', null),
+      fila('PERFIL_CALIFICANDO', null),
+    ]
+    const delCorte = filtrar(filas, 'PERFIL_INTEGRAL', 'por-revisar')
+    expect(delCorte).toEqual(filas.filter((f) => esperaALaEmpresa(f.estado, 'PERFIL_INTEGRAL')))
+    expect(delCorte).toHaveLength(1)
+    expect(recuentos(filas, 'PERFIL_INTEGRAL')['por-revisar']).toBe(1)
   })
 })
 
@@ -1844,14 +1972,19 @@ describe('de qué recorte salió la hoja', () => {
   const CIUDADES = [{ codigo: '1501', nombre: 'Lima — Lima', cuantas: 3 }]
 
   /*
-    ⚠️ **El corte de la botonera es lo que MÁS filas quita.** «Por revisar»
+    ⚠️ **El corte de la botonera es lo que MÁS filas quita.** «Pendiente»
     esconde a casi toda la tanda; una descripción que solo dijera «Ciudad: Lima»
     haría leer la hoja como si trajera a todos los de Lima.
   */
   it('nombra la etapa y el corte, siempre', () => {
     const dicho = describirFiltro('PERFIL_INTEGRAL', 'por-revisar', SIN_FILTROS, null, [])
     expect(dicho).toContain('Perfil integral')
-    expect(dicho).toContain('Por revisar')
+    expect(dicho).toContain('Pendiente')
+    /*
+      El rótulo viejo no puede viajar dentro de la hoja: quien la abra dentro de
+      un mes leería un corte que en la pantalla ya no se llama así.
+    */
+    expect(dicho).not.toContain('Por revisar')
   })
 
   it('dice el orden, porque el backend escribe las filas como se las manden', () => {

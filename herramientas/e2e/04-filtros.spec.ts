@@ -19,7 +19,7 @@ const pretHasta = (page: Page) => page.getByLabel('Pretensión, hasta')
 
 test.describe('Nuevo · filtros del ranking', () => {
   /*
-    La pantalla abre por «Por revisar», que solo trae a quien espera una
+    La pantalla abre por «Pendiente», que solo trae a quien espera una
     decisión. Lo que se mide aquí es otra cosa —los filtros, el orden, el
     teclado—, así que se abre la tanda entera para tener filas con las que
     trabajar; es lo que traía el corte de antes, «Con nota», en esta vacante.
@@ -183,7 +183,7 @@ test.describe('Nuevo · filtros del ranking', () => {
       simulación nadie entra, que además es el estado normal de esa pestaña.
     */
     await pestana(page, 'Simulación').click()
-    await corte(page, 'Por revisar').click()
+    await corte(page, 'Pendiente').click()
     await expect(filasDelRanking(page)).toHaveCount(0)
     await expect(page.locator('table tbody tr').last()).toContainText(
       'Nadie espera tu decisión en Simulación',
@@ -215,7 +215,7 @@ test.describe('Nuevo · filtros del ranking', () => {
     await page.reload()
     await expect(page.getByRole('tablist', { name: 'Etapa del ranking' })).toBeVisible()
     await expect(pestana(page, 'Perfil integral')).toHaveAttribute('aria-selected', 'true')
-    await expect(corte(page, 'Por revisar')).toHaveAttribute('aria-pressed', 'true')
+    await expect(corte(page, 'Pendiente')).toHaveAttribute('aria-pressed', 'true')
     await expect(page.getByRole('searchbox')).toHaveValue('')
     await expect(cabecera(page, 'Candidato')).toHaveAttribute('aria-sort', 'none')
   })

@@ -983,7 +983,7 @@ thead .celdaCandidato {
 /*
  * La cifra de cada corte, dentro de su propio boton.
  *
- * Va en pildora hundida y no suelta detras del texto: «Por revisar 12
+ * Va en pildora hundida y no suelta detras del texto: «Pendiente 12
  * / Le toca al candidato 3» sin separacion se lee como un solo rotulo con numeros
  * dentro. Y es lo que evita tener que pulsar los tres para saber si alguno
  * tiene algo.
@@ -1135,6 +1135,11 @@ thead .celdaCandidato {
    * Ahora la celda lleva dos palabras y la frase entera vive en el titulo. Doce
    * es lo que mide el mas largo de los siete rotulos —«no la ha hecho»— y por
    * eso ninguno se parte.
+   *
+   * ⚠️ **Los dos textos de la prueba del puesto son mas largos y se parten en
+   * dos lineas a proposito**: «Prueba incompleta» y «Pendiente de calificación»
+   * son la respuesta entera y no un resumen. Ninguna de sus palabras pasa de
+   * doce caracteres, asi que el ancho de la columna no se mueve.
    */
   max-width: 13ch;
   margin-left: auto;

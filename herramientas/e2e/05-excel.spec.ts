@@ -169,7 +169,7 @@ test.describe('Nuevo · la descarga del Excel', () => {
 
   test('Perfil integral: el archivo llega, pesa y lleva la fecha en el nombre', async ({ page }) => {
     await irAVacante(page, VACANTES.LLENA)
-    // El botón cuenta las filas del corte, y se abre por «Por revisar».
+    // El botón cuenta las filas del corte, y se abre por «Pendiente».
     await corte(page, 'Toda la tanda').click()
     await expect(botonExcel(page)).toHaveText('Descargar Excel (4)')
 
@@ -198,7 +198,7 @@ test.describe('Nuevo · la descarga del Excel', () => {
   test('Prueba del puesto también exporta (hay que abrir «Toda la tanda» antes)', async ({ page }) => {
     await irAVacante(page, VACANTES.LLENA)
     await pestana(page, 'Prueba del puesto').click()
-    // Con «Por revisar» solo sale quien espera decisión en esta etapa: una
+    // Con «Pendiente» solo sale quien espera decisión en esta etapa: una
     // persona, así que el botón exporta esa. La tanda entera trae las cuatro.
     await expect(botonExcel(page)).toHaveText('Descargar Excel (1)')
 
@@ -233,7 +233,7 @@ test.describe('Nuevo · la descarga del Excel', () => {
     expect(texto).toContain('Filtro aplicado:')
     expect(texto).toContain('Ciudad: Lima — Lima')
     expect(texto).toContain('Perfil integral')
-    expect(texto).toContain('Por revisar')
+    expect(texto).toContain('Pendiente')
   })
 
   test('EL EXCEL RESPETA EL ORDEN de la pantalla', async ({ page }) => {
