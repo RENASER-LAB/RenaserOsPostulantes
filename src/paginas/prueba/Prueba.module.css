@@ -288,11 +288,6 @@
   color: var(--tinta3);
 }
 
-.estadoRespuesta.pendiente {
-  color: var(--mal);
-  font-weight: 600;
-}
-
 /* ---------- Entregables ---------- */
 
 .entregables {
@@ -511,6 +506,16 @@
   line-height: 1.55;
   color: var(--tinta2);
   margin-top: var(--e3);
+}
+
+/*
+ * La cuenta de lo que queda en blanco es el dato del modal, y la jerarquia la
+ * hace la tipografia: sube a la tinta de titulares ademas del peso. Envuelve una
+ * frase ENTERA, no un trozo de otra, asi que no rompe la regla de la frase
+ * entera —lo que esa regla prohibe es partir una frase por dentro—.
+ */
+.confirmacionTexto b {
+  color: var(--tinta);
 }
 
 .confirmacionBotones {

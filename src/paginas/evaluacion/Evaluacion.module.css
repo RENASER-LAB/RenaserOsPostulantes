@@ -329,8 +329,18 @@
   color: var(--tinta2);
 }
 
-.estadoRespuesta.pendiente {
+/*
+ * El rojo solo para el fallo real. «Guardando…» se queda en la tinta de siempre:
+ * es un estado que se resuelve solo y no pide nada a quien responde.
+ */
+.estadoRespuesta.fallo {
   color: var(--mal);
+  font-weight: 600;
+}
+
+/* Lo que le falta al candidato, no una averia nuestra. */
+.estadoRespuesta.duda {
+  color: var(--duda-tinta);
   font-weight: 600;
 }
 
