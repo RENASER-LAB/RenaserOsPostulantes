@@ -261,7 +261,13 @@ export interface PretensionDeclarada {
  */
 export interface AvisoDelPortal {
   id: number
-  /** Hoy solo `REMUNERACION_ACTUALIZADA`. Los siguientes entran aqui al lado. */
+  /**
+   * Que clase de noticia es.
+   *
+   * `REMUNERACION_ACTUALIZADA` es el cambio de sueldo hecho desde la tarjeta del
+   * panel; `VACANTE_ACTUALIZADA` es el guardado del formulario de la vacante,
+   * con todo lo que cambio —sueldo incluido— en un solo aviso.
+   */
   tipo: string
   titulo: string
   cuerpo: string

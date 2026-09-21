@@ -487,9 +487,9 @@ export function VacantePanelDetalle() {
           El sueldo va PRIMERO, antes de lo que responderá quien postule.
 
           Es lo unico de esta pantalla que le llega al candidato en el momento
-          —correo y aviso en su portal—, y ademas decide si al postular se le va
-          a exigir su pretension. Debajo de los desplegables de plantillas se
-          encontraria buscandolo.
+          —un aviso en la campana de su portal—, y ademas decide si al postular
+          se le va a exigir su pretension. Debajo de los desplegables de
+          plantillas se encontraria buscandolo.
         */}
         <RemuneracionDeLaVacante vacante={v} />
         <ConfiguracionDeLaVacante vacante={v} />

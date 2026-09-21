@@ -14,37 +14,40 @@ no se vuelve a subir el currículum. Lo del 07/09 se documentó en
 
 ---
 
-## Una prueba sin nota ya no se lee de una sola manera (18/09/2026)
+## Corregir una vacante desde la lista, y el sueldo sin correo (19-20/09/2026)
 
-En la pestaña de la prueba del puesto, «sin cerrar» valía igual para quien no había abierto su
-prueba que para quien la había entregado hacía días. Los dos casos piden lo contrario: a uno se le
-persigue, al otro se le califica.
+El backend tenía el `PUT` de la vacante y la lista no ofrecía editar. Ahora cada fila en
+borrador o publicada lleva un lápiz que abre **el mismo formulario del alta**. Cómo funciona hoy está en
+[PANEL.md](PANEL.md), «Corregir una vacante con el lápiz»; aquí va el porqué.
 
-Ahora la celda dice **«Prueba incompleta»** o **«Pendiente de calificación»**, y la nota manda
-sobre las dos: **un cero es una nota** y se pinta como número. Cómo queda hoy, en
-[06-FLUJO-COMPLETO.md](06-FLUJO-COMPLETO.md).
+- **Un formulario, no dos.** Los campos comunes salieron a `CamposDeLaVacante.tsx` y los usan el
+  alta y la edición (`EditarVacante.tsx`): se corrige donde se escribió, con las mismas palabras
+  y en el mismo orden.
+- **El aviso previo va debajo del botón y no es un diálogo.** Corregir una vacante es lo normal,
+  y un «¿estás seguro?» en cada guardado se aprende a despachar sin leerlo.
+- **El sueldo entra en el mismo guardado.** Antes eran dos llamadas, y cambiar el sueldo y el
+  horario a la vez mandaba dos avisos por un solo cambio. El formulario manda la remuneración
+  entera y, si cambia, el motivo; el backend saca un único aviso con todo.
+- **El sueldo deja de mandar correo, por sus dos puertas.** La tarjeta del detalle ya no promete
+  «por correo y en su portal»: la campana espera a que la persona entre, y el correo se pierde.
+- **La fila trae lo que el lápiz necesita**: el texto entero de la convocatoria,
+  `postulantesEnCarrera` y `puedeEditar`. Sin el texto, el formulario se abriría a medias y
+  guardar borraría lo que no viajó.
 
-⚠️ **No se deduce aquí.** Desde el navegador los tres casos son lo mismo, una nota que no está. Lo
-que los separa —si hubo entrega y si la hizo la persona o el reloj— solo lo sabe el backend, que
-manda el dato ya decidido en cada fila y **solo en esa pestaña**. Sacarlo del estado de la
-postulación habría repetido el fallo que se venía a arreglar: `PRUEBA_POR_CONFIRMAR` no dice si
-hubo entrega.
+### Lo que encontró el QA, y se corrigió
 
-### Y el primer corte se llama «Pendiente»
+- Guardar sin tocar nada **vaciaba la fecha de apertura**, que el formulario no enseña, y las
+  plazas que no cuadraban con la forma de cierre; el panel decía «Cambios guardados». Ahora la
+  apertura no se toca al editar, y plazas y fecha de cierre solo cambian si su forma de cierre las
+  enseña o si esa forma cambió.
+- Guardar sin tocar la fecha de cierre **le quitaba la hora**. Ahora se compara por día y, si el
+  día es el mismo, se conserva la hora guardada.
 
-El botón con el que abre la pantalla se llamaba «Por revisar». **Cambió el rótulo y nada más**:
-las mismas filas, la misma cifra y el mismo orden. La clave interna sigue siendo `por-revisar`,
-porque es una clave y no un texto de pantalla. El nombre nuevo viaja también dentro del Excel, que
-lo recibe del panel y no lo redacta.
+### Cómo se comprueba
 
-### Tres decisiones de ese día
-
-- **Sin intento se conserva «sin cerrar».** Se propuso sustituirlo y se decidió que no: sin prueba
-  de la que hablar, el texto nuevo prometería una distinción que ahí no existe.
-- **Las vacantes con cuestionario técnico se quedan fuera.** No crean intentos, así que todas sus
-  filas sin nota siguen diciendo «sin cerrar», incluso las ya entregadas. Pendiente conocido.
-- **El Excel no hereda la distinción.** Su columna de nota sigue diciendo «rúbrica incompleta»
-  para cualquier fila sin nota.
+797 pruebas del frontend en verde, `EditarVacante.test.tsx` incluido. E2E nuevos, 12 casos:
+`25-editar-vacante` (no escribe) y `26-editar-vacante-avisos` (siembra su terreno y lo retira).
+Tres casos antiguos quedaron fuera a propósito y están en [PENDIENTES.md](PENDIENTES.md).
 
 ---
 

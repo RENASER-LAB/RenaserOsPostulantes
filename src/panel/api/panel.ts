@@ -37,6 +37,7 @@ import type {
   SesionEquipo,
   SesionPanel,
   UsuarioEquipo,
+  VacanteActualizadaResponse,
   VacantePanel,
   VersionBanco,
   NuevaVersionBanco,
@@ -134,13 +135,21 @@ export const listarVacantes = () => pedir<VacantePanel[]>('/vacantes')
 export const verVacante = (id: number) => pedir<VacantePanel>(`/vacantes/${id}`)
 export const crearVacante = (datos: GuardarVacante) =>
   pedir<VacantePanel>('/vacantes', { metodo: 'POST', cuerpo: datos })
-export const editarVacante = (id: number, datos: GuardarVacante) =>
-  pedir<VacantePanel>(`/vacantes/${id}`, { metodo: 'PUT', cuerpo: datos })
 /**
- * Definir o cambiar lo que la vacante paga.
+ * Guardar el formulario entero de una vacante que ya existe.
  *
- * Verbo propio y no un campo del PUT general: si la vacante esta publicada, este
- * cambio le manda un correo y un aviso a cada candidato que sigue en carrera.
+ * El cuerpo es el mismo del alta, remuneracion incluida. El backend compara campo
+ * a campo —sin contar los espacios de los extremos— y contesta si de verdad cambio
+ * algo y a cuanta gente le llego el aviso.
+ */
+export const editarVacante = (id: number, datos: GuardarVacante) =>
+  pedir<VacanteActualizadaResponse>(`/vacantes/${id}`, { metodo: 'PUT', cuerpo: datos })
+/**
+ * Definir o cambiar lo que la vacante paga, desde la tarjeta del detalle.
+ *
+ * Verbo propio porque tiene pantalla propia: cambiar solo el sueldo sin abrir el
+ * formulario entero. Si la vacante esta publicada, deja un aviso en la campana de
+ * cada candidato que sigue en carrera. **No manda correo.**
  */
 export const actualizarRemuneracion = (id: number, datos: ActualizarRemuneracion) =>
   pedir<RemuneracionActualizadaResponse>(`/vacantes/${id}/remuneracion`, {

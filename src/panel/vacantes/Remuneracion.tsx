@@ -6,9 +6,15 @@
  *   - `CamposDeRemuneracion` son los campos sueltos, para el alta: ahi el sueldo
  *     es un campo mas del formulario porque todavia no hay nadie a quien avisar.
  *   - `RemuneracionDeLaVacante` es la seccion de configuracion, con su motivo y
- *     su boton propio: ahi cambiar el sueldo **le escribe a cada candidato vivo**,
- *     y eso no puede ir escondido dentro de un «guardar» general que tambien
- *     corrige la descripcion.
+ *     su boton propio: es la puerta para cambiar SOLO el sueldo sin abrir el
+ *     formulario entero. Cambiarlo **le deja un aviso en el portal a cada
+ *     candidato vivo**; desde el formulario de edicion ese aviso sale junto con
+ *     el resto del guardado, en uno solo.
+ *
+ * ⚠️ **El cambio de sueldo ya no manda correo.** La campana se queda quieta
+ * hasta que la persona entra y la ve; el correo se pierde —promociones,
+ * direcciones que invento el cargador de curriculums— y prometer los dos era
+ * prometer una entrega que nadie podia confirmar.
  *
  * ⚠️ **Esconder el sueldo no es un ajuste de presentacion.** Es la mitad de un
  * trato: si la vacante lo enseña, quien postula esta obligado a decir cuanto
@@ -57,7 +63,7 @@ export function desdeLaVacante(r: Datos | null | undefined): FormularioRemunerac
  *
  * Se valida aqui y no solo en el servidor porque un 400 despues de pulsar
  * «guardar» en una vacante publicada es un susto: el boton dice que va a
- * escribirle a cuarenta personas, y quien lo pulsa merece saber antes si lo que
+ * avisar a cuarenta personas, y quien lo pulsa merece saber antes si lo que
  * escribio tiene sentido.
  */
 export function comoCuerpo(f: FormularioRemuneracion): { datos: Datos } | { error: string } {
@@ -65,8 +71,8 @@ export function comoCuerpo(f: FormularioRemuneracion): { datos: Datos } | { erro
     return { datos: { tipo: 'OCULTA', min: null, max: null, moneda: null } }
   }
   // `aCifra` y no `Number`: `Number('3,500')` vale 3.5 y pasaria las validaciones
-  // de abajo. Un monto fijo mal leido en una vacante publicada dispara cuarenta
-  // correos que dicen «Ahora: S/ 3.50». Ver `dominio/dinero`.
+  // de abajo. Un monto fijo mal leido en una vacante publicada deja cuarenta
+  // avisos que dicen «Ahora: S/ 3.50». Ver `dominio/dinero`.
   const min = aCifra(f.min)
   if (f.min.trim() === '') {
     return {
@@ -98,6 +104,22 @@ export function comoCuerpo(f: FormularioRemuneracion): { datos: Datos } | { erro
     return { error: 'Ese monto parece un error de tecleo: revísalo.' }
   }
   return { datos: { tipo: 'RANGO', min, max, moneda: f.moneda } }
+}
+
+/**
+ * Si dos remuneraciones dicen lo mismo.
+ *
+ * Lo usa el formulario de edicion para decidir si pedir el motivo: el sueldo se
+ * manda siempre —el cuerpo es el formulario entero— y sin esta comparacion se
+ * pediria una justificacion por no haber tocado nada.
+ */
+export function mismoSueldo(a: Datos, b: Datos | null | undefined): boolean {
+  if (!b) return a.tipo === 'OCULTA'
+  if (a.tipo !== b.tipo) return false
+  if (a.tipo === 'OCULTA') return true
+  return Number(a.min) === Number(b.min)
+    && Number(a.max ?? 0) === Number(b.max ?? 0)
+    && (a.moneda ?? 'PEN') === (b.moneda ?? 'PEN')
 }
 
 const SIMBOLO: Record<string, string> = { PEN: 'S/', USD: 'US$' }
@@ -289,7 +311,8 @@ export function RemuneracionDeLaVacante({ vacante }: { vacante: VacantePanel }) 
    * deja media tanda con cifra y media sin, porque a los de antes no hay forma de
    * volver a pedirsela.
    *
-   * El **monto** si se cambia, y es justo lo que les llega por correo y campana.
+   * El **monto** si se cambia, y es justo lo que les llega a la campana de su
+   * portal.
    * Por eso se congela solo la eleccion de publicar o no, y moverse entre «rango»
    * y «monto fijo» sigue estando abierto: las dos publican.
    *
@@ -313,14 +336,14 @@ export function RemuneracionDeLaVacante({ vacante }: { vacante: VacantePanel }) 
       setFallo(null)
       setMotivo('')
       // Se dice a cuanta gente le llego, con nombre y apellido. «Guardado» a
-      // secas deja a quien acaba de mover un sueldo sin saber si el correo salio
+      // secas deja a quien acaba de mover un sueldo sin saber si el aviso salio
       // —y es la pregunta que se hace en el mismo segundo de pulsar—.
       setHecho(
         respuesta.candidatosAvisados === 0
           ? `Guardado: ${respuesta.ahora}. No había candidatos a quienes avisar.`
           : `Guardado: de ${respuesta.antes} a ${respuesta.ahora}. Avisamos a ` +
             `${respuesta.candidatosAvisados} candidato` +
-            `${respuesta.candidatosAvisados === 1 ? '' : 's'} por correo y en su portal.`,
+            `${respuesta.candidatosAvisados === 1 ? '' : 's'} en su portal.`,
       )
       await cache.invalidateQueries({ queryKey: ['panel-vacante', vacante.id] })
     },
@@ -332,7 +355,7 @@ export function RemuneracionDeLaVacante({ vacante }: { vacante: VacantePanel }) 
 
   // En borrador no hay a quien avisar, asi que tampoco hace falta justificarse.
   // Pedir un motivo para rellenar un campo de una vacante que nadie ha visto es
-  // burocracia; pedirlo cuando cuarenta personas van a recibir un correo, no.
+  // burocracia; pedirlo cuando cuarenta personas van a recibir el aviso, no.
   const motivoObligatorio = publicada
 
   function enviar() {
@@ -412,7 +435,7 @@ export function RemuneracionDeLaVacante({ vacante }: { vacante: VacantePanel }) 
           {publicada && (
             <p className={estilos.consecuenciaFuerte}>
               Esta vacante está publicada: al guardar, cada candidato que sigue en carrera
-              recibirá un correo y un aviso en su portal. A quienes ya no continúan, no.
+              recibirá un aviso en su portal. A quienes ya no continúan, no.
             </p>
           )}
 

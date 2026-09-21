@@ -66,6 +66,50 @@ export interface VacantePanel {
   remuneracion: RemuneracionDeLaVacante
   /** Cuando se toco el sueldo por ultima vez. `null` = nunca desde que se creo. */
   remuneracionActualizadaEn: FechaIso | null
+  /*
+   * El texto de la convocatoria, entero. Viaja en la LISTA y no solo en el
+   * detalle: el lapiz abre el formulario con los datos actuales sin pedir nada
+   * mas, y el cuerpo del PUT es el formulario completo — lo que no viaja, se
+   * borra.
+   */
+  descripcion: string | null
+  proposito: string | null
+  responsabilidades: string | null
+  requisitos: string | null
+  modalidad: string | null
+  horario: string | null
+  ubicacion: string | null
+  plazas: number | null
+  abreEn: FechaIso | null
+  cierraEn: FechaIso | null
+  /**
+   * Cuanta gente sigue en carrera en esta vacante.
+   *
+   * Es el numero que el panel dice antes de guardar —«avisaremos a N
+   * postulantes»—. No cuenta a quien ya termino: contratado, no continua o
+   * cerrada.
+   */
+  postulantesEnCarrera: number
+  /**
+   * Si quien mira puede editar ESTA vacante.
+   *
+   * Viene en la fila y no de un endpoint de permisos: el alcance se decide
+   * vacante a vacante —con `SUS_VACANTES` solo alcanzas las que diriges— y una
+   * respuesta general no podria contestarlo.
+   */
+  puedeEditar: boolean
+}
+
+/**
+ * Como acabo un guardado de la vacante.
+ *
+ * Las dos cosas que el panel no puede deducir: si de verdad cambio algo —guardar
+ * sin tocar nada es el camino mas normal del mundo— y a cuanta gente le llego el
+ * aviso en su portal.
+ */
+export interface VacanteActualizadaResponse {
+  huboCambios: boolean
+  postulantesAvisados: number
 }
 
 /**
@@ -89,7 +133,7 @@ export interface RemuneracionDeLaVacante {
 /**
  * Cambiar el sueldo de una vacante, con el motivo de por que.
  *
- * El motivo no es burocracia: este cambio le manda un correo y un aviso a cada
+ * El motivo no es burocracia: este cambio le deja un aviso en el portal a cada
  * persona con una postulacion viva, y la auditoria tiene que poder contestar
  * «¿por que le dijimos a cuarenta candidatos que el sueldo bajo?» con algo mas
  * que una marca de tiempo.
@@ -130,10 +174,10 @@ export interface GuardarVacante {
    * Lo que paga, si se dice ya. Vacio = `OCULTA`, que es como nacen todas las
    * vacantes que no digan lo contrario.
    *
-   * ⚠️ **Solo se lee al CREAR.** Al editar, el backend lo ignora a proposito:
-   * cambiar el sueldo avisa por correo y por la campana a cada candidato vivo, y
-   * eso no puede dispararse al corregir una falta de ortografia en la
-   * descripcion. Para cambiarlo esta `actualizarRemuneracion`, con su motivo.
+   * ⚠️ **Al editar hay que mandarlo siempre.** El cuerpo es el formulario
+   * completo: omitirlo significa «no publicar el sueldo», y en una vacante
+   * publicada que lo enseña eso se rechaza. Si cambia, sale en el MISMO aviso
+   * que el resto del guardado — por eso ya no hace falta una llamada aparte.
    */
   remuneracion?: RemuneracionDeLaVacante
   tipoCierre: string
@@ -141,6 +185,13 @@ export interface GuardarVacante {
   abreEn?: FechaIso
   cierraEn?: FechaIso
   responsableUsuarioId: number
+  /**
+   * Por que cambia el sueldo, cuando este guardado lo cambia.
+   *
+   * Obligatorio si la vacante esta publicada: a cada persona en carrera le va a
+   * llegar la noticia. Queda en la auditoria, nunca en el aviso del candidato.
+   */
+  motivoRemuneracion?: string
 }
 
 export interface RequisitoPanel {
