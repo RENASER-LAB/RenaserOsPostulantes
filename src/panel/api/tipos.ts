@@ -91,6 +91,14 @@ export interface VacantePanel {
    */
   postulantesEnCarrera: number
   /**
+   * Cuando se archivo, o `null` si sigue en la lista habitual.
+   *
+   * **No es un estado.** Una archivada sigue `CERRADA` y conserva sus
+   * postulaciones: lo unico que cambia es que deja de salir en `/admin` y pasa a
+   * consultarse en «Vacantes archivadas».
+   */
+  archivadaEn: FechaIso | null
+  /**
    * Si quien mira puede editar ESTA vacante.
    *
    * Viene en la fila y no de un endpoint de permisos: el alcance se decide
@@ -98,6 +106,22 @@ export interface VacantePanel {
    * respuesta general no podria contestarlo.
    */
   puedeEditar: boolean
+  /**
+   * Si quien mira puede archivar ESTA vacante.
+   *
+   * ⚠️ **No mira a cuanta gente le queda proceso.** El icono tiene que aparecer
+   * aunque queden postulantes en carrera, porque es su modal el que dice cuantos
+   * son y donde se decide cada uno. Escondiendolo, quien mira la fila no tendria
+   * forma de saber por que esa vacante no se puede guardar.
+   */
+  puedeArchivar: boolean
+  /** Si quien mira puede devolverla a la lista habitual. */
+  puedeDesarchivar: boolean
+}
+
+/** Cuantas vacantes archivadas hay: el numero del boton de la cabecera. */
+export interface ConteoDeArchivadas {
+  archivadas: number
 }
 
 /**

@@ -13,11 +13,12 @@
  * habia forma de escribir la segunda desde el panel.
  */
 
-import { useMemo, useState, type FormEvent } from 'react'
+import { useMemo, useRef, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   aprobarSolicitud,
+  contarVacantesArchivadas,
   crearPuesto,
   crearSolicitud,
   crearVacante,
@@ -54,6 +55,8 @@ import {
   type DatosDeVacante,
 } from './CamposDeLaVacante'
 import { FormularioDeEdicion } from './EditarVacante'
+import { ModalDeArchivo } from './ArchivarVacante'
+import { IconoArchivo, IconoLapiz } from './IconosDeLaFila'
 import estilos from './Vacantes.module.css'
 
 /** Como se dice cada estado de vacante. Los codigos son del backend. */
@@ -74,12 +77,32 @@ export function VacantesPanel() {
    * siempre es el que se estaba mirando.
    */
   const [editando, setEditando] = useState<number | null>(null)
+  /** Que vacante esta esperando la confirmacion de archivo, si alguna. */
+  const [archivando, setArchivando] = useState<number | null>(null)
   /** Lo que se dice en voz alta despues de guardar. */
   const [confirmacion, setConfirmacion] = useState<string | null>(null)
+  /*
+   * El sitio al que va el foco cuando la fila que lo tenia desaparece.
+   *
+   * Archivar quita la fila de la tabla, y con ella el icono que abrio el modal:
+   * devolver el foco ahi lo manda al `body` y quien navega con teclado queda al
+   * principio de la pagina. «Archivadas (N)» es el punto logico — es donde acaba
+   * de irse la vacante.
+   */
+  const botonDeArchivadas = useRef<HTMLAnchorElement>(null)
 
   const vacantes = useQuery({
     queryKey: ['panel-vacantes'],
-    queryFn: listarVacantes,
+    queryFn: () => listarVacantes(),
+  })
+  /*
+   * El contador de la cabecera se pide aparte y no contando filas: la lista de
+   * archivadas no esta en esta pantalla, y traerla entera para enseñar un numero
+   * seria pagar la vista que nadie ha pedido todavia.
+   */
+  const archivadas = useQuery({
+    queryKey: ['panel-vacantes-archivadas-conteo'],
+    queryFn: contarVacantesArchivadas,
   })
 
   /*
@@ -89,6 +112,9 @@ export function VacantesPanel() {
    */
   const laQueSeEdita: VacantePanel | undefined = (vacantes.data ?? []).find(
     (v) => v.id === editando,
+  )
+  const laQueSeArchiva: VacantePanel | undefined = (vacantes.data ?? []).find(
+    (v) => v.id === archivando,
   )
 
   return (
@@ -133,6 +159,22 @@ export function VacantesPanel() {
           >
             {creando ? 'Cerrar el formulario' : 'Crear vacante'}
           </button>
+          {/*
+            La tercera puerta, y no un selector «Activas / Archivadas» encima de
+            la tabla: lo guardado es otra pantalla, no otro filtro de esta. Un
+            selector deja dudando si lo que se mira son todas o la mitad; un
+            botón que lleva a otro sitio, con su vuelta, no.
+
+            El número se enseña aunque sea cero: «Archivadas» a secas obliga a
+            entrar para descubrir que no hay nada.
+          */}
+          <Link
+            ref={botonDeArchivadas}
+            className={estilos.archivadas}
+            to={rutas.adminVacantesArchivadas()}
+          >
+            Archivadas ({archivadas.data?.archivadas ?? 0})
+          </Link>
         </div>
       </div>
 
@@ -166,10 +208,27 @@ export function VacantesPanel() {
            */
           key={laQueSeEdita.id}
           vacante={laQueSeEdita}
+          alCerrar={() => setEditando(null)}
           alTerminar={async (mensaje) => {
             setEditando(null)
             setConfirmacion(mensaje)
             await cache.invalidateQueries({ queryKey: ['panel-vacantes'] })
+          }}
+        />
+      )}
+
+      {laQueSeArchiva && (
+        <ModalDeArchivo
+          key={laQueSeArchiva.id}
+          vacante={laQueSeArchiva}
+          alCerrar={() => setArchivando(null)}
+          alArchivar={() => {
+            setArchivando(null)
+            setConfirmacion(
+              `«${laQueSeArchiva.titulo}» está en Archivadas. Puedes desarchivarla cuando quieras.`,
+            )
+            // La fila ya no existe: el foco va a donde acaba de irse la vacante.
+            botonDeArchivadas.current?.focus()
           }}
         />
       )}
@@ -227,12 +286,39 @@ export function VacantesPanel() {
                         aria-expanded={editando === v.id}
                         onClick={() => {
                           setEditando((actual) => (actual === v.id ? null : v.id))
+                          setArchivando(null)
                           setCreando(false)
                           setEscribiendoSolicitud(false)
                           setConfirmacion(null)
                         }}
                       >
                         <IconoLapiz />
+                      </button>
+                    )}
+                    {/*
+                      El archivo, en el mismo sitio que el lapiz y con su misma
+                      regla de estados al reves: el lapiz esta en las que se
+                      pueden corregir —borrador y publicada— y esto en las que ya
+                      terminaron. Nunca los dos en la misma fila.
+
+                      ⚠️ Aparece aunque queden postulantes en carrera: es su modal
+                      el que dice cuantos son y donde se decide cada uno.
+                    */}
+                    {v.puedeArchivar && (
+                      <button
+                        type="button"
+                        className={estilos.archivar}
+                        aria-label={`Archivar la vacante ${v.titulo}`}
+                        aria-expanded={archivando === v.id}
+                        onClick={() => {
+                          setArchivando((actual) => (actual === v.id ? null : v.id))
+                          setEditando(null)
+                          setCreando(false)
+                          setEscribiendoSolicitud(false)
+                          setConfirmacion(null)
+                        }}
+                      >
+                        <IconoArchivo />
                       </button>
                     )}
                   </td>
@@ -947,29 +1033,5 @@ function SelectorDePuesto({
   )
 }
 
-/**
- * El lapiz de cada fila.
- *
- * Mismo trazo que el resto de iconos del panel —16 px, grosor 2, hereda el
- * color— para no traerse una libreria entera por un dibujo. El nombre
- * accesible lo pone el boton que lo envuelve: aqui el SVG se esconde.
- */
-function IconoLapiz() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      focusable="false"
-    >
-      <path d="M12 20h9" />
-      <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
-    </svg>
-  )
-}
+// Los iconos del lápiz y del archivo viven en `IconosDeLaFila`: los usan esta
+// pantalla y la de archivadas.

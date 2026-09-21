@@ -34,6 +34,7 @@ import { ArmazonPanel } from '@/panel/Armazon'
 import { EntrarPanel } from '@/panel/entrar/Entrar'
 import { InvitacionPanel } from '@/panel/entrar/Invitacion'
 import { VacantesPanel } from '@/panel/vacantes/Vacantes'
+import { VacantesArchivadas } from '@/panel/vacantes/VacantesArchivadas'
 import { VacantePanelDetalle } from '@/panel/vacantes/Vacante'
 import { PruebaTecnica } from '@/panel/vacantes/prueba-tecnica/PruebaTecnica'
 import { SesionesPanel } from '@/panel/simulacion/Sesiones'
@@ -101,6 +102,10 @@ export function App() {
                     }
                   >
                     <Route path={patrones.adminVacantes} element={<VacantesPanel />} />
+                    <Route
+                      path={patrones.adminVacantesArchivadas}
+                      element={<VacantesArchivadas />}
+                    />
                     <Route path={patrones.adminVacante} element={<VacantePanelDetalle />} />
                     <Route path={patrones.adminPruebaTecnica} element={<PruebaTecnica />} />
                     <Route path={patrones.adminSesiones} element={<SesionesPanel />} />

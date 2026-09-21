@@ -39,6 +39,7 @@ const crearPuesto = vi.fn()
 
 vi.mock('../api/panel', () => ({
   listarVacantes: () => Promise.resolve([]),
+  contarVacantesArchivadas: () => Promise.resolve({ archivadas: 0 }),
   listarAreas: () => Promise.resolve([{ id: 1, nombre: 'Tecnología', esActiva: true }]),
   listarSolicitudes: () => listarSolicitudes(),
   listarPuestos: () => listarPuestos(),
