@@ -26,6 +26,7 @@ código antes de darlas por ciertas.
 | **La dirección del backend es prestada** | `nip.io` es de terceros y la IP va escrita a mano en `vercel.json` |
 | **Cuenta de prueba en la base real** | `prueba.portal.qa.20260819@example.com` quedó como candidata activa, postulada a Ingeniero/a de Infraestructura (`f7a53fcc-11eb-4369-be96-bee577bdea85`) |
 | **Vercel escribe en producción** | El portal desplegado usa la misma base real |
+| **Tres casos antiguos que el lápiz no guarda a la primera** | Conocidos y dejados fuera de la entrega del 19/09/2026. Un sueldo guardado **con céntimos** hace que guardar responda con error hasta escribir el monto sin ellos. Si el **responsable o la forma de cierre** guardados ya no están en su catálogo, el desplegable se ve vacío, aunque el valor guardado no se pierde. Y una vacante **«por plazas» sin número de plazas** no se guarda hasta escribir un entero |
 
 Pendiente de comprobar: si hay evaluaciones ya entregadas con menos respuestas de las que
 deberían. Las que se perdieron **no se recuperan**, nunca llegaron al servidor.

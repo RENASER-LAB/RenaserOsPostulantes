@@ -1,20 +1,8 @@
 import { expect, type Locator, type Page } from '@playwright/test'
 
-/**
- * El backend contra el que corre la suite.
- *
- * ⚠️ **El 8081 es un valor por defecto, no una constante.** Estaba escrito a
- * mano, y con varios worktrees a la vez ese puerto es el backend de OTRA rama:
- * la suite se autenticaba y **escribia en la base de esa otra rama** sin que
- * nada lo dijera. Con `E2E_API` cada worktree apunta al suyo:
- *
- *     E2E_API=http://localhost:8085/api/v1 npx playwright test -c playwright.calificar.config.ts
- *
- * El `baseURL` del navegador se elige aparte, en el config: son dos cosas
- * distintas —el panel y su backend— y pueden vivir en puertos que no se
- * correspondan.
- */
-export const API = process.env.E2E_API ?? 'http://localhost:8081/api/v1'
+import { configuracion } from './base-de-datos'
+
+export const API = configuracion().E2E_API
 
 /**
  * El identificador de RENASER OS con el que entra la suite al panel.

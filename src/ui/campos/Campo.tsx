@@ -17,11 +17,43 @@ import {
 } from 'react'
 import estilos from './Campo.module.css'
 
+/**
+ * La marca de «hay que rellenarlo»: un asterisco pegado al nombre del campo.
+ *
+ * ⚠️ **El asterisco es para quien mira; la palabra, para quien escucha.** Un `*`
+ * suelto lo lee un lector de pantalla como «asterisco» —o se lo salta—, así que
+ * va con `aria-hidden` y detrás viaja la palabra «obligatorio», visible solo para
+ * el lector. Las dos están DENTRO de la etiqueta a propósito: así entran en el
+ * nombre accesible del campo y se oyen al llegar a él, no antes ni después.
+ *
+ * Y no sustituye a `aria-required`, que es lo que dice el estado de verdad: esto
+ * es el nombre, aquello es la propiedad.
+ */
+function Asterisco() {
+  return (
+    <>
+      <span className={estilos.obligatorio} aria-hidden="true">
+        {' *'}
+      </span>
+      <span className={estilos.soloLectores}> obligatorio</span>
+    </>
+  )
+}
+
 interface PropsCampo extends InputHTMLAttributes<HTMLInputElement> {
   etiqueta: string
   /** Lo que conviene saber antes de escribir. No es el error. */
   ayuda?: string
   error?: string
+  /**
+   * Que hay que rellenarlo, dicho con un asterisco. Ver {@link Asterisco}.
+   *
+   * ⚠️ **No lo decide este componente, lo decide quien lo usa.** La lista de
+   * obligatorios sale del esquema que valida el formulario, no de una elección
+   * de maquetación: marcar a mano es cómo una pantalla acaba diciendo que algo
+   * es obligatorio cuando la validación ya dejó de exigirlo.
+   */
+  obligatorio?: boolean
 }
 
 /**
@@ -60,7 +92,7 @@ function Ojo({ tachado }: { tachado: boolean }) {
 }
 
 export const Campo = forwardRef<HTMLInputElement, PropsCampo>(function Campo(
-  { etiqueta, ayuda, error, id, type, ...resto },
+  { etiqueta, ayuda, error, obligatorio, id, type, ...resto },
   ref,
 ) {
   const propio = useId()
@@ -81,6 +113,9 @@ export const Campo = forwardRef<HTMLInputElement, PropsCampo>(function Campo(
       id={idCampo}
       ref={ref}
       className={`${estilos.entrada}${esContrasena ? ` ${estilos.conOjo}` : ''}`}
+      // El asterisco lo ve quien mira; esto es lo que hace que el lector de
+      // pantalla lo diga al llegar al campo, sin depender de la marca dibujada.
+      aria-required={obligatorio || undefined}
       aria-invalid={error ? true : undefined}
       // El error y la ayuda se anuncian con el campo, no sueltos: sin esto,
       // quien navega con lector de pantalla oye el campo y nunca su error.
@@ -92,6 +127,7 @@ export const Campo = forwardRef<HTMLInputElement, PropsCampo>(function Campo(
     <div className={estilos.campo}>
       <label className={estilos.etiqueta} htmlFor={idCampo}>
         {etiqueta}
+        {obligatorio && <Asterisco />}
       </label>
       {ayuda && (
         <span className={estilos.ayuda} id={idAyuda}>
@@ -136,6 +172,17 @@ interface PropsSeleccion extends SelectHTMLAttributes<HTMLSelectElement> {
   etiqueta: string
   ayuda?: string
   error?: string
+  /**
+   * Que hay que elegir algo, dicho en la etiqueta con un asterisco.
+   *
+   * ⚠️ **Se dice antes de pulsar, no al rebotar.** Un desplegable cuya primera
+   * opción es un texto de ayuda se lee como «ya hay algo puesto»; quien no lo
+   * toca se entera de que era obligatorio cuando el formulario le devuelve un
+   * error. El asterisco es la convención que todo el mundo ya sabe leer sin que
+   * nadie se la explique — ver {@link Asterisco}, que es la misma marca que
+   * llevan los consentimientos obligatorios de esta pantalla.
+   */
+  obligatorio?: boolean
   /** Las `<option>` y `<optgroup>`, escritas por quien lo usa. */
   children: ReactNode
 }
@@ -154,7 +201,7 @@ interface PropsSeleccion extends SelectHTMLAttributes<HTMLSelectElement> {
  * rellenan igual no pueden verse distinto.
  */
 export const Seleccion = forwardRef<HTMLSelectElement, PropsSeleccion>(function Seleccion(
-  { etiqueta, ayuda, error, id, children, ...resto },
+  { etiqueta, ayuda, error, obligatorio, id, children, ...resto },
   ref,
 ) {
   const propio = useId()
@@ -166,6 +213,7 @@ export const Seleccion = forwardRef<HTMLSelectElement, PropsSeleccion>(function 
     <div className={estilos.campo}>
       <label className={estilos.etiqueta} htmlFor={idCampo}>
         {etiqueta}
+        {obligatorio && <Asterisco />}
       </label>
       {ayuda && (
         <span className={estilos.ayuda} id={idAyuda}>
@@ -182,6 +230,10 @@ export const Seleccion = forwardRef<HTMLSelectElement, PropsSeleccion>(function 
         id={idCampo}
         ref={ref}
         className={estilos.seleccion}
+        // La marca de la etiqueta es para quien mira; esta, para quien escucha.
+        // Sin ella, un lector de pantalla anuncia el desplegable como si dar por
+        // bueno el texto de ayuda fuera una respuesta válida.
+        aria-required={obligatorio || undefined}
         aria-invalid={error ? true : undefined}
         aria-describedby={
           [ayuda && idAyuda, error && idError].filter(Boolean).join(' ') || undefined
@@ -254,15 +306,30 @@ export const Consentimiento = forwardRef<HTMLInputElement, PropsConsentimiento>(
             id={idCampo}
             ref={ref}
             className={estilos.casilla}
+            // Mismo trato que los campos: el asterisco se ve y esto se oye. En una
+            // casilla importa más todavía, porque aquí «obligatorio» quiere decir
+            // que hay que MARCARLA, no que haya que pasar por ella.
+            aria-required={obligatorio || undefined}
             aria-invalid={error ? true : undefined}
             aria-describedby={error ? idError : undefined}
           />
           <div className={estilos.cuerpoConsentimiento}>
+            {/*
+              El obligatorio lleva el asterisco del resto de la pantalla; el otro
+              sigue diciendo «· opcional» con todas sus letras.
+
+              ⚠️ **No son la misma marca al revés.** Que algo sea opcional no se
+              deduce de la ausencia de un asterisco: hay que decirlo, porque una
+              casilla de consentimiento que parece obligatoria se marca «por si
+              acaso», y ese permiso no vale nada.
+            */}
             <label className={estilos.tituloConsentimiento} htmlFor={idCampo}>
-              {titulo}{' '}
-              <span className={estilos.obligatorio}>
-                {obligatorio ? '· obligatorio' : '· opcional'}
-              </span>
+              {titulo}
+              {obligatorio ? (
+                <Asterisco />
+              ) : (
+                <span className={estilos.opcional}> · opcional</span>
+              )}
             </label>
             <p className={estilos.textoConsentimiento}>{explicacion}</p>
           </div>

@@ -386,3 +386,170 @@
   padding-top: var(--e5);
   border-top: 1px solid var(--regla);
 }
+
+/* ---------- Corregir una vacante ---------- */
+
+/*
+ * El lapiz de la fila.
+ *
+ * Sin caja y sin fondo: la fila ya es una linea de datos y un boton solido ahi
+ * compite con el enlace de al lado, que es la accion principal. Lo que lo hace
+ * pulsable es el area, no el relleno — 32 px de lado, que es el minimo comodo
+ * para un dedo.
+ */
+.lapiz {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  flex: none;
+  border: 1px solid transparent;
+  border-radius: var(--radio-menor);
+  background: none;
+  color: var(--tinta2);
+  cursor: pointer;
+}
+
+.lapiz:hover {
+  border-color: var(--regla2);
+  color: var(--tinta);
+}
+
+/* El foco se ve: con teclado, esto es lo unico que dice donde esta uno. */
+.lapiz:focus-visible {
+  outline: 2px solid var(--activo);
+  outline-offset: 2px;
+}
+
+/* Lo que se dice al guardar: fue bien, y a cuanta gente le llego. */
+.aviso.bueno {
+  background: var(--bien-bruma);
+  padding: var(--e3) var(--e4);
+  color: var(--bien);
+}
+
+/*
+ * Lo que va a pasar al guardar, debajo del boton.
+ *
+ * Debajo y no encima: se lee justo despues de decidir pulsar, que es cuando
+ * todavia se puede reconsiderar. Y no es un dialogo de confirmacion a proposito
+ * —corregir una vacante es lo normal, y un «¿estas seguro?» en cada guardado se
+ * aprende a despachar sin leerlo—.
+ */
+.avisoPrevio {
+  font-size: var(--t-apoyo);
+  line-height: 1.5;
+  color: var(--tinta2);
+  margin: var(--e3) 0 0;
+  max-width: var(--medida);
+}
+
+/* ---------- La edicion dentro del modal ---------- */
+
+/*
+ * El formulario, ya sin caja propia.
+ *
+ * `.alta` traia borde, fondo y relleno porque vivia suelto encima de la tabla.
+ * Dentro del modal, la caja ya la pone el modal: repetirla dibujaria un marco
+ * dentro de otro. Lo que queda es la separacion entre bloques.
+ */
+.enElModal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e4);
+}
+
+/* El primer bloque no necesita el margen que `.enviar` trae para vivir suelto. */
+.guardar {
+  composes: acentoGrande from '../../estilos/piezas.module.css';
+}
+
+.secundarioModal {
+  composes: secundario from '../../estilos/piezas.module.css';
+}
+
+/*
+ * La pregunta de cerrar con cambios sin guardar.
+ *
+ * Va DENTRO del modal y encima del formulario, no en otro dialogo: el
+ * formulario sigue montado debajo, asi que «Seguir editando» devuelve lo
+ * escrito tal cual estaba.
+ */
+.descartar {
+  border: 1px solid var(--regla2);
+  border-radius: var(--radio-menor);
+  padding: var(--e4);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e3);
+}
+
+.descartarTexto {
+  margin: 0;
+  font-size: var(--t-prosa);
+  color: var(--tinta);
+}
+
+.descartarBotones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e3);
+}
+
+.seguirEditando {
+  composes: solido from '../../estilos/piezas.module.css';
+}
+
+/* ---------- Archivar ---------- */
+
+/*
+ * El icono de archivo, al lado del espacio del lapiz.
+ *
+ * Mismo trazo y misma area que el lapiz: son las dos acciones de la fila y
+ * tienen que leerse como una pareja, no como dos cosas de sitios distintos.
+ */
+.archivar {
+  composes: lapiz;
+}
+
+/*
+ * La tercera puerta de la cabecera.
+ *
+ * Secundaria, como «Escribir una solicitud»: ir a lo guardado no compite con
+ * crear una vacante, que es lo que se hace todos los dias. Es un enlace y no un
+ * boton porque lleva a otra direccion — y eso permite abrirla en otra pestaña.
+ */
+.archivadas {
+  composes: secundario from '../../estilos/piezas.module.css';
+  /* Explicito: `.secundario` no fija color porque se escribio para botones, y
+     un enlace sin el se pinta del azul de los enlaces al lado de dos botones. */
+  color: var(--tinta);
+}
+
+/* La fecha de archivo de cada fila, y el «Archivada el …» del detalle. */
+.fechaArchivo {
+  color: var(--tinta2);
+  white-space: nowrap;
+}
+
+/* Lo que va a pasar al archivar, en tres lineas y no en un parrafo. */
+.loQuePasa {
+  margin: var(--e3) 0 0;
+  padding-left: var(--e5);
+  font-size: var(--t-prosa);
+  line-height: 1.55;
+  color: var(--tinta2);
+}
+
+.loQuePasa > li + li {
+  margin-top: var(--e2);
+}
+
+/* La vuelta a la lista habitual, desde Archivadas. */
+.volver {
+  composes: volver from '../../estilos/piezas.module.css';
+  margin-bottom: var(--e4);
+}

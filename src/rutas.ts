@@ -50,6 +50,15 @@ export const patrones = {
   adminInvitacion: '/admin/invitacion',
   invitacionSuelta: '/invitacion',
   adminVacantes: '/admin',
+  /**
+   * Las vacantes archivadas, en su propia direccion.
+   *
+   * Direccion y no un estado dentro de `/admin`: la vista tiene que sobrevivir a
+   * la recarga y al boton Atras del navegador. Con un `useState` dentro de la
+   * lista, recargar devolveria a la lista habitual sin decir nada y Atras
+   * saldria del panel entero.
+   */
+  adminVacantesArchivadas: '/admin/archivadas',
   adminVacante: '/admin/vacantes/:id',
   /** La ficha del puesto y su cuestionario tecnico: la primera sub-ruta de una vacante. */
   adminPruebaTecnica: '/admin/vacantes/:id/prueba-tecnica',
@@ -111,6 +120,7 @@ export const rutas = {
   adminEntrar: () => '/admin/entrar',
   adminInvitacion: (token: string) => `/admin/invitacion?token=${encodeURIComponent(token)}`,
   adminVacantes: () => '/admin',
+  adminVacantesArchivadas: () => '/admin/archivadas',
   adminVacante: (id: number | string) => `/admin/vacantes/${id}`,
   adminPruebaTecnica: (id: number | string) => `/admin/vacantes/${id}/prueba-tecnica`,
   adminSesiones: () => '/admin/simulacion',

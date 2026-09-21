@@ -74,11 +74,11 @@ El detalle, en [docs/TRABAJAR-EN-LOCAL.md](docs/TRABAJAR-EN-LOCAL.md).
 |---|---|
 | Orientarte en los documentos | [docs/README.md](docs/README.md) |
 | Levantarlo, elegir backend, saber a qué base escribes, mirar pantallas sin tocar la base | [TRABAJAR-EN-LOCAL](docs/TRABAJAR-EN-LOCAL.md), [README.md](README.md) |
-| Tocar código: los 18 estados, la hora del servidor, la única puerta al backend, `grupoPrioridad`, las trampas que costaron un fallo, cómo se nombra aquí | [REGLAS-DEL-CODIGO](docs/REGLAS-DEL-CODIGO.md) |
+| Tocar código: los 18 estados, la hora del servidor, la única puerta al backend, `grupoPrioridad`, las trampas que costaron un fallo, la marca de obligatorio de los formularios, cómo se nombra aquí | [REGLAS-DEL-CODIGO](docs/REGLAS-DEL-CODIGO.md) |
 | Tocar diseño: el mundo visual, sus reglas nombradas, la tipografía, el mapa de `src/` | [DESIGN.md](DESIGN.md) y [EL-MUNDO-VISUAL](docs/EL-MUNDO-VISUAL.md); los tokens con su porqué en [`src/estilos/mundo.css`](src/estilos/mundo.css) |
 | Entender qué ve y qué hace quien postula, pantalla por pantalla | [02-QUE-VE-EL-CANDIDATO](docs/02-QUE-VE-EL-CANDIDATO.md) |
 | Seguir el proceso entero, los dos lados, con lo que desbloquea cada paso | [06-FLUJO-COMPLETO](docs/06-FLUJO-COMPLETO.md) |
-| Tocar el panel: entrar, las tres pestañas, el ranking por etapas, qué exige publicar una vacante, los huecos del backend | [PANEL](docs/PANEL.md) |
+| Tocar el panel: entrar, las tres pestañas, el ranking por etapas, qué exige publicar una vacante, corregirla en su modal, archivarla y dónde queda, los huecos del backend | [PANEL](docs/PANEL.md) |
 | Saber qué falta, qué está a medias y qué promesa hoy no se cumple | [PENDIENTES](docs/PENDIENTES.md), [03-ESTADO-DEL-REDISENO](docs/03-ESTADO-DEL-REDISENO.md) |
 | Saber por qué algo quedó así, qué se probó al construirlo o qué se hizo un día concreto | [BITACORA-2026-09](docs/BITACORA-2026-09.md), [BITACORA-2026-08](docs/BITACORA-2026-08.md) |
 | Las 17 pantallas del maquetado, que es lo que se lee para construir | [maquetado/LEEME.md](maquetado/LEEME.md) |

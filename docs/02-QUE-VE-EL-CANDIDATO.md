@@ -116,18 +116,51 @@ que hay que mirar antes de tocar cualquiera de los dos.
 
 **Otros retoques del mismo día**: se quitaron las ayudas de campo del correo y de la ubicación,
 la bajada bajo el título solo sale cuando se llega desde una vacante —ahí dice algo, que la
-postulación no se pierde—, y la etiqueta «Dónde vives» pasó a **«Ubicación»**.
+postulación no se pierde—, y la etiqueta «Dónde vives» pasó a «Ubicación» (el 17/09 pasó a
+**«Ciudad»**; ver más abajo). Las ayudas de campo siguen quitadas.
 
 ⚠️ **Los textos siguen sin revisión de un abogado.** Lo que cambió es que ya no falta
 información; falta la firma. Y **quien creó su cuenta antes del 14/09 nunca firmó el texto
 nuevo**: la migración no toca las aceptaciones ya hechas y no hay ninguna pantalla de
 re-aceptación. Si algún día se decide pedírsela, es pantalla nueva y no existe.
 
-**Ubicación (01/09/2026; se llamaba «Dónde vives» hasta el 15/09).** `ciudadUbigeo` es el ubigeo
+**Ciudad (01/09/2026; «Dónde vives» hasta el 15/09, «Ubicación» hasta el 17/09).**
+`ciudadUbigeo` es el ubigeo
 de nivel 2 —la provincia— o `EXT` si
 vive fuera del Perú, y el backend lo valida contra su catálogo: un código que no exista sale con
 400. Las opciones llegan de `GET /portal/catalogos/ubigeo`, ya ordenadas por departamento y
 nombre, con `departamento` en nulo únicamente en `EXT`.
+
+⚠️ **Que es obligatorio se dice antes de pulsar, no al rebotar (17/09/2026).** La etiqueta lleva
+un **asterisco** pegado al nombre del campo y el desplegable va con `aria-required`. Hacía falta
+porque un `<select>` cuya primera opción es un texto de ayuda se lee como si ya hubiera algo
+elegido: quien no lo tocaba se enteraba al enviar. Esa primera opción vale `''` y **no cuenta
+como elección**; si falta, el formulario no se manda y el campo se marca con **«Selecciona tu
+ciudad»** —la frase exacta que pidió el cliente, sin punto final— sin perder nada de lo ya
+escrito. Al elegir una ciudad el aviso se retira, y «Fuera del Perú» es una elección válida como
+cualquier provincia.
+
+**La marca es de todo el formulario, no solo de Ciudad (17/09/2026).** Llevan asterisco los siete
+controles que el esquema exige —nombre, apellidos, correo, contraseña, repetir contraseña, ciudad
+y el permiso de tratamiento de datos—; el permiso de avisos de futuras vacantes se queda sin él y
+sigue diciendo «· opcional» con todas sus letras, porque «no tiene asterisco» no es algo que
+nadie note. Entre el resumen de errores y el primer campo va una línea que lo explica: «Los
+campos con \* son obligatorios.» Ahí y no más arriba: cuando hay algo que corregir, lo primero
+que hay que leer es cuántos datos faltan.
+
+⚠️ **La lista de obligatorios se deduce del esquema `Datos` de zod, no se escribe a mano**: un
+campo lleva asterisco si su valor vacío (`''`, o `false` en las casillas) no pasa su validación.
+Si mañana una validación se afloja, la marca se va sola; una lista escrita aparte habría acabado
+diciendo que algo es obligatorio cuando ya no lo es.
+
+⚠️ **El asterisco no es la única señal, y no es para todo el mundo.** Va con `aria-hidden` —un
+`*` a solas se oye como «asterisco» o no se oye— y detrás viaja la palabra «obligatorio»,
+escondida a la vista y dentro de la etiqueta, para que entre en el nombre del campo. El estado de
+verdad lo dice `aria-required` en el control. Lo que se anuncia al llegar al campo es, por
+ejemplo, **«Ciudad obligatorio»** —el asterisco no entra, porque va oculto—, y así se comprobó
+sobre el árbol de accesibilidad real, no solo leyendo el marcado. Consecuencia para las pruebas:
+el texto de la etiqueta ya no es «Nombre» sino «Nombre * obligatorio», así que se busca por
+expresión (`/^Nombre/`) y no por texto exacto.
 
 En pantalla es **un solo desplegable nativo con las 196 provincias agrupadas por departamento**,
 no dos encadenados: encadenar dos obliga a esperar una petición entre el primero y el segundo
@@ -137,7 +170,10 @@ porque no cuelga de ningún sitio del Perú y es donde se busca.
 ⚠️ **El catálogo se pide sin token, y no es un descuido**: lo consulta justamente la pantalla
 que todavía no tiene ninguno. Y si no carga, se dice con palabras: el campo es obligatorio, así
 que un desplegable apagado y mudo deja a la persona pulsando «Crear cuenta» contra un error que
-no explica nada.
+no explica nada. Desde el 17/09 hay además un botón **«Volver a cargar las ciudades»** debajo del
+campo: antes el aviso decía «recarga la página», que con el formulario a medias es pedirle
+escribirlo otra vez por un fallo que no es suyo. Sin lista no se crea la cuenta — el fallo del
+catálogo no abre la puerta a un registro sin ciudad.
 
 ⚠️ **Se pregunta una vez y nunca más.** A quien ya tiene cuenta no se le pide jamás, ni al
 postular ni después: esta pantalla es el único sitio del producto por donde entra el dato.

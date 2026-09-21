@@ -260,6 +260,7 @@ const VERSIONES_DE_SIEMPRE = [
 let VERSIONES_PRUEBA = VERSIONES_DE_SIEMPRE
 
 const listarVersionesBanco = vi.fn(() => Promise.resolve(BANCOS))
+const desarchivarVacante = vi.fn((_id: number) => Promise.resolve(undefined))
 const asignarPlantillaPrueba = vi.fn((_vacanteId: number, _versionId: number) =>
   Promise.resolve({}),
 )
@@ -371,6 +372,7 @@ vi.mock('../api/panel', () => ({
   elegirInstrumentoTecnico: (vacanteId: number, datos: unknown) =>
     elegirInstrumento(vacanteId, datos),
   cerrarVacante: () => Promise.resolve({}),
+  desarchivarVacante: (id: number) => desarchivarVacante(id),
   confirmarAvance: () => Promise.resolve({}),
   crearRequisito: () => Promise.resolve({}),
   publicarVacante: () => Promise.resolve({}),
@@ -469,8 +471,10 @@ async function pintar(filas: FilaRanking[] = TANDA, puedeVerPretension = true) {
     mismo que ve una persona. Lo que la tuerca hace por sí misma —abrirse y
     cerrarse— se prueba aparte.
   */
-  const tuerca = screen.getByRole('button', { name: 'Configuración de la vacante' })
-  if (tuerca.getAttribute('aria-expanded') === 'false') fireEvent.click(tuerca)
+  // Una vacante archivada no la tiene: dentro no hay nada que se pueda guardar,
+  // así que el botón no se pinta. Ver «el detalle de una vacante archivada».
+  const tuerca = screen.queryByRole('button', { name: 'Configuración de la vacante' })
+  if (tuerca?.getAttribute('aria-expanded') === 'false') fireEvent.click(tuerca)
 }
 
 /** La del ranking es la primera de la pantalla; el `!` es de `noUncheckedIndexedAccess`. */
@@ -552,7 +556,7 @@ describe('el ranking filtra por la etapa de su pestaña', () => {
   it('abre por quien espera una decisión, no por quien tiene nota', async () => {
     await pintar()
     const tabla = within(laTabla())
-    expect(elCorte('Por revisar')).toHaveProperty('ariaPressed', 'true')
+    expect(elCorte('Pendiente')).toHaveProperty('ariaPressed', 'true')
     expect(tabla.queryByText('Rodrigo Ayala')).toBeTruthy() // PERFIL_POR_CONFIRMAR
     expect(tabla.queryByText('Camila Reyes')).toBeNull() // con nota, pero ya en la prueba
     expect(tabla.queryByText('Fátima Quispe')).toBeNull() // en la etapa, pero le toca a ella
@@ -570,18 +574,18 @@ describe('el ranking filtra por la etapa de su pestaña', () => {
 
   /*
    * El motivo de que hagan falta los dos: son las dos mitades de «de quién es
-   * la pelota». «Por revisar» se vacía en cuanto decides; el otro no se mueve
+   * la pelota». «Pendiente» se vacía en cuanto decides; el otro no se mueve
    * hasta que el candidato haga lo suyo, y perseguirlo es otro trabajo.
    */
   it('los dos primeros cortes reparten a la gente, no la repiten', async () => {
     await pintar()
-    expect(cuantasEn('Por revisar')).toBe(1) // Rodrigo, «por confirmar»
+    expect(cuantasEn('Pendiente')).toBe(1) // Rodrigo, «por confirmar»
     expect(cuantasEn('Le toca al candidato')).toBe(1) // Fátima, con su evaluación
 
     irA('Prueba del puesto')
     await waitFor(() => expect(screen.getByText(/con nota de la prueba/)).toBeTruthy())
     // Camila está rindiendo: nadie espera decisión, pero hay a quién perseguir.
-    expect(cuantasEn('Por revisar')).toBe(0)
+    expect(cuantasEn('Pendiente')).toBe(0)
     expect(cuantasEn('Le toca al candidato')).toBe(1)
     verCorte('Le toca al candidato')
     await waitFor(() => expect(within(laTabla()).queryByText('Camila Reyes')).toBeTruthy())
@@ -601,7 +605,7 @@ describe('el ranking filtra por la etapa de su pestaña', () => {
   */
   it('quien acaba de postular no sale en ninguno de los dos primeros cortes', async () => {
     await pintar([fila(96, 'Recién Llegada', 'POSTULADA', null)])
-    expect(cuantasEn('Por revisar')).toBe(0)
+    expect(cuantasEn('Pendiente')).toBe(0)
     expect(cuantasEn('Le toca al candidato')).toBe(0)
     expect(cuantasEn('Toda la tanda')).toBe(1)
     // Y el vacío manda al único sitio donde está.
@@ -621,13 +625,13 @@ describe('el ranking filtra por la etapa de su pestaña', () => {
 
   it('cada corte lleva su cifra, contada de las filas y no de lo que se pinta', async () => {
     await pintar()
-    expect(cuantasEn('Por revisar')).toBe(1)
+    expect(cuantasEn('Pendiente')).toBe(1)
     expect(cuantasEn('Le toca al candidato')).toBe(1)
     expect(cuantasEn('Toda la tanda')).toBe(4)
     // Con el corte puesto, la cifra de los otros dos no se mueve: si saliera de
-    // lo visible, «Por revisar» diría siempre lo mismo que la tabla.
+    // lo visible, «Pendiente» diría siempre lo mismo que la tabla.
     verCorte('Toda la tanda')
-    await waitFor(() => expect(cuantasEn('Por revisar')).toBe(1))
+    await waitFor(() => expect(cuantasEn('Pendiente')).toBe(1))
   })
 
   /*
@@ -710,6 +714,88 @@ describe('el escape a la tanda entera', () => {
     irA('Decisión')
     await waitFor(() => expect(elCorte('Toda la tanda')).toHaveProperty('ariaPressed', 'true'))
     expect(within(laTabla()).queryByText('Lucía Ferrer')).toBeTruthy()
+  })
+})
+
+describe('la celda de la prueba del puesto dice en qué punto está', () => {
+  /*
+    ⚠️ **El guion de esta columna tenía tres significados y escribía uno solo:
+    «sin cerrar».** No se parecen: no la terminó, el sistema la cerró al vencer
+    el plazo, o la entregó una persona y falta calificarla. Solo la última es
+    trabajo del equipo, y confundirlas manda a perseguir a quien ya hizo lo suyo.
+
+    ⚠️ **El caso no se deduce aquí**: llega decidido del backend en
+    `estadoPrueba`, porque desde el navegador los tres se ven igual —una nota
+    vacía—. Estas filas traen el campo y ninguna nota, que es la situación real.
+  */
+  const enLaPrueba = (
+    id: number,
+    nombre: string,
+    estado: string,
+    estadoPrueba: FilaRanking['estadoPrueba'],
+    notaEtapa: number | null = null,
+  ) => fila(id, nombre, estado, notaEtapa, { estadoPrueba })
+
+  /** La tabla de la pestaña de la prueba, con la tanda entera a la vista. */
+  const laPestanaDeLaPrueba = async (filas: FilaRanking[]) => {
+    await pintar(filas)
+    irA('Prueba del puesto')
+    // La tabla se remonta entera al cambiar de pestaña (`key={etapa}`): hasta que
+    // no vuelve la botonera no hay corte que pulsar.
+    await waitFor(() => expect(losCortes()).toBeTruthy())
+    verCorte('Toda la tanda')
+    await waitFor(() => expect(within(laTabla()).queryByText(filas[0]!.candidato)).toBeTruthy())
+    return within(laTabla())
+  }
+
+  it('separa la que nadie terminó de la que espera al equipo', async () => {
+    const tabla = await laPestanaDeLaPrueba([
+      enLaPrueba(95, 'Sin Terminar', 'PRUEBA_TURNO_CANDIDATO', 'INCOMPLETA'),
+      enLaPrueba(96, 'Entregada A Mano', 'PRUEBA_POR_CONFIRMAR', 'PENDIENTE_CALIFICACION'),
+    ])
+
+    expect(tabla.getByText('Prueba incompleta')).toBeTruthy()
+    expect(tabla.getByText('Pendiente de calificación')).toBeTruthy()
+    // Y la copia anterior no sobrevive en ninguna fila.
+    expect(tabla.queryByText('sin cerrar')).toBeNull()
+  })
+
+  /*
+    La que cerró el sistema al vencer el plazo NO es una entrega: mientras no
+    tenga nota se lee igual que una prueba a medias, que es lo que es.
+  */
+  it('la que cerró el sistema al vencer el plazo no pasa por entrega', async () => {
+    const tabla = await laPestanaDeLaPrueba([
+      enLaPrueba(95, 'Se Le Acabó', 'PRUEBA_POR_CONFIRMAR', 'INCOMPLETA'),
+    ])
+
+    expect(tabla.getByText('Prueba incompleta')).toBeTruthy()
+    expect(tabla.queryByText('Pendiente de calificación')).toBeNull()
+  })
+
+  /*
+    Quien no llegó a la etapa técnica conserva el indicador de siempre —el que
+    dice dónde está parado— y nunca aparece como trabajo del equipo.
+  */
+  it('quien no ha llegado a la etapa técnica no entra en la bandeja del equipo', async () => {
+    const tabla = await laPestanaDeLaPrueba([
+      enLaPrueba(95, 'Aún En Perfil', 'PERFIL_POR_CONFIRMAR', 'NO_APLICA'),
+    ])
+
+    expect(tabla.getByText('en otra etapa')).toBeTruthy()
+    expect(tabla.queryByText('Pendiente de calificación')).toBeNull()
+    expect(tabla.queryByText('Prueba incompleta')).toBeNull()
+  })
+
+  /* Con nota se pinta la nota, y un cero es una nota. */
+  it('una prueba calificada enseña su número, aunque sea un cero', async () => {
+    const tabla = await laPestanaDeLaPrueba([
+      enLaPrueba(95, 'Sacó Cero', 'PRUEBA_POR_CONFIRMAR', 'CALIFICADA', 0),
+    ])
+
+    expect(tabla.getByText('0')).toBeTruthy()
+    expect(tabla.queryByText('Prueba incompleta')).toBeNull()
+    expect(tabla.queryByText('Pendiente de calificación')).toBeNull()
   })
 })
 
@@ -1384,7 +1470,7 @@ describe('avanzar en tanda', () => {
     expect(screen.getByRole('button', { name: /Avanzar a 1 persona/ })).toBeTruthy()
     // Fátima acaba de postular: nadie espera decisión sobre ella, así que al
     // volver al corte por defecto desaparece de la tabla.
-    verCorte('Por revisar')
+    verCorte('Pendiente')
     await waitFor(() =>
       expect(screen.getByRole('button', { name: 'Marca a quienes avanzan' })).toBeTruthy(),
     )
@@ -1555,6 +1641,144 @@ describe('los desplegables que siguen existiendo', () => {
  * plantilla de evaluación justo después de borrar el desplegable que era la
  * única forma de ponerla.
  */
+/*
+ * El detalle de una vacante archivada: se consulta entero, no se toca.
+ *
+ * Lo que compila perfectamente estando mal:
+ *   1. **Enseñar la tuerca.** Dentro no hay nada que se pueda guardar —sueldo,
+ *      instrumentos, requisitos y cierre son mutaciones que el backend rechaza—
+ *      y ocho controles que contestan 409 son ocho promesas rotas.
+ *   2. **Callar que está archivada.** Entonces «¿por qué no puedo editar esto?»
+ *      no tiene respuesta en la pantalla.
+ *   3. **Esconder también el proceso.** Archivar conserva el ranking, las fichas
+ *      y las descargas: es la mitad de lo que archivar promete.
+ */
+describe('el detalle de una vacante archivada', () => {
+  const archivada = (extra: Record<string, unknown> = {}) => {
+    sinRuido.verVacante = () =>
+      Promise.resolve({
+        ...VACANTE,
+        estado: 'CERRADA',
+        cerradaEn: '2026-09-10T10:00:00Z',
+        archivadaEn: '2026-09-15T10:00:00Z',
+        puedeDesarchivar: true,
+        ...extra,
+      })
+  }
+
+  it('dice cuándo se archivó, sin perder cómo terminó la convocatoria', async () => {
+    archivada()
+    await pintar()
+
+    expect(screen.getByText(/Archivada el 15 de setiembre de 2026/)).toBeTruthy()
+    expect(screen.getByText(/Cerrada el 10 de setiembre de 2026/)).toBeTruthy()
+    expect(screen.getByText('Esta vacante está archivada: se consulta, no se cambia.'))
+      .toBeTruthy()
+  })
+
+  it('no ofrece configurarla, ni publicarla, ni cerrarla otra vez', async () => {
+    archivada()
+    await pintar()
+
+    expect(screen.queryByRole('button', { name: 'Configuración de la vacante' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Publicar en el portal' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Cerrar vacante' })).toBeNull()
+  })
+
+  it('el proceso sigue ahí: el ranking con sus etapas se consulta igual', async () => {
+    archivada()
+    await pintar()
+
+    expect(screen.getByRole('heading', { name: 'Ranking' })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: 'Perfil integral' })).toBeTruthy()
+  })
+
+  /*
+   * El ranking se lee entero y no ofrece las dos tandas que escriben.
+   *
+   * «Revisar y calificar pendientes» seguía ahí sobre una archivada y su
+   * endpoint respondía 200: no movía a nadie —en una archivada nadie sigue en
+   * carrera— pero dejaba una fila de auditoría sobre una vacante que la cabecera
+   * declara de solo lectura. El backend la rechaza ahora con 409; esto evita
+   * ofrecer el botón que se la comería.
+   */
+  it('no ofrece calificar la tanda del currículum, que es una mutación', async () => {
+    archivada()
+    await pintar()
+
+    expect(screen.queryByRole('button', { name: 'Revisar y calificar pendientes' })).toBeNull()
+  })
+
+  it('tampoco la tanda de la prueba, por lo mismo', async () => {
+    archivada()
+    await pintar()
+
+    irA('Prueba del puesto')
+
+    expect(screen.queryByRole('button', { name: /Calificar con la IA/ })).toBeNull()
+  })
+
+  it('en una vacante viva las dos tandas siguen estando', async () => {
+    await pintar()
+
+    expect(screen.getByRole('button', { name: 'Revisar y calificar pendientes' })).toBeTruthy()
+  })
+
+  it('desarchivar está solo con el permiso, y devuelve la vacante a la lista', async () => {
+    archivada()
+    await pintar()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Desarchivar' }))
+
+    await waitFor(() => expect(desarchivarVacante).toHaveBeenCalledWith(1))
+  })
+
+  /*
+   * El doble clic en «Desarchivar», desde el detalle.
+   *
+   * El segundo DELETE llegaba cuando el primero ya había desarchivado: el
+   * servidor contesta 409 «Esta vacante no está archivada» —con razón— y la
+   * pantalla lo pintaba en rojo sobre una operación que sí funcionó.
+   */
+  it('un doble clic manda una sola petición, y no deja un error falso en pantalla', async () => {
+    archivada()
+    await pintar()
+    const boton = screen.getByRole('button', { name: 'Desarchivar' })
+
+    fireEvent.click(boton)
+    fireEvent.click(boton)
+
+    await waitFor(() => expect(desarchivarVacante).toHaveBeenCalled())
+    expect(desarchivarVacante).toHaveBeenCalledTimes(1)
+    expect(screen.queryByText('Esta vacante no está archivada')).toBeNull()
+  })
+
+  it('si falla, se puede reintentar: la guarda se suelta', async () => {
+    desarchivarVacante.mockRejectedValueOnce(new Error('La red se cayó'))
+    archivada()
+    await pintar()
+    const boton = screen.getByRole('button', { name: 'Desarchivar' })
+
+    fireEvent.click(boton)
+    await screen.findByText('La red se cayó')
+
+    fireEvent.click(boton)
+
+    await waitFor(() => expect(desarchivarVacante).toHaveBeenCalledTimes(2))
+  })
+
+  it('sin el permiso no hay botón de desarchivar', async () => {
+    archivada({ puedeDesarchivar: false })
+    await pintar()
+
+    expect(screen.queryByRole('button', { name: 'Desarchivar' })).toBeNull()
+    // Pero el aviso sigue: quien no puede desarchivarla igual necesita saber
+    // por qué la pantalla no deja tocar nada.
+    expect(screen.getByText('Esta vacante está archivada: se consulta, no se cambia.'))
+      .toBeTruthy()
+  })
+})
+
 describe('publicar una vacante en borrador', () => {
   const enBorrador = (extra: Record<string, unknown> = {}) => {
     sinRuido.verVacante = () =>
@@ -1891,7 +2115,9 @@ describe('la descarga del Excel', () => {
     await waitFor(() => expect(pedirExcel).toHaveBeenCalledOnce())
     const descrito = (pedirExcel.mock.calls[0]?.[1] as { filtroDescrito: string }).filtroDescrito
     expect(descrito).toContain('Perfil integral')
-    expect(descrito).toContain('Por revisar')
+    expect(descrito).toContain('Pendiente')
+    // El rótulo viejo no puede sobrevivir dentro de la hoja.
+    expect(descrito).not.toContain('Por revisar')
     expect(descrito).toContain('Orden del ranking')
   })
 

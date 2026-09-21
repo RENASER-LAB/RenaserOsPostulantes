@@ -15,6 +15,43 @@ no se vuelve a subir el currículum. Lo del 07/09 se documentó en
 
 ---
 
+## Corregir una vacante desde la lista, y el sueldo sin correo (19-20/09/2026)
+
+El backend tenía el `PUT` de la vacante y la lista no ofrecía editar. Ahora cada fila en
+borrador o publicada lleva un lápiz que abre **el mismo formulario del alta**. Cómo funciona hoy está en
+[PANEL.md](PANEL.md), «Corregir una vacante con el lápiz»; aquí va el porqué.
+
+- **Un formulario, no dos.** Los campos comunes salieron a `CamposDeLaVacante.tsx` y los usan el
+  alta y la edición (`EditarVacante.tsx`): se corrige donde se escribió, con las mismas palabras
+  y en el mismo orden.
+- **El aviso previo va debajo del botón y no es un diálogo.** Corregir una vacante es lo normal,
+  y un «¿estás seguro?» en cada guardado se aprende a despachar sin leerlo.
+- **El sueldo entra en el mismo guardado.** Antes eran dos llamadas, y cambiar el sueldo y el
+  horario a la vez mandaba dos avisos por un solo cambio. El formulario manda la remuneración
+  entera y, si cambia, el motivo; el backend saca un único aviso con todo.
+- **El sueldo deja de mandar correo, por sus dos puertas.** La tarjeta del detalle ya no promete
+  «por correo y en su portal»: la campana espera a que la persona entre, y el correo se pierde.
+- **La fila trae lo que el lápiz necesita**: el texto entero de la convocatoria,
+  `postulantesEnCarrera` y `puedeEditar`. Sin el texto, el formulario se abriría a medias y
+  guardar borraría lo que no viajó.
+
+### Lo que encontró el QA, y se corrigió
+
+- Guardar sin tocar nada **vaciaba la fecha de apertura**, que el formulario no enseña, y las
+  plazas que no cuadraban con la forma de cierre; el panel decía «Cambios guardados». Ahora la
+  apertura no se toca al editar, y plazas y fecha de cierre solo cambian si su forma de cierre las
+  enseña o si esa forma cambió.
+- Guardar sin tocar la fecha de cierre **le quitaba la hora**. Ahora se compara por día y, si el
+  día es el mismo, se conserva la hora guardada.
+
+### Cómo se comprueba
+
+797 pruebas del frontend en verde, `EditarVacante.test.tsx` incluido. E2E nuevos, 12 casos:
+`25-editar-vacante` (no escribe) y `26-editar-vacante-avisos` (siembra su terreno y lo retira).
+Tres casos antiguos quedaron fuera a propósito y están en [PENDIENTES.md](PENDIENTES.md).
+
+---
+
 ## El modal compartido solo dejaba escribir una letra (11/09/2026, tarde)
 
 Lo encontró una persona probando el descarte a mano: escribía una letra en el campo del motivo y

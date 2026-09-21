@@ -257,6 +257,20 @@ indispensable.
 
 Pasa a `PUBLICADA` y sale en la portada del portal el mismo instante.
 
+### 5b · Corregirla después (19/09/2026)
+
+**Panel · Vacantes → el lápiz de la fila**
+
+Mientras no esté cerrada, la vacante se corrige con el mismo formulario del
+alta. La solicitud y el puesto ya no se cambian: para eso se crea otra.
+
+Si está publicada y cambió algo que ve quien postula —título, textos,
+modalidad, horario, ubicación o sueldo—, **a cada postulante en carrera le
+llega un solo aviso en la campana del portal**, sin correo, con lo que
+cambió. Al pulsarlo va a su proceso y ve la vacante con los datos nuevos. Lo
+interno —responsable, forma de cierre, plazas, fecha de cierre— se guarda sin
+avisar. El detalle está en [PANEL.md](PANEL.md).
+
 ---
 
 ## Lo que hace quien postula
@@ -267,12 +281,22 @@ Pasa a `PUBLICADA` y sale en la portada del portal el mismo instante.
 
 Se ve sin cuenta. Postular sí la exige: entrar o crearla.
 
-⚠️ **Crear la cuenta pide dónde vive, desde el 01/09/2026.** Un desplegable
+⚠️ **Crear la cuenta pide la ciudad, desde el 01/09/2026.** Un desplegable
 obligatorio con las 196 provincias del Perú agrupadas por departamento, y «Fuera
 del Perú» suelto al final. Se pregunta ahí y en ningún otro sitio: a quien ya
-tenía cuenta no se le pide nunca, ni al postular ni después. Por eso las
-postulaciones anteriores a esa fecha no traen ciudad, y el ranking cuenta con
-ello en vez de fingir que la tiene.
+tenía cuenta no se le pide nunca, ni al postular ni después, y quien la tenga sin
+ciudad sigue entrando y postulando como siempre. Por eso las postulaciones
+anteriores a esa fecha no traen ciudad, y el ranking cuenta con ello en vez de
+fingir que la tiene.
+
+⚠️ **Y desde el 17/09/2026 se dice antes de pulsar, no al rebotar.** El campo se
+llama **«Ciudad»** —se llamó «Dónde vives» y luego «Ubicación»— y lleva un
+asterisco, igual que los otros seis datos que el formulario exige; una línea
+sobre los campos explica qué significa. Sin elegir ciudad no se crea la cuenta:
+sale «Selecciona tu ciudad» junto al campo y se conserva todo lo demás escrito,
+y el texto de ayuda del desplegable no cuenta como elección. Si la lista de
+ciudades no carga se dice con palabras y un botón la vuelve a pedir, también sin
+perder lo escrito.
 
 ⚠️ **Al crear la cuenta se marcan dos casillas, y desde el 15/09/2026 llevan solo
 un título corto y un enlace** a la política de privacidad, que enseña los textos
@@ -374,10 +398,12 @@ la nota de la etapa elegida, adecuación, potencial, alertas y riesgos críticos
 A quién se mira lo eligen **tres cortes** con su cifra al lado, y desde el
 07/09/2026 los tres contestan **una sola pregunta: de quién es la pelota**.
 
-- **«Por revisar»**, que es con lo que abre la pantalla. Trae a quien espera una
+- **«Pendiente»**, que es con lo que abre la pantalla. Trae a quien espera una
   decisión de la empresa: el candidato ya hizo lo suyo y falta que alguien de
   dentro —el equipo de Talento, o el responsable del área— lo mire y lo mueva. Es
-  la bandeja de trabajo: lo que se puede cerrar hoy.
+  la bandeja de trabajo: lo que se puede cerrar hoy. (Se llamó «Por revisar»
+  hasta el 18/09/2026: cambió el rótulo y nada más, las mismas filas y la misma
+  cifra.)
 - **«Le toca al candidato»**. Tiene la evaluación o la prueba pendiente, y hasta
   que no la haga no hay nada que decidir. Es el otro trabajo, el de perseguir.
 - **«Toda la tanda»**, sin filtrar y con los que ya terminaron dentro.
@@ -513,6 +539,43 @@ Se puede ordenar por ella, y va también al Excel del ranking.
 y es la que se compara con los umbrales del semáforo. Esta mezcla dos, y por eso
 el título emergente lo dice con todas las letras: una columna llamada «Ponderado»
 al lado de una llamada «Nota» se leería como el resultado del proceso.
+
+### Por qué esa prueba no tiene nota (18/09/2026)
+
+En la pestaña **Prueba del puesto**, una celda sin cifra decía «sin cerrar»
+pasara lo que pasara. Detrás había tres cosas distintas, y solo una era
+trabajo del equipo:
+
+| Lo que pasó con su prueba | Lo que dice la celda |
+|---|---|
+| Ya tiene nota | La nota. **Un cero es una nota** y se pinta como número |
+| No llegó a entregarla, o se le cerró sola al vencer el plazo | **«Prueba incompleta»** |
+| La entregó y su rúbrica todavía no tiene nota | **«Pendiente de calificación»** |
+| No hay prueba suya de la que hablar | El motivo de siempre, que dice dónde está parada: «sin cerrar» a quien está justo ahí |
+
+Al pasar el ratón por encima, la frase entera explica el porqué.
+
+«Pendiente de calificación» es el único de los cuatro en que **la pelota es del
+equipo**: esa persona ya hizo lo suyo y falta poner las notas que la IA no puede
+poner —un video, un enlace, un criterio de los que mira alguien—. Antes se leía
+igual que «no la ha hecho», y se salía a perseguir a quien ya había entregado.
+
+**Se calcula al abrir el ranking**, con lo que hay en ese momento: no se guarda
+nada, y quien entregue o califique hoy ve el texto nuevo al recargar.
+
+⚠️ **Quién decide esto es el backend**, mirando el intento de esa persona: si
+hubo entrega y si la hizo ella o el reloj. Desde el navegador los tres casos se
+ven igual —una nota que no está— y el estado de la postulación no los separa.
+
+⚠️ **Sin intento no se dice nada nuevo, y se decidió así.** Ahí caen quien
+todavía no llegó a la etapa técnica **y las vacantes que rinden el cuestionario
+técnico**, que no crean intentos: todas sus filas sin nota siguen diciendo «sin
+cerrar», también las de quien ya entregó. Es un pendiente conocido, no un fallo
+abierto.
+
+⚠️ **El Excel no lo hereda.** En la hoja, la nota de la prueba que falta sigue
+diciendo «rúbrica incompleta» pase lo que pase. Lo único que cambió allí es la
+descripción del recorte, que ahora dice «Pendiente».
 
 ### Ordenar la mesa (01/09/2026)
 

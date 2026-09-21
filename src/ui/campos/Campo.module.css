@@ -198,10 +198,40 @@
   cursor: pointer;
 }
 
+/*
+ * El asterisco de «hay que rellenarlo».
+ *
+ * ⚠️ **Ni rojo ni acento.** En rojo acusaría antes de que nadie se haya
+ * equivocado —el error ya tiene su color y su sitio, debajo del campo—, y el
+ * acento de este portal significa una sola cosa, «te toca a ti»: gastarlo en una
+ * marca de formulario lo desafina. Va en la tinta de la etiqueta y un punto más
+ * grueso, que es lo justo para verlo sin que grite.
+ */
 .obligatorio {
+  color: var(--tinta);
+  font-weight: 700;
+}
+
+/* «· opcional», que es una nota y no una marca: pequeña y en tinta secundaria,
+   como estaba antes de que el obligatorio pasara a ser un asterisco. */
+.opcional {
   font-size: var(--t-menor);
   font-weight: 400;
   color: var(--tinta2);
+}
+
+/* Lo que solo se oye. Misma receta que en el resto del portal: sacado del flujo
+   sin `display: none`, que lo borraría también para el lector. */
+.soloLectores {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
 
 .textoConsentimiento {

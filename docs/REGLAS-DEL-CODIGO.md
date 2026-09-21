@@ -80,6 +80,28 @@ estado, después el cuerpo.
 
 ---
 
+## La marca de obligatorio es una sola, y la decide el esquema
+
+Vale para los tres campos compartidos que la aceptan —`Campo`, `Seleccion` y `Consentimiento`—,
+y se escribió una vez para que ningún formulario la invente otra vez.
+
+**Un asterisco pegado al nombre del campo.** Va con `aria-hidden`, porque un `*` a solas se oye
+como «asterisco» o no se oye, y detrás viaja la palabra «obligatorio» escondida a la vista,
+**dentro de la misma etiqueta**, para que entre en el nombre del campo: lo que se anuncia al
+llegar es «Ciudad obligatorio». El estado de verdad lo dice `aria-required` en el control, que es
+otra cosa que el nombre.
+
+**Qué campos la llevan sale del esquema de `zod` que valida el formulario**, preguntando a cada
+uno si su valor vacío pasa la validación —`''` en el texto, `false` en las casillas—. Una lista
+escrita aparte envejece sola: el día que una validación se afloje, la pantalla seguiría marcando
+lo de antes, y un asterisco que miente es peor que ninguno.
+
+**Lo opcional se dice con todas sus letras** —«· opcional»—, no se deduce de la ausencia del
+asterisco. Importa sobre todo en una casilla de consentimiento: la que parece obligatoria se
+marca «por si acaso», y ese permiso no vale nada.
+
+---
+
 ## Cómo se escribe aquí
 
 - **Todo en español**, incluidos los nombres del código, como en el backend. Sin eñes ni

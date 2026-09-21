@@ -15,13 +15,12 @@ import { borrarCuentasDePrueba, CLAVE_DE_CANDIDATO, correoDePrueba, test } from 
  *      leer quién la recibe, ya es el acto afirmativo que pide la ley 29733.
  *   4. La postulación entra y sale en «Mis procesos» con su empresa.
  *
- * ⚠️ **ESCRIBE**: crea una cuenta `e2e.postular.<instante>@example.com` y una
+ * ⚠️ **ESCRIBE**: crea una cuenta `e2e.postular.<uuid>@example.com` y una
  * postulación. Va sobre la vacante `SIN_PRETENSION`, como el avance de etapa de
  * `09-avance`: la llena es el banco de pruebas de orden, filtros y Excel, y
- * `06-sin-ciudad` fabrica su caso sobre `OTRA` con ids fijos; una fila nueva en
+ * `06-sin-ciudad` fabrica su caso sobre `OTRA`; una fila nueva en
  * cualquiera de las dos les mueve las cifras exactas. Al terminar intenta
- * borrar lo suyo; ver `borrarCuentasDePrueba` para por qué la postulación puede
- * quedarse.
+ * borrar lo suyo; ver `borrarCuentasDePrueba` para por qué una restricción puede impedir la limpieza.
  *
  * Los pasos van en serie: la cuenta que crea el segundo es con la que postulan
  * el tercero y el cuarto.
@@ -93,16 +92,7 @@ test.describe('Regresión · postular de punta a punta', () => {
     vacante = elegida
   })
 
-  test.afterAll(() => {
-    try {
-      borrarCuentasDePrueba('e2e.postular')
-    } catch (causa) {
-      console.warn(
-        `[12-postular] No se pudo borrar la cuenta ${CORREO} ni su postulación a «${vacante?.titulo}»: ` +
-          String(causa).split('\n')[0],
-      )
-    }
-  })
+  test.afterAll(() => borrarCuentasDePrueba([CORREO]))
 
   test('el tablón dice de qué empresa es cada vacante', async ({ page }) => {
     await page.goto('/')
@@ -114,13 +104,13 @@ test.describe('Regresión · postular de punta a punta', () => {
     page,
   }) => {
     await page.goto(`/registro?vacante=${vacante.id}`)
-    await page.getByLabel('Nombre', { exact: true }).fill('Prueba')
+    await page.getByLabel(/^Nombre/).fill('Prueba')
     await page.getByLabel('Apellidos').fill('De Punta a Punta')
     await page.getByLabel('Correo').fill(CORREO)
-    await page.getByLabel('Contraseña', { exact: true }).fill(CLAVE_DE_CANDIDATO)
+    await page.getByLabel(/^Contraseña/).fill(CLAVE_DE_CANDIDATO)
     await page.getByLabel('Repite la contraseña').fill(CLAVE_DE_CANDIDATO)
     // El registro exige ciudad desde que la pide el alta (ver `02-regresion-portal`).
-    await page.getByLabel('Ubicación').selectOption('1501') // Lima — Lima
+    await page.getByLabel('Ciudad').selectOption('1501') // Lima — Lima
     // El consentimiento de la plataforma, que es distinto del de la empresa.
     await page.locator('input[type=checkbox]').first().check()
     await page.getByRole('button', { name: /crear/i }).click()

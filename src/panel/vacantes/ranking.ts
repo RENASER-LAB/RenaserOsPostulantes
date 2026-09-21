@@ -1,8 +1,8 @@
 /**
  * Las cinco etapas del ranking, y las tres formas de mirarlas.
  *
- * Los tres cortes se leen con UNA pregunta: de quien es la pelota. «Por
- * revisar» —espera una decision de la empresa, y es con lo que se abre la
+ * Los tres cortes se leen con UNA pregunta: de quien es la pelota.
+ * «Pendiente» —espera una decision de la empresa, y es con lo que se abre la
  * pantalla—, «Le toca al candidato» —tiene algo pendiente que hacer— y «Toda
  * la tanda».
  *
@@ -47,7 +47,8 @@ export const ETAPAS_PANEL = [
     /**
      * Los estados de esta etapa donde la pelota esta en el tejado de la
      * empresa: el candidato ya hizo lo suyo y alguien de dentro tiene que
-     * mirar y decidir. Es el corte «Por revisar».
+     * mirar y decidir. Es el corte «Pendiente» —el que se llamaba «Por
+     * revisar»: cambio el rotulo, no que filas trae—.
      *
      * Sale de `espera_a` del catalogo de estados del backend —TALENTO o AREA,
      * nunca CANDIDATO ni SISTEMA—, escrito aqui porque el ranking no recibe
@@ -183,10 +184,17 @@ export function filtrar(filas: FilaRanking[], etapa: EtapaPanel, vista: Vista): 
  * Lo leen los tres botones Y la descripcion que viaja al Excel. Escrito dos
  * veces, la hoja acabaria diciendo que salio de un corte con otro nombre que el
  * que se pulso.
+ *
+ * ⚠️ **El primero se llamaba «Por revisar» y ahora se llama «Pendiente»; el
+ * corte es el mismo.** Cambio el rotulo, no la regla: sigue saliendo de
+ * `porRevisar` de `ETAPAS_PANEL`, con las mismas filas, el mismo conteo y el
+ * mismo orden. El nombre interno de la vista —`'por-revisar'`— tampoco se toca:
+ * es una clave, no un texto de pantalla, y renombrarla no cambiaria nada de lo
+ * que se ve.
  */
 export const rotuloDeVista = (vista: Vista): string =>
   vista === 'por-revisar'
-    ? 'Por revisar'
+    ? 'Pendiente'
     : vista === 'le-toca'
       ? 'Le toca al candidato'
       : 'Toda la tanda'
@@ -196,7 +204,7 @@ export const rotuloDeVista = (vista: Vista): string =>
  *
  * ⚠️ **Las tres se cuentan siempre, aunque solo una se este viendo.** Un
  * control segmentado sin sus cifras obliga a pulsar las tres para saber si
- * alguna tiene algo, y «Por revisar» es justo el que suele estar vacio: la
+ * alguna tiene algo, y «Pendiente» es justo el que suele estar vacio: la
  * cifra dice sin pulsar que hoy no hay nada que decidir.
  *
  * Los dos primeros NO se solapan: son las dos mitades de «de quien es la
@@ -302,6 +310,55 @@ export function desgloseDelPonderado(fila: FilaRanking): string {
 
 // ---------- Por que esa nota esta vacia ----------
 
+/** Los dos textos de cada caso: el de la celda y el del titulo, juntos para que no se separen. */
+const LO_DE_LA_PRUEBA = {
+  INCOMPLETA: {
+    corto: 'Prueba incompleta',
+    entero:
+      'Prueba incompleta: no llegó a entregarla, o el sistema la cerró al vencer el plazo',
+  },
+  PENDIENTE_CALIFICACION: {
+    corto: 'Pendiente de calificación',
+    entero: 'Pendiente de calificación: la entregó y su rúbrica todavía no tiene nota',
+  },
+} as const
+
+/**
+ * Lo que dice la celda de la prueba del puesto cuando no hay nota, y por que.
+ *
+ * ⚠️ **Sale de `estadoPrueba`, que manda el backend, y NUNCA del estado de la
+ * postulacion.** Hasta ahora las tres situaciones se escribian igual —«sin
+ * cerrar»— y no se parecen en nada:
+ *
+ * - **«Prueba incompleta»**: no llego a haber entrega del candidato. Entra
+ *   quien no la ha abierto, quien la tiene a medias y **quien la vio cerrada
+ *   por el sistema al vencer el plazo** —eso es el reloj, no un «ya esta»—.
+ * - **«Pendiente de calificacion»**: la entrego una persona y su rubrica
+ *   todavia no tiene nota. **Es el unico caso en que el trabajo es del
+ *   equipo**, y por eso hay que poder distinguirlo de un vistazo.
+ *
+ * Los otros dos valores no producen texto: con nota se pinta la nota, y sin
+ * intento la fila conserva el motivo de siempre —que dice donde esta parada esa
+ * persona— porque no hay prueba de la que hablar.
+ *
+ * ⚠️ **Fuera de la pestaña de la prueba devuelve `null` aunque el campo
+ * llegara**: ahi la columna Nota es de otra etapa, y este texto se leeria como
+ * suyo.
+ *
+ * ⚠️ **Y `null` tambien si la fila no trae el campo** —un backend anterior a
+ * este cambio—: entonces manda el motivo de siempre. Vale mas un texto viejo
+ * que un hueco.
+ */
+export function loDeLaPrueba(
+  fila: FilaRanking,
+  etapa: EtapaPanel,
+): { corto: string; entero: string } | null {
+  if (etapa !== 'PRUEBA_PUESTO') return null
+  const suyo = fila.estadoPrueba
+  if (suyo !== 'INCOMPLETA' && suyo !== 'PENDIENTE_CALIFICACION') return null
+  return LO_DE_LA_PRUEBA[suyo]
+}
+
 /**
  * Un guion no significa una sola cosa, y esa era la queja: «están calificados y
  * no se ve su nota».
@@ -314,8 +371,17 @@ export function desgloseDelPonderado(fila: FilaRanking): string {
  *
  * Lo que si es de la etapa es **donde esta parada la persona**, que sale de su
  * estado. De ahi los cinco motivos.
+ *
+ * ⚠️ **En la prueba del puesto manda `loDeLaPrueba`**, que sabe del intento lo
+ * que el estado de la postulacion no puede saber: si hubo entrega y si la hizo
+ * una persona o el reloj.
  */
 export function porQueNoHayNota(fila: FilaRanking, etapa: EtapaPanel): string {
+  // En la prueba del puesto manda lo que dice el backend de SU intento: el
+  // estado de la postulacion no sabe si hubo entrega ni quien la hizo.
+  const deLaPrueba = loDeLaPrueba(fila, etapa)
+  if (deLaPrueba !== null) return deLaPrueba.entero
+
   const suya = indiceDeLaEtapaDe(fila.estado)
   const esta = ETAPAS_PANEL.findIndex((e) => e.codigo === etapa)
 
@@ -373,8 +439,17 @@ export function porQueNoHayNota(fila: FilaRanking, etapa: EtapaPanel): string {
  * ⚠️ **«En otra etapa» no dice cuál, y es correcto que no lo diga**: la columna
  * Estado, dos celdas más allá, lo dice con todas sus letras. Repetirlo aquí era
  * gastar el ancho de la tabla en decir dos veces lo mismo.
+ *
+ * ⚠️ **Los dos textos de la prueba del puesto son la excepcion al «dos
+ * palabras»**, y a proposito: «Prueba incompleta» y «Pendiente de calificación»
+ * se escriben enteros en la celda porque son la respuesta, no un resumen de
+ * ella. Caben: la palabra mas larga mide doce y la celda deja trece.
  */
 export function porQueNoHayNotaCorto(fila: FilaRanking, etapa: EtapaPanel): string {
+  // La misma regla que el titulo, o la celda diria una cosa y su titulo otra.
+  const deLaPrueba = loDeLaPrueba(fila, etapa)
+  if (deLaPrueba !== null) return deLaPrueba.corto
+
   const suya = indiceDeLaEtapaDe(fila.estado)
   const esta = ETAPAS_PANEL.findIndex((e) => e.codigo === etapa)
 
@@ -1734,7 +1809,7 @@ const ROTULO_DE_COLUMNA: Record<ColumnaOrdenable, string> = {
  * De qué recorte salió la hoja, en una frase que se lea dentro del Excel.
  *
  * ⚠️ **Lleva el corte de la botonera además de los filtros.** El corte es lo que
- * más filas quita —«Por revisar» deja fuera a casi toda la tanda— y una hoja que
+ * más filas quita —«Pendiente» deja fuera a casi toda la tanda— y una hoja que
  * solo dijera «Ciudad: Lima» se leería como si trajera a todos los de Lima.
  *
  * ⚠️ **Y lleva el orden.** El backend escribe las filas en el orden que se le

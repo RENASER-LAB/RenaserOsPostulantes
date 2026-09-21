@@ -13,18 +13,18 @@
  * habia forma de escribir la segunda desde el panel.
  */
 
-import { useMemo, useState, type FormEvent } from 'react'
+import { useMemo, useRef, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   aprobarSolicitud,
+  contarVacantesArchivadas,
   crearPuesto,
   crearSolicitud,
   crearVacante,
   listarAreas,
   listarPuestos,
   listarSolicitudes,
-  listarUsuarios,
   listarVacantes,
   verCatalogos,
 } from '../api/panel'
@@ -34,6 +34,7 @@ import type {
   GuardarVacante,
   PuestoPanel,
   ResultadoEsperado,
+  VacantePanel,
 } from '../api/tipos'
 import { rutas } from '@/rutas'
 import { formatearFechaCorta } from '@/dominio/reloj'
@@ -43,6 +44,19 @@ import {
   REMUNERACION_VACIA,
   comoCuerpo,
 } from './Remuneracion'
+import {
+  Area,
+  Campo,
+  CamposComunes,
+  Selector,
+  VACANTE_VACIA,
+  camposParaGuardar,
+  loQueFaltaEnLaVacante,
+  type DatosDeVacante,
+} from './CamposDeLaVacante'
+import { FormularioDeEdicion } from './EditarVacante'
+import { ModalDeArchivo } from './ArchivarVacante'
+import { IconoArchivo, IconoLapiz } from './IconosDeLaFila'
 import estilos from './Vacantes.module.css'
 
 /** Como se dice cada estado de vacante. Los codigos son del backend. */
@@ -56,11 +70,52 @@ export function VacantesPanel() {
   const cache = useQueryClient()
   const [creando, setCreando] = useState(false)
   const [escribiendoSolicitud, setEscribiendoSolicitud] = useState(false)
+  /*
+   * Que vacante se esta corrigiendo, si alguna. Solo cabe una a la vez, y abrir
+   * la edicion cierra el alta: dos formularios de lo mismo abiertos a la vez son
+   * dos borradores distintos, y el que se guarda es el que se pulsa — que no
+   * siempre es el que se estaba mirando.
+   */
+  const [editando, setEditando] = useState<number | null>(null)
+  /** Que vacante esta esperando la confirmacion de archivo, si alguna. */
+  const [archivando, setArchivando] = useState<number | null>(null)
+  /** Lo que se dice en voz alta despues de guardar. */
+  const [confirmacion, setConfirmacion] = useState<string | null>(null)
+  /*
+   * El sitio al que va el foco cuando la fila que lo tenia desaparece.
+   *
+   * Archivar quita la fila de la tabla, y con ella el icono que abrio el modal:
+   * devolver el foco ahi lo manda al `body` y quien navega con teclado queda al
+   * principio de la pagina. «Archivadas (N)» es el punto logico — es donde acaba
+   * de irse la vacante.
+   */
+  const botonDeArchivadas = useRef<HTMLAnchorElement>(null)
 
   const vacantes = useQuery({
     queryKey: ['panel-vacantes'],
-    queryFn: listarVacantes,
+    queryFn: () => listarVacantes(),
   })
+  /*
+   * El contador de la cabecera se pide aparte y no contando filas: la lista de
+   * archivadas no esta en esta pantalla, y traerla entera para enseñar un numero
+   * seria pagar la vista que nadie ha pedido todavia.
+   */
+  const archivadas = useQuery({
+    queryKey: ['panel-vacantes-archivadas-conteo'],
+    queryFn: contarVacantesArchivadas,
+  })
+
+  /*
+   * La vacante que se edita se busca en la lista recien traida, no se copia al
+   * abrir: asi, cuando el guardado refresca la tabla, el formulario que siga
+   * abierto lo hace sobre los datos de ahora.
+   */
+  const laQueSeEdita: VacantePanel | undefined = (vacantes.data ?? []).find(
+    (v) => v.id === editando,
+  )
+  const laQueSeArchiva: VacantePanel | undefined = (vacantes.data ?? []).find(
+    (v) => v.id === archivando,
+  )
 
   return (
     <div className={estilos.pagina}>
@@ -86,17 +141,40 @@ export function VacantesPanel() {
           <button
             className={estilos.aprobar}
             type="button"
-            onClick={() => setEscribiendoSolicitud((v) => !v)}
+            onClick={() => {
+              setEscribiendoSolicitud((v) => !v)
+              setEditando(null)
+            }}
           >
             {escribiendoSolicitud ? 'Dejarlo' : 'Escribir una solicitud'}
           </button>
           <button
             className={estilos.crear}
             type="button"
-            onClick={() => setCreando((v) => !v)}
+            onClick={() => {
+              setCreando((v) => !v)
+              setEditando(null)
+              setConfirmacion(null)
+            }}
           >
             {creando ? 'Cerrar el formulario' : 'Crear vacante'}
           </button>
+          {/*
+            La tercera puerta, y no un selector «Activas / Archivadas» encima de
+            la tabla: lo guardado es otra pantalla, no otro filtro de esta. Un
+            selector deja dudando si lo que se mira son todas o la mitad; un
+            botón que lleva a otro sitio, con su vuelta, no.
+
+            El número se enseña aunque sea cero: «Archivadas» a secas obliga a
+            entrar para descubrir que no hay nada.
+          */}
+          <Link
+            ref={botonDeArchivadas}
+            className={estilos.archivadas}
+            to={rutas.adminVacantesArchivadas()}
+          >
+            Archivadas ({archivadas.data?.archivadas ?? 0})
+          </Link>
         </div>
       </div>
 
@@ -119,6 +197,46 @@ export function VacantesPanel() {
             await cache.invalidateQueries({ queryKey: ['panel-vacantes'] })
           }}
         />
+      )}
+
+      {laQueSeEdita && (
+        <FormularioDeEdicion
+          /*
+           * La clave la ata a SU vacante: sin ella, pulsar el lapiz de otra fila
+           * reutilizaria el mismo componente y dejaria dentro lo que se estaba
+           * escribiendo en la anterior.
+           */
+          key={laQueSeEdita.id}
+          vacante={laQueSeEdita}
+          alCerrar={() => setEditando(null)}
+          alTerminar={async (mensaje) => {
+            setEditando(null)
+            setConfirmacion(mensaje)
+            await cache.invalidateQueries({ queryKey: ['panel-vacantes'] })
+          }}
+        />
+      )}
+
+      {laQueSeArchiva && (
+        <ModalDeArchivo
+          key={laQueSeArchiva.id}
+          vacante={laQueSeArchiva}
+          alCerrar={() => setArchivando(null)}
+          alArchivar={() => {
+            setArchivando(null)
+            setConfirmacion(
+              `«${laQueSeArchiva.titulo}» está en Archivadas. Puedes desarchivarla cuando quieras.`,
+            )
+            // La fila ya no existe: el foco va a donde acaba de irse la vacante.
+            botonDeArchivadas.current?.focus()
+          }}
+        />
+      )}
+
+      {confirmacion && (
+        <p className={`${estilos.aviso} ${estilos.bueno}`} role="status">
+          {confirmacion}
+        </p>
       )}
 
       {vacantes.isPending && <p className={estilos.aviso}>Cargando las vacantes…</p>}
@@ -149,8 +267,60 @@ export function VacantesPanel() {
                   <td>{ESTADO_VACANTE[v.estado] ?? v.estado}</td>
                   <td>{v.aplicaEvaluacion ? 'Encendida' : 'Apagada'}</td>
                   <td>{v.publicadaEn ? formatearFechaCorta(v.publicadaEn) : '—'}</td>
-                  <td>
+                  <td className={estilos.acciones}>
                     <Link to={rutas.adminVacante(v.id)}>Ver postulantes y gestionar</Link>
+                    {/*
+                      El lapiz solo donde de verdad se puede editar: el backend lo
+                      decide por vacante —con «sus vacantes» solo alcanzas las que
+                      diriges, y una cerrada no se toca— y la fila lo trae dicho.
+                      Un boton que siempre contesta 409 es una promesa rota.
+                    */}
+                    {v.puedeEditar && (
+                      <button
+                        type="button"
+                        className={estilos.lapiz}
+                        // El nombre lleva el titulo: con veinte filas, «Editar» a
+                        // secas repetido veinte veces no dice cual es cual a quien
+                        // navega con lector de pantalla.
+                        aria-label={`Editar la vacante ${v.titulo}`}
+                        aria-expanded={editando === v.id}
+                        onClick={() => {
+                          setEditando((actual) => (actual === v.id ? null : v.id))
+                          setArchivando(null)
+                          setCreando(false)
+                          setEscribiendoSolicitud(false)
+                          setConfirmacion(null)
+                        }}
+                      >
+                        <IconoLapiz />
+                      </button>
+                    )}
+                    {/*
+                      El archivo, en el mismo sitio que el lapiz y con su misma
+                      regla de estados al reves: el lapiz esta en las que se
+                      pueden corregir —borrador y publicada— y esto en las que ya
+                      terminaron. Nunca los dos en la misma fila.
+
+                      ⚠️ Aparece aunque queden postulantes en carrera: es su modal
+                      el que dice cuantos son y donde se decide cada uno.
+                    */}
+                    {v.puedeArchivar && (
+                      <button
+                        type="button"
+                        className={estilos.archivar}
+                        aria-label={`Archivar la vacante ${v.titulo}`}
+                        aria-expanded={archivando === v.id}
+                        onClick={() => {
+                          setArchivando((actual) => (actual === v.id ? null : v.id))
+                          setEditando(null)
+                          setCreando(false)
+                          setEscribiendoSolicitud(false)
+                          setConfirmacion(null)
+                        }}
+                      >
+                        <IconoArchivo />
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -176,37 +346,22 @@ function FormularioDeAlta({ alCrear }: { alCrear: () => Promise<void> }) {
     queryKey: ['panel-solicitudes'],
     queryFn: listarSolicitudes,
   })
-  const usuarios = useQuery({
-    queryKey: ['panel-usuarios'],
-    queryFn: listarUsuarios,
-  })
   const catalogos = useQuery({
     queryKey: ['panel-catalogos'],
     queryFn: verCatalogos,
   })
 
-  const [datos, setDatos] = useState({
-    solicitudTalentoId: '',
-    puestoId: '',
-    responsableUsuarioId: '',
-    titulo: '',
-    descripcion: '',
-    proposito: '',
-    responsabilidades: '',
-    requisitos: '',
-    modalidad: '',
-    horario: '',
-    ubicacion: '',
-    tipoCierre: 'PERMANENTE',
-    plazas: '',
-    cierraEn: '',
-  })
+  // Los campos comunes con la edicion van juntos y con su tipo; los dos de aqui
+  // —la solicitud que respalda y el puesto— no existen al corregir.
+  const [datos, setDatos] = useState<DatosDeVacante>(VACANTE_VACIA)
+  const [solicitudTalentoId, setSolicitudTalentoId] = useState('')
+  const [puestoId, setPuestoId] = useState('')
   // El sueldo va aparte del resto de campos: es un objeto con cuatro partes que
   // tienen que cuadrar entre si, no una cadena mas. Ver `./Remuneracion`.
   const [remuneracion, setRemuneracion] = useState(REMUNERACION_VACIA)
   const [fallo, setFallo] = useState<string | null>(null)
 
-  const poner = (campo: keyof typeof datos) => (valor: string) =>
+  const poner = (campo: keyof DatosDeVacante) => (valor: string) =>
     setDatos((d) => ({ ...d, [campo]: valor }))
 
   // Solo las aprobadas y sin vacante admiten una nueva.
@@ -215,15 +370,15 @@ function FormularioDeAlta({ alCrear }: { alCrear: () => Promise<void> }) {
     [solicitudes.data],
   )
   const solicitudSeleccionada = abiertas.find(
-    (solicitud) => String(solicitud.id) === datos.solicitudTalentoId,
+    (solicitud) => String(solicitud.id) === solicitudTalentoId,
   )
 
   const escogerSolicitud = (valor: string) => {
     const solicitud = abiertas.find((candidata) => String(candidata.id) === valor)
+    setSolicitudTalentoId(valor)
+    setPuestoId(solicitud?.puestoId ? String(solicitud.puestoId) : '')
     setDatos((actuales) => ({
       ...actuales,
-      solicitudTalentoId: valor,
-      puestoId: solicitud?.puestoId ? String(solicitud.puestoId) : '',
       titulo:
         actuales.titulo.trim() === '' && solicitud?.puestoNombre
           ? solicitud.puestoNombre
@@ -245,16 +400,17 @@ function FormularioDeAlta({ alCrear }: { alCrear: () => Promise<void> }) {
   function alEnviar(evento: FormEvent) {
     evento.preventDefault()
     setFallo(null)
-    if (!datos.solicitudTalentoId || !datos.responsableUsuarioId) {
-      setFallo('Elige la solicitud y el responsable del proceso.')
+    if (!solicitudTalentoId) {
+      setFallo('Elige la solicitud que respalda la vacante.')
       return
     }
-    if (!solicitudSeleccionada?.puestoId && !datos.puestoId) {
+    if (!solicitudSeleccionada?.puestoId && !puestoId) {
       setFallo('Esta solicitud histórica necesita que elijas un puesto.')
       return
     }
-    if (datos.titulo.trim() === '' || datos.descripcion.trim() === '') {
-      setFallo('El título y la descripción son lo mínimo que ve quien postula.')
+    const falta = loQueFaltaEnLaVacante(datos)
+    if (falta) {
+      setFallo(falta)
       return
     }
     const sueldo = comoCuerpo(remuneracion)
@@ -263,27 +419,10 @@ function FormularioDeAlta({ alCrear }: { alCrear: () => Promise<void> }) {
       return
     }
     creacion.mutate({
-      solicitudTalentoId: Number(datos.solicitudTalentoId),
-      puestoId: solicitudSeleccionada?.puestoId
-        ? undefined
-        : Number(datos.puestoId),
-      responsableUsuarioId: Number(datos.responsableUsuarioId),
-      titulo: datos.titulo.trim(),
-      descripcion: datos.descripcion.trim(),
-      proposito: datos.proposito.trim() || undefined,
-      responsabilidades: datos.responsabilidades.trim() || undefined,
-      requisitos: datos.requisitos.trim() || undefined,
-      modalidad: datos.modalidad.trim() || undefined,
-      horario: datos.horario.trim() || undefined,
-      ubicacion: datos.ubicacion.trim() || undefined,
+      solicitudTalentoId: Number(solicitudTalentoId),
+      puestoId: solicitudSeleccionada?.puestoId ? undefined : Number(puestoId),
+      ...camposParaGuardar(datos),
       remuneracion: sueldo.datos,
-      tipoCierre: datos.tipoCierre,
-      plazas:
-        datos.tipoCierre === 'PLAZAS' && datos.plazas ? Number(datos.plazas) : undefined,
-      cierraEn:
-        datos.tipoCierre === 'FECHA' && datos.cierraEn
-          ? new Date(datos.cierraEn).toISOString()
-          : undefined,
     })
   }
 
@@ -352,7 +491,7 @@ function FormularioDeAlta({ alCrear }: { alCrear: () => Promise<void> }) {
       <div className={estilos.rejilla}>
         <Selector
           etiqueta="Solicitud aprobada que la respalda"
-          valor={datos.solicitudTalentoId}
+          valor={solicitudTalentoId}
           alCambiar={escogerSolicitud}
           opciones={abiertas.map((s) => ({
             valor: String(s.id),
@@ -374,92 +513,17 @@ function FormularioDeAlta({ alCrear }: { alCrear: () => Promise<void> }) {
             </p>
             <SelectorDePuesto
               etiqueta="Puesto para esta solicitud histórica"
-              valor={datos.puestoId}
-              alCambiar={poner('puestoId')}
+              valor={puestoId}
+              alCambiar={setPuestoId}
             />
           </div>
         )}
-        <Selector
-          etiqueta="Responsable del proceso"
-          valor={datos.responsableUsuarioId}
-          alCambiar={poner('responsableUsuarioId')}
-          cargando={usuarios.isPending}
-          vacio="No hay ningún usuario del equipo"
-          opciones={(usuarios.data ?? []).map((u) => ({
-            valor: String(u.id),
-            texto: u.correo ?? u.usuarioRenaserOsId ?? `Usuario ${u.id}`,
-          }))}
-        />
-
-        <Campo
-          etiqueta="Título que ve quien postula"
-          valor={datos.titulo}
-          alCambiar={poner('titulo')}
-          ancho
-        />
-        <Area
-          etiqueta="Descripción"
-          valor={datos.descripcion}
-          alCambiar={poner('descripcion')}
-          ancho
-        />
-        <Area
-          etiqueta="El resultado que se espera (propósito)"
-          valor={datos.proposito}
-          alCambiar={poner('proposito')}
-          ancho
-        />
-        <Area
-          etiqueta="Lo que hará, una responsabilidad por línea"
-          valor={datos.responsabilidades}
-          alCambiar={poner('responsabilidades')}
-          ancho
-        />
-        <Area
-          etiqueta="Lo que se busca, un requisito por línea"
-          valor={datos.requisitos}
-          alCambiar={poner('requisitos')}
-          ancho
-        />
-
-        <Campo
-          etiqueta="Modalidad (Presencial, Híbrido…)"
-          valor={datos.modalidad}
-          alCambiar={poner('modalidad')}
-        />
-        <Campo etiqueta="Horario" valor={datos.horario} alCambiar={poner('horario')} />
-        <Campo
-          etiqueta="Ubicación"
-          valor={datos.ubicacion}
-          alCambiar={poner('ubicacion')}
-        />
-        <Selector
-          etiqueta="Cómo se cierra"
-          valor={datos.tipoCierre}
-          alCambiar={poner('tipoCierre')}
-          sinVacio
-          cargando={catalogos.isPending}
-          opciones={(catalogos.data?.tiposCierre ?? []).map((t) => ({
-            valor: t.codigo,
-            texto: t.nombre,
-          }))}
-        />
-        {datos.tipoCierre === 'PLAZAS' && (
-          <Campo
-            etiqueta="Cuántas plazas"
-            valor={datos.plazas}
-            alCambiar={poner('plazas')}
-            numerico
-          />
-        )}
-        {datos.tipoCierre === 'FECHA' && (
-          <Campo
-            etiqueta="Fecha de cierre"
-            valor={datos.cierraEn}
-            alCambiar={poner('cierraEn')}
-            tipo="date"
-          />
-        )}
+        {/*
+          De aqui abajo, los MISMOS campos que la edicion: se corrige una vacante
+          donde se escribio, con las mismas palabras y en el mismo orden. Ver
+          `CamposDeLaVacante`.
+        */}
+        <CamposComunes datos={datos} poner={poner} />
       </div>
 
       {/*
@@ -969,91 +1033,5 @@ function SelectorDePuesto({
   )
 }
 
-// ---------- Piezas del formulario ----------
-
-interface PropsCampo {
-  etiqueta: string
-  valor: string
-  alCambiar: (valor: string) => void
-  ancho?: boolean
-  numerico?: boolean
-  tipo?: string
-}
-
-function Campo({ etiqueta, valor, alCambiar, ancho, numerico, tipo }: PropsCampo) {
-  return (
-    <label className={`${estilos.campo}${ancho ? ` ${estilos.anchoEntero}` : ''}`}>
-      <span className={estilos.etiqueta}>{etiqueta}</span>
-      <input
-        className={estilos.entrada}
-        type={tipo ?? 'text'}
-        inputMode={numerico ? 'numeric' : undefined}
-        value={valor}
-        onChange={(e) => alCambiar(e.target.value)}
-      />
-    </label>
-  )
-}
-
-function Area({ etiqueta, valor, alCambiar, ancho }: PropsCampo) {
-  return (
-    <label className={`${estilos.campo}${ancho ? ` ${estilos.anchoEntero}` : ''}`}>
-      <span className={estilos.etiqueta}>{etiqueta}</span>
-      <textarea
-        className={estilos.area}
-        value={valor}
-        onChange={(e) => alCambiar(e.target.value)}
-      />
-    </label>
-  )
-}
-
-/**
- * Un desplegable que no miente sobre lo que lleva dentro.
- *
- * ⚠️ Un `<select>` cuya unica linea es «Elige…» se abre y parece cerrarse solo:
- * no hay nada que elegir y no se dice por que. Mientras su lista viaja se apaga
- * y lo cuenta; si llega vacia, tambien. Las dos cosas son informacion, y un
- * control apagado ya se ve apagado.
- */
-function Selector({
-  etiqueta,
-  valor,
-  alCambiar,
-  opciones,
-  sinVacio,
-  cargando,
-  vacio,
-}: {
-  etiqueta: string
-  valor: string
-  alCambiar: (valor: string) => void
-  opciones: { valor: string; texto: string }[]
-  sinVacio?: boolean
-  cargando?: boolean
-  /** Que decir cuando la lista llego y no traia nada. */
-  vacio?: string
-}) {
-  const sinNada = !cargando && opciones.length === 0
-  return (
-    <label className={estilos.campo}>
-      <span className={estilos.etiqueta}>{etiqueta}</span>
-      <select
-        className={estilos.entrada}
-        value={valor}
-        disabled={cargando || sinNada}
-        onChange={(e) => alCambiar(e.target.value)}
-      >
-        {cargando && <option value="">Cargando…</option>}
-        {sinNada && <option value="">{vacio ?? 'No hay ninguna'}</option>}
-        {!cargando && !sinNada && !sinVacio && <option value="">Elige…</option>}
-        {!cargando &&
-          opciones.map((o) => (
-            <option value={o.valor} key={o.valor}>
-              {o.texto}
-            </option>
-          ))}
-      </select>
-    </label>
-  )
-}
+// Los iconos del lápiz y del archivo viven en `IconosDeLaFila`: los usan esta
+// pantalla y la de archivadas.

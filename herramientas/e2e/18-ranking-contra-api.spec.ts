@@ -82,7 +82,7 @@ async function rankingPorApi(vacanteId: number, etapa?: string): Promise<{ estad
 
 // ---------- El panel ----------
 
-/** La cifra que lleva un corte al final de su nombre: «Por revisar 1». */
+/** La cifra que lleva un corte al final de su nombre: «Pendiente 1». */
 const cifraDelCorte = async (page: Page, nombre: string) =>
   Number(((await corte(page, nombre).textContent()) ?? '').match(/(\d+)\s*$/)?.[1])
 
@@ -153,7 +153,7 @@ test.describe('El ranking contra la API · lo pintado es lo que el backend dijo'
     await expect(page.getByRole('heading', { name: 'Ranking' })).toBeVisible({ timeout: 20_000 })
 
     // Abre por lo que espera una decisión de la empresa: la bandeja de trabajo.
-    await expect(corte(page, 'Por revisar')).toHaveAttribute('aria-pressed', 'true')
+    await expect(corte(page, 'Pendiente')).toHaveAttribute('aria-pressed', 'true')
 
     let algunaVacia = false
     for (const etapa of ETAPAS) {
@@ -176,7 +176,7 @@ test.describe('El ranking contra la API · lo pintado es lo que el backend dijo'
       const porRevisar = todas.filter((f) => (etapa.porRevisar as readonly string[]).includes(f.estado))
       const leToca = todas.filter((f) => (etapa.leToca as readonly string[]).includes(f.estado))
 
-      await expect(corte(page, 'Por revisar'), `${etapa.nombre}: el corte «por revisar» no dice ${porRevisar.length}`).toHaveText(
+      await expect(corte(page, 'Pendiente'), `${etapa.nombre}: el corte «Pendiente» no dice ${porRevisar.length}`).toHaveText(
         new RegExp(`${porRevisar.length}\\s*$`),
       )
       expect(await cifraDelCorte(page, 'Le toca al candidato'), `${etapa.nombre}: «le toca al candidato» no dice ${leToca.length}`).toBe(

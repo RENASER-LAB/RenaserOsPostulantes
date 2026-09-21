@@ -66,7 +66,7 @@ test.describe('Móvil 375px', () => {
 
   test('los tres cortes siguen pulsables en 375px', async ({ page }) => {
     await irAVacante(page, VACANTES.LLENA)
-    for (const nombre of ['Le toca al candidato', 'Toda la tanda', 'Por revisar']) {
+    for (const nombre of ['Le toca al candidato', 'Toda la tanda', 'Pendiente']) {
       const boton = corte(page, nombre)
       await expect(boton).toBeVisible()
       await boton.click()
@@ -76,7 +76,7 @@ test.describe('Móvil 375px', () => {
 
   test('el registro con su desplegable de ciudad se rellena en el teléfono', async ({ page }) => {
     await page.goto('/registro')
-    const select = page.getByLabel('Ubicación')
+    const select = page.getByLabel('Ciudad')
     await expect(select).toBeVisible()
     await select.selectOption('1501')
     await expect(select).toHaveValue('1501')

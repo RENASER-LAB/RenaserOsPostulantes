@@ -24,6 +24,7 @@ import {
   asignarPlantillaPrueba,
   asignarVersionPesos,
   cerrarVacante,
+  desarchivarVacante,
   confirmarAvance,
   crearRequisito,
   descargarExcelDelRanking,
@@ -264,8 +265,10 @@ export function VacantePanelDetalle() {
     una vacante con treinta postulaciones repetía las treinta cinco veces y
     ninguna de las cinco listas era la mesa de decidir de su etapa.
 
-    **Por defecto, «Por revisar»**: lo que espera una decisión tuya, que es la
-    bandeja de trabajo. «Le toca al candidato» es el otro trabajo —perseguir a
+    **Por defecto, «Pendiente»**: lo que espera una decisión tuya, que es la
+    bandeja de trabajo. (Se llamaba «Por revisar»; cambió el rótulo, no qué
+    filas trae: el corte es el mismo y la clave interna sigue siendo
+    `por-revisar`.) «Le toca al candidato» es el otro trabajo —perseguir a
     quien no ha hecho lo suyo— y los dos no se solapan nunca: un estado espera
     a la empresa o al candidato.
 
@@ -320,6 +323,38 @@ export function VacantePanelDetalle() {
     onError: (c) => setFallo(c instanceof Error ? c.message : 'No se pudo cerrar.'),
   })
 
+  /*
+    Devolverla a la lista habitual desde su propio detalle.
+
+    Se ofrece aquí y no solo en la vista de Archivadas porque es aquí donde se
+    descubre que hace falta: alguien entra a consultar un proceso viejo y resulta
+    que la convocatoria vuelve a hacer falta.
+  */
+  /*
+    La misma guarda síncrona que la vista de Archivadas, y por lo mismo.
+
+    `disabled={desarchivo.isPending}` llega un render tarde: las dos pulsaciones
+    de un doble clic salen antes, y la segunda se encuentra la vacante ya
+    desarchivada. El servidor contesta 409 con razón —«Esta vacante no está
+    archivada»— y el panel lo pintaba en rojo encima de una operación que había
+    ido bien. El ref se escribe en el mismo turno del evento.
+  */
+  const desarchivoEnVuelo = useRef(false)
+  const desarchivo = useMutation({
+    mutationFn: () => desarchivarVacante(vacanteId),
+    onSuccess: async () => {
+      await cache.invalidateQueries({ queryKey: ['panel-vacante', vacanteId] })
+      await cache.invalidateQueries({ queryKey: ['panel-vacantes'] })
+      await cache.invalidateQueries({ queryKey: ['panel-vacantes-archivadas'] })
+      await cache.invalidateQueries({ queryKey: ['panel-vacantes-archivadas-conteo'] })
+    },
+    onError: (c) => setFallo(c instanceof Error ? c.message : 'No se pudo desarchivar.'),
+    // Si falló, la vacante sigue archivada y el botón tiene que volver a servir.
+    onSettled: () => {
+      desarchivoEnVuelo.current = false
+    },
+  })
+
   if (vacante.isPending) return <p className={estilos.cargando}>Cargando la vacante…</p>
   if (vacante.isError) {
     return (
@@ -330,6 +365,11 @@ export function VacantePanelDetalle() {
   }
 
   const v = vacante.data
+  /*
+    Archivada = en lectura. Lo decide la fecha y no el estado: una archivada
+    sigue CERRADA, y hay cerradas que no están archivadas.
+  */
+  const archivada = v.archivadaEn != null
   /*
     ⚠️ **Solo se afirma que falta cuando se SABE que falta.** Mientras las
     listas viajan, o si no se pudieron leer, el boton no se bloquea: quien
@@ -380,12 +420,46 @@ export function VacantePanelDetalle() {
               : v.estado === 'BORRADOR'
                 ? 'En borrador: todavía no aparece en el portal'
                 : `Cerrada${v.cerradaEn ? ` el ${formatearFechaCorta(v.cerradaEn)}` : ''}`}
+            {/*
+              Se dice DESPUÉS del estado y no en lugar de él: archivar no es una
+              forma de terminar, y perder cómo terminó la convocatoria sería
+              perder el dato en la pantalla donde se va a consultar.
+            */}
+            {archivada && ` · Archivada el ${formatearFechaCorta(v.archivadaEn!)}`}
             {' · '}
             {v.aplicaEvaluacion ? 'con evaluación del banco' : 'sin evaluación del banco'}
           </p>
         </div>
 
-        {v.estado === 'BORRADOR' && (
+        {/*
+          Archivada: solo lectura, y se dice con palabras en vez de dejar la
+          pantalla sin botones y que cada uno adivine por qué. La vuelta está
+          justo al lado, porque es lo único que se puede hacer desde aquí.
+        */}
+        {archivada && (
+          <div className={estilos.cierre}>
+            <p className={estilos.pista}>
+              Esta vacante está archivada: se consulta, no se cambia.
+            </p>
+            {v.puedeDesarchivar && (
+              <button
+                className={estilos.accionSecundaria}
+                type="button"
+                disabled={desarchivo.isPending}
+                onClick={() => {
+                  // Síncrono, antes de cualquier render: ver `desarchivoEnVuelo`.
+                  if (desarchivoEnVuelo.current) return
+                  desarchivoEnVuelo.current = true
+                  desarchivo.mutate()
+                }}
+              >
+                {desarchivo.isPending ? 'Desarchivando…' : 'Desarchivar'}
+              </button>
+            )}
+          </div>
+        )}
+
+        {!archivada && v.estado === 'BORRADOR' && (
           <div className={estilos.cierre}>
             <button
               className={estilos.publicar}
@@ -407,21 +481,30 @@ export function VacantePanelDetalle() {
           nada de eso compite ya con lo que se hace todos los días, que es mirar
           la tabla y decidir.
         */}
-        <button
-          ref={botonAjustes}
-          className={estilos.tuerca}
-          type="button"
-          aria-expanded={mostrarAjustes}
-          aria-controls="ajustes-vacante"
-          title="Configuración de la vacante"
-          onClick={() => setMostrarAjustes(!mostrarAjustes)}
-        >
-          <span aria-hidden="true">⚙</span>
-          <span className={estilos.soloLectores}>Configuración de la vacante</span>
-        </button>
+        {/*
+          La tuerca no se pinta en una archivada, y no es por esconder: dentro
+          NO hay nada que se pueda hacer —sueldo, instrumentos, requisitos y
+          cierre son todos mutaciones que el backend rechaza— y una pantalla
+          entera de controles que contestan 409 es una promesa rota repetida
+          ocho veces.
+        */}
+        {!archivada && (
+          <button
+            ref={botonAjustes}
+            className={estilos.tuerca}
+            type="button"
+            aria-expanded={mostrarAjustes}
+            aria-controls="ajustes-vacante"
+            title="Configuración de la vacante"
+            onClick={() => setMostrarAjustes(!mostrarAjustes)}
+          >
+            <span aria-hidden="true">⚙</span>
+            <span className={estilos.soloLectores}>Configuración de la vacante</span>
+          </button>
+        )}
       </header>
 
-      {v.estado === 'PUBLICADA' && mostrarCierre && (
+      {!archivada && v.estado === 'PUBLICADA' && mostrarCierre && (
         <form
           id="cerrar-vacante"
           className={estilos.formularioCierre}
@@ -478,16 +561,23 @@ export function VacantePanelDetalle() {
       <section
         id="ajustes-vacante"
         className={estilos.cuerpoConfiguracion}
-        hidden={!mostrarAjustes}
+        /*
+          ⚠️ En una archivada se esconde ENTERA, y aquí sí se desmontaría con
+          gusto: no hay ningún borrador dentro que proteger porque no hay nada
+          que se pueda guardar. Se deja con `hidden` y no con un condicional por
+          la misma razón de siempre —los tres borradores en memoria de una
+          vacante viva— y porque así la sección vuelve intacta al desarchivarla.
+        */
+        hidden={archivada || !mostrarAjustes}
         aria-label="Configuración de la vacante"
       >
         {/*
           El sueldo va PRIMERO, antes de lo que responderá quien postule.
 
           Es lo unico de esta pantalla que le llega al candidato en el momento
-          —correo y aviso en su portal—, y ademas decide si al postular se le va
-          a exigir su pretension. Debajo de los desplegables de plantillas se
-          encontraria buscandolo.
+          —un aviso en la campana de su portal—, y ademas decide si al postular
+          se le va a exigir su pretension. Debajo de los desplegables de
+          plantillas se encontraria buscandolo.
         */}
         <RemuneracionDeLaVacante vacante={v} />
         <ConfiguracionDeLaVacante vacante={v} />
@@ -579,7 +669,8 @@ export function VacantePanelDetalle() {
           sin nota no sale en «con nota de la prueba», que es el corte por
           defecto.
         */}
-        {etapa === 'PRUEBA_PUESTO' && ranking.data && (
+        {/* La otra tanda que escribe: tampoco se ofrece sobre una archivada. */}
+        {etapa === 'PRUEBA_PUESTO' && !archivada && ranking.data && (
           <LaTandaDeLaPrueba
             filas={ranking.data.filas}
             alTerminar={() => {
@@ -596,6 +687,7 @@ export function VacantePanelDetalle() {
             filas={ranking.data.filas}
             cabeceraDelCv={ranking.data}
             vista={vista}
+            archivada={archivada}
             alCambiarVista={setVista}
             alAvanzar={async () => {
               await cache.invalidateQueries({
@@ -691,6 +783,7 @@ function Ranking({
   vista,
   alCambiarVista,
   alAvanzar,
+  archivada,
 }: {
   vacanteId: number
   etapa: EtapaPanel
@@ -700,6 +793,14 @@ function Ranking({
   vista: Vista
   alCambiarVista: (v: Vista) => void
   alAvanzar: () => Promise<void>
+  /**
+   * Si la vacante está archivada: entonces la mesa se lee y no se opera.
+   *
+   * Viaja hasta aquí en vez de deducirse de las filas porque es de la VACANTE y
+   * no de la tanda: el ranking sigue entero —es lo que archivar promete
+   * conservar— y lo que desaparece son los botones que escriben.
+   */
+  archivada: boolean
 }) {
   const [marcados, setMarcados] = useState<Set<number>>(new Set())
   const [abierta, setAbierta] = useState<number | null>(null)
@@ -1135,7 +1236,14 @@ function Ranking({
             titulo y un parrafo de tres lineas. Aqui ocupa una casilla al lado
             de «Descargar Excel» y no baja la tabla ni una fila.
           */
-          etapa === 'PERFIL_INTEGRAL' ? (
+          /*
+            ⚠️ Y NUNCA en una archivada. Encolar una pasada sobre una vacante
+            que la cabecera declara de solo lectura no movía a nadie —en una
+            archivada no queda nadie en carrera— pero dejaba una fila de
+            auditoría sobre ella. El backend lo rechaza con 409 desde
+            `calificarTanda`; esto evita ofrecer el botón que se lo comería.
+          */
+          etapa === 'PERFIL_INTEGRAL' && !archivada ? (
             <CalificarLaTanda
               vacanteId={vacanteId}
               total={filas.length}
