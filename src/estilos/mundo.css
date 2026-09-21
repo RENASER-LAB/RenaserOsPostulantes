@@ -278,6 +278,21 @@
      convierte en una pastilla y deja de leerse como casilla. */
   --radio-marca: 4px;
 
+  /* La unica pieza que se permite una curva mayor que las superficies: la
+     vitrina de la portada y la caja de cierre que la cierra abajo. */
+  --radio-escaparate: 20px;
+
+  /* El marco translucido de la vitrina. Es un token porque el radio del interior
+     se calcula restandolo: si los dos no se mueven juntos, el blanco asoma por
+     las esquinas. */
+  --borde-escaparate: 12px;
+
+  /* Las franjas del recorrido, y NADA mas. Una barra de 6 px de alto con los
+     extremos redondos es un estadio, que es la forma correcta de una barra; el
+     mismo valor en cualquier otra cosa la convierte en pildora y contradice
+     «esquina corta, no pildora». */
+  --radio-barra: 999px;
+
   /* Lo que mide la cabecera fija. Lo consume la barra de avance del examen,
      que se pega justo debajo.
 

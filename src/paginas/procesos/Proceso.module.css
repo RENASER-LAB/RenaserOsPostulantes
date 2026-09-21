@@ -341,9 +341,9 @@
   padding: var(--e4);
   border: 1px solid var(--regla);
   /*
-   * `--radio-menor` y NO `--radio-control`: el de control son 999px, la pildora
-   * de los botones de la casa. Sobre una caja ancha eso no redondea, la convierte
-   * en una capsula que arquea el texto de dentro.
+   * `--radio-menor` y NO `--radio-control`: el de control es la esquina corta de
+   * 4 px de un boton, y sobre una caja ancha como esta se queda en nada. Esta caja
+   * es una superficie pequeña, no un control.
    */
   border-radius: var(--radio-menor);
   background: var(--nube);

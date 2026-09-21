@@ -211,15 +211,15 @@ components:
 
 **Creative North Star: «El escaparate»**
 
-Un cuarto gris con una sola pieza iluminada. El fondo no es blanco: es un gris claro y
-neutro que hace que las superficies blancas de encima se lean como objetos puestos sobre
+Un cuarto de luz cálida con una sola pieza iluminada. El fondo no es blanco: es un pastel
+anaranjado que hace que las superficies blancas de encima se lean como objetos puestos sobre
 una mesa, no como más página. En medio de ese cuarto hay una vitrina —una tarjeta blanca de
 borde grueso— y dentro está el producto: el recorrido del candidato, sus cinco etapas, lo
 que le toca ahora. No hay una metáfora que explicar antes de entender la pantalla; hay una
 cosa mirándote de frente.
 
 De ahí sale la disciplina entera. **La acción es negra**, no de color, porque el negro pleno
-sobre gris claro es el contraste más alto disponible y no compite con nada. **El color
+sobre el pastel del fondo es el contraste más alto disponible y no compite con nada. **El color
 aparece una sola vez**: el resplandor coral detrás del escaparate, y la bruma rosa que marca
 lo que reclama tu turno. Y las superficies no flotan: se separan del fondo porque están un
 punto más claras, no porque tengan sombra.
@@ -234,14 +234,14 @@ petición del cliente.
 
 - La acción es negra; el color no es nunca una acción.
 - Un solo color en toda la pantalla, y significa «te toca a ti».
-- El fondo es gris claro, no blanco: las superficies blancas son objetos encima.
+- El fondo es un pastel cálido, no blanco: las superficies blancas son objetos encima.
 - Los controles tienen esquina corta (4 px), no son píldoras.
 - El estado se lee en la forma antes que en el color.
 - Solo tema claro.
 
 ## Colors
 
-Un gris de fondo, blancos de superficie, tres tintas neutras y un solo coral. La paleta se
+Un pastel cálido de fondo, blancos de superficie, tres tintas neutras y un solo coral. La paleta se
 divide en dos: los neutros hacen todo el trabajo de lectura, y el color solo marca turno.
 
 ### Primary
@@ -410,7 +410,7 @@ su altura: la mide y la guarda en un token junto a la barra que la produce —`-
 ## Elevation & Depth
 
 **La profundidad es tono, no papel levantado.** Una superficie se separa del fondo porque
-está un punto más clara —blanco sobre gris claro—, no porque tenga contorno grueso ni sombra.
+está un punto más clara —blanco sobre el pastel del cielo—, no porque tenga contorno grueso ni sombra.
 Las sombras que hay son difusas, frías y de tinta plena con muy poca opacidad, y aparecen
 como respuesta a un estado, nunca en reposo.
 
@@ -433,10 +433,13 @@ encima, interrumpir, reclamar—, nunca para sugerir que una tarjeta flota.
 
 ## Shapes
 
-**Esquina corta, no píldora.** Cinco radios y ninguno más: `--radio` (12px) en superficies,
+**Esquina corta, no píldora.** Seis radios y ninguno más: `--radio` (12px) en superficies,
 `--radio-menor` (8px) en campos, `--radio-control` (**4px**) en todos los controles,
-`--radio-marca` (4px) en lo más pequeño que se redondea, y 20px en el escaparate, que es la
-única pieza que se permite una curva mayor.
+`--radio-marca` (4px) en lo más pequeño que se redondea, `--radio-escaparate` (20px) en el
+escaparate y su caja de cierre —la única pieza que se permite una curva mayor— y
+`--radio-barra` (999px) en las franjas del recorrido y **nada más**: una barra de 6 px con los
+extremos redondos es un estadio, que es la forma correcta de una barra; ese mismo valor en
+cualquier otra cosa la convierte en píldora.
 
 ⚠️ **`--radio-control` valía 999px en el mundo anterior.** Los botones eran píldoras enteras
 y ahora no lo son; cualquier hoja que dé por hecho una píldora está desactualizada.
@@ -562,17 +565,26 @@ navegador que se quede con el texto real.
   arregla** — nunca «campo inválido». El mensaje **no lleva filete lateral**: el borde ya es
   la señal de forma y el texto ya va en `--mal` a 5,68:1; tres señales para una cosa son dos
   de más.
+- **Un fallo del formulario entero va ARRIBA del formulario, no pegado al botón.** Es otra
+  pieza que el error de campo: el servidor de «Entrar» no dice cuál de los dos campos falla,
+  así que el mensaje no puede colgar de ninguno. Al pie solo se leería después de haber
+  vuelto a mirar el formulario entero; arriba se lee al volver del envío, que es cuando
+  aparece. Lleva `role="alert"` y su icono de aviso en `currentColor`.
 - **Un formulario corto vive en una superficie de nube.** Flotando sobre el cielo se lee como
   página, no como cosa, y en este mundo lo blanco son objetos puestos encima. El titular y el
-  pie se quedan fuera: sitúan la pantalla, no forman parte de lo que se rellena.
-- **Pero una superficie envuelve una cosa, no un recorrido.** Entrar son tres campos y un
-  botón: una cosa sobre la mesa. Postular son varias secciones separadas por reglas que se
+  pie se quedan fuera: sitúan la pantalla, no forman parte de lo que se rellena. ⚠️ **Entrar
+  es la excepción y está sola:** ahí el titular, la bajada y la salida a crear cuenta viven
+  DENTRO de la tarjeta, porque es la única pantalla que se compone centrada en lo que se ve y
+  la tarjeta es todo lo que hay. Crear cuenta y la contraseña olvidada siguen la regla.
+- **Pero una superficie envuelve una cosa, no un recorrido.** Entrar son dos campos y un
+  botón negro, con la salida de contorno a crear cuenta debajo de una regla que la nombra:
+  una cosa sobre la mesa. Postular son varias secciones separadas por reglas que se
   leen de arriba abajo: eso es un documento y va sobre el cielo. Un documento largo metido
   entero en una tarjeta blanca es una losa, no un objeto.
 
 ### Cards / Containers
 
-Superficies de nube: fondo blanco sobre el cielo gris, contorno de 1 px de regla, `--radio`,
+Superficies de nube: fondo blanco sobre el cielo cálido, contorno de 1 px de regla, `--radio`,
 y 24 px de relleno. **Nunca se anidan superficies con sombra**; lo que va dentro de una
 superficie cambia de fondo —a nube hundida— y no de elevación.
 

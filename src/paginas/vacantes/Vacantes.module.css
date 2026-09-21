@@ -123,8 +123,8 @@
    * nada. De paso, el borde translucido de 12 px deja intuir la luz por el canto,
    * que es lo que lo hace parecer un neon y no una sombra de color.
    */
-  border: 12px solid rgb(255 255 255 / 0.4);
-  border-radius: 20px;
+  border: var(--borde-escaparate) solid rgb(255 255 255 / 0.4);
+  border-radius: var(--radio-escaparate);
   box-shadow: var(--sombra-nube);
 }
 
@@ -196,8 +196,10 @@
   padding: var(--e7) var(--e6) var(--e8);
   background-color: var(--nube);
   /* El radio de la tarjeta menos su borde de 12 px. Lo lleva el interior porque
-     la tarjeta ya no recorta: sin esto, el blanco asoma por las esquinas. */
-  border-radius: 8px;
+     la tarjeta ya no recorta: sin esto, el blanco asoma por las esquinas. Va en
+     `calc` y no en 8 px a pelo para que mover `--radio-escaparate` no deje este
+     valor atras. */
+  border-radius: calc(var(--radio-escaparate) - var(--borde-escaparate));
 }
 
 .pieEscaparate {
@@ -230,7 +232,7 @@
 .barraTramo,
 .barraViva {
   height: 6px;
-  border-radius: 999px;
+  border-radius: var(--radio-barra);
   margin-bottom: var(--e3);
 }
 
@@ -508,7 +510,7 @@
   position: relative;
   padding: var(--e8) var(--e5);
   border: 1px solid var(--regla);
-  border-radius: 20px;
+  border-radius: var(--radio-escaparate);
   background-color: var(--nube);
   overflow: hidden;
   text-align: center;

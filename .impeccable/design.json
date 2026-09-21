@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-10T21:41:44Z",
+  "generatedAt": "2026-09-17T21:05:00Z",
   "title": "Design System: EX · Portal del candidato",
   "extensions": {
     "colorMeta": {
@@ -36,8 +36,8 @@
       },
       "cielo": {
         "role": "neutral",
-        "displayName": "Cielo gris",
-        "canonical": "#f5f5f5",
+        "displayName": "Cielo calido",
+        "canonical": "#fbf1e9",
         "tonalRamp": [
           "#1a1a1a",
           "#333333",
@@ -45,7 +45,7 @@
           "#8a8a8a",
           "#cbcbcb",
           "#e6e6e6",
-          "#f5f5f5",
+          "#fbf1e9",
           "#ffffff"
         ]
       },
@@ -273,7 +273,7 @@
       "name": "Superficie",
       "kind": "card",
       "refersTo": "superficie",
-      "description": "Blanco sobre el cielo gris. Se separa por tono, no por contorno grueso.",
+      "description": "Blanco sobre el cielo calido. Se separa por tono, no por contorno grueso.",
       "html": "<div class=\"ds-superficie\"><h3>Analista de Datos</h3><p>Clinica San Juan</p></div>",
       "css": ".ds-superficie { background: var(--nube, #fff); border: 1px solid var(--regla, #e6e6e6); border-radius: var(--radio, 12px); padding: 24px; color: var(--tinta, #333); font-family: Figtree, system-ui, sans-serif; } .ds-superficie h3 { margin: 0 0 4px; font: 600 20px/1.25 inherit; letter-spacing: -.02em; } .ds-superficie p { margin: 0; font-size: 14px; color: var(--tinta3, #6b6b6b); }"
     },
@@ -344,11 +344,11 @@
   ],
   "narrative": {
     "northStar": "El escaparate",
-    "overview": "Un cuarto gris con una sola pieza iluminada. El fondo no es blanco: es un gris claro y neutro que hace que las superficies blancas de encima se lean como objetos puestos sobre una mesa, no como mas pagina. En medio de ese cuarto hay una vitrina —una tarjeta blanca de borde grueso— y dentro esta el producto: el recorrido del candidato, sus cinco etapas, lo que le toca ahora.\n\nDe ahi sale la disciplina entera. La accion es negra, no de color, porque el negro pleno sobre gris claro es el contraste mas alto disponible y no compite con nada. El color aparece una sola vez: el resplandor coral detras del escaparate, y la bruma rosa que marca lo que reclama tu turno. Y las superficies no flotan: se separan del fondo porque estan un punto mas claras, no porque tengan sombra.\n\nSe reemplazo a «El canto» el 10/09/2026. El motivo no fue el concepto sino su rendicion: el fondo y las superficies quedaban a un 2 % de diferencia, el espectro salia pastel, y el portal entero se leia apagado.",
+    "overview": "Un cuarto de luz calida con una sola pieza iluminada. El fondo no es blanco: es un pastel anaranjado que hace que las superficies blancas de encima se lean como objetos puestos sobre una mesa, no como mas pagina. En medio de ese cuarto hay una vitrina —una tarjeta blanca de borde grueso— y dentro esta el producto: el recorrido del candidato, sus cinco etapas, lo que le toca ahora.\n\nDe ahi sale la disciplina entera. La accion es negra, no de color, porque el negro pleno sobre el pastel del fondo es el contraste mas alto disponible y no compite con nada. El color aparece una sola vez: el resplandor coral detras del escaparate, y la bruma rosa que marca lo que reclama tu turno. Y las superficies no flotan: se separan del fondo porque estan un punto mas claras, no porque tengan sombra.\n\nSe reemplazo a «El canto» el 10/09/2026. El motivo no fue el concepto sino su rendicion: el fondo y las superficies quedaban a un 2 % de diferencia, el espectro salia pastel, y el portal entero se leia apagado.",
     "keyCharacteristics": [
       "La accion es negra; el color no es nunca una accion.",
       "Un solo color en toda la pantalla, y significa «te toca a ti».",
-      "El fondo es gris claro, no blanco: las superficies blancas son objetos encima.",
+      "El fondo es un pastel calido, no blanco: las superficies blancas son objetos encima.",
       "Los controles tienen esquina corta (4 px), no son pildoras.",
       "El estado se lee en la forma antes que en el color.",
       "Solo tema claro."
