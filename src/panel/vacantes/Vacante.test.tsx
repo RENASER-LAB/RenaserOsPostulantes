@@ -260,6 +260,7 @@ const VERSIONES_DE_SIEMPRE = [
 let VERSIONES_PRUEBA = VERSIONES_DE_SIEMPRE
 
 const listarVersionesBanco = vi.fn(() => Promise.resolve(BANCOS))
+const desarchivarVacante = vi.fn((_id: number) => Promise.resolve(undefined))
 const asignarPlantillaPrueba = vi.fn((_vacanteId: number, _versionId: number) =>
   Promise.resolve({}),
 )
@@ -371,6 +372,7 @@ vi.mock('../api/panel', () => ({
   elegirInstrumentoTecnico: (vacanteId: number, datos: unknown) =>
     elegirInstrumento(vacanteId, datos),
   cerrarVacante: () => Promise.resolve({}),
+  desarchivarVacante: (id: number) => desarchivarVacante(id),
   confirmarAvance: () => Promise.resolve({}),
   crearRequisito: () => Promise.resolve({}),
   publicarVacante: () => Promise.resolve({}),
@@ -469,8 +471,10 @@ async function pintar(filas: FilaRanking[] = TANDA, puedeVerPretension = true) {
     mismo que ve una persona. Lo que la tuerca hace por sí misma —abrirse y
     cerrarse— se prueba aparte.
   */
-  const tuerca = screen.getByRole('button', { name: 'Configuración de la vacante' })
-  if (tuerca.getAttribute('aria-expanded') === 'false') fireEvent.click(tuerca)
+  // Una vacante archivada no la tiene: dentro no hay nada que se pueda guardar,
+  // así que el botón no se pinta. Ver «el detalle de una vacante archivada».
+  const tuerca = screen.queryByRole('button', { name: 'Configuración de la vacante' })
+  if (tuerca?.getAttribute('aria-expanded') === 'false') fireEvent.click(tuerca)
 }
 
 /** La del ranking es la primera de la pantalla; el `!` es de `noUncheckedIndexedAccess`. */
@@ -1637,6 +1641,144 @@ describe('los desplegables que siguen existiendo', () => {
  * plantilla de evaluación justo después de borrar el desplegable que era la
  * única forma de ponerla.
  */
+/*
+ * El detalle de una vacante archivada: se consulta entero, no se toca.
+ *
+ * Lo que compila perfectamente estando mal:
+ *   1. **Enseñar la tuerca.** Dentro no hay nada que se pueda guardar —sueldo,
+ *      instrumentos, requisitos y cierre son mutaciones que el backend rechaza—
+ *      y ocho controles que contestan 409 son ocho promesas rotas.
+ *   2. **Callar que está archivada.** Entonces «¿por qué no puedo editar esto?»
+ *      no tiene respuesta en la pantalla.
+ *   3. **Esconder también el proceso.** Archivar conserva el ranking, las fichas
+ *      y las descargas: es la mitad de lo que archivar promete.
+ */
+describe('el detalle de una vacante archivada', () => {
+  const archivada = (extra: Record<string, unknown> = {}) => {
+    sinRuido.verVacante = () =>
+      Promise.resolve({
+        ...VACANTE,
+        estado: 'CERRADA',
+        cerradaEn: '2026-09-10T10:00:00Z',
+        archivadaEn: '2026-09-15T10:00:00Z',
+        puedeDesarchivar: true,
+        ...extra,
+      })
+  }
+
+  it('dice cuándo se archivó, sin perder cómo terminó la convocatoria', async () => {
+    archivada()
+    await pintar()
+
+    expect(screen.getByText(/Archivada el 15 de setiembre de 2026/)).toBeTruthy()
+    expect(screen.getByText(/Cerrada el 10 de setiembre de 2026/)).toBeTruthy()
+    expect(screen.getByText('Esta vacante está archivada: se consulta, no se cambia.'))
+      .toBeTruthy()
+  })
+
+  it('no ofrece configurarla, ni publicarla, ni cerrarla otra vez', async () => {
+    archivada()
+    await pintar()
+
+    expect(screen.queryByRole('button', { name: 'Configuración de la vacante' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Publicar en el portal' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Cerrar vacante' })).toBeNull()
+  })
+
+  it('el proceso sigue ahí: el ranking con sus etapas se consulta igual', async () => {
+    archivada()
+    await pintar()
+
+    expect(screen.getByRole('heading', { name: 'Ranking' })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: 'Perfil integral' })).toBeTruthy()
+  })
+
+  /*
+   * El ranking se lee entero y no ofrece las dos tandas que escriben.
+   *
+   * «Revisar y calificar pendientes» seguía ahí sobre una archivada y su
+   * endpoint respondía 200: no movía a nadie —en una archivada nadie sigue en
+   * carrera— pero dejaba una fila de auditoría sobre una vacante que la cabecera
+   * declara de solo lectura. El backend la rechaza ahora con 409; esto evita
+   * ofrecer el botón que se la comería.
+   */
+  it('no ofrece calificar la tanda del currículum, que es una mutación', async () => {
+    archivada()
+    await pintar()
+
+    expect(screen.queryByRole('button', { name: 'Revisar y calificar pendientes' })).toBeNull()
+  })
+
+  it('tampoco la tanda de la prueba, por lo mismo', async () => {
+    archivada()
+    await pintar()
+
+    irA('Prueba del puesto')
+
+    expect(screen.queryByRole('button', { name: /Calificar con la IA/ })).toBeNull()
+  })
+
+  it('en una vacante viva las dos tandas siguen estando', async () => {
+    await pintar()
+
+    expect(screen.getByRole('button', { name: 'Revisar y calificar pendientes' })).toBeTruthy()
+  })
+
+  it('desarchivar está solo con el permiso, y devuelve la vacante a la lista', async () => {
+    archivada()
+    await pintar()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Desarchivar' }))
+
+    await waitFor(() => expect(desarchivarVacante).toHaveBeenCalledWith(1))
+  })
+
+  /*
+   * El doble clic en «Desarchivar», desde el detalle.
+   *
+   * El segundo DELETE llegaba cuando el primero ya había desarchivado: el
+   * servidor contesta 409 «Esta vacante no está archivada» —con razón— y la
+   * pantalla lo pintaba en rojo sobre una operación que sí funcionó.
+   */
+  it('un doble clic manda una sola petición, y no deja un error falso en pantalla', async () => {
+    archivada()
+    await pintar()
+    const boton = screen.getByRole('button', { name: 'Desarchivar' })
+
+    fireEvent.click(boton)
+    fireEvent.click(boton)
+
+    await waitFor(() => expect(desarchivarVacante).toHaveBeenCalled())
+    expect(desarchivarVacante).toHaveBeenCalledTimes(1)
+    expect(screen.queryByText('Esta vacante no está archivada')).toBeNull()
+  })
+
+  it('si falla, se puede reintentar: la guarda se suelta', async () => {
+    desarchivarVacante.mockRejectedValueOnce(new Error('La red se cayó'))
+    archivada()
+    await pintar()
+    const boton = screen.getByRole('button', { name: 'Desarchivar' })
+
+    fireEvent.click(boton)
+    await screen.findByText('La red se cayó')
+
+    fireEvent.click(boton)
+
+    await waitFor(() => expect(desarchivarVacante).toHaveBeenCalledTimes(2))
+  })
+
+  it('sin el permiso no hay botón de desarchivar', async () => {
+    archivada({ puedeDesarchivar: false })
+    await pintar()
+
+    expect(screen.queryByRole('button', { name: 'Desarchivar' })).toBeNull()
+    // Pero el aviso sigue: quien no puede desarchivarla igual necesita saber
+    // por qué la pantalla no deja tocar nada.
+    expect(screen.getByText('Esta vacante está archivada: se consulta, no se cambia.'))
+      .toBeTruthy()
+  })
+})
+
 describe('publicar una vacante en borrador', () => {
   const enBorrador = (extra: Record<string, unknown> = {}) => {
     sinRuido.verVacante = () =>

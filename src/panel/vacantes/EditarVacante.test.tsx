@@ -30,6 +30,7 @@ const editarVacante = vi.fn()
 
 vi.mock('../api/panel', () => ({
   listarVacantes: () => listarVacantes(),
+  contarVacantesArchivadas: () => Promise.resolve({ archivadas: 0 }),
   editarVacante: (id: number, datos: unknown) => editarVacante(id, datos),
   listarSolicitudes: () => Promise.resolve([]),
   listarPuestos: () =>
@@ -95,7 +96,10 @@ function vacante(cambios: Partial<Vacante> = {}): Vacante {
     abreEn: null,
     cierraEn: null,
     postulantesEnCarrera: 2,
+    archivadaEn: null,
     puedeEditar: true,
+    puedeArchivar: false,
+    puedeDesarchivar: false,
     ...cambios,
   }
 }
@@ -147,6 +151,103 @@ describe('El lápiz de cada fila', () => {
 
     await screen.findByText('Analista')
     expect(screen.queryByRole('button', { name: /Editar la vacante/ })).toBeNull()
+  })
+})
+
+describe('El modal de edición', () => {
+  it('es un diálogo con título, cierre con nombre y los dos botones del pie', async () => {
+    await abrirLaEdicion()
+
+    const dialogo = screen.getByRole('dialog')
+    expect(dialogo.getAttribute('aria-modal')).toBe('true')
+    // El aspa lleva nombre accesible: un «×» a secas no se puede pulsar a ciegas.
+    expect(screen.getByRole('button', { name: 'Cerrar' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Cancelar' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Guardar cambios' })).toBeTruthy()
+  })
+
+  it('sin cambios, cancelar cierra sin preguntar y sin guardar nada', async () => {
+    await abrirLaEdicion()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect(editarVacante).not.toHaveBeenCalled()
+  })
+
+  it('con cambios, cancelar pregunta y «Seguir editando» los conserva', async () => {
+    await abrirLaEdicion()
+    fireEvent.change(screen.getByLabelText('Horario'), { target: { value: 'Turnos' } })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
+
+    // No se ha ido nada: el modal sigue y la pregunta está dentro.
+    expect(await screen.findByRole('alertdialog', { name: 'Cambios sin guardar' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Seguir editando' }))
+
+    expect(screen.queryByRole('alertdialog')).toBeNull()
+    expect((screen.getByLabelText('Horario') as HTMLInputElement).value).toBe('Turnos')
+    expect(editarVacante).not.toHaveBeenCalled()
+  })
+
+  it('«Descartar cambios» cierra sin guardar ni avisar', async () => {
+    await abrirLaEdicion()
+    fireEvent.change(screen.getByLabelText('Horario'), { target: { value: 'Turnos' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Descartar cambios' }))
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect(editarVacante).not.toHaveBeenCalled()
+    // Y lo descartado se descartó de verdad: al reabrir está lo guardado.
+    fireEvent.click(screen.getByRole('button', { name: 'Editar la vacante Desarrollador web' }))
+    expect((await screen.findByLabelText('Horario') as HTMLInputElement).value)
+      .toBe('L-V de 9 a 6')
+  })
+
+  it('Escape con cambios tampoco tira lo escrito: pregunta igual que Cancelar', async () => {
+    await abrirLaEdicion()
+    fireEvent.change(screen.getByLabelText('Horario'), { target: { value: 'Turnos' } })
+
+    fireEvent.keyDown(document, { key: 'Escape' })
+
+    expect(await screen.findByRole('alertdialog', { name: 'Cambios sin guardar' })).toBeTruthy()
+    expect(screen.getByRole('dialog')).toBeTruthy()
+  })
+
+  it('Escape sin cambios cierra, como cancelar', async () => {
+    await abrirLaEdicion()
+
+    fireEvent.keyDown(document, { key: 'Escape' })
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+  })
+
+  it('la tabla sigue entera detrás del modal: no se desplaza ni desaparece', async () => {
+    await abrirLaEdicion()
+
+    // La fila que se está editando sigue visible: el modal no empuja la lista.
+    expect(screen.getAllByText('Desarrollador web').length).toBeGreaterThan(0)
+    expect(screen.getByRole('table')).toBeTruthy()
+  })
+
+  it('mientras guarda no se puede cerrar con Escape: la petición ya salió', async () => {
+    let soltar!: (valor: unknown) => void
+    editarVacante.mockReturnValue(new Promise((resolver) => {
+      soltar = resolver
+    }))
+    await abrirLaEdicion()
+    fireEvent.change(screen.getByLabelText('Horario'), { target: { value: 'Turnos' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }))
+    await screen.findByRole('button', { name: 'Guardando…' })
+
+    fireEvent.keyDown(document, { key: 'Escape' })
+
+    expect(screen.getByRole('dialog')).toBeTruthy()
+    expect(screen.queryByRole('alertdialog')).toBeNull()
+
+    soltar({ huboCambios: true, postulantesAvisados: 0 })
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
   })
 })
 

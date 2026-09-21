@@ -138,10 +138,23 @@ Cada fila en **borrador o publicada** lleva un lápiz, con el nombre accesible �
 Tampoco sale si quien mira no tiene `editar_vacante` o su alcance no llega a esa vacante; lo
 decide el backend fila a fila con `puedeEditar`, porque no hay endpoint de «mis permisos».
 
-Al pulsarlo se abre **el mismo formulario del alta**, con el título «Editar vacante» y los datos
-de ahora, sueldo incluido. La solicitud y el puesto salen como texto fijo, con la frase «El
-puesto decide el nivel y la familia de la evaluación; para cambiarlo, crea otra vacante». **Solo
-hay un formulario abierto a la vez**: abrir la edición cierra el alta y la solicitud, y al revés.
+Al pulsarlo se abre **el mismo formulario del alta en un modal** (21/09), con el título «Editar
+vacante» y los datos de ahora, sueldo incluido. Antes se insertaba encima de la tabla y empujaba
+las filas: quien pulsaba el lápiz de la fila doce perdía de vista la fila doce. Ahora **la lista
+se queda quieta detrás**. La solicitud y el puesto salen como texto fijo, con la frase «El puesto
+decide el nivel y la familia de la evaluación; para cambiarlo, crea otra vacante». **Solo hay un
+formulario abierto a la vez**: abrir la edición cierra el alta y la solicitud, y al revés.
+
+Es el **modal compartido `src/ui/Modal.tsx`**, no una infraestructura propia: allí ya están el
+Escape, el foco atrapado dentro, el fondo que no se opera y la vuelta del foco al botón que lo
+abrió. En el pie, «Cancelar» y «Guardar cambios».
+
+⚠️ **Cerrar con algo escrito no tira lo escrito.** Cancelar, el aspa, Escape y pulsar el fondo
+hacen lo mismo: sin cambios cierran; con cambios preguntan, con «Descartar cambios» y «Seguir
+editando». La pregunta se pinta **dentro del mismo modal** y no en otro encima, y eso no es
+estética: el formulario sigue montado detrás, así que «Seguir editando» devuelve lo escrito tal
+cual estaba. Cancelar nunca guarda, audita ni avisa. Mientras guarda no se puede cerrar ni
+reenviar; al terminar o fallar, sí.
 
 | Cuándo | Qué dice el panel |
 |---|---|
@@ -169,5 +182,63 @@ Comprobarlo: `npx playwright test herramientas/e2e/25-editar-vacante.spec.ts` **
 `herramientas/e2e/26-editar-vacante-avisos.spec.ts` ⚠️ **sí escribe**: siembra en el clon su
 propia vacante, candidatos y cuentas de panel, y lo retira al terminar salvo la auditoría, que la
 base no deja borrar. Necesita las variables de [TRABAJAR-EN-LOCAL.md](TRABAJAR-EN-LOCAL.md).
+
+### Archivar una vacante cerrada, y dónde va a parar (21/09)
+
+`/admin` enseñaba **todas** las vacantes de la empresa, y las cerradas se acumulan para siempre.
+Ahora una **`CERRADA`** lleva en sus acciones un **icono de caja** —«Archivar la vacante
+{título}»— si quien mira tiene `cerrar_vacante` y el alcance llega: lo dice `puedeArchivar` de la
+fila. Se conserva la regla de estados: las cerradas no tienen lápiz, y las de borrador o
+publicadas no tienen archivo. Es una caja y no una papelera a propósito: archivar **no borra
+nada** y se puede deshacer.
+
+Al pulsarlo se abre el modal «Archivar vacante», que **no pregunta «¿estás seguro?»: cuenta lo
+que va a pasar** —deja la lista habitual, se podrá consultar en «Vacantes archivadas» con todo su
+proceso, se podrá desarchivar sin reabrirla— y deja decidir con eso puesto. «Cancelar» y el
+cierre no cambian nada.
+
+| Cuándo | Qué hace el panel |
+|---|---|
+| Sin nadie en carrera | «Archivar vacante» confirma, la fila sale de la lista y el aviso dice dónde está: «… está en Archivadas. Puedes desarchivarla cuando quieras». El foco va a «Archivadas (N)» —el icono que abrió el modal ya no existe, y devolvérselo dejaría a quien usa teclado en el `body`— |
+| Con N en carrera | El icono **sale igual** y es el modal el que explica por qué no se puede: «Quedan N postulantes en carrera. Decide cada uno, o descártalos en lote, desde la vacante antes de archivarla», con enlace a la vacante y el botón apagado. Esconder el icono dejaría la pregunta sin respuesta |
+| Algo falla | El modal se queda con el error. La fila no se retira como si hubiera ido bien |
+
+⚠️ **El conteo del modal es el de la fila y puede tener un minuto.** El servidor vuelve a mirar
+estado y conteo al confirmar y contesta **409** si cambió: el modal es una foto, la decisión se
+toma sobre lo que hay.
+
+⚠️ **`disabled` no protege del doble clic.** Solo llega al botón cuando React vuelve a pintar, y
+las dos pulsaciones caben antes de ese render: salían dos peticiones. La guarda es un `ref`
+escrito en el mismo turno del evento, aquí y en «Desarchivar». El backend tiene la suya —un
+`UPDATE` condicional—, y hacen falta las dos.
+
+**La cabecera lleva «Archivadas (N)»**, junto a «Escribir una solicitud» y «Crear vacante»; el
+número sale de `GET /vacantes/archivadas/conteo` y se refresca al archivar y al desarchivar, para
+que no diga (0) justo encima del aviso de que la vacante ya está allí. No hay selector «Activas /
+Archivadas»: **son dos pantallas, no dos modos de una**, porque un selector deja dudando si lo
+que se mira son todas las vacantes o la mitad.
+
+**`/admin/archivadas`** es esa segunda pantalla, con «← Volver a vacantes», la fecha de archivo
+de cada fila, el paso a su detalle, «Desarchivar» cuando se puede y «No hay vacantes archivadas.»
+si está vacía. Tener **dirección propia** es lo que hace que la recarga y el botón Atrás acierten
+y que el enlace se pueda mandar por chat.
+
+⚠️ **El corte lo hace el servidor, no el navegador.** La lista habitual pide las no archivadas y
+esta pide las archivadas (`GET /vacantes?archivadas=true`): por eso una archivada no reaparece al
+buscar, filtrar por estado ni paginar en `/admin`. Recortar en el navegador una lista que ya vino
+entera las dejaría al alcance de cualquier búsqueda.
+
+**El detalle de una archivada se lee entero y no se toca.** La cabecera dice «Cerrada el … ·
+Archivada el …» —después del estado, no en su lugar: archivar no es una forma de terminar— y
+«Esta vacante está archivada: se consulta, no se cambia», con «Desarchivar» al lado si el permiso
+llega. Sus postulantes, etapas, ranking, fichas, historial y descargas siguen ahí con los
+permisos de siempre. Desarchivar la devuelve a la lista **cerrada como estaba**, sin reabrir
+ninguna postulación: **el candidato no ve ningún cambio en su portal**.
+
+Comprobarlo: `npx playwright test herramientas/e2e/27-archivar-vacante.spec.ts` y
+`28-archivar-vacante-regresiones.spec.ts` ⚠️ **escriben**: siembran en el clon sus propias
+vacantes, un candidato en carrera y una cuenta de panel sin permiso de archivo —no tocan las
+vacantes sembradas de la base, porque archivar una las escondería del resto de pruebas— y lo
+retiran al terminar. Necesitan las variables de [TRABAJAR-EN-LOCAL.md](TRABAJAR-EN-LOCAL.md).
 
 ---

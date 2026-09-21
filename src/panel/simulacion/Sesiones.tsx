@@ -41,7 +41,7 @@ export function SesionesPanel() {
   const [abierta, setAbierta] = useState<number | null>(null)
 
   const sesiones = useQuery({ queryKey: ['panel-sesiones'], queryFn: listarSesiones })
-  const vacantes = useQuery({ queryKey: ['panel-vacantes'], queryFn: listarVacantes })
+  const vacantes = useQuery({ queryKey: ['panel-vacantes'], queryFn: () => listarVacantes() })
 
   const invalidar = () => cache.invalidateQueries({ queryKey: ['panel-sesiones'] })
 
@@ -233,7 +233,7 @@ function FormularioDeSesion({
   alCrear: () => Promise<void>
   alNoPoder: () => void
 }) {
-  const vacantes = useQuery({ queryKey: ['panel-vacantes'], queryFn: listarVacantes })
+  const vacantes = useQuery({ queryKey: ['panel-vacantes'], queryFn: () => listarVacantes() })
 
   const [datos, setDatos] = useState({
     fecha: '',

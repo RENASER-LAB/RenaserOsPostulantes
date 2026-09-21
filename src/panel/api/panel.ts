@@ -37,6 +37,7 @@ import type {
   SesionEquipo,
   SesionPanel,
   UsuarioEquipo,
+  ConteoDeArchivadas,
   VacanteActualizadaResponse,
   VacantePanel,
   VersionBanco,
@@ -131,7 +132,18 @@ export const aprobarSolicitud = (id: number, motivo: string) =>
 
 // ---------- Vacantes ----------
 
-export const listarVacantes = () => pedir<VacantePanel[]>('/vacantes')
+/**
+ * Las vacantes de la empresa, en una de sus dos listas.
+ *
+ * Sin nada, la de todos los dias: las que nadie ha archivado. Con `true`, solo
+ * las archivadas. **El corte lo hace el servidor**, no esta funcion: filtrado
+ * aqui, una archivada reapareceria en cuanto alguien buscara o paginara.
+ */
+export const listarVacantes = (archivadas = false) =>
+  pedir<VacantePanel[]>(archivadas ? '/vacantes?archivadas=true' : '/vacantes')
+/** Cuantas archivadas hay, para el boton «Archivadas (N)» de la cabecera. */
+export const contarVacantesArchivadas = () =>
+  pedir<ConteoDeArchivadas>('/vacantes/archivadas/conteo')
 export const verVacante = (id: number) => pedir<VacantePanel>(`/vacantes/${id}`)
 export const crearVacante = (datos: GuardarVacante) =>
   pedir<VacantePanel>('/vacantes', { metodo: 'POST', cuerpo: datos })
@@ -161,6 +173,20 @@ export const publicarVacante = (id: number) =>
   pedir<void>(`/vacantes/${id}/publicacion`, { metodo: 'POST' })
 export const cerrarVacante = (id: number, motivo: string) =>
   pedir<void>(`/vacantes/${id}/cierre`, { metodo: 'POST', cuerpo: { motivo } })
+
+/**
+ * Archivar: la vacante cerrada deja la lista habitual y se consulta aparte.
+ *
+ * Verbo propio y no un campo del formulario: archivar no es corregir la vacante,
+ * es retirarla de la mesa de trabajo de todo el equipo, y pasa por otro permiso.
+ * El servidor vuelve a comprobar que este cerrada y sin nadie en carrera, aunque
+ * el modal ya lo haya enseñado: entre abrirlo y confirmarlo cabe un minuto.
+ */
+export const archivarVacante = (id: number) =>
+  pedir<void>(`/vacantes/${id}/archivo`, { metodo: 'POST' })
+/** Devolverla a la lista habitual. Sigue CERRADA y no reabre ninguna postulacion. */
+export const desarchivarVacante = (id: number) =>
+  pedir<void>(`/vacantes/${id}/archivo`, { metodo: 'DELETE' })
 
 export const listarPuestos = () => pedir<PuestoPanel[]>('/puestos')
 /** El código interno lo genera el servidor cuando el panel no lo envía. */
