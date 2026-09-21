@@ -572,7 +572,36 @@ export interface FilaRanking {
    * null` —que cubre los dos— y nunca con `!== null`.
    */
   ponderado?: Ponderado | null
+  /**
+   * En que punto esta su prueba del puesto, dicho por el backend.
+   *
+   * ⚠️ **Viaja SOLO en el ranking de la prueba del puesto**; en las otras
+   * pestañas llega nulo, porque ahi la columna Nota no habla de la prueba.
+   *
+   * ⚠️ **Existe para no deducirlo de `notaEtapa == null`.** Ese hueco tiene tres
+   * causas que desde el navegador se ven igual —no la termino, el sistema la
+   * cerro al vencer el plazo, o la entrego y falta calificarla— y solo la
+   * ultima es trabajo del equipo.
+   *
+   * Opcional a proposito: un backend anterior al cambio no manda el campo y
+   * entonces llega `undefined`, no `null`. Quien lo lea comprueba los dos.
+   */
+  estadoPrueba?: EstadoPrueba | null
 }
+
+/**
+ * Los cuatro puntos en los que puede estar una prueba del puesto.
+ *
+ * `NO_APLICA` es que no hay intento del que hablar: la postulacion todavia no
+ * llego a la etapa tecnica, o la vacante rinde el cuestionario tecnico. **No es
+ * lo mismo que una entrega esperando calificacion**, y confundirlos llena la
+ * bandeja del equipo de gente a la que no hay que mirar.
+ */
+export type EstadoPrueba =
+  | 'CALIFICADA'
+  | 'PENDIENTE_CALIFICACION'
+  | 'INCOMPLETA'
+  | 'NO_APLICA'
 
 /**
  * Lo ya rendido: las dos etapas que existen, reescaladas sobre 100.

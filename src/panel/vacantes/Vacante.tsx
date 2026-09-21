@@ -264,8 +264,10 @@ export function VacantePanelDetalle() {
     una vacante con treinta postulaciones repetía las treinta cinco veces y
     ninguna de las cinco listas era la mesa de decidir de su etapa.
 
-    **Por defecto, «Por revisar»**: lo que espera una decisión tuya, que es la
-    bandeja de trabajo. «Le toca al candidato» es el otro trabajo —perseguir a
+    **Por defecto, «Pendiente»**: lo que espera una decisión tuya, que es la
+    bandeja de trabajo. (Se llamaba «Por revisar»; cambió el rótulo, no qué
+    filas trae: el corte es el mismo y la clave interna sigue siendo
+    `por-revisar`.) «Le toca al candidato» es el otro trabajo —perseguir a
     quien no ha hecho lo suyo— y los dos no se solapan nunca: un estado espera
     a la empresa o al candidato.
 

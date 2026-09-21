@@ -10,7 +10,7 @@ test.describe('Humo: el arnés llega a la pantalla', () => {
 
     await irAVacante(page, VACANTES.LLENA)
     await expect(page.getByRole('heading', { level: 1, name: 'Desarrollador web' })).toBeVisible()
-    // La pantalla abre por «Por revisar», que es la bandeja de trabajo y suele
+    // La pantalla abre por «Pendiente», que es la bandeja de trabajo y suele
     // traer una o ninguna: el humo mira la tanda entera, que son cuatro.
     await corte(page, 'Toda la tanda').click()
     await expect(filasDelRanking(page)).toHaveCount(4)

@@ -398,10 +398,12 @@ la nota de la etapa elegida, adecuación, potencial, alertas y riesgos críticos
 A quién se mira lo eligen **tres cortes** con su cifra al lado, y desde el
 07/09/2026 los tres contestan **una sola pregunta: de quién es la pelota**.
 
-- **«Por revisar»**, que es con lo que abre la pantalla. Trae a quien espera una
+- **«Pendiente»**, que es con lo que abre la pantalla. Trae a quien espera una
   decisión de la empresa: el candidato ya hizo lo suyo y falta que alguien de
   dentro —el equipo de Talento, o el responsable del área— lo mire y lo mueva. Es
-  la bandeja de trabajo: lo que se puede cerrar hoy.
+  la bandeja de trabajo: lo que se puede cerrar hoy. (Se llamó «Por revisar»
+  hasta el 18/09/2026: cambió el rótulo y nada más, las mismas filas y la misma
+  cifra.)
 - **«Le toca al candidato»**. Tiene la evaluación o la prueba pendiente, y hasta
   que no la haga no hay nada que decidir. Es el otro trabajo, el de perseguir.
 - **«Toda la tanda»**, sin filtrar y con los que ya terminaron dentro.
@@ -537,6 +539,43 @@ Se puede ordenar por ella, y va también al Excel del ranking.
 y es la que se compara con los umbrales del semáforo. Esta mezcla dos, y por eso
 el título emergente lo dice con todas las letras: una columna llamada «Ponderado»
 al lado de una llamada «Nota» se leería como el resultado del proceso.
+
+### Por qué esa prueba no tiene nota (18/09/2026)
+
+En la pestaña **Prueba del puesto**, una celda sin cifra decía «sin cerrar»
+pasara lo que pasara. Detrás había tres cosas distintas, y solo una era
+trabajo del equipo:
+
+| Lo que pasó con su prueba | Lo que dice la celda |
+|---|---|
+| Ya tiene nota | La nota. **Un cero es una nota** y se pinta como número |
+| No llegó a entregarla, o se le cerró sola al vencer el plazo | **«Prueba incompleta»** |
+| La entregó y su rúbrica todavía no tiene nota | **«Pendiente de calificación»** |
+| No hay prueba suya de la que hablar | El motivo de siempre, que dice dónde está parada: «sin cerrar» a quien está justo ahí |
+
+Al pasar el ratón por encima, la frase entera explica el porqué.
+
+«Pendiente de calificación» es el único de los cuatro en que **la pelota es del
+equipo**: esa persona ya hizo lo suyo y falta poner las notas que la IA no puede
+poner —un video, un enlace, un criterio de los que mira alguien—. Antes se leía
+igual que «no la ha hecho», y se salía a perseguir a quien ya había entregado.
+
+**Se calcula al abrir el ranking**, con lo que hay en ese momento: no se guarda
+nada, y quien entregue o califique hoy ve el texto nuevo al recargar.
+
+⚠️ **Quién decide esto es el backend**, mirando el intento de esa persona: si
+hubo entrega y si la hizo ella o el reloj. Desde el navegador los tres casos se
+ven igual —una nota que no está— y el estado de la postulación no los separa.
+
+⚠️ **Sin intento no se dice nada nuevo, y se decidió así.** Ahí caen quien
+todavía no llegó a la etapa técnica **y las vacantes que rinden el cuestionario
+técnico**, que no crean intentos: todas sus filas sin nota siguen diciendo «sin
+cerrar», también las de quien ya entregó. Es un pendiente conocido, no un fallo
+abierto.
+
+⚠️ **El Excel no lo hereda.** En la hoja, la nota de la prueba que falta sigue
+diciendo «rúbrica incompleta» pase lo que pase. Lo único que cambió allí es la
+descripción del recorte, que ahora dice «Pendiente».
 
 ### Ordenar la mesa (01/09/2026)
 
