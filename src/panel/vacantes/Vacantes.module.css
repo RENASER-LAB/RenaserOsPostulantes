@@ -386,3 +386,61 @@
   padding-top: var(--e5);
   border-top: 1px solid var(--regla);
 }
+
+/* ---------- Corregir una vacante ---------- */
+
+/*
+ * El lapiz de la fila.
+ *
+ * Sin caja y sin fondo: la fila ya es una linea de datos y un boton solido ahi
+ * compite con el enlace de al lado, que es la accion principal. Lo que lo hace
+ * pulsable es el area, no el relleno — 32 px de lado, que es el minimo comodo
+ * para un dedo.
+ */
+.lapiz {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  flex: none;
+  border: 1px solid transparent;
+  border-radius: var(--radio-menor);
+  background: none;
+  color: var(--tinta2);
+  cursor: pointer;
+}
+
+.lapiz:hover {
+  border-color: var(--regla2);
+  color: var(--tinta);
+}
+
+/* El foco se ve: con teclado, esto es lo unico que dice donde esta uno. */
+.lapiz:focus-visible {
+  outline: 2px solid var(--activo);
+  outline-offset: 2px;
+}
+
+/* Lo que se dice al guardar: fue bien, y a cuanta gente le llego. */
+.aviso.bueno {
+  background: var(--bien-bruma);
+  padding: var(--e3) var(--e4);
+  color: var(--bien);
+}
+
+/*
+ * Lo que va a pasar al guardar, debajo del boton.
+ *
+ * Debajo y no encima: se lee justo despues de decidir pulsar, que es cuando
+ * todavia se puede reconsiderar. Y no es un dialogo de confirmacion a proposito
+ * —corregir una vacante es lo normal, y un «¿estas seguro?» en cada guardado se
+ * aprende a despachar sin leerlo—.
+ */
+.avisoPrevio {
+  font-size: var(--t-apoyo);
+  line-height: 1.5;
+  color: var(--tinta2);
+  margin: var(--e3) 0 0;
+  max-width: var(--medida);
+}

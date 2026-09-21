@@ -1,7 +1,7 @@
 # El panel del equipo (`/admin`)
 
-Qué es, cómo se entra, qué enseña cada pestaña y qué exige el backend antes de publicar una
-vacante. El recorrido de los dos lados —equipo y candidato— está en
+Qué es, cómo se entra, qué enseña cada pestaña, qué exige el backend antes de publicar una
+vacante y cómo se corrige después. El recorrido de los dos lados —equipo y candidato— está en
 [06-FLUJO-COMPLETO.md](06-FLUJO-COMPLETO.md).
 
 ---
@@ -130,5 +130,44 @@ hacía nada. Va fuera, con un `return` temprano.
 [06-FLUJO-COMPLETO.md](06-FLUJO-COMPLETO.md), y se comprueba con
 `npx playwright test herramientas/e2e/14-vacante.spec.ts`: abre un Chrome de verdad y va de la solicitud a la vacante
 publicada en el portal. ⚠️ Escribe en la base local.
+
+### Corregir una vacante con el lápiz (19/09)
+
+Cada fila en **borrador o publicada** lleva un lápiz, con el nombre accesible «Editar la vacante
+{título}»: con veinte filas, «Editar» a secas no dice cuál es cuál. En una cerrada no sale.
+Tampoco sale si quien mira no tiene `editar_vacante` o su alcance no llega a esa vacante; lo
+decide el backend fila a fila con `puedeEditar`, porque no hay endpoint de «mis permisos».
+
+Al pulsarlo se abre **el mismo formulario del alta**, con el título «Editar vacante» y los datos
+de ahora, sueldo incluido. La solicitud y el puesto salen como texto fijo, con la frase «El
+puesto decide el nivel y la familia de la evaluación; para cambiarlo, crea otra vacante». **Solo
+hay un formulario abierto a la vez**: abrir la edición cierra el alta y la solicitud, y al revés.
+
+| Cuándo | Qué dice el panel |
+|---|---|
+| Antes de guardar, en una publicada con gente en carrera | Bajo el botón, sin pedir confirmación: «Al guardar, avisaremos en su portal a N postulantes en carrera de lo que cambies» |
+| Guardó y avisó | «Cambios guardados. Avisamos a N postulantes en su portal». N son los avisos que de verdad se publicaron |
+| Guardó y no había a quién avisar | «Cambios guardados» |
+| No había nada distinto | «No había cambios que guardar». No se guarda, no se audita y no se avisa |
+| Algo falla | El error, junto al formulario, y lo escrito se queda. Si la vacante se cerró mientras tanto, no se guarda nada y la lista se recarga |
+
+En carrera es toda postulación que no esté contratada, cerrada ni en «no continúa». Lo interno
+—responsable, forma de cierre, plazas y fecha de cierre— se guarda **sin avisar a nadie**.
+
+**El sueldo también se corrige aquí.** En una publicada no se puede pasar de oculto a visible ni
+al revés, y la opción bloqueada dice por qué; el monto sí, y entonces se pide «Por qué cambia el
+sueldo». Si el mismo guardado cambia el sueldo y otra cosa, al candidato le llega **un solo
+aviso** con todo. La tarjeta del sueldo del detalle sigue existiendo para cambiar solo eso.
+
+⚠️ **Ni el formulario ni la tarjeta del sueldo mandan correo.** Lo que cambia en una vacante se
+avisa solo en la campana del portal, y la tarjeta ya dice «Avisamos a N candidatos en su portal»
+en vez de prometer un correo. El aviso del candidato dice «antes → ahora» en lo corto, nombra lo
+largo («se actualizaron la descripción y los requisitos») y lo lleva a su proceso.
+
+Comprobarlo: `npx playwright test herramientas/e2e/25-editar-vacante.spec.ts` **no escribe**
+—guarda el formulario tal cual y el backend contesta que no había cambios—.
+`herramientas/e2e/26-editar-vacante-avisos.spec.ts` ⚠️ **sí escribe**: siembra en el clon su
+propia vacante, candidatos y cuentas de panel, y lo retira al terminar salvo la auditoría, que la
+base no deja borrar. Necesita las variables de [TRABAJAR-EN-LOCAL.md](TRABAJAR-EN-LOCAL.md).
 
 ---

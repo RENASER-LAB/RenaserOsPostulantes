@@ -257,6 +257,20 @@ indispensable.
 
 Pasa a `PUBLICADA` y sale en la portada del portal el mismo instante.
 
+### 5b · Corregirla después (19/09/2026)
+
+**Panel · Vacantes → el lápiz de la fila**
+
+Mientras no esté cerrada, la vacante se corrige con el mismo formulario del
+alta. La solicitud y el puesto ya no se cambian: para eso se crea otra.
+
+Si está publicada y cambió algo que ve quien postula —título, textos,
+modalidad, horario, ubicación o sueldo—, **a cada postulante en carrera le
+llega un solo aviso en la campana del portal**, sin correo, con lo que
+cambió. Al pulsarlo va a su proceso y ve la vacante con los datos nuevos. Lo
+interno —responsable, forma de cierre, plazas, fecha de cierre— se guarda sin
+avisar. El detalle está en [PANEL.md](PANEL.md).
+
 ---
 
 ## Lo que hace quien postula
