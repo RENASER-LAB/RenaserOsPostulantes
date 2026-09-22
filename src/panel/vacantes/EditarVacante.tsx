@@ -69,12 +69,22 @@ export function FormularioDeEdicion({
   vacante,
   alCerrar,
   alTerminar,
+  alFallar,
 }: {
   vacante: VacantePanel
   /** Cerrar sin guardar: cancelar, el aspa, Escape o el fondo. */
   alCerrar: () => void
   /** Se llama con lo que el panel tiene que decir en voz alta al cerrar. */
   alTerminar: (mensaje: string) => void
+  /**
+   * El mismo fallo, repetido FUERA del modal por si el modal no sobrevive.
+   *
+   * Ver el comentario de `onError`: el error se escribe dentro del formulario, y
+   * eso basta mientras el formulario siga en pantalla. Cuando la vacante ya no
+   * existe, la fila se va de la lista y el modal se desmonta con ella —el
+   * mensaje incluido—, asi que el panel necesita tenerlo tambien fuera.
+   */
+  alFallar: (mensaje: string) => void
 }) {
   const [datos, setDatos] = useState<DatosDeVacante>(() => vacanteComoFormulario(vacante))
   const [remuneracion, setRemuneracion] = useState(() => desdeLaVacante(vacante.remuneracion))
@@ -132,9 +142,19 @@ export function FormularioDeEdicion({
      * el backend lo rechaza entero —no se guarda nada—, y sin volver a pedir la
      * lista la fila seguiría diciendo «Publicada» y el lápiz seguiría invitando
      * a reintentar algo que ya no se puede.
+     *
+     * ⚠️ Y desde que una vacante se puede ELIMINAR, ese refresco puede llevarse
+     * por delante este mismo modal: si la vacante ya no existe, su fila
+     * desaparece de la lista y el formulario se desmonta con ella. El mensaje
+     * que se acaba de escribir aquí se iría con el modal, y quien estaba
+     * corrigiendo la convocatoria vería exactamente lo mismo que cuando el
+     * guardado funciona: el formulario cerrándose sin decir nada. Por eso el
+     * fallo se cuenta TAMBIÉN hacia fuera, donde nada lo desmonta.
      */
     onError: (causa) => {
-      setFallo(causa instanceof Error ? causa.message : 'No se pudo guardar la vacante.')
+      const mensaje = causa instanceof Error ? causa.message : 'No se pudo guardar la vacante.'
+      setFallo(mensaje)
+      alFallar(mensaje)
       void cache.invalidateQueries({ queryKey: ['panel-vacantes'] })
     },
   })

@@ -51,3 +51,27 @@ export function IconoArchivo() {
     </svg>
   )
 }
+
+/**
+ * Retirar la vacante: una papelera, y aqui si.
+ *
+ * Es el dibujo que significa «esto deja de existir», que es exactamente lo que
+ * pasa —la vacante se va del panel y del portal y no vuelve desde aqui—. La
+ * caja y la papelera dicen cosas contrarias a proposito: quien duda entre
+ * archivar y eliminar tiene que poder distinguirlas de un vistazo, sin leer.
+ *
+ * El caracter destructivo se sostiene tambien fuera del dibujo: va la ultima de
+ * la fila, se pinta en rojo al acercarse y no hace nada al pulsarla —abre el
+ * modal, que es donde se confirma—.
+ */
+export function IconoPapelera() {
+  return (
+    <svg {...TRAZO}>
+      <path d="M4 7h16" />
+      <path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+      <path d="M6 7v12a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V7" />
+      <path d="M10 11v6" />
+      <path d="M14 11v6" />
+    </svg>
+  )
+}

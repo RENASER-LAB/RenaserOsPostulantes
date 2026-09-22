@@ -13,7 +13,7 @@
  * habia forma de escribir la segunda desde el panel.
  */
 
-import { useMemo, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
@@ -56,7 +56,8 @@ import {
 } from './CamposDeLaVacante'
 import { FormularioDeEdicion } from './EditarVacante'
 import { ModalDeArchivo } from './ArchivarVacante'
-import { IconoArchivo, IconoLapiz } from './IconosDeLaFila'
+import { ModalDeEliminacion } from './EliminarVacante'
+import { IconoArchivo, IconoLapiz, IconoPapelera } from './IconosDeLaFila'
 import estilos from './Vacantes.module.css'
 
 /** Como se dice cada estado de vacante. Los codigos son del backend. */
@@ -79,8 +80,23 @@ export function VacantesPanel() {
   const [editando, setEditando] = useState<number | null>(null)
   /** Que vacante esta esperando la confirmacion de archivo, si alguna. */
   const [archivando, setArchivando] = useState<number | null>(null)
+  /** Y cual espera la de eliminacion. Nunca las dos a la vez. */
+  const [eliminando, setEliminando] = useState<number | null>(null)
   /** Lo que se dice en voz alta despues de guardar. */
   const [confirmacion, setConfirmacion] = useState<string | null>(null)
+  /*
+   * Y lo que hay que decir cuando el guardado falla y el formulario ya no esta
+   * para decirlo.
+   *
+   * El modal escribe sus propios errores dentro, que es donde se leen mejor:
+   * junto al campo que hay que corregir y con lo escrito delante. Eso deja de
+   * funcionar en un caso, y llego con la eliminacion: si la vacante ya no
+   * existe, el refresco de la lista se lleva su fila y el modal se desmonta con
+   * ella —el mensaje incluido—. Lo que se ve entonces es un formulario que se
+   * cierra solo, igual que cuando el guardado sale bien, y quien corregia la
+   * convocatoria se queda creyendo que guardo.
+   */
+  const [falloDeLaEdicion, setFalloDeLaEdicion] = useState<string | null>(null)
   /*
    * El sitio al que va el foco cuando la fila que lo tenia desaparece.
    *
@@ -90,6 +106,15 @@ export function VacantesPanel() {
    * de irse la vacante.
    */
   const botonDeArchivadas = useRef<HTMLAnchorElement>(null)
+  /*
+   * Y donde va cuando la fila desaparece sin ir a ninguna parte.
+   *
+   * Eliminar no deja un sitio al que mirar —«Archivadas (N)» seria mentir—, asi
+   * que el foco vuelve al titulo de la pagina, que es justo encima del aviso
+   * que cuenta como acabo. `tabIndex={-1}` lo hace enfocable por codigo sin
+   * meterlo en el recorrido del tabulador.
+   */
+  const tituloDeLaPagina = useRef<HTMLHeadingElement>(null)
 
   const vacantes = useQuery({
     queryKey: ['panel-vacantes'],
@@ -116,12 +141,37 @@ export function VacantesPanel() {
   const laQueSeArchiva: VacantePanel | undefined = (vacantes.data ?? []).find(
     (v) => v.id === archivando,
   )
+  const laQueSeElimina: VacantePanel | undefined = (vacantes.data ?? []).find(
+    (v) => v.id === eliminando,
+  )
+
+  /*
+   * El fallo se enseña aquí SOLO cuando el formulario ya no está.
+   *
+   * Mientras el modal sigue abierto, el mensaje se lee dentro —junto a lo que
+   * hay que corregir— y repetirlo fuera lo diría dos veces, y dos veces
+   * tambien a quien navega con lector de pantalla. Esto es la red de abajo:
+   * salta justo cuando la fila desaparecio y el modal se fue con ella.
+   */
+  const laEdicionSeQuedoSinFila = falloDeLaEdicion !== null && !laQueSeEdita
+  useEffect(() => {
+    if (!laEdicionSeQuedoSinFila) return
+    // La vacante ya no esta en la lista: no hay nada que seguir editando, y
+    // dejarlo apuntado reabriria el modal si la fila volviera.
+    setEditando(null)
+    // El foco iba al lapiz que abrio el modal y ese boton se fue con la fila:
+    // sin esto, quien navega con teclado acaba en el `body`, al principio del
+    // documento y sin haber leido nada. El titulo esta justo encima del aviso.
+    tituloDeLaPagina.current?.focus()
+  }, [laEdicionSeQuedoSinFila])
 
   return (
     <div className={estilos.pagina}>
       <div className={estilos.cabecera}>
         <div>
-          <h1>Vacantes.</h1>
+          <h1 ref={tituloDeLaPagina} tabIndex={-1}>
+            Vacantes.
+          </h1>
           <p className={estilos.bajada}>
             Cada una con su estado. Dentro están los postulantes, el ranking y el avance
             de etapa.
@@ -208,12 +258,26 @@ export function VacantesPanel() {
            */
           key={laQueSeEdita.id}
           vacante={laQueSeEdita}
-          alCerrar={() => setEditando(null)}
+          alCerrar={() => {
+            setEditando(null)
+            setFalloDeLaEdicion(null)
+          }}
           alTerminar={async (mensaje) => {
             setEditando(null)
+            setFalloDeLaEdicion(null)
             setConfirmacion(mensaje)
             await cache.invalidateQueries({ queryKey: ['panel-vacantes'] })
           }}
+          /*
+           * El titulo se pone AQUI y no al pintar el aviso: cuando el aviso
+           * hace falta, la fila ya no esta en la lista y con ella se fue el
+           * nombre de la vacante. Decir cual era es la mitad del mensaje.
+           */
+          alFallar={(mensaje) =>
+            setFalloDeLaEdicion(
+              `No se guardó nada en «${laQueSeEdita.titulo}»: ${mensaje}`,
+            )
+          }
         />
       )}
 
@@ -233,9 +297,40 @@ export function VacantesPanel() {
         />
       )}
 
+      {laQueSeElimina && (
+        <ModalDeEliminacion
+          key={laQueSeElimina.id}
+          vacante={laQueSeElimina}
+          alCerrar={() => setEliminando(null)}
+          alEliminar={(mensaje) => {
+            setEliminando(null)
+            setConfirmacion(mensaje)
+            /*
+             * El foco NO va a «Archivadas»: la vacante no se fue ahi, se fue a
+             * ningun sitio. Volver al principio del documento seria dejar a
+             * quien navega con teclado sin saber que paso, asi que se manda al
+             * titulo de la pagina, que es donde vive el aviso que lo cuenta.
+             */
+            tituloDeLaPagina.current?.focus()
+          }}
+        />
+      )}
+
       {confirmacion && (
         <p className={`${estilos.aviso} ${estilos.bueno}`} role="status">
           {confirmacion}
+        </p>
+      )}
+
+      {/*
+        El fallo del formulario que ya no esta para contarlo. `role="alert"` y
+        no `status`: no es el final tranquilo de una accion, es que lo que se
+        estaba corrigiendo desaparecio y el texto escrito se perdio — se
+        interrumpe al lector de pantalla a proposito.
+      */}
+      {laEdicionSeQuedoSinFila && (
+        <p className={`${estilos.aviso} ${estilos.malo}`} role="alert">
+          {falloDeLaEdicion}
         </p>
       )}
 
@@ -287,9 +382,11 @@ export function VacantesPanel() {
                         onClick={() => {
                           setEditando((actual) => (actual === v.id ? null : v.id))
                           setArchivando(null)
+                          setEliminando(null)
                           setCreando(false)
                           setEscribiendoSolicitud(false)
                           setConfirmacion(null)
+                          setFalloDeLaEdicion(null)
                         }}
                       >
                         <IconoLapiz />
@@ -313,12 +410,44 @@ export function VacantesPanel() {
                         onClick={() => {
                           setArchivando((actual) => (actual === v.id ? null : v.id))
                           setEditando(null)
+                          setEliminando(null)
                           setCreando(false)
                           setEscribiendoSolicitud(false)
                           setConfirmacion(null)
                         }}
                       >
                         <IconoArchivo />
+                      </button>
+                    )}
+                    {/*
+                      La papelera, **la ultima de la fila y en cualquier estado**.
+
+                      Lo ultimo porque es lo unico que no se deshace: el orden
+                      de las acciones es editar, archivar y eliminar, y una
+                      accion destructiva en medio se pulsa por inercia.
+
+                      Y en cualquier estado porque una vacante mal creada se
+                      retira este donde este — la mas comun es justo el borrador
+                      que nadie llego a ver. Pulsarla no elimina nada: abre el
+                      modal, que es donde se cuentan las consecuencias y se pide
+                      el motivo.
+                    */}
+                    {v.puedeEliminar && (
+                      <button
+                        type="button"
+                        className={estilos.eliminar}
+                        aria-label={`Eliminar la vacante ${v.titulo}`}
+                        aria-expanded={eliminando === v.id}
+                        onClick={() => {
+                          setEliminando((actual) => (actual === v.id ? null : v.id))
+                          setEditando(null)
+                          setArchivando(null)
+                          setCreando(false)
+                          setEscribiendoSolicitud(false)
+                          setConfirmacion(null)
+                        }}
+                      >
+                        <IconoPapelera />
                       </button>
                     )}
                   </td>

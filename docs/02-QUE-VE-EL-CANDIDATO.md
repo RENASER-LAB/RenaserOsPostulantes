@@ -265,6 +265,13 @@ Es historial **real**, no inventado. Se puede pintar como línea de tiempo.
 **Acción:** retirarse (`POST .../retiro`). Retirarse ≠ borrar datos: son cosas distintas y hay
 que decirlo.
 
+⚠️ **Si la empresa eliminó la vacante (21/09/2026), el proceso deja de verse.** No llega en
+«Mis procesos», y abrirlo desde un enlace viejo responde 404: la pantalla dice «Esta vacante ya
+no está disponible.» y «La empresa la retiró, así que su proceso dejó de verse aquí. No tienes que
+hacer nada», con la vuelta a la lista. El detalle público de esa vacante dice lo mismo en su
+título. Quien seguía en carrera recibe en la campana un aviso **sin enlace**, y los avisos que ya
+tenía de esa vacante se quedan, también sin enlace.
+
 ### 2.8 Evaluación (Perfil Integral) — la pantalla difícil
 `GET /portal/evaluacion/{uuid}` → `estado`, `venceEn`, `iniciadaEn`, `terminadaEn`,
 `minutosObjetivo`, `total`, `respondidas`, y **todas las preguntas de golpe**.

@@ -39,6 +39,7 @@ import type {
   UsuarioEquipo,
   ConteoDeArchivadas,
   VacanteActualizadaResponse,
+  VacanteEliminadaResponse,
   VacantePanel,
   VersionBanco,
   NuevaVersionBanco,
@@ -187,6 +188,24 @@ export const archivarVacante = (id: number) =>
 /** Devolverla a la lista habitual. Sigue CERRADA y no reabre ninguna postulacion. */
 export const desarchivarVacante = (id: number) =>
   pedir<void>(`/vacantes/${id}/archivo`, { metodo: 'DELETE' })
+
+/**
+ * Eliminar la vacante que no debio existir. **No se deshace desde el panel.**
+ *
+ * `DELETE` sobre la vacante, con el motivo en el cuerpo: esta accion cierra las
+ * postulaciones de otras personas, les deja un aviso en su portal y devuelve la
+ * solicitud a ABIERTA, asi que la auditoria tiene que poder contestar por que.
+ * Sin motivo —o con espacios— el backend contesta 400 aunque el boton del panel
+ * este apagado.
+ *
+ * Devuelve cuantas postulaciones se cerraron y a cuantas les llego de verdad el
+ * aviso. Los dos numeros, y no uno: si alguno falla, el panel lo dice.
+ */
+export const eliminarVacante = (id: number, motivo: string) =>
+  pedir<VacanteEliminadaResponse>(`/vacantes/${id}`, {
+    metodo: 'DELETE',
+    cuerpo: { motivo },
+  })
 
 export const listarPuestos = () => pedir<PuestoPanel[]>('/puestos')
 /** El código interno lo genera el servidor cuando el panel no lo envía. */

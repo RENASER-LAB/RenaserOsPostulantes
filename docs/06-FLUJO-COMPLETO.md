@@ -271,6 +271,20 @@ cambió. Al pulsarlo va a su proceso y ve la vacante con los datos nuevos. Lo
 interno —responsable, forma de cierre, plazas, fecha de cierre— se guarda sin
 avisar. El detalle está en [PANEL.md](PANEL.md).
 
+### 5c · Retirarla si no debió existir (21/09/2026)
+
+**Panel · Vacantes → la papelera de la fila**
+
+La vacante creada por error se elimina en cualquier estado, con un motivo
+escrito y después de leer las consecuencias. Quien seguía en carrera queda con
+su postulación cerrada y **un aviso en la campana, sin correo y sin enlace**:
+«La empresa retiró esta vacante y tu postulación quedó cerrada. No tienes que
+hacer nada». La vacante sale del tablón, y el proceso sale de «Mis procesos» de
+todos los que postularon; si alguien abre un enlace viejo, lee «Esta vacante ya
+no está disponible». La solicitud que la respaldaba **vuelve a estar libre**
+para crear la vacante correcta. No se deshace desde el panel. El detalle está
+en [PANEL.md](PANEL.md).
+
 ---
 
 ## Lo que hace quien postula
