@@ -92,6 +92,7 @@ function vacante(cambios: Partial<Vacante> = {}): Vacante {
     puedeEditar: false,
     puedeArchivar: true,
     puedeDesarchivar: false,
+    puedeEliminar: false,
     ...cambios,
   }
 }

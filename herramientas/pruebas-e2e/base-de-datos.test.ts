@@ -90,6 +90,19 @@ describe('limpieza exacta', () => {
     expect(consulta.trim()).toMatch(/^begin;[\s\S]*commit;$/)
     expect(() => borrarCuentasDePrueba(['e2e.perfil.nuevo@example.com'], () => { throw new Error('auditoria_inmutable') })).toThrow('auditoria_inmutable')
   })
+  it('no intenta borrar el historial inmutable: lo que lo tiene se retira, no se borra', () => {
+    // La base rechaza el DELETE sobre transicion_estado (V6), y con él se caía la
+    // limpieza entera: la transacción se deshacía y dejaba puesto el terreno que
+    // venía a quitar, así que la ejecución siguiente tropezaba con lo mismo.
+    const ejecutar = vi.fn((_consulta: string) => '')
+    borrarCuentasDePrueba(['e2e.elimina.carrera0@example.com'], ejecutar)
+    const consulta = ejecutar.mock.calls[0]![0]
+    expect(consulta).not.toMatch(/delete\s+from\s+transicion_estado/i)
+    // Y las cuentas con historial no se borran a medias: quedan fuera de las que
+    // se borran y se retiran sin sesión y con otro correo.
+    expect(consulta).toContain('create temporary table qa_retenidas')
+    expect(consulta).toMatch(/update usuario[\s\S]*es_activo = false[\s\S]*qa_retenidas/)
+  })
   it('no ejecuta SQL con una lista vacía', () => {
     const consultar = vi.fn(); borrarCuentasDePrueba([], consultar); expect(consultar).not.toHaveBeenCalled()
   })

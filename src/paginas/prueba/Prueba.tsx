@@ -31,9 +31,11 @@ import {
 } from '@/api/prueba'
 import type { EntregableRequerido, FechaIso, MiPrueba } from '@/api/tipos'
 import { formatearFechaLarga, segundosHasta } from '@/dominio/reloj'
+import { usePantallaAbierta } from '@/paginas/procesos/useVacanteRetirada'
 import { rutas } from '@/rutas'
 import { useAviso } from '@/ui/Avisos'
 import { Cronometro } from '@/ui/Cronometro'
+import { VacanteRetirada } from '@/ui/Mensajes'
 import { Modal } from '@/ui/Modal'
 import { TextoPlano } from '@/ui/TextoPlano'
 import estilos from './Prueba.module.css'
@@ -100,16 +102,28 @@ function Entregable({
   entregable,
   bloqueado,
   alSubir,
+  siSeCerroLaPuerta,
+  seEnsena,
 }: {
   uuid: string
   entregable: EntregableRequerido
   /** Con el tiempo agotado ya no se admite nada: el servidor lo rechaza. */
   bloqueado: boolean
   alSubir: () => void
+  /** Un 404 al subir: la vacante pudo retirarse con la prueba abierta. Ver `usePantallaAbierta`. */
+  siSeCerroLaPuerta: (causa: unknown) => boolean
+  seEnsena: (causa: unknown) => boolean
 }) {
   const campoArchivo = useRef<HTMLInputElement>(null)
   const [enlace, setEnlace] = useState('')
-  const [error, setError] = useState<string | null>(null)
+  // Se guarda la causa y no solo el texto: un 404 no se enseña mientras se comprueba si es
+  // la vacante retirada.
+  const [fallo, setFallo] = useState<{ causa: unknown; texto: string } | null>(null)
+  const error = fallo !== null && seEnsena(fallo.causa) ? fallo.texto : null
+  const alFallar = (causa: unknown, siNoHayTexto: string) => {
+    siSeCerroLaPuerta(causa)
+    setFallo({ causa, texto: causa instanceof Error ? causa.message : siNoHayTexto })
+  }
 
   /*
    * El backend solo dice `entregado: true`. No devuelve el nombre del archivo
@@ -128,22 +142,22 @@ function Entregable({
   const archivo = useMutation({
     mutationFn: (f: File) => subirArchivo(uuid, entregable.id, f),
     onSuccess: (_resultado, f) => {
-      setError(null)
+      setFallo(null)
       setUltimoEnvio(f.name)
       alSubir()
     },
-    onError: (c) => setError(c instanceof Error ? c.message : 'No se pudo subir.'),
+    onError: (c) => alFallar(c, 'No se pudo subir.'),
   })
 
   const url = useMutation({
     mutationFn: (valor: string) => subirEnlace(uuid, entregable.id, valor),
     onSuccess: (_resultado, valor) => {
-      setError(null)
+      setFallo(null)
       setUltimoEnvio(valor)
       setEnlace('')
       alSubir()
     },
-    onError: (c) => setError(c instanceof Error ? c.message : 'No se pudo guardar el enlace.'),
+    onError: (c) => alFallar(c, 'No se pudo guardar el enlace.'),
   })
 
   return (
@@ -259,6 +273,7 @@ function PreguntaPrueba({
   bloqueado,
   registrarEnvio,
   registrarSiTieneTexto,
+  siSeCerroLaPuerta,
 }: {
   uuid: string
   pregunta: { id: number; enunciado: string; respuestaTexto: string | null }
@@ -278,6 +293,8 @@ function PreguntaPrueba({
    * entera nadie. No bloquea: avisa antes de un gesto que no tiene vuelta atras.
    */
   registrarSiTieneTexto: (preguntaId: number, tiene: boolean | null) => void
+  /** Un 404 al guardar: la vacante pudo retirarse con la prueba abierta. Ver `usePantallaAbierta`. */
+  siSeCerroLaPuerta: (causa: unknown) => boolean
 }) {
   const [texto, setTexto] = useState(pregunta.respuestaTexto ?? '')
   const [estado, setEstado] = useState<'limpio' | 'guardando' | 'pendiente'>('limpio')
@@ -321,7 +338,10 @@ function PreguntaPrueba({
         setEstado('limpio')
       }
     },
-    onError: () => setEstado('pendiente'),
+    onError: (causa) => {
+      setEstado('pendiente')
+      siSeCerroLaPuerta(causa)
+    },
   })
 
   const guardarTexto = guardar.mutateAsync
@@ -517,6 +537,14 @@ export function Prueba() {
     },
   })
 
+  // Un 404 aquí puede ser que la empresa retiró la vacante: lo dice su proceso. Y si la
+  // retira con la prueba abierta, quien se entera es el botón: ver `usePantallaAbierta`.
+  const { retirada, siSeCerroLaPuerta, seEnsena } = usePantallaAbierta(
+    uuid,
+    ['prueba', uuid],
+    consulta,
+  )
+
   const datos = consulta.data
   const tiempoAgotado = useTiempoAgotado(
     datos?.venceEn ?? null,
@@ -539,6 +567,7 @@ export function Prueba() {
       setConfirmarInicio(false)
       refrescar()
     },
+    onError: siSeCerroLaPuerta,
   })
 
   const entrega = useMutation({
@@ -556,9 +585,10 @@ export function Prueba() {
       avisar('Prueba entregada.')
       navegar(rutas.proceso(uuid), { replace: true })
     },
+    onError: siSeCerroLaPuerta,
   })
 
-  if (consulta.isPending) {
+  if (consulta.isPending || (consulta.isError && retirada === 'comprobando')) {
     return (
       <div className={estilos.pagina}>
         <div className={estilos.marco} aria-busy="true">
@@ -567,6 +597,15 @@ export function Prueba() {
           <div className={`${estilos.barra} ${estilos.barraMedia}`} />
           <div className={`${estilos.barra} ${estilos.barraCorta}`} />
         </div>
+      </div>
+    )
+  }
+
+  if (consulta.isError && retirada === 'retirada') {
+    // Ni reloj ni botón de entregar: la prueba es de un proceso que ya no existe.
+    return (
+      <div className={estilos.pagina}>
+        <VacanteRetirada />
       </div>
     )
   }
@@ -881,6 +920,7 @@ export function Prueba() {
                         bloqueado={tiempoAgotado}
                         registrarEnvio={registrarEnvio}
                         registrarSiTieneTexto={registrarSiTieneTexto}
+                        siSeCerroLaPuerta={siSeCerroLaPuerta}
                       />
                     ))}
                   </div>
@@ -903,6 +943,8 @@ export function Prueba() {
                         entregable={e}
                         bloqueado={tiempoAgotado}
                         alSubir={refrescar}
+                        siSeCerroLaPuerta={siSeCerroLaPuerta}
+                        seEnsena={seEnsena}
                       />
                     ))}
                   </div>
@@ -964,7 +1006,9 @@ export function Prueba() {
             corriendo. Al terminar se entrega lo que hayas guardado.
           </span>
         </p>
-        {inicio.isError && (
+        {/* Un 404 no se enseña mientras se comprueba: si es la vacante retirada, la pantalla
+            entera lo dice en vez de dejar el texto del servidor aquí con el reloj corriendo. */}
+        {inicio.isError && seEnsena(inicio.error) && (
           <p className={`${estilos.aviso} ${estilos.malo}`} role="alert">
             <span>
               {inicio.error instanceof Error ? inicio.error.message : 'No pudimos abrirla.'}
@@ -1019,7 +1063,7 @@ export function Prueba() {
         <p className={estilos.confirmacionTexto}>
           Después de entregar no podrás modificar archivos, enlaces ni respuestas.
         </p>
-        {entrega.isError && (
+        {entrega.isError && seEnsena(entrega.error) && (
           <p className={`${estilos.aviso} ${estilos.malo}`} role="alert">
             <span>
               {entrega.error instanceof Error ? entrega.error.message : 'No pudimos entregar.'}

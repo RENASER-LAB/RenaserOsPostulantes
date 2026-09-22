@@ -265,6 +265,24 @@ Es historial **real**, no inventado. Se puede pintar como línea de tiempo.
 **Acción:** retirarse (`POST .../retiro`). Retirarse ≠ borrar datos: son cosas distintas y hay
 que decirlo.
 
+⚠️ **Si la empresa eliminó la vacante (21/09/2026), el proceso deja de verse.** No llega en
+«Mis procesos», y abrirlo desde un enlace viejo responde 404: la pantalla dice «Esta vacante ya
+no está disponible.» y «La empresa la retiró, así que su proceso dejó de verse aquí. No tienes que
+hacer nada», con la vuelta a la lista. El detalle público de esa vacante dice lo mismo en su
+título. Quien seguía en carrera recibe en la campana un aviso **sin enlace**, y los avisos que ya
+tenía de esa vacante se quedan, también sin enlace.
+
+**Lo mismo en las pantallas de su proceso** (22/09/2026): la prueba del puesto, la evaluación, el
+cuestionario técnico y las fechas de la simulación enseñan ese mismo aviso (`VacanteRetirada`, en
+`src/ui/Mensajes.tsx`) en lugar de un error y sin ofrecer reintentar. Un 404 de esas pantallas no
+basta —en la simulación también es «todavía no elegiste fecha»—, así que se le pregunta a su
+proceso, y solo si también responde 404 se dice que la vacante ya no está. **Con la pantalla
+abierta desde antes** quien se entera es el botón: un 404 al empezar, responder, subir, entregar o
+confirmar fecha vuelve a pedir la pantalla, y si la vacante se eliminó la pantalla entera pasa al
+aviso. Si la vacante sigue ahí, ese 404 era otra cosa y se enseña su error normal; en la prueba,
+sin cerrar el diálogo. Lo hacen las cuatro con el mismo hook, `usePantallaAbierta`
+(`src/paginas/procesos/useVacanteRetirada.ts`).
+
 ### 2.8 Evaluación (Perfil Integral) — la pantalla difícil
 `GET /portal/evaluacion/{uuid}` → `estado`, `venceEn`, `iniciadaEn`, `terminadaEn`,
 `minutosObjetivo`, `total`, `respondidas`, y **todas las preguntas de golpe**.

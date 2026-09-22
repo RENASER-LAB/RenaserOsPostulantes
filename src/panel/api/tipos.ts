@@ -118,6 +118,16 @@ export interface VacantePanel {
   /** Si quien mira puede devolverla a la lista habitual. */
   puedeDesarchivar: boolean
   /**
+   * Si quien mira puede eliminar ESTA vacante.
+   *
+   * ⚠️ **No mira el estado, y ahi esta la diferencia con archivar.** El archivo
+   * solo tiene sentido sobre una cerrada; una vacante mal creada se retira este
+   * donde este —y la mas comun es justo el borrador que nadie llego a ver—. Lo
+   * unico que decide si sale la papelera es el permiso `eliminar_vacante` y su
+   * alcance. Cuanta gente sigue dentro lo cuenta el modal.
+   */
+  puedeEliminar: boolean
+  /**
    * Cuando cierra la prueba de esta vacante, **para todos**.
    *
    * `null` = no hay fecha comun: a cada persona le cierra N dias despues de que
@@ -147,6 +157,19 @@ export interface VacantePanel {
   intentosAbiertosSinPlazoPropio?: number | null
   /** Y cuantos se quedarian como estan por tener fecha propia. */
   intentosAbiertosConPlazoPropio?: number | null
+}
+
+/**
+ * Como acabo una eliminacion, en los dos numeros que el panel no puede deducir.
+ *
+ * **Se cuentan por separado a proposito.** Casi siempre son el mismo y entonces
+ * el panel dice «se cerraron N postulaciones y se les aviso». El dia que un
+ * aviso falle no lo son, y afirmar que a todos se les aviso seria mentir sobre
+ * lo unico que el candidato puede comprobar.
+ */
+export interface VacanteEliminadaResponse {
+  postulacionesCerradas: number
+  postulantesAvisados: number
 }
 
 /** Cuantas vacantes archivadas hay: el numero del boton de la cabecera. */

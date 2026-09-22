@@ -56,7 +56,7 @@ El detalle, en [docs/TRABAJAR-EN-LOCAL.md](docs/TRABAJAR-EN-LOCAL.md).
 | Tocar diseño: el mundo visual, sus cuatro reglas de forma, la tipografía, el mapa de `src/` | [EL-MUNDO-VISUAL](docs/EL-MUNDO-VISUAL.md), [DESIGN.md](DESIGN.md) |
 | Entender qué ve y qué hace quien postula, pantalla por pantalla | [02-QUE-VE-EL-CANDIDATO](docs/02-QUE-VE-EL-CANDIDATO.md) |
 | Seguir el proceso entero, los dos lados, con lo que desbloquea cada paso | [06-FLUJO-COMPLETO](docs/06-FLUJO-COMPLETO.md) |
-| Tocar el panel: entrar, las tres pestañas, el ranking por etapas, qué exige publicar una vacante, corregirla en su modal, archivarla y dónde queda, el plazo de su prueba, los huecos del backend | [PANEL](docs/PANEL.md) |
+| Tocar el panel: entrar, las tres pestañas, el ranking por etapas, qué exige publicar una vacante, corregirla en su modal, archivarla y dónde queda, eliminarla por borrado lógico, el plazo de su prueba, los huecos del backend | [PANEL](docs/PANEL.md) |
 | Saber qué falta, qué está a medias y qué promesa hoy no se cumple | [PENDIENTES](docs/PENDIENTES.md), [03-ESTADO-DEL-REDISENO](docs/03-ESTADO-DEL-REDISENO.md) |
 | Saber por qué algo quedó así, qué se probó al construirlo o qué se hizo un día concreto | [BITACORA-2026-09](docs/BITACORA-2026-09.md), [BITACORA-2026-08](docs/BITACORA-2026-08.md) |
 | Las 17 pantallas del maquetado, que es lo que se lee para construir | [maquetado/LEEME.md](maquetado/LEEME.md) |

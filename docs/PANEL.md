@@ -243,6 +243,61 @@ vacantes, un candidato en carrera y una cuenta de panel sin permiso de archivo �
 vacantes sembradas de la base, porque archivar una las escondería del resto de pruebas— y lo
 retiran al terminar. Necesitan las variables de [TRABAJAR-EN-LOCAL.md](TRABAJAR-EN-LOCAL.md).
 
+### Eliminar una vacante que no debió existir (21/09)
+
+Archivar guarda lo que terminó bien; **eliminar es para la que se creó por error** —el puesto
+equivocado, duplicada— y es excepcional. Si quien mira tiene `eliminar_vacante` y el alcance
+llega —lo dice `puedeEliminar` de la fila—, cada fila lleva una **papelera**, «Eliminar la
+vacante {título}», **esté en el estado que esté**, también en `/admin/archivadas`. Va en la misma
+columna de acciones y **al final**: editar, archivar o desarchivar, eliminar. No hay botón de
+eliminar en la cabecera, y no hace falta archivar antes.
+
+La papelera no elimina: abre el modal «Eliminar vacante» (el modal compartido `src/ui/Modal.tsx`),
+que nombra la vacante y cuenta lo que va a pasar: dejará de verse en el panel y en el portal
+—tablón, detalle público y «Mis procesos»—; **«Se cerrarán sus N postulaciones y se les avisará
+en su portal»**, solo si hay gente en carrera; y no se podrá deshacer desde el panel. Pide **«Por
+qué se elimina»**, y el botón destructivo «Eliminar vacante» se enciende solo con un motivo que no
+sea solo espacios —el backend aplica la misma regla y contesta 400—. «Cancelar», el aspa y Escape
+no cambian nada. Mientras envía dice «Eliminando…» y no se cierra; si falla, se queda con el
+error y **con el motivo escrito**, para reintentar.
+
+| Cuándo | Qué dice el panel |
+|---|---|
+| No había nadie en carrera | «Vacante eliminada» |
+| Se cerraron N y salieron los N avisos | «Vacante eliminada. Se cerraron N postulaciones y se les avisó en su portal» |
+| Algún aviso no salió | «Vacante eliminada. Se cerraron N postulaciones y se avisó a M: los avisos que faltan no salieron». **No se redondea**: el equipo necesita saber a quién escribir a mano |
+| Algo falla antes | El modal se queda con el error; la fila no se retira |
+
+Los números son los que contesta el servidor (`postulacionesCerradas`, `postulantesAvisados`), no
+los de la fila, que pueden tener un minuto. Al terminar se refrescan la lista, Archivadas y su
+contador, y **el foco va al título de la página**, donde vive el aviso: la vacante no se fue a
+Archivadas, se fue a ninguna parte. El doble clic lo frena el mismo `ref` que en archivar, y el
+backend tiene su `UPDATE` condicional.
+
+**Después, la vacante no existe para el panel**: su detalle responde 404 y no sale en ninguna
+lista ni contador. Un formulario de edición que alguien tenía abierto no guarda: el modal se va
+con la fila y queda, fuera de él, «No se guardó nada en «{título}»: …». En el portal, su detalle
+público y los procesos de quienes postularon dicen **«Esta vacante ya no está disponible.»**
+—también la prueba, la evaluación, el cuestionario técnico y las fechas de la simulación, y
+también si el candidato las tenía abiertas al eliminarla: lo dice el primer botón que pulse (ver
+[02-QUE-VE-EL-CANDIDATO.md](02-QUE-VE-EL-CANDIDATO.md), §2.7)—, y a quienes seguían en carrera
+les llega un aviso en la campana, sin enlace. No hay botón de restaurar: solo soporte, en la base.
+
+**Sus postulaciones se leen pero ya no se escriben.** Una ficha abierta desde antes sigue
+cargando —la ficha, la prueba y su plazo responden 200, por decisión del producto—, pero todo lo
+que escribe sobre ella —el plazo de esa persona, las notas, calificar con IA, el currículum, el
+contacto, el enlace de acceso, la simulación, la validación y la decisión— recibe un **404** del
+backend. La lista completa está en `09-APIS.md` del backend.
+
+Comprobarlo: `npx playwright test herramientas/e2e/29-eliminar-vacante.spec.ts`,
+`30-eliminar-vacante-regresiones.spec.ts`, `31-eliminar-vacante-y-su-prueba.spec.ts` —el enlace
+de la prueba en el portal y el plazo de la persona en el panel— y
+`32-eliminar-vacante-con-la-pantalla-abierta.spec.ts` —las cuatro pantallas del candidato abiertas
+mientras se elimina, por la API y sin salir de la página— ⚠️ **escriben**: siembran en el clon su propio terreno
+(`herramientas/e2e/ayuda-eliminar-vacante.ts`) —nunca las vacantes sembradas de la base, que no
+tienen vuelta— y lo retiran al terminar, salvo la auditoría y las transiciones, que la base no
+deja borrar. Necesitan las variables de [TRABAJAR-EN-LOCAL.md](TRABAJAR-EN-LOCAL.md).
+
 ### El plazo de la prueba se ve antes de cambiarlo (22/09)
 
 Los dos controles —la fecha de toda la convocatoria y la de una sola persona, los dos en

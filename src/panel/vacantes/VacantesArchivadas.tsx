@@ -29,6 +29,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { useRef, useState } from 'react'
 import { desarchivarVacante, listarVacantes } from '../api/panel'
+import { ModalDeEliminacion } from './EliminarVacante'
+import { IconoPapelera } from './IconosDeLaFila'
 import { rutas } from '@/rutas'
 import { formatearFechaCorta } from '@/dominio/reloj'
 import tabla from '../ui/Tabla.module.css'
@@ -38,6 +40,14 @@ export function VacantesArchivadas() {
   const cache = useQueryClient()
   const [fallo, setFallo] = useState<string | null>(null)
   const [dicho, setDicho] = useState<string | null>(null)
+  /** Que vacante archivada espera la confirmacion de eliminacion, si alguna. */
+  const [eliminando, setEliminando] = useState<number | null>(null)
+  /*
+   * Eliminar quita la fila y, con ella, el icono que abrio el modal: devolver
+   * el foco ahi lo manda al `body`. El titulo de la pantalla es el punto
+   * logico, porque es donde aparece el aviso que cuenta como acabo.
+   */
+  const tituloDeLaPagina = useRef<HTMLHeadingElement>(null)
 
   const vacantes = useQuery({
     queryKey: ['panel-vacantes-archivadas'],
@@ -92,6 +102,13 @@ export function VacantesArchivadas() {
     desarchivo.mutate(id)
   }
 
+  /*
+   * La que se elimina se busca en la lista recien traida y no se copia al abrir
+   * el modal: asi el conteo de postulantes que el modal dice en voz alta es el
+   * de ahora, no el de cuando se pulso la papelera.
+   */
+  const laQueSeElimina = (vacantes.data ?? []).find((v) => v.id === eliminando)
+
   return (
     <div className={estilos.pagina}>
       <Link className={estilos.volver} to={rutas.adminVacantes()}>
@@ -100,13 +117,29 @@ export function VacantesArchivadas() {
 
       <div className={estilos.cabecera}>
         <div>
-          <h1>Vacantes archivadas.</h1>
+          <h1 ref={tituloDeLaPagina} tabIndex={-1}>
+            Vacantes archivadas.
+          </h1>
           <p className={estilos.bajada}>
             Convocatorias cerradas que se retiraron de la lista. Su proceso sigue completo y
             se puede consultar; para volver a moverlas, desarchívalas.
           </p>
         </div>
       </div>
+
+      {laQueSeElimina && (
+        <ModalDeEliminacion
+          key={laQueSeElimina.id}
+          vacante={laQueSeElimina}
+          alCerrar={() => setEliminando(null)}
+          alEliminar={(mensaje) => {
+            setEliminando(null)
+            setFallo(null)
+            setDicho(mensaje)
+            tituloDeLaPagina.current?.focus()
+          }}
+        />
+      )}
 
       {dicho && (
         <p className={`${estilos.aviso} ${estilos.bueno}`} role="status">
@@ -161,6 +194,24 @@ export function VacantesArchivadas() {
                         onClick={() => pedirDesarchivo(v.id)}
                       >
                         Desarchivar
+                      </button>
+                    )}
+                    {/*
+                      Y la papelera, tambien aqui y tambien la ultima: una
+                      archivada se elimina sin tener que devolverla antes a la
+                      lista. Archivar y eliminar no son dos pasos de lo mismo.
+                    */}
+                    {v.puedeEliminar && (
+                      <button
+                        type="button"
+                        className={estilos.eliminar}
+                        aria-label={`Eliminar la vacante ${v.titulo}`}
+                        aria-expanded={eliminando === v.id}
+                        onClick={() =>
+                          setEliminando((actual) => (actual === v.id ? null : v.id))
+                        }
+                      >
+                        <IconoPapelera />
                       </button>
                     )}
                   </td>

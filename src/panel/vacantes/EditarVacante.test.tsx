@@ -23,6 +23,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
 import { VacantesPanel } from './Vacantes'
+import { ErrorApi } from '@/api/puerta'
 import type { Catalogos, VacantePanel as Vacante } from '../api/tipos'
 
 const listarVacantes = vi.fn()
@@ -100,6 +101,7 @@ function vacante(cambios: Partial<Vacante> = {}): Vacante {
     puedeEditar: true,
     puedeArchivar: false,
     puedeDesarchivar: false,
+    puedeEliminar: false,
     ...cambios,
   }
 }
@@ -355,6 +357,51 @@ describe('Al guardar', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }))
 
     expect(await screen.findByText('No había cambios que guardar')).toBeTruthy()
+  })
+
+  it('si la vacante desapareció de la lista, el fallo se dice fuera del modal', async () => {
+    /*
+     * El caso que trajo la eliminación: alguien retira la vacante mientras otra
+     * persona la está corrigiendo. El backend contesta 404 y no guarda nada —eso
+     * ya funcionaba—, pero el error se escribía DENTRO del modal y el mismo
+     * fallo refresca la lista: la fila se va, el modal se desmonta con ella y el
+     * mensaje se va con el modal. Lo que se veía era un formulario cerrándose
+     * solo, idéntico a un guardado correcto.
+     */
+    listarVacantes
+      .mockResolvedValueOnce([vacante()])
+      // El refresco de después del fallo: la vacante ya no existe para el panel.
+      .mockResolvedValue([])
+    editarVacante.mockRejectedValue(new ErrorApi(404, 'Vacante no encontrada con id: 10'))
+    await abrirLaEdicion()
+    fireEvent.change(screen.getByLabelText('Descripción'), {
+      target: { value: 'Un texto largo que costó escribir' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }))
+
+    // El modal se va con su fila, y el aviso se queda en la pantalla.
+    await waitFor(() =>
+      expect(screen.queryByRole('heading', { name: 'Editar vacante' })).toBeNull(),
+    )
+    expect(await screen.findByRole('alert')).toHaveProperty(
+      'textContent',
+      'No se guardó nada en «Desarrollador web»: Vacante no encontrada con id: 10',
+    )
+    // Y no se dice lo contrario por otro lado: nada de «Cambios guardados».
+    expect(screen.queryByRole('status')).toBeNull()
+  })
+
+  it('mientras el modal sigue abierto el fallo no se repite fuera', async () => {
+    // Dicho dos veces se lee dos veces, y un lector de pantalla lo anuncia dos
+    // veces. Fuera solo cuando dentro ya no hay dónde decirlo.
+    editarVacante.mockRejectedValue(new Error('Una vacante cerrada no se edita'))
+    await abrirLaEdicion()
+    fireEvent.change(screen.getByLabelText('Horario'), { target: { value: 'Turnos' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }))
+
+    expect(await screen.findByRole('alert')).toBeTruthy()
+    expect(screen.getAllByRole('alert')).toHaveLength(1)
+    expect(screen.getByRole('dialog')).toBeTruthy()
   })
 
   it('el error se enseña junto al formulario y lo escrito se queda', async () => {

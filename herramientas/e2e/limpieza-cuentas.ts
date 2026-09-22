@@ -2,6 +2,36 @@ import { seleccionDeCorreos, sql } from './base-de-datos'
 
 /** Borra solo las cuentas indicadas, en una transacción. Los triggers siguen activos.
  * Si la auditoría impide borrar, el error se propaga y se conserva el clon.
+ *
+ * ## Una cuenta con historial no se borra: se retira
+ *
+ * `transicion_estado` es inmutable desde la V6 —la base rechaza el DELETE con un
+ * trigger, a propósito: es el historial del proceso de una persona— y cada
+ * postulación cuelga de sus transiciones por clave ajena. Así que en cuanto una
+ * postulación de prueba tiene historial, la base **no permite** retirarla, ni a
+ * ella ni a la cuenta que la hizo: no es un descuido que se pueda arreglar
+ * borrando en otro orden.
+ *
+ * Mientras ninguna prueba movía de estado a sus cuentas sembradas esto no se
+ * notaba. Eliminar una vacante cierra las postulaciones en carrera, y ahí cada
+ * cuenta se quedó con su transición: la limpieza entera reventaba, se deshacía
+ * y dejaba el terreno puesto, así que la siguiente ejecución tropezaba con lo
+ * mismo y cuatro pruebas no llegaban a correr nunca.
+ *
+ * Lo que se hace es lo mismo que hace el sistema con el borrado de datos de la
+ * ley 29733, que se topa con esta misma regla: **lo que no se puede borrar se
+ * retira del camino**. La cuenta con historial se queda sin sesión
+ * (`es_activo`) y su correo pasa a uno que ninguna siembra vuelve a pedir, así
+ * que no choca con nada ni la recoge ninguna barrida posterior. Lo suyo —su
+ * postulación, su currículum, sus avisos— se queda donde está, como se queda la
+ * auditoría, y colgando de una vacante que a estas alturas ya no existe para
+ * ninguna pantalla.
+ *
+ * ⚠️ **La auditoría sigue siendo un error y no un caso previsto.** También es
+ * inmutable, pero una cuenta de prueba de candidato no tiene por qué dejar
+ * filas ahí: si las tiene, la limpieza falla, el error se propaga y el clon se
+ * conserva para mirarlo. Una transición, en cambio, es lo normal en cuanto se
+ * postula.
  */
 export function borrarCuentasDePrueba(correos: readonly string[], consultar: typeof sql = sql): void {
   if (!correos.length) return
@@ -9,8 +39,24 @@ export function borrarCuentasDePrueba(correos: readonly string[], consultar: typ
   consultar(`
 begin;
 
-create temporary table qa_cuentas on commit drop as
+create temporary table qa_indicadas on commit drop as
   select u.id as usuario_id, u.persona_id from usuario u where u.correo in (${seleccion});
+
+-- Las que la base no deja retirar, por el historial inmutable: el de su propia
+-- postulación, y también el de la de otro si fue esta cuenta quien lo movió —la
+-- transición guarda quién decidió, y esa fila tampoco se puede borrar.
+create temporary table qa_retenidas on commit drop as
+  select c.usuario_id, c.persona_id from qa_indicadas c
+  where exists (select 1 from postulacion p
+                 where p.usuario_id = c.usuario_id
+                   and exists (select 1 from transicion_estado t
+                                where t.postulacion_id = p.id))
+     or exists (select 1 from transicion_estado t where t.usuario_id = c.usuario_id);
+
+-- Y las que sí: de estas se va todo, igual que siempre.
+create temporary table qa_cuentas on commit drop as
+  select c.usuario_id, c.persona_id from qa_indicadas c
+  where not exists (select 1 from qa_retenidas r where r.usuario_id = c.usuario_id);
 create temporary table qa_postulaciones on commit drop as
   select id from postulacion where usuario_id in (select usuario_id from qa_cuentas);
 create temporary table qa_trabajos on commit drop as
@@ -100,9 +146,9 @@ delete from enlace_acceso where postulacion_id in (select id from qa_postulacion
 delete from evidencia_adicional where postulacion_id in (select id from qa_postulaciones);
 delete from inscripcion_sesion where postulacion_id in (select id from qa_postulaciones);
 delete from nota_etapa where postulacion_id in (select id from qa_postulaciones);
-delete from transicion_estado
-  where postulacion_id in (select id from qa_postulaciones)
-     or usuario_id in (select usuario_id from qa_cuentas);
+-- transicion_estado NO se toca: es inmutable (V6) y la base rechaza el DELETE. Las
+-- cuentas cuyas postulaciones tienen historial no llegan hasta aquí — quedaron fuera
+-- de qa_cuentas y se retiran al final. Ver el comentario de la función.
 delete from validacion where postulacion_id in (select id from qa_postulaciones);
 -- La campana del portal (V55). Cuelga del usuario y, cuando el aviso nace de una
 -- postulación, también de ella: por eso se borra por las dos vías y ANTES que las dos.
@@ -138,6 +184,14 @@ delete from archivo where id in (select id from qa_archivos_perfil where id is n
 delete from solicitud_borrado where persona_id in (select persona_id from qa_cuentas);
 delete from usuario where id in (select usuario_id from qa_cuentas);
 delete from persona where id in (select persona_id from qa_cuentas);
+
+-- Y las que no se pudieron retirar, fuera del camino: sin sesión y con un correo que
+-- ninguna siembra vuelve a pedir ni ninguna barrida vuelve a recoger. Es lo único que
+-- se les hace; lo suyo se queda, como se queda la auditoría.
+update usuario
+   set es_activo = false,
+       correo = 'e2e.retirada.' || gen_random_uuid() || '@example.com'
+ where id in (select usuario_id from qa_retenidas);
 
 commit;
 `)

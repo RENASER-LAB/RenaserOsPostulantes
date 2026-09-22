@@ -27,6 +27,7 @@ código antes de darlas por ciertas.
 | **Cuenta de prueba en la base real** | `prueba.portal.qa.20260819@example.com` quedó como candidata activa, postulada a Ingeniero/a de Infraestructura (`f7a53fcc-11eb-4369-be96-bee577bdea85`) |
 | **Vercel escribe en producción** | El portal desplegado usa la misma base real |
 | **Tres casos antiguos que el lápiz no guarda a la primera** | Conocidos y dejados fuera de la entrega del 19/09/2026. Un sueldo guardado **con céntimos** hace que guardar responda con error hasta escribir el monto sin ellos. Si el **responsable o la forma de cierre** guardados ya no están en su catálogo, el desplegable se ve vacío, aunque el valor guardado no se pierde. Y una vacante **«por plazas» sin número de plazas** no se guarda hasta escribir un entero |
+| **Dos fallos del examen que ya estaban antes** | Los vio QA el 22/09/2026 y se dejaron fuera de la entrega de eliminar vacantes. En la **evaluación**, una respuesta que el servidor rechaza de forma definitiva —un 4xx que no es 408 ni 429— sale de la cola de `useColaDeRespuestas`, así que al volver a esa pregunta **el recuadro aparece vacío** aunque diga «No se pudo guardar». En el **cuestionario técnico**, el error de un «Empezar la prueba» fallido **sigue en pantalla después de empezar bien**: el inicio que sale bien no limpia el fallo anterior |
 
 Pendiente de comprobar: si hay evaluaciones ya entregadas con menos respuestas de las que
 deberían. Las que se perdieron **no se recuperan**, nunca llegaron al servidor.

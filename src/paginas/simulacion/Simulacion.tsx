@@ -16,9 +16,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { inscribirse, miSesion, sesionesDisponibles } from '@/api/simulacion'
 import { ErrorApi } from '@/api/cliente'
 import { formatearFechaLarga, horaDelTramo } from '@/dominio/reloj'
+import { usePantallaAbierta } from '@/paginas/procesos/useVacanteRetirada'
 import { rutas } from '@/rutas'
 import { useAviso } from '@/ui/Avisos'
-import { Cargando, Fallo } from '@/ui/Mensajes'
+import { Cargando, Fallo, VacanteRetirada } from '@/ui/Mensajes'
 import { Vacio } from '@/ui/Vacio'
 import estilos from './Simulacion.module.css'
 
@@ -27,7 +28,9 @@ export function Simulacion() {
   const avisar = useAviso()
   const cache = useQueryClient()
   const [elegida, setElegida] = useState<number | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  // Se guarda la causa y no solo el texto: un 404 al confirmar no se enseña mientras se
+  // comprueba si es que la empresa retiró la vacante con la lista abierta.
+  const [fallo, setFallo] = useState<{ causa: unknown; texto: string } | null>(null)
 
   // Si ya esta inscrito, esta consulta trae la sesion. Si no, el backend
   // responde 404 y hay que enseñar las fechas disponibles.
@@ -47,6 +50,13 @@ export function Simulacion() {
     enabled: uuid !== '' && inscripcion.isError,
   })
 
+  // Sin inscripción, el 404 de «mi sesión» es lo normal; el de las fechas no. Si
+  // tampoco hay fechas que pedir, se le pregunta a su proceso: puede que la
+  // empresa haya retirado la vacante. Con la lista abierta desde antes, quien se
+  // entera es «Confirmar asistencia», que ya vuelve a pedir las fechas al fallar.
+  const { retirada, seEnsena } = usePantallaAbierta(uuid, ['sesiones', uuid], disponibles)
+  const error = fallo !== null && seEnsena(fallo.causa) ? fallo.texto : null
+
   const inscripcionNueva = useMutation({
     mutationFn: (sesionId: number) => inscribirse(uuid, sesionId),
     onSuccess: async () => {
@@ -55,7 +65,10 @@ export function Simulacion() {
       avisar('Asistencia confirmada.')
     },
     onError: async (causa) => {
-      setError(causa instanceof Error ? causa.message : 'No pudimos confirmar la fecha.')
+      setFallo({
+        causa,
+        texto: causa instanceof Error ? causa.message : 'No pudimos confirmar la fecha.',
+      })
 
       // El motivo mas probable de que esto falle es que la sesion se llenara
       // entre que se cargo la lista y se pulso el boton. Enseñar el error sobre
@@ -149,6 +162,10 @@ export function Simulacion() {
     )
   }
 
+  // ---------- Su vacante ya no existe ----------
+
+  if (retirada === 'retirada') return <VacanteRetirada />
+
   // ---------- Todavia tiene que elegir ----------
 
   return (
@@ -165,12 +182,17 @@ export function Simulacion() {
         </p>
       </div>
 
-      {disponibles.isPending && <Cargando que="Buscando fechas disponibles…" />}
-      {disponibles.isError && (
+      {(disponibles.isPending || (disponibles.isError && retirada === 'comprobando')) && (
+        <Cargando que="Buscando fechas disponibles…" />
+      )}
+      {disponibles.isError && retirada === 'no' && (
         <Fallo error={disponibles.error} reintentar={() => void disponibles.refetch()} />
       )}
 
+      {/* Mientras se comprueba si la vacante sigue, no se deja elegir entre fechas de una
+          lista que quizá ya no existe. */}
       {disponibles.data &&
+        retirada === 'no' &&
         (disponibles.data.length === 0 ? (
           <Vacio titulo="Todavía no hay fechas con cupo">
             En cuanto se publique una sesión para tu vacante te avisaremos y aparecerá
@@ -202,7 +224,7 @@ export function Simulacion() {
                       disabled={llena}
                       onChange={() => {
                         setElegida(s.id)
-                        setError(null)
+                        setFallo(null)
                       }}
                     />
                     <span className={estilos.marca} aria-hidden="true" />

@@ -19,7 +19,14 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import type { EvaluacionCandidato, PreguntaEvaluacion } from '@/api/tipos'
 import { ProveedorAvisos } from '@/ui/Avisos'
-import { responderEvaluacion, verEvaluacion } from '@/api/evaluacion'
+import {
+  entregarEvaluacion,
+  iniciarEvaluacion,
+  responderEvaluacion,
+  verEvaluacion,
+} from '@/api/evaluacion'
+import { ErrorApi } from '@/api/cliente'
+import { verPostulacion } from '@/api/portal'
 import { Evaluacion } from './Evaluacion'
 import { estadoDePregunta, siguienteIncompleta } from './bancoV3'
 
@@ -89,6 +96,9 @@ vi.mock('@/api/evaluacion', () => ({
   }),
   entregarEvaluacion: vi.fn(async () => ({ estado: 'ENTREGADA', respondidas: guardadas.size, total: TOTAL })),
 }))
+
+// Su proceso: solo se le pregunta cuando la evaluación contesta 404.
+vi.mock('@/api/portal', () => ({ verPostulacion: vi.fn() }))
 
 // ---------- Montaje ----------
 
@@ -575,5 +585,131 @@ describe('el estado de cada pregunta', () => {
     // El unico hueco es el de delante: no hay «siguiente» al que mandar a nadie.
     expect(siguienteIncompleta(['lista', 'a-medias'], 1)).toBe(-1)
     expect(siguienteIncompleta(['lista', 'lista'], 0)).toBe(-1)
+  })
+})
+
+describe('cuando la empresa retiró la vacante', () => {
+  it('el enlace viejo dice que la vacante ya no está, sin ofrecer reintentar', async () => {
+    const yaNoExiste = new ErrorApi(404, "Postulación not found with código: 'x1'")
+    vi.mocked(verEvaluacion).mockRejectedValueOnce(yaNoExiste)
+    vi.mocked(verPostulacion).mockRejectedValueOnce(yaNoExiste)
+    montar()
+
+    expect(
+      await screen.findByRole('heading', { name: /Esta vacante ya no está disponible/ }),
+    ).toBeTruthy()
+    expect(screen.queryByRole('heading', { name: 'No pudimos abrir tu evaluación.' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Intentar de nuevo' })).toBeNull()
+  })
+
+  /*
+    Con la evaluación abierta desde antes de que la retiren, quien se entera es el botón.
+    Antes solo la prueba del puesto lo sabía leer: aquí «Empezar evaluación» se tragaba el
+    404, cada respuesta quedaba en «No se pudo guardar» sin decir por qué y la entrega
+    enseñaba el texto del servidor dentro del modal (QA-830D-C3-1).
+  */
+  const yaNoExiste = () => new ErrorApi(404, "Postulación not found with código: 'x1'")
+
+  /** La siguiente lectura de la evaluación y la de su proceso contestan que ya no existe. */
+  function laRetiran() {
+    vi.mocked(verEvaluacion).mockRejectedValueOnce(yaNoExiste())
+    vi.mocked(verPostulacion).mockRejectedValueOnce(yaNoExiste())
+  }
+
+  const elAviso = () =>
+    screen.findByRole('heading', { name: /Esta vacante ya no está disponible/ })
+
+  it('abierta sin empezar, «Empezar evaluación» con 404 dice que la vacante ya no está', async () => {
+    montar()
+    const empezarla = await screen.findByRole('button', { name: /Empezar evaluación/ })
+
+    vi.mocked(iniciarEvaluacion).mockRejectedValueOnce(yaNoExiste())
+    laRetiran()
+    fireEvent.click(empezarla)
+
+    expect(await elAviso()).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /Empezar evaluación/ })).toBeNull()
+    expect(screen.queryByText(/not found/)).toBeNull()
+  })
+
+  it('en curso, una respuesta con 404 dice que la vacante ya no está, no «No se pudo guardar»', async () => {
+    await empezar()
+
+    vi.mocked(responderEvaluacion).mockRejectedValueOnce(yaNoExiste())
+    laRetiran()
+    responder('Una respuesta que ya no tiene dónde guardarse.')
+    siguiente()
+
+    expect(await elAviso()).toBeTruthy()
+    expect(screen.queryByText('No se pudo guardar')).toBeNull()
+    expect(screen.queryByLabelText('Tu respuesta')).toBeNull()
+  })
+
+  it('al entregar, un 404 lo dice fuera del modal y sin el texto del servidor', async () => {
+    guardadas.set(1, 'Uno.')
+    opcionesGuardadas.set(CON_OPCIONES, 21)
+    guardadas.set(3, 'Tres.')
+    guardadas.set(4, 'Cuatro.')
+    iniciada = true
+    montar()
+    fireEvent.click(await screen.findByRole('button', { name: 'Ir al final' }))
+    fireEvent.click(await screen.findByRole('button', { name: /Entregar evaluación/ }))
+    const entregarla = await screen.findByRole('button', { name: 'Entregar' })
+
+    vi.mocked(entregarEvaluacion).mockRejectedValueOnce(yaNoExiste())
+    laRetiran()
+    fireEvent.click(entregarla)
+
+    expect(await elAviso()).toBeTruthy()
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(screen.queryByText(/not found/)).toBeNull()
+  })
+
+  it('un 404 al empezar con la evaluación todavía ahí no se hace pasar por una vacante retirada', async () => {
+    montar()
+    const empezarla = await screen.findByRole('button', { name: /Empezar evaluación/ })
+
+    // La evaluación se vuelve a leer y sigue ahí: el 404 era otra cosa, y se dice.
+    vi.mocked(iniciarEvaluacion).mockRejectedValueOnce(
+      new ErrorApi(404, 'No tienes una evaluación asignada'),
+    )
+    fireEvent.click(empezarla)
+
+    expect((await screen.findByRole('alert')).textContent).toMatch(
+      /No tienes una evaluación asignada/,
+    )
+    expect(screen.queryByRole('heading', { name: /Esta vacante ya no está disponible/ })).toBeNull()
+    expect(verEvaluacion).toHaveBeenCalledTimes(2)
+    // Ni se le preguntó a su proceso: la evaluación contestó.
+    expect(verPostulacion).not.toHaveBeenCalled()
+  })
+
+  it('un 404 al responder con la evaluación todavía ahí sigue en «No se pudo guardar»', async () => {
+    await empezar()
+
+    vi.mocked(responderEvaluacion).mockRejectedValueOnce(
+      new ErrorApi(404, 'Pregunta not found with id: 1'),
+    )
+    responder('Una respuesta.')
+    siguiente()
+    fireEvent.click(screen.getByRole('button', { name: 'Anterior' }))
+
+    expect(await screen.findByText('No se pudo guardar')).toBeTruthy()
+    expect(screen.queryByRole('heading', { name: /Esta vacante ya no está disponible/ })).toBeNull()
+    expect(verPostulacion).not.toHaveBeenCalled()
+  })
+
+  it('un fallo que no es 404 al empezar se dice, en vez de tragárselo', async () => {
+    montar()
+    const empezarla = await screen.findByRole('button', { name: /Empezar evaluación/ })
+
+    vi.mocked(iniciarEvaluacion).mockRejectedValueOnce(
+      new ErrorApi(500, 'El sistema tuvo un problema. Inténtalo de nuevo en un momento.'),
+    )
+    fireEvent.click(empezarla)
+
+    expect((await screen.findByRole('alert')).textContent).toMatch(/El sistema tuvo un problema/)
+    // Un 500 no es una puerta cerrada: ni se vuelve a leer la evaluación.
+    expect(verEvaluacion).toHaveBeenCalledTimes(1)
   })
 })
