@@ -46,8 +46,10 @@ import {
 } from '@/api/evaluacion'
 import type { DetalleRespuesta, EvaluacionCandidato, PreguntaEvaluacion } from '@/api/tipos'
 import { diasHasta, formatearTiempo, segundosHasta } from '@/dominio/reloj'
+import { usePantallaAbierta } from '@/paginas/procesos/useVacanteRetirada'
 import { rutas } from '@/rutas'
 import { useAviso } from '@/ui/Avisos'
+import { VacanteRetirada } from '@/ui/Mensajes'
 import { Modal } from '@/ui/Modal'
 import { RespuestaDeLaPregunta } from './Formatos'
 import { useColaDeRespuestas } from './useColaDeRespuestas'
@@ -169,6 +171,18 @@ export function Evaluacion() {
     refetchOnWindowFocus: true,
   })
 
+  // Un 404 aquí puede ser que la empresa retiró la vacante: lo dice su proceso. Y si la
+  // retira con la evaluación abierta, quien se entera es el botón —empezar, cada respuesta,
+  // entregar—: todos pasan su fallo por `siSeCerroLaPuerta`. Ver `usePantallaAbierta`.
+  //
+  // Sin recarga periódica, a propósito: cada respuesta ya es una pregunta al servidor, y
+  // pedir las sesenta preguntas cada pocos segundos es justo el tráfico que se quitó.
+  const { retirada, siSeCerroLaPuerta, seEnsena } = usePantallaAbierta(
+    uuid,
+    ['evaluacion', uuid],
+    consulta,
+  )
+
   const preguntas = useMemo(() => consulta.data?.preguntas ?? [], [consulta.data])
   const pregunta = preguntas[indice]
 
@@ -204,6 +218,9 @@ export function Evaluacion() {
         detalle: datos.detalle,
         segundos: datos.segundos,
       }),
+    // La cola ya da por atascada una respuesta con 404; esto es para que la pantalla diga
+    // por qué, si es que la vacante se retiró, en vez de dejarla en «No se pudo guardar».
+    onError: siSeCerroLaPuerta,
   })
 
   const mandarAlServidor = useCallback(
@@ -306,6 +323,9 @@ export function Evaluacion() {
     onSuccess: async () => {
       await cache.invalidateQueries({ queryKey: ['evaluacion', uuid] })
     },
+    // Antes no tenía: un fallo al empezar —el 404 de una vacante retirada incluido— se
+    // tragaba en silencio y el botón seguía ahí sin decir nada.
+    onError: siSeCerroLaPuerta,
   })
 
   const entrega = useMutation({
@@ -334,6 +354,7 @@ export function Evaluacion() {
       avisar('Evaluación entregada. Te avisaremos cuando avance.')
       navegar(rutas.proceso(uuid), { replace: true })
     },
+    onError: siSeCerroLaPuerta,
   })
 
   /**
@@ -486,7 +507,7 @@ export function Evaluacion() {
     return () => document.removeEventListener('keydown', alPulsar)
   }, [mapaAbierto])
 
-  if (consulta.isPending) {
+  if (consulta.isPending || (consulta.isError && retirada === 'comprobando')) {
     return (
       <div className={estilos.pagina}>
         <div className={estilos.marco} aria-busy="true">
@@ -495,6 +516,14 @@ export function Evaluacion() {
           <div className={`${estilos.barra} ${estilos.barraMedia}`} />
           <div className={`${estilos.barra} ${estilos.barraCorta}`} />
         </div>
+      </div>
+    )
+  }
+
+  if (consulta.isError && retirada === 'retirada') {
+    return (
+      <div className={estilos.pagina}>
+        <VacanteRetirada />
       </div>
     )
   }
@@ -595,6 +624,13 @@ export function Evaluacion() {
           >
             {inicio.isPending ? 'Abriendo…' : 'Empezar evaluación'}
           </button>
+          {inicio.isError && seEnsena(inicio.error) && (
+            <p className={`${estilos.aviso} ${estilos.malo}`} role="alert">
+              <span>
+                {inicio.error instanceof Error ? inicio.error.message : 'No pudimos abrirla.'}
+              </span>
+            </p>
+          )}
         </div>
       </div>
     )
@@ -1000,7 +1036,9 @@ export function Evaluacion() {
             </span>
           </p>
         )}
-        {entrega.isError && (
+        {/* Un 404 no se enseña mientras se comprueba: si es la vacante retirada, la pantalla
+            entera lo dice en vez de dejar el texto del servidor dentro del modal. */}
+        {entrega.isError && seEnsena(entrega.error) && (
           <p className={`${estilos.aviso} ${estilos.malo}`} role="alert">
             <span>
               {entrega.error instanceof Error ? entrega.error.message : 'No pudimos entregar.'}

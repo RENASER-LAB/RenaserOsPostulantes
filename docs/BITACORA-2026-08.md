@@ -1227,6 +1227,10 @@ responde 409.
 **Una prueba `CRONOMETRADA` no admite fecha de cierre**, y el backend lo explica bien: el plazo
 son los minutos que corren desde que cada uno empieza. El panel enseña ese mensaje tal cual.
 
+⚠️ **Eso dejó de ser cierto el 22/09/2026**: el backend quitó ese rechazo y hoy el reloj y la
+fecha conviven —rige el que caiga antes—, así que el panel sí ofrece ahí el control. Cómo se ve
+ahora, en «El plazo de la prueba se ve antes de cambiarlo» de [PANEL.md](PANEL.md).
+
 ### La zona horaria, otra vez
 
 Las dos fechas viajan como `Instant`. `new Date('2036-01-15T23:59').toISOString()` sí da el
@@ -1255,8 +1259,9 @@ npx playwright test herramientas/e2e/20-prueba-y-empresas.spec.ts
 ```
 
 28 comprobaciones: el contrato de los cuatro endpoints, las columnas que cambian con la
-pestaña, la ficha con lo escrito, el cierre rechazado por cronometrada, la criba que pregunta
-antes y el pie del portal. **Es lo que encontró las cuatro trampas de arriba.**
+pestaña, la ficha con lo escrito, el cierre de la prueba —el caso de la cronometrada se dio la
+vuelta el 22/09/2026 y hoy comprueba que **sí** acepta fecha—, la criba que pregunta antes y el
+pie del portal. **Es lo que encontró las cuatro trampas de arriba.**
 
 ⚠️ **Escribe poco y todo idempotente**: quita un cierre que ya estaba quitado y pide una
 calificación. Lo que no se deshace son las filas de auditoría, y es correcto que así sea.

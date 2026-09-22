@@ -22,7 +22,8 @@ import { Link, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { verPostulacion } from '@/api/portal'
 import { rutas } from '@/rutas'
-import { Cargando, Fallo } from '@/ui/Mensajes'
+import { esPuertaCerrada } from '@/paginas/procesos/useVacanteRetirada'
+import { Cargando, Fallo, VacanteRetirada } from '@/ui/Mensajes'
 import estilos from './Decision.module.css'
 
 const CORREO = 'talento@renaser.pe'
@@ -43,6 +44,9 @@ export function Decision() {
   })
 
   if (consulta.isPending) return <Cargando que="Cargando tu proceso…" />
+  // Es la consulta de su proceso: un 404 aquí es lo mismo que en su detalle, la
+  // vacante ya no está.
+  if (consulta.isError && esPuertaCerrada(consulta.error)) return <VacanteRetirada />
   if (consulta.isError) {
     return <Fallo error={consulta.error} reintentar={() => void consulta.refetch()} />
   }

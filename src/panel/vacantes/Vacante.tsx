@@ -2332,12 +2332,13 @@ function DetalleDelPostulante({ fila, etapa }: { fila: FilaRanking; etapa: Etapa
             <PlazoDeUnaPersona
               postulacionId={fila.postulacionId}
               /*
-                No hay nada que refrescar y no es un descuido: la fecha propia
-                no sale en ninguna otra parte de la ficha —`FichaPostulacion` no
-                la trae— y el propio control ya ensena lo que contesto el
-                servidor. Invalidar consultas aqui seria pedir datos que nadie
-                va a mirar; el dia que la ficha traiga el plazo, esto pasa a
-                refrescarla.
+                Sigue sin haber nada que refrescar DESDE AQUI, y no es un
+                descuido: el plazo de esta persona no sale en ninguna otra parte
+                de la ficha —`FichaPostulacion` no lo trae— y el propio control
+                ya relee el suyo (`panel-plazo-prueba`) en cuanto guarda, que es
+                lo que hace que la linea de arriba pase a decir «fecha puesta a
+                mano». Invalidar el ranking aqui seria pedir datos que ninguna
+                columna enseña.
               */
               alGuardar={noHayNadaQueRefrescar}
             />
@@ -3734,7 +3735,10 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
         </label>
         )}
 
-        <label className={estilos.ajuste}>
+        {/* El `id` es el destino del enlace «Ajustar los minutos →» de «Plazos
+            de la prueba»: con el cuestionario tecnico no hay fecha que fijar y
+            el tiempo se cambia aqui, unas lineas mas arriba en la misma pagina. */}
+        <label className={estilos.ajuste} id="tiempo-de-la-etapa-tecnica">
           <span className={estilos.etiquetaAjuste}>Cuánto tiempo tendrá</span>
           <MinutosDeLaEtapa vacante={vacante} alGuardar={instrumento.mutate}
                             guardando={instrumento.isPending} />
@@ -3796,34 +3800,51 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
         pulsar.
       */}
       {/*
-        Dos casos en los que el control no se ofrece, comprobados llamando al
-        backend y no leyendo el codigo:
+        Tres casos en los que el control NO se ofrece, y uno en el que se ofrece
+        distinto. Los cuatro salen de lo que contesta el backend, comprobado
+        llamandolo y no leyendo el codigo:
 
-        - **Vacante cerrada**: contesta 409 «Una vacante cerrada no se edita».
-        - **Sin version de prueba elegida**: revienta con un 400 cuyo texto es
-          «The given id must not be null» — el `findById(null)` de Spring Data
-          saliendo a la cara de quien usa el panel, en ingles. Es un fallo del
-          backend, pero ofrecer el control aqui seria ofrecer una averia.
+        - **Vacante cerrada**: 409 «Una vacante cerrada no se edita».
+        - **Cuestionario tecnico**: 409 explicando que su etapa tecnica no se
+          cierra con una fecha — su plazo son los minutos de la vacante, que se
+          ajustan aqui mismo, unas lineas mas arriba.
+        - **Sin version de prueba elegida**: 409 «Esta vacante no rinde una
+          prueba del puesto…».
 
-        En los dos casos se dice por que en vez de esconderlo sin mas: un hueco
-        callado en la pantalla que ordena la prueba se lee como que falta una
-        pieza del panel.
+        ⚠️ **La regla vieja escondia tambien la CRONOMETRADA**, que sí admite
+        fecha: desde que empezar se queda con el plazo que caiga antes entre el
+        reloj y la fecha de la convocatoria, las dos conviven. Esconderlo dejaba
+        sin forma de decir «nadie sigue después del domingo» en las pruebas que
+        mas lo necesitan.
+
+        En los tres primeros se dice por que en vez de esconderlo sin mas: un
+        hueco callado en la pantalla que ordena la prueba se lee como que falta
+        una pieza del panel. Y el desplegable se abre igual, porque es donde
+        quien busca la fecha va a mirar.
       */}
-      {vacante.estado === 'CERRADA' ? (
-        <p className={estilos.ayudaAjuste}>
-          La vacante está cerrada, así que su prueba ya no admite una fecha nueva.
-        </p>
-      ) : vacante.versionPlantillaPruebaId === null ? (
-        <p className={estilos.ayudaAjuste}>
-          Para fijar cuándo cierra la prueba hay que elegir antes cuál es: la fecha
-          se calcula sobre la versión de la plantilla.
-        </p>
-      ) : (
-        <details className={estilos.plazosPlegables}>
-          <summary>Plazos de la prueba</summary>
-          <CierreDeLaVacante vacanteId={vacante.id} alGuardar={refrescar} />
-        </details>
-      )}
+      <details className={estilos.plazosPlegables}>
+        <summary>Plazos de la prueba</summary>
+        {vacante.estado === 'CERRADA' ? (
+          <p className={estilos.ayudaAjuste}>
+            La vacante está cerrada, así que su prueba ya no admite una fecha nueva.
+          </p>
+        ) : vacante.instrumentoEtapaTecnica === 'CUESTIONARIO_TECNICO' ? (
+          <p className={estilos.ayudaAjuste}>
+            {typeof vacante.minutosPruebaVigentes === 'number'
+              ? `Esta vacante rinde el cuestionario técnico: cada persona tiene ${vacante.minutosPruebaVigentes} minutos desde que lo abre, así que no se cierra con una fecha.`
+              : 'Esta vacante rinde el cuestionario técnico: cada persona tiene los minutos que rijan desde que lo abre, así que no se cierra con una fecha.'}{' '}
+            <a href="#tiempo-de-la-etapa-tecnica">Ajustar los minutos →</a>
+          </p>
+        ) : vacante.versionPlantillaPruebaId === null ? (
+          <p className={estilos.ayudaAjuste}>
+            Para fijar cuándo cierra la prueba hay que elegir antes cuál rendirá, aquí
+            arriba en «Qué prueba del puesto rendirá»: el plazo se cuenta sobre la versión
+            de la plantilla.
+          </p>
+        ) : (
+          <CierreDeLaVacante vacante={vacante} alGuardar={refrescar} />
+        )}
+      </details>
 
       {fallo && (
         <p className={estilos.avisoMalo} role="alert">

@@ -36,6 +36,32 @@ export function Fallo({ error, reintentar }: { error: unknown; reintentar?: () =
   )
 }
 
+/**
+ * Lo que ve quien llega a su proceso —o a una de sus pantallas: la prueba, la
+ * evaluación, la simulación— cuando la empresa ya retiró la vacante.
+ *
+ * No es una avería y no se ofrece reintentar: sería mandarlo a chocar contra la
+ * misma puerta. Se le dice lo que pasó y se le lleva a su lista, que es lo único
+ * que puede hacer. Sin acento: no le toca hacer nada.
+ */
+export function VacanteRetirada() {
+  return (
+    <div className={estilos.marco}>
+      <span className={estilos.eti}>Proceso cerrado</span>
+      <h1 className={estilos.titulo}>Esta vacante ya no está disponible.</h1>
+      <p className={estilos.texto}>
+        La empresa la retiró, así que su proceso dejó de verse aquí. No tienes que hacer
+        nada.
+      </p>
+      <div className={estilos.botones}>
+        <Link className={estilos.secundario} to={rutas.procesos()}>
+          Ver mis procesos
+        </Link>
+      </div>
+    </div>
+  )
+}
+
 /** Lo que ve quien intenta abrir una pantalla privada sin cuenta. */
 export function AccesoNecesario() {
   return (

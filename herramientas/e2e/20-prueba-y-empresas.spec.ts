@@ -286,7 +286,7 @@ test.describe('La prueba · el panel', () => {
     )
   })
 
-  test('cuándo cierra la prueba: una cronometrada rechaza la fecha con el porqué del backend, y quitar el cierre no pinta undefined', async ({ page }) => {
+  test('cuándo cierra la prueba: se lee lo que rige hoy, una cronometrada SÍ acepta fecha, y quitar el cierre no pinta undefined', async ({ page }) => {
     test.skip(!vacanteAbierta, 'no hay ninguna vacante abierta con su prueba elegida')
     await irAVacante(page, vacanteAbierta!.titulo)
 
@@ -313,20 +313,37 @@ test.describe('La prueba · el panel', () => {
     // El control aparece en una vacante abierta con su prueba elegida.
     await expect(page.getByText('Cuándo cierra la prueba')).toBeVisible({ timeout: 20_000 })
 
+    /*
+      Lo primero que tiene que poder leerse: QUÉ rige ahora mismo. Con la
+      plantilla sembrada —CRONOMETRADA— la línea nombra los minutos; antes esta
+      pantalla decía en voz alta que no podía saberlo.
+    */
+    await expect(page.locator('main')).toContainText(
+      /Cronometrada: .* minutos desde que cada persona empieza|Sin fecha para todos|Cierra el /i,
+      { timeout: 20_000 },
+    )
+
     await page.getByLabel('Se cierra el').fill('2036-01-15T23:59')
     await page
       .getByLabel('Por qué se fija esta fecha')
-      .fill('e2e: comprobar que una cronometrada lo rechaza con explicación')
+      .fill('e2e: una cronometrada también admite fecha para todos')
     await page.getByRole('button', { name: 'Guardar la fecha de cierre' }).click()
 
-    // ⚠️ La plantilla sembrada es CRONOMETRADA: si un día fuera de plazo
-    // abierto, la fecha se guardaría de verdad y esto fallaría a propósito.
-    await expect(page.locator('main')).toContainText(/cronometrada/i, { timeout: 20_000 })
+    /*
+      ⚠️ **Antes esto comprobaba lo contrario**: que una cronometrada rechazaba
+      la fecha «porque anularía el reloj». Dejó de ser cierto cuando empezar pasó
+      a quedarse con el plazo que caiga antes entre el reloj y la fecha de la
+      convocatoria: las dos conviven, y sin fecha no hay forma de impedir que
+      alguien abra el examen la semana siguiente a que cerrara.
+    */
+    await expect(page.getByText(/La prueba se cierra el/i)).toBeVisible({ timeout: 20_000 })
     const texto = await page.locator('main').innerText()
+    expect(texto).not.toMatch(/anularía el reloj/i)
     expect(texto).not.toMatch(/must not be null|null|undefined/i)
 
-    // Quitar el cierre: la operación que sí funciona aquí, y la que devuelve
-    // los dos números. Es idempotente —ya estaba quitado— así que no deja rastro.
+    // Y se quita, que además devuelve la vacante a como estaba: el paso de
+    // arriba ya no es un rechazo, así que sin esto el test dejaría una fecha
+    // puesta en la convocatoria sembrada.
     await page.getByRole('button', { name: 'Quitar el cierre de la vacante' }).click()
     await page.getByRole('button', { name: 'Sí, quitar el cierre' }).click()
     await expect(page.getByText('La prueba ya no tiene fecha de cierre')).toBeVisible({ timeout: 20_000 })

@@ -9,7 +9,7 @@ en los temáticos, y lo que se hizo un día concreto, en las dos bitácoras.
 |---|---|
 | Entender qué ve y qué hace quien postula, pantalla por pantalla | [02-QUE-VE-EL-CANDIDATO.md](02-QUE-VE-EL-CANDIDATO.md) |
 | Seguir el proceso entero, los dos lados, con lo que desbloquea cada paso | [06-FLUJO-COMPLETO.md](06-FLUJO-COMPLETO.md) |
-| Tocar el panel del equipo: entrar, las tres pestañas, el ranking por etapas, qué exige publicar una vacante, corregirla con el lápiz, archivarla o eliminarla | [PANEL.md](PANEL.md) |
+| Tocar el panel del equipo: entrar, las tres pestañas, el ranking por etapas, qué exige publicar una vacante, corregirla con el lápiz, archivarla o eliminarla, el plazo de su prueba | [PANEL.md](PANEL.md) |
 | Escribir código: los comportamientos que no se reescriben, las trampas que ya costaron un fallo, cómo se nombra aquí | [REGLAS-DEL-CODIGO.md](REGLAS-DEL-CODIGO.md) |
 | Levantarlo, apuntarlo a un backend y saber a qué base escribes | [TRABAJAR-EN-LOCAL.md](TRABAJAR-EN-LOCAL.md) |
 | Tocar diseño: el mundo visual, sus cuatro reglas de forma y dónde está cada carpeta de `src/` | [EL-MUNDO-VISUAL.md](EL-MUNDO-VISUAL.md) |

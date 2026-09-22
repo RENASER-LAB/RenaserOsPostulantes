@@ -65,6 +65,7 @@ import type {
   CierrePruebaAplicado,
   ElegirInstrumentoTecnico,
   PlazoDePrueba,
+  PlazoVigenteDePrueba,
   FichaDelPuesto,
   GuardarFichaDelPuesto,
   CuestionarioTecnico,
@@ -879,6 +880,17 @@ export const definirCierreDePrueba = (
     metodo: 'POST',
     cuerpo: { cierraEn, motivo },
   })
+
+/**
+ * Que plazo rige HOY para esta persona, antes de tocarlo.
+ *
+ * Pide `abrir_ficha_candidato` —leer, no mover—, asi que quien no puede cambiar
+ * la fecha igualmente la ve. **No contesta 404 cuando no hay prueba**: quien no
+ * llego a la etapa y la vacante que rinde el cuestionario tecnico salen con
+ * `existeIntento: false` y el instrumento, que es lo que distingue los dos.
+ */
+export const verPlazoDePrueba = (postulacionId: number) =>
+  pedir<PlazoVigenteDePrueba>(`/postulaciones/${postulacionId}/prueba/plazo`)
 
 /** La fecha de UNA persona, que manda sobre la de la vacante. */
 export const definirPlazoDePrueba = (

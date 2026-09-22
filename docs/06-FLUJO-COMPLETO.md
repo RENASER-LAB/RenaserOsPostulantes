@@ -281,7 +281,10 @@ su postulación cerrada y **un aviso en la campana, sin correo y sin enlace**:
 «La empresa retiró esta vacante y tu postulación quedó cerrada. No tienes que
 hacer nada». La vacante sale del tablón, y el proceso sale de «Mis procesos» de
 todos los que postularon; si alguien abre un enlace viejo, lee «Esta vacante ya
-no está disponible». La solicitud que la respaldaba **vuelve a estar libre**
+no está disponible», y lo mismo si tenía abierta la prueba, la evaluación, el
+cuestionario técnico o las fechas de la simulación: nada de lo que haga ahí se
+guarda. Desde el panel ya no se escribe nada sobre sus postulaciones. La
+solicitud que la respaldaba **vuelve a estar libre**
 para crear la vacante correcta. No se deshace desde el panel. El detalle está
 en [PANEL.md](PANEL.md).
 

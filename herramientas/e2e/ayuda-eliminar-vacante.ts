@@ -235,6 +235,32 @@ export async function sembrarEscenario(): Promise<Escenario> {
   }
 }
 
+/**
+ * Una vacante PUBLICADA más, marcada y **con su propia solicitud**, para una prueba que la
+ * va a eliminar.
+ *
+ * ⚠️ Eliminar devuelve a ABIERTA la solicitud que la respalda (AC-21). `viva` cuelga de la
+ * solicitud de la primera vacante del clon —la de verdad, la que se revisa a mano—, así que
+ * eliminarla, o eliminar una copiada de ella, reabriría una solicitud ajena y la dejaría
+ * ofreciéndose en «Crear vacante». Esta no: su solicitud es sembrada y `retirarLoSembrado`
+ * la archiva.
+ */
+export function sembrarVacantePropia(
+  titulo: string,
+  instrumento: 'PLANTILLA' | 'CUESTIONARIO_TECNICO' = 'PLANTILLA',
+): number {
+  if (!titulo.startsWith(MARCA)) throw new Error(`El título tiene que llevar la marca ${MARCA}`)
+  const responsable = Number(
+    uno("select id from usuario where usuario_renaser_os_id = 'dev-equipo'").id,
+  )
+  const plantilla = uno(`select solicitud_talento_id, puesto_id, version_pesos_id, organizacion_id
+                           from vacante order by id limit 1`)
+  const id = crearVacante(plantilla, responsable, titulo, 'PUBLICADA',
+    crearSolicitud(plantilla, responsable))
+  sql(`update vacante set instrumento_etapa_tecnica = ${literal(instrumento)} where id = ${id};`)
+  return id
+}
+
 async function sembrarPersona(organizacion: number, vacanteId: number, prefijo: string,
                               estado: string, motivoCierre: string | null): Promise<Persona> {
   const correo = correoDePrueba(prefijo)

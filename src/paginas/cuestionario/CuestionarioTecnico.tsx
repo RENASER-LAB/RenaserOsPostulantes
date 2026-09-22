@@ -33,10 +33,11 @@ import {
   verCuestionarioTecnico,
 } from '@/api/cuestionarioTecnico'
 import type { EvaluacionCandidato, PreguntaEvaluacion } from '@/api/tipos'
+import { usePantallaAbierta } from '@/paginas/procesos/useVacanteRetirada'
 import { rutas } from '@/rutas'
 import { useAviso } from '@/ui/Avisos'
 import { Cronometro } from '@/ui/Cronometro'
-import { Cargando, Fallo } from '@/ui/Mensajes'
+import { Cargando, Fallo, VacanteRetirada } from '@/ui/Mensajes'
 import { Modal } from '@/ui/Modal'
 import { useColaDeRespuestas } from '../evaluacion/useColaDeRespuestas'
 import estilos from './CuestionarioTecnico.module.css'
@@ -66,7 +67,9 @@ export function CuestionarioTecnico() {
     preguntaId: 0,
     texto: '',
   })
-  const [error, setError] = useState<string | null>(null)
+  // Se guarda la causa y no solo el texto: un 404 no se enseña mientras se comprueba si es
+  // la vacante retirada, que la pantalla entera dice mejor que el texto del servidor.
+  const [fallo, setFallo] = useState<{ causa: unknown; texto: string } | null>(null)
   const [confirmarEntrega, setConfirmarEntrega] = useState(false)
   const abiertaEn = useRef<number>(Date.now())
 
@@ -79,6 +82,16 @@ export function CuestionarioTecnico() {
     // cancela cualquier recarga en vuelo antes de escribir lo confirmado.
     refetchOnWindowFocus: true,
   })
+
+  // Un 404 aquí puede ser que la empresa retiró la vacante: lo dice su proceso. Y si la
+  // retira con la prueba abierta, quien se entera es el botón —empezar, cada respuesta,
+  // entregar—: todos pasan su fallo por `siSeCerroLaPuerta`. Ver `usePantallaAbierta`.
+  const { retirada, siSeCerroLaPuerta, seEnsena } = usePantallaAbierta(
+    uuid,
+    ['cuestionario-tecnico', uuid],
+    consulta,
+  )
+  const error = fallo !== null && seEnsena(fallo.causa) ? fallo.texto : null
 
   const preguntas = useMemo(() => consulta.data?.preguntas ?? [], [consulta.data])
   const pregunta: PreguntaEvaluacion | undefined = preguntas[indice]
@@ -93,6 +106,9 @@ export function CuestionarioTecnico() {
         texto: datos.texto,
         segundos: datos.segundos,
       }),
+    // La cola ya da por atascada una respuesta con 404; esto es para que la pantalla diga
+    // por qué, si es que la vacante se retiró.
+    onError: siSeCerroLaPuerta,
   })
 
   const mandar = useCallback(
@@ -151,8 +167,13 @@ export function CuestionarioTecnico() {
     onSuccess: async () => {
       await cache.invalidateQueries({ queryKey: ['cuestionario-tecnico', uuid] })
     },
-    onError: (causa) =>
-      setError(causa instanceof Error ? causa.message : 'No pudimos abrir tu cuestionario.'),
+    onError: (causa) => {
+      siSeCerroLaPuerta(causa)
+      setFallo({
+        causa,
+        texto: causa instanceof Error ? causa.message : 'No pudimos abrir tu cuestionario.',
+      })
+    },
   })
 
   const entrega = useMutation({
@@ -177,7 +198,11 @@ export function CuestionarioTecnico() {
     },
     onError: (causa) => {
       setConfirmarEntrega(false)
-      setError(causa instanceof Error ? causa.message : 'No pudimos entregar tu prueba.')
+      siSeCerroLaPuerta(causa)
+      setFallo({
+        causa,
+        texto: causa instanceof Error ? causa.message : 'No pudimos entregar tu prueba.',
+      })
     },
   })
 
@@ -229,7 +254,10 @@ export function CuestionarioTecnico() {
     [cola.mandarYa, preguntas.length],
   )
 
-  if (consulta.isPending) return <Cargando que="Abriendo tu prueba técnica…" />
+  if (consulta.isPending || (consulta.isError && retirada === 'comprobando')) {
+    return <Cargando que="Abriendo tu prueba técnica…" />
+  }
+  if (consulta.isError && retirada === 'retirada') return <VacanteRetirada />
   if (consulta.isError) {
     return <Fallo error={consulta.error} reintentar={() => consulta.refetch()} />
   }

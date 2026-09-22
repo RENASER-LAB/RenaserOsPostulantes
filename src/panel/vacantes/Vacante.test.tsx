@@ -260,6 +260,17 @@ const VERSIONES_DE_SIEMPRE = [
 let VERSIONES_PRUEBA = VERSIONES_DE_SIEMPRE
 
 const listarVersionesBanco = vi.fn(() => Promise.resolve(BANCOS))
+/* El plazo de quien se abre en la ficha: lo normal, sin prueba todavia. */
+const verPlazoDePrueba = vi.fn(() =>
+  Promise.resolve({
+    existeIntento: false,
+    venceEn: null,
+    origen: null,
+    iniciadoEn: null,
+    entregadoEn: null,
+    instrumento: 'PLANTILLA',
+  }),
+)
 const desarchivarVacante = vi.fn((_id: number) => Promise.resolve(undefined))
 const asignarPlantillaPrueba = vi.fn((_vacanteId: number, _versionId: number) =>
   Promise.resolve({}),
@@ -404,6 +415,13 @@ vi.mock('../api/panel', () => ({
   calificarPerfilIntegralConIa: () => Promise.resolve({ estado: 'ENCOLADA' }),
   cribaRapida: () => Promise.resolve({ estado: 'ENCOLADA' }),
   cribaFina: () => Promise.resolve({ estado: 'ENCOLADA' }),
+  /*
+    ⚠️ **Tiene que estar, aunque estas pruebas no vayan del plazo.**
+    `PlazoDeUnaPersona` se monta dentro de la ficha en la pestaña de la prueba y
+    lo PIDE al pintarse: sin este doble, el modulo falso no exporta lo que el
+    componente importa y revienta la ficha entera.
+  */
+  verPlazoDePrueba: () => verPlazoDePrueba(),
   verCierrePrueba: () => Promise.resolve({}),
   fijarCierrePrueba: () => Promise.resolve({}),
   quitarCierrePrueba: () => Promise.resolve({}),
@@ -1961,6 +1979,76 @@ describe('qué se rinde en la etapa técnica', () => {
 
     expect(screen.getByText(/manda sobre el que traiga el instrumento/i)).toBeTruthy()
     expect(screen.queryByText(/rige el tiempo que traiga el instrumento/i)).toBeNull()
+  })
+})
+
+/**
+ * Cuándo se ofrece fijar la fecha de la prueba, y cuándo se dice por qué no.
+ *
+ * Lo que compila perfectamente estando mal:
+ *   1. **Esconder el control sin decir nada.** Un hueco callado en la pantalla que
+ *      ordena la prueba se lee como que falta una pieza del panel, no como una regla.
+ *   2. **Ofrecerlo donde el backend contesta 409.** Sin instrumento elegido y con el
+ *      cuestionario técnico, guardar es un error garantizado después de escribir el motivo.
+ *   3. **Esconderlo en una CRONOMETRADA.** Sí admite fecha desde que empezar se queda con
+ *      el plazo que caiga antes entre el reloj y la de la convocatoria: esconderlo deja
+ *      sin forma de decir «nadie sigue después del domingo» justo donde más se necesita.
+ */
+describe('los plazos de la prueba, en la configuración de la vacante', () => {
+  const conLaVacante = (cambios: Record<string, unknown>) => {
+    sinRuido.verVacante = () => Promise.resolve({ ...VACANTE, ...cambios })
+  }
+
+  it('cerrada: se explica que ya no admite fecha y no hay control', async () => {
+    conLaVacante({ estado: 'CERRADA', versionPlantillaPruebaId: 1 })
+    await pintar()
+
+    expect(screen.getByText(/ya no admite una fecha nueva/i)).toBeTruthy()
+    expect(screen.queryByLabelText('Se cierra el')).toBeNull()
+  })
+
+  it('sin prueba elegida: se dice qué hay que elegir antes, y no hay control', async () => {
+    await pintar()
+
+    expect(screen.getByText(/hay que elegir antes cuál rendirá/i)).toBeTruthy()
+    expect(screen.queryByLabelText('Se cierra el')).toBeNull()
+  })
+
+  it('con cuestionario técnico: los minutos y el enlace para ajustarlos, sin fecha', async () => {
+    conLaVacante({
+      instrumentoEtapaTecnica: 'CUESTIONARIO_TECNICO',
+      minutosPruebaVigentes: 60,
+    })
+    await pintar()
+
+    expect(screen.getByText(/60 minutos desde que lo abre/i)).toBeTruthy()
+    expect(screen.getByRole('link', { name: /Ajustar los minutos/ })).toBeTruthy()
+    expect(screen.queryByLabelText('Se cierra el')).toBeNull()
+  })
+
+  it('con la prueba del puesto: se ofrece el control y se lee lo que rige hoy', async () => {
+    conLaVacante({
+      versionPlantillaPruebaId: 1,
+      modalidadPrueba: 'PLAZO_ABIERTO',
+      diasPruebaVigentes: 5,
+    })
+    await pintar()
+
+    expect(screen.getByText(/5 días después de que empieza/i)).toBeTruthy()
+    expect(screen.getByLabelText('Se cierra el')).toBeTruthy()
+  })
+
+  it('cronometrada: el control se ofrece igual, y dice que rige lo que caiga antes', async () => {
+    conLaVacante({
+      versionPlantillaPruebaId: 1,
+      modalidadPrueba: 'CRONOMETRADA',
+      minutosPruebaVigentes: 30,
+      pruebaCierraEn: '2035-08-31T04:59:00Z',
+    })
+    await pintar()
+
+    expect(screen.getByText(/Rige lo que caiga antes/i)).toBeTruthy()
+    expect(screen.getByLabelText('Se cierra el')).toBeTruthy()
   })
 })
 
