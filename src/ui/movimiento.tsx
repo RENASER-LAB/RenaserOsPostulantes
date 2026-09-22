@@ -8,6 +8,8 @@
  *   B · `TituloQueViaja`      — el titulo de la vacante viaja de la tarjeta a la ficha.
  *   C · `FranjaQueSeLlena`    — la barra del recorrido se dibuja de izquierda a derecha.
  *   D · `TarjetaQueResponde`  — la tarjeta se levanta al pasar por encima.
+ *   E · `AlAsomarse`          — un bloque entra al asomar por el borde de la ventana.
+ *       `AsomanEnFila`        — y sus hermanos, escalonados de 200 en 200 ms.
  *
  * ⚠️ **Todas respetan `prefers-reduced-motion`.** No es un adorno de
  * accesibilidad: esto es un portal de empleo y una barrera aqui impide postular
@@ -201,5 +203,119 @@ export function TarjetaQueResponde({
     >
       {children}
     </motion.article>
+  )
+}
+
+/* ------------------------------------------------------------------ *
+ * E · Lo que entra al asomarse
+ * ------------------------------------------------------------------ */
+
+/**
+ * La animacion de OriginX, replicada con sus valores exactos.
+ *
+ * ⚠️ **No es una transicion de ruta, aunque lo parezca.** En la referencia esto
+ * es `whileInView`: cada bloque se anima cuando ASOMA por el borde de la
+ * ventana, una sola vez. Al cargar una pagina, todo lo que cae sobre el pliegue
+ * asoma a la vez y entra junto — y eso es lo que se lee como «la pantalla
+ * entro animada». Al bajar, cada seccion va entrando por su cuenta. La pieza A
+ * sigue siendo la que ata una ruta con la siguiente; esta es otra cosa y las
+ * dos pueden convivir.
+ *
+ * Los numeros salen de su propio bundle, no de mirar la pantalla:
+ *
+ *     variantes  fadeInUp {opacity:0,y:50} · fadeInLeft {x:-50} ·
+ *                fadeInRight {x:50} · scaleUp {scale:.8}
+ *     viewport   {once:true, amount:0.2}
+ *     transition {duration:.5, delay:0, ease:[.25,.1,.25,1]}
+ *     escalonado staggerChildren: .2
+ *
+ * ⚠️ **La curva y la duracion NO son las del mundo, y es deliberado.** Aqui
+ * mandan `[.25,.1,.25,1]` —el `ease` de CSS— y 500 ms, contra los
+ * `cubic-bezier(0.16, 1, 0.3, 1)` y 300 ms que usa el resto del portal. Se pidio
+ * replicar la referencia «exactamente»; si algun dia se prefiere que esto hable
+ * como el resto, se cambian estas dos constantes y nada mas.
+ */
+const CURVA_ORIGINX = [0.25, 0.1, 0.25, 1] as const
+
+const VARIANTES = {
+  fadeInUp: { hidden: { opacity: 0, y: 50 }, visible: { opacity: 1, y: 0 } },
+  fadeInLeft: { hidden: { opacity: 0, x: -50 }, visible: { opacity: 1, x: 0 } },
+  fadeInRight: { hidden: { opacity: 0, x: 50 }, visible: { opacity: 1, x: 0 } },
+  scaleUp: { hidden: { opacity: 0, scale: 0.8 }, visible: { opacity: 1, scale: 1 } },
+  ninguna: { hidden: {}, visible: {} },
+} as const
+
+export type Variante = keyof typeof VARIANTES
+
+export function AlAsomarse({
+  children,
+  variante = 'fadeInUp',
+  className,
+  retraso = 0,
+  duracion = 0.5,
+  unaVez = true,
+}: {
+  children: ReactNode
+  variante?: Variante
+  className?: string
+  retraso?: number
+  duracion?: number
+  unaVez?: boolean
+}) {
+  const quieto = useReducedMotion()
+  const donde = useLocation()
+
+  // Misma regla que las otras cuatro: con el reloj corriendo, nada se mueve.
+  if (quieto || conElRelojCorriendo(donde.pathname)) {
+    return <div className={className}>{children}</div>
+  }
+
+  return (
+    <motion.div
+      className={className}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: unaVez, amount: 0.2 }}
+      variants={VARIANTES[variante]}
+      transition={{ duration: duracion, delay: retraso, ease: CURVA_ORIGINX }}
+    >
+      {children}
+    </motion.div>
+  )
+}
+
+/**
+ * El contenedor escalonado: sus hijos directos entran de 200 ms en 200 ms.
+ *
+ * Los hijos tienen que ser `AlAsomarse` —o cualquier `motion` con las mismas
+ * variantes—, porque el escalonado lo reparte el padre sobre variantes que
+ * comparten nombre. Un hijo que no las tenga entra sin mas.
+ */
+export function AsomanEnFila({
+  children,
+  className,
+  unaVez = true,
+}: {
+  children: ReactNode
+  className?: string
+  unaVez?: boolean
+}) {
+  const quieto = useReducedMotion()
+  const donde = useLocation()
+
+  if (quieto || conElRelojCorriendo(donde.pathname)) {
+    return <div className={className}>{children}</div>
+  }
+
+  return (
+    <motion.div
+      className={className}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: unaVez, amount: 0.2 }}
+      variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.2 } } }}
+    >
+      {children}
+    </motion.div>
   )
 }

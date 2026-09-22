@@ -154,9 +154,17 @@
  *
  * El desenfoque es grande —40 px— porque lo que se busca es un neon, no un
  * degradado con borde.
+ *
+ * ⚠️ **La intensidad esta en UN mando, `--luz`.** Las tres capas se suman, asi
+ * que tocarlas a mano por separado descuadra el equilibrio entre ellas: la
+ * calida de la izquierda y la fria de la derecha estan calibradas una contra
+ * otra —el rosa pesa mas que el coral a igual opacidad— y esa proporcion tiene
+ * que sobrevivir a cualquier subida o bajada. Multiplicando, se mueven juntas.
  */
 .escaparate::before {
   content: '';
+  /* 1 es el valor con el que nacio el 15/09; 0,6 es lo que se ve hoy. */
+  --luz: 0.6;
   position: absolute;
   left: -2%;
   right: -2%;
@@ -166,23 +174,23 @@
     /* El nucleo, centrado y por debajo del suelo de la tarjeta. */
     radial-gradient(
       40% 60% at 50% 96%,
-      rgb(255 120 150 / 0.62) 0%,
-      rgb(255 120 150 / 0.26) 46%,
+      rgb(255 120 150 / calc(0.62 * var(--luz))) 0%,
+      rgb(255 120 150 / calc(0.26 * var(--luz))) 46%,
       rgb(255 120 150 / 0) 78%
     ),
     /* La calida, saliendo por la izquierda. */
     radial-gradient(
       42% 64% at 10% 92%,
-      rgb(255 124 97 / 0.54) 0%,
-      rgb(255 124 97 / 0.22) 46%,
+      rgb(255 124 97 / calc(0.54 * var(--luz))) 0%,
+      rgb(255 124 97 / calc(0.22 * var(--luz))) 46%,
       rgb(255 124 97 / 0) 78%
     ),
     /* La fria, saliendo por la derecha. Un punto mas apagada: el rosa pesa mas
        que el coral a igual opacidad y si van iguales se come la izquierda. */
     radial-gradient(
       42% 64% at 90% 92%,
-      rgb(255 71 184 / 0.48) 0%,
-      rgb(255 71 184 / 0.2) 46%,
+      rgb(255 71 184 / calc(0.48 * var(--luz))) 0%,
+      rgb(255 71 184 / calc(0.2 * var(--luz))) 46%,
       rgb(255 71 184 / 0) 78%
     );
   filter: blur(24px);
