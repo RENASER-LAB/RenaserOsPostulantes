@@ -45,6 +45,7 @@ import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vites
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ErrorApi } from '../api/cliente'
+import type { VacantePanel } from '../api/tipos'
 import { CierreDeLaVacante, PlazoDeUnaPersona, aCampoLocal, aInstanteUtc } from './CierreDePrueba'
 
 afterAll(() => {
@@ -53,12 +54,14 @@ afterAll(() => {
 
 const cierre = vi.fn()
 const plazo = vi.fn()
+const verPlazo = vi.fn()
 
 vi.mock('../api/panel', () => ({
   definirCierreDePrueba: (vacanteId: number, cierraEn: string | null, motivo: string) =>
     cierre(vacanteId, cierraEn, motivo),
   definirPlazoDePrueba: (postulacionId: number, venceEn: string, motivo: string) =>
     plazo(postulacionId, venceEn, motivo),
+  verPlazoDePrueba: (postulacionId: number) => verPlazo(postulacionId),
 }))
 
 /** Lejos en el futuro y de noche: el instante en UTC cae ya en el día siguiente. */
@@ -67,13 +70,31 @@ const NOCHE_UTC = '2035-08-31T04:59:00.000Z'
 /** Una fecha que pasó hace años, sin depender de cuándo corran las pruebas. */
 const PASADA = '2020-03-01T09:00'
 
-function montarVacante(alGuardar = () => {}) {
+/**
+ * La vacante que lee el control: lo justo que mira, y lo que rige hoy.
+ *
+ * ⚠️ **Los cinco campos del plazo son opcionales a proposito** —la lista de
+ * vacantes no los trae y un backend anterior tampoco—, asi que la fixtura de
+ * base los deja fuera: es el caso «sin dato», que tiene que seguir pintandose.
+ */
+const vacante = (cambios: Partial<VacantePanel> = {}): VacantePanel =>
+  ({
+    id: 7,
+    titulo: 'Ingeniera',
+    estado: 'PUBLICADA',
+    instrumentoEtapaTecnica: 'PLANTILLA',
+    minutosEtapaTecnica: null,
+    versionPlantillaPruebaId: 3,
+    ...cambios,
+  }) as VacantePanel
+
+function montarVacante(alGuardar = () => {}, datosDeLaVacante: Partial<VacantePanel> = {}) {
   const datos = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   })
   return render(
     <QueryClientProvider client={datos}>
-      <CierreDeLaVacante vacanteId={7} alGuardar={alGuardar} />
+      <CierreDeLaVacante vacante={vacante(datosDeLaVacante)} alGuardar={alGuardar} />
     </QueryClientProvider>,
   )
 }
@@ -89,6 +110,13 @@ function montarPersona(alGuardar = () => {}) {
   )
 }
 
+/** El control por persona solo se pinta cuando el servidor ya contesto que rige. */
+async function montarPersonaConControl(alGuardar = () => {}) {
+  const pintado = montarPersona(alGuardar)
+  await screen.findByLabelText('Se le cierra el')
+  return pintado
+}
+
 function escribir(etiqueta: string | RegExp, valor: string) {
   fireEvent.change(screen.getByLabelText(etiqueta), { target: { value: valor } })
 }
@@ -96,8 +124,19 @@ function escribir(etiqueta: string | RegExp, valor: string) {
 beforeEach(() => {
   cierre.mockReset()
   plazo.mockReset()
+  verPlazo.mockReset()
   cierre.mockResolvedValue({ cierraEn: NOCHE_UTC, intentosMovidos: 0, intentosConPlazoPropio: 0 })
   plazo.mockResolvedValue({ postulacionId: 31, venceEn: NOCHE_UTC, yaEmpezo: false })
+  // Lo normal en la etapa: tiene su prueba, no la ha abierto y hereda la fecha
+  // de la vacante.
+  verPlazo.mockResolvedValue({
+    existeIntento: true,
+    venceEn: null,
+    origen: null,
+    iniciadoEn: null,
+    entregadoEn: null,
+    instrumento: 'PLANTILLA',
+  })
 })
 
 afterEach(cleanup)
@@ -141,6 +180,87 @@ describe('la hora que se escribe y el instante que se guarda', () => {
 
     // Es lo que quita la duda: se ve el salto de día antes de guardar.
     expect(screen.getByText(new RegExp(NOCHE_UTC))).toBeTruthy()
+  })
+})
+
+/*
+ * ⚠️ **La fecha vigente es lo que faltaba, y no es un adorno.** El campo salia
+ * vacio sobre una vacante que si tenia fecha: quien entraba no sabia que estaba
+ * cambiando, y la pantalla lo decia en voz alta porque no habia GET que
+ * preguntarlo. Ahora viaja en `VacantePanel`, y con ella la regla que rige
+ * cuando no hay fecha —dias o minutos—, que tampoco se puede deducir de la
+ * fecha.
+ */
+describe('lo que rige hoy', () => {
+  it('con fecha, se lee cuándo cierra y el campo llega precargado con ella', () => {
+    montarVacante(() => {}, { pruebaCierraEn: NOCHE_UTC, modalidadPrueba: 'PLAZO_ABIERTO' })
+
+    expect(screen.getByText(/^Cierra el/)).toBeTruthy()
+    // En Lima, las 04:59Z del 31 son las 23:59 del 30: el campo tiene que
+    // pintar la hora local, no el reloj de UTC.
+    expect(screen.getByLabelText('Se cierra el')).toHaveProperty('value', NOCHE)
+  })
+
+  it('sin fecha, dice cuántos días tiene cada persona desde que empieza', () => {
+    montarVacante(() => {}, { modalidadPrueba: 'PLAZO_ABIERTO', diasPruebaVigentes: 5 })
+
+    expect(screen.getByText(/5 días después de que empieza/i)).toBeTruthy()
+    expect(screen.getByLabelText('Se cierra el')).toHaveProperty('value', '')
+  })
+
+  it('cronometrada sin fecha: los minutos, y que no hay límite para empezar', () => {
+    montarVacante(() => {}, { modalidadPrueba: 'CRONOMETRADA', minutosPruebaVigentes: 30 })
+
+    expect(screen.getByText(/30 minutos desde que cada persona empieza/i)).toBeTruthy()
+    expect(screen.getByText(/sin fecha límite para empezar/i)).toBeTruthy()
+  })
+
+  it('cronometrada con fecha: las dos conviven, y rige la que caiga antes', () => {
+    montarVacante(() => {}, {
+      modalidadPrueba: 'CRONOMETRADA',
+      minutosPruebaVigentes: 30,
+      pruebaCierraEn: NOCHE_UTC,
+    })
+
+    // El caso que la regla vieja del backend prohibia: aqui se ofrece el campo
+    // igual, y la frase explica que el reloj no desaparece.
+    expect(screen.getByText(/Rige lo que caiga antes/i)).toBeTruthy()
+    expect(screen.getByLabelText('Se cierra el')).toHaveProperty('value', NOCHE)
+  })
+
+  it('sin los campos nuevos dice «sin dato», no «no hay fecha»', () => {
+    // Un backend anterior no los manda. Decir que no hay plazo seria justo lo
+    // contrario de lo que pasa en una vacante que si lo tiene.
+    montarVacante()
+
+    expect(screen.getByText(/Sin dato/i)).toBeTruthy()
+  })
+})
+
+describe('a cuánta gente alcanza el cambio', () => {
+  it('antes de guardar dice cuántos se mueven y cuántos no', () => {
+    montarVacante(() => {}, {
+      modalidadPrueba: 'PLAZO_ABIERTO',
+      intentosAbiertosSinPlazoPropio: 8,
+      intentosAbiertosConPlazoPropio: 2,
+    })
+    escribir('Se cierra el', NOCHE)
+
+    expect(screen.getByText(/Se moverá el cierre de 8 exámenes abiertos/i)).toBeTruthy()
+    expect(screen.getByText(/2 quedan como están porque tienen fecha propia/i)).toBeTruthy()
+  })
+
+  it('sobre la fecha que ya rige no promete ningún movimiento', () => {
+    montarVacante(() => {}, {
+      // La del servidor sin milisegundos, que es como llega de verdad: comparar
+      // las cadenas diria que cambio algo cuando es la misma fecha.
+      pruebaCierraEn: '2035-08-31T04:59:00Z',
+      modalidadPrueba: 'PLAZO_ABIERTO',
+      intentosAbiertosSinPlazoPropio: 8,
+      intentosAbiertosConPlazoPropio: 2,
+    })
+
+    expect(screen.queryByText(/Se moverá el cierre/i)).toBeNull()
   })
 })
 
@@ -290,7 +410,7 @@ describe('una fecha que ya pasó', () => {
 describe('el plazo de una sola persona', () => {
   it('manda el instante en UTC y avisa el padre', async () => {
     const aviso = vi.fn()
-    montarPersona(aviso)
+    await montarPersonaConControl(aviso)
     escribir('Se le cierra el', NOCHE)
     escribir(/Por qué esta persona tiene otro plazo/, 'Pidió más horas por un viaje.')
     fireEvent.click(screen.getByRole('button', { name: 'Guardar el plazo' }))
@@ -303,7 +423,7 @@ describe('el plazo de una sola persona', () => {
 
   it('si ya abrió el examen, se dice que se le cambió en vivo', async () => {
     plazo.mockResolvedValue({ postulacionId: 31, venceEn: NOCHE_UTC, yaEmpezo: true })
-    montarPersona()
+    await montarPersonaConControl()
     escribir('Se le cierra el', NOCHE)
     escribir(/Por qué esta persona tiene otro plazo/, 'Pidió más horas.')
     fireEvent.click(screen.getByRole('button', { name: 'Guardar el plazo' }))
@@ -312,7 +432,7 @@ describe('el plazo de una sola persona', () => {
   })
 
   it('si no lo ha abierto, se dice desde cuándo rige', async () => {
-    montarPersona()
+    await montarPersonaConControl()
     escribir('Se le cierra el', NOCHE)
     escribir(/Por qué esta persona tiene otro plazo/, 'Entra en la tanda del domingo.')
     fireEvent.click(screen.getByRole('button', { name: 'Guardar el plazo' }))
@@ -320,12 +440,111 @@ describe('el plazo de una sola persona', () => {
     expect(await screen.findByText(/rige desde que lo abra/i)).toBeTruthy()
   })
 
-  it('sin motivo no se llama al servidor', () => {
-    montarPersona()
+  it('sin motivo no se llama al servidor', async () => {
+    await montarPersonaConControl()
     escribir('Se le cierra el', NOCHE)
     fireEvent.click(screen.getByRole('button', { name: 'Guardar el plazo' }))
 
     expect(plazo).not.toHaveBeenCalled()
+  })
+
+  /*
+   * ⚠️ **Las cuatro situaciones de la ficha no se parecen en nada**, y hasta hoy
+   * compartian la misma pantalla: un campo de fecha vacio. Dos de ellas ni
+   * siquiera admiten cambio, y el servidor las rechazaba DESPUES de escribir el
+   * motivo con «Prueba del puesto no encontrada» y «ya se entregó» — un 404 en
+   * la cara de quien abre una ficha se lee como una averia del panel.
+   */
+  it('quien no llegó a la etapa no tiene control, y se dice por qué', async () => {
+    verPlazo.mockResolvedValue({
+      existeIntento: false,
+      venceEn: null,
+      origen: null,
+      iniciadoEn: null,
+      entregadoEn: null,
+      instrumento: 'PLANTILLA',
+    })
+    montarPersona()
+
+    expect(await screen.findByText(/Todavía no tiene prueba/i)).toBeTruthy()
+    expect(screen.queryByLabelText('Se le cierra el')).toBeNull()
+  })
+
+  it('con cuestionario técnico no se ofrece fecha por persona', async () => {
+    verPlazo.mockResolvedValue({
+      existeIntento: false,
+      venceEn: null,
+      origen: null,
+      iniciadoEn: null,
+      entregadoEn: null,
+      instrumento: 'CUESTIONARIO_TECNICO',
+    })
+    montarPersona()
+
+    expect(await screen.findByText(/minutos de la vacante/i)).toBeTruthy()
+    expect(screen.queryByLabelText('Se le cierra el')).toBeNull()
+  })
+
+  it('quien ya entregó no cambia de plazo, y se ve cuándo entregó', async () => {
+    verPlazo.mockResolvedValue({
+      existeIntento: true,
+      venceEn: NOCHE_UTC,
+      origen: 'VACANTE',
+      iniciadoEn: '2035-08-30T12:00:00.000Z',
+      entregadoEn: '2035-08-30T18:32:00.000Z',
+      instrumento: 'PLANTILLA',
+    })
+    montarPersona()
+
+    expect(await screen.findByText(/El plazo ya no cambia/i)).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Guardar el plazo' })).toBeNull()
+  })
+
+  it('la fecha puesta a mano se distingue de la de la vacante', async () => {
+    verPlazo.mockResolvedValue({
+      existeIntento: true,
+      venceEn: NOCHE_UTC,
+      origen: 'PROPIO',
+      iniciadoEn: '2035-08-30T12:00:00.000Z',
+      entregadoEn: null,
+      instrumento: 'PLANTILLA',
+    })
+    await montarPersonaConControl()
+
+    // Sin esto, «le cierra el domingo» se lee como la fecha de la convocatoria y
+    // nadie sabria que a esta persona ya no la mueve cambiarla.
+    expect(screen.getByText(/fecha puesta a mano/i)).toBeTruthy()
+    // Y el campo llega sembrado con la suya: en Lima, las 23:59 del dia 30.
+    expect(screen.getByLabelText('Se le cierra el')).toHaveProperty('value', NOCHE)
+  })
+
+  it('en curso y con la de la vacante, se dice que es la de la vacante', async () => {
+    verPlazo.mockResolvedValue({
+      existeIntento: true,
+      venceEn: NOCHE_UTC,
+      origen: 'VACANTE',
+      iniciadoEn: '2035-08-30T12:00:00.000Z',
+      entregadoEn: null,
+      instrumento: 'PLANTILLA',
+    })
+    await montarPersonaConControl()
+
+    // Con el origen pegado a la fecha, y no en la prosa de al lado: es lo que
+    // distingue «se le movera si cambia la de la convocatoria» de lo contrario.
+    expect(screen.getByText(/Le cierra el .*\(la de la vacante\)/i)).toBeTruthy()
+  })
+
+  it('el texto del backend sobre la fecha sale en el campo, no en un aviso suelto', async () => {
+    plazo.mockRejectedValue(
+      new ErrorApi(400, 'Esa fecha ya pasó: al candidato se le entregaría la prueba sola'),
+    )
+    await montarPersonaConControl()
+    escribir('Se le cierra el', NOCHE)
+    escribir(/Por qué esta persona tiene otro plazo/, 'Pidió más horas.')
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar el plazo' }))
+
+    expect(await screen.findByText(/al candidato se le entregaría la prueba sola/i)).toBeTruthy()
+    expect(screen.getByLabelText('Se le cierra el')).toHaveProperty('ariaInvalid', 'true')
   })
 })
 
@@ -342,7 +561,7 @@ describe('cuando el servidor dice que no', () => {
 
   it('el 403 del plazo nombra otro permiso, que es otro', async () => {
     plazo.mockRejectedValue(new ErrorApi(403, 'Forbidden', null))
-    montarPersona()
+    await montarPersonaConControl()
     escribir('Se le cierra el', NOCHE)
     escribir(/Por qué esta persona tiene otro plazo/, 'Pidió más horas.')
     fireEvent.click(screen.getByRole('button', { name: 'Guardar el plazo' }))
