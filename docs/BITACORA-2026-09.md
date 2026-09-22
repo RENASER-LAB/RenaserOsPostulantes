@@ -7,11 +7,63 @@ por qué llegó a ser así y qué se probó por el camino.
 Sigue en [BITACORA-2026-08.md](BITACORA-2026-08.md).
 
 **Al 10/09/2026, el titular del mes:** el portal cambió de mundo visual —«El canto» se fue
-y entró «El escaparate»: fondo gris, acción en negro, Figtree y esquina corta—. Antes de eso: el ranking se corta por de quién es la pelota; «Mi
+y entró «El escaparate»: acción en negro, Figtree y esquina corta, sobre un fondo que acabó
+siendo el pastel cálido `#FBF1E9` el 15/09—. Antes de eso: el ranking se corta por de quién es la pelota; «Mi
 perfil» tiene foto, portada, currículum propio y diplomas; empleos, estudios y
 certificaciones comparten UNA cronología; la caja significa «esto te toca»; y al postular ya
 no se vuelve a subir el currículum. Lo del 07/09 se documentó en
 [06-FLUJO-COMPLETO.md](06-FLUJO-COMPLETO.md), no aquí.
+
+---
+
+## La portada entra por bloques, y el fundido al navegar se va (22/09/2026)
+
+El cliente preguntó por «esa animación al cambiar de pestaña» y pidió replicar la de
+[OriginX](https://originx.demos.tailgrids.com/), la plantilla que inspiró el mundo. Los
+valores no se sacaron mirando la pantalla sino de su propio bundle — que resultó ser
+`motion`, la misma librería que ya usábamos:
+
+    variantes  fadeInUp {opacity:0,y:50} · fadeInLeft {x:-50} · fadeInRight {x:50} ·
+               scaleUp {scale:.8}
+    viewport   {once:true, amount:0.2}
+    transition {duration:.5, delay:0, ease:[.25,.1,.25,1]}
+    escalonado staggerChildren: .2
+
+**Lo primero que se aclaró es que no era lo que parecía.** En la referencia eso no es una
+transición de ruta: es `whileInView`, y cada bloque se anima cuando asoma por el borde de la
+ventana, una sola vez. Al cargar, todo lo que cae sobre el pliegue asoma a la vez y entra
+junto — y ESO es lo que se lee como «la pantalla entró animada».
+
+Se añadió como pieza E —`AlAsomarse` y `AsomanEnFila`— y se aplicó **solo a la portada**, en
+cinco bloques con envoltorio propio y ninguno anidado, que es como lo hace la referencia. El
+escaparate lleva `scaleUp` con 200 ms de retraso —la variante que ella reserva para tarjetas—
+y las cinco etapas de dentro entran escalonadas.
+
+⚠️ **El escalonado de las etapas va con `retraso={0.2 * indice}` y no con `AsomanEnFila`.** El
+contenedor escalonado reparte sobre HIJOS DIRECTOS, y cada etapa cuelga de su propio `<li>`:
+el padre no las ve.
+
+**Y por qué no está en las otras dieciséis.** Se preguntó si extenderla. No por peso
+—`IntersectionObserver` no toca el hilo principal y con `once:true` cada elemento se
+desconecta al entrar—, sino porque **retrasa medio segundo lo que el usuario vino a ver**. En
+«Mis procesos» eso es cobrarle una animación a quien entra a comprobar si hay novedad, y
+además ahí ya se mueve la franja del recorrido, que sí significa algo: dos movimientos
+compitiendo le quitan el significado al que lo tenía. La regla que quedó: **esta animación es
+para pantallas que se leen, no para pantallas que se usan.**
+
+**Se retiró la pieza A.** Ligaba una pantalla con la siguiente, pero envolvía al `<Outlet>`,
+así que corría en CADA cambio de ruta y el contenido llegaba 280 ms tarde. El cliente lo
+llamó «el bug»: se lee como un fallo, no como una transición. El código sigue en
+`movimiento.tsx` por si se recupera; lo que ya no hace es envolver al `<Outlet>`.
+
+Un efecto lateral: `design.json` justificaba que la franja se animara con `animate()`
+imperativo «porque el `AnimatePresence initial={false}` del armazón suprime por contexto la
+entrada de todos sus descendientes». Ese contenedor ya no existe. Se deja imperativa de todos
+modos —así no depende de lo que decida ningún contenedor futuro— y se corrigió el porqué.
+
+También se bajó el resplandor del escaparate al 60 %, con la intensidad en un solo mando
+`--luz`: las tres capas se suman y están calibradas una contra otra —el rosa pesa más que el
+coral a igual opacidad—, así que tocarlas por separado descuadra esa proporción.
 
 ---
 

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-17T21:05:00Z",
+  "generatedAt": "2026-09-22T16:50:00Z",
   "title": "Design System: EX · Portal del candidato",
   "extensions": {
     "colorMeta": {
@@ -198,17 +198,22 @@
       {
         "name": "franja",
         "value": "500ms, escalonada 80ms por etapa",
-        "purpose": "La barra del recorrido dibujandose. Es el unico movimiento que significa algo del producto: dice hasta donde llegaste. Se anima con `animate()` imperativo y no con `initial`/`animate`, porque el `AnimatePresence initial={false}` del armazon suprime por contexto la entrada de todos sus descendientes."
+        "purpose": "La barra del recorrido dibujandose. Es el unico movimiento que significa algo del producto: dice hasta donde llegaste. Se anima con `animate()` imperativo y no con `initial`/`animate`. ⚠️ El motivo original —el `AnimatePresence initial={false}` del armazon suprimia por contexto la entrada de todos sus descendientes— desaparecio al retirarse esa pieza el 22/09/2026. Sigue imperativa porque asi no depende de lo que decida ningun contenedor futuro."
       },
       {
         "name": "pantalla",
-        "value": "280ms, opacidad y 12px de desplazamiento",
-        "purpose": "Cada pantalla al cambiar de ruta. ⚠️ No corre en la evaluacion, la prueba ni el cuestionario tecnico: con el reloj corriendo no se mueve nada."
+        "value": "retirada del armazon el 22/09/2026",
+        "purpose": "Fundia cada pantalla al cambiar de ruta, 280ms y 12px. Se quito porque corria en CADA navegacion y el contenido llegaba tarde: se leia como un fallo. El codigo sigue en `movimiento.tsx`; lo que ya no hace es envolver al `<Outlet>`."
       },
       {
         "name": "tarjeta",
         "value": "muelle, rigidez 400, amortiguacion 30",
         "purpose": "La tarjeta que se levanta al pasar por encima. Con muelle y no con duracion: al pulsar y soltar rapido, una duracion fija se siente pegajosa."
+      },
+      {
+        "name": "al-asomarse",
+        "value": "500ms, ease [.25,.1,.25,1], viewport {once:true, amount:0.2}, escalonado 200ms",
+        "purpose": "Cada bloque entra al asomar por el borde de la ventana, una sola vez. Replicada de OriginX con sus valores exactos. ⚠️ Su curva y su duracion NO son las del mundo (0.16,1,0.3,1 y 300ms), y es deliberado: se pidio replicar la referencia. ⚠️ Solo en la portada: retrasa medio segundo lo que el visitante vino a ver, y eso solo se paga donde la pantalla se lee."
       }
     ],
     "breakpoints": [

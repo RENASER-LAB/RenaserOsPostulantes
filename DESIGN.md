@@ -865,19 +865,25 @@ curva es siempre `cubic-bezier(0.16, 1, 0.3, 1)` y la duración por defecto son 
 
 Tres registros, y cada uno tiene su trabajo:
 
-**Las cuatro piezas se quedan.** Se implementaron para poder elegir entre ellas y el 10/09/2026
-se confirmaron las cuatro: ninguna es gratuita —C dice hasta dónde llegaste, B sostiene la
-continuidad al abrir una ficha, D es la respuesta al puntero y A liga las pantallas—. No se
-vuelve a discutir sin un motivo nuevo.
+**Cuatro piezas construidas, tres en uso, y una quinta traída de la referencia.**
+
+⚠️ **A se retiró el 22/09/2026 y el motivo es de uso, no de gusto.** Ligaba una pantalla con
+la siguiente, pero como envolvía al `<Outlet>` corría en **cada** cambio de ruta: el contenido
+llegaba 280 ms tarde y eso se lee como un fallo, no como una transición. El código sigue en
+`movimiento.tsx`; lo que ya no hace es envolver al `<Outlet>`. Recuperarla es volver a ponerlo
+en `Armazon.tsx`.
+
+B, C y D siguen: ninguna es gratuita —C dice hasta dónde llegaste, B sostiene la continuidad al
+abrir una ficha y D es la respuesta al puntero—.
 
 La librería es **`motion`** (la antigua Framer Motion). ⚠️ Se probó antes con la View
 Transitions API nativa y **se descartó el 10/09/2026 por criterio visual**; no reintentarla sin
-que alguien lo pida. Las cuatro piezas viven separadas en
+que alguien lo pida. Las cinco piezas viven separadas en
 [`src/ui/movimiento.tsx`](src/ui/movimiento.tsx) para poder quitar una sin desmontar el resto:
 
-- **A · La pantalla que entra.** Cada cambio de ruta funde la pantalla vieja y entra la nueva
-  con un desplazamiento corto. `mode="wait"`, porque con el ancho fijo del portal dos capas a
-  la vez dan un salto de altura.
+- **A · La pantalla que entra.** *Retirada del armazón el 22/09/2026, ver arriba.* Fundía la
+  pantalla vieja y entraba la nueva con un desplazamiento corto. `mode="wait"`, porque con el
+  ancho fijo del portal dos capas a la vez dan un salto de altura.
 - **B · El título que viaja.** `layoutId` con el número de la vacante: el título de la tarjeta
   interpola posición y tamaño hasta ser el titular de la ficha. El id lleva el número porque
   en la portada hay una tarjeta por puesto y dos `layoutId` iguales pelean.
@@ -890,11 +896,29 @@ que alguien lo pida. Las cuatro piezas viven separadas en
   tarjeta 2 px y la pieza D la subía 4: dos animaciones peleando por el mismo `transform` con
   dos curvas distintas.
 
-⚠️ **Con el reloj corriendo no se mueve nada, y eso se aplica en el armazón.** La regla la
-tenían las piezas, pero `PantallaConEntrada` envuelve el `<Outlet>`, así que la evaluación, la
+- **E · Lo que entra al asomarse.** `AlAsomarse` y `AsomanEnFila`, traídas de OriginX con sus
+  valores exactos, sacados de su bundle. **No es una transición de ruta aunque lo parezca**: es
+  `whileInView`, y cada bloque se anima cuando asoma por el borde de la ventana, una sola vez.
+  Al cargar, lo que cae sobre el pliegue entra junto —y eso es lo que se lee como «la pantalla
+  entró animada»—; al bajar, cada sección va entrando por su cuenta.
+
+  Variantes `fadeInUp` (y 50), `fadeInLeft` (x −50), `fadeInRight` (x 50) y `scaleUp`
+  (escala 0,8); `viewport {once: true, amount: 0.2}`; escalonado de 200 ms.
+
+  ⚠️ **Su curva y su duración NO son las del mundo, y es deliberado.** Usa `[.25,.1,.25,1]`
+  —el `ease` de CSS— y 500 ms, contra los `cubic-bezier(0.16, 1, 0.3, 1)` y 300 ms del resto.
+  Se pidió replicar la referencia exactamente; cambiarlo son dos constantes.
+
+  ⚠️ **Solo está en la portada.** Retrasa medio segundo lo que el visitante vino a ver, y eso
+  solo se paga donde la pantalla se lee. En «Mis procesos» no va: alguien entra a comprobar si
+  hay novedad, y además ahí ya se mueve C, que sí significa algo.
+
+⚠️ **Con el reloj corriendo no se mueve nada, y eso se aplica en cada pieza.** La regla la
+tenían las piezas, pero mientras `PantallaConEntrada` envolvió al `<Outlet>` la evaluación, la
 prueba y el cuestionario técnico entraban desplazándose igual que las demás: **la única pieza
 que una pantalla no puede rechazar es la que le pone su contenedor**. El rechazo vive en
-`movimiento.tsx`, que compara la ruta contra los tres patrones cronometrados.
+`movimiento.tsx`, que compara la ruta contra los tres patrones cronometrados, y lo heredan
+también `AlAsomarse` y `AsomanEnFila`.
 - **La franja se llena al entrar**, de izquierda a derecha y escalonada por etapa. ⚠️ **Esto
   decía que solo corría «cuando el estado cambió desde la última visita», y era falso**: corre
   en cada montaje, y nunca hubo código que comparase con una visita anterior. Se corrigió el

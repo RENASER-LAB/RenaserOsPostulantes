@@ -31,8 +31,9 @@ nombre **EX** y su logotipo: la palabra con la hormiga dentro de la X.
 y el proveedor de tema; el `index.html` deja de abrir en oscuro.
 
 ~~**Fondo blanco puro y acento índigo `#4338CA`**~~ — decidido el 23/08/2026 y **sustituido
-el 10/09/2026** por el fondo gris `#F5F5F5` con la acción en negro, que el 11/09 acabó en
-blanco puro. Lo que sigue vigente de
+el 10/09/2026** por la acción en negro. El fondo pasó por tres valores antes de asentarse:
+gris `#F5F5F5` ese día, blanco puro el 11/09, y **el pastel cálido `#FBF1E9` desde el 15/09**,
+que es el que está vigente. Lo que sigue vigente de
 aquella decisión es el porqué: verde, ámbar y rojo ya tienen significado fijo en el sistema
 —aprobado, en duda, error—, así que ni el acento ni la acción podían ser ninguno de esos.
 

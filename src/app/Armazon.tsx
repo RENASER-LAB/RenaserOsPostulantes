@@ -12,7 +12,6 @@ import { useSesion } from './Sesion'
 import { Campana } from '@/ui/Campana'
 import { Marca } from '@/ui/Marca'
 import estilos from './Armazon.module.css'
-import { PantallaConEntrada } from '@/ui/movimiento'
 
 /**
  * El titulo de la pestaña, por pantalla.
@@ -187,10 +186,18 @@ export function Armazon() {
       </header>
 
       <main className={estilos.principal}>
-        {/* A · cada pantalla entra desplazandose. Ver `src/ui/movimiento.tsx`. */}
-        <PantallaConEntrada>
-          <Outlet />
-        </PantallaConEntrada>
+        {/*
+          ⚠️ **Sin la pieza A, y a proposito.** Cada cambio de ruta fundia la
+          pantalla vieja y entraba la nueva desplazandose. Se quito el
+          22/09/2026 por peticion: al cambiar de pestaña el contenido llegaba
+          tarde y se leia como un fallo, no como una transicion. La pieza sigue
+          en `movimiento.tsx` por si se quiere recuperar; lo que ya no hace es
+          envolver al `<Outlet>`.
+
+          El movimiento de entrada vive ahora solo en la portada, con la pieza E
+          —`AlAsomarse`—, que se dispara al asomar cada bloque y no al navegar.
+        */}
+        <Outlet />
       </main>
 
       <footer className={estilos.pie}>
