@@ -30,8 +30,10 @@ vacantes (modelo Indeed), el panel se construye en este repositorio, bajo `/admi
   Excel, usuarios y roles, áreas).
 - ⚠️ **Huecos del backend, comprobados el 27/08**: `GET /panel/bandeja` devuelve 500; y **no hay
   forma de listar las versiones de una plantilla de prueba**, solo de pedir una suelta por su
-  id. Y `POST /vacantes/{id}/cierre-prueba` contesta 400 **en inglés** si la vacante no tiene
-  versión elegida. Se enseña lo que existe, como hizo el portal con la decisión ámbar.
+  id. Se enseña lo que existe, como hizo el portal con la decisión ámbar.
+  (Lo de `POST /vacantes/{id}/cierre-prueba` en inglés se cerró: hoy contesta en castellano
+  que esa vacante no rinde una prueba del puesto, y el panel ni ofrece el control ahí — ver
+  «El plazo de la prueba se ve antes de cambiarlo».)
   (El hueco de «quiénes se inscribieron» se cerró: ver «Los inscritos de una sesión, y quién puede qué» en la [bitácora de agosto](BITACORA-2026-08.md).)
 
 ### El ranking es por etapas (25/08)
@@ -240,5 +242,72 @@ Comprobarlo: `npx playwright test herramientas/e2e/27-archivar-vacante.spec.ts` 
 vacantes, un candidato en carrera y una cuenta de panel sin permiso de archivo —no tocan las
 vacantes sembradas de la base, porque archivar una las escondería del resto de pruebas— y lo
 retiran al terminar. Necesitan las variables de [TRABAJAR-EN-LOCAL.md](TRABAJAR-EN-LOCAL.md).
+
+### El plazo de la prueba se ve antes de cambiarlo (22/09)
+
+Los dos controles —la fecha de toda la convocatoria y la de una sola persona, los dos en
+`src/panel/vacantes/CierreDePrueba.tsx`— existían desde agosto. Lo que faltaba era **ver qué
+plazo rige hoy**: los dos campos de fecha salían vacíos sobre vacantes que sí tenían fecha, y
+quien entraba no sabía qué estaba cambiando.
+
+**En la configuración de la vacante**, el desplegable «Plazos de la prueba» abre con una línea
+que contesta «¿qué rige ahora mismo?». Son cuatro frases y no una con huecos, porque son cuatro
+reglas distintas:
+
+| La vacante | Qué dice la línea |
+|---|---|
+| Plazo abierto **con** fecha | «Cierra el domingo 21 sep 2026, 23:59 (hora de tu equipo, `America/Lima`)» |
+| Plazo abierto **sin** fecha | «Sin fecha para todos: a cada persona le cierra N días después de que empieza» |
+| Cronometrada **sin** fecha | «Cronometrada: N minutos desde que cada persona empieza, sin fecha límite para empezar» |
+| Cronometrada **con** fecha | Los minutos **y** la fecha, y «Rige lo que caiga antes» |
+
+Y tres casos en los que el control **no se ofrece**, con el motivo escrito en vez de un hueco
+callado: la vacante **cerrada** («ya no admite una fecha nueva»), la que rinde el **cuestionario
+técnico** —su tiempo son los minutos de la vacante, con el enlace «Ajustar los minutos →» al
+ajuste que está unas líneas más arriba en la misma página— y la que **no ha elegido prueba**,
+que manda a elegirla antes. El desplegable se abre igual: es donde quien busca la fecha mira.
+
+⚠️ **Una prueba `CRONOMETRADA` sí admite fecha desde el 22/09/2026**, y la regla vieja del panel
+la escondía junto a esos tres casos. El reloj y la fecha **conviven**: al empezar rige el que
+caiga antes, así que la fecha es lo que impide abrir el examen después de que cierre la
+convocatoria. Hasta esa fecha el backend lo rechazaba con un 400, «anularía el reloj».
+
+El campo llega **precargado con la fecha vigente** —`pruebaCierraEn`, pasada a hora local con
+`aCampoLocal`— y al escribir otra se dice a cuánta gente alcanza **antes** de guardar: «Se
+moverá el cierre de 8 exámenes abiertos; 2 quedan como están porque tienen fecha propia». Las
+dos cifras solo se conocían después, en la respuesta del `POST`, cuando a los ocho ya les había
+llegado.
+
+**En la ficha del candidato** (etapa Prueba del puesto), `GET /postulaciones/{id}/prueba/plazo`
+dice en qué punto está esa persona y hasta cuándo tiene. Va con **`abrir_ficha_candidato`**, el
+permiso de leer: quien no puede mover el plazo igualmente lo ve.
+
+| Esa persona | Qué se ve, y si hay control |
+|---|---|
+| No llegó a la etapa | «Todavía no tiene prueba. El plazo se fija cuando llegue». Sin control |
+| No ha abierto la prueba | Cuándo le cierra, o «su plazo empieza a contar cuando la abra» |
+| En curso | «Le cierra el …» y **de dónde sale**: la de la vacante, la que calculó el reloj al abrirla, o una puesta a mano |
+| Ya entregó | «Entregó el …. El plazo ya no cambia». Sin control: moverlo no cambiaría nada de lo que hizo |
+| Su vacante rinde el cuestionario técnico | No hay fecha por persona; el tiempo son los minutos de la vacante |
+
+Los tres casos sin control son los que el servidor rechazaba **después** de escribir el motivo,
+con «Prueba del puesto no encontrada» o «ya se entregó». La fecha que se guarde aquí queda
+**como suya**, y la pantalla lo dice antes de guardar: no se moverá aunque cambie la de la
+vacante.
+
+⚠️ **Los campos nuevos pueden faltar, y `undefined` no es «no hay fecha».** `modalidadPrueba`,
+los minutos o días vigentes y las dos cifras de exámenes abiertos **solo viajan en el detalle**
+(`GET /vacantes/{id}`), no en la lista, y un backend anterior no los manda: donde no se sabe se
+dice «sin dato» en vez de afirmar que no hay plazo, que es lo contrario de lo que pasa.
+
+Los errores del servidor se leen en castellano y pegados a lo que hay que corregir: lo que
+rechaza la fecha —«Esa fecha ya pasó…»— va en el campo, y un 403 nombra el permiso que falta
+(`elegir_plantilla_prueba` en la vacante, `mover_postulacion` en la persona). El motivo sigue
+siendo obligatorio en las dos llamadas y queda en la auditoría.
+
+Comprobarlo: `npx playwright test herramientas/e2e/29-plazo-de-la-prueba.spec.ts` ⚠️ **escribe**:
+siembra en el clon sus propias vacantes, una plantilla de prueba, los candidatos de cada estado
+y una cuenta de panel de solo lectura, y lo retira al terminar. Necesita las variables de
+[TRABAJAR-EN-LOCAL.md](TRABAJAR-EN-LOCAL.md).
 
 ---

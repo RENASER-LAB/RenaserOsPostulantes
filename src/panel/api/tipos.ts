@@ -117,6 +117,36 @@ export interface VacantePanel {
   puedeArchivar: boolean
   /** Si quien mira puede devolverla a la lista habitual. */
   puedeDesarchivar: boolean
+  /**
+   * Cuando cierra la prueba de esta vacante, **para todos**.
+   *
+   * `null` = no hay fecha comun: a cada persona le cierra N dias despues de que
+   * empieza. Viaja tambien en la lista, porque es una columna de la propia
+   * vacante y no cuesta ninguna consulta. Opcional como los de abajo: un
+   * backend anterior no lo manda, y eso no es «no hay fecha».
+   */
+  pruebaCierraEn?: FechaIso | null
+  /**
+   * La modalidad que de verdad rige hoy en la etapa tecnica.
+   *
+   * Es la **efectiva**, no la de la fila de la plantilla: unos minutos propios
+   * de la vacante convierten en cronometrada hasta una de plazo abierto. `null`
+   * con cuestionario tecnico, sin prueba elegida — o en la LISTA, que no
+   * resuelve nada de esto para no gastar dos consultas por fila.
+   *
+   * ⚠️ **Opcional a proposito**: un backend anterior no manda ninguno de los
+   * cinco campos de abajo, y la pantalla tiene que decir «sin dato» en vez de
+   * pintar «undefined minutos».
+   */
+  modalidadPrueba?: 'CRONOMETRADA' | 'PLAZO_ABIERTO' | null
+  /** Los minutos que rigen hoy, o `null` si esta prueba se mide en dias. */
+  minutosPruebaVigentes?: number | null
+  /** Los dias que rigen desde que cada persona empieza, o `null`. */
+  diasPruebaVigentes?: number | null
+  /** Cuantos examenes abiertos se moverian al cambiar la fecha. */
+  intentosAbiertosSinPlazoPropio?: number | null
+  /** Y cuantos se quedarian como estan por tener fecha propia. */
+  intentosAbiertosConPlazoPropio?: number | null
 }
 
 /** Cuantas vacantes archivadas hay: el numero del boton de la cabecera. */
@@ -479,6 +509,34 @@ export interface PlazoDePrueba {
   postulacionId: number
   venceEn: FechaIso
   yaEmpezo: boolean
+}
+
+/**
+ * El plazo que rige HOY para una persona, para poder enseñarlo antes de tocarlo.
+ *
+ * Las dos ausencias son caminos normales y **no un error**:
+ *
+ * - `existeIntento: false` con `instrumento: 'PLANTILLA'` = todavia no llego a
+ *   la etapa tecnica; su plazo se fijara cuando llegue.
+ * - `existeIntento: false` con `instrumento: 'CUESTIONARIO_TECNICO'` = esa
+ *   vacante no usa `intento_prueba`: su tiempo son los minutos de la vacante y
+ *   no hay fecha por persona que fijar.
+ *
+ * `venceEn` vacio tampoco es un error: se le calculara al abrir la prueba, y los
+ * datos antiguos son asi.
+ */
+export interface PlazoVigenteDePrueba {
+  existeIntento: boolean
+  venceEn: FechaIso | null
+  /**
+   * De donde sale esa fecha: `VACANTE` (la comun de la convocatoria), `RELOJ`
+   * (la calculo el servidor al empezar) o `PROPIO` (la puso alguien a mano, y
+   * mover la de la vacante ya no la toca). `null` si no hay fecha.
+   */
+  origen: 'VACANTE' | 'RELOJ' | 'PROPIO' | null
+  iniciadoEn: FechaIso | null
+  entregadoEn: FechaIso | null
+  instrumento: InstrumentoTecnico | null
 }
 
 // ---------- Postulaciones ----------
