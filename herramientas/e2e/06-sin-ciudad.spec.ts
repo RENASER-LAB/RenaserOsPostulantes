@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { abrirMasFiltros, cabecera, corte, entrarAlPanel, irAVacante, nombresVisibles, VACANTES } from './ayuda'
+import { abrirFiltros, cabecera, corte, entrarAlPanel, irAVacante, nombresVisibles, VACANTES } from './ayuda'
 import { sql, literal } from './base-de-datos'
 
 /** Se guardan los datos existentes antes de escribir, siempre dentro de la vacante esperada. */
@@ -67,8 +67,8 @@ test.describe('Nuevo · cuando la ciudad falta', () => {
     ])
 
     // Y el desplegable de ciudad solo ofrece las dos que de verdad hay.
-    await abrirMasFiltros(page)
-    await expect(page.locator('fieldset').first().getByRole('button')).toHaveCount(2)
+    await abrirFiltros(page)
+    await expect(page.getByRole('group', { name: 'Ciudad' }).getByRole('button')).toHaveCount(2)
   })
 
   test('TODA VACÍA: la columna Ciudad desaparece y se dice por qué', async ({ page }) => {
@@ -94,14 +94,14 @@ test.describe('Nuevo · cuando la ciudad falta', () => {
     )
     await page.locator('table tbody tr').first().click()
 
-    await abrirMasFiltros(page)
+    await abrirFiltros(page)
     await expect(
       page.getByText(
         'Todavía no hay ninguna ciudad en esta tanda: solo se le pide a quien crea su cuenta desde ahora, así que ninguna postulación anterior la trae.',
       ),
     ).toBeVisible()
     // Sin ciudades no se sirve un desplegable vacío.
-    await expect(page.locator('fieldset').first().getByRole('button')).toHaveCount(0)
+    await expect(page.getByRole('group', { name: 'Ciudad' }).getByRole('button')).toHaveCount(0)
   })
 
   test('y la vacante 8, que no se tocó, sigue con su columna Ciudad', async ({ page }) => {

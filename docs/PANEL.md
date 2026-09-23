@@ -80,13 +80,14 @@ lee el equipo en el historial.
 pueda abrir fichas de todos y mover solo las suyas verá el botón y recibirá un 404. Está
 traducido como lo que es, un límite del alcance del rol.
 
-**Y a varios a la vez, desde la mesa de la tabla (11/09).** Junto a «Avanzar a N personas» hay
-ahora «Descartar a N personas»: las mismas casillas, el mismo motivo. Por eso el campo dejó de
+**Y a varios a la vez (11/09).** Junto a «Avanzar a N personas» está «Descartar…»: las mismas
+casillas, el mismo motivo. Desde el 23/09 los dos viven en la barra que aparece abajo al marcar a
+alguien (ver «Filtrar la tanda y actuar sobre muchas a la vez»). Por eso el campo dejó de
 llamarse «motivo del avance» —con el descarte al lado, ese nombre haría escribir un motivo de
 avance para acabar cerrando a seis personas con él—.
 
-⚠️ **El botón del lote NO actúa al pulsarlo**, al revés que el de avanzar: abre una ventana con
-los nombres escritos. El error real no es equivocarse de botón, es llegar con alguien marcado de
+⚠️ **El botón del lote NO actúa al pulsarlo**, al revés que el de avanzar: abre la ventana
+«Descartar a N personas» con los nombres escritos. El error real no es equivocarse de botón, es llegar con alguien marcado de
 una pestaña anterior, y la cifra sola no lo enseña. Va uno a uno; quien falle sale nombrado y no
 frena a los demás, así que la ventana promete «hasta N» correos.
 
@@ -94,6 +95,67 @@ frena a los demás, así que la ventana promete «hasta N» correos.
 sin que le llegue nada al candidato — para cuando ya se habló con esa persona por otro lado. Se
 manda como `avisar: false`; el backend calla solo el correo y **deja escrito que no se avisó**,
 en el motivo del historial y en la auditoría.
+
+### Filtrar la tanda y actuar sobre muchas a la vez (23/09)
+
+Las cinco pestañas del ranking comparten la misma barra y la misma forma de marcar. Todo pasa en
+el navegador, sobre las filas que ya trajo el backend, y nada se guarda al recargar.
+
+**La barra de encima**, de izquierda a derecha: buscar por nombre · **«Filtros»**, con una
+insignia de cuántos hay puestos · «Columnas» · **«Borrar filtros»** (sustituye a «Ver a
+todos») · calificar y «Descargar Excel». En el teléfono, «Columnas» y las acciones de la tanda
+se recogen en «Más».
+
+**El panel «Filtros»** flota sobre la tabla en escritorio, sin oscurecer ni mover nada, y la
+tabla cambia detrás mientras se toca. En el teléfono es una hoja que sube desde abajo, con el
+fondo apagado y el foco atrapado dentro. Los cambios se aplican al momento; el pie dice «Se ven X
+de Y» y tiene «Borrar filtros» y «Listo».
+
+| Sección | Qué hace |
+|---|---|
+| Fecha de postulación | Un día, o un rango con «Desde» y «Hasta» (los dos incluidos, cada uno opcional), y los atajos Hoy, Últimos 7 días y Últimos 30 días. El día es el del navegador de quien mira. Si «Desde» es posterior a «Hasta», avisa y no filtra. Quien no tiene fecha queda fuera, y la ayuda lo dice |
+| Calificación con IA | Calificada, en curso o fallida, con cuántas hay de cada una. Es la de la cola del currículum, así que después de la primera etapa lo aclara: «Es la calificación del currículum» |
+| Ciudad, Nota de la etapa, Pretensión | Como antes. Si la vacante no publica su remuneración, la ayuda de Pretensión dice «La vacante no publicó pretensión» |
+
+Cada filtro puesto sale como una **etiqueta con «×»** debajo de la barra. Los filtros **se
+conservan al cambiar de etapa** y se reinician al cambiar de vacante. La búsqueda por nombre no
+cuenta en la insignia ni lleva etiqueta, pero «Borrar filtros» también la limpia, y basta con
+ella escrita para que el botón aparezca. Un rango de fechas al revés no cuenta como filtro puesto.
+Si no queda ninguna fila, la tabla dice cuántas hay sin filtrar y ofrece «Borrar filtros».
+
+**Marcar todo lo que se ve.** La casilla de la cabecera marca solo las filas visibles, las suelta
+si ya estaban todas y queda a medias si hay algunas. ⚠️ **Una marca que un filtro esconde se
+conserva pero no cuenta** en los botones: la barra dice «N marcadas · M fuera de vista por los
+filtros» y ofrece «Soltar las ocultas». Si el filtro esconde a todas las marcadas, la barra no
+sale. Mandar una carta de rechazo a quien no se ve es el error más caro de la pantalla.
+
+**La barra de lo marcado** sustituye a la mesa de debajo de la tabla y va pegada abajo mientras
+se recorre la tabla: motivo (obligatorio), «Avanzar a N personas», «Descartar…» —sin permiso de
+mover postulaciones no sale— y «Soltar selección». Es `position: sticky` y no `fixed`, así que no
+tapa la última fila ni el pie. El resultado se queda en ella hasta cerrarlo con «×».
+
+**El Excel** sigue bajando exactamente las filas que se ven, en su orden, filtros nuevos
+incluidos.
+
+**Foco y teclado.** Esc, «Listo» y un clic fuera sobre algo que no es un control devuelven el
+foco a «Filtros». Un clic fuera sobre un control —una casilla, un botón— hace lo suyo y el foco
+se queda ahí; uno sobre una fila cierra el panel y abre su ficha. Salir con Tab lo cierra. Los
+«Borrar filtros» de la barra y de la tabla vacía llevan el foco a «Filtros»; el del pie se apaga
+con `aria-disabled` y conserva el foco. En ventanas estrechas el panel se corre a la izquierda
+para no desbordar.
+
+Dónde está: `FiltrosDelRanking.tsx` (el botón, el panel y las etiquetas),
+`BarraDeLaSeleccion.tsx` (la barra de abajo) y las reglas de filtrado en `ranking.ts`, todo en
+`src/panel/vacantes/`. La fecha llega en `postuladoEn` de cada fila, nuevo en el backend.
+
+Comprobarlo: `npx playwright test herramientas/e2e/33-filtros-y-seleccion-en-lote.spec.ts`, que
+no escribe (intercepta «Avanzar» y cancela el descarte). El 34 y el 35
+(`34-filtros-y-seleccion-qa`, `35-filtros-y-seleccion-qa-movil`) ⚠️ **escriben**: siembran su
+propio terreno —32 postulaciones en 9 días, con la IA en sus cuatro estados— y lo retiran al
+terminar. Lo que el 34 hace avanzar no se puede borrar, así que su vacante queda marcada
+eliminada. Necesitan las variables de [TRABAJAR-EN-LOCAL.md](TRABAJAR-EN-LOCAL.md). ⚠️ Los
+números 33 a 35 están repetidos con los de «¿Olvidaste tu contraseña?»: ver
+[PENDIENTES.md](PENDIENTES.md).
 
 ### Publicar una vacante exige tres cosas antes (25/08)
 

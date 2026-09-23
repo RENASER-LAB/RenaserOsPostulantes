@@ -1,0 +1,474 @@
+/*
+ * El botón «Filtros», su panel y las etiquetas de lo puesto.
+ *
+ * ⚠️ **Todo en neutro.** En esta pantalla el violeta es «Avanzar a N personas»,
+ * que significa «te toca a ti». Un filtro puesto no le pide nada a nadie: el
+ * botón, la insignia, el punto de cada sección y las etiquetas van en tinta y
+ * nube, y lo puesto se lee en la forma —el contorno engorda— antes que en el
+ * color.
+ */
+
+/* ---------- El botón ---------- */
+
+/* El ancla del panel: el panel flota desde aquí sin empujar nada. */
+.ancla {
+  position: relative;
+}
+
+.boton {
+  composes: secundario from '../../estilos/piezas.module.css';
+  gap: var(--e2);
+  padding: 0 var(--e4);
+  font-size: var(--t-apoyo);
+  white-space: nowrap;
+}
+
+/* Abierto se marca como la tuerca: fondo hundido y contorno de tinta. */
+.boton[aria-expanded='true'] {
+  background: var(--nube-hundida);
+  border-color: var(--tinta);
+}
+
+/*
+ * Cuántos filtros hay puestos.
+ *
+ * ⚠️ **Es lo que impide que el panel esconda un recorte.** Sin la cifra, una
+ * tabla filtrada por fecha y ciudad se ve igual que una sin filtrar.
+ */
+.insignia {
+  min-width: 1.5rem;
+  padding: 1px var(--e2);
+  border-radius: var(--radio-control);
+  background: var(--tinta);
+  color: var(--tinta-invertida);
+  font-size: var(--t-micro);
+  font-weight: 700;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* El pliegue gira, no se sustituye: es el mismo control en el otro estado. */
+.pliegue {
+  flex: none;
+  color: var(--tinta3);
+  transition: transform 160ms var(--salida);
+}
+
+.boton[aria-expanded='true'] .pliegue {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pliegue {
+    transition: none;
+  }
+}
+
+/* ---------- El panel ---------- */
+
+/*
+ * En escritorio flota anclado al botón, por encima de la tabla y sin fondo
+ * apagado.
+ *
+ * ⚠️ **`position: absolute` y no en el flujo.** Empujando, abrirlo bajaba la
+ * tabla entera y la fila que se estaba mirando se iba de la pantalla — justo
+ * mientras se recorta la lista, que es cuando hay que ver el efecto.
+ *
+ * `z-index` por encima de la celda pegajosa del candidato y de la barra de la
+ * selección, y por debajo de la cabecera del panel (10).
+ */
+.panel {
+  position: absolute;
+  z-index: 8;
+  top: calc(100% + var(--e2));
+  left: 0;
+  width: min(32rem, calc(100vw - 2rem));
+  max-height: min(70vh, 44rem);
+  display: flex;
+  flex-direction: column;
+  background: var(--nube);
+  border: 1px solid var(--regla2);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra-nube);
+}
+
+/* El fondo apagado es solo del teléfono. */
+.fondo {
+  display: none;
+}
+
+/* El título de la hoja: en escritorio el botón de al lado ya lo dice. */
+.tituloHoja {
+  display: none;
+}
+
+.cuerpo {
+  overflow-y: auto;
+  padding: var(--e4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--e4);
+}
+
+/* `fieldset` por la semántica —cada sección es un grupo con nombre— y sin nada
+   de su vestuario de fábrica. Las secciones se separan con una regla. */
+.seccion {
+  border: 0;
+  margin: 0;
+  padding: 0 0 var(--e4);
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+  border-bottom: 1px solid var(--regla);
+}
+
+.seccion:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.tituloSeccion {
+  display: flex;
+  align-items: center;
+  gap: var(--e2);
+  width: 100%;
+  padding: 0;
+  margin-bottom: var(--e1);
+  font-size: var(--t-apoyo);
+  font-weight: 700;
+  color: var(--tinta);
+}
+
+/* El punto de «filtrando», a la derecha del título y en tinta. */
+.marcaPuesto {
+  width: 8px;
+  height: 8px;
+  margin-left: auto;
+  border-radius: 50%;
+  background: var(--tinta);
+}
+
+.modos,
+.casillas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e1) var(--e4);
+}
+
+/* Radio o casilla con su texto: 44 px de alto, como todo lo que se toca. */
+.opcion {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  min-height: 44px;
+  font-size: var(--t-apoyo);
+  color: var(--tinta);
+  cursor: pointer;
+}
+
+.opcion input {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--tinta);
+}
+
+.cuenta {
+  color: var(--tinta3);
+  font-size: var(--t-menor);
+  font-variant-numeric: tabular-nums;
+}
+
+.rangoFechas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e3);
+}
+
+.campoFecha {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e1);
+  font-size: var(--t-menor);
+  color: var(--tinta2);
+}
+
+/* 48 px y 16 px de letra: por debajo, iOS hace zoom al enfocar el campo. */
+.fecha,
+.fechaMal {
+  min-height: 48px;
+  padding: 0 var(--e3);
+  background: var(--nube);
+  color: var(--tinta);
+  border: 1px solid var(--borde-control);
+  border-radius: var(--radio-menor);
+  font: inherit;
+  font-size: var(--t-base);
+  font-variant-numeric: tabular-nums;
+}
+
+.fecha:hover {
+  border-color: var(--tinta2);
+}
+
+/* El error engorda el borde a 2 px y lo vuelve rojo, en ese orden. */
+.fechaMal {
+  border: 2px solid var(--mal);
+}
+
+.aviso {
+  font-size: var(--t-menor);
+  line-height: 1.45;
+  color: var(--mal-pulsado);
+  max-width: var(--medida-corta);
+}
+
+.atajos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e2);
+}
+
+.atajo {
+  composes: secundario from '../../estilos/piezas.module.css';
+  padding: 0 var(--e3);
+  font-size: var(--t-menor);
+}
+
+.pista {
+  font-size: var(--t-menor);
+  color: var(--tinta3);
+  line-height: 1.4;
+  max-width: var(--medida-corta);
+}
+
+.porQueNoSale {
+  font-size: var(--t-menor);
+  line-height: 1.45;
+  color: var(--tinta2);
+  max-width: var(--medida-corta);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e2);
+}
+
+/*
+ * Una ciudad marcada.
+ *
+ * Misma silueta que los tres cortes de arriba —píldora, cifra dentro, lo
+ * elegido engorda el borde— porque es la misma operación: elegir qué filas se
+ * ven. Lo marcado se lee en el borde y en el peso, no en un color.
+ */
+.chip,
+.chipMarcado {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  min-height: 44px;
+  padding: 0 var(--e3);
+  font: inherit;
+  font-size: var(--t-menor);
+  border: 1px solid var(--regla2);
+  border-radius: var(--radio-control);
+  background: var(--nube);
+  color: var(--tinta2);
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    border-color 160ms var(--salida),
+    color 160ms var(--salida);
+}
+
+.chip:hover {
+  border-color: var(--tinta2);
+  color: var(--tinta);
+}
+
+.chipMarcado {
+  border-color: var(--tinta);
+  border-width: 2px;
+  color: var(--tinta);
+  font-weight: 700;
+}
+
+.rango {
+  display: flex;
+  align-items: center;
+  gap: var(--e2);
+  color: var(--tinta3);
+}
+
+.cifra {
+  width: 6.5rem;
+  min-height: 44px;
+  padding: 0 var(--e3);
+  background: var(--nube);
+  color: var(--tinta);
+  border: 1px solid var(--borde-control);
+  font: inherit;
+  font-size: var(--t-base);
+  font-variant-numeric: tabular-nums;
+  border-radius: var(--radio-menor);
+}
+
+.cifra:hover {
+  border-color: var(--tinta2);
+}
+
+/* El pie no rueda con el cuerpo: «Se ven X de Y» y «Listo» siempre a mano. */
+.pie {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e2) var(--e3);
+  padding: var(--e3) var(--e4);
+  border-top: 1px solid var(--regla);
+}
+
+.seVen {
+  margin-right: auto;
+  font-size: var(--t-menor);
+  color: var(--tinta2);
+  font-variant-numeric: tabular-nums;
+}
+
+.borrar {
+  composes: secundario from '../../estilos/piezas.module.css';
+  font-size: var(--t-apoyo);
+}
+
+/*
+ * El apagado de `.secundario:disabled`, pero con `aria-disabled`: este botón se
+ * apaga al pulsarlo y no puede soltar el foco (ver el botón). Con `.pie` delante
+ * para ganarle también al `:hover:not(:disabled)` de la pieza.
+ */
+.pie .borrar[aria-disabled='true'],
+.pie .borrar[aria-disabled='true']:hover {
+  background: var(--nube-honda);
+  border-color: var(--nube-honda);
+  color: var(--tinta3);
+  cursor: default;
+}
+
+/* Sólido y no violeta: cerrar el panel no es «te toca a ti». */
+.listo {
+  composes: solido from '../../estilos/piezas.module.css';
+  font-size: var(--t-apoyo);
+}
+
+/* ---------- Las etiquetas de lo puesto ---------- */
+
+.etiquetas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e2);
+  margin: var(--e3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+/*
+ * Nube hundida con contorno: se lee como algo puesto que se puede quitar, y no
+ * como un botón de acción. La «×» va a la derecha y la etiqueta entera la
+ * acciona.
+ */
+.etiqueta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  min-height: 44px;
+  padding: 0 var(--e2) 0 var(--e3);
+  border: 1px solid var(--regla2);
+  border-radius: var(--radio-control);
+  background: var(--nube-hundida);
+  color: var(--tinta);
+  font: inherit;
+  font-size: var(--t-menor);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color 160ms var(--salida);
+}
+
+.etiqueta:hover {
+  border-color: var(--tinta);
+}
+
+.aspa {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  color: var(--tinta2);
+  font-size: var(--t-apoyo);
+  line-height: 1;
+}
+
+.etiqueta:hover .aspa {
+  background: var(--nube-honda);
+  color: var(--tinta);
+}
+
+/* ---------- En el teléfono ---------- */
+
+@media (max-width: 640px) {
+  /*
+   * Una hoja que sube desde abajo y ocupa el ancho, con el fondo apagado: no hay
+   * sitio para flotar sin tapar la tabla entera. La tabla de detrás no se mueve;
+   * se ve actualizada al cerrar.
+   */
+  .fondo {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    background: rgb(35 43 54 / 0.4);
+  }
+
+  .panel {
+    position: fixed;
+    z-index: 90;
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    max-height: 88dvh;
+    border-radius: var(--radio) var(--radio) 0 0;
+    border-bottom: 0;
+    box-shadow: var(--sombra-aviso);
+  }
+
+  .tituloHoja {
+    display: block;
+    padding: var(--e4) var(--e4) 0;
+    font-size: var(--t-titulo);
+    font-weight: 600;
+    color: var(--tinta);
+  }
+
+  /* El pie se queda fijo al fondo de la hoja, por encima del gesto de inicio. */
+  .pie {
+    padding-bottom: max(var(--e3), env(safe-area-inset-bottom));
+  }
+
+  /* Las etiquetas, en una sola fila que rueda en horizontal. */
+  .etiquetas {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .etiquetas::-webkit-scrollbar {
+    display: none;
+  }
+
+  .etiquetas li {
+    flex: none;
+  }
+}

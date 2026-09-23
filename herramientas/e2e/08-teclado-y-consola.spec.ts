@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { abrirMasFiltros, cabecera, corte, entrarAlPanel, filasDelRanking, irAVacante, nombresVisibles, VACANTES } from './ayuda'
+import { abrirFiltros, botonFiltros, cabecera, cerrarFiltros, corte, entrarAlPanel, filasDelRanking, irAVacante, nombresVisibles, panelFiltros, VACANTES } from './ayuda'
 
 /** Cómo se llama lo que tiene el foco ahora mismo. */
 const enfocado = (page: import('@playwright/test').Page) =>
@@ -24,11 +24,13 @@ test.describe('Teclado sin ratón', () => {
   })
 
   test('la barra de filtros entera se recorre con Tab', async ({ page }) => {
-    await abrirMasFiltros(page)
+    await abrirFiltros(page)
     await page.getByRole('searchbox').focus()
 
     const recorrido: string[] = []
-    for (let i = 0; i < 25; i++) {
+    // Más pasos que antes: el panel suma la fecha —con sus tres segmentos en
+    // Chrome—, sus atajos y las tres casillas de la IA.
+    for (let i = 0; i < 40; i++) {
       recorrido.push(await enfocado(page))
       await page.keyboard.press('Tab')
     }
@@ -44,7 +46,7 @@ test.describe('Teclado sin ratón', () => {
   })
 
   test('los chips de ciudad se marcan con Enter y con Espacio', async ({ page }) => {
-    await abrirMasFiltros(page)
+    await abrirFiltros(page)
     const chip = page.getByRole('button', { name: /^Lima — Lima/ })
     await chip.focus()
     await expect(chip).toBeFocused()
@@ -56,12 +58,48 @@ test.describe('Teclado sin ratón', () => {
     await expect(filasDelRanking(page)).toHaveCount(4)
   })
 
-  test('el pliegue de filtros abre con teclado desde su resumen', async ({ page }) => {
-    const resumen = page.locator('summary', { hasText: 'Ciudad, nota y pretensión' })
-    await resumen.focus()
-    await expect(resumen).toBeFocused()
+  test('«Filtros» abre con teclado, y Esc lo cierra devolviendo el foco', async ({ page }) => {
+    const boton = botonFiltros(page)
+    await boton.focus()
+    await expect(boton).toBeFocused()
     await page.keyboard.press('Enter')
     await expect(page.getByLabel('Nota del perfil, desde')).toBeVisible()
+    // El foco entra en el panel: se puede operar sin recorrer la página.
+    await expect(panelFiltros(page).getByRole('radio', { name: 'Un día' })).toBeFocused()
+    await page.keyboard.press('Escape')
+    await expect(panelFiltros(page)).toHaveCount(0)
+    await expect(boton).toBeFocused()
+  })
+
+  // Un texto del panel no es un control: pulsarlo no puede llevar el foco al
+  // ranking de detrás, que es enfocable y envuelve el panel.
+  test('pulsar un texto del panel lo deja abierto con el foco dentro, y Tab sigue en él', async ({ page }) => {
+    await abrirFiltros(page)
+    const panel = panelFiltros(page)
+    const enElPanel = () =>
+      page.evaluate(() => !!document.activeElement?.closest('[role="dialog"][aria-label="Filtros"]'))
+    await panel.getByText(/^Se ven \d+ de \d+$/).click()
+    await expect(panel).toBeVisible()
+    expect(await enElPanel()).toBe(true)
+    await page.keyboard.press('Tab')
+    await expect(panel).toBeVisible()
+    expect(await enElPanel()).toBe(true)
+  })
+
+  // F-06 con el ratón: ni el «Borrar filtros» del pie ni el de la barra dejan el foco en <body>.
+  test('«Borrar filtros» con el ratón: la barra lo manda a «Filtros» y el pie lo conserva', async ({ page }) => {
+    await abrirFiltros(page)
+    await panelFiltros(page).getByRole('button', { name: /^Lima — Lima/ }).click()
+    const delPie = panelFiltros(page).getByRole('button', { name: 'Borrar filtros' })
+    await delPie.click()
+    await expect(filasDelRanking(page)).toHaveCount(4)
+    await expect(delPie).toBeFocused()
+
+    await panelFiltros(page).getByRole('button', { name: /^Lima — Lima/ }).click()
+    await cerrarFiltros(page)
+    await page.getByRole('button', { name: 'Borrar filtros' }).click()
+    await expect(filasDelRanking(page)).toHaveCount(4)
+    await expect(botonFiltros(page)).toBeFocused()
   })
 
   test('se puede ordenar entero sin tocar el ratón', async ({ page }) => {
@@ -99,8 +137,10 @@ test.describe('La consola, sin los fallos conocidos', () => {
     for (const etapa of ['Prueba del puesto', 'Simulación', 'Validación', 'Decisión', 'Perfil integral']) {
       await page.getByRole('tab', { name: etapa, exact: true }).click()
     }
-    await abrirMasFiltros(page)
+    await abrirFiltros(page)
     await page.getByRole('button', { name: /^Lima — Lima/ }).click()
+    // El panel flota encima de la tabla: se cierra antes de pulsar la cabecera.
+    await cerrarFiltros(page)
     await cabecera(page, 'Candidato').getByRole('button').click()
     await page.getByRole('searchbox').fill('zzz')
     await page.waitForTimeout(500)

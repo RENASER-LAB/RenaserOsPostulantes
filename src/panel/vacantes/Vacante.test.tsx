@@ -31,9 +31,9 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { Link, MemoryRouter, Route, Routes } from 'react-router-dom'
 import { VacantePanelDetalle } from './Vacante'
 import { ErrorApi } from '../api/cliente'
 import type { FilaRanking, VersionBanco } from '../api/tipos'
@@ -43,6 +43,10 @@ const elegirInstrumento = vi.fn()
 const pedirExcel = vi.fn()
 const ponerNotaPrueba = vi.fn()
 const mover = vi.fn()
+const avanzar = vi.fn()
+/* Si la sesión puede mover postulaciones. Apagado por defecto, como un rol que no
+   puede: así «Descartar…» no sale salvo en las pruebas que lo encienden. */
+let PUEDE_MOVER = false
 
 /**
  * La rubrica de la prueba, con UN criterio sin nota.
@@ -384,7 +388,7 @@ vi.mock('../api/panel', () => ({
     elegirInstrumento(vacanteId, datos),
   cerrarVacante: () => Promise.resolve({}),
   desarchivarVacante: (id: number) => desarchivarVacante(id),
-  confirmarAvance: () => Promise.resolve({}),
+  confirmarAvance: (postulacionId: number, motivo: string) => avanzar(postulacionId, motivo),
   crearRequisito: () => Promise.resolve({}),
   publicarVacante: () => Promise.resolve({}),
   quitarRequisito: () => Promise.resolve({}),
@@ -450,6 +454,7 @@ const tanda = (filas: FilaRanking[], puedeVerPretension = true) => ({
   enCurso: 0,
   fallidos: 0,
   puedeVerPretension,
+  puedeMoverPostulacion: PUEDE_MOVER,
   filas,
 })
 
@@ -554,6 +559,9 @@ beforeEach(() => {
   FICHA = FICHA_PELADA
   mover.mockReset()
   mover.mockResolvedValue(undefined)
+  avanzar.mockReset()
+  avanzar.mockResolvedValue({})
+  PUEDE_MOVER = false
   sinRuido.verCatalogos = () =>
     Promise.resolve({
       areas: [],
@@ -1487,10 +1495,16 @@ describe('avanzar en tanda', () => {
     fireEvent.click(screen.getByRole('checkbox', { name: 'Avanza Fátima Quispe' }))
     expect(screen.getByRole('button', { name: /Avanzar a 1 persona/ })).toBeTruthy()
     // Fátima acaba de postular: nadie espera decisión sobre ella, así que al
-    // volver al corte por defecto desaparece de la tabla.
+    // volver al corte por defecto desaparece de la tabla — y con ella, la barra:
+    // sin marcadas a la vista no hay a quién avanzar.
     verCorte('Pendiente')
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Marca a quienes avanzan' })).toBeTruthy(),
+      expect(screen.queryByRole('button', { name: /Avanzar a/ })).toBeNull(),
+    )
+    // La marca no se perdió: al volver a verla, vuelve a contar.
+    verCorte('Toda la tanda')
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /Avanzar a 1 persona/ })).toBeTruthy(),
     )
   })
 })
@@ -2142,17 +2156,19 @@ describe('los filtros de la barra', () => {
     await conDatos()
     fireEvent.change(elBuscador(), { target: { value: 'nadie se llama así' } })
     await waitFor(() =>
-      expect(screen.getByText(/pasa los filtros que hay puestos/i)).toBeTruthy(),
+      expect(screen.getByText(/Ningún resultado con estos filtros/i)).toBeTruthy(),
     )
+    expect(screen.getByText(/Hay 3 sin filtrar en este corte/)).toBeTruthy()
     expect(screen.queryByText(/Nadie tiene todavía nota del perfil/)).toBeNull()
   })
 
-  it('«Ver a todos» los devuelve', async () => {
+  it('«Borrar filtros» los devuelve', async () => {
     await conDatos()
     fireEvent.change(elBuscador(), { target: { value: 'lucia' } })
     await waitFor(() => expect(elOrdenDeLaTabla()).toEqual(['Lucía Ferrer']))
-    fireEvent.click(screen.getByRole('button', { name: 'Ver a todos' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Borrar filtros' }))
     await waitFor(() => expect(elOrdenDeLaTabla()).toHaveLength(3))
+    expect((elBuscador() as HTMLInputElement).value).toBe('')
   })
 
   it('mientras hay filtro puesto se dice cuántas se ven de cuántas', async () => {
@@ -2285,7 +2301,7 @@ describe('una columna entera vacía no se pinta', () => {
 
   it('y se dice por qué: con permiso, que nadie la declaró', async () => {
     await pintar()
-    fireEvent.click(screen.getByText(/Ciudad, nota y pretensión/))
+    fireEvent.click(screen.getByRole('button', { name: /^Filtros/ }))
     expect(screen.getByText(/Ninguno de estos candidatos declaró/)).toBeTruthy()
     expect(screen.getByText(/solo se le pide a quien crea su cuenta desde ahora/)).toBeTruthy()
   })
@@ -2298,7 +2314,7 @@ describe('una columna entera vacía no se pinta', () => {
   */
   it('y sin el permiso, que el dato ni se consultó', async () => {
     await pintar(TANDA, false)
-    fireEvent.click(screen.getByText(/Ciudad, nota y pretensión/))
+    fireEvent.click(screen.getByRole('button', { name: /^Filtros/ }))
     expect(screen.getByText(/Tu rol no puede ver la pretensión/)).toBeTruthy()
     expect(screen.getByText(/NO quiere decir/)).toBeTruthy()
   })
@@ -2607,5 +2623,788 @@ describe('descartar desde la ficha', () => {
 
     expect(await screen.findByText(/ya terminó su recorrido/)).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Descartar' })).toBeNull()
+  })
+})
+
+// ---------- El botón «Filtros», la fecha y la selección en lote ----------
+
+/*
+ * Una tanda con fechas y estados de la IA repartidos.
+ *
+ * ⚠️ **Las fechas se fabrican con la hora LOCAL.** El día que cuenta es el del
+ * calendario del navegador; escritas con una «Z» a mano, estas pruebas pasarían
+ * o fallarían según la zona del equipo que las corra.
+ *
+ * Las seis esperan decisión —`PERFIL_POR_CONFIRMAR`— para que el corte por
+ * defecto las traiga a todas y lo único que recorte sea el filtro que se prueba.
+ */
+const aLas = (dia: number, hora = 10) => new Date(2026, 8, dia, hora, 0).toISOString()
+const LIMA = { ciudad: 'Lima — Lima', ciudadCodigo: '1501' }
+const CUSCO = { ciudad: 'Cusco — Cusco', ciudadCodigo: '0801' }
+const CON_FECHAS = [
+  fila(101, 'Ana Pérez', 'PERFIL_POR_CONFIRMAR', 90, { postuladoEn: aLas(10), ...LIMA }),
+  fila(102, 'Beto Salas', 'PERFIL_POR_CONFIRMAR', 80, { postuladoEn: aLas(12, 0), ...LIMA }),
+  fila(103, 'Cira Núñez', 'PERFIL_POR_CONFIRMAR', 70, {
+    postuladoEn: aLas(12, 23),
+    estadoCalificacion: 'FALLIDA',
+    ...CUSCO,
+  }),
+  fila(104, 'Dora Vela', 'PERFIL_POR_CONFIRMAR', 60, {
+    postuladoEn: aLas(14),
+    estadoCalificacion: 'EN_CURSO',
+  }),
+  fila(105, 'Elsa Rojas', 'PERFIL_POR_CONFIRMAR', 50, {
+    postuladoEn: aLas(15),
+    estadoCalificacion: 'FALLIDA',
+  }),
+  // Un registro antiguo: sin fecha de postulación.
+  fila(106, 'Félix Soto', 'PERFIL_POR_CONFIRMAR', null, {
+    postuladoEn: null,
+    estadoCalificacion: 'SIN_EMPEZAR',
+  }),
+]
+const conFechas = () => pintar(CON_FECHAS.map((f) => ({ ...f })))
+
+const elBotonFiltros = () => screen.getByRole('button', { name: /^Filtros/ })
+const abrirFiltros = () => fireEvent.click(elBotonFiltros())
+const elPanel = () => screen.getByRole('dialog', { name: 'Filtros' })
+const lasEtiquetas = () => screen.queryByRole('list', { name: 'Filtros activos' })
+const marcarTodo = () => screen.getByRole('checkbox', { name: 'Marcar todas las que se ven' })
+const lasMarcadas = () =>
+  within(laTabla())
+    .getAllByRole('checkbox')
+    .filter((c) => (c as HTMLInputElement).checked && c.getAttribute('aria-label')?.startsWith('Avanza '))
+    .map((c) => c.getAttribute('aria-label')!.replace(/^Avanza /, ''))
+const marcar = (nombre: string) =>
+  fireEvent.click(screen.getByRole('checkbox', { name: `Avanza ${nombre}` }))
+const escribirFecha = (etiqueta: string, valor: string) =>
+  fireEvent.change(within(elPanel()).getByLabelText(etiqueta), { target: { value: valor } })
+const elegirModo = (modo: 'Un día' | 'Rango') =>
+  fireEvent.click(within(elPanel()).getByRole('radio', { name: modo }))
+const marcarIa = (nombre: RegExp) =>
+  fireEvent.click(within(elPanel()).getByRole('checkbox', { name: nombre }))
+
+/*
+  El año de las etiquetas se dice solo cuando no es el de hoy. Con el reloj en
+  septiembre de 2026 —el de los datos— las pruebas leen lo mismo el año que
+  vengan a correrse: una fecha quemada que caduca ya tumbó la suite una vez.
+  Solo se finge la fecha; los temporizadores siguen siendo los de verdad.
+*/
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'] })
+  vi.setSystemTime(new Date(2026, 8, 15, 12, 0))
+})
+afterEach(() => {
+  vi.useRealTimers()
+})
+
+describe('el botón «Filtros»', () => {
+  // AC-01
+  it('existe con ese nombre, y el desplegable viejo ya no', async () => {
+    await conFechas()
+    expect(elBotonFiltros().textContent).toMatch(/^Filtros/)
+    expect(screen.queryByText(/Ciudad, nota y pretensión/)).toBeNull()
+  })
+
+  // AC-02
+  it('sin filtros no lleva insignia, ni «Borrar filtros», ni fila de etiquetas', async () => {
+    await conFechas()
+    expect(elBotonFiltros().textContent).toBe('Filtros')
+    expect(screen.queryByRole('button', { name: 'Borrar filtros' })).toBeNull()
+    expect(lasEtiquetas()).toBeNull()
+  })
+
+  // AC-03
+  it('con tres filtros la insignia dice 3 y hay tres etiquetas con su «×»', async () => {
+    await conFechas()
+    abrirFiltros()
+    elegirModo('Rango')
+    escribirFecha('Postulados desde', '2026-09-12')
+    escribirFecha('Postulados hasta', '2026-09-15')
+    marcarIa(/^Fallida/)
+    fireEvent.click(within(elPanel()).getByRole('button', { name: /^Lima — Lima/ }))
+
+    expect(elBotonFiltros().textContent).toContain('3')
+    const etiquetas = within(lasEtiquetas()!).getAllByRole('button')
+    expect(etiquetas.map((e) => e.textContent)).toEqual([
+      'Postulados del 12 al 15 sep× (quitar este filtro)',
+      'IA: fallida× (quitar este filtro)',
+      'Ciudad: Lima — Lima× (quitar este filtro)',
+    ])
+  })
+
+  // AC-04
+  it('Esc lo cierra sin perder nada, y el foco vuelve al botón', async () => {
+    await conFechas()
+    abrirFiltros()
+    marcarIa(/^Fallida/)
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(screen.queryByRole('dialog', { name: 'Filtros' })).toBeNull()
+    expect(document.activeElement).toBe(elBotonFiltros())
+    expect(elOrdenDeLaTabla()).toEqual(['Cira Núñez', 'Elsa Rojas'])
+  })
+
+  /*
+    Un clic de verdad: el dedo baja, el navegador mueve el foco y después llega
+    el `click`. Se cierra en el `click` y no al bajar el dedo (F-03): cerrar
+    antes desmontaba el panel en mitad del gesto y el clic acababa en otra cosa.
+
+    ⚠️ **El foco va al primer antepasado enfocable, como en el navegador**, y no
+    a nada: pulsar un texto de la tabla enfoca el `tabpanel` del ranking, que
+    tiene tabindex 0 y la envuelve. Fingir que el foco se pierde escondía F-02.
+  */
+  const clicFuera = (donde: HTMLElement) => {
+    fireEvent.pointerDown(donde)
+    act(() => {
+      const enfocable = donde.closest<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), select, textarea, summary, [tabindex]',
+      )
+      if (enfocable) enfocable.focus()
+      else (document.activeElement as HTMLElement | null)?.blur()
+    })
+    fireEvent.click(donde)
+  }
+  /** Lo mismo, pero dentro del panel: el nombre dice dónde cae. */
+  const pulsarDentro = clicFuera
+
+  it('un clic fuera lo cierra, también sin perder nada', async () => {
+    await conFechas()
+    abrirFiltros()
+    marcarIa(/^Fallida/)
+    clicFuera(screen.getByRole('heading', { name: 'Ranking' }))
+    expect(screen.queryByRole('dialog', { name: 'Filtros' })).toBeNull()
+    expect(document.activeElement).toBe(elBotonFiltros())
+    expect(elOrdenDeLaTabla()).toHaveLength(2)
+  })
+
+  // F-03: el panel sigue abierto hasta el `click`, que es el que decide el destino.
+  it('bajar el dedo fuera todavía no lo cierra: lo cierra el clic', async () => {
+    await conFechas()
+    abrirFiltros()
+    fireEvent.pointerDown(screen.getByRole('heading', { name: 'Ranking' }))
+    expect(screen.getByRole('dialog', { name: 'Filtros' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('heading', { name: 'Ranking' }))
+    expect(screen.queryByRole('dialog', { name: 'Filtros' })).toBeNull()
+  })
+
+  // F-03: el clic fuera sobre un control actúa, y el foco se queda en él.
+  it('un clic fuera sobre una casilla la marca y le deja el foco', async () => {
+    await conFechas()
+    abrirFiltros()
+    const casilla = screen.getByRole('checkbox', { name: 'Avanza Ana Pérez' })
+    clicFuera(casilla)
+    expect(screen.queryByRole('dialog', { name: 'Filtros' })).toBeNull()
+    expect(lasMarcadas()).toEqual(['Ana Pérez'])
+    expect(document.activeElement).toBe(casilla)
+  })
+
+  // F-02: el panel flota sobre la tabla, y ahí cae el clic fuera más habitual.
+  it('un clic fuera sobre un texto de la tabla, que enfoca el tabpanel, devuelve el foco a «Filtros»', async () => {
+    await conFechas()
+    abrirFiltros()
+    const texto = within(screen.getByRole('tabpanel')).getByText(/ya calificados/)
+    // Lo que hace que este caso sea distinto del título: su enfocable es el tabpanel.
+    expect(texto.closest('[tabindex]')).toBe(screen.getByRole('tabpanel'))
+    clicFuera(texto)
+    expect(screen.queryByRole('dialog', { name: 'Filtros' })).toBeNull()
+    expect(document.activeElement).toBe(elBotonFiltros())
+  })
+
+  // F-02 en el teléfono: el clic fuera de la hoja es tocar su fondo apagado.
+  it('tocar el fondo apagado lo cierra y devuelve el foco a «Filtros»', async () => {
+    await conFechas()
+    abrirFiltros()
+    const fondo = elPanel().previousElementSibling as HTMLElement
+    expect(fondo.getAttribute('aria-hidden')).toBe('true')
+    clicFuera(fondo)
+    expect(screen.queryByRole('dialog', { name: 'Filtros' })).toBeNull()
+    expect(document.activeElement).toBe(elBotonFiltros())
+  })
+
+  // F-02 sin romper F-03: «Columnas», que está dentro del tabpanel, sigue quedándose el foco.
+  it('un clic fuera sobre «Columnas» le deja el foco a «Columnas»', async () => {
+    await conFechas()
+    abrirFiltros()
+    const columnas = screen.getByText('Columnas', { selector: 'summary' })
+    clicFuera(columnas)
+    expect(screen.queryByRole('dialog', { name: 'Filtros' })).toBeNull()
+    expect(document.activeElement).toBe(columnas)
+  })
+
+  // Pulsar un texto del panel no es salir de él: el foco no se va al tabpanel de detrás.
+  it('pulsar un texto del panel lo deja abierto y con el foco dentro', async () => {
+    await conFechas()
+    abrirFiltros()
+    pulsarDentro(within(elPanel()).getByText(/^Se ven/))
+    expect(screen.getByRole('dialog', { name: 'Filtros' })).toBeTruthy()
+    expect(elPanel().contains(document.activeElement)).toBe(true)
+  })
+
+  it('un gesto que empieza dentro del panel y acaba fuera no lo cierra', async () => {
+    await conFechas()
+    abrirFiltros()
+    fireEvent.pointerDown(within(elPanel()).getByRole('radio', { name: 'Rango' }))
+    fireEvent.click(screen.getByRole('heading', { name: 'Ranking' }))
+    expect(screen.getByRole('dialog', { name: 'Filtros' })).toBeTruthy()
+  })
+
+  // F-04: el foco que sale con el teclado no se queda debajo del panel abierto.
+  it('salir del panel con Tab lo cierra y deja el foco donde fue', async () => {
+    await conFechas()
+    abrirFiltros()
+    marcarIa(/^Fallida/)
+    const despues = screen.getByRole('searchbox', { name: /buscar por nombre/i })
+    fireEvent.keyDown(within(elPanel()).getByRole('button', { name: 'Listo' }), { key: 'Tab' })
+    act(() => despues.focus())
+    expect(screen.queryByRole('dialog', { name: 'Filtros' })).toBeNull()
+    expect(document.activeElement).toBe(despues)
+    expect(elOrdenDeLaTabla()).toHaveLength(2)
+  })
+
+  it('un foco que mueve el código, sin tecla de por medio, no lo cierra', async () => {
+    await conFechas()
+    abrirFiltros()
+    act(() => screen.getByRole('searchbox', { name: /buscar por nombre/i }).focus())
+    expect(screen.getByRole('dialog', { name: 'Filtros' })).toBeTruthy()
+  })
+
+  it('volver a «Filtros» con Mayús+Tab no es salir: el panel sigue abierto', async () => {
+    await conFechas()
+    abrirFiltros()
+    fireEvent.keyDown(document.activeElement!, { key: 'Tab', shiftKey: true })
+    act(() => elBotonFiltros().focus())
+    expect(screen.getByRole('dialog', { name: 'Filtros' })).toBeTruthy()
+  })
+
+  it('con el puntero, el foco que sale no lo cierra antes del clic', async () => {
+    await conFechas()
+    abrirFiltros()
+    const buscador = screen.getByRole('searchbox', { name: /buscar por nombre/i })
+    fireEvent.pointerDown(buscador)
+    act(() => buscador.focus())
+    expect(screen.getByRole('dialog', { name: 'Filtros' })).toBeTruthy()
+    fireEvent.click(buscador)
+    expect(screen.queryByRole('dialog', { name: 'Filtros' })).toBeNull()
+    expect(document.activeElement).toBe(buscador)
+  })
+
+  it('«Listo» lo cierra', async () => {
+    await conFechas()
+    abrirFiltros()
+    fireEvent.click(within(elPanel()).getByRole('button', { name: 'Listo' }))
+    expect(screen.queryByRole('dialog', { name: 'Filtros' })).toBeNull()
+  })
+
+  // AC-04b: en escritorio no es un modal, y la tabla de detrás cambia en vivo.
+  it('en escritorio no es modal, y la tabla se actualiza con el panel abierto', async () => {
+    await conFechas()
+    abrirFiltros()
+    expect(elPanel().getAttribute('aria-modal')).toBe('false')
+    marcarIa(/^En curso/)
+    expect(screen.getByRole('dialog', { name: 'Filtros' })).toBeTruthy()
+    expect(elOrdenDeLaTabla()).toEqual(['Dora Vela'])
+    expect(within(elPanel()).getByText('Se ven 1 de 6')).toBeTruthy()
+  })
+
+  it('las secciones van en su orden, y la que filtra lo dice en su título', async () => {
+    await conFechas()
+    abrirFiltros()
+    const titulos = within(elPanel())
+      .getAllByRole('group')
+      .map((g) => g.querySelector('legend')?.textContent ?? '')
+      .filter(Boolean)
+    expect(titulos).toEqual([
+      'Fecha de postulación',
+      'Calificación con IA',
+      'Ciudad',
+      'Nota del perfil',
+      'Pretensión',
+    ])
+    marcarIa(/^Fallida/)
+    expect(within(elPanel()).getByRole('group', { name: 'Calificación con IA, filtrando' })).toBeTruthy()
+    expect(within(elPanel()).getByRole('group', { name: 'Ciudad' })).toBeTruthy()
+  })
+
+  // AC-05
+  it('la «×» de una etiqueta quita solo ese filtro', async () => {
+    await conFechas()
+    abrirFiltros()
+    marcarIa(/^Fallida/)
+    fireEvent.click(within(elPanel()).getByRole('button', { name: /^Lima — Lima/ }))
+    fireEvent.click(within(elPanel()).getByRole('button', { name: 'Listo' }))
+    // Fallida y de Lima no hay nadie.
+    expect(screen.getByText(/Ningún resultado con estos filtros/)).toBeTruthy()
+
+    fireEvent.click(within(lasEtiquetas()!).getByRole('button', { name: /^Ciudad: Lima/ }))
+    expect(elOrdenDeLaTabla()).toEqual(['Cira Núñez', 'Elsa Rojas'])
+    expect(within(lasEtiquetas()!).getAllByRole('button')).toHaveLength(1)
+    expect(elBotonFiltros().textContent).toContain('1')
+  })
+
+  // AC-06
+  it('«Borrar filtros» limpia todos, búsqueda incluida, y no toca las marcas', async () => {
+    await conFechas()
+    marcar('Ana Pérez')
+    fireEvent.change(screen.getByRole('searchbox', { name: /buscar por nombre/i }), {
+      target: { value: 'elsa' },
+    })
+    abrirFiltros()
+    marcarIa(/^Fallida/)
+    fireEvent.click(within(elPanel()).getByRole('button', { name: 'Listo' }))
+    expect(elOrdenDeLaTabla()).toEqual(['Elsa Rojas'])
+
+    fireEvent.click(screen.getByRole('button', { name: 'Borrar filtros' }))
+    expect(elOrdenDeLaTabla()).toHaveLength(6)
+    expect((screen.getByRole('searchbox') as HTMLInputElement).value).toBe('')
+    expect(lasEtiquetas()).toBeNull()
+    expect(lasMarcadas()).toEqual(['Ana Pérez'])
+  })
+
+  /*
+    F-06: los tres «Borrar filtros» con teclado. Los de la barra y la tabla
+    vacía desaparecen al pulsarlos; el del pie se apaga. Ninguno puede dejar el
+    foco en <body>.
+  */
+  it('«Borrar filtros» de la barra desaparece y deja el foco en «Filtros»', async () => {
+    await conFechas()
+    abrirFiltros()
+    marcarIa(/^Fallida/)
+    fireEvent.click(within(elPanel()).getByRole('button', { name: 'Listo' }))
+    const borrar = screen.getByRole('button', { name: 'Borrar filtros' })
+    act(() => borrar.focus())
+    fireEvent.click(borrar)
+    expect(screen.queryByRole('button', { name: 'Borrar filtros' })).toBeNull()
+    expect(elOrdenDeLaTabla()).toHaveLength(6)
+    expect(document.activeElement).toBe(elBotonFiltros())
+  })
+
+  it('«Borrar filtros» de la tabla vacía devuelve las filas y deja el foco en «Filtros»', async () => {
+    await conFechas()
+    fireEvent.change(screen.getByRole('searchbox', { name: /buscar por nombre/i }), {
+      target: { value: 'nadie' },
+    })
+    const borrar = within(laTabla()).getByRole('button', { name: 'Borrar filtros' })
+    act(() => borrar.focus())
+    fireEvent.click(borrar)
+    expect(elOrdenDeLaTabla()).toHaveLength(6)
+    expect(document.activeElement).toBe(elBotonFiltros())
+  })
+
+  it('«Borrar filtros» del pie se apaga sin soltar el foco, y apagado no hace nada', async () => {
+    await conFechas()
+    abrirFiltros()
+    const borrar = within(elPanel()).getByRole('button', { name: 'Borrar filtros' })
+    expect(borrar.getAttribute('aria-disabled')).toBe('true')
+    marcarIa(/^Fallida/)
+    expect(borrar.getAttribute('aria-disabled')).toBe('false')
+
+    act(() => borrar.focus())
+    fireEvent.click(borrar)
+    const fallida = within(elPanel()).getByRole('checkbox', { name: /^Fallida/ }) as HTMLInputElement
+    expect(fallida.checked).toBe(false)
+    expect(elOrdenDeLaTabla()).toHaveLength(6)
+    expect(borrar.getAttribute('aria-disabled')).toBe('true')
+    // Con `disabled` el navegador suelta el foco a <body>; jsdom no lo hace, así
+    // que lo que se comprueba aquí es que no se apague de esa manera.
+    expect(borrar.hasAttribute('disabled')).toBe(false)
+    expect(document.activeElement).toBe(borrar)
+
+    fireEvent.click(borrar)
+    expect(screen.getByRole('dialog', { name: 'Filtros' })).toBeTruthy()
+    expect(document.activeElement).toBe(borrar)
+  })
+
+  /*
+    La hoja del teléfono con el foco en ella misma —se pulsó un texto suyo—:
+    Mayús+Tab saldría a «Filtros», detrás de la hoja modal.
+  */
+  it('en el teléfono, con el foco en la hoja misma, Tab y Mayús+Tab no salen de ella', async () => {
+    const antes = window.matchMedia
+    window.matchMedia = ((consulta: string) => ({
+      matches: true,
+      media: consulta,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    })) as unknown as typeof window.matchMedia
+    try {
+      await conFechas()
+      abrirFiltros()
+      expect(elPanel().getAttribute('aria-modal')).toBe('true')
+      pulsarDentro(within(elPanel()).getByText(/^Se ven/))
+      expect(document.activeElement).toBe(elPanel())
+
+      fireEvent.keyDown(elPanel(), { key: 'Tab', shiftKey: true })
+      expect(document.activeElement).toBe(within(elPanel()).getByRole('button', { name: 'Listo' }))
+
+      act(() => elPanel().focus())
+      fireEvent.keyDown(elPanel(), { key: 'Tab' })
+      expect(document.activeElement).toBe(within(elPanel()).getByRole('radio', { name: 'Un día' }))
+    } finally {
+      window.matchMedia = antes
+    }
+  })
+})
+
+describe('los filtros viven en la vacante, no en la pestaña', () => {
+  // AC-07
+  it('se conservan al ir a otra etapa y volver, con su insignia', async () => {
+    await conFechas()
+    abrirFiltros()
+    marcarIa(/^Fallida/)
+    fireEvent.click(within(elPanel()).getByRole('button', { name: 'Listo' }))
+
+    irA('Prueba del puesto')
+    await waitFor(() => expect(screen.getByText(/con nota de la prueba/)).toBeTruthy())
+    expect(elBotonFiltros().textContent).toContain('1')
+    expect(within(lasEtiquetas()!).getByRole('button', { name: /^IA: fallida/ })).toBeTruthy()
+
+    irA('Perfil integral')
+    await waitFor(() => expect(elOrdenDeLaTabla()).toEqual(['Cira Núñez', 'Elsa Rojas']))
+  })
+
+  it('fuera del perfil integral se aclara que la IA es la del currículum', async () => {
+    await conFechas()
+    abrirFiltros()
+    expect(within(elPanel()).queryByText('Es la calificación del currículum.')).toBeNull()
+    fireEvent.keyDown(document, { key: 'Escape' })
+    irA('Prueba del puesto')
+    await waitFor(() => expect(screen.getByText(/con nota de la prueba/)).toBeTruthy())
+    abrirFiltros()
+    expect(within(elPanel()).getByText('Es la calificación del currículum.')).toBeTruthy()
+  })
+
+  // Regla 6: la nota habla de la etapa que se mira.
+  it('la etiqueta de la nota lleva el nombre de la etapa que se mira', async () => {
+    await conFechas()
+    abrirFiltros()
+    fireEvent.change(within(elPanel()).getByLabelText('Nota del perfil, desde'), {
+      target: { value: '60' },
+    })
+    expect(within(lasEtiquetas()!).getByRole('button', { name: /^Nota del perfil ≥ 60/ })).toBeTruthy()
+    fireEvent.keyDown(document, { key: 'Escape' })
+    irA('Prueba del puesto')
+    await waitFor(() =>
+      expect(
+        within(lasEtiquetas()!).getByRole('button', { name: /^Nota de la prueba ≥ 60/ }),
+      ).toBeTruthy(),
+    )
+  })
+
+  it('al cambiar de vacante se reinician', async () => {
+    verRanking.mockImplementation(() => Promise.resolve(tanda(CON_FECHAS.map((f) => ({ ...f })))))
+    const cliente = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    render(
+      <QueryClientProvider client={cliente}>
+        <MemoryRouter initialEntries={['/admin/vacantes/1']}>
+          <Link to="/admin/vacantes/2">Otra vacante</Link>
+          <Routes>
+            <Route path="/admin/vacantes/:id" element={<VacantePanelDetalle />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+    await waitFor(() => expect(elOrdenDeLaTabla()).toHaveLength(6))
+    abrirFiltros()
+    marcarIa(/^Fallida/)
+    fireEvent.click(within(elPanel()).getByRole('button', { name: 'Listo' }))
+    expect(elOrdenDeLaTabla()).toHaveLength(2)
+
+    fireEvent.click(screen.getByRole('link', { name: 'Otra vacante' }))
+    await waitFor(() => expect(elOrdenDeLaTabla()).toHaveLength(6))
+    expect(elBotonFiltros().textContent).toBe('Filtros')
+    expect(lasEtiquetas()).toBeNull()
+  })
+})
+
+describe('el filtro de fecha de postulación', () => {
+  // AC-08
+  it('«Un día» deja solo a quien se postuló ese día calendario, y lo cuenta', async () => {
+    await conFechas()
+    abrirFiltros()
+    escribirFecha('Postulados el día', '2026-09-12')
+    expect(elOrdenDeLaTabla()).toEqual(['Beto Salas', 'Cira Núñez'])
+    expect(within(elPanel()).getByText('Se ven 2 de 6')).toBeTruthy()
+    expect(screen.getByText(/Se ven 2 de 6 de este corte/)).toBeTruthy()
+  })
+
+  // AC-09
+  it('el rango trae los dos extremos y lo de en medio', async () => {
+    await conFechas()
+    abrirFiltros()
+    elegirModo('Rango')
+    escribirFecha('Postulados desde', '2026-09-12')
+    escribirFecha('Postulados hasta', '2026-09-14')
+    expect(elOrdenDeLaTabla()).toEqual(['Beto Salas', 'Cira Núñez', 'Dora Vela'])
+  })
+
+  // AC-10
+  it('con un solo extremo, de ahí en adelante o hasta ahí', async () => {
+    await conFechas()
+    abrirFiltros()
+    elegirModo('Rango')
+    escribirFecha('Postulados desde', '2026-09-14')
+    expect(elOrdenDeLaTabla()).toEqual(['Dora Vela', 'Elsa Rojas'])
+    escribirFecha('Postulados desde', '')
+    escribirFecha('Postulados hasta', '2026-09-10')
+    expect(elOrdenDeLaTabla()).toEqual(['Ana Pérez'])
+  })
+
+  // AC-11
+  it('«Desde» después de «Hasta» no se aplica y se avisa junto a los campos', async () => {
+    await conFechas()
+    abrirFiltros()
+    elegirModo('Rango')
+    escribirFecha('Postulados desde', '2026-09-15')
+    escribirFecha('Postulados hasta', '2026-09-12')
+    const aviso = within(elPanel()).getByRole('alert')
+    expect(aviso.textContent).toMatch(/«Desde» es posterior a «Hasta»/)
+    const desde = within(elPanel()).getByLabelText('Postulados desde')
+    expect(desde.getAttribute('aria-invalid')).toBe('true')
+    expect(desde.getAttribute('aria-describedby')).toBe(aviso.id)
+    expect(elOrdenDeLaTabla()).toHaveLength(6)
+    expect(elBotonFiltros().textContent).toBe('Filtros')
+  })
+
+  // AC-12
+  it('«Últimos 7 días» rellena de hoy − 6 a hoy, y se puede editar', async () => {
+    await conFechas()
+    abrirFiltros()
+    fireEvent.click(within(elPanel()).getByRole('button', { name: 'Últimos 7 días' }))
+    const desde = within(elPanel()).getByLabelText('Postulados desde') as HTMLInputElement
+    const hasta = within(elPanel()).getByLabelText('Postulados hasta') as HTMLInputElement
+    expect(desde.value).toBe('2026-09-09')
+    expect(hasta.value).toBe('2026-09-15')
+    expect(desde.disabled).toBe(false)
+    // Del 9 al 15: todos los que tienen fecha salvo el del 10… que también cae.
+    expect(elOrdenDeLaTabla()).toEqual([
+      'Ana Pérez',
+      'Beto Salas',
+      'Cira Núñez',
+      'Dora Vela',
+      'Elsa Rojas',
+    ])
+    escribirFecha('Postulados desde', '2026-09-13')
+    expect(elOrdenDeLaTabla()).toEqual(['Dora Vela', 'Elsa Rojas'])
+  })
+
+  // Regla 10
+  it('quien no tiene fecha queda fuera, y la ayuda lo dice', async () => {
+    await conFechas()
+    abrirFiltros()
+    expect(within(elPanel()).getByText('Quien no tiene fecha queda fuera.')).toBeTruthy()
+    fireEvent.click(within(elPanel()).getByRole('button', { name: 'Últimos 30 días' }))
+    expect(elOrdenDeLaTabla()).not.toContain('Félix Soto')
+  })
+})
+
+describe('el filtro de calificación con IA', () => {
+  // AC-13
+  it('«Fallida» deja solo las fallidas, y con dos casillas se ve la unión', async () => {
+    await conFechas()
+    abrirFiltros()
+    marcarIa(/^Fallida/)
+    expect(elOrdenDeLaTabla()).toEqual(['Cira Núñez', 'Elsa Rojas'])
+    marcarIa(/^En curso/)
+    expect(elOrdenDeLaTabla()).toEqual(['Cira Núñez', 'Dora Vela', 'Elsa Rojas'])
+  })
+
+  it('cada casilla lleva cuántas hay en la tanda', async () => {
+    await conFechas()
+    abrirFiltros()
+    expect(within(elPanel()).getByRole('checkbox', { name: /^Calificada\s*2$/ })).toBeTruthy()
+    expect(within(elPanel()).getByRole('checkbox', { name: /^En curso\s*1$/ })).toBeTruthy()
+    expect(within(elPanel()).getByRole('checkbox', { name: /^Fallida\s*2$/ })).toBeTruthy()
+  })
+})
+
+describe('marcar todo lo que se ve', () => {
+  // AC-14
+  it('con un filtro puesto marca exactamente las visibles y ninguna oculta', async () => {
+    await conFechas()
+    abrirFiltros()
+    marcarIa(/^Fallida/)
+    fireEvent.click(within(elPanel()).getByRole('button', { name: 'Listo' }))
+    fireEvent.click(marcarTodo())
+    expect(lasMarcadas()).toEqual(['Cira Núñez', 'Elsa Rojas'])
+
+    fireEvent.click(screen.getByRole('button', { name: 'Borrar filtros' }))
+    expect(lasMarcadas()).toEqual(['Cira Núñez', 'Elsa Rojas'])
+  })
+
+  // AC-15
+  it('con todas marcadas las suelta, y con algunas queda en intermedio', async () => {
+    await conFechas()
+    marcar('Ana Pérez')
+    expect((marcarTodo() as HTMLInputElement).indeterminate).toBe(true)
+    expect((marcarTodo() as HTMLInputElement).checked).toBe(false)
+    fireEvent.click(marcarTodo())
+    expect(lasMarcadas()).toHaveLength(6)
+    expect((marcarTodo() as HTMLInputElement).checked).toBe(true)
+    expect((marcarTodo() as HTMLInputElement).indeterminate).toBe(false)
+    fireEvent.click(marcarTodo())
+    expect(lasMarcadas()).toEqual([])
+  })
+
+  // AC-22
+  it('sin filas a la vista se explica, se ofrece «Borrar filtros» y la casilla se apaga', async () => {
+    await conFechas()
+    fireEvent.change(screen.getByRole('searchbox', { name: /buscar por nombre/i }), {
+      target: { value: 'nadie' },
+    })
+    expect(screen.getByText(/Ningún resultado con estos filtros/)).toBeTruthy()
+    expect(screen.getByText(/Hay 6 sin filtrar en este corte/)).toBeTruthy()
+    expect((marcarTodo() as HTMLInputElement).disabled).toBe(true)
+    const enLaTabla = within(laTabla()).getByRole('button', { name: 'Borrar filtros' })
+    fireEvent.click(enLaTabla)
+    expect(elOrdenDeLaTabla()).toHaveLength(6)
+  })
+})
+
+describe('la barra de lo marcado', () => {
+  // AC-17
+  it('sin marcadas no existe', async () => {
+    await conFechas()
+    expect(screen.queryByRole('group', { name: 'Lo marcado' })).toBeNull()
+    expect(screen.queryByLabelText('Motivo (obligatorio)')).toBeNull()
+  })
+
+  // AC-16 (la parte que se ve sin navegador: aparece con la primera marca)
+  it('aparece con la primera marca, con el motivo y las acciones', async () => {
+    await conFechas()
+    marcar('Ana Pérez')
+    const barra = screen.getByRole('group', { name: 'Lo marcado' })
+    expect(within(barra).getByText('1 persona marcada')).toBeTruthy()
+    expect(within(barra).getByLabelText('Motivo (obligatorio)')).toBeTruthy()
+    expect(within(barra).getByRole('button', { name: 'Avanzar a 1 persona' })).toBeTruthy()
+    expect(within(barra).getByRole('button', { name: 'Soltar selección' })).toBeTruthy()
+  })
+
+  // AC-18
+  it('avanza a las cinco marcadas, una a una, y lo deja todo limpio', async () => {
+    await conFechas()
+    for (const nombre of ['Ana Pérez', 'Beto Salas', 'Cira Núñez', 'Dora Vela', 'Elsa Rojas']) {
+      marcar(nombre)
+    }
+    const barra = screen.getByRole('group', { name: 'Lo marcado' })
+    const avanzarA5 = within(barra).getByRole('button', { name: 'Avanzar a 5 personas' })
+    // Sin motivo no se puede: el backend lo exige y la pantalla lo evita.
+    expect((avanzarA5 as HTMLButtonElement).disabled).toBe(true)
+    fireEvent.change(within(barra).getByLabelText('Motivo (obligatorio)'), {
+      target: { value: 'Pasan a la prueba' },
+    })
+    const llamadasAntes = verRanking.mock.calls.length
+    fireEvent.click(avanzarA5)
+
+    await waitFor(() => expect(avanzar).toHaveBeenCalledTimes(5))
+    expect(avanzar.mock.calls.map((c) => c[0])).toEqual([101, 102, 103, 104, 105])
+    expect(avanzar.mock.calls.every((c) => c[1] === 'Pasan a la prueba')).toBe(true)
+    await waitFor(() =>
+      expect(screen.getByText(/Avanzaron: Ana Pérez, Beto Salas, Cira Núñez, Dora Vela, Elsa Rojas\./)).toBeTruthy(),
+    )
+    expect(lasMarcadas()).toEqual([])
+    expect(screen.queryByRole('group', { name: 'Lo marcado' })).toBeNull()
+    await waitFor(() => expect(verRanking.mock.calls.length).toBeGreaterThan(llamadasAntes))
+  })
+
+  it('quien no avanza sale nombrado con lo que dijo el backend', async () => {
+    avanzar.mockResolvedValueOnce({}).mockRejectedValueOnce(new Error('No tienes permiso'))
+    await conFechas()
+    marcar('Ana Pérez')
+    marcar('Beto Salas')
+    fireEvent.change(screen.getByLabelText('Motivo (obligatorio)'), { target: { value: 'x' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Avanzar a 2 personas' }))
+    await waitFor(() =>
+      expect(screen.getByText(/No avanzaron: Beto Salas \(No tienes permiso\)/)).toBeTruthy(),
+    )
+    expect(screen.getByText(/Avanzaron: Ana Pérez\./)).toBeTruthy()
+  })
+
+  // AC-19
+  it('«Descartar…» abre la ventana con los nombres y no descarta hasta confirmar', async () => {
+    PUEDE_MOVER = true
+    await conFechas()
+    marcar('Ana Pérez')
+    marcar('Cira Núñez')
+    fireEvent.change(screen.getByLabelText('Motivo (obligatorio)'), {
+      target: { value: 'No encaja' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Descartar…' }))
+    const ventana = screen.getByRole('dialog', { name: 'Descartar a 2 personas' })
+    expect(within(ventana).getByText('Ana Pérez')).toBeTruthy()
+    expect(within(ventana).getByText('Cira Núñez')).toBeTruthy()
+    expect(mover).not.toHaveBeenCalled()
+  })
+
+  // AC-20
+  it('seis marcadas y dos ocultas: cuenta cuatro, lo dice, y actúa sobre cuatro', async () => {
+    await conFechas()
+    fireEvent.click(marcarTodo())
+    abrirFiltros()
+    elegirModo('Rango')
+    escribirFecha('Postulados desde', '2026-09-12')
+    fireEvent.click(within(elPanel()).getByRole('button', { name: 'Listo' }))
+    // Quedan fuera Ana (día 10) y Félix (sin fecha).
+    const barra = screen.getByRole('group', { name: 'Lo marcado' })
+    expect(within(barra).getByText(/4 personas marcadas · 2 fuera de vista/)).toBeTruthy()
+    const avanzarA4 = within(barra).getByRole('button', { name: 'Avanzar a 4 personas' })
+    fireEvent.change(within(barra).getByLabelText('Motivo (obligatorio)'), { target: { value: 'x' } })
+    fireEvent.click(avanzarA4)
+    await waitFor(() => expect(avanzar).toHaveBeenCalledTimes(4))
+    expect(avanzar.mock.calls.map((c) => c[0])).not.toContain(101)
+    expect(avanzar.mock.calls.map((c) => c[0])).not.toContain(106)
+  })
+
+  it('«Soltar las ocultas» suelta solo las que el filtro esconde', async () => {
+    await conFechas()
+    fireEvent.click(marcarTodo())
+    abrirFiltros()
+    marcarIa(/^Fallida/)
+    fireEvent.click(within(elPanel()).getByRole('button', { name: 'Listo' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Soltar las ocultas' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Borrar filtros' }))
+    expect(lasMarcadas()).toEqual(['Cira Núñez', 'Elsa Rojas'])
+  })
+
+  it('«Soltar selección» las suelta todas y la barra se va', async () => {
+    await conFechas()
+    marcar('Ana Pérez')
+    fireEvent.click(screen.getByRole('button', { name: 'Soltar selección' }))
+    expect(lasMarcadas()).toEqual([])
+    expect(screen.queryByRole('group', { name: 'Lo marcado' })).toBeNull()
+  })
+
+  // AC-23
+  it('sin permiso de mover postulaciones no hay «Descartar…»', async () => {
+    PUEDE_MOVER = false
+    await conFechas()
+    marcar('Ana Pérez')
+    expect(screen.queryByRole('button', { name: /^Descartar/ })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Avanzar a 1 persona' })).toBeTruthy()
+  })
+
+  // AC-25: el contador se anuncia a quien lee con lector de pantalla.
+  it('cuántas hay marcadas se anuncia en una región viva', async () => {
+    await conFechas()
+    const regiones = () => screen.getAllByRole('status').map((r) => r.textContent)
+    expect(regiones()).not.toContain('3 personas marcadas')
+    marcar('Ana Pérez')
+    marcar('Beto Salas')
+    marcar('Cira Núñez')
+    expect(regiones()).toContain('3 personas marcadas')
+  })
+})
+
+describe('el Excel con los filtros nuevos', () => {
+  // AC-21
+  it('lleva exactamente las filas visibles, en su orden, y dice los filtros nuevos', async () => {
+    await conFechas()
+    abrirFiltros()
+    marcarIa(/^Fallida/)
+    fireEvent.click(within(elPanel()).getByRole('button', { name: 'Listo' }))
+    fireEvent.click(screen.getByRole('button', { name: /Descargar Excel/ }))
+    await waitFor(() => expect(pedirExcel).toHaveBeenCalledOnce())
+    const pedido = pedirExcel.mock.calls[0]?.[1] as { postulacionIds: number[]; filtroDescrito: string }
+    expect(pedido.postulacionIds).toEqual([103, 105])
+    expect(pedido.filtroDescrito).toContain('IA: fallida')
   })
 })

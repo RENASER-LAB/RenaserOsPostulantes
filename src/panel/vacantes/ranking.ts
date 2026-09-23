@@ -1352,6 +1352,28 @@ export function ordenar(filas: FilaRanking[], orden: Orden | null): FilaRanking[
 
 // ---------- Filtrar ----------
 
+/**
+ * Los tres estados de la calificación con IA que se pueden pedir.
+ *
+ * ⚠️ **Es el estado de la cola que califica el CURRÍCULUM, no el de la etapa
+ * que se mira** —la trampa de la cabecera de este archivo—. Por eso el panel lo
+ * aclara fuera del perfil integral: «Es la calificación del currículum».
+ *
+ * `SIN_EMPEZAR` existe en la cola y no se ofrece: nadie pidió filtrar «a quien
+ * todavía no se le pidió nada», y con cualquier casilla marcada esas filas
+ * quedan fuera, igual que un rango deja fuera a quien no tiene el dato.
+ */
+export const ESTADOS_DE_LA_IA = [
+  { codigo: 'TERMINADA', nombre: 'Calificada' },
+  { codigo: 'EN_CURSO', nombre: 'En curso' },
+  { codigo: 'FALLIDA', nombre: 'Fallida' },
+] as const
+
+export type EstadoDeLaIa = (typeof ESTADOS_DE_LA_IA)[number]['codigo']
+
+/** «Un día» o «Rango»: los dos modos del filtro de fecha. */
+export type ModoDeFecha = 'dia' | 'rango'
+
 export interface Filtros {
   /** Se busca en el nombre, sin tildes ni mayúsculas. */
   texto: string
@@ -1361,6 +1383,21 @@ export interface Filtros {
   notaMax: number | null
   pretensionMin: number | null
   pretensionMax: number | null
+  /**
+   * Qué modo de fecha está elegido. Los valores de los dos se guardan a la vez
+   * —cambiar de modo no borra lo escrito en el otro— pero solo cuenta el
+   * elegido.
+   */
+  fechaModo: ModoDeFecha
+  /**
+   * Los días van como `AAAA-MM-DD` del calendario del NAVEGADOR, que es lo que
+   * da y recibe un `<input type="date">`. Nada de horas: se filtra por día.
+   */
+  fechaDia: string | null
+  fechaDesde: string | null
+  fechaHasta: string | null
+  /** Estados de la IA marcados. Vacío significa «todos», no «ninguno». */
+  calificacion: EstadoDeLaIa[]
 }
 
 export const SIN_FILTROS: Filtros = {
@@ -1370,7 +1407,91 @@ export const SIN_FILTROS: Filtros = {
   notaMax: null,
   pretensionMin: null,
   pretensionMax: null,
+  fechaModo: 'dia',
+  fechaDia: null,
+  fechaDesde: null,
+  fechaHasta: null,
+  calificacion: [],
 }
+
+// ---------- La fecha, en días del calendario ----------
+
+const dosCifras = (n: number) => String(n).padStart(2, '0')
+
+/** Un `Date` local escrito como `AAAA-MM-DD`. */
+const comoDia = (d: Date): string =>
+  `${d.getFullYear()}-${dosCifras(d.getMonth() + 1)}-${dosCifras(d.getDate())}`
+
+/**
+ * El día del calendario en que cae un instante, en la zona del NAVEGADOR.
+ *
+ * ⚠️ **No vale cortar la cadena ISO por la «T».** El backend manda el instante
+ * en UTC: quien se postuló a las 21:00 del 12 en Lima llega como `…13T02:00Z`, y
+ * cortar daría el 13. El día que cuenta es el de quien mira, igual que el resto
+ * de fechas del panel; entre dos equipos en zonas distintas no hay garantía, y
+ * la spec lo acepta así.
+ *
+ * `null` si no hay fecha o no se puede leer: esa fila no tiene día.
+ */
+export function diaDelCalendario(instante: string | null | undefined): string | null {
+  if (instante == null || instante === '') return null
+  const d = new Date(instante)
+  return Number.isNaN(d.getTime()) ? null : comoDia(d)
+}
+
+/** El día de hoy en el calendario del navegador, a partir de un instante en ms. */
+export const diaDeHoy = (ms: number): string => comoDia(new Date(ms))
+
+/**
+ * Un día movido `n` días del calendario, hacia atrás con `n` negativo.
+ *
+ * Se cuenta con año, mes y día y no restando 86 400 000 ms: el día del cambio
+ * de hora dura 23 o 25 horas y la resta caería en el día equivocado.
+ */
+export function sumarDias(dia: string, n: number): string {
+  const [anio, mes, d] = dia.split('-').map(Number)
+  return comoDia(new Date(anio!, mes! - 1, d! + n))
+}
+
+export type AtajoDeFecha = 'hoy' | 'ultimos-7' | 'ultimos-30'
+
+export const ATAJOS_DE_FECHA: { atajo: AtajoDeFecha; rotulo: string }[] = [
+  { atajo: 'hoy', rotulo: 'Hoy' },
+  { atajo: 'ultimos-7', rotulo: 'Últimos 7 días' },
+  { atajo: 'ultimos-30', rotulo: 'Últimos 30 días' },
+]
+
+/**
+ * Lo que rellena cada atajo: SIEMPRE un rango, con hoy dentro.
+ *
+ * «Últimos 7 días» son siete días contando hoy —de hoy − 6 a hoy—, no siete
+ * más hoy: es lo que se lee en un calendario y lo que pide la spec.
+ */
+export function atajoDeFecha(atajo: AtajoDeFecha, hoy: string): { desde: string; hasta: string } {
+  if (atajo === 'hoy') return { desde: hoy, hasta: hoy }
+  return { desde: sumarDias(hoy, atajo === 'ultimos-7' ? -6 : -29), hasta: hoy }
+}
+
+/**
+ * «Desde» después de «Hasta»: el rango no puede traer a nadie.
+ *
+ * ⚠️ **No se aplica, y se avisa.** Aplicarlo vaciaría la tabla sin decir por
+ * qué, y darle la vuelta en silencio adivinaría lo que alguien quiso escribir.
+ */
+export const rangoDeFechaAlReves = (f: Filtros): boolean =>
+  f.fechaModo === 'rango' &&
+  f.fechaDesde != null &&
+  f.fechaHasta != null &&
+  f.fechaDesde > f.fechaHasta
+
+/**
+ * Si el filtro de fecha recorta de verdad: con algo escrito en el modo elegido
+ * y sin el rango al revés.
+ */
+export const hayFiltroDeFecha = (f: Filtros): boolean =>
+  f.fechaModo === 'dia'
+    ? f.fechaDia != null
+    : (f.fechaDesde != null || f.fechaHasta != null) && !rangoDeFechaAlReves(f)
 
 export const hayFiltroPuesto = (f: Filtros): boolean =>
   f.texto.trim() !== '' ||
@@ -1378,15 +1499,29 @@ export const hayFiltroPuesto = (f: Filtros): boolean =>
   f.notaMin != null ||
   f.notaMax != null ||
   f.pretensionMin != null ||
-  f.pretensionMax != null
+  f.pretensionMax != null ||
+  hayFiltroDeFecha(f) ||
+  f.calificacion.length > 0
 
 /**
- * Los cuatro filtros de la barra, encima del corte que ya elige la botonera.
+ * Si «Borrar filtros» tiene algo que borrar: lo que filtra, y además lo escrito
+ * que no filtra —un rango al revés, o las fechas del modo que no está elegido—.
+ * Un botón que no borra nada estaría encendido para nada.
+ */
+export const hayAlgoQueBorrar = (f: Filtros): boolean =>
+  hayFiltroPuesto(f) ||
+  f.fechaDia != null ||
+  f.fechaDesde != null ||
+  f.fechaHasta != null
+
+/**
+ * Los filtros de la barra, encima del corte que ya elige la botonera.
  *
  * ⚠️ **Un rango deja fuera a quien no declaró el dato, y es a propósito.** Una
- * fila sin nota no es «≥ 60»; una sin pretensión no cabe en ninguna banda. Lo
- * contrario —colarlos por si acaso— llena de huecos justo la lista que se pidió
- * recortar. Los vacíos vuelven quitando el filtro, que es un clic.
+ * fila sin nota no es «≥ 60»; una sin pretensión no cabe en ninguna banda; una
+ * sin fecha no se postuló «el 12». Lo contrario —colarlos por si acaso— llena de
+ * huecos justo la lista que se pidió recortar. Los vacíos vuelven quitando el
+ * filtro, que es un clic.
  *
  * ⚠️ **La pretensión se cruza contra lo que la persona DIJO, no contra lo que se
  * pueda deducir.** Quien declaró «2,000 a 3,000» sale si su rango toca la banda
@@ -1396,10 +1531,14 @@ export const hayFiltroPuesto = (f: Filtros): boolean =>
  * —«sale quien pida algo dentro de esa banda»— y lo que se puede afirmar: leer
  * un «desde 5,000» como «acepta cualquier cosa por encima» es ponerle en la boca
  * al candidato una cifra que no escribió.
+ *
+ * Todos se combinan con «y».
  */
 export function filtrarFino(filas: FilaRanking[], filtros: Filtros): FilaRanking[] {
   const buscado = paraBuscar(filtros.texto)
   const porCiudad = new Set(filtros.ciudades)
+  const porIa = new Set<string>(filtros.calificacion)
+  const conFecha = hayFiltroDeFecha(filtros)
 
   return filas.filter((fila) => {
     if (buscado !== '' && !paraBuscar(fila.candidato ?? '').includes(buscado)) return false
@@ -1424,8 +1563,239 @@ export function filtrarFino(filas: FilaRanking[], filtros: Filtros): FilaRanking
       if (filtros.pretensionMin != null && suyoMax < filtros.pretensionMin) return false
     }
 
+    if (conFecha) {
+      // Los días `AAAA-MM-DD` se comparan como texto: con ceros delante, el
+      // orden alfabético ES el del calendario.
+      const dia = diaDelCalendario(fila.postuladoEn)
+      if (dia === null) return false
+      if (filtros.fechaModo === 'dia') {
+        if (dia !== filtros.fechaDia) return false
+      } else {
+        if (filtros.fechaDesde != null && dia < filtros.fechaDesde) return false
+        if (filtros.fechaHasta != null && dia > filtros.fechaHasta) return false
+      }
+    }
+
+    if (porIa.size > 0 && !porIa.has(fila.estadoCalificacion)) return false
+
     return true
   })
+}
+
+/**
+ * Cuántas filas hay en cada estado de la IA, para la cifra de cada casilla.
+ *
+ * ⚠️ **De las filas SIN filtrar**, por lo mismo que las ciudades: contadas de lo
+ * visible, marcar «Fallida» pondría a cero las otras dos y no habría forma de
+ * saber qué se añade al marcar la segunda.
+ */
+export function cuantasPorCalificacion(filas: FilaRanking[]): Record<EstadoDeLaIa, number> {
+  const cuenta: Record<EstadoDeLaIa, number> = { TERMINADA: 0, EN_CURSO: 0, FALLIDA: 0 }
+  for (const fila of filas) {
+    const estado = fila.estadoCalificacion as EstadoDeLaIa
+    if (estado in cuenta) cuenta[estado] += 1
+  }
+  return cuenta
+}
+
+// ---------- Los filtros puestos, dichos ----------
+
+const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
+
+/*
+  Las abreviaturas van escritas a mano y no con `Intl`: según la versión del
+  navegador, `es-PE` abrevia septiembre como «sep» o como «sept.», y una misma
+  etiqueta no puede decir cosas distintas en dos equipos del equipo.
+*/
+const partes = (dia: string) => {
+  const [anio, mes, d] = dia.split('-').map(Number)
+  return { anio: anio!, mes: MESES[mes! - 1]!, dia: d! }
+}
+
+/**
+ * Un día dicho corto —«12 sep»—, con el año solo cuando no es el de hoy: entre
+ * septiembre de este año y el del pasado la diferencia importa, y repetir el año
+ * en cada etiqueta del año en curso solo alarga.
+ */
+const diaDicho = (dia: string, anioActual: number): string => {
+  const p = partes(dia)
+  return p.anio === anioActual ? `${p.dia} ${p.mes}` : `${p.dia} ${p.mes} ${p.anio}`
+}
+
+/**
+ * El filtro de fecha en una frase: «Postulados del 12 al 15 sep».
+ *
+ * Con los dos días en el mismo mes, el mes se dice una vez; si cambian de mes o
+ * de año, cada uno lleva el suyo.
+ */
+export function fechaDicha(f: Filtros, anioActual: number): string | null {
+  if (!hayFiltroDeFecha(f)) return null
+  if (f.fechaModo === 'dia') return `Postulados el ${diaDicho(f.fechaDia!, anioActual)}`
+  const { fechaDesde: desde, fechaHasta: hasta } = f
+  if (desde != null && hasta != null) {
+    if (desde === hasta) return `Postulados el ${diaDicho(desde, anioActual)}`
+    const a = partes(desde)
+    const b = partes(hasta)
+    if (a.anio === b.anio && a.mes === b.mes) {
+      return `Postulados del ${a.dia} al ${diaDicho(hasta, anioActual)}`
+    }
+    // Si cambian de año, cada extremo lleva el suyo aunque uno sea el de hoy:
+    // «del 28 dic al 3 ene 2026» dejaría el primero sin año que leer.
+    const dicho =
+      a.anio !== b.anio
+        ? (d: string) => `${partes(d).dia} ${partes(d).mes} ${partes(d).anio}`
+        : (d: string) => diaDicho(d, anioActual)
+    return `Postulados del ${dicho(desde)} al ${dicho(hasta)}`
+  }
+  if (desde != null) return `Postulados desde el ${diaDicho(desde, anioActual)}`
+  return `Postulados hasta el ${diaDicho(hasta!, anioActual)}`
+}
+
+/** «IA: fallida», «IA: calificada o fallida». */
+export function calificacionDicha(f: Filtros): string | null {
+  if (f.calificacion.length === 0) return null
+  // En el orden del control, no en el que se marcaron.
+  const nombres = ESTADOS_DE_LA_IA.filter((e) => f.calificacion.includes(e.codigo)).map((e) =>
+    e.nombre.toLowerCase(),
+  )
+  const lista =
+    nombres.length === 1
+      ? nombres[0]!
+      : `${nombres.slice(0, -1).join(', ')} o ${nombres[nombres.length - 1]!}`
+  return `IA: ${lista}`
+}
+
+export type ClaveDeFiltro = 'fecha' | 'calificacion' | 'ciudad' | 'nota' | 'pretension'
+
+export interface FiltroActivo {
+  clave: ClaveDeFiltro
+  /** Lo que se lee en la etiqueta. */
+  texto: string
+}
+
+const RANGO_DICHO = (min: number | null, max: number | null): string =>
+  min != null && max != null ? `${min}–${max}` : min != null ? `≥ ${min}` : `≤ ${max}`
+
+/**
+ * Los filtros del panel que están recortando, uno por etiqueta y en el orden de
+ * las secciones del panel.
+ *
+ * ⚠️ **Es la única fuente de la insignia y de las etiquetas.** La cifra del
+ * botón «Filtros» es `length` de esta lista: contadas en dos sitios, la
+ * insignia diría 3 sobre dos etiquetas en cuanto alguien añada un filtro y se
+ * acuerde solo de uno.
+ *
+ * ⚠️ **La búsqueda por nombre no está.** Vive a la vista en su caja, fuera del
+ * panel, y una etiqueta más con lo mismo que se lee al lado sería ruido. «Borrar
+ * filtros» sí la limpia.
+ *
+ * ⚠️ **La nota lleva el nombre de la etapa**: el filtro se conserva al cambiar
+ * de pestaña y siempre habla de la nota de la que se mira. «Nota ≥ 60» a secas
+ * se leería como la del perfil estando en la prueba.
+ */
+export function filtrosActivos(
+  f: Filtros,
+  etapa: EtapaPanel,
+  ciudades: CiudadDelRanking[],
+  anioActual: number,
+): FiltroActivo[] {
+  const nombreDeCiudad = (codigo: string) =>
+    ciudades.find((c) => c.codigo === codigo)?.nombre ?? codigo
+  const fecha = fechaDicha(f, anioActual)
+  const ia = calificacionDicha(f)
+
+  const activos: (FiltroActivo | null)[] = [
+    fecha ? { clave: 'fecha', texto: fecha } : null,
+    ia ? { clave: 'calificacion', texto: ia } : null,
+    f.ciudades.length > 0
+      ? { clave: 'ciudad', texto: `Ciudad: ${f.ciudades.map(nombreDeCiudad).join(', ')}` }
+      : null,
+    f.notaMin != null || f.notaMax != null
+      ? { clave: 'nota', texto: `${laEtapaDe(etapa).nota} ${RANGO_DICHO(f.notaMin, f.notaMax)}` }
+      : null,
+    f.pretensionMin != null || f.pretensionMax != null
+      ? { clave: 'pretension', texto: `Pretensión ${RANGO_DICHO(f.pretensionMin, f.pretensionMax)}` }
+      : null,
+  ]
+  return activos.filter((a): a is FiltroActivo => a !== null)
+}
+
+/**
+ * Quita UN filtro y deja los demás como estaban.
+ *
+ * La fecha se quita entera —los dos modos—: su etiqueta es una y la «×» no
+ * puede dejar escrito en el otro modo algo que vuelva a filtrar al cambiarlo.
+ */
+export function quitarFiltro(f: Filtros, clave: ClaveDeFiltro): Filtros {
+  switch (clave) {
+    case 'fecha':
+      return { ...f, fechaDia: null, fechaDesde: null, fechaHasta: null }
+    case 'calificacion':
+      return { ...f, calificacion: [] }
+    case 'ciudad':
+      return { ...f, ciudades: [] }
+    case 'nota':
+      return { ...f, notaMin: null, notaMax: null }
+    case 'pretension':
+      return { ...f, pretensionMin: null, pretensionMax: null }
+  }
+}
+
+// ---------- Marcar todo lo que se ve ----------
+
+export type EstadoDeMarcarTodo = 'ninguna' | 'algunas' | 'todas'
+
+/**
+ * Cómo está la casilla de la cabecera, mirando SOLO lo que se ve.
+ *
+ * Una marca oculta por un filtro no la pone en «algunas»: la casilla habla de
+ * la tabla que tiene debajo, y lo oculto lo cuenta la barra de abajo.
+ */
+export function estadoDeMarcarTodo(
+  marcados: ReadonlySet<number>,
+  visibles: readonly number[],
+): EstadoDeMarcarTodo {
+  const cuantas = visibles.filter((id) => marcados.has(id)).length
+  if (cuantas === 0) return 'ninguna'
+  return cuantas === visibles.length ? 'todas' : 'algunas'
+}
+
+/**
+ * Lo que hace la casilla de la cabecera: con todas las visibles marcadas las
+ * suelta; si no, marca las que faltan.
+ *
+ * ⚠️ **Nunca toca lo que no se ve.** Es el error más caro de esta pantalla:
+ * marcar a alguien escondido por un filtro y mandarle una carta de rechazo que
+ * nadie quería. Por eso solo se añaden los ids VISIBLES, y al soltar solo se
+ * sueltan esos: una marca oculta que ya estaba sigue como estaba.
+ */
+export function alternarMarcarTodo(
+  marcados: ReadonlySet<number>,
+  visibles: readonly number[],
+): Set<number> {
+  const nuevos = new Set(marcados)
+  if (estadoDeMarcarTodo(marcados, visibles) === 'todas') {
+    for (const id of visibles) nuevos.delete(id)
+  } else {
+    for (const id of visibles) nuevos.add(id)
+  }
+  return nuevos
+}
+
+/**
+ * Las marcas que siguen puestas en filas que los filtros esconden.
+ *
+ * Solo cuentan las de filas que EXISTEN en la tanda: una marca de alguien que
+ * ya no está —se movió de etapa y la tanda se refrescó— no está «fuera de
+ * vista», no está.
+ */
+export function marcasFueraDeVista(
+  marcados: ReadonlySet<number>,
+  enLaTanda: readonly number[],
+  visibles: readonly number[],
+): number[] {
+  const seVen = new Set(visibles)
+  return enLaTanda.filter((id) => marcados.has(id) && !seVen.has(id))
 }
 
 // ---------- Las ciudades que de verdad hay ----------
@@ -1596,16 +1966,12 @@ export const porQueNoHayPretension = (
   /*
     El tercer motivo, y el unico que es una decision de la empresa y no del
     candidato: esta vacante no publica lo que paga, asi que a nadie se le exigio
-    decir lo suyo. Sin esta frase, una columna vacia se lee como una tanda de
-    gente reservada — cuando en realidad es el trato funcionando como se diseño.
+    decir lo suyo. Basta con nombrar ese motivo, en una linea y con las palabras
+    que pidio el usuario, para que el vacio no se lea como una tanda de gente
+    reservada; el porque del trato no hace falta repetirlo aqui.
   */
   if (vacanteMuestraSueldo === false) {
-    return (
-      'Esta vacante no publica su remuneración, así que a nadie se le pidió la suya: ' +
-      'es el trato: quien no enseña lo que paga tampoco pregunta lo que piden. ' +
-      'Publícala en la configuración de la vacante y quien postule desde entonces ' +
-      'tendrá que declararla.'
-    )
+    return 'La vacante no publicó pretensión'
   }
   return (
     'Ninguno de estos candidatos declaró pretensión salarial. La columna no sale ' +
@@ -1794,9 +2160,6 @@ export const criteriosQueSePintan = (
 export const seExportaAExcel = (etapa: EtapaPanel): boolean =>
   etapa === 'PERFIL_INTEGRAL' || etapa === 'PRUEBA_PUESTO'
 
-const RANGO_DICHO = (min: number | null, max: number | null): string =>
-  min != null && max != null ? `${min}–${max}` : min != null ? `≥ ${min}` : `≤ ${max}`
-
 const ROTULO_DE_COLUMNA: Record<ColumnaOrdenable, string> = {
   nombre: 'Candidato',
   ciudad: 'Ciudad',
@@ -1829,6 +2192,8 @@ export function describirFiltro(
   filtros: Filtros,
   orden: Orden | null,
   ciudades: CiudadDelRanking[],
+  /** Para decir el año de una fecha solo cuando no es el de hoy. */
+  anioActual: number = new Date().getFullYear(),
 ): string {
   const nombreDeCiudad = (codigo: string) =>
     ciudades.find((c) => c.codigo === codigo)?.nombre ?? codigo
@@ -1837,6 +2202,9 @@ export function describirFiltro(
     laEtapaDe(etapa).nombre,
     rotuloDeVista(vista),
     filtros.texto.trim() !== '' ? `Nombre contiene «${filtros.texto.trim()}»` : null,
+    // La fecha y la IA, con las mismas palabras que su etiqueta en la pantalla.
+    fechaDicha(filtros, anioActual),
+    calificacionDicha(filtros),
     filtros.ciudades.length > 0
       ? `Ciudad: ${filtros.ciudades.map(nombreDeCiudad).join(', ')}`
       : null,

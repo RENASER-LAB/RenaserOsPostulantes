@@ -257,7 +257,7 @@ test.describe('El ciclo 2 · la vacante elige el cuestionario y la candidata lo 
      */
     const avanzarUnPaso = async (motivo: string) => {
       await camila().first().locator('input[type="checkbox"]').check()
-      await page.getByPlaceholder('Motivo del avance (obligatorio)').fill(motivo)
+      await page.getByLabel('Motivo (obligatorio)').fill(motivo)
       await page.getByRole('button', { name: /^Avanzar a 1 persona$/ }).click()
       await expect(page.locator('[role="status"]').filter({ hasText: /Avanzaron: Camila/ })).toBeVisible({
         timeout: 30_000,

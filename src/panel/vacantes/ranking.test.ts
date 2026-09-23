@@ -64,6 +64,22 @@ import {
   rotuloCorto,
   seExportaAExcel,
   SIN_FILTROS,
+  alternarMarcarTodo,
+  atajoDeFecha,
+  calificacionDicha,
+  cuantasPorCalificacion,
+  diaDelCalendario,
+  estadoDeMarcarTodo,
+  fechaDicha,
+  filtrosActivos,
+  hayAlgoQueBorrar,
+  hayFiltroDeFecha,
+  hayFiltroPuesto,
+  marcasFueraDeVista,
+  quitarFiltro,
+  rangoDeFechaAlReves,
+  sumarDias,
+  type Filtros,
   notaDelCriterio,
   tonoDelCriterio,
   desgloseDelPonderado,
@@ -1120,6 +1136,329 @@ describe('el filtro de ciudad', () => {
   })
 })
 
+// ---------- La fecha de postulación ----------
+
+/*
+  ⚠️ **Los instantes se fabrican con la hora LOCAL, nunca con una «Z» escrita a
+  mano.** El día que cuenta es el del calendario del navegador; una fixture en
+  UTC haría pasar o fallar estas pruebas según la zona del equipo que las corra.
+  Con `new Date(año, mes, día, hora)` el día local es el escrito, esté donde esté.
+*/
+const aLas = (anio: number, mes: number, dia: number, hora = 10, minuto = 0) =>
+  new Date(anio, mes - 1, dia, hora, minuto).toISOString()
+
+describe('el día del calendario de una fecha', () => {
+  it('es el del navegador, no el de la cadena UTC', () => {
+    // 23:59 del 12 en local puede ser ya el 13 en UTC: cuenta el 12.
+    expect(diaDelCalendario(aLas(2026, 9, 12, 23, 59))).toBe('2026-09-12')
+    expect(diaDelCalendario(aLas(2026, 9, 13, 0, 0))).toBe('2026-09-13')
+  })
+
+  it('sin fecha, o una que no se puede leer, no tiene día', () => {
+    expect(diaDelCalendario(null)).toBeNull()
+    expect(diaDelCalendario(undefined)).toBeNull()
+    expect(diaDelCalendario('no es una fecha')).toBeNull()
+  })
+
+  it('se mueve por días del calendario, cruzando meses y años', () => {
+    expect(sumarDias('2026-09-03', -6)).toBe('2026-08-28')
+    expect(sumarDias('2026-01-02', -3)).toBe('2025-12-30')
+    expect(sumarDias('2026-02-28', 1)).toBe('2026-03-01')
+  })
+})
+
+describe('los atajos de fecha', () => {
+  const HOY = '2026-09-15'
+
+  it('«Hoy» es un rango de un solo día', () => {
+    expect(atajoDeFecha('hoy', HOY)).toEqual({ desde: HOY, hasta: HOY })
+  })
+
+  // AC-12: siete días contando hoy, no siete más hoy.
+  it('«Últimos 7 días» va de hoy − 6 a hoy', () => {
+    expect(atajoDeFecha('ultimos-7', HOY)).toEqual({ desde: '2026-09-09', hasta: HOY })
+  })
+
+  it('«Últimos 30 días» va de hoy − 29 a hoy', () => {
+    expect(atajoDeFecha('ultimos-30', HOY)).toEqual({ desde: '2026-08-17', hasta: HOY })
+  })
+})
+
+describe('el filtro de fecha de postulación', () => {
+  const TANDA = [
+    fila('POSTULADA', null, { candidato: 'El 11', postuladoEn: aLas(2026, 9, 11) }),
+    fila('POSTULADA', null, { candidato: 'El 12 temprano', postuladoEn: aLas(2026, 9, 12, 0, 5) }),
+    fila('POSTULADA', null, { candidato: 'El 12 tarde', postuladoEn: aLas(2026, 9, 12, 23, 55) }),
+    fila('POSTULADA', null, { candidato: 'El 15', postuladoEn: aLas(2026, 9, 15) }),
+    fila('POSTULADA', null, { candidato: 'Sin fecha', postuladoEn: null }),
+    // Un backend anterior al cambio ni manda el campo.
+    fila('POSTULADA', null, { candidato: 'Backend viejo' }),
+  ]
+  const enRango = (desde: string | null, hasta: string | null): Filtros => ({
+    ...SIN_FILTROS,
+    fechaModo: 'rango',
+    fechaDesde: desde,
+    fechaHasta: hasta,
+  })
+
+  // AC-08
+  it('«Un día» trae el día calendario entero, de la primera a la última hora', () => {
+    const f: Filtros = { ...SIN_FILTROS, fechaModo: 'dia', fechaDia: '2026-09-12' }
+    expect(nombres(filtrarFino(TANDA, f))).toEqual(['El 12 temprano', 'El 12 tarde'])
+  })
+
+  // AC-09
+  it('el rango incluye sus dos extremos y lo de en medio', () => {
+    expect(nombres(filtrarFino(TANDA, enRango('2026-09-12', '2026-09-15')))).toEqual([
+      'El 12 temprano',
+      'El 12 tarde',
+      'El 15',
+    ])
+  })
+
+  // AC-10
+  it('solo «Desde» es de esa fecha en adelante', () => {
+    expect(nombres(filtrarFino(TANDA, enRango('2026-09-12', null)))).toEqual([
+      'El 12 temprano',
+      'El 12 tarde',
+      'El 15',
+    ])
+  })
+
+  it('solo «Hasta» es hasta esa fecha, incluida', () => {
+    expect(nombres(filtrarFino(TANDA, enRango(null, '2026-09-12')))).toEqual([
+      'El 11',
+      'El 12 temprano',
+      'El 12 tarde',
+    ])
+  })
+
+  // Regla 10: sin fecha no se postuló «el 12», ni en ningún rango.
+  it('quien no tiene fecha queda fuera en cuanto hay filtro de fecha', () => {
+    const quedan = nombres(filtrarFino(TANDA, enRango('2000-01-01', null)))
+    expect(quedan).not.toContain('Sin fecha')
+    expect(quedan).not.toContain('Backend viejo')
+  })
+
+  it('sin fechas escritas no filtra a nadie, tampoco a quien no tiene fecha', () => {
+    expect(filtrarFino(TANDA, enRango(null, null))).toHaveLength(6)
+    expect(filtrarFino(TANDA, SIN_FILTROS)).toHaveLength(6)
+  })
+
+  // AC-11
+  it('«Desde» después de «Hasta» no se aplica: no vacía la tabla a escondidas', () => {
+    const alReves = enRango('2026-09-15', '2026-09-12')
+    expect(rangoDeFechaAlReves(alReves)).toBe(true)
+    expect(hayFiltroDeFecha(alReves)).toBe(false)
+    expect(filtrarFino(TANDA, alReves)).toHaveLength(6)
+    // Y no cuenta como filtro puesto, pero sí hay algo que borrar.
+    expect(hayFiltroPuesto(alReves)).toBe(false)
+    expect(hayAlgoQueBorrar(alReves)).toBe(true)
+  })
+
+  it('el mismo día en los dos extremos no es un rango al revés', () => {
+    expect(rangoDeFechaAlReves(enRango('2026-09-12', '2026-09-12'))).toBe(false)
+  })
+
+  it('solo cuenta el modo elegido: lo escrito en el otro no filtra', () => {
+    const f: Filtros = {
+      ...SIN_FILTROS,
+      fechaModo: 'dia',
+      fechaDia: null,
+      fechaDesde: '2026-09-15',
+      fechaHasta: '2026-09-15',
+    }
+    expect(hayFiltroDeFecha(f)).toBe(false)
+    expect(filtrarFino(TANDA, f)).toHaveLength(6)
+  })
+})
+
+describe('el filtro de calificación con IA', () => {
+  const TANDA = [
+    fila('POSTULADA', null, { candidato: 'Calificada', estadoCalificacion: 'TERMINADA' }),
+    fila('POSTULADA', null, { candidato: 'En curso', estadoCalificacion: 'EN_CURSO' }),
+    fila('POSTULADA', null, { candidato: 'Fallida', estadoCalificacion: 'FALLIDA' }),
+    fila('POSTULADA', null, { candidato: 'Otra fallida', estadoCalificacion: 'FALLIDA' }),
+    fila('POSTULADA', null, { candidato: 'Sin empezar', estadoCalificacion: 'SIN_EMPEZAR' }),
+  ]
+
+  // AC-13
+  it('«Fallida» trae solo las fallidas', () => {
+    expect(nombres(filtrarFino(TANDA, { ...SIN_FILTROS, calificacion: ['FALLIDA'] }))).toEqual([
+      'Fallida',
+      'Otra fallida',
+    ])
+  })
+
+  it('con varias casillas se ve la unión', () => {
+    expect(
+      nombres(filtrarFino(TANDA, { ...SIN_FILTROS, calificacion: ['TERMINADA', 'FALLIDA'] })),
+    ).toEqual(['Calificada', 'Fallida', 'Otra fallida'])
+  })
+
+  it('vacío significa todas, incluida la que nadie ha pedido todavía', () => {
+    expect(filtrarFino(TANDA, SIN_FILTROS)).toHaveLength(5)
+  })
+
+  it('cada casilla lleva su cifra, contada de la tanda entera', () => {
+    expect(cuantasPorCalificacion(TANDA)).toEqual({ TERMINADA: 1, EN_CURSO: 1, FALLIDA: 2 })
+  })
+
+  it('se combina con los demás filtros con «y»', () => {
+    const conFecha = TANDA.map((f, i) => ({ ...f, postuladoEn: aLas(2026, 9, 10 + i) }))
+    const f: Filtros = {
+      ...SIN_FILTROS,
+      calificacion: ['FALLIDA'],
+      fechaModo: 'dia',
+      fechaDia: '2026-09-13',
+    }
+    expect(nombres(filtrarFino(conFecha, f))).toEqual(['Otra fallida'])
+  })
+})
+
+describe('las etiquetas de los filtros puestos', () => {
+  const CIUDADES = [
+    { codigo: '1501', nombre: 'Lima — Lima', cuantas: 3 },
+    { codigo: '0402', nombre: 'Arequipa — Camaná', cuantas: 1 },
+  ]
+  const TRES: Filtros = {
+    ...SIN_FILTROS,
+    fechaModo: 'rango',
+    fechaDesde: '2026-09-12',
+    fechaHasta: '2026-09-15',
+    calificacion: ['FALLIDA'],
+    ciudades: ['1501'],
+  }
+
+  // AC-03: la insignia es `length` de esta lista, y hay una etiqueta por filtro.
+  it('tres filtros son tres etiquetas legibles, en el orden del panel', () => {
+    expect(filtrosActivos(TRES, 'PERFIL_INTEGRAL', CIUDADES, 2026)).toEqual([
+      { clave: 'fecha', texto: 'Postulados del 12 al 15 sep' },
+      { clave: 'calificacion', texto: 'IA: fallida' },
+      { clave: 'ciudad', texto: 'Ciudad: Lima — Lima' },
+    ])
+  })
+
+  // AC-02
+  it('sin filtros no hay ninguna, y la búsqueda por nombre no es etiqueta', () => {
+    expect(filtrosActivos(SIN_FILTROS, 'PERFIL_INTEGRAL', CIUDADES, 2026)).toEqual([])
+    expect(
+      filtrosActivos({ ...SIN_FILTROS, texto: 'lucia' }, 'PERFIL_INTEGRAL', CIUDADES, 2026),
+    ).toEqual([])
+  })
+
+  // Regla 6: la nota habla de la etapa que se mira, y lo dice.
+  it('la nota lleva el nombre de la nota de la etapa', () => {
+    const f = { ...SIN_FILTROS, notaMin: 60 }
+    expect(filtrosActivos(f, 'PERFIL_INTEGRAL', [], 2026)[0]!.texto).toBe('Nota del perfil ≥ 60')
+    expect(filtrosActivos(f, 'PRUEBA_PUESTO', [], 2026)[0]!.texto).toBe('Nota de la prueba ≥ 60')
+  })
+
+  it('un rango al revés no es etiqueta: no está filtrando', () => {
+    const f: Filtros = { ...SIN_FILTROS, fechaModo: 'rango', fechaDesde: '2026-09-15', fechaHasta: '2026-09-12' }
+    expect(filtrosActivos(f, 'PERFIL_INTEGRAL', [], 2026)).toEqual([])
+  })
+
+  it('la fecha se dice en cada una de sus formas', () => {
+    const dicha = (f: Partial<Filtros>) => fechaDicha({ ...SIN_FILTROS, ...f }, 2026)
+    expect(dicha({ fechaModo: 'dia', fechaDia: '2026-09-12' })).toBe('Postulados el 12 sep')
+    expect(dicha({ fechaModo: 'rango', fechaDesde: '2026-08-28', fechaHasta: '2026-09-03' })).toBe(
+      'Postulados del 28 ago al 3 sep',
+    )
+    expect(dicha({ fechaModo: 'rango', fechaDesde: '2026-09-12' })).toBe('Postulados desde el 12 sep')
+    expect(dicha({ fechaModo: 'rango', fechaHasta: '2026-09-15' })).toBe('Postulados hasta el 15 sep')
+    expect(dicha({ fechaModo: 'rango', fechaDesde: '2026-09-12', fechaHasta: '2026-09-12' })).toBe(
+      'Postulados el 12 sep',
+    )
+    // El año solo cuando no es el de hoy, y en los dos extremos si cambian de año.
+    expect(dicha({ fechaModo: 'dia', fechaDia: '2025-09-12' })).toBe('Postulados el 12 sep 2025')
+    expect(dicha({ fechaModo: 'rango', fechaDesde: '2025-12-28', fechaHasta: '2026-01-03' })).toBe(
+      'Postulados del 28 dic 2025 al 3 ene 2026',
+    )
+    expect(dicha({ fechaModo: 'dia' })).toBeNull()
+  })
+
+  it('la IA se dice en el orden del control, no en el que se marcó', () => {
+    expect(calificacionDicha({ ...SIN_FILTROS, calificacion: ['FALLIDA', 'TERMINADA'] })).toBe(
+      'IA: calificada o fallida',
+    )
+    expect(
+      calificacionDicha({ ...SIN_FILTROS, calificacion: ['FALLIDA', 'EN_CURSO', 'TERMINADA'] }),
+    ).toBe('IA: calificada, en curso o fallida')
+  })
+
+  // AC-05
+  it('la «×» quita solo ese filtro y deja los demás', () => {
+    const sinIa = quitarFiltro(TRES, 'calificacion')
+    expect(sinIa.calificacion).toEqual([])
+    expect(sinIa.ciudades).toEqual(['1501'])
+    expect(sinIa.fechaDesde).toBe('2026-09-12')
+    expect(filtrosActivos(sinIa, 'PERFIL_INTEGRAL', CIUDADES, 2026)).toHaveLength(2)
+  })
+
+  it('quitar la fecha borra los dos modos: no puede volver a filtrar al cambiar de modo', () => {
+    const f: Filtros = { ...TRES, fechaDia: '2026-09-01' }
+    const sinFecha = quitarFiltro(f, 'fecha')
+    expect(sinFecha.fechaDia).toBeNull()
+    expect(sinFecha.fechaDesde).toBeNull()
+    expect(sinFecha.fechaHasta).toBeNull()
+    expect(hayFiltroDeFecha({ ...sinFecha, fechaModo: 'dia' })).toBe(false)
+  })
+
+  it('cada clave quita lo suyo', () => {
+    const todo: Filtros = { ...TRES, notaMin: 1, notaMax: 2, pretensionMin: 3, pretensionMax: 4 }
+    expect(quitarFiltro(todo, 'nota')).toMatchObject({ notaMin: null, notaMax: null, pretensionMin: 3 })
+    expect(quitarFiltro(todo, 'pretension')).toMatchObject({ pretensionMin: null, pretensionMax: null, notaMin: 1 })
+    expect(quitarFiltro(todo, 'ciudad').ciudades).toEqual([])
+  })
+})
+
+// ---------- Marcar todo lo que se ve ----------
+
+describe('la casilla de marcar todo', () => {
+  // AC-14
+  it('marca exactamente las visibles y ninguna oculta', () => {
+    const marcados = alternarMarcarTodo(new Set(), [1, 2, 3])
+    expect([...marcados].sort()).toEqual([1, 2, 3])
+  })
+
+  // AC-15
+  it('con todas las visibles marcadas, las suelta', () => {
+    expect([...alternarMarcarTodo(new Set([1, 2, 3]), [1, 2, 3])]).toEqual([])
+  })
+
+  it('con algunas marcadas está en intermedio, y al pulsarla completa las visibles', () => {
+    expect(estadoDeMarcarTodo(new Set([2]), [1, 2, 3])).toBe('algunas')
+    expect([...alternarMarcarTodo(new Set([2]), [1, 2, 3])].sort()).toEqual([1, 2, 3])
+  })
+
+  /*
+    ⚠️ **El error más caro de la pantalla.** Una marca oculta por un filtro no
+    se suelta al soltar las visibles —era de antes y nadie la tocó—, ni cuenta
+    para decir que «todas» están marcadas.
+  */
+  it('una marca oculta ni cuenta en la casilla ni se toca al pulsarla', () => {
+    const conOculta = new Set([9, 1, 2])
+    expect(estadoDeMarcarTodo(conOculta, [1, 2])).toBe('todas')
+    expect([...alternarMarcarTodo(conOculta, [1, 2])]).toEqual([9])
+    expect(estadoDeMarcarTodo(new Set([9]), [1, 2])).toBe('ninguna')
+  })
+
+  it('sin filas visibles no hay nada marcado', () => {
+    expect(estadoDeMarcarTodo(new Set([1]), [])).toBe('ninguna')
+  })
+
+  // AC-20: seis marcadas y un filtro que esconde dos.
+  it('las marcas fuera de vista son las de la tanda que el filtro esconde', () => {
+    const marcados = new Set([1, 2, 3, 4, 5, 6])
+    expect(marcasFueraDeVista(marcados, [1, 2, 3, 4, 5, 6, 7], [1, 2, 3, 4, 7])).toEqual([5, 6])
+  })
+
+  it('una marca de alguien que ya no está en la tanda no está «fuera de vista»', () => {
+    expect(marcasFueraDeVista(new Set([1, 99]), [1, 2], [2])).toEqual([1])
+  })
+})
+
 // ---------- La pretensión, dicha ----------
 
 describe('la pretensión en una celda', () => {
@@ -2019,6 +2358,38 @@ describe('de qué recorte salió la hoja', () => {
     expect(dicho).toContain('Nota ≥ 60')
     expect(dicho).toContain('Pretensión ≤ 4000')
   })
+
+  // Regla 15: la hoja dice también los filtros nuevos, con las palabras de su etiqueta.
+  it('la fecha y la calificación con IA viajan en la descripción', () => {
+    const dicho = describirFiltro(
+      'PERFIL_INTEGRAL',
+      'toda',
+      {
+        ...SIN_FILTROS,
+        fechaModo: 'rango',
+        fechaDesde: '2026-09-12',
+        fechaHasta: '2026-09-15',
+        calificacion: ['FALLIDA'],
+      },
+      null,
+      [],
+      2026,
+    )
+    expect(dicho).toContain('Postulados del 12 al 15 sep')
+    expect(dicho).toContain('IA: fallida')
+  })
+
+  it('un rango de fecha al revés no se describe: no recortó la hoja', () => {
+    const dicho = describirFiltro(
+      'PERFIL_INTEGRAL',
+      'toda',
+      { ...SIN_FILTROS, fechaModo: 'rango', fechaDesde: '2026-09-15', fechaHasta: '2026-09-12' },
+      null,
+      [],
+      2026,
+    )
+    expect(dicho).not.toContain('Postulados')
+  })
 })
 
 describe('qué etapas exportan a Excel', () => {
@@ -2171,6 +2542,8 @@ describe('una columna entera vacía no se pinta: se dice por qué', () => {
     expect(porQueNoHayPretension(false)).toContain('Dirección')
     expect(porQueNoHayPretension(true)).toContain('Ninguno de estos candidatos declaró')
     expect(porQueNoHayPretension(true)).not.toContain('permiso')
+    // El tercer motivo, con el texto exacto que pidió el usuario.
+    expect(porQueNoHayPretension(true, false)).toBe('La vacante no publicó pretensión')
   })
 })
 
