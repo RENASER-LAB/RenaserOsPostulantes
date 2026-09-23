@@ -89,6 +89,14 @@ estado, después el cuerpo.
 
 **`<button>` sin `type`.** Por defecto es de envío. Dentro de un formulario, lo envía.
 
+**Retocar una pieza compartida desde la misma clase no hace nada.** Si una clase trae un botón
+de `piezas.module.css` con `composes`, una regla sobre esa misma clase que cambie `display`,
+`padding` o `font-size` pierde: en la hoja construida la pieza se escribe **después**, y a igual
+especificidad manda la última. Así el botón «Más» del ranking se veía en escritorio, donde no
+abre nada. La salida es escribir el retoque con el contenedor delante (`.filaFiltros .mas`), que
+pesa más, no `!important`. ⚠️ En el código hay hoy unas 23 reglas así que el navegador ignora;
+no se han tocado.
+
 ---
 
 ## La marca de obligatorio es una sola, y la decide el esquema

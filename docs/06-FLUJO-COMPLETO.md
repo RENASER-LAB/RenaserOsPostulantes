@@ -441,7 +441,7 @@ puesto: gente calificada, con su nota puesta, y sobre la que no había ninguna
 decisión que tomar. La lista que se abre para decidir traía sobre todo a quien ya
 estaba decidido, y ese fue el motivo del cambio. Quien quiera ver a todo el que
 sacó nota alguna vez no ha perdido nada: está en «Toda la tanda» ordenando por la
-columna Nota, o con el filtro de nota mínima de la barra.
+columna Nota, o con el filtro de nota del botón «Filtros».
 
 Encima de la tabla, una línea reparte a los que **todavía no tienen nota** en
 tres: los que ya la hicieron y esperan la calificación, los que no la han hecho
@@ -516,8 +516,8 @@ sobre alguien que ya terminó su recorrido no sale: en su lugar va una línea qu
 dice, porque un botón que desaparece sin explicación deja pensando si lo que falta
 es un permiso.
 
-**Y a varios de golpe, sin abrir sus fichas.** En la mesa de la tabla, al lado de
-«Avanzar», está «Descartar a N personas»: se marcan las casillas de siempre, se
+**Y a varios de golpe, sin abrir sus fichas.** En la barra que aparece abajo al
+marcar a alguien, al lado de «Avanzar», está «Descartar…»: se marcan las casillas, se
 escribe un motivo que vale para todas y se elige qué hacer con ellas. Ese botón no
 actúa al pulsarlo — abre una ventana **con los nombres escritos**, que es donde se
 ve si quedó marcada alguien de una pestaña anterior. Va una a una: quien no se
@@ -627,11 +627,15 @@ de filas sin dato justo al pulsar «de mayor a menor».
 
 ### Filtrar sin perder el corte (01/09/2026)
 
-Encima de la tabla, y conviviendo con los tres cortes de la botonera:
+La búsqueda por nombre va encima de la tabla; el resto, dentro del botón **«Filtros»**
+(desde el 23/09/2026), y todo convive con los tres cortes de la botonera. Los filtros
+se conservan al cambiar de etapa. Cómo se ven y se quitan, en [PANEL.md](PANEL.md).
 
 | Filtro | Qué hace |
 |---|---|
 | **Buscar por nombre** | Compara **sin tildes ni mayúsculas**: media tanda se llama Fátima, Lucía o Muñoz, y quien teclea `fatima` en un buscador que compara literales no encuentra a nadie y concluye que la caja está rota |
+| **Fecha de postulación** | Un día o un rango. Quien no tiene fecha queda fuera, y se dice |
+| **Calificación con IA** | Calificada, en curso o fallida. Es la del currículum, también en las etapas siguientes |
 | **Ciudad** | Las que de verdad hay en la tanda, con cuántas trae cada una, y se marcan varias. **Salen de las filas, nunca del catálogo de ubigeo**: servirlo del catálogo ofrecería 196 filtros que no devuelven a nadie |
 | **Nota** | Desde–hasta, sobre la nota de la etapa que se está mirando |
 | **Pretensión** | Desde–hasta. Sale quien pida algo dentro de esa banda |
@@ -639,8 +643,8 @@ Encima de la tabla, y conviviendo con los tres cortes de la botonera:
 ⚠️ **Un rango deja fuera a quien no declaró el dato, y es a propósito.** Una fila
 sin nota no es «≥ 60», y una sin pretensión no cabe en ninguna banda; colarlas
 por si acaso llenaría de huecos justo la lista que se pidió recortar. La pantalla
-lo dice debajo de cada rango, y vuelven quitando el filtro, que es un clic: «Ver
-a todos».
+lo dice debajo de cada rango, y vuelven quitando el filtro, que es un clic: la «×»
+de su etiqueta, o «Borrar filtros».
 
 Con cualquier filtro puesto, la pantalla dice **cuántas se ven de cuántas** de
 ese corte. Ocultar sin decirlo es el indicador que miente.

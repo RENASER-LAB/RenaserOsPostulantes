@@ -669,15 +669,6 @@ thead .celdaCandidato {
   overflow-wrap: anywhere;
 }
 
-/* ---------- El avance ---------- */
-
-.avance {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--e3);
-  margin-top: var(--e4);
-}
-
 .entradaMotivo {
   flex: 1 1 18rem;
   min-height: 44px;
@@ -688,18 +679,6 @@ thead .celdaCandidato {
   font: inherit;
   font-size: var(--t-base);
   border-radius: var(--radio-menor);
-}
-
-.avanzar {
-  composes: acentoMenor from '../../estilos/piezas.module.css';
-}
-
-.resultadoAvance {
-  font-size: var(--t-prosa);
-  line-height: 1.55;
-  color: var(--tinta2);
-  margin-top: var(--e3);
-  max-width: var(--medida);
 }
 
 /* ---------- Requisitos ---------- */
@@ -756,7 +735,6 @@ thead .celdaCandidato {
   }
 
   .publicar,
-  .avanzar,
   .anadir {
     width: 100%;
   }
@@ -1840,210 +1818,66 @@ th.columnaCifra {
   border-color: var(--tinta2);
 }
 
-/*
- * Los tres filtros que se pliegan.
- *
- * `<details>` y no un desplegable propio: teclado, `Enter`, `Espacio` y el
- * anuncio de «contraido/expandido» vienen de fabrica. La regla de la plataforma
- * primero, la misma por la que el registro usa un `<select>` nativo.
- */
-.masFiltros {
-  position: relative;
-}
-
-.resumenFiltros {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--e2);
-  min-height: 44px;
-  padding: 0 var(--e4);
-  border: 1px solid var(--borde-control);
-  border-radius: var(--radio-control);
-  background: var(--nube);
-  font-size: var(--t-apoyo);
-  font-weight: 600;
-  color: var(--tinta);
-  cursor: pointer;
-  list-style: none;
-  white-space: nowrap;
-}
-
-.resumenFiltros::-webkit-details-marker {
-  display: none;
-}
-
-/*
- * El pliegue gira, no se sustituye.
- *
- * Un icono que cambia de forma al abrir se lee como otro icono; el mismo
- * girando dice que es el MISMO control en el otro estado. 160ms con la curva
- * del proyecto, y quieto para quien pidió menos movimiento.
- */
-.pliegue {
-  flex: none;
-  color: var(--tinta3);
-  transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.masFiltros[open] .pliegue {
-  transform: rotate(180deg);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .pliegue {
-    transition: none;
-  }
-}
-
-/*
- * Cuantos filtros hay puestos ahi dentro.
- *
- * ⚠️ **Es lo que impide que el pliegue esconda un recorte.** Sin esta cifra,
- * una tabla filtrada por ciudad y nota se ve igual que una sin filtrar, y quien
- * llega a la pantalla decide sobre media tanda creyendo que la ve entera.
- */
-.cuantosFiltros {
-  font-size: var(--t-micro);
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  color: var(--tinta);
-  background: var(--nube-honda);
-  border-radius: var(--radio-control);
-  padding: 1px var(--e2);
-}
-
-/*
- * El cuerpo del pliegue, flotando sobre la tabla.
- *
- * Empujando en el flujo, abrirlo desplazaba la tabla entera hacia abajo y la
- * fila que se estaba mirando se iba de la pantalla — justo mientras se recorta
- * la lista, que es cuando hay que ver el efecto.
- */
-.cuerpoFiltros {
-  position: absolute;
-  z-index: 2;
-  top: calc(100% + var(--e2));
-  left: 0;
-  min-width: 22rem;
-  max-width: min(34rem, 90vw);
-  display: flex;
-  flex-direction: column;
-  gap: var(--e4);
-  padding: var(--e4);
-  background: var(--nube);
-  border: 1px solid var(--regla2);
-  border-radius: var(--radio);
-  box-shadow: var(--sombra-nube);
-}
-
-/* `fieldset` por la semantica —el rango son dos campos que van juntos— y sin
-   nada de su vestuario de fabrica. */
-.grupoFiltro {
-  border: 0;
-  padding: 0;
-  margin: 0;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--e2);
-}
-
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--e2);
-}
-
-/*
- * Una ciudad marcada.
- *
- * Misma silueta que los tres cortes de arriba —pildora, cifra dentro, lo
- * elegido sube a nube con borde— porque es la misma operacion: elegir que filas
- * se ven. Otra forma diria que hace algo de otra clase.
- */
-.chip,
-.chipMarcado {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--e2);
-  min-height: 44px;
-  padding: 0 var(--e3);
-  font: inherit;
-  font-size: var(--t-menor);
-  border: 1px solid var(--regla2);
-  border-radius: var(--radio-control);
-  background: var(--nube);
-  color: var(--tinta2);
-  cursor: pointer;
-  white-space: nowrap;
-  transition:
-    border-color 160ms var(--salida),
-    color 160ms var(--salida);
-}
-
-.chip:hover {
-  border-color: var(--tinta2);
-  color: var(--tinta);
-}
-
-/* Lo marcado se lee en el borde y en el peso, no en un color: la tabla y sus
-   controles se tienen que poder leer en gris. */
-.chipMarcado {
-  border-color: var(--tinta);
-  border-width: 2px;
-  color: var(--tinta);
-  font-weight: 700;
-}
-
-.rango {
-  display: flex;
-  align-items: center;
-  gap: var(--e2);
-  color: var(--tinta3);
-}
-
-.cifraFiltro {
-  width: 6.5rem;
-  min-height: 44px;
-  padding: 0 var(--e3);
-  background: var(--nube);
-  color: var(--tinta);
-  border: 1px solid var(--borde-control);
-  font: inherit;
-  font-size: var(--t-base);
-  font-variant-numeric: tabular-nums;
-  border-radius: var(--radio-menor);
-}
-
-.cifraFiltro:hover {
-  border-color: var(--tinta2);
-}
-
-.pistaFiltro {
-  font-size: var(--t-menor);
-  color: var(--tinta3);
-  line-height: 1.4;
-  max-width: var(--medida-corta);
-}
-
-/*
- * Por que una columna entera no sale: ni ciudad, ni pretension.
- *
- * En prosa y en el sitio donde estaria su control, no en un control apagado: un
- * desplegable vacio o un rango que no puede devolver a nadie se leen como una
- * pantalla rota, y esto no esta roto. La ciudad solo se le pide a quien crea
- * cuenta desde ahora; la pretension viaja bajo un permiso que casi nadie tiene.
- */
-.porQueNoSale {
-  font-size: var(--t-menor);
-  line-height: 1.45;
-  color: var(--tinta2);
-  max-width: var(--medida-corta);
-}
-
 .quitarFiltros {
   composes: secundario from '../../estilos/piezas.module.css';
   font-size: var(--t-apoyo);
+}
+
+/*
+ * Calificar y descargar, a la derecha de la barra: son acciones sobre la
+ * tanda, no filtros, y el hueco que las separa lo dice.
+ */
+.accionesDeLaTanda {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--e3);
+  margin-left: auto;
+}
+
+/*
+ * Lo que en el teléfono se recoge en «Más». En escritorio el envoltorio no
+ * existe para la maquetación —sus hijos son de la fila— y «Más» no se pinta.
+ */
+.enMas {
+  display: contents;
+}
+
+.enMas.accionesDeLaTanda {
+  display: flex;
+}
+
+.mas {
+  composes: secundario from '../../estilos/piezas.module.css';
+  font-size: var(--t-apoyo);
+}
+
+/*
+ * ⚠️ **Con `.filaFiltros` delante, no con `.mas` solo.** La pieza `secundario`
+ * trae `display: inline-flex` y en la hoja construida se escribe DESPUÉS que
+ * esta: a igual especificidad ganaba ella y «Más» se pintaba en escritorio,
+ * donde no abre nada (F-01).
+ */
+.filaFiltros .mas {
+  display: none;
+}
+
+.mas[aria-expanded='true'] {
+  background: var(--nube-hundida);
+  border-color: var(--tinta);
+}
+
+/* La casilla de la cabecera: la misma medida que las de cada fila. */
+.marcarTodo {
+  margin: 0;
+}
+
+/* El vacío que dejó un filtro: la frase y el botón que lo quita, juntos. */
+.vacioPorFiltro {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e3);
 }
 
 /*
@@ -2056,7 +1890,6 @@ th.columnaCifra {
 .descargar {
   composes: secundario from '../../estilos/piezas.module.css';
   font-size: var(--t-apoyo);
-  margin-left: auto;
 }
 
 .cuantasFiltradas {
@@ -2066,26 +1899,35 @@ th.columnaCifra {
   font-variant-numeric: tabular-nums;
 }
 
+/*
+ * En el teléfono arriba solo caben la búsqueda, «Filtros» y «Más»; «Columnas»
+ * y las acciones de la tanda se recogen dentro de «Más» y bajan a su propia
+ * línea al abrirlo.
+ */
 @media (max-width: 640px) {
   .filaFiltros {
-    flex-direction: column;
-    align-items: stretch;
+    align-items: flex-end;
   }
 
   .buscador {
     width: 100%;
   }
 
-  .descargar {
-    margin-left: 0;
+  .filaFiltros .mas {
+    display: inline-flex;
   }
 
-  /* En un telefono el flotante no cabe al lado de nada: vuelve al flujo. */
-  .cuerpoFiltros {
-    position: static;
-    min-width: 0;
-    max-width: none;
-    margin-top: var(--e2);
+  .enMas,
+  .enMas.accionesDeLaTanda {
+    display: none;
+  }
+
+  .filaFiltros[data-mas-abierto='true'] .enMas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--e2);
+    flex: 1 1 100%;
+    margin-left: 0;
   }
 }
 
@@ -2226,7 +2068,7 @@ th.columnaCifra {
   min-height: 48px;
   font-weight: 400;
 }
-.avance, .altaRequisito {
+.altaRequisito {
   align-items: flex-end;
 }
 .abrirCandidato {
@@ -2295,13 +2137,10 @@ th.columnaCifra {
     gap: var(--e2);
   }
   .campoFiltro {
-    flex: 1 1 100%;
+    flex: 1 1 9rem;
   }
   .buscador {
     width: 100%;
-  }
-  .selectorColumnas {
-    margin-left: auto;
   }
   .listaColumnas {
     right: 0;

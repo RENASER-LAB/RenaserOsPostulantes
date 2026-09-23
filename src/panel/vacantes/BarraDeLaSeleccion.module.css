@@ -1,0 +1,184 @@
+/*
+ * La barra de lo marcado.
+ *
+ * ⚠️ **`sticky` con `bottom: 0`, no `fixed`.** Se pega al borde inferior de la
+ * ventana mientras se recorre la tabla, y al llegar al final se queda en su
+ * sitio, debajo de todo lo del ranking: no tapa la última fila ni el pie de la
+ * página, y no hay que medir su alto para dejarle hueco. Solo el navegador
+ * decide dónde va; ningún scroll la vuelve a pintar ni toca la tabla.
+ *
+ * `z-index` por encima de la celda pegajosa del candidato (1–3) y por debajo del
+ * panel de filtros (8) y de la cabecera del panel (10).
+ */
+.barra {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  margin-top: var(--e4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+  padding: var(--e3) var(--e4);
+  background: var(--nube);
+  border: 1px solid var(--regla2);
+  border-radius: var(--radio);
+  /* La sombra responde a un estado —hay algo marcado que espera decisión—, y es
+     la de la nube: no hay fondo apagado del que despegarse. */
+  box-shadow: var(--sombra-nube);
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--e2) var(--e3);
+}
+
+/* La cifra de lo marcado y, si hay marcas escondidas, cómo soltarlas. */
+.linea {
+  flex: 1 1 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--e3);
+}
+
+/* Entera en una frase que se lee de una pieza. */
+.cuantas {
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  color: var(--tinta);
+  font-variant-numeric: tabular-nums;
+}
+
+/* «Soltar las ocultas»: un enlace de tinta subrayado, no un botón más. */
+.enlace {
+  align-self: center;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: var(--t-menor);
+  color: var(--tinta);
+  text-decoration: underline;
+  text-decoration-color: var(--regla2);
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}
+
+.enlace:hover:not(:disabled) {
+  text-decoration-color: currentColor;
+}
+
+.motivo {
+  flex: 1 1 18rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e1);
+  min-width: 0;
+  font-size: var(--t-menor);
+  font-weight: 600;
+  color: var(--tinta2);
+}
+
+/* 48 px y 16 px de letra: por debajo, iOS hace zoom al enfocar. */
+.entradaMotivo {
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  padding: 0 var(--e3);
+  background: var(--nube);
+  color: var(--tinta);
+  border: 1px solid var(--borde-control);
+  border-radius: var(--radio-menor);
+  font: inherit;
+  font-size: var(--t-base);
+  font-weight: 400;
+}
+
+.botones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e2);
+}
+
+/* El único violeta de la pantalla: avanzar es «te toca a ti». */
+.avanzar {
+  composes: acentoMenor from '../../estilos/piezas.module.css';
+}
+
+.soltar {
+  composes: secundario from '../../estilos/piezas.module.css';
+  font-size: var(--t-apoyo);
+}
+
+/* ---------- El resultado de la última tanda ---------- */
+
+.resultado,
+.resultadoConFallos {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e1);
+  padding: var(--e2) var(--e7) var(--e2) var(--e3);
+  border-radius: var(--radio-menor);
+  background: var(--nube-hundida);
+  font-size: var(--t-apoyo);
+  line-height: 1.5;
+  color: var(--tinta2);
+}
+
+/* Alguien no pasó: el filete dice «fallo» en la forma, sin teñir la prosa. */
+.resultadoConFallos {
+  border-left: 2px solid var(--mal);
+}
+
+.actualizando {
+  font-size: var(--t-menor);
+  color: var(--tinta3);
+}
+
+.cerrarResultado {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  background: none;
+  color: var(--tinta2);
+  font-size: var(--t-destacado);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.cerrarResultado:hover {
+  color: var(--tinta);
+}
+
+/* ---------- En el teléfono ---------- */
+
+@media (max-width: 640px) {
+  /*
+   * A lo ancho y en dos filas: el motivo arriba, los botones debajo, cada uno
+   * con sus 44 px para el pulgar. La tabla no queda tapada: la barra ocupa su
+   * sitio al final de la sección.
+   */
+  .barra {
+    padding-bottom: max(var(--e3), env(safe-area-inset-bottom));
+  }
+
+  .motivo {
+    flex-basis: 100%;
+  }
+
+  .botones {
+    flex: 1 1 100%;
+  }
+
+  .botones > * {
+    flex: 1 1 auto;
+  }
+}

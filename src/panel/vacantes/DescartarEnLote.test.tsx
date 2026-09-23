@@ -46,7 +46,7 @@ function montar({
   )
 }
 
-const botonDeLaMesa = () => screen.getByRole('button', { name: /Descartar a|Marca a quienes/ })
+const botonDeLaMesa = () => screen.getByRole('button', { name: /^Descartar…$|Marca a quienes/ })
 const confirmar = () => screen.getByRole('button', { name: /^Descartar (y avisar|a \d+ sin)/ })
 
 beforeEach(() => {
@@ -65,6 +65,22 @@ describe('el botón de la mesa', () => {
 
   it('sin motivo escrito tampoco: el backend lo exige y la pantalla lo evita', () => {
     montar({ motivo: '   ' })
+    expect((botonDeLaMesa() as HTMLButtonElement).disabled).toBe(true)
+  })
+
+  it('dice «Descartar…»: los puntos avisan de que abre algo antes de actuar', () => {
+    montar()
+    expect(botonDeLaMesa().textContent).toBe('Descartar…')
+  })
+
+  /*
+    Mientras «Avanzar» trabaja, descartar a la misma tanda mandaría dos cosas
+    opuestas a la vez: la barra lo apaga desde fuera.
+  */
+  it('se apaga desde fuera mientras la otra acción de la barra trabaja', () => {
+    render(
+      <DescartarEnLote marcados={TRES} motivo="La vacante se cubrió." alTerminar={() => {}} deshabilitado />,
+    )
     expect((botonDeLaMesa() as HTMLButtonElement).disabled).toBe(true)
   })
 
@@ -157,5 +173,26 @@ describe('cuando alguno falla', () => {
     expect(resultado.textContent).toMatch(/Ana Ruiz/)
     expect(resultado.textContent).toMatch(/Cira Núñez/)
     expect(resultado.textContent).toMatch(/No se descartaron: Beto Salas/)
+  })
+
+  /*
+    Al terminar se sueltan las casillas y la barra que contiene el botón se va
+    con ellas: el resultado tiene que salir hacia quien sigue en pantalla.
+  */
+  it('el resultado viaja a quien lo pinta, con los que fallaron nombrados', async () => {
+    mover
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new ErrorApi(409, 'Ya terminó su recorrido'))
+      .mockResolvedValueOnce(undefined)
+    const alTerminar = vi.fn()
+    montar({ alTerminar })
+    fireEvent.click(botonDeLaMesa())
+    fireEvent.click(confirmar())
+
+    await waitFor(() => expect(alTerminar).toHaveBeenCalledOnce())
+    const dicho = alTerminar.mock.calls[0]![0] as string
+    expect(dicho).toMatch(/Se descartó a Ana Ruiz, Cira Núñez/)
+    expect(dicho).toMatch(/No se descartaron: Beto Salas \(Ya terminó su recorrido\)/)
+    expect(alTerminar.mock.calls[0]![1]).toBe(true)
   })
 })

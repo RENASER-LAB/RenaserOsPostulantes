@@ -706,6 +706,16 @@ export interface FilaRanking {
    * entonces llega `undefined`, no `null`. Quien lo lea comprueba los dos.
    */
   estadoPrueba?: EstadoPrueba | null
+  /**
+   * Cuando se postulo: `postulacion.creado_en`, tal cual. Es lo que filtra la
+   * tabla por fecha de postulacion.
+   *
+   * ⚠️ **Puede faltar.** Un registro antiguo la trae nula y un backend anterior
+   * al cambio ni manda el campo (`undefined`). En los dos casos esa fila queda
+   * fuera de un filtro de fecha puesto —no se le inventa un dia— y el control lo
+   * dice. Quien lo lea comprueba con `!= null`.
+   */
+  postuladoEn?: FechaIso | null
 }
 
 /**

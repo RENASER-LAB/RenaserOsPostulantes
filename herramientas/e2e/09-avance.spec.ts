@@ -14,23 +14,20 @@ test.describe('Regresión · avanzar de etapa', () => {
     await irAVacante(page, VACANTES.SIN_PRETENSION)
     await corte(page, 'Toda la tanda').click()
 
-    const avanzar = page.getByRole('button', { name: /Avanzar a|Marca a quienes avanzan/ })
-    // Sin nadie marcado, el botón lo dice y está apagado.
-    await expect(avanzar).toHaveText('Marca a quienes avanzan')
-    await expect(avanzar).toBeDisabled()
+    const avanzar = page.getByRole('button', { name: /^Avanzar a/ })
+    // Sin nadie marcado no hay barra: ni botón que pulsar, ni motivo que escribir.
+    await expect(avanzar).toHaveCount(0)
+    await expect(page.getByLabel('Motivo (obligatorio)')).toHaveCount(0)
 
     const fila = filasDelRanking(page).filter({ hasText: 'Diego Salazar Núñez' })
     await fila.locator('input[type="checkbox"]').check()
-    // Marcado pero sin motivo: sigue apagado.
+    // Marcado pero sin motivo: la barra sale y el botón sigue apagado.
     await expect(avanzar).toHaveText('Avanzar a 1 persona')
     await expect(avanzar).toBeDisabled()
 
-    // ⚠️ «Motivo (obligatorio)» y no «Motivo del avance (obligatorio)»: la barra dejó de ser
-    // solo la de avanzar cuando aprendió a descartar a la tanda marcada (PR #42, 7b0eb66), y
-    // el texto se acortó con ella. Este spec se quedó con el nombre viejo y desde entonces
-    // moría aquí por tiempo de espera, sin llegar nunca a comprobar el avance que da nombre
-    // al archivo.
-    await page.getByPlaceholder('Motivo (obligatorio)').fill('Verificación QA de la rama')
+    // ⚠️ El motivo vive ahora en la barra de lo marcado, con su rótulo «Motivo
+    // (obligatorio)»; se busca por el rótulo y no por el texto de ayuda del campo.
+    await page.getByLabel('Motivo (obligatorio)').fill('Verificación QA de la rama')
     await expect(avanzar).toBeEnabled()
     await avanzar.click()
 
@@ -39,8 +36,8 @@ test.describe('Regresión · avanzar de etapa', () => {
     await expect(resultado).toBeVisible({ timeout: 20_000 })
     const texto = (await resultado.textContent()) ?? ''
     expect(texto).toContain('Diego Salazar Núñez')
-    // Y la tanda se refresca sola: el botón vuelve a su estado de reposo.
-    await expect(avanzar).toHaveText('Marca a quienes avanzan')
+    // Y la tanda se refresca sola: las marcas se sueltan y la barra de acciones se va.
+    await expect(avanzar).toHaveCount(0)
     console.log('[AVANCE]', texto)
   })
 })
