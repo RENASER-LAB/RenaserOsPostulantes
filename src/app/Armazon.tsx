@@ -59,15 +59,62 @@ function TituloDeLaPagina() {
 }
 
 function ArribaAlCambiarDePagina() {
-  const { pathname } = useLocation()
+  const { pathname, hash } = useLocation()
 
   // Ojo con el cuerpo entre llaves: si se escribe `useEffect(() => window.
   // scrollTo(0, 0), ...)`, el efecto devuelve lo que devuelva `scrollTo`, y
   // React se lo queda como funcion de limpieza. Al desmontar intenta llamarlo
   // y revienta con «destroy is not a function», tumbando la pagina entera.
   useEffect(() => {
+    // Con ancla manda `LlevarAlAncla`. Sin esta guarda los dos se pelean: al
+    // llegar de otra pantalla a `/#vacantes-abiertas` este efecto sube a cero
+    // y deja al visitante arriba del todo, que es justo donde no queria ir.
+    if (hash) return
     window.scrollTo(0, 0)
-  }, [pathname])
+  }, [pathname, hash])
+
+  return null
+}
+
+/**
+ * Desplaza hasta el ancla de la direccion.
+ *
+ * ⚠️ **Hace falta escribirlo: con `<Link>` el navegador no lo hace solo.** Un
+ * enlace normal a `#algo` lo resuelve el navegador, pero React Router navega
+ * con `pushState`, y `pushState` no dispara el salto al ancla. Sin esto,
+ * «Vacantes» cambiaba la direccion a `/#vacantes-abiertas` y la pagina se
+ * quedaba exactamente donde estaba.
+ *
+ * Va contra `key` y no contra `hash`: `key` cambia en cada navegacion aunque
+ * el destino sea el mismo, asi que pulsar «Vacantes» dos veces seguidas vuelve
+ * a llevar abajo. Contra `hash`, la segunda pulsacion no hacia nada.
+ *
+ * El `requestAnimationFrame` espera al primer pintado: al llegar de otra
+ * pantalla el destino todavia no esta en el documento cuando corre el efecto.
+ */
+function LlevarAlAncla() {
+  const { hash, key } = useLocation()
+
+  useEffect(() => {
+    if (!hash) return
+
+    const id = decodeURIComponent(hash.slice(1))
+
+    // Quien pidio menos movimiento salta, no se desliza. El bloque de
+    // `prefers-reduced-motion` de `mundo.css` aqui no llega: solo apaga
+    // animaciones y transiciones de CSS, y esto es una opcion de JavaScript
+    // que ninguna hoja puede sobrescribir.
+    const quieto = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+    const cuadro = requestAnimationFrame(() => {
+      const destino = document.getElementById(id)
+      // `scroll-margin-top` en el destino es lo que impide que la cabecera,
+      // que flota encima, le tape el titulo al llegar.
+      destino?.scrollIntoView({ behavior: quieto ? 'auto' : 'smooth', block: 'start' })
+    })
+
+    return () => cancelAnimationFrame(cuadro)
+  }, [hash, key])
 
   return null
 }
@@ -116,6 +163,7 @@ export function Armazon() {
   return (
     <div className={`${estilos.armazon} ${justo ? estilos.armazonJusto : ''}`}>
       <ArribaAlCambiarDePagina />
+      <LlevarAlAncla />
       <TituloDeLaPagina />
 
       <header className={`${estilos.cabecera} ${posada ? estilos.posada : ''}`}>

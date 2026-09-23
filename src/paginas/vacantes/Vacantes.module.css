@@ -332,6 +332,20 @@
   margin-inline: auto;
 }
 
+/*
+ * El aire que se deja arriba al llegar por el ancla `#vacantes-abiertas`.
+ *
+ * La cabecera flota encima del contenido, asi que un salto al titulo lo deja
+ * justo debajo de ella, medio tapado. `scroll-margin-top` no mueve nada en
+ * reposo: solo le dice al navegador donde parar al desplazarse hasta aqui.
+ *
+ * Son los 70 px medidos de la barra mas un respiro, para que el titulo no
+ * quede pegado a su borde inferior.
+ */
+.cabeceraSeccion h2 {
+  scroll-margin-top: calc(var(--alto-cabecera) + var(--e5));
+}
+
 /* ---------- las vacantes ---------- */
 
 .lista {
