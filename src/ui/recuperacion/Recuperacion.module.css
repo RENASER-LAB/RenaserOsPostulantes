@@ -1,0 +1,155 @@
+/*
+ * «Me olvidé mi contraseña», en el portal y en el panel.
+ *
+ * Una sola hoja para las dos puertas porque es el mismo formulario: el portal y
+ * el panel ya comparten los campos (`Campo`) y los botones (`piezas`). La
+ * columna, la marca y el pie son de cada pantalla; aquí solo lo de dentro.
+ */
+
+.bajada {
+  font-size: var(--t-base);
+  line-height: 1.55;
+  color: var(--tinta2);
+  margin-top: var(--e3);
+  max-width: var(--medida-corta);
+}
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e5);
+  margin-top: var(--e6);
+}
+
+/* `fieldset` nativo para apagar el formulario mientras se envía: un solo
+   atributo deshabilita los dos campos, sus ojos y el botón. Sin marco propio. */
+.grupo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e5);
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+
+.enviar {
+  composes: acentoGrande from '../../estilos/piezas.module.css';
+  align-self: flex-start;
+}
+
+/* El fallo del envío, arriba del botón y no como aviso flotante: si desaparece
+   solo, quien lee despacio no llega a enterarse. Mismo trazo que el de entrar. */
+.fallo {
+  display: flex;
+  gap: var(--e3);
+  border: 1px solid var(--mal-regla);
+  background: var(--mal-bruma);
+  padding: var(--e4);
+  font-size: var(--t-apoyo);
+  line-height: 1.5;
+  color: var(--mal);
+  border-radius: var(--radio);
+  margin: 0;
+}
+
+.fallo::before {
+  content: '';
+  flex: none;
+  width: 3px;
+  background: var(--mal);
+}
+
+/* ---------- Enviado ---------- */
+
+.mensaje {
+  font-size: var(--t-base);
+  line-height: 1.55;
+  color: var(--tinta2);
+  margin-top: var(--e3);
+  max-width: var(--medida-corta);
+}
+
+/* El foco llega aquí al enviar, para que el lector de pantalla lo lea; el anillo
+   no hace falta en un párrafo que no se puede pulsar. */
+.mensaje:focus,
+.titular:focus {
+  outline: none;
+}
+
+.para {
+  margin-top: var(--e3);
+  font-size: var(--t-apoyo);
+  color: var(--tinta3);
+  overflow-wrap: anywhere;
+}
+
+.para b {
+  color: var(--tinta2);
+  font-weight: 600;
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e3);
+  margin-top: var(--e6);
+}
+
+/* Las dos son secundarias: después de pedir el enlace lo que le toca a la
+   persona es abrir su correo, no pulsar nada aquí. */
+.secundario {
+  composes: secundario from '../../estilos/piezas.module.css';
+  font-variant-numeric: tabular-nums;
+}
+
+.enlaceSecundario {
+  composes: secundario from '../../estilos/piezas.module.css';
+  align-self: flex-start;
+  margin-top: var(--e6);
+}
+
+/* ---------- Enlace que no sirve ---------- */
+
+.titular {
+  overflow-wrap: anywhere;
+}
+
+/* ---------- El aviso de éxito en la pantalla de entrar ---------- */
+
+/*
+ * Verde de hecho sobre su bruma: «lo confirmado», que es lo único que significa
+ * en este mundo. El filete a la izquierda repite la forma del fallo, así el
+ * estado se lee también con la pantalla en gris.
+ */
+.exito {
+  display: flex;
+  align-items: center;
+  gap: var(--e3);
+  border: 1px solid var(--bien);
+  background: var(--bien-bruma);
+  padding: var(--e4);
+  font-size: var(--t-prosa);
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--bien);
+  border-radius: var(--radio);
+  margin: var(--e5) 0 0;
+}
+
+.exito:focus {
+  outline: none;
+}
+
+@media (max-width: 640px) {
+  .enviar,
+  .secundario,
+  .enlaceSecundario {
+    width: 100%;
+    align-self: stretch;
+  }
+
+  .acciones {
+    flex-direction: column;
+  }
+}

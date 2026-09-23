@@ -14,6 +14,11 @@ export const patrones = {
   acceso: '/acceso',
   registro: '/registro',
   clave: '/clave',
+  /**
+   * Elegir la contraseña nueva con el enlace del correo. El token llega en la
+   * query y la pantalla lo quita de la barra al cargar (`replace`).
+   */
+  restablecer: '/restablecer',
   perfil: '/perfil',
   procesos: '/procesos',
   proceso: '/procesos/:uuid',
@@ -49,6 +54,18 @@ export const patrones = {
    */
   adminInvitacion: '/admin/invitacion',
   invitacionSuelta: '/invitacion',
+  /** Pedir el enlace de contraseña nueva del panel. Sin la línea de talento. */
+  adminClave: '/admin/clave',
+  /**
+   * Elegir la contraseña nueva del panel.
+   *
+   * ⚠️ **Aquí no hay ruta suelta como la de `/invitacion`, y no puede haberla.**
+   * `/restablecer` a secas es la pantalla del candidato; por eso el backend arma
+   * el enlace del equipo con `/admin/restablecer` siempre, lleve o no
+   * `renaser.panel.url` el `/admin`. Un enlace de equipo nunca aterriza en el
+   * portal.
+   */
+  adminRestablecer: '/admin/restablecer',
   adminVacantes: '/admin',
   /**
    * Las vacantes archivadas, en su propia direccion.
@@ -89,8 +106,10 @@ export const rutas = {
   /** El registro recuerda a que vacante se estaba postulando, para volver despues. */
   registro: (vacanteId?: number | string) =>
     vacanteId === undefined ? '/registro' : `/registro?vacante=${vacanteId}`,
-  /** La contrasena olvidada. No restablece: explica y da la salida que si existe. */
+  /** La contraseña olvidada: pedir el enlace para elegir una nueva. */
   clave: () => '/clave',
+  /** Solo para pruebas y documentación: el enlace lo arma el backend. */
+  restablecer: (token: string) => `/restablecer?token=${encodeURIComponent(token)}`,
   perfil: () => '/perfil',
   procesos: () => '/procesos',
   proceso: (uuid: string) => `/procesos/${uuid}`,
@@ -119,6 +138,10 @@ export const rutas = {
   // ---------- El panel del equipo ----------
   adminEntrar: () => '/admin/entrar',
   adminInvitacion: (token: string) => `/admin/invitacion?token=${encodeURIComponent(token)}`,
+  adminClave: () => '/admin/clave',
+  /** Solo para pruebas y documentación: el enlace lo arma el backend. */
+  adminRestablecer: (token: string) =>
+    `/admin/restablecer?token=${encodeURIComponent(token)}`,
   adminVacantes: () => '/admin',
   adminVacantesArchivadas: () => '/admin/archivadas',
   adminVacante: (id: number | string) => `/admin/vacantes/${id}`,

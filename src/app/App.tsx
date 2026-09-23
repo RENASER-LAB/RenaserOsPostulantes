@@ -16,6 +16,7 @@ import { Ingresar } from '@/paginas/cuenta/Ingresar'
 import { Acceso } from '@/paginas/cuenta/Acceso'
 import { Registro } from '@/paginas/cuenta/Registro'
 import { Clave } from '@/paginas/cuenta/Clave'
+import { Restablecer } from '@/paginas/cuenta/Restablecer'
 import { Postular } from '@/paginas/postular/Postular'
 import { Perfil } from '@/paginas/perfil/Perfil'
 import { Procesos } from '@/paginas/procesos/Procesos'
@@ -33,6 +34,8 @@ import { ProveedorSesionPanel } from '@/panel/Sesion'
 import { ArmazonPanel } from '@/panel/Armazon'
 import { EntrarPanel } from '@/panel/entrar/Entrar'
 import { InvitacionPanel } from '@/panel/entrar/Invitacion'
+import { ClavePanel } from '@/panel/entrar/ClavePanel'
+import { RestablecerPanel } from '@/panel/entrar/RestablecerPanel'
 import { VacantesPanel } from '@/panel/vacantes/Vacantes'
 import { VacantesArchivadas } from '@/panel/vacantes/VacantesArchivadas'
 import { VacantePanelDetalle } from '@/panel/vacantes/Vacante'
@@ -94,6 +97,29 @@ export function App() {
                     traga la direccion y el token se pierde sin decir nada.
                   */}
                   <Route path={patrones.invitacionSuelta} element={<HaciaLaInvitacion />} />
+                  {/*
+                    La contraseña olvidada del panel: pedir el enlace y elegir la
+                    nueva. Sueltas y fuera de ArmazonPanel por lo mismo que la
+                    invitación: quien llega no tiene sesión. Sin ruta suelta para
+                    `/restablecer`: esa es la del candidato, y el backend arma el
+                    enlace del equipo siempre con `/admin`.
+                  */}
+                  <Route
+                    path={patrones.adminClave}
+                    element={
+                      <ProveedorSesionPanel>
+                        <ClavePanel />
+                      </ProveedorSesionPanel>
+                    }
+                  />
+                  <Route
+                    path={patrones.adminRestablecer}
+                    element={
+                      <ProveedorSesionPanel>
+                        <RestablecerPanel />
+                      </ProveedorSesionPanel>
+                    }
+                  />
                   <Route
                     element={
                       <ProveedorSesionPanel>
@@ -123,6 +149,8 @@ export function App() {
                     <Route path={patrones.acceso} element={<Acceso />} />
                     <Route path={patrones.registro} element={<Registro />} />
                     <Route path={patrones.clave} element={<Clave />} />
+                    {/* El enlace del correo de «me olvidé mi contraseña». */}
+                    <Route path={patrones.restablecer} element={<Restablecer />} />
                     {/* La politica, sin sesion: Play exige poder leerla sin cuenta. */}
                     <Route path={patrones.politica} element={<PoliticaPublica />} />
 

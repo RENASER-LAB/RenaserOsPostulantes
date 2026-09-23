@@ -365,4 +365,35 @@ siembra en el clon sus propias vacantes, una plantilla de prueba, los candidatos
 y una cuenta de panel de solo lectura, y lo retira al terminar. Necesita las variables de
 [TRABAJAR-EN-LOCAL.md](TRABAJAR-EN-LOCAL.md).
 
+### ¿Olvidaste tu contraseña? (22/09)
+
+Antes, quien olvidaba su contraseña del panel solo podía pedir que lo invitaran de nuevo. Ahora
+`/admin/entrar` tiene **«¿Olvidaste tu contraseña?»** debajo del botón, y el recorrido es el
+mismo que el del candidato (ver [02-QUE-VE-EL-CANDIDATO.md](02-QUE-VE-EL-CANDIDATO.md), «Si
+olvidó la contraseña»), con sus propias pantallas y sus propias llamadas:
+
+| Paso | Pantalla | Llamada |
+|---|---|---|
+| Pedir el enlace con el correo | `/admin/clave` (`ClavePanel.tsx`) | `POST /panel/auth/recuperacion` |
+| Elegir la contraseña nueva, **mínimo 12** | `/admin/restablecer?token=…` (`RestablecerPanel.tsx`) | `POST /panel/auth/restablecer` |
+| Volver a entrar, con «✓ Contraseña cambiada exitosamente» encima | `/admin/entrar` | — |
+
+El formulario, los textos y las reglas son **los mismos del portal** y viven en
+`src/ui/recuperacion/`: el mensaje de enviado es idéntico exista o no la cuenta, «Reenviar
+enlace» espera 60 segundos, el token sale de la barra al cargar y no se abre sesión al terminar.
+Lo que cambia es el mínimo (12, como la invitación) y que aquí no hay línea de talento: quien no
+recibe el correo o tiene la cuenta desactivada sigue pidiendo a su administrador que lo invite
+de nuevo, y la caja «¿No puedes entrar?» lo dice.
+
+⚠️ **El enlace del correo de equipo cae siempre en `/admin/restablecer`**, lleve o no `/admin`
+la dirección del panel configurada en el backend: `/restablecer` a secas es la pantalla del
+candidato. Si el mismo correo tiene cuenta en dos empresas, llegan dos correos, uno por cuenta,
+y cada enlace cambia solo la contraseña de la suya.
+
+Comprobarlo: `npx playwright test herramientas/e2e/33-recuperar-contrasena.spec.ts`, y del 34 al
+36 (móvil, bordes y regresiones). ⚠️ **El 33, el 35 y el 36 escriben**: crean sus cuentas en el
+clon, leen el enlace del correo guardado en la base (`correo_enviado`: el backend local no
+envía correo) y las retiran al terminar. El 34 no escribe nada. Necesitan las variables de
+[TRABAJAR-EN-LOCAL.md](TRABAJAR-EN-LOCAL.md).
+
 ---

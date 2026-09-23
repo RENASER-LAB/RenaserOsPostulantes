@@ -9,6 +9,8 @@ import type { Archivo } from '@/api/puerta'
 import type {
   AceptarInvitacionPanel,
   LoginPanel,
+  PedirRecuperacionPanel,
+  RestablecerClavePanel,
   CrearSolicitud,
   DesgloseEvaluacion,
   AreaPanel,
@@ -102,6 +104,26 @@ export const entrarAlPanel = (datos: LoginPanel) =>
  */
 export const aceptarInvitacion = (datos: AceptarInvitacionPanel) =>
   pedir<SesionEquipo>('/auth/invitacion', { metodo: 'POST', cuerpo: datos, sinToken: true })
+
+/**
+ * Pedir el enlace de contraseña nueva del panel. 202 vacío siempre, exista o no
+ * la cuenta; si el correo tiene cuenta en varias empresas, llega un enlace por
+ * cada una.
+ */
+export const pedirRecuperacionPanel = (correo: string) =>
+  pedir<void>('/auth/recuperacion', {
+    metodo: 'POST',
+    cuerpo: { correo } satisfies PedirRecuperacionPanel,
+    sinToken: true,
+  })
+
+/**
+ * Elegir la contraseña nueva del panel con el token del enlace. No abre sesión.
+ * Sin token de sesión: un 401 aquí es «el enlace no sirve» y no debe cerrar la
+ * sesión de nadie.
+ */
+export const restablecerClavePanel = (datos: RestablecerClavePanel) =>
+  pedir<void>('/auth/restablecer', { metodo: 'POST', cuerpo: datos, sinToken: true })
 
 /**
  * El login de desarrollo. El backend lo mantiene para local y lo apaga en

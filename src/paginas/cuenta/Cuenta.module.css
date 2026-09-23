@@ -87,32 +87,6 @@
   color: var(--tinta2);
 }
 
-/* ---------- Dos salidas en paralelo (hoy solo `/clave`) ---------- */
-
-.caminos {
-  display: flex;
-  flex-direction: column;
-  gap: var(--e6);
-  margin-top: var(--e6);
-}
-
-.camino {
-  border: 1px solid var(--regla);
-  padding: var(--e5);
-  border-radius: var(--radio);
-}
-
-.tituloCamino {
-  margin: 0 0 var(--e2);
-}
-
-.queEs {
-  font-size: var(--t-prosa);
-  line-height: 1.55;
-  color: var(--tinta2);
-  max-width: var(--medida-corta);
-}
-
 @media (max-width: 640px) {
   .pagina {
     padding: var(--e5) var(--e4) var(--e7);

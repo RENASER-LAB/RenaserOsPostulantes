@@ -14,6 +14,49 @@ no se vuelve a subir el currículum. Lo del 07/09 se documentó en
 
 ---
 
+## «¿Olvidaste tu contraseña?» deja de ser un cartel (22-23/09/2026)
+
+Hasta ahora `/clave` solo explicaba que se escribiera a talento, y el panel no ofrecía nada: el
+backend no tenía la ruta. Ahora, en el portal y en el panel, se pide un enlace con el correo y
+con él se elige una contraseña nueva. Cómo funciona hoy está en
+[02-QUE-VE-EL-CANDIDATO.md](02-QUE-VE-EL-CANDIDATO.md), «Si olvidó la contraseña», y en
+[PANEL.md](PANEL.md), «¿Olvidaste tu contraseña?»; aquí va el porqué.
+
+- **Un solo juego de pantallas para las dos puertas** (`src/ui/recuperacion/`). Cada puerta
+  pone su llamada, su mínimo (8 o 12) y su pie; el mensaje neutro, la cuenta atrás y el
+  tratamiento del token son el mismo código, así que no pueden divergir.
+- **La línea de talento se queda en el portal.** A una cuenta de carga masiva no le llega
+  ningún enlace, y el mensaje de enviado no puede decírselo sin revelar qué correos tienen
+  cuenta.
+- **El aviso de éxito viaja en el estado de la navegación, no en la dirección**: un
+  `?clave=ok` se quedaría en marcadores diciendo algo que ya no es verdad.
+
+### Decisiones que aprobó el usuario
+
+- **Sin señuelo de tiempo.** La spec pedía imitar el del login para que «no existe» no respondiera
+  más rápido. En su lugar, el backend responde 202 al instante y hace el trabajo después: los
+  tiempos son iguales exista o no la cuenta.
+- **Topes de 3 enlaces por cuenta y hora y 30 solicitudes por IP y hora.** El de la IP se cuenta
+  en la memoria del servidor y se reinicia cuando arranca.
+- **«Vale por 60 minutos» va fijo en pantalla.** Si se cambia `minutos_vida_recuperacion` en el
+  backend, hay que cambiar el texto a mano.
+- **Recargar `/restablecer` después de que el token salió de la barra muestra «El enlace está
+  incompleto».** El enlace del correo sigue sirviendo si se vuelve a abrir.
+- **Tope de 72 bytes en la contraseña nueva**, el límite de BCrypt, con el mensaje «La contraseña
+  es demasiado larga. Usa como máximo 72 caracteres; las letras con tilde, la ñ y los emojis
+  cuentan por más de uno.». Crear cuenta y aceptar la invitación siguen sin él: está en
+  [PENDIENTES.md](PENDIENTES.md).
+
+### Cómo se comprueba
+
+951 pruebas del frontend en verde. E2E nuevos: `33-recuperar-contrasena` (los dos recorridos
+completos), `34-recuperar-contrasena-movil` (no escribe), `35-recuperar-contrasena-bordes` y
+`36-recuperar-contrasena-regresiones`. Los que escriben leen el enlace de `correo_enviado`,
+porque el backend local no envía correo. **Falta la prueba con SMTP real**: pedir el enlace al
+correo propio, ver que llega, que abre la pantalla correcta y que después se entra con la nueva.
+
+---
+
 ## Corregir una vacante desde la lista, y el sueldo sin correo (19-20/09/2026)
 
 El backend tenía el `PUT` de la vacante y la lista no ofrecía editar. Ahora cada fila en
