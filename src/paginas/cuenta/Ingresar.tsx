@@ -9,6 +9,9 @@
  * token igual que antes, y quien llega por ese enlace entra sin pasar por aquí.
  * Lo que ya no ocurre es que alguien que llegó por esa vía y aterrizó en esta
  * pantalla se entere de dónde buscar su correo.
+ *
+ * Al volver de `/restablecer` con la contraseña cambiada, el aviso va encima
+ * del formulario (`AvisoClaveCambiada`) y el foco se posa en él.
  */
 
 import { useState, type FormEvent } from 'react'
@@ -17,6 +20,7 @@ import { z } from 'zod'
 import { useSesion } from '@/app/Sesion'
 import { rutas } from '@/rutas'
 import { Campo } from '@/ui/campos/Campo'
+import { AvisoClaveCambiada } from '@/ui/recuperacion/AvisoClaveCambiada'
 import estilos from './Cuenta.module.css'
 
 const Datos = z.object({
@@ -78,6 +82,8 @@ export function Ingresar() {
   return (
     <div className={estilos.pagina}>
       <h1>Entra a tu proceso.</h1>
+
+      <AvisoClaveCambiada />
 
       {/*
         Sin caja alrededor y sin subtítulo encima: con un solo camino, el

@@ -8,26 +8,21 @@
  * invitación de alguien que ya está dentro. Una cuenta de equipo ve los datos
  * de mucha gente, así que no puede crearse sola.
  *
- * ⚠️ **Tampoco hay recuperación de contraseña, y esta pantalla no la finge.**
- * El backend no tiene ninguna ruta para eso. Ofrecer un «te mandamos un enlace»
- * que no manda nada es peor que decir la verdad: quien lo pulse se queda
- * esperando un correo que no existe. Lo que sí funciona —pedirle a su
- * administrador que lo invite de nuevo— está escrito abajo.
- *
- * La ruta que falta, para el día que exista:
- *
- *     POST /panel/auth/recuperacion  { correo }  → manda un enlace de un solo
- *     uso que canjea, como la invitación, en POST /panel/auth/invitacion.
- *     La tubería del enlace ya está construida entera; le falta quien la dispare.
+ * **La contraseña olvidada** tiene su enlace debajo del formulario: lleva a
+ * `/admin/clave`, que manda por correo un enlace de un solo uso a
+ * `/admin/restablecer`. Al volver de allí con la contraseña cambiada, esta
+ * pantalla enseña el aviso encima (`AvisoClaveCambiada`). Lo que queda escrito
+ * abajo es para cuando eso no basta: cuenta desactivada o correo que no llega.
  */
 
 import { useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { z } from 'zod'
 import { ErrorApi } from '@/panel/api/cliente'
 import { rutas } from '@/rutas'
 import { Marca } from '@/ui/Marca'
 import { Campo } from '@/ui/campos/Campo'
+import { AvisoClaveCambiada } from '@/ui/recuperacion/AvisoClaveCambiada'
 import { useSesionPanel } from '../Sesion'
 import { useTituloDelPanel } from '../titulo'
 import estilos from './Entrar.module.css'
@@ -143,6 +138,8 @@ export function EntrarPanel() {
         proceso. Es la entrada del equipo, no la de quien postula.
       </p>
 
+      <AvisoClaveCambiada />
+
       <form className={estilos.formulario} onSubmit={alEnviar} noValidate>
         <Campo
           etiqueta="Correo"
@@ -173,13 +170,17 @@ export function EntrarPanel() {
         </button>
       </form>
 
+      <p className={estilos.olvidada}>
+        <Link to={rutas.adminClave()}>¿Olvidaste tu contraseña?</Link>
+      </p>
+
       <section className={estilos.camino}>
         <h2 className={estilos.tituloCamino}>¿No puedes entrar?</h2>
         <p className={estilos.queEs}>
-          Todavía no podemos restablecer una contraseña desde aquí. Si la perdiste,{' '}
-          <b>pídele a quien administra tu equipo que te invite de nuevo</b>: el enlace del
-          correo te deja poner una contraseña nueva y entras directo, sin perder nada de lo
-          que ya estaba a tu nombre.
+          Si olvidaste tu contraseña, pide un enlace para elegir una nueva. Si el correo no
+          llega o tu cuenta está desactivada,{' '}
+          <b>pídele a quien administra tu equipo que te invite de nuevo</b>: no pierdes nada
+          de lo que ya estaba a tu nombre.
         </p>
         <p className={estilos.queEs}>
           Las cuentas del panel <b>solo se crean por invitación</b>. Si nunca has tenido

@@ -35,6 +35,20 @@ export interface AceptarInvitacionPanel {
   contrasena: string
 }
 
+/** Pedir el enlace de contraseña nueva del panel. `DtosSeguridad.PedirRecuperacion`. */
+export interface PedirRecuperacionPanel {
+  correo: string
+}
+
+/**
+ * Elegir la contraseña nueva del panel. `DtosSeguridad.RestablecerClave`: doce
+ * caracteres como mínimo, como la invitación.
+ */
+export interface RestablecerClavePanel {
+  token: string
+  contrasena: string
+}
+
 // ---------- Vacantes ----------
 
 export interface VacantePanel {
