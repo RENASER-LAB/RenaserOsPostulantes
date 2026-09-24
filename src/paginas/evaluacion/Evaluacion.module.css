@@ -18,9 +18,7 @@
  */
 
 .pagina {
-  max-width: var(--ancho);
-  margin: 0 auto;
-  padding: var(--e4) var(--e5) var(--e8);
+  composes: hoja from '../../estilos/pagina.module.css';
 }
 
 .volver {
@@ -331,8 +329,18 @@
   color: var(--tinta2);
 }
 
-.estadoRespuesta.pendiente {
+/*
+ * El rojo solo para el fallo real. «Guardando…» se queda en la tinta de siempre:
+ * es un estado que se resuelve solo y no pide nada a quien responde.
+ */
+.estadoRespuesta.fallo {
   color: var(--mal);
+  font-weight: 600;
+}
+
+/* Lo que le falta al candidato, no una averia nuestra. */
+.estadoRespuesta.duda {
+  color: var(--duda-tinta);
   font-weight: 600;
 }
 
@@ -369,12 +377,6 @@
   border-radius: var(--radio);
 }
 
-.aviso::before {
-  content: '';
-  flex: none;
-  width: 3px;
-  background: var(--regla2);
-}
 
 .aviso.malo {
   border-color: var(--mal-regla);
@@ -382,9 +384,6 @@
   color: var(--mal);
 }
 
-.aviso.malo::before {
-  background: var(--mal);
-}
 
 .enlaceAviso {
   background: none;
@@ -536,7 +535,7 @@
 }
 
 .confirmacion::backdrop {
-  background: rgb(35 43 54 / 0.4);
+  background: var(--velo);
 }
 
 .confirmacionTitulo {

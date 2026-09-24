@@ -20,6 +20,7 @@ import { z } from 'zod'
 import { useSesion } from '@/app/Sesion'
 import { rutas } from '@/rutas'
 import { Campo } from '@/ui/campos/Campo'
+import { IconoAviso } from '@/ui/Iconos'
 import { AvisoClaveCambiada } from '@/ui/recuperacion/AvisoClaveCambiada'
 import estilos from './Cuenta.module.css'
 
@@ -80,54 +81,107 @@ export function Ingresar() {
   }
 
   return (
-    <div className={estilos.pagina}>
-      <h1>Entra a tu proceso.</h1>
-
-      <AvisoClaveCambiada />
-
+    <div className={estilos.paginaEntrar}>
       {/*
-        Sin caja alrededor y sin subtítulo encima: con un solo camino, el
-        recuadro no separaba de nada y el «Con tu correo y contraseña» repetía
-        lo que las dos etiquetas de debajo ya dicen. El titular nombra la
-        pantalla y el formulario empieza en la línea siguiente.
+        Todo dentro de la tarjeta, incluida la salida a crear cuenta: con el
+        boton de contorno fuera, la tarjeta terminaba en el boton negro y el otro
+        quedaba flotando debajo sin pertenecer a nada.
       */}
-      <form className={estilos.formulario} onSubmit={enviar} noValidate>
-        <Campo
-          etiqueta="Correo"
-          type="email"
-          autoComplete="email"
-          value={correo}
-          onChange={(e) => setCorreo(e.target.value)}
-          error={errores.correo}
-        />
-        <Campo
-          etiqueta="Contraseña"
-          type="password"
-          autoComplete="current-password"
-          value={contrasena}
-          onChange={(e) => setContrasena(e.target.value)}
-          error={errores.contrasena}
-        />
+      <div className={estilos.tarjetaEntrar}>
+        <h1 className={estilos.titularEntrar}>Entra a tu proceso.</h1>
+        <p className={estilos.bajadaEntrar}>Sigue donde lo dejaste.</p>
 
+        {/*
+          «✓ Contraseña cambiada exitosamente», al volver de `/restablecer`.
+
+          Va DENTRO de la tarjeta y no encima de ella, que es donde nacio: aqui
+          la tarjeta es la pantalla entera, y un aviso flotando fuera se lee como
+          de otro sitio. Se protege solo —sin el estado de navegacion devuelve
+          `null`—, asi que no hace falta envolverlo.
+        */}
+        <AvisoClaveCambiada />
+
+        {/*
+          El error va ARRIBA del formulario y no pegado al boton.
+
+          Lo que falla aqui no es un campo suelto —el servidor no dice cual de los
+          dos—, asi que no puede colgar de ninguno; y al pie solo se ve despues de
+          haber vuelto a mirar el formulario entero. Arriba se lee al volver del
+          envio, que es cuando aparece.
+        */}
         {fallo && (
-          <p className={estilos.falloEnvio} role="alert">
+          <p className={estilos.falloEntrar} role="alert">
+            <IconoAviso tamano={18} />
             {fallo}
           </p>
         )}
 
-        <button type="submit" className={estilos.enviar} disabled={entrando}>
-          {entrando ? 'Entrando…' : 'Entrar'}
-        </button>
-      </form>
+        <form className={estilos.formularioEntrar} onSubmit={enviar} noValidate>
+          <Campo
+            etiqueta="Correo"
+            type="email"
+            autoComplete="email"
+            value={correo}
+            onChange={(e) => setCorreo(e.target.value)}
+            error={errores.correo}
+          />
 
-      <p className={estilos.olvidada}>
-        <Link to={rutas.clave()}>¿Olvidaste tu contraseña?</Link>
-      </p>
+          <div className={estilos.grupoClave}>
+            <Campo
+              etiqueta="Contraseña"
+              type="password"
+              autoComplete="current-password"
+              value={contrasena}
+              onChange={(e) => setContrasena(e.target.value)}
+              error={errores.contrasena}
+            />
+            {/*
+              Pegada a su campo: quien la necesita esta mirando la contraseña.
+            */}
+            <p className={estilos.olvidadaEntrar}>
+              ¿Olvidaste tu contraseña?{' '}
+              {/*
+                El rotulo visible es corto porque la frase de al lado ya da el
+                contexto, pero un lector de pantalla lee los enlaces en lista y
+                fuera de ella «Restablecer» no dice de que. El nombre accesible se
+                sostiene solo; el visible se queda como en la referencia.
+              */}
+              <Link to={rutas.clave()} aria-label="Restablecer tu contraseña">
+                Restablecer
+              </Link>
+            </p>
+          </div>
 
-      <p className={estilos.pie}>
-        ¿Todavía no tienes cuenta?{' '}
-        <Link to={vacante ? rutas.registro(vacante) : rutas.registro()}>Créala aquí</Link>.
-      </p>
+          <button
+            type="submit"
+            className={estilos.enviarEntrar}
+            disabled={entrando}
+            data-rotulo={entrando ? 'Entrando…' : 'Entrar'}
+          >
+            {entrando ? 'Entrando…' : 'Entrar'}
+          </button>
+        </form>
+
+        {/*
+          Crear cuenta deja de ser un enlace en una frase y pasa a ser un boton de
+          contorno, separado por una regla que lo nombra.
+
+          No compiten: el negro es la accion de esta pantalla y el contorno es la
+          salida para quien no puede hacerla. La regla con texto en medio dice que
+          empieza otra cosa, que es lo que un enlace suelto no decia.
+        */}
+        <div className={estilos.separador}>
+          <span>¿Todavía no tienes cuenta?</span>
+        </div>
+
+        <Link
+          className={estilos.crearCuenta}
+          to={vacante ? rutas.registro(vacante) : rutas.registro()}
+          data-rotulo="Crear cuenta"
+        >
+          Crear cuenta
+        </Link>
+      </div>
     </div>
   )
 }

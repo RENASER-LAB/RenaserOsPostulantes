@@ -70,7 +70,16 @@ test.describe('Me olvidé mi contraseña', () => {
     page,
   }) => {
     await page.goto('/ingresar')
-    await page.getByRole('link', { name: '¿Olvidaste tu contraseña?' }).click()
+    /*
+     * ⚠️ **En el portal el enlace se llama «Restablecer tu contraseña», no como
+     * en el panel.** La pantalla de entrar del candidato está rediseñada: la
+     * frase «¿Olvidaste tu contraseña?» es texto y el enlace es solo
+     * «Restablecer», con `aria-label` que se sostiene solo cuando un lector de
+     * pantalla enumera los enlaces fuera de su frase. El de `/admin/entrar`, más
+     * abajo en este mismo archivo, sí es la frase entera: esa pantalla no entró
+     * al rediseño.
+     */
+    await page.getByRole('link', { name: 'Restablecer tu contraseña' }).click()
     await expect(page).toHaveURL(/\/clave$/)
     await expect(page.getByText(/talento@renaser\.pe/)).toBeVisible()
 

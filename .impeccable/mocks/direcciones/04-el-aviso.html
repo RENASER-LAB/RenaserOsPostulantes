@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EX · Portal del candidato — dirección «El Aviso»</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap" rel="stylesheet">
+<style>
+/*
+  THESIS: La pagina de avisos de empleo del diario, que es donde esta gente y
+    sus padres buscaron trabajo, compuesta de verdad: columnas con corondel,
+    cuerpo pequeno y denso, cabecera con fecha y edicion. Rechaza el heroe con
+    slogan y la fila de cinco tarjetas que entrega esta categoria.
+  OWN-WORLD: Papel de diario #EDEAE1, tinta #1A1A17 y un solo rojo de imprenta
+    #B02116 para el corondel maestro y la marca de nuevo. Zilla Slab en los
+    titulares del aviso, Source Serif 4 en el cuerpo a 15px. Corondeles de
+    pelo entre columnas; ningun recuadro con sombra en toda la pagina.
+  STORY: Quien entra reconoce la pagina antes de leerla, encuentra los cinco
+    avisos en la columna de la derecha y, si quiere saber como se elige aqui,
+    lee la columna editorial de la izquierda.
+  FIRST VIEWPORT: Cabecera con fecha, edicion y plazas; corondel rojo; a la
+    izquierda el articulo con capitular que explica el proceso entero en
+    prosa; a la derecha los cinco avisos compuestos como clasificados.
+  FORM: candidato 6 de la lista propia (el aviso clasificado del diario);
+    semilla 76fbfbe1, re-roll 2.
+  FINISH: unreviewed and undocumented is unfinished; this build ends with the
+    finish review, the verdict, DESIGN.md, and every shipping raster carrying
+    its provenance.
+*/
+
+:root {
+  --papel: #edeae1;
+  --papel-sombra: #e2ded2;
+  --tinta: #1a1a17;
+  --tinta2: #3d3b35;
+  --tinta3: #5d5a51;
+  --corondel: #b9b4a6;
+  --corondel-fuerte: #8b8577;
+  --rojo: #b02116;
+
+  --e1: 4px; --e2: 8px; --e3: 12px; --e4: 16px;
+  --e5: 24px; --e6: 32px; --e7: 44px; --e8: 64px;
+  --ancho: 1240px;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background-color: var(--papel);
+  background-image:
+    repeating-linear-gradient(0deg, rgba(26,26,23,0.018) 0 1px, transparent 1px 3px);
+  color: var(--tinta);
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-size: 15px;
+  line-height: 1.48;
+}
+
+::selection { background: var(--rojo); color: var(--papel); }
+:focus-visible { outline: 2px solid var(--rojo); outline-offset: 2px; }
+
+* { scrollbar-color: var(--corondel-fuerte) var(--papel-sombra); scrollbar-width: thin; }
+::-webkit-scrollbar { width: 12px; }
+::-webkit-scrollbar-track { background: var(--papel-sombra); }
+::-webkit-scrollbar-thumb { background: var(--corondel-fuerte); border: 3px solid var(--papel-sombra); }
+
+a { color: inherit; text-underline-offset: 2px; text-decoration-thickness: 1px; }
+
+.hoja { max-width: var(--ancho); margin-inline: auto; padding-inline: var(--e5); }
+
+.pie-linea {
+  font-family: 'Zilla Slab', Georgia, serif;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--tinta3);
+}
+
+/* ---------- cabecera del diario ---------- */
+
+.cabeza { padding-top: var(--e5); }
+.cabeza-alta {
+  display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between;
+  gap: var(--e3);
+  border-bottom: 1px solid var(--tinta);
+  padding-bottom: var(--e2);
+}
+.nombre-diario {
+  font-family: 'Zilla Slab', Georgia, serif;
+  font-size: clamp(30px, 4.6vw, 56px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  margin: 0;
+  display: flex; align-items: center; gap: var(--e3);
+}
+.nombre-diario svg { display: block; }
+.cabeza-datos { display: flex; flex-wrap: wrap; gap: var(--e5); }
+
+.corondel-maestro {
+  height: 5px;
+  background: var(--rojo);
+  margin-top: 3px;
+  transform-origin: left;
+  animation: entintar 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes entintar { from { transform: scaleX(0.04); } to { transform: scaleX(1); } }
+@media (prefers-reduced-motion: reduce) { .corondel-maestro { animation: none; } }
+
+.sumario {
+  display: flex; flex-wrap: wrap; gap: var(--e5);
+  padding: var(--e2) 0 var(--e3);
+  border-bottom: 1px solid var(--corondel-fuerte);
+}
+.sumario a { text-decoration: none; border-bottom: 2px solid transparent; padding-bottom: 2px; }
+.sumario a:hover { border-bottom-color: var(--tinta); }
+.sumario a[aria-current] { border-bottom-color: var(--rojo); }
+
+/* ---------- la plana ---------- */
+
+.plana {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: 0;
+  padding-block: var(--e6) var(--e8);
+}
+
+.articulo { padding-right: var(--e6); border-right: 1px solid var(--corondel); }
+
+.articulo h2 {
+  margin: 0 0 var(--e2);
+  font-family: 'Zilla Slab', Georgia, serif;
+  font-size: clamp(26px, 3vw, 38px);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+.firma { margin: 0 0 var(--e4); }
+.articulo p { margin: 0 0 var(--e4); }
+.articulo .entrada::first-letter {
+  float: left;
+  font-family: 'Zilla Slab', Georgia, serif;
+  font-size: 62px;
+  line-height: 0.82;
+  font-weight: 700;
+  padding: 4px 8px 0 0;
+}
+.articulo .destacado {
+  margin: var(--e5) 0;
+  padding: var(--e4) 0;
+  border-top: 3px double var(--tinta);
+  border-bottom: 3px double var(--tinta);
+  font-family: 'Zilla Slab', Georgia, serif;
+  font-size: 19px;
+  line-height: 1.3;
+  font-weight: 500;
+}
+.paso-en-prosa { font-weight: 700; font-family: 'Zilla Slab', Georgia, serif; }
+
+/* ---------- los avisos ---------- */
+
+.avisos { padding-left: var(--e6); }
+.avisos-cabeza {
+  display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between;
+  gap: var(--e3);
+  border-bottom: 3px solid var(--tinta);
+  padding-bottom: var(--e2);
+  margin-bottom: var(--e4);
+}
+.avisos-cabeza h2 {
+  margin: 0;
+  font-family: 'Zilla Slab', Georgia, serif;
+  font-size: clamp(20px, 2.1vw, 26px);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.columnas { columns: 2; column-gap: var(--e5); column-rule: 1px solid var(--corondel); }
+
+.aviso {
+  break-inside: avoid;
+  padding-bottom: var(--e4);
+  margin-bottom: var(--e4);
+  border-bottom: 1px solid var(--corondel);
+  position: relative;
+}
+.aviso:hover { background: var(--papel-sombra); box-shadow: 0 0 0 6px var(--papel-sombra); }
+.aviso h3 {
+  margin: 0 0 2px;
+  font-family: 'Zilla Slab', Georgia, serif;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.12;
+  letter-spacing: -0.005em;
+  text-transform: uppercase;
+}
+.aviso h3 a { text-decoration: none; }
+.aviso h3 a::after { content: ''; position: absolute; inset: -6px; }
+.aviso .ficha {
+  font-family: 'Zilla Slab', Georgia, serif;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--tinta2);
+  margin-bottom: var(--e2);
+}
+.aviso .ficha b { font-weight: 700; color: var(--tinta); }
+.aviso p { margin: 0 0 var(--e2); font-size: 14.5px; line-height: 1.45; }
+.aviso .llamada {
+  font-family: 'Zilla Slab', Georgia, serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--tinta);
+  padding-bottom: 1px;
+}
+.aviso:hover .llamada { border-bottom-color: var(--rojo); color: var(--rojo); }
+.nuevo {
+  font-family: 'Zilla Slab', Georgia, serif;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--papel);
+  background: var(--rojo);
+  padding: 1px 5px;
+  vertical-align: 2px;
+  margin-left: 5px;
+}
+
+.recuadro {
+  break-inside: avoid;
+  margin-top: var(--e4);
+  border: 1px solid var(--tinta);
+  padding: var(--e4);
+}
+.recuadro h3 {
+  margin: 0 0 var(--e2);
+  font-family: 'Zilla Slab', Georgia, serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.recuadro p { margin: 0 0 var(--e3); font-size: 14.5px; }
+.entrar {
+  display: inline-block;
+  font-family: 'Zilla Slab', Georgia, serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: var(--tinta);
+  color: var(--papel);
+  padding: 10px var(--e4);
+  min-height: 44px;
+  line-height: 24px;
+  text-decoration: none;
+  transition: background 140ms;
+}
+.entrar:hover { background: var(--rojo); }
+
+/* ---------- pie de imprenta ---------- */
+
+.imprenta {
+  border-top: 1px solid var(--tinta);
+  padding-block: var(--e4) var(--e6);
+}
+.imprenta .hoja { display: flex; flex-wrap: wrap; gap: var(--e5); justify-content: space-between; }
+.imprenta ul { display: flex; flex-wrap: wrap; gap: var(--e5); list-style: none; margin: 0; padding: 0; }
+
+/* ---------- adaptacion ---------- */
+
+@media (max-width: 1000px) {
+  .plana { grid-template-columns: 1fr; gap: var(--e6); padding-block: var(--e5) var(--e7); }
+  .articulo { order: 2; padding-right: 0; border-right: 0; border-top: 1px solid var(--corondel-fuerte); padding-top: var(--e5); }
+  .avisos { order: 1; padding-left: 0; }
+}
+@media (max-width: 660px) {
+  .columnas { columns: 1; }
+  .cabeza-datos { gap: var(--e3); }
+  .articulo .entrada::first-letter { font-size: 52px; }
+}
+</style>
+</head>
+<body>
+
+<header class="cabeza">
+  <div class="hoja">
+    <div class="cabeza-alta">
+      <h1 class="nombre-diario">
+        <svg width="38" height="30" viewBox="0 0 38 30" fill="none" aria-hidden="true">
+          <path d="M2 3h11M2 15h9.5M2 27h11" stroke="#1a1a17" stroke-width="3.4" stroke-linecap="square"/>
+          <path d="M19 3l16 24M35 3L19 27" stroke="#1a1a17" stroke-width="3.4" stroke-linecap="square"/>
+          <circle cx="27" cy="15" r="3" fill="#b02116"/>
+        </svg>
+        Avisos de empleo
+      </h1>
+      <div class="cabeza-datos pie-linea">
+        <span>Miércoles 9 de setiembre de 2026</span>
+        <span>Edición 14</span>
+        <span>Gratis para quien busca</span>
+      </div>
+    </div>
+    <div class="corondel-maestro"></div>
+
+    <nav class="sumario pie-linea" aria-label="Principal">
+      <a href="#" aria-current="page">Los avisos</a>
+      <a href="#">Mis procesos</a>
+      <a href="#">Ingresar</a>
+      <a href="#">Privacidad</a>
+    </nav>
+  </div>
+</header>
+
+<main class="hoja plana">
+
+  <article class="articulo">
+    <h2>Aquí no se decide por el currículum</h2>
+    <p class="firma pie-linea">Cómo se elige · Renaser Consulting · Lima</p>
+
+    <p class="entrada">
+      El currículum entra, pero por diseño no descarta a nadie. Lo que decide es cómo
+      trabajas, y para verlo hacen falta cinco etapas y varias semanas. Nadie llama por
+      teléfono a preguntar cómo va: el portal lo dice.
+    </p>
+
+    <p>
+      Se empieza por el <span class="paso-en-prosa">perfil</span>, que junta tu currículum
+      con una evaluación escrita sobre cómo trabajas; hay catorce días para responderla y
+      se puede volver atrás a corregir. Sigue la <span class="paso-en-prosa">prueba del
+      puesto</span>, un encargo real con el reloj corriendo, y el reloj no se detiene al
+      cerrar el navegador. Después viene la <span class="paso-en-prosa">simulación</span>:
+      dos horas de trabajo con el equipo, en una fecha que eliges tú. Luego la
+      <span class="paso-en-prosa">validación</span>, un periodo corto trabajando de verdad,
+      con acuerdo y con responsable. Y al final la
+      <span class="paso-en-prosa">decisión</span>, que la toma una persona mirando todo el
+      recorrido, no un puntaje.
+    </p>
+
+    <p class="destacado">
+      Trece de los dieciocho estados del proceso no te piden nada. Ahí no estás olvidado:
+      estás esperando, y la pantalla te dice a quién le toca mover.
+    </p>
+
+    <p>
+      Lo único que cierra una postulación en el acto es no cumplir un requisito
+      indispensable, y esos se leen enteros antes de postular, en el aviso. No hay
+      descartes silenciosos ni cartas que no llegan.
+    </p>
+
+    <p>
+      Puedes leer los avisos completos y los textos legales sin cuenta. La cuenta se crea
+      recién cuando decides postular, y ahí se pregunta dónde vives; una sola vez.
+    </p>
+  </article>
+
+  <section class="avisos">
+    <div class="avisos-cabeza">
+      <h2>Ofertas de trabajo</h2>
+      <span class="pie-linea">5 plazas · Lima, Arequipa y Trujillo</span>
+    </div>
+
+    <div class="columnas">
+
+      <div class="aviso">
+        <h3><a href="#">Analista de Datos</a><span class="nuevo">Nuevo</span></h3>
+        <div class="ficha"><b>Clínica San Juan</b> · Híbrido, Lima · L a V, 9 a 18 h · S/ 3 800 – 4 500</div>
+        <p>Que los reportes semanales salgan solos y sean confiables, y que el área comercial deje de pedir números por chat cada lunes por la mañana.</p>
+        <span class="llamada">Leer el aviso</span>
+      </div>
+
+      <div class="aviso">
+        <h3><a href="#">Coordinador/a de Operaciones</a></h3>
+        <div class="ficha"><b>Transportes del Sur</b> · Presencial, Arequipa · L a S</div>
+        <p>Llevar la operación del día a día: proveedores, rutas, caja chica y el control de que lo comprometido se cumpla.</p>
+        <span class="llamada">Leer el aviso</span>
+      </div>
+
+      <div class="aviso">
+        <h3><a href="#">Especialista en Mejora Continua</a></h3>
+        <div class="ficha"><b>Molinos del Norte</b> · Presencial, Trujillo</div>
+        <p>Bajar el desperdicio de la línea de envasado sin parar la producción.</p>
+        <span class="llamada">Leer el aviso</span>
+      </div>
+
+      <div class="aviso">
+        <h3><a href="#">Analista de Planeamiento</a></h3>
+        <div class="ficha"><b>Andes Retail</b> · Remoto, Lima · Horario flexible</div>
+        <p>Que la reposición de tiendas deje de decidirse por corazonada.</p>
+        <span class="llamada">Leer el aviso</span>
+      </div>
+
+      <div class="aviso">
+        <h3><a href="#">Jefe/a de Servicio al Cliente</a></h3>
+        <div class="ficha"><b>Clínica San Juan</b> · Presencial, Lima · Turnos rotativos</div>
+        <p>Que una queja se resuelva en el primer contacto y quede aprendida.</p>
+        <span class="llamada">Leer el aviso</span>
+      </div>
+
+      <div class="recuadro">
+        <h3>Ya postulaste antes</h3>
+        <p>
+          Entra con tu correo y contraseña, o con el enlace que te mandamos: las dos vías
+          llevan al mismo sitio y te dejan ver en qué punto está cada postulación.
+        </p>
+        <a class="entrar" href="#">Entrar a mis procesos</a>
+      </div>
+
+    </div>
+  </section>
+
+</main>
+
+<footer class="imprenta">
+  <div class="hoja">
+    <span class="pie-linea">© 2026 Renaser Consulting · Lima</span>
+    <ul class="pie-linea">
+      <li><a href="#">Política de privacidad</a></li>
+      <li><a href="#">Privacidad y control</a></li>
+      <li><a href="#">Panel de empresas</a></li>
+    </ul>
+  </div>
+</footer>
+
+</body>
+</html>

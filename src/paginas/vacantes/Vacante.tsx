@@ -5,10 +5,11 @@
  * eso el boton lleva a crear cuenta cuando no la hay, recordando a que vacante
  * se estaba postulando.
  *
- * **Los requisitos indispensables llevan el acento.** Son lo unico que decide el
+ * **Los requisitos indispensables van en ambar.** Son lo unico que decide el
  * sistema solo: al postular hay que confirmarlos uno por uno, y dejar alguno sin
  * marcar cierra la postulacion en el acto. Enseñarlos aqui, antes de empezar, es
- * lo que evita que alguien llegue al final y se lleve el golpe.
+ * lo que evita que alguien llegue al final y se lleve el golpe. No van en coral
+ * porque aqui todavia no hay postulacion y por tanto no hay turno.
  *
  * Casi todos los campos del backend son texto libre y pueden venir vacios: la
  * pantalla se arma con lo que haya.
@@ -27,6 +28,7 @@ import { verVacante } from '@/api/portal'
 import { useSesion } from '@/app/Sesion'
 import { rutas } from '@/rutas'
 import { Remuneracion } from '@/ui/Remuneracion'
+import { TituloQueViaja } from '@/ui/movimiento'
 import estilos from './Vacante.module.css'
 
 export function Vacante() {
@@ -84,7 +86,11 @@ export function Vacante() {
                 : 'No pudimos conectar con el servidor.'}
           </p>
           {noExiste ? (
-            <Link className={estilos.reintentar} to={rutas.vacantes()}>
+            <Link
+              className={estilos.reintentar}
+              to={rutas.vacantes()}
+              data-rotulo="Ver los puestos abiertos"
+            >
               Ver los puestos abiertos
             </Link>
           ) : (
@@ -92,6 +98,7 @@ export function Vacante() {
               type="button"
               className={estilos.reintentar}
               onClick={() => void consulta.refetch()}
+              data-rotulo="Intentar de nuevo"
             >
               Intentar de nuevo
             </button>
@@ -115,7 +122,10 @@ export function Vacante() {
       </Link>
 
       <div className={estilos.encabezado}>
-        <h1>{v.titulo}</h1>
+        {/* B · el otro extremo del titulo que viaja desde la tarjeta. */}
+        <TituloQueViaja id={v.id} como="h1" className={estilos.titular}>
+          {v.titulo}
+        </TituloQueViaja>
         {/*
           Quien contrata va aqui y no entre los datos de abajo: «Hibrido» y
           «Arequipa» se comparan de un vistazo entre vacantes, pero de quien es
@@ -194,6 +204,7 @@ export function Vacante() {
         <Link
           className={estilos.boton}
           to={hayCuenta ? rutas.postular(v.id) : rutas.registro(v.id)}
+          data-rotulo="Postular a este puesto"
         >
           Postular a este puesto
         </Link>

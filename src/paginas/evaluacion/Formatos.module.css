@@ -30,13 +30,6 @@
   border-radius: var(--radio);
 }
 
-.pendiente::before {
-  content: '';
-  flex: none;
-  width: 3px;
-  background: var(--regla2);
-}
-
 /* ---------- Opción única (PC) y marcar varias (INV, DE) ---------- */
 
 .opciones {
@@ -310,7 +303,7 @@
 /* Mientras se arrastra: se levanta del papel. */
 .paso.arrastrando {
   border-color: var(--tinta);
-  box-shadow: 0 6px 16px rgb(35 43 54 / 0.16);
+  box-shadow: var(--sombra-nube);
   position: relative;
   z-index: 2;
 }

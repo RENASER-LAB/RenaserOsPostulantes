@@ -218,10 +218,20 @@ export function Trayectoria({
         </>
       ) : (
         <div className={estilos.anadirTres}>
-          <button className={estilos.anadir} type="button" onClick={empleos.abrirNueva}>
+          <button
+            className={estilos.anadir}
+            type="button"
+            onClick={empleos.abrirNueva}
+            data-rotulo="Añadir un empleo"
+          >
             Añadir un empleo
           </button>
-          <button className={estilos.anadir} type="button" onClick={estudios.abrirNueva}>
+          <button
+            className={estilos.anadir}
+            type="button"
+            onClick={estudios.abrirNueva}
+            data-rotulo="Añadir estudios"
+          >
             Añadir estudios
           </button>
         </div>

@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EX · Portal del candidato — dirección «La Libreta»</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600&family=Karla:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/*
+  THESIS: La pagina esta escrita por quien busca trabajo, no dirigida a el.
+    Es su hoja de libreta: lo que ya entendio, lo que le van a pedir y a donde
+    puede postular, en primera persona. Rechaza el slogan en segunda persona
+    y el heroe centrado que entrega esta categoria.
+  OWN-WORLD: Hoja rayada #FBF9F2 con renglon azul y margen rojo, tinta de
+    lapicero #26408B para lo escrito a mano y grafito #2A2A28 para lo
+    impreso. Karla en todo lo que hay que leer; Caveat solo en las notas al
+    margen y nunca en un parrafo. Sin sombras ni tarjetas: solo hoja.
+  STORY: Quien entra se reconoce en la hoja, ve marcado lo que le van a
+    pedir, y encuentra al final a donde puede postular.
+  FIRST VIEWPORT: Pestanas de la libreta; la fecha al margen; y la primera
+    anotacion, «Lo que ya entendi de este sitio», sobre el renglon.
+  FORM: candidato 2 de la lista propia (la libreta del que busca trabajo);
+    semilla 76fbfbe1, re-roll 3.
+  FINISH: unreviewed and undocumented is unfinished; this build ends with the
+    finish review, the verdict, DESIGN.md, and every shipping raster carrying
+    its provenance.
+*/
+
+:root {
+  --hoja: #fbf9f2;
+  --hoja-honda: #f0ede2;
+  --renglon: #cfdcec;
+  --margen: #d0847e;
+  --grafito: #2a2a28;
+  --grafito2: #4c4c47;
+  --grafito3: #6a6a62;
+  --lapicero: #26408b;
+  --lapicero-hondo: #1a2e66;
+  --linea: #d8d4c5;
+
+  --renglon-alto: 34px;
+  --e1: 4px; --e2: 8px; --e3: 12px; --e4: 16px;
+  --e5: 24px; --e6: 32px; --e7: 48px; --e8: 68px;
+  --ancho: 1060px;
+  --margen-x: 96px;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background-color: var(--hoja);
+  color: var(--grafito);
+  font-family: Karla, system-ui, sans-serif;
+  font-size: 17px;
+  line-height: var(--renglon-alto);
+}
+
+::selection { background: var(--lapicero); color: var(--hoja); }
+:focus-visible { outline: 2px solid var(--lapicero); outline-offset: 3px; }
+
+* { scrollbar-color: var(--margen) var(--hoja-honda); scrollbar-width: thin; }
+::-webkit-scrollbar { width: 12px; }
+::-webkit-scrollbar-track { background: var(--hoja-honda); }
+::-webkit-scrollbar-thumb { background: var(--margen); border: 3px solid var(--hoja-honda); }
+
+a { color: inherit; text-underline-offset: 3px; text-decoration-color: var(--margen); }
+a:hover { text-decoration-color: var(--lapicero); }
+
+.mano {
+  font-family: Caveat, cursive;
+  font-size: 21px;
+  line-height: 1.2;
+  color: var(--lapicero);
+}
+
+/* ---------- pestañas de la libreta ---------- */
+
+.pestanas { border-bottom: 2px solid var(--grafito); background: var(--hoja-honda); }
+.pestanas .fila {
+  max-width: var(--ancho); margin-inline: auto; padding-inline: var(--e4);
+  display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--e2);
+  min-height: 56px;
+}
+.marca-libreta { display: flex; align-items: center; gap: var(--e2); margin-right: auto; padding-block: var(--e3); text-decoration: none; }
+.marca-libreta svg { display: block; }
+.pestana {
+  display: inline-flex; align-items: center; min-height: 44px; padding: 0 var(--e4);
+  border: 2px solid var(--grafito); border-bottom: 0;
+  border-radius: 6px 6px 0 0;
+  background: var(--hoja-honda);
+  font-size: 15px; font-weight: 600; color: var(--grafito2); text-decoration: none;
+  position: relative; top: 2px;
+}
+.pestana:hover { background: var(--hoja); }
+.pestana[aria-current] { background: var(--hoja); color: var(--grafito); border-bottom: 2px solid var(--hoja); }
+
+/* ---------- la hoja ---------- */
+
+.papel {
+  max-width: var(--ancho);
+  margin-inline: auto;
+  padding: var(--e6) var(--e5) var(--e8) var(--margen-x);
+  position: relative;
+  background-image:
+    linear-gradient(var(--margen), var(--margen)),
+    repeating-linear-gradient(to bottom, transparent 0 calc(var(--renglon-alto) - 1px), var(--renglon) calc(var(--renglon-alto) - 1px) var(--renglon-alto));
+  background-size: 3px 100%, 100% 100%;
+  background-position: calc(var(--margen-x) - 26px) 0, 0 0;
+  background-repeat: no-repeat, repeat;
+}
+
+.fecha-margen {
+  position: absolute;
+  left: var(--e3); top: var(--e6);
+  width: 62px;
+  text-align: right;
+  font-family: Caveat, cursive;
+  font-size: 19px;
+  color: var(--lapicero);
+  line-height: 1.15;
+}
+
+.apunte { margin-bottom: var(--e7); }
+.apunte > h2 {
+  margin: 0 0 var(--e2);
+  font-size: clamp(26px, 3.2vw, 40px);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: var(--renglon-alto);
+}
+.apunte > h2 .subrayado {
+  background-image: linear-gradient(var(--lapicero), var(--lapicero));
+  background-size: 100% 3px;
+  background-position: 0 92%;
+  background-repeat: no-repeat;
+  padding-bottom: 2px;
+}
+.apunte p { margin: 0 0 var(--renglon-alto); max-width: 58ch; }
+.apunte p strong { font-weight: 700; }
+
+.nota-lado {
+  float: right;
+  width: 220px;
+  margin: 0 0 var(--e4) var(--e5);
+  font-family: Caveat, cursive;
+  font-size: 20px;
+  line-height: 1.25;
+  color: var(--lapicero);
+  border-left: 1px solid var(--margen);
+  padding-left: var(--e3);
+}
+
+/* ---------- la lista de lo que me van a pedir ---------- */
+
+.pendientes { list-style: none; margin: 0 0 var(--renglon-alto); padding: 0; }
+.pendiente {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) 150px;
+  gap: var(--e4);
+  align-items: baseline;
+  padding-block: var(--e2);
+}
+.casilla {
+  width: 21px; height: 21px;
+  border: 2px solid var(--grafito);
+  border-radius: 3px;
+  align-self: center;
+}
+.pendiente b { font-weight: 700; }
+.pendiente .yo { color: var(--grafito2); }
+.pendiente .apunte-plazo {
+  font-family: Caveat, cursive;
+  font-size: 19px;
+  color: var(--lapicero);
+  text-align: right;
+  line-height: 1.2;
+}
+
+/* ---------- a donde puedo postular ---------- */
+
+.donde { list-style: none; margin: 0; padding: 0; }
+.sitio {
+  position: relative;
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) auto;
+  gap: var(--e4);
+  align-items: center;
+  padding-block: var(--e3);
+  border-bottom: 1px solid var(--linea);
+}
+.flecha { width: 22px; color: var(--lapicero); }
+.sitio h3 { margin: 0; font-size: 21px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.25; }
+.sitio h3 a { text-decoration: none; }
+.sitio h3 a::after { content: ''; position: absolute; inset: 0; }
+.sitio .detalle { font-size: 16px; color: var(--grafito2); line-height: 1.35; }
+.sitio .plata {
+  font-family: Caveat, cursive;
+  font-size: 22px;
+  color: var(--lapicero);
+  white-space: nowrap;
+  border: 2px solid var(--lapicero);
+  border-radius: 50% / 60%;
+  padding: 2px var(--e3);
+  transform: rotate(-2deg);
+}
+.sitio .sin-plata { font-size: 15px; color: var(--grafito3); white-space: nowrap; }
+.sitio:hover h3 { color: var(--lapicero); }
+
+/* ---------- lo que cierro con esta hoja ---------- */
+
+.cerrar {
+  margin-top: var(--e7);
+  border-top: 2px solid var(--grafito);
+  padding-top: var(--e4);
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--e5);
+}
+.boton-hoja {
+  display: inline-flex; align-items: center; gap: var(--e2);
+  min-height: 50px; padding-inline: var(--e5);
+  background: var(--lapicero); color: var(--hoja);
+  border-radius: 4px;
+  font-size: 16px; font-weight: 700;
+  text-decoration: none;
+  transition: background 150ms;
+}
+.boton-hoja:hover { background: var(--lapicero-hondo); }
+.cerrar .mano { max-width: 34ch; }
+
+/* ---------- pie ---------- */
+
+.pie { border-top: 1px solid var(--linea); background: var(--hoja-honda); padding-block: var(--e5); }
+.pie .fila { max-width: var(--ancho); margin-inline: auto; padding-inline: var(--e5); display: flex; flex-wrap: wrap; gap: var(--e4); justify-content: space-between; font-size: 15px; color: var(--grafito2); }
+.pie ul { display: flex; flex-wrap: wrap; gap: var(--e5); list-style: none; margin: 0; padding: 0; }
+
+/* ---------- adaptacion ---------- */
+
+@media (max-width: 780px) {
+  :root { --margen-x: 56px; --e8: 48px; --e7: 32px; }
+  .fecha-margen { position: static; width: auto; text-align: left; margin-bottom: var(--e3); }
+  .nota-lado { float: none; width: auto; margin: var(--e3) 0 var(--e4); border-left: 0; border-top: 1px solid var(--margen); padding-left: 0; padding-top: var(--e2); }
+  .pendiente { grid-template-columns: 30px minmax(0, 1fr); row-gap: var(--e1); }
+  .pendiente .apunte-plazo { grid-column: 2; text-align: left; }
+  .sitio { grid-template-columns: 30px minmax(0, 1fr); row-gap: var(--e2); }
+  .sitio .plata, .sitio .sin-plata { grid-column: 2; justify-self: start; }
+  .papel { background-position: calc(var(--margen-x) - 20px) 0, 0 0; }
+}
+</style>
+</head>
+<body>
+
+<header class="pestanas">
+  <div class="fila">
+    <a class="marca-libreta" href="#" aria-label="EX, portal del candidato">
+      <svg width="28" height="22" viewBox="0 0 28 22" fill="none" aria-hidden="true">
+        <path d="M1.5 2.5h8.5M1.5 11h7M1.5 19.5h8.5" stroke="#2a2a28" stroke-width="2.4" stroke-linecap="square"/>
+        <path d="M14 2.5l12 17M26 2.5l-12 17" stroke="#2a2a28" stroke-width="2.4" stroke-linecap="square"/>
+        <circle cx="20" cy="11" r="2.2" fill="#26408b"/>
+      </svg>
+    </a>
+    <a class="pestana" href="#" aria-current="page">Esta hoja</a>
+    <a class="pestana" href="#">Mis postulaciones</a>
+    <a class="pestana" href="#">Entrar</a>
+  </div>
+</header>
+
+<main class="papel">
+  <div class="fecha-margen">9 set<br>2026</div>
+
+  <section class="apunte">
+    <h2>Lo que ya entendí <span class="subrayado">de este sitio</span></h2>
+
+    <aside class="nota-lado">
+      Ojo: mirar los puestos y los textos legales no pide cuenta. La cuenta recién se abre
+      cuando postulo.
+    </aside>
+
+    <p>
+      Aquí <strong>no deciden leyendo mi currículum</strong>. El currículum entra, pero por
+      diseño no descarta a nadie: lo que miran es cómo trabajo. Eso significa una prueba
+      del puesto con reloj, una sesión de trabajo con el equipo y un periodo corto
+      trabajando de verdad.
+    </p>
+    <p>
+      Son <strong>cinco etapas</strong> y toma semanas. De los dieciocho estados que puede
+      tener mi postulación, <strong>trece no me piden nada</strong>: en esos estoy
+      esperando, y la pantalla me dice a quién le toca mover. No tengo que escribirle a
+      nadie para preguntar.
+    </p>
+    <p>
+      Lo único que cierra mi postulación en el acto es <strong>no cumplir un requisito
+      indispensable</strong>. Están escritos enteros en cada puesto y me los hacen
+      confirmar antes de empezar.
+    </p>
+  </section>
+
+  <section class="apunte">
+    <h2>Lo que me <span class="subrayado">van a pedir</span></h2>
+
+    <ol class="pendientes">
+      <li class="pendiente">
+        <span class="casilla" aria-hidden="true"></span>
+        <span><b>Subir mi currículum</b> <span class="yo">y responder una evaluación escrita sobre cómo trabajo. Puedo hacerla en varias sesiones y volver atrás a corregir.</span></span>
+        <span class="apunte-plazo">tengo 14 días</span>
+      </li>
+      <li class="pendiente">
+        <span class="casilla" aria-hidden="true"></span>
+        <span><b>Hacer la prueba del puesto</b> <span class="yo">— un encargo real. El reloj arranca cuando la abro y no se detiene si cierro.</span></span>
+        <span class="apunte-plazo">no abrirla<br>a las 11 pm</span>
+      </li>
+      <li class="pendiente">
+        <span class="casilla" aria-hidden="true"></span>
+        <span><b>Elegir fecha para la simulación</b> <span class="yo">— dos horas de trabajo con el equipo.</span></span>
+        <span class="apunte-plazo">yo elijo el día</span>
+      </li>
+      <li class="pendiente">
+        <span class="casilla" aria-hidden="true"></span>
+        <span><b>Hacer la validación</b> <span class="yo">— un periodo corto trabajando de verdad, con acuerdo y con un responsable.</span></span>
+        <span class="apunte-plazo">preguntar<br>por el acuerdo</span>
+      </li>
+      <li class="pendiente">
+        <span class="casilla" aria-hidden="true"></span>
+        <span><b>Esperar la decisión</b> <span class="yo">— la toma una persona mirando todo el recorrido, no un puntaje.</span></span>
+        <span class="apunte-plazo">esta no<br>depende de mí</span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="apunte">
+    <h2>A dónde <span class="subrayado">puedo postular</span></h2>
+
+    <ul class="donde">
+      <li class="sitio">
+        <svg class="flecha" viewBox="0 0 22 16" fill="none" aria-hidden="true"><path d="M1 8c5-6 11 5 20-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M17 2l4 2-2 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div>
+          <h3><a href="#">Analista de Datos</a></h3>
+          <div class="detalle">Clínica San Juan · Híbrido, Lima · L a V, 9 a 18 h</div>
+        </div>
+        <span class="plata">S/ 3 800 – 4 500</span>
+      </li>
+      <li class="sitio">
+        <svg class="flecha" viewBox="0 0 22 16" fill="none" aria-hidden="true"><path d="M1 8c5-6 11 5 20-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M17 2l4 2-2 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div>
+          <h3><a href="#">Coordinador/a de Operaciones</a></h3>
+          <div class="detalle">Transportes del Sur · Presencial, Arequipa · Lunes a sábado</div>
+        </div>
+        <span class="sin-plata">Sin rango publicado</span>
+      </li>
+      <li class="sitio">
+        <svg class="flecha" viewBox="0 0 22 16" fill="none" aria-hidden="true"><path d="M1 8c5-6 11 5 20-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M17 2l4 2-2 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div>
+          <h3><a href="#">Especialista en Mejora Continua</a></h3>
+          <div class="detalle">Molinos del Norte · Presencial, Trujillo</div>
+        </div>
+        <span class="sin-plata">Sin rango publicado</span>
+      </li>
+      <li class="sitio">
+        <svg class="flecha" viewBox="0 0 22 16" fill="none" aria-hidden="true"><path d="M1 8c5-6 11 5 20-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M17 2l4 2-2 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div>
+          <h3><a href="#">Analista de Planeamiento</a></h3>
+          <div class="detalle">Andes Retail · Remoto, Lima · Horario flexible</div>
+        </div>
+        <span class="sin-plata">Sin rango publicado</span>
+      </li>
+      <li class="sitio">
+        <svg class="flecha" viewBox="0 0 22 16" fill="none" aria-hidden="true"><path d="M1 8c5-6 11 5 20-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M17 2l4 2-2 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div>
+          <h3><a href="#">Jefe/a de Servicio al Cliente</a></h3>
+          <div class="detalle">Clínica San Juan · Presencial, Lima · Turnos rotativos</div>
+        </div>
+        <span class="sin-plata">Sin rango publicado</span>
+      </li>
+    </ul>
+
+    <div class="cerrar">
+      <a class="boton-hoja" href="#">Abrir el primero</a>
+      <p class="mano">Si ya postulé antes, entro con mi correo o con el enlace que me mandaron.</p>
+    </div>
+  </section>
+</main>
+
+<footer class="pie">
+  <div class="fila">
+    <span>© 2026 Renaser Consulting</span>
+    <ul>
+      <li><a href="#">Política de privacidad</a></li>
+      <li><a href="#">Privacidad y control</a></li>
+      <li><a href="#">Panel de empresas</a></li>
+    </ul>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -137,8 +137,6 @@ puntuó; y no ve la matriz, que es justamente lo que se espera que descubra o pr
 - **Decisión ámbar** y **Validación** están maquetadas completas, pero el backend **no tiene
   ninguna ruta** para ellas: ni para leer qué evidencia se pide, ni para enviarla, ni para
   consultar días, responsable o métricas.
-- **El correo hoy no sale.** El backend lo tiene en modo registro por defecto, así que cada
-  «te avisaremos por correo» es una promesa que el sistema desplegado puede no cumplir.
 - **Los textos de consentimiento van a crecer**: todavía no nombran a las empresas que
   procesan los datos, y tienen que hacerlo antes del primer candidato real.
 - La figura contractual de la validación y el responsable del periodo son datos que Renaser
@@ -149,8 +147,10 @@ puntuó; y no ve la matriz, que es justamente lo que se espera que descubra o pr
 - **El nombre es EX**, y su logotipo —la palabra con la hormiga dentro de la X— se conserva
   tal cual. Es lo único que sobrevive del portal anterior.
 - **Solo tema claro**, por petición del cliente.
-- **Fondo blanco y acento índigo `#4338CA`**, ya aprobado. El acento significa una sola cosa:
-  «te toca a ti».
+- **Fondo gris claro `#F5F5F5` y acción en negro pleno `#0A0A0A`**, elegido por el cliente el
+  10/09/2026 a partir de la plantilla OriginX de TailGrids. El color aparece una sola vez por
+  pantalla —coral `#FF7C61` y su bruma rosa— y significa una sola cosa: «te toca a ti».
+  ⚠️ Es una plantilla comercial: hay que mirar su licencia antes de lanzar.
 - **Todo en español**, incluidos los nombres del código.
 - Al cliente le gusta la estética de Apple, pero pidió expresamente que no fuera su azul.
 
@@ -182,9 +182,10 @@ de resultados. El sistema todavía no ha pasado por su primer candidato real.
 3. **Lo mismo para todos.** El contenido y el recorrido no cambian según el puesto ni el nivel
    de quien postula. Un texto que solo entiende un perfil concreto está mal escrito.
 
-4. **No prometer lo que el sistema no cumple.** Si el correo puede no salir, la pantalla no
-   puede tratarlo como la única vía. Si una evidencia no se puede enviar todavía, no se finge
-   un formulario.
+4. **No prometer lo que el sistema no cumple.** Si una evidencia no se puede enviar todavía,
+   no se finge un formulario. **El correo sí sale desde el 10/09/2026** —confirmado—, así que
+   «te avisaremos por correo» ya es cierto; pero la pantalla sigue sin tratarlo como la única
+   vía, porque un correo puede acabar en spam y «Mis procesos» tiene que bastar por sí solo.
 
 5. **Lo interno se queda dentro, y «dentro» se mide desde la sesión del candidato.** El grupo de
    prioridad, las claves de las preguntas y la matriz de la simulación no llegan al portal. No

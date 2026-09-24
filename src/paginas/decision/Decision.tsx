@@ -60,7 +60,8 @@ export function Decision() {
         ← Volver a mi proceso
       </Link>
 
-      {/* Acento: aqui la espera es del candidato, y este panel es su accion. */}
+      {/* Sin coral: la pantalla ya pinta ambar mas abajo, y dos colores no
+          marcan el doble. Lo que separa esto del resto es el titular. */}
       <section className={estilos.cabeza}>
         <span className={estilos.eti}>Decisión · te pedimos una cosa más</span>
         <h1 className={estilos.titulo}>Queremos resolver una duda antes de decidir.</h1>
@@ -69,7 +70,11 @@ export function Decision() {
           punto que queremos ver mejor. <b>No es un rechazo</b>: si no nos interesaras, no
           te lo pediríamos.
         </p>
-        <a className={estilos.escribir} href={`mailto:${CORREO}?subject=${asunto}`}>
+        <a
+          className={estilos.escribir}
+          href={`mailto:${CORREO}?subject=${asunto}`}
+          data-rotulo="Escribirle al equipo"
+        >
           Escribirle al equipo
         </a>
       </section>
@@ -93,7 +98,7 @@ export function Decision() {
           <section className={estilos.bloque}>
             <h2 className={estilos.tituloBloque}>Tu respuesta</h2>
 
-            <p className={estilos.todaviaNo}>
+            <p className={estilos.todaviaNo} id="por-que-no-envia" role="status">
               Todavía no puedes mandarla desde el portal: estamos terminando esta parte.
               Por ahora respóndenos por correo y queda igual de registrada.
             </p>
@@ -123,10 +128,10 @@ export function Decision() {
                     Un documento, una captura, un enlace.
                   </span>
                   <span className={estilos.botones}>
-                    <button className={estilos.boton} type="button">
+                    <button className={estilos.boton} type="button" data-rotulo="Subir archivo">
                       Subir archivo
                     </button>
-                    <button className={estilos.boton} type="button">
+                    <button className={estilos.boton} type="button" data-rotulo="Pegar enlace">
                       Pegar enlace
                     </button>
                   </span>
@@ -138,9 +143,22 @@ export function Decision() {
               <span className={estilos.ronda}>
                 Como mucho te pediremos una respuesta más después de esta.
               </span>
-              <span className={estilos.enviar} aria-disabled="true">
+              {/*
+                ⚠️ **Era un `<span aria-disabled>` y no se enfocaba.** Quien
+                navega con teclado pasaba del correo al pie sin que nada le
+                dijera por que 630 px de formulario no hacen nada. Un `<button
+                disabled>` si aparece en el arbol, y `aria-describedby` lo ata al
+                aviso ambar que lo explica.
+              */}
+              <button
+                type="button"
+                className={estilos.enviar}
+                disabled
+                aria-describedby="por-que-no-envia"
+                data-rotulo="Enviar respuesta"
+              >
                 Enviar respuesta
-              </span>
+              </button>
             </div>
           </section>
         </div>

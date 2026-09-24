@@ -546,6 +546,7 @@ export function Evaluacion() {
             type="button"
             className={estilos.reintentar}
             onClick={() => void consulta.refetch()}
+            data-rotulo="Intentar de nuevo"
           >
             Intentar de nuevo
           </button>
@@ -621,6 +622,7 @@ export function Evaluacion() {
             className={estilos.empezar}
             onClick={() => inicio.mutate()}
             disabled={inicio.isPending}
+            data-rotulo={inicio.isPending ? 'Abriendo…' : 'Empezar evaluación'}
           >
             {inicio.isPending ? 'Abriendo…' : 'Empezar evaluación'}
           </button>
@@ -642,7 +644,11 @@ export function Evaluacion() {
         <div className={estilos.marco}>
           <h1>No hay preguntas pendientes.</h1>
           <p className={estilos.marcoTexto}>Tu evaluación no tiene preguntas que mostrar.</p>
-          <Link className={estilos.reintentar} to={rutas.proceso(uuid)}>
+          <Link
+            className={estilos.reintentar}
+            to={rutas.proceso(uuid)}
+            data-rotulo="Volver a mi proceso"
+          >
             Volver a mi proceso
           </Link>
         </div>
@@ -704,15 +710,21 @@ export function Evaluacion() {
   // cubre tanto lo que esta viajando como lo que espera turno o se esta reintentando. Para
   // quien responde es el mismo estado —todavia no esta— y partirlo en dos solo serviria para
   // parpadear.
+  //
+  // El tono NO es «pendiente si o no». El rojo esta reservado al error real, y
+  // «Guardando…» dejo de ser uno: la cola manda sola y reintenta sola, asi que
+  // pintarlo de rojo alarma sin dar nada que hacer —que es justo el cartel que
+  // se quito—. Solo «No se pudo guardar» es nuestro fallo; «Sin terminar» es
+  // algo que le toca al candidato y va en ambar.
   const indicador = cola.atascadas.includes(pregunta.id)
-    ? { texto: 'No se pudo guardar', pendiente: true }
+    ? { texto: 'No se pudo guardar', tono: 'fallo' as const }
     : esteSinConfirmar
-    ? { texto: 'Guardando…', pendiente: true }
+    ? { texto: 'Guardando…', tono: 'neutro' as const }
     : estaVacia
-      ? { texto: 'Sin responder', pendiente: false }
+      ? { texto: 'Sin responder', tono: 'neutro' as const }
       : falta !== null
-        ? { texto: 'Sin terminar', pendiente: true }
-        : { texto: 'Respuesta guardada', pendiente: false }
+        ? { texto: 'Sin terminar', tono: 'duda' as const }
+        : { texto: 'Respuesta guardada', tono: 'neutro' as const }
 
   return (
     <div className={estilos.pagina}>
@@ -934,7 +946,11 @@ export function Evaluacion() {
           <div className={estilos.pie}>
             <span
               className={`${estilos.estadoRespuesta}${
-                indicador.pendiente ? ` ${estilos.pendiente}` : ''
+                indicador.tono === 'fallo'
+                  ? ` ${estilos.fallo}`
+                  : indicador.tono === 'duda'
+                    ? ` ${estilos.duda}`
+                    : ''
               }`}
             >
               {indicador.texto}
@@ -945,6 +961,7 @@ export function Evaluacion() {
                 className={estilos.anterior}
                 onClick={() => navegarA(indice - 1)}
                 disabled={indice === 0}
+                data-rotulo="Anterior"
               >
                 Anterior
               </button>
@@ -986,7 +1003,12 @@ export function Evaluacion() {
         onCerrar={() => setConfirmarEntrega(false)}
         pie={
           <>
-            <button type="button" className={estilos.seguir} onClick={() => setConfirmarEntrega(false)}>
+            <button
+              type="button"
+              className={estilos.seguir}
+              onClick={() => setConfirmarEntrega(false)}
+              data-rotulo="Seguir revisando"
+            >
               Seguir revisando
             </button>
             <button
@@ -996,6 +1018,7 @@ export function Evaluacion() {
               // Solo por preguntas sin responder. Lo que aun no ha llegado al servidor ya no
               // bloquea nada: la propia entrega vacia la cola antes de mandar nada.
               disabled={entrega.isPending || faltan > 0}
+              data-rotulo={entrega.isPending ? 'Entregando…' : 'Entregar'}
             >
               {entrega.isPending ? 'Entregando…' : 'Entregar'}
             </button>

@@ -1,14 +1,18 @@
 /*
  * La validacion practica: el periodo en el que el candidato ya esta trabajando.
  *
- * Es la unica etapa en la que la espera es del candidato durante dias, no
- * minutos, asi que el panel de arriba lleva acento y todo lo demas se aparta.
+ * El esqueleto —carril, encabezado, reparto, bloques— viene de
+ * `estilos/pagina.module.css`. Aqui solo esta lo que es de esta pantalla.
+ *
+ * ⚠️ **Ya no lleva coral.** El panel del periodo lo tuvo, con el argumento de
+ * que durante la validacion la espera es del candidato. Pero el coral sirve
+ * para *encontrar* tu turno entre cosas que no lo son, y aqui no hay nada
+ * contra lo que discriminar: llegaste porque te tocaba y no hay mas que una
+ * cosa. Lo que separa el periodo del resto es que es lo unico que dice un dato.
  */
 
 .pagina {
-  max-width: var(--ancho);
-  margin: 0 auto;
-  padding: var(--e5) var(--e5) var(--e8);
+  composes: hoja from '../../estilos/pagina.module.css';
 }
 
 .volver {
@@ -16,56 +20,50 @@
 }
 
 .encabezado {
-  margin-top: var(--e4);
+  composes: encabezado from '../../estilos/pagina.module.css';
 }
 
-.eti {
-  display: block;
-  font-size: var(--t-micro);
-  font-weight: 600;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  color: var(--tinta3);
-  margin-bottom: var(--e3);
+.titular {
+  composes: titular from '../../estilos/pagina.module.css';
 }
 
 .bajada {
-  font-size: var(--t-base);
-  line-height: 1.55;
-  color: var(--tinta2);
-  margin-top: var(--e3);
-  max-width: var(--medida);
+  composes: bajada from '../../estilos/pagina.module.css';
 }
 
 .reparto {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 19rem;
-  align-items: start;
-  gap: var(--e5);
-  margin-top: var(--e6);
+  composes: reparto from '../../estilos/pagina.module.css';
 }
 
 .columna {
-  display: flex;
-  flex-direction: column;
-  gap: var(--e5);
-  min-width: 0;
+  composes: columna from '../../estilos/pagina.module.css';
+}
+
+.bloque {
+  composes: bloque from '../../estilos/pagina.module.css';
+}
+
+.hundido {
+  composes: bloqueHundido from '../../estilos/pagina.module.css';
+}
+
+.tituloBloque {
+  composes: tituloBloque from '../../estilos/pagina.module.css';
+}
+
+.texto {
+  composes: texto from '../../estilos/pagina.module.css';
 }
 
 /* ---------- El periodo ---------- */
 
+/*
+ * Lo unico de la pantalla que trae un dato de verdad, asi que lo dice en
+ * grande. La fecha es la cifra; todo lo demas de aqui es prosa.
+ */
 .periodo {
-  border: 2px solid var(--activo-regla);
-  background: var(--nube);
-  padding: var(--e5);
-  border-radius: var(--radio);
-  box-shadow:
-    0 2px 6px rgb(35 43 54 / 0.05),
-    0 14px 40px rgb(86 56 214 / 0.14);
+  composes: bloque from '../../estilos/pagina.module.css';
 }
-
-/* `.etiAcento` se fue con «TU PERIODO»: era un antetítulo encima de un
-   titular, y el titular se sostiene solo. */
 
 .desde {
   margin: 0;
@@ -78,36 +76,9 @@
 .sinPlazo {
   font-size: var(--t-prosa);
   line-height: 1.6;
-  color: var(--tinta);
-  margin-top: var(--e3);
-  max-width: var(--medida);
-}
-
-/* ---------- Bloques ---------- */
-
-.bloque {
-  border: 1px solid var(--regla);
-  padding: var(--e5);
-  border-radius: var(--radio);
-}
-
-.bloque.hundido {
-  background: var(--nube-hundida);
-}
-
-.tituloBloque {
-  margin: 0 0 var(--e3);
-}
-
-.texto {
-  font-size: var(--t-prosa);
-  line-height: 1.6;
   color: var(--tinta2);
-  max-width: var(--medida);
-}
-
-.texto + .texto {
   margin-top: var(--e3);
+  max-width: var(--medida);
 }
 
 /* ---------- Lo que se mira ---------- */
@@ -153,6 +124,9 @@
 /*
  * «Automático» y «Una persona» no son colores del semaforo: son quien mide. La
  * diferencia se lee en el trazo del contorno, no en el tono.
+ *
+ * El radio es el del control y no el de la caja: `--radio` en algo de 26 px de
+ * alto lo deja casi redondo, que es la forma del mundo anterior.
  */
 .quien {
   flex: none;
@@ -161,12 +135,12 @@
   min-height: 26px;
   padding: 0 var(--e3);
   border: 1px solid var(--regla2);
+  border-radius: var(--radio-control);
   font-size: var(--t-micro);
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--tinta2);
-  border-radius: var(--radio);
 }
 
 .quien.persona {
@@ -178,41 +152,10 @@
 /* ---------- Lo que el portal todavía no sabe ---------- */
 
 /*
- * Se dice en vez de inventarse. Un nombre de responsable puesto a ojo o una
- * cuenta de dias sacada de la nada valen menos que el hueco declarado.
+ * ⚠️ **Llevaba un filete de 3 px a la izquierda y se fue.** La barra de acento
+ * lateral esta prohibida en este mundo; ademas un hueco declarado no es una
+ * alarma, es honestidad.
  */
 .falta {
-  display: flex;
-  gap: var(--e3);
-  border: 1px solid var(--regla2);
-  background: var(--nube-hundida);
-  padding: var(--e4);
-  font-size: var(--t-apoyo);
-  line-height: 1.55;
-  color: var(--tinta2);
-  border-radius: var(--radio);
-}
-
-.falta::before {
-  content: '';
-  flex: none;
-  width: 3px;
-  background: var(--regla2);
-}
-
-@media (max-width: 900px) {
-  .reparto {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 640px) {
-  .pagina {
-    padding: var(--e4) var(--e4) var(--e7);
-  }
-
-  .periodo,
-  .bloque {
-    padding: var(--e4);
-  }
+  composes: hueco from '../../estilos/pagina.module.css';
 }

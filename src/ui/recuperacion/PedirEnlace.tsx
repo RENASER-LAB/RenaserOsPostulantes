@@ -31,9 +31,17 @@ interface Props {
   bajada: ReactNode
   /** Lo que va debajo en los dos estados. En el portal, la línea de talento. */
   alternativa?: ReactNode
+  /**
+   * La superficie del formulario, si quien lo usa tiene una.
+   *
+   * El portal pone el suyo sobre nube, como el resto de sus formularios; el
+   * panel lo deja a pelo sobre el fondo, que es su disposición. La decisión es
+   * de cada puerta y no de esta pieza, que es la misma para las dos.
+   */
+  claseFormulario?: string
 }
 
-export function PedirEnlace({ pedir, titulo, bajada, alternativa }: Props) {
+export function PedirEnlace({ pedir, titulo, bajada, alternativa, claseFormulario }: Props) {
   const [correo, setCorreo] = useState('')
   const [error, setError] = useState<string | undefined>()
   const [fallo, setFallo] = useState<string | null>(null)
@@ -103,7 +111,7 @@ export function PedirEnlace({ pedir, titulo, bajada, alternativa }: Props) {
   if (enviadoA !== null) {
     return (
       <>
-        <h1>Revisa tu correo.</h1>
+        <h1 className={estilos.titular}>Revisa tu correo.</h1>
         <p ref={mensaje} className={estilos.mensaje} role="status" tabIndex={-1}>
           {MENSAJE_ENVIADO}
         </p>
@@ -147,10 +155,14 @@ export function PedirEnlace({ pedir, titulo, bajada, alternativa }: Props) {
 
   return (
     <>
-      <h1>{titulo}</h1>
+      <h1 className={estilos.titular}>{titulo}</h1>
       <p className={estilos.bajada}>{bajada}</p>
 
-      <form className={estilos.formulario} onSubmit={alEnviar} noValidate>
+      <form
+        className={`${estilos.formulario} ${claseFormulario ?? ''}`}
+        onSubmit={alEnviar}
+        noValidate
+      >
         <Campo
           ref={campo}
           etiqueta="Correo"

@@ -219,6 +219,7 @@ function Entregable({
               type="button"
               onClick={() => url.mutate(enlace.trim())}
               disabled={bloqueado || !enlace.trim() || url.isPending}
+              data-rotulo={url.isPending ? 'Guardando…' : 'Guardar enlace'}
             >
               {url.isPending ? 'Guardando…' : 'Guardar enlace'}
             </button>
@@ -241,6 +242,7 @@ function Entregable({
               type="button"
               onClick={() => campoArchivo.current?.click()}
               disabled={bloqueado || archivo.isPending}
+              data-rotulo={archivo.isPending ? 'Subiendo…' : 'Seleccionar archivo'}
             >
               {archivo.isPending ? 'Subiendo…' : 'Seleccionar archivo'}
             </button>
@@ -472,11 +474,14 @@ function PreguntaPrueba({
         aria-disabled={bloqueado}
         onChange={(e) => escribir(e.target.value)}
       />
-      <span
-        className={`${estilos.estadoRespuesta}${
-          !bloqueado && estado === 'pendiente' ? ` ${estilos.pendiente}` : ''
-        }`}
-      >
+      {/*
+        Sin rojo. Este estado se pinta cuando el envio fallo y la cola va a
+        reintentar, pero el texto que se ve dice «Guardando…»: en rojo alarmaba
+        sin darle nada que hacer a quien esta en mitad de una prueba con reloj,
+        que es el cartel que se quito. Lo que importa —si llego o no— ya lo dice
+        la propia frase.
+      */}
+      <span className={estilos.estadoRespuesta}>
         {pista}
       </span>
     </div>
@@ -628,6 +633,7 @@ export function Prueba() {
             type="button"
             className={estilos.reintentar}
             onClick={() => void consulta.refetch()}
+            data-rotulo="Intentar de nuevo"
           >
             Intentar de nuevo
           </button>
@@ -663,7 +669,11 @@ export function Prueba() {
             {hayEntregables &&
               ` Recibimos ${prueba.entregables.filter((e) => e.entregado).length} de ${prueba.entregables.length} entregables.`}
           </p>
-          <Link className={estilos.volverAlProceso} to={rutas.proceso(uuid)}>
+          <Link
+            className={estilos.volverAlProceso}
+            to={rutas.proceso(uuid)}
+            data-rotulo="Volver a mi proceso"
+          >
             Volver a mi proceso
           </Link>
         </div>
@@ -801,6 +811,7 @@ export function Prueba() {
                 className={estilos.empezar}
                 style={{ width: '100%', marginTop: 'var(--e4)' }}
                 onClick={() => setConfirmarInicio(true)}
+                data-rotulo="Empezar prueba"
               >
                 Empezar prueba
               </button>
@@ -825,6 +836,9 @@ export function Prueba() {
                   alAgotarse={refrescar}
                   className={estilos.tiempo}
                   classNamePoco={estilos.poco}
+                  /* La frase del umbral se ve: el rojo del numero es color, y
+                     el color solo no es una señal. */
+                  classNameAviso={estilos.avisoDelReloj}
                 />
                 {prueba.venceEn && (
                   <span className={estilos.hasta}>
@@ -971,6 +985,7 @@ export function Prueba() {
                   type="button"
                   className={estilos.entregar}
                   onClick={() => setConfirmarEntrega(true)}
+                  data-rotulo="Entregar prueba"
                 >
                   Entregar prueba
                 </button>
@@ -986,7 +1001,12 @@ export function Prueba() {
         onCerrar={() => setConfirmarInicio(false)}
         pie={
           <>
-            <button type="button" className={estilos.cancelar} onClick={() => setConfirmarInicio(false)}>
+            <button
+              type="button"
+              className={estilos.cancelar}
+              onClick={() => setConfirmarInicio(false)}
+              data-rotulo="Aún no"
+            >
               Aún no
             </button>
             <button
@@ -994,6 +1014,7 @@ export function Prueba() {
               className={estilos.confirmar}
               onClick={() => inicio.mutate()}
               disabled={inicio.isPending}
+              data-rotulo={inicio.isPending ? 'Abriendo…' : 'Sí, empezar'}
             >
               {inicio.isPending ? 'Abriendo…' : 'Sí, empezar'}
             </button>
@@ -1023,7 +1044,12 @@ export function Prueba() {
         onCerrar={() => setConfirmarEntrega(false)}
         pie={
           <>
-            <button type="button" className={estilos.cancelar} onClick={() => setConfirmarEntrega(false)}>
+            <button
+              type="button"
+              className={estilos.cancelar}
+              onClick={() => setConfirmarEntrega(false)}
+              data-rotulo="Seguir revisando"
+            >
               Seguir revisando
             </button>
             <button
@@ -1032,6 +1058,7 @@ export function Prueba() {
               onClick={() => entrega.mutate()}
               // Ya no depende de la cola: la propia entrega manda lo que quede antes de nada.
               disabled={entrega.isPending}
+              data-rotulo={entrega.isPending ? 'Entregando…' : 'Entregar'}
             >
               {entrega.isPending ? 'Entregando…' : 'Entregar'}
             </button>

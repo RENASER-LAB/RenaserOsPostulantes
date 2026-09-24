@@ -26,6 +26,7 @@ export function Restablecer() {
   return (
     <div className={estilos.pagina}>
       <ElegirClave
+        claseFormulario={estilos.superficieDelFormulario}
         minimo={8}
         ayuda="Al menos 8 caracteres, sin espacios al principio ni al final."
         restablecer={restablecerClave}

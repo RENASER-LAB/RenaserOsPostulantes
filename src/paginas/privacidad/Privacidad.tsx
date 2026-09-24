@@ -87,7 +87,7 @@ export function Privacidad() {
       </Link>
 
       <div className={estilos.encabezado}>
-        <h1>Tus datos, tus decisiones.</h1>
+        <h1 className={estilos.titular}>Tus datos, tus decisiones.</h1>
         <p className={estilos.bajada}>
           Son tres cosas distintas y se parecen mucho. Léelas antes de elegir:{' '}
           <b>solo una borra tus datos</b>.
@@ -127,6 +127,7 @@ export function Privacidad() {
                 className={estilos.secundario}
                 type="button"
                 onClick={() => void consulta.refetch()}
+                data-rotulo="Intentar de nuevo"
               >
                 Intentar de nuevo
               </button>
@@ -173,6 +174,7 @@ export function Privacidad() {
             type="button"
             onClick={() => futuros.mutate()}
             disabled={futuros.isPending}
+            data-rotulo={futuros.isPending ? 'Retirando…' : 'Retirar el permiso'}
           >
             {futuros.isPending ? 'Retirando…' : 'Retirar el permiso'}
           </button>
@@ -220,6 +222,7 @@ export function Privacidad() {
               className={estilos.cancelar}
               type="button"
               onClick={() => setPorRetirar(null)}
+              data-rotulo="Cancelar"
             >
               Cancelar
             </button>
@@ -258,6 +261,7 @@ export function Privacidad() {
               className={estilos.cancelar}
               type="button"
               onClick={() => setConfirmarBorrado(false)}
+              data-rotulo="Cancelar"
             >
               Cancelar
             </button>

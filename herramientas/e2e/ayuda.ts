@@ -4,14 +4,34 @@ import { configuracion } from './base-de-datos'
 
 export const API = configuracion().E2E_API
 
+/**
+ * El identificador de RENASER OS con el que entra la suite al panel.
+ *
+ * ⚠️ **`dev-equipo` es un valor por defecto, no una constante.** El `dev-login`
+ * exige que el id **exista ya** en la base: si no, el backend responde 400 con
+ * «Ese id de RENASER OS no está registrado en el sistema», que se lee como si
+ * el `dev-login` estuviera apagado y no lo está. Cada base local trae los
+ * usuarios de equipo que trae, y el nombre no tiene por qué coincidir:
+ *
+ *     E2E_EQUIPO=andy-dev npx playwright test
+ *
+ * Para ver cuáles hay:
+ *
+ *     docker exec -i renaser-postgres psql -U postgres -d renaser_db \
+ *       -c "select usuario_renaser_os_id from usuario where es_equipo;"
+ */
+export const EQUIPO = process.env.E2E_EQUIPO ?? 'dev-equipo'
+
 /** El token del panel: `dev-login` da todos los roles. */
 export async function tokenDelPanel(): Promise<string> {
   const r = await fetch(`${API}/panel/auth/dev-login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ usuarioRenaserOsId: 'dev-equipo' }),
+    body: JSON.stringify({ usuarioRenaserOsId: EQUIPO }),
   })
-  if (!r.ok) throw new Error(`dev-login falló: ${r.status}`)
+  if (!r.ok) {
+    throw new Error(`dev-login falló: ${r.status} ${await r.text()}`)
+  }
   return (await r.json()).token
 }
 

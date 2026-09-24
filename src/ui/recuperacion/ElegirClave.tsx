@@ -43,12 +43,27 @@ interface Props {
   rutaPedirEnlace: string
   /** Cuando la contraseña ya cambió: cada puerta lleva a su pantalla de entrar. */
   alCambiar: () => void
+  /**
+   * La superficie del formulario, si quien lo usa tiene una.
+   *
+   * El portal pone el suyo sobre nube, como el resto de sus formularios; el
+   * panel lo deja a pelo sobre el fondo, que es su disposición. La decisión es
+   * de cada puerta y no de esta pieza, que es la misma para las dos.
+   */
+  claseFormulario?: string
 }
 
 type Errores = Partial<Record<keyof CamposClaveNueva, string>>
 const VACIO: CamposClaveNueva = { contrasena: '', repetir: '' }
 
-export function ElegirClave({ minimo, ayuda, restablecer, rutaPedirEnlace, alCambiar }: Props) {
+export function ElegirClave({
+  minimo,
+  ayuda,
+  restablecer,
+  rutaPedirEnlace,
+  alCambiar,
+  claseFormulario,
+}: Props) {
   const [parametros, setParametros] = useSearchParams()
   // Se lee una vez, al montar: en cuanto la barra se limpia, la dirección ya no
   // lo tiene y el estado es el único sitio donde queda.
@@ -144,13 +159,17 @@ export function ElegirClave({ minimo, ayuda, restablecer, rutaPedirEnlace, alCam
 
   return (
     <>
-      <h1>Elige una contraseña nueva.</h1>
+      <h1 className={estilos.titular}>Elige una contraseña nueva.</h1>
       <p className={estilos.bajada}>
         Es la que vas a usar para entrar a partir de ahora. Cuando la guardes, te llevamos a
         la pantalla de entrar.
       </p>
 
-      <form className={estilos.formulario} onSubmit={alEnviar} noValidate>
+      <form
+        className={`${estilos.formulario} ${claseFormulario ?? ''}`}
+        onSubmit={alEnviar}
+        noValidate
+      >
         <fieldset className={estilos.grupo} disabled={enviando}>
           <Campo
             etiqueta="Contraseña nueva"

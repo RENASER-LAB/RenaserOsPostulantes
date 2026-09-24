@@ -1,0 +1,701 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EX · Portal del candidato — dirección «El Análisis»</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Archivo+Narrow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/*
+  THESIS: Aqui se mide el trabajo, no a la persona. La portada es la hoja de
+    emision de un laboratorio y su cadena de custodia; rechaza el hero de
+    slogan flotando sobre casi-blanco que entrega esta categoria.
+  OWN-WORLD: Papel #F5F3EE con reticula impresa, tinta #16181D, y una sola
+    tinta de sello violeta #4B2ED6 para lo que exige tu firma. Archivo y
+    Archivo Narrow, cifras tabulares en todo dato. Reglas de pelo, casillas
+    con rotulo en versalitas, y el semaforo verde/ambar/rojo intacto.
+  STORY: Quien entra entiende que el proceso se registra, no se opina: cada
+    etapa lleva fecha, hora y responsable, y lo que falta se dice pendiente.
+  FIRST VIEWPORT: Membrete con la hora del servidor impresa; el titular como
+    cabecera del documento a la izquierda; a la derecha la casilla de
+    indicacion con la accion sellada. Debajo, la escala de diez divisiones
+    con las cinco etapas medidas contra ella, y el registro de vacantes en
+    columnas fijas.
+  FORM: candidato 3 de la lista propia (la ficha de analisis y su cadena de
+    custodia); semilla 76fbfbe1, re-roll 1.
+  FINISH: unreviewed and undocumented is unfinished; this build ends with the
+    finish review, the verdict, DESIGN.md, and every shipping raster carrying
+    its provenance.
+*/
+
+:root {
+  --papel: #f5f3ee;
+  --papel-hundido: #eae7de;
+  --papel-honda: #dedacf;
+  --reticula: rgba(22, 24, 29, 0.045);
+  --regla: #d5d1c5;
+  --regla-fuerte: #b3ae9f;
+  --tinta: #16181d;
+  --tinta2: #4a4f58;
+  --tinta3: #5f6572;
+  --borde-control: #8c8778;
+  --sello: #4b2ed6;
+  --sello-hondo: #38209f;
+  --sello-bruma: #ece8fb;
+  --hecho: #0b7a63;
+  --duda: #8f5a0a;
+  --error: #c22a3f;
+
+  --e1: 4px; --e2: 8px; --e3: 12px; --e4: 16px;
+  --e5: 24px; --e6: 32px; --e7: 48px; --e8: 72px;
+
+  --ancho: 1180px;
+  --paso: 24px;
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--papel);
+  background-image:
+    repeating-linear-gradient(to right, var(--reticula) 0 1px, transparent 1px var(--paso)),
+    repeating-linear-gradient(to bottom, var(--reticula) 0 1px, transparent 1px var(--paso));
+  color: var(--tinta);
+  font-family: Archivo, system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+}
+
+::selection { background: var(--sello); color: #fff; }
+
+:focus-visible {
+  outline: 2px solid var(--sello);
+  outline-offset: 3px;
+}
+
+* { scrollbar-color: var(--regla-fuerte) var(--papel-hundido); scrollbar-width: thin; }
+::-webkit-scrollbar { width: 12px; height: 12px; }
+::-webkit-scrollbar-track { background: var(--papel-hundido); }
+::-webkit-scrollbar-thumb { background: var(--regla-fuerte); border: 3px solid var(--papel-hundido); }
+
+a { color: inherit; text-underline-offset: 3px; text-decoration-thickness: 1px; text-decoration-color: var(--regla-fuerte); }
+a:hover { text-decoration-color: var(--tinta); }
+
+.limite { max-width: var(--ancho); margin-inline: auto; padding-inline: var(--e5); }
+
+.rotulo {
+  font-family: 'Archivo Narrow', Archivo, system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--tinta3);
+}
+
+/* ---------- membrete ---------- */
+
+.membrete {
+  border-bottom: 1px solid var(--regla-fuerte);
+  background: var(--papel);
+}
+.membrete .limite {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e5);
+  min-height: 60px;
+}
+.marca {
+  display: flex;
+  align-items: baseline;
+  gap: var(--e2);
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: -0.02em;
+}
+.marca svg { display: block; }
+.nav { display: flex; gap: var(--e1); list-style: none; margin: 0; padding: 0; }
+.nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding-inline: var(--e3);
+  font-size: 14px;
+  color: var(--tinta2);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+}
+.nav a:hover { color: var(--tinta); border-bottom-color: var(--regla-fuerte); }
+.nav a[aria-current] { color: var(--tinta); font-weight: 600; border-bottom-color: var(--tinta); }
+
+/* ---------- tira de datos del documento ---------- */
+
+.tira {
+  border-bottom: 1px solid var(--regla);
+  background: var(--papel-hundido);
+}
+.tira .limite {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+}
+.celda {
+  padding: var(--e3) var(--e4) var(--e3) 0;
+  border-left: 1px solid var(--regla);
+  padding-left: var(--e4);
+}
+.celda:first-child { border-left: 0; padding-left: 0; }
+.celda .dato {
+  font-family: 'Archivo Narrow', Archivo, system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--tinta);
+  margin-top: 2px;
+}
+
+/* ---------- cabecera del documento ---------- */
+
+.cabecera { padding-block: var(--e7) var(--e5); position: relative; }
+.cabecera .limite {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.85fr);
+  gap: var(--e7);
+  align-items: start;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(40px, 6.2vw, 84px);
+  font-weight: 600;
+  line-height: 0.98;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+  max-width: 14ch;
+}
+h1 em {
+  font-style: normal;
+  display: block;
+  color: var(--tinta2);
+}
+
+.entradilla {
+  margin: var(--e5) 0 0;
+  max-width: 46ch;
+  font-size: 18px;
+  line-height: 1.55;
+  color: var(--tinta2);
+}
+
+/* casilla de indicacion */
+.casilla {
+  border: 1px solid var(--regla-fuerte);
+  background: var(--papel);
+  padding: var(--e5);
+}
+.casilla h2 {
+  margin: 0 0 var(--e3);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.casilla p { margin: 0 0 var(--e4); font-size: 15px; line-height: 1.55; color: var(--tinta2); }
+.casilla dl {
+  margin: 0 0 var(--e5);
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--e2) var(--e4);
+  border-top: 1px solid var(--regla);
+  padding-top: var(--e4);
+  font-size: 14px;
+}
+.casilla dt { color: var(--tinta3); font-family: 'Archivo Narrow', Archivo, sans-serif; }
+.casilla dd { margin: 0; font-weight: 500; }
+
+.sellado {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e3);
+  min-height: 52px;
+  padding-inline: var(--e6);
+  background: var(--sello);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  text-decoration: none;
+  border: 1px solid var(--sello);
+  transition: background 160ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.sellado:hover { background: var(--sello-hondo); box-shadow: 0 0 0 4px var(--sello-bruma); }
+.sellado svg { flex: none; }
+
+/* sello fechador */
+.sello-fechador {
+  position: absolute;
+  right: max(var(--e5), calc(50vw - var(--ancho) / 2 + var(--e5)));
+  top: var(--e4);
+  transform: rotate(-8deg);
+  border: 2px solid var(--sello);
+  color: var(--sello);
+  padding: var(--e2) var(--e4) 6px;
+  text-align: center;
+  opacity: 0.86;
+  pointer-events: none;
+  animation: asentar 900ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.sello-fechador .palabra {
+  font-family: 'Archivo Narrow', Archivo, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  display: block;
+  line-height: 1.2;
+}
+.sello-fechador .cuando {
+  font-family: 'Archivo Narrow', Archivo, sans-serif;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  display: block;
+  border-top: 1px solid currentColor;
+  margin-top: 3px;
+  padding-top: 3px;
+}
+@keyframes asentar {
+  from { transform: rotate(-14deg) scale(1.14); opacity: 0.28; }
+  to   { transform: rotate(-8deg) scale(1); opacity: 0.86; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sello-fechador { animation: none; }
+}
+
+/* ---------- la escala ---------- */
+
+.escala { padding-block: var(--e5) var(--e8); }
+.escala h2 { margin: 0 0 var(--e4); font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+
+/* indice del documento */
+.indice { margin-top: var(--e6); max-width: 46ch; }
+.indice ol {
+  list-style: none;
+  margin: var(--e2) 0 0;
+  padding: 0;
+  border-top: 1px solid var(--regla-fuerte);
+}
+.indice li {
+  display: grid;
+  grid-template-columns: 52px 1fr auto;
+  gap: var(--e3);
+  align-items: baseline;
+  padding: var(--e3) 0;
+  border-bottom: 1px solid var(--regla);
+}
+.indice a {
+  font-size: 16px;
+  font-weight: 500;
+  text-decoration: none;
+  letter-spacing: -0.01em;
+}
+.indice a:hover { text-decoration: underline; text-decoration-color: var(--tinta); }
+.indice .donde {
+  font-family: 'Archivo Narrow', Archivo, sans-serif;
+  font-size: 14px;
+  color: var(--tinta3);
+}
+
+.regleta {
+  position: relative;
+  border-top: 2px solid var(--tinta);
+  padding-top: 0;
+}
+.divisiones {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  height: 15px;
+  border-bottom: 1px solid var(--regla);
+}
+.divisiones span { border-left: 1px solid var(--tinta3); }
+.divisiones span:nth-child(odd) { border-left-color: var(--regla-fuerte); margin-top: 6px; }
+.divisiones span:first-child { border-left: 0; }
+
+.etapas {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.etapa {
+  border-left: 1px solid var(--regla);
+  padding: var(--e4) var(--e4) var(--e5) var(--e4);
+  display: flex;
+  flex-direction: column;
+}
+.etapa:first-child { border-left: 0; padding-left: 0; }
+.etapa h3 {
+  margin: 0 0 var(--e2);
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  display: flex;
+  align-items: baseline;
+  gap: var(--e2);
+}
+.etapa h3 .n {
+  font-family: 'Archivo Narrow', Archivo, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--tinta3);
+  border: 1px solid var(--regla-fuerte);
+  min-width: 20px;
+  text-align: center;
+  padding: 1px 4px;
+  align-self: center;
+}
+.etapa p { margin: 0 0 var(--e5); font-size: 14px; line-height: 1.5; color: var(--tinta2); max-width: 32ch; }
+.etapa .medida {
+  margin-top: auto;
+  padding-top: var(--e2);
+  border-top: 1px solid var(--regla);
+}
+.etapa .medida .dato {
+  font-family: 'Archivo Narrow', Archivo, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--tinta);
+  margin-top: 2px;
+}
+
+/* ---------- registro de vacantes ---------- */
+
+.registro { padding-bottom: var(--e8); }
+.registro-cab {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--e4);
+  border-bottom: 2px solid var(--tinta);
+  padding-bottom: var(--e3);
+}
+.registro-cab h2 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+
+table { width: 100%; border-collapse: collapse; }
+thead th {
+  text-align: left;
+  padding: var(--e3) var(--e4) var(--e3) 0;
+  border-bottom: 1px solid var(--regla-fuerte);
+  font-family: 'Archivo Narrow', Archivo, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--tinta3);
+  white-space: nowrap;
+}
+tbody tr { border-bottom: 1px solid var(--regla); }
+tbody tr:hover { background: var(--papel-hundido); }
+tbody td { padding: var(--e5) var(--e4) var(--e5) 0; vertical-align: top; }
+tbody td:last-child, thead th:last-child { padding-right: 0; text-align: right; }
+
+.folio {
+  font-family: 'Archivo Narrow', Archivo, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--tinta3);
+  white-space: nowrap;
+}
+.puesto { font-size: 21px; font-weight: 600; letter-spacing: -0.018em; line-height: 1.2; }
+.puesto a { text-decoration: none; }
+.puesto a::after { content: ''; position: absolute; inset: 0; }
+tbody tr { position: relative; scroll-margin-top: 80px; }
+.empresa { margin-top: 3px; font-size: 14px; color: var(--tinta2); }
+.encargo { margin: var(--e3) 0 0; font-size: 14.5px; line-height: 1.5; color: var(--tinta2); max-width: 52ch; }
+.condiciones {
+  font-family: 'Archivo Narrow', Archivo, sans-serif;
+  font-size: 14px;
+  color: var(--tinta2);
+  line-height: 1.6;
+}
+.condiciones b { display: block; font-weight: 600; color: var(--tinta); }
+.sueldo { display: block; margin-top: var(--e3); font-family: Archivo, sans-serif; font-size: 15px; font-weight: 600; color: var(--tinta); white-space: nowrap; }
+.ver {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  min-height: 44px;
+  padding-inline: var(--e4);
+  border: 1px solid var(--borde-control);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: border-color 160ms cubic-bezier(0.16, 1, 0.3, 1), background 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+tbody tr:hover .ver { border-color: var(--tinta); background: var(--papel); }
+
+/* ---------- pie ---------- */
+
+.pie {
+  border-top: 1px solid var(--regla-fuerte);
+  background: var(--papel-hundido);
+  padding-block: var(--e5);
+}
+.pie .limite {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e4);
+  font-size: 14px;
+  color: var(--tinta2);
+}
+.pie ul { display: flex; flex-wrap: wrap; gap: var(--e5); list-style: none; margin: 0; padding: 0; }
+
+/* ---------- adaptacion ---------- */
+
+@media (max-width: 1000px) {
+  .cabecera .limite { grid-template-columns: 1fr; gap: var(--e6); }
+  .sello-fechador { position: static; display: inline-block; margin-bottom: var(--e5); }
+  .etapas { grid-template-columns: repeat(2, 1fr); }
+  .etapa { border-left: 1px solid var(--regla); border-top: 1px solid var(--regla); padding-left: var(--e4); }
+  .etapa:first-child { border-top: 0; }
+  .etapa:nth-child(odd) { border-left: 0; padding-left: 0; }
+  .etapa:nth-child(2) { border-top: 0; }
+}
+
+@media (max-width: 760px) {
+  :root { --e8: 48px; --e7: 32px; }
+  .tira .limite { grid-template-columns: repeat(2, 1fr); }
+  .celda:nth-child(3) { border-left: 0; padding-left: 0; }
+  .celda:nth-child(3), .celda:nth-child(4) { border-top: 1px solid var(--regla); }
+  .etapas { grid-template-columns: 1fr; }
+  .etapa, .etapa:nth-child(odd) { border-left: 0; padding-left: 0; border-top: 1px solid var(--regla); }
+  .etapa:first-child { border-top: 0; }
+  .etapa p { max-width: none; }
+
+  thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  tbody tr { display: block; padding-block: var(--e5); }
+  tbody td { display: block; padding: 0 0 var(--e3); }
+  tbody td:last-child { text-align: left; padding-bottom: 0; }
+  .nav a { padding-inline: var(--e2); }
+  .marca { font-size: 19px; }
+}
+</style>
+</head>
+<body>
+
+<header class="membrete">
+  <div class="limite">
+    <a class="marca" href="#" aria-label="EX, portal del candidato">
+      <svg width="30" height="24" viewBox="0 0 30 24" fill="none" aria-hidden="true">
+        <path d="M1 2h9M1 11.5h7.5M1 21h9" stroke="#16181d" stroke-width="2.6" stroke-linecap="square"/>
+        <path d="M15 2l13 19M28 2L15 21" stroke="#16181d" stroke-width="2.6" stroke-linecap="square"/>
+        <circle cx="21.5" cy="11.5" r="2.4" fill="#4b2ed6"/>
+      </svg>
+    </a>
+    <nav aria-label="Principal">
+      <ul class="nav">
+        <li><a href="#" aria-current="page">Vacantes</a></li>
+        <li><a href="#">Mis procesos</a></li>
+        <li><a href="#">Ingresar</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<div class="tira">
+  <div class="limite">
+    <div class="celda">
+      <div class="rotulo">Emitido</div>
+      <div class="dato"><time datetime="2026-09-09T17:42">09/09/2026 · 17:42</time></div>
+    </div>
+    <div class="celda">
+      <div class="rotulo">Hora</div>
+      <div class="dato">Del servidor, no de tu equipo</div>
+    </div>
+    <div class="celda">
+      <div class="rotulo">Registro</div>
+      <div class="dato">5 vacantes abiertas</div>
+    </div>
+    <div class="celda">
+      <div class="rotulo">Emisor</div>
+      <div class="dato">Renaser Consulting</div>
+    </div>
+  </div>
+</div>
+
+<section class="cabecera">
+  <div class="sello-fechador" aria-hidden="true">
+    <span class="palabra">Vigente</span>
+    <span class="cuando">09 SET 2026 · 17:42</span>
+  </div>
+  <div class="limite">
+    <div>
+      <h1>Tu próximo trabajo <em>puede empezar aquí.</em></h1>
+      <p class="entradilla">
+        El proceso son cinco etapas, y en todas se mira cómo trabajas. Tu currículum
+        entra, pero por diseño no descarta a nadie.
+      </p>
+
+      <div class="indice">
+        <span class="rotulo">En este registro</span>
+        <ol>
+          <li><span class="folio">V-001</span><a href="#v001">Analista de Datos</a><span class="donde">Lima</span></li>
+          <li><span class="folio">V-002</span><a href="#v002">Coordinador/a de Operaciones</a><span class="donde">Arequipa</span></li>
+          <li><span class="folio">V-003</span><a href="#v003">Especialista en Mejora Continua</a><span class="donde">Trujillo</span></li>
+          <li><span class="folio">V-004</span><a href="#v004">Analista de Planeamiento</a><span class="donde">Lima</span></li>
+          <li><span class="folio">V-005</span><a href="#v005">Jefe/a de Servicio al Cliente</a><span class="donde">Lima</span></li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="casilla">
+      <h2>Antes de empezar</h2>
+      <p>
+        Cada etapa queda registrada con su fecha, su hora y quién la recibió. Lo que
+        todavía no se ha hecho se dice pendiente; nunca vas a tener que escribir para
+        preguntar en qué punto estás.
+      </p>
+      <dl>
+        <dt>Duración</dt><dd>Semanas, no días</dd>
+        <dt>Etapas</dt><dd>Cinco, en orden fijo</dd>
+        <dt>Cuenta</dt><dd>No hace falta para mirar</dd>
+      </dl>
+      <a class="sellado" href="#registro">
+        Ver las vacantes abiertas
+        <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+          <path d="M1 6h13M9.5 1.5L14 6l-4.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/>
+        </svg>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="escala">
+  <div class="limite">
+    <h2>El recorrido completo, de principio a fin</h2>
+    <div class="regleta">
+      <div class="divisiones" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+      <ol class="etapas">
+        <li class="etapa">
+          <h3><span class="n">1</span>Perfil</h3>
+          <p>Subes tu currículum y respondes una evaluación escrita sobre cómo trabajas.</p>
+          <div class="medida"><span class="rotulo">Plazo</span><div class="dato">14 días para responder</div></div>
+        </li>
+        <li class="etapa">
+          <h3><span class="n">2</span>Prueba</h3>
+          <p>Un encargo real del puesto, con el tiempo medido.</p>
+          <div class="medida"><span class="rotulo">Reloj</span><div class="dato">Corre aunque cierres</div></div>
+        </li>
+        <li class="etapa">
+          <h3><span class="n">3</span>Simulación</h3>
+          <p>Una sesión de trabajo con el equipo, en una fecha que eliges tú.</p>
+          <div class="medida"><span class="rotulo">Sesión</span><div class="dato">2 horas, fecha que eliges</div></div>
+        </li>
+        <li class="etapa">
+          <h3><span class="n">4</span>Validación</h3>
+          <p>Un periodo corto trabajando de verdad, con acuerdo y responsable.</p>
+          <div class="medida"><span class="rotulo">Periodo</span><div class="dato">Corto, con responsable</div></div>
+        </li>
+        <li class="etapa">
+          <h3><span class="n">5</span>Decisión</h3>
+          <p>Una persona decide, mirando todo el recorrido.</p>
+          <div class="medida"><span class="rotulo">Decide</span><div class="dato">Una persona, no un puntaje</div></div>
+        </li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<section class="registro" id="registro">
+  <div class="limite">
+    <div class="registro-cab">
+      <h2>Vacantes abiertas</h2>
+      <span class="rotulo">5 puestos · actualizado 17:42</span>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th scope="col">Folio</th>
+          <th scope="col">Puesto y encargo</th>
+          <th scope="col">Condiciones</th>
+          <th scope="col"><span class="rotulo">Acción</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr id="v001">
+          <td class="folio">V-001</td>
+          <td>
+            <div class="puesto"><a href="#">Analista de Datos</a></div>
+            <div class="empresa">Clínica San Juan</div>
+            <p class="encargo">Que los reportes semanales salgan solos y sean confiables, y que el área comercial deje de pedir números por chat cada lunes por la mañana.</p>
+          </td>
+          <td class="condiciones"><b>Híbrido · Lima</b>Lunes a viernes, de 9 a 18<span class="sueldo">S/ 3 800 – 4 500</span></td>
+          <td><span class="ver">Ver el puesto</span></td>
+        </tr>
+        <tr id="v002">
+          <td class="folio">V-002</td>
+          <td>
+            <div class="puesto"><a href="#">Coordinador/a de Operaciones</a></div>
+            <div class="empresa">Transportes del Sur</div>
+            <p class="encargo">Llevar la operación del día a día: proveedores, rutas, caja chica y el control de que lo comprometido se cumpla.</p>
+          </td>
+          <td class="condiciones"><b>Presencial · Arequipa</b>Lunes a sábado</td>
+          <td><span class="ver">Ver el puesto</span></td>
+        </tr>
+        <tr id="v003">
+          <td class="folio">V-003</td>
+          <td>
+            <div class="puesto"><a href="#">Especialista en Mejora Continua</a></div>
+            <div class="empresa">Molinos del Norte</div>
+            <p class="encargo">Bajar el desperdicio de la línea de envasado sin parar la producción.</p>
+          </td>
+          <td class="condiciones"><b>Presencial · Trujillo</b></td>
+          <td><span class="ver">Ver el puesto</span></td>
+        </tr>
+        <tr id="v004">
+          <td class="folio">V-004</td>
+          <td>
+            <div class="puesto"><a href="#">Analista de Planeamiento</a></div>
+            <div class="empresa">Andes Retail</div>
+            <p class="encargo">Que la reposición de tiendas deje de decidirse por corazonada.</p>
+          </td>
+          <td class="condiciones"><b>Remoto · Lima</b>Flexible</td>
+          <td><span class="ver">Ver el puesto</span></td>
+        </tr>
+        <tr id="v005">
+          <td class="folio">V-005</td>
+          <td>
+            <div class="puesto"><a href="#">Jefe/a de Servicio al Cliente</a></div>
+            <div class="empresa">Clínica San Juan</div>
+            <p class="encargo">Que una queja se resuelva en el primer contacto y quede aprendida.</p>
+          </td>
+          <td class="condiciones"><b>Presencial · Lima</b>Turnos rotativos</td>
+          <td><span class="ver">Ver el puesto</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<footer class="pie">
+  <div class="limite">
+    <span>© 2026 Renaser Consulting</span>
+    <ul>
+      <li><a href="#">Política de privacidad</a></li>
+      <li><a href="#">Privacidad y control</a></li>
+      <li><a href="#">Entrar al panel de empresas</a></li>
+    </ul>
+  </div>
+</footer>
+
+</body>
+</html>

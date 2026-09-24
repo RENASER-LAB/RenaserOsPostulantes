@@ -1,0 +1,229 @@
+/*
+ * El esqueleto de una pantalla del portal.
+ *
+ * `piezas.module.css` tiene las cosas —botones, paneles—; esto tiene el sitio
+ * donde se ponen: el carril, el encabezado, el reparto en columnas y el bloque.
+ * Se separan porque son dos preguntas distintas: una pantalla puede componerse
+ * entera con esta hoja sin usar ni un boton.
+ *
+ * Se trae igual que las piezas, con `composes` desde la hoja de cada pantalla:
+ *
+ *   .pagina {
+ *     composes: hoja from '../../estilos/pagina.module.css';
+ *   }
+ *
+ * ⚠️ **Esto sale de mirar dos pantallas que tenian el mismo CSS escrito dos
+ * veces** —«El caso ambar» y «La validacion practica», palabra por palabra en
+ * once reglas—. Antes de anadir algo aqui, comprueba que lo pidan dos sitios:
+ * una pieza con un solo consumidor es un nombre compartido que hay que prometer
+ * no reutilizar, y eso cuesta mas que duplicar.
+ */
+
+/* ================================================================== *
+ * EL CARRIL
+ * ================================================================== */
+
+/*
+ * Donde vive una pantalla del portal. **Cuatro anchos y ninguno mas.**
+ *
+ *   .hoja              68rem  lo que se compone en columnas
+ *   .hojaProsa         48rem  un documento para leer
+ *   .hojaFormulario    44rem  un formulario largo
+ *   .hojaCorta         34rem  un formulario de tres campos
+ *
+ * Son variantes declaradas y no un `max-width` que cada pantalla se escribe
+ * encima: pisar el de `.hoja` desde la hoja de la pantalla funciona, pero
+ * funciona **por el orden en que se juntan las hojas**, no porque nadie lo haya
+ * decidido. Aqui la que gana es la que se nombra.
+ *
+ * Abre con `--e7` y no con `--e5`: la cabecera dejo de ser vidrio empañado y es
+ * nube maciza, asi que el titular que empieza a 24 px se pega a ella.
+ */
+.hoja {
+  max-width: var(--ancho);
+  margin: 0 auto;
+  padding: var(--e7) var(--e5) var(--e8);
+}
+
+/* La prosa la corta `--medida` de todas formas; el carril solo evita que un
+   titular de dos palabras quede perdido en 68rem de blanco. */
+.hojaProsa {
+  composes: hoja;
+  max-width: 48rem;
+}
+
+.hojaFormulario {
+  composes: hoja;
+  max-width: 44rem;
+}
+
+.hojaCorta {
+  composes: hoja;
+  max-width: 34rem;
+}
+
+/* El enlace de vuelta come del aire de arriba: no se suma, se resta. */
+.hoja > :first-child {
+  margin-top: calc(var(--e5) * -1);
+}
+
+@media (max-width: 640px) {
+  .hoja {
+    padding: var(--e6) var(--e4) var(--e7);
+  }
+}
+
+/* ================================================================== *
+ * EL ENCABEZADO
+ * ================================================================== */
+
+/*
+ * El `h1` y la linea que lo situa. La jerarquia la hace la tipografia y nada
+ * mas: aqui no hay recuadro, ni filete, ni fondo.
+ *
+ * ⚠️ **Tres clases sueltas y ningun selector de descendiente**, aunque
+ * `.encabezado h1` seria mas corto. Un descendiente que llega por `composes`
+ * pesa (0,1,1) y le gana a la clase propia del consumidor, que pesa (0,1,0):
+ * una pantalla que quisiera su bajada en tinta plena no podria, y el fallo se
+ * ve en la pantalla y no en la hoja que lo causa. Con clases sueltas, quien
+ * compone decide.
+ */
+.encabezado {
+  margin-top: var(--e6);
+}
+
+.titular {
+  margin: 0;
+  max-width: 22ch;
+}
+
+.bajada {
+  margin: var(--e3) 0 0;
+  font-size: var(--t-base);
+  line-height: 1.55;
+  color: var(--tinta2);
+  max-width: var(--medida);
+}
+
+/* ================================================================== *
+ * EL REPARTO
+ * ================================================================== */
+
+/*
+ * Una columna que manda y una que acompana. La estrecha mide 19rem y no un
+ * porcentaje: lo que va ahi son notas de dos lineas, y en porcentaje crecen
+ * hasta parecer una segunda lectura.
+ *
+ * Por debajo de 900 px se apilan, y la que acompana cae debajo — que es donde
+ * tiene que estar, porque acompana.
+ */
+.reparto {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 19rem;
+  align-items: start;
+  gap: var(--e5);
+  margin-top: var(--e6);
+}
+
+.columna {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e5);
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  .reparto {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ================================================================== *
+ * LOS BLOQUES
+ * ================================================================== */
+
+/*
+ * Una superficie de nube sobre el cielo. Sin sombra: la profundidad de este
+ * mundo es tono, no papel levantado, y una sombra en reposo la gastaria donde
+ * no hace falta.
+ */
+.bloque {
+  border: 1px solid var(--regla);
+  border-radius: var(--radio);
+  padding: var(--e5);
+}
+
+/*
+ * El mismo bloque con mas aire dentro, para cuando lo que contiene es una
+ * pantalla entera y no una nota: un formulario, o el momento de canjear el
+ * enlace del correo.
+ *
+ * ⚠️ **Es una variante y no un `padding` escrito encima desde la pantalla.**
+ * Un `composes` **entre archivos** deja las dos reglas con el mismo peso, y cual
+ * gana lo decide el orden en que Vite inyecta las hojas — que no es el orden en
+ * que las escribes. Se comprobo: `.formulario { composes: bloque; padding:
+ * var(--e6) }` daba 24 px, no 32. Dentro de esta hoja el orden si esta
+ * garantizado, asi que la variante gana siempre.
+ */
+.bloqueHolgado {
+  composes: bloque;
+  padding: var(--e6);
+}
+
+/*
+ * Lo que va dentro de una superficie cambia de fondo, no de elevacion. Es la
+ * regla de no anidar sombras, escrita como pieza.
+ */
+.bloqueHundido {
+  background: var(--nube-hundida);
+}
+
+.tituloBloque {
+  margin: 0 0 var(--e3);
+}
+
+.texto {
+  font-size: var(--t-prosa);
+  line-height: 1.6;
+  color: var(--tinta2);
+  max-width: var(--medida);
+}
+
+.texto + .texto {
+  margin-top: var(--e3);
+}
+
+@media (max-width: 640px) {
+  .bloque {
+    padding: var(--e4);
+  }
+
+  .bloqueHolgado {
+    padding: var(--e5);
+  }
+}
+
+/* ================================================================== *
+ * LO QUE EL PORTAL NO SABE
+ * ================================================================== */
+
+/*
+ * El hueco declarado.
+ *
+ * Este portal dice lo que no sabe en vez de rellenarlo: un nombre de
+ * responsable puesto a ojo o una cuenta de dias sacada de la nada valen menos
+ * que el hueco escrito. Aparece en «La validacion practica» y en «El caso
+ * ambar», y va a aparecer mas.
+ *
+ * Va neutro y sin filete lateral: **la barra de acento a la izquierda esta
+ * prohibida en este mundo**, y ademas un hueco no es una alarma.
+ */
+.hueco {
+  border: 1px solid var(--regla2);
+  border-radius: var(--radio);
+  background: var(--nube-hundida);
+  padding: var(--e4);
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+}

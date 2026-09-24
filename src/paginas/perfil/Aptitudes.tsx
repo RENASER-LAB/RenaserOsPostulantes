@@ -151,6 +151,7 @@ export function Aptitudes({
           className={estilos.anadir}
           onClick={() => anadir(pendiente)}
           disabled={pendiente.trim() === ''}
+          data-rotulo="Añadir"
         >
           Añadir
         </button>

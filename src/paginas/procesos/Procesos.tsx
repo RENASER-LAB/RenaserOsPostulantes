@@ -19,17 +19,17 @@ import type { MiPostulacion } from '@/api/tipos'
 import { esFinal, estaCalificando, leTocaAlCandidato, momentoDeLaEtapa } from '@/dominio/estados'
 import { formatearFechaCorta } from '@/dominio/reloj'
 import { rutas } from '@/rutas'
-import { Canto } from '@/ui/Canto'
 import { Seguimiento } from './Seguimiento'
 import estilos from './Procesos.module.css'
 
 const CADA_15_SEGUNDOS = 15_000
 
 /** Lo que se le dice a quien llega a una postulacion ya terminada. */
-const COMO_TERMINO: Record<string, { titulo: string; texto: string }> = {
+const COMO_TERMINO: Record<string, { titulo: string; texto: string; bien?: true }> = {
   CONTRATADO: {
     titulo: 'Te damos la bienvenida',
     texto: 'El proceso terminó y te contratamos. Nos pondremos en contacto contigo.',
+    bien: true,
   },
   NO_CONTINUA: {
     titulo: 'Gracias por participar',
@@ -62,7 +62,6 @@ export function Procesos() {
   if (consulta.isPending) {
     return (
       <div className={estilos.pagina}>
-        <Canto />
         <div className={estilos.estado} aria-busy="true">
           <h1>Cargando tus procesos…</h1>
           <div className={estilos.barra} />
@@ -80,7 +79,6 @@ export function Procesos() {
         : 'No pudimos conectar con el servidor.'
     return (
       <div className={estilos.pagina}>
-        <Canto />
         <div className={estilos.estado}>
           <h1>No pudimos cargar tus procesos.</h1>
           <p className={estilos.estadoTexto}>
@@ -91,6 +89,7 @@ export function Procesos() {
             type="button"
             className={estilos.reintentar}
             onClick={() => void consulta.refetch()}
+            data-rotulo="Intentar de nuevo"
           >
             Intentar de nuevo
           </button>
@@ -112,8 +111,6 @@ export function Procesos() {
 
   return (
     <div className={estilos.pagina}>
-      <Canto />
-
       {/*
         La lista se refresca sola cada 15 segundos y hasta ahora el estado
         cambiaba en silencio: quien no ve la pantalla no se enteraba de que
@@ -229,12 +226,30 @@ function Proceso({ postulacion }: { postulacion: MiPostulacion }) {
       <article className={estilos.proceso} aria-labelledby={idTitulo}>
         {cabecera}
         {termino && (
-          <div className={estilos.cierre}>
+          /*
+            ⚠️ El cierre en positivo y el descarte se pintaban IGUAL, con la
+            misma marca punteada que en el recorrido significa «aqui se detuvo»:
+            al contratado se le dibujaba la forma de detenido. Son los dos
+            estados mas distintos que el sistema produce.
+          */
+          <div
+            className={`${estilos.cierre}${termino.bien ? ` ${estilos.bienvenida}` : ''}`}
+          >
             <p className={estilos.tituloCerrado}>
               <span className={estilos.marcaCortada} aria-hidden="true" />
               <span className={estilos.cierreTitulo}>{termino.titulo}</span>
             </p>
             <p className={estilos.cierreTexto}>{termino.texto}</p>
+            {/*
+              Y una salida hacia adelante cuando NO continua. Sin esto la
+              pantalla daba la noticia y terminaba ahi: despues de semanas de
+              trabajo, el unico sitio al que ir era el pie de pagina.
+            */}
+            {!termino.bien && (
+              <p className={estilos.seguirBuscando}>
+                <Link to={rutas.vacantes()}>Ver las vacantes abiertas</Link>
+              </p>
+            )}
           </div>
         )}
         {enlaceDetalle}

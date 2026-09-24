@@ -359,6 +359,7 @@ function TuCurriculum({ perfil }: { perfil: PerfilCompleto }) {
                   className={estilos.accionMenor}
                   onClick={() => quitada.mutate()}
                   disabled={ocupado}
+                  data-rotulo="Sí, quitarlo"
                 >
                   Sí, quitarlo
                 </button>
@@ -366,6 +367,7 @@ function TuCurriculum({ perfil }: { perfil: PerfilCompleto }) {
                   type="button"
                   className={estilos.accionMenor}
                   onClick={() => setConfirmandoQuitar(false)}
+                  data-rotulo="No"
                 >
                   No
                 </button>

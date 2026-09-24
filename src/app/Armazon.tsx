@@ -6,7 +6,7 @@
  */
 
 import { Link, NavLink, Outlet, matchPath, useLocation } from 'react-router-dom'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { patrones, rutas } from '@/rutas'
 import { useSesion } from './Sesion'
 import { Campana } from '@/ui/Campana'
@@ -40,6 +40,7 @@ const TITULOS: Array<[string, string]> = [
   [patrones.proceso, 'Mi proceso'],
   [patrones.evaluacion, 'Evaluación'],
   [patrones.prueba, 'La prueba del puesto'],
+  [patrones.cuestionarioTecnico, 'La prueba del puesto'],
   [patrones.simulacion, 'Simulación de trabajo'],
   [patrones.validacion, 'Validación práctica'],
   [patrones.decision, 'Decisión'],
@@ -59,15 +60,62 @@ function TituloDeLaPagina() {
 }
 
 function ArribaAlCambiarDePagina() {
-  const { pathname } = useLocation()
+  const { pathname, hash } = useLocation()
 
   // Ojo con el cuerpo entre llaves: si se escribe `useEffect(() => window.
   // scrollTo(0, 0), ...)`, el efecto devuelve lo que devuelva `scrollTo`, y
   // React se lo queda como funcion de limpieza. Al desmontar intenta llamarlo
   // y revienta con «destroy is not a function», tumbando la pagina entera.
   useEffect(() => {
+    // Con ancla manda `LlevarAlAncla`. Sin esta guarda los dos se pelean: al
+    // llegar de otra pantalla a `/#vacantes-abiertas` este efecto sube a cero
+    // y deja al visitante arriba del todo, que es justo donde no queria ir.
+    if (hash) return
     window.scrollTo(0, 0)
-  }, [pathname])
+  }, [pathname, hash])
+
+  return null
+}
+
+/**
+ * Desplaza hasta el ancla de la direccion.
+ *
+ * ⚠️ **Hace falta escribirlo: con `<Link>` el navegador no lo hace solo.** Un
+ * enlace normal a `#algo` lo resuelve el navegador, pero React Router navega
+ * con `pushState`, y `pushState` no dispara el salto al ancla. Sin esto,
+ * «Vacantes» cambiaba la direccion a `/#vacantes-abiertas` y la pagina se
+ * quedaba exactamente donde estaba.
+ *
+ * Va contra `key` y no contra `hash`: `key` cambia en cada navegacion aunque
+ * el destino sea el mismo, asi que pulsar «Vacantes» dos veces seguidas vuelve
+ * a llevar abajo. Contra `hash`, la segunda pulsacion no hacia nada.
+ *
+ * El `requestAnimationFrame` espera al primer pintado: al llegar de otra
+ * pantalla el destino todavia no esta en el documento cuando corre el efecto.
+ */
+function LlevarAlAncla() {
+  const { hash, key } = useLocation()
+
+  useEffect(() => {
+    if (!hash) return
+
+    const id = decodeURIComponent(hash.slice(1))
+
+    // Quien pidio menos movimiento salta, no se desliza. El bloque de
+    // `prefers-reduced-motion` de `mundo.css` aqui no llega: solo apaga
+    // animaciones y transiciones de CSS, y esto es una opcion de JavaScript
+    // que ninguna hoja puede sobrescribir.
+    const quieto = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+    const cuadro = requestAnimationFrame(() => {
+      const destino = document.getElementById(id)
+      // `scroll-margin-top` en el destino es lo que impide que la cabecera,
+      // que flota encima, le tape el titulo al llegar.
+      destino?.scrollIntoView({ behavior: quieto ? 'auto' : 'smooth', block: 'start' })
+    })
+
+    return () => cancelAnimationFrame(cuadro)
+  }, [hash, key])
 
   return null
 }
@@ -76,15 +124,50 @@ function claseDelEnlace({ isActive }: { isActive: boolean }) {
   return isActive ? `${estilos.enlace} ${estilos.enlaceActivo}` : estilos.enlace
 }
 
+/**
+ * Si la pagina ya se movio de arriba.
+ *
+ * Es lo unico que separa la cabecera en reposo —solo la marca y los enlaces
+ * sobre el cielo— de la cabecera posada, que saca su superficie para que el
+ * contenido no se le mezcle por debajo.
+ *
+ * ⚠️ **Se lee una vez al montar, ademas de escuchar.** Al volver a una pantalla
+ * con el navegador ya desplazado, un oyente que solo reacciona a `scroll` deja
+ * la barra transparente sobre contenido.
+ *
+ * El oyente va en `passive`: no llama a `preventDefault` y sin la marca el
+ * navegador tiene que esperar a saber si lo hara antes de desplazar.
+ */
+function usarPosada() {
+  const [posada, setPosada] = useState(false)
+
+  useEffect(() => {
+    const mirar = () => setPosada(window.scrollY > 4)
+    mirar()
+    window.addEventListener('scroll', mirar, { passive: true })
+    return () => window.removeEventListener('scroll', mirar)
+  }, [])
+
+  return posada
+}
+
 export function Armazon() {
   const { hayCuenta } = useSesion()
+  const posada = usarPosada()
+  const { pathname } = useLocation()
+
+  // «Entrar» es una tarjeta sola en la pantalla y se centra en lo que se ve, no
+  // fluye desde arriba. Eso cambia el armazon —la cadena de altos y el aire del
+  // pie—, asi que la decision se toma aqui. Ver `.armazonJusto` en la hoja.
+  const justo = matchPath(patrones.ingresar, pathname) !== null
 
   return (
-    <div className={estilos.armazon}>
+    <div className={`${estilos.armazon} ${justo ? estilos.armazonJusto : ''}`}>
       <ArribaAlCambiarDePagina />
+      <LlevarAlAncla />
       <TituloDeLaPagina />
 
-      <header className={estilos.cabecera}>
+      <header className={`${estilos.cabecera} ${posada ? estilos.posada : ''}`}>
         <div className={estilos.cabeceraDentro}>
           <Link className={estilos.marca} to={rutas.vacantes()} aria-label="EX, inicio">
             <Marca tamano={22} />
@@ -92,34 +175,77 @@ export function Armazon() {
 
           <nav className={estilos.navegacion}>
             <NavLink className={claseDelEnlace} to={rutas.vacantes()} end>
-              Vacantes
+              Inicio
             </NavLink>
+            {/*
+              «Vacantes» no es una pantalla: es una seccion de la portada, la
+              misma `#vacantes-abiertas` a la que apunta el boton principal de
+              arriba. Por eso va de `Link` y no de `NavLink`: un `NavLink` aqui
+              comparte ruta con «Inicio» y los dos se encenderian a la vez.
+            */}
+            <Link
+              className={`${estilos.enlace} ${estilos.enlaceSeccion}`}
+              to={{ pathname: rutas.vacantes(), hash: '#vacantes-abiertas' }}
+            >
+              Vacantes
+            </Link>
             <NavLink className={claseDelEnlace} to={rutas.procesos()}>
               Mis procesos
             </NavLink>
-            {/*
-              Con cuenta, «Mi cuenta» lleva al perfil y no a privacidad: aquella
-              es la pantalla de retirar consentimientos y pedir el borrado, que
-              es una cosa que se hace una vez, no «mi cuenta». Privacidad se
-              enlaza desde dentro del perfil y desde el pie.
-            */}
-            <NavLink
-              className={claseDelEnlace}
-              to={hayCuenta ? rutas.perfil() : rutas.ingresar()}
-            >
-              {hayCuenta ? 'Mi cuenta' : 'Ingresar'}
-            </NavLink>
-            {/*
-              La campana va al final de la barra y solo con sesion: sin cuenta no
-              hay nada que contarle, y un icono muerto en la cabecera de quien
-              todavia esta mirando vacantes solo ocupa sitio.
-            */}
-            <Campana />
           </nav>
+
+          {/*
+            La accion sale del `<nav>` y vive en su propia celda a la derecha.
+            No es navegacion: es lo unico que se pulsa en la barra, y la rejilla
+            de tres columnas necesita que sea un hermano para poder dejar los
+            destinos centrados de verdad.
+
+            Con cuenta, «Mi cuenta» lleva al perfil y no a privacidad: aquella es
+            la pantalla de retirar consentimientos y pedir el borrado, que se hace
+            una vez, no «mi cuenta». Privacidad se enlaza desde dentro del perfil
+            y desde el pie. Y con cuenta no hay accion, solo navegacion: vuelve a
+            ser un enlace de texto como los otros tres.
+
+            El <span> de dentro de «Iniciar sesión» NO es decorativo y no se
+            puede quitar: el enlace es el marco rosa y el hijo es la cara con la
+            rampa. Ver `.entrar` en la hoja.
+
+            La campana va aqui y no dentro del `<nav>`, que es donde nacio: no es
+            un destino, es lo unico —con «Mi cuenta»— que se pulsa sin cambiar de
+            pantalla, y metida en el `<nav>` descentraba los tres destinos, que
+            es justo lo que la rejilla de tres columnas existe para evitar. Se
+            protege sola: sin sesion devuelve `null`, asi que no hace falta
+            envolverla.
+          */}
+          <div className={estilos.acciones}>
+            {hayCuenta ? (
+              <NavLink className={claseDelEnlace} to={rutas.perfil()}>
+                Mi cuenta
+              </NavLink>
+            ) : (
+              <Link className={estilos.entrar} to={rutas.ingresar()}>
+                <span className={estilos.entrarCara} data-rotulo="Iniciar sesión">
+                  Iniciar sesión
+                </span>
+              </Link>
+            )}
+            <Campana />
+          </div>
         </div>
       </header>
 
       <main className={estilos.principal}>
+        {/*
+          ⚠️ **Sin la pieza A, y a proposito.** Cada cambio de ruta fundia la
+          pantalla vieja y entraba la nueva desplazandose. Se quito el
+          22/09/2026 por peticion: al cambiar de pestaña el contenido llegaba
+          tarde y se leia como un fallo, no como una transicion. La pieza sigue
+          en `movimiento.tsx` por si se quiere recuperar; lo que ya no hace es
+          envolver al `<Outlet>`.
+
+          El movimiento de entrada vive ahora solo en la portada, con la pieza E
+          —`AlAsomarse`—, que se dispara al asomar cada bloque y no al navegar.
+        */}
         <Outlet />
       </main>
 

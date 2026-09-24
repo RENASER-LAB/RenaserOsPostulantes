@@ -2,7 +2,7 @@
  * Los iconos del portal, dibujados a mano.
  *
  * **Sin librería, y es una decisión.** El proyecto ya dibuja sus SVG así
- * (`Marca.tsx`, `Canto.tsx`), y una dependencia nueva por catorce iconos añade
+ * (`Marca.tsx`), y una dependencia nueva por catorce iconos añade
  * un paquete que hay que actualizar, un estilo que no es el de la casa y peso
  * en un portal que se abre desde el teléfono.
  *
@@ -40,6 +40,17 @@ function Icono({ tamano = 20, className, children }: PropsIcono & { children: Re
     >
       {children}
     </svg>
+  )
+}
+
+/** Un aviso. Va al lado del texto del error, nunca solo. */
+export function IconoAviso(props: PropsIcono) {
+  return (
+    <Icono {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7.6v5" />
+      <path d="M12 16.1h.01" />
+    </Icono>
   )
 }
 

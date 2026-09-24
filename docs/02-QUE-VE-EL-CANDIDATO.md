@@ -564,14 +564,16 @@ backend llegan como `application/problem+json` (comprobar con `includes('json')`
 `'application/json'`, o se pierde el mensaje del servidor), y hay que mirar el **estado** de la
 respuesta antes que el cuerpo.
 
-**Modo claro:** ya está forzado en `src/app/Tema.tsx` (el interruptor se quitó porque el oscuro
-tenía texto del color del fondo). Falta limpiar: `index.html` todavía abre con
-`data-theme="dark"` y `color-scheme: dark light`, y `variables.css` conserva el bloque oscuro
-entero. En el rediseño desaparecen el bloque `html[data-theme="dark"]` y `ProveedorTema`, y el
-champagne queda en un solo valor (`#816220`, 5,1:1 sobre fondo hueso).
+**Modo claro, y ya no hay nada que limpiar.** ~~`src/app/Tema.tsx`~~, ~~`ProveedorTema`~~, el
+bloque `html[data-theme="dark"]` y ~~`variables.css`~~ **se borraron**; `index.html` abre en
+claro. El champagne `#816220` que aquí se citaba tampoco existe: el mundo visual se sustituyó
+dos veces desde entonces y hoy es «El escaparate» —fondo pastel cálido, acción negra, coral para «te
+toca a ti»—. Ver [EL-MUNDO-VISUAL.md](EL-MUNDO-VISUAL.md).
 
-Nota: el `CLAUDE.md` del portal dice que el tema oscuro es el de la marca y que abre en oscuro —
-está desactualizado, el código ya fuerza claro.
+⚠️ **Lo que sigue vigente de este documento es el contrato de datos**: los dieciocho estados,
+qué ve el candidato en cada uno y de quién se espera algo. Eso sale del backend y no ha
+cambiado. Lo que dice de color o de archivos de tema está viejo y se deja tachado a propósito,
+para que nadie lo reimplemente.
 
 ---
 

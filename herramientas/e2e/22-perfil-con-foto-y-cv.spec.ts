@@ -145,9 +145,17 @@ test.describe('Regresión · el perfil guarda tu foto, tu portada y tu currícul
     expect((await pedirPerfil()).tieneFoto).toBe(false)
   })
 
+  /*
+   * ⚠️ **El nombre que se ve y el código que se guarda son cosas distintas, y
+   * esta prueba es la que lo sostiene.** Las cinco portadas se renombraron el
+   * 10/09/2026 —«Aqua» pasó a ser «Pizarra»— porque al retargetear los tokens
+   * cuatro de las cinco quedaron en tonos del mismo coral. Los códigos del
+   * backend NO se tocaron: renombrarlos rompería la portada guardada de
+   * cualquier perfil que ya exista.
+   */
   test('la portada se elige de la galería y se queda elegida', async ({ page }) => {
     await page.getByRole('button', { name: 'Portada', exact: true }).click()
-    await page.getByRole('button', { name: 'Aqua' }).click()
+    await page.getByRole('button', { name: 'Pizarra' }).click()
 
     await expect
       .poll(async () => (await pedirPerfil()).portada, { timeout: 15_000 })
@@ -155,7 +163,7 @@ test.describe('Regresión · el perfil guarda tu foto, tu portada y tu currícul
 
     // Y la muestra elegida queda marcada, que es lo que se ve al reabrir el menú.
     await page.getByRole('button', { name: 'Portada', exact: true }).click()
-    await expect(page.getByRole('button', { name: 'Aqua', pressed: true })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Pizarra', pressed: true })).toBeVisible()
   })
 
   test('los menús de foto y portada se cierran, y nunca están los dos abiertos', async ({ page }) => {
@@ -215,7 +223,7 @@ test.describe('Regresión · el perfil guarda tu foto, tu portada y tu currícul
 
     // El recorrido va en serie: se devuelve el perfil como estaba para que el
     // paso siguiente no herede una portada propia a medio camino.
-    await page.getByRole('button', { name: 'Aqua' }).click()
+    await page.getByRole('button', { name: 'Pizarra' }).click()
     await expect.poll(async () => (await pedirPerfil()).portada.tipo).toBe('GALERIA')
   })
 
@@ -246,7 +254,7 @@ test.describe('Regresión · el perfil guarda tu foto, tu portada y tu currícul
 
     // Se deja como estaba para los pasos siguientes.
     await page.getByRole('button', { name: 'Portada', exact: true }).click()
-    await page.getByRole('button', { name: 'Aqua' }).click()
+    await page.getByRole('button', { name: 'Pizarra' }).click()
     await expect.poll(async () => (await pedirPerfil()).portada.codigo).toBe('CANTO_AQUA')
   })
 

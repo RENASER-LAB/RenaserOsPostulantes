@@ -129,8 +129,16 @@ export function Proceso() {
               </>
             )}
           </p>
+          {/*
+            `data-rotulo` en los dos: es la accion que gira su rotulo al pasar
+            por encima, y el gesto tiene que ser el mismo lleve donde lleve.
+          */}
           {yaNoEsta ? (
-            <Link className={estilos.reintentar} to={rutas.procesos()}>
+            <Link
+              className={estilos.reintentar}
+              to={rutas.procesos()}
+              data-rotulo="Ver mis procesos"
+            >
               Ver mis procesos
             </Link>
           ) : (
@@ -138,6 +146,7 @@ export function Proceso() {
               type="button"
               className={estilos.reintentar}
               onClick={() => void consulta.refetch()}
+              data-rotulo="Intentar de nuevo"
             >
               Intentar de nuevo
             </button>
@@ -183,7 +192,7 @@ export function Proceso() {
       </Link>
 
       <div className={estilos.encabezado}>
-        <h1>{resumen.vacante}</h1>
+        <h1 className={estilos.titular}>{resumen.vacante}</h1>
         <span className={estilos.desde}>
           Postulaste el{' '}
           <time dateTime={resumen.creadoEn}>{formatearFechaCorta(resumen.creadoEn)}</time>

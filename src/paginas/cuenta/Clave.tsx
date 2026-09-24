@@ -32,6 +32,7 @@ export function Clave() {
 
       <PedirEnlace
         pedir={pedirRecuperacion}
+        claseFormulario={estilos.superficieDelFormulario}
         titulo="Te ayudamos a entrar."
         bajada="Escribe el correo con el que creaste tu cuenta y te enviamos un enlace para elegir una contraseña nueva. Tu proceso sigue igual: no pierdes nada de lo que ya respondiste."
         alternativa={

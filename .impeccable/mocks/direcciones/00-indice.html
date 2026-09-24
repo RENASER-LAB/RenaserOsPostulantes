@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rediseño del portal · las once direcciones</title>
+<style>
+:root {
+  --fondo: #f4f3ef; --fila: #fbfaf7; --tinta: #1a1c20; --tinta2: #4a4e56;
+  --tinta3: #6c717a; --linea: #d7d4cb; --linea-fuerte: #8b8879; --acento: #3a3d99;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--fondo); color: var(--tinta);
+  font: 16px/1.55 system-ui, sans-serif;
+}
+::selection { background: var(--acento); color: #fff; }
+:focus-visible { outline: 2px solid var(--acento); outline-offset: 3px; }
+.hoja { max-width: 900px; margin-inline: auto; padding: 48px 24px 72px; }
+h1 { margin: 0 0 8px; font-size: clamp(28px, 4vw, 42px); font-weight: 800; letter-spacing: -0.035em; line-height: 1.05; }
+.sub { margin: 0 0 40px; color: var(--tinta2); max-width: 62ch; }
+.sub code { background: #e8e6df; padding: 1px 5px; border-radius: 3px; font-size: 14px; }
+ol { list-style: none; margin: 0; padding: 0; border-top: 2px solid var(--tinta); }
+li { border-bottom: 1px solid var(--linea); }
+a.dir {
+  display: grid; grid-template-columns: 44px minmax(0, 1fr) auto;
+  gap: 20px; align-items: center;
+  padding: 20px 12px; margin-inline: -12px;
+  text-decoration: none; color: inherit;
+}
+a.dir:hover { background: var(--fila); }
+.n { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--tinta3); font-size: 15px; }
+.nombre { font-size: 21px; font-weight: 700; letter-spacing: -0.02em; }
+.mundo { margin-top: 2px; color: var(--tinta2); font-size: 15px; }
+.abrir { font-size: 14px; font-weight: 600; color: var(--acento); white-space: nowrap; }
+a.dir:hover .abrir { text-decoration: underline; text-underline-offset: 3px; }
+.nota { margin-top: 36px; padding-top: 20px; border-top: 1px solid var(--linea-fuerte); color: var(--tinta3); font-size: 14.5px; max-width: 62ch; }
+@media (max-width: 620px) {
+  a.dir { grid-template-columns: 34px 1fr; row-gap: 6px; }
+  .abrir { grid-column: 2; }
+}
+</style>
+</head>
+<body>
+<div class="hoja">
+  <h1>Rediseño del portal · once direcciones</h1>
+  <p class="sub">
+    Cada una es una portada completa, con su propio mundo visual, su propia estructura y sus
+    propias palabras. Ninguna toca <code>src/</code>. Tema claro en las once.
+  </p>
+
+  <ol>
+    <li><a class="dir" href="01-el-analisis.html">
+      <span class="n">01</span>
+      <span><span class="nombre">El Análisis</span><span class="mundo">La hoja de laboratorio y su cadena de custodia: fecha, hora y responsable en cada etapa.</span></span>
+      <span class="abrir">Abrir →</span></a></li>
+
+    <li><a class="dir" href="02-el-rotulo.html">
+      <span class="n">02</span>
+      <span><span class="nombre">El Rótulo</span><span class="mundo">Rotulación popular peruana: tablero ultramar, letra dibujada con filete y sombra dura.</span></span>
+      <span class="abrir">Abrir →</span></a></li>
+
+    <li><a class="dir" href="03-la-piel.html">
+      <span class="n">03</span>
+      <span><span class="nombre">La Piel</span><span class="mundo">Una sola señal encendida a la vez; el peso de la letra crece con ella.</span></span>
+      <span class="abrir">Abrir →</span></a></li>
+
+    <li><a class="dir" href="04-el-aviso.html">
+      <span class="n">04</span>
+      <span><span class="nombre">El Aviso</span><span class="mundo">La página de avisos del diario: columnas con corondel, capitular y clasificados.</span></span>
+      <span class="abrir">Abrir →</span></a></li>
+
+    <li><a class="dir" href="05-el-carnet.html">
+      <span class="n">05</span>
+      <span><span class="nombre">El Carnet</span><span class="mundo">La portada es el fotocheck que aún no tienes: campos en blanco y cinco sellos por reunir.</span></span>
+      <span class="abrir">Abrir →</span></a></li>
+
+    <li><a class="dir" href="06-la-serie.html">
+      <span class="n">06</span>
+      <span><span class="nombre">La Serie</span><span class="mundo">Álbum de láminas numeradas que se voltean; el dorso siempre más apretado que la cara.</span></span>
+      <span class="abrir">Abrir →</span></a></li>
+
+    <li><a class="dir" href="07-el-telar.html">
+      <span class="n">07</span>
+      <span><span class="nombre">El Telar</span><span class="mundo">Bandas tejidas en orden de dificultad, y la firma con fecha al pie.</span></span>
+      <span class="abrir">Abrir →</span></a></li>
+
+    <li><a class="dir" href="08-al-aire.html">
+      <span class="n">08</span>
+      <span><span class="nombre">Al Aire</span><span class="mundo">Parrilla de emisión con el tiempo a escala; lo que no tiene fecha va rayado.</span></span>
+      <span class="abrir">Abrir →</span></a></li>
+
+    <li><a class="dir" href="09-la-libreta.html">
+      <span class="n">09</span>
+      <span><span class="nombre">La Libreta</span><span class="mundo">Una hoja rayada escrita en primera persona por quien busca trabajo.</span></span>
+      <span class="abrir">Abrir →</span></a></li>
+    <li><a class="dir" href="10-originx.html">
+      <span class="n">10</span>
+      <span><span class="nombre">OriginX</span><span class="mundo">El estilo de la plantilla OriginX de TailGrids, primera pasada.</span></span>
+      <span class="abrir">Abrir →</span></a></li>
+
+    <li><a class="dir" href="11-originx-fiel.html">
+      <span class="n">11</span>
+      <span><span class="nombre">OriginX · fiel</span><span class="mundo">La misma, con sus marcas de esquina, cajas sin redondear y escalas tipográficas reales.</span></span>
+      <span class="abrir">Abrir →</span></a></li>
+  </ol>
+
+  <p class="nota">
+    Las fuentes vienen de Google Fonts, así que hace falta conexión para que se vean como
+    deben. Prueba también el ancho de teléfono: las once están adaptadas.
+  </p>
+</div>
+</body>
+</html>

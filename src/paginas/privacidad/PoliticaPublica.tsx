@@ -168,7 +168,7 @@ export function PoliticaPublica() {
           acceso distinto se leerian como la misma y la de la sesion parecerian
           un error.
         */}
-        <h1>Política de privacidad</h1>
+        <h1 className={estilos.titular}>Política de privacidad</h1>
         <p className={estilos.bajada}>
           Qué datos te pedimos, para qué los usamos, quién más los ve y cómo pides que los
           borremos. Escrito para que se entienda; el texto que firmas, palabra por palabra,

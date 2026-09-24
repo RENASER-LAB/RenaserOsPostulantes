@@ -229,6 +229,7 @@ function FormularioDePostular({ vacanteId }: { vacanteId: string }) {
             type="button"
             className={estilos.reintentar}
             onClick={() => void vacante.refetch()}
+            data-rotulo="Intentar de nuevo"
           >
             Intentar de nuevo
           </button>
@@ -388,7 +389,7 @@ function FormularioDePostular({ vacanteId }: { vacanteId: string }) {
       </Link>
 
       <div className={estilos.encabezado}>
-        <h1>Postula a este puesto.</h1>
+        <h1 className={estilos.titular}>Postula a este puesto.</h1>
         <span className={estilos.puesto}>
           {v.titulo}
           {v.nombreEmpresa ? ` · ${v.nombreEmpresa}` : ''}
@@ -457,6 +458,7 @@ function FormularioDePostular({ vacanteId }: { vacanteId: string }) {
                 onClick={() => campoArchivo.current?.click()}
                 aria-invalid={errores.cv ? true : undefined}
                 aria-describedby={errores.cv ? 'error-cv' : undefined}
+                data-rotulo="Buscar en mi equipo"
               >
                 Buscar en mi equipo
               </button>
@@ -647,7 +649,12 @@ function FormularioDePostular({ vacanteId }: { vacanteId: string }) {
               {fallo}
             </p>
           )}
-          <button type="submit" className={estilos.enviar} disabled={envio.isPending}>
+          <button
+            type="submit"
+            className={estilos.enviar}
+            disabled={envio.isPending}
+            data-rotulo={envio.isPending ? 'Enviando…' : 'Enviar mi postulación'}
+          >
             {envio.isPending ? 'Enviando…' : 'Enviar mi postulación'}
           </button>
         </div>
@@ -683,6 +690,7 @@ function FormularioDePostular({ vacanteId }: { vacanteId: string }) {
             className={estilos.enviarIgual}
             onClick={mandar}
             disabled={envio.isPending}
+            data-rotulo="Enviarla de todos modos"
           >
             Enviarla de todos modos
           </button>

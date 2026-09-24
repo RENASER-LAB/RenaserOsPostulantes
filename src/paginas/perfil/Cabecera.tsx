@@ -530,6 +530,7 @@ function Foto({
             className={estilos.accionFoto}
             onClick={() => entrada.current?.click()}
             disabled={ocupado}
+            data-rotulo={tieneFoto ? 'Cambiar la foto' : 'Subir una foto'}
           >
             {tieneFoto ? 'Cambiar la foto' : 'Subir una foto'}
           </button>
@@ -539,6 +540,7 @@ function Foto({
               className={estilos.accionFoto}
               onClick={() => quitada.mutate()}
               disabled={ocupado}
+              data-rotulo="Quitar la foto"
             >
               Quitar la foto
             </button>
@@ -695,6 +697,7 @@ function Portada({
                 className={estilos.accionMenor}
                 onClick={() => cambio.mutate({ tipo: 'deLaFoto' })}
                 disabled={cambio.isPending}
+                data-rotulo="Los colores de mi foto"
               >
                 Los colores de mi foto
               </button>
@@ -703,6 +706,7 @@ function Portada({
               type="button"
               className={estilos.accionMenor}
               onClick={() => entrada.current?.click()}
+              data-rotulo="Subir la mía"
             >
               Subir la mía
             </button>
@@ -711,6 +715,7 @@ function Portada({
                 type="button"
                 className={estilos.accionMenor}
                 onClick={() => cambio.mutate({ tipo: 'ninguna' })}
+                data-rotulo="Quitar"
               >
                 Quitar
               </button>

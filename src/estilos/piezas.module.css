@@ -19,73 +19,98 @@
  * cualquier cosa que dependa de donde esta el boton son del sitio, no de la
  * pieza, y quedarse con ellos aqui haria imposible reusarla.
  *
- * En «El canto» los controles son **pildoras**: la nube no tiene esquinas. Los
- * nombres `acentoGrande` y `acentoMenor` se conservan aunque el mundo ya no
+ * ⚠️ **Esta hoja es la unica especificacion de boton del portal.** Ninguna
+ * pantalla se dibuja el suyo. Antes del 10/09/2026 habia dos —la portada
+ * escribia los suyos a mano, y seis hojas redondeaban sus botones a `--radio`,
+ * que es el radio de una caja y no el de un control— y la contradiccion se
+ * heredaba a cada pantalla que se migraba. Si hace falta una forma que no este
+ * aqui, se anade aqui.
+ *
+ * Los nombres `acentoGrande` y `acentoMenor` se conservan aunque el mundo ya no
  * llame «acento» a su color, porque renombrarlos tocaria dieciseis hojas para
  * no cambiar nada de lo que se ve.
  */
 
-/* ---------- La accion de la banda viva ---------- */
+/* ================================================================== *
+ * LOS BOTONES
+ *
+ * Dos alturas, y cada una con sus pesos. La de 48 px abre una pantalla;
+ * la de 44 px vive dentro de algo —un tramo, un aviso, una fila— y no
+ * puede pesar mas que su contenedor. 44 px es el suelo: es el area que
+ * hace falta para acertarle con el pulgar.
+ *
+ *   48 px  ·  .acentoGrande   .secundarioGrande   .peligroso
+ *   44 px  ·  .acentoMenor    .secundario         .peligrosoMenor
+ *             .solido         .peligrosoContorno
+ * ================================================================== */
+
+/* ---------- La accion principal ---------- */
 
 /*
- * El violeta significa una sola cosa, «te toca a ti», asi que estas dos son las
- * unicas piezas que lo llevan. La grande es la accion principal de una pantalla
- * —entregar, postular, empezar la prueba—; la menor es la misma accion cuando
- * vive dentro de un tramo o de un aviso y no puede pesar mas que su contenedor.
+ * Rellena de negro. El negro es la accion en este mundo, y va rellena y no con
+ * contorno porque esta es la afordancia mas importante del producto: un
+ * contorno pesa menos que un enlace subrayado que tenga al lado.
  *
- * Van rellenas y no con filete espectral, aunque el filete sea mas bonito: esta
- * es la afordancia mas importante del producto y un contorno pesa menos que un
- * enlace subrayado que tenga al lado. El filete espectral tiene su propio
- * trabajo —marcar la superficie donde estas— y darselo tambien a los botones lo
- * dejaria sin significar nada.
+ * El coral **no** se usa aqui. Marca «te toca a ti» y nada mas; un boton coral
+ * lo gastaria en cada pantalla y dejaria de discriminar donde hace falta.
  */
 .acentoGrande {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 48px;
-  padding: 0 var(--e6);
-  border-radius: var(--radio-control);
-  background: var(--activo);
-  color: var(--tinta-invertida);
-  border: 1px solid var(--activo);
-  font-size: var(--t-base);
-  font-weight: 600;
-  letter-spacing: -0.004em;
-  text-decoration: none;
-  cursor: pointer;
-  transition:
-    background 160ms var(--salida),
-    box-shadow 160ms var(--salida);
-}
-
-.acentoMenor {
+  --rotulo-tinta: var(--tinta-invertida);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-height: 44px;
-  padding: 0 var(--e5);
   border-radius: var(--radio-control);
-  background: var(--activo);
-  color: var(--tinta-invertida);
-  border: 1px solid var(--activo);
-  font-size: var(--t-prosa);
-  font-weight: 600;
-  letter-spacing: -0.004em;
+  font-size: var(--t-apoyo);
+  font-weight: 500;
+  /* Fija, y de ahi salen los 44 px: 20 de linea + 12 y 12 de relleno. */
+  line-height: 20px;
   text-decoration: none;
   cursor: pointer;
-  transition:
-    background 160ms var(--salida),
-    box-shadow 160ms var(--salida);
+  /* `all` y no una lista: es lo que hace la referencia, y con el rotulo girando
+     hay fondo, sombra y transformacion moviendose a la vez. */
+  transition: all 300ms var(--curva-control);
+  padding: 12px 20px;
+  background: var(--activo);
+  border: 0;
+  color: var(--tinta-invertida);
 }
 
+.acentoMenor {
+  --rotulo-tinta: var(--tinta-invertida);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  border-radius: var(--radio-control);
+  font-size: var(--t-apoyo);
+  font-weight: 500;
+  /* Fija, y de ahi salen los 44 px: 20 de linea + 12 y 12 de relleno. */
+  line-height: 20px;
+  text-decoration: none;
+  cursor: pointer;
+  /* `all` y no una lista: es lo que hace la referencia, y con el rotulo girando
+     hay fondo, sombra y transformacion moviendose a la vez. */
+  transition: all 300ms var(--curva-control);
+  padding: 12px var(--e4);
+  background: var(--activo);
+  border: 0;
+  color: var(--tinta-invertida);
+}
+
+/*
+ * ⚠️ **Aqui habia una bruma coral y se fue el 15/09/2026.** Era un halo de 4 px
+ * en `--activo-bruma` al pasar por encima; la referencia levanta la pieza con
+ * una sombra neutra y aclara el negro, y eso es lo que se copia. De paso, el
+ * coral deja de aparecer en una pantalla donde no hay turno que marcar.
+ *
+ * `--activo-pulsado` ya era `#404040`, que es exactamente el gris al que aclara
+ * la referencia: no hubo nada que ajustar.
+ */
 .acentoGrande:hover:not(:disabled),
 .acentoMenor:hover:not(:disabled) {
   background: var(--activo-pulsado);
-  border-color: var(--activo-pulsado);
-  /* El halo es la banda ensanchandose, que es lo que le pasa a la luz cuando te
-     acercas al angulo. Es la respuesta del mundo, no un adorno. */
-  box-shadow: var(--bruma-viva);
+  box-shadow: var(--sombra-control-alta);
   /* Declarado y no heredado: en un `<a>`, la regla global de enlaces le
      devolveria la tinta del cielo al pasar por encima. */
   color: var(--tinta-invertida);
@@ -93,8 +118,8 @@
 
 .acentoGrande:disabled,
 .acentoMenor:disabled {
+  --rotulo-tinta: var(--tinta3);
   background: var(--nube-honda);
-  border-color: var(--nube-honda);
   color: var(--tinta3);
   box-shadow: none;
   cursor: default;
@@ -103,48 +128,85 @@
 /* ---------- La accion que no es la principal ---------- */
 
 /*
- * Nube con contorno. El contorno es `--borde-control` y no `--regla2` porque un
- * control pide 3:1 contra el fondo y una caja no.
+ * Nube SIN contorno, sostenida por una sombra de cuatro capas. Es la pieza
+ * «Contact Us» de `originx.demos.tailgrids.com`, medida el 15/09/2026.
+ *
+ * ⚠️ **Tenia contorno `--borde-control` y lo perdio, y eso EMPEORA el
+ * contraste.** El contorno daba 3,45:1 contra el fondo, que es lo que WCAG
+ * 1.4.11 pide al limite visible de un control; la nube blanca sobre el cielo
+ * calido da 1,113:1 y la sombra no llega a medirse siquiera. Este archivo tenia
+ * escrito, literalmente, que el contorno no se cambiaba por una sombra. Se
+ * cambia por peticion expresa del cliente, que queria la pieza de la referencia
+ * igual, y queda aqui el numero y la vuelta atras: `border: 1px solid
+ * var(--borde-control)`, una linea.
+ *
+ * ⚠️ **No tiene respuesta de hover propia, y tampoco la tiene la referencia.**
+ * Lo unico que se mueve al pasar por encima es el rotulo. Si algun dia se quita
+ * el giro, hay que devolverle algo aqui o la pieza se queda muda.
  */
-.secundario {
+.secundarioGrande {
+  --rotulo-tinta: var(--tinta);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-height: 44px;
-  padding: 0 var(--e5);
   border-radius: var(--radio-control);
-  background: var(--nube);
-  border: 1px solid var(--borde-control);
-  font-size: var(--t-prosa);
-  font-weight: 600;
-  letter-spacing: -0.004em;
+  font-size: var(--t-apoyo);
+  font-weight: 500;
+  /* Fija, y de ahi salen los 44 px: 20 de linea + 12 y 12 de relleno. */
+  line-height: 20px;
   text-decoration: none;
   cursor: pointer;
-  transition:
-    border-color 160ms var(--salida),
-    background 160ms var(--salida);
-}
-
-.secundario:hover:not(:disabled) {
-  border-color: var(--tinta);
+  /* `all` y no una lista: es lo que hace la referencia, y con el rotulo girando
+     hay fondo, sombra y transformacion moviendose a la vez. */
+  transition: all 300ms var(--curva-control);
+  padding: 12px 20px;
   background: var(--nube);
+  border: 0;
+  box-shadow: var(--sombra-control);
+  color: var(--tinta);
 }
 
+.secundario {
+  --rotulo-tinta: var(--tinta);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  border-radius: var(--radio-control);
+  font-size: var(--t-apoyo);
+  font-weight: 500;
+  /* Fija, y de ahi salen los 44 px: 20 de linea + 12 y 12 de relleno. */
+  line-height: 20px;
+  text-decoration: none;
+  cursor: pointer;
+  /* `all` y no una lista: es lo que hace la referencia, y con el rotulo girando
+     hay fondo, sombra y transformacion moviendose a la vez. */
+  transition: all 300ms var(--curva-control);
+  padding: 12px var(--e4);
+  background: var(--nube);
+  border: 0;
+  box-shadow: var(--sombra-control);
+  color: var(--tinta);
+}
+
+.secundarioGrande:disabled,
 .secundario:disabled {
+  --rotulo-tinta: var(--tinta3);
   /* El fondo tambien: sin el, un boton apagado sobre nube blanca sigue
      pareciendo pulsable. */
   background: var(--nube-honda);
-  border-color: var(--nube-honda);
   color: var(--tinta3);
+  box-shadow: none;
   cursor: default;
 }
 
-/* ---------- La accion firme que no es «te toca a ti» ---------- */
+/* ---------- La accion firme que no abre la pantalla ---------- */
 
 /*
- * Rellena de tinta. Es para cuando algo tiene que pesar mas que un contorno y
- * el violeta estaria mintiendo: la salida segura de un aviso, o el boton de una
- * pantalla vacia, donde no hay ningun proceso esperando al candidato.
+ * Rellena de tinta. Es para cuando algo tiene que pesar mas que un contorno
+ * pero no es la accion principal de la pantalla: la salida segura de un aviso,
+ * o el boton de una pantalla vacia.
  */
 .solido {
   display: inline-flex;
@@ -165,7 +227,7 @@
 }
 
 /*
- * ⚠️ **Sin esto un boton de tinta apagado se lee como pulsable.** Las otras tres
+ * ⚠️ **Sin esto un boton de tinta apagado se lee como pulsable.** Las otras
  * piezas lo declaran; esta no lo llevaba porque hasta hoy ningun `.solido` era
  * desactivable. El primero que lo es —el de guardar la nota de un criterio—
  * nace apagado, o sea que ese era el estado inicial que se veia.
@@ -183,6 +245,239 @@
   color: var(--nube);
 }
 
+/* ---------- Lo que no se puede deshacer ---------- */
+
+/*
+ * Rojo, y solo aqui. Borrar la cuenta, retirar una postulacion: cosas que el
+ * portal no puede devolver.
+ *
+ * **Relleno cuando es la accion destructiva principal de donde esta** —de la
+ * pantalla, o del aviso que la confirma—; **de contorno cuando es una entre
+ * varias**, como el «Retirarme» de cada fila de la lista de postulaciones. Lo
+ * que decide no es si confirma o si abre un aviso: es cuanto pesa ahi.
+ *
+ * El contorno es `--mal` pleno y no `--mal-regla`: `--mal-regla` da 1,56:1
+ * contra la nube, o sea que el borde no se ve. El texto en `--mal` llega a
+ * 5,68:1 y es lo que identifica el boton.
+ */
+.peligroso {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 var(--e6);
+  border-radius: var(--radio-control);
+  background: var(--mal);
+  color: var(--tinta-invertida);
+  border: 1px solid var(--mal);
+  font-size: var(--t-base);
+  font-weight: 600;
+  letter-spacing: -0.004em;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 160ms var(--salida);
+}
+
+.peligrosoMenor {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 var(--e5);
+  border-radius: var(--radio-control);
+  background: var(--mal);
+  color: var(--tinta-invertida);
+  border: 1px solid var(--mal);
+  font-size: var(--t-prosa);
+  font-weight: 600;
+  letter-spacing: -0.004em;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 160ms var(--salida);
+}
+
+.peligroso:hover:not(:disabled),
+.peligrosoMenor:hover:not(:disabled) {
+  background: var(--mal-pulsado);
+  border-color: var(--mal-pulsado);
+  color: var(--tinta-invertida);
+}
+
+.peligrosoContorno {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 var(--e5);
+  border-radius: var(--radio-control);
+  background: var(--nube);
+  color: var(--mal);
+  border: 1px solid var(--mal);
+  font-size: var(--t-prosa);
+  font-weight: 600;
+  letter-spacing: -0.004em;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background 160ms var(--salida),
+    border-color 160ms var(--salida);
+}
+
+.peligrosoContorno:hover:not(:disabled) {
+  background: var(--mal-bruma);
+  color: var(--mal);
+}
+
+.peligroso:disabled,
+.peligrosoMenor:disabled,
+.peligrosoContorno:disabled {
+  background: var(--nube-honda);
+  border-color: var(--nube-honda);
+  color: var(--tinta3);
+  cursor: default;
+}
+
+/* ---------- El rotulo que gira ---------- */
+
+/*
+ * Al pasar por encima, el rotulo sale por arriba y entra otro identico por
+ * abajo. Es el gesto de todos los botones de `originx.demos.tailgrids.com`.
+ *
+ * ⚠️ **Hacen falta DOS copias del rotulo, y el truco es que NINGUNA es el texto
+ * real.** La referencia duplica la etiqueta en el arbol, y eso deja el nombre
+ * accesible del boton como «Enviar Enviar» —y rompe las pruebas, que localizan
+ * por rol y nombre—. Aqui las dos copias son pseudoelementos: el texto real se
+ * queda en su sitio, sigue dando el ancho y sigue siendo el nombre accesible,
+ * pero se pinta transparente.
+ *
+ * ⚠️ **La barra del `content` no es un adorno: `attr(data-rotulo) / ''` le da al
+ * pseudoelemento un texto alternativo VACIO.** Sin ella, las dos copias se
+ * sumarian al nombre accesible y estariamos en el mismo sitio que la referencia.
+ *
+ * ⚠️ **Y por eso va todo dentro de un `@supports`.** Si el navegador no entiende
+ * esa sintaxis, la declaracion entera es invalida: no habria pseudoelementos y
+ * el boton se quedaria con su texto real transparente, o sea en blanco. Fuera
+ * del bloque no se toca nada y el rotulo se pinta normal, sin giro.
+ *
+ * ⚠️ **Sin `data-rotulo` no pasa nada de esto**, que es lo que permite ponerlo
+ * pieza a pieza: el boton cuyo rotulo cambia solo —«Guardando…», «Enviando…»—
+ * no lleva el atributo y se queda quieto, que ademas es lo correcto.
+ *
+ * No lo llevan los botones de peligro. Un rotulo que juega no es el gesto de
+ * algo que no se puede deshacer.
+ */
+@supports (content: 'a' / '') {
+  .acentoGrande[data-rotulo],
+  .acentoMenor[data-rotulo],
+  .secundarioGrande[data-rotulo],
+  .secundario[data-rotulo] {
+    position: relative;
+    overflow: hidden;
+    /*
+     * ⚠️ **`-webkit-text-fill-color` y NO solo `color`, y esto costo un fallo.**
+     * Con `color: transparent` a secas el texto real reaparecia al pasar por
+     * encima y se veian TRES rotulos a la vez: el fijo mas los dos que giran.
+     * El motivo es especificidad —`.acentoGrande:hover:not(:disabled)` es
+     * (0,3,0) y declara `color`, por encima del (0,2,0) de
+     * `.acentoGrande[data-rotulo]`—, y lo mismo haria cualquier pantalla que le
+     * ponga color a su boton desde su propia hoja, donde ademas el orden entre
+     * archivos no es fiable.
+     *
+     * Con que se pinta el glifo lo decide `-webkit-text-fill-color`, que nadie
+     * mas declara en todo el proyecto: no hay pelea de cascada posible. `color`
+     * se queda tambien, porque es lo unico que entiende un navegador que no
+     * llegue hasta aqui.
+     */
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .acentoGrande[data-rotulo]::before,
+  .acentoMenor[data-rotulo]::before,
+  .secundarioGrande[data-rotulo]::before,
+  .secundario[data-rotulo]::before,
+  .acentoGrande[data-rotulo]::after,
+  .acentoMenor[data-rotulo]::after,
+  .secundarioGrande[data-rotulo]::after,
+  .secundario[data-rotulo]::after {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--rotulo-tinta);
+    /* Heredarian el transparente de la pieza, asi que se les devuelve el color
+       por la misma via. */
+    -webkit-text-fill-color: var(--rotulo-tinta);
+    transition: transform 300ms var(--curva-control);
+  }
+
+  .acentoGrande[data-rotulo]::before,
+  .acentoMenor[data-rotulo]::before,
+  .secundarioGrande[data-rotulo]::before,
+  .secundario[data-rotulo]::before {
+    content: attr(data-rotulo) / '';
+  }
+
+  /* La copia que espera fuera, justo debajo del suelo de la pieza. */
+  .acentoGrande[data-rotulo]::after,
+  .acentoMenor[data-rotulo]::after,
+  .secundarioGrande[data-rotulo]::after,
+  .secundario[data-rotulo]::after {
+    content: attr(data-rotulo) / '';
+    transform: translateY(100%);
+  }
+
+  .acentoGrande[data-rotulo]:hover:not(:disabled)::before,
+  .acentoMenor[data-rotulo]:hover:not(:disabled)::before,
+  .secundarioGrande[data-rotulo]:hover:not(:disabled)::before,
+  .secundario[data-rotulo]:hover:not(:disabled)::before {
+    transform: translateY(-100%);
+  }
+
+  .acentoGrande[data-rotulo]:hover:not(:disabled)::after,
+  .acentoMenor[data-rotulo]:hover:not(:disabled)::after,
+  .secundarioGrande[data-rotulo]:hover:not(:disabled)::after,
+  .secundario[data-rotulo]:hover:not(:disabled)::after {
+    transform: translateY(0);
+  }
+
+  /*
+   * Menos movimiento, no menos informacion: las dos copias se quedan donde
+   * estan y el rotulo sigue leyendose.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    .acentoGrande[data-rotulo]::before,
+  .acentoMenor[data-rotulo]::before,
+  .secundarioGrande[data-rotulo]::before,
+  .secundario[data-rotulo]::before,
+    .acentoGrande[data-rotulo]::after,
+  .acentoMenor[data-rotulo]::after,
+  .secundarioGrande[data-rotulo]::after,
+  .secundario[data-rotulo]::after {
+      transition: none;
+    }
+
+    .acentoGrande[data-rotulo]:hover:not(:disabled)::before,
+  .acentoMenor[data-rotulo]:hover:not(:disabled)::before,
+  .secundarioGrande[data-rotulo]:hover:not(:disabled)::before,
+  .secundario[data-rotulo]:hover:not(:disabled)::before,
+    .acentoGrande[data-rotulo]:hover:not(:disabled)::after,
+  .acentoMenor[data-rotulo]:hover:not(:disabled)::after,
+  .secundarioGrande[data-rotulo]:hover:not(:disabled)::after,
+  .secundario[data-rotulo]:hover:not(:disabled)::after {
+      transform: none;
+    }
+
+    .acentoGrande[data-rotulo]:hover:not(:disabled)::after,
+  .acentoMenor[data-rotulo]:hover:not(:disabled)::after,
+  .secundarioGrande[data-rotulo]:hover:not(:disabled)::after,
+  .secundario[data-rotulo]:hover:not(:disabled)::after {
+      opacity: 0;
+    }
+  }
+}
+
 /* ---------- Volver ---------- */
 
 /*
@@ -196,4 +491,167 @@
   min-height: 44px;
   font-size: var(--t-apoyo);
   color: var(--tinta2);
+}
+
+/* ================================================================== *
+ * LOS PANELES
+ *
+ * Tres, y cada uno dice algo distinto sobre de quien depende que el
+ * proceso siga. Se distinguen por el borde, que es lo que se ve de
+ * lejos, y no por el fondo, que apenas cambia.
+ *
+ * Ninguno lleva `padding`: cuanto respiran por dentro depende de donde
+ * esten, y eso es del sitio.
+ * ================================================================== */
+
+/*
+ * **Te toca a ti.** El unico sitio del portal donde el coral se queda pintado.
+ *
+ * ⚠️ **Una pantalla lo pinta como mucho una vez.** El coral es un
+ * discriminador —sirve para encontrar tu turno entre cosas que no lo son—, no
+ * una etiqueta: dos corales en la misma pantalla no marcan el doble, no marcan
+ * nada. Antes del 10/09/2026 esta forma estaba copiada en cinco hojas y cada
+ * copia arrastraba una sombra violeta de un mundo que ya no existe.
+ */
+.turno {
+  border: 2px solid var(--activo-regla);
+  border-radius: var(--radio);
+  background: var(--nube);
+  box-shadow: var(--sombra-nube);
+}
+
+/*
+ * **Esperando.** Trece de los dieciocho estados caen aqui, asi que este es el
+ * panel que mas se ve en todo el portal. Va sin sombra y sin color: lo que
+ * espera no reclama, y darle relieve seria pedir atencion para algo en lo que
+ * no hay nada que hacer.
+ */
+.panelDeEspera {
+  border: 1px solid var(--regla);
+  border-radius: var(--radio);
+  background: var(--nube-hundida);
+}
+
+/*
+ * **Esto te cambia la decision.** El ambar, que es la tercera cosa que puede
+ * decir un panel: ni te toca a ti, ni esperas a otro — mirate esto antes de
+ * seguir.
+ *
+ * Dos ejemplos reales, y por eso es una pieza y no una copia: los requisitos
+ * indispensables de una vacante, y el aviso de que el formulario de la decision
+ * todavia no envia. Ninguno es culpa del candidato y los dos cambian lo que
+ * hace a continuacion.
+ *
+ * ⚠️ El texto de apoyo que vaya dentro necesita `--duda-tinta2`. `--tinta3` da
+ * 4,9:1 sobre el cielo y es el suelo: sobre un fondo con tinte se cae.
+ */
+.enDuda {
+  border: 1px solid var(--duda);
+  border-radius: var(--radio);
+  background: var(--duda-bruma);
+  color: var(--duda-tinta);
+}
+
+/*
+ * El mismo ambar con el borde al doble, para el unico descarte automatico del
+ * producto: no cumplir un requisito indispensable.
+ *
+ * Ambar y no coral, aunque antes fuera coral: donde aparece todavia no hay
+ * ninguna postulacion y por tanto ningun turno — quien llega no tiene turno,
+ * tiene curiosidad.
+ */
+.indispensable {
+  composes: enDuda;
+  border-width: 2px;
+}
+
+/* ================================================================== *
+ * LA TIPOGRAFIA QUE SE REPITE
+ * ================================================================== */
+
+/*
+ * La cabecera de una seccion: un `h2` y una linea que lo explica.
+ *
+ * Las reglas van a los descendientes y no a clases sueltas porque el marcado no
+ * las lleva: `composes` solo pone la clase del contenedor, y el `h2` de dentro
+ * se estila desde aqui. Asi una hoja de pantalla no repite seis declaraciones
+ * para escribir un titulo de seccion.
+ *
+ * **Sin `text-align`.** Centrar es la voz de la portada, no la del mundo: las
+ * otras dieciseis pantallas son documentos alineados a la izquierda.
+ */
+.cabeceraDeSeccion h2 {
+  margin: 0;
+  font-size: var(--t-destacado);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+  color: var(--tinta);
+  text-wrap: balance;
+}
+
+.cabeceraDeSeccion p {
+  margin: var(--e3) 0 0;
+  max-width: var(--medida);
+  color: var(--tinta3);
+}
+
+/*
+ * El plegable. `<details>` nativo, asi que el teclado y el lector de pantalla
+ * vienen puestos; lo que hay que escribir es apagar el triangulo del navegador,
+ * y ese pisoton es lo que cada copia tiene que acordarse de repetir.
+ *
+ * El signo es una cruz de dos filetes que gira a aspa al abrir. Vive en un
+ * `<span aria-hidden>` dentro del `summary`.
+ */
+.plegable {
+  border-bottom: 1px solid var(--regla);
+}
+
+.plegable summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e4);
+  /* No necesita 44 px: el `summary` entero ya mide mas. */
+  padding-block: var(--e5);
+  font-size: var(--t-entradilla);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--tinta);
+  cursor: pointer;
+  list-style: none;
+}
+
+.plegable summary::-webkit-details-marker {
+  display: none;
+}
+
+.signoMas {
+  position: relative;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  transition: transform 300ms var(--salida);
+}
+
+.signoMas::before,
+.signoMas::after {
+  content: '';
+  position: absolute;
+  inset: 50% 0 auto;
+  height: 2px;
+  background-color: var(--tinta3);
+  transform: translateY(-50%);
+}
+
+.signoMas::after {
+  inset: 0 auto 0 50%;
+  width: 2px;
+  height: auto;
+  transform: translateX(-50%);
+}
+
+.plegable[open] .signoMas {
+  transform: rotate(45deg);
 }

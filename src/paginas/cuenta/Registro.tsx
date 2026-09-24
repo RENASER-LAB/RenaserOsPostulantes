@@ -246,14 +246,14 @@ export function Registro() {
   }
 
   return (
-    <div className={`${estilos.pagina} ${estilos.paginaAncha}`}>
+    <div className={estilos.paginaAncha}>
       {vacante && (
         <Link className={estilos.volver} to={rutas.vacante(vacante)}>
           ← Volver al puesto
         </Link>
       )}
 
-      <h1>Crea tu cuenta.</h1>
+      <h1 className={estilos.titular}>Crea tu cuenta.</h1>
       {/*
         Solo cuando se viene de una vacante: ahi la frase hace un trabajo —dice
         que la postulacion no se pierde por crear la cuenta en medio—. Llegando
@@ -457,7 +457,12 @@ export function Registro() {
           </p>
         )}
 
-        <button type="submit" className={estilos.enviar} disabled={enviando}>
+        <button
+          type="submit"
+          className={estilos.enviar}
+          disabled={enviando}
+          data-rotulo={enviando ? 'Creando tu cuenta…' : 'Crear cuenta y seguir'}
+        >
           {enviando ? 'Creando tu cuenta…' : 'Crear cuenta y seguir'}
         </button>
       </form>

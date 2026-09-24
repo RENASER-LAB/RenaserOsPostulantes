@@ -136,7 +136,14 @@ test.describe('Regresión · postular de punta a punta', () => {
     await expect(aviso).toBeVisible()
     await expect(aviso).toContainText(vacante.nombreEmpresa)
 
-    const enlace = page.getByRole('link', { name: /política de privacidad/i })
+    /*
+      ⚠️ **Acotado al aviso, y hace falta.** El pie del portal lleva otro enlace
+      que se llama igual —«Política de privacidad», desde el #17—, asi que
+      buscarlo en la pagina entera casa con dos y Playwright para en modo
+      estricto. El de aqui es el unico que interesa: el del pie va al texto
+      general y este al de ESTA vacante, que es justo lo que la prueba fija.
+    */
+    const enlace = aviso.getByRole('link', { name: /política de privacidad/i })
     await expect(enlace).toHaveAttribute(
       'href',
       `/politica-de-privacidad?vacante=${vacante.id}#el-texto-que-aceptas`,

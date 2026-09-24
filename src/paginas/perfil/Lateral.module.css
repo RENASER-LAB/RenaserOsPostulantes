@@ -328,17 +328,20 @@
 }
 
 /*
- * La misma píldora que llevan las filas que cuenta. Iban en ámbar mientras las
- * filas eran ámbar; al pasar estas al acento, el índice tenía que seguirlas o
- * quedaba contando una cosa con el color de otra.
+ * Cuantos datos faltan por confirmar en cada seccion.
+ *
+ * ⚠️ **Es una cuenta, no una marca, y por eso no lleva coral.** El coral senala
+ * la fila que reclama; el indice dice cuantas hay. Repetirlo aqui lo pinta una
+ * vez por seccion ademas de una vez por fila, y el color deja de encontrar
+ * nada.
  */
 .porRevisar {
   flex: none;
   padding: 2px var(--e2);
   border-radius: var(--radio-control);
-  border: 1px solid var(--activo-regla);
-  background: var(--activo-bruma);
-  color: var(--activo-pulsado);
+  border: 1px solid var(--regla2);
+  background: var(--nube-hundida);
+  color: var(--tinta2);
   font-size: var(--t-micro);
   font-weight: 700;
   white-space: nowrap;

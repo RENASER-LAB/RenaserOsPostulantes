@@ -43,11 +43,22 @@
  * un teléfono se salía ocho píxeles por cada lado y la pantalla entera se
  * desplazaba en horizontal.
  */
+/*
+ * ⚠️ **Esta es la unica pantalla que NO compone `hoja` de `pagina.module.css`**,
+ * y es a proposito. El relleno lateral tiene que ser legible desde aqui porque
+ * la portada se sale a sangre restandolo —`margin-inline: calc(var(--margen-de-la-pagina) * -1)`—,
+ * y el aviso de arriba cuenta el fallo que costo escribirlo en dos sitios.
+ * Traerlo de otra hoja mete un tercer sitio y lo empeora.
+ *
+ * Los numeros son los mismos que los de `hoja`: `--e7` de aire arriba, `--e5` a
+ * los lados, `--e8` abajo, y `--e4` a los lados por debajo de 640. Si `hoja`
+ * cambia, esto cambia con ella.
+ */
 .pagina {
   --margen-de-la-pagina: var(--e5);
   max-width: var(--ancho);
   margin: 0 auto;
-  padding: var(--e5) var(--margen-de-la-pagina) var(--e8);
+  padding: var(--e7) var(--margen-de-la-pagina) var(--e8);
 }
 
 /*
@@ -127,19 +138,19 @@
 /* ---------- El panel de lo que hay que revisar ---------- */
 
 /*
- * El único violeta de la pantalla. Campo de nube con perímetro vivo y
- * resplandor, como el tramo abierto de «Mis procesos»: el color vive en el
- * canto, nunca bajo la prosa.
+ * El resumen de arriba: «Te quedan 3 datos por revisar».
+ *
+ * ⚠️ **No lleva coral, y las filas que cuenta si.** Es un recuento, no una de
+ * las cosas que reclaman: el coral senala **cada fila sin confirmar**, que es
+ * donde esta el trabajo, igual que en «Mis procesos» senala cada postulacion
+ * que pide algo. Pintarlo tambien aqui lo repetiria una vez mas ademas de una
+ * por fila, y un color que aparece catorce veces no encuentra nada.
+ *
+ * Lo dice con palabras, que para un recuento es lo que sirve.
  */
 .porRevisar {
+  composes: bloqueHolgado from '../../estilos/pagina.module.css';
   margin-top: var(--e6);
-  padding: var(--e5);
-  border: 2px solid var(--activo-regla);
-  border-radius: var(--radio);
-  background: var(--nube);
-  box-shadow:
-    0 2px 6px rgb(35 43 54 / 0.05),
-    0 14px 40px rgb(86 56 214 / 0.14);
 }
 
 .porRevisarTitulo {
@@ -477,7 +488,7 @@
      negativo la dejaba más ancha que el título de su propia sección y que la
      regla que la cierra, y eso se lee como un desajuste, no como énfasis. */
   margin: var(--e3) 0;
-  box-shadow: 0 1px 3px rgb(35 43 54 / 0.05);
+  box-shadow: var(--sombra-nube);
 }
 
 
@@ -592,10 +603,16 @@
   white-space: nowrap;
 }
 
+/*
+ * ⚠️ **La pildora no lleva coral, y la fila si.** Son la misma cosa —esta fila
+ * te reclama— dicha dos veces sobre el mismo elemento, y el coral marca una vez
+ * o no marca. Se queda el borde de la fila, que es lo que se ve al recorrer la
+ * pantalla; la pildora dice *que* es lo que falta, y para eso basta la tinta.
+ */
 .marca.porRevisar {
-  border-color: var(--activo-regla);
-  background: var(--activo-bruma);
-  color: var(--activo-pulsado);
+  border-color: var(--regla2);
+  background: var(--nube-hundida);
+  color: var(--tinta2);
 }
 
 /*
@@ -856,9 +873,12 @@
   max-width: var(--medida);
 }
 
+/*
+ * ⚠️ **Llevaba un filete de 3 px a la izquierda y se fue.** Era la ultima barra
+ * de acento lateral del portal del candidato; estan prohibidas en este mundo y
+ * el bloque ya se distingue por su contorno y su fondo enteros.
+ */
 .fallo {
-  display: flex;
-  gap: var(--e3);
   margin-top: var(--e4);
   border: 1px solid var(--mal-regla);
   background: var(--mal-bruma);
@@ -867,13 +887,6 @@
   line-height: 1.5;
   color: var(--mal);
   border-radius: var(--radio-menor);
-}
-
-.fallo::before {
-  content: '';
-  flex: none;
-  width: 3px;
-  background: var(--mal);
 }
 
 /* ---------- Cargando y fallo de la pantalla entera ---------- */
@@ -1157,12 +1170,17 @@
   animation: seAsienta 0.5s var(--salida) both;
 }
 
-/* El fantasma de la caja, disolviéndose donde estaba. */
+/*
+ * El fantasma de la caja, disolviéndose donde estaba.
+ *
+ * ⚠️ **Va en tinta y no en coral.** Marca lo que **acaba de dejar** de
+ * reclamar: pintarlo del color del turno dice lo contrario de lo que pasa.
+ */
 .recienConfirmada::after {
   content: '';
   position: absolute;
   inset: calc(var(--e3) * -1) calc(var(--e4) * -1);
-  border: 2px solid var(--activo-regla);
+  border: 2px solid var(--tinta);
   border-radius: var(--radio);
   pointer-events: none;
   animation: seDisuelve 0.5s var(--salida) both;

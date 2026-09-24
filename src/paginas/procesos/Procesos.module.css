@@ -5,34 +5,21 @@
  * Por eso el titular es la respuesta a esa pregunta y no el nombre de la
  * pantalla, y la postulacion que pide algo va primera.
  *
- * El canto irisado entra a sangre por arriba y el titular se lee sobre el, en
- * la parte blanca de la nube. Nunca sobre la banda de color: la prosa se lee
- * sobre nube, el color vive en el canto.
- */
-
-/*
- * El relleno de arriba no es aire: es el sitio del canto.
- *
- * La banda se dibuja en el tercio alto de su lienzo, y el titular empieza justo
- * por debajo. Si este valor baja, el titular se mete dentro de la banda y la
- * prosa acaba leyendose sobre color.
+ * ⚠️ **Aqui entraba el canto irisado a sangre por arriba, y se fue el
+ * 10/09/2026.** Con el se fueron tres cosas que solo existian para hacerle
+ * sitio: un relleno superior de `clamp(184px, 25vh, 272px)`, el
+ * `position: relative` de la pagina y una regla que subia todo lo legible a
+ * `z-index: 1` para que la prosa no quedara sobre la banda de color. En este
+ * mundo la pantalla abre con el titular sobre el cielo, como las otras
+ * dieciseis.
  */
 .pagina {
-  position: relative;
-  max-width: var(--ancho);
-  margin: 0 auto;
-  padding: clamp(184px, 25vh, 272px) var(--e5) var(--e8);
-}
-
-/* Todo lo que se lee va por encima del canto. */
-.pagina > *:not([aria-hidden]) {
-  position: relative;
-  z-index: 1;
+  composes: hoja from '../../estilos/pagina.module.css';
 }
 
 /* El titular responde la pregunta con la que el candidato llega. */
 .titular {
-  max-width: 18ch;
+  composes: titular from '../../estilos/pagina.module.css';
 }
 
 .entrada {
@@ -55,15 +42,17 @@
  *
  * No es una tarjeta de catalogo: cada una tiene su propio contenido y su propio
  * alto, y lo que la separa del fondo es que esta un punto mas clara que el
- * cielo, no un contorno grueso. La sombra es difusa y fria porque en este mundo
- * la profundidad es aire, no papel levantado.
+ * cielo, no un contorno grueso.
+ *
+ * ⚠️ **Va plana, y antes llevaba sombra en reposo.** La regla del plano por
+ * defecto dice que una sombra aparece como respuesta a un estado, y una
+ * postulacion en reposo no responde a nada. Ademas la sombra la lleva el panel
+ * `.turno` que va dentro: si la caja entera ya flota, lo que reclama deja de
+ * distinguirse de lo que no.
  */
 .proceso {
+  composes: bloqueHolgado from '../../estilos/pagina.module.css';
   background: var(--nube);
-  border: 1px solid var(--regla);
-  border-radius: var(--radio);
-  box-shadow: var(--sombra-nube);
-  padding: var(--e6);
 }
 
 /*
@@ -101,18 +90,41 @@
 }
 
 /*
- * La postulacion terminada.
+ * La postulacion terminada sin continuar.
  *
  * Se distingue de una espera antes de leer nada por la franja dispersa —la
  * misma forma que el recorrido usa para «aqui se detuvo»— y no por el color.
  */
 .cierre {
-  border: 1px solid var(--regla);
-  border-radius: var(--radio);
-  background: var(--nube-hundida);
-  padding: var(--e5);
+  composes: bloque from '../../estilos/pagina.module.css';
+  composes: bloqueHundido from '../../estilos/pagina.module.css';
   margin-bottom: var(--e5);
   max-width: 44rem;
+}
+
+/*
+ * La postulacion que termino BIEN.
+ *
+ * ⚠️ **Se pintaba igual que el descarte, con la misma marca punteada.** Son los
+ * dos estados mas distintos que el sistema puede producir —el final de semanas
+ * de trabajo real— y compartian clase, fondo y glifo: al contratado se le
+ * pintaba la forma de «aqui se detuvo».
+ *
+ * Va en verde porque `--bien` significa exactamente eso, «lo confirmado», y
+ * estaba declarado sin que lo usara nadie. No rompe la regla del coral: el
+ * coral marca lo que reclama, y aqui no reclama nada — ya termino.
+ *
+ * Contrastes: `--bien` sobre `--bien-bruma` da 4,70:1 para el glifo, que es
+ * decoracion y solo pide 3:1; el texto va en `--tinta`, 11,24:1.
+ */
+.cierre.bienvenida {
+  border-color: var(--bien);
+  background: var(--bien-bruma);
+}
+
+/* Maciza y entera, no punteada: es lo contrario de «se detuvo». */
+.bienvenida .marcaCortada {
+  background: var(--bien);
 }
 
 .tituloCerrado {
@@ -140,6 +152,19 @@
   letter-spacing: -0.008em;
 }
 
+/* La salida de quien no continua. Va dentro del cierre, no en el pie: quien la
+   necesita esta leyendo la noticia, no recorriendo la pagina. */
+.seguirBuscando {
+  margin-top: var(--e4);
+  font-size: var(--t-apoyo);
+}
+
+.seguirBuscando a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
 .cierreTexto {
   font-size: var(--t-apoyo);
   line-height: 1.55;
@@ -162,12 +187,9 @@
 /* ---------- Sin ninguna postulacion ---------- */
 
 .vacio {
+  composes: bloqueHolgado from '../../estilos/pagina.module.css';
   margin-top: var(--e7);
   background: var(--nube);
-  border: 1px solid var(--regla);
-  border-radius: var(--radio);
-  box-shadow: var(--sombra-nube);
-  padding: var(--e6);
 }
 
 .vacioTexto {
@@ -185,12 +207,9 @@
 /* ---------- Cargando y fallo ---------- */
 
 .estado {
+  composes: bloqueHolgado from '../../estilos/pagina.module.css';
   margin-top: var(--e7);
   background: var(--nube);
-  border: 1px solid var(--regla);
-  border-radius: var(--radio);
-  box-shadow: var(--sombra-nube);
-  padding: var(--e6);
 }
 
 .estadoTexto {
@@ -242,15 +261,14 @@
   min-height: 44px;
 }
 
+/*
+ * ⚠️ **Aqui quedaba el ultimo hueco del canto, y era el peor.** Al borrar la
+ * banda el 10/09/2026 se quito su relleno de escritorio pero no el de movil:
+ * `clamp(168px, 24vh, 220px)` dejaba 195 px de gris vacio antes del titular en
+ * un telefono, o sea un tercio de la pantalla. Se fue el mismo dia, mirandolo a
+ * 375 px.
+ */
 @media (max-width: 760px) {
-  .pagina {
-    padding: clamp(168px, 24vh, 220px) var(--e4) var(--e7);
-  }
-
-  .titular {
-    max-width: none;
-  }
-
   .proceso {
     padding: var(--e5) var(--e4);
   }
@@ -282,9 +300,7 @@
  * al ensanchar la ventana.
  */
 .espera {
-  border: 1px solid var(--regla);
-  border-radius: var(--radio);
-  background: var(--nube-hundida);
+  composes: panelDeEspera from '../../estilos/piezas.module.css';
   padding: var(--e5);
   max-width: 44rem;
 }
@@ -348,7 +364,7 @@
 /*
  * El punto de «hay algo nuevo en este proceso».
  *
- * Ambar y no violeta: el violeta significa una sola cosa en este portal, «te
+ * Ambar y no coral: el coral significa una sola cosa en este portal, «te
  * toca a ti», y un aviso no le da ningun turno — le cuenta algo que puede
  * cambiar su decision, que es lo que `--duda` nombra.
  *

@@ -1,5 +1,5 @@
 import { expect } from '@playwright/test'
-import { API, corte, entrarAlPanel, filasDelRanking, idDeVacante, irAVacante, pestana, tokenDelPanel, VACANTES } from './ayuda'
+import { API, EQUIPO, VACANTES, corte, entrarAlPanel, filasDelRanking, idDeVacante, irAVacante, pestana, tokenDelPanel } from './ayuda'
 import { test as base } from './ayuda-candidato'
 
 /**
@@ -103,7 +103,7 @@ test.describe('Regresión · el ranking por etapas', () => {
       accesible hasta que el `<details>` se despliega.
     */
     await page.getByText('Entrar con un id de desarrollo').click()
-    await page.getByLabel('Identificador de RENASER OS').fill('dev-equipo')
+    await page.getByLabel('Identificador de RENASER OS').fill(EQUIPO)
     await page.getByRole('button', { name: 'Entrar como desarrollo' }).click()
     await expect(page.getByRole('heading', { level: 1, name: 'Vacantes.' })).toBeVisible({ timeout: 15_000 })
   })

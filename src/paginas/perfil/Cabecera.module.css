@@ -27,12 +27,71 @@
  * ancho de lectura porque es lo único de la pantalla que puede hacerlo sin
  * dejar una línea de prosa de dos metros.
  */
+/*
+ * La banda de identidad de la cabecera.
+ *
+ * ⚠️ **Los cinco fondos eran del espectro del canto y se repintaron el
+ * 10/09/2026.** Al retargetear los tokens, cuatro de las cinco opciones se
+ * volvieron tonos del mismo coral —la galeria dejo de ofrecer colores
+ * distintos— y una era exactamente `--activo-regla`, o sea que el candidato
+ * podia ponerse de fondo el color que significa «te toca a ti».
+ *
+ * Ahora son cinco neutros que se distinguen por temperatura y profundidad, no
+ * por tono: ninguno puede confundirse con el coral ni con el semaforo.
+ *
+ * **Un solo degradado y cinco lineas.** Antes eran cinco degradados de cinco
+ * lineas cada uno, identicos salvo el token. Cada opcion aporta `--tono-base` y
+ * la forma vive aqui.
+ */
 .portada {
   height: 168px;
   border-radius: var(--radio) var(--radio) 0 0;
   background-color: var(--nube-hundida);
   background-size: cover;
   background-position: center;
+}
+
+/*
+ * El lavado: la base se abre hacia el cielo. Nunca sale a fondo pleno — es la
+ * banda de un perfil, no una pieza que reclame nada.
+ */
+.portada-CANTO_MENTA,
+.portada-CANTO_AQUA,
+.portada-CANTO_ROSA,
+.portada-CANTO_VIOLETA,
+.portada-BRUMA {
+  background-image: linear-gradient(
+    115deg,
+    color-mix(in oklab, var(--tono-base) 38%, var(--cielo)) 0%,
+    color-mix(in oklab, var(--tono-base) 16%, var(--cielo)) 45%,
+    var(--cielo) 100%
+  );
+}
+
+/*
+ * Las cinco bases. Son mas oscuras de lo que parece la banda **a proposito**:
+ * el disco de las iniciales sale del mismo token y ahi el blanco tiene que
+ * aguantar 4,5:1. Medidos contra blanco: arena 5,78:1, pizarra 5,85:1,
+ * humo 5,33:1, carbon 8,86:1.
+ */
+.portada-CANTO_MENTA {
+  --tono-base: #6f6455;
+}
+
+.portada-CANTO_AQUA {
+  --tono-base: #5b6672;
+}
+
+.portada-CANTO_ROSA {
+  --tono-base: #6b6b6b;
+}
+
+.portada-CANTO_VIOLETA {
+  --tono-base: #4a4a4a;
+}
+
+.portada-BRUMA {
+  --tono-base: var(--regla2);
 }
 
 @media (max-width: 700px) {
@@ -52,51 +111,6 @@
  * dibuja el avance por etapas en «Mis procesos», y repetirlo aquí sugeriría un
  * progreso que en el perfil no existe.
  */
-/*
- * Los tonos intermedios se DERIVAN del token, no se escriben a mano: así el día
- * que el espectro cambie, cambian con él. Es el mismo color del canto abriéndose
- * hacia la bruma, que es lo que hace la luz al alejarse del ángulo.
- */
-.portada-CANTO_MENTA {
-  background-image: linear-gradient(
-    115deg,
-    var(--canto-menta) 0%,
-    color-mix(in oklab, var(--canto-menta) 45%, var(--cielo)) 45%,
-    var(--cielo) 100%
-  );
-}
-
-.portada-CANTO_AQUA {
-  background-image: linear-gradient(
-    115deg,
-    var(--canto-aqua) 0%,
-    color-mix(in oklab, var(--canto-aqua) 45%, var(--cielo)) 45%,
-    var(--cielo) 100%
-  );
-}
-
-.portada-CANTO_ROSA {
-  background-image: linear-gradient(
-    115deg,
-    var(--canto-rosa) 0%,
-    color-mix(in oklab, var(--canto-rosa) 45%, var(--cielo)) 45%,
-    var(--cielo) 100%
-  );
-}
-
-.portada-CANTO_VIOLETA {
-  background-image: linear-gradient(
-    115deg,
-    var(--canto-violeta) 0%,
-    color-mix(in oklab, var(--canto-violeta) 45%, var(--cielo)) 45%,
-    var(--cielo) 100%
-  );
-}
-
-.portada-BRUMA {
-  background-image: linear-gradient(115deg, var(--nube-honda) 0%, var(--cielo) 70%);
-}
-
 .botonPortada {
   position: absolute;
   right: var(--e4);
@@ -270,46 +284,45 @@
  */
 .iniciales {
   font-size: var(--t-cifra);
-  font-weight: 200;
+  font-weight: 600;
   letter-spacing: -0.02em;
   color: var(--tinta-invertida);
 }
 
 /*
- * El extremo oscuro sale del token, no de un hexadecimal aparte. Y va oscuro a
- * propósito: el blanco de las iniciales tiene que aguantar 4,5:1 sobre TODO el
- * disco, no solo sobre su lado claro.
+ * El disco de las iniciales, con el tono de la portada elegida.
+ *
+ * **Un solo degradado y cuatro lineas**, como la banda. La base es la misma que
+ * la de la portada —de ahi que sean tonos medios y no lavados—: aqui el blanco
+ * de las iniciales tiene que aguantar 4,5:1 sobre TODO el disco, no solo sobre
+ * su lado claro, y por eso el extremo oscuro se saca del token mezclando hacia
+ * la tinta plena.
  */
-.tono-menta {
-  background: linear-gradient(
-    140deg,
-    var(--canto-menta),
-    color-mix(in oklab, var(--canto-menta) 78%, var(--tinta-pulsado))
-  );
-}
-
-.tono-aqua {
-  background: linear-gradient(
-    140deg,
-    var(--canto-aqua),
-    color-mix(in oklab, var(--canto-aqua) 78%, var(--tinta-pulsado))
-  );
-}
-
-.tono-rosa {
-  background: linear-gradient(
-    140deg,
-    var(--canto-rosa),
-    color-mix(in oklab, var(--canto-rosa) 78%, var(--tinta-pulsado))
-  );
-}
-
+.tono-menta,
+.tono-aqua,
+.tono-rosa,
 .tono-violeta {
   background: linear-gradient(
     140deg,
-    var(--canto-violeta),
-    color-mix(in oklab, var(--canto-violeta) 78%, var(--tinta-pulsado))
+    var(--tono-base),
+    color-mix(in oklab, var(--tono-base) 78%, var(--tinta-pulsado))
   );
+}
+
+.tono-menta {
+  --tono-base: #6f6455;
+}
+
+.tono-aqua {
+  --tono-base: #5b6672;
+}
+
+.tono-rosa {
+  --tono-base: #6b6b6b;
+}
+
+.tono-violeta {
+  --tono-base: #4a4a4a;
 }
 
 .botonFoto {
@@ -442,7 +455,7 @@
 .nombre {
   margin: 0;
   font-size: var(--t-portada);
-  font-weight: 200;
+  font-weight: 600;
   letter-spacing: -0.03em;
   line-height: 1.06;
   color: var(--tinta);

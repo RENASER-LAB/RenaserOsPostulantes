@@ -109,9 +109,19 @@
   margin-top: var(--e6);
 }
 
-/* ---------- Enlace que no sirve ---------- */
+/* ---------- El titular de las cuatro caras ---------- */
 
+/*
+ * `22ch` es la medida de los titulares del portal —la misma que `.titular` de
+ * `pagina.module.css`—, y aqui se escribe a mano en vez de componerla: esta
+ * hoja la comparten las dos puertas, y el panel no entro al escaparate. Copiar
+ * un numero es menos malo que arrastrar al panel el carril del portal.
+ *
+ * `overflow-wrap` es por «Este enlace ya no sirve.» y sus vecinas: son frases
+ * cortas, pero el estado de enlace roto llego a enseñar el correo entero.
+ */
 .titular {
+  max-width: 22ch;
   overflow-wrap: anywhere;
 }
 

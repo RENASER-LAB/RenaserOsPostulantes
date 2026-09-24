@@ -9,12 +9,22 @@
  */
 
 .pagina {
-  /* Lo que mide la barra del cronometro, medida en el navegador: 71 px. El
-     encargo pegajoso se pega justo debajo de ella. */
-  --alto-reloj: 71px;
-  max-width: var(--ancho);
-  margin: 0 auto;
-  padding: var(--e4) var(--e5) var(--e8);
+  composes: hoja from '../../estilos/pagina.module.css';
+  /*
+   * Lo que mide la barra del cronometro. **Medido en el navegador, no
+   * calculado**, y es el numero del peor caso: 77 px en reposo y **111 px con
+   * la frase del umbral visible**, que es la que aparece en los ultimos diez
+   * minutos.
+   *
+   * ⚠️ Se pone el maximo a proposito. El encargo se pega justo debajo con
+   * `top: calc(--alto-cabecera + --alto-reloj)`: con 77 px sobrarian 34 en
+   * reposo, pero con la frase puesta **el encargo quedaria tapado durante los
+   * ultimos diez minutos de una prueba cronometrada**, que es el peor momento
+   * posible. Un hueco de mas no molesta; una tapadura ahi si.
+   *
+   * Antes decia 71 px, de cuando la barra no tenia frase.
+   */
+  --alto-reloj: 111px;
 }
 
 .volver {
@@ -62,6 +72,26 @@
   color: var(--mal);
 }
 
+/*
+ * La frase del umbral, **visible y no solo para el lector de pantalla**.
+ *
+ * ⚠️ El rojo del numero era la unica señal de que queda poco, y el color solo
+ * no vale: quien no lo distingue no tenia ninguna. La frase ya existia en el
+ * DOM —`Cronometro` la emite en un `role="status"`— y lo unico que hacia falta
+ * era dejarla ver. No es texto nuevo.
+ */
+.avisoDelReloj {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  color: var(--mal);
+}
+
+.avisoDelReloj:empty {
+  display: none;
+}
+
 .hasta {
   font-size: var(--t-apoyo);
   color: var(--tinta2);
@@ -74,21 +104,19 @@
  * se aprenderia el patron. Por eso aparece a mitad y tiene que verse sin
  * gritar.
  */
+/*
+ * ⚠️ **Llevaba un filete de 4 px a la izquierda y se fue.** Es la misma barra
+ * de acento lateral prohibida que en el resto del portal —solo que de cuatro y
+ * no de tres, por eso el barrido no la cazo—. El contorno macizo de 2 px en
+ * tinta ya es la superficie mas fuerte de la pantalla.
+ */
 .cambio {
   display: flex;
-  gap: var(--e4);
   border: 2px solid var(--tinta);
   background: var(--nube);
   padding: var(--e5);
   margin-bottom: var(--e5);
   border-radius: var(--radio);
-}
-
-.cambio::before {
-  content: '';
-  flex: none;
-  width: 4px;
-  background: var(--tinta);
 }
 
 .tituloCambio {
@@ -176,9 +204,12 @@
 
 /* ---------- Antes de empezar ---------- */
 
+/*
+ * ⚠️ **Llevaba un filete de 3 px a la izquierda y se fue.** La barra de acento
+ * lateral esta prohibida en este mundo; las tres variantes ya se distinguen por
+ * el contorno y el fondo enteros.
+ */
 .aviso {
-  display: flex;
-  gap: var(--e3);
   /* El tope va en el aviso, no en el `span` de dentro: con el campo a 1040 y el
      texto a 460 se reproduce el mismo hueco que se queria quitar. */
   max-width: var(--medida);
@@ -192,31 +223,16 @@
   border-radius: var(--radio);
 }
 
-.aviso::before {
-  content: '';
-  flex: none;
-  width: 3px;
-  background: var(--regla2);
-}
-
 .aviso.serio {
   border-color: var(--tinta);
   color: var(--tinta);
   background: var(--nube);
 }
 
-.aviso.serio::before {
-  background: var(--tinta);
-}
-
 .aviso.malo {
   border-color: var(--mal-regla);
   background: var(--mal-bruma);
   color: var(--mal);
-}
-
-.aviso.malo::before {
-  background: var(--mal);
 }
 
 .empezar {
@@ -270,11 +286,6 @@
   margin-top: var(--e2);
   font-size: var(--t-menor);
   color: var(--tinta3);
-}
-
-.estadoRespuesta.pendiente {
-  color: var(--mal);
-  font-weight: 600;
 }
 
 /* ---------- Entregables ---------- */
@@ -495,6 +506,16 @@
   line-height: 1.55;
   color: var(--tinta2);
   margin-top: var(--e3);
+}
+
+/*
+ * La cuenta de lo que queda en blanco es el dato del modal, y la jerarquia la
+ * hace la tipografia: sube a la tinta de titulares ademas del peso. Envuelve una
+ * frase ENTERA, no un trozo de otra, asi que no rompe la regla de la frase
+ * entera —lo que esa regla prohibe es partir una frase por dentro—.
+ */
+.confirmacionTexto b {
+  color: var(--tinta);
 }
 
 .confirmacionBotones {

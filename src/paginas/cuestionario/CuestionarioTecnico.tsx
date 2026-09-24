@@ -330,6 +330,8 @@ export function CuestionarioTecnico() {
             venceEn={cuestionario.venceEn}
             className={estilos.reloj}
             classNamePoco={estilos.relojPoco}
+            /* La frase del umbral se ve: el color solo no es una señal. */
+            classNameAviso={estilos.avisoDelReloj}
             alAgotarse={() => {
               cola.mandarYa()
               void cache.invalidateQueries({ queryKey: ['cuestionario-tecnico', uuid] })
@@ -374,6 +376,7 @@ export function CuestionarioTecnico() {
           type="button"
           onClick={() => irA(indice - 1)}
           disabled={indice === 0}
+          data-rotulo="← Anterior"
         >
           ← Anterior
         </button>
@@ -382,6 +385,7 @@ export function CuestionarioTecnico() {
           type="button"
           onClick={() => irA(indice + 1)}
           disabled={indice >= preguntas.length - 1}
+          data-rotulo="Siguiente →"
         >
           Siguiente →
         </button>
@@ -407,6 +411,7 @@ export function CuestionarioTecnico() {
           type="button"
           onClick={() => setConfirmarEntrega(true)}
           disabled={faltan > 0 || entrega.isPending}
+          data-rotulo="Entregar"
         >
           Entregar
         </button>
@@ -430,6 +435,7 @@ export function CuestionarioTecnico() {
               type="button"
               onClick={() => entrega.mutate()}
               disabled={entrega.isPending}
+              data-rotulo={entrega.isPending ? 'Entregando…' : 'Sí, entregar'}
             >
               {entrega.isPending ? 'Entregando…' : 'Sí, entregar'}
             </button>
@@ -437,6 +443,7 @@ export function CuestionarioTecnico() {
               className={estilos.secundario}
               type="button"
               onClick={() => setConfirmarEntrega(false)}
+              data-rotulo="Mejor no"
             >
               Mejor no
             </button>

@@ -1,0 +1,524 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EX · Portal del candidato — dirección «El Carnet»</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chivo:wght@300;400;500;600;700;800&family=Chivo+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/*
+  THESIS: La portada no habla del trabajo: te ensena el fotocheck que
+    todavia no tienes, con los campos en blanco y los cinco sellos que
+    faltan para emitirlo. Rechaza el heroe con slogan y la lista de tarjetas.
+  OWN-WORLD: Papel de seguridad #F1F0EA con guilloche de arcos entrelazados,
+    tinta #131A2B, azul de seguridad #1E3A6E, rojo de anulacion #A3283A y
+    verde de validacion #1D6B5A. Chivo y Chivo Mono; todo dato en monoespaciada
+    con cifras tabulares. Nada tiene sombra salvo el laminado de la credencial.
+  STORY: Quien entra ve una credencial a su nombre sin emitir, entiende que
+    se emite juntando cinco sellos, y elige para que puesto empezar.
+  FIRST VIEWPORT: Barra fina de emisor; a la izquierda la credencial en
+    blanco con su guilloche y el laminado barriendo una vez; a la derecha lo
+    que falta para emitirla, con los cinco sellos en columna.
+  FORM: candidato 1 de la lista propia (el carnet y su guilloche), carta de
+    mi propia mano; semilla 76fbfbe1, re-roll 2.
+  FINISH: unreviewed and undocumented is unfinished; this build ends with the
+    finish review, the verdict, DESIGN.md, and every shipping raster carrying
+    its provenance.
+*/
+
+:root {
+  --seguridad: #f1f0ea;
+  --seguridad-honda: #e5e3d9;
+  --tarjeta: #fbfaf6;
+  --guilloche: rgba(30, 58, 110, 0.13);
+  --tinta: #131a2b;
+  --tinta2: #3c445a;
+  --tinta3: #5b6478;
+  --linea: #c9c8bd;
+  --linea-fuerte: #85857a;
+  --azul: #1e3a6e;
+  --azul-hondo: #142848;
+  --rojo: #a3283a;
+  --verde: #1d6b5a;
+
+  --e1: 4px; --e2: 8px; --e3: 12px; --e4: 16px;
+  --e5: 24px; --e6: 32px; --e7: 48px; --e8: 72px;
+  --ancho: 1180px;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--seguridad);
+  color: var(--tinta);
+  font-family: Chivo, system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+::selection { background: var(--azul); color: #fff; }
+:focus-visible { outline: 2px solid var(--azul); outline-offset: 3px; }
+
+* { scrollbar-color: var(--linea-fuerte) var(--seguridad-honda); scrollbar-width: thin; }
+::-webkit-scrollbar { width: 12px; }
+::-webkit-scrollbar-track { background: var(--seguridad-honda); }
+::-webkit-scrollbar-thumb { background: var(--linea-fuerte); border: 3px solid var(--seguridad-honda); }
+
+a { color: inherit; text-underline-offset: 3px; text-decoration-color: var(--linea-fuerte); }
+
+.marco { max-width: var(--ancho); margin-inline: auto; padding-inline: var(--e5); }
+
+.campo-rotulo {
+  font-family: 'Chivo Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--tinta3);
+}
+.dato-mono { font-family: 'Chivo Mono', monospace; font-variant-numeric: tabular-nums; }
+
+/* ---------- barra del emisor ---------- */
+
+.emisor {
+  border-bottom: 1px solid var(--linea-fuerte);
+  background: var(--seguridad);
+}
+.emisor .marco {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--e5); min-height: 54px;
+}
+.emisor-marca { display: flex; align-items: center; gap: var(--e3); text-decoration: none; }
+.emisor-marca svg { display: block; }
+.emisor-marca span { font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--tinta2); }
+.emisor nav ul { display: flex; gap: var(--e1); list-style: none; margin: 0; padding: 0; }
+.emisor nav a {
+  display: inline-flex; align-items: center; min-height: 44px; padding-inline: var(--e3);
+  font-size: 14px; color: var(--tinta2); text-decoration: none;
+  border-bottom: 2px solid transparent;
+}
+.emisor nav a:hover { color: var(--tinta); border-bottom-color: var(--linea-fuerte); }
+.emisor nav a[aria-current] { color: var(--tinta); font-weight: 600; border-bottom-color: var(--azul); }
+
+/* ---------- la mesa de emision ---------- */
+
+.mesa {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--e8);
+  align-items: start;
+  padding-block: var(--e8) var(--e7);
+}
+
+/* la credencial */
+.credencial {
+  position: relative;
+  aspect-ratio: 85.6 / 54;
+  background: var(--tarjeta);
+  border: 1px solid var(--linea-fuerte);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(19,26,43,0.06), 0 18px 40px rgba(19,26,43,0.10);
+}
+.credencial .rosa { position: absolute; inset: 0; width: 100%; height: 100%; }
+.credencial .laminado {
+  position: absolute; inset: 0;
+  background: linear-gradient(104deg, transparent 34%, rgba(255,255,255,0.72) 46%, rgba(255,255,255,0.30) 52%, transparent 62%);
+  animation: barrer 1000ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  pointer-events: none;
+}
+@keyframes barrer { from { transform: translateX(-62%); } to { transform: translateX(58%); } }
+@media (prefers-reduced-motion: reduce) { .credencial .laminado { animation: none; opacity: 0.35; } }
+
+.credencial-cuerpo {
+  position: relative;
+  height: 100%;
+  display: grid;
+  grid-template-columns: 30% 1fr;
+  gap: var(--e5);
+  padding: var(--e5);
+}
+.retrato {
+  border: 1px dashed var(--linea-fuerte);
+  border-radius: 4px;
+  display: grid; place-items: center;
+  text-align: center;
+  padding: var(--e2);
+  align-self: stretch;
+}
+.retrato span { font-family: 'Chivo Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--tinta3); line-height: 1.4; }
+
+.campos { display: flex; flex-direction: column; gap: var(--e3); min-width: 0; }
+.campo { border-bottom: 1px solid var(--linea); padding-bottom: var(--e1); }
+.campo .valor {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  min-height: 24px;
+  color: var(--tinta);
+}
+.campo .vacio { color: var(--tinta3); font-weight: 400; letter-spacing: 0.34em; }
+
+.credencial .anulada {
+  position: absolute;
+  right: 5%;
+  top: 42%;
+  transform: rotate(-11deg);
+  border: 3px solid var(--rojo);
+  border-radius: 6px;
+  color: var(--rojo);
+  font-size: clamp(15px, 2vw, 21px);
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 4px 18px;
+  opacity: 0.9;
+  background: rgba(251,250,246,0.5);
+}
+
+.pie-credencial {
+  margin-top: var(--e3);
+  display: flex; flex-wrap: wrap; gap: var(--e5);
+}
+
+.advertencia {
+  margin-top: var(--e5);
+  border: 1px solid var(--rojo);
+  padding: 0;
+}
+.advertencia .campo-rotulo {
+  display: block;
+  background: var(--rojo);
+  color: var(--seguridad);
+  padding: 5px var(--e4);
+}
+.advertencia p { margin: 0; padding: var(--e4); font-size: 14.5px; line-height: 1.5; color: var(--tinta2); }
+
+/* lo que falta */
+.falta h1 {
+  margin: 0 0 var(--e4);
+  font-size: clamp(34px, 4.4vw, 56px);
+  font-weight: 800;
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+.falta h1 em { font-style: normal; font-weight: 300; color: var(--tinta2); display: block; }
+.falta > p { margin: 0 0 var(--e6); max-width: 46ch; font-size: 17px; color: var(--tinta2); }
+
+.sellos { list-style: none; margin: 0 0 var(--e6); padding: 0; border-top: 1px solid var(--linea-fuerte); }
+.sello {
+  display: grid;
+  grid-template-columns: 46px 1fr auto;
+  gap: var(--e4);
+  align-items: center;
+  padding: var(--e4) 0;
+  border-bottom: 1px solid var(--linea);
+}
+.sello .disco {
+  width: 46px; height: 46px; border-radius: 50%;
+  border: 2px dashed var(--linea-fuerte);
+  display: grid; place-items: center;
+  font-family: 'Chivo Mono', monospace;
+  font-size: 15px; font-weight: 600;
+  color: var(--tinta3);
+}
+.sello h2 { margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
+.sello p { margin: 2px 0 0; font-size: 14px; color: var(--tinta2); }
+.sello .plazo { font-family: 'Chivo Mono', monospace; font-size: 12.5px; color: var(--tinta3); white-space: nowrap; }
+
+.nota-emision {
+  border-top: 1px solid var(--linea-fuerte);
+  padding-top: var(--e3);
+  font-size: 15px;
+  color: var(--tinta2);
+  max-width: 48ch;
+}
+
+/* ---------- elegir el puesto ---------- */
+
+.eleccion { padding-bottom: var(--e8); }
+.eleccion-cabeza {
+  border-top: 2px solid var(--tinta);
+  padding-top: var(--e3);
+  margin-bottom: var(--e2);
+  display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--e3);
+}
+.eleccion-cabeza h2 { margin: 0; font-size: clamp(21px, 2.2vw, 27px); font-weight: 700; letter-spacing: -0.025em; }
+
+.solicitudes { list-style: none; margin: 0; padding: 0; }
+.solicitud {
+  position: relative;
+  display: grid;
+  grid-template-columns: 60px minmax(0, 2fr) minmax(0, 1.1fr) auto;
+  gap: var(--e5);
+  align-items: center;
+  padding: var(--e5) var(--e3);
+  margin-inline: calc(var(--e3) * -1);
+  border-bottom: 1px solid var(--linea);
+  transition: background 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.solicitud:hover { background: var(--tarjeta); }
+.serie { font-family: 'Chivo Mono', monospace; font-size: 13px; font-weight: 600; color: var(--azul); letter-spacing: 0.04em; }
+.solicitud h3 { margin: 0; font-size: clamp(18px, 1.9vw, 23px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; }
+.solicitud h3 a { text-decoration: none; }
+.solicitud h3 a::after { content: ''; position: absolute; inset: 0; }
+.solicitud .empleador { margin-top: 3px; font-size: 14px; color: var(--tinta2); }
+.solicitud .cond { font-family: 'Chivo Mono', monospace; font-size: 13px; line-height: 1.6; color: var(--tinta2); }
+.solicitud .cond b { display: block; font-weight: 600; color: var(--tinta); }
+.solicitar {
+  display: inline-flex; align-items: center; gap: var(--e2);
+  min-height: 46px; padding-inline: var(--e5);
+  border: 1px solid var(--azul);
+  color: var(--azul);
+  border-radius: 4px;
+  font-size: 14px; font-weight: 600;
+  white-space: nowrap;
+  transition: background 160ms, color 160ms;
+}
+.solicitud:hover .solicitar { background: var(--azul); color: #fff; }
+
+/* ---------- pie ---------- */
+
+.pie { border-top: 1px solid var(--linea-fuerte); background: var(--seguridad-honda); padding-block: var(--e5); }
+.pie .marco { display: flex; flex-wrap: wrap; gap: var(--e4); justify-content: space-between; font-size: 14px; color: var(--tinta2); }
+.pie ul { display: flex; flex-wrap: wrap; gap: var(--e5); list-style: none; margin: 0; padding: 0; }
+
+/* ---------- adaptacion ---------- */
+
+@media (max-width: 980px) {
+  .mesa { grid-template-columns: 1fr; gap: var(--e7); padding-block: var(--e6) var(--e6); }
+  .solicitud { grid-template-columns: 60px 1fr; row-gap: var(--e3); }
+  .solicitud .cond { grid-column: 2; }
+  .solicitar { grid-column: 2; justify-self: start; }
+}
+@media (max-width: 620px) {
+  :root { --e8: 48px; --e7: 32px; }
+  .credencial-cuerpo { grid-template-columns: 34% 1fr; gap: var(--e4); padding: var(--e4); }
+  .campo .valor { font-size: 15px; }
+  .solicitud { grid-template-columns: 1fr; }
+  .solicitud .cond, .solicitar { grid-column: 1; }
+  .emisor nav a { padding-inline: var(--e2); font-size: 13px; }
+  .emisor-marca span { display: none; }
+}
+</style>
+</head>
+<body>
+
+<header class="emisor">
+  <div class="marco">
+    <a class="emisor-marca" href="#" aria-label="EX, portal del candidato">
+      <svg width="30" height="24" viewBox="0 0 30 24" fill="none" aria-hidden="true">
+        <path d="M1.5 2.5h9M1.5 12h7.5M1.5 21.5h9" stroke="#131a2b" stroke-width="2.6" stroke-linecap="square"/>
+        <path d="M15 2.5l13 19M28 2.5l-13 19" stroke="#131a2b" stroke-width="2.6" stroke-linecap="square"/>
+        <circle cx="21.5" cy="12" r="2.4" fill="#1e3a6e"/>
+      </svg>
+      <span>Emisor · Renaser Consulting</span>
+    </a>
+    <nav aria-label="Principal">
+      <ul>
+        <li><a href="#" aria-current="page">Puestos</a></li>
+        <li><a href="#">Mi credencial</a></li>
+        <li><a href="#">Ingresar</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main class="marco mesa">
+
+  <div>
+    <div class="credencial">
+      <svg class="rosa" viewBox="0 0 400 253" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <g fill="none" stroke="rgba(30,58,110,0.13)" stroke-width="0.6">
+          <g transform="translate(300 60)">
+            <ellipse rx="52" ry="20"/><ellipse rx="52" ry="20" transform="rotate(15)"/>
+            <ellipse rx="52" ry="20" transform="rotate(30)"/><ellipse rx="52" ry="20" transform="rotate(45)"/>
+            <ellipse rx="52" ry="20" transform="rotate(60)"/><ellipse rx="52" ry="20" transform="rotate(75)"/>
+            <ellipse rx="52" ry="20" transform="rotate(90)"/><ellipse rx="52" ry="20" transform="rotate(105)"/>
+            <ellipse rx="52" ry="20" transform="rotate(120)"/><ellipse rx="52" ry="20" transform="rotate(135)"/>
+            <ellipse rx="52" ry="20" transform="rotate(150)"/><ellipse rx="52" ry="20" transform="rotate(165)"/>
+          </g>
+          <g transform="translate(70 205)">
+            <ellipse rx="72" ry="26"/><ellipse rx="72" ry="26" transform="rotate(20)"/>
+            <ellipse rx="72" ry="26" transform="rotate(40)"/><ellipse rx="72" ry="26" transform="rotate(60)"/>
+            <ellipse rx="72" ry="26" transform="rotate(80)"/><ellipse rx="72" ry="26" transform="rotate(100)"/>
+            <ellipse rx="72" ry="26" transform="rotate(120)"/><ellipse rx="72" ry="26" transform="rotate(140)"/>
+            <ellipse rx="72" ry="26" transform="rotate(160)"/>
+          </g>
+          <path d="M0 30 C 80 12, 160 48, 240 30 S 400 12, 400 30" />
+          <path d="M0 38 C 80 20, 160 56, 240 38 S 400 20, 400 38" />
+          <path d="M0 226 C 90 210, 170 244, 260 226 S 400 208, 400 226" />
+        </g>
+      </svg>
+
+      <div class="credencial-cuerpo">
+        <div class="retrato"><span>Sin<br>fotografía</span></div>
+        <div class="campos">
+          <div class="campo">
+            <div class="campo-rotulo">Portador</div>
+            <div class="valor vacio">· · · · · · ·</div>
+          </div>
+          <div class="campo">
+            <div class="campo-rotulo">Puesto</div>
+            <div class="valor vacio">· · · · · · ·</div>
+          </div>
+          <div class="campo">
+            <div class="campo-rotulo">Empresa</div>
+            <div class="valor vacio">· · · · · · ·</div>
+          </div>
+          <div class="campo">
+            <div class="campo-rotulo">Sellos reunidos</div>
+            <div class="valor dato-mono">0 de 5</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="anulada">Sin emitir</div>
+    </div>
+
+    <div class="pie-credencial">
+      <span class="campo-rotulo">Serie <span class="dato-mono">EX-2026-000000</span></span>
+      <span class="campo-rotulo">Emitida <span class="dato-mono">··/··/····</span></span>
+    </div>
+
+    <div class="advertencia">
+      <div class="campo-rotulo">Lo único que cierra una postulación</div>
+      <p>
+        No cumplir un requisito indispensable. Son pocos, están escritos enteros en cada
+        puesto, y se confirman al pedir la credencial. Nada más te descarta de forma
+        automática: ni tu currículum, ni tus respuestas, ni cuánto tardes.
+      </p>
+    </div>
+  </div>
+
+  <div class="falta">
+    <h1>Todavía no tienes tu fotocheck. <em>Así se consigue.</em></h1>
+    <p>
+      No se emite por currículum. Se emite juntando cinco sellos, y cada sello se gana
+      trabajando: por eso tarda semanas y por eso vale.
+    </p>
+
+    <ol class="sellos">
+      <li class="sello">
+        <span class="disco">1</span>
+        <div>
+          <h2>Perfil</h2>
+          <p>Tu currículum y una evaluación escrita sobre cómo trabajas.</p>
+        </div>
+        <span class="plazo">14 días</span>
+      </li>
+      <li class="sello">
+        <span class="disco">2</span>
+        <div>
+          <h2>Prueba del puesto</h2>
+          <p>Un encargo real, con el reloj corriendo aunque cierres.</p>
+        </div>
+        <span class="plazo">Con reloj</span>
+      </li>
+      <li class="sello">
+        <span class="disco">3</span>
+        <div>
+          <h2>Simulación</h2>
+          <p>Dos horas de trabajo con el equipo, en la fecha que elijas.</p>
+        </div>
+        <span class="plazo">2 horas</span>
+      </li>
+      <li class="sello">
+        <span class="disco">4</span>
+        <div>
+          <h2>Validación</h2>
+          <p>Un periodo corto trabajando de verdad, con responsable.</p>
+        </div>
+        <span class="plazo">Periodo corto</span>
+      </li>
+      <li class="sello">
+        <span class="disco">5</span>
+        <div>
+          <h2>Decisión</h2>
+          <p>Decide una persona mirando todo el recorrido, no un puntaje.</p>
+        </div>
+        <span class="plazo">Sin plazo</span>
+      </li>
+    </ol>
+
+    <p class="nota-emision">
+      Mirar no exige cuenta: los puestos y los textos legales se leen enteros sin
+      registrarse. La cuenta se abre cuando pides tu primera credencial.
+    </p>
+  </div>
+
+</main>
+
+<section class="marco eleccion">
+  <div class="eleccion-cabeza">
+    <h2>¿Para qué puesto la pides?</h2>
+    <span class="campo-rotulo">5 series abiertas · Lima, Arequipa, Trujillo</span>
+  </div>
+
+  <ul class="solicitudes">
+    <li class="solicitud">
+      <span class="serie">EX-001</span>
+      <div>
+        <h3><a href="#">Analista de Datos</a></h3>
+        <div class="empleador">Clínica San Juan · Que los reportes semanales salgan solos y sean confiables.</div>
+      </div>
+      <div class="cond"><b>Híbrido · Lima</b>L a V, 9–18 h<br>S/ 3 800 – 4 500</div>
+      <span class="solicitar">Pedir esta credencial</span>
+    </li>
+    <li class="solicitud">
+      <span class="serie">EX-002</span>
+      <div>
+        <h3><a href="#">Coordinador/a de Operaciones</a></h3>
+        <div class="empleador">Transportes del Sur · Proveedores, rutas, caja chica y que lo comprometido se cumpla.</div>
+      </div>
+      <div class="cond"><b>Presencial · Arequipa</b>L a S</div>
+      <span class="solicitar">Pedir esta credencial</span>
+    </li>
+    <li class="solicitud">
+      <span class="serie">EX-003</span>
+      <div>
+        <h3><a href="#">Especialista en Mejora Continua</a></h3>
+        <div class="empleador">Molinos del Norte · Bajar el desperdicio del envasado sin parar la producción.</div>
+      </div>
+      <div class="cond"><b>Presencial · Trujillo</b></div>
+      <span class="solicitar">Pedir esta credencial</span>
+    </li>
+    <li class="solicitud">
+      <span class="serie">EX-004</span>
+      <div>
+        <h3><a href="#">Analista de Planeamiento</a></h3>
+        <div class="empleador">Andes Retail · Que la reposición de tiendas deje de decidirse por corazonada.</div>
+      </div>
+      <div class="cond"><b>Remoto · Lima</b>Flexible</div>
+      <span class="solicitar">Pedir esta credencial</span>
+    </li>
+    <li class="solicitud">
+      <span class="serie">EX-005</span>
+      <div>
+        <h3><a href="#">Jefe/a de Servicio al Cliente</a></h3>
+        <div class="empleador">Clínica San Juan · Que una queja se resuelva en el primer contacto y quede aprendida.</div>
+      </div>
+      <div class="cond"><b>Presencial · Lima</b>Turnos rotativos</div>
+      <span class="solicitar">Pedir esta credencial</span>
+    </li>
+  </ul>
+</section>
+
+<footer class="pie">
+  <div class="marco">
+    <span>© 2026 Renaser Consulting</span>
+    <ul>
+      <li><a href="#">Política de privacidad</a></li>
+      <li><a href="#">Privacidad y control</a></li>
+      <li><a href="#">Panel de empresas</a></li>
+    </ul>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -1,69 +1,83 @@
 /*
- * El mundo visual del portal: «El canto».
+ * El mundo visual del portal: «El escaparate».
  *
- * Una nube recien formada difracta la luz del sol cuando sus gotas son de
- * tamaño parecido, y aparece en su borde una banda estrecha de color. Tu
- * candidatura es esa banda: se forma tramo a tramo a lo largo de semanas.
+ * Un cuarto de luz calida con una sola pieza iluminada. El fondo es un pastel
+ * anaranjado y las superficies de encima son nube blanca, asi que se leen como
+ * objetos puestos sobre una mesa. En medio hay una vitrina —tarjeta de borde
+ * grueso y sombra— y dentro esta el producto: el recorrido del candidato y lo
+ * que le toca ahora.
  *
- * Del fenomeno viene el vocabulario de estado entero —ausente, formandose,
- * vivido, disperso— y una sola inversion deliberada: en el cielo el canto se
- * deshace cuando las gotas engordan; **aqui lo que se formo se queda formado**,
- * porque el producto trata de acumular evidencia y lo que el candidato ya
- * demostro es suyo.
+ * ⚠️ **El fondo paso por gris, por blanco y acabo en calido.** `#f5f5f5` hasta el
+ * 11/09/2026, blanco puro ese mismo dia, y `#fbf1e9` desde el 15/09.
+ *
+ * ⚠️ **Sustituyo a «El canto» el 10/09/2026.** Aquel mundo era una nube
+ * difractando luz: espectro irisado, violeta `#5638d6`, Mulish de peso 200 y
+ * controles en pildora. Si encuentras alguno de esos nombrado en el codigo,
+ * esta viejo. Lo unico que sobrevive es `--canto`, y solo porque el panel del
+ * equipo todavia no se ha migrado.
  *
  * Cuatro reglas que sostienen el resto:
  *
- *   1. El color es POSICIONAL, no categorico. El espectro corre una sola vez de
- *      principio a fin del recorrido, y cada tramo enseña su rebanada. Ningun
- *      color significa «esta etapa»; significa «hasta aqui llego la luz».
- *   2. El violeta pleno significa UNA cosa: «te toca a ti». Es la banda viva.
+ *   1. La ACCION ES NEGRA, no de color. Un boton de color compite con lo unico
+ *      que tiene permiso para llamar la atencion.
+ *   2. El coral `#FF7C61` significa UNA cosa: «te toca a ti». Y es un
+ *      discriminador, no una etiqueta: sirve para encontrar tu turno entre cosas
+ *      que no lo son, asi que aparece una vez por cosa que reclama y en una
+ *      pantalla donde no hay nada contra lo que discriminar no aparece.
  *   3. El estado se lee en la FORMA antes que en el color —barra maciza, filete,
- *      punteado disperso— porque quien no distingue colores lee lo mismo.
- *   4. El color vive en el CANTO. El campo donde se lee se queda en nube: filete
- *      espectral en el borde de lo que importa, nunca relleno bajo el texto.
+ *      punteado— porque quien no distingue colores lee lo mismo.
+ *   4. La profundidad es TONO, no papel levantado: una superficie se separa del
+ *      fondo porque es mas clara que el —nube blanca sobre cielo calido—, y la
+ *      sombra responde a un estado; en reposo, plano. El contorno de 1 px sigue
+ *      puesto y es el que sostiene lo que va DENTRO de otra superficie.
  *
- * El contrato de direccion completo esta en la cabecera de `index.html`.
+ * El sistema entero esta en `DESIGN.md`; el contrato de direccion, en la
+ * cabecera de `index.html`.
  */
 
 /*
- * Mulish, servida por el propio sitio.
+ * Figtree, servida por el propio sitio.
  *
  * Venia de Google Fonts, y para la aplicacion instalada eso no vale: un
- * telefono sin cobertura abriria la app con los titulares en otra letra, que en
- * un mundo cuyo titular pesa 200 no es un detalle. Empaquetada, carga siempre.
+ * telefono sin cobertura abriria la app con los titulares en otra letra.
+ * Empaquetada, carga siempre.
  *
  * En la web tambien mejora: se van las dos conexiones previas del arranque y
  * deja de depender de un tercero.
  *
  * ⚠️ **Es la fuente variable, un solo archivo por subconjunto.** El portal usa
- * cuatro pesos —200, 400, 600 y 700— y con estaticas serian cuatro descargas de
- * cada subconjunto. `font-weight: 200 900` declara el rango entero, asi que un
- * peso nuevo no obliga a volver aqui a añadir un archivo.
+ * tres pesos —400, 600 y 700— y con estaticas serian tres descargas de cada
+ * subconjunto. `font-weight: 400 700` declara el rango entero, asi que un peso
+ * nuevo dentro de el no obliga a volver aqui.
+ *
+ * ⚠️ **El rango empieza en 400 y no en 200.** El mundo anterior tenia titulares
+ * de peso 200; este los pone en 600, y declarar un rango que no se usa solo
+ * invita a volver a bajarlos.
  *
  * ⚠️ **No hay cursiva a proposito**: no se usa en ninguna hoja del portal, y la
  * cursiva es otro archivo. Si algun dia se usa, hay que traerla — el navegador
- * la fabricaria inclinando la recta, que en Mulish se ve mal.
+ * la fabricaria inclinando la recta, que se ve mal.
  *
  * Los `unicode-range` son los de Google y no se tocan a ojo: son los que hacen
  * que un navegador que solo pinta español no descargue el subconjunto extendido.
  */
 @font-face {
-  font-family: Mulish;
+  font-family: Figtree;
   font-style: normal;
-  font-weight: 200 900;
+  font-weight: 400 700;
   font-display: swap;
-  src: url('/tipografia/mulish-latin.woff2') format('woff2');
+  src: url('/tipografia/figtree-latin.woff2') format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
     U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
     U+FEFF, U+FFFD;
 }
 
 @font-face {
-  font-family: Mulish;
+  font-family: Figtree;
   font-style: normal;
-  font-weight: 200 900;
+  font-weight: 400 700;
   font-display: swap;
-  src: url('/tipografia/mulish-latin-ext.woff2') format('woff2');
+  src: url('/tipografia/figtree-latin-ext.woff2') format('woff2');
   unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
     U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0,
     U+2113, U+2C60-2C7F, U+A720-A7FF;
@@ -71,56 +85,88 @@
 
 :root {
   /*
-   * Superficies. El fondo es bruma fria y las superficies son nube blanca: al
-   * reves que un portal corriente, donde la pagina es blanca y los bloques
-   * tambien y solo un contorno los separa.
+   * Superficies. El fondo es un pastel calido y las superficies son nube blanca:
+   * asi lo que se pone encima —la cabecera, las tarjetas, el escaparate— se lee
+   * como un objeto sobre una mesa, y no hace falta que se sostenga solo con su
+   * contorno.
+   *
+   * ⚠️ **El cielo volvio a tener tono el 15/09/2026, y con el vuelve la regla de
+   * que una superficie se separa del fondo POR TONO**, no solo por su contorno de
+   * 1 px. Los contornos se quedan —son los que sostienen lo que va dentro de otra
+   * superficie— pero ya no cargan solos con el trabajo.
+   *
+   * El recorrido: #f5f5f5 (10/09) -> #fafafa con resplandores corales (11/09) ->
+   * #ffffff (11/09) -> #fbf1e9. La separacion entre pagina y superficie es de
+   * **1,113:1**, un punto mejor que la del gris con el que empezo.
+   *
+   * ⚠️ **El tono es calido a proposito y no es el de la referencia que lo pidio.**
+   * Aquella pagina lleva un gris neutro #f5f5f5 y lo que se ve calido en ella son
+   * sus resplandores corales, no el fondo. Aqui el naranja esta en el fondo. Si
+   * algun dia se quiere el gris de verdad, es cambiar este valor y nada mas.
+   *
+   * `--nube-hundida` no se movio: lo hundido vive DENTRO de una superficie, asi
+   * que su pareja de contraste es #ffffff y no el cielo.
    */
-  --cielo: #f6f8fb;
+  --cielo: #fbf1e9;
   --nube: #ffffff;
-  --nube-hundida: #eef1f6;
+  --nube-hundida: #f4f4f4;
   /* Barras de esqueleto y fondo de lo apagado: tiene que separarse de
      `--nube-hundida` o un control deshabitado dentro de un bloque de apoyo
      desaparece. */
-  --nube-honda: #dfe4ec;
+  --nube-honda: #e6e6e6;
 
   /*
-   * Tinta. Pizarra, no negro: es el gris azulado del cuerpo de una nube vista a
-   * contraluz, y el unico color que el mundo tiene fuera del canto.
+   * Tinta. Gris neutro y no negro pleno: el negro esta reservado a la accion, y
+   * un texto largo del mismo negro que un boton le quita el sitio.
    */
-  --tinta: #232b36;  /* 13,0:1 sobre nube */
-  --tinta2: #4a5563; /* 7,5:1  — la prosa que explica */
-  /* No bajar de aqui: 4,81:1 sobre nube. Un escalon mas claro no llega al 4,5
-     que pide el texto pequeño. */
-  /* ⚠️ Es el gris más claro que aguanta 4,5:1 sobre TODOS los fondos claros del
-     sistema, no solo sobre el blanco. A #68727f daba 4,31:1 sobre
-     `--nube-hundida` y 4,40:1 sobre `--duda-bruma`: pasaba la prueba en la
-     página y la fallaba dentro de cualquier caja hundida. */
-  --tinta3: #5f6977;
+  --tinta: #333333;  /* 10,9:1 sobre nube */
+  --tinta2: #5b5b5b; /* 6,8:1  — la prosa que explica */
+  /*
+   * El gris mas claro que se puede usar para texto, y no se baja de aqui.
+   *
+   * Medido contra los siete fondos claros del sistema: nube 5,33 · cielo 4,79 ·
+   * nube-hundida 4,85 · duda-bruma 4,80 · bien-bruma 4,74 · mal-bruma 4,71.
+   * Un escalon mas claro los tumba: #68727f daba 4,31 sobre `--nube-hundida`,
+   * o sea pasaba en la pagina y fallaba dentro de cualquier caja hundida.
+   *
+   * ⚠️ **La excepcion es `--nube-honda`: ahi da 4,27:1 y no llega.** El unico
+   * sitio donde se tocan es el texto de un control **deshabilitado**, que WCAG
+   * 1.4.3 exime expresamente —un componente inactivo no tiene requisito de
+   * contraste— y que a proposito se lee apagado. Si algun dia hace falta texto
+   * ACTIVO sobre nube honda, no puede ser este: el gris mas claro que aguanta
+   * ahi es #5a5a5a, que ya es mas oscuro que `--tinta2`.
+   */
+  --tinta3: #6b6b6b;
 
-  --regla: #e3e7ee;
-  --regla2: #cbd2dc;
-  /* Un control pide 3:1 contra el fondo; una caja no. Este da 3,27:1. */
-  --borde-control: #848e9c;
+  --regla: #e6e6e6;
+  --regla2: #cbcbcb;
+  /* Un control pide 3:1 contra el fondo; una caja no. Este da 3,45:1. */
+  --borde-control: #8a8a8a;
 
   /* La tinta que va ENCIMA de un relleno, no la de la nube. Se parecen —la
      nube tambien es blanca— pero no son lo mismo: si un dia la superficie deja
      de ser blanca pura, el texto de los botones no tiene por que moverse. */
   --tinta-invertida: #ffffff;
-  --tinta-pulsado: #11161d;
+  --tinta-pulsado: #0a0a0a;
 
   /*
-   * El violeta de la banda viva. En el fenomeno es la banda que se ve cuando el
-   * angulo es el tuyo; aqui es «te toca a ti», y no significa nada mas.
+   * La accion y el turno.
+   *
+   * `--activo` es NEGRO y no un color de marca: es el contraste maximo puesto
+   * donde hay que pulsar. El coral de `--activo-regla` es lo unico que significa
+   * «te toca a ti», y su bruma rosa lo acompaña. Los nombres conservan la
+   * palabra «activo» del mundo anterior porque renombrarlos tocaria dieciseis
+   * hojas para no cambiar un pixel.
    */
-  --activo: #5638d6;         /* 7,1:1 con texto blanco encima */
-  --activo-pulsado: #4429b8;
-  --activo-bruma: #efecfd;
-  --activo-regla: #c6bcf7;
+  --activo: #0a0a0a;         /* 19,8:1 con texto blanco encima */
+  --activo-pulsado: #404040;
+  --activo-bruma: rgba(255, 136, 150, 0.2);
+  --activo-regla: #ff7c61;
 
   /*
-   * El semaforo del sistema, releido en los colores del canto. Cada uno ya
-   * significaba algo fijo en el producto antes que en el diseño, y por eso el
-   * violeta no podia ser ninguno de ellos.
+   * El semaforo del sistema. Cada uno significaba algo fijo en el producto antes
+   * que en el diseño —hecho, en duda, error—, y por eso ni la accion ni el coral
+   * del turno podian ser ninguno de ellos.
    */
   --bien: #0b7a63;        /* 5,3:1 — lo confirmado */
   --bien-bruma: #e6f5f0;
@@ -139,26 +185,31 @@
   --mal-regla: #f3c3cc;
 
   /*
-   * El canto: el espectro entero, de un extremo al otro del recorrido.
+   * El canto: lo ultimo que queda del mundo visual anterior.
    *
-   * No son cinco colores para cinco etapas. Es una sola tirada de luz, y cada
-   * tramo enseña la rebanada que le toca por su sitio. Por eso avanzar cambia
-   * de color sin que ningun color signifique una etapa.
+   * ⚠️ **Ningun sitio del portal del candidato lo usa desde el 10/09/2026.**
+   * Sobrevive por un solo consumidor, `src/panel/Armazon.module.css`, que es
+   * del panel del equipo y todavia no se ha migrado. El dia que se migre, esta
+   * declaracion se va con el.
+   *
+   * Se le retargeteo el degradado a la familia coral para que no desentonara
+   * mientras seguia en pantalla; **no se usa en composiciones nuevas**.
+   *
+   * Se fueron con la migracion: `--canto-vertical`, que solo servia al
+   * recorrido en movil, y los cuatro tonos `--canto-menta/aqua/rosa/violeta`,
+   * que vestian las portadas de «Mi perfil» y quedaron en cuatro corales casi
+   * identicos al retargetear. Los codigos `CANTO_*` que guarda el backend
+   * siguen existiendo; lo que cambio es con que se pintan.
    */
-  --canto: linear-gradient(90deg, #16a184 0%, #4f8ac9 34%, #d2497e 68%, #6b4be0 100%);
-  --canto-vertical: linear-gradient(180deg, #16a184 0%, #4f8ac9 34%, #d2497e 68%, #6b4be0 100%);
-  --canto-menta: #16a184;
-  --canto-aqua: #4f8ac9;
-  --canto-rosa: #d2497e;
-  --canto-violeta: #6b4be0;
+  --canto: linear-gradient(90deg, #ffc4b4 0%, #ff9d86 34%, #ff7c61 68%, #ff5d6e 100%);
 
   /*
    * La escala tipografica. Diez escalones y cada uno tiene un trabajo.
    *
-   * El titular es fino y grande a proposito —200 a 56 px— porque es lo que hace
-   * el mundo: una banda estrecha de luz sobre mucho cielo. Ese peso NO baja de
-   * `--t-portada`: por debajo de 30 px una Mulish de 200 deja de leerse comoda,
-   * y este es un portal de empleo donde una barrera impide postular.
+   * ⚠️ **La jerarquia la hace la tipografia, y nada mas.** Ningun recuadro ni
+   * sombra crea un nivel que el tamaño ya crea. Los titulares van en 600 sobre
+   * `--t-portada`; el mundo anterior los ponia en 200, que a este tamaño se leia
+   * como un adorno y no como el titulo de la pantalla.
    */
   --t-micro: 12px;      /* etiquetas de bloque */
   --t-menor: 13px;      /* pies, unidades, pistas */
@@ -167,9 +218,9 @@
   --t-base: 16px;       /* el cuerpo, y los campos: por debajo iOS hace zoom */
   --t-entradilla: 18px; /* la entradilla, y el titulo del tramo abierto */
   --t-titulo: 20px;     /* el titulo de un bloque */
-  --t-destacado: clamp(20px, 2.1vw, 24px); /* lo mayor de una pantalla */
+  --t-destacado: clamp(24px, 2.4vw, 30px); /* lo mayor de una pantalla */
   --t-cifra: clamp(28px, 5vw, 34px);       /* el cronometro y las cifras */
-  --t-portada: clamp(32px, 5.2vw, 56px);   /* el titular */
+  --t-portada: clamp(36px, 5.2vw, 60px);   /* el titular */
 
   /*
    * El ancho del portal en escritorio. No es medida de lectura: es el hueco
@@ -196,9 +247,9 @@
   --ancho-panel: 120rem;
 
   /*
-   * La medida de la linea, en `ch` —el ancho del cero—. En Mulish el cero es
-   * algo mas estrecho que en la familia anterior, asi que estos valores compran
-   * 66-72 caracteres por linea. Medido en el navegador, no calculado.
+   * La medida de la linea, en `ch` —el ancho del cero—. Estos valores compran
+   * 66-72 caracteres por linea en Figtree. Medido en el navegador, no calculado:
+   * el `ch` depende de la fuente, asi que cambiarla obliga a volver a medir.
    */
   --medida: 50ch;
   --medida-corta: 44ch;
@@ -213,23 +264,62 @@
   --e8: 72px;
 
   /*
-   * El radio. La nube no tiene esquinas: el mundo anterior era papel impreso y
-   * este es vapor, asi que las superficies se redondean y los controles son
-   * pildoras enteras.
+   * El radio. Las superficies se redondean con holgura y los controles con
+   * esquina corta.
+   *
+   * ⚠️ **`--radio-control` vale 4 px y NO es una pildora.** En el mundo anterior
+   * valia `999px`; cualquier hoja que de por hecho una pildora esta vieja. La
+   * unica forma redondeada que queda es `--radio-marca` en avatares y puntos.
    */
-  --radio: 14px;
-  --radio-menor: 10px;
-  --radio-control: 999px;
+  --radio: 12px;
+  --radio-menor: 8px;
+  --radio-control: 4px;
   /* Lo mas pequeño que se redondea: una casilla de 20 px. Con 10 px se
      convierte en una pastilla y deja de leerse como casilla. */
   --radio-marca: 4px;
 
+  /* La unica pieza que se permite una curva mayor que las superficies: la
+     vitrina de la portada y la caja de cierre que la cierra abajo. */
+  --radio-escaparate: 20px;
+
+  /* El marco translucido de la vitrina. Es un token porque el radio del interior
+     se calcula restandolo: si los dos no se mueven juntos, el blanco asoma por
+     las esquinas. */
+  --borde-escaparate: 12px;
+
+  /* Las franjas del recorrido, y NADA mas. Una barra de 6 px de alto con los
+     extremos redondos es un estadio, que es la forma correcta de una barra; el
+     mismo valor en cualquier otra cosa la convierte en pildora y contradice
+     «esquina corta, no pildora». */
+  --radio-barra: 999px;
+
   /* Lo que mide la cabecera fija. Lo consume la barra de avance del examen,
-     que se pega justo debajo. */
-  --alto-cabecera: 61px;
+     que se pega justo debajo.
+
+     Son 70 px MEDIDOS en el navegador, no calculados: 8 de aire arriba + 62 de
+     barra. El 11/09/2026 pasaron por 61 (barra a sangre) y 76 (vaina ovalada), y
+     el 15/09/2026 de 68 a 70, porque «Ingresar» copio la pieza de la referencia y
+     paso de 44 a 46 px de alto. Si cambia el relleno de `.cabecera`, el de
+     `.cabeceraDentro` o el ALTO DEL BOTON, se vuelve a medir — seis reglas de
+     cuatro hojas se pinchan debajo de este numero y ninguna lo puede adivinar.
+
+     ⚠️ **Y ahora la barra es transparente mientras no se baja.** Lo que se pincha
+     aqui aparece sobre el cielo, no bajo una barra opaca, hasta el primer scroll.
+     En cuanto hay scroll —que es cuando algo pasaria por debajo— la barra ya tiene
+     su velo puesto. */
+  --alto-cabecera: 70px;
 
   /* El movimiento: salida exponencial desde algo que ya se ve */
   --salida: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /*
+   * La curva de los botones, medida en `originx.demos.tailgrids.com` el
+   * 15/09/2026. Acelera y frena por igual, que es lo que pide un rotulo que
+   * entra por abajo y sale por arriba: con `--salida` el recorrido se gasta en
+   * el primer tercio y se ve un salto, no un giro. Es la misma razon por la que
+   * `--salida` tampoco valia para el destello que hubo en «Ingresar».
+   */
+  --curva-control: cubic-bezier(0.4, 0, 0.2, 1);
 
   /*
    * Las tres sombras del portal, y ninguna es decorativa.
@@ -238,9 +328,42 @@
    * levantado: desplazamiento corto, desenfoque largo, y el color de la tinta
    * con muy poca opacidad.
    */
-  --sombra-nube: 0 1px 2px rgb(35 43 54 / 0.04), 0 8px 24px rgb(35 43 54 / 0.05);
-  --sombra-aviso: 0 12px 24px rgb(35 43 54 / 0.10), 0 32px 64px rgb(35 43 54 / 0.14);
+  --sombra-nube: 0 1px 2px rgb(10 10 10 / 0.05), 0 8px 24px rgb(10 10 10 / 0.06);
+  --sombra-aviso: 0 12px 24px rgb(10 10 10 / 0.10), 0 32px 64px rgb(10 10 10 / 0.14);
   --bruma-viva: 0 0 0 4px var(--activo-bruma);
+
+  /*
+   * Las dos sombras del boton, copiadas al valor de
+   * `originx.demos.tailgrids.com` el 15/09/2026.
+   *
+   * `--sombra-control` es lo unico que separa del fondo al boton claro desde
+   * que perdio su contorno: cuatro capas de gris que van de 3 a 48 px, cada una
+   * con menos opacidad cuanto mas lejos. La quinta capa del original —76 px a
+   * alfa 0— no se copia porque no pinta nada.
+   *
+   * ⚠️ **No da los 3:1 que WCAG 1.4.11 pide al limite de un control**, y el
+   * contorno que habia si los daba (3,45:1). Ver `.secundario` en
+   * `piezas.module.css`, donde esta la decision y su numero.
+   */
+  --sombra-control:
+    0 3px 7px rgb(130 130 130 / 0.15),
+    0 12px 12px rgb(130 130 130 / 0.13),
+    0 27px 16px rgb(130 130 130 / 0.08),
+    0 48px 19px rgb(130 130 130 / 0.02);
+  --sombra-control-alta:
+    0 10px 15px -3px rgb(10 10 10 / 0.1),
+    0 4px 6px -4px rgb(10 10 10 / 0.1);
+
+  /*
+   * Lo que se apaga detras de un modal.
+   *
+   * Es un token y no una pieza porque sus cuatro consumidores no pueden
+   * compartir una clase: tres son el `::backdrop` de un `<dialog>` nativo, que
+   * no acepta `composes`, y el cuarto es una capa fija. Hasta el 10/09/2026
+   * cada uno lo escribia a mano con la pizarra del mundo anterior, y la
+   * evaluacion llegaba a ensenar dos velos distintos en la misma pantalla.
+   */
+  --velo: rgb(10 10 10 / 0.4);
 }
 
 *,
@@ -258,7 +381,7 @@ body {
   margin: 0;
   background: var(--cielo);
   color: var(--tinta);
-  font-family: Mulish, system-ui, sans-serif;
+  font-family: Figtree, system-ui, sans-serif;
   font-size: 16px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -295,9 +418,9 @@ ol {
  */
 h1 {
   font-size: var(--t-portada);
-  line-height: 1.06;
+  line-height: 1.13;
   letter-spacing: -0.03em;
-  font-weight: 200;
+  font-weight: 600;
   text-wrap: balance;
 }
 
@@ -317,11 +440,11 @@ h3 {
 }
 
 /*
- * Los enlaces no llevan el violeta.
+ * Los enlaces no llevan el coral.
  *
- * El violeta significa una sola cosa —«te toca a ti»— y con seis enlaces de ese
- * color rodeando un boton del mismo color, el candidato deja de poder confiar
- * en el color y tiene que leerlo todo. El subrayado ya identifica un enlace.
+ * El coral significa una sola cosa —«te toca a ti»— y con seis enlaces de ese
+ * color rodeando un panel del mismo color, el candidato deja de poder confiar en
+ * el color y tiene que leerlo todo. El subrayado ya identifica un enlace.
  */
 a {
   color: var(--tinta);
@@ -411,10 +534,18 @@ input[type='file']::file-selector-button:hover {
   scrollbar-width: thin;
 }
 
+/*
+ * El anillo de foco.
+ *
+ * ⚠️ **No lleva `border-radius`, y antes si.** El contorno del navegador sigue
+ * el radio del elemento, asi que forzarlo aqui a `--radio-menor` redondeaba el
+ * elemento mismo mientras estaba enfocado: un boton de 4 px saltaba a 8 al
+ * recibir el foco, y en un aviso con dos botones se veian dos esquinas
+ * distintas. Sin la declaracion, cada cosa se anilla con la forma que ya tiene.
+ */
 :focus-visible {
   outline: 2px solid var(--activo);
   outline-offset: 3px;
-  border-radius: var(--radio-menor);
 }
 
 /*
@@ -454,8 +585,8 @@ time,
  * El logotipo de EX, lo unico que sobrevive de los portales anteriores: la
  * palabra con la hormiga metida dentro de la X.
  *
- * El peso baja de 800 a 700: en Mulish el 800 es notablemente mas ancho y la
- * hormiga se quedaba sin sitio sobre el vertice de la X.
+ * El peso es 700 y no 800: el 800 es notablemente mas ancho y la hormiga se
+ * quedaba sin sitio sobre el vertice de la X.
  */
 .marca {
   position: relative;

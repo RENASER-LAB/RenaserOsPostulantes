@@ -1,32 +1,66 @@
 /*
  * El caso ambar: se pide una evidencia mas antes de decidir.
  *
- * Es de los pocos sitios del portal donde el acento esta justificado en un
- * panel entero: el estado es `DECISION_TURNO_CANDIDATO` y la espera es del
- * candidato. Lo que NO lleva acento es el formulario, porque hoy no envia.
+ * El esqueleto —carril, encabezado, reparto, bloques— viene de
+ * `estilos/pagina.module.css`. Aqui solo esta lo que es de esta pantalla.
+ *
+ * ⚠️ **Ya no lleva coral, y el argumento es el conteo.** El panel de arriba lo
+ * tuvo porque el estado es `DECISION_TURNO_CANDIDATO`. Pero esta pantalla
+ * **ya pinta ambar** —el aviso de que el formulario todavia no envia, que no es
+ * negociable porque es la unica verdad que impide perder lo escrito—, y dos
+ * colores en una pantalla no marcan el doble: no marcan nada. El coral sirve
+ * para *encontrar* tu turno entre cosas que no lo son, y aqui llegaste porque
+ * te tocaba: no hay nada contra lo que discriminar.
+ *
+ * Lo que separa el panel de arriba sigue siendo lo que siempre debio separarlo:
+ * el titular, que es lo primero que se lee.
  */
 
 .pagina {
-  max-width: var(--ancho);
-  margin: 0 auto;
-  padding: var(--e5) var(--e5) var(--e8);
+  composes: hoja from '../../estilos/pagina.module.css';
 }
 
 .volver {
   composes: volver from '../../estilos/piezas.module.css';
 }
 
-/* ---------- El panel de arriba: por qué estás aquí ---------- */
+.reparto {
+  composes: reparto from '../../estilos/pagina.module.css';
+}
 
+.columna {
+  composes: columna from '../../estilos/pagina.module.css';
+}
+
+.bloque {
+  composes: bloque from '../../estilos/pagina.module.css';
+}
+
+.hundido {
+  composes: bloqueHundido from '../../estilos/pagina.module.css';
+}
+
+.tituloBloque {
+  composes: tituloBloque from '../../estilos/pagina.module.css';
+}
+
+.texto {
+  composes: texto from '../../estilos/pagina.module.css';
+}
+
+/* ---------- Por qué estás aquí ---------- */
+
+/*
+ * Va a sangre sobre el cielo y no dentro de una superficie: es el encabezado de
+ * la pantalla, no un bloque mas. Meterlo en una caja lo pondria al mismo nivel
+ * que «Sin prisa», que es una nota de dos lineas.
+ */
 .cabeza {
-  margin-top: var(--e4);
-  border: 2px solid var(--activo-regla);
-  background: var(--nube);
-  padding: var(--e6);
-  border-radius: var(--radio);
-  box-shadow:
-    0 2px 6px rgb(35 43 54 / 0.05),
-    0 14px 40px rgb(86 56 214 / 0.14);
+  composes: encabezado from '../../estilos/pagina.module.css';
+}
+
+.titulo {
+  composes: titular from '../../estilos/pagina.module.css';
 }
 
 .eti {
@@ -35,15 +69,14 @@
   font-weight: 600;
   letter-spacing: 0.09em;
   text-transform: uppercase;
-  color: var(--activo-pulsado);
+  color: var(--tinta3);
   margin-bottom: var(--e3);
 }
 
-.titulo {
-  margin: 0;
-  max-width: 22ch;
-}
-
+/*
+ * La explicacion va en tinta plena y no en tinta segunda: es la unica parte de
+ * la pantalla que dice «esto no es un rechazo», y ahi el tono importa.
+ */
 .explicacion {
   font-size: var(--t-base);
   line-height: 1.55;
@@ -52,51 +85,10 @@
   max-width: var(--medida);
 }
 
+/* La accion que si funciona hoy es el correo, asi que es la accion principal. */
 .escribir {
   composes: acentoGrande from '../../estilos/piezas.module.css';
   margin-top: var(--e5);
-}
-
-/* ---------- El reparto en dos columnas ---------- */
-
-.reparto {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 19rem;
-  align-items: start;
-  gap: var(--e5);
-  margin-top: var(--e5);
-}
-
-.columna {
-  display: flex;
-  flex-direction: column;
-  gap: var(--e5);
-  min-width: 0;
-}
-
-.bloque {
-  border: 1px solid var(--regla);
-  padding: var(--e5);
-  border-radius: var(--radio);
-}
-
-.bloque.hundido {
-  background: var(--nube-hundida);
-}
-
-.tituloBloque {
-  margin: 0 0 var(--e3);
-}
-
-.texto {
-  font-size: var(--t-prosa);
-  line-height: 1.6;
-  color: var(--tinta2);
-  max-width: var(--medida);
-}
-
-.texto + .texto {
-  margin-top: var(--e3);
 }
 
 .pasos {
@@ -128,25 +120,17 @@
  * Va entero y va apagado, y eso se dice antes de que nadie escriba nada.
  * Dejarlo escribible y fallar al pulsar seria la version peor: se pierde lo
  * escrito y se aprende que la pantalla miente.
+ *
+ * ⚠️ **Llevaba un filete de 3 px a la izquierda y se fue.** La barra de acento
+ * lateral esta prohibida en este mundo. El ambar lo pone la pieza.
  */
 .todaviaNo {
-  display: flex;
-  gap: var(--e3);
-  border: 1px solid var(--duda);
-  background: var(--duda-bruma);
+  composes: enDuda from '../../estilos/piezas.module.css';
+  display: block;
   padding: var(--e4);
   margin-bottom: var(--e5);
   font-size: var(--t-prosa);
   line-height: 1.55;
-  color: var(--duda-tinta);
-  border-radius: var(--radio);
-}
-
-.todaviaNo::before {
-  content: '';
-  flex: none;
-  width: 3px;
-  background: var(--duda);
 }
 
 .formulario {
@@ -213,23 +197,7 @@
 }
 
 .boton {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 44px;
-  padding: 0 var(--e4);
-  background: var(--nube);
-  border: 1px solid var(--borde-control);
-  font-size: var(--t-apoyo);
-  font-weight: 600;
-  cursor: pointer;
-  border-radius: var(--radio-control);
-}
-
-.boton:disabled {
-  border-color: var(--regla2);
-  color: var(--tinta3);
-  cursor: default;
+  composes: secundario from '../../estilos/piezas.module.css';
 }
 
 .botones {
@@ -255,20 +223,23 @@
   color: var(--tinta2);
 }
 
+/*
+ * ⚠️ **Es un `<span>`, no un `<button>`.** No hay nada que pulsar, asi que
+ * `:disabled` no le aplica y el apagado se escribe aqui. Compone la forma del
+ * boton principal para que se lea como el boton que sera cuando el backend
+ * exista, y no como un recuadro cualquiera.
+ */
 .enviar {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 48px;
-  padding: 0 var(--e6);
-  background: var(--nube-honda);
-  color: var(--tinta3);
-  border: 1px solid var(--regla2);
-  font-size: var(--t-base);
-  font-weight: 600;
-  cursor: default;
-  border-radius: var(--radio);
+  composes: acentoGrande from '../../estilos/piezas.module.css';
 }
+
+/*
+ * El apagado ya lo pone el kit: `.acentoGrande:disabled`. Aqui hubo un bloque
+ * colgado de `[aria-disabled]` porque esto era un `<span>`, y un `<span>` nunca
+ * casa `:disabled`, asi que el `:hover:not(:disabled)` del kit si le aplicaba y
+ * el boton muerto se ponia negro con halo coral al pasar por encima. Ahora es un
+ * `<button disabled>` de verdad y no hace falta nada.
+ */
 
 .correo {
   display: inline-block;
@@ -276,22 +247,7 @@
   font-size: var(--t-prosa);
 }
 
-@media (max-width: 900px) {
-  .reparto {
-    grid-template-columns: 1fr;
-  }
-}
-
 @media (max-width: 640px) {
-  .pagina {
-    padding: var(--e4) var(--e4) var(--e7);
-  }
-
-  .cabeza,
-  .bloque {
-    padding: var(--e4);
-  }
-
   .escribir,
   .enviar {
     width: 100%;

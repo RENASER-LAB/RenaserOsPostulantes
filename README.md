@@ -97,18 +97,33 @@ demás son CSS Modules, uno por pantalla; lo que se repite se trae con `composes
 
 ## De dónde sale el diseño
 
-Del rediseño de agosto de 2026, no del portal original. El mundo visual se llama **«El
-seguimiento»**: tu postulación como algo que va en camino, con hitos cumplidos que no se
-apagan y un siguiente hito siempre nombrado.
+El mundo visual se llama **«El escaparate»**, desde el 10/09/2026: un cuarto gris con una
+sola pieza iluminada. El fondo es un pastel cálido y las superficies de encima son nube blanca,
+así que las superficies
+blancas de encima se leen como objetos puestos sobre una mesa.
 
-- Los tokens con su razón de ser, las ocho reglas con nombre y los do's and don'ts están
-  en [DESIGN.md](DESIGN.md).
-- El maquetado de las 17 pantallas, en HTML plano, en [maquetado/](maquetado/LEEME.md).
-- El brief de la pantalla que ordena el resto, en
-  [docs/04-BRIEF-MIS-PROCESOS.md](docs/04-BRIEF-MIS-PROCESOS.md).
+- **La acción es negra** (`#0A0A0A`), con esquina de 4 px. Un botón de color compite con lo
+  único que tiene permiso para llamar la atención.
+- **El coral `#FF7C61` aparece una vez y significa «te toca a ti».** Es un discriminador:
+  sirve para encontrar tu turno entre cosas que no lo son, así que una pantalla donde no hay
+  nada contra lo que discriminar no lo pinta.
+- **El estado se lee en la forma antes que en el color**, para que quien no distingue colores
+  lea el mismo recorrido.
+- **Solo tema claro**, por petición del cliente.
 
-**Solo tema claro**, por petición del cliente. Fondo blanco puro y acento índigo
-`#4338CA`, que significa una sola cosa: «te toca a ti».
+⚠️ **Hubo dos mundos antes y sus nombres siguen apareciendo en documentos viejos.** «El
+seguimiento» —hitos impresos, cero radios— y «El canto» —espectro irisado, violeta `#5638d6`,
+Mulish, controles en píldora—. Si encuentras alguno nombrado como si fuera el actual, está
+desactualizado.
+
+- Los tokens con su razón de ser están en [`src/estilos/mundo.css`](src/estilos/mundo.css);
+  el sistema entero, con sus reglas nombradas, en [DESIGN.md](DESIGN.md).
+- Los botones y paneles compartidos en
+  [`src/estilos/piezas.module.css`](src/estilos/piezas.module.css), y el carril, el encabezado
+  y los bloques en [`src/estilos/pagina.module.css`](src/estilos/pagina.module.css).
+  **Ninguna pantalla se dibuja los suyos**: se traen con `composes`.
+- El maquetado de las 17 pantallas, en HTML plano, en [maquetado/](maquetado/LEEME.md). Dice
+  qué información y qué palabras van en cada pantalla, **no el color ni la forma**.
 
 ## Verificarlo de verdad
 

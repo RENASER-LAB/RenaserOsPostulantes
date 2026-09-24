@@ -2,26 +2,29 @@
  * La politica de privacidad publica.
  *
  * Es un documento para leer, no una pantalla para operar: por eso no hay ni un
- * control con acento y todo el ancho lo manda `--medida`. La unica accion —como
- * pedir el borrado— vive al final, que es donde llega quien vino buscandola.
+ * control con color y el carril es el de prosa. La unica accion —como pedir el
+ * borrado— vive al final, que es donde llega quien vino buscandola.
+ *
+ * Sus secciones respiran a `--e6` y no a `--e7` como las de la ficha de una
+ * vacante: son ocho seguidas, y con 48 px entre cada una el documento se
+ * convierte en un desfiladero. Por eso el ritmo de seccion no es una pieza
+ * compartida — las dos pantallas lo quieren distinto a proposito.
  */
 
 .pagina {
-  max-width: 48rem;
-  margin: 0 auto;
-  padding: var(--e5) var(--e5) var(--e8);
+  composes: hojaProsa from '../../estilos/pagina.module.css';
 }
 
 .encabezado {
-  margin-top: var(--e4);
+  composes: encabezado from '../../estilos/pagina.module.css';
+}
+
+.titular {
+  composes: titular from '../../estilos/pagina.module.css';
 }
 
 .bajada {
-  font-size: var(--t-base);
-  line-height: 1.55;
-  color: var(--tinta2);
-  margin-top: var(--e3);
-  max-width: var(--medida);
+  composes: bajada from '../../estilos/pagina.module.css';
 }
 
 .seccion {
@@ -61,9 +64,9 @@
 }
 
 .contacto {
+  composes: bloqueHundido from '../../estilos/pagina.module.css';
   margin-top: var(--e6);
   padding: var(--e4);
-  background: var(--nube-hundida);
   border-radius: var(--radio);
 }
 

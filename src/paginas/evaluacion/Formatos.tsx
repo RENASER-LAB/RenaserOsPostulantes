@@ -426,6 +426,7 @@ function Ordenar({ pregunta, detalle, onDetalle }: Props) {
           type="button"
           className={estilos.confirmarOrden}
           onClick={() => onDetalle({ ...detalle, orden })}
+          data-rotulo="Este orden es el mío"
         >
           Este orden es el mío
         </button>

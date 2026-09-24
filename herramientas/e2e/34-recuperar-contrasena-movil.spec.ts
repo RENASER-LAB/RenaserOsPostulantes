@@ -16,12 +16,31 @@ async function sinScrollHorizontal(page: Page) {
   expect(desborda, 'la página entera no debe poder desplazarse en horizontal').toBe(false)
 }
 
-/** El botón ocupa el ancho de su columna: en el teléfono no se queda a medias. */
+/**
+ * El botón ocupa el ancho de su columna: en el teléfono no se queda a medias.
+ *
+ * ⚠️ **La columna es el hueco INTERIOR del formulario, no su borde exterior.**
+ * Esto medía `getBoundingClientRect()`, que incluye relleno y borde, y funcionaba
+ * solo porque el formulario no tenía ninguno de los dos. Desde el 23/09/2026 el
+ * del portal va sobre una superficie —`.superficieDelFormulario`, que es como se
+ * leen todos los formularios de esa familia— y en móvil esa superficie pone 24 px
+ * de relleno y 1 px de borde por lado: el botón salía 50 px «corto» estando
+ * perfectamente a ras. Restando el relleno se mide lo que la prueba quiere decir,
+ * y deja de depender de que la caja no tenga ninguno.
+ */
 async function botonAlAncho(page: Page, nombre: string) {
-  const medidas = await page.getByRole('button', { name: nombre }).evaluate((b) => ({
-    boton: b.getBoundingClientRect().width,
-    columna: (b.closest('form') ?? b.parentElement!).getBoundingClientRect().width,
-  }))
+  const medidas = await page.getByRole('button', { name: nombre }).evaluate((b) => {
+    const caja = b.closest('form') ?? b.parentElement!
+    const estilo = getComputedStyle(caja)
+    return {
+      boton: b.getBoundingClientRect().width,
+      // `clientWidth` ya deja fuera el borde; el relleno hay que restarlo.
+      columna:
+        caja.clientWidth -
+        parseFloat(estilo.paddingLeft) -
+        parseFloat(estilo.paddingRight),
+    }
+  })
   expect(medidas.boton).toBeGreaterThanOrEqual(medidas.columna - 1)
 }
 

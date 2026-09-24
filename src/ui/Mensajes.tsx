@@ -27,7 +27,12 @@ export function Fallo({ error, reintentar }: { error: unknown; reintentar?: () =
       <p className={estilos.texto}>{mensaje}</p>
       {reintentar && (
         <div className={estilos.botones}>
-          <button className={estilos.secundario} type="button" onClick={reintentar}>
+          <button
+            className={estilos.secundario}
+            type="button"
+            onClick={reintentar}
+            data-rotulo="Intentar de nuevo"
+          >
             Intentar de nuevo
           </button>
         </div>
@@ -76,7 +81,7 @@ export function AccesoNecesario() {
         de tu cuenta.
       </p>
       <div className={estilos.botones}>
-        <Link className={estilos.principal} to={rutas.ingresar()}>
+        <Link className={estilos.principal} to={rutas.ingresar()} data-rotulo="Ingresar">
           Ingresar
         </Link>
         <Link to={rutas.vacantes()}>Ver vacantes</Link>

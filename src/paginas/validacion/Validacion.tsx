@@ -91,15 +91,14 @@ export function Validacion() {
       </Link>
 
       <div className={estilos.encabezado}>
-        <h1>Estás trabajando con nosotros.</h1>
-        <p className={estilos.bajada}>
-          Validación práctica · {resumen.vacante}
-        </p>
+        <h1 className={estilos.titular}>Estás trabajando con nosotros.</h1>
+        <p className={estilos.bajada}>Validación práctica · {resumen.vacante}</p>
       </div>
 
       <div className={estilos.reparto}>
         <div className={estilos.columna}>
-          {/* Acento: durante el periodo, lo que se espera lo hace el candidato. */}
+          {/* Sin coral: llegaste porque te tocaba y no hay nada contra lo que
+              discriminar. Lo que destaca este bloque es que dice un dato. */}
           <section className={estilos.periodo}>
             <p className={estilos.desde}>
               {empezo ? `Empezó el ${formatearFechaCorta(empezo)}` : 'Ya empezó'}
