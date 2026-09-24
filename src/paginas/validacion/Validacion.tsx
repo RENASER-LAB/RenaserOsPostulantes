@@ -31,7 +31,8 @@ import { verPostulacion } from '@/api/portal'
 import { fechasDelRecorrido } from '@/dominio/estados'
 import { formatearFechaCorta } from '@/dominio/reloj'
 import { rutas } from '@/rutas'
-import { Cargando, Fallo } from '@/ui/Mensajes'
+import { esPuertaCerrada } from '@/paginas/procesos/useVacanteRetirada'
+import { Cargando, Fallo, VacanteRetirada } from '@/ui/Mensajes'
 import estilos from './Validacion.module.css'
 
 interface Medida {
@@ -73,6 +74,9 @@ export function Validacion() {
   })
 
   if (consulta.isPending) return <Cargando que="Cargando tu proceso…" />
+  // Es la consulta de su proceso: un 404 aquí es lo mismo que en su detalle, la
+  // vacante ya no está.
+  if (consulta.isError && esPuertaCerrada(consulta.error)) return <VacanteRetirada />
   if (consulta.isError) {
     return <Fallo error={consulta.error} reintentar={() => void consulta.refetch()} />
   }

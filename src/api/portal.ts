@@ -11,7 +11,9 @@ import type {
   MisAvisos,
   OpcionUbigeo,
   PedirBorrado,
+  PedirRecuperacion,
   QuienSoy,
+  RestablecerClave,
   Sesion,
   TextoConsentimientoPublico,
   VacantePublica,
@@ -65,6 +67,30 @@ export const ingresar = (datos: Login) =>
  */
 export const accederConEnlace = (token: string) =>
   pedir<Sesion>('/auth/acceso', { metodo: 'POST', cuerpo: { token }, sinToken: true })
+
+/**
+ * Pedir el enlace para elegir una contraseña nueva.
+ *
+ * El backend contesta 202 vacío **siempre**, exista o no la cuenta: la pantalla
+ * enseña el mismo mensaje pase lo que pase, y solo un fallo de red o del
+ * servidor es un error de verdad.
+ */
+export const pedirRecuperacion = (correo: string) =>
+  pedir<void>('/auth/recuperacion', {
+    metodo: 'POST',
+    cuerpo: { correo } satisfies PedirRecuperacion,
+    sinToken: true,
+  })
+
+/**
+ * Elegir la contraseña nueva con el token del enlace. No abre sesión.
+ *
+ * El token va en el cuerpo, nunca en la dirección de la API. Sin token de
+ * sesión a propósito: un 401 aquí es «el enlace no sirve», no «tu sesión cayó»,
+ * y no debe cerrarle la sesión a nadie.
+ */
+export const restablecerClave = (datos: RestablecerClave) =>
+  pedir<void>('/auth/restablecer', { metodo: 'POST', cuerpo: datos, sinToken: true })
 
 /** Como se llama quien tiene el token guardado. Ver `QuienSoy`. */
 export const quienSoy = () => pedir<QuienSoy>('/auth/sesion')

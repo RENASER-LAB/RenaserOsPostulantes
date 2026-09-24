@@ -38,9 +38,10 @@ Tres avisos que no se ponen detrás de un enlace, porque llegan tarde:
 candidato está completa.** Fondo **pastel cálido `#FBF1E9`** con las superficies en nube blanca
 encima, que es lo que las separa. **Acción en negro `#0A0A0A`** con radio 4 px, coral `#FF7C61`
 para «te toca a ti» —y, en la
-cabecera, también para el destino actual y el botón «Iniciar sesión»—, Figtree. Las diecisiete
-pantallas están compuestas; `/admin` queda fuera por alcance y conserva la disposición
-anterior.
+cabecera, también para el destino actual y el botón «Iniciar sesión»—, Figtree. Las **dieciocho**
+pantallas están compuestas —la número dieciocho es `/restablecer`, que llegó de main el
+23/09/2026 junto con la reescritura de `/clave`—; `/admin` queda fuera por alcance y conserva
+la disposición anterior.
 
 ⚠️ **La cabecera no se ve hasta que bajas.** Es una barra insertada 8 px del borde que saca su
 superficie al primer scroll. `--alto-cabecera` son **70 px medidos**, y ha pasado por 61, 76 y
@@ -78,7 +79,7 @@ El detalle, en [docs/TRABAJAR-EN-LOCAL.md](docs/TRABAJAR-EN-LOCAL.md).
 | Tocar diseño: el mundo visual, sus reglas nombradas, la tipografía, el mapa de `src/` | [DESIGN.md](DESIGN.md) y [EL-MUNDO-VISUAL](docs/EL-MUNDO-VISUAL.md); los tokens con su porqué en [`src/estilos/mundo.css`](src/estilos/mundo.css) |
 | Entender qué ve y qué hace quien postula, pantalla por pantalla | [02-QUE-VE-EL-CANDIDATO](docs/02-QUE-VE-EL-CANDIDATO.md) |
 | Seguir el proceso entero, los dos lados, con lo que desbloquea cada paso | [06-FLUJO-COMPLETO](docs/06-FLUJO-COMPLETO.md) |
-| Tocar el panel: entrar, las tres pestañas, el ranking por etapas, qué exige publicar una vacante, corregirla en su modal, archivarla y dónde queda, los huecos del backend | [PANEL](docs/PANEL.md) |
+| Tocar el panel: entrar y recuperar la contraseña, las tres pestañas, el ranking por etapas, qué exige publicar una vacante, corregirla en su modal, archivarla y dónde queda, eliminarla por borrado lógico, el plazo de su prueba, los huecos del backend | [PANEL](docs/PANEL.md) |
 | Saber qué falta, qué está a medias y qué promesa hoy no se cumple | [PENDIENTES](docs/PENDIENTES.md), [03-ESTADO-DEL-REDISENO](docs/03-ESTADO-DEL-REDISENO.md) |
 | Saber por qué algo quedó así, qué se probó al construirlo o qué se hizo un día concreto | [BITACORA-2026-09](docs/BITACORA-2026-09.md), [BITACORA-2026-08](docs/BITACORA-2026-08.md) |
 | Las 17 pantallas del maquetado, que es lo que se lee para construir | [maquetado/LEEME.md](maquetado/LEEME.md) |

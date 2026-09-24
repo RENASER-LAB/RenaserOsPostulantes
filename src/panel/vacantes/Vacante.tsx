@@ -14,7 +14,7 @@
  */
 
 import { Fragment, useEffect, useRef, useState } from 'react'
-import type { ReactNode } from 'react'
+import type { ReactNode, RefObject } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
@@ -63,11 +63,12 @@ import type {
   VacantePanel,
 } from '../api/tipos'
 import { rutas } from '@/rutas'
-import { formatearFechaCorta, formatearFechaLarga } from '@/dominio/reloj'
+import { ahora, formatearFechaCorta, formatearFechaLarga } from '@/dominio/reloj'
 import tabla from '../ui/Tabla.module.css'
 import { DescargarCv } from './DescargarCv'
 import { DescartarPostulacion } from './DescartarPostulacion'
-import { DescartarEnLote } from './DescartarEnLote'
+import { BarraDeLaSeleccion } from './BarraDeLaSeleccion'
+import { EtiquetasDeFiltros, FiltrosDelRanking } from './FiltrosDelRanking'
 import { EntregablesDePrueba } from './EntregablesDePrueba'
 import { RespuestasDePrueba } from './RespuestasDePrueba'
 import { CierreDeLaVacante, PlazoDeUnaPersona } from './CierreDePrueba'
@@ -79,9 +80,8 @@ import { claveDelCuestionario } from './prueba-tecnica/consultas'
 import { verCuestionarioTecnico } from '../api/panel'
 import {
   ETAPAS_PANEL,
-  POR_QUE_NO_HAY_CIUDAD,
-  porQueNoHayPretension,
   SIN_FILTROS,
+  alternarMarcarTodo,
   alternarOrden,
   CORTE_DE_LA_TANDA,
   cifrasDeLaEtapa,
@@ -90,13 +90,17 @@ import {
   columnasVisibles,
   comoSeOrdena,
   criteriosQueSePintan,
+  cuantasPorCalificacion,
   cuantoCubre,
   describirFiltro,
   esDelCurriculum,
+  estadoDeMarcarTodo,
   filtrar,
   filtrarFino,
+  filtrosActivos,
   hayFiltroPuesto,
   laEtapaDe,
+  marcasFueraDeVista,
   porPilar,
   SENALES,
   lecturaDeLaNota,
@@ -109,6 +113,7 @@ import {
   desgloseDelPonderado,
   pretensionDicha,
   queTraeLaTanda,
+  quitarFiltro,
   recuentos,
   resumenDeLaTanda,
   rotuloDeVista,
@@ -118,6 +123,7 @@ import {
   notaEscrita,
   tonoDelCriterio,
   type CiudadDelRanking,
+  type EstadoDeLaIa,
   type EtapaPanel,
   type Filtros,
   type Orden,
@@ -277,6 +283,23 @@ export function VacantePanelDetalle() {
     justo después de que alguien pidiera otro.
   */
   const [vista, setVista] = useState<Vista>('por-revisar')
+  /*
+    Los filtros de la tabla, aquí y no dentro de `<Ranking>`, por lo mismo que
+    el corte: aquel lleva `key={etapa}` y cambiar de pestaña los borraría. Se
+    conservan entre etapas —quien filtra por fecha en el perfil quiere a la
+    misma gente en la prueba— y se reinician al cambiar de vacante.
+
+    ⚠️ **Van atados al id de la vacante, y no se borran con un efecto.** La ruta
+    no remonta esta pantalla al pasar de una vacante a otra; un efecto que los
+    limpiara dejaría pintar un instante la tabla nueva con los filtros de la
+    vieja. Guardando de qué vacante son, los de otra simplemente no se leen.
+  */
+  const [filtrosDe, setFiltrosDe] = useState<{ vacanteId: number; filtros: Filtros }>(() => ({
+    vacanteId,
+    filtros: SIN_FILTROS,
+  }))
+  const filtros = filtrosDe.vacanteId === vacanteId ? filtrosDe.filtros : SIN_FILTROS
+  const cambiarFiltros = (nuevos: Filtros) => setFiltrosDe({ vacanteId, filtros: nuevos })
   const ranking = useQuery({
     queryKey: ['panel-ranking', vacanteId, etapa],
     queryFn: () => verRanking(vacanteId, etapa),
@@ -689,6 +712,8 @@ export function VacantePanelDetalle() {
             vista={vista}
             archivada={archivada}
             alCambiarVista={setVista}
+            filtros={filtros}
+            alCambiarFiltros={cambiarFiltros}
             alAvanzar={async () => {
               await cache.invalidateQueries({
                 queryKey: ['panel-ranking', vacanteId],
@@ -729,7 +754,8 @@ const noHayNadaQueRefrescar = () => {}
 // ---------- El ranking, con seleccion y avance ----------
 
 /**
- * La flecha de orden y el pliegue de los filtros, DIBUJADOS.
+ * La flecha de orden, DIBUJADA. (El pliegue del botón «Filtros» se traza con la
+ * misma pluma en `FiltrosDelRanking.tsx`.)
  *
  * Estaban puestos con glifos de la fuente —`▲▼↕` y `▾▴`—, y un glifo no es un
  * icono: cambia de tamaño, de peso y de línea base con la familia, y al lado
@@ -784,6 +810,8 @@ function Ranking({
   alCambiarVista,
   alAvanzar,
   archivada,
+  filtros,
+  alCambiarFiltros,
 }: {
   vacanteId: number
   etapa: EtapaPanel
@@ -801,16 +829,29 @@ function Ranking({
    * conservar— y lo que desaparece son los botones que escriben.
    */
   archivada: boolean
+  /** Viven en la vacante, por encima de las pestañas: ver `VacantePanelDetalle`. */
+  filtros: Filtros
+  alCambiarFiltros: (f: Filtros) => void
 }) {
   const [marcados, setMarcados] = useState<Set<number>>(new Set())
   const [abierta, setAbierta] = useState<number | null>(null)
+  /*
+    El botón «Filtros», aquí y no en la barra: los dos «Borrar filtros» —el de
+    la barra y el de la tabla vacía— desaparecen al pulsarlos, y el foco tiene
+    que ir a algún sitio que no sea `<body>` (F-06). Va a «Filtros», como hace
+    la «×» de una etiqueta: es el control de lo que se acaba de quitar.
+  */
+  const botonDeFiltros = useRef<HTMLButtonElement>(null)
+  const borrarFiltros = () => {
+    alCambiarFiltros(SIN_FILTROS)
+    botonDeFiltros.current?.focus()
+  }
   /*
     Sale de la tanda y no de la ficha: la mesa vive fuera de cualquier ficha
     abierta, y pedir una solo para saber un permiso sería una consulta de más
     por una casilla. Es el mismo dato y el mismo patrón que `puedeVerPretension`.
   */
   const puedeMoverEnLote = cabeceraDelCv.puedeMoverPostulacion
-  const [filtros, setFiltros] = useState<Filtros>(SIN_FILTROS)
   /*
     Sin orden puesto manda el del backend —grupo de prioridad y, dentro, nota—,
     que es la opinión del producto sobre la tanda. Por eso el estado arranca en
@@ -911,9 +952,26 @@ function Ranking({
   // Solo cuentan las marcas que se VEN: si el filtro oculta una fila marcada,
   // el boton no puede seguir diciendo que avanzara a esa persona.
   const marcadosVisibles = visibles.filter((f) => marcados.has(f.postulacionId))
+  const idsVisibles = visibles.map((f) => f.postulacionId)
+  /*
+    La casilla de la cabecera habla SOLO de lo que se ve: marca las visibles y
+    ninguna oculta. Ver `alternarMarcarTodo`, que es donde vive esa regla.
+  */
+  const comoEstaTodo = estadoDeMarcarTodo(marcados, idsVisibles)
+  /*
+    Las marcas que un filtro esconde: se conservan —quitando el filtro vuelven—
+    pero no cuentan en los botones, y la barra lo dice.
+  */
+  const fueraDeVista = marcasFueraDeVista(
+    marcados,
+    filas.map((f) => f.postulacionId),
+    idsVisibles,
+  )
   const [motivo, setMotivo] = useState('')
   const [resultado, setResultado] = useState<string | null>(null)
+  const [resultadoConFallos, setResultadoConFallos] = useState(false)
   const [avanzando, setAvanzando] = useState(false)
+  const [actualizando, setActualizando] = useState(false)
   const [descargando, setDescargando] = useState(false)
   const [falloDescarga, setFalloDescarga] = useState<string | null>(null)
 
@@ -944,7 +1002,14 @@ function Ranking({
           explicar por qué salió vacía una columna que no está desorienta más
           que callar. La tabla, que sí las tiene, las sigue explicando.
         */
-        filtroDescrito: describirFiltro(etapa, vista, filtros, orden, ciudades),
+        filtroDescrito: describirFiltro(
+          etapa,
+          vista,
+          filtros,
+          orden,
+          ciudades,
+          new Date(ahora()).getFullYear(),
+        ),
       })
       const url = URL.createObjectURL(archivo.contenido)
       const enlace = document.createElement('a')
@@ -976,9 +1041,24 @@ function Ranking({
       return nuevos
     })
 
+  /*
+    Volver a pedir la tanda después de actuar, diciéndolo: sin esto la barra se
+    quedaba con el resultado mientras la tabla de debajo seguía enseñando a la
+    gente en su sitio viejo, sin nada que dijera que iba a cambiar.
+  */
+  async function refrescar() {
+    setActualizando(true)
+    try {
+      await alAvanzar()
+    } finally {
+      setActualizando(false)
+    }
+  }
+
   async function avanzarMarcados() {
     setAvanzando(true)
     setResultado(null)
+    setResultadoConFallos(false)
     const avanzaron: string[] = []
     const fallaron: string[] = []
     // Uno a uno, no en paralelo: si el backend rechaza a alguien, el mensaje
@@ -996,6 +1076,7 @@ function Ranking({
     setAvanzando(false)
     setMarcados(new Set())
     setMotivo('')
+    setResultadoConFallos(fallaron.length > 0)
     setResultado(
       [
         avanzaron.length > 0 ? `Avanzaron: ${avanzaron.join(', ')}.` : null,
@@ -1004,7 +1085,7 @@ function Ranking({
         .filter(Boolean)
         .join(' '),
     )
-    await alAvanzar()
+    await refrescar()
   }
 
   const resumen = resumenDeLaTanda(filas, etapa)
@@ -1219,9 +1300,13 @@ function Ranking({
         }
         etapa={etapa}
         filtros={filtros}
-        alCambiar={setFiltros}
+        alCambiar={alCambiarFiltros}
+        alBorrar={borrarFiltros}
+        botonDeFiltros={botonDeFiltros}
         ciudades={ciudades}
         trae={trae}
+        // De la tanda SIN filtrar, como las ciudades: ver `cuantasPorCalificacion`.
+        calificaciones={cuantasPorCalificacion(filas)}
         cuantasSeVen={visibles.length}
         cuantasHabia={delCorte.length}
         puedeDescargar={seExportaAExcel(etapa)}
@@ -1283,7 +1368,33 @@ function Ranking({
           <thead>
             <tr>
               {columnasDeLaTabla.map((columna) => {
-                if (columna.clave === 'avance') return <th key={columna.clave} aria-label="Avanza" />
+                if (columna.clave === 'avance') {
+                  /*
+                    Marcar todo lo que SE VE, y nada más: con un filtro puesto,
+                    marcar también lo oculto es mandar una carta de rechazo a
+                    quien no se quería. Tres estados —vacía, marcada e
+                    intermedia— y apagada si no se ve nadie.
+
+                    `indeterminate` no existe como atributo de HTML: solo como
+                    propiedad, y por eso va en el `ref`.
+                  */
+                  return (
+                    <th key={columna.clave}>
+                      <input
+                        type="checkbox"
+                        className={estilos.marcarTodo}
+                        aria-label="Marcar todas las que se ven"
+                        title="Marcar todas las que se ven"
+                        checked={comoEstaTodo === 'todas'}
+                        ref={(casilla) => {
+                          if (casilla) casilla.indeterminate = comoEstaTodo === 'algunas'
+                        }}
+                        disabled={visibles.length === 0}
+                        onChange={() => setMarcados((antes) => alternarMarcarTodo(antes, idsVisibles))}
+                      />
+                    </th>
+                  )
+                }
                 /*
                   Toda columna de cifra se estrecha: dentro caben tres digitos y
                   el ancho lo decidia el rotulo. Con ocho criterios al lado, esos
@@ -1648,18 +1759,32 @@ function Ranking({
                     columnas, y en un teléfono la frase acababa a la derecha del
                     scroll. Ver `.vacia` en `Tabla.module.css`.
                   */}
-                  <p>
-                    {filas.length === 0
-                      ? 'Todavía no hay postulaciones en esta vacante.'
-                      : delCorte.length > 0
-                        ? `Ninguna de las ${delCorte.length} de este corte pasa los filtros que ` +
-                          `hay puestos. Pulsa «Ver a todos» para quitarlos.`
+                  {/*
+                    El del filtro ofrece quitarlo ahí mismo: al conservarse los
+                    filtros entre etapas, una pestaña puede abrirse ya vacía por
+                    un rango que en la anterior sí traía gente.
+                  */}
+                  {filas.length > 0 && delCorte.length > 0 ? (
+                    <div className={estilos.vacioPorFiltro}>
+                      <p>
+                        Ningún resultado con estos filtros. Hay {delCorte.length} sin filtrar en
+                        este corte.
+                      </p>
+                      <button type="button" className={estilos.quitarFiltros} onClick={borrarFiltros}>
+                        Borrar filtros
+                      </button>
+                    </div>
+                  ) : (
+                    <p>
+                      {filas.length === 0
+                        ? 'Todavía no hay postulaciones en esta vacante.'
                         : vista === 'por-revisar'
                           ? `Nadie espera tu decisión en ${laEtapa.nombre} ahora mismo. ` +
                             `Pulsa «Toda la tanda» para las ${filas.length} de la vacante.`
                           : `Nadie tiene nada pendiente en ${laEtapa.nombre} ahora mismo. ` +
                             `Pulsa «Toda la tanda» para las ${filas.length} de la vacante.`}
-                  </p>
+                    </p>
+                  )}
                 </td>
               </tr>
             )}
@@ -1746,68 +1871,64 @@ function Ranking({
       )}
 
       {/*
-        La mesa: un motivo para la tanda marcada, y las dos cosas que se pueden
-        hacer con ella.
+        Cuántas hay marcadas, dicho a quien lee con lector de pantalla cada vez
+        que cambia —también al marcar todo con la casilla de la cabecera, que no
+        dice nada por sí sola de a cuántas alcanzó—.
 
-        ⚠️ **El motivo es UNO y vale para las dos.** Antes se llamaba «motivo del
-        avance» porque avanzar era lo único que había; con el descarte al lado,
-        ese nombre haría escribir un motivo de avance para acabar cerrando a seis
-        personas con él. Se marca a quien sea y después se elige qué hacer, que
-        es el orden en que se trabaja la tabla.
+        ⚠️ **Montada siempre, y solo escondida.** Naciendo con su contenido no
+        se anuncia nada: para el lector no hubo cambio.
       */}
-      <div className={estilos.avance}>
-        <label className={estilos.campoMotivo}>
-          <span>Motivo (obligatorio) · queda en el historial de cada una</span>
-        <input
-          className={estilos.entradaMotivo}
-          type="text"
-          placeholder="Motivo (obligatorio)"
-          value={motivo}
-          onChange={(e) => setMotivo(e.target.value)}
-        />
-        </label>
-        <button
-          className={estilos.avanzar}
-          type="button"
-          onClick={() => void avanzarMarcados()}
-          disabled={avanzando || marcadosVisibles.length === 0 || motivo.trim() === ''}
-        >
-          {avanzando
-            ? 'Avanzando…'
-            : marcadosVisibles.length === 0
-              ? 'Marca a quienes avanzan'
-              : `Avanzar a ${marcadosVisibles.length} ${marcadosVisibles.length === 1 ? 'persona' : 'personas'}`}
-        </button>
-        {/*
-          ⚠️ **Al lado del de avanzar y no escondido, pero NO actúa al pulsarlo.**
-          Son dos botones pegados que hacen cosas opuestas: este abre una ventana
-          con los nombres escritos, que es donde se atrapa haber dejado marcada a
-          una persona de una pestaña anterior.
+      <p className="solo-lectores" role="status">
+        {marcadosVisibles.length === 0
+          ? ''
+          : `${marcadosVisibles.length} ${marcadosVisibles.length === 1 ? 'persona marcada' : 'personas marcadas'}` +
+            (fueraDeVista.length > 0 ? `, ${fueraDeVista.length} fuera de vista por los filtros` : '')}
+      </p>
 
-          Solo para quien puede mover postulaciones. `puedeMoverEnLote` sale de la
-          ficha de alguien de la tanda, que es de donde el panel sabe qué permisos
-          trae la sesión: no hay endpoint que lo diga.
-        */}
-        {puedeMoverEnLote && (
-          <DescartarEnLote
-            marcados={marcadosVisibles.map((f) => ({
-              postulacionId: f.postulacionId,
-              candidato: f.candidato,
-            }))}
-            motivo={motivo}
-            alTerminar={() => {
-              setMarcados(new Set())
-              setMotivo('')
-              void alAvanzar()
-            }}
-          />
-        )}
-      </div>
-      {resultado && (
-        <p className={estilos.resultadoAvance} role="status">
-          {resultado}
-        </p>
-      )}
+      {/*
+        La barra de lo marcado, pegada abajo: sustituye a la mesa que vivía aquí
+        y obligaba a bajar al final de la tabla para actuar.
+
+        ⚠️ **El motivo es UNO y vale para las dos acciones.** Se marca a quien
+        sea y después se elige qué hacer, que es el orden en que se trabaja la
+        tabla; «Descartar…» abre su ventana con los nombres escritos, que es
+        donde se atrapa haber dejado marcada a alguien de más.
+
+        `puedeMoverEnLote` sale de la tanda: no hay endpoint de «mis permisos».
+        Sin él, «Descartar…» no sale y «Avanzar» falla por fila con el mensaje
+        del backend, igual que antes.
+      */}
+      <BarraDeLaSeleccion
+        marcadas={marcadosVisibles.map((f) => ({
+          postulacionId: f.postulacionId,
+          candidato: f.candidato,
+        }))}
+        fueraDeVista={fueraDeVista.length}
+        motivo={motivo}
+        alCambiarMotivo={setMotivo}
+        avanzando={avanzando}
+        alAvanzar={() => void avanzarMarcados()}
+        puedeDescartar={puedeMoverEnLote}
+        alTerminarDescarte={(dicho, conFallos) => {
+          setMarcados(new Set())
+          setMotivo('')
+          setResultadoConFallos(conFallos)
+          setResultado(dicho)
+          void refrescar()
+        }}
+        alSoltarOcultas={() =>
+          setMarcados((antes) => {
+            const quedan = new Set(antes)
+            for (const id of fueraDeVista) quedan.delete(id)
+            return quedan
+          })
+        }
+        alSoltarTodo={() => setMarcados(new Set())}
+        resultado={resultado}
+        conFallos={resultadoConFallos}
+        actualizando={actualizando}
+        alCerrarResultado={() => setResultado(null)}
+      />
     </>
   )
 }
@@ -1815,30 +1936,21 @@ function Ranking({
 // ---------- La barra de filtros, y la descarga de lo que se ve ----------
 
 /**
- * Un número escrito a mano, o nada.
+ * La barra de encima de la tabla, de izquierda a derecha: la búsqueda por
+ * nombre, «Filtros», «Columnas», «Borrar filtros» si hay algo puesto, y las
+ * acciones de la tanda —calificar y descargar el Excel—.
  *
- * Una caja vacía es «sin límite», no un cero: tratarla como cero pondría un
- * «Nota ≥ 0» que no filtra nada y encendería igualmente el aviso de «hay
- * filtros puestos». Lo que no sea un número tampoco pasa.
- */
-const aCifra = (valor: string): number | null => {
-  const limpio = valor.trim()
-  if (limpio === '') return null
-  const cifra = Number(limpio)
-  return Number.isFinite(cifra) ? cifra : null
-}
-
-/**
- * Los cuatro filtros y el botón del Excel, encima de la tabla.
+ * ⚠️ **La búsqueda por nombre se queda a la vista y el resto va al panel.** Es
+ * la que se usa a diario —«¿dónde está Camila?»— y las demás son de recortar
+ * una tanda entera, que se hace de vez en cuando.
  *
- * ⚠️ **La búsqueda por nombre se queda a la vista y el resto se pliega.** Es la
- * que se usa a diario —«¿dónde está Camila?»— y las otras tres son de recortar
- * una tanda entera, que se hace de vez en cuando. Seis controles fijos sobre una
- * mesa de decidir compiten con la tabla, que es lo que se viene a mirar.
+ * ⚠️ **Pero un filtro dentro del panel NO puede quedar escondido.** El botón
+ * lleva cuántos hay puestos, debajo va una etiqueta por cada uno, y debajo aún
+ * cuántas filas quedan de cuántas: un recorte que no se ve es la trampa del
+ * indicador que miente.
  *
- * ⚠️ **Pero un filtro plegado NO puede quedar escondido.** El resumen del pliegue
- * lleva cuántos hay puestos, y debajo de la barra se dice cuántas filas quedan de
- * cuántas: un recorte que no se ve es la trampa del indicador que miente.
+ * En el teléfono, «Columnas» y las acciones de la tanda se recogen en «Más»:
+ * arriba solo caben la búsqueda y «Filtros», que son lo que se usa.
  */
 function BarraDeFiltros({
   etapa,
@@ -1846,6 +1958,7 @@ function BarraDeFiltros({
   alCambiar,
   ciudades,
   trae,
+  calificaciones,
   cuantasSeVen,
   cuantasHabia,
   puedeDescargar,
@@ -1853,14 +1966,22 @@ function BarraDeFiltros({
   alDescargar,
   columnas,
   calificar,
+  alBorrar,
+  botonDeFiltros,
 }: {
   etapa: EtapaPanel
   filtros: Filtros
   alCambiar: (f: Filtros) => void
+  /** «Borrar filtros»: los quita todos y deja el foco en «Filtros». */
+  alBorrar: () => void
+  /** El botón «Filtros», de `Ranking`: ahí vuelve el foco al quitar algo. */
+  botonDeFiltros: RefObject<HTMLButtonElement | null>
   /** Las que de verdad hay en la tanda. Vacío significa que todavía no hay ninguna. */
   ciudades: CiudadDelRanking[]
   /** Qué columnas nuevas trae la tanda. Lo que no trae, no se ofrece filtrar. */
   trae: QueTraeLaTanda
+  /** Cuántas hay en cada estado de la IA, de la tanda sin filtrar. */
+  calificaciones: Record<EstadoDeLaIa, number>
   cuantasSeVen: number
   cuantasHabia: number
   puedeDescargar: boolean
@@ -1875,27 +1996,19 @@ function BarraDeFiltros({
    */
   calificar: ReactNode
 }) {
-  const cambiar = <C extends keyof Filtros>(campo: C, valor: Filtros[C]) =>
-    alCambiar({ ...filtros, [campo]: valor })
-
-  const alternarCiudad = (codigo: string) =>
-    cambiar(
-      'ciudades',
-      filtros.ciudades.includes(codigo)
-        ? filtros.ciudades.filter((c) => c !== codigo)
-        : [...filtros.ciudades, codigo],
-    )
+  const [masAbierto, setMasAbierto] = useState(false)
+  const idMas = `mas-acciones-${etapa}`
 
   const puesto = hayFiltroPuesto(filtros)
-  const plegados = [
-    filtros.ciudades.length > 0,
-    filtros.notaMin != null || filtros.notaMax != null,
-    filtros.pretensionMin != null || filtros.pretensionMax != null,
-  ].filter(Boolean).length
+  /*
+    La insignia y las etiquetas salen de la MISMA lista: contadas en dos sitios,
+    la cifra del botón y las etiquetas de debajo acabarían discrepando.
+  */
+  const puestos = filtrosActivos(filtros, etapa, ciudades, new Date(ahora()).getFullYear())
 
   return (
     <div className={estilos.filtros}>
-      <div className={estilos.filaFiltros}>
+      <div className={estilos.filaFiltros} data-mas-abierto={masAbierto}>
         <label className={estilos.campoFiltro}>
           <span className={estilos.rotuloFiltro}>Buscar por nombre</span>
           {/*
@@ -1907,190 +2020,93 @@ function BarraDeFiltros({
             className={estilos.buscador}
             type="search"
             value={filtros.texto}
-            onChange={(e) => cambiar('texto', e.target.value)}
+            onChange={(e) => alCambiar({ ...filtros, texto: e.target.value })}
             placeholder="Parte del nombre"
           />
         </label>
 
-        <details className={estilos.masFiltros}>
-          <summary className={estilos.resumenFiltros}>
-            Ciudad, nota y pretensión
-            {plegados > 0 && <span className={estilos.cuantosFiltros}>{plegados}</span>}
-            <Pluma clase={estilos.pliegue}>
-              <path d="m7 10 5 5 5-5" />
-            </Pluma>
-          </summary>
+        <FiltrosDelRanking
+          etapa={etapa}
+          filtros={filtros}
+          alCambiar={alCambiar}
+          ciudades={ciudades}
+          trae={trae}
+          calificaciones={calificaciones}
+          cuantasSeVen={cuantasSeVen}
+          cuantasHabia={cuantasHabia}
+          cuantosPuestos={puestos.length}
+          boton={botonDeFiltros}
+        />
 
-          <div className={estilos.cuerpoFiltros}>
-            <fieldset className={estilos.grupoFiltro}>
-              <legend className={estilos.rotuloFiltro}>Ciudad</legend>
-              {/*
-                ⚠️ **Si nadie tiene ciudad, aquí no va un desplegable vacío.** La
-                ciudad solo se le pide a quien crea cuenta desde ahora, así que
-                hoy la tanda entera viene sin ella: un control con cero opciones
-                se lee como una pantalla rota, y servirlo del catálogo de ubigeo
-                ofrecería 196 filtros que no devuelven a nadie. Se dice lo que
-                pasa, que es lo único honesto que hay que decir.
-              */}
-              {ciudades.length === 0 ? (
-                <p className={estilos.porQueNoSale}>{POR_QUE_NO_HAY_CIUDAD}</p>
-              ) : (
-                <div className={estilos.chips}>
-                  {ciudades.map((ciudad) => {
-                    const marcada = filtros.ciudades.includes(ciudad.codigo)
-                    return (
-                      <button
-                        key={ciudad.codigo}
-                        type="button"
-                        className={marcada ? estilos.chipMarcado : estilos.chip}
-                        aria-pressed={marcada}
-                        onClick={() => alternarCiudad(ciudad.codigo)}
-                      >
-                        {ciudad.nombre}
-                        <span className={estilos.cuantasEnLaVista}>{ciudad.cuantas}</span>
-                      </button>
-                    )
-                  })}
-                </div>
-              )}
-            </fieldset>
+        {/* Solo en el teléfono: en escritorio lo de dentro ya está a la vista. */}
+        <button
+          type="button"
+          className={estilos.mas}
+          aria-expanded={masAbierto}
+          aria-controls={`${idMas}-columnas ${idMas}-tanda`}
+          onClick={() => setMasAbierto(!masAbierto)}
+        >
+          Más
+        </button>
 
-            <fieldset className={estilos.grupoFiltro}>
-              <legend className={estilos.rotuloFiltro}>{laEtapaDe(etapa).nota}</legend>
-              <div className={estilos.rango}>
-                <input
-                  className={estilos.cifraFiltro}
-                  type="number"
-                  inputMode="numeric"
-                  min={0}
-                  max={100}
-                  aria-label={`${laEtapaDe(etapa).nota}, desde`}
-                  placeholder="desde"
-                  value={filtros.notaMin ?? ''}
-                  onChange={(e) => cambiar('notaMin', aCifra(e.target.value))}
-                />
-                <span aria-hidden="true">–</span>
-                <input
-                  className={estilos.cifraFiltro}
-                  type="number"
-                  inputMode="numeric"
-                  min={0}
-                  max={100}
-                  aria-label={`${laEtapaDe(etapa).nota}, hasta`}
-                  placeholder="hasta"
-                  value={filtros.notaMax ?? ''}
-                  onChange={(e) => cambiar('notaMax', aCifra(e.target.value))}
-                />
-              </div>
-              {/* Se dice, porque es lo que sorprende: una fila sin nota no es
-                  «≥ 60» y desaparece en cuanto se escribe un extremo. */}
-              <p className={estilos.pistaFiltro}>Quien no tiene nota queda fuera.</p>
-            </fieldset>
-
-            <fieldset className={estilos.grupoFiltro}>
-              <legend className={estilos.rotuloFiltro}>Pretensión</legend>
-              {/*
-                ⚠️ **Sin pretensión en la tanda no hay rango que ofrecer**, y
-                sobre todo hay que decir por qué. Un rango que solo puede quitar
-                filas y nunca dejar ninguna es un control roto; y una columna en
-                blanco se lee como «nadie pidió sueldo», que puede ser falso: la
-                pretensión viaja bajo el permiso `ver_pretension` y solo lo tiene
-                Dirección. `puedeVerPretension` dice cuál de los dos motivos es,
-                así que la frase afirma uno en vez de enumerar hipótesis.
-              */}
-              {!trae.hayPretension ? (
-                <p className={estilos.porQueNoSale}>
-                  {porQueNoHayPretension(
-                    trae.puedeVerPretension,
-                    trae.vacanteMuestraSueldo,
-                  )}
-                </p>
-              ) : (
-                <>
-                  <div className={estilos.rango}>
-                    <input
-                      className={estilos.cifraFiltro}
-                      type="number"
-                      inputMode="numeric"
-                      min={0}
-                      aria-label="Pretensión, desde"
-                      placeholder="desde"
-                      value={filtros.pretensionMin ?? ''}
-                      onChange={(e) => cambiar('pretensionMin', aCifra(e.target.value))}
-                    />
-                    <span aria-hidden="true">–</span>
-                    <input
-                      className={estilos.cifraFiltro}
-                      type="number"
-                      inputMode="numeric"
-                      min={0}
-                      aria-label="Pretensión, hasta"
-                      placeholder="hasta"
-                      value={filtros.pretensionMax ?? ''}
-                      onChange={(e) => cambiar('pretensionMax', aCifra(e.target.value))}
-                    />
-                  </div>
-                  {/* Solape y no contención: quien solo declaró un extremo entra
-                      si ese extremo cabe en la banda. Ver `filtrarFino`. */}
-                  <p className={estilos.pistaFiltro}>
-                    Sale quien pida algo dentro de esa banda. Quien no la declaró queda fuera.
-                  </p>
-                </>
-              )}
-            </fieldset>
-          </div>
-        </details>
-
-        {columnas}
+        <div id={`${idMas}-columnas`} className={estilos.enMas}>
+          {columnas}
+        </div>
 
         {puesto && (
-          <button
-            type="button"
-            className={estilos.quitarFiltros}
-            onClick={() => alCambiar(SIN_FILTROS)}
-          >
-            Ver a todos
+          <button type="button" className={estilos.quitarFiltros} onClick={alBorrar}>
+            Borrar filtros
           </button>
         )}
 
         {/*
           ⚠️ **Sin violeta.** En esta pantalla el violeta es «Avanzar a N
-          personas», la acción principal, y ya está puesto ahí abajo. Descargar
-          una hoja no compite con eso.
+          personas», la acción principal, y vive en la barra de abajo. Calificar
+          y descargar una hoja no compiten con eso.
 
           ⚠️ **Y el botón dice si está trabajando.** Armar el Excel de setenta y
           ocho filas con su detalle tarda; un botón que no cambia invita a
           pulsarlo tres veces y a bajar tres archivos iguales.
         */}
-        {calificar}
+        <div id={`${idMas}-tanda`} className={`${estilos.enMas} ${estilos.accionesDeLaTanda}`}>
+          {calificar}
 
-        {puedeDescargar && (
-          <button
-            type="button"
-            className={estilos.descargar}
-            onClick={alDescargar}
-            disabled={descargando || cuantasSeVen === 0}
-            aria-busy={descargando}
-          >
-            {descargando
-              ? 'Preparando el Excel…'
-              : cuantasSeVen === 0
-                ? 'Nada que descargar'
-                : `Descargar Excel (${cuantasSeVen})`}
-          </button>
-        )}
+          {puedeDescargar && (
+            <button
+              type="button"
+              className={estilos.descargar}
+              onClick={alDescargar}
+              disabled={descargando || cuantasSeVen === 0}
+              aria-busy={descargando}
+            >
+              {descargando
+                ? 'Preparando el Excel…'
+                : cuantasSeVen === 0
+                  ? 'Nada que descargar'
+                  : `Descargar Excel (${cuantasSeVen})`}
+            </button>
+          )}
+        </div>
       </div>
+
+      <EtiquetasDeFiltros
+        puestos={puestos}
+        alQuitar={(clave) => {
+          alCambiar(quitarFiltro(filtros, clave))
+          // La etiqueta que tenía el foco desaparece: se devuelve al botón.
+          botonDeFiltros.current?.focus()
+        }}
+      />
 
       {/*
         Cuántas quedan de cuántas, en cuanto hay un filtro puesto. Es la misma
         regla que la cifra dentro de cada corte: ocultar sin decirlo es el
-        indicador que miente, y aquí además parte del recorte está plegado.
+        indicador que miente.
 
         ⚠️ **La región viva se monta siempre y solo se esconde.** Naciendo con su
         contenido, el lector de pantalla no anuncia nada: para él no hubo cambio,
-        apareció un párrafo nuevo. Es la trampa que el registro ya documenta con
-        su `.oculto`, y aquí `.solo-lectores` de `mundo.css` hace lo mismo — deja
-        el texto en el árbol de accesibilidad y fuera de la vista.
+        apareció un párrafo nuevo. `.solo-lectores` de `mundo.css` deja el texto
+        en el árbol de accesibilidad y fuera de la vista.
       */}
       <p className={puesto ? estilos.cuantasFiltradas : 'solo-lectores'} role="status">
         {puesto &&
@@ -2332,12 +2348,13 @@ function DetalleDelPostulante({ fila, etapa }: { fila: FilaRanking; etapa: Etapa
             <PlazoDeUnaPersona
               postulacionId={fila.postulacionId}
               /*
-                No hay nada que refrescar y no es un descuido: la fecha propia
-                no sale en ninguna otra parte de la ficha —`FichaPostulacion` no
-                la trae— y el propio control ya ensena lo que contesto el
-                servidor. Invalidar consultas aqui seria pedir datos que nadie
-                va a mirar; el dia que la ficha traiga el plazo, esto pasa a
-                refrescarla.
+                Sigue sin haber nada que refrescar DESDE AQUI, y no es un
+                descuido: el plazo de esta persona no sale en ninguna otra parte
+                de la ficha —`FichaPostulacion` no lo trae— y el propio control
+                ya relee el suyo (`panel-plazo-prueba`) en cuanto guarda, que es
+                lo que hace que la linea de arriba pase a decir «fecha puesta a
+                mano». Invalidar el ranking aqui seria pedir datos que ninguna
+                columna enseña.
               */
               alGuardar={noHayNadaQueRefrescar}
             />
@@ -3734,7 +3751,10 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
         </label>
         )}
 
-        <label className={estilos.ajuste}>
+        {/* El `id` es el destino del enlace «Ajustar los minutos →» de «Plazos
+            de la prueba»: con el cuestionario tecnico no hay fecha que fijar y
+            el tiempo se cambia aqui, unas lineas mas arriba en la misma pagina. */}
+        <label className={estilos.ajuste} id="tiempo-de-la-etapa-tecnica">
           <span className={estilos.etiquetaAjuste}>Cuánto tiempo tendrá</span>
           <MinutosDeLaEtapa vacante={vacante} alGuardar={instrumento.mutate}
                             guardando={instrumento.isPending} />
@@ -3796,34 +3816,51 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
         pulsar.
       */}
       {/*
-        Dos casos en los que el control no se ofrece, comprobados llamando al
-        backend y no leyendo el codigo:
+        Tres casos en los que el control NO se ofrece, y uno en el que se ofrece
+        distinto. Los cuatro salen de lo que contesta el backend, comprobado
+        llamandolo y no leyendo el codigo:
 
-        - **Vacante cerrada**: contesta 409 «Una vacante cerrada no se edita».
-        - **Sin version de prueba elegida**: revienta con un 400 cuyo texto es
-          «The given id must not be null» — el `findById(null)` de Spring Data
-          saliendo a la cara de quien usa el panel, en ingles. Es un fallo del
-          backend, pero ofrecer el control aqui seria ofrecer una averia.
+        - **Vacante cerrada**: 409 «Una vacante cerrada no se edita».
+        - **Cuestionario tecnico**: 409 explicando que su etapa tecnica no se
+          cierra con una fecha — su plazo son los minutos de la vacante, que se
+          ajustan aqui mismo, unas lineas mas arriba.
+        - **Sin version de prueba elegida**: 409 «Esta vacante no rinde una
+          prueba del puesto…».
 
-        En los dos casos se dice por que en vez de esconderlo sin mas: un hueco
-        callado en la pantalla que ordena la prueba se lee como que falta una
-        pieza del panel.
+        ⚠️ **La regla vieja escondia tambien la CRONOMETRADA**, que sí admite
+        fecha: desde que empezar se queda con el plazo que caiga antes entre el
+        reloj y la fecha de la convocatoria, las dos conviven. Esconderlo dejaba
+        sin forma de decir «nadie sigue después del domingo» en las pruebas que
+        mas lo necesitan.
+
+        En los tres primeros se dice por que en vez de esconderlo sin mas: un
+        hueco callado en la pantalla que ordena la prueba se lee como que falta
+        una pieza del panel. Y el desplegable se abre igual, porque es donde
+        quien busca la fecha va a mirar.
       */}
-      {vacante.estado === 'CERRADA' ? (
-        <p className={estilos.ayudaAjuste}>
-          La vacante está cerrada, así que su prueba ya no admite una fecha nueva.
-        </p>
-      ) : vacante.versionPlantillaPruebaId === null ? (
-        <p className={estilos.ayudaAjuste}>
-          Para fijar cuándo cierra la prueba hay que elegir antes cuál es: la fecha
-          se calcula sobre la versión de la plantilla.
-        </p>
-      ) : (
-        <details className={estilos.plazosPlegables}>
-          <summary>Plazos de la prueba</summary>
-          <CierreDeLaVacante vacanteId={vacante.id} alGuardar={refrescar} />
-        </details>
-      )}
+      <details className={estilos.plazosPlegables}>
+        <summary>Plazos de la prueba</summary>
+        {vacante.estado === 'CERRADA' ? (
+          <p className={estilos.ayudaAjuste}>
+            La vacante está cerrada, así que su prueba ya no admite una fecha nueva.
+          </p>
+        ) : vacante.instrumentoEtapaTecnica === 'CUESTIONARIO_TECNICO' ? (
+          <p className={estilos.ayudaAjuste}>
+            {typeof vacante.minutosPruebaVigentes === 'number'
+              ? `Esta vacante rinde el cuestionario técnico: cada persona tiene ${vacante.minutosPruebaVigentes} minutos desde que lo abre, así que no se cierra con una fecha.`
+              : 'Esta vacante rinde el cuestionario técnico: cada persona tiene los minutos que rijan desde que lo abre, así que no se cierra con una fecha.'}{' '}
+            <a href="#tiempo-de-la-etapa-tecnica">Ajustar los minutos →</a>
+          </p>
+        ) : vacante.versionPlantillaPruebaId === null ? (
+          <p className={estilos.ayudaAjuste}>
+            Para fijar cuándo cierra la prueba hay que elegir antes cuál rendirá, aquí
+            arriba en «Qué prueba del puesto rendirá»: el plazo se cuenta sobre la versión
+            de la plantilla.
+          </p>
+        ) : (
+          <CierreDeLaVacante vacante={vacante} alGuardar={refrescar} />
+        )}
+      </details>
 
       {fallo && (
         <p className={estilos.avisoMalo} role="alert">

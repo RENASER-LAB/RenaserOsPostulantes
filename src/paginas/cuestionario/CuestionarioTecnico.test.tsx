@@ -16,6 +16,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { CuestionarioTecnico } from './CuestionarioTecnico'
 import type { EvaluacionCandidato } from '@/api/tipos'
+import { ErrorApi } from '@/api/cliente'
 
 const ver = vi.fn()
 const iniciar = vi.fn()
@@ -31,6 +32,10 @@ vi.mock('@/api/cuestionarioTecnico', () => ({
 }))
 
 vi.mock('@/ui/Avisos', () => ({ useAviso: () => vi.fn() }))
+
+// Su proceso: solo se le pregunta cuando el cuestionario contesta 404.
+const verProceso = vi.fn()
+vi.mock('@/api/portal', () => ({ verPostulacion: (uuid: string) => verProceso(uuid) }))
 
 const UUID = 'aa11bb22-cc33-dd44-ee55-ff6677889900'
 
@@ -85,6 +90,7 @@ beforeEach(() => {
   iniciar.mockReset()
   responder.mockReset()
   entregar.mockReset()
+  verProceso.mockReset()
   ver.mockResolvedValue(examen())
   iniciar.mockResolvedValue(examen())
   responder.mockResolvedValue(undefined)
@@ -279,5 +285,113 @@ describe('entregar', () => {
     expect(await screen.findByText(/ya entregaste tu prueba técnica/i)).toBeTruthy()
     expect(screen.queryByRole('textbox')).toBeNull()
     expect(screen.queryByRole('button', { name: 'Entregar' })).toBeNull()
+  })
+})
+
+describe('cuando la empresa retiró la vacante', () => {
+  it('el enlace viejo dice que la vacante ya no está, en vez de «No pudimos cargar esto»', async () => {
+    const yaNoExiste = new ErrorApi(404, `Postulación not found with código: '${UUID}'`)
+    ver.mockRejectedValue(yaNoExiste)
+    verProceso.mockRejectedValueOnce(yaNoExiste)
+    pintar()
+
+    expect(
+      await screen.findByRole('heading', { name: /Esta vacante ya no está disponible/ }),
+    ).toBeTruthy()
+    expect(verProceso).toHaveBeenCalledWith(UUID)
+    expect(screen.queryByText('No pudimos cargar esto.')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Entregar' })).toBeNull()
+  })
+
+  /*
+    Con el cuestionario abierto desde antes de que la retiren, quien se entera es el botón.
+    Antes, empezar o entregar enseñaban el texto crudo del servidor —«Postulación not found
+    with código…»— y cada respuesta quedaba en «No se pudo guardar» (QA-830D-C3-1).
+  */
+  const yaNoExiste = () => new ErrorApi(404, `Postulación not found with código: '${UUID}'`)
+
+  /** La siguiente lectura del cuestionario y la de su proceso contestan que ya no existe. */
+  function laRetiran() {
+    ver.mockRejectedValueOnce(yaNoExiste())
+    verProceso.mockRejectedValueOnce(yaNoExiste())
+  }
+
+  const elAviso = () =>
+    screen.findByRole('heading', { name: /Esta vacante ya no está disponible/ })
+
+  const todoRespondido = () =>
+    examen({ respondidas: 2, preguntas: [pregunta(101, 'una'), pregunta(102, 'otra')] })
+
+  it('abierto sin empezar, «Empezar la prueba» con 404 dice que la vacante ya no está', async () => {
+    ver.mockResolvedValue(examen({ iniciadaEn: null, estado: 'PENDIENTE' }))
+    pintar()
+    const empezarla = await screen.findByRole('button', { name: /empezar la prueba/i })
+
+    iniciar.mockRejectedValueOnce(yaNoExiste())
+    laRetiran()
+    fireEvent.click(empezarla)
+
+    expect(await elAviso()).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /empezar la prueba/i })).toBeNull()
+    expect(screen.queryByText(/not found/)).toBeNull()
+  })
+
+  it('en curso, una respuesta con 404 dice que la vacante ya no está, no «No se pudo guardar»', async () => {
+    pintar()
+    const recuadro = await screen.findByRole('textbox', { name: /tu respuesta/i })
+
+    responder.mockRejectedValueOnce(yaNoExiste())
+    laRetiran()
+    fireEvent.change(recuadro, { target: { value: 'Tres cajas' } })
+    // Cambiar de pregunta la manda ya, sin esperar al temporizador.
+    fireEvent.click(screen.getByRole('button', { name: /siguiente/i }))
+
+    expect(await elAviso()).toBeTruthy()
+    expect(loQueSeLee()).not.toMatch(/No se pudo guardar/)
+    expect(screen.queryByRole('textbox', { name: /tu respuesta/i })).toBeNull()
+  })
+
+  it('al entregar, un 404 lo dice en vez del texto del servidor', async () => {
+    ver.mockResolvedValue(todoRespondido())
+    pintar()
+    fireEvent.click(await screen.findByRole('button', { name: 'Entregar' }))
+
+    entregar.mockRejectedValueOnce(yaNoExiste())
+    laRetiran()
+    fireEvent.click(screen.getByRole('button', { name: 'Sí, entregar' }))
+
+    expect(await elAviso()).toBeTruthy()
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(screen.queryByText(/not found/)).toBeNull()
+  })
+
+  it('un 404 al empezar con el cuestionario todavía ahí se dice, sin hacerlo pasar por una vacante retirada', async () => {
+    ver.mockResolvedValue(examen({ iniciadaEn: null, estado: 'PENDIENTE' }))
+    pintar()
+    const empezarla = await screen.findByRole('button', { name: /empezar la prueba/i })
+
+    iniciar.mockRejectedValueOnce(new ErrorApi(404, 'No tienes un cuestionario asignado'))
+    fireEvent.click(empezarla)
+
+    expect((await screen.findByRole('alert')).textContent).toMatch(
+      /No tienes un cuestionario asignado/,
+    )
+    expect(screen.queryByRole('heading', { name: /Esta vacante ya no está disponible/ })).toBeNull()
+    // Se volvió a leer, contestó, y por eso ni se le preguntó a su proceso.
+    expect(ver).toHaveBeenCalledTimes(2)
+    expect(verProceso).not.toHaveBeenCalled()
+  })
+
+  it('un 404 al entregar con el cuestionario todavía ahí se dice, sin hacerlo pasar por una vacante retirada', async () => {
+    ver.mockResolvedValue(todoRespondido())
+    pintar()
+    fireEvent.click(await screen.findByRole('button', { name: 'Entregar' }))
+
+    entregar.mockRejectedValueOnce(new ErrorApi(404, 'Evaluación not found with id: 5'))
+    fireEvent.click(screen.getByRole('button', { name: 'Sí, entregar' }))
+
+    expect((await screen.findByRole('alert')).textContent).toMatch(/Evaluación not found/)
+    expect(screen.queryByRole('heading', { name: /Esta vacante ya no está disponible/ })).toBeNull()
+    expect(verProceso).not.toHaveBeenCalled()
   })
 })

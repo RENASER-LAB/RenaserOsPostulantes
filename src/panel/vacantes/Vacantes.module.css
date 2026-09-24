@@ -553,3 +553,59 @@
   composes: volver from '../../estilos/piezas.module.css';
   margin-bottom: var(--e4);
 }
+
+/*
+ * La papelera de la fila.
+ *
+ * Misma area y mismo trazo que el lapiz y la caja —son las acciones de la misma
+ * fila y tienen que leerse como una familia—, pero se pinta de rojo al
+ * acercarse: es la unica de las tres que no se deshace, y el color lo dice
+ * antes de pulsar. En reposo no grita, porque esta en todas las filas y una
+ * tabla con veinte iconos rojos deja de significar nada.
+ */
+.eliminar {
+  composes: lapiz;
+}
+
+.eliminar:hover {
+  border-color: var(--mal-regla);
+  background: var(--mal-bruma);
+  color: var(--mal);
+}
+
+.eliminar:focus-visible {
+  outline: 2px solid var(--mal);
+  outline-offset: 2px;
+}
+
+/*
+ * El boton que confirma la eliminacion.
+ *
+ * Rojo y no del acento de la marca: el acento significa «sigue adelante» en
+ * todo el panel, y aqui adelante es retirar una convocatoria y cerrarle el
+ * proceso a gente que no hizo nada. Apagado mientras no haya motivo, que es la
+ * misma regla que aplica el servidor.
+ */
+.eliminarConfirmar {
+  composes: acentoGrande from '../../estilos/piezas.module.css';
+  background: var(--mal);
+  border-color: var(--mal);
+}
+
+.eliminarConfirmar:hover:not(:disabled) {
+  background: var(--mal-pulsado);
+  border-color: var(--mal-pulsado);
+}
+
+/* El motivo de la eliminacion, dentro del modal. */
+.motivoEtiqueta {
+  composes: etiqueta;
+  display: block;
+  margin-top: var(--e4);
+  margin-bottom: var(--e2);
+}
+
+.motivoCampo {
+  composes: area;
+  width: 100%;
+}

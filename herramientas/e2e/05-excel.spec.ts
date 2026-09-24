@@ -4,7 +4,7 @@ import { mkdtempSync, statSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import {
-  abrirMasFiltros,
+  abrirFiltros,
   cabecera,
   corte,
   entrarAlPanel,
@@ -215,7 +215,7 @@ test.describe('Nuevo · la descarga del Excel', () => {
 
   test('EL EXCEL RESPETA EL FILTRO: una ciudad en pantalla, esa ciudad en la hoja', async ({ page }) => {
     await irAVacante(page, VACANTES.LLENA)
-    await abrirMasFiltros(page)
+    await abrirFiltros(page)
     await page.getByRole('button', { name: /^Lima — Lima/ }).click()
 
     const enPantalla = await nombresVisibles(page)
@@ -253,7 +253,7 @@ test.describe('Nuevo · la descarga del Excel', () => {
   test('un filtro que deja tres filas baja exactamente tres', async ({ page }) => {
     await irAVacante(page, VACANTES.LLENA)
     await corte(page, 'Toda la tanda').click()
-    await abrirMasFiltros(page)
+    await abrirFiltros(page)
     await page.getByLabel('Nota del perfil, desde').fill('56')
 
     const enPantalla = await nombresVisibles(page)

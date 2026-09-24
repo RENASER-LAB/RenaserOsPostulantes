@@ -50,6 +50,40 @@
 }
 
 /*
+ * Lo que rige HOY: la primera linea de los dos controles.
+ *
+ * Caja de nube hundida y sin color, como `.resultado`: no es una alerta ni un
+ * logro, es el dato que contesta «¿que estoy cambiando?». En negrita porque es
+ * lo primero que hay que leer, y la prosa que la explica va debajo en tinta
+ * floja — al reves se lee la teoria antes que el hecho.
+ */
+.rigeHoy {
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  font-weight: 600;
+  color: var(--tinta);
+  background: var(--nube-hundida);
+  border-radius: var(--radio-menor);
+  padding: var(--e3) var(--e4);
+  max-width: var(--medida);
+  margin: 0;
+}
+
+/*
+ * A cuanta gente alcanza el cambio, antes de pulsar.
+ *
+ * Tinta de apoyo y sin caja: acompaña a los campos, no compite con la linea de
+ * arriba. Si gritara, taparia justo el dato que se esta mirando para decidir.
+ */
+.alcance {
+  font-size: var(--t-menor);
+  line-height: 1.5;
+  color: var(--tinta2);
+  max-width: var(--medida);
+  margin: 0;
+}
+
+/*
   Los campos no se estiran con la seccion.
 
   El bloque vive dentro del detalle de la vacante, que mide `--ancho`: sin tope,

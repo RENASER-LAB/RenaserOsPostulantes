@@ -1,27 +1,24 @@
 /**
- * La contraseña olvidada.
+ * La contraseña olvidada: pedir el enlace para elegir una nueva.
  *
- * ⚠️ **Esta pantalla no restablece nada, y lo dice.** No hay ruta en el backend
- * para pedir un restablecimiento, asi que fingir un formulario de «escribe tu
- * correo y te mandamos un enlace» seria prometer un correo que nadie va a
- * mandar — y el transporte de correo esta en modo registro por defecto, asi que
- * ni siquiera saldria.
+ * Hasta septiembre de 2026 esta pantalla no restablecía nada —el backend no
+ * tenía la ruta— y solo explicaba que se escribiera a talento. Ahora pide el
+ * enlace de verdad (`POST /portal/auth/recuperacion`), que llega por correo y
+ * lleva a `/restablecer`.
  *
- * Existe porque el agujero era peor que la pantalla: quien se registro con
- * contraseña y la olvida **se queda fuera de un proceso de semanas sin ninguna
- * salida dentro del producto**, con una evaluacion abierta y catorce dias de
- * plazo corriendo. Que la unica via sea escribir a una direccion es poco; que
- * no haya ni direccion es perder una oportunidad de trabajo por la interfaz.
+ * La línea de talento **se queda, debajo, en los dos estados**: a una cuenta
+ * creada por carga masiva de currículums —con un correo inventado— no le llega
+ * ningún enlace, y el mensaje de enviado no puede decírselo sin revelar qué
+ * correos tienen cuenta. Para esa persona, y para quien no reciba el correo,
+ * escribir sigue siendo la salida.
  *
- * Lo que hace falta para que esto deje de ser una pantalla de disculpa:
- *
- *   POST /portal/auth/recuperacion  { correo }  → manda el mismo enlace de
- *   entrada que ya canjea `POST /portal/auth/acceso`. La via tecnica esta
- *   construida entera; solo le falta quien la dispare.
+ * El formulario y su «enviado» son los mismos del panel: `ui/recuperacion`.
  */
 
 import { Link } from 'react-router-dom'
+import { pedirRecuperacion } from '@/api/portal'
 import { rutas } from '@/rutas'
+import { PedirEnlace } from '@/ui/recuperacion/PedirEnlace'
 import estilos from './Cuenta.module.css'
 
 const CORREO = 'talento@renaser.pe'
@@ -33,34 +30,18 @@ export function Clave() {
         ← Volver a entrar
       </Link>
 
-      <h1 className={estilos.titular}>Te ayudamos a entrar.</h1>
-      <p className={estilos.bajada}>
-        Todavía no podemos restablecer una contraseña desde aquí. Pero hay dos formas de
-        que vuelvas a tu proceso hoy mismo, y ninguna te hace empezar de cero.
-      </p>
-
-      <div className={estilos.caminos}>
-        <section className={estilos.camino}>
-          <h2 className={estilos.tituloCamino}>Busca el enlace en tu correo</h2>
-          <p className={estilos.queEs}>
-            Cada aviso que te mandamos trae un enlace que te mete directo, <b>sin pedirte
-            la contraseña</b>. Si tienes cualquiera de esos correos a mano, ese enlace
-            sigue siendo la vía más rápida.
+      <PedirEnlace
+        pedir={pedirRecuperacion}
+        claseFormulario={estilos.superficieDelFormulario}
+        titulo="Te ayudamos a entrar."
+        bajada="Escribe el correo con el que creaste tu cuenta y te enviamos un enlace para elegir una contraseña nueva. Tu proceso sigue igual: no pierdes nada de lo que ya respondiste."
+        alternativa={
+          <p className={estilos.aparte}>
+            ¿No te llega? Escríbenos a{' '}
+            <a href={`mailto:${CORREO}?subject=No%20puedo%20entrar%20al%20portal`}>{CORREO}</a>
           </p>
-        </section>
-
-        <section className={estilos.camino}>
-          <h2 className={estilos.tituloCamino}>O escríbenos</h2>
-          <p className={estilos.queEs}>
-            Dinos desde qué correo postulaste y te mandamos un enlace nuevo. Contesta una
-            persona, así que no es inmediato, pero <b>tu proceso no se cierra mientras
-            tanto</b> y no pierdes nada de lo que ya respondiste.
-          </p>
-          <a className={estilos.enviar} href={`mailto:${CORREO}?subject=No%20puedo%20entrar%20al%20portal`}>
-            Escribir a {CORREO}
-          </a>
-        </section>
-      </div>
+        }
+      />
 
       <p className={estilos.pie}>
         ¿Todavía no tienes cuenta? <Link to={rutas.registro()}>Créala aquí</Link>.

@@ -202,6 +202,41 @@ partir de la segunda visita arranca de un token guardado y nadie le ha dicho el 
 endpoint, la cabecera del perfil decía «Tu perfil» sobre un disco de iniciales vacío a quien
 volvía al día siguiente, cambiaba de navegador o vaciaba el almacenamiento.
 
+#### Si olvidó la contraseña (22/09/2026)
+
+«¿Olvidaste tu contraseña?», en `/ingresar`, lleva a **`/clave`**, que ya no es una pantalla que
+solo explica: pide el correo y manda un enlace. El recorrido:
+
+1. Escribe su correo y pulsa «Enviar enlace» (`POST /portal/auth/recuperacion`). Un correo mal
+   escrito se marca en el campo y no se manda nada.
+2. Ve **siempre lo mismo**, tenga cuenta o no: «Si ese correo tiene una cuenta, te enviamos un
+   enlace. Revisa también tu carpeta de spam. Vale por 60 minutos.». Así la pantalla no sirve
+   para averiguar qué correos están registrados. «Reenviar enlace» se enciende a los 60
+   segundos, con la cuenta atrás en el botón, y «Usar otro correo» vuelve al formulario.
+3. Debajo, en los dos estados, sigue «¿No te llega? Escríbenos a talento@renaser.pe».
+4. El enlace del correo abre **`/restablecer?token=…`**. El token **sale de la barra al
+   cargar** y no queda en el historial. Abrir la pantalla no gasta el enlace.
+5. Elige la contraseña nueva y la repite: al menos 8 caracteres, sin espacios al principio ni
+   al final (se avisa, no se recortan) y como mucho 72 bytes —una tilde o una «ñ» cuentan
+   doble, un emoji cuádruple—. Si es igual a la de antes, el aviso sale en el campo y el enlace
+   sigue sirviendo.
+6. Al guardar (`POST /portal/auth/restablecer`) va a `/ingresar` con «✓ Contraseña cambiada
+   exitosamente» encima. **No queda con la sesión abierta**: entra con la nueva.
+
+Si el enlace venció, ya se usó o se pidió otro después, la pantalla dice una sola cosa, «Este
+enlace ya no sirve.», con «Pedir un enlace nuevo». Si el token falta —enlace cortado al
+pegarlo—, dice «El enlace está incompleto.». ⚠️ **Recargar `/restablecer` después de que el
+token salió de la barra también muestra «El enlace está incompleto.»** Es una decisión aprobada:
+el enlace del correo sigue sirviendo si se vuelve a abrir.
+
+⚠️ **«Vale por 60 minutos» va escrito a mano** (`src/ui/recuperacion/reglas.ts`). La vida del
+enlace es un parámetro del backend, `minutos_vida_recuperacion`, y la respuesta no trae el
+número: si se cambia allí, se cambia aquí.
+
+**Quien no puede usarlo:** quien fue cargado desde una carpeta de CVs tiene un correo inventado
+y no le llega nada; por eso la línea de talento se queda. Y **sin el correo encendido en el
+backend no le llega a nadie** (ver [PENDIENTES.md](PENDIENTES.md)).
+
 ### 2.5 Postular — con cuenta
 `POST /portal/postulaciones` (multipart): `cv` (PDF o Word, máx. 10 MB), `resultadoOrgulloso`
 (texto obligatorio), `portafolio`/`linkedin`/`github` (opcionales), y `requisitosConfirmados`.
@@ -264,6 +299,24 @@ Es historial **real**, no inventado. Se puede pintar como línea de tiempo.
 
 **Acción:** retirarse (`POST .../retiro`). Retirarse ≠ borrar datos: son cosas distintas y hay
 que decirlo.
+
+⚠️ **Si la empresa eliminó la vacante (21/09/2026), el proceso deja de verse.** No llega en
+«Mis procesos», y abrirlo desde un enlace viejo responde 404: la pantalla dice «Esta vacante ya
+no está disponible.» y «La empresa la retiró, así que su proceso dejó de verse aquí. No tienes que
+hacer nada», con la vuelta a la lista. El detalle público de esa vacante dice lo mismo en su
+título. Quien seguía en carrera recibe en la campana un aviso **sin enlace**, y los avisos que ya
+tenía de esa vacante se quedan, también sin enlace.
+
+**Lo mismo en las pantallas de su proceso** (22/09/2026): la prueba del puesto, la evaluación, el
+cuestionario técnico y las fechas de la simulación enseñan ese mismo aviso (`VacanteRetirada`, en
+`src/ui/Mensajes.tsx`) en lugar de un error y sin ofrecer reintentar. Un 404 de esas pantallas no
+basta —en la simulación también es «todavía no elegiste fecha»—, así que se le pregunta a su
+proceso, y solo si también responde 404 se dice que la vacante ya no está. **Con la pantalla
+abierta desde antes** quien se entera es el botón: un 404 al empezar, responder, subir, entregar o
+confirmar fecha vuelve a pedir la pantalla, y si la vacante se eliminó la pantalla entera pasa al
+aviso. Si la vacante sigue ahí, ese 404 era otra cosa y se enseña su error normal; en la prueba,
+sin cerrar el diálogo. Lo hacen las cuatro con el mismo hook, `usePantallaAbierta`
+(`src/paginas/procesos/useVacanteRetirada.ts`).
 
 ### 2.8 Evaluación (Perfil Integral) — la pantalla difícil
 `GET /portal/evaluacion/{uuid}` → `estado`, `venceEn`, `iniciadaEn`, `terminadaEn`,
@@ -456,7 +509,8 @@ versión anterior prometía lo contrario y era falso.
 
 `ConfiguracionSeguridad` deja abierto **sin token**: `GET /portal/vacantes/**`,
 `GET /portal/consentimientos/textos`, `POST /portal/cuentas`, `POST /portal/auth/login`,
-`POST /portal/auth/acceso`. A esa lista se suma `GET /portal/catalogos/ubigeo`, que se pide sin
+`POST /portal/auth/acceso`, y desde el 22/09/2026 `POST /portal/auth/recuperacion` y
+`POST /portal/auth/restablecer`. A esa lista se suma `GET /portal/catalogos/ubigeo`, que se pide sin
 token desde crear cuenta (01/09/2026) — los otros dos catálogos del portal, niveles educativos y
 de idioma, sí van con token porque solo se usan dentro del perfil. **Todo lo demás exige token de
 candidato.**

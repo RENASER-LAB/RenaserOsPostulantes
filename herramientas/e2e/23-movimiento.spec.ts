@@ -27,8 +27,21 @@
 
 import { expect, test, type Page } from '@playwright/test'
 
-/** La primera franja del recorrido de la portada. */
-const FRANJA = 'ol li > div'
+/**
+ * La primera franja del recorrido de la portada.
+ *
+ * ⚠️ **Se busca por `aria-hidden`, no por posicion.** Esto decia `ol li > div`,
+ * y el 22/09/2026 dejo de apuntar a la franja sin que nadie se enterara: cada
+ * etapa se envolvio en la pieza E para que asome escalonada, asi que el primer
+ * `div` del `<li>` paso a ser ese envoltorio. El envoltorio mueve `y`, nunca
+ * `scaleX`, de modo que la prueba leia una escala de 1 constante y fallaba
+ * diciendo que la franja «no se dibujo» cuando se dibujaba perfectamente.
+ *
+ * La franja es el unico `div` decorativo de la etapa —los demas hijos son
+ * parrafos—, y `aria-hidden` es parte de lo que la pieza promete, no un detalle
+ * de como este anidada hoy.
+ */
+const FRANJA = 'ol li div[aria-hidden="true"]'
 
 /** El observador, en el idioma del navegador. Anota la escala minima y maxima. */
 const OBSERVADOR = ([selector, ms]: readonly [string, number]) => {

@@ -9,6 +9,8 @@ import type { Archivo } from '@/api/puerta'
 import type {
   AceptarInvitacionPanel,
   LoginPanel,
+  PedirRecuperacionPanel,
+  RestablecerClavePanel,
   CrearSolicitud,
   DesgloseEvaluacion,
   AreaPanel,
@@ -39,6 +41,7 @@ import type {
   UsuarioEquipo,
   ConteoDeArchivadas,
   VacanteActualizadaResponse,
+  VacanteEliminadaResponse,
   VacantePanel,
   VersionBanco,
   NuevaVersionBanco,
@@ -64,6 +67,7 @@ import type {
   CierrePruebaAplicado,
   ElegirInstrumentoTecnico,
   PlazoDePrueba,
+  PlazoVigenteDePrueba,
   FichaDelPuesto,
   GuardarFichaDelPuesto,
   CuestionarioTecnico,
@@ -100,6 +104,26 @@ export const entrarAlPanel = (datos: LoginPanel) =>
  */
 export const aceptarInvitacion = (datos: AceptarInvitacionPanel) =>
   pedir<SesionEquipo>('/auth/invitacion', { metodo: 'POST', cuerpo: datos, sinToken: true })
+
+/**
+ * Pedir el enlace de contraseña nueva del panel. 202 vacío siempre, exista o no
+ * la cuenta; si el correo tiene cuenta en varias empresas, llega un enlace por
+ * cada una.
+ */
+export const pedirRecuperacionPanel = (correo: string) =>
+  pedir<void>('/auth/recuperacion', {
+    metodo: 'POST',
+    cuerpo: { correo } satisfies PedirRecuperacionPanel,
+    sinToken: true,
+  })
+
+/**
+ * Elegir la contraseña nueva del panel con el token del enlace. No abre sesión.
+ * Sin token de sesión: un 401 aquí es «el enlace no sirve» y no debe cerrar la
+ * sesión de nadie.
+ */
+export const restablecerClavePanel = (datos: RestablecerClavePanel) =>
+  pedir<void>('/auth/restablecer', { metodo: 'POST', cuerpo: datos, sinToken: true })
 
 /**
  * El login de desarrollo. El backend lo mantiene para local y lo apaga en
@@ -187,6 +211,24 @@ export const archivarVacante = (id: number) =>
 /** Devolverla a la lista habitual. Sigue CERRADA y no reabre ninguna postulacion. */
 export const desarchivarVacante = (id: number) =>
   pedir<void>(`/vacantes/${id}/archivo`, { metodo: 'DELETE' })
+
+/**
+ * Eliminar la vacante que no debio existir. **No se deshace desde el panel.**
+ *
+ * `DELETE` sobre la vacante, con el motivo en el cuerpo: esta accion cierra las
+ * postulaciones de otras personas, les deja un aviso en su portal y devuelve la
+ * solicitud a ABIERTA, asi que la auditoria tiene que poder contestar por que.
+ * Sin motivo —o con espacios— el backend contesta 400 aunque el boton del panel
+ * este apagado.
+ *
+ * Devuelve cuantas postulaciones se cerraron y a cuantas les llego de verdad el
+ * aviso. Los dos numeros, y no uno: si alguno falla, el panel lo dice.
+ */
+export const eliminarVacante = (id: number, motivo: string) =>
+  pedir<VacanteEliminadaResponse>(`/vacantes/${id}`, {
+    metodo: 'DELETE',
+    cuerpo: { motivo },
+  })
 
 export const listarPuestos = () => pedir<PuestoPanel[]>('/puestos')
 /** El código interno lo genera el servidor cuando el panel no lo envía. */
@@ -860,6 +902,17 @@ export const definirCierreDePrueba = (
     metodo: 'POST',
     cuerpo: { cierraEn, motivo },
   })
+
+/**
+ * Que plazo rige HOY para esta persona, antes de tocarlo.
+ *
+ * Pide `abrir_ficha_candidato` —leer, no mover—, asi que quien no puede cambiar
+ * la fecha igualmente la ve. **No contesta 404 cuando no hay prueba**: quien no
+ * llego a la etapa y la vacante que rinde el cuestionario tecnico salen con
+ * `existeIntento: false` y el instrumento, que es lo que distingue los dos.
+ */
+export const verPlazoDePrueba = (postulacionId: number) =>
+  pedir<PlazoVigenteDePrueba>(`/postulaciones/${postulacionId}/prueba/plazo`)
 
 /** La fecha de UNA persona, que manda sobre la de la vacante. */
 export const definirPlazoDePrueba = (

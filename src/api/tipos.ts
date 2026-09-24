@@ -156,6 +156,26 @@ export interface Login {
 }
 
 /**
+ * Pedir el enlace de contraseña nueva. `DtosPortal.PedirRecuperacion`.
+ *
+ * La respuesta es un 202 vacío siempre, exista o no la cuenta: no hay tipo de
+ * vuelta porque no hay nada que leer.
+ */
+export interface PedirRecuperacion {
+  correo: string
+}
+
+/**
+ * Elegir la contraseña nueva con el token del enlace. `DtosPortal.RestablecerClave`.
+ * 204 si cambió; 401 si el enlace no sirve, sin decir por qué; 400 si la
+ * contraseña no cumple una regla o es la misma de antes.
+ */
+export interface RestablecerClave {
+  token: string
+  contrasena: string
+}
+
+/**
  * Como se llama quien ya tiene token. Sin token dentro: quien pregunta ya lo tiene.
  *
  * Lo pide el portal cuando arranca con una sesion guardada y sin nombre — la

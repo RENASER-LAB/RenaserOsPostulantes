@@ -30,8 +30,10 @@ vacantes (modelo Indeed), el panel se construye en este repositorio, bajo `/admi
   Excel, usuarios y roles, áreas).
 - ⚠️ **Huecos del backend, comprobados el 27/08**: `GET /panel/bandeja` devuelve 500; y **no hay
   forma de listar las versiones de una plantilla de prueba**, solo de pedir una suelta por su
-  id. Y `POST /vacantes/{id}/cierre-prueba` contesta 400 **en inglés** si la vacante no tiene
-  versión elegida. Se enseña lo que existe, como hizo el portal con la decisión ámbar.
+  id. Se enseña lo que existe, como hizo el portal con la decisión ámbar.
+  (Lo de `POST /vacantes/{id}/cierre-prueba` en inglés se cerró: hoy contesta en castellano
+  que esa vacante no rinde una prueba del puesto, y el panel ni ofrece el control ahí — ver
+  «El plazo de la prueba se ve antes de cambiarlo».)
   (El hueco de «quiénes se inscribieron» se cerró: ver «Los inscritos de una sesión, y quién puede qué» en la [bitácora de agosto](BITACORA-2026-08.md).)
 
 ### El ranking es por etapas (25/08)
@@ -78,13 +80,14 @@ lee el equipo en el historial.
 pueda abrir fichas de todos y mover solo las suyas verá el botón y recibirá un 404. Está
 traducido como lo que es, un límite del alcance del rol.
 
-**Y a varios a la vez, desde la mesa de la tabla (11/09).** Junto a «Avanzar a N personas» hay
-ahora «Descartar a N personas»: las mismas casillas, el mismo motivo. Por eso el campo dejó de
+**Y a varios a la vez (11/09).** Junto a «Avanzar a N personas» está «Descartar…»: las mismas
+casillas, el mismo motivo. Desde el 23/09 los dos viven en la barra que aparece abajo al marcar a
+alguien (ver «Filtrar la tanda y actuar sobre muchas a la vez»). Por eso el campo dejó de
 llamarse «motivo del avance» —con el descarte al lado, ese nombre haría escribir un motivo de
 avance para acabar cerrando a seis personas con él—.
 
-⚠️ **El botón del lote NO actúa al pulsarlo**, al revés que el de avanzar: abre una ventana con
-los nombres escritos. El error real no es equivocarse de botón, es llegar con alguien marcado de
+⚠️ **El botón del lote NO actúa al pulsarlo**, al revés que el de avanzar: abre la ventana
+«Descartar a N personas» con los nombres escritos. El error real no es equivocarse de botón, es llegar con alguien marcado de
 una pestaña anterior, y la cifra sola no lo enseña. Va uno a uno; quien falle sale nombrado y no
 frena a los demás, así que la ventana promete «hasta N» correos.
 
@@ -92,6 +95,67 @@ frena a los demás, así que la ventana promete «hasta N» correos.
 sin que le llegue nada al candidato — para cuando ya se habló con esa persona por otro lado. Se
 manda como `avisar: false`; el backend calla solo el correo y **deja escrito que no se avisó**,
 en el motivo del historial y en la auditoría.
+
+### Filtrar la tanda y actuar sobre muchas a la vez (23/09)
+
+Las cinco pestañas del ranking comparten la misma barra y la misma forma de marcar. Todo pasa en
+el navegador, sobre las filas que ya trajo el backend, y nada se guarda al recargar.
+
+**La barra de encima**, de izquierda a derecha: buscar por nombre · **«Filtros»**, con una
+insignia de cuántos hay puestos · «Columnas» · **«Borrar filtros»** (sustituye a «Ver a
+todos») · calificar y «Descargar Excel». En el teléfono, «Columnas» y las acciones de la tanda
+se recogen en «Más».
+
+**El panel «Filtros»** flota sobre la tabla en escritorio, sin oscurecer ni mover nada, y la
+tabla cambia detrás mientras se toca. En el teléfono es una hoja que sube desde abajo, con el
+fondo apagado y el foco atrapado dentro. Los cambios se aplican al momento; el pie dice «Se ven X
+de Y» y tiene «Borrar filtros» y «Listo».
+
+| Sección | Qué hace |
+|---|---|
+| Fecha de postulación | Un día, o un rango con «Desde» y «Hasta» (los dos incluidos, cada uno opcional), y los atajos Hoy, Últimos 7 días y Últimos 30 días. El día es el del navegador de quien mira. Si «Desde» es posterior a «Hasta», avisa y no filtra. Quien no tiene fecha queda fuera, y la ayuda lo dice |
+| Calificación con IA | Calificada, en curso o fallida, con cuántas hay de cada una. Es la de la cola del currículum, así que después de la primera etapa lo aclara: «Es la calificación del currículum» |
+| Ciudad, Nota de la etapa, Pretensión | Como antes. Si la vacante no publica su remuneración, la ayuda de Pretensión dice «La vacante no publicó pretensión» |
+
+Cada filtro puesto sale como una **etiqueta con «×»** debajo de la barra. Los filtros **se
+conservan al cambiar de etapa** y se reinician al cambiar de vacante. La búsqueda por nombre no
+cuenta en la insignia ni lleva etiqueta, pero «Borrar filtros» también la limpia, y basta con
+ella escrita para que el botón aparezca. Un rango de fechas al revés no cuenta como filtro puesto.
+Si no queda ninguna fila, la tabla dice cuántas hay sin filtrar y ofrece «Borrar filtros».
+
+**Marcar todo lo que se ve.** La casilla de la cabecera marca solo las filas visibles, las suelta
+si ya estaban todas y queda a medias si hay algunas. ⚠️ **Una marca que un filtro esconde se
+conserva pero no cuenta** en los botones: la barra dice «N marcadas · M fuera de vista por los
+filtros» y ofrece «Soltar las ocultas». Si el filtro esconde a todas las marcadas, la barra no
+sale. Mandar una carta de rechazo a quien no se ve es el error más caro de la pantalla.
+
+**La barra de lo marcado** sustituye a la mesa de debajo de la tabla y va pegada abajo mientras
+se recorre la tabla: motivo (obligatorio), «Avanzar a N personas», «Descartar…» —sin permiso de
+mover postulaciones no sale— y «Soltar selección». Es `position: sticky` y no `fixed`, así que no
+tapa la última fila ni el pie. El resultado se queda en ella hasta cerrarlo con «×».
+
+**El Excel** sigue bajando exactamente las filas que se ven, en su orden, filtros nuevos
+incluidos.
+
+**Foco y teclado.** Esc, «Listo» y un clic fuera sobre algo que no es un control devuelven el
+foco a «Filtros». Un clic fuera sobre un control —una casilla, un botón— hace lo suyo y el foco
+se queda ahí; uno sobre una fila cierra el panel y abre su ficha. Salir con Tab lo cierra. Los
+«Borrar filtros» de la barra y de la tabla vacía llevan el foco a «Filtros»; el del pie se apaga
+con `aria-disabled` y conserva el foco. En ventanas estrechas el panel se corre a la izquierda
+para no desbordar.
+
+Dónde está: `FiltrosDelRanking.tsx` (el botón, el panel y las etiquetas),
+`BarraDeLaSeleccion.tsx` (la barra de abajo) y las reglas de filtrado en `ranking.ts`, todo en
+`src/panel/vacantes/`. La fecha llega en `postuladoEn` de cada fila, nuevo en el backend.
+
+Comprobarlo: `npx playwright test herramientas/e2e/33-filtros-y-seleccion-en-lote.spec.ts`, que
+no escribe (intercepta «Avanzar» y cancela el descarte). El 34 y el 35
+(`34-filtros-y-seleccion-qa`, `35-filtros-y-seleccion-qa-movil`) ⚠️ **escriben**: siembran su
+propio terreno —32 postulaciones en 9 días, con la IA en sus cuatro estados— y lo retiran al
+terminar. Lo que el 34 hace avanzar no se puede borrar, así que su vacante queda marcada
+eliminada. Necesitan las variables de [TRABAJAR-EN-LOCAL.md](TRABAJAR-EN-LOCAL.md). ⚠️ Los
+números 33 a 35 están repetidos con los de «¿Olvidaste tu contraseña?»: ver
+[PENDIENTES.md](PENDIENTES.md).
 
 ### Publicar una vacante exige tres cosas antes (25/08)
 
@@ -240,5 +304,158 @@ Comprobarlo: `npx playwright test herramientas/e2e/27-archivar-vacante.spec.ts` 
 vacantes, un candidato en carrera y una cuenta de panel sin permiso de archivo —no tocan las
 vacantes sembradas de la base, porque archivar una las escondería del resto de pruebas— y lo
 retiran al terminar. Necesitan las variables de [TRABAJAR-EN-LOCAL.md](TRABAJAR-EN-LOCAL.md).
+
+### Eliminar una vacante que no debió existir (21/09)
+
+Archivar guarda lo que terminó bien; **eliminar es para la que se creó por error** —el puesto
+equivocado, duplicada— y es excepcional. Si quien mira tiene `eliminar_vacante` y el alcance
+llega —lo dice `puedeEliminar` de la fila—, cada fila lleva una **papelera**, «Eliminar la
+vacante {título}», **esté en el estado que esté**, también en `/admin/archivadas`. Va en la misma
+columna de acciones y **al final**: editar, archivar o desarchivar, eliminar. No hay botón de
+eliminar en la cabecera, y no hace falta archivar antes.
+
+La papelera no elimina: abre el modal «Eliminar vacante» (el modal compartido `src/ui/Modal.tsx`),
+que nombra la vacante y cuenta lo que va a pasar: dejará de verse en el panel y en el portal
+—tablón, detalle público y «Mis procesos»—; **«Se cerrarán sus N postulaciones y se les avisará
+en su portal»**, solo si hay gente en carrera; y no se podrá deshacer desde el panel. Pide **«Por
+qué se elimina»**, y el botón destructivo «Eliminar vacante» se enciende solo con un motivo que no
+sea solo espacios —el backend aplica la misma regla y contesta 400—. «Cancelar», el aspa y Escape
+no cambian nada. Mientras envía dice «Eliminando…» y no se cierra; si falla, se queda con el
+error y **con el motivo escrito**, para reintentar.
+
+| Cuándo | Qué dice el panel |
+|---|---|
+| No había nadie en carrera | «Vacante eliminada» |
+| Se cerraron N y salieron los N avisos | «Vacante eliminada. Se cerraron N postulaciones y se les avisó en su portal» |
+| Algún aviso no salió | «Vacante eliminada. Se cerraron N postulaciones y se avisó a M: los avisos que faltan no salieron». **No se redondea**: el equipo necesita saber a quién escribir a mano |
+| Algo falla antes | El modal se queda con el error; la fila no se retira |
+
+Los números son los que contesta el servidor (`postulacionesCerradas`, `postulantesAvisados`), no
+los de la fila, que pueden tener un minuto. Al terminar se refrescan la lista, Archivadas y su
+contador, y **el foco va al título de la página**, donde vive el aviso: la vacante no se fue a
+Archivadas, se fue a ninguna parte. El doble clic lo frena el mismo `ref` que en archivar, y el
+backend tiene su `UPDATE` condicional.
+
+**Después, la vacante no existe para el panel**: su detalle responde 404 y no sale en ninguna
+lista ni contador. Un formulario de edición que alguien tenía abierto no guarda: el modal se va
+con la fila y queda, fuera de él, «No se guardó nada en «{título}»: …». En el portal, su detalle
+público y los procesos de quienes postularon dicen **«Esta vacante ya no está disponible.»**
+—también la prueba, la evaluación, el cuestionario técnico y las fechas de la simulación, y
+también si el candidato las tenía abiertas al eliminarla: lo dice el primer botón que pulse (ver
+[02-QUE-VE-EL-CANDIDATO.md](02-QUE-VE-EL-CANDIDATO.md), §2.7)—, y a quienes seguían en carrera
+les llega un aviso en la campana, sin enlace. No hay botón de restaurar: solo soporte, en la base.
+
+**Sus postulaciones se leen pero ya no se escriben.** Una ficha abierta desde antes sigue
+cargando —la ficha, la prueba y su plazo responden 200, por decisión del producto—, pero todo lo
+que escribe sobre ella —el plazo de esa persona, las notas, calificar con IA, el currículum, el
+contacto, el enlace de acceso, la simulación, la validación y la decisión— recibe un **404** del
+backend. La lista completa está en `09-APIS.md` del backend.
+
+Comprobarlo: `npx playwright test herramientas/e2e/29-eliminar-vacante.spec.ts`,
+`30-eliminar-vacante-regresiones.spec.ts`, `31-eliminar-vacante-y-su-prueba.spec.ts` —el enlace
+de la prueba en el portal y el plazo de la persona en el panel— y
+`32-eliminar-vacante-con-la-pantalla-abierta.spec.ts` —las cuatro pantallas del candidato abiertas
+mientras se elimina, por la API y sin salir de la página— ⚠️ **escriben**: siembran en el clon su propio terreno
+(`herramientas/e2e/ayuda-eliminar-vacante.ts`) —nunca las vacantes sembradas de la base, que no
+tienen vuelta— y lo retiran al terminar, salvo la auditoría y las transiciones, que la base no
+deja borrar. Necesitan las variables de [TRABAJAR-EN-LOCAL.md](TRABAJAR-EN-LOCAL.md).
+
+### El plazo de la prueba se ve antes de cambiarlo (22/09)
+
+Los dos controles —la fecha de toda la convocatoria y la de una sola persona, los dos en
+`src/panel/vacantes/CierreDePrueba.tsx`— existían desde agosto. Lo que faltaba era **ver qué
+plazo rige hoy**: los dos campos de fecha salían vacíos sobre vacantes que sí tenían fecha, y
+quien entraba no sabía qué estaba cambiando.
+
+**En la configuración de la vacante**, el desplegable «Plazos de la prueba» abre con una línea
+que contesta «¿qué rige ahora mismo?». Son cuatro frases y no una con huecos, porque son cuatro
+reglas distintas:
+
+| La vacante | Qué dice la línea |
+|---|---|
+| Plazo abierto **con** fecha | «Cierra el domingo 21 sep 2026, 23:59 (hora de tu equipo, `America/Lima`)» |
+| Plazo abierto **sin** fecha | «Sin fecha para todos: a cada persona le cierra N días después de que empieza» |
+| Cronometrada **sin** fecha | «Cronometrada: N minutos desde que cada persona empieza, sin fecha límite para empezar» |
+| Cronometrada **con** fecha | Los minutos **y** la fecha, y «Rige lo que caiga antes» |
+
+Y tres casos en los que el control **no se ofrece**, con el motivo escrito en vez de un hueco
+callado: la vacante **cerrada** («ya no admite una fecha nueva»), la que rinde el **cuestionario
+técnico** —su tiempo son los minutos de la vacante, con el enlace «Ajustar los minutos →» al
+ajuste que está unas líneas más arriba en la misma página— y la que **no ha elegido prueba**,
+que manda a elegirla antes. El desplegable se abre igual: es donde quien busca la fecha mira.
+
+⚠️ **Una prueba `CRONOMETRADA` sí admite fecha desde el 22/09/2026**, y la regla vieja del panel
+la escondía junto a esos tres casos. El reloj y la fecha **conviven**: al empezar rige el que
+caiga antes, así que la fecha es lo que impide abrir el examen después de que cierre la
+convocatoria. Hasta esa fecha el backend lo rechazaba con un 400, «anularía el reloj».
+
+El campo llega **precargado con la fecha vigente** —`pruebaCierraEn`, pasada a hora local con
+`aCampoLocal`— y al escribir otra se dice a cuánta gente alcanza **antes** de guardar: «Se
+moverá el cierre de 8 exámenes abiertos; 2 quedan como están porque tienen fecha propia». Las
+dos cifras solo se conocían después, en la respuesta del `POST`, cuando a los ocho ya les había
+llegado.
+
+**En la ficha del candidato** (etapa Prueba del puesto), `GET /postulaciones/{id}/prueba/plazo`
+dice en qué punto está esa persona y hasta cuándo tiene. Va con **`abrir_ficha_candidato`**, el
+permiso de leer: quien no puede mover el plazo igualmente lo ve.
+
+| Esa persona | Qué se ve, y si hay control |
+|---|---|
+| No llegó a la etapa | «Todavía no tiene prueba. El plazo se fija cuando llegue». Sin control |
+| No ha abierto la prueba | Cuándo le cierra, o «su plazo empieza a contar cuando la abra» |
+| En curso | «Le cierra el …» y **de dónde sale**: la de la vacante, la que calculó el reloj al abrirla, o una puesta a mano |
+| Ya entregó | «Entregó el …. El plazo ya no cambia». Sin control: moverlo no cambiaría nada de lo que hizo |
+| Su vacante rinde el cuestionario técnico | No hay fecha por persona; el tiempo son los minutos de la vacante |
+
+Los tres casos sin control son los que el servidor rechazaba **después** de escribir el motivo,
+con «Prueba del puesto no encontrada» o «ya se entregó». La fecha que se guarde aquí queda
+**como suya**, y la pantalla lo dice antes de guardar: no se moverá aunque cambie la de la
+vacante.
+
+⚠️ **Los campos nuevos pueden faltar, y `undefined` no es «no hay fecha».** `modalidadPrueba`,
+los minutos o días vigentes y las dos cifras de exámenes abiertos **solo viajan en el detalle**
+(`GET /vacantes/{id}`), no en la lista, y un backend anterior no los manda: donde no se sabe se
+dice «sin dato» en vez de afirmar que no hay plazo, que es lo contrario de lo que pasa.
+
+Los errores del servidor se leen en castellano y pegados a lo que hay que corregir: lo que
+rechaza la fecha —«Esa fecha ya pasó…»— va en el campo, y un 403 nombra el permiso que falta
+(`elegir_plantilla_prueba` en la vacante, `mover_postulacion` en la persona). El motivo sigue
+siendo obligatorio en las dos llamadas y queda en la auditoría.
+
+Comprobarlo: `npx playwright test herramientas/e2e/29-plazo-de-la-prueba.spec.ts` ⚠️ **escribe**:
+siembra en el clon sus propias vacantes, una plantilla de prueba, los candidatos de cada estado
+y una cuenta de panel de solo lectura, y lo retira al terminar. Necesita las variables de
+[TRABAJAR-EN-LOCAL.md](TRABAJAR-EN-LOCAL.md).
+
+### ¿Olvidaste tu contraseña? (22/09)
+
+Antes, quien olvidaba su contraseña del panel solo podía pedir que lo invitaran de nuevo. Ahora
+`/admin/entrar` tiene **«¿Olvidaste tu contraseña?»** debajo del botón, y el recorrido es el
+mismo que el del candidato (ver [02-QUE-VE-EL-CANDIDATO.md](02-QUE-VE-EL-CANDIDATO.md), «Si
+olvidó la contraseña»), con sus propias pantallas y sus propias llamadas:
+
+| Paso | Pantalla | Llamada |
+|---|---|---|
+| Pedir el enlace con el correo | `/admin/clave` (`ClavePanel.tsx`) | `POST /panel/auth/recuperacion` |
+| Elegir la contraseña nueva, **mínimo 12** | `/admin/restablecer?token=…` (`RestablecerPanel.tsx`) | `POST /panel/auth/restablecer` |
+| Volver a entrar, con «✓ Contraseña cambiada exitosamente» encima | `/admin/entrar` | — |
+
+El formulario, los textos y las reglas son **los mismos del portal** y viven en
+`src/ui/recuperacion/`: el mensaje de enviado es idéntico exista o no la cuenta, «Reenviar
+enlace» espera 60 segundos, el token sale de la barra al cargar y no se abre sesión al terminar.
+Lo que cambia es el mínimo (12, como la invitación) y que aquí no hay línea de talento: quien no
+recibe el correo o tiene la cuenta desactivada sigue pidiendo a su administrador que lo invite
+de nuevo, y la caja «¿No puedes entrar?» lo dice.
+
+⚠️ **El enlace del correo de equipo cae siempre en `/admin/restablecer`**, lleve o no `/admin`
+la dirección del panel configurada en el backend: `/restablecer` a secas es la pantalla del
+candidato. Si el mismo correo tiene cuenta en dos empresas, llegan dos correos, uno por cuenta,
+y cada enlace cambia solo la contraseña de la suya.
+
+Comprobarlo: `npx playwright test herramientas/e2e/33-recuperar-contrasena.spec.ts`, y del 34 al
+36 (móvil, bordes y regresiones). ⚠️ **El 33, el 35 y el 36 escriben**: crean sus cuentas en el
+clon, leen el enlace del correo guardado en la base (`correo_enviado`: el backend local no
+envía correo) y las retiran al terminar. El 34 no escribe nada. Necesitan las variables de
+[TRABAJAR-EN-LOCAL.md](TRABAJAR-EN-LOCAL.md).
 
 ---

@@ -95,9 +95,10 @@ vez de con el espectro irisado, y la galería de portadas de «Mi perfil» se re
 Los tokens `--canto-*` siguen declarados porque son los códigos que el backend tiene guardados
 en cada perfil; sus valores ya no se usan.
 
-**La migración está completa: las diecisiete pantallas del candidato están compuestas.** Lo que
-queda son decisiones de producto anotadas en [PENDIENTES](PENDIENTES.md), no trabajo de
-diseño.
+**La migración está completa: las dieciocho pantallas del candidato están compuestas.** Eran
+diecisiete hasta el 23/09/2026, cuando llegaron de main `/clave` reescrita y `/restablecer`
+nueva. Lo que queda son decisiones de producto anotadas en [PENDIENTES](PENDIENTES.md), no
+trabajo de diseño.
 
 ### Dónde está el código nuevo
 

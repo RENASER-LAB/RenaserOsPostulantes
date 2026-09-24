@@ -201,6 +201,12 @@ components:
 > compuestas.** `/admin` queda fuera por decisión de alcance y conserva su composición
 > anterior.
 >
+> **El 23/09/2026 entraron dos más y son dieciocho.** `/clave` dejó de ser un cartel que
+> explicaba y pasó a pedir el enlace de verdad, y `/restablecer` es nueva. Las dos se apoyan
+> en `ui/recuperacion`, que el portal **comparte con el panel**: por eso su formulario recibe
+> la superficie desde fuera —`claseFormulario`— en vez de traerla puesta. Ver «La contraseña
+> olvidada» más abajo.
+>
 > **El detector encuentra dos cosas en el código del candidato, y las dos son deliberadas:**
 > el `#ff5d6e` de `--canto` en `mundo.css` —el token vive solo para el panel sin migrar— y el
 > degradado de la pieza coral de la portada, que es el componente firma y no se tokeniza hasta
@@ -616,6 +622,31 @@ perfil» (n datos, m sin confirmar).
 vacante y el aviso de que el formulario de la decisión todavía no envía. El texto de apoyo
 que vaya dentro necesita `--duda-tinta2`: `--tinta3` da 4,9:1 sobre el cielo y es el suelo,
 sobre un fondo con tinte se cae.
+
+### La contraseña olvidada — dos pantallas prestadas
+
+`/clave` y `/restablecer` llegaron de main el 23/09/2026 y **su formulario no es de este
+mundo**: vive en `src/ui/recuperacion/`, que el portal comparte con el panel. Una sola pieza,
+dos puertas con dos mundos visuales distintos.
+
+**La superficie entra desde fuera.** En el portal, todo formulario de esta familia se lee sobre
+nube —`/registro`, `/acceso` y el de entrar lo hacen—; en el panel, el formulario va a pelo
+sobre el fondo, que es su disposición de siempre. Poner la superficie dentro de la pieza
+compartida habría arrastrado al panel a un mundo al que no entró, y no ponerla dejaba el único
+formulario desnudo del portal justo al lado de los que sí la tienen.
+
+La salida es un `claseFormulario` opcional: el portal pasa `.superficieDelFormulario` de
+`Cuenta.module.css` —que solo compone `bloqueHolgado` y el fondo nube—, el panel no pasa nada.
+
+⚠️ **Esa clase trae la superficie y nada más.** La dirección, el hueco entre campos y el aire
+de arriba los pone `.formulario` de la hoja compartida; repetirlos en la clase del portal
+dejaría en manos del orden del bundle saber cuál gana, que es el fallo que ya costó un 500 en
+este proyecto.
+
+⚠️ **El `22ch` del titular está escrito a mano en `Recuperacion.module.css`, no compuesto.**
+Es la medida de `.titular` de `pagina.module.css`, pero componerla desde una hoja compartida
+arrastraría el carril del portal al panel. Copiar un número es aquí menos malo que exportar un
+mundo entero.
 
 ### La pieza del titular
 

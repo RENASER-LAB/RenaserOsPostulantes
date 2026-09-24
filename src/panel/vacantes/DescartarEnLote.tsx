@@ -1,5 +1,5 @@
 /**
- * Descartar de golpe a la tanda marcada, desde la mesa de avance.
+ * Descartar de golpe a la tanda marcada, desde la barra de la selección.
  *
  * El botón de la ficha sirve para «estoy leyendo a esta persona y decido que
  * no». Este es el otro trabajo: se ha repasado la tabla, se sabe quiénes no
@@ -42,13 +42,23 @@ export interface AQuienDescartar {
 interface Props {
   /** Los marcados que se están viendo, en el orden de la tabla. */
   marcados: AQuienDescartar[]
-  /** El motivo de la mesa, el mismo que usa «Avanzar». */
+  /** El motivo de la barra, el mismo que usa «Avanzar». */
   motivo: string
-  /** Refrescar el ranking y soltar las casillas. */
-  alTerminar: () => void
+  /**
+   * Refrescar el ranking y soltar las casillas. Recibe el resultado ya escrito
+   * —a quién se descartó y a quién no— porque al soltar las casillas la barra
+   * que contiene este botón desaparece, y el resultado tiene que seguir a la
+   * vista en quien lo pinta.
+   */
+  alTerminar: (resultado: string, conFallos: boolean) => void
+  /**
+   * Apagado desde fuera mientras la otra acción de la barra trabaja: descartar a
+   * mitad de un avance mandaría dos cosas opuestas a la misma tanda.
+   */
+  deshabilitado?: boolean
 }
 
-export function DescartarEnLote({ marcados, motivo, alTerminar }: Props) {
+export function DescartarEnLote({ marcados, motivo, alTerminar, deshabilitado = false }: Props) {
   const [abierto, setAbierto] = useState(false)
   const [avisar, setAvisar] = useState(true)
   const [yendo, setYendo] = useState(false)
@@ -89,35 +99,35 @@ export function DescartarEnLote({ marcados, motivo, alTerminar }: Props) {
     }
     setYendo(false)
     setAbierto(false)
-    setResultado(
-      [
-        fueron.length > 0
-          ? `Se descartó a ${fueron.join(', ')}${avisar ? ', y les salió el correo' : ', sin avisarles'}.`
-          : null,
-        fallaron.length > 0 ? `No se descartaron: ${fallaron.join('; ')}.` : null,
-      ]
-        .filter(Boolean)
-        .join(' '),
-    )
-    alTerminar()
+    const dicho = [
+      fueron.length > 0
+        ? `Se descartó a ${fueron.join(', ')}${avisar ? ', y les salió el correo' : ', sin avisarles'}.`
+        : null,
+      fallaron.length > 0 ? `No se descartaron: ${fallaron.join('; ')}.` : null,
+    ]
+      .filter(Boolean)
+      .join(' ')
+    setResultado(dicho)
+    alTerminar(dicho, fallaron.length > 0)
   }
 
   return (
     <>
       {/*
-        El nombre del botón lleva la cifra, como el de avanzar: «Descartar» a
-        secas al lado de «Avanzar a 6 personas» no dice a cuántos alcanza, y son
-        dos botones pegados que hacen cosas opuestas.
+        «Descartar…», con los puntos: dicen que abre algo antes de actuar.
+
+        ⚠️ **La cifra ya no va en el botón, y no se pierde.** Vive en la barra
+        de la selección —«4 personas marcadas», justo encima— y en «Avanzar a 4
+        personas» al lado; y la ventana que se abre lleva en el título a cuántos
+        y debajo los nombres, que es donde de verdad se atrapa un error.
       */}
       <button
         type="button"
         className={estilos.descartarLote}
         onClick={abrir}
-        disabled={cuantos === 0 || faltaMotivo}
+        disabled={deshabilitado || cuantos === 0 || faltaMotivo}
       >
-        {cuantos === 0
-          ? 'Marca a quienes no siguen'
-          : `Descartar a ${cuantos} ${cuantos === 1 ? 'persona' : 'personas'}`}
+        {cuantos === 0 ? 'Marca a quienes no siguen' : 'Descartar…'}
       </button>
 
       {resultado && (

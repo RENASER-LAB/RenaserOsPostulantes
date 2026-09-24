@@ -19,6 +19,32 @@
   color: var(--tinta);
 }
 
+/* La vuelta de «Recuperar la contraseña» a entrar, debajo de la marca y encima
+   del titular, como en el portal. La envoltura es la que la pone en su propia
+   línea: la marca y el enlace son los dos en línea y se quedarían lado a lado. */
+.vuelta {
+  margin-bottom: var(--e3);
+}
+
+.volver {
+  composes: volver from '../../estilos/piezas.module.css';
+}
+
+/*
+ * «¿Olvidaste tu contraseña?», pegado al formulario y no al pie: quien lo
+ * necesita está mirando el campo de la contraseña. Mismo sitio que en el portal.
+ */
+.olvidada {
+  margin-top: var(--e4);
+  font-size: var(--t-apoyo);
+}
+
+.olvidada a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
 /* La ayuda de un campo se ciñe como toda la prosa: era el único texto sin tope
    y corría líneas más largas que el resto de la pantalla. */
 .pagina p {
@@ -65,11 +91,9 @@
 }
 
 /*
- * La salida de quien no puede entrar.
- *
- * Mismo patrón que la `/clave` del portal: no se finge un restablecimiento que
- * el backend no tiene, se nombra la limitación y se ofrece el camino que sí
- * funciona. Va en superficie de nube porque es contenido, no un aviso.
+ * La salida de quien no puede entrar, cuando pedir el enlace no basta: la
+ * cuenta desactivada o el correo que no llega. Va en superficie de nube porque
+ * es contenido, no un aviso.
  */
 .camino {
   margin-top: var(--e7);

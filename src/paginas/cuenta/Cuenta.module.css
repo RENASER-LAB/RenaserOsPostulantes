@@ -102,31 +102,6 @@
   color: var(--tinta2);
 }
 
-/* ---------- Dos salidas en paralelo (hoy solo `/clave`) ---------- */
-
-.caminos {
-  display: flex;
-  flex-direction: column;
-  gap: var(--e5);
-  margin-top: var(--e6);
-}
-
-.camino {
-  composes: bloque from '../../estilos/pagina.module.css';
-  background: var(--nube);
-}
-
-.tituloCamino {
-  margin: 0 0 var(--e2);
-}
-
-.queEs {
-  font-size: var(--t-prosa);
-  line-height: 1.55;
-  color: var(--tinta2);
-  max-width: var(--medida-corta);
-}
-
 @media (max-width: 640px) {
   .pareja {
     grid-template-columns: 1fr;
@@ -186,6 +161,26 @@
   display: block;
   color: var(--tinta);
   margin-bottom: var(--e5);
+}
+
+/*
+ * La superficie de los dos formularios de la contraseña olvidada: `/clave` y
+ * `/restablecer`.
+ *
+ * ⚠️ **Existe porque esos formularios NO son de esta hoja.** Viven en
+ * `ui/recuperacion`, compartidos con el panel, y alli el formulario va a pelo
+ * sobre el fondo —es la disposicion del panel, que no entro al escaparate—. En
+ * el portal, en cambio, todo formulario de esta familia se lee sobre nube:
+ * `/registro`, `/acceso` y el de entrar lo hacen, y uno solo sin superficie,
+ * justo al lado, se lee como una pantalla a medio cargar.
+ *
+ * Solo trae la superficie. La direccion, el hueco entre campos y el aire de
+ * arriba ya los pone `.formulario` de la hoja compartida, y repetirlos aqui
+ * dependeria del orden del bundle para saber cual gana.
+ */
+.superficieDelFormulario {
+  composes: bloqueHolgado from '../../estilos/pagina.module.css';
+  background: var(--nube);
 }
 
 .aparte {

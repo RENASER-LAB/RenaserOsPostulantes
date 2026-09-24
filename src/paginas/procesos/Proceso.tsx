@@ -19,6 +19,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { ErrorApi } from '@/api/cliente'
 import { retirarPostulacion, verPostulacion } from '@/api/portal'
 import type { PasoHistorial } from '@/api/tipos'
 import {
@@ -90,6 +91,16 @@ export function Proceso() {
   }
 
   if (consulta.isError) {
+    /*
+     * Un 404 aquí no es una avería, y decirle que lo intente de nuevo sería
+     * mandarlo a chocar contra la misma puerta.
+     *
+     * Pasa cuando la empresa retira la vacante: el proceso deja de verse junto
+     * con ella, y el enlace sigue estando en el navegador, en el correo que se
+     * le mandó y en los avisos viejos de su campana. Se le dice lo que pasó y
+     * se le lleva a su lista, que es lo único que puede hacer.
+     */
+    const yaNoEsta = consulta.error instanceof ErrorApi && consulta.error.estado === 404
     const causa =
       consulta.error instanceof Error
         ? consulta.error.message
@@ -100,19 +111,46 @@ export function Proceso() {
           ← Volver a mis procesos
         </Link>
         <div className={estilos.marco}>
-          <h1>No pudimos cargar esta postulación.</h1>
+          <h1>
+            {yaNoEsta
+              ? 'Esta vacante ya no está disponible.'
+              : 'No pudimos cargar esta postulación.'}
+          </h1>
           <p className={estilos.marcoTexto}>
-            {causa} Tu postulación está a salvo: esto es un problema para mostrarla, no
-            para conservarla.
+            {yaNoEsta ? (
+              <>
+                La empresa la retiró, así que su proceso dejó de verse aquí. No tienes que
+                hacer nada.
+              </>
+            ) : (
+              <>
+                {causa} Tu postulación está a salvo: esto es un problema para mostrarla, no
+                para conservarla.
+              </>
+            )}
           </p>
-          <button
-            type="button"
-            className={estilos.reintentar}
-            onClick={() => void consulta.refetch()}
-            data-rotulo="Intentar de nuevo"
-          >
-            Intentar de nuevo
-          </button>
+          {/*
+            `data-rotulo` en los dos: es la accion que gira su rotulo al pasar
+            por encima, y el gesto tiene que ser el mismo lleve donde lleve.
+          */}
+          {yaNoEsta ? (
+            <Link
+              className={estilos.reintentar}
+              to={rutas.procesos()}
+              data-rotulo="Ver mis procesos"
+            >
+              Ver mis procesos
+            </Link>
+          ) : (
+            <button
+              type="button"
+              className={estilos.reintentar}
+              onClick={() => void consulta.refetch()}
+              data-rotulo="Intentar de nuevo"
+            >
+              Intentar de nuevo
+            </button>
+          )}
         </div>
       </div>
     )

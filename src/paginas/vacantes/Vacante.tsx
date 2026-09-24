@@ -65,10 +65,22 @@ export function Vacante() {
           ← Volver a las vacantes
         </Link>
         <div className={estilos.marco}>
-          <h1>{noExiste ? 'Este puesto ya no está abierto.' : 'No pudimos cargar este puesto.'}</h1>
+          {/*
+            «Esta vacante ya no está disponible» cubre los tres casos que aquí
+            dan 404 —cerrada, empresa suspendida y retirada por la empresa— y no
+            los distingue a propósito: para quien mira, los tres significan lo
+            mismo y explicar cuál es cuál sería contar por dentro de otra
+            empresa. La frase es la que dice la decisión del 21/09/2026 para la
+            vacante eliminada, y vale igual para las otras dos.
+          */}
+          <h1>
+            {noExiste
+              ? 'Esta vacante ya no está disponible.'
+              : 'No pudimos cargar este puesto.'}
+          </h1>
           <p className={estilos.marcoTexto}>
             {noExiste
-              ? 'Puede que la convocatoria se haya cerrado o que la empresa ya no esté publicando. Hay otros puestos abiertos.'
+              ? 'Puede que la convocatoria se haya cerrado o que la empresa la haya retirado. Hay otros puestos abiertos.'
               : consulta.error instanceof Error
                 ? consulta.error.message
                 : 'No pudimos conectar con el servidor.'}

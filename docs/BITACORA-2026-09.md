@@ -16,6 +16,149 @@ no se vuelve a subir el currículum. Lo del 07/09 se documentó en
 
 ---
 
+## La contraseña olvidada entra al escaparate (23/09/2026)
+
+Se trajo main a la rama del rediseño: cuatro commits (#52 a #55). Tres son del panel y quedan
+fuera de alcance; el cuarto trae **dos pantallas del candidato** que había que componer,
+`/clave` —que dejó de ser un cartel explicando que no se podía— y `/restablecer`, nueva.
+
+**El formulario de las dos no es del portal.** Vive en `src/ui/recuperacion/`, compartido con
+el panel, y estaba escrito contra la disposición del panel: formulario a pelo sobre el fondo,
+sin superficie. En el portal eso deja `/clave` desnuda justo al lado de `/registro` y
+`/acceso`, que sí van sobre nube — y la propia hoja de esas pantallas ya avisaba de por qué:
+«un formulario sin superficie no se lee como una cosa: se lee como página».
+
+Meter la superficie dentro de la pieza compartida habría arrastrado al panel a un mundo al que
+no entró. Así que la superficie **entra desde fuera**, por un `claseFormulario` opcional: el
+portal pasa la suya, el panel no pasa nada y queda igual que estaba.
+
+⚠️ **Esa clase trae la superficie y nada más.** La dirección, el hueco y el aire ya los pone
+la hoja compartida; repetirlos dejaría en manos del orden del bundle saber cuál gana.
+
+Los titulares eran `<h1>` a secas y ahora llevan el `22ch` del portal, escrito a mano en la
+hoja compartida en vez de compuesto, por la misma razón: componerlo desde ahí le exportaría el
+carril del portal al panel.
+
+**Los cinco conflictos de la fusión, y ninguno pedía elegir un bando salvo uno:**
+
+  - `Clave.tsx`: gana main entero. Nuestra versión era el diseño del cartel viejo, y el cartel
+    ya no existe — la pantalla ahora manda el enlace de verdad.
+  - `Cuenta.module.css`: se van `.caminos`, `.camino`, `.tituloCamino` y `.queEs`, que
+    vestían ese cartel. Se comprobó que no los usa nadie más.
+  - `Ingresar.tsx`: se quedan las dos cosas. La tarjeta del rediseño y el
+    `<AvisoClaveCambiada>` de main, que va **dentro** de la tarjeta y no encima: aquí la
+    tarjeta es la pantalla entera, y un aviso flotando fuera se lee como de otro sitio.
+  - `Proceso.tsx`: main añade el caso de la vacante eliminada («Ver mis procesos»), la rama
+    añadía `data-rotulo`. Van los dos, y el rótulo en las dos ramas del condicional: es el
+    mismo gesto lleve donde lleve.
+  - La bitácora: las dos entradas, en orden inverso.
+
+El detector no encuentra nada. 1043 pruebas en verde —191 más, que vienen de main— y typecheck
+limpio.
+
+## Filtrar la tanda por fecha y actuar sobre muchas sin bajar (22-23/09/2026)
+
+La barra de encima del ranking mezclaba en una fila la búsqueda, un desplegable «Ciudad, nota y
+pretensión», las columnas y «Ver a todos», y para avanzar o descartar había que bajar hasta el
+final de la tabla. Ahora los filtros van en un botón «Filtros», se puede filtrar por fecha de
+postulación y por la calificación con IA, y avanzar y descartar están en una barra pegada abajo.
+Cómo funciona hoy está en [PANEL.md](PANEL.md), «Filtrar la tanda y actuar sobre muchas a la
+vez»; aquí va el porqué.
+
+- **El backend solo añade la fecha.** Cada fila del ranking trae `postuladoEn`, sin migración:
+  la fecha ya estaba guardada. Filtrar sigue siendo cosa del navegador.
+- **Los filtros suben por encima de las pestañas**, para conservarse al cambiar de etapa, y se
+  reinician al cambiar de vacante.
+- **En escritorio el panel no es un modal**: lo que se viene a ver al filtrar es cómo cambia la
+  tabla, y un modal la taparía. En el teléfono sí lo es, porque no hay sitio para flotar.
+- **La barra de abajo es `sticky`, no `fixed`**: no tapa la última fila ni el pie, y no hay que
+  medir nada al hacer scroll.
+- **Lo marcado que un filtro esconde no cuenta.** Es el error más caro: una carta de rechazo a
+  quien no se ve.
+
+### Decisiones que aprobó el usuario
+
+- La búsqueda por nombre no cuenta en la insignia ni lleva etiqueta, pero «Borrar filtros» la
+  limpia.
+- Un rango de fechas al revés no cuenta como filtro puesto.
+- Si un filtro esconde a todas las marcadas, la barra no sale, como dice la spec al pie de la
+  letra.
+- En «Pretensión», si la vacante no publica su remuneración, la ayuda dice «La vacante no publicó
+  pretensión».
+
+### Lo que encontró el QA, y se corrigió
+
+- **«Más» salía en escritorio**, donde no abre nada: la regla que lo escondía perdía por
+  especificidad frente a la pieza compartida del botón. La trampa quedó en
+  [REGLAS-DEL-CODIGO.md](REGLAS-DEL-CODIGO.md).
+- **Un clic fuera sobre un texto de la tabla**, o sobre el fondo apagado del teléfono, dejaba el
+  foco en el contenedor del ranking en vez de devolverlo a «Filtros».
+- **Cerrar el panel al bajar el dedo robaba el clic**: la página se recogía y la casilla no se
+  marcaba, o el primer «Descargar Excel» no bajaba nada. Ahora cierra al soltar, y devolver el
+  foco no mueve la página.
+- **Con el panel abierto, Tab llevaba a controles tapados.** Ahora salir con Tab lo cierra.
+- **En ventanas estrechas el panel se salía por la derecha** y creaba scroll horizontal. Ahora se
+  corre a la izquierda.
+- **«Borrar filtros» soltaba el foco a la nada** y quien iba con teclado salía del panel. Ahora
+  va a «Filtros», y el del pie se apaga con `aria-disabled` sin soltar el foco.
+
+QA vio además un fallo que viene de antes y no se tocó: la ficha desplegada le dice a Dirección
+que su rol no puede ver la pretensión cuando es la vacante la que no publica sueldo. Está en
+[PENDIENTES.md](PENDIENTES.md).
+
+### Cómo se comprueba
+
+1043 pruebas del frontend en verde, y en el backend 1077 unitarias y 202 de integración. E2E
+nuevos: `33-filtros-y-seleccion-en-lote` (no escribe), `34-filtros-y-seleccion-qa` y
+`35-filtros-y-seleccion-qa-movil`, que siembran su propio terreno de 32 postulaciones en 9 días
+y lo retiran. La siembra de siempre trae cuatro postulaciones del mismo día y ninguna
+calificación con IA, y con eso la fecha y la IA no se podían probar. Quedan en
+[PENDIENTES.md](PENDIENTES.md): 16 E2E que ya fallaban antes (`04-filtros`, `05-excel`,
+`07-movil`, `08-teclado`), los números 33 a 35 repetidos con los de la contraseña, dos
+comentarios desactualizados y un tamaño fuera de escala que viene de main.
+
+---
+
+## «¿Olvidaste tu contraseña?» deja de ser un cartel (22-23/09/2026)
+
+Hasta ahora `/clave` solo explicaba que se escribiera a talento, y el panel no ofrecía nada: el
+backend no tenía la ruta. Ahora, en el portal y en el panel, se pide un enlace con el correo y
+con él se elige una contraseña nueva. Cómo funciona hoy está en
+[02-QUE-VE-EL-CANDIDATO.md](02-QUE-VE-EL-CANDIDATO.md), «Si olvidó la contraseña», y en
+[PANEL.md](PANEL.md), «¿Olvidaste tu contraseña?»; aquí va el porqué.
+
+- **Un solo juego de pantallas para las dos puertas** (`src/ui/recuperacion/`). Cada puerta
+  pone su llamada, su mínimo (8 o 12) y su pie; el mensaje neutro, la cuenta atrás y el
+  tratamiento del token son el mismo código, así que no pueden divergir.
+- **La línea de talento se queda en el portal.** A una cuenta de carga masiva no le llega
+  ningún enlace, y el mensaje de enviado no puede decírselo sin revelar qué correos tienen
+  cuenta.
+- **El aviso de éxito viaja en el estado de la navegación, no en la dirección**: un
+  `?clave=ok` se quedaría en marcadores diciendo algo que ya no es verdad.
+
+### Decisiones que aprobó el usuario
+
+- **Sin señuelo de tiempo.** La spec pedía imitar el del login para que «no existe» no respondiera
+  más rápido. En su lugar, el backend responde 202 al instante y hace el trabajo después: los
+  tiempos son iguales exista o no la cuenta.
+- **Topes de 3 enlaces por cuenta y hora y 30 solicitudes por IP y hora.** El de la IP se cuenta
+  en la memoria del servidor y se reinicia cuando arranca.
+- **«Vale por 60 minutos» va fijo en pantalla.** Si se cambia `minutos_vida_recuperacion` en el
+  backend, hay que cambiar el texto a mano.
+- **Recargar `/restablecer` después de que el token salió de la barra muestra «El enlace está
+  incompleto».** El enlace del correo sigue sirviendo si se vuelve a abrir.
+- **Tope de 72 bytes en la contraseña nueva**, el límite de BCrypt, con el mensaje «La contraseña
+  es demasiado larga. Usa como máximo 72 caracteres; las letras con tilde, la ñ y los emojis
+  cuentan por más de uno.». Crear cuenta y aceptar la invitación siguen sin él: está en
+  [PENDIENTES.md](PENDIENTES.md).
+
+### Cómo se comprueba
+
+951 pruebas del frontend en verde. E2E nuevos: `33-recuperar-contrasena` (los dos recorridos
+completos), `34-recuperar-contrasena-movil` (no escribe), `35-recuperar-contrasena-bordes` y
+`36-recuperar-contrasena-regresiones`. Los que escriben leen el enlace de `correo_enviado`,
+porque el backend local no envía correo. **Falta la prueba con SMTP real**: pedir el enlace al
+correo propio, ver que llega, que abre la pantalla correcta y que después se entra con la nueva.
 ## La portada entra por bloques, y el fundido al navegar se va (22/09/2026)
 
 El cliente preguntó por «esa animación al cambiar de pestaña» y pidió replicar la de

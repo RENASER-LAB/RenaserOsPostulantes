@@ -138,8 +138,28 @@ export const pestana = (page: Page, nombre: string): Locator =>
 export const corte = (page: Page, nombre: string): Locator =>
   page.getByRole('group', { name: 'Qué filas se ven' }).getByRole('button', { name: new RegExp(`^${nombre}`) })
 
-export const abrirMasFiltros = async (page: Page) => {
-  const resumen = page.getByText('Ciudad, nota y pretensión')
-  const abierto = await page.locator('details').first().evaluate((d) => (d as HTMLDetailsElement).open)
-  if (!abierto) await resumen.click()
+/** El botón «Filtros»: su nombre accesible lleva detrás cuántos hay puestos. */
+export const botonFiltros = (page: Page): Locator => page.getByRole('button', { name: /^Filtros/ })
+
+/** El panel de «Filtros» abierto. */
+export const panelFiltros = (page: Page): Locator => page.getByRole('dialog', { name: 'Filtros' })
+
+/**
+ * Abre el panel de «Filtros» si no lo está.
+ *
+ * ⚠️ **En escritorio flota encima de la tabla.** Para pulsar algo que quede
+ * debajo —una cabecera, una fila— hay que cerrarlo antes con `cerrarFiltros`:
+ * Playwright no pulsa lo que está tapado.
+ */
+export const abrirFiltros = async (page: Page) => {
+  const boton = botonFiltros(page)
+  if ((await boton.getAttribute('aria-expanded')) !== 'true') await boton.click()
+  await expect(panelFiltros(page)).toBeVisible()
+}
+
+/** Cierra el panel con Escape, que devuelve el foco al botón. */
+export const cerrarFiltros = async (page: Page) => {
+  if ((await botonFiltros(page).getAttribute('aria-expanded')) !== 'true') return
+  await page.keyboard.press('Escape')
+  await expect(panelFiltros(page)).toHaveCount(0)
 }

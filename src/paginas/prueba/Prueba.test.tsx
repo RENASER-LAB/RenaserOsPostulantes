@@ -17,7 +17,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
-import type { MiPrueba } from '@/api/tipos'
+import { ErrorApi } from '@/api/cliente'
+import { verPostulacion } from '@/api/portal'
+import { entregarPrueba, iniciarPrueba, responderPrueba, subirEnlace, verPrueba } from '@/api/prueba'
+import type { MiPostulacionDetalle, MiPrueba } from '@/api/tipos'
 import { ProveedorAvisos } from '@/ui/Avisos'
 import { Prueba } from './Prueba'
 
@@ -53,6 +56,13 @@ vi.mock('@/api/prueba', () => ({
   subirEnlace: vi.fn(async () => undefined),
   entregarPrueba: vi.fn(async () => ({ estado: 'ENTREGADA', completa: true, faltantes: 0 })),
 }))
+
+// Su proceso: solo se le pregunta cuando la prueba contesta 404.
+vi.mock('@/api/portal', () => ({ verPostulacion: vi.fn() }))
+
+/** El 404 con el que el backend contesta a una postulación que ya no existe. */
+const yaNoExiste = () =>
+  new ErrorApi(404, "Postulación not found with código: 'x1'", { status: 404 })
 
 // ---------- Montaje ----------
 
@@ -214,5 +224,122 @@ describe('entregar con preguntas en blanco', () => {
 
     const dialogo = await screen.findByRole('dialog')
     expect(dialogo.textContent).not.toMatch(/sin responder/)
+  })
+})
+
+describe('cuando la empresa retiró la vacante', () => {
+  it('el enlace viejo dice que la vacante ya no está, sin reloj ni botón de entregar', async () => {
+    vi.mocked(verPrueba).mockRejectedValueOnce(yaNoExiste())
+    vi.mocked(verPostulacion).mockRejectedValueOnce(yaNoExiste())
+    montar()
+
+    expect(
+      await screen.findByRole('heading', { name: /Esta vacante ya no está disponible/ }),
+    ).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Ver mis procesos' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Entregar prueba' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Intentar de nuevo' })).toBeNull()
+    // El texto crudo del servidor no se le enseña.
+    expect(screen.queryByText(/not found/)).toBeNull()
+  })
+
+  it('si su proceso sigue ahí, un 404 de la prueba no se hace pasar por una vacante retirada', async () => {
+    vi.mocked(verPrueba).mockRejectedValueOnce(
+      new ErrorApi(404, 'Todavía no tienes una prueba abierta', { status: 404 }),
+    )
+    vi.mocked(verPostulacion).mockResolvedValueOnce({} as MiPostulacionDetalle)
+    montar()
+
+    expect(await screen.findByRole('heading', { name: 'No pudimos abrir la prueba.' })).toBeTruthy()
+    expect(screen.queryByRole('heading', { name: /Esta vacante ya no está disponible/ })).toBeNull()
+  })
+
+  it('con la prueba abierta desde antes, un 404 al entregar lo dice fuera del diálogo', async () => {
+    respuesta = pruebaEnCurso(enUnaHora(), 'CUALQUIERA')
+    montar()
+    fireEvent.click(await screen.findByRole('button', { name: 'Entregar prueba' }))
+    await screen.findByRole('dialog')
+
+    vi.mocked(entregarPrueba).mockRejectedValueOnce(yaNoExiste())
+    vi.mocked(verPrueba).mockRejectedValueOnce(yaNoExiste())
+    vi.mocked(verPostulacion).mockRejectedValueOnce(yaNoExiste())
+    fireEvent.click(screen.getByRole('button', { name: 'Entregar' }))
+
+    expect(
+      await screen.findByRole('heading', { name: /Esta vacante ya no está disponible/ }),
+    ).toBeTruthy()
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect(screen.queryByText(/not found/)).toBeNull()
+  })
+
+  /** La siguiente lectura de la prueba y la de su proceso contestan que ya no existe. */
+  function laRetiran() {
+    vi.mocked(verPrueba).mockRejectedValueOnce(yaNoExiste())
+    vi.mocked(verPostulacion).mockRejectedValueOnce(yaNoExiste())
+  }
+
+  const elAviso = () =>
+    screen.findByRole('heading', { name: /Esta vacante ya no está disponible/ }, { timeout: 4000 })
+
+  it('abierta sin empezar, «Sí, empezar» con 404 dice que la vacante ya no está', async () => {
+    respuesta = { ...pruebaEnCurso(enUnaHora(), 'CUALQUIERA'), estadoIntento: 'PENDIENTE', iniciadoEn: null }
+    montar()
+    fireEvent.click(await screen.findByRole('button', { name: 'Empezar prueba' }))
+    await screen.findByRole('dialog')
+
+    vi.mocked(iniciarPrueba).mockRejectedValueOnce(yaNoExiste())
+    laRetiran()
+    fireEvent.click(screen.getByRole('button', { name: 'Sí, empezar' }))
+
+    expect(await elAviso()).toBeTruthy()
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(screen.queryByText(/not found/)).toBeNull()
+  })
+
+  it('en curso, una respuesta con 404 dice que la vacante ya no está, sin esperar a la recarga', async () => {
+    respuesta = pruebaEnCurso(enUnaHora(), 'CUALQUIERA')
+    montar()
+    const recuadro = await screen.findByLabelText('Por qué lo hiciste así')
+
+    vi.mocked(responderPrueba).mockRejectedValueOnce(yaNoExiste())
+    laRetiran()
+    fireEvent.change(recuadro, { target: { value: 'Porque sí' } })
+
+    expect(await elAviso()).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Entregar prueba' })).toBeNull()
+  })
+
+  it('en curso, un enlace con 404 dice que la vacante ya no está, no el texto del servidor', async () => {
+    respuesta = pruebaEnCurso(enUnaHora(), 'ENLACE')
+    montar()
+    fireEvent.change(await screen.findByLabelText('Enlace'), {
+      target: { value: 'https://drive.example/informe' },
+    })
+
+    vi.mocked(subirEnlace).mockRejectedValueOnce(yaNoExiste())
+    laRetiran()
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar enlace' }))
+
+    expect(await elAviso()).toBeTruthy()
+    expect(screen.queryByText(/not found/)).toBeNull()
+  })
+
+  it('si la prueba sigue ahí, un 404 al entregar se dice dentro del diálogo', async () => {
+    respuesta = pruebaEnCurso(enUnaHora(), 'CUALQUIERA')
+    montar()
+    fireEvent.click(await screen.findByRole('button', { name: 'Entregar prueba' }))
+    await screen.findByRole('dialog')
+
+    vi.mocked(entregarPrueba).mockRejectedValueOnce(
+      new ErrorApi(404, 'Intento not found with id: 1', { status: 404 }),
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Entregar' }))
+
+    // Se volvió a leer la prueba, contestó, y el 404 era otra cosa: se dice, y el diálogo sigue.
+    await waitFor(() =>
+      expect(screen.getByRole('dialog').textContent).toMatch(/Intento not found/),
+    )
+    expect(screen.queryByRole('heading', { name: /Esta vacante ya no está disponible/ })).toBeNull()
+    expect(verPostulacion).not.toHaveBeenCalled()
   })
 })

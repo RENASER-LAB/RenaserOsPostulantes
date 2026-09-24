@@ -33,6 +33,17 @@ portal de en qué casilla lo pusieron. **En el panel sí se pinta**, en cada fil
 quien mira es el dueño de esa clasificación. La regla se lee sobre la sesión del candidato, y lo
 que no puede pasar es que el dato cruce de una cara a la otra.
 
+**Una pantalla del candidato que se queda abierta pasa sus fallos de escritura por
+`usePantallaAbierta`** (`src/paginas/procesos/useVacanteRetirada.ts`, 22/09/2026). Si la empresa
+elimina la vacante con la pantalla abierta, quien se entera es el botón: empezar, responder, subir
+o entregar reciben un 404. El `onError` de cada escritura llama a `siSeCerroLaPuerta`, que vuelve
+a pedir la pantalla —la simulación ya la pedía de nuevo al fallar «Confirmar asistencia»—, y el
+error se enseña solo si `seEnsena` lo deja: mientras se comprueba se calla, y si la vacante se
+eliminó la pantalla entera pasa a `VacanteRetirada`. Hoy lo usan la
+prueba, la evaluación, el cuestionario técnico y la simulación; la evaluación se tragaba ese 404 y
+el cuestionario enseñaba el texto crudo del servidor, porque cada una lo resolvía a su manera.
+Una pantalla nueva de ese tipo entra por aquí.
+
 **Las ocho formas de respuesta del banco v3.** `PC`, abierta/`V`, `EF-4`, `SJT-R`, `SEC`,
 `INV`, `DE` y `CD`. La forma exacta de lo que se envía la valida el backend y responde 400 si
 no cuadra.
@@ -77,6 +88,14 @@ llega.
 estado, después el cuerpo.
 
 **`<button>` sin `type`.** Por defecto es de envío. Dentro de un formulario, lo envía.
+
+**Retocar una pieza compartida desde la misma clase no hace nada.** Si una clase trae un botón
+de `piezas.module.css` con `composes`, una regla sobre esa misma clase que cambie `display`,
+`padding` o `font-size` pierde: en la hoja construida la pieza se escribe **después**, y a igual
+especificidad manda la última. Así el botón «Más» del ranking se veía en escritorio, donde no
+abre nada. La salida es escribir el retoque con el contenedor delante (`.filaFiltros .mas`), que
+pesa más, no `!important`. ⚠️ En el código hay hoy unas 23 reglas así que el navegador ignora;
+no se han tocado.
 
 ---
 

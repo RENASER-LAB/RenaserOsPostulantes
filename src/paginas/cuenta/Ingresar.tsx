@@ -9,6 +9,9 @@
  * token igual que antes, y quien llega por ese enlace entra sin pasar por aquí.
  * Lo que ya no ocurre es que alguien que llegó por esa vía y aterrizó en esta
  * pantalla se entere de dónde buscar su correo.
+ *
+ * Al volver de `/restablecer` con la contraseña cambiada, el aviso va encima
+ * del formulario (`AvisoClaveCambiada`) y el foco se posa en él.
  */
 
 import { useState, type FormEvent } from 'react'
@@ -18,6 +21,7 @@ import { useSesion } from '@/app/Sesion'
 import { rutas } from '@/rutas'
 import { Campo } from '@/ui/campos/Campo'
 import { IconoAviso } from '@/ui/Iconos'
+import { AvisoClaveCambiada } from '@/ui/recuperacion/AvisoClaveCambiada'
 import estilos from './Cuenta.module.css'
 
 const Datos = z.object({
@@ -86,6 +90,16 @@ export function Ingresar() {
       <div className={estilos.tarjetaEntrar}>
         <h1 className={estilos.titularEntrar}>Entra a tu proceso.</h1>
         <p className={estilos.bajadaEntrar}>Sigue donde lo dejaste.</p>
+
+        {/*
+          «✓ Contraseña cambiada exitosamente», al volver de `/restablecer`.
+
+          Va DENTRO de la tarjeta y no encima de ella, que es donde nacio: aqui
+          la tarjeta es la pantalla entera, y un aviso flotando fuera se lee como
+          de otro sitio. Se protege solo —sin el estado de navegacion devuelve
+          `null`—, asi que no hace falta envolverlo.
+        */}
+        <AvisoClaveCambiada />
 
         {/*
           El error va ARRIBA del formulario y no pegado al boton.
