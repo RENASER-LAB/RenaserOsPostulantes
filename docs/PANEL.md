@@ -58,8 +58,9 @@ de la evaluación quedan «pendiente de calificar», que el panel enseña sin fi
 evaluación entregada de verdad en la base local —sembrada con
 `scripts/sembrar-evaluacion-local.py` del backend— esperando esa clave.
 
-Verificarlo entero: `npx playwright test herramientas/e2e/13-etapas.spec.ts`
-(Chrome visible, solo lee).
+Verificarlo: `npx playwright test herramientas/e2e/13-etapas.spec.ts` (la entrada de desarrollo
+y la ficha que cambia con la pestaña; solo lee) y `18-ranking-contra-api.spec.ts` (las cinco
+pestañas, los cortes y las cifras, contrastados con la API).
 
 ### Descartar a un candidato, desde su ficha (11/09)
 
@@ -148,8 +149,11 @@ Dónde está: `FiltrosDelRanking.tsx` (el botón, el panel y las etiquetas),
 `BarraDeLaSeleccion.tsx` (la barra de abajo) y las reglas de filtrado en `ranking.ts`, todo en
 `src/panel/vacantes/`. La fecha llega en `postuladoEn` de cada fila, nuevo en el backend.
 
-Comprobarlo: `npx playwright test herramientas/e2e/33-filtros-y-seleccion-en-lote.spec.ts`, que
-no escribe (intercepta «Avanzar» y cancela el descarte). El 34 y el 35
+Comprobarlo: `npx playwright test herramientas/e2e/34-filtros-y-seleccion-qa.spec.ts` es la
+suite entera (fecha, IA, selección en lote, foco, Excel, permisos, avance real); el 33 quedó
+reducido a dos pruebas que no escriben —el panel flota y los filtros se conservan al cambiar de
+etapa— y las reglas de filtrado se prueban sin navegador en `ranking.test.ts` y
+`ranking.escenario-e2e.test.ts` (ver [SUITE-E2E-CLASIFICACION-2026-09-25.md](SUITE-E2E-CLASIFICACION-2026-09-25.md)). El 34 y el 35
 (`34-filtros-y-seleccion-qa`, `35-filtros-y-seleccion-qa-movil`) ⚠️ **escriben**: siembran su
 propio terreno —32 postulaciones en 9 días, con la IA en sus cuatro estados— y lo retiran al
 terminar. Lo que el 34 hace avanzar no se puede borrar, así que su vacante queda marcada

@@ -48,8 +48,10 @@ import {
  *   2. **Dos PUBLICADA del mismo nivel conviven** y solo la de `publicadaEn`
  *      más reciente se le fija a quien empieza (`laPublicadaDelNivel`, con su
  *      `order by publicadaEn desc limit 1`). La base sembrada NO trae ese caso
- *      —una publicada por nivel— así que esa mitad queda en `skip`, en voz
- *      alta, en vez de pasar en verde callando.
+ *      —una publicada por nivel— y las dos pruebas que lo miraban se saltaban
+ *      siempre: se retiraron y quedan anotadas como recorrido sin cobertura en
+ *      `docs/SUITE-E2E-CLASIFICACION-2026-09-25.md` (la pantalla lo fija sin
+ *      navegador en `BancoDePreguntas.test.tsx`).
  *   3. **Los cinco 409 están escritos en español y son específicos**, y su
  *      `detail` llega entero a la pantalla. Eso último es lo que ninguna
  *      prueba de unidad puede fijar: las de unidad construyen el `ErrorApi`
@@ -59,20 +61,6 @@ import {
 
 let versiones: VersionDelBanco[] = []
 const unaEn = (estado: VersionDelBanco['estado']) => versiones.find((v) => v.estado === estado)
-
-/** Los grupos (tipo de banco, nivel) con más de una PUBLICADA. */
-function nivelesConVariasPublicadas(): VersionDelBanco[][] {
-  const porNivel = new Map<string, VersionDelBanco[]>()
-  for (const v of versiones.filter((v) => v.estado === 'PUBLICADA')) {
-    const clave = `${v.tipoBanco}|${v.nivelPuestoCodigo ?? ''}`
-    porNivel.set(clave, [...(porNivel.get(clave) ?? []), v])
-  }
-  return [...porNivel.values()].filter((g) => g.length > 1)
-}
-
-const SIN_DOS_PUBLICADAS =
-  'hace falta un nivel con DOS publicadas y la base local no tiene ninguno: ' +
-  'esa mitad de la pantalla —el aviso y las dos etiquetas— no se ejercita'
 
 /** El borrador propio que ejercita las guardas y la fila de un BORRADOR. */
 const ETIQUETA_PROPIA = 'e2e-banco · versión de usar y tirar'
@@ -117,19 +105,6 @@ test.describe('El banco · el contrato del backend', () => {
     for (const v of versiones) {
       expect(['BORRADOR', 'PUBLICADA', 'ARCHIVADA'], `estado ${v.estado} en la versión ${v.id}`).toContain(v.estado)
     }
-  })
-
-  test('dos PUBLICADA del mismo nivel conviven y todas traen publicadaEn, que es el desempate', async () => {
-    const conVarias = nivelesConVariasPublicadas()
-    test.skip(conVarias.length === 0, SIN_DOS_PUBLICADAS)
-
-    expect(conVarias.length).toBeGreaterThan(0)
-    const [grupo] = conVarias
-    expect(grupo!.every((v) => v.publicadaEn), JSON.stringify(grupo!.map((v) => v.publicadaEn))).toBe(true)
-    const masReciente = [...grupo!].sort(
-      (a, b) => Date.parse(b.publicadaEn!) - Date.parse(a.publicadaEn!),
-    )[0]!
-    console.log(`[BANCO] rige «${masReciente.etiqueta}» (versión ${masReciente.id})`)
   })
 
   test('GET /versiones/{id}/preguntas trae codigo, tipo y esEliminatorio, y NUNCA logicaInterna', async () => {
@@ -254,16 +229,6 @@ test.describe('El banco · lo que el panel enseña y deja hacer', () => {
     const titulos = await seccion.locator('h3').allInnerTexts()
     expect(titulos.some((t) => /^Nivel /.test(t)), JSON.stringify(titulos)).toBe(true)
     expect(titulos.some((t) => /^Nivel [A-Z_]+$/.test(t)), JSON.stringify(titulos)).toBe(false)
-  })
-
-  test('el nivel con dos publicadas lo avisa arriba del grupo y dice cuál NO se asigna', async ({ page }) => {
-    test.skip(nivelesConVariasPublicadas().length === 0, SIN_DOS_PUBLICADAS)
-    const seccion = await abrirElBanco(page)
-
-    const cuantasRigen = await seccion.getByText('Se asigna a quien empiece ahora').count()
-    const cuantasNo = await seccion.getByText('Publicada, pero no se asigna a nadie').count()
-    expect(cuantasNo, `${cuantasRigen} rigen, ${cuantasNo} no`).toBeGreaterThan(0)
-    await expect(seccion.getByText(/Hay \d+ versiones publicadas de este banco y solo una se asigna/)).toBeVisible()
   })
 
   test('un borrador ofrece Publicar y Descartar, no Renombrar, y pulsar Publicar pregunta antes en la propia fila', async ({ page }) => {

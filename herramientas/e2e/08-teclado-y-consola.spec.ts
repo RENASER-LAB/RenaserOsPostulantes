@@ -1,5 +1,15 @@
 import { expect, test } from '@playwright/test'
-import { abrirFiltros, botonFiltros, cabecera, cerrarFiltros, corte, entrarAlPanel, filasDelRanking, irAVacante, nombresVisibles, panelFiltros, VACANTES } from './ayuda'
+import { abrirFiltros, botonFiltros, cabecera, cerrarFiltros, corte, entrarAlPanel, filasDelRanking, irAVacante, panelFiltros, VACANTES } from './ayuda'
+import { interceptarEscenario } from './escenario-desarrollador-web'
+
+/**
+ * El panel de filtros y las cabeceras, sin ratón.
+ *
+ * ⚠️ **El escenario viene interceptado** (`escenario-desarrollador-web.ts`): así
+ * la columna de Pretensión y sus dos campos existen seguro en el recorrido con
+ * Tab. Ordenar entero con el teclado —Enter, Espacio y el foco que no se
+ * pierde— vive en `03-orden`.
+ */
 
 /** Cómo se llama lo que tiene el foco ahora mismo. */
 const enfocado = (page: import('@playwright/test').Page) =>
@@ -19,6 +29,7 @@ test.describe('Teclado sin ratón', () => {
   */
   test.beforeEach(async ({ page }) => {
     await entrarAlPanel(page)
+    await interceptarEscenario(page)
     await irAVacante(page, VACANTES.LLENA)
     await corte(page, 'Toda la tanda').click()
   })
@@ -100,18 +111,6 @@ test.describe('Teclado sin ratón', () => {
     await page.getByRole('button', { name: 'Borrar filtros' }).click()
     await expect(filasDelRanking(page)).toHaveCount(4)
     await expect(botonFiltros(page)).toBeFocused()
-  })
-
-  test('se puede ordenar entero sin tocar el ratón', async ({ page }) => {
-    await cabecera(page, 'Pretensión').getByRole('button').focus()
-    await page.keyboard.press('Enter')
-    await expect(cabecera(page, 'Pretensión')).toHaveAttribute('aria-sort', 'ascending')
-    expect((await nombresVisibles(page)).at(-1)).toBe('Sebastián Cárdenas Rojo')
-    await page.keyboard.press('Enter')
-    await expect(cabecera(page, 'Pretensión')).toHaveAttribute('aria-sort', 'descending')
-    // El vacío sigue el último, y el foco no se perdió al reordenar.
-    expect((await nombresVisibles(page)).at(-1)).toBe('Sebastián Cárdenas Rojo')
-    await expect(cabecera(page, 'Pretensión').getByRole('button')).toBeFocused()
   })
 })
 

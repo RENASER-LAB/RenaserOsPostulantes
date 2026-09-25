@@ -135,15 +135,8 @@ test.describe('Regresión · el perfil guarda tu foto, tu portada y tu currícul
     await expect.poll(async () => (await pedirPerfil()).tieneFoto, { timeout: 15_000 }).toBe(false)
   })
 
-  test('un PDF no vale como foto, y lo dice sin jerga', async ({ page }) => {
-    await page.getByRole('button', { name: 'Añadir una foto de perfil' }).click()
-    await page.setInputFiles('input[aria-label="Tu foto de perfil"]', UN_CV('esto no es una foto'))
-
-    await expect(page.getByText(/no es una imagen|JPG, PNG o WebP/i).first()).toBeVisible({
-      timeout: 15_000,
-    })
-    expect((await pedirPerfil()).tieneFoto).toBe(false)
-  })
+  // Que un PDF no valga como foto es una regla de `archivos.ts`, fijada sin
+  // navegador en `archivos.test.ts` («un PDF no vale como foto…»).
 
   /*
    * ⚠️ **El nombre que se ve y el código que se guarda son cosas distintas, y

@@ -11,11 +11,19 @@ import {
   panelFiltros,
   VACANTES,
 } from './ayuda'
+import { interceptarEscenario } from './escenario-desarrollador-web'
 
-/** Todo lo nuevo, en 375 px. Este archivo lo corre el proyecto `movil`. */
+/**
+ * Todo lo nuevo, en 375 px. Este archivo lo corre el proyecto `movil`.
+ *
+ * ⚠️ **El escenario viene interceptado** (`escenario-desarrollador-web.ts`):
+ * las pretensiones por las que se ordena son las de ahí, puestas encima del
+ * ranking real. El alta con ciudad en el teléfono vive en `24-ciudad-obligatoria`.
+ */
 test.describe('Móvil 375px', () => {
   test.beforeEach(async ({ page }) => {
     await entrarAlPanel(page)
+    await interceptarEscenario(page)
   })
 
   test('la tabla no desborda el <body>: el scroll va dentro de su envoltura', async ({ page }) => {
@@ -172,17 +180,5 @@ test.describe('Móvil 375px', () => {
       await boton.click()
       await expect(boton).toHaveAttribute('aria-pressed', 'true')
     }
-  })
-
-  test('el registro con su desplegable de ciudad se rellena en el teléfono', async ({ page }) => {
-    await page.goto('/registro')
-    const select = page.getByLabel('Ciudad')
-    await expect(select).toBeVisible()
-    await select.selectOption('1501')
-    await expect(select).toHaveValue('1501')
-    const desborda = await page.evaluate(
-      () => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
-    )
-    expect(desborda).toBe(false)
   })
 })

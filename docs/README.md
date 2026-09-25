@@ -27,6 +27,7 @@ de hoy.
 | [05-AUDITORIA.md](05-AUDITORIA.md) | 24/08 · `impeccable audit` sobre el portal; el método de medición se repite |
 | [07-BRIEF-MI-PERFIL.md](07-BRIEF-MI-PERFIL.md) | 05/09 · el inventario de «Mi perfil» ANTES del rediseño, con las seis decisiones |
 | [superpowers/specs/](superpowers/specs/) | 28/08 · la versión móvil para Play Store |
+| [SUITE-E2E-CLASIFICACION-2026-09-25.md](SUITE-E2E-CLASIFICACION-2026-09-25.md) | 25/09 · las 329 pruebas e2e clasificadas una a una (Recorrido, Baja a unitario, Sobra), qué se borró y por qué, los `serial` que quedan, las que dependían del sembrador con el hueco para los tiempos, las de IA real y cómo correrlas, y los recorridos sin cobertura |
 
 ## Dónde busca cada tema en las bitácoras
 
@@ -42,4 +43,5 @@ Las secciones llevan título y fecha; busca por el título.
 | Las sesiones de simulación, sus inscritos y los permisos por rol | [08](BITACORA-2026-08.md) | 27/08 |
 | Multiempresa y la entrada de las empresas | [08](BITACORA-2026-08.md) | 27/08 tarde, 26/08 |
 | Los e2e de Playwright y los guiones de captura | [09](BITACORA-2026-09.md) | 01/09 |
+| Cómo quedó la suite e2e tras el recorte, y cómo se corre cada parte | [SUITE-E2E-CLASIFICACION-2026-09-25.md](SUITE-E2E-CLASIFICACION-2026-09-25.md) | — |
 | Corregir una vacante con el lápiz, y el sueldo sin correo | [09](BITACORA-2026-09.md) | 19-20/09 |

@@ -63,7 +63,6 @@ const campo = (page: Page, etiqueta: string) => page.getByLabel(etiqueta)
  * los cambios de página; buscar «el status» a secas caza los dos.
  */
 const confirmacion = (page: Page) => page.getByRole('status').filter({ hasText: /\S/ })
-const error = (page: Page) => page.getByRole('alert').filter({ hasText: /\S/ })
 
 /** Entra al panel con una cuenta concreta y no con la de todos los permisos. */
 async function entrarAlPanelComo(page: Page, renaserOsId: string) {
@@ -300,30 +299,10 @@ test.describe('Editar una vacante publicada y avisar a quien sigue en carrera', 
     expect(idsDeAvisos()).toHaveLength(antes)
   })
 
-  test('sin decir por qué cambia el sueldo no se envía nada, y lo escrito se conserva', async ({
-    page,
-  }) => {
-    await abrirElPanel(page)
-    await elLapiz(page, tituloActual).click()
-
-    const peticiones: string[] = []
-    page.on('request', (r) => {
-      if (r.method() === 'PUT' && r.url().includes('/panel/vacantes/')) peticiones.push(r.url())
-    })
-
-    await campo(page, 'Modalidad (Presencial, Híbrido…)').fill('Híbrido, 3 días')
-    await campo(page, 'Mínimo mensual').fill('3600')
-    await page.getByRole('button', { name: 'Guardar cambios' }).click()
-
-    await expect(error(page)).toHaveText(
-      'Escribe por qué cambia el sueldo: queda en la auditoría de la vacante.',
-    )
-    expect(peticiones, 'ni una petición sale con el formulario incompleto').toHaveLength(0)
-    // Lo escrito sigue donde estaba: nadie vuelve a teclear tres párrafos por un campo.
-    await expect(campo(page, 'Modalidad (Presencial, Híbrido…)')).toHaveValue('Híbrido, 3 días')
-    await expect(campo(page, 'Mínimo mensual')).toHaveValue('3600')
-    expect(Number(vacanteEnBase(escenario.publicada).remuneracion_min)).toBe(3500)
-  })
+  // Que sin decir por qué cambia el sueldo no salga ni una petición, y que lo
+  // escrito se conserve, es del formulario y se fija sin navegador en
+  // `EditarVacante.test.tsx` («cambiar el sueldo de una publicada no se manda sin
+  // decir por qué»).
 
   // ---------- 5. Permisos: lo que se esconde y lo que se contesta ----------
 

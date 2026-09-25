@@ -135,6 +135,20 @@ describe('elegir la contraseña nueva en el panel', () => {
     expect(restablecer).not.toHaveBeenCalled()
   })
 
+  /*
+    Bajó de `35-recuperar-contrasena-bordes.spec.ts` («enlace sin token: lo dice
+    y lleva a pedir otro en su propia puerta»): la mitad del panel.
+  */
+  it('sin token en la dirección dice que el enlace está incompleto y lleva a pedir otro en el panel', () => {
+    montar('/admin/restablecer?token=')
+    expect(screen.getByRole('heading', { name: 'El enlace está incompleto.' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Pedir un enlace nuevo' }).getAttribute('href')).toBe(
+      '/admin/clave',
+    )
+    expect(screen.queryByLabelText(/^Contraseña nueva/)).toBeNull()
+    expect(restablecer).not.toHaveBeenCalled()
+  })
+
   it('un enlace que no sirve ofrece pedir otro en el panel', async () => {
     restablecer.mockRejectedValue(new ErrorApi(401, 'Este enlace ya no sirve. Pide uno nuevo.'))
     montar(`/admin/restablecer?token=${TOKEN}`)

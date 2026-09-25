@@ -1,5 +1,6 @@
-import { expect, test, type Page } from '@playwright/test'
+import { expect, type Page } from '@playwright/test'
 import { API, corte, entrarAlPanel, idDeVacante, nombresVisibles, pestana, tokenDelPanel, VACANTES } from './ayuda'
+import { test } from './ayuda-candidato'
 
 /**
  * El ranking, CONTRASTADO con lo que dice la API.
@@ -26,6 +27,11 @@ import { API, corte, entrarAlPanel, idDeVacante, nombresVisibles, pestana, token
  *
  * Se mira la vacante LLENA, que reparte su gente entre tres etapas y tiene una
  * postulación cerrada: es la que ejercita las dos mitades.
+ *
+ * Las pruebas no dependen unas de otras —cada una abre la vacante por su
+ * cuenta y `contexto` se llena una vez en `beforeAll`—, así que no van en
+ * serie: un fallo en una no deja sin correr a las demás. Los errores de página
+ * los vigila el `test` de `ayuda-candidato` en cada prueba.
  */
 
 /**
@@ -96,20 +102,13 @@ const contexto = {
   vacanteId: 0,
   /** La tanda entera según la API sin `?etapa=`. */
   todas: [] as Fila[],
-  erroresDePagina: [] as string[],
 }
 
 test.describe('El ranking contra la API · lo pintado es lo que el backend dijo', () => {
-  test.describe.configure({ mode: 'serial' })
-
   test.beforeAll(async () => {
     contexto.vacanteId = await idDeVacante(VACANTES.LLENA)
     const base = await rankingPorApi(contexto.vacanteId)
     contexto.todas = base.filas ?? []
-  })
-
-  test.beforeEach(async ({ page }) => {
-    page.on('pageerror', (e) => contexto.erroresDePagina.push(String(e).slice(0, 200)))
   })
 
   test('el contrato: la tanda entera, y «?etapa=» cambia la nota y NO la lista', async () => {
@@ -310,11 +309,7 @@ test.describe('El ranking contra la API · lo pintado es lo que el backend dijo'
     expect(motivos.length, 'ninguna fila sin nota explicaba su guion').toBeGreaterThan(0)
 
     // Que el corte sobreviva al cambio de pestaña ya lo cubre `01-regresion-panel`
-    // («cambiar de pestaña con filtros puestos los limpia, pero el corte se
+    // («cambiar de pestaña limpia la búsqueda y el orden, pero el corte se
     // conserva»): no se repite aquí.
-  })
-
-  test('sin errores de página en todo el recorrido', () => {
-    expect(contexto.erroresDePagina, contexto.erroresDePagina.join(' · ')).toEqual([])
   })
 })

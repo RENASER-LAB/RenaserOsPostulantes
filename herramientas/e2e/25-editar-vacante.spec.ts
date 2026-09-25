@@ -14,8 +14,12 @@ import { entrarAlPanel, VACANTES } from './ayuda'
  * Lo que sí se comprueba aquí y no puede comprobar una prueba de servicio: que
  * el lápiz exista con un nombre que distinga una fila de otra, que el modal se
  * abra con los datos de ahora **sin mover la tabla de debajo**, que la solicitud
- * y el puesto no se puedan cambiar, que cerrar con algo escrito pregunte antes
- * de tirarlo, y que no queden dos formularios abiertos a la vez.
+ * y el puesto no se puedan cambiar, que Escape devuelva el foco al lápiz, y que
+ * reenviar lo mismo diga que no había nada que guardar.
+ *
+ * Cancelar con y sin cambios, «Seguir editando» y «Descartar cambios», y que
+ * abrir la edición cierre el alta son comportamientos del componente y se
+ * fijan sin navegador en `EditarVacante.test.tsx`.
  */
 test.describe('Editar una vacante desde la lista', () => {
   test.beforeEach(async ({ page }) => {
@@ -57,36 +61,6 @@ test.describe('Editar una vacante desde la lista', () => {
     await expect(elModal(page).getByRole('button', { name: 'Guardar cambios' })).toBeVisible()
   })
 
-  test('cancelar sin cambios cierra; con cambios pregunta y no los pierde', async ({ page }) => {
-    await elLapiz(page, VACANTES.LLENA).click()
-    await expect(elModal(page)).toBeVisible()
-
-    // Sin tocar nada: cierra y ya.
-    await elModal(page).getByRole('button', { name: 'Cancelar' }).click()
-    await expect(elModal(page)).toHaveCount(0)
-
-    // Con algo escrito: pregunta, y «Seguir editando» devuelve lo escrito.
-    await elLapiz(page, VACANTES.LLENA).click()
-    await page.getByLabel('Horario').fill('Turnos rotativos de prueba')
-    await elModal(page).getByRole('button', { name: 'Cancelar' }).click()
-
-    const pregunta = page.getByRole('alertdialog', { name: 'Cambios sin guardar' })
-    await expect(pregunta).toBeVisible()
-    await pregunta.getByRole('button', { name: 'Seguir editando' }).click()
-    await expect(page.getByLabel('Horario')).toHaveValue('Turnos rotativos de prueba')
-
-    // Y «Descartar cambios» cierra sin guardar: al reabrir está lo de antes.
-    await elModal(page).getByRole('button', { name: 'Cancelar' }).click()
-    await page
-      .getByRole('alertdialog', { name: 'Cambios sin guardar' })
-      .getByRole('button', { name: 'Descartar cambios' })
-      .click()
-    await expect(elModal(page)).toHaveCount(0)
-
-    await elLapiz(page, VACANTES.LLENA).click()
-    await expect(page.getByLabel('Horario')).not.toHaveValue('Turnos rotativos de prueba')
-  })
-
   test('Escape sin cambios cierra el modal y el foco vuelve al lápiz', async ({ page }) => {
     const lapiz = elLapiz(page, VACANTES.LLENA)
     await lapiz.click()
@@ -118,25 +92,5 @@ test.describe('Editar una vacante desde la lista', () => {
       // Y el modal se cierra: no hay nada pendiente que decidir.
       await expect(elModal(page)).toHaveCount(0)
     }
-  })
-
-  test('abrir la edición cierra el alta: un solo formulario a la vez', async ({ page }) => {
-    await page.getByRole('button', { name: 'Crear vacante' }).click()
-    await expect(page.getByRole('heading', { name: /Vacante nueva/ })).toBeVisible()
-
-    await elLapiz(page, VACANTES.LLENA).click()
-
-    await expect(elModal(page)).toBeVisible()
-    await expect(page.getByRole('heading', { name: 'Vacante nueva' })).toHaveCount(0)
-  })
-
-  test('el lápiz se alcanza con el tabulador y se abre con Enter', async ({ page }) => {
-    const lapiz = elLapiz(page, VACANTES.LLENA)
-    await lapiz.focus()
-    await expect(lapiz).toBeFocused()
-
-    await page.keyboard.press('Enter')
-
-    await expect(elModal(page)).toBeVisible()
   })
 })

@@ -3,218 +3,91 @@ import {
   abrirFiltros,
   botonFiltros,
   cabecera,
-  cerrarFiltros,
   corte,
   entrarAlPanel,
   filasDelRanking,
   irAVacante,
   nombresVisibles,
-  pestana, VACANTES } from './ayuda'
+  pestana,
+  VACANTES,
+} from './ayuda'
+import { interceptarEscenario } from './escenario-desarrollador-web'
 
-const chip = (page: Page, ciudad: string) =>
-  page.getByRole('button', { name: new RegExp(`^${ciudad}`) })
+/**
+ * Los filtros del ranking: lo que SOLO se ve en el navegador.
+ *
+ * Qué filas deja cada filtro —el buscador con y sin tildes, varias ciudades a la
+ * vez, los rangos de nota y de pretensión, un rango al revés, cómo se combinan
+ * entre sí y con el corte, que el filtro sobreviva a ordenar— es lógica de
+ * `ranking.ts` y se prueba sin navegador en `ranking.test.ts` y en
+ * `ranking.escenario-e2e.test.ts`, con este mismo escenario. El resto de la
+ * pantalla —etiquetas, insignia, «Borrar filtros», la tabla vacía, los chips de
+ * ciudad, el foco— lo cubren `07-movil`, `08-teclado-y-consola`,
+ * `33-filtros-y-seleccion-en-lote` y `34-filtros-y-seleccion-qa`.
+ *
+ * Aquí quedan dos cosas: que los campos de rango del panel estén cableados a la
+ * tabla, y que recargar la página lo pierda todo, que solo se ve recargando.
+ *
+ * ⚠️ **El escenario viene interceptado** (`escenario-desarrollador-web.ts`): las
+ * notas y pretensiones que se filtran son las de ahí, puestas encima del
+ * ranking real. Con `E2E_ESCENARIO=base` se fía de la base.
+ */
 
 const notaDesde = (page: Page) => page.getByLabel('Nota del perfil, desde')
 const notaHasta = (page: Page) => page.getByLabel('Nota del perfil, hasta')
 const pretDesde = (page: Page) => page.getByLabel('Pretensión, desde')
 const pretHasta = (page: Page) => page.getByLabel('Pretensión, hasta')
 
-test.describe('Nuevo · filtros del ranking', () => {
+test.describe('Los filtros del ranking', () => {
   /*
     La pantalla abre por «Pendiente», que solo trae a quien espera una
-    decisión. Lo que se mide aquí es otra cosa —los filtros, el orden, el
-    teclado—, así que se abre la tanda entera para tener filas con las que
-    trabajar; es lo que traía el corte de antes, «Con nota», en esta vacante.
+    decisión. Lo que se mide aquí son los filtros, así que se abre la tanda
+    entera para tener las cuatro filas con las que trabajar.
   */
   test.beforeEach(async ({ page }) => {
     await entrarAlPanel(page)
+    await interceptarEscenario(page)
     await irAVacante(page, VACANTES.LLENA)
     await corte(page, 'Toda la tanda').click()
   })
 
-  test('el buscador encuentra CON y SIN tildes, en los dos sentidos', async ({ page }) => {
-    const caja = page.getByRole('searchbox')
-
-    // Escrito sin tilde, el dato la lleva.
-    await caja.fill('lucia')
-    await expect(filasDelRanking(page)).toHaveCount(1)
-    expect(await nombresVisibles(page)).toEqual(['Lucía Chávez Paredes'])
-
-    // Escrito CON tilde, también.
-    await caja.fill('Lucía')
-    await expect(filasDelRanking(page)).toHaveCount(1)
-
-    // Por apellido y sin tilde.
-    await caja.fill('chavez')
-    await expect(filasDelRanking(page)).toHaveCount(1)
-
-    // En mayúsculas.
-    await caja.fill('CAMILA')
-    expect(await nombresVisibles(page)).toEqual(['Camila Torres Rivas'])
-
-    // Con espacios alrededor: se recortan.
-    await caja.fill('   camila   ')
-    await expect(filasDelRanking(page)).toHaveCount(1)
-
-    // Solo espacios NO es un filtro puesto.
-    await caja.fill('   ')
-    await expect(filasDelRanking(page)).toHaveCount(4)
-    await expect(page.getByRole('button', { name: 'Borrar filtros' })).toHaveCount(0)
-  })
-
-  test('el contador «Se ven N de M» cuadra con las filas visibles', async ({ page }) => {
-    await page.getByRole('searchbox').fill('a')
-    const cuantas = await filasDelRanking(page).count()
-    await expect(page.getByText(/Se ven \d+ de \d+ de este corte/)).toContainText(
-      `Se ven ${cuantas} de 4 de este corte.`,
-    )
-    await expect(page.getByText(/El Excel lleva exactamente estas, en este orden/)).toBeVisible()
-  })
-
-  test('multi-selección de ciudad: dos marcadas suman las dos', async ({ page }) => {
-    await abrirFiltros(page)
-    await chip(page, 'Lima — Lima').click()
-    await expect(chip(page, 'Lima — Lima')).toHaveAttribute('aria-pressed', 'true')
-    await expect(filasDelRanking(page)).toHaveCount(1)
-
-    await chip(page, 'Arequipa — Camaná').click()
-    await expect(filasDelRanking(page)).toHaveCount(2)
-    expect((await nombresVisibles(page)).sort()).toEqual([
-      'Camila Torres Rivas',
-      'Lucía Chávez Paredes',
-    ])
-
-    // Desmarcar una la quita.
-    await chip(page, 'Lima — Lima').click()
-    await expect(chip(page, 'Lima — Lima')).toHaveAttribute('aria-pressed', 'false')
-    await expect(filasDelRanking(page)).toHaveCount(1)
-
-    // Los chips llevan su recuento y salen de las filas, no del catálogo (4 ciudades).
-    await expect(page.getByRole('group', { name: 'Ciudad' }).getByRole('button')).toHaveCount(4)
-  })
-
-  test('rango de nota: quien no tiene nota queda fuera, y se dice', async ({ page }) => {
+  test('los rangos de nota y de pretensión del panel recortan la tabla, y quien no declaró queda fuera', async ({
+    page,
+  }) => {
     await abrirFiltros(page)
     await expect(page.getByText('Quien no tiene nota queda fuera.')).toBeVisible()
 
+    // Nota 60–80: Lucía (74) y Sebastián (61). Camila (55) y Joaquín (95) quedan fuera.
     await notaDesde(page).fill('60')
     await notaHasta(page).fill('80')
     await expect(filasDelRanking(page)).toHaveCount(2)
-    expect((await nombresVisibles(page)).sort()).toEqual([
-      'Lucía Chávez Paredes',
-      'Sebastián Cárdenas Rojo',
-    ])
+    expect((await nombresVisibles(page)).sort()).toEqual(['Lucía Chávez Paredes', 'Sebastián Cárdenas Rojo'])
 
-    // Solo un extremo también filtra.
+    // Solo un extremo también filtra: ≥ 60 son 61, 74 y 95.
     await notaHasta(page).fill('')
-    await expect(filasDelRanking(page)).toHaveCount(3) // 61, 74, 95
-  })
+    await expect(filasDelRanking(page)).toHaveCount(3)
+    await notaDesde(page).fill('')
+    await expect(filasDelRanking(page)).toHaveCount(4)
 
-  test('rango de pretensión: solape, no contención; sin declarar queda fuera', async ({ page }) => {
-    await abrirFiltros(page)
+    // La pretensión se cruza por solape, no por contención; sin declarar queda fuera.
     await expect(
       page.getByText('Sale quien pida algo dentro de esa banda. Quien no la declaró queda fuera.'),
     ).toBeVisible()
-
     await pretDesde(page).fill('2000')
     await pretHasta(page).fill('3000')
     // Camila pide 2500–3000: solapa. Lucía empieza en 3100: no. Sebastián no declaró.
     await expect(filasDelRanking(page)).toHaveCount(1)
     expect(await nombresVisibles(page)).toEqual(['Camila Torres Rivas'])
-
     await pretHasta(page).fill('3200')
     await expect(filasDelRanking(page)).toHaveCount(2)
+
+    // La insignia del botón cuenta los filtros del panel: uno, el de pretensión.
+    await expect(botonFiltros(page)).toContainText('1')
   })
 
-  test('los filtros se combinan entre sí y con el corte', async ({ page }) => {
-    await abrirFiltros(page)
-    await notaDesde(page).fill('50')
-    await chip(page, 'Lima — Lima').click()
-    await chip(page, 'Arequipa — Camaná').click()
-    await page.getByRole('searchbox').fill('lucia')
-    await expect(filasDelRanking(page)).toHaveCount(1)
-    expect(await nombresVisibles(page)).toEqual(['Lucía Chávez Paredes'])
-
-    // La insignia del botón cuenta los filtros del panel (ciudad + nota = 2); la
-    // búsqueda por nombre está a la vista y no cuenta.
-    await expect(botonFiltros(page)).toContainText('2')
-    await expect(page.getByRole('list', { name: 'Filtros activos' }).getByRole('button')).toHaveCount(2)
-
-    // Y el corte recorta encima: a Lucía no le toca hacer nada, así que cae.
-    await corte(page, 'Le toca al candidato').click()
-    await expect(filasDelRanking(page)).toHaveCount(0)
-  })
-
-  test('«Borrar filtros» borra todos de un golpe, búsqueda incluida', async ({ page }) => {
-    await abrirFiltros(page)
-    await page.getByRole('searchbox').fill('lucia')
-    await notaDesde(page).fill('70')
-    await chip(page, 'Arequipa — Camaná').click()
-    await expect(filasDelRanking(page)).toHaveCount(1)
-
-    // El de la barra: con el panel abierto también hay uno en su pie.
-    await cerrarFiltros(page)
-    await page.getByRole('button', { name: 'Borrar filtros' }).click()
-    await expect(filasDelRanking(page)).toHaveCount(4)
-    await expect(page.getByRole('searchbox')).toHaveValue('')
-    await abrirFiltros(page)
-    await expect(notaDesde(page)).toHaveValue('')
-    await expect(chip(page, 'Arequipa — Camaná')).toHaveAttribute('aria-pressed', 'false')
-  })
-
-  test('vacío por filtro: NO dice «nadie tiene nota», nombra el filtro', async ({ page }) => {
-    await page.getByRole('searchbox').fill('zzzzzz')
-    await expect(filasDelRanking(page)).toHaveCount(0)
-
-    const vacio = page.locator('table tbody tr').last()
-    await expect(vacio).toContainText('Ningún resultado con estos filtros. Hay 4 sin filtrar en este corte.')
-    await expect(vacio.getByRole('button', { name: 'Borrar filtros' })).toBeVisible()
-    await expect(vacio).not.toContainText('Nadie tiene todavía')
-    // Y no se puede marcar a nadie que no se ve.
-    await expect(page.getByRole('checkbox', { name: 'Marcar todas las que se ven' })).toBeDisabled()
-    // Y el botón del Excel se apaga en vez de bajar una hoja vacía.
-    await expect(page.getByRole('button', { name: 'Nada que descargar' })).toBeDisabled()
-  })
-
-  test('rango invertido (80–20) deja la tabla vacía y lo explica como filtro', async ({ page }) => {
-    await abrirFiltros(page)
-    await notaDesde(page).fill('80')
-    await notaHasta(page).fill('20')
-    await expect(filasDelRanking(page)).toHaveCount(0)
-    await expect(page.locator('table tbody tr').last()).toContainText('Ningún resultado con estos filtros')
-  })
-
-  test('el vacío SIN filtros sí dice que no hay a quién revisar', async ({ page }) => {
-    /*
-      Simulación y no la prueba: en la prueba SÍ hay alguien esperando decisión
-      —`PRUEBA_POR_CONFIRMAR`— y el vacío que este test mide no se daba. En
-      simulación nadie entra, que además es el estado normal de esa pestaña.
-    */
-    await pestana(page, 'Simulación').click()
-    await corte(page, 'Pendiente').click()
-    await expect(filasDelRanking(page)).toHaveCount(0)
-    await expect(page.locator('table tbody tr').last()).toContainText(
-      'Nadie espera tu decisión en Simulación',
-    )
-  })
-
-  test('el filtro sobrevive a ordenar, y el orden al filtrar', async ({ page }) => {
-    await page.getByRole('searchbox').fill('a') // las cuatro llevan «a»
-    await expect(filasDelRanking(page)).toHaveCount(4)
-    await cabecera(page, 'Candidato').getByRole('button').click()
-    expect(await nombresVisibles(page)).toEqual([
-      'Camila Torres Rivas',
-      'Joaquín Vargas Ureta',
-      'Lucía Chávez Paredes',
-      'Sebastián Cárdenas Rojo',
-    ])
-    await page.getByRole('searchbox').fill('ar') // Camila (Torres), Joaquín (Vargas), Sebastián (Cárdenas)
-    await expect(cabecera(page, 'Candidato')).toHaveAttribute('aria-sort', 'ascending')
-    const tras = await nombresVisibles(page)
-    expect(tras).toEqual([...tras].sort((a, b) => a.localeCompare(b, 'es')))
-  })
-
-  test('recargar la página pierde filtros, orden, etapa y corte (todo vive en memoria)', async ({ page }) => {
+  test('recargar la página pierde filtros, orden, etapa y corte (todo vive en memoria)', async ({
+    page,
+  }) => {
     await pestana(page, 'Prueba del puesto').click()
     await corte(page, 'Toda la tanda').click()
     await page.getByRole('searchbox').fill('lucia')
@@ -226,49 +99,5 @@ test.describe('Nuevo · filtros del ranking', () => {
     await expect(corte(page, 'Pendiente')).toHaveAttribute('aria-pressed', 'true')
     await expect(page.getByRole('searchbox')).toHaveValue('')
     await expect(cabecera(page, 'Candidato')).toHaveAttribute('aria-sort', 'none')
-  })
-})
-
-test.describe('Nuevo · las columnas que aparecen y desaparecen', () => {
-  test.beforeEach(async ({ page }) => {
-    await entrarAlPanel(page)
-  })
-
-  test('vacante 7: están Ciudad y Pretensión', async ({ page }) => {
-    await irAVacante(page, VACANTES.LLENA)
-    await expect(cabecera(page, 'Ciudad')).toHaveCount(1)
-    await expect(cabecera(page, 'Pretensión')).toHaveCount(1)
-    // Y la pretensión se lee con su símbolo y su separador peruano.
-    await expect(page.locator('table tbody')).toContainText('S/ 2,500 – 3,000')
-  })
-
-  test('vacante 8: la Pretensión desaparece y se explica por qué', async ({ page }) => {
-    await irAVacante(page, VACANTES.SIN_PRETENSION)
-    await corte(page, 'Toda la tanda').click()
-    await expect(cabecera(page, 'Pretensión')).toHaveCount(0)
-    // La ciudad SÍ la trae, así que esa columna se queda.
-    await expect(cabecera(page, 'Ciudad')).toHaveCount(1)
-
-    await abrirFiltros(page)
-    await expect(
-      page.getByText(
-        'Ninguno de estos candidatos declaró pretensión salarial. La columna no sale porque no hay nada que poner en ella, no porque esté oculta.',
-      ),
-    ).toBeVisible()
-    // Y no se cuela el motivo equivocado: la ciudad sí está.
-    await expect(page.getByText('Todavía no hay ninguna ciudad en esta tanda')).toHaveCount(0)
-    // Sin pretensión no hay rango de pretensión que ofrecer.
-    await expect(page.getByLabel('Pretensión, desde')).toHaveCount(0)
-  })
-
-  test('vacante 9: mismo caso, y el ancho de la fila de detalle cuadra con las columnas', async ({ page }) => {
-    await irAVacante(page, VACANTES.OTRA)
-    await corte(page, 'Toda la tanda').click()
-    await expect(cabecera(page, 'Pretensión')).toHaveCount(0)
-
-    const columnas = await page.locator('table thead th').count()
-    await filasDelRanking(page).first().click()
-    const detalle = page.locator('table tbody tr td[colspan]')
-    await expect(detalle.first()).toHaveAttribute('colspan', String(columnas))
   })
 })
