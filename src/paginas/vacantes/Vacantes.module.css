@@ -68,125 +68,66 @@
 /* ---------- el escaparate ---------- */
 
 /*
- * El borde de 12 px es blanco translucido y no un contorno.
+ * El marco de cristal, copiado de la referencia del cliente capa por capa:
+ * **borde blanco de 1 px, 12 px de relleno con un blanco al 25 % que se
+ * desvanece hacia abajo, y radio de 26 px solo arriba.** Medido en su pagina el
+ * 25/09/2026, no a ojo. Por el relleno se ve el cielo de detras, que es lo que
+ * lo hace leerse como vidrio y no como una tarjeta con borde grueso.
  *
- * ⚠️ **Con el fondo gris separaba la pieza sin dibujar una linea; desde que la
- * pagina es blanca (11/09/2026) es invisible y solo aporta aire.** Se queda
- * porque el aire es correcto y porque el dia que la pagina vuelva a tener tono
- * recupera su trabajo. Lo que separa el escaparate del fondo hoy es la sombra.
+ * ⚠️ **Sin sombra y sin resplandor, y los dos existian.** Aqui hubo un neon de
+ * tres capas en `::before` —coral y rosa, y luego indigo y celeste— con un mando
+ * `--luz` y una larga historia sobre como ponerlo detras del blanco sin
+ * enterrarlo. El marco de la referencia no lleva ni sombra ni luz: lo separa del
+ * cielo el propio contraste entre el blanco de la ventana y el azul. Se fue
+ * entero.
  *
- * `background-clip: padding-box` impide que el blanco de dentro se cuele por
- * debajo del borde y lo anule.
+ * ⚠️ **El borde de abajo no existe, y los radios de abajo son cero.** La ventana
+ * no termina: se desvanece. Un filete blanco cerrando por debajo contradiria
+ * justo eso. Por debajo de 900 px, donde la ventana SI termina —ver el `@media`
+ * del final—, recupera el borde y los cuatro radios.
  */
 .escaparate {
   position: relative;
   margin: var(--e7) auto 0;
-  max-width: 1066px;
+  max-width: 1100px;
+  padding: 12px;
+  border: 1px solid var(--nube);
+  border-bottom: 0;
+  border-radius: 26px 26px 0 0;
+  background-image: linear-gradient(rgb(255 255 255 / 0.25), rgb(255 255 255 / 0));
   /*
-   * ⚠️ **Sin fondo propio, y eso es lo que deja sitio a la luz.** El blanco lo
-   * pinta `.escaparateDentro`; aqui solo quedan el borde, el radio y la sombra.
-   * Asi el resplandor puede vivir entre los dos: detras del blanco y delante de
-   * nada. De paso, el borde translucido de 12 px deja intuir la luz por el canto,
-   * que es lo que lo hace parecer un neon y no una sombra de color.
+   * ⚠️ **El desvanecido va en los ultimos 120 px, no en un porcentaje.** Con un
+   * porcentaje, en pantallas estrechas el fundido subia hasta el recorrido y se
+   * comia sus ultimas lineas, que son contenido de verdad. En px, lo que se
+   * funde es siempre la franja de abajo, donde solo vive la ficha que asoma.
    */
-  border: var(--borde-escaparate) solid rgb(255 255 255 / 0.4);
-  border-radius: var(--radio-escaparate);
-  box-shadow: var(--sombra-nube);
-}
-
-/*
- * El resplandor, DETRAS de la tarjeta y no dentro.
- *
- * ⚠️ **Estuvo dentro hasta el 15/09/2026 y ahi tenia un problema de fondo**: la
- * tarjeta es lo unico que hay que leer en la portada, y meterle luz por debajo del
- * texto obligaba a pelear cada tono —las cuatro capas se suman, el gris mas claro
- * del sistema caia a 3,85:1, hubo que subir el texto de las etapas a `--tinta2`—.
- * Fuera, el interior vuelve a ser blanco limpio y el problema no existe.
- *
- * ⚠️ **NO lleva `z-index: -1`, y se intento.** Es la misma trampa que en el
- * armazon: `mundo.css` pinta el cielo en `html` **y** en `body`, y el fondo de
- * `body` se pinta DESPUES de los descendientes de z negativo, asi que la luz
- * quedaba enterrada. Se comprobo poniendola en rojo plano y sin desenfoque: no
- * aparecia.
- *
- * Lo que la coloca bien es el orden natural: este `::before` va antes que
- * `.escaparateDentro` en el arbol, los dos estan posicionados, y sin `z-index`
- * gana el ultimo. La luz cae detras del blanco sin salirse del apilamiento.
- *
- * Por eso tambien se fue el `overflow: hidden` de la tarjeta: estaba ahi para
- * recortar la luz de dentro, y ahora recortaria la de fuera. Lo que mantiene el
- * blanco dentro de las esquinas redondas es el radio propio de
- * `.escaparateDentro`.
- *
- * El desenfoque es grande —40 px— porque lo que se busca es un neon, no un
- * degradado con borde.
- *
- * ⚠️ **La intensidad esta en UN mando, `--luz`.** Las tres capas se suman, asi
- * que tocarlas a mano por separado descuadra el equilibrio entre ellas: la
- * calida de la izquierda y la fria de la derecha estan calibradas una contra
- * otra —el rosa pesa mas que el coral a igual opacidad— y esa proporcion tiene
- * que sobrevivir a cualquier subida o bajada. Multiplicando, se mueven juntas.
- */
-.escaparate::before {
-  content: '';
-  /* 1 es el valor con el que nacio el 15/09; 0,6 es lo que se ve hoy. */
-  --luz: 0.6;
-  position: absolute;
-  left: -2%;
-  right: -2%;
-  top: 58%;
-  bottom: -30px;
-  background:
-    /* El nucleo, centrado y por debajo del suelo de la tarjeta. */
-    radial-gradient(
-      40% 60% at 50% 96%,
-      rgb(129 140 248 / calc(0.62 * var(--luz))) 0%,
-      rgb(129 140 248 / calc(0.26 * var(--luz))) 46%,
-      rgb(129 140 248 / 0) 78%
-    ),
-    /* La de la izquierda: el indigo de la accion. Era coral. */
-    radial-gradient(
-      42% 64% at 10% 92%,
-      rgb(97 95 255 / calc(0.54 * var(--luz))) 0%,
-      rgb(97 95 255 / calc(0.22 * var(--luz))) 46%,
-      rgb(97 95 255 / 0) 78%
-    ),
-    /* La de la derecha: celeste, para que el resplandor tenga dos tonos y no
-       sea una sola mancha. Un punto mas apagada que la otra — el claro pesa mas
-       a igual opacidad y si van iguales se come la izquierda. Era rosa. */
-    radial-gradient(
-      42% 64% at 90% 92%,
-      rgb(56 189 248 / calc(0.48 * var(--luz))) 0%,
-      rgb(56 189 248 / calc(0.2 * var(--luz))) 46%,
-      rgb(56 189 248 / 0) 78%
-    );
-  filter: blur(24px);
-  pointer-events: none;
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 120px), transparent);
 }
 
 /*
  * El marco que recorta: es lo que hace que la ventana se corte abajo en vez de
  * terminar.
  *
- * ⚠️ **El recorte va AQUI y no en `.escaparate`.** Alli se comeria el
- * resplandor, que vive en su `::before` y tiene que poder salirse por fuera.
- *
- * ⚠️ **Y el alto es el que decide donde corta.** Sin el, la ficha de abajo se
- * veria entera y no habria corte ninguno. Va en `clamp` contra el ancho de la
- * ventana para que el trozo que asoma sea parecido en cualquier pantalla; en un
- * telefono el recorrido se apila y ocupa mas, asi que alli se suelta —ver el
- * `@media` del final— o cortaria por encima de la ultima etapa.
+ * ⚠️ **El alto es el que decide donde corta.** Sin el, la ficha de abajo se veria
+ * entera y no habria corte ninguno. Va en `clamp` contra el ancho de la ventana
+ * para que el trozo que asoma sea parecido en cualquier pantalla; en un telefono
+ * el recorrido se apila y ocupa mas, asi que alli se suelta —ver el `@media` del
+ * final— o cortaria por encima de la ultima etapa.
  */
 .marcoVentana {
   position: relative;
   overflow: hidden;
-  max-height: clamp(21rem, 30vw, 27rem);
+  /*
+   * ⚠️ **El minimo es 23rem y no 21, y sale de una medida.** Con 21, entre 901 y
+   * ~1100 px de ancho el fundido de `.escaparate` se comia los ultimos 17 px del
+   * recorrido: a esos anchos las descripciones de las etapas se parten en mas
+   * lineas y el recorrido crece, pero el recorte seguia en su minimo. Medido a
+   * 901, 1000, 1100, 1280, 1440 y 1920 contra el borde superior del fundido.
+   */
+  max-height: clamp(23rem, 30vw, 27rem);
   background-color: var(--nube);
-  /* El radio de la tarjeta menos su borde de 12 px. Lo lleva el interior porque
-     la tarjeta ya no recorta: sin esto, el blanco asoma por las esquinas. Va en
-     `calc` y no en 8 px a pelo para que mover `--radio-escaparate` no deje este
-     valor atras. */
-  border-radius: calc(var(--radio-escaparate) - var(--borde-escaparate));
+  /* 14 px solo arriba: el radio de la captura en la referencia. */
+  border-radius: 14px 14px 0 0;
 }
 
 .ventana {
@@ -845,6 +786,14 @@
    */
   .marcoVentana {
     max-height: none;
+    border-radius: 14px;
+  }
+
+  /* Aqui la ventana termina, asi que el marco la cierra entero y no se funde. */
+  .escaparate {
+    border-bottom: 1px solid var(--nube);
+    border-radius: 26px;
+    mask-image: none;
   }
 
   .fichaQueAsoma {
@@ -875,14 +824,6 @@
 
   .escaparateDentro {
     padding: var(--e6) var(--e4) var(--e7);
-  }
-
-  /* En un telefono la tarjeta es mucho mas alta, asi que la luz arranca mas
-     abajo o se convierte en un halo por todo el borde. */
-  .escaparate::before {
-    top: 80%;
-    bottom: -22px;
-    filter: blur(18px);
   }
 
   .cinta {
