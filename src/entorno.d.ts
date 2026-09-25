@@ -12,6 +12,16 @@ interface ImportMetaEnv {
    * la ruta es relativa y la reescribe Vercel. Lo rellena `build:movil`.
    */
   readonly VITE_ORIGEN_API?: string
+  /**
+   * Abre la entrada de desarrollo de `/admin/entrar` en un paquete construido.
+   *
+   * En el servidor de desarrollo no hace falta: ahi manda `import.meta.env.DEV`.
+   * Existe para quien levanta un **preview** —un build— y necesita esa puerta,
+   * que es el caso de `13-etapas.spec.ts`. Vercel no la define, asi que en
+   * produccion el bloque no llega a compilarse. Vale `'1'`; cualquier otra cosa
+   * la deja cerrada.
+   */
+  readonly VITE_PUERTA_DESARROLLO?: string
 }
 
 interface ImportMeta {

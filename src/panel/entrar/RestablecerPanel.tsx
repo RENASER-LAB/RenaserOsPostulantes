@@ -15,7 +15,6 @@
 import { useNavigate } from 'react-router-dom'
 import { restablecerClavePanel } from '@/panel/api/panel'
 import { rutas } from '@/rutas'
-import { Marca } from '@/ui/Marca'
 import { ESTADO_CLAVE_CAMBIADA } from '@/ui/recuperacion/AvisoClaveCambiada'
 import { ElegirClave } from '@/ui/recuperacion/ElegirClave'
 import { useSesionPanel } from '../Sesion'
@@ -29,14 +28,14 @@ export function RestablecerPanel() {
 
   return (
     <div className={estilos.pagina}>
-      <span className={estilos.marca}>
-        <Marca />
-      </span>
+      {/* La marca la pone ahora la cabecera del portal, que envuelve esta
+          pantalla desde el 24/09/2026. Repetirla aquí ponía dos EX seguidas. */}
       <ElegirClave
         minimo={12}
         ayuda="Al menos 12 caracteres, sin espacios al principio ni al final. Es más que en el portal del candidato porque desde aquí se ven los datos de muchas personas."
         restablecer={restablecerClavePanel}
         rutaPedirEnlace={rutas.adminClave()}
+        claseFormulario={estilos.superficieDelFormulario}
         alCambiar={() => {
           if (hayEquipo) salir()
           navegar(rutas.adminEntrar(), { replace: true, state: ESTADO_CLAVE_CAMBIADA })
