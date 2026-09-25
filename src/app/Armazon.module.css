@@ -57,7 +57,7 @@
    */
   height: 1100px;
   transform: translateX(-50%);
-  /* Detras de todo lo que se lee, y de la superficie de la cabecera posada. */
+  /* Detras de todo lo que se lee, y de la superficie de la cabecera. */
   z-index: 0;
   pointer-events: none;
   /*
@@ -215,7 +215,8 @@
   max-width: var(--ancho);
   margin: 0 auto;
   padding: var(--e3) var(--e5);
-  border-radius: var(--radio);
+  /* 18 px, el radio de la pildora de la referencia, medido en su pagina. */
+  border-radius: 18px;
   /*
    * Tres columnas y no `space-between`: los destinos tienen que quedar centrados
    * respecto a la BARRA, no repartidos entre la marca y el boton. Con
@@ -247,18 +248,17 @@
  * cabecera, que ya es contexto de apilamiento por su `z-index: 10`.
  *
  * ⚠️ **Nube maciza, y se probo la otra.** Se probo nube al 85 % con
- * `backdrop-filter: blur(12px)`, y mirandolo con contenido pasando por debajo el
- * boton de maximo contraste de la portada se leia entero a traves del velo: un
- * 15 % de transparencia no perdona una pieza asi.
+ * `backdrop-filter: blur(12px)`, y con contenido pasando por debajo el boton de
+ * maximo contraste de la portada se leia entero a traves del velo.
  *
- * ⚠️ **La pagina es casi blanca, asi que el relleno no dice donde acaba la
- * barra.** Eso lo dicen su contorno de `--regla` y su sombra. Los dos son
- * obligatorios aqui.
- *
- * ⚠️ **`opacity: 1` de salida desde el 25/09/2026.** Antes nacia en 0 y subia al
- * bajar la pagina; ahora la pildora esta siempre. Lo que sigue reaccionando al
- * desplazamiento es la sombra, que se hace mas honda para separar la barra del
- * contenido que le pasa por debajo — el trabajo que antes hacia el velo entero.
+ * ⚠️ **Sin borde y sin sombra desde el 25/09/2026, en reposo y al bajar.** Llevo
+ * un filete de `--regla` y `--sombra-nube`, y al bajar la sombra se hacia mas
+ * honda. Se quito todo para igualar la referencia del cliente, que es blanca a
+ * secas: medido en su pagina, sin borde ni sombra tanto arriba como con la
+ * pagina bajada. Sobre el cielo azul la separa el contraste; **mas abajo, sobre
+ * el gris claro de la pagina y las tarjetas blancas, casi no se distingue y el
+ * contenido pasa por detras sin linea que lo corte.** Es lo que hace la
+ * referencia, aceptado a sabiendas.
  */
 .cabeceraDentro::before {
   content: '';
@@ -267,21 +267,6 @@
   z-index: -1;
   border-radius: inherit;
   background: var(--nube);
-  border: 1px solid var(--regla);
-  box-shadow: var(--sombra-nube);
-  transition: box-shadow 200ms var(--salida);
-}
-
-.posada .cabeceraDentro::before {
-  box-shadow: var(--sombra-aviso);
-}
-
-/* Quien pide menos movimiento ve la barra igual: lo que se apaga es el cambio
-   de sombra, no la sombra. */
-@media (prefers-reduced-motion: reduce) {
-  .cabeceraDentro::before {
-    transition: none;
-  }
 }
 
 .marca {
@@ -299,10 +284,11 @@
 }
 
 /*
- * ⚠️ **18 px y peso 500, no 14 y 400.** Con la tipografia de apoyo y peso normal
- * los cuatro destinos se perdian: son lo unico que hay en medio de una barra muy
- * ancha y blanca, sin contorno ni relleno que los sostenga. Figtree es variable
- * de 400 a 700, asi que el 500 no cuesta una descarga mas.
+ * ⚠️ **16 px y peso 400, como la referencia del cliente, desde el 25/09/2026.**
+ * Antes fueron 18/500 y luego 16/500: con peso normal los destinos se perdian en
+ * una barra ancha y blanca SIN contorno. Ahora la barra es una pildora con
+ * contorno y sombra, que es lo que los sostiene. Geist es variable de 400 a 700,
+ * asi que cualquier peso de ese rango no cuesta una descarga mas.
  */
 .navegacion {
   display: flex;
@@ -315,12 +301,13 @@
    */
   gap: 0;
   /*
-   * 16 px, medido en `originx.demos.tailgrids.com` el 15/09/2026 junto con el
-   * peso 500 y los 32 px de separacion. Estuvo en 18 px desde el 11/09/2026 y
-   * baja por peticion expresa: lo que evita que los destinos se pierdan es el
-   * peso, no el tamaño.
+   * ⚠️ **17 px desde el 25/09/2026, y no es un escalon de la escala.** Se pidio
+   * «un poco» mas grande que los 16 de la referencia; 18 —el escalon siguiente—
+   * ya es lo que se tuvo el 11/09 y se bajo por peticion expresa el 15/09. 17 es
+   * justo lo pedido y solo lo usa esta pieza, asi que no se promueve a token.
+   * Historial: 18 (11/09) → 16 (15/09) → 17 (25/09).
    */
-  font-size: var(--t-base);
+  font-size: 17px;
 }
 
 /*
@@ -379,7 +366,15 @@
   align-items: center;
   min-height: 44px;
   padding: 0 var(--e4);
-  font-weight: 500;
+  /*
+   * ⚠️ **400 desde el 25/09/2026, y antes 500.** El 500 existia porque los
+   * destinos «se perdian en una barra muy ancha y blanca, sin contorno ni relleno
+   * que los sostenga». Desde que la cabecera es una pildora con contorno y
+   * sombra, esa razon ya no vale, y la referencia del cliente pone sus enlaces
+   * de barra a 400. El destino actual sigue distinguiendose por el indigo y el
+   * subrayado, no por el peso.
+   */
+  font-weight: 400;
   /* Sin esto «Mis procesos» se parte en dos lineas en un telefono y la barra
      pasa de 61 a 85 px, justo el numero que `--alto-cabecera` promete fijo. */
   white-space: nowrap;
@@ -433,31 +428,42 @@
 }
 
 /*
- * La pagina en la que estas se dice con el color del texto y con el peso 700.
+ * La pagina en la que estas se dice SOLO con el color: indigo, peso 400, sin
+ * filete. Es lo que hace la referencia del cliente, medido en su barra el
+ * 25/09/2026.
  *
- * ⚠️ **`--activo-regla` como TEXTO da 2,53:1 sobre nube, donde WCAG 1.4.3 pide
- * 4,5:1.** Es una decision tomada a sabiendas el 11/09/2026, mirando el numero:
- * se probo tambien `#bf4526` —el mismo tono con la luz bajada, 5,13:1— y se
- * eligio el coral de marca. El peso 700 acompaña al color, asi que quien no
- * distingue el naranja tiene la segunda señal que pide 1.4.1; lo que no se
- * cumple es el contraste del texto.
+ * ⚠️ **Hasta ese dia llevaba peso 700 y un filete de 2 px debajo, y no eran
+ * adorno**: eran la segunda señal que pide WCAG 1.4.1 para que el color no vaya
+ * solo. Se quitaron por peticion, y se comprobo que el color aguanta la señal
+ * sin ellos:
  *
- * WCAG 1.4.1 pide que el color no vaya solo, y no va: le acompañan el peso 700 y
- * el filete de abajo, que es decoracion y no le aplica el 3:1 de un control.
+ * - **Contra los otros destinos da 3,88:1** (indigo `#615fff` frente a la tinta
+ *   `#101828`). Por encima de 3:1, quien no distingue el tono lo sigue viendo
+ *   como el mas claro de los tres: la diferencia es de luz, no solo de matiz.
+ *   Es el mismo umbral que WCAG acepta para un enlace que se distingue del texto
+ *   de alrededor solo por color (tecnica G183).
+ * - **Como texto da 4,58:1 sobre nube**, y pasa el 4,5 de 1.4.3. El coral de
+ *   antes daba 2,53 y era un incumplimiento aceptado a sabiendas; con el indigo
+ *   ese incumplimiento desaparecio.
  *
- * El coral de texto amplia la excepcion a «el coral solo marca te toca a ti»: en
- * la cabecera pasa a significar tambien «estas aqui».
+ * Quien usa lector de pantalla lo recibe por `aria-current="page"`, que pone
+ * `NavLink` solo.
+ *
+ * ⚠️ **Si algun dia se aclara el indigo o se oscurece la tinta, hay que volver a
+ * medir el 3,88**: por debajo de 3 el color se queda solo de verdad y hay que
+ * devolverle el filete o el peso.
  */
 .enlaceActivo {
   color: var(--activo-regla);
-  font-weight: 700;
+  font-weight: 400;
 }
 
+/* Sin filete tambien al pasar por encima: ya estas ahi, no hay gesto que
+   anunciar. El de los otros destinos sigue abriendose en gris. */
 .enlaceActivo::after,
 .enlaceActivo:hover::after {
-  left: var(--e4);
-  right: var(--e4);
-  background: var(--activo-regla);
+  left: 50%;
+  right: 50%;
 }
 
 .enlaceActivo:hover {
@@ -538,7 +544,9 @@
   border-radius: var(--radio-control);
   background: var(--accion-fuerte);
   color: var(--tinta-invertida);
-  font-size: var(--t-apoyo);
+  /* 15 px desde el 25/09/2026, que era 14: sube con el resto de la barra. La
+     linea se queda en 20 px, asi que el boton no crece de alto. */
+  font-size: var(--t-prosa);
   font-weight: 600;
   line-height: 20px;
   text-align: center;
@@ -663,20 +671,21 @@
     gap: var(--e2);
   }
 
-  /* Un punto menos que en escritorio, pero **el peso 500 se queda**: es el peso,
-     no el tamaño, lo que hacia que los destinos se perdieran. */
+  /* Dos puntos menos que en escritorio: 15 px, que era 14 hasta el 25/09/2026
+     y subio con el resto de la barra. */
   .navegacion {
     gap: 0;
-    font-size: var(--t-apoyo);
+    font-size: var(--t-prosa);
   }
 
   .enlace {
     padding: 0 var(--e2);
   }
 
-  .enlace:hover::after,
-  .enlaceActivo::after,
-  .enlaceActivo:hover::after {
+  /* Solo el de pasar por encima: el activo no lleva filete en ningun ancho. Aqui
+     estaba tambien `.enlaceActivo::after`, y como esta regla va despues en la
+     hoja, en un telefono le devolvia el filete que se le quito en escritorio. */
+  .enlace:hover::after {
     left: var(--e2);
     right: var(--e2);
   }
@@ -703,9 +712,7 @@
     padding: 0 var(--e1);
   }
 
-  .enlace:hover::after,
-  .enlaceActivo::after,
-  .enlaceActivo:hover::after {
+  .enlace:hover::after {
     left: var(--e1);
     right: var(--e1);
   }
@@ -714,8 +721,15 @@
     margin-left: var(--e1);
   }
 
+  /*
+   * ⚠️ **Aqui el boton vuelve a 14 px.** El 25/09/2026 la letra de la barra
+   * subio un punto, y a 320 px «Iniciar sesion» a 15 se salia 4 px de la ventana
+   * y la pagina entera se podia mover en horizontal. Medido: a 14 cabe. Es el
+   * unico ancho donde hace falta — a 360 ya quedan 22 px de holgura.
+   */
   .entrarCara {
     padding-inline: var(--e2);
+    font-size: var(--t-apoyo);
   }
 }
 

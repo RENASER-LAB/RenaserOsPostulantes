@@ -6,7 +6,7 @@
  */
 
 import { Link, NavLink, Outlet, matchPath, useLocation } from 'react-router-dom'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { patrones, rutas } from '@/rutas'
 import { useSesion } from './Sesion'
 import { Campana } from '@/ui/Campana'
@@ -176,36 +176,17 @@ function claseDelEnlace({ isActive }: { isActive: boolean }) {
   return isActive ? `${estilos.enlace} ${estilos.enlaceActivo}` : estilos.enlace
 }
 
-/**
- * Si la pagina ya se movio de arriba.
- *
- * Es lo unico que separa la cabecera en reposo —solo la marca y los enlaces
- * sobre el cielo— de la cabecera posada, que saca su superficie para que el
- * contenido no se le mezcle por debajo.
- *
- * ⚠️ **Se lee una vez al montar, ademas de escuchar.** Al volver a una pantalla
- * con el navegador ya desplazado, un oyente que solo reacciona a `scroll` deja
- * la barra transparente sobre contenido.
- *
- * El oyente va en `passive`: no llama a `preventDefault` y sin la marca el
- * navegador tiene que esperar a saber si lo hara antes de desplazar.
+/*
+ * Aqui vivia `usarPosada`, que escuchaba el desplazamiento para saber si la
+ * pagina se habia movido de arriba y ponerle `.posada` a la cabecera: primero
+ * para sacar su superficie, y luego para hondear su sombra. Se fue el
+ * 25/09/2026, cuando la pildora paso a ser blanca a secas en reposo y al bajar,
+ * como la de la referencia del cliente: ya no habia nada que cambiar al bajar,
+ * y un oyente de `scroll` que no pinta nada es trabajo en cada frame para nada.
  */
-function usarPosada() {
-  const [posada, setPosada] = useState(false)
-
-  useEffect(() => {
-    const mirar = () => setPosada(window.scrollY > 4)
-    mirar()
-    window.addEventListener('scroll', mirar, { passive: true })
-    return () => window.removeEventListener('scroll', mirar)
-  }, [])
-
-  return posada
-}
 
 export function Armazon() {
   const { hayCuenta } = useSesion()
-  const posada = usarPosada()
   const { pathname } = useLocation()
 
   /*
@@ -242,7 +223,7 @@ export function Armazon() {
       <LlevarAlAncla />
       <TituloDeLaPagina />
 
-      <header className={`${estilos.cabecera} ${posada ? estilos.posada : ''}`}>
+      <header className={estilos.cabecera}>
         <div className={estilos.cabeceraDentro}>
           <Link className={estilos.marca} to={rutas.vacantes()} aria-label="EX, inicio">
             <Marca tamano={22} />
