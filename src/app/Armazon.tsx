@@ -6,7 +6,7 @@
  */
 
 import { Link, NavLink, Outlet, matchPath, useLocation, useNavigationType } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { patrones, rutas } from '@/rutas'
 import { useSesion } from './Sesion'
 import { Campana } from '@/ui/Campana'
@@ -47,6 +47,19 @@ const TITULOS: Array<[string, string]> = [
   [patrones.decision, 'Decisión'],
   [patrones.privacidad, 'Privacidad y control'],
   [patrones.politica, 'Política de privacidad'],
+  /*
+   * Las tres puertas del panel entraron en este armazon el 24/09/2026, así que
+   * ahora pasan por aquí.
+   *
+   * ⚠️ **Los rótulos tienen que decir LO MISMO que `useTituloDelPanel` en cada
+   * una de esas pantallas.** Las dos cosas escriben `document.title` en un
+   * efecto y las dos se montan a la vez; cuál gana depende del orden en que
+   * React recorre el árbol, que no es algo sobre lo que apoyarse. Diciendo lo
+   * mismo, el orden deja de importar. Si cambias uno, cambia el otro.
+   */
+  [patrones.adminEntrar, 'Entrar al panel'],
+  [patrones.adminClave, 'Recuperar la contraseña'],
+  [patrones.adminRestablecer, 'Elegir contraseña nueva'],
 ]
 
 function TituloDeLaPagina() {
@@ -60,25 +73,68 @@ function TituloDeLaPagina() {
   return null
 }
 
+/**
+ * Sube arriba al navegar. Y **si no se cambia de pantalla, subiendo se ve**.
+ *
+ * Son dos gestos distintos con el mismo destino:
+ *
+ * - **Cambiar de pantalla** —de una vacante a «Mis procesos»— sube de golpe. Lo
+ *   que llega es contenido nuevo: deslizar por encima del anterior tarda y no
+ *   dice nada, porque no hay nada que seguir con la vista.
+ * - **Pulsar «Inicio» estando ya en la portada** se desliza, igual que
+ *   «Vacantes» baja hasta su seccion. Aqui el recorrido SI se ve, y es lo que
+ *   dice que subiste tu y que la pagina no salto sola.
+ *
+ * ⚠️ **Va contra `key` y no solo contra `pathname`.** Pulsar «Inicio» en la
+ * portada no cambia ni la ruta ni el ancla, asi que con `[pathname, hash]` el
+ * efecto no volvia a correr y el boton no hacia absolutamente nada. `key` cambia
+ * en cada navegacion aunque el destino sea el mismo, que es el mismo motivo por
+ * el que lo usa `LlevarAlAncla`.
+ *
+ * `anterior` empieza en `null` a proposito: en la primera carga no hay pantalla
+ * de la que venir, y sin eso el primer render contaria como «misma pantalla» y
+ * pediria un deslizamiento en una pagina que ya esta arriba.
+ *
+ * Ojo con el cuerpo entre llaves: si se escribe `useEffect(() => window.
+ * scrollTo(0, 0), ...)`, el efecto devuelve lo que devuelva `scrollTo`, y React
+ * se lo queda como funcion de limpieza. Al desmontar intenta llamarlo y revienta
+ * con «destroy is not a function», tumbando la pagina entera.
+ */
 function ArribaAlCambiarDePagina() {
-  const { pathname, hash } = useLocation()
+  const { pathname, hash, key } = useLocation()
   const tipo = useNavigationType()
+  const anterior = useRef<string | null>(null)
 
-  // Ojo con el cuerpo entre llaves: si se escribe `useEffect(() => window.
-  // scrollTo(0, 0), ...)`, el efecto devuelve lo que devuelva `scrollTo`, y
-  // React se lo queda como funcion de limpieza. Al desmontar intenta llamarlo
-  // y revienta con «destroy is not a function», tumbando la pagina entera.
   useEffect(() => {
     // Con ancla manda `LlevarAlAncla`. Sin esta guarda los dos se pelean: al
     // llegar de otra pantalla a `/#vacantes-abiertas` este efecto sube a cero
     // y deja al visitante arriba del todo, que es justo donde no queria ir.
-    if (hash) return
+    if (hash) {
+      anterior.current = pathname
+      return
+    }
+
     // Al VOLVER a la lista de vacantes —atrás desde una ficha— manda la propia
     // lista, que se desplaza hasta la tarjeta que se abrió. Subir a cero aquí
     // haría que la pantalla saltara arriba y luego bajara.
-    if (tipo === 'POP' && matchPath(patrones.vacantes, pathname)) return
-    window.scrollTo(0, 0)
-  }, [pathname, hash, tipo])
+    if (tipo === 'POP' && matchPath(patrones.vacantes, pathname)) {
+      anterior.current = pathname
+      return
+    }
+
+    const mismaPantalla = anterior.current === pathname
+    anterior.current = pathname
+
+    /*
+     * Quien pidio menos movimiento salta, no se desliza. El bloque de
+     * `prefers-reduced-motion` de `mundo.css` aqui no llega: solo apaga
+     * animaciones y transiciones de CSS, y esto es una opcion de JavaScript que
+     * ninguna hoja puede sobrescribir. Mismo criterio que `LlevarAlAncla`.
+     */
+    const quieto = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+    window.scrollTo({ top: 0, behavior: mismaPantalla && !quieto ? 'smooth' : 'auto' })
+  }, [pathname, hash, key, tipo])
 
   return null
 }
@@ -167,10 +223,20 @@ export function Armazon() {
   const posada = usarPosada()
   const { pathname } = useLocation()
 
-  // «Entrar» es una tarjeta sola en la pantalla y se centra en lo que se ve, no
-  // fluye desde arriba. Eso cambia el armazon —la cadena de altos y el aire del
-  // pie—, asi que la decision se toma aqui. Ver `.armazonJusto` en la hoja.
-  const justo = matchPath(patrones.ingresar, pathname) !== null
+  /*
+   * Las dos pantallas que son UNA tarjeta sola: se centran en lo que se ve en
+   * vez de fluir desde arriba. Eso cambia el armazon —la cadena de altos y el
+   * aire del pie—, asi que la decision se toma aqui. Ver `.armazonJusto`.
+   *
+   * ⚠️ **`/admin/entrar` entro el 25/09/2026, y solo pudo entrar al quitarle el
+   * bloque «¿No puedes entrar?»**: con el, la pantalla medía mas que la ventana,
+   * y centrar lo que no cabe desborda por los dos lados —a lo que se sale por
+   * arriba el navegador no deja llegar—. Si algun dia vuelve a crecer por
+   * debajo de la tarjeta, esto hay que quitarlo.
+   */
+  const justo =
+    matchPath(patrones.ingresar, pathname) !== null ||
+    matchPath(patrones.adminEntrar, pathname) !== null
 
   return (
     <div className={`${estilos.armazon} ${justo ? estilos.armazonJusto : ''}`}>

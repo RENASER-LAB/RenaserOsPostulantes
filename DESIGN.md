@@ -199,7 +199,8 @@ components:
 >
 > **La migración terminó el 10/09/2026: las diecisiete pantallas del candidato están
 > compuestas.** `/admin` queda fuera por decisión de alcance y conserva su composición
-> anterior.
+> anterior — **salvo sus tres puertas, que entraron el 25/09/2026**: ver «Las puertas del
+> panel» más abajo.
 >
 > **El 23/09/2026 entraron dos más y son dieciocho.** `/clave` dejó de ser un cartel que
 > explicaba y pasó a pedir el enlace de verdad, y `/restablecer` es nueva. Las dos se apoyan
@@ -647,6 +648,40 @@ este proyecto.
 Es la medida de `.titular` de `pagina.module.css`, pero componerla desde una hoja compartida
 arrastraría el carril del portal al panel. Copiar un número es aquí menos malo que exportar un
 mundo entero.
+
+### Las puertas del panel — lo único de `/admin` dentro del escaparate
+
+`/admin/entrar`, `/admin/clave` y `/admin/restablecer` entraron el **25/09/2026**. El resto del
+panel sigue fuera por alcance.
+
+**Van dentro del armazón del portal**, no sueltas: por eso llevan su cabecera y su pie. Antes
+vivían fuera de los dos armazones y al pasar del pie del portal —«Entrar al panel de
+empresas»— a `/admin/entrar` la barra desaparecía de golpe. Lo que sigue fuera es
+`ArmazonPanel`, que es donde vive el candado: ese armazón manda a `/admin/entrar` a quien no
+tiene sesión de equipo, y meter ahí la propia pantalla de entrar sería un bucle.
+
+⚠️ **Al entrar en el armazón perdieron su marca propia.** Cada una dibujaba un `<Marca>` porque
+no tenía cabecera de la que colgar; con la del portal encima salían dos EX seguidas.
+
+⚠️ **La cabecera que se ve es la del candidato**, con «Iniciar sesión» llevando a `/ingresar`.
+Es a sabiendas: la pantalla tiene dos entradas distintas, la del equipo en su tarjeta y la del
+candidato en la barra. La alternativa descartada era una barra propia con la marca y «Volver al
+portal».
+
+**`/admin/entrar` es una tarjeta centrada**, como `/ingresar`, y usa el mismo `.armazonJusto`.
+Sus clases viven aparte en `Entrar.module.css` —`.paginaEntrar`, `.tarjeta`, `.titularEntrar`…—
+porque esa hoja la comparten cuatro pantallas y tocar `.pagina` o `.formulario` las repintaría
+todas.
+
+⚠️ **El centrado solo es seguro mientras la pantalla quepa.** Solo pudo entrar al quitarle el
+bloque «¿No puedes entrar?» y su bajada: con ellos medía más que la ventana, y centrar lo que
+no cabe desborda por los dos lados — a lo que se sale por arriba el navegador no deja llegar.
+Si vuelve a colgar algo largo debajo de la tarjeta, hay que quitar el centrado.
+
+**Las otras dos reciben la superficie desde fuera**, con el mismo `claseFormulario` de la
+sección anterior: `.superficieDelFormulario` existe ahora también en `Entrar.module.css`. Sin
+ella quedaban desnudas justo al lado de una tarjeta, que es la incoherencia que la pieza
+compartida existe para evitar.
 
 ### La pieza del titular
 

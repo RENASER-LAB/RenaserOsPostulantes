@@ -40,8 +40,14 @@ encima, que es lo que las separa. **Acción en negro `#0A0A0A`** con radio 4 px,
 para «te toca a ti» —y, en la
 cabecera, también para el destino actual y el botón «Iniciar sesión»—, Figtree. Las **dieciocho**
 pantallas están compuestas —la número dieciocho es `/restablecer`, que llegó de main el
-23/09/2026 junto con la reescritura de `/clave`—; `/admin` queda fuera por alcance y conserva
-la disposición anterior.
+23/09/2026 junto con la reescritura de `/clave`—; **el panel sigue fuera de alcance, salvo sus
+tres puertas.**
+
+⚠️ **`/admin/entrar`, `/admin/clave` y `/admin/restablecer` entraron al escaparate el
+25/09/2026 y ya no viven sueltas: van DENTRO del armazón del portal**, así que llevan su
+cabecera y su pie. Lo que sigue fuera es `ArmazonPanel` —el candado—, y por eso no hay bucle.
+`/admin/invitacion` no entró: a esa se llega desde un enlace del correo, no desde el portal.
+El resto de `/admin` conserva la disposición anterior.
 
 ⚠️ **La cabecera no se ve hasta que bajas.** Es una barra insertada 8 px del borde que saca su
 superficie al primer scroll. `--alto-cabecera` son **70 px medidos**, y ha pasado por 61, 76 y

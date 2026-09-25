@@ -69,20 +69,15 @@ export function App() {
               <BrowserRouter>
                 <Routes>
                   {/* ---------- El panel del equipo ---------- */}
-                  {/* Va antes que el portal y fuera de su armazon: otra persona,
-                      otra sesion, otra cabecera. El candado vive en ArmazonPanel. */}
-                  <Route
-                    path={patrones.adminEntrar}
-                    element={
-                      <ProveedorSesionPanel>
-                        <EntrarPanel />
-                      </ProveedorSesionPanel>
-                    }
-                  />
                   {/*
                     Canjear la invitacion. Suelta y NO dentro de ArmazonPanel:
                     ese armazon manda a `/admin/entrar` a quien no tiene sesion,
                     y quien viene de una invitacion es justo eso.
+
+                    Tampoco entra en el armazon del portal, a diferencia de las
+                    tres puertas de abajo: a esta no se llega desde el portal
+                    sino desde un enlace del correo, y quien la abre no viene de
+                    ninguna cabecera de la que echar en falta la vuelta.
                   */}
                   <Route
                     path={patrones.adminInvitacion}
@@ -98,29 +93,6 @@ export function App() {
                     traga la direccion y el token se pierde sin decir nada.
                   */}
                   <Route path={patrones.invitacionSuelta} element={<HaciaLaInvitacion />} />
-                  {/*
-                    La contraseña olvidada del panel: pedir el enlace y elegir la
-                    nueva. Sueltas y fuera de ArmazonPanel por lo mismo que la
-                    invitación: quien llega no tiene sesión. Sin ruta suelta para
-                    `/restablecer`: esa es la del candidato, y el backend arma el
-                    enlace del equipo siempre con `/admin`.
-                  */}
-                  <Route
-                    path={patrones.adminClave}
-                    element={
-                      <ProveedorSesionPanel>
-                        <ClavePanel />
-                      </ProveedorSesionPanel>
-                    }
-                  />
-                  <Route
-                    path={patrones.adminRestablecer}
-                    element={
-                      <ProveedorSesionPanel>
-                        <RestablecerPanel />
-                      </ProveedorSesionPanel>
-                    }
-                  />
                   <Route
                     element={
                       <ProveedorSesionPanel>
@@ -142,6 +114,62 @@ export function App() {
                   </Route>
 
                   <Route element={<Armazon />}>
+                    {/*
+                      Las tres puertas del panel, DENTRO del armazon del portal.
+
+                      Vivian sueltas, sin ninguna cabecera, y por eso al pasar
+                      del pie del portal —«Entrar al panel de empresas»— a
+                      `/admin/entrar` la barra de arriba desaparecia de golpe.
+                      Se trajeron aqui el 24/09/2026 por peticion.
+
+                      ⚠️ **La cabecera que se ve es la del candidato**, con
+                      «Iniciar sesion» llevando a `/ingresar`. Es a sabiendas: la
+                      pantalla pasa a tener dos entradas distintas, la del equipo
+                      en su tarjeta y la del candidato en la barra. Si algun dia
+                      molesta, la alternativa era una barra propia con la marca y
+                      «Volver al portal».
+
+                      ⚠️ **Siguen fuera de `ArmazonPanel`**, que es lo que
+                      importa para el candado: ese armazon manda a
+                      `/admin/entrar` a quien no tiene sesion de equipo, y quien
+                      llega a estas tres es justo eso. Meterlas alli seria un
+                      bucle.
+
+                      Cada una conserva su `ProveedorSesionPanel`: la sesion del
+                      equipo es otra que la del candidato, y el armazon del
+                      portal solo aporta la barra y el pie.
+                    */}
+                    <Route
+                      path={patrones.adminEntrar}
+                      element={
+                        <ProveedorSesionPanel>
+                          <EntrarPanel />
+                        </ProveedorSesionPanel>
+                      }
+                    />
+                    {/*
+                      La contraseña olvidada del panel: pedir el enlace y elegir
+                      la nueva. Sin ruta suelta para `/restablecer`: esa es la del
+                      candidato, y el backend arma el enlace del equipo siempre
+                      con `/admin`.
+                    */}
+                    <Route
+                      path={patrones.adminClave}
+                      element={
+                        <ProveedorSesionPanel>
+                          <ClavePanel />
+                        </ProveedorSesionPanel>
+                      }
+                    />
+                    <Route
+                      path={patrones.adminRestablecer}
+                      element={
+                        <ProveedorSesionPanel>
+                          <RestablecerPanel />
+                        </ProveedorSesionPanel>
+                      }
+                    />
+
                     {/* Publico */}
                     <Route path={patrones.inicio} element={<Vacantes />} />
                     <Route path={patrones.vacantes} element={<BuscarVacantes />} />
