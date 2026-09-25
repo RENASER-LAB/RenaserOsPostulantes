@@ -25,13 +25,35 @@ import { test as base } from './ayuda-candidato'
  * de prueba y simulación sin calificar, el tanteo de versiones de prueba que el
  * backend no deja listar, y la ficha del perfil que ya daba 404 en `main`
  * (ver `08-teclado-y-consola`).
+ *
+ * ⚠️ **Lo entregado y lo escrito en la prueba también, y por lo mismo que sus
+ * notas.** La ficha de «Prueba del puesto» monta siempre esos dos bloques, y a
+ * quien no tiene `intento_prueba` el backend le contesta 404 en las tres rutas
+ * (`ServicioCalificacionPruebaImpl`); la ficha lo traduce en «no rindió»
+ * (`EntregablesDePrueba.test.tsx`, `RespuestasDePrueba.test.tsx`). Faltaban
+ * aquí y la prueba solo pasaba si acababa antes de que llegaran: con la traza
+ * puesta fallaba siempre.
+ *
+ * ⚠️ **Se perdona la ruta CON su estado, y solo el 404.** La lista se miraba
+ * sin el estado, y cualquier error de esas rutas pasaba: un 500 en
+ * `/prueba/entregables` dejaba la prueba en verde con la ficha diciendo «El
+ * sistema tuvo un problema». El 404 es lo único que la ficha traduce en «no
+ * hay»; un 500, un 403 o un 400 en la misma URL son fallo.
  */
-const ESPERADOS = [/\/validacion\b/, /\/prueba\/notas/, /\/simulacion\/notas/, /\/plantillas-prueba\/versiones\//, /\/ficha\b/]
+const ESPERADOS_404 = [
+  /\/validacion\b/,
+  /\/prueba\/notas/,
+  /\/prueba\/entregables/,
+  /\/prueba\/respuestas/,
+  /\/simulacion\/notas/,
+  /\/plantillas-prueba\/versiones\//,
+  /\/ficha\b/,
+]
 
 /**
  * `test` con el segundo vigilante del arnés viejo: cualquier respuesta de 400
- * para arriba que no sea de las esperadas (ni un 401, que es cosa de sesión)
- * hace fallar la prueba.
+ * para arriba que no sea uno de los 404 esperados (ni un 401, que es cosa de
+ * sesión) hace fallar la prueba.
  */
 const test = base.extend<{ sinRespuestasMalas: void }>({
   sinRespuestasMalas: [
@@ -39,7 +61,7 @@ const test = base.extend<{ sinRespuestasMalas: void }>({
       const malas: string[] = []
       page.on('response', (r) => {
         if (r.status() < 400 || r.status() === 401) return
-        if (ESPERADOS.some((patron) => patron.test(r.url()))) return
+        if (r.status() === 404 && ESPERADOS_404.some((patron) => patron.test(new URL(r.url()).pathname))) return
         malas.push(`${r.status()} · ${r.url()}`)
       })
       await usar()
@@ -98,6 +120,19 @@ test.describe('Regresión · el ranking por etapas', () => {
         page.getByRole('heading', { name: /La prueba del puesto, criterio a criterio/ }),
       ).toBeVisible({ timeout: 15_000 })
       await expect(page.getByRole('heading', { name: 'Lo que calificó la IA' })).toHaveCount(0)
+
+      /*
+        Se espera a que los tres bloques contesten —las notas, lo entregado y lo
+        escrito— para que el vigilante juzgue sus respuestas en todas las
+        corridas, y no según lo que tarde la prueba en acabar: como solo perdona
+        el 404, un 500 en cualquiera de las tres rutas la hace fallar siempre.
+      */
+      for (const bloque of ['Lo que entregó', 'Lo que escribió en la prueba']) {
+        await expect(page.getByRole('heading', { name: bloque, exact: true })).toBeVisible()
+      }
+      await expect(
+        page.getByText(/^(Buscando lo que (entregó|escribió)|Cargando las notas)…$/),
+      ).toHaveCount(0, { timeout: 15_000 })
     })
   })
 })

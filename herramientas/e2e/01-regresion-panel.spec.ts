@@ -38,7 +38,14 @@ test.describe('Regresión · el panel del equipo', () => {
     await expect(page.getByText(/banco de preguntas/i).first()).toBeVisible()
   })
 
-  test('cambiar de pestaña limpia la búsqueda y el orden, pero el corte se conserva', async ({ page }) => {
+  /*
+    Qué sobrevive al cambio de pestaña y qué no. `<Ranking key={etapa}>` se
+    remonta con cada etapa, y solo muere lo que vive dentro: el orden. La
+    búsqueda (`filtros.texto`) y el corte (`vista`) viven en el padre desde
+    #55 justo para que no se pierdan al cambiar de etapa; que los demás filtros
+    también se conservan lo prueba `33-filtros-y-seleccion-en-lote`.
+  */
+  test('cambiar de pestaña reinicia el orden, pero la búsqueda y el corte se conservan', async ({ page }) => {
     await irAVacante(page, VACANTES.LLENA)
     await corte(page, 'Toda la tanda').click()
     await page.getByRole('searchbox').fill('camila')
@@ -47,11 +54,14 @@ test.describe('Regresión · el panel del equipo', () => {
     await expect(cabecera(page, 'Candidato')).toHaveAttribute('aria-sort', 'ascending')
 
     await pestana(page, 'Prueba del puesto').click()
-    // `<Ranking key={etapa}>` remonta: la búsqueda y el orden mueren con él.
-    await expect(page.getByRole('searchbox')).toHaveValue('')
+    // El orden vive dentro de `<Ranking>` y muere con el remontaje.
     await expect(cabecera(page, 'Candidato')).toHaveAttribute('aria-sort', 'none')
-    // `vista` vive en el padre y NO se reinicia.
+    // La búsqueda y el corte viven en el padre y siguen aplicados: una sola fila.
+    await expect(page.getByRole('searchbox')).toHaveValue('camila')
     await expect(corte(page, 'Toda la tanda')).toHaveAttribute('aria-pressed', 'true')
+    await expect(filasDelRanking(page)).toHaveCount(1)
+    // Y al vaciar la búsqueda, el corte entero de esta etapa.
+    await page.getByRole('searchbox').clear()
     await expect(filasDelRanking(page)).toHaveCount(4)
   })
 })

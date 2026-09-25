@@ -161,7 +161,7 @@ Dos variables más, las dos opcionales y las dos apagadas por defecto:
 | Variable | Qué hace |
 |---|---|
 | `E2E_IA_REAL=1` | Deja correr las pruebas que le piden algo a DeepSeek de verdad (`16-cuestionario-tecnico` pasos 6–12, `17-prueba-tecnica` paso 5). Sin ella se saltan diciendo por qué: la corrida automática nunca llama al proveedor. Hace falta el backend con la clave real |
-| `E2E_ESCENARIO=base` | Apaga la intercepción del ranking de «Desarrollador web» (`herramientas/e2e/escenario-desarrollador-web.ts`): las pruebas del ranking se fían de lo que haya en la base, que es lo que dejan `scripts/sembrar-escenario-e2e.py` del backend o `herramientas/e2e/sembrar-escenario-desarrollador-web.ts`. Solo para medir una vía contra la otra |
+| `E2E_ESCENARIO=base` | Apaga la intercepción del ranking de «Desarrollador web» (`herramientas/e2e/escenario-desarrollador-web.ts`): las pruebas del ranking se fían de lo que haya en la base, que es lo que deja `npx vite-node herramientas/e2e/sembrar-escenario-desarrollador-web.ts`. Solo para repetir la medición de AC-10 o mirar el escenario en el panel: ninguna prueba la usa por defecto, y el sembrador deja la base escrita |
 
 El detalle de qué prueba usa qué, en [SUITE-E2E-CLASIFICACION-2026-09-25.md](SUITE-E2E-CLASIFICACION-2026-09-25.md).
 

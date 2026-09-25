@@ -20,7 +20,13 @@ import {
  * está en el servidor, así que se pregunta por API antes y después.
  *
  * ⚠️ **ESCRIBE**: crea `e2e.archivos.<uuid>@example.com`, le sube archivos y
- * postula a dos vacantes. Al terminar borra lo suyo.
+ * postula a dos vacantes sembradas —«Líder de operaciones» y «Analista de
+ * experiencia del cliente»—. Al terminar borra lo que se puede borrar y **retira**
+ * la cuenta: las dos postulaciones se quedan, porque nacen con su transición y
+ * esa fila es inmutable (ver `borrarCuentasDePrueba`). Cada corrida entera deja
+ * así una fila de «Prueba De Archivos», sin sesión y con Lima, en cada una de las
+ * dos vacantes: ninguna prueba puede afirmar la lista exacta de sus postulantes
+ * (`06-sin-ciudad` afirma sobre sus tres personas sembradas por eso).
  *
  * En serie a propósito: cada paso cuenta con lo que dejó el anterior —la foto
  * que se quita, el currículum con el que se postula sin adjuntar nada—.
@@ -291,8 +297,7 @@ test.describe('Regresión · el perfil guarda tu foto, tu portada y tu currícul
     await expect(page.getByRole('button', { name: 'Usar otro solo para esta vacante' })).toBeVisible()
 
     await rellenarLoDemas(page)
-    await page.getByRole('button', { name: /^Enviar/ }).click()
-    await expect(page.getByText(/postulación|recibimos/i).first()).toBeVisible({ timeout: 30_000 })
+    await enviarYComprobar(page, VACANTES.SIN_PRETENSION)
 
     // Lo que importa: el del perfil sigue siendo el mismo archivo.
     expect((await pedirPerfil()).cv).toEqual(antes.cv)
@@ -319,8 +324,7 @@ test.describe('Regresión · el perfil guarda tu foto, tu portada y tu currícul
       buffer: Buffer.from('%PDF-1.4 el que mando solo a esta'),
     })
     await rellenarLoDemas(page)
-    await page.getByRole('button', { name: /^Enviar/ }).click()
-    await expect(page.getByText(/postulación|recibimos/i).first()).toBeVisible({ timeout: 30_000 })
+    await enviarYComprobar(page, VACANTES.OTRA)
 
     // El del perfil no se enteró: mismo nombre y mismo tamaño que antes.
     expect((await pedirPerfil()).cv).toEqual(antes.cv)
@@ -365,6 +369,29 @@ async function rellenarLoDemas(page: Page) {
     await grupo.getByText('Sí', { exact: true }).click()
     await expect(grupo.getByRole('radio', { name: 'Sí' })).toBeChecked()
   }
+  // La pretensión, si la vacante publica lo que paga (V54): «Líder de operaciones»
+  // la publica y la pide. Sin ella el envío se queda en la misma página.
+  const pretension = page.getByLabel(/Tu pretensión mensual/)
+  if (await pretension.isVisible().catch(() => false)) await pretension.fill('3500')
   // Aquí se marcaba la casilla del tratamiento de datos. Se retiró de la pantalla:
   // enviar la postulación es el acto, y encima del botón se dice quién la recibe.
+}
+
+/**
+ * Envía y comprueba que la postulación EXISTE: la pantalla lleva a «Mis procesos»
+ * y el backend la cuenta entre las de esta cuenta.
+ *
+ * ⚠️ Antes se esperaba el texto `/postulación|recibimos/`, que ya está en el propio
+ * formulario —«Enviar mi postulación»—, así que la prueba pasaba aunque el envío
+ * se quedara en la página. Y se quedaba: «Líder de operaciones» pide la pretensión
+ * y nadie la escribía, así que la primera postulación no llegó a crearse nunca y
+ * «el perfil no cambia» se comprobaba sin haber postulado.
+ */
+async function enviarYComprobar(page: Page, vacante: string) {
+  await page.getByRole('button', { name: /^Enviar/ }).click()
+  await expect(page).toHaveURL(/\/procesos$/, { timeout: 30_000 })
+  const mias = (await (
+    await fetch(`${API}/portal/postulaciones`, { headers: { Authorization: `Bearer ${token}` } })
+  ).json()) as { vacante: string }[]
+  expect(mias.map((m) => m.vacante)).toContain(vacante)
 }

@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Locator } from '@playwright/test'
 import { entrarAlPanel, VACANTES } from './ayuda'
 
 /**
@@ -34,11 +34,30 @@ test.describe('Editar una vacante desde la lista', () => {
   const elModal = (page: import('@playwright/test').Page) =>
     page.getByRole('dialog', { name: 'Editar vacante' })
 
+  /**
+   * Dónde está en la PÁGINA, no en la ventana.
+   *
+   * ⚠️ `boundingBox()` mide contra la ventana. Cada corrida entera deja en la lista
+   * vacantes que no se pueden borrar (las de `14`, `16`, `17`, `29`–`35`), y el
+   * panel las pone arriba: con doce filas «Desarrollador web» queda bajo el pliegue
+   * de los 720 px, el clic en el lápiz desplaza la página para alcanzarlo y la
+   * segunda medida sale 300 px más arriba sin que la tabla se haya movido. Sumando
+   * el desplazamiento, lo que se compara es la posición en el documento: solo
+   * cambia si algo empuja las filas, que es lo que la prueba vigila.
+   */
+  const posicionEnLaPagina = (fila: Locator) =>
+    fila.evaluate((el) => {
+      const r = el.getBoundingClientRect()
+      return { x: r.x + window.scrollX, y: r.y + window.scrollY, ancho: r.width, alto: r.height }
+    })
+
   test('el lápiz de la fila abre un modal con los datos de ahora, y la tabla no se mueve', async ({
     page,
   }) => {
     const laFila = page.getByRole('row').filter({ hasText: VACANTES.LLENA })
-    const antes = await laFila.boundingBox()
+    // A la vista antes de medir: así el clic tampoco tiene que desplazar nada.
+    await laFila.scrollIntoViewIfNeeded()
+    const antes = await posicionEnLaPagina(laFila)
 
     await elLapiz(page, VACANTES.LLENA).click()
 
@@ -47,7 +66,7 @@ test.describe('Editar una vacante desde la lista', () => {
     await expect(page.getByLabel('Descripción')).not.toHaveValue('')
 
     // La tabla sigue donde estaba: el modal se pone encima, no empuja las filas.
-    expect(await laFila.boundingBox()).toEqual(antes)
+    expect(await posicionEnLaPagina(laFila)).toEqual(antes)
 
     // La solicitud y el puesto, como texto fijo y con el porqué: cambiarlos
     // cambiaría el nivel y la familia de toda la evaluación.

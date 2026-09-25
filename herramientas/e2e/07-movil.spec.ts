@@ -28,6 +28,10 @@ test.describe('Móvil 375px', () => {
 
   test('la tabla no desborda el <body>: el scroll va dentro de su envoltura', async ({ page }) => {
     await irAVacante(page, VACANTES.LLENA)
+    // `irAVacante` espera la cabecera y las pestañas; el ranking llega después
+    // —y con el escenario interceptado, una vuelta más tarde—. Sin esperar la
+    // tabla, `querySelector('table')` es null y se mide una página sin ella.
+    await expect(page.locator('table tbody tr').first()).toBeVisible()
     const desborda = await page.evaluate(
       () => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
     )

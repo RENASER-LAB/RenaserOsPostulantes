@@ -6,8 +6,9 @@ import { literal, sql } from './base-de-datos'
 /**
  * El escenario de la vacante «Desarrollador web» que las pruebas del ranking
  * dan por sabido: notas, grupos de prioridad, ciudades y pretensiones de las
- * cuatro personas sembradas. Es el mismo que escribía
- * `scripts/sembrar-escenario-e2e.py` del backend, en dos vías:
+ * cuatro personas sembradas. Es el que escribía `scripts/sembrar-escenario-e2e.py`
+ * del backend —borrado el 25/09/2026, cuando se midió que interceptar es más
+ * rápido—, en dos vías:
  *
  *   1. **`interceptarEscenario(page)`** —la vía por defecto—: el ranking de la
  *      vacante se pide al backend de verdad y, antes de que llegue a la pantalla,
@@ -16,17 +17,14 @@ import { literal, sql } from './base-de-datos'
  *      nada. Es el patrón que ya usaba `34-filtros-y-seleccion-qa` para la fila
  *      sin fecha.
  *   2. **`sembrarEscenarioEnBase()`**: lo mismo escrito en la base por SQL, con
- *      su restauración. Es la réplica en TypeScript del script de Python, para
- *      cuando haga falta que el BACKEND vea las notas (hoy ninguna prueba lo
- *      necesita: el Excel recibe los ids ya filtrados por el navegador).
+ *      su restauración. Para cuando haga falta que el BACKEND vea las notas
+ *      (hoy ninguna prueba lo necesita: el Excel recibe los ids ya filtrados
+ *      por el navegador) o para dejar el escenario puesto en una base propia.
  *
  * ⚠️ **`E2E_ESCENARIO=base` apaga las dos vías.** Con esa variable las pruebas
- * se fían de lo que haya en la base —lo que deja el sembrador de Python o el
- * de TypeScript— y así se puede medir cada vía contra la otra con las mismas
- * pruebas:
- *
- *     python3 ../backend/scripts/sembrar-escenario-e2e.py --api … --contenedor … --db …
- *     E2E_ESCENARIO=base npx playwright test 03-orden
+ * se fían de lo que haya en la base —lo que deja el sembrador de TypeScript— y
+ * así se midió esta vía contra la intercepción con las mismas pruebas (los
+ * tiempos, en `docs/SUITE-E2E-CLASIFICACION-2026-09-25.md`):
  *
  *     npx vite-node herramientas/e2e/sembrar-escenario-desarrollador-web.ts
  *     E2E_ESCENARIO=base npx playwright test 03-orden
@@ -206,17 +204,17 @@ const correosDelEscenario = () => ESCENARIO.map((p) => literal(p.correo)).join('
  * Escribe el escenario en la base —grupo, nota del perfil y pretensión— y
  * devuelve cómo dejarla exactamente como estaba.
  *
- * Es lo que hacía el script de Python, sin Python y sin `requests`: la
- * pretensión va también por SQL porque el perfil ya existe para las cuatro
- * cuentas sembradas (si alguna no lo tuviera, se avisa y se deja sin pretensión
- * en vez de inventarle un perfil).
+ * Todo por SQL, sin pasar por la API: la pretensión también, porque el perfil
+ * ya existe para las cuatro cuentas sembradas (si alguna no lo tuviera, se avisa
+ * y se deja sin pretensión en vez de inventarle un perfil). A quien va «sin
+ * pretensión» se le quita la que la cuenta trae de nacimiento.
  *
- * La nota se escribe con `insert … on conflict do update`: el script de Python
- * hacía un `update` sobre una fila que en una base recién sembrada no existe, y
- * afectaba a cero filas sin decirlo.
+ * La nota se escribe con `insert … on conflict do update`: una base recién
+ * sembrada no trae esa fila, y un `update` a secas afectaría a cero filas sin
+ * decirlo (así fallaba el script de Python al que esto reemplazó).
  *
  * No mira `E2E_ESCENARIO`: quien la llama decide. Hoy solo la llama el guion
- * `sembrar-escenario-desarrollador-web.ts`, que es la vía que se mide.
+ * `sembrar-escenario-desarrollador-web.ts`, que es la vía que se midió.
  */
 export function sembrarEscenarioEnBase(): () => void {
   const vacante = sql(`select id from vacante where titulo = ${literal(VACANTES.LLENA)} and eliminada_en is null;`)

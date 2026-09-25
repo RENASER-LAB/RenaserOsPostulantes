@@ -117,8 +117,15 @@ test.describe('Teclado sin ratón', () => {
 /**
  * Los 404 de `/ficha` y de `plantillas-prueba/versiones/N` son PREEXISTENTES:
  * ya estaban en `main` y no se cuentan.
+ *
+ * ⚠️ **Se perdonan por su ruta Y su estado, y se juzgan en la respuesta.** El
+ * aviso de la consola —«Failed to load resource: … status of 500»— no trae la
+ * URL en el texto, y perdonarlo por ese texto dejaba pasar cualquier error de
+ * red del recorrido, un 500 incluido. Así que en la consola solo se descarta
+ * ese eco, y la respuesta decide: un 404 de estas dos rutas pasa; cualquier
+ * otro estado de 400 para arriba, en estas rutas o en otras, es fallo.
  */
-const CONOCIDOS = [/\/ficha\b/, /plantillas-prueba\/versiones\/\d+/, /Failed to load resource/]
+const CONOCIDOS_404 = [/\/ficha\b/, /\/plantillas-prueba\/versiones\/\d+$/]
 
 test.describe('La consola, sin los fallos conocidos', () => {
   test('recorrer el ranking no levanta errores nuevos', async ({ page }) => {
@@ -126,8 +133,13 @@ test.describe('La consola, sin los fallos conocidos', () => {
     page.on('console', (m) => {
       if (m.type() !== 'error') return
       const texto = m.text()
-      if (CONOCIDOS.some((r) => r.test(texto))) return
+      if (texto.startsWith('Failed to load resource')) return
       errores.push(texto)
+    })
+    page.on('response', (r) => {
+      if (r.status() < 400) return
+      if (r.status() === 404 && CONOCIDOS_404.some((ruta) => ruta.test(new URL(r.url()).pathname))) return
+      errores.push(`${r.status()} · ${r.request().method()} ${r.url()}`)
     })
     page.on('pageerror', (e) => errores.push(`pageerror: ${e.message}`))
 

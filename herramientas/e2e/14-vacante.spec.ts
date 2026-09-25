@@ -43,9 +43,25 @@ test.describe.serial('El recorrido entero de una vacante', () => {
     expect(vigia.fallos, vigia.fallos.join('\n')).toEqual([])
   })
 
+  /**
+   * Abre la vacante con su configuración a la vista.
+   *
+   * En borrador la configuración se abre sola —es lo único que hay que hacer
+   * ahí—; publicada, queda plegada tras la tuerca porque lo que hace falta es
+   * la tabla, y hay que pulsarla. Se decide por lo que dice la cabecera y no
+   * por el estado del botón: en borrador se abre en un efecto, un render
+   * después de que llegue la vacante, y leer el botón antes podría pulsarlo
+   * de más y volver a plegarla.
+   */
   async function abrirLaVacante(page: Page) {
     if (idVacante === null) throw new Error('La vacante todavía no se creó: este tramo va después del alta')
     await page.goto(`/admin/vacantes/${idVacante}`)
+    const tuerca = page.getByRole('button', { name: 'Configuración de la vacante' })
+    await expect(tuerca).toBeVisible({ timeout: 15_000 })
+    if (await page.getByText(/Publicada el/).isVisible()) {
+      await expect(tuerca).toHaveAttribute('aria-expanded', 'false')
+      await tuerca.click()
+    }
     await expect(page.getByRole('heading', { name: 'Qué responderá quien postule' })).toBeVisible({ timeout: 15_000 })
   }
 
@@ -262,8 +278,8 @@ test.describe.serial('El recorrido entero de una vacante', () => {
    * esperar a la IA sin gastar dinero de verdad.
    */
   test('la vacante se puede poner en automático, y lo dice sin jerga', async ({ page }) => {
+    // Ya publicada: `abrirLaVacante` pulsa la tuerca, que aquí está plegada.
     await abrirLaVacante(page)
-    await page.getByRole('button', { name: 'Configuración de la vacante' }).click()
 
     const interruptor = page.getByRole('checkbox', { name: /Calificar y avanzar sola/i })
     await expect(interruptor).toBeVisible({ timeout: 15_000 })
@@ -272,14 +288,18 @@ test.describe.serial('El recorrido entero de una vacante', () => {
     // modelo, y esa decisión es de quien lleva la vacante.
     await expect(page.locator('main')).toContainText(/cada paso lo pides tú/i)
 
-    await interruptor.check()
+    // Como la del banco, la casilla la manda el servidor: no se marca sola al
+    // pulsarla, cambia cuando el backend lo confirma. `check()` exigiría el
+    // cambio en el acto y fallaría con el guardado ya hecho; se pulsa y se espera.
+    await interruptor.click()
     await expect(interruptor).toBeChecked({ timeout: 15_000 })
     // Y lo que promete se dice sin nombrar modelos ni colas.
     await expect(page.locator('main')).toContainText(/se califica sola y llega hasta la prueba/i)
 
     // Se deja como estaba: la siguiente prueba cierra esta vacante.
-    await interruptor.uncheck()
+    await interruptor.click()
     await expect(interruptor).not.toBeChecked({ timeout: 15_000 })
+    await expect(page.locator('main')).toContainText(/cada paso lo pides tú/i)
   })
 
   /**
@@ -287,14 +307,16 @@ test.describe.serial('El recorrido entero de una vacante', () => {
    * forma de borrarla: lo más cerca que se puede dejar es cerrada.
    */
   test('se cierra: el e2e no deja vacantes sueltas en el portal', async ({ page }) => {
-    await abrirLaVacante(page)
     // Cerrar una vacante se hace una sola vez y no tiene vuelta atrás: desde la
     // V53 vive dentro de la tuerca, la última de la configuración, y no en la
-    // cabecera compitiendo con lo que se hace todos los días.
-    await page.getByRole('button', { name: 'Configuración de la vacante' }).click()
+    // cabecera compitiendo con lo que se hace todos los días. La tuerca la
+    // pulsa `abrirLaVacante`.
+    await abrirLaVacante(page)
     await page.getByRole('button', { name: 'Cerrar vacante' }).click()
     await page.getByPlaceholder('Motivo del cierre').fill('Limpieza: la dejó el e2e')
-    await page.getByRole('button', { name: 'Cerrar vacante' }).click()
+    // El envío se llama «Confirmar cierre»: pulsar otra vez «Cerrar vacante»
+    // pliega el formulario y la vacante se queda publicada.
+    await page.getByRole('button', { name: 'Confirmar cierre' }).click()
     await expect(page.getByText(/^Cerrada/)).toBeVisible({ timeout: 15_000 })
   })
 })
