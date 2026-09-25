@@ -142,9 +142,12 @@ test.describe.serial('El recorrido entero de una vacante', () => {
       await page.getByLabel('Descripción').fill(
         'Acompañas a quien ya es cliente: resuelves sus dudas, detectas lo que se repite y lo llevas al equipo que puede arreglarlo.',
       )
-      await page.getByLabel('Modalidad (Presencial, Híbrido…)').fill('Híbrido')
+      // Desde el 25/09/2026 la modalidad y la ciudad se eligen de una lista, y una
+      // híbrida exige su ciudad.
+      await page.getByLabel('Modalidad', { exact: true }).selectOption('Híbrido')
+      await page.getByLabel('Ciudad', { exact: true }).selectOption('1501')
       await page.getByLabel('Horario').fill('Lunes a viernes, 9:00 a 18:00')
-      await page.getByLabel('Ubicación').fill('San Isidro, Lima')
+      await page.getByLabel('Zona o referencia').fill('San Isidro, Lima')
       await page.getByRole('button', { name: /Crear en borrador/ }).click()
 
       // Creada: está en la lista. Si en vez de eso la pantalla se queja, que se lea la queja.

@@ -5,7 +5,7 @@
  * proceso; el portal solo tiene que estar ahi para volver.
  */
 
-import { Link, NavLink, Outlet, matchPath, useLocation } from 'react-router-dom'
+import { Link, NavLink, Outlet, matchPath, useLocation, useNavigationType } from 'react-router-dom'
 import { useEffect, useRef } from 'react'
 import { patrones, rutas } from '@/rutas'
 import { useSesion } from './Sesion'
@@ -27,6 +27,7 @@ import estilos from './Armazon.module.css'
  * especifico que a veces llega tarde.
  */
 const TITULOS: Array<[string, string]> = [
+  [patrones.inicio, 'Inicio'],
   [patrones.vacantes, 'Vacantes abiertas'],
   [patrones.vacante, 'Detalle de la vacante'],
   [patrones.postular, 'Postular'],
@@ -88,7 +89,8 @@ const PUERTAS = [
  * cuenta. Cualquier otra pantalla sin cuenta es «acceso necesario».
  */
 const PUBLICAS_CON_CONTENIDO = [
-  { path: patrones.vacantes, end: true },
+  { path: patrones.inicio, end: true },
+  patrones.vacantes,
   patrones.vacante,
   patrones.politica,
 ]
@@ -133,6 +135,7 @@ function TituloDeLaPagina() {
  */
 function ArribaAlCambiarDePagina() {
   const { pathname, hash, key } = useLocation()
+  const tipo = useNavigationType()
   const anterior = useRef<string | null>(null)
 
   useEffect(() => {
@@ -140,6 +143,14 @@ function ArribaAlCambiarDePagina() {
     // llegar de otra pantalla a `/#vacantes-abiertas` este efecto sube a cero
     // y deja al visitante arriba del todo, que es justo donde no queria ir.
     if (hash) {
+      anterior.current = pathname
+      return
+    }
+
+    // Al VOLVER a la lista de vacantes —atrás desde una ficha— manda la propia
+    // lista, que se desplaza hasta la tarjeta que se abrió. Subir a cero aquí
+    // haría que la pantalla saltara arriba y luego bajara.
+    if (tipo === 'POP' && matchPath(patrones.vacantes, pathname)) {
       anterior.current = pathname
       return
     }
@@ -156,7 +167,7 @@ function ArribaAlCambiarDePagina() {
     const quieto = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
     window.scrollTo({ top: 0, behavior: mismaPantalla && !quieto ? 'smooth' : 'auto' })
-  }, [pathname, hash, key])
+  }, [pathname, hash, key, tipo])
 
   return null
 }
@@ -208,6 +219,11 @@ function claseDelEnlace({ isActive }: { isActive: boolean }) {
   return isActive ? `${estilos.enlace} ${estilos.enlaceActivo}` : estilos.enlace
 }
 
+/** El destino que cede sitio en una pantalla muy estrecha. Ver `.enlaceQueCede`. */
+function claseDelEnlaceQueCede(estado: { isActive: boolean }) {
+  return `${claseDelEnlace(estado)} ${estilos.enlaceQueCede}`
+}
+
 /*
  * Aqui vivia `usarPosada`, que escuchaba el desplazamiento para saber si la
  * pagina se habia movido de arriba y ponerle `.posada` a la cabecera: primero
@@ -242,7 +258,7 @@ export function Armazon() {
    * `end` importa: sin el, `/` casa con todo y el cielo saldria en las dieciocho
    * pantallas.
    */
-  const conCielo = matchPath({ path: patrones.vacantes, end: true }, pathname) !== null
+  const conCielo = matchPath({ path: patrones.inicio, end: true }, pathname) !== null
 
   /*
    * El pie corto: una sola linea, para las pantallas que son una tarjeta.
@@ -256,7 +272,8 @@ export function Armazon() {
    * Van con el corto las puertas —entrar, crear cuenta, el enlace del correo, la
    * contraseña olvidada, y las tres del panel— y cualquier pantalla privada vista
    * SIN cuenta, que es «acceso necesario». Con el largo, las publicas que tienen
-   * contenido que leer: la portada, la ficha de una vacante y la politica.
+   * contenido que leer: la portada, el buscador de vacantes, la ficha de una
+   * vacante y la politica.
    *
    * `hayCuenta` sale del token guardado y se sabe desde el primer render, asi que
    * quien tiene cuenta no ve parpadear el pie al abrir «Mis procesos».
@@ -279,26 +296,24 @@ export function Armazon() {
 
       <header className={estilos.cabecera}>
         <div className={estilos.cabeceraDentro}>
-          <Link className={estilos.marca} to={rutas.vacantes()} aria-label="EX, inicio">
+          <Link className={estilos.marca} to={rutas.inicio()} aria-label="EX, inicio">
             <Marca tamano={22} />
           </Link>
 
           <nav className={estilos.navegacion}>
-            <NavLink className={claseDelEnlace} to={rutas.vacantes()} end>
+            <NavLink className={claseDelEnlace} to={rutas.inicio()} end>
               Inicio
             </NavLink>
             {/*
-              «Vacantes» no es una pantalla: es una seccion de la portada, la
-              misma `#vacantes-abiertas` a la que apunta el boton principal de
-              arriba. Por eso va de `Link` y no de `NavLink`: un `NavLink` aqui
-              comparte ruta con «Inicio» y los dos se encenderian a la vez.
+              «Vacantes» es una pantalla desde el 25/09/2026: `/vacantes`, con
+              el buscador y los filtros. Va de `NavLink` sin `end` para encenderse
+              también en la ficha de cualquier vacante (`/vacantes/:id`); en la
+              portada solo se enciende «Inicio». Hasta entonces era un ancla a la
+              sección `#vacantes-abiertas` de la portada y no se encendía nunca.
             */}
-            <Link
-              className={`${estilos.enlace} ${estilos.enlaceSeccion}`}
-              to={{ pathname: rutas.vacantes(), hash: '#vacantes-abiertas' }}
-            >
+            <NavLink className={claseDelEnlaceQueCede} to={rutas.vacantes()}>
               Vacantes
-            </Link>
+            </NavLink>
             <NavLink className={claseDelEnlace} to={rutas.procesos()}>
               Mis procesos
             </NavLink>
@@ -399,7 +414,7 @@ function PieEnColumnas() {
     <>
         <div className={estilos.pieDentro}>
           <div className={estilos.pieMarca}>
-            <Link className={estilos.marcaDelPie} to={rutas.vacantes()} aria-label="EX, inicio">
+            <Link className={estilos.marcaDelPie} to={rutas.inicio()} aria-label="EX, inicio">
               <Marca tamano={20} />
             </Link>
             <p className={estilos.pieQueEs}>
@@ -411,10 +426,8 @@ function PieEnColumnas() {
           <nav className={estilos.pieColumnas} aria-label="Enlaces del pie">
             <div className={estilos.pieColumna}>
               <h2 className={estilos.pieTitulo}>El portal</h2>
-              <Link to={rutas.vacantes()}>Inicio</Link>
-              <Link to={{ pathname: rutas.vacantes(), hash: '#vacantes-abiertas' }}>
-                Vacantes abiertas
-              </Link>
+              <Link to={rutas.inicio()}>Inicio</Link>
+              <Link to={rutas.vacantes()}>Vacantes abiertas</Link>
               <Link to={rutas.procesos()}>Mis procesos</Link>
             </div>
 

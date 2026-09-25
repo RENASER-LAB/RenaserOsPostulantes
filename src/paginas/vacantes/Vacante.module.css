@@ -20,6 +20,21 @@
   composes: volver from '../../estilos/piezas.module.css';
 }
 
+/* El mismo enlace de vuelta, cuando vuelve atrás en el historial y es un botón. */
+.volverAtras {
+  composes: volver from '../../estilos/piezas.module.css';
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: var(--t-apoyo);
+  cursor: pointer;
+}
+
+.volverAtras:hover {
+  text-decoration: underline;
+}
+
 .encabezado {
   composes: encabezado from '../../estilos/pagina.module.css';
 }
@@ -53,6 +68,8 @@
   display: inline-flex;
   align-items: center;
   gap: var(--e2);
+  /* La zona larga se parte; no empuja la fila. */
+  overflow-wrap: anywhere;
 }
 
 .dato::before {

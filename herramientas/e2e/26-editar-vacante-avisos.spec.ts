@@ -231,7 +231,7 @@ test.describe('Editar una vacante publicada y avisar a quien sigue en carrera', 
     antes = idsDeAvisos()
     await page.goto('/admin')
     await elLapiz(page, tituloActual).click()
-    await campo(page, 'Ubicación').fill('Lima, San Isidro')
+    await campo(page, 'Zona o referencia').fill('Lima, San Isidro')
     await campo(page, 'Mínimo mensual').fill('3500')
     await campo(page, 'Por qué cambia el sueldo').fill('Se cierra la banda por arriba')
     await page.getByRole('button', { name: 'Guardar cambios' }).click()
@@ -243,7 +243,7 @@ test.describe('Editar una vacante publicada y avisar a quien sigue en carrera', 
     nuevos = avisosDe(escenario.publicada).filter((a) => !antes.includes(Number(a.id)))
     expect(nuevos, 'un aviso por persona, no uno por campo').toHaveLength(2)
     expect(new Set(nuevos.map((a) => String(a.tipo)))).toEqual(new Set(['VACANTE_ACTUALIZADA']))
-    expect(String(nuevos[0]!.cuerpo)).toContain('Ubicación: sin indicar → Lima, San Isidro')
+    expect(String(nuevos[0]!.cuerpo)).toContain('Zona o referencia: sin indicar → Lima, San Isidro')
     expect(String(nuevos[0]!.cuerpo)).toContain(
       'Remuneración: S/ 3 200 a 4 000 → S/ 3 500 a 4 000',
     )
@@ -311,7 +311,9 @@ test.describe('Editar una vacante publicada y avisar a quien sigue en carrera', 
       if (r.method() === 'PUT' && r.url().includes('/panel/vacantes/')) peticiones.push(r.url())
     })
 
-    await campo(page, 'Modalidad (Presencial, Híbrido…)').fill('Híbrido, 3 días')
+    // `exact`: sin él, «Modalidad» también casa con los botones «Archivar/Eliminar la vacante …»
+    // de cualquier vacante del listado cuyo título lleve esa palabra.
+    await page.getByLabel('Modalidad', { exact: true }).selectOption('Remoto')
     await campo(page, 'Mínimo mensual').fill('3600')
     await page.getByRole('button', { name: 'Guardar cambios' }).click()
 
@@ -320,7 +322,7 @@ test.describe('Editar una vacante publicada y avisar a quien sigue en carrera', 
     )
     expect(peticiones, 'ni una petición sale con el formulario incompleto').toHaveLength(0)
     // Lo escrito sigue donde estaba: nadie vuelve a teclear tres párrafos por un campo.
-    await expect(campo(page, 'Modalidad (Presencial, Híbrido…)')).toHaveValue('Híbrido, 3 días')
+    await expect(page.getByLabel('Modalidad', { exact: true })).toHaveValue('Remoto')
     await expect(campo(page, 'Mínimo mensual')).toHaveValue('3600')
     expect(Number(vacanteEnBase(escenario.publicada).remuneracion_min)).toBe(3500)
   })

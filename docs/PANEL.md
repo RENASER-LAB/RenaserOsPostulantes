@@ -1,7 +1,7 @@
 # El panel del equipo (`/admin`)
 
 Qué es, cómo se entra, qué enseña cada pestaña, qué exige el backend antes de publicar una
-vacante y cómo se corrige después. El recorrido de los dos lados —equipo y candidato— está en
+vacante, cómo se eligen su modalidad y su ciudad, y cómo se corrige después. El recorrido de los dos lados —equipo y candidato— está en
 [06-FLUJO-COMPLETO.md](06-FLUJO-COMPLETO.md).
 
 ---
@@ -462,5 +462,35 @@ Comprobarlo: `npx playwright test herramientas/e2e/33-recuperar-contrasena.spec.
 clon, leen el enlace del correo guardado en la base (`correo_enviado`: el backend local no
 envía correo) y las retiran al terminar. El 34 no escribe nada. Necesitan las variables de
 [TRABAJAR-EN-LOCAL.md](TRABAJAR-EN-LOCAL.md).
+
+### Modalidad y ciudad, de una lista (25/09)
+
+El portal ya deja buscar y filtrar vacantes por ciudad y modalidad, y con texto libre «Lima» y
+«LIMA» eran dos ciudades. Por eso el formulario de la vacante —el mismo para crear y para
+corregir— cambió tres campos:
+
+| Campo | Cómo es ahora |
+|---|---|
+| **Modalidad** | Un desplegable con Presencial, Híbrido y Remoto. **Obligatorio al crear** |
+| **Ciudad** | El mismo catálogo del registro del candidato, agrupado por departamento y con «Fuera del Perú» al final. **Obligatoria al crear si la modalidad es Presencial o Híbrido**; con Remoto es opcional |
+| **Zona o referencia (opcional)** | Lo que antes se llamaba «Ubicación»: barrio, distrito o dirección. Se ve en la ficha y no se filtra |
+
+**Las vacantes viejas se corrigen sin obligar a decidir nada.** Si no tienen modalidad o ciudad,
+el desplegable dice «Sin indicar» y se puede guardar así; si la modalidad guardada no se parece a
+ninguna de las tres, sale como «test (valor anterior)», marcada. La ciudad solo se vuelve a pedir
+si alguien **elige** Presencial o Híbrido en una vacante que no la tiene.
+
+⚠️ **Si nadie toca un desplegable, se guarda lo que había, letra por letra.** Una modalidad
+guardada como «PRESENCIAL» sigue siendo «PRESENCIAL» al corregir el horario: si se guardara como
+«Presencial», el backend lo contaría como un cambio y avisaría en falso a cada postulante en
+carrera.
+
+Cambiar la ciudad de una publicada sí avisa, como cualquier dato que ve el candidato: «Ciudad: —
+→ Arequipa». La zona aparece en el aviso como «Zona o referencia: antes → ahora». Un código de
+ciudad que el backend no reconoce responde «Esa ciudad no está en el catálogo».
+
+Comprobarlo: `npx playwright test herramientas/e2e/39-buscar-vacantes-panel.spec.ts` ⚠️
+**escribe**: siembra su propia solicitud, vacantes y postulantes, y lo retira al terminar.
+Necesita las variables de [TRABAJAR-EN-LOCAL.md](TRABAJAR-EN-LOCAL.md).
 
 ---

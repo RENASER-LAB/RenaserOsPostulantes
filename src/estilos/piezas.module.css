@@ -201,6 +201,29 @@
   cursor: default;
 }
 
+/*
+ * El secundario que solo existe en el telefono. En escritorio no se pinta:
+ * es para lo que en pantalla grande esta a la vista y en el telefono se pliega
+ * detras de un boton, como «Filtrar (n)» de la busqueda de vacantes.
+ *
+ * ⚠️ **Vive aqui y no en la hoja de la pantalla, y es a proposito.** Un
+ * `composes` desde otro archivo no gana por escribirse despues: `.filtrar {
+ * composes: secundario; display: none }` perdia contra el `display: inline-flex`
+ * de `.secundario` y el boton se veia en escritorio al lado de los filtros ya
+ * desplegados. En la misma hoja, lo que va despues gana. El telefono es el
+ * mismo corte que `pagina.module.css`: 640 px.
+ */
+.secundarioDelTelefono {
+  composes: secundario;
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .secundarioDelTelefono {
+    display: inline-flex;
+  }
+}
+
 /* ---------- La accion firme que no abre la pantalla ---------- */
 
 /*

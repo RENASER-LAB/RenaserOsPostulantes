@@ -22,6 +22,17 @@ export interface RequisitoPublico {
   descripcion: string
 }
 
+/**
+ * La ciudad de una vacante, como la lee el portal: el código —lo que viaja en la
+ * dirección al filtrar—, el nombre y el departamento, por si dos se llamaran igual.
+ * `EXT` («Fuera del Perú») sale con el departamento vacío.
+ */
+export interface CiudadPublica {
+  codigo: string
+  nombre: string
+  departamento: string | null
+}
+
 export interface VacantePublica {
   id: number
   titulo: string
@@ -37,7 +48,12 @@ export interface VacantePublica {
   requisitos: string | null
   modalidad: string | null
   horario: string | null
+  /** La zona o referencia: barrio, distrito o dirección. Hasta la V62 era «la ubicación». */
   ubicacion: string | null
+  /** La ciudad del catálogo, o `null` si la vacante no la dice (V62). */
+  ciudad: CiudadPublica | null
+  /** Cuándo se publicó. Puede faltar: se fija al publicar y las viejas no siempre la tienen. */
+  publicadaEn: FechaIso | null
   remuneracion: RemuneracionPublica
   requisitosObjetivos: RequisitoPublico[]
 }

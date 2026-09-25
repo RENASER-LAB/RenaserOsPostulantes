@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-25T22:45:44Z",
+  "generatedAt": "2026-09-25T23:02:42Z",
   "title": "Design System: EX · Portal del candidato",
   "extensions": {
     "colorMeta": {
@@ -582,12 +582,12 @@
         "value": "480px"
       },
       {
-        "name": "cae-vacantes",
-        "value": "400px"
+        "name": "cabecera-apretada",
+        "value": "470px"
       },
       {
-        "name": "cabecera-al-limite",
-        "value": "360px"
+        "name": "cae-vacantes",
+        "value": "368px"
       }
     ]
   },

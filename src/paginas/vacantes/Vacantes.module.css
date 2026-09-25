@@ -545,98 +545,31 @@
 
 /* ---------- las vacantes ---------- */
 
+/*
+ * Las tres mas recientes. La tarjeta vive en `Tarjeta.module.css`, compartida con
+ * la pantalla de busqueda; aqui solo la rejilla y la salida a todas.
+ */
 .lista {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: var(--e3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-/*
- * ⚠️ **El levantarse es de `motion`, no de aqui.** Hasta el 10/09/2026 esta
- * hoja subia la tarjeta 2 px y la pieza D la subia 4: dos animaciones peleando
- * por el mismo `transform`, con dos curvas distintas. Se queda la de motion,
- * que va con muelle. Aqui solo la sombra. Ver `src/ui/movimiento.tsx`.
- */
-.vacante {
-  position: relative;
-  border: 1px solid var(--regla);
-  border-radius: var(--radio);
-  background-color: var(--nube);
-  transition: box-shadow 300ms var(--salida);
+.lista > li {
+  min-width: 0;
 }
 
-.vacante:hover {
-  box-shadow: var(--sombra-nube);
-}
-
-.enlaceVacante {
+.verTodasLasVacantes {
   display: flex;
-  flex-direction: column;
-  height: 100%;
-  padding: var(--e5);
-  color: inherit;
-  text-decoration: none;
+  justify-content: center;
+  margin-top: var(--e6);
 }
 
-/*
- * Donde esta el puesto: el primer filtro que aplica cualquiera que busca trabajo.
- *
- * ⚠️ **Llevaba la bruma coral y se fue el 11/09/2026.** Era el peor sitio
- * posible para gastarla: la bruma es lo que marca «te toca a ti», y aqui decia
- * «Hibrido · Lima» **tres veces en la primera pantalla que ve cualquiera**, para
- * una categoria. Cuando mas tarde llegue el coral que si significa tu turno, ya
- * se ha visto como decoracion.
- *
- * Y no habia nada que discriminar: en la portada nadie tiene turno todavia.
- */
-.etiqueta {
-  align-self: flex-start;
-  margin-bottom: var(--e4);
-  padding: 4px 10px;
-  border-radius: var(--radio-marca);
-  background-color: var(--nube-hundida);
-  font-size: var(--t-micro);
-  font-weight: 600;
-  color: var(--tinta2);
-}
-
-.tituloVacante {
-  margin: 0 0 var(--e1);
-  font-size: var(--t-titulo);
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  line-height: 1.2;
-  color: var(--tinta);
-}
-
-.empresa {
-  font-size: var(--t-apoyo);
-  color: var(--tinta3);
-}
-
-.queSeHace {
-  margin: var(--e4) 0 0;
-  font-size: var(--t-prosa);
-  line-height: 1.5;
-  color: var(--tinta3);
-}
-
-.pieVacante {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--e2);
-  /* `auto` pega el pie abajo aunque las tarjetas tengan textos de largos distintos. */
-  margin-top: auto;
-  padding-top: var(--e5);
-  font-size: var(--t-menor);
-  color: var(--tinta3);
-}
-
-.paga {
-  font-weight: 600;
-  color: var(--tinta);
+.verTodas {
+  composes: secundarioGrande from '../../estilos/piezas.module.css';
 }
 
 /* ---------- los estados de carga, error y vacio ---------- */

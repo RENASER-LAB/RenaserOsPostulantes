@@ -2,34 +2,38 @@
  * La portada: qué es este proceso y qué vacantes hay abiertas.
  *
  * Es la única pantalla en modo Persuade —quien llega todavía no ha postulado y
- * tiene que decidir si le merece la pena—, y desde el rediseño de 09/2026 la
- * compone el mundo nuevo: fondo blanco, titular centrado, acción en negro y dos
- * piezas de color —la loseta con el maletín incrustada en el titular y el
- * resplandor coral dentro del escaparate—.
+ * tiene que decidir si le merece la pena—, y desde el 25/09/2026 la compone
+ * «El cielo despejado»: el cielo azul detrás de la cabecera —solo aquí—, el
+ * titular centrado y la acción en casi negro.
  *
- * La pieza grande es el escaparate: una tarjeta blanca de borde grueso con el
- * recorrido dentro, que enseña el producto en vez de decorar la pantalla. En su
- * sitio hubo una banda irisada, que se fue con el mundo anterior.
+ * La pieza grande es el escaparate: un marco de cristal con una ventana del
+ * portal dentro y el recorrido en ella, que enseña el producto en vez de
+ * decorar la pantalla.
  *
  * Lo que no cambia es la promesa: lo que ve antes de entrar es lo mismo que verá
  * después, porque el recorrido se dibuja igual aquí que dentro del portal.
  *
  * Se ve sin cuenta. `GET /vacantes` es público.
+ *
+ * Desde el 25/09/2026 la sección de vacantes enseña **las tres más recientes** y
+ * manda a `/vacantes`, que es donde se busca, se filtra y se ordena. Los enlaces
+ * viejos a `/#vacantes-abiertas` siguen cayendo en esa sección.
  */
 
+import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { listarVacantes } from '@/api/portal'
-import type { VacantePublica } from '@/api/tipos'
 import { ETAPAS } from '@/dominio/estados'
+import { ahora as ahoraDelServidor } from '@/dominio/reloj'
 import { rutas } from '@/rutas'
-import { AlAsomarse } from '@/ui/movimiento'
-import {
-  FranjaQueSeLlena,
-  TarjetaQueResponde,
-  TituloQueViaja,
-} from '@/ui/movimiento'
+import { AlAsomarse, FranjaQueSeLlena } from '@/ui/movimiento'
+import { ciudadesDistintas, indexar, porFecha, publicadaHace } from './busqueda'
+import { Tarjeta } from './Tarjeta'
 import estilos from './Vacantes.module.css'
+
+/** Cuántas enseña la portada; el resto vive en `/vacantes`. */
+const RECIENTES = 3
 
 /** Qué hace el candidato en cada etapa. Es texto de producto, no dato. */
 const QUE_ES: Record<string, string> = {
@@ -97,8 +101,17 @@ export function Vacantes() {
   const consulta = useQuery({ queryKey: ['vacantes'], queryFn: listarVacantes })
   // Lo que llegue por la red no puede dar por hecho que tiene la forma
   // prometida: un cuerpo que no sea lista reventaba la pantalla entera.
-  const vacantes = Array.isArray(consulta.data) ? consulta.data : []
-  const ciudades = new Set(vacantes.map((v) => v.ubicacion).filter(Boolean)).size
+  const vacantes = useMemo(
+    () => (Array.isArray(consulta.data) ? consulta.data : []),
+    [consulta.data],
+  )
+  // Ciudades de verdad, del catálogo: «Selva Alegre» es un barrio y no cuenta, y
+  // las que no dicen ciudad tampoco. Antes se contaban textos de ubicación distintos.
+  const ciudades = ciudadesDistintas(vacantes)
+  // Las tres más recientes, con las que no tienen fecha al final; y la hora del
+  // servidor tomada al llegar los datos, para el «Publicada hace…» de cada una.
+  const recientes = useMemo(() => [...indexar(vacantes)].sort(porFecha).slice(0, RECIENTES), [vacantes])
+  const ahora = useMemo(() => ahoraDelServidor(), [consulta.dataUpdatedAt])
 
   return (
     <div className={estilos.pagina}>
@@ -114,13 +127,13 @@ export function Vacantes() {
           */}
           <h1 className={estilos.entrada}>Tu próximo trabajo puede empezar aquí</h1>
           <div className={estilos.acciones}>
-            <a
+            <Link
               className={estilos.accionPrincipal}
-              href="#vacantes-abiertas"
+              to={rutas.vacantes()}
               data-rotulo="Ver las vacantes abiertas"
             >
               Ver las vacantes abiertas
-            </a>
+            </Link>
             <Link
               className={estilos.accionSecundaria}
               to={rutas.procesos()}
@@ -284,11 +297,29 @@ export function Vacantes() {
           )}
 
           {vacantes.length > 0 && (
-            <div className={estilos.lista}>
-              {vacantes.map((v) => (
-                <Vacante key={v.id} vacante={v} />
-              ))}
-            </div>
+            <>
+              <ul className={estilos.lista} role="list" aria-label="Vacantes más recientes">
+                {recientes.map((v) => (
+                  <li key={v.vacante.id}>
+                    <Tarjeta vacante={v.vacante} publicada={publicadaHace(v.publicadaEn, ahora)} />
+                  </li>
+                ))}
+              </ul>
+              {/*
+                Todas viven en `/vacantes`, donde se busca y se filtra. Aquí van las
+                tres más recientes: la portada es para decidir si merece la pena, no
+                para leer cuarenta tarjetas.
+              */}
+              <div className={estilos.verTodasLasVacantes}>
+                <Link
+                  className={estilos.verTodas}
+                  to={rutas.vacantes()}
+                  data-rotulo={`Ver las ${vacantes.length} vacantes`}
+                >
+                  Ver las {vacantes.length} vacantes
+                </Link>
+              </div>
+            </>
           )}
         </section>
       </AlAsomarse>
@@ -365,13 +396,13 @@ export function Vacantes() {
               pantalla, paso a paso.
             </p>
             <div className={estilos.acciones}>
-              <a
+              <Link
                 className={estilos.accionPrincipal}
-                href="#vacantes-abiertas"
+                to={rutas.vacantes()}
                 data-rotulo="Ver las vacantes abiertas"
               >
                 Ver las vacantes abiertas
-              </a>
+              </Link>
               <Link
                 className={estilos.accionSecundaria}
                 to={rutas.procesos()}
@@ -441,47 +472,3 @@ function Maqueta({ que }: { que: 'curriculum' | 'sin-cuenta' | 'persona' }) {
   )
 }
 
-function Vacante({ vacante }: { vacante: VacantePublica }) {
-  const destino = rutas.vacante(vacante.id)
-  const donde = [vacante.modalidad, vacante.ubicacion].filter(Boolean).join(' · ')
-  // Casi todos los campos de la vacante pueden venir vacios, asi que se elige
-  // el primero que traiga algo en vez de dar por hecho ninguno.
-  const resumen = vacante.proposito ?? vacante.descripcion
-
-  // D · la tarjeta se levanta al pasar por encima.
-  return (
-    <TarjetaQueResponde className={estilos.vacante}>
-      <Link className={estilos.enlaceVacante} to={destino}>
-        {donde && <span className={estilos.etiqueta}>{donde}</span>}
-        {/* B · este titulo viaja hasta el titular de la ficha. */}
-        <TituloQueViaja id={vacante.id} className={estilos.tituloVacante}>
-          {vacante.titulo}
-        </TituloQueViaja>
-        {vacante.nombreEmpresa && (
-          <span className={estilos.empresa}>{vacante.nombreEmpresa}</span>
-        )}
-        {resumen && <p className={estilos.queSeHace}>{resumen}</p>}
-        <span className={estilos.pieVacante}>
-          {vacante.horario && <span>{vacante.horario}</span>}
-          {/*
-            ⚠️ **Aqui NO va el `<Remuneracion>` compartido, y es a proposito.**
-            Esa pieza es un bloque con su etiqueta, su matiz y su «actualizado
-            el …»: lo que hace falta en la ficha, donde el sueldo es la mitad de
-            un trato. En la tarjeta de la lista el sueldo es un dato mas del pie,
-            al lado del horario, y el bloque entero rompe la fila.
-
-            Lo que si se respeta es la regla de esa pieza: **`OCULTA` se nombra,
-            no se esconde** —un hueco donde deberia ir el numero se lee como un
-            fallo de carga—, y el monto **llega escrito del servidor**, asi que
-            aqui no se formatea ningun numero.
-          */}
-          <span className={estilos.paga}>
-            {!vacante.remuneracion || vacante.remuneracion.tipo === 'OCULTA'
-              ? 'Sueldo sin publicar'
-              : vacante.remuneracion.texto}
-          </span>
-        </span>
-      </Link>
-    </TarjetaQueResponde>
-  )
-}

@@ -395,8 +395,8 @@ en el panel** (`src/ui/recuperacion/`), y se pinta pensando que va dentro de una
 tarjeta la pone cada pantalla.
 
 **Hay dos pies.** El **pie en columnas** (290 px: la marca, «El portal», «Tus datos»,
-«Empresas» y el copyright) va en las páginas que se leen: la portada, la ficha de una vacante y
-la política. El **pie corto** (una línea, ~60 px) va en las puertas —entrar, crear cuenta, el
+«Empresas» y el copyright) va en las páginas que se leen: la portada, la búsqueda de
+vacantes, la ficha de una vacante y la política. El **pie corto** (una línea, ~60 px) va en las puertas —entrar, crear cuenta, el
 enlace del correo, la contraseña olvidada y las tres del panel— y en cualquier pantalla privada
 vista sin cuenta. Con el grande, esas pantallas de una sola tarea sacaban scroll en un
 escritorio normal. Con el corto y la composición en tarjeta, **todas caben** a 1910×922,
@@ -407,11 +407,24 @@ La portada es la única que rompe el carril: su cielo y la banda de «Por qué e
 distinto» van **a sangre**, a `100vw`. Eso solo es seguro porque su armazón recorta con
 `overflow-x: clip` —y no con `hidden`, que rompería el `sticky` de la cabecera—.
 
-El corte principal es **640 px**, el del teléfono: lo usan 47 hojas. Además hay cortes propios
-de una pieza —900, 860, 760, 700, 620, 480, 400 y 360 px— donde esa pieza lo necesita. A 900 la
-banda de tres tarjetas pasa a una columna, la lista de vacantes a dos, y la ventana de la
-portada deja de cortarse; por debajo de 620 la cabecera pierde su columna central; por debajo
-de 400 se cae el destino «Vacantes», que es un ancla de la portada y no una pantalla.
+El corte principal es **640 px**, el del teléfono. Además hay cortes propios de una pieza
+—900, 860, 760, 700, 620, 480, 470 y 368 px— donde esa pieza lo necesita. A 900 la banda de
+tres tarjetas pasa a una columna, la lista de vacantes a dos, los filtros de `/vacantes` se
+apilan encima de la lista, y la ventana de la portada deja de cortarse; por debajo de 620 la
+cabecera pierde su columna central; por debajo de 470 se aprieta; por debajo de 368 se cae el
+destino «Vacantes».
+
+**Y un umbral que no es de la ventana:** la tarjeta a lo ancho de `/vacantes` se apila cuando
+**ella** mide menos de **36rem** (`@container`, en `Tarjeta.module.css`). La columna de
+resultados mide 704 px a 1280, 517 a 901 —la de filtros se lleva 19rem— y 343 en un teléfono de
+375: ningún corte de ventana acierta los tres.
+
+**El esqueleto de una pantalla** vive en `src/estilos/pagina.module.css` —el carril, el
+encabezado, el bloque, el hueco declarado y los repartos en columnas—. `.reparto` pone una
+columna que manda y una de 19rem que acompaña a la derecha; **`.repartoConFiltros`** la pone a
+la **izquierda**, porque acota lo de al lado: son los filtros de `/vacantes`. Las dos se apilan
+a 900 px. Son variantes con nombre y no un `grid-template-columns` que la pantalla se escribe
+encima: entre archivos gana el orden en que se juntan las hojas, no el que se escribe.
 
 ### Named Rules
 
@@ -504,6 +517,44 @@ Precisos y serenos: esquina de 8 px, 44 px de alto como mínimo, un solo color c
 - **Obligatorio:** un asterisco en tinta plena y peso 700 en la etiqueta, explicado una vez
   antes del primer campo.
 
+### La tarjeta de vacante — de pie y a lo ancho
+
+`src/paginas/vacantes/Tarjeta.tsx` tiene **dos formas y un solo enlace**: en las dos, la
+tarjeta entera es un enlace cuyo nombre es el título, y el título es el mismo `TituloQueViaja`
+que cruza hasta el titular de la ficha. Nube sobre el cielo, filete de `regla`, esquina de
+12 px y, al pasar por encima, la sombra de nube y la pieza D.
+
+- **De pie** (`forma="dePie"`): la portada, tres en fila. Modalidad · ciudad arriba, título,
+  empresa, resumen de tres líneas y un pie con horario, sueldo y fecha.
+- **A lo ancho** (`forma="aLoAncho"`): la lista de `/vacantes`, una por fila. A la izquierda
+  «Publicada hace…», el título, la empresa y el resumen en **dos** líneas; a la derecha, tras
+  una línea de 1 px en `regla` —separador neutro, no barra de acento—, una columna de 13rem con
+  **dónde** (la ciudad o, sin ella, la zona), **modalidad**, **horario** y **sueldo**, cada uno
+  con su icono de 16 px en `currentColor`. El dato que falta no se pinta; el sueldo siempre,
+  porque `OCULTA` se nombra: «Sueldo sin publicar» en `tinta2`, el monto publicado en tinta
+  plena y 600. Se apila cuando la tarjeta mide menos de 36rem.
+
+**El resumen es el propósito o, si falta, la descripción, y un campo con solo espacios falta**:
+lo decide `resumenDe` de `busqueda.ts`, la misma función con la que el orden cuenta si la
+vacante trae resumen, para que la tarjeta y el orden no discrepen.
+
+### La búsqueda de vacantes
+
+`/vacantes` pone **los filtros en una columna de 19rem a la izquierda** (`.repartoConFiltros`),
+sobre nube y con los grupos plegables. Encima de las dos columnas, a todo el ancho, el contador
+y «Ordenar por». **Las etiquetas activas y «Quitar filtros» van siempre justo encima de la
+lista**, en la columna de resultados: marcar una casilla mueve la lista, nunca los grupos bajo
+el puntero, y lo que se ve sigue el orden de Tab. De 641 a 900 px los filtros se apilan
+abiertos, y hasta 640 se pliegan tras «Filtrar (n)» —`.secundarioDelTelefono` de
+`piezas.module.css`, que existe porque un `display: none` en la hoja de la pantalla perdía
+contra el `inline-flex` del secundario—.
+
+- **«Ordenar por»** son dos caras pegadas con la esquina de 8 px por fuera: la marcada, rellena
+  en índigo con texto blanco (4,57:1); la otra, con el contorno de control.
+- **El índigo es solo lo marcado** —el orden elegido, las casillas y los radios—, que es
+  «dónde estás». Nadie tiene turno en una lista de vacantes, así que aquí no hay borde de 2 px
+  en ninguna parte.
+
 ### Navigation
 
 Una píldora blanca que flota a 16 px del borde, **sin filete ni sombra**, en reposo y al bajar
@@ -515,8 +566,15 @@ centro exacto y la acción a la derecha — las columnas de los lados valen lo m
 - **Hover:** se abre un filete gris de 2 px bajo el destino.
 - **Activo:** índigo, **sin peso ni filete**. Se sostiene solo por la regla de la luz (3,88:1
   frente a los otros), y `aria-current="page"` lo dice a quien usa lector.
-- **Teléfono:** por debajo de 620 px las tres columnas pasan a un reparto simple; por debajo de
-  400 se cae «Vacantes»; por debajo de 360 el botón vuelve a 14 px, o a 320 se sale 4 px.
+- **«Inicio» y «Vacantes» son dos pantallas.** «Inicio» es la portada; «Vacantes» es
+  `/vacantes`, la búsqueda, y va sin `end` para encenderse también en la ficha de cualquier
+  vacante.
+- **Teléfono:** por debajo de 620 px las tres columnas pasan a un reparto simple. **Por debajo
+  de 470 se aprieta**: los destinos bajan a 13 px y los rellenos al mínimo, sin bajar de los 44
+  px táctiles — con la letra de 15, de 431 a 454 px la barra se salía hasta 24 px. **Por debajo
+  de 368 se cae «Vacantes»**: a 320 no caben los cuatro ni apretados, y es el destino con más
+  caminos alternativos (el botón grande de la portada y «← Volver a las vacantes» de cada
+  ficha). Medido: a 375 sobran 11 px, a 369 sobran 5 y a 320, con tres destinos, 17.
 
 ⚠️ Sobre el gris claro de más abajo en la página la píldora casi no se distingue, y el
 contenido pasa por detrás sin línea que lo corte. Es lo que hace la referencia, aceptado a
@@ -575,6 +633,10 @@ quedarse con unas y tirar otras sin desmontar el resto:
 - **B · El título que viaja:** el título de una vacante pasa de su tarjeta a la ficha.
 - **C · La franja que se llena:** la barra del recorrido se dibuja de izquierda a derecha.
 - **D · La tarjeta que responde:** la tarjeta de vacante se levanta al pasar por encima.
+  ⚠️ **Su superficie lleva `tabIndex={-1}`, y no es un descuido.** `motion` pone `tabindex="0"`
+  a todo lo que tenga `whileTap` y no sea un control: cada tarjeta eran dos paradas de Tab, una
+  caja sin nombre y después su enlace. Con `-1` la única parada es el enlace, y el toque sigue
+  hundiendo la superficie porque el `pointerdown` del enlace sube hasta ella.
 - **E · Al asomarse:** un bloque de la portada entra al asomar por el borde de la ventana, y sus
   hermanos en fila, de 200 en 200 ms. Solo en la portada.
 
