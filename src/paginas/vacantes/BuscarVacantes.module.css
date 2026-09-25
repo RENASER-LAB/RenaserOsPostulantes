@@ -1,0 +1,496 @@
+/*
+ * Buscar vacantes.
+ *
+ * El esqueleto viene de `estilos/pagina.module.css` y los botones de
+ * `estilos/piezas.module.css`. Lo que esta hoja compone es lo que solo existe
+ * aqui: el buscador, la fila del contador con el conmutador de orden, los
+ * grupos de filtros y las etiquetas activas.
+ *
+ * Tres decisiones que no se ven en las reglas:
+ *
+ *   1. **Ningun color.** Aqui no hay turno de nadie: la accion es negra, lo
+ *      marcado se distingue por su relleno y lo demas por el contorno.
+ *   2. **El conmutador de orden no es una pildora.** La referencia era una
+ *      pildora azul marino; el portal prohibe las dos cosas. Esquina de 4 px, la
+ *      opcion marcada rellena en tinta y la otra con el contorno de control.
+ *   3. **Filtrar y ordenar no animan la lista.** Nada se desliza al acotar: la
+ *      lista cambia y ya. Lo unico con movimiento son las tarjetas al pasar por
+ *      encima, que es de `motion` y respeta `prefers-reduced-motion`.
+ */
+
+.pagina {
+  composes: hoja from '../../estilos/pagina.module.css';
+}
+
+.encabezado {
+  composes: encabezado from '../../estilos/pagina.module.css';
+}
+
+.titular {
+  composes: titular from '../../estilos/pagina.module.css';
+}
+
+/* Lo que se lee y no se ve: el anuncio del lector de pantalla y los radios de verdad. */
+.soloLectores {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------- el buscador ---------- */
+
+.buscador {
+  margin-top: var(--e6);
+}
+
+.etiquetaBuscador {
+  display: block;
+  margin-bottom: var(--e2);
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  color: var(--tinta);
+}
+
+.cajaBuscador {
+  position: relative;
+  max-width: 40rem;
+}
+
+/*
+ * 48 px de alto y 16 px de letra: por debajo de 16 iOS hace zoom al enfocar.
+ * El relleno de la derecha deja sitio a la equis sin que el texto pase por debajo.
+ */
+.entrada {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 52px 0 var(--e3);
+  background-color: var(--nube);
+  color: var(--tinta);
+  border: 1px solid var(--borde-control);
+  border-radius: var(--radio-menor);
+  font: inherit;
+  font-size: var(--t-base);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* La equis nativa de WebKit sobraria al lado de la propia. */
+.entrada::-webkit-search-cancel-button,
+.entrada::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.entrada:focus-visible {
+  outline: 2px solid var(--activo);
+  outline-offset: 3px;
+}
+
+.borrar {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: var(--radio-control);
+  background: transparent;
+  color: var(--tinta2);
+  font: inherit;
+  font-size: var(--t-base);
+  cursor: pointer;
+}
+
+.borrar:hover {
+  color: var(--tinta);
+  background-color: var(--nube-hundida);
+}
+
+.borrar:focus-visible {
+  outline: 2px solid var(--activo);
+  outline-offset: 2px;
+}
+
+/* ---------- ninguna coincide ---------- */
+
+.ninguna {
+  margin-top: var(--e5);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e2) var(--e4);
+}
+
+.ninguna .contador {
+  flex-basis: 100%;
+}
+
+.hayVacantes {
+  margin: 0;
+  font-size: var(--t-base);
+  color: var(--tinta2);
+}
+
+.verTodas {
+  composes: acentoMenor from '../../estilos/piezas.module.css';
+}
+
+/* ---------- el contador y el orden ---------- */
+
+/*
+ * Una rejilla con areas y no un `flex` con `order`: en escritorio el contador va
+ * a la izquierda y el orden a la derecha; en el telefono el contador comparte
+ * fila con «Filtrar» y el orden baja debajo. El orden de tabulacion no cambia
+ * —buscador, orden, filtros—, cambia solo donde se pintan.
+ */
+.filaContador {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  grid-template-areas: 'contador orden filtrar';
+  align-items: center;
+  gap: var(--e3) var(--e5);
+  margin-top: var(--e5);
+  min-height: 44px;
+}
+
+.contador {
+  grid-area: contador;
+  margin: 0;
+  font-size: var(--t-base);
+  font-weight: 600;
+  color: var(--tinta);
+  font-variant-numeric: tabular-nums;
+}
+
+.orden {
+  grid-area: orden;
+  display: flex;
+  align-items: center;
+  gap: var(--e2);
+}
+
+.ordenFijo {
+  grid-area: orden;
+  margin: 0;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+}
+
+.tituloDelOrden {
+  margin-right: var(--e1);
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+}
+
+.opcionDeOrden {
+  position: relative;
+  display: inline-flex;
+  cursor: pointer;
+}
+
+/*
+ * La cara del conmutador. El radio de verdad esta debajo, escondido pero
+ * enfocable: Tab entra al grupo y las flechas cambian la opcion, como en
+ * cualquier grupo de radios.
+ */
+.caraDelOrden {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--e4);
+  border: 1px solid var(--borde-control);
+  border-radius: var(--radio-control);
+  background-color: var(--nube);
+  color: var(--tinta);
+  font-size: var(--t-apoyo);
+  font-weight: 500;
+  line-height: 20px;
+  white-space: nowrap;
+}
+
+.opcionDeOrden input:checked + .caraDelOrden {
+  background-color: var(--activo);
+  border-color: var(--activo);
+  color: var(--tinta-invertida);
+}
+
+.opcionDeOrden input:focus-visible + .caraDelOrden {
+  outline: 2px solid var(--activo);
+  outline-offset: 3px;
+}
+
+/* «Filtrar (n)»: solo en el telefono; en escritorio los filtros estan a la vista. */
+.filtrar {
+  composes: secundario from '../../estilos/piezas.module.css';
+  grid-area: filtrar;
+  display: none;
+}
+
+/* ---------- los filtros ---------- */
+
+.filtros {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+  margin-top: var(--e4);
+  padding-top: var(--e4);
+  border-top: 1px solid var(--regla);
+}
+
+.grupo {
+  display: grid;
+  grid-template-columns: 7rem 1fr;
+  align-items: start;
+  gap: var(--e2) var(--e4);
+}
+
+.tituloDelGrupo {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  color: var(--tinta);
+}
+
+.opciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--e4);
+}
+
+/*
+ * Cada opcion mide 44 px de alto aunque su texto mida catorce: es el area que
+ * hace falta para acertarle con el pulgar. Un nombre largo se parte dentro de su
+ * opcion sin empujar la fila.
+ */
+.opcion {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  min-height: 44px;
+  max-width: 100%;
+  font-size: var(--t-apoyo);
+  color: var(--tinta);
+  cursor: pointer;
+}
+
+.casilla {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  flex: none;
+  accent-color: var(--activo);
+  cursor: pointer;
+}
+
+.casilla:focus-visible {
+  outline: 2px solid var(--activo);
+  outline-offset: 2px;
+}
+
+.nombreDeOpcion {
+  overflow-wrap: anywhere;
+}
+
+.cantidad {
+  color: var(--tinta3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- las etiquetas activas ---------- */
+
+.etiquetas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e2) var(--e3);
+  margin-top: var(--e4);
+}
+
+.listaDeEtiquetas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Una etiqueta se distingue por la forma —contorno y equis—, no por el color. */
+.etiqueta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  min-height: 44px;
+  padding: 0 var(--e3);
+  border: 1px solid var(--borde-control);
+  border-radius: var(--radio-control);
+  background-color: var(--nube);
+  color: var(--tinta);
+  font: inherit;
+  font-size: var(--t-apoyo);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.etiqueta:hover {
+  background-color: var(--nube-hundida);
+}
+
+.etiqueta:focus-visible {
+  outline: 2px solid var(--activo);
+  outline-offset: 3px;
+}
+
+.quitarFiltros {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--e2);
+  border: 0;
+  background: transparent;
+  color: var(--tinta2);
+  font: inherit;
+  font-size: var(--t-apoyo);
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.quitarFiltros:hover {
+  color: var(--tinta);
+}
+
+.quitarFiltros:focus-visible {
+  outline: 2px solid var(--activo);
+  outline-offset: 3px;
+  border-radius: var(--radio-control);
+}
+
+/* ---------- la lista ---------- */
+
+.lista {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--e3);
+  margin: var(--e5) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lista > li {
+  min-width: 0;
+}
+
+/* ---------- cargando, fallo y sin vacantes ---------- */
+
+.esqueleto {
+  padding: var(--e5);
+  border: 1px solid var(--regla);
+  border-radius: var(--radio);
+  background-color: var(--nube);
+}
+
+.barra {
+  height: 12px;
+  margin-top: var(--e3);
+  border-radius: var(--radio-marca);
+  background-color: var(--nube-honda);
+}
+
+.barra:first-child {
+  margin-top: 0;
+}
+
+.barraCorta {
+  width: 42%;
+}
+
+.barraMedia {
+  width: 68%;
+}
+
+.marco {
+  composes: bloqueHolgado from '../../estilos/pagina.module.css';
+  margin-top: var(--e6);
+}
+
+.tituloMarco {
+  margin: 0;
+  font-size: var(--t-titulo);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--tinta);
+}
+
+.marcoTexto {
+  margin: var(--e3) 0 0;
+  max-width: var(--medida-corta);
+  font-size: var(--t-prosa);
+  line-height: 1.55;
+  color: var(--tinta2);
+}
+
+.reintentar {
+  composes: secundario from '../../estilos/piezas.module.css';
+  margin-top: var(--e5);
+}
+
+/* ---------- adaptacion ---------- */
+
+@media (max-width: 900px) {
+  .lista {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/*
+ * El telefono: una columna, el orden bajo el contador, y los filtros plegados
+ * tras «Filtrar (n)», que se despliega en su sitio —sin ventana encima— y la
+ * lista responde con el panel abierto. Las etiquetas activas se ven siempre.
+ */
+@media (max-width: 640px) {
+  .lista {
+    grid-template-columns: 1fr;
+  }
+
+  .filaContador {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      'contador filtrar'
+      'orden orden';
+  }
+
+  .filtrar {
+    display: inline-flex;
+  }
+
+  .filtros:not(.filtrosAbiertos) {
+    display: none;
+  }
+
+  .grupo {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .opciones {
+    flex-direction: column;
+    gap: 0;
+  }
+}

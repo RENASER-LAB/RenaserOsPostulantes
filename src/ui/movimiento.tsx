@@ -91,21 +91,28 @@ export function PantallaConEntrada({ children }: { children: ReactNode }) {
  */
 export function TituloQueViaja({
   id,
+  idDom,
   como: Como = 'h3',
   className,
   children,
 }: {
   id: number | string
+  /**
+   * El `id` del elemento en el documento, para que un enlace pueda nombrarse por
+   * este titulo con `aria-labelledby`. No es el `layoutId`, que es el de arriba.
+   */
+  idDom?: string
   como?: 'h1' | 'h3'
   className?: string
   children: ReactNode
 }) {
   const quieto = useReducedMotion()
-  if (quieto) return <Como className={className}>{children}</Como>
+  if (quieto) return <Como id={idDom} className={className}>{children}</Como>
 
   const Etiqueta = Como === 'h1' ? motion.h1 : motion.h3
   return (
     <Etiqueta
+      id={idDom}
       layoutId={`vacante-${id}`}
       className={className}
       transition={{ duration: 0.34, ease: SALIDA }}

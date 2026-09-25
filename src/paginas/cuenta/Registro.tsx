@@ -41,39 +41,13 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { z } from 'zod'
 import { catalogoUbigeo } from '@/api/portal'
-import type { OpcionUbigeo } from '@/api/tipos'
 import { useSesion } from '@/app/Sesion'
+// Las provincias por departamento, con `EXT` suelto al final: la misma regla que
+// el desplegable de ciudad del panel, escrita una vez en `dominio/ubigeo`.
+import { agrupadasPorDepartamento } from '@/dominio/ubigeo'
 import { rutas } from '@/rutas'
 import { Campo, Consentimiento, Seleccion } from '@/ui/campos/Campo'
 import estilos from './Cuenta.module.css'
-
-/**
- * Las provincias, repartidas por departamento y en el orden en que llegan.
- *
- * ⚠️ **`EXT` no tiene departamento y sale aparte.** Metido en un `<optgroup>`
- * con `label={null}` el navegador pinta un grupo llamado «null»; y colgándolo de
- * un departamento inventado diría que el extranjero está en algún sitio del
- * Perú. Va suelto al final, que es donde se busca.
- *
- * El catálogo llega ya ordenado por departamento y nombre, así que aquí no se
- * reordena nada: solo se agrupa respetando el orden de llegada.
- */
-function agrupadasPorDepartamento(
-  opciones: OpcionUbigeo[],
-): { departamentos: [string, OpcionUbigeo[]][]; sueltas: OpcionUbigeo[] } {
-  const departamentos = new Map<string, OpcionUbigeo[]>()
-  const sueltas: OpcionUbigeo[] = []
-  for (const opcion of opciones) {
-    if (opcion.departamento == null) {
-      sueltas.push(opcion)
-      continue
-    }
-    const ya = departamentos.get(opcion.departamento)
-    if (ya) ya.push(opcion)
-    else departamentos.set(opcion.departamento, [opcion])
-  }
-  return { departamentos: [...departamentos.entries()], sueltas }
-}
 
 const Datos = z
   .object({

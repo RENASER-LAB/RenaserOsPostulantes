@@ -606,14 +606,19 @@
 }
 
 /*
- * ⚠️ **Por debajo de 400 px se cae «Vacantes», y es lo unico que se puede
- * caer.** A 320 px los cuatro destinos piden 42 px mas de los que hay, y de los
- * cuatro este es el unico que no es una pantalla: es un ancla a la seccion
- * `#vacantes-abiertas` de la portada, a la que se llega tocando «Inicio» y el
- * boton grande que hay ahi. Los otros tres son destinos propios y no se tocan.
+ * ⚠️ **Por debajo de 368 px se cae «Vacantes», y es lo unico que se puede
+ * caer.** A 320 px los cuatro destinos piden 42 px mas de los que hay. Desde el
+ * 25/09/2026 «Vacantes» SI es una pantalla (`/vacantes`), pero sigue siendo la
+ * que mas caminos tiene: se llega tocando el boton grande de la portada, «Ver
+ * las N vacantes» y «← Volver a las vacantes» de cualquier ficha. Los otros
+ * tres destinos no tienen otro camino y no se tocan.
+ *
+ * El corte bajo de 400 a 368: los 42 px que faltaban a 320 caben desde 362, y
+ * un telefono de 375 —el ancho con el que se comprueba la pantalla— tiene que
+ * ver los cuatro. Si se toca el relleno de `.enlace` hay que volver a medirlo.
  */
-@media (max-width: 400px) {
-  .enlaceSeccion {
+@media (max-width: 368px) {
+  .enlaceQueCede {
     display: none;
   }
 }

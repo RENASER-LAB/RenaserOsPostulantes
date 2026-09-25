@@ -1,0 +1,109 @@
+/*
+ * La tarjeta de una vacante. Vivia en `Vacantes.module.css` (la portada) hasta que
+ * la pantalla de busqueda la necesito igual: ahora la comparten y la forma vive
+ * una sola vez.
+ *
+ * ⚠️ **El levantarse es de `motion`, no de aqui.** Hasta el 10/09/2026 esta
+ * hoja subia la tarjeta 2 px y la pieza D la subia 4: dos animaciones peleando
+ * por el mismo `transform`, con dos curvas distintas. Se queda la de motion,
+ * que va con muelle. Aqui solo la sombra. Ver `src/ui/movimiento.tsx`.
+ */
+
+.vacante {
+  position: relative;
+  height: 100%;
+  border: 1px solid var(--regla);
+  border-radius: var(--radio);
+  background-color: var(--nube);
+  transition: box-shadow 300ms var(--salida);
+}
+
+.vacante:hover {
+  box-shadow: var(--sombra-nube);
+}
+
+.enlaceVacante {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: var(--e5);
+  color: inherit;
+  text-decoration: none;
+}
+
+/*
+ * Donde esta el puesto: el primer filtro que aplica cualquiera que busca trabajo.
+ *
+ * ⚠️ **Llevaba la bruma coral y se fue el 11/09/2026.** Era el peor sitio
+ * posible para gastarla: la bruma es lo que marca «te toca a ti», y aqui decia
+ * «Hibrido · Lima» **tres veces en la primera pantalla que ve cualquiera**, para
+ * una categoria. Cuando mas tarde llegue el coral que si significa tu turno, ya
+ * se ha visto como decoracion.
+ *
+ * Y no habia nada que discriminar: en la portada nadie tiene turno todavia.
+ */
+.etiqueta {
+  align-self: flex-start;
+  margin-bottom: var(--e4);
+  padding: 4px 10px;
+  border-radius: var(--radio-marca);
+  background-color: var(--nube-hundida);
+  font-size: var(--t-micro);
+  font-weight: 600;
+  color: var(--tinta2);
+  /* Una ciudad larga se parte dentro de su etiqueta; no empuja la tarjeta. */
+  overflow-wrap: anywhere;
+}
+
+/* El titulo se parte en lineas y no se corta: un titulo de 150 caracteres se lee entero. */
+.tituloVacante {
+  margin: 0 0 var(--e1);
+  font-size: var(--t-titulo);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--tinta);
+  overflow-wrap: anywhere;
+}
+
+.empresa {
+  font-size: var(--t-apoyo);
+  color: var(--tinta3);
+}
+
+/* El resumen, tres lineas como mucho: la tarjeta es para elegir, la ficha para leer. */
+.queSeHace {
+  margin: var(--e4) 0 0;
+  font-size: var(--t-prosa);
+  line-height: 1.5;
+  color: var(--tinta3);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+}
+
+.pieVacante {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e2) var(--e3);
+  /* `auto` pega el pie abajo aunque las tarjetas tengan textos de largos distintos. */
+  margin-top: auto;
+  padding-top: var(--e5);
+  font-size: var(--t-menor);
+  color: var(--tinta3);
+  font-variant-numeric: tabular-nums;
+}
+
+.paga {
+  font-weight: 600;
+  color: var(--tinta);
+}
+
+/* «Publicada hace 3 dias»: una linea entera para ella, debajo del resto del pie. */
+.fecha {
+  flex-basis: 100%;
+}

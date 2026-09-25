@@ -11,6 +11,7 @@ import { Salvavidas } from './Salvavidas'
 import { ProveedorSesion } from './Sesion'
 
 import { Vacantes } from '@/paginas/vacantes/Vacantes'
+import { BuscarVacantes } from '@/paginas/vacantes/BuscarVacantes'
 import { Vacante } from '@/paginas/vacantes/Vacante'
 import { Ingresar } from '@/paginas/cuenta/Ingresar'
 import { Acceso } from '@/paginas/cuenta/Acceso'
@@ -142,7 +143,8 @@ export function App() {
 
                   <Route element={<Armazon />}>
                     {/* Publico */}
-                    <Route path={patrones.vacantes} element={<Vacantes />} />
+                    <Route path={patrones.inicio} element={<Vacantes />} />
+                    <Route path={patrones.vacantes} element={<BuscarVacantes />} />
                     <Route path={patrones.vacante} element={<Vacante />} />
                     <Route path={patrones.ingresar} element={<Ingresar />} />
                     {/* La entrada por el enlace del correo: sin contrasena. */}
@@ -247,7 +249,7 @@ export function App() {
                     />
 
                     {/* Cualquier otra cosa, a la portada */}
-                    <Route path="*" element={<Navigate to={patrones.vacantes} replace />} />
+                    <Route path="*" element={<Navigate to={patrones.inicio} replace />} />
                   </Route>
                 </Routes>
               </BrowserRouter>
