@@ -16,6 +16,53 @@ no se vuelve a subir el currículum. Lo del 07/09 se documentó en
 
 ---
 
+## La portada copia la estructura de una referencia, y el portal entero cambia de paleta (25/09/2026)
+
+El cliente trajo una plantilla SaaS de referencia —saasly.demos.tailgrids.com— y pidió
+replicarla adaptada. Se hizo por capas, y cada capa acabó pidiendo la siguiente.
+
+**Primero la estructura, sin tocar el mundo.** Cielo detrás del hero, banda a sangre «Por qué
+este proceso es distinto» con tres tarjetas y su maqueta dibujada con divs, ritmo alterno de
+secciones, y pie en columnas. Precios, integraciones y testimonios **no** se trajeron: los dos
+primeros no existen en un portal de empleo gratuito y los testimonios el código se niega a
+inventarlos. La banda destapó un problema viejo —lo hundido en gris frío sobre página cálida se
+lee sucio— y la solución ya estaba escrita en la cinta de la portada, con una nota que decía que
+se nombrara el día que hiciera falta en otra pantalla: nació `--cielo-hundido`.
+
+⚠️ **El primer cielo no se veía.** Iba de `#fffaf6` a `#fbf1e9` con nubes blancas encima: blanco
+sobre casi blanco. El de la referencia funciona porque su azul está saturado y la nube contrasta
+*contra* él. Hubo que darle color de verdad.
+
+**Luego la paleta entera, por petición.** Gris frío de Tailwind v4 e índigo `#615FFF`, sacados
+de los `oklch` de la referencia pintándolos en un canvas. Radio de botón de 4 a 8 px. La
+cabecera pasó a píldora visible desde el primer píxel, con el botón en casi negro
+—`--accion-fuerte`— para no competir con el índigo del destino actual, y perdió su marco rosa
+con los cuatro cuadraditos; **la animación del rótulo que gira se quedó**, como se pidió.
+
+**Lo que se perdió, dicho claro:** el coral significaba «te toca a ti» en las dieciocho
+pantallas, y la referencia no tiene un segundo acento. El turno se pinta ahora del mismo índigo
+que la acción.
+
+**Lo que no se copió, y por qué:** el borde de sus botones da 1,24:1 contra blanco —WCAG 1.4.11
+pide 3:1— y su verde da 3,22:1, por debajo del 4,5 para texto. Tampoco la foto del cielo: es
+`images/covers/hero.jpg` de una plantilla comercial, así que se reconstruyó en degradados.
+
+**El escaparate se volvió ventana**, como la captura de producto de la referencia: barra
+arriba, el recorrido, y una ficha que asoma y se corta contra el borde. Lo que se corta es solo
+decoración, con `aria-hidden`; el recorrido queda entero. Por debajo de 900 px el recorte se
+suelta, porque cortaba por encima de la última etapa. La loseta del maletín se retiró del
+titular.
+
+⚠️ **`--alto-cabecera` se quedó en 70 con la barra midiendo 84.** Se tocó el relleno y el botón y
+no se volvió a medir hasta el momento del commit, que es justo lo que el propio aviso del token
+pide no hacer. Corregido a 84, medido a 1440, 768 y 390.
+
+Pendiente: reescribir DESIGN.md y EL-MUNDO-VISUAL con la paleta nueva —hoy llevan un aviso
+arriba y el detalle del mundo anterior debajo—, repintar la loseta si vuelve, y decidir si «te
+toca a ti» recupera un color propio.
+
+---
+
 ## Las pantallas de relleno se ponen encima, y las puertas del panel entran (24–25/09/2026)
 
 Cuatro cosas, todas pedidas mirando la pantalla.

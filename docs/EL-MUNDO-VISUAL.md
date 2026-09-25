@@ -6,6 +6,15 @@ los tokens con su porqué en [`src/estilos/mundo.css`](../src/estilos/mundo.css)
 
 ---
 
+> ⚠️ **La paleta cambió el 25/09/2026 y este documento todavía no.** Lo de abajo describe
+> «El escaparate»: fondo pastel cálido `#FBF1E9`, acción negra `#0A0A0A` con radio 4 px, y el
+> coral `#FF7C61` como único color, para «te toca a ti». Desde ese día la paleta es la de una
+> referencia que trajo el cliente —gris frío de Tailwind v4, página `#F9FAFB`, acción índigo
+> `#615FFF` con radio 8 px— y **el coral ya no existe**: el turno se pinta del mismo índigo que
+> la acción. Lo que sigue siendo cierto es la estructura —nube sobre página, estado en la forma,
+> los componentes y su porqué—; los **valores**, en [`mundo.css`](../src/estilos/mundo.css), que es la fuente de verdad.
+> Reescribir este documento está pendiente.
+
 ## Estamos en un rediseño, no en un retoque
 
 El portal que hay en `src/` **se va a reemplazar entero**. Lo único que sobrevive es el

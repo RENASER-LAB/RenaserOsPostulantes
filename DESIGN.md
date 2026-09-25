@@ -1,23 +1,23 @@
 ---
 name: EX · Portal del candidato
-description: Un escaparate en un cuarto de luz cálida; la acción es negra y el único color aparece una sola vez.
+description: Gris frío de Tailwind con acción índigo, desde el 25/09/2026; antes, un escaparate en luz cálida con acción negra y un solo coral.
 colors:
-  cielo: "#fbf1e9"
+  cielo: "#f9fafb"
   nube: "#ffffff"
-  nube-hundida: "#f4f4f4"
-  nube-honda: "#e6e6e6"
-  tinta: "#333333"
-  tinta2: "#5b5b5b"
-  tinta3: "#6b6b6b"
+  nube-hundida: "#f3f4f6"
+  nube-honda: "#e5e7eb"
+  tinta: "#101828"
+  tinta2: "#364153"
+  tinta3: "#6a7282"
   tinta-invertida: "#ffffff"
   tinta-pulsado: "#0a0a0a"
-  regla: "#e6e6e6"
-  regla2: "#cbcbcb"
-  borde-control: "#8a8a8a"
-  activo: "#0a0a0a"
-  activo-pulsado: "#404040"
-  activo-bruma: "rgba(255, 136, 150, 0.2)"
-  activo-regla: "#ff7c61"
+  regla: "#e5e7eb"
+  regla2: "#d1d5dc"
+  borde-control: "#6a7282"
+  activo: "#615fff"
+  activo-pulsado: "#4f46e5"
+  activo-bruma: "rgb(97 95 255 / 0.2)"
+  activo-regla: "#615fff"
   bien: "#0b7a63"
   bien-bruma: "#e6f5f0"
   duda: "#8f5a0a"
@@ -213,6 +213,15 @@ components:
 > degradado de la pieza coral de la portada, que es el componente firma y no se tokeniza hasta
 > que un segundo sitio lo pida. Los otros ocho hallazgos están todos en `src/panel/` y son el
 > mundo anterior intacto: la pizarra `rgb(35 43 54)` y el violeta `rgb(86 56 214)`.
+
+> ⚠️ **La paleta cambió el 25/09/2026 y este documento todavía no.** Lo de abajo describe
+> «El escaparate»: fondo pastel cálido `#FBF1E9`, acción negra `#0A0A0A` con radio 4 px, y el
+> coral `#FF7C61` como único color, para «te toca a ti». Desde ese día la paleta es la de una
+> referencia que trajo el cliente —gris frío de Tailwind v4, página `#F9FAFB`, acción índigo
+> `#615FFF` con radio 8 px— y **el coral ya no existe**: el turno se pinta del mismo índigo que
+> la acción. Lo que sigue siendo cierto es la estructura —nube sobre página, estado en la forma,
+> los componentes y su porqué—; los **valores**, en [`mundo.css`](src/estilos/mundo.css), que es la fuente de verdad.
+> Reescribir este documento está pendiente.
 
 ## Overview
 

@@ -34,14 +34,19 @@ Solo commitea si te lo pido explícitamente.
 
 Tres avisos que no se ponen detrás de un enlace, porque llegan tarde:
 
-⚠️ **El mundo visual es «El escaparate» desde el 10/09/2026, y la migración del portal del
-candidato está completa.** Fondo **pastel cálido `#FBF1E9`** con las superficies en nube blanca
-encima, que es lo que las separa. **Acción en negro `#0A0A0A`** con radio 4 px, coral `#FF7C61`
-para «te toca a ti» —y, en la
-cabecera, también para el destino actual y el botón «Iniciar sesión»—, Figtree. Las **dieciocho**
-pantallas están compuestas —la número dieciocho es `/restablecer`, que llegó de main el
-23/09/2026 junto con la reescritura de `/clave`—; **el panel sigue fuera de alcance, salvo sus
-tres puertas.**
+⚠️ **La paleta cambió el 25/09/2026 y ya no es la de «El escaparate».** Es la de una
+referencia que trajo el cliente (saasly.demos.tailgrids.com): la escala gris fría de Tailwind
+v4 —página `#F9FAFB`, superficies en nube blanca encima, que es lo que las separa—, **acción en
+índigo `#615FFF`** con radio **8 px**, y `--accion-fuerte` casi negro `#030712` solo para el
+botón de la cabecera. Figtree sigue. **El coral y el crema ya no existen**, y con el coral se
+perdió el color propio de «te toca a ti»: ahora es el mismo índigo de la acción. **La fuente de
+verdad son los tokens de [`mundo.css`](src/estilos/mundo.css)**; DESIGN.md y EL-MUNDO-VISUAL
+todavía describen en detalle el mundo anterior.
+
+Las **dieciocho** pantallas del candidato están compuestas —la número dieciocho es
+`/restablecer`, que llegó de main el 23/09/2026 junto con la reescritura de `/clave`—; **el
+panel sigue fuera de alcance, salvo sus tres puertas**, aunque `mundo.css` es global y el
+cambio de paleta también lo repintó.
 
 ⚠️ **`/admin/entrar`, `/admin/clave` y `/admin/restablecer` entraron al escaparate el
 25/09/2026 y ya no viven sueltas: van DENTRO del armazón del portal**, así que llevan su
@@ -49,9 +54,11 @@ cabecera y su pie. Lo que sigue fuera es `ArmazonPanel` —el candado—, y por 
 `/admin/invitacion` no entró: a esa se llega desde un enlace del correo, no desde el portal.
 El resto de `/admin` conserva la disposición anterior.
 
-⚠️ **La cabecera no se ve hasta que bajas.** Es una barra insertada 8 px del borde que saca su
-superficie al primer scroll. `--alto-cabecera` son **70 px medidos**, y ha pasado por 61, 76 y
-68: si tocas su relleno **o el alto del botón «Iniciar sesión»**, vuelve a medirlo en el navegador.
+⚠️ **La cabecera se ve desde el primer píxel.** Es una píldora blanca flotante a 16 px del
+borde; al bajar solo se le hace más honda la sombra. `--alto-cabecera` son **84 px medidos**, y
+ha pasado por 61, 76, 68 y 70: si tocas su relleno **o el alto del botón «Iniciar sesión»**,
+vuelve a medirlo en el navegador. El 25/09/2026 se olvidó y el token se quedó en 70 con la barra
+midiendo 84.
 
 Lo que se toca al componer una pantalla nueva vive en tres sitios y **ninguno se escribe a
 mano en la hoja de la pantalla**: los tokens en [`mundo.css`](src/estilos/mundo.css), los
