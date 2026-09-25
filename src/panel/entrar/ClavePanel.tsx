@@ -14,7 +14,6 @@
 import { Link } from 'react-router-dom'
 import { pedirRecuperacionPanel } from '@/panel/api/panel'
 import { rutas } from '@/rutas'
-import { Marca } from '@/ui/Marca'
 import { PedirEnlace } from '@/ui/recuperacion/PedirEnlace'
 import { useTituloDelPanel } from '../titulo'
 import estilos from './Entrar.module.css'
@@ -24,9 +23,8 @@ export function ClavePanel() {
 
   return (
     <div className={estilos.pagina}>
-      <span className={estilos.marca}>
-        <Marca />
-      </span>
+      {/* La marca la pone ahora la cabecera del portal, que envuelve esta
+          pantalla desde el 24/09/2026. Repetirla aquí ponía dos EX seguidas. */}
       <div className={estilos.vuelta}>
         <Link className={estilos.volver} to={rutas.adminEntrar()}>
           ← Volver a entrar
@@ -37,6 +35,7 @@ export function ClavePanel() {
         pedir={pedirRecuperacionPanel}
         titulo="Recupera tu acceso al panel."
         bajada="Escribe el correo de tu cuenta del panel y te enviamos un enlace para elegir una contraseña nueva."
+        claseFormulario={estilos.superficieDelFormulario}
       />
 
       <section className={estilos.camino}>
