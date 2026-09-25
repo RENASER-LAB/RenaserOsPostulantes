@@ -286,6 +286,9 @@
   --t-base: 16px;       /* el cuerpo, y los campos: por debajo iOS hace zoom */
   --t-entradilla: 18px; /* la entradilla, y el titulo del tramo abierto */
   --t-titulo: 20px;     /* el titulo de un bloque */
+  /* Los destinos de la cabecera. Fuera de la progresion a proposito: se pidio
+     «un poco» mas que los 16 de la referencia, y 18 ya se probo y se bajo. */
+  --t-navegacion: 17px;
   --t-destacado: clamp(24px, 2.4vw, 30px); /* lo mayor de una pantalla */
   --t-cifra: clamp(28px, 5vw, 34px);       /* el cronometro y las cifras */
   --t-portada: clamp(36px, 5.2vw, 60px);   /* el titular */
@@ -353,6 +356,15 @@
   /* Lo mas pequeño que se redondea: una casilla de 20 px. Con 10 px se
      convierte en una pastilla y deja de leerse como casilla. */
   --radio-marca: 4px;
+  /*
+   * Tres radios de pieza, medidos en la referencia del cliente el 25/09/2026.
+   * Nacieron como numeros sueltos en su hoja y se nombraron ese mismo dia, al
+   * reescribir DESIGN.md: el detector de `impeccable` los marcaba fuera de la
+   * escala, y lo honesto era darles nombre y no silenciarlo.
+   */
+  --radio-pildora: 18px;   /* la cabecera */
+  --radio-cristal: 26px;   /* el marco de cristal de la portada */
+  --radio-ventana: 14px;   /* la ventana dentro de ese marco */
 
   /* La unica pieza que se permite una curva mayor que las superficies: la
      vitrina de la portada y la caja de cierre que la cierra abajo. */

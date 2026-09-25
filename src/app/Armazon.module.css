@@ -215,8 +215,8 @@
   max-width: var(--ancho);
   margin: 0 auto;
   padding: var(--e3) var(--e5);
-  /* 18 px, el radio de la pildora de la referencia, medido en su pagina. */
-  border-radius: 18px;
+  /* El radio de la pildora de la referencia, medido en su pagina. */
+  border-radius: var(--radio-pildora);
   /*
    * Tres columnas y no `space-between`: los destinos tienen que quedar centrados
    * respecto a la BARRA, no repartidos entre la marca y el boton. Con
@@ -301,13 +301,14 @@
    */
   gap: 0;
   /*
-   * ⚠️ **17 px desde el 25/09/2026, y no es un escalon de la escala.** Se pidio
-   * «un poco» mas grande que los 16 de la referencia; 18 —el escalon siguiente—
-   * ya es lo que se tuvo el 11/09 y se bajo por peticion expresa el 15/09. 17 es
-   * justo lo pedido y solo lo usa esta pieza, asi que no se promueve a token.
+   * ⚠️ **17 px desde el 25/09/2026, fuera de la progresion de la escala.** Se
+   * pidio «un poco» mas grande que los 16 de la referencia; 18 —el escalon
+   * siguiente— ya es lo que se tuvo el 11/09 y se bajo por peticion expresa el
+   * 15/09. Nacio como numero suelto y ese mismo dia se nombro `--t-navegacion`:
+   * el detector de `impeccable` lo marcaba fuera de la escala de DESIGN.md.
    * Historial: 18 (11/09) → 16 (15/09) → 17 (25/09).
    */
-  font-size: 17px;
+  font-size: var(--t-navegacion);
 }
 
 /*
@@ -407,7 +408,8 @@
   right: 50%;
   bottom: 10px;
   height: 2px;
-  border-radius: 2px;
+  /* En una linea de 2 px de alto, redondo del todo: la barra de la escala. */
+  border-radius: var(--radio-barra);
   background: var(--activo-regla);
   transition:
     left 300ms var(--salida),

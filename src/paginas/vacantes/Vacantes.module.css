@@ -93,7 +93,7 @@
   padding: 12px;
   border: 1px solid var(--nube);
   border-bottom: 0;
-  border-radius: 26px 26px 0 0;
+  border-radius: var(--radio-cristal) var(--radio-cristal) 0 0;
   background-image: linear-gradient(rgb(255 255 255 / 0.25), rgb(255 255 255 / 0));
   /*
    * ⚠️ **El desvanecido va en los ultimos 120 px, no en un porcentaje.** Con un
@@ -101,6 +101,7 @@
    * comia sus ultimas lineas, que son contenido de verdad. En px, lo que se
    * funde es siempre la franja de abajo, donde solo vive la ficha que asoma.
    */
+  /* impeccable-disable-next-line design-system-color -- es una mascara: solo cuenta el alfa, el color no se pinta */
   mask-image: linear-gradient(to bottom, #000 calc(100% - 120px), transparent);
 }
 
@@ -126,8 +127,8 @@
    */
   max-height: clamp(23rem, 30vw, 27rem);
   background-color: var(--nube);
-  /* 14 px solo arriba: el radio de la captura en la referencia. */
-  border-radius: 14px 14px 0 0;
+  /* Solo arriba: el radio de la captura en la referencia. */
+  border-radius: var(--radio-ventana) var(--radio-ventana) 0 0;
 }
 
 .ventana {
@@ -493,6 +494,7 @@
 
 .maquetaEtiqueta {
   align-self: flex-start;
+  /* impeccable-disable-next-line design-system-font-size -- rotulo de una maqueta decorativa y aria-hidden: retrata en miniatura una etiqueta de 12 px */
   font-size: 9px;
   font-weight: 600;
   letter-spacing: 0.08em;
@@ -786,13 +788,13 @@
    */
   .marcoVentana {
     max-height: none;
-    border-radius: 14px;
+    border-radius: var(--radio-ventana);
   }
 
   /* Aqui la ventana termina, asi que el marco la cierra entero y no se funde. */
   .escaparate {
     border-bottom: 1px solid var(--nube);
-    border-radius: 26px;
+    border-radius: var(--radio-cristal);
     mask-image: none;
   }
 
