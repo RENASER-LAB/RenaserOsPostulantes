@@ -772,6 +772,47 @@
 }
 
 /*
+ * El pie corto de las puertas: una linea, ~60 px, como fue el pie hasta el
+ * 25/09/2026. Ver `pieCorto` en `Armazon.tsx` para cuales lo llevan y por que.
+ *
+ * ⚠️ **Sin los 72 px de aire encima, y hace falta.** El aire de `.pie` separa el
+ * pie de una pagina que se lee; en una puerta, lo de encima ya trae el suyo —el
+ * relleno de abajo de `.hoja`, el margen de la tarjeta— y sumarle 72 mas era
+ * justo lo que empujaba `/clave` fuera de la ventana.
+ */
+.pieCorto {
+  margin-top: 0;
+}
+
+.pieLinea {
+  max-width: var(--ancho);
+  margin: 0 auto;
+  padding: var(--e2) var(--e5);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e2) var(--e5);
+  font-size: var(--t-menor);
+  color: var(--tinta3);
+}
+
+/* Los enlaces juntos a la derecha: son tres salidas del mismo sitio, y
+   repartidos por el `space-between` se leerian como bloques sin relacion. */
+.pieLineaEnlaces {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--e5);
+}
+
+.pieLinea a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+/*
  * El pie en columnas, desde el 25/09/2026.
  *
  * Era una linea: el copyright a la izquierda y tres enlaces apretados a la
@@ -873,7 +914,8 @@
     padding-right: var(--e4);
   }
 
-  .pieAbajo {
+  .pieAbajo,
+  .pieLinea {
     padding-left: var(--e4);
     padding-right: var(--e4);
   }

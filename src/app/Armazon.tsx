@@ -61,6 +61,28 @@ const TITULOS: Array<[string, string]> = [
   [patrones.adminRestablecer, 'Elegir contraseña nueva'],
 ]
 
+/** Las puertas: pantallas de una sola tarea, que llevan el pie corto. */
+const PUERTAS = [
+  patrones.ingresar,
+  patrones.acceso,
+  patrones.registro,
+  patrones.clave,
+  patrones.restablecer,
+  patrones.adminEntrar,
+  patrones.adminClave,
+  patrones.adminRestablecer,
+]
+
+/**
+ * Las publicas con contenido que leer: llevan el pie en columnas aunque no haya
+ * cuenta. Cualquier otra pantalla sin cuenta es «acceso necesario».
+ */
+const PUBLICAS_CON_CONTENIDO = [
+  { path: patrones.vacantes, end: true },
+  patrones.vacante,
+  patrones.politica,
+]
+
 function TituloDeLaPagina() {
   const { pathname } = useLocation()
 
@@ -213,6 +235,29 @@ export function Armazon() {
    */
   const conCielo = matchPath({ path: patrones.vacantes, end: true }, pathname) !== null
 
+  /*
+   * El pie corto: una sola linea, para las pantallas que son una tarjeta.
+   *
+   * ⚠️ **El pie en columnas mide 290 px, y en estas pantallas sacaba scroll.**
+   * Medido el 25/09/2026 a 1440×900: `/ingresar` se pasaba 24 px, `/clave` 289 y
+   * «acceso necesario» 39 — pantallas que tienen UNA cosa que hacer y ningun
+   * motivo para bajar. El pie grande es para las paginas que se leen; en una
+   * puerta, el pie tiene que estar y apartarse.
+   *
+   * Van con el corto las puertas —entrar, crear cuenta, el enlace del correo, la
+   * contraseña olvidada, y las tres del panel— y cualquier pantalla privada vista
+   * SIN cuenta, que es «acceso necesario». Con el largo, las publicas que tienen
+   * contenido que leer: la portada, la ficha de una vacante y la politica.
+   *
+   * `hayCuenta` sale del token guardado y se sabe desde el primer render, asi que
+   * quien tiene cuenta no ve parpadear el pie al abrir «Mis procesos».
+   */
+  const esPuerta = PUERTAS.some((patron) => matchPath(patron, pathname) !== null)
+  const publicaConContenido = PUBLICAS_CON_CONTENIDO.some(
+    (patron) => matchPath(patron, pathname) !== null,
+  )
+  const pieCorto = esPuerta || (!hayCuenta && !publicaConContenido)
+
   return (
     <div
       className={`${estilos.armazon} ${justo ? estilos.armazonJusto : ''} ${
@@ -305,16 +350,44 @@ export function Armazon() {
         <Outlet />
       </main>
 
-      <footer className={estilos.pie}>
-        {/*
-          El pie en columnas desde el 25/09/2026. Era una linea con el copyright
-          y tres enlaces apretados a la derecha; en columnas cada grupo dice de
-          que va y se puede crecer sin que el de al lado se resienta.
+      <footer className={`${estilos.pie} ${pieCorto ? estilos.pieCorto : ''}`}>
+        {pieCorto ? (
+          /*
+            Los tres enlaces que no llevan a una pantalla de la cabecera: la
+            politica —que Google Play exige poder leer sin cuenta—, el panel de
+            los datos y la entrada de las empresas. Los destinos del portal ya
+            estan arriba, a un palmo.
+          */
+          <div className={estilos.pieLinea}>
+            <span>© 2026 Renaser Consulting</span>
+            <nav className={estilos.pieLineaEnlaces} aria-label="Enlaces del pie">
+              <Link to={rutas.politica()}>Política de privacidad</Link>
+              <Link to={rutas.privacidad()}>Privacidad y control</Link>
+              <Link to={rutas.adminEntrar()}>Entrar al panel de empresas</Link>
+            </nav>
+          </div>
+        ) : (
+          <PieEnColumnas />
+        )}
+      </footer>
+    </div>
+  )
+}
 
-          ⚠️ **Los enlaces son los que ya existian mas los tres destinos de la
-          cabecera.** Aqui no se invento ningun sitio nuevo: un pie con enlaces
-          que no llevan a nada es peor que un pie corto.
-        */}
+/**
+ * El pie en columnas, desde el 25/09/2026, para las paginas que se leen.
+ *
+ * Era una linea con el copyright y tres enlaces apretados a la derecha; en
+ * columnas cada grupo dice de que va y se puede crecer sin que el de al lado se
+ * resienta.
+ *
+ * ⚠️ **Los enlaces son los que ya existian mas los tres destinos de la
+ * cabecera.** Aqui no se invento ningun sitio nuevo: un pie con enlaces que no
+ * llevan a nada es peor que un pie corto.
+ */
+function PieEnColumnas() {
+  return (
+    <>
         <div className={estilos.pieDentro}>
           <div className={estilos.pieMarca}>
             <Link className={estilos.marcaDelPie} to={rutas.vacantes()} aria-label="EX, inicio">
@@ -369,7 +442,6 @@ export function Armazon() {
         <div className={estilos.pieAbajo}>
           <span>© 2026 Renaser Consulting</span>
         </div>
-      </footer>
-    </div>
+    </>
   )
 }

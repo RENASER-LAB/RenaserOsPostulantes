@@ -5,10 +5,16 @@
  * sesión todavía— así que traen su propia marca. Sin ella se entraba a una
  * pantalla sin ninguna señal de qué producto es.
  */
+/*
+ * ⚠️ **48 px de aire abajo y no 72, desde el 25/09/2026.** Los 72 eran el
+ * colchon antes del pie en columnas, que mide 290 px. Estas pantallas llevan
+ * ahora el pie corto, y con 72 `/admin/restablecer` se pasaba 1 px de una
+ * ventana de 900: lo justo para que la pagina se pudiera mover.
+ */
 .pagina {
   max-width: 34rem;
   margin: 0 auto;
-  padding: var(--e6) var(--e5) var(--e8);
+  padding: var(--e6) var(--e5) var(--e7);
 }
 
 .marca {
