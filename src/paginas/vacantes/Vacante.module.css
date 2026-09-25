@@ -35,11 +35,6 @@
   text-decoration: underline;
 }
 
-/* La zona larga se parte; no empuja la fila. */
-.dato {
-  overflow-wrap: anywhere;
-}
-
 .encabezado {
   composes: encabezado from '../../estilos/pagina.module.css';
 }
@@ -73,6 +68,8 @@
   display: inline-flex;
   align-items: center;
   gap: var(--e2);
+  /* La zona larga se parte; no empuja la fila. */
+  overflow-wrap: anywhere;
 }
 
 .dato::before {

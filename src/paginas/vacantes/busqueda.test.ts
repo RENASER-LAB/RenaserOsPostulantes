@@ -6,12 +6,14 @@
  *   1. **Que «gestion» encuentre «Gestión» y «ingenier» a «Ingeniero/a»**, y que
  *      con dos palabras hagan falta las dos. Un buscador que exige la tilde no
  *      encuentra nada en un teléfono.
- *   2. **Que la relevancia ponga primero lo que empieza por lo escrito** y que
- *      «Recientes» mande las que no tienen fecha al final: el servidor las pondría
- *      las primeras.
- *   3. **Que un filtro solo aparezca si separa algo**, y que las cantidades de
- *      cada opción se calculen con los DEMÁS filtros puestos, no con el suyo:
- *      marcar Lima no puede dejar a Arequipa en (0).
+ *   2. **Que la relevancia ponga primero lo que empieza por lo escrito**, que
+ *      sin texto ponga primero las vacantes más completas, y que «Recientes»
+ *      mande las que no tienen fecha al final: el servidor las pondría las
+ *      primeras.
+ *   3. **Que ciudad, modalidad y fecha salgan siempre** —empresa solo si hay
+ *      más de una— y que las cantidades de cada opción se calculen con los
+ *      DEMÁS filtros puestos, no con el suyo: marcar Lima no puede dejar a
+ *      Arequipa en (0).
  *   4. **Que la dirección se lea con lo que se entiende y se ignore lo demás**:
  *      `ciudad=04` es un departamento y se descarta; `ciudad=0801` es una ciudad
  *      sin vacantes y se conserva.
@@ -23,7 +25,10 @@ import { describe, expect, it } from 'vitest'
 import type { VacantePublica } from '@/api/tipos'
 import {
   ciudadesDistintas,
+  completitudDe,
   contador,
+  datosDeLaTarjeta,
+  detalleDelContador,
   escribirEstado,
   etiquetas,
   grupos,
@@ -35,6 +40,7 @@ import {
   opcionesDeFecha,
   publicadaHace,
   resultados,
+  resumenDe,
   SIN_FILTROS,
   SIN_INDICAR,
   type Estado,
@@ -98,11 +104,35 @@ function titulos(lista: ReturnType<typeof resultados>): string[] {
 describe('Buscar', () => {
   const indice = indexar(lasDeProduccion())
 
-  it('sin nada escrito trae todas, de la más reciente a la más antigua y las sin fecha al final', () => {
-    const lista = titulos(resultados(indice, estado(), AHORA))
-    expect(lista).toHaveLength(9)
-    expect(lista[0]).toBe('Especialista en Gestión del Talento')
-    expect(lista.at(-1)).toBe('Desarrollador web')
+  it('sin nada escrito y con «Relevantes» trae todas, primero las más completas; entre iguales la más reciente y las sin fecha al final', () => {
+    // Las cuatro con modalidad, ciudad, horario y resumen (4 de 5) por fecha;
+    // después las cinco que solo traen resumen (1 de 5), por fecha y la sin fecha al final.
+    expect(titulos(resultados(indice, estado(), AHORA))).toEqual([
+      'Especialista en Gestión del Talento',
+      'Especialista en Marketing Digital',
+      'Administrador',
+      'Asistente Administrativo',
+      'Ingeniero Civil Builder Junior',
+      'Arquitecto Builder Junior',
+      'Ingeniero/a de Infraestructura',
+      'Líder de operaciones',
+      'Desarrollador web',
+    ])
+  })
+
+  it('sin nada escrito y con «Recientes» va por fecha, sin mirar lo completas que están', () => {
+    const lista = titulos(resultados(indice, estado({ orden: 'recientes' }), AHORA))
+    expect(lista).toEqual([
+      'Especialista en Gestión del Talento',
+      'Especialista en Marketing Digital',
+      'Ingeniero Civil Builder Junior',
+      'Arquitecto Builder Junior',
+      'Ingeniero/a de Infraestructura',
+      'Líder de operaciones',
+      'Administrador',
+      'Asistente Administrativo',
+      'Desarrollador web',
+    ])
   })
 
   it('«GESTION» encuentra «Gestión»: ni mayúsculas ni tildes cuentan', () => {
@@ -174,6 +204,40 @@ describe('Ordenar', () => {
     expect(lista[0]!.publicadaEn).toBeGreaterThan(lista[1]!.publicadaEn!)
   })
 
+  it('sin texto, «Relevantes» cuenta modalidad, ciudad, horario, resumen y sueldo publicado', () => {
+    const FIJA = { tipo: 'FIJA' as const, min: 3500, max: null, moneda: 'PEN', texto: 'S/ 3 500', actualizadaEn: null }
+    const completa = vacante({ modalidad: 'Remoto', ciudad: LIMA, horario: '9am-6pm', proposito: 'Algo', remuneracion: FIJA })
+    expect(completitudDe(completa)).toBe(5)
+    // El sueldo oculto no cuenta; el propósito o la descripción cuentan una sola vez.
+    expect(completitudDe(vacante({ modalidad: 'Remoto', ciudad: LIMA, horario: '9am-6pm', proposito: 'Algo' }))).toBe(4)
+    // Solo espacios es vacío, y sin propósito ni descripción no hay resumen.
+    expect(completitudDe(vacante({ modalidad: '  ', horario: ' ', descripcion: '   ', proposito: null }))).toBe(0)
+    // La zona no es la ciudad: «Selva Alegre» no dice en qué ciudad está.
+    expect(completitudDe(vacante({ ubicacion: 'Selva Alegre', descripcion: null }))).toBe(0)
+    expect(completitudDe(vacante({ ciudad: AREQUIPA, descripcion: null }))).toBe(1)
+  })
+
+  it('sin texto, «Relevantes» deja delante a la más completa aunque sea más vieja, y entre iguales la sin fecha va la última', () => {
+    const FIJA = { tipo: 'FIJA' as const, min: 3500, max: null, moneda: 'PEN', texto: 'S/ 3 500', actualizadaEn: null }
+    const indice = indexar([
+      vacante({ titulo: 'Nueva y escueta', publicadaEn: hace(0) }),
+      vacante({ titulo: 'Completa sin fecha', modalidad: 'Remoto', horario: '9am-6pm', publicadaEn: null }),
+      vacante({ titulo: 'Vieja y completa', modalidad: 'Remoto', horario: '9am-6pm', publicadaEn: hace(40) }),
+      vacante({ titulo: 'Con sueldo', modalidad: 'Remoto', horario: '9am-6pm', remuneracion: FIJA, publicadaEn: hace(20) }),
+    ])
+    expect(titulos(resultados(indice, estado(), AHORA))).toEqual([
+      'Con sueldo',
+      'Vieja y completa',
+      'Completa sin fecha',
+      'Nueva y escueta',
+    ])
+    // Los filtros acotan igual; el orden de lo que queda no cambia de regla.
+    expect(titulos(resultados(indice, estado({ filtros: { ...SIN_FILTROS, publicada: '30d' } }), AHORA))).toEqual([
+      'Con sueldo',
+      'Nueva y escueta',
+    ])
+  })
+
   it('con «Recientes» la que no tiene fecha va la última', () => {
     const indice = indexar([
       vacante({ titulo: 'Analista sin fecha', publicadaEn: null }),
@@ -184,28 +248,56 @@ describe('Ordenar', () => {
       'Analista sin fecha',
     ])
   })
+
+  it('a la misma fecha, al milisegundo, y con lo mismo completo, quedan en el orden en que llegan, en los tres órdenes', () => {
+    // El backend ya las manda de la más reciente a la más antigua con microsegundos;
+    // aquí solo se leen milisegundos, y un empate no reordena lo que él ya decidió.
+    const mismoInstante = hace(40)
+    const llegan = [
+      vacante({ titulo: 'Analista que llega primero', publicadaEn: mismoInstante }),
+      vacante({ titulo: 'Analista que llega segundo', publicadaEn: mismoInstante }),
+      vacante({ titulo: 'Analista que llega tercero', publicadaEn: mismoInstante }),
+    ]
+    for (const orden of [llegan, [...llegan].reverse()]) {
+      const esperado = orden.map((v) => v.titulo)
+      const indice = indexar(orden)
+      expect(titulos(resultados(indice, estado(), AHORA))).toEqual(esperado)
+      expect(titulos(resultados(indice, estado({ orden: 'recientes' }), AHORA))).toEqual(esperado)
+      expect(titulos(resultados(indice, estado({ q: 'analista' }), AHORA))).toEqual(esperado)
+    }
+  })
 })
 
 describe('Acotar', () => {
-  it('la ciudad agrupa por código, la modalidad sin mayúsculas ni tildes, y el filtro solo aparece si separa algo', () => {
+  it('la ciudad agrupa por código, la modalidad sin mayúsculas ni tildes, y las dos salen siempre con sus cantidades', () => {
     const indice = indexar(lasDeProduccion())
     const g = grupos(indice, estado(), AHORA)
-    expect(g.map((x) => x.clave)).toEqual(['ciudades'])
+    expect(g.map((x) => x.clave)).toEqual(['ciudades', 'modalidades'])
     expect(g[0]!.opciones).toEqual([
       { valor: '0401', nombre: 'Arequipa', cantidad: 2 },
       { valor: '1501', nombre: 'Lima', cantidad: 2 },
       { valor: SIN_INDICAR, nombre: 'Sin indicar', cantidad: 5 },
     ])
+    // «Presencial» y «PRESENCIAL» son una opción, aunque sea la única modalidad escrita.
+    expect(g[1]!.opciones).toEqual([
+      { valor: 'presencial', nombre: 'Presencial', cantidad: 4 },
+      { valor: SIN_INDICAR, nombre: 'Sin indicar', cantidad: 5 },
+    ])
   })
 
-  it('una sola ciudad no separa nada: ni con cinco sin indicar al lado', () => {
-    const indice = indexar([
-      vacante({ ciudad: LIMA }),
-      vacante({ ciudad: LIMA }),
-      vacante(),
-      vacante(),
-    ])
-    expect(grupos(indice, estado(), AHORA)).toEqual([])
+  it('una sola ciudad, o ninguna, también sale; empresa solo con más de una', () => {
+    const unaCiudad = indexar([vacante({ ciudad: LIMA }), vacante({ ciudad: LIMA }), vacante(), vacante()])
+    const g = grupos(unaCiudad, estado(), AHORA)
+    expect(g.map((x) => x.clave)).toEqual(['ciudades', 'modalidades'])
+    expect(g[0]!.opciones.map((o) => [o.nombre, o.cantidad])).toEqual([['Lima', 2], ['Sin indicar', 2]])
+    expect(g[1]!.opciones.map((o) => [o.nombre, o.cantidad])).toEqual([['Sin indicar', 4]])
+
+    const todasConCiudad = grupos(indexar([vacante({ ciudad: LIMA })]), estado(), AHORA)
+    expect(todasConCiudad[0]!.opciones.map((o) => o.nombre)).toEqual(['Lima'])
+
+    const dosEmpresas = grupos(indexar([vacante(), vacante({ nombreEmpresa: 'Otra S.A.' })]), estado(), AHORA)
+    expect(dosEmpresas.map((x) => x.clave)).toEqual(['ciudades', 'modalidades', 'empresas'])
+    expect(grupos(indexar([]), estado(), AHORA)).toEqual([])
   })
 
   it('con «Remoto» publicada, la modalidad aparece con Presencial y Remoto en orden fijo, y las variantes son una', () => {
@@ -264,12 +356,18 @@ describe('Acotar', () => {
     expect(resultados(indice, estado({ filtros: { ...SIN_FILTROS, publicada: '7d' } }), AHORA)).toHaveLength(2)
   })
 
-  it('con todas de hace más de 30 días, o todas de hoy, «Publicada» no se muestra; y las sin fecha solo entran en «Cualquier fecha»', () => {
-    expect(opcionesDeFecha(indexar([vacante({ publicadaEn: hace(40) }), vacante({ publicadaEn: hace(60) })]), estado(), AHORA)).toBeNull()
-    expect(opcionesDeFecha(indexar([vacante({ publicadaEn: hace(0) }), vacante({ publicadaEn: hace(0) })]), estado(), AHORA)).toBeNull()
+  it('con todas de hace más de 30 días, «Publicada» sale igual, con sus ceros; y las sin fecha solo entran en «Cualquier fecha»', () => {
+    const viejas = indexar([vacante({ publicadaEn: hace(40) }), vacante({ publicadaEn: hace(60) })])
+    expect(opcionesDeFecha(viejas, estado(), AHORA).map((o) => [o.nombre, o.cantidad])).toEqual([
+      ['Cualquier fecha', 2],
+      ['Últimas 24 horas', 0],
+      ['Últimos 7 días', 0],
+      ['Últimos 30 días', 0],
+    ])
     const conUnaSinFecha = indexar([vacante({ publicadaEn: hace(0) }), vacante({ publicadaEn: null })])
-    expect(opcionesDeFecha(conUnaSinFecha, estado(), AHORA)).not.toBeNull()
+    expect(opcionesDeFecha(conUnaSinFecha, estado(), AHORA).map((o) => o.cantidad)).toEqual([2, 1, 1, 1])
     expect(resultados(conUnaSinFecha, estado({ filtros: { ...SIN_FILTROS, publicada: '30d' } }), AHORA)).toHaveLength(1)
+    expect(opcionesDeFecha(indexar([]), estado(), AHORA)).toEqual([])
   })
 })
 
@@ -291,11 +389,13 @@ describe('La dirección', () => {
     expect(e.orden).toBe('relevantes')
   })
 
-  it('«recientes» solo viaja con texto, y «relevantes» nunca', () => {
-    expect(leerEstado(new URLSearchParams('orden=recientes')).orden).toBe('relevantes')
+  it('«recientes» viaja con o sin texto, y «relevantes» nunca', () => {
+    expect(leerEstado(new URLSearchParams('orden=recientes')).orden).toBe('recientes')
+    expect(leerEstado(new URLSearchParams('orden=relevantes')).orden).toBe('relevantes')
     expect(escribirEstado(estado({ q: 'x', orden: 'recientes' })).toString()).toBe('q=x&orden=recientes')
     expect(escribirEstado(estado({ q: 'x', orden: 'relevantes' })).toString()).toBe('q=x')
-    expect(escribirEstado(estado({ q: '', orden: 'recientes' })).toString()).toBe('')
+    expect(escribirEstado(estado({ q: '', orden: 'recientes' })).toString()).toBe('orden=recientes')
+    expect(escribirEstado(estado({ q: '', orden: 'relevantes' })).toString()).toBe('')
   })
 
   it('escribe y vuelve a leer lo mismo, con signos raros incluidos', () => {
@@ -326,6 +426,20 @@ describe('Las etiquetas y el contador', () => {
       .toBe('Ninguna vacante coincide con «analista» en Lima')
     expect(contador(0, 9, estado(), [{ grupo: 'ciudades', valor: '0801', nombre: 'Cusco' }]))
       .toBe('Ninguna vacante coincide en Cusco')
+    // El singular también en «de 1 vacante».
+    expect(contador(1, 1, estado({ q: 'x' }), [])).toBe('1 de 1 vacante')
+  })
+
+  it('el contador se acompaña con lo buscado y, si es el único filtro, la ciudad', () => {
+    const lima = { grupo: 'ciudades' as const, valor: '1501', nombre: 'Lima' }
+    expect(detalleDelContador(estado(), [])).toBe('')
+    expect(detalleDelContador(estado({ q: '  líder ' }), [])).toBe('para «líder»')
+    expect(detalleDelContador(estado({ q: 'líder' }), [lima])).toBe('para «líder» en Lima')
+    expect(detalleDelContador(estado(), [lima])).toBe('en Lima')
+    // «en Sin indicar», «en Últimos 7 días» o «en Presencial» no se leen: no se dicen.
+    expect(detalleDelContador(estado(), [{ grupo: 'ciudades', valor: SIN_INDICAR, nombre: 'Sin indicar' }])).toBe('')
+    expect(detalleDelContador(estado(), [{ grupo: 'publicada', valor: '7d', nombre: 'Últimos 7 días' }])).toBe('')
+    expect(detalleDelContador(estado({ q: 'x' }), [lima, { grupo: 'ciudades', valor: '0401', nombre: 'Arequipa' }])).toBe('para «x»')
   })
 })
 
@@ -364,6 +478,30 @@ describe('La ficha, la tarjeta y la cinta', () => {
     expect(lineaDeLaTarjeta({ modalidad: '  ', ciudad: null, ubicacion: '   ' })).toBe('')
     expect(modalidadCanonica('hibrido')).toBe('Híbrido')
     expect(modalidadCanonica('test')).toBe('test')
+  })
+
+  it('la tarjeta a lo ancho da cada dato por separado, sin pintar el que falta y nombrando siempre el sueldo', () => {
+    expect(datosDeLaTarjeta(vacante({ modalidad: 'PRESENCIAL', ciudad: AREQUIPA, ubicacion: 'Selva Alegre', horario: ' 9am-6pm ' })))
+      .toEqual({ donde: 'Arequipa', modalidad: 'Presencial', horario: '9am-6pm', sueldo: { texto: 'Sueldo sin publicar', publicado: false } })
+    expect(datosDeLaTarjeta(vacante({ ubicacion: '  Selva Alegre  ' })).donde).toBe('Selva Alegre')
+    expect(datosDeLaTarjeta(vacante({ modalidad: ' ', ubicacion: ' ', horario: '  ' })))
+      .toEqual({ donde: null, modalidad: null, horario: null, sueldo: { texto: 'Sueldo sin publicar', publicado: false } })
+    const RANGO = { tipo: 'RANGO' as const, min: 3500, max: 4200, moneda: 'PEN', texto: 'S/ 3 500 a 4 200', actualizadaEn: null }
+    expect(datosDeLaTarjeta(vacante({ remuneracion: RANGO })).sueldo).toEqual({ texto: 'S/ 3 500 a 4 200', publicado: true })
+  })
+
+  it('el resumen es el propósito o, si falta, la descripción; solo espacios cuenta como vacío, igual que en la completitud', () => {
+    expect(resumenDe({ proposito: 'Liderar el equipo', descripcion: 'Otra cosa' })).toBe('Liderar el equipo')
+    expect(resumenDe({ proposito: null, descripcion: 'La descripción' })).toBe('La descripción')
+    // C2-F-02: un propósito en blanco no tapa la descripción.
+    expect(resumenDe({ proposito: '   ', descripcion: '  La descripción\n' })).toBe('La descripción')
+    expect(resumenDe({ proposito: ' \n\t ', descripcion: '   ' })).toBeNull()
+    expect(resumenDe({ proposito: null, descripcion: null })).toBeNull()
+    // La tarjeta y el orden dicen lo mismo: hay resumen si y solo si la completitud lo cuenta.
+    for (const [proposito, descripcion] of [['   ', 'Algo'], ['   ', '  '], [null, null], ['Algo', null]] as const) {
+      const v = vacante({ proposito, descripcion })
+      expect(completitudDe(v), `${JSON.stringify([proposito, descripcion])}`).toBe(resumenDe(v) === null ? 0 : 1)
+    }
   })
 
   it('la cinta cuenta ciudades del catálogo, sin «Fuera del Perú» ni las que no tienen', () => {

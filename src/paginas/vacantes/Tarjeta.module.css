@@ -107,3 +107,118 @@
 .fecha {
   flex-basis: 100%;
 }
+
+/* ================================================================== *
+ * A LO ANCHO — la lista de `/vacantes`, una por fila
+ * ================================================================== */
+
+/*
+ * La misma superficie, que ademas mide su propio ancho: la tarjeta decide si
+ * los datos van a la derecha o debajo segun lo que ELLA mide, no la ventana.
+ * La columna de resultados mide 704 px a 1280, 517 a 901 (la de filtros se
+ * lleva 19rem) y 343 en un telefono de 375: un corte de ventana no acierta los
+ * tres, y a 901 dejaba el titulo en 220 px.
+ */
+.aLoAncho {
+  container: tarjeta / inline-size;
+}
+
+/*
+ * Dos columnas: lo que se lee a la izquierda y los datos a la derecha, tras
+ * una linea fina de 1 px en regla —un separador neutro, no una barra de acento:
+ * esas estan prohibidas en este mundo—. 13rem caben «Sueldo sin publicar» y
+ * «Tiempo completo» sin partirse.
+ */
+.enlaceALoAncho {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 13rem;
+  align-items: start;
+  gap: var(--e5);
+  padding: var(--e5);
+  color: inherit;
+  text-decoration: none;
+}
+
+.cuerpo {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* «Publicada hace 3 dias», encima del titulo: lo primero que se compara al bajar. */
+.cuando {
+  margin-bottom: var(--e2);
+  font-size: var(--t-menor);
+  color: var(--tinta3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* El resumen, dos lineas como mucho: en una lista larga, tres empujan la siguiente fuera. */
+.resumenCorto {
+  margin: var(--e3) 0 0;
+  max-width: var(--medida);
+  font-size: var(--t-prosa);
+  line-height: 1.5;
+  color: var(--tinta3);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+
+.datos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+  min-width: 0;
+  /* Alto de sobra para que la linea no se corte antes que el cuerpo. */
+  align-self: stretch;
+  padding-left: var(--e5);
+  border-left: 1px solid var(--regla);
+}
+
+/* Un dato: su icono y su texto. Un nombre largo —una zona de 60 letras— se parte en su fila. */
+.dato {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--e2);
+  font-size: var(--t-apoyo);
+  line-height: 20px;
+  color: var(--tinta2);
+  overflow-wrap: anywhere;
+}
+
+/* El icono, centrado en la primera linea del texto: 20 px de linea, 16 de icono. */
+.iconoDato {
+  flex: none;
+  margin-top: 2px;
+  color: var(--tinta3);
+}
+
+.sueldoPublicado {
+  font-weight: 600;
+  color: var(--tinta);
+}
+
+/*
+ * Estrecha —un telefono, o la columna de resultados de 901 a 1000 px—: los
+ * datos bajan debajo del resumen, en una fila que se parte, y la linea fina
+ * pasa de su izquierda a su techo.
+ */
+@container tarjeta (max-width: 36rem) {
+  .enlaceALoAncho {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--e4);
+    padding: var(--e4);
+  }
+
+  .datos {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: var(--e2) var(--e4);
+    padding: var(--e3) 0 0;
+    border-left: 0;
+    border-top: 1px solid var(--regla);
+  }
+}

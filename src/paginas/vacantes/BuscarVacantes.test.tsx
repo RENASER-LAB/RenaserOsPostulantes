@@ -5,8 +5,9 @@
  * La lógica de buscar, acotar y ordenar tiene sus propias pruebas en
  * `busqueda.test.ts`; aquí se protege lo que solo se ve montada:
  *
- *   1. **Sin nada escrito no hay conmutador de orden**, en su sitio se lee «Más
- *      recientes primero», y el contador dice «9 vacantes abiertas».
+ *   1. **El conmutador de orden está siempre, con «Relevantes» marcado**, también
+ *      sin nada escrito —entonces pone primero las más completas— y el contador
+ *      dice «9 vacantes abiertas». Ciudad, modalidad y fecha se ven siempre.
  *   2. **«Ninguna coincide» nunca es «no hay vacantes»**, y «Ver las 9 vacantes»
  *      limpia la búsqueda y los filtros dejando el buscador vacío.
  *   3. **Sin ninguna vacante publicada** no hay buscador, filtros ni orden aunque
@@ -17,10 +18,15 @@
  *      atrás sale de `/vacantes`.
  *   6. **Un filtro que la dirección trae y hoy no tiene vacantes** aparece como
  *      etiqueta con su nombre y se puede quitar; un departamento se ignora.
+ *   7. **Dos clics en el mismo instante** —un doble clic, o dos casillas seguidas—
+ *      parten cada uno de lo que dejó el anterior, aunque el router todavía no
+ *      haya pintado la dirección.
+ *   8. **El recorrido de Tab es el del punto 38** y cada tarjeta es una sola
+ *      parada: su enlace. Dónde se pinta cada cosa lo mide Playwright.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import type { VacantePublica } from '@/api/tipos'
@@ -37,8 +43,22 @@ vi.mock('@/api/portal', () => ({
 let siguienteId = 1
 const DIA = 24 * 60 * 60 * 1000
 
+/**
+ * El reloj de estas pruebas, fijo: lo leen el fixture y la pantalla (`beforeEach`
+ * lo pone con `vi.setSystemTime`).
+ *
+ * ⚠️ **Nunca `Date.now()` en `hace()`.** Cada llamada leía su propio reloj: dos
+ * `hace(40)` seguidas salían iguales o con 1 ms de diferencia según cambiara el
+ * milisegundo entre ellas, y el orden por fecha (exacto, al milisegundo) ponía a
+ * Asistente Administrativo delante de Administrador solo en algunas corridas.
+ * Con el reloj fijo, las publicadas «el mismo día» lo son al milisegundo y quedan
+ * en el orden en que llegan, que es la regla de los empates (la fija
+ * `busqueda.test.ts`, «a la misma fecha…»).
+ */
+const AHORA = Date.parse('2026-09-25T15:00:00Z')
+
 function hace(dias: number): string {
-  return new Date(Date.now() - dias * DIA).toISOString()
+  return new Date(AHORA - dias * DIA).toISOString()
 }
 
 function vacante(cambios: Partial<VacantePublica> = {}): VacantePublica {
@@ -120,6 +140,8 @@ function tarjetas(): string[] {
 }
 
 beforeEach(() => {
+  // Solo la fecha: los temporizadores siguen siendo los de verdad.
+  vi.setSystemTime(AHORA)
   siguienteId = 1
   listarVacantes.mockResolvedValue(lasNueve())
   catalogoUbigeo.mockResolvedValue([
@@ -131,18 +153,29 @@ beforeEach(() => {
 afterEach(() => {
   cleanup()
   vi.clearAllMocks()
+  vi.useRealTimers()
 })
 
 describe('Llega sin saber qué hay', () => {
-  it('ve las 9 de la más reciente a la más antigua, «9 vacantes abiertas» y «Más recientes primero» sin conmutador', async () => {
+  it('ve las 9 con «Relevantes» marcado, las más completas primero, y «9 vacantes abiertas»', async () => {
     pintar()
     expect(await screen.findByText('9 vacantes abiertas')).toBeTruthy()
-    expect(screen.getByText('Más recientes primero')).toBeTruthy()
-    expect(screen.queryByRole('radiogroup', { name: 'Ordenar por' })).toBeNull()
-    const titulos = tarjetas()
-    expect(titulos).toHaveLength(9)
-    expect(titulos[0]).toBe('Especialista en Gestión del Talento')
-    expect(titulos.at(-1)).toBe('Desarrollador web')
+    expect(screen.queryByText('Más recientes primero')).toBeNull()
+    const orden = screen.getByRole('radiogroup', { name: 'Ordenar por' })
+    expect((within(orden).getByRole('radio', { name: 'Relevantes' }) as HTMLInputElement).checked).toBe(true)
+    // Las cuatro con modalidad, ciudad y resumen, por fecha; después las que solo traen resumen.
+    // Administrador y Asistente se publicaron en el mismo instante: quedan en el orden en que llegan.
+    expect(tarjetas()).toEqual([
+      'Especialista en Gestión del Talento',
+      'Especialista en Marketing Digital',
+      'Administrador',
+      'Asistente Administrativo',
+      'Ingeniero Civil Builder Junior',
+      'Arquitecto Builder Junior',
+      'Ingeniero/a de Infraestructura',
+      'Líder de operaciones',
+      'Desarrollador web',
+    ])
     // Cada tarjeta es un enlace cuyo nombre es el título.
     expect(screen.getByRole('link', { name: 'Administrador' })).toBeTruthy()
     // El buscador vive en una región de búsqueda con su etiqueta visible.
@@ -155,15 +188,45 @@ describe('Llega sin saber qué hay', () => {
     expect((screen.getByLabelText('Buscar vacantes') as HTMLInputElement).value).toBe('lider')
     expect(screen.queryByText(/vacantes abiertas/)).toBeNull()
     expect(screen.queryByText(/0 de/)).toBeNull()
+    // Ni filtros con cantidades inventadas: todavía no se sabe cuántas hay.
+    expect(screen.queryByRole('group', { name: 'Ciudad' })).toBeNull()
+    expect(screen.queryByText(/\(0\)/)).toBeNull()
+  })
+
+  it('sin texto, «Recientes» ordena por fecha y viaja en la dirección; «Relevantes» vuelve y no viaja', async () => {
+    pintar()
+    await screen.findByText('9 vacantes abiertas')
+    fireEvent.click(screen.getByRole('radio', { name: 'Recientes' }))
+    await waitFor(() => expect(direccion()).toBe('/vacantes?orden=recientes'))
+    expect(screen.getByText('Ordenadas por más recientes')).toBeTruthy()
+    const porFecha = tarjetas()
+    expect(porFecha.slice(0, 3)).toEqual([
+      'Especialista en Gestión del Talento',
+      'Especialista en Marketing Digital',
+      'Ingeniero Civil Builder Junior',
+    ])
+    expect(porFecha.at(-1)).toBe('Desarrollador web')
+    fireEvent.click(screen.getByRole('radio', { name: 'Relevantes' }))
+    await waitFor(() => expect(direccion()).toBe('/vacantes'))
+    expect(tarjetas()[2]).toBe('Administrador')
+  })
+
+  it('un enlace con `orden=recientes` y sin texto llega con «Recientes» marcado', async () => {
+    pintar('/vacantes?orden=recientes')
+    await screen.findByText('9 vacantes abiertas')
+    expect((screen.getByRole('radio', { name: 'Recientes' }) as HTMLInputElement).checked).toBe(true)
+    expect(tarjetas()[2]).toBe('Ingeniero Civil Builder Junior')
   })
 })
 
 describe('Busca algo concreto', () => {
-  it('«GESTION» deja una y el contador dice «1 de 9 vacantes»; con texto aparece el conmutador', async () => {
+  it('«GESTION» deja una y el contador dice «1 de 9 vacantes para «GESTION»»; el conmutador sigue en «Relevantes»', async () => {
     pintar()
     await screen.findByText('9 vacantes abiertas')
     fireEvent.change(screen.getByLabelText('Buscar vacantes'), { target: { value: 'GESTION' } })
     expect(await screen.findByText('1 de 9 vacantes')).toBeTruthy()
+    // Lo que acompaña a la cuenta es aparte: la cuenta se sigue leyendo sola.
+    expect(screen.getByText('para «GESTION»', { exact: false })).toBeTruthy()
     expect(tarjetas()).toEqual(['Especialista en Gestión del Talento'])
     const orden = screen.getByRole('radiogroup', { name: 'Ordenar por' })
     expect((within(orden).getByRole('radio', { name: 'Relevantes' }) as HTMLInputElement).checked).toBe(true)
@@ -186,14 +249,17 @@ describe('Busca algo concreto', () => {
     expect(direccion()).toBe('/vacantes')
   })
 
-  it('borrar el texto con la ✕ devuelve la lista completa y «Más recientes primero»', async () => {
+  it('borrar el texto con la ✕ devuelve la lista completa y deja el orden elegido', async () => {
     pintar('/vacantes?q=ingeniero&orden=recientes')
     expect(await screen.findByText('2 de 9 vacantes')).toBeTruthy()
     expect((screen.getByRole('radio', { name: 'Recientes' }) as HTMLInputElement).checked).toBe(true)
     fireEvent.click(screen.getByRole('button', { name: 'Borrar búsqueda' }))
     expect(await screen.findByText('9 vacantes abiertas')).toBeTruthy()
-    expect(screen.getByText('Más recientes primero')).toBeTruthy()
-    expect(direccion()).toBe('/vacantes')
+    expect((screen.getByRole('radio', { name: 'Recientes' }) as HTMLInputElement).checked).toBe(true)
+    expect(screen.queryByText('Más recientes primero')).toBeNull()
+    expect(direccion()).toBe('/vacantes?orden=recientes')
+    expect(tarjetas()[0]).toBe('Especialista en Gestión del Talento')
+    expect(tarjetas().at(-1)).toBe('Desarrollador web')
   })
 })
 
@@ -204,6 +270,8 @@ describe('Acota', () => {
     const ciudad = screen.getByRole('group', { name: 'Ciudad' })
     fireEvent.click(within(ciudad).getByRole('checkbox', { name: 'Lima (2)' }))
     expect(await screen.findByText('2 de 9 vacantes')).toBeTruthy()
+    // Con la ciudad como único filtro, el contador la nombra.
+    expect(screen.getByText('en Lima', { exact: false })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Quitar filtro Lima' })).toBeTruthy()
     expect(direccion()).toBe('/vacantes?ciudad=1501')
     // Arequipa no baja a (0): dentro del grupo las opciones suman.
@@ -214,10 +282,14 @@ describe('Acota', () => {
     expect(direccion()).toBe('/vacantes?ciudad=1501&ciudad=sin-indicar')
   })
 
-  it('con una sola modalidad escrita no hay filtro de modalidad; con «Remoto» publicada aparece', async () => {
+  it('modalidad sale aunque solo haya una escrita, con sus cantidades; con «Remoto» publicada aparece su opción', async () => {
     pintar()
     await screen.findByText('9 vacantes abiertas')
-    expect(screen.queryByRole('group', { name: 'Modalidad' })).toBeNull()
+    const sola = screen.getByRole('group', { name: 'Modalidad' })
+    expect(within(sola).getAllByRole('checkbox').map((c) => (c.parentElement?.textContent ?? '').trim()))
+      .toEqual(['Presencial (4)', 'Sin indicar (5)'])
+    // Empresa no: hay una sola.
+    expect(screen.queryByRole('group', { name: 'Empresa' })).toBeNull()
     cleanup()
 
     listarVacantes.mockResolvedValue([...lasNueve(), vacante({ titulo: 'Soporte remoto', modalidad: 'Remoto' })])
@@ -246,11 +318,38 @@ describe('Acota', () => {
     expect(direccion()).toBe('/vacantes?publicada=7d')
   })
 
-  it('si todas se publicaron hace más de 30 días, no se muestra «Publicada»', async () => {
+  it('si todas se publicaron hace más de 30 días, «Publicada» sale igual con sus ceros, y ciudad y modalidad con «Sin indicar»', async () => {
     listarVacantes.mockResolvedValue([vacante({ publicadaEn: hace(40) }), vacante({ publicadaEn: hace(50) })])
     pintar()
     await screen.findByText('2 vacantes abiertas')
-    expect(screen.queryByRole('radiogroup', { name: 'Publicada' })).toBeNull()
+    const publicada = screen.getByRole('radiogroup', { name: 'Publicada' })
+    expect(within(publicada).getAllByRole('radio').map((r) => (r.parentElement?.textContent ?? '').trim()))
+      .toEqual(['Cualquier fecha (2)', 'Últimas 24 horas (0)', 'Últimos 7 días (0)', 'Últimos 30 días (0)'])
+    expect(within(screen.getByRole('group', { name: 'Ciudad' })).getByRole('checkbox', { name: 'Sin indicar (2)' })).toBeTruthy()
+    expect(within(screen.getByRole('group', { name: 'Modalidad' })).getByRole('checkbox', { name: 'Sin indicar (2)' })).toBeTruthy()
+  })
+
+  it('con dos empresas aparece «Empresa»', async () => {
+    listarVacantes.mockResolvedValue([vacante(), vacante({ nombreEmpresa: 'Otra S.A.' })])
+    pintar()
+    await screen.findByText('2 vacantes abiertas')
+    expect(screen.getByRole('group', { name: 'Empresa' })).toBeTruthy()
+  })
+
+  it('cada grupo se pliega y se despliega con su nombre, sin tocar lo marcado', async () => {
+    pintar('/vacantes?ciudad=1501')
+    await screen.findByText('2 de 9 vacantes')
+    const cabeza = screen.getByRole('button', { name: 'Ciudad' })
+    expect(cabeza.getAttribute('aria-expanded')).toBe('true')
+    fireEvent.click(cabeza)
+    expect(cabeza.getAttribute('aria-expanded')).toBe('false')
+    expect(screen.queryByRole('group', { name: 'Ciudad' })).toBeNull()
+    // Lo marcado sigue: la etiqueta y la dirección no cambian.
+    expect(screen.getByRole('button', { name: 'Quitar filtro Lima' })).toBeTruthy()
+    expect(direccion()).toBe('/vacantes?ciudad=1501')
+    fireEvent.click(cabeza)
+    const lima = within(screen.getByRole('group', { name: 'Ciudad' })).getByRole('checkbox', { name: 'Lima (2)' }) as HTMLInputElement
+    expect(lima.checked).toBe(true)
   })
 })
 
@@ -296,6 +395,70 @@ describe('Comparte y vuelve', () => {
     expect(sessionStorage.getItem('vacantes:vuelta')).toContain('"id":8')
     sessionStorage.removeItem('vacantes:vuelta')
   })
+
+  it('con «ciudad=9999» espera al catálogo sin enseñar «9999 ✕» ni «ninguna coincide», y después lo quita de la dirección', async () => {
+    let entregarCatalogo!: (catalogo: unknown) => void
+    catalogoUbigeo.mockReturnValue(new Promise((resolver) => { entregarCatalogo = resolver }))
+    pintar('/vacantes?ciudad=9999')
+    // Las vacantes ya llegaron y el catálogo no: la lista sigue en su esqueleto.
+    await waitFor(() => expect(listarVacantes).toHaveBeenCalled())
+    expect(await screen.findByLabelText('Buscando vacantes')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /^Quitar filtro / })).toBeNull()
+    expect(screen.queryByText(/Ninguna vacante coincide/)).toBeNull()
+    await act(async () => entregarCatalogo([LIMA, AREQUIPA]))
+    expect(await screen.findByText('9 vacantes abiertas')).toBeTruthy()
+    expect(direccion()).toBe('/vacantes')
+    expect(screen.queryByRole('button', { name: /^Quitar filtro / })).toBeNull()
+  })
+})
+
+/*
+ * El router escribe la dirección en una transición: tras un clic, la casilla y
+ * el estado siguen siendo los de antes hasta que esa transición se pinta. Dos
+ * clics dentro de un mismo `act` llegan sin pintado entre medias, igual que los
+ * dos de un doble clic.
+ */
+describe('Dos clics en el mismo instante', () => {
+  it('un doble clic sobre «Lima» la deja como estaba: sin marcar, sin etiqueta y sin `ciudad` en la dirección', async () => {
+    pintar()
+    const lima = (await screen.findByRole('checkbox', { name: /^Lima/ })) as HTMLInputElement
+    await act(async () => {
+      lima.click()
+      lima.click()
+    })
+    expect(await screen.findByText('9 vacantes abiertas')).toBeTruthy()
+    expect(direccion()).toBe('/vacantes')
+    expect(lima.checked).toBe(false)
+    expect(screen.queryByRole('button', { name: 'Quitar filtro Lima' })).toBeNull()
+  })
+
+  it('marcar «Lima» y «Arequipa» seguidas deja las dos: la segunda no pisa a la primera', async () => {
+    pintar()
+    const lima = (await screen.findByRole('checkbox', { name: /^Lima/ })) as HTMLInputElement
+    const arequipa = screen.getByRole('checkbox', { name: /^Arequipa/ }) as HTMLInputElement
+    await act(async () => {
+      lima.click()
+      arequipa.click()
+    })
+    expect(await screen.findByText('4 de 9 vacantes')).toBeTruthy()
+    expect(direccion()).toBe('/vacantes?ciudad=1501&ciudad=0401')
+    expect(lima.checked).toBe(true)
+    expect(arequipa.checked).toBe(true)
+    expect(screen.getByRole('button', { name: 'Quitar filtro Lima' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Quitar filtro Arequipa' })).toBeTruthy()
+  })
+
+  it('un doble clic sobre la etiqueta «Lima ✕» la quita una sola vez y no se lleva a la de al lado', async () => {
+    pintar('/vacantes?ciudad=1501&ciudad=0401')
+    const quitarLima = await screen.findByRole('button', { name: 'Quitar filtro Lima' })
+    await act(async () => {
+      quitarLima.click()
+      quitarLima.click()
+    })
+    expect(await screen.findByText('2 de 9 vacantes')).toBeTruthy()
+    expect(direccion()).toBe('/vacantes?ciudad=0401')
+    expect(screen.getByRole('button', { name: 'Quitar filtro Arequipa' })).toBeTruthy()
+  })
 })
 
 describe('Cargando, sin conexión y sin vacantes', () => {
@@ -304,7 +467,8 @@ describe('Cargando, sin conexión y sin vacantes', () => {
     pintar('/vacantes?q=analista')
     expect(await screen.findByText('Ahora mismo no hay vacantes abiertas.')).toBeTruthy()
     expect(screen.queryByRole('search')).toBeNull()
-    expect(screen.queryByText('Más recientes primero')).toBeNull()
+    expect(screen.queryByRole('radiogroup', { name: 'Ordenar por' })).toBeNull()
+    expect(screen.queryByRole('group', { name: 'Ciudad' })).toBeNull()
   })
 
   it('si el servidor no responde, conserva el texto, ofrece «Intentar de nuevo» y no dice «ninguna coincide»', async () => {
@@ -324,7 +488,10 @@ describe('Cargando, sin conexión y sin vacantes', () => {
 
 describe('Lo que se anuncia', () => {
   it('cambiar el orden anuncia por qué se ordena, y el contador se anuncia al dejar de escribir', async () => {
-    vi.useFakeTimers({ shouldAdvanceTime: true })
+    // `beforeEach` congeló solo la fecha; aquí hacen falta también los
+    // temporizadores, y vitest exige soltar la fecha antes de fingirlos.
+    vi.useRealTimers()
+    vi.useFakeTimers({ shouldAdvanceTime: true, now: AHORA })
     try {
       pintar('/vacantes?q=ingeniero')
       await screen.findByText('2 de 9 vacantes')
@@ -335,5 +502,43 @@ describe('Lo que se anuncia', () => {
     } finally {
       vi.useRealTimers()
     }
+  })
+})
+
+describe('El teclado (punto 38)', () => {
+  /** Lo que Tab recorre en la pantalla, en orden de documento, con el nombre que se oye. */
+  function recorridoDeTab() {
+    const pagina = screen.getByRole('heading', { level: 1, name: 'Vacantes abiertas' }).parentElement!.parentElement!
+    return Array.from(pagina.querySelectorAll<HTMLElement>('*'))
+      .filter((e) => e.tabIndex >= 0 && !e.hasAttribute('disabled'))
+      .map((e) => {
+        const etiqueta = (e as HTMLInputElement).labels?.[0]?.textContent ?? ''
+        const nombre = e.getAttribute('aria-label') ?? (etiqueta || e.textContent || '')
+        return { tag: e.tagName, nombre: nombre.replace(/\s+/g, ' ').trim(), href: e.getAttribute('href') }
+      })
+  }
+
+  it('buscador → borrar → orden → filtros → etiquetas → resultados, y cada tarjeta es una sola parada', async () => {
+    pintar('/vacantes?q=a&ciudad=1501')
+    await screen.findByRole('button', { name: 'Quitar filtro Lima' })
+    const recorrido = recorridoDeTab()
+    const nombres = recorrido.map((p) => p.nombre)
+    const posicion = (texto: string) => nombres.findIndex((n) => n === texto || n.startsWith(texto))
+
+    expect(posicion('Buscar vacantes')).toBe(0)
+    expect(posicion('Borrar búsqueda')).toBe(1)
+    expect(posicion('Relevantes')).toBe(2)
+    expect(posicion('Publicada')).toBeGreaterThan(posicion('Relevantes'))
+    expect(posicion('Ciudad')).toBeGreaterThan(posicion('Publicada'))
+    expect(posicion('Modalidad')).toBeGreaterThan(posicion('Ciudad'))
+    // Las etiquetas, después de la última casilla de filtros y antes de la primera tarjeta.
+    const ultimaCasilla = recorrido.map((p) => p.tag).lastIndexOf('INPUT')
+    expect(posicion('Quitar filtro Lima')).toBe(ultimaCasilla + 1)
+    expect(posicion('Quitar filtros')).toBe(posicion('Quitar filtro Lima') + 1)
+    // Detrás, solo los enlaces de las tarjetas: uno por tarjeta y nada sin nombre en medio.
+    const resto = recorrido.slice(posicion('Quitar filtros') + 1)
+    expect(resto.map((p) => p.tag)).toEqual(tarjetas().map(() => 'A'))
+    expect(resto.every((p) => p.href?.startsWith('/vacantes/'))).toBe(true)
+    expect(recorrido.filter((p) => p.tag === 'ARTICLE')).toEqual([])
   })
 })

@@ -169,6 +169,47 @@ export function IconoReloj(props: PropsIcono) {
   )
 }
 
+/** Un edificio: la modalidad de una vacante (presencial, híbrida, remota), al lado de su nombre. */
+export function IconoEdificio(props: PropsIcono) {
+  return (
+    <Icono {...props}>
+      <path d="M4.5 21V4.5a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1V21" />
+      <path d="M14.5 9.5h4a1 1 0 0 1 1 1V21" />
+      <path d="M3 21h18" />
+      <path d="M8 7.5h3M8 11h3M8 14.5h3" />
+    </Icono>
+  )
+}
+
+/** Un billete: el sueldo, al lado del monto o de «Sueldo sin publicar». */
+export function IconoBillete(props: PropsIcono) {
+  return (
+    <Icono {...props}>
+      <rect x="2.5" y="6" width="19" height="12" rx="1.5" />
+      <circle cx="12" cy="12" r="2.5" />
+      <path d="M6 9.5v5M18 9.5v5" />
+    </Icono>
+  )
+}
+
+/** Una equis: quitar o borrar. Siempre en un botón con nombre propio («Quitar filtro Lima»). */
+export function IconoCruz(props: PropsIcono) {
+  return (
+    <Icono {...props}>
+      <path d="m6.5 6.5 11 11M17.5 6.5l-11 11" />
+    </Icono>
+  )
+}
+
+/** El pico que se abre hacia abajo: un grupo desplegado. Girado, uno plegado. */
+export function IconoDesplegar(props: PropsIcono) {
+  return (
+    <Icono {...props}>
+      <path d="m6 9.5 6 6 6-6" />
+    </Icono>
+  )
+}
+
 export function IconoMas(props: PropsIcono) {
   return (
     <Icono {...props}>

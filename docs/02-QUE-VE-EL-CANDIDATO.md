@@ -71,19 +71,58 @@ es un callejón sin salida.
 Todo sale de los `record` de Java (`DtosPortal`, `DtosEvaluacion`, `DtosPrueba`, `DtosSimulacion`).
 Lo que no está aquí, **el backend no lo manda**.
 
-### 2.1 Portada · vacantes abiertas — pública, sin cuenta
+### 2.1 Portada · las vacantes más recientes — pública, sin cuenta
 `GET /portal/vacantes`
 
-Por vacante: `id`, `titulo`, `descripcion`, `proposito`, `responsabilidades`, `requisitos`,
-`modalidad`, `horario`, `ubicacion`, `compensacionPublica`, y la lista de `requisitosObjetivos`
-(`id` + `descripcion`).
+Por vacante: `id`, `titulo`, `nombreEmpresa`, `descripcion`, `proposito`, `responsabilidades`,
+`requisitos`, `modalidad`, `horario`, `ubicacion` (desde el 25/09/2026, la **zona o
+referencia**), `ciudad` (`{codigo, nombre, departamento}` del catálogo, o nula), `publicadaEn`
+(puede venir nula en una vieja), `remuneracion` y la lista de `requisitosObjetivos` (`id` +
+`descripcion`).
 
 Casi todos los campos son **texto libre con saltos de línea**, y varios pueden venir en nulo. El
 maquetado tiene que aguantar tanto una vacante con tres campos llenos como una con diez.
 
+Desde el 25/09/2026 la portada enseña **solo las 3 más recientes**, en sus tarjetas de pie, y un
+botón **«Ver las N vacantes»** que lleva a `/vacantes`. La cinta de la portada cuenta las
+ciudades del catálogo, sin «Fuera del Perú». La pestaña del navegador dice «Inicio».
+
+### 2.1b Buscar vacantes — pública, sin cuenta (25/09/2026)
+`/vacantes` · la misma `GET /portal/vacantes`. **Buscar, filtrar y ordenar pasa en el
+navegador**, sobre la lista entera: el backend no tiene parámetros de búsqueda.
+
+- **El buscador** mira el título, la empresa, la modalidad, la ciudad y la zona; no la
+  descripción ni los requisitos. Sin mayúsculas ni tildes. Encima de la lista, cuántas quedan.
+- **Filtros, siempre con su cantidad**: Ciudad, Modalidad y Publicada (cualquier fecha, últimas
+  24 horas, 7 días o 30 días) se ven siempre, aunque no separen nada; «Sin indicar» cuenta las
+  que no dicen ese dato. **Empresa** solo aparece si hay más de una.
+- **«Ordenar por: Relevantes / Recientes»** se ve siempre, con Relevantes marcado de entrada. Con
+  texto, Relevantes pone arriba lo que mejor coincide en el título. Sin texto, pone primero las
+  vacantes **más completas** —las que dicen modalidad, ciudad, horario, resumen y sueldo
+  publicado—; entre iguales, la más reciente, y las que no tienen fecha van al final.
+  Recientes ordena por fecha.
+- **La dirección guarda la búsqueda** (`?q=…&ciudad=1501&publicada=7d`) sin llenar el
+  historial; el orden solo viaja si es `orden=recientes`. Un enlace con un filtro que hoy no
+  tiene vacantes lo enseña igual como etiqueta, para poder quitarlo.
+- **En escritorio**, los filtros van en una columna a la izquierda y la lista a la derecha, con
+  tarjetas horizontales: «Publicada hace…», título, empresa y un resumen de 2 líneas; a la
+  derecha, la ciudad (o la zona), la modalidad, el horario y el sueldo, con iconos. Las
+  etiquetas de los filtros activos y «Quitar filtros» van **encima de las tarjetas**, así que
+  marcar una casilla no mueve la columna. **En el teléfono** los filtros se pliegan tras
+  «Filtrar (n)» y los datos de la tarjeta van debajo.
+- **Teclado**: buscador, borrar, orden, filtros, etiquetas y tarjetas. **Cada tarjeta es una
+  sola parada de Tab**: su enlace, con el título por nombre.
+- **Al volver desde la ficha** la lista queda a la misma altura. Hay estados propios para
+  cargando, sin conexión, ninguna publicada y ninguna que coincida.
+- La pestaña se titula «Vacantes abiertas», y «Vacantes» de la cabecera se enciende aquí y en
+  la ficha.
+
 ### 2.2 Ficha de la vacante — pública
 `GET /portal/vacantes/{id}` · los mismos campos, más las etapas del proceso (texto de producto,
 no dato del backend).
+
+Dónde es el puesto se pinta como **«Modalidad · Ciudad · Zona · Horario»**, con lo que haya, y
+sin repetir la zona si dice lo mismo que la ciudad; sin ciudad, solo la zona.
 
 **Acción única:** postular. Si no hay cuenta, lleva a crearla recordando a qué vacante.
 

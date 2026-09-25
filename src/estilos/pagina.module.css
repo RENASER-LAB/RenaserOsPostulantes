@@ -132,6 +132,27 @@
   min-width: 0;
 }
 
+/*
+ * El reparto al reves: la columna de 19rem va a la IZQUIERDA y manda la de la
+ * derecha. Es para lo que acota lo de al lado —los filtros de una lista, como
+ * en `/vacantes`—, que se mira antes que la lista y por eso va primero en la
+ * lectura de izquierda a derecha.
+ *
+ * Mas apretado entre filas que entre columnas: lo que va encima de la lista
+ * (su contador) es de la lista y se pega a ella, 12 px; la columna de al lado
+ * es otra cosa y se separa 32.
+ *
+ * ⚠️ **Variante con nombre y no un `grid-template-columns` escrito encima desde
+ * la pantalla**, por la misma razon que `.bloqueHolgado`: entre archivos gana
+ * el orden de inyeccion, no el que tu escribes. Y se declara ANTES del corte de
+ * 900 para que ahi gane el apilado.
+ */
+.repartoConFiltros {
+  composes: reparto;
+  grid-template-columns: 19rem minmax(0, 1fr);
+  gap: var(--e3) var(--e6);
+}
+
 @media (max-width: 900px) {
   .reparto {
     grid-template-columns: 1fr;

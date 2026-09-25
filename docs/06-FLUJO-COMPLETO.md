@@ -1,6 +1,6 @@
 # De la solicitud a la decisión: el proceso entero
 
-Última actualización: 2026-09-15
+Última actualización: 2026-09-25
 
 **Los pasos 1 a 5 están corridos** contra el backend local con
 `herramientas/e2e/14-vacante.spec.ts`, y **la mitad del paso 0 que escribe una prueba**,
@@ -88,8 +88,15 @@ Se elige la solicitud que la respalda, el puesto del catálogo y el responsable.
 El **puesto manda más de lo que parece**: su nivel decide qué evaluaciones
 valen después.
 
-Título y descripción son lo mínimo que ve quien postula. Modalidad, horario y
-ubicación no son obligatorios, pero sin ellos la ficha de la vacante sale coja.
+Título y descripción son lo mínimo que ve quien postula. **Desde el 25/09/2026
+la modalidad es obligatoria al crear** —Presencial, Híbrido o Remoto, de un
+desplegable— y **la ciudad también, si es Presencial o Híbrido**: se elige del
+mismo catálogo que usa el registro del candidato, y es lo que deja filtrar por
+ciudad en el portal. Horario y «Zona o referencia» (lo que antes era
+«Ubicación») no son obligatorios, pero sin ellos la ficha sale coja. Lo que
+falta de modalidad, ciudad, horario, resumen y sueldo publicado hace además que
+la vacante baje en el orden de «Relevantes». El detalle está en
+[PANEL.md](PANEL.md).
 
 Queda en `BORRADOR`: **todavía no aparece en el portal**.
 
@@ -255,7 +262,8 @@ indispensable.
 
 **Panel · la vacante → «Publicar en el portal»**
 
-Pasa a `PUBLICADA` y sale en la portada del portal el mismo instante.
+Pasa a `PUBLICADA` y sale en `/vacantes` el mismo instante; en la portada, si
+está entre las 3 más recientes.
 
 ### 5b · Corregirla después (19/09/2026)
 
@@ -265,7 +273,7 @@ Mientras no esté cerrada, la vacante se corrige con el mismo formulario del
 alta. La solicitud y el puesto ya no se cambian: para eso se crea otra.
 
 Si está publicada y cambió algo que ve quien postula —título, textos,
-modalidad, horario, ubicación o sueldo—, **a cada postulante en carrera le
+modalidad, ciudad, zona, horario o sueldo—, **a cada postulante en carrera le
 llega un solo aviso en la campana del portal**, sin correo, con lo que
 cambió. Al pulsarlo va a su proceso y ve la vacante con los datos nuevos. Lo
 interno —responsable, forma de cierre, plazas, fecha de cierre— se guarda sin
@@ -294,9 +302,18 @@ en [PANEL.md](PANEL.md).
 
 ### 6 · Encontrar la vacante y postular
 
-**Portal · portada → ficha → postular**
+**Portal · portada o «Vacantes» → `/vacantes` → ficha → postular**
 
 Se ve sin cuenta. Postular sí la exige: entrar o crearla.
+
+Desde el 25/09/2026 la portada enseña las 3 vacantes más recientes y un botón
+«Ver las N vacantes»; la lista entera está en `/vacantes`, a la que también
+lleva «Vacantes» en la cabecera. Ahí se busca escribiendo, se filtra por
+ciudad, modalidad, fecha de publicación y —si hay más de una— empresa, y se
+ordena por «Relevantes» o «Recientes». La búsqueda queda en la dirección, así
+que se puede compartir, y al volver de una ficha la lista sigue a la misma
+altura. Cómo es cada pantalla está en
+[02-QUE-VE-EL-CANDIDATO.md](02-QUE-VE-EL-CANDIDATO.md).
 
 ⚠️ **Crear la cuenta pide la ciudad, desde el 01/09/2026.** Un desplegable
 obligatorio con las 196 provincias del Perú agrupadas por departamento, y «Fuera

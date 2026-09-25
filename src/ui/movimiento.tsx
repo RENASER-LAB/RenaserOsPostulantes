@@ -114,6 +114,15 @@ export function TituloQueViaja({
     <Etiqueta
       id={idDom}
       layoutId={`vacante-${id}`}
+      /*
+       * ⚠️ **Solo viaja; dentro de la lista no se mueve.** Sin esto, `layoutId`
+       * mide el titulo en cada render y, al filtrar u ordenar `/vacantes`, los
+       * titulos «volaban» de su sitio viejo al nuevo por la rejilla —y la spec
+       * dice que filtrar y ordenar no animan la lista—. Con una dependencia que
+       * no cambia, motion solo mide al montar y al desmontar, que es justo
+       * cuando el titulo cruza de la tarjeta a la ficha y de vuelta.
+       */
+      layoutDependency={id}
       className={className}
       transition={{ duration: 0.34, ease: SALIDA }}
     >
@@ -190,6 +199,16 @@ export function FranjaQueSeLlena({
  *
  * Con muelle y no con duracion: al pulsar y soltar rapido, una duracion fija
  * se siente pegajosa y el muelle no.
+ *
+ * ⚠️ **La superficie no es una parada de Tab, y hay que decirselo a motion.**
+ * `motion` pone `tabindex="0"` a todo elemento con gesto de pulsar
+ * (`whileTap`) que no sea un control ni traiga `tabindex` propio: cada tarjeta
+ * eran DOS paradas, un `<article>` sin nombre ni accion —Enter no hacia nada— y
+ * despues su enlace (C2-F-01 del ciclo 2 de QA, puntos 38 y 40 de la busqueda;
+ * la portada lo tenia igual). Lo que se enfoca y se abre es el enlace de
+ * dentro, que llena la superficie; con `-1` el `<article>` sale del recorrido
+ * y el toque sigue hundiendolo, porque el `pointerdown` del enlace sube hasta
+ * el. Con el movimiento reducido no hay gesto y el `<article>` es plano.
  */
 export function TarjetaQueResponde({
   className,
@@ -204,6 +223,7 @@ export function TarjetaQueResponde({
   return (
     <motion.article
       className={className}
+      tabIndex={-1}
       whileHover={{ y: -4 }}
       whileTap={{ y: -1 }}
       transition={{ type: 'spring', stiffness: 400, damping: 30 }}

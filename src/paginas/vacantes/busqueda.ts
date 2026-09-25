@@ -12,11 +12,18 @@
  *      `1501`; «Presencial» y «PRESENCIAL» son la misma modalidad porque aquí se
  *      agrupan sin mayúsculas ni tildes. Lo que el equipo escribió mal («test») sale
  *      tal cual: la pantalla no adivina ni oculta.
- *   2. **Un filtro solo aparece si separa algo**, y los recuentos de cada opción
- *      se calculan con la búsqueda y los DEMÁS filtros puestos: marcar Lima no deja
- *      a Arequipa en (0), porque dentro del mismo grupo las opciones suman.
- *   3. **Sin texto no hay relevancia que medir.** El orden por relevancia solo
- *      existe con algo escrito; sin nada, la lista va por fecha y punto.
+ *   2. **Ciudad, modalidad y fecha se ven siempre, con sus cantidades**, aunque
+ *      no separen nada («Sin indicar (3)»): con pocas vacantes, un filtro que
+ *      aparece y desaparece hace parecer rota la pantalla. Empresa, solo si hay
+ *      más de una. Los recuentos de cada opción se calculan con la búsqueda y los
+ *      DEMÁS filtros puestos: marcar Lima no deja a Arequipa en (0), porque dentro
+ *      del mismo grupo las opciones suman.
+ *   3. **«Relevantes» vale también sin texto, y mide otra cosa.** Con algo escrito
+ *      es cuánto se parece a lo buscado; sin nada, cuánto dice la vacante de sí
+ *      misma —modalidad, ciudad, horario, resumen y sueldo publicado—: las más
+ *      completas primero, que son las que se pueden decidir sin abrirlas.
+ *      (Decisión del usuario del 25/09/2026, que sustituye al «sin texto, por
+ *      fecha y punto» de la spec.)
  */
 
 import type { VacantePublica } from '@/api/tipos'
@@ -113,8 +120,8 @@ const CODIGO_DE_CIUDAD = /^(\d{4}|EXT)$/
  * desconocido. Lo que sí se entiende se conserva aunque hoy no tenga vacantes: la
  * etiqueta aparece igual y se puede quitar.
  *
- * `relevantes` no viaja: es lo que se muestra si no se dice nada. Y `recientes`
- * solo tiene sentido con texto; sin él la lista ya va por fecha.
+ * `relevantes` no viaja: es lo que se muestra si no se dice nada. `recientes`
+ * viaja con o sin texto, porque sin texto también cambia el orden.
  */
 export function leerEstado(params: URLSearchParams): Estado {
   const q = params.get('q') ?? ''
@@ -130,7 +137,7 @@ export function leerEstado(params: URLSearchParams): Estado {
   )
   const ventana = params.get('publicada')
   const publicada = VENTANAS.find((v) => v === ventana) ?? null
-  const orden: Orden = params.get('orden') === 'recientes' && q.trim() !== '' ? 'recientes' : 'relevantes'
+  const orden: Orden = params.get('orden') === 'recientes' ? 'recientes' : 'relevantes'
   return { q, filtros: { ciudades, modalidades, empresas, publicada }, orden }
 }
 
@@ -142,7 +149,7 @@ export function escribirEstado(estado: Estado): URLSearchParams {
   for (const m of estado.filtros.modalidades) params.append('modalidad', m)
   for (const e of estado.filtros.empresas) params.append('empresa', e)
   if (estado.filtros.publicada) params.set('publicada', estado.filtros.publicada)
-  if (estado.orden === 'recientes' && estado.q.trim() !== '') params.set('orden', 'recientes')
+  if (estado.orden === 'recientes') params.set('orden', 'recientes')
   return params
 }
 
@@ -162,6 +169,58 @@ export interface VacanteIndexada {
   empresaNombre: string | null
   /** Milisegundos, o `null` sin fecha. */
   publicadaEn: number | null
+  /** Cuántos de los cinco datos que ayudan a decidir trae: ver `completitudDe`. */
+  completitud: number
+}
+
+/** El texto sin los espacios de los bordes, o `null` si no trae nada: solo espacios cuenta como vacío. */
+export function recortado(texto: string | null | undefined): string | null {
+  return (texto ?? '').trim() || null
+}
+
+/** Un texto que trae algo: `null`, vacío o solo espacios no cuentan. */
+function lleno(texto: string | null | undefined): boolean {
+  return recortado(texto) !== null
+}
+
+/**
+ * El resumen de la tarjeta: el propósito o, si falta, la descripción; `null` si
+ * ninguno trae nada. Un propósito de solo espacios falta, y deja paso a la
+ * descripción (C2-F-02 del ciclo 2 de QA: `proposito ?? descripcion` pintaba un
+ * resumen en blanco).
+ *
+ * ⚠️ **La misma regla para la tarjeta y para el orden.** `completitudDe` cuenta
+ * el resumen con esta función: si la tarjeta y el orden la escribieran cada uno
+ * a su manera, una vacante se ordenaría como si tuviera resumen y se pintaría sin él.
+ */
+export function resumenDe(v: Pick<VacantePublica, 'proposito' | 'descripcion'>): string | null {
+  return recortado(v.proposito) ?? recortado(v.descripcion)
+}
+
+/** Si la vacante dice cuánto paga: `OCULTA` (o sin dato) no cuenta. */
+export function sueldoPublicado(v: Pick<VacantePublica, 'remuneracion'>): boolean {
+  return !!v.remuneracion && v.remuneracion.tipo !== 'OCULTA'
+}
+
+/**
+ * Cuántos de estos cinco datos trae una vacante: modalidad, ciudad del catálogo,
+ * horario, resumen (el propósito o, si falta, la descripción) y sueldo
+ * publicado. Es lo que ordena «Relevantes» sin texto: primero las que se pueden
+ * decidir sin abrirlas.
+ *
+ * La zona no cuenta como ciudad: «Selva Alegre» no dice en qué ciudad está, y
+ * la regla nombra la ciudad. Un campo con solo espacios cuenta como vacío.
+ */
+export function completitudDe(
+  v: Pick<VacantePublica, 'modalidad' | 'ciudad' | 'horario' | 'proposito' | 'descripcion' | 'remuneracion'>,
+): number {
+  return [
+    lleno(v.modalidad),
+    v.ciudad !== null && v.ciudad !== undefined,
+    lleno(v.horario),
+    resumenDe(v) !== null,
+    sueldoPublicado(v),
+  ].filter(Boolean).length
 }
 
 export function indexar(vacantes: VacantePublica[]): VacanteIndexada[] {
@@ -183,6 +242,7 @@ export function indexar(vacantes: VacantePublica[]): VacanteIndexada[] {
       empresa: empresaNombre === null ? SIN_INDICAR : normalizar(empresaNombre),
       empresaNombre,
       publicadaEn: Number.isNaN(fecha) ? null : fecha,
+      completitud: completitudDe(v),
     }
   })
 }
@@ -253,13 +313,24 @@ export function porFecha(a: VacanteIndexada, b: VacanteIndexada): number {
   return b.publicadaEn - a.publicadaEn
 }
 
-/** Lo que queda, en el orden pedido. */
+/** Primero las que traen más datos; entre iguales, la más reciente y las sin fecha al final. */
+export function porCompletitud(a: VacanteIndexada, b: VacanteIndexada): number {
+  return b.completitud - a.completitud || porFecha(a, b)
+}
+
+/**
+ * Lo que queda, en el orden pedido:
+ *
+ *   - «Recientes», con o sin texto: por fecha, y las sin fecha al final.
+ *   - «Relevantes» con texto: los cuatro grupos de `relevanciaDe` y, dentro de
+ *     cada uno, la más reciente primero.
+ *   - «Relevantes» sin texto: las más completas primero (`completitudDe`).
+ */
 export function resultados(indice: VacanteIndexada[], estado: Estado, ahora: number): VacanteIndexada[] {
   const palabras = palabrasDe(estado.q)
   const quedan = indice.filter((v) => pasa(v, estado, ahora))
-  if (palabras.length === 0 || estado.orden === 'recientes') {
-    return [...quedan].sort(porFecha)
-  }
+  if (estado.orden === 'recientes') return [...quedan].sort(porFecha)
+  if (palabras.length === 0) return [...quedan].sort(porCompletitud)
   return quedan
     .map((v) => ({ v, grupo: relevanciaDe(v, palabras, estado.q) ?? 3 }))
     .sort((a, b) => a.grupo - b.grupo || porFecha(a.v, b.v))
@@ -311,10 +382,11 @@ function nombresDeCiudad(indice: VacanteIndexada[]): Map<string, string> {
 }
 
 /**
- * Los tres grupos de casillas, con sus recuentos, y solo los que separan algo:
- * al menos dos valores distintos —sin contar «Sin indicar»— entre todas las
- * publicadas, no entre las que quedan tras buscar. Así un grupo no aparece y
- * desaparece mientras se escribe.
+ * Los grupos de casillas con sus recuentos. **Ciudad y modalidad salen
+ * siempre** que haya alguna publicada, aunque no separen nada: «Lima (1)» y
+ * «Sin indicar (3)» dicen cuántas dicen dónde. **Empresa, solo si hay más de
+ * una** entre todas las publicadas —no entre las que quedan tras buscar—: con
+ * una sola, el grupo sería el nombre de la empresa repetido.
  *
  * Cada opción cuenta con la búsqueda y los demás grupos puestos, no con el suyo:
  * dentro de un grupo las opciones suman. Una opción que baja a (0) sigue en su
@@ -322,9 +394,10 @@ function nombresDeCiudad(indice: VacanteIndexada[]): Map<string, string> {
  */
 export function grupos(indice: VacanteIndexada[], estado: Estado, ahora: number): Grupo[] {
   const salida: Grupo[] = []
+  if (indice.length === 0) return salida
 
   // Ciudad: como en el catálogo y en orden alfabético.
-  if (distintos(indice.map((v) => v.ciudad)) >= 2) {
+  {
     const nombres = nombresDeCiudad(indice)
     const quedan = indice.filter((v) => pasa(v, estado, ahora, 'ciudades'))
     const opciones: Opcion[] = [...nombres.entries()]
@@ -334,7 +407,7 @@ export function grupos(indice: VacanteIndexada[], estado: Estado, ahora: number)
   }
 
   // Modalidad: Presencial, Híbrido, Remoto y después cualquier otra, tal cual.
-  if (distintos(indice.map((v) => v.modalidad)) >= 2) {
+  {
     const quedan = indice.filter((v) => pasa(v, estado, ahora, 'modalidades'))
     const vistas = new Map<string, string>()
     for (const v of indice) if (v.modalidadNombre) vistas.set(v.modalidad, v.modalidadNombre)
@@ -379,18 +452,12 @@ function conSinIndicar(
 }
 
 /**
- * El filtro «Publicada», o `null` si no separa nada: aparece solo si alguna de
- * las tres ventanas deja dentro a unas y fuera a otras entre TODAS las publicadas.
- * Si todas se publicaron hace más de 30 días, o todas en las últimas 24 horas,
- * no se muestra.
+ * El filtro «Publicada», siempre con sus cuatro opciones y sus cantidades,
+ * aunque todas caigan en la misma ventana: «Últimos 7 días (0)» también
+ * informa. Sin ninguna publicada no hay filtro: la lista vacía `[]`.
  */
-export function opcionesDeFecha(indice: VacanteIndexada[], estado: Estado, ahora: number): OpcionDeFecha[] | null {
-  const total = indice.length
-  const separa = VENTANAS.some((ventana) => {
-    const dentro = indice.filter((v) => dentroDeVentana(v.publicadaEn, ventana, ahora)).length
-    return dentro > 0 && dentro < total
-  })
-  if (!separa) return null
+export function opcionesDeFecha(indice: VacanteIndexada[], estado: Estado, ahora: number): OpcionDeFecha[] {
+  if (indice.length === 0) return []
   const quedan = indice.filter((v) => pasa(v, estado, ahora, 'publicada'))
   return [
     { valor: null, nombre: 'Cualquier fecha', cantidad: quedan.length },
@@ -463,11 +530,11 @@ export function vacantesEnPlural(n: number): string {
   return n === 1 ? '1 vacante abierta' : `${n} vacantes abiertas`
 }
 
-/** «9 vacantes abiertas», «2 de 9 vacantes», «Ninguna vacante coincide…». */
+/** «9 vacantes abiertas», «2 de 9 vacantes», «1 de 1 vacante», «Ninguna vacante coincide…». */
 export function contador(quedan: number, total: number, estado: Estado, etiquetasActivas: Etiqueta[]): string {
   const acotando = estado.q.trim() !== '' || etiquetasActivas.length > 0
   if (!acotando) return vacantesEnPlural(total)
-  if (quedan > 0) return `${quedan} de ${total} vacantes`
+  if (quedan > 0) return `${quedan} de ${total} ${total === 1 ? 'vacante' : 'vacantes'}`
   const conTexto = estado.q.trim() !== '' ? ` con «${estado.q.trim()}»` : ''
   const conFiltros =
     etiquetasActivas.length === 1
@@ -476,6 +543,22 @@ export function contador(quedan: number, total: number, estado: Estado, etiqueta
         ? ' con los filtros elegidos'
         : ''
   return `Ninguna vacante coincide${conTexto}${conFiltros}`
+}
+
+/**
+ * Lo que acompaña al contador cuando algo acota: «para «líder»», «en Lima» o
+ * «para «líder» en Lima». La ciudad solo si es el único filtro puesto y es una
+ * ciudad de verdad: «en Últimos 7 días» o «en Presencial» no se leen, y con
+ * varios filtros las etiquetas de al lado ya dicen cuáles. Vacío si no hay nada
+ * que decir. El anuncio del lector de pantalla no lo lleva: dice la cuenta.
+ */
+export function detalleDelContador(estado: Estado, etiquetasActivas: Etiqueta[]): string {
+  const partes: string[] = []
+  const q = estado.q.trim()
+  if (q !== '') partes.push(`para «${q}»`)
+  const unica = etiquetasActivas.length === 1 ? etiquetasActivas[0]! : null
+  if (unica && unica.grupo === 'ciudades' && unica.valor !== SIN_INDICAR) partes.push(`en ${unica.nombre}`)
+  return partes.join(' ')
 }
 
 // ---------- «Publicada hace…» ----------
@@ -534,10 +617,39 @@ export function lineaDeDonde(v: Pick<VacantePublica, 'modalidad' | 'ciudad' | 'u
     .filter((x): x is string => x !== null && x !== '')
 }
 
-/** La primera línea de la tarjeta: modalidad · ciudad, o la zona si no hay ciudad. */
+/** Dónde está el puesto para la tarjeta: la ciudad, o la zona si no hay ciudad; `null` si ninguna. */
+export function dondeDeLaTarjeta(v: Pick<VacantePublica, 'ciudad' | 'ubicacion'>): string | null {
+  return v.ciudad?.nombre ?? ((v.ubicacion ?? '').trim() || null)
+}
+
+export interface DatosDeLaTarjeta {
+  donde: string | null
+  modalidad: string | null
+  horario: string | null
+  sueldo: { texto: string; publicado: boolean }
+}
+
+/**
+ * La columna de datos de la tarjeta a lo ancho de `/vacantes`: dónde, modalidad,
+ * horario y sueldo. Lo que falta es `null` y no se pinta; el sueldo siempre se
+ * dice —«Sueldo sin publicar» o el texto que ya llega escrito del servidor—,
+ * porque un hueco donde debería ir el número se lee como un fallo de carga.
+ */
+export function datosDeLaTarjeta(
+  v: Pick<VacantePublica, 'ciudad' | 'ubicacion' | 'modalidad' | 'horario' | 'remuneracion'>,
+): DatosDeLaTarjeta {
+  const publicado = sueldoPublicado(v)
+  return {
+    donde: dondeDeLaTarjeta(v),
+    modalidad: modalidadCanonica(v.modalidad),
+    horario: recortado(v.horario),
+    sueldo: { texto: publicado ? v.remuneracion.texto : 'Sueldo sin publicar', publicado },
+  }
+}
+
+/** La primera línea de la tarjeta de la portada: modalidad · ciudad, o la zona si no hay ciudad. */
 export function lineaDeLaTarjeta(v: Pick<VacantePublica, 'modalidad' | 'ciudad' | 'ubicacion'>): string {
-  const donde = v.ciudad?.nombre ?? (v.ubicacion ?? '').trim() ?? ''
-  return [modalidadCanonica(v.modalidad), donde || null].filter((x): x is string => x !== null).join(' · ')
+  return [modalidadCanonica(v.modalidad), dondeDeLaTarjeta(v)].filter((x): x is string => x !== null).join(' · ')
 }
 
 /** Cuántas ciudades distintas del catálogo, sin «Fuera del Perú»: la cinta de la portada. */

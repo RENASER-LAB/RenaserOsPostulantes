@@ -577,23 +577,39 @@
 }
 
 /*
- * Por debajo de 360 px la marca, dos destinos y un boton relleno van al limite:
- * se aprieta lo unico que se puede apretar sin bajar de los 44 px tactiles.
+ * ⚠️ **Por debajo de 430 px se aprieta todo, y es lo que permite ver los cuatro
+ * destinos en un telefono de 375.** Con el relleno de arriba —12 px de caja,
+ * 8 por lado en cada destino, 12 en la cara del boton— la marca, «Inicio»,
+ * «Vacantes», «Mis procesos» y «Iniciar sesión» piden 418 px: a 375 la barra
+ * desbordaba y «Iniciar sesión» salia cortado (medido el 25/09/2026, con la
+ * pagina entera haciendo scroll horizontal). Aqui baja la letra de los destinos
+ * un punto mas —13 px, `--t-menor`, con el peso 500 que es lo que los sostiene—
+ * y se aprietan los rellenos sin bajar de los 44 px tactiles: 3 px por lado en
+ * cada destino, 4 de hueco entre piezas y 6 en la cara del boton.
+ *
+ * Medido con esto: a 375 px sobran 12; a 369, 6; a 320 con tres destinos, 14.
+ * **Si se toca cualquiera de estos rellenos hay que volver a medir**, y no
+ * cambia el alto: la cabecera sigue en sus 70 px.
  */
-@media (max-width: 360px) {
+@media (max-width: 430px) {
   .cabeceraDentro {
     padding-inline: var(--e2);
+    gap: var(--e1);
+  }
+
+  .navegacion {
+    font-size: var(--t-menor);
   }
 
   .enlace {
-    padding: 0 var(--e1);
+    padding: 0 3px;
   }
 
   .enlace:hover::after,
   .enlaceActivo::after,
   .enlaceActivo:hover::after {
-    left: var(--e1);
-    right: var(--e1);
+    left: 3px;
+    right: 3px;
   }
 
   .entrar {
@@ -601,21 +617,22 @@
   }
 
   .entrarCara {
-    padding-inline: var(--e2);
+    padding-inline: 6px;
   }
 }
 
 /*
  * ⚠️ **Por debajo de 368 px se cae «Vacantes», y es lo unico que se puede
- * caer.** A 320 px los cuatro destinos piden 42 px mas de los que hay. Desde el
+ * caer.** A 320 px los cuatro destinos no caben ni apretados. Desde el
  * 25/09/2026 «Vacantes» SI es una pantalla (`/vacantes`), pero sigue siendo la
  * que mas caminos tiene: se llega tocando el boton grande de la portada, «Ver
  * las N vacantes» y «← Volver a las vacantes» de cualquier ficha. Los otros
  * tres destinos no tienen otro camino y no se tocan.
  *
- * El corte bajo de 400 a 368: los 42 px que faltaban a 320 caben desde 362, y
- * un telefono de 375 —el ancho con el que se comprueba la pantalla— tiene que
- * ver los cuatro. Si se toca el relleno de `.enlace` hay que volver a medirlo.
+ * El corte estuvo en 400 y bajo a 368 el 25/09/2026: un telefono de 375 —el
+ * ancho con el que se comprueba la pantalla— tiene que ver los cuatro, y con el
+ * apretado de arriba caben desde 363. Los 5 px de margen son por si la letra
+ * del sistema es mas ancha que Figtree mientras esta carga.
  */
 @media (max-width: 368px) {
   .enlaceQueCede {
