@@ -223,8 +223,21 @@ export function Armazon() {
     matchPath(patrones.ingresar, pathname) !== null ||
     matchPath(patrones.adminEntrar, pathname) !== null
 
+  /*
+   * El amanecer de la portada. Va detras de la cabecera, asi que la decision es
+   * del armazon y no de la pantalla. Ver `.armazonConCielo` en la hoja.
+   *
+   * `end` importa: sin el, `/` casa con todo y el cielo saldria en las dieciocho
+   * pantallas.
+   */
+  const conCielo = matchPath({ path: patrones.vacantes, end: true }, pathname) !== null
+
   return (
-    <div className={`${estilos.armazon} ${justo ? estilos.armazonJusto : ''}`}>
+    <div
+      className={`${estilos.armazon} ${justo ? estilos.armazonJusto : ''} ${
+        conCielo ? estilos.armazonConCielo : ''
+      }`}
+    >
       <ArribaAlCambiarDePagina />
       <LlevarAlAncla />
       <TituloDeLaPagina />
@@ -312,32 +325,68 @@ export function Armazon() {
       </main>
 
       <footer className={estilos.pie}>
-        <div className={estilos.pieDentro}>
-          <span>© 2026 Renaser Consulting</span>
-          {/*
-            La entrada de las empresas vive en el pie y no en la barra de
-            arriba, y es una decision, no una rebaja. Esos tres enlaces son el
-            camino de quien postula; un cuarto para otro publico distinto los
-            diluye justo cuando quien busca trabajo mas los necesita. Quien
-            trabaja en el panel entra una vez y lo guarda: lo que necesita es
-            que exista un sitio donde encontrarlo, no que le compita al
-            candidato.
+        {/*
+          El pie en columnas desde el 25/09/2026. Era una linea con el copyright
+          y tres enlaces apretados a la derecha; en columnas cada grupo dice de
+          que va y se puede crecer sin que el de al lado se resienta.
 
-            Y dice «Entrar», nunca «Crear cuenta»: las cuentas del panel nacen
-            solo por invitacion. Un enlace que prometa registrarse lleva a una
-            pantalla que no puede cumplirlo.
-          */}
-          <nav className={estilos.enlacesDelPie} aria-label="Enlaces del pie">
-            {/*
-              Son dos y se llaman distinto a proposito. «Privacidad y control»
-              es el panel de acciones y necesita sesion; la politica es el
-              documento y se lee sin cuenta — Google Play exige poder enlazarla
-              asi. Con el mismo nombre, la que pide sesion pareceria un error.
-            */}
-            <Link to={rutas.politica()}>Política de privacidad</Link>
-            <Link to={rutas.privacidad()}>Privacidad y control</Link>
-            <Link to={rutas.adminEntrar()}>Entrar al panel de empresas</Link>
+          ⚠️ **Los enlaces son los que ya existian mas los tres destinos de la
+          cabecera.** Aqui no se invento ningun sitio nuevo: un pie con enlaces
+          que no llevan a nada es peor que un pie corto.
+        */}
+        <div className={estilos.pieDentro}>
+          <div className={estilos.pieMarca}>
+            <Link className={estilos.marcaDelPie} to={rutas.vacantes()} aria-label="EX, inicio">
+              <Marca tamano={20} />
+            </Link>
+            <p className={estilos.pieQueEs}>
+              El portal donde Renaser abre sus convocatorias. Cinco etapas para conocer cómo
+              trabajas, y una persona decidiendo al final.
+            </p>
+          </div>
+
+          <nav className={estilos.pieColumnas} aria-label="Enlaces del pie">
+            <div className={estilos.pieColumna}>
+              <h2 className={estilos.pieTitulo}>El portal</h2>
+              <Link to={rutas.vacantes()}>Inicio</Link>
+              <Link to={{ pathname: rutas.vacantes(), hash: '#vacantes-abiertas' }}>
+                Vacantes abiertas
+              </Link>
+              <Link to={rutas.procesos()}>Mis procesos</Link>
+            </div>
+
+            <div className={estilos.pieColumna}>
+              <h2 className={estilos.pieTitulo}>Tus datos</h2>
+              {/*
+                Son dos y se llaman distinto a proposito. «Privacidad y control»
+                es el panel de acciones y necesita sesion; la politica es el
+                documento y se lee sin cuenta — Google Play exige poder enlazarla
+                asi. Con el mismo nombre, la que pide sesion pareceria un error.
+              */}
+              <Link to={rutas.politica()}>Política de privacidad</Link>
+              <Link to={rutas.privacidad()}>Privacidad y control</Link>
+            </div>
+
+            <div className={estilos.pieColumna}>
+              <h2 className={estilos.pieTitulo}>Empresas</h2>
+              {/*
+                La entrada de las empresas vive en el pie y no en la barra de
+                arriba, y es una decision, no una rebaja. Los tres destinos de
+                arriba son el camino de quien postula; un cuarto para otro
+                publico distinto los diluye justo cuando quien busca trabajo mas
+                los necesita.
+
+                Y dice «Entrar», nunca «Crear cuenta»: las cuentas del panel
+                nacen solo por invitacion. Un enlace que prometa registrarse
+                lleva a una pantalla que no puede cumplirlo.
+              */}
+              <Link to={rutas.adminEntrar()}>Entrar al panel de empresas</Link>
+            </div>
           </nav>
+        </div>
+
+        <div className={estilos.pieAbajo}>
+          <span>© 2026 Renaser Consulting</span>
         </div>
       </footer>
     </div>

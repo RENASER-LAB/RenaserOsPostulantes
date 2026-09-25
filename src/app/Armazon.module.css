@@ -9,6 +9,114 @@
   flex-direction: column;
 }
 
+/* ================================================================== *
+ * EL CIELO DE LA PORTADA
+ * ================================================================== */
+
+/*
+ * El cielo de la portada, **solo en la portada**.
+ *
+ * ⚠️ **Nacio como un amanecer calido y es azul desde el 25/09/2026.** Cuando el
+ * mundo era pastel calido con acento coral, un cielo azul habria sido su
+ * complementario exacto; ese mismo dia la paleta paso a la de la referencia
+ * —gris frio e indigo— y entonces el que desentonaba era el amanecer.
+ *
+ * ⚠️ **La referencia usa una FOTO**, `images/covers/hero.jpg` de su servidor.
+ * Esto es una reconstruccion en degradados: no se trae el archivo de una
+ * plantilla comercial ajena. A cambio no hay recurso que pese ni que mantener,
+ * y las nubes se repintan solas si cambia la paleta.
+ *
+ * ⚠️ **Vive aqui y no en la hoja de la portada porque tiene que pasar por
+ * DETRAS de la cabecera.** La cabecera es del armazon y la portada empieza
+ * dentro de `main`: desde su hoja, el cielo arrancaria por debajo de la barra y
+ * dejaria una franja de fondo plano arriba del todo. Es el mismo motivo por el
+ * que `.armazonJusto` vive aqui y no en `Cuenta.module.css`.
+ */
+.armazonConCielo {
+  position: relative;
+  /*
+   * ⚠️ **`clip` y NO `hidden`.** Los dos recortan lo que se sale, pero `hidden`
+   * crea un contenedor de desplazamiento y eso **rompe el `position: sticky` de
+   * la cabecera**: dejaria de posarse. `clip` recorta sin crear ese contenedor.
+   * Hace falta porque el cielo mide `100vw` para ir a sangre, y `100vw` incluye
+   * el ancho de la barra de desplazamiento: sin recortar, la pagina entera se
+   * puede mover en horizontal.
+   */
+  overflow-x: clip;
+}
+
+.armazonConCielo::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 100vw;
+  /*
+   * Hasta donde llega. Es el alto del hero mas el escaparate: por debajo la
+   * pagina vuelve a ser crema plano y las secciones se apoyan en el.
+   */
+  height: 1100px;
+  transform: translateX(-50%);
+  /* Detras de todo lo que se lee, y de la superficie de la cabecera posada. */
+  z-index: 0;
+  pointer-events: none;
+  /*
+   * ⚠️ **El cielo tiene que tener COLOR, o las nubes no existen.** La primera
+   * version del amanecer iba de `#fffaf6` a `#fbf1e9` —cuatro puntos de
+   * diferencia— con nubes blancas encima: blanco sobre casi blanco no se ve, asi
+   * que no se veia nada. La referencia funciona porque su azul esta saturado y
+   * la nube contrasta CONTRA el; aqui hace falta lo mismo.
+   *
+   * ⚠️ **Pero el color arranca POR DEBAJO de la barra.** Con azul hasta el borde
+   * de arriba, la pildora blanca de la cabecera pierde su contorno contra el
+   * fondo y deja de leerse como una pieza. Los primeros 100 px se quedan casi
+   * blancos: la barra se lee sobre claro y el cielo empieza justo detras del
+   * titular, que es donde se mira.
+   *
+   * Las nubes van en capas de distinto tamaño y no en una sola mancha: una nube
+   * de verdad tiene bordes desiguales, y varios ovalos desplazados que se
+   * solapan lo dan mejor que uno grande difuminado. El blanco aguanta opaco
+   * hasta el 45 % del ovalo y solo despues se desvanece — desvaneciendo desde el
+   * centro sale un halo, no una nube.
+   */
+  background:
+    /* Nube alta a la izquierda: tres ovalos que se solapan. */
+    radial-gradient(26rem 8rem at 17% 27%, rgb(255 255 255 / 0.97) 45%, transparent 76%),
+    radial-gradient(17rem 6rem at 28% 33%, rgb(255 255 255 / 0.95) 48%, transparent 78%),
+    radial-gradient(12rem 4.5rem at 9% 33%, rgb(255 255 255 / 0.9) 45%, transparent 78%),
+    /* Nube baja a la derecha, mas suelta. */
+    radial-gradient(22rem 7rem at 88% 51%, rgb(255 255 255 / 0.95) 45%, transparent 76%),
+    radial-gradient(15rem 5rem at 77% 57%, rgb(255 255 255 / 0.88) 48%, transparent 78%),
+    /* Un jiron suelto abajo, para que la franja no acabe en linea recta. */
+    radial-gradient(20rem 5rem at 44% 71%, rgb(255 255 255 / 0.82) 42%, transparent 78%),
+    /*
+     * El cielo. Casi blanco donde va la barra, azul de verdad donde van el
+     * titular y las nubes, y de vuelta al fondo de la pagina abajo del todo para
+     * que no se vea el corte.
+     */
+    linear-gradient(
+      180deg,
+      #fbfdff 0%,
+      #eff7ff 9%,
+      #c7e2fb 34%,
+      #cfe6fc 48%,
+      #e8f1fa 74%,
+      var(--cielo) 100%
+    );
+}
+
+/*
+ * Lo que se lee va por encima del cielo.
+ *
+ * `main` y el pie necesitan contexto de apilamiento propio: sin el, el
+ * `::before` del armazon —que es hermano suyo y va despues en el orden de
+ * pintado— se les pondria encima y taparia el titular.
+ */
+.armazonConCielo > * {
+  position: relative;
+  z-index: 1;
+}
+
 /*
  * El armazon ajustado a la ventana, que hoy usa una sola pantalla: «Entrar».
  *
@@ -77,25 +185,37 @@
   z-index: 10;
   /*
    * El hueco que la separa del borde va de relleno y no de margen: asi la barra
-   * guarda los mismos 8 px arriba en reposo y pegada, porque el relleno viaja
-   * con la caja pegajosa y un margen se quedaria arriba.
+   * guarda el mismo aire arriba en reposo y pegada, porque el relleno viaja con
+   * la caja pegajosa y un margen se quedaria arriba.
+   *
+   * ⚠️ **Eran 8 px y son 16 desde el 25/09/2026.** Ahora la pildora se ve desde
+   * el primer pixel, asi que el hueco no es un detalle: es lo que la separa del
+   * borde de la ventana y lo que la hace leerse como una pieza flotando encima
+   * de la pagina, que es lo que hace la referencia.
    */
-  padding: var(--e2) var(--e2) 0;
+  padding: var(--e4) var(--e2) 0;
 }
 
 /*
- * La barra en si. **En reposo no existe**: solo se ven la marca y los enlaces
- * sobre el cielo, y la superficie aparece al bajar.
+ * La barra en si: una pildora blanca flotando sobre la pagina.
  *
- * Es lo contrario de la vaina ovalada que se probo y se descarto esta misma
- * mañana: aquella tapaba la pagina desde el primer pixel.
+ * ⚠️ **Cuarta forma, y esta se ve desde el primer pixel.** Las tres anteriores
+ * fueron: barra a sangre con filete; vaina ovalada flotante, descartada el
+ * 10/09 por tapar la pagina desde arriba; y barra insertada **invisible en
+ * reposo** que sacaba su superficie al bajar. El 25/09/2026 se pidio igualar la
+ * referencia del cliente, cuya cabecera es una pildora blanca siempre presente,
+ * asi que la superficie dejo de esconderse.
+ *
+ * La objecion que mato a la vaina —«tapa la pagina desde el primer pixel»—
+ * sigue siendo cierta, y ahora se acepta a sabiendas: es el precio de que la
+ * barra se lea como una pieza y no como texto suelto sobre el fondo.
  */
 .cabeceraDentro {
   position: relative;
   max-width: var(--ancho);
   margin: 0 auto;
-  padding: var(--e2) var(--e5);
-  border-radius: var(--radio-menor);
+  padding: var(--e3) var(--e5);
+  border-radius: var(--radio);
   /*
    * Tres columnas y no `space-between`: los destinos tienen que quedar centrados
    * respecto a la BARRA, no repartidos entre la marca y el boton. Con
@@ -118,7 +238,7 @@
 }
 
 /*
- * El velo que aparece al bajar.
+ * La superficie de la pildora.
  *
  * Va en `::before` y no en un `<div>`: no hay nada que anunciar a un lector de
  * pantalla y un elemento mas en el arbol solo habria que esconderlo.
@@ -128,12 +248,17 @@
  *
  * ⚠️ **Nube maciza, y se probo la otra.** Se probo nube al 85 % con
  * `backdrop-filter: blur(12px)`, y mirandolo con contenido pasando por debajo el
- * boton negro de la portada se leia entero a traves del velo: un 15 % de
- * transparencia no perdona una pieza de maximo contraste.
+ * boton de maximo contraste de la portada se leia entero a traves del velo: un
+ * 15 % de transparencia no perdona una pieza asi.
  *
- * ⚠️ **Y ahora la pagina es blanca, asi que el velo es del mismo color que el
- * fondo.** Lo que dice donde acaba la barra es su contorno de `--regla` y su
- * sombra, no el relleno. Por eso los dos son obligatorios aqui.
+ * ⚠️ **La pagina es casi blanca, asi que el relleno no dice donde acaba la
+ * barra.** Eso lo dicen su contorno de `--regla` y su sombra. Los dos son
+ * obligatorios aqui.
+ *
+ * ⚠️ **`opacity: 1` de salida desde el 25/09/2026.** Antes nacia en 0 y subia al
+ * bajar la pagina; ahora la pildora esta siempre. Lo que sigue reaccionando al
+ * desplazamiento es la sombra, que se hace mas honda para separar la barra del
+ * contenido que le pasa por debajo — el trabajo que antes hacia el velo entero.
  */
 .cabeceraDentro::before {
   content: '';
@@ -144,16 +269,15 @@
   background: var(--nube);
   border: 1px solid var(--regla);
   box-shadow: var(--sombra-nube);
-  opacity: 0;
-  transition: opacity 200ms var(--salida);
+  transition: box-shadow 200ms var(--salida);
 }
 
 .posada .cabeceraDentro::before {
-  opacity: 1;
+  box-shadow: var(--sombra-aviso);
 }
 
-/* Quien pide menos movimiento igual necesita ver donde acaba la barra cuando
-   el contenido pasa por debajo: el velo deja de aparecer y se queda puesto. */
+/* Quien pide menos movimiento ve la barra igual: lo que se apaga es el cambio
+   de sombra, no la sombra. */
 @media (prefers-reduced-motion: reduce) {
   .cabeceraDentro::before {
     transition: none;
@@ -370,41 +494,39 @@
  * Si algun dia hay que cumplirlo, el cambio es de dos valores: la misma rampa
  * con la luz bajada. `#d81b7e → #c4304b` da 4,80:1 y 5,42:1.
  */
+/*
+ * ⚠️ **Aqui habia un marco rosa con cuatro cuadraditos en las esquinas, y se
+ * fue el 25/09/2026.** Era una pieza de «El escaparate»: 4 px de marco en
+ * degradado coral-rosa, con cuatro cuadrados de 3 px asomando 1 px por fuera
+ * gracias a un borde transparente. Se retiro al igualar la paleta de la
+ * referencia del cliente, donde el boton de la barra es macizo y sin adornos.
+ *
+ * El envoltorio se queda porque sigue haciendo falta: es quien recibe el raton
+ * y el foco mientras la cara de dentro recorta el rotulo que gira.
+ */
 .entrar {
   display: block;
   margin-left: var(--e2);
-  /* El marco rosa: 4 px de relleno y esquina viva, como la referencia. */
-  padding: 4px;
-  /*
-   * ⚠️ **Un borde transparente de 1 px, y hace falta.** Los cuadrados de las
-   * esquinas tienen que asomar 1 px POR FUERA del marco, y un fondo no se puede
-   * salir de su caja: lo que se hace es agrandar la caja de pintado con un borde
-   * invisible y colocarlos en su esquina.
-   */
-  border: 1px solid transparent;
-  background-color: rgb(255 136 150 / 0.2);
-  background-image:
-    linear-gradient(270deg, #ff8268 0%, #fe7eb2 100%),
-    linear-gradient(270deg, #ff8268 0%, #fe7eb2 100%),
-    linear-gradient(270deg, #ff8268 0%, #fe7eb2 100%),
-    linear-gradient(270deg, #ff8268 0%, #fe7eb2 100%);
-  background-repeat: no-repeat;
-  background-size: 3px 3px;
-  background-position: 0 0, 100% 0, 0 100%, 100% 100%;
-  background-origin: border-box;
-  /*
-   * Los cuatro cuadrados llegan al borde; el rosa del marco se queda en el
-   * relleno, o el marco mediria 5 px en vez de 4. **El color de fondo usa
-   * siempre el ULTIMO valor de esta lista**, y por eso `padding-box` va al final.
-   */
-  background-clip: border-box, border-box, border-box, border-box, padding-box;
   text-decoration: none;
   transition: transform 180ms var(--salida);
 }
 
 /*
- * La cara. De aqui sale el area tactil: 20 de linea + 16 de relleno = 36, mas
- * 4+1 de marco por lado = 46 px, por encima de los 44 que pide 2.5.5.
+ * La cara: el boton en si.
+ *
+ * ⚠️ **Macizo y sin luces interiores desde el 25/09/2026.** Llevaba un
+ * degradado coral-rosa con dos luces blancas al 20 % que lo abombaban; los dos
+ * eran de «El escaparate» y se fueron al igualar la paleta de la referencia,
+ * cuyo boton de barra es un solido sin relieve.
+ *
+ * ⚠️ **Va en `--accion-fuerte` y no en `--activo`.** A un palmo tiene «Inicio»,
+ * que se pinta con el indigo de `--activo-regla` por ser el destino actual: si
+ * el boton fuera del mismo indigo, los dos acentos competirian dentro de la
+ * misma barra. Es la misma reparticion que hace la referencia.
+ *
+ * El area tactil: 20 de linea + 24 de relleno = 44 px, justo lo que pide
+ * WCAG 2.5.5. **Antes salian 46 porque el marco rosa sumaba 5 px por lado**, y
+ * al quitarlo el relleno vertical tuvo que subir de 8 a 12 para no bajar de 44.
  */
 .entrarCara {
   display: block;
@@ -412,17 +534,9 @@
   /* Recorta el rotulo que gira. No recorta el anillo de foco, que va en el
      `<a>` de fuera y ademas es `outline`. */
   overflow: hidden;
-  padding: 8px 16px;
-  border-radius: 4px;
-  background: linear-gradient(270deg, #ff7c61 0%, #ff68a5 100%);
-  /*
-   * Las dos luces interiores de la referencia, blancas al 20 %: una arriba y
-   * otra abajo. Son lo que abomba la pieza; sin ellas la rampa se ve plana y
-   * deja de parecerse.
-   */
-  box-shadow:
-    inset 0 -4px 8px rgb(255 255 255 / 0.2),
-    inset 0 4px 4px rgb(255 255 255 / 0.2);
+  padding: 12px 16px;
+  border-radius: var(--radio-control);
+  background: var(--accion-fuerte);
   color: var(--tinta-invertida);
   font-size: var(--t-apoyo);
   font-weight: 600;
@@ -640,16 +754,73 @@
 }
 
 /*
-  Los dos enlaces del pie van juntos a la derecha y no repartidos por el
-  `space-between`: separar «Privacidad» de «Entrar al panel» dejaria el copyright
-  en un extremo y un enlace suelto en el medio, que se lee como tres bloques sin
-  relacion. Son dos salidas del mismo sitio.
-*/
-.enlacesDelPie {
+ * El pie en columnas, desde el 25/09/2026.
+ *
+ * Era una linea: el copyright a la izquierda y tres enlaces apretados a la
+ * derecha. En columnas cada grupo lleva su rotulo, se puede crecer sin que el
+ * de al lado se resienta, y el copyright baja a su propia franja — que es donde
+ * se busca.
+ *
+ * La marca ocupa su propia columna y es mas ancha que las de enlaces: lleva
+ * prosa, y una columna de enlaces con un parrafo dentro se lee torcida.
+ */
+.pieDentro {
+  max-width: var(--ancho);
+  margin: 0 auto;
+  padding: var(--e7) var(--e5) var(--e6);
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 2fr);
+  gap: var(--e7);
+  font-size: var(--t-menor);
+  color: var(--tinta3);
+}
+
+.pieMarca {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--e2) var(--e5);
+  flex-direction: column;
+  gap: var(--e3);
+}
+
+/* El color va sobre el enlace y no se hereda: `mundo.css` le declara su tinta
+   al propio `.marca`, y una tinta declarada no la hereda de nadie. */
+.marcaDelPie {
+  align-self: flex-start;
+  color: var(--tinta);
+  text-decoration: none;
+}
+
+.pieQueEs {
+  margin: 0;
+  max-width: 34ch;
+  font-size: var(--t-menor);
+  line-height: 1.6;
+  color: var(--tinta3);
+}
+
+.pieColumnas {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--e5);
+}
+
+.pieColumna {
+  display: flex;
+  flex-direction: column;
+}
+
+/*
+ * El rotulo del grupo.
+ *
+ * Es un `<h2>` porque encabeza una lista de destinos y quien navega por
+ * encabezados tiene que poder saltar a el; lo que no puede es *parecer* un
+ * titular, asi que va del tamaño del resto del pie y se distingue por el peso
+ * y la tinta, no por el cuerpo.
+ */
+.pieTitulo {
+  margin: 0 0 var(--e2);
+  font-size: var(--t-menor);
+  font-weight: 600;
+  color: var(--tinta);
 }
 
 .pieDentro a {
@@ -658,22 +829,41 @@
   min-height: 44px;
 }
 
-.pieDentro {
+/* La franja del copyright, separada por una regla: no es un destino y no
+   compite con los que si lo son. */
+.pieAbajo {
   max-width: var(--ancho);
   margin: 0 auto;
-  padding: var(--e2) var(--e5);
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--e3);
+  padding: var(--e4) var(--e5);
+  border-top: 1px solid var(--regla);
   font-size: var(--t-menor);
   color: var(--tinta3);
+}
+
+@media (max-width: 900px) {
+  /* La marca deja de compartir fila con los enlaces antes de que su prosa se
+     estreche: a dos columnas justas, 34ch se parten en cinco lineas. */
+  .pieDentro {
+    grid-template-columns: 1fr;
+    gap: var(--e6);
+  }
 }
 
 @media (max-width: 640px) {
   .pieDentro {
     padding-left: var(--e4);
     padding-right: var(--e4);
+  }
+
+  .pieAbajo {
+    padding-left: var(--e4);
+    padding-right: var(--e4);
+  }
+
+  /* Tres columnas de enlaces en 375 px dejan cada rotulo partido en dos lineas
+     y cada enlace en tres. Dos columnas es lo que cabe leyendose. */
+  .pieColumnas {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--e5) var(--e4);
   }
 }
