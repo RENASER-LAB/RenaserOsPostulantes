@@ -22,14 +22,41 @@
  */
 
 import { useQuery } from '@tanstack/react-query'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { ErrorApi } from '@/api/cliente'
 import { verVacante } from '@/api/portal'
 import { useSesion } from '@/app/Sesion'
 import { rutas } from '@/rutas'
 import { Remuneracion } from '@/ui/Remuneracion'
 import { TituloQueViaja } from '@/ui/movimiento'
+import { lineaDeDonde } from './busqueda'
 import estilos from './Vacante.module.css'
+
+/**
+ * «← Volver a las vacantes».
+ *
+ * Si se llegó desde `/vacantes`, vuelve atrás en el historial: la lista se monta
+ * con la misma búsqueda, los mismos filtros y el mismo orden, y se desplaza hasta
+ * la tarjeta que se abrió. Si se llegó directo por un enlace, no hay lista a la
+ * que volver y lleva a `/vacantes` limpia.
+ */
+function Volver() {
+  const { state } = useLocation()
+  const navegar = useNavigate()
+  const desdeLaLista = Boolean((state as { desdeLaLista?: boolean } | null)?.desdeLaLista)
+  if (desdeLaLista) {
+    return (
+      <button className={estilos.volverAtras} type="button" onClick={() => navegar(-1)}>
+        ← Volver a las vacantes
+      </button>
+    )
+  }
+  return (
+    <Link className={estilos.volver} to={rutas.vacantes()}>
+      ← Volver a las vacantes
+    </Link>
+  )
+}
 
 export function Vacante() {
   const { vacanteId = '' } = useParams()
@@ -61,9 +88,7 @@ export function Vacante() {
 
     return (
       <div className={estilos.pagina}>
-        <Link className={estilos.volver} to={rutas.vacantes()}>
-          ← Volver a las vacantes
-        </Link>
+        <Volver />
         <div className={estilos.marco}>
           {/*
             «Esta vacante ya no está disponible» cubre los tres casos que aquí
@@ -113,13 +138,14 @@ export function Vacante() {
   // El sueldo sale del grupo de pastillas y se pinta aparte, debajo: es lo
   // primero que se busca en una convocatoria, y como una pastilla mas junto a
   // «Hibrido» y «Arequipa» se pierde. Ver `ui/Remuneracion`.
-  const datos = [v.modalidad, v.ubicacion, v.horario].filter(Boolean)
+  //
+  // «Presencial · Arequipa · Selva Alegre · 9am-6pm»: la ciudad del catálogo y,
+  // detrás, la zona; si la zona repite el nombre de la ciudad no se dice dos veces.
+  const datos = lineaDeDonde(v)
 
   return (
     <div className={estilos.pagina}>
-      <Link className={estilos.volver} to={rutas.vacantes()}>
-        ← Volver a las vacantes
-      </Link>
+      <Volver />
 
       <div className={estilos.encabezado}>
         {/* B · el otro extremo del titulo que viaja desde la tarjeta. */}

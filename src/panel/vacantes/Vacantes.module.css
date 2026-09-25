@@ -116,6 +116,18 @@
   font-weight: 600;
 }
 
+/* Una linea bajo el campo que dice que va ahi. */
+.pista {
+  font-size: var(--t-menor);
+  color: var(--tinta3);
+}
+
+/* Lo que falta, bajo su campo y en la tinta del error; el borde no cambia de sitio. */
+.errorCampo {
+  font-size: var(--t-menor);
+  color: var(--mal);
+}
+
 .entrada {
   min-height: 44px;
   padding: 0 var(--e3);

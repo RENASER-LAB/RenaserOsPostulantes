@@ -16,6 +16,89 @@ no se vuelve a subir el currículum. Lo del 07/09 se documentó en
 
 ---
 
+## Buscar vacantes, y la vacante gana ciudad (25/09/2026)
+
+La portada era la única lista de vacantes y no había forma de buscar. Ahora hay una pantalla
+propia, `/vacantes`, con buscador, filtros y orden, y la portada enseña solo las 3 más recientes
+con «Ver las N vacantes». Cómo funciona hoy está en
+[02-QUE-VE-EL-CANDIDATO.md](02-QUE-VE-EL-CANDIDATO.md) (2.1b) y, del lado del equipo, en
+[PANEL.md](PANEL.md), «Modalidad y ciudad, de una lista»; aquí va el porqué.
+
+- **Filtrar por ciudad pedía una ciudad de verdad.** «Lima» y «LIMA» escritas a mano eran dos
+  opciones. El backend añadió a la vacante una ciudad del catálogo del registro (`V62`) y el
+  texto de siempre pasó a ser «Zona o referencia». La migración solo rescató la ciudad donde el
+  texto era exactamente una provincia; lo demás lo elige el equipo.
+- **Todo pasa en el navegador**, sobre la lista entera que ya llega: hoy son nueve vacantes y
+  tiene que sentirse instantáneo con cuarenta. La lógica vive en `busqueda.ts`, sin pantalla,
+  para probarla sin montar nada.
+- **La dirección guarda la búsqueda sin llenar el historial**, y al volver de la ficha la lista
+  queda a la misma altura.
+- **En el panel, modalidad y ciudad son desplegables**, y si nadie los toca se guarda lo que
+  había letra por letra: pasar «PRESENCIAL» a «Presencial» al corregir el horario habría avisado
+  en falso a cada postulante en carrera.
+- **La cabecera tiene dos pantallas distintas**: «Inicio» es la portada y «Vacantes» es
+  `/vacantes`, encendida también en la ficha.
+- De paso, `scripts/cargar-convocatoria.py` del backend vuelve a funcionar: se cortaba con un
+  400 desde el PR #80 porque no mandaba el puesto.
+
+### El rediseño que pidió el usuario
+
+Con la primera versión aprobada por QA, el usuario pidió cambiarla mirando la pantalla. Estas
+decisiones sustituyen lo que decía la spec:
+
+- **En escritorio, filtros en una columna a la izquierda y la lista a la derecha**, con tarjetas
+  horizontales: «Publicada hace…», título, empresa y resumen de 2 líneas; a la derecha, ciudad (o
+  zona), modalidad, horario y sueldo, con iconos. En el teléfono los filtros se pliegan tras
+  «Filtrar (n)» y los datos de la tarjeta van debajo. La portada conserva sus 3 tarjetas de pie.
+- **Ciudad, modalidad y fecha de publicación se ven siempre**, con sus cantidades, aunque no
+  separen nada: un filtro que aparece y desaparece hace parecer rota la pantalla. Empresa, solo
+  si hay más de una.
+- **«Ordenar por: Relevantes / Recientes» se ve siempre**, con Relevantes de entrada. Sin texto,
+  Relevantes pone primero las vacantes más completas —modalidad, ciudad, horario, resumen y
+  sueldo publicado—, porque son las que se pueden decidir sin abrirlas; entre iguales, la más
+  reciente, y las sin fecha al final. En la dirección solo viaja `orden=recientes`.
+- **Las etiquetas de los filtros activos y «Quitar filtros» van encima de las tarjetas**, no en
+  la columna: así la columna no se mueve bajo el puntero al marcar una casilla, y el teclado
+  sigue el orden que se ve —buscador, borrar, orden, filtros, etiquetas y tarjetas—.
+
+### Lo que encontró el QA, y se corrigió
+
+En la primera revisión, seis cosas:
+
+- **Entre 369 y 420 px la cabecera desbordaba** y «Iniciar sesión» salía cortado, con scroll
+  horizontal en todo el portal. Ahora hasta 430 px los destinos se aprietan y a 368 px o menos
+  «Vacantes» se oculta.
+- **«Filtrar» salía también en escritorio**, junto a los filtros abiertos. La trampa quedó en
+  [REGLAS-DEL-CODIGO.md](REGLAS-DEL-CODIGO.md).
+- **Una búsqueda larga sin espacios** hacía desbordar «Ninguna vacante coincide con…».
+- **Los títulos de las tarjetas «volaban»** por la rejilla al filtrar u ordenar.
+- **Un doble clic sobre una casilla** la dejaba marcada en vez de como estaba.
+- **`cargar-convocatoria.py` se cortaba** antes de crear la vacante (el 400 del puesto).
+
+La segunda revisión aprobó. Tras el rediseño, la tercera encontró dos:
+
+- **Cada tarjeta eran dos paradas de Tab**: un `<article>` sin nombre, que `motion` hace enfocable
+  por su `whileTap`, y después su enlace. Venía de «El escaparate» y también pasaba en la
+  portada. La trampa quedó en [REGLAS-DEL-CODIGO.md](REGLAS-DEL-CODIGO.md).
+- **Un propósito de solo espacios dejaba la tarjeta con el resumen en blanco**, mientras el orden
+  lo contaba como resumen. Ahora las dos cosas usan la misma función.
+
+La última revisión aprobó sin hallazgos. Quedaron fuera, en [PENDIENTES.md](PENDIENTES.md): la
+cabecera que tapa lo enfocado al subir con Shift+Tab, la ficha con un propósito de solo espacios,
+el E2E `14-vacante` en «poner en automático» y las vacantes publicadas sin ciudad.
+
+### Cómo se comprueba
+
+1118 pruebas del frontend en verde, y en el backend 1444 unitarias y 210 de integración. Pruebas
+nuevas: `busqueda.test.ts`, `BuscarVacantes.test.tsx`, `Tarjeta.test.tsx` y
+`CamposDeLaVacante.test.tsx`; en el backend, `FlujoCiudadDeLaVacanteIT`,
+`MigracionCiudadDeLaVacanteIT` y casos nuevos en `CambiosDeLaVacanteTest`. E2E nuevos:
+`37-buscar-vacantes`, `38-buscar-vacantes-movil` y `39-buscar-vacantes-panel`. ⚠️ **Los tres
+escriben**: siembran su propio terreno y lo retiran al terminar; el 37 y el 38 además pasan a
+borrador las publicadas que no son suyas mientras corren, y las devuelven después.
+
+---
+
 ## Las pantallas de relleno se ponen encima, y las puertas del panel entran (24–25/09/2026)
 
 Cuatro cosas, todas pedidas mirando la pantalla.

@@ -84,6 +84,7 @@ function vacante(cambios: Partial<Vacante> = {}): Vacante {
     modalidad: null,
     horario: null,
     ubicacion: null,
+    ciudad: null,
     plazas: null,
     abreEn: null,
     cierraEn: null,
