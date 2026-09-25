@@ -38,7 +38,7 @@ Tres avisos que no se ponen detrás de un enlace, porque llegan tarde:
 referencia que trajo el cliente (saasly.demos.tailgrids.com): la escala gris fría de Tailwind
 v4 —página `#F9FAFB`, superficies en nube blanca encima, que es lo que las separa—, **acción en
 índigo `#615FFF`** con radio **8 px**, y `--accion-fuerte` casi negro `#030712` solo para el
-botón de la cabecera. Figtree sigue. **El coral y el crema ya no existen**, y con el coral se
+botón de la cabecera. **Geist**, servida por el sitio, en vez de Figtree. **El coral y el crema ya no existen**, y con el coral se
 perdió el color propio de «te toca a ti»: ahora es el mismo índigo de la acción. **La fuente de
 verdad son los tokens de [`mundo.css`](src/estilos/mundo.css)**; DESIGN.md y EL-MUNDO-VISUAL
 todavía describen en detalle el mundo anterior.
@@ -55,7 +55,8 @@ cabecera y su pie. Lo que sigue fuera es `ArmazonPanel` —el candado—, y por 
 El resto de `/admin` conserva la disposición anterior.
 
 ⚠️ **La cabecera se ve desde el primer píxel.** Es una píldora blanca flotante a 16 px del
-borde; al bajar solo se le hace más honda la sombra. `--alto-cabecera` son **84 px medidos**, y
+borde, **sin filete ni sombra** en reposo ni al bajar, como la de la referencia; sobre el gris
+claro de más abajo casi no se distingue, y es a sabiendas. `--alto-cabecera` son **84 px medidos**, y
 ha pasado por 61, 76, 68 y 70: si tocas su relleno **o el alto del botón «Iniciar sesión»**,
 vuelve a medirlo en el navegador. El 25/09/2026 se olvidó y el token se quedó en 70 con la barra
 midiendo 84.

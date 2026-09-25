@@ -30,61 +30,61 @@ colors:
   mal-regla: "#f3c3cc"
 typography:
   display:
-    fontFamily: "Figtree, system-ui, sans-serif"
+    fontFamily: "Geist, system-ui, sans-serif"
     fontSize: "clamp(36px, 5.2vw, 60px)"
     fontWeight: 600
     lineHeight: 1.13
     letterSpacing: "-0.03em"
   cifra:
-    fontFamily: "Figtree, system-ui, sans-serif"
+    fontFamily: "Geist, system-ui, sans-serif"
     fontSize: "clamp(28px, 5vw, 34px)"
     fontWeight: 600
     lineHeight: 1.1
     letterSpacing: "-0.02em"
   headline:
-    fontFamily: "Figtree, system-ui, sans-serif"
+    fontFamily: "Geist, system-ui, sans-serif"
     fontSize: "clamp(24px, 2.4vw, 30px)"
     fontWeight: 700
     lineHeight: 1.2
     letterSpacing: "-0.03em"
   title:
-    fontFamily: "Figtree, system-ui, sans-serif"
+    fontFamily: "Geist, system-ui, sans-serif"
     fontSize: "20px"
     fontWeight: 600
     lineHeight: 1.25
     letterSpacing: "-0.02em"
   entradilla:
-    fontFamily: "Figtree, system-ui, sans-serif"
+    fontFamily: "Geist, system-ui, sans-serif"
     fontSize: "18px"
     fontWeight: 600
     lineHeight: 1.5
     letterSpacing: "-0.015em"
   body:
-    fontFamily: "Figtree, system-ui, sans-serif"
+    fontFamily: "Geist, system-ui, sans-serif"
     fontSize: "16px"
     fontWeight: 400
     lineHeight: 1.5
     letterSpacing: "normal"
   prosa:
-    fontFamily: "Figtree, system-ui, sans-serif"
+    fontFamily: "Geist, system-ui, sans-serif"
     fontSize: "15px"
     fontWeight: 400
     lineHeight: 1.55
     letterSpacing: "normal"
   apoyo:
-    fontFamily: "Figtree, system-ui, sans-serif"
+    fontFamily: "Geist, system-ui, sans-serif"
     fontSize: "14px"
     fontWeight: 500
     lineHeight: 1.5
     letterSpacing: "normal"
   menor:
-    fontFamily: "Figtree, system-ui, sans-serif"
+    fontFamily: "Geist, system-ui, sans-serif"
     fontSize: "13px"
     fontWeight: 400
     lineHeight: 1.45
     letterSpacing: "normal"
   label:
-    fontFamily: "Figtree, system-ui, sans-serif"
+    fontFamily: "Geist, system-ui, sans-serif"
     fontSize: "12px"
     fontWeight: 600
     lineHeight: 1.4
@@ -221,7 +221,8 @@ components:
 > `#615FFF` con radio 8 px— y **el coral ya no existe**: el turno se pinta del mismo índigo que
 > la acción. Lo que sigue siendo cierto es la estructura —nube sobre página, estado en la forma,
 > los componentes y su porqué—; los **valores**, en [`mundo.css`](src/estilos/mundo.css), que es la fuente de verdad.
-> Reescribir este documento está pendiente.
+> **La tipografía también cambió ese día: Geist en vez de Figtree**, y el titular pasó a interlínea 1
+> y espaciado normal. Reescribir este documento está pendiente.
 
 ## Overview
 

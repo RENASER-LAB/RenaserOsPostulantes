@@ -61,6 +61,28 @@ Pendiente: reescribir DESIGN.md y EL-MUNDO-VISUAL con la paleta nueva —hoy lle
 arriba y el detalle del mundo anterior debajo—, repintar la loseta si vuelve, y decidir si «te
 toca a ti» recupera un color propio.
 
+**Segunda vuelta, el mismo día: tipografía, marco de cristal y cabecera.**
+
+- **Geist en vez de Figtree**, la de la referencia, servida por el sitio como lo estaba
+  Figtree: la app instalada no puede quedarse sin titulares por falta de cobertura. El titular
+  pasó a interlínea 1 y espaciado normal, que es lo que mide la referencia; el `-0,03em` se
+  le había puesto a Figtree, que es ancha, y sobre Geist amontonaba las letras. Medido con las
+  cajas de tinta que la «j» de «trabajo» no pisa la «í» de «aquí»: 6 px de aire a 1440, 3 a
+  390. `--medida` no se movió: con Geist compra 65-69 caracteres, casi lo mismo que antes.
+- **El escaparate, de cristal**: filete blanco de 1 px, 12 px de relleno con blanco al 25 %
+  desvaneciéndose, radio 26 solo arriba, y fundido abajo. Fuera la sombra y el resplandor. El
+  fundido **se comía el recorrido entre 901 y ~1100 px** —ahí las etapas ocupan más líneas— y
+  se subió el alto mínimo del recorte hasta dejar 15 px de margen.
+- **El destino actual, solo con color**, como la referencia: sin peso 700 ni filete. Antes de
+  quitarlos se midió que el color aguanta solo: 3,88:1 contra los otros destinos y 4,58:1
+  como texto — el coral daba 2,53 y era un incumplimiento aceptado.
+- **La cabecera, sin filete ni sombra**, en reposo y al bajar; radio 18. Se fue el oyente de
+  desplazamiento que existía para cambiar la sombra. Letra de la barra un punto más grande
+  —17 en escritorio, 15 en teléfono y en el botón—; a 320 px el botón se salía 4 px y ahí
+  volvió a 14.
+- ⚠️ **Un fallo de la vuelta anterior:** en teléfono «Inicio» seguía subrayado. Dos reglas de
+  la media query, que van después en la hoja, le devolvían el filete quitado en escritorio.
+
 ---
 
 ## Las pantallas de relleno se ponen encima, y las puertas del panel entran (24–25/09/2026)

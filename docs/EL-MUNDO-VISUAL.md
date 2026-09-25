@@ -13,7 +13,8 @@ los tokens con su porqué en [`src/estilos/mundo.css`](../src/estilos/mundo.css)
 > `#615FFF` con radio 8 px— y **el coral ya no existe**: el turno se pinta del mismo índigo que
 > la acción. Lo que sigue siendo cierto es la estructura —nube sobre página, estado en la forma,
 > los componentes y su porqué—; los **valores**, en [`mundo.css`](../src/estilos/mundo.css), que es la fuente de verdad.
-> Reescribir este documento está pendiente.
+> **La tipografía también cambió ese día: Geist en vez de Figtree**, y el titular pasó a interlínea 1
+> y espaciado normal. Reescribir este documento está pendiente.
 
 ## Estamos en un rediseño, no en un retoque
 
