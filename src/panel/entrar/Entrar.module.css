@@ -37,24 +37,10 @@
 }
 
 /*
- * La superficie de los dos formularios de la contraseña olvidada del panel:
- * `/admin/clave` y `/admin/restablecer`.
- *
- * ⚠️ **Existe porque esos formularios NO son de esta hoja.** Viven en
- * `ui/recuperacion`, compartidos con el portal, y llegaban a pelo sobre el
- * fondo. Desde que `/admin/entrar` es una tarjeta de nube, el enlace de
- * «¿Olvidaste tu contraseña?» llevaba de una superficie a una pantalla sin
- * ninguna, y eso se lee como a medio cargar. Es la gemela de
- * `.superficieDelFormulario` en `Cuenta.module.css`, por el mismo motivo.
- *
- * Solo trae la superficie. La direccion, el hueco entre campos y el aire de
- * arriba ya los pone `.formulario` de la hoja compartida, y repetirlos aqui
- * dependeria del orden del bundle para saber cual gana.
+ * Aqui estaba `.superficieDelFormulario`, la superficie de nube del formulario de
+ * `/admin/clave` y `/admin/restablecer`. Se fue el 25/09/2026, cuando las dos
+ * pasaron a la tarjeta de `/admin/entrar`: la superficie ahora es la tarjeta.
  */
-.superficieDelFormulario {
-  composes: bloqueHolgado from '../../estilos/pagina.module.css';
-  background: var(--nube);
-}
 
 /* La ayuda de un campo se ciñe como toda la prosa: era el único texto sin tope
    y corría líneas más largas que el resto de la pantalla. */
@@ -177,10 +163,9 @@
 /* ---------- Entrar al panel, con la composicion de `/ingresar` ---------- */
 
 /*
- * Solo las usa `Entrar.tsx`. Las clases de arriba se quedan intactas porque esta
- * hoja la comparten cuatro pantallas —`/admin/clave`, `/admin/restablecer` y
- * `/admin/invitacion`—, y tocar `.pagina`, `.formulario`, `.fallo` o `.enviar`
- * las repintaria todas sin que nadie lo haya pedido.
+ * Las usan `/admin/entrar` y, desde el 25/09/2026, sus dos hermanas de la
+ * contraseña olvidada, que llevan la misma tarjeta. Las clases de arriba se
+ * quedan intactas porque `/admin/invitacion` sigue con su columna.
  *
  * Centrada en lo que se ve, igual que `/ingresar`: el hueco entre la cabecera y
  * el pie lo prepara `.armazonJusto` en `Armazon.module.css`, que `Armazon.tsx`
@@ -358,4 +343,26 @@
   -webkit-text-fill-color: var(--tinta);
   caret-color: var(--activo);
   transition: background-color 100000s ease-in-out 0s;
+}
+
+/* ---------- Lo que va debajo del formulario en `/admin/clave` ---------- */
+
+/*
+ * «Si el correo no llega», dentro de la tarjeta y separado por una regla: es la
+ * salida de quien no puede, no parte del formulario. Centrado, como todo lo de
+ * la tarjeta; en la columna de antes iba a la izquierda.
+ */
+.notaEnTarjeta {
+  margin-top: var(--e5);
+  padding-top: var(--e5);
+  border-top: 1px solid var(--regla);
+  text-align: center;
+}
+
+.queEsEnTarjeta {
+  margin: var(--e2) 0 0;
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+  text-wrap: pretty;
 }

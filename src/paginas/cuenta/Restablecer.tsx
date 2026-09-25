@@ -24,18 +24,20 @@ export function Restablecer() {
   const { hayCuenta, salir } = useSesion()
 
   return (
-    <div className={estilos.pagina}>
-      <ElegirClave
-        claseFormulario={estilos.superficieDelFormulario}
-        minimo={8}
-        ayuda="Al menos 8 caracteres, sin espacios al principio ni al final."
-        restablecer={restablecerClave}
-        rutaPedirEnlace={rutas.clave()}
-        alCambiar={() => {
-          if (hayCuenta) salir()
-          navegar(rutas.ingresar(), { replace: true, state: ESTADO_CLAVE_CAMBIADA })
-        }}
-      />
+    // Una tarjeta centrada, como `/ingresar` y `/clave`, desde el 25/09/2026.
+    <div className={estilos.paginaEntrar}>
+      <div className={estilos.tarjetaEntrar}>
+        <ElegirClave
+          minimo={8}
+          ayuda="Al menos 8 caracteres, sin espacios al principio ni al final."
+          restablecer={restablecerClave}
+          rutaPedirEnlace={rutas.clave()}
+          alCambiar={() => {
+            if (hayCuenta) salir()
+            navegar(rutas.ingresar(), { replace: true, state: ESTADO_CLAVE_CAMBIADA })
+          }}
+        />
+      </div>
     </div>
   )
 }

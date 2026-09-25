@@ -115,6 +115,14 @@ línea en la portada, la máscara del fundido y el rótulo en miniatura de una m
   falsa**: Vite servía una versión a medio escribir de `Armazon.tsx` que fallaba, y lo que se
   medía era la pantalla de error, que es corta. Lo delató `/registro` «cabiendo» en un
   teléfono.
+- **La contraseña olvidada, en tarjeta.** Con el pie corto, `/clave`, `/restablecer` y sus dos
+  del panel seguían desplazándose en un portátil de 1366×768: su propio contenido medía más que
+  la ventana —un titular de dos líneas a 60 px y el formulario en su propia superficie—. Pasaron
+  a la tarjeta de `/ingresar`: titular a 30 px dentro, el formulario sin superficie, y la
+  vuelta atrás y la salida de quien no puede también dentro. La pieza compartida
+  (`ui/recuperacion`) dejó de aceptar `claseFormulario`, porque una superficie dentro de la
+  tarjeta no separa nada, y su fallo perdió el filete lateral, que en este mundo está prohibido.
+  Ahora caben las siete pantallas de tarjeta a los cuatro tamaños medidos.
 
 ---
 

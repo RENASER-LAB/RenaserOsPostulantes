@@ -61,6 +61,16 @@ const TITULOS: Array<[string, string]> = [
   [patrones.adminRestablecer, 'Elegir contraseña nueva'],
 ]
 
+/** Las pantallas que son una tarjeta sola y se centran en la ventana. */
+const CENTRADAS = [
+  patrones.ingresar,
+  patrones.clave,
+  patrones.restablecer,
+  patrones.adminEntrar,
+  patrones.adminClave,
+  patrones.adminRestablecer,
+]
+
 /** Las puertas: pantallas de una sola tarea, que llevan el pie corto. */
 const PUERTAS = [
   patrones.ingresar,
@@ -212,19 +222,18 @@ export function Armazon() {
   const { pathname } = useLocation()
 
   /*
-   * Las dos pantallas que son UNA tarjeta sola: se centran en lo que se ve en
-   * vez de fluir desde arriba. Eso cambia el armazon —la cadena de altos y el
-   * aire del pie—, asi que la decision se toma aqui. Ver `.armazonJusto`.
+   * Las pantallas que son UNA tarjeta sola: se centran en lo que se ve en vez de
+   * fluir desde arriba. Eso cambia el armazon —la cadena de altos y el aire del
+   * pie—, asi que la decision se toma aqui. Ver `.armazonJusto`.
    *
-   * ⚠️ **`/admin/entrar` entro el 25/09/2026, y solo pudo entrar al quitarle el
-   * bloque «¿No puedes entrar?»**: con el, la pantalla medía mas que la ventana,
-   * y centrar lo que no cabe desborda por los dos lados —a lo que se sale por
-   * arriba el navegador no deja llegar—. Si algun dia vuelve a crecer por
-   * debajo de la tarjeta, esto hay que quitarlo.
+   * ⚠️ **Centrar solo es seguro mientras la tarjeta quepa.** Centrar lo que no
+   * cabe desborda por los dos lados, y a lo que se sale por arriba el navegador
+   * no deja llegar. `/admin/entrar` solo pudo entrar al quitarle el bloque «¿No
+   * puedes entrar?», y la contraseña olvidada —las cuatro— al pasar a tarjeta con
+   * titular de 30 px, el 25/09/2026. Si alguna vuelve a crecer por debajo de la
+   * tarjeta, hay que sacarla de aqui.
    */
-  const justo =
-    matchPath(patrones.ingresar, pathname) !== null ||
-    matchPath(patrones.adminEntrar, pathname) !== null
+  const justo = CENTRADAS.some((patron) => matchPath(patron, pathname) !== null)
 
   /*
    * El amanecer de la portada. Va detras de la cabecera, asi que la decision es

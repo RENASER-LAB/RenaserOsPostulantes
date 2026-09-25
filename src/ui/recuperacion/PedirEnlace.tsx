@@ -15,6 +15,7 @@
 
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { Campo } from '@/ui/campos/Campo'
+import { IconoAviso } from '@/ui/Iconos'
 import {
   EsquemaCorreo,
   FALLO_AL_PEDIR,
@@ -31,17 +32,15 @@ interface Props {
   bajada: ReactNode
   /** Lo que va debajo en los dos estados. En el portal, la línea de talento. */
   alternativa?: ReactNode
-  /**
-   * La superficie del formulario, si quien lo usa tiene una.
-   *
-   * El portal pone el suyo sobre nube, como el resto de sus formularios; el
-   * panel lo deja a pelo sobre el fondo, que es su disposición. La decisión es
-   * de cada puerta y no de esta pieza, que es la misma para las dos.
+  /*
+   * Aquí había `claseFormulario`, la superficie que cada puerta le ponía al
+   * formulario. Se fue el 25/09/2026: esta pieza se pinta ahora DENTRO de una
+   * tarjeta que pone cada pantalla, y una superficie dentro de otra no separa
+   * nada. Ver `Recuperacion.module.css`.
    */
-  claseFormulario?: string
 }
 
-export function PedirEnlace({ pedir, titulo, bajada, alternativa, claseFormulario }: Props) {
+export function PedirEnlace({ pedir, titulo, bajada, alternativa }: Props) {
   const [correo, setCorreo] = useState('')
   const [error, setError] = useState<string | undefined>()
   const [fallo, setFallo] = useState<string | null>(null)
@@ -121,6 +120,7 @@ export function PedirEnlace({ pedir, titulo, bajada, alternativa, claseFormulari
 
         {fallo && (
           <p className={estilos.fallo} role="alert">
+            <IconoAviso tamano={18} />
             {fallo}
           </p>
         )}
@@ -159,7 +159,7 @@ export function PedirEnlace({ pedir, titulo, bajada, alternativa, claseFormulari
       <p className={estilos.bajada}>{bajada}</p>
 
       <form
-        className={`${estilos.formulario} ${claseFormulario ?? ''}`}
+        className={estilos.formulario}
         onSubmit={alEnviar}
         noValidate
       >
@@ -180,6 +180,7 @@ export function PedirEnlace({ pedir, titulo, bajada, alternativa, claseFormulari
 
         {fallo && (
           <p className={estilos.fallo} role="alert">
+            <IconoAviso tamano={18} />
             {fallo}
           </p>
         )}

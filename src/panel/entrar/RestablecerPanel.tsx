@@ -27,20 +27,22 @@ export function RestablecerPanel() {
   const { hayEquipo, salir } = useSesionPanel()
 
   return (
-    <div className={estilos.pagina}>
-      {/* La marca la pone ahora la cabecera del portal, que envuelve esta
-          pantalla desde el 24/09/2026. Repetirla aquí ponía dos EX seguidas. */}
-      <ElegirClave
-        minimo={12}
-        ayuda="Al menos 12 caracteres, sin espacios al principio ni al final. Es más que en el portal del candidato porque desde aquí se ven los datos de muchas personas."
-        restablecer={restablecerClavePanel}
-        rutaPedirEnlace={rutas.adminClave()}
-        claseFormulario={estilos.superficieDelFormulario}
-        alCambiar={() => {
-          if (hayEquipo) salir()
-          navegar(rutas.adminEntrar(), { replace: true, state: ESTADO_CLAVE_CAMBIADA })
-        }}
-      />
+    // Una tarjeta centrada, como `/admin/entrar`, desde el 25/09/2026.
+    <div className={estilos.paginaEntrar}>
+      <div className={estilos.tarjeta}>
+        {/* La marca la pone ahora la cabecera del portal, que envuelve esta
+            pantalla desde el 24/09/2026. Repetirla aquí ponía dos EX seguidas. */}
+        <ElegirClave
+          minimo={12}
+          ayuda="Al menos 12 caracteres, sin espacios al principio ni al final. Es más que en el portal del candidato porque desde aquí se ven los datos de muchas personas."
+          restablecer={restablecerClavePanel}
+          rutaPedirEnlace={rutas.adminClave()}
+          alCambiar={() => {
+            if (hayEquipo) salir()
+            navegar(rutas.adminEntrar(), { replace: true, state: ESTADO_CLAVE_CAMBIADA })
+          }}
+        />
+      </div>
     </div>
   )
 }

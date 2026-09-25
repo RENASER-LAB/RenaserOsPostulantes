@@ -383,17 +383,25 @@ La cabecera es una píldora que flota a 16 px del borde y mide **84 px** con su 
 cronómetro— se engancha a ese token. **Se mide en el navegador, no se calcula**: si cambia el
 relleno de la cabecera o el alto de su botón, hay que volver a medirlo.
 
-Las pantallas que son **una tarjeta sola** —`/ingresar` y `/admin/entrar`— se centran en el
-hueco que queda entre la cabecera y el pie. Solo es seguro mientras quepan: centrar lo que no
-cabe desborda por los dos lados, y a lo que se sale por arriba el navegador no deja llegar.
+Las pantallas que son **una tarjeta sola** se centran en el hueco que queda entre la cabecera
+y el pie: `/ingresar`, `/clave`, `/restablecer` y sus tres del panel. Todas llevan la misma
+composición —la tarjeta de nube, el titular dentro a 30 px y centrado, el botón a todo el
+ancho, y dentro también la vuelta atrás y la salida de quien no puede—. Solo es seguro
+mientras quepan: centrar lo que no cabe desborda por los dos lados, y a lo que se sale por
+arriba el navegador no deja llegar.
+
+La contraseña olvidada —pedir el enlace y elegir la nueva— es **la misma pieza en el portal y
+en el panel** (`src/ui/recuperacion/`), y se pinta pensando que va dentro de una tarjeta: la
+tarjeta la pone cada pantalla.
 
 **Hay dos pies.** El **pie en columnas** (290 px: la marca, «El portal», «Tus datos»,
 «Empresas» y el copyright) va en las páginas que se leen: la portada, la ficha de una vacante y
 la política. El **pie corto** (una línea, ~60 px) va en las puertas —entrar, crear cuenta, el
 enlace del correo, la contraseña olvidada y las tres del panel— y en cualquier pantalla privada
 vista sin cuenta. Con el grande, esas pantallas de una sola tarea sacaban scroll en un
-escritorio normal; con el corto, caben a 1440×900 y 1910×922, y `/ingresar`, `/admin/entrar` y
-«acceso necesario» también a 1366×768 y en el teléfono.
+escritorio normal. Con el corto y la composición en tarjeta, **todas caben** a 1910×922,
+1440×900, 1366×768 y en un teléfono de 390×844; la única que se desplaza es `/registro`, que
+es un formulario largo.
 
 La portada es la única que rompe el carril: su cielo y la banda de «Por qué este proceso es
 distinto» van **a sangre**, a `100vw`. Eso solo es seguro porque su armazón recorta con
