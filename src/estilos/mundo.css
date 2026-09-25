@@ -16,20 +16,31 @@
  * esta viejo. Lo unico que sobrevive es `--canto`, y solo porque el panel del
  * equipo todavia no se ha migrado.
  *
+ * ⚠️ **La paleta cambio el 25/09/2026 y estas reglas cambiaron con ella.** Era
+ * pastel calido `#fbf1e9` con accion NEGRA y coral `#FF7C61` para «te toca a
+ * ti»; se paso a la de la referencia que trajo el cliente —la escala gris fria
+ * de Tailwind con indigo `#615FFF`—. Si encuentras crema, negro pleno o coral
+ * nombrados en el codigo, estan viejos.
+ *
  * Cuatro reglas que sostienen el resto:
  *
- *   1. La ACCION ES NEGRA, no de color. Un boton de color compite con lo unico
- *      que tiene permiso para llamar la atencion.
- *   2. El coral `#FF7C61` significa UNA cosa: «te toca a ti». Y es un
- *      discriminador, no una etiqueta: sirve para encontrar tu turno entre cosas
- *      que no lo son, asi que aparece una vez por cosa que reclama y en una
- *      pantalla donde no hay nada contra lo que discriminar no aparece.
+ *   1. La ACCION ES INDIGO. Antes era negra, con el argumento de que un boton de
+ *      color compite con lo unico que tiene permiso para llamar la atencion; el
+ *      negro se quedo solo en `--accion-fuerte`, la pieza de la cabecera, para
+ *      que no compita con el indigo que tiene al lado.
+ *   2. **Ya no hay un color propio para «te toca a ti».** El coral lo era, y era
+ *      un discriminador: servia para encontrar tu turno entre cosas que no lo
+ *      son. La referencia no tiene un segundo acento, asi que el turno se pinta
+ *      del mismo indigo de la accion — y esa distincion se perdio. Recuperarla
+ *      pide un color que esta paleta no trae.
  *   3. El estado se lee en la FORMA antes que en el color —barra maciza, filete,
- *      punteado— porque quien no distingue colores lee lo mismo.
+ *      punteado— porque quien no distingue colores lee lo mismo. **Esta es la
+ *      regla que sostiene el sistema ahora que el turno perdio su color.**
  *   4. La profundidad es TONO, no papel levantado: una superficie se separa del
- *      fondo porque es mas clara que el —nube blanca sobre cielo calido—, y la
- *      sombra responde a un estado; en reposo, plano. El contorno de 1 px sigue
- *      puesto y es el que sostiene lo que va DENTRO de otra superficie.
+ *      fondo porque es mas clara que el —nube blanca sobre el gris de la
+ *      pagina—, y la sombra responde a un estado; en reposo, plano. El contorno
+ *      de 1 px sigue puesto y es el que sostiene lo que va DENTRO de otra
+ *      superficie.
  *
  * El sistema entero esta en `DESIGN.md`; el contrato de direccion, en la
  * cabecera de `index.html`.
@@ -107,41 +118,72 @@
    * `--nube-hundida` no se movio: lo hundido vive DENTRO de una superficie, asi
    * que su pareja de contraste es #ffffff y no el cielo.
    */
-  --cielo: #fbf1e9;
+  /*
+   * ⚠️ **El fondo dejo de ser pastel calido el 25/09/2026.** Era `#fbf1e9`, y se
+   * cambio por peticion para igualar la paleta de la referencia del cliente, que
+   * alterna blanco y un gris muy claro y frio. Todo lo de aqui abajo sale de esa
+   * misma escala, asi que lo calido ya no existe en ningun token.
+   *
+   * La pagina es el gris claro y las superficies el blanco: es como separa este
+   * portal desde el 10/09, y se mantiene. La referencia separa por contorno, no
+   * por superficie, y copiarle eso habria dejado tarjetas blancas sobre paginas
+   * blancas con una linea de 1,28:1 — que es justo el fallo que se corrigio en
+   * las pantallas de relleno hace dos dias.
+   */
+  --cielo: #f9fafb;
+  /*
+   * Lo hundido que se apoya en el CIELO, no dentro de una superficie.
+   *
+   * Nacio suelto en la cinta de la portada el 15/09/2026, con una nota que
+   * decia: «No es un token: existe solo aqui. Si algun dia hace falta en otra
+   * pantalla, entonces se nombra». El 25/09 hizo falta en la banda de «Por que
+   * este proceso es distinto», asi que se nombro.
+   *
+   * ⚠️ **Existia porque `--nube-hundida` era gris frio sobre una pagina calida,
+   * y ahora la pagina tambien es fria: los dos valen lo mismo.** Se queda con
+   * nombre propio porque significa otra cosa —lo hundido que se apoya en la
+   * pagina, no dentro de una superficie— y el dia que la pagina vuelva a tener
+   * tono propio recupera su trabajo.
+   */
+  --cielo-hundido: #f3f4f6;
   --nube: #ffffff;
-  --nube-hundida: #f4f4f4;
+  --nube-hundida: #f3f4f6;
   /* Barras de esqueleto y fondo de lo apagado: tiene que separarse de
      `--nube-hundida` o un control deshabitado dentro de un bloque de apoyo
      desaparece. */
-  --nube-honda: #e6e6e6;
+  --nube-honda: #e5e7eb;
 
   /*
-   * Tinta. Gris neutro y no negro pleno: el negro esta reservado a la accion, y
-   * un texto largo del mismo negro que un boton le quita el sitio.
+   * Tinta. La escala gris de la referencia, que es fria y tira a azul.
+   *
+   * ⚠️ **Ya no es gris neutro.** El motivo de que lo fuera —el negro estaba
+   * reservado a la accion— desaparecio el 25/09/2026 con el cambio de paleta:
+   * la accion ahora es indigo, asi que la tinta puede ser tan oscura como haga
+   * falta sin quitarle el sitio a ningun boton.
    */
-  --tinta: #333333;  /* 10,9:1 sobre nube */
-  --tinta2: #5b5b5b; /* 6,8:1  — la prosa que explica */
+  --tinta: #101828;  /* 18,2:1 sobre nube */
+  --tinta2: #364153; /* 10,3:1 — la prosa que explica */
   /*
    * El gris mas claro que se puede usar para texto, y no se baja de aqui.
    *
-   * Medido contra los siete fondos claros del sistema: nube 5,33 · cielo 4,79 ·
-   * nube-hundida 4,85 · duda-bruma 4,80 · bien-bruma 4,74 · mal-bruma 4,71.
-   * Un escalon mas claro los tumba: #68727f daba 4,31 sobre `--nube-hundida`,
-   * o sea pasaba en la pagina y fallaba dentro de cualquier caja hundida.
-   *
-   * ⚠️ **La excepcion es `--nube-honda`: ahi da 4,27:1 y no llega.** El unico
-   * sitio donde se tocan es el texto de un control **deshabilitado**, que WCAG
-   * 1.4.3 exime expresamente —un componente inactivo no tiene requisito de
-   * contraste— y que a proposito se lee apagado. Si algun dia hace falta texto
-   * ACTIVO sobre nube honda, no puede ser este: el gris mas claro que aguanta
-   * ahi es #5a5a5a, que ya es mas oscuro que `--tinta2`.
+   * Medido: nube 4,83:1 · cielo 4,67:1 · nube-hundida 4,56:1. Los tres pasan el
+   * 4,5 de WCAG 1.4.3, pero con poco margen — **un escalon mas claro los tumba
+   * los tres**. El siguiente de la escala de la referencia, `#99a1af`, da 2,60
+   * sobre nube: no vale ni para texto ni para el limite de un control.
    */
-  --tinta3: #6b6b6b;
+  --tinta3: #6a7282;
 
-  --regla: #e6e6e6;
-  --regla2: #cbcbcb;
-  /* Un control pide 3:1 contra el fondo; una caja no. Este da 3,45:1. */
-  --borde-control: #8a8a8a;
+  --regla: #e5e7eb;
+  --regla2: #d1d5dc;
+  /*
+   * Un control pide 3:1 contra el fondo; una caja no. Este da 4,83:1.
+   *
+   * ⚠️ **Aqui NO se copia la referencia.** Ella dibuja el limite de sus botones
+   * con su gris de reglas, que sobre blanco da 1,24:1: WCAG 1.4.11 pide 3:1 para
+   * el limite visible de un control, asi que ese borde no se ve para quien no
+   * distingue matices claros. Se usa el gris de texto, que si llega.
+   */
+  --borde-control: #6a7282;
 
   /* La tinta que va ENCIMA de un relleno, no la de la nube. Se parecen —la
      nube tambien es blanca— pero no son lo mismo: si un dia la superficie deja
@@ -152,16 +194,38 @@
   /*
    * La accion y el turno.
    *
-   * `--activo` es NEGRO y no un color de marca: es el contraste maximo puesto
-   * donde hay que pulsar. El coral de `--activo-regla` es lo unico que significa
-   * «te toca a ti», y su bruma rosa lo acompaña. Los nombres conservan la
+   * ⚠️ **Desde el 25/09/2026 la accion es INDIGO y ya no negra.** Era negro
+   * pleno con coral para «te toca a ti»; se cambio por peticion, para igualar la
+   * paleta de la referencia que paso el cliente. Los nombres conservan la
    * palabra «activo» del mundo anterior porque renombrarlos tocaria dieciseis
    * hojas para no cambiar un pixel.
+   *
+   * ⚠️ **El turno dejo de tener color propio.** Antes `--activo-regla` era coral
+   * y significaba «te toca a ti», distinto de la accion. La referencia no tiene
+   * dos acentos: marca el destino actual con el mismo indigo del boton. Asi que
+   * ahora el turno y la accion son el mismo color, y **esa distincion se
+   * perdio** — si algun dia hace falta recuperarla, hace falta un segundo acento
+   * que aqui no existe.
+   *
+   * Blanco sobre `--activo` da **4,57:1**: pasa el 4,5 que pide WCAG 1.4.3 para
+   * texto normal, pero por poco. No aclarar este indigo.
    */
-  --activo: #0a0a0a;         /* 19,8:1 con texto blanco encima */
-  --activo-pulsado: #404040;
-  --activo-bruma: rgba(255, 136, 150, 0.2);
-  --activo-regla: #ff7c61;
+  --activo: #615fff;         /* 4,57:1 con texto blanco encima */
+  --activo-pulsado: #4f46e5;
+  --activo-bruma: rgb(97 95 255 / 0.2);
+  --activo-regla: #615fff;
+  /*
+   * La accion mas fuerte de todas: la de la cabecera.
+   *
+   * La referencia usa DOS pesos en su barra a proposito — el destino actual en
+   * indigo y el boton en casi negro— para que no compitan estando a un palmo.
+   * Sin esta segunda pieza, «Inicio» y «Iniciar sesion» serian el mismo indigo
+   * uno al lado del otro.
+   *
+   * 18,9:1 con texto blanco encima.
+   */
+  --accion-fuerte: #030712;
+  --accion-fuerte-pulsado: #1e2939;
 
   /*
    * El semaforo del sistema. Cada uno significaba algo fijo en el producto antes
@@ -201,7 +265,9 @@
    * identicos al retargetear. Los codigos `CANTO_*` que guarda el backend
    * siguen existiendo; lo que cambio es con que se pintan.
    */
-  --canto: linear-gradient(90deg, #ffc4b4 0%, #ff9d86 34%, #ff7c61 68%, #ff5d6e 100%);
+  /* ⚠️ Repintado en indigo el 25/09/2026 con el resto de la paleta: era coral,
+     y sobre el mundo frio se quedaba como la unica mancha calida del portal. */
+  --canto: linear-gradient(90deg, #a5b4fc 0%, #818cf8 34%, #615fff 68%, #4f46e5 100%);
 
   /*
    * La escala tipografica. Diez escalones y cada uno tiene un trabajo.
@@ -267,13 +333,15 @@
    * El radio. Las superficies se redondean con holgura y los controles con
    * esquina corta.
    *
-   * ⚠️ **`--radio-control` vale 4 px y NO es una pildora.** En el mundo anterior
-   * valia `999px`; cualquier hoja que de por hecho una pildora esta vieja. La
-   * unica forma redondeada que queda es `--radio-marca` en avatares y puntos.
+   * ⚠️ **`--radio-control` vale 8 px desde el 25/09/2026, y antes 4.** Se subio
+   * por peticion, para igualar la forma de los botones de la referencia: los
+   * suyos van todos a 8 px. Sigue sin ser una pildora — en el mundo anterior a
+   * septiembre valia `999px`, y cualquier hoja que de eso por hecho esta vieja.
+   * La unica forma redondeada que queda es `--radio-marca` en avatares y puntos.
    */
   --radio: 12px;
   --radio-menor: 8px;
-  --radio-control: 4px;
+  --radio-control: 8px;
   /* Lo mas pequeño que se redondea: una casilla de 20 px. Con 10 px se
      convierte en una pastilla y deja de leerse como casilla. */
   --radio-marca: 4px;
@@ -296,18 +364,20 @@
   /* Lo que mide la cabecera fija. Lo consume la barra de avance del examen,
      que se pega justo debajo.
 
-     Son 70 px MEDIDOS en el navegador, no calculados: 8 de aire arriba + 62 de
-     barra. El 11/09/2026 pasaron por 61 (barra a sangre) y 76 (vaina ovalada), y
-     el 15/09/2026 de 68 a 70, porque «Ingresar» copio la pieza de la referencia y
-     paso de 44 a 46 px de alto. Si cambia el relleno de `.cabecera`, el de
-     `.cabeceraDentro` o el ALTO DEL BOTON, se vuelve a medir — seis reglas de
-     cuatro hojas se pinchan debajo de este numero y ninguna lo puede adivinar.
+     Son 84 px MEDIDOS en el navegador, no calculados, y los mismos a 1440, 768 y
+     390 de ancho: 16 de aire arriba + 12 de relleno + 44 del boton + 12 de
+     relleno. Historial: 61 (barra a sangre, 11/09), 76 (vaina ovalada, 11/09),
+     68 y luego 70 (15/09, cuando «Iniciar sesion» paso de 44 a 46 px), y 84 el
+     25/09/2026, cuando la cabecera paso a pildora visible con mas aire arriba y
+     el boton perdio su marco rosa.
 
-     ⚠️ **Y ahora la barra es transparente mientras no se baja.** Lo que se pincha
-     aqui aparece sobre el cielo, no bajo una barra opaca, hasta el primer scroll.
-     En cuanto hay scroll —que es cuando algo pasaria por debajo— la barra ya tiene
-     su velo puesto. */
-  --alto-cabecera: 70px;
+     ⚠️ **El 25/09 se quedo en 70 un rato y estaba mal.** Se toco el relleno y el
+     boton y no se volvio a medir hasta el commit: la barra de avance del examen
+     y la del cronometro se habrian pegado 14 px por debajo de la cabecera. Si
+     cambia el relleno de `.cabecera`, el de `.cabeceraDentro` o el ALTO DEL
+     BOTON, se vuelve a medir — seis reglas de cuatro hojas se pinchan debajo de
+     este numero y ninguna lo puede adivinar. */
+  --alto-cabecera: 84px;
 
   /* El movimiento: salida exponencial desde algo que ya se ve */
   --salida: cubic-bezier(0.16, 1, 0.3, 1);
