@@ -36,46 +36,12 @@
 }
 
 /*
- * La pieza incrustada en el titular: la loseta con el maletin y la flecha.
- *
- * Va DENTRO de la frase y no suelta encima: fuera seria una decoracion colgando.
- *
- * ⚠️ **El ancho de aqui NO es el tamaño que se ve.** La imagen es cuadrada y el
- * dibujo no la llena: **la loseta de delante ocupa el 78,5 % del lado** y el
- * resto lo ocupa la loseta girada de detras y el aire. Con 1,08em de imagen se
- * ven 45 px de loseta, que es la medida con la que se compuso el titular.
- *
- * ⚠️ **Esa fraccion cambia con el archivo, y ya cambio una vez.** El PNG del
- * 11/09/2026 traia un halo rosa pintado dentro y la loseta era el 73 %: 1,32em
- * de imagen para los mismos 45 px. El del 15/09 va recortado al ras, asi que la
- * misma anchura lo dejaba en 55 px y la loseta se metia dentro de la palabra
- * «trabajo». Si se vuelve a cambiar la imagen, **se mide la fraccion y se vuelve
- * a sacar el ancho**, no se deja el numero de antes.
- *
- * ⚠️ **Se alinea con `middle` y no con un desplazamiento desde la linea base.**
- * Con `vertical-align: -0.34em` la imagen colgaba 20 px por debajo de la base y
- * la fuente solo desciende 13: la caja de la linea crecia y el titular pasaba de
- * 106 a 111 px de alto. Los margenes negativos no lo arreglaban —el problema no
- * era la caja, era el descuelgue—. Con `middle` la pieza no toca la linea:
- * medido, 106 px con imagen y sin ella.
- *
- * ⚠️ **Y hacen falta LAS DOS COSAS: `middle` y el margen negativo.** Con
- * `middle` a secas el titular se va a 115 px, peor que antes; con margen negativo
- * pero descolgada de la base, a 111. Juntas, 106 —lo mismo que sin imagen—.
- *
- * ⚠️ **El margen horizontal es POSITIVO desde el 15/09/2026**, y antes era
- * negativo. Con el PNG anterior habia que recuperar el aire que el halo
- * transparente metia a los lados; el de ahora va al ras y lo que hace falta es
- * justo lo contrario, separarlo de la palabra que tiene al lado.
+ * ⚠️ **Aquí vivía `.pieza`, la loseta del maletín incrustada en el titular, y
+ * se borró el 25/09/2026.** Eran cuarenta líneas de notas sobre cómo alinearla
+ * —`vertical-align: middle` más un margen negativo, y la fracción del PNG que
+ * ocupa el dibujo, que había que volver a medir cada vez que cambiaba el
+ * archivo—. Todo eso deja de aplicar: el titular ya no lleva imagen.
  */
-.pieza {
-  display: inline-block;
-  width: 1.08em;
-  height: 1.08em;
-  margin-block: -0.18em;
-  margin-inline: 0.06em;
-  vertical-align: middle;
-}
 
 .acciones {
   display: flex;
@@ -174,40 +140,163 @@
     /* El nucleo, centrado y por debajo del suelo de la tarjeta. */
     radial-gradient(
       40% 60% at 50% 96%,
-      rgb(255 120 150 / calc(0.62 * var(--luz))) 0%,
-      rgb(255 120 150 / calc(0.26 * var(--luz))) 46%,
-      rgb(255 120 150 / 0) 78%
+      rgb(129 140 248 / calc(0.62 * var(--luz))) 0%,
+      rgb(129 140 248 / calc(0.26 * var(--luz))) 46%,
+      rgb(129 140 248 / 0) 78%
     ),
-    /* La calida, saliendo por la izquierda. */
+    /* La de la izquierda: el indigo de la accion. Era coral. */
     radial-gradient(
       42% 64% at 10% 92%,
-      rgb(255 124 97 / calc(0.54 * var(--luz))) 0%,
-      rgb(255 124 97 / calc(0.22 * var(--luz))) 46%,
-      rgb(255 124 97 / 0) 78%
+      rgb(97 95 255 / calc(0.54 * var(--luz))) 0%,
+      rgb(97 95 255 / calc(0.22 * var(--luz))) 46%,
+      rgb(97 95 255 / 0) 78%
     ),
-    /* La fria, saliendo por la derecha. Un punto mas apagada: el rosa pesa mas
-       que el coral a igual opacidad y si van iguales se come la izquierda. */
+    /* La de la derecha: celeste, para que el resplandor tenga dos tonos y no
+       sea una sola mancha. Un punto mas apagada que la otra — el claro pesa mas
+       a igual opacidad y si van iguales se come la izquierda. Era rosa. */
     radial-gradient(
       42% 64% at 90% 92%,
-      rgb(255 71 184 / calc(0.48 * var(--luz))) 0%,
-      rgb(255 71 184 / calc(0.2 * var(--luz))) 46%,
-      rgb(255 71 184 / 0) 78%
+      rgb(56 189 248 / calc(0.48 * var(--luz))) 0%,
+      rgb(56 189 248 / calc(0.2 * var(--luz))) 46%,
+      rgb(56 189 248 / 0) 78%
     );
   filter: blur(24px);
   pointer-events: none;
 }
 
-.escaparateDentro {
+/*
+ * El marco que recorta: es lo que hace que la ventana se corte abajo en vez de
+ * terminar.
+ *
+ * ⚠️ **El recorte va AQUI y no en `.escaparate`.** Alli se comeria el
+ * resplandor, que vive en su `::before` y tiene que poder salirse por fuera.
+ *
+ * ⚠️ **Y el alto es el que decide donde corta.** Sin el, la ficha de abajo se
+ * veria entera y no habria corte ninguno. Va en `clamp` contra el ancho de la
+ * ventana para que el trozo que asoma sea parecido en cualquier pantalla; en un
+ * telefono el recorrido se apila y ocupa mas, asi que alli se suelta —ver el
+ * `@media` del final— o cortaria por encima de la ultima etapa.
+ */
+.marcoVentana {
   position: relative;
-  /* Abajo una talla mas que arriba, y solo una: la caja tiene que leerse
-     equilibrada. */
-  padding: var(--e7) var(--e6) var(--e8);
+  overflow: hidden;
+  max-height: clamp(21rem, 30vw, 27rem);
   background-color: var(--nube);
   /* El radio de la tarjeta menos su borde de 12 px. Lo lleva el interior porque
      la tarjeta ya no recorta: sin esto, el blanco asoma por las esquinas. Va en
      `calc` y no en 8 px a pelo para que mover `--radio-escaparate` no deje este
      valor atras. */
   border-radius: calc(var(--radio-escaparate) - var(--borde-escaparate));
+}
+
+.ventana {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------- la barra de la ventana ---------- */
+
+/*
+ * El retrato de la cabecera del portal: marca, tres destinos y el avatar. No
+ * son enlaces ni llevan texto — es un dibujo de la barra, y por eso todo el
+ * bloque va `aria-hidden` desde el TSX.
+ */
+.ventanaBarra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e4);
+  padding: var(--e3) var(--e5);
+  border-bottom: 1px solid var(--regla);
+  background: var(--nube);
+}
+
+.ventanaMarca {
+  width: 26px;
+  height: 10px;
+  border-radius: var(--radio-control);
+  background: var(--tinta);
+}
+
+.ventanaDestinos {
+  display: flex;
+  gap: var(--e3);
+}
+
+.ventanaDestinos span {
+  width: 34px;
+  height: 7px;
+  border-radius: var(--radio-barra);
+  background: var(--regla2);
+}
+
+/* El destino actual, del indigo que lo marca en la barra de verdad. */
+.ventanaDestinoVivo {
+  background: var(--activo-regla) !important;
+}
+
+.ventanaAvatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--nube-honda);
+}
+
+.escaparateDentro {
+  position: relative;
+  /* Menos aire que cuando era una tarjeta suelta: ahora lo de arriba lo pone la
+     barra de la ventana, y abajo tiene que caber la ficha que asoma. */
+  padding: var(--e6) var(--e6) var(--e5);
+  background-color: var(--nube);
+}
+
+/* ---------- la ficha que asoma por debajo ---------- */
+
+/*
+ * Lo que se corta contra el borde del marco. Decoracion: sin texto, sin
+ * enlaces y con `aria-hidden` desde el TSX.
+ */
+.fichaQueAsoma {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+  margin: 0 var(--e6);
+  padding: var(--e5) var(--e5) var(--e7);
+  border: 1px solid var(--regla);
+  border-radius: var(--radio-menor);
+  border-bottom: 0;
+  border-end-start-radius: 0;
+  border-end-end-radius: 0;
+  background: var(--nube);
+}
+
+.fichaLinea {
+  height: 10px;
+  border-radius: var(--radio-control);
+  background: var(--regla2);
+}
+
+.fichaLineaMenor {
+  height: 7px;
+  border-radius: var(--radio-control);
+  background: var(--regla);
+}
+
+.fichaBarras {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--e2);
+  margin-top: var(--e3);
+}
+
+.fichaBarras span {
+  height: 6px;
+  border-radius: var(--radio-barra);
+  background: var(--regla);
+}
+
+.fichaBarraViva {
+  background: var(--activo) !important;
 }
 
 .pieEscaparate {
@@ -287,19 +376,17 @@
   padding-block: var(--e5);
   border-block: 1px solid var(--regla);
   /*
-   * ⚠️ **Hundida en calido y no en `--nube-hundida`, que es gris frio.** Es el
-   * UNICO sitio del portal donde algo hundido se apoya directamente en el cielo:
-   * todo lo demas que usa `--nube-hundida` vive dentro de una superficie blanca,
-   * donde el gris frio es lo correcto. Desde que el cielo es calido (15/09/2026),
-   * ese gris se leia como una mancha sucia cruzando la pagina.
+   * ⚠️ **Hundida en calido y no en `--nube-hundida`, que es gris frio.** Todo lo
+   * que usa `--nube-hundida` vive dentro de una superficie blanca, donde el gris
+   * frio es lo correcto; apoyado en el cielo calido se lee como una mancha
+   * sucia.
    *
-   * 1,052:1 contra el cielo —el gris daba 1,012, o sea casi nada— y el texto que
-   * lleva encima va en `--tinta2` (5,80:1) y `--tinta` (10,78:1).
-   *
-   * No es un token: existe solo aqui. Si algun dia hace falta en otra pantalla,
-   * entonces se nombra.
+   * Nacio aqui como un valor suelto el 15/09/2026, con la nota de que se
+   * nombrara el dia que hiciera falta en otra pantalla. Hizo falta el 25/09 en
+   * la banda de «Por que este proceso es distinto», asi que ya es `--cielo-hundido`
+   * en `mundo.css`, con su medida de contraste.
    */
-  background-color: #f7ebe1;
+  background-color: var(--cielo-hundido);
   font-size: var(--t-apoyo);
   color: var(--tinta2);
 }
@@ -344,6 +431,173 @@
  */
 .cabeceraSeccion h2 {
   scroll-margin-top: calc(var(--alto-cabecera) + var(--e5));
+}
+
+/* ---------- «Por qué este proceso es distinto» ---------- */
+
+/*
+ * Una banda a sangre en nube, que es lo que da el ritmo alterno de la portada:
+ * cielo en el hero, nube aquí, cielo otra vez en las preguntas.
+ *
+ * ⚠️ **Sale del carril con `100vw`, y eso solo es seguro porque el armazón de
+ * la portada recorta.** `.armazonConCielo` lleva `overflow-x: clip` —puesto
+ * para el cielo— y es lo que impide que la barra de desplazamiento sume ancho y
+ * la página entera se pueda mover en horizontal. Si algún día esta banda se usa
+ * en una pantalla sin ese recorte, hay que llevárselo con ella.
+ *
+ * `margin-inline` negativo en vez de `position: absolute`: así la banda sigue
+ * ocupando su sitio en el flujo y las secciones de al lado no se le meten
+ * debajo.
+ */
+/*
+ * ⚠️ **La banda va en `--cielo-hundido` y no en nube blanca.** En blanco, las
+ * tarjetas de dentro tenían que ser lo hundido —`--nube-hundida`, gris frío—, y
+ * un gris frío encima de una página cálida es la mancha sucia que este mundo
+ * lleva evitando desde el 15/09. Hundiendo la banda en cálido, las tarjetas
+ * suben a nube blanca y la escala queda en orden: cielo, hundido, nube.
+ */
+.banda {
+  margin-inline: calc(50% - 50vw);
+  padding-block: var(--e8);
+  background: var(--cielo-hundido);
+  border-block: 1px solid var(--regla);
+}
+
+/* Dentro de la banda vuelve el carril, o el texto correría de borde a borde. */
+.bandaDentro {
+  max-width: var(--ancho);
+  margin-inline: auto;
+  padding-inline: var(--e5);
+}
+
+.rejillaTres {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--e5);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* La tarjeta es nube sobre la banda hundida: lo mismo que hace cualquier
+   superficie de este mundo sobre el cielo. */
+.tarjetaNuestra {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--regla);
+  border-radius: var(--radio);
+  background: var(--nube);
+  padding: var(--e5);
+}
+
+.tituloNuestra {
+  margin: var(--e5) 0 0;
+  font-size: var(--t-entradilla);
+  font-weight: 600;
+  letter-spacing: -0.014em;
+  color: var(--tinta);
+}
+
+.textoNuestra {
+  margin: var(--e3) 0 0;
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+}
+
+/* ---------- las maquetas que coronan cada tarjeta ---------- */
+
+/*
+ * Cada una es un trozo del portal dibujado con divs. No son imágenes a
+ * propósito: una captura habría que rehacerla cada vez que cambie la pantalla
+ * que retrata, y estas se repintan solas el día que cambie `mundo.css`.
+ */
+.maqueta {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 8.5rem;
+  border-radius: var(--radio-menor);
+  /* Hundido DENTRO de la tarjeta blanca: es la mesa sobre la que se apoya la
+     ficha, y por eso baja un escalón en vez de repetir el blanco de su padre. */
+  background: var(--nube-hundida);
+  overflow: hidden;
+}
+
+.maquetaFicha {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+  width: 72%;
+  padding: var(--e4);
+  border: 1px solid var(--regla);
+  border-radius: var(--radio-menor);
+  background: var(--nube);
+  box-shadow: var(--sombra-nube);
+}
+
+.maquetaLinea {
+  height: 7px;
+  border-radius: var(--radio-control);
+  background: var(--regla);
+}
+
+.maquetaTitulo {
+  height: 11px;
+  width: 84%;
+  border-radius: var(--radio-control);
+  background: var(--regla2);
+}
+
+.maquetaEtiqueta {
+  align-self: flex-start;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tinta3);
+}
+
+.maquetaFila {
+  display: flex;
+  align-items: center;
+  gap: var(--e2);
+}
+
+.maquetaCara {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--regla2);
+}
+
+/*
+ * El sello, abajo a la derecha y ligeramente salido de la ficha.
+ *
+ * ⚠️ **Va en tinta y no en coral.** El coral significa «te toca a ti» en todo
+ * el portal, y aquí no le toca nada a nadie: es una maqueta.
+ */
+.maquetaSello {
+  position: absolute;
+  right: var(--e3);
+  bottom: var(--e3);
+  padding: 4px var(--e2);
+  border: 1px solid var(--regla);
+  border-radius: 999px;
+  background: var(--nube);
+  font-size: var(--t-micro);
+  font-weight: 600;
+  color: var(--tinta2);
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .rejillaTres {
+    grid-template-columns: 1fr;
+    gap: var(--e4);
+  }
 }
 
 /* ---------- las vacantes ---------- */
@@ -564,8 +818,8 @@
   transform: translateX(-50%);
   background: radial-gradient(
     50% 50% at 50% 50%,
-    rgb(255 124 97 / 0.26) 0%,
-    rgb(255 136 150 / 0) 72%
+    rgb(97 95 255 / 0.26) 0%,
+    rgb(97 95 255 / 0) 72%
   );
   pointer-events: none;
 }
@@ -580,6 +834,21 @@
   .recorrido {
     grid-template-columns: repeat(3, 1fr);
     gap: var(--e5);
+  }
+
+  /*
+   * ⚠️ **Se suelta el alto del marco, y hace falta.** Por debajo de 900 px el
+   * recorrido pasa a tres columnas y luego a dos: ocupa mucho mas alto, y el
+   * recorte fijo cortaria por encima de la última etapa — es decir, se comería
+   * contenido de verdad en vez de decoración. Aquí la ventana termina donde
+   * termina lo que tiene dentro, y lo que asoma deja de asomar.
+   */
+  .marcoVentana {
+    max-height: none;
+  }
+
+  .fichaQueAsoma {
+    display: none;
   }
 }
 
