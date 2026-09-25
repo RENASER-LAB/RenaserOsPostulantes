@@ -7,7 +7,13 @@
  */
 
 export const patrones = {
-  vacantes: '/',
+  inicio: '/',
+  /**
+   * Buscar vacantes: la pantalla con el buscador, los filtros y el orden. Hasta el
+   * 25/09/2026 «las vacantes» eran una sección de la portada, `/#vacantes-abiertas`,
+   * que sigue existiendo con las tres más recientes.
+   */
+  vacantes: '/vacantes',
   vacante: '/vacantes/:vacanteId',
   postular: '/vacantes/:vacanteId/postular',
   ingresar: '/ingresar',
@@ -95,7 +101,13 @@ export const patrones = {
 } as const
 
 export const rutas = {
-  vacantes: () => '/',
+  inicio: () => '/',
+  /**
+   * La búsqueda, los filtros y el orden viajan en la query (`?q=…&ciudad=1501`):
+   * quien ya la tiene la pasa entera para volver a la lista tal como estaba.
+   */
+  vacantes: (busqueda?: string) =>
+    busqueda === undefined || busqueda === '' || busqueda === '?' ? '/vacantes' : `/vacantes${busqueda.startsWith('?') ? '' : '?'}${busqueda}`,
   vacante: (vacanteId: number | string) => `/vacantes/${vacanteId}`,
   postular: (vacanteId: number | string) => `/vacantes/${vacanteId}/postular`,
   /** Recuerda a que vacante se estaba postulando, para volver despues. */

@@ -371,6 +371,12 @@ trabajo de la prueba dejan de ir en paralelo), **760** (el recorrido de cinco tr
 de pie) y **700** (la portada de «Mi perfil» se sale a sangre). Añadir uno nuevo es una
 decisión: si la pieza cabe en 900 o en 640, va ahí.
 
+**Y un umbral que no es de la ventana:** la tarjeta a lo ancho de `/vacantes` se apila cuando
+**ella** mide menos de **36rem** (`@container`, en `Tarjeta.module.css`). La columna de
+resultados mide 704 px a 1280, 517 a 901 —la de filtros se lleva 19rem— y 343 en un teléfono de
+375: ningún corte de ventana acierta los tres, y con uno de 640 el título se quedaba en 220 px
+de 901 a 1000.
+
 **Cualquier cosa que se pueda tocar mide 44 px de alto como mínimo**, aunque su texto mida
 catorce. Los campos de texto suben a 48 px y nunca bajan de 16 px de letra.
 
@@ -387,6 +393,7 @@ componerse entera sin usar ni un botón. Se trae igual, con `composes`.
 | `.bloqueHolgado` | El bloque con `--e6` dentro, para lo que llena una pantalla: un formulario |
 | `.encabezado` · `.titular` · `.bajada` | El `h1` y la línea que lo sitúa |
 | `.reparto` · `.columna` | Una columna que manda y una de 19rem que acompaña; a 900 px se apilan |
+| `.repartoConFiltros` | El reparto al revés: la de 19rem va a la **izquierda** porque acota lo de al lado (los filtros de `/vacantes`); 12 px entre filas y 32 entre columnas; a 900 px se apila igual |
 | `.bloque` · `.bloqueHundido` · `.tituloBloque` · `.texto` | La superficie de nube y su contenido |
 | `.hueco` | **El hueco declarado**: lo que el portal no sabe todavía y dice en vez de rellenar |
 
@@ -624,6 +631,41 @@ vacante y el aviso de que el formulario de la decisión todavía no envía. El t
 que vaya dentro necesita `--duda-tinta2`: `--tinta3` da 4,9:1 sobre el cielo y es el suelo,
 sobre un fondo con tinte se cae.
 
+### La tarjeta de vacante — de pie y a lo ancho
+
+`src/paginas/vacantes/Tarjeta.tsx` tiene **dos formas y un solo enlace**: en las dos, la
+tarjeta entera es un enlace cuyo nombre es el título, y el título es el mismo `TituloQueViaja`
+que cruza hasta el titular de la ficha.
+
+- **De pie** (`forma="dePie"`, la de siempre): la portada, tres en fila. Modalidad · ciudad
+  arriba, título, empresa, resumen de tres líneas y un pie con horario, sueldo y fecha.
+- **A lo ancho** (`forma="aLoAncho"`, desde el 25/09/2026): la lista de `/vacantes`, una por
+  fila. A la izquierda «Publicada hace…», el título, la empresa y el resumen en **dos** líneas;
+  a la derecha, tras una línea fina de 1 px en regla —separador neutro, no barra de acento—,
+  una columna de 13rem con **dónde** (la ciudad o, sin ella, la zona), **modalidad**, **horario**
+  y **sueldo**, cada uno con su icono de 16 px en `currentColor`. El dato que falta no se pinta;
+  el sueldo siempre, porque `OCULTA` se nombra: «Sueldo sin publicar» en tinta2, el monto
+  publicado en tinta plena y 600, que es lo que el ojo busca al bajar. Se apila —datos debajo
+  del resumen, en una fila que se parte— cuando la tarjeta mide menos de 36rem.
+
+En las dos formas **el resumen es el propósito o, si falta, la descripción, y un campo con solo
+espacios falta**: lo decide `resumenDe` de `busqueda.ts`, la misma función con la que el orden
+cuenta si la vacante trae resumen, para que la tarjeta y el orden no discrepen. La empresa y
+el horario en blanco tampoco dejan hueco.
+
+La pantalla de `/vacantes` que la usa pone **los filtros en una columna de 19rem a la izquierda**
+(`.repartoConFiltros`), que en escritorio es una superficie de nube con los grupos plegables.
+Encima de las dos columnas, a todo el ancho, la fila del contador con «Ordenar por». **Las
+etiquetas activas y «Quitar filtros» van siempre justo encima de la lista**, en la columna de
+resultados y no en la de filtros (decisión del 25/09/2026): marcar una casilla mueve la lista,
+nunca los grupos bajo el puntero, y lo que se ve sigue el orden de Tab del punto 38 —la fila,
+la columna de filtros, las etiquetas y las tarjetas—, sin que el foco baje por una columna y
+vuelva a subir por ella. De 641 a 900 los filtros se apilan abiertos y hasta 640 se pliegan tras
+«Filtrar (n)»; en los dos las etiquetas quedan igual, entre los filtros y la lista. El
+conmutador «Ordenar por» son dos caras pegadas con esquina de 4 px por fuera: la marcada
+rellena en tinta, la otra con el contorno de control. **Ningún color en la pantalla**: nadie
+tiene turno en una lista de vacantes.
+
 ### La contraseña olvidada — dos pantallas prestadas
 
 `/clave` y `/restablecer` llegaron de main el 23/09/2026 y **su formulario no es de este
@@ -819,11 +861,13 @@ segunda señal que pide 1.4.1 está; lo que no se cumple es el contraste del tex
 marca te toca a ti» y era pequeña; ahora el coral es el texto activo y el relleno de la
 acción. Dentro de las pantallas el coral sigue significando turno y solo turno.
 
-**«Inicio» y «Vacantes» no son lo mismo.** `rutas.vacantes()` es `/`, así que los dos irían
-al mismo sitio: «Inicio» es la portada y «Vacantes» es un ancla a `#vacantes-abiertas`, la
-sección que ya existe ahí. Por eso «Vacantes» va de `Link` y no de `NavLink` —dos `NavLink`
-con la misma ruta se encienden a la vez— y **por debajo de 400 px desaparece**: a 320 px los
-cuatro piden 42 px más de los que hay, y es el único que no es una pantalla propia.
+**«Inicio» y «Vacantes» son dos pantallas desde el 25/09/2026.** «Inicio» es la portada y
+«Vacantes» es `/vacantes`, la lista con buscador y filtros; va de `NavLink` sin `end` para
+encenderse también en la ficha de cualquier vacante. **Por debajo de 430 px la barra se
+aprieta** —letra de 13 px en los destinos, rellenos mínimos— para que los cuatro quepan en un
+teléfono de 375 sin scroll horizontal, y **por debajo de 368 px desaparece «Vacantes»**: a 320
+px no caben ni apretados, y es el destino con más caminos alternativos (el botón grande de la
+portada y «← Volver a las vacantes» de cada ficha).
 
 **El movimiento de la barra son dos cosas y ninguna más.** La cascada de entrada, 420 ms con
 60 ms de desfase entre destinos, que corre **una vez por carga de página** porque `Armazon` se
@@ -961,6 +1005,11 @@ que alguien lo pida. Las cinco piezas viven separadas en
   ⚠️ **El levantarse es solo de motion.** Hasta el 10/09/2026 la hoja de la portada subía la
   tarjeta 2 px y la pieza D la subía 4: dos animaciones peleando por el mismo `transform` con
   dos curvas distintas.
+  ⚠️ **La superficie lleva `tabIndex={-1}`, y no es un descuido.** `motion` pone
+  `tabindex="0"` a todo lo que tenga `whileTap` y no sea un control: cada tarjeta eran dos
+  paradas de Tab, un `<article>` sin nombre ni acción y después su enlace (25/09/2026, en la
+  portada y en `/vacantes`). Con `-1` la única parada es el enlace, y el toque sigue hundiendo
+  la superficie porque el `pointerdown` del enlace sube hasta ella.
 
 - **E · Lo que entra al asomarse.** `AlAsomarse` y `AsomanEnFila`, traídas de OriginX con sus
   valores exactos, sacados de su bundle. **No es una transición de ruta aunque lo parezca**: es

@@ -230,7 +230,7 @@ test.describe('Editar una vacante publicada y avisar a quien sigue en carrera', 
     antes = idsDeAvisos()
     await page.goto('/admin')
     await elLapiz(page, tituloActual).click()
-    await campo(page, 'Ubicación').fill('Lima, San Isidro')
+    await campo(page, 'Zona o referencia').fill('Lima, San Isidro')
     await campo(page, 'Mínimo mensual').fill('3500')
     await campo(page, 'Por qué cambia el sueldo').fill('Se cierra la banda por arriba')
     await page.getByRole('button', { name: 'Guardar cambios' }).click()
@@ -242,7 +242,7 @@ test.describe('Editar una vacante publicada y avisar a quien sigue en carrera', 
     nuevos = avisosDe(escenario.publicada).filter((a) => !antes.includes(Number(a.id)))
     expect(nuevos, 'un aviso por persona, no uno por campo').toHaveLength(2)
     expect(new Set(nuevos.map((a) => String(a.tipo)))).toEqual(new Set(['VACANTE_ACTUALIZADA']))
-    expect(String(nuevos[0]!.cuerpo)).toContain('Ubicación: sin indicar → Lima, San Isidro')
+    expect(String(nuevos[0]!.cuerpo)).toContain('Zona o referencia: sin indicar → Lima, San Isidro')
     expect(String(nuevos[0]!.cuerpo)).toContain(
       'Remuneración: S/ 3 200 a 4 000 → S/ 3 500 a 4 000',
     )

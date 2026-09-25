@@ -97,8 +97,8 @@ en cada perfil; sus valores ya no se usan.
 
 **La migración está completa: las dieciocho pantallas del candidato están compuestas.** Eran
 diecisiete hasta el 23/09/2026, cuando llegaron de main `/clave` reescrita y `/restablecer`
-nueva. Lo que queda son decisiones de producto anotadas en [PENDIENTES](PENDIENTES.md), no
-trabajo de diseño.
+nueva. El 25/09/2026 se sumó `/vacantes`, la búsqueda, que nació ya en este mundo. Lo que queda
+son decisiones de producto anotadas en [PENDIENTES](PENDIENTES.md), no trabajo de diseño.
 
 ### Dónde está el código nuevo
 

@@ -97,6 +97,22 @@ abre nada. La salida es escribir el retoque con el contenedor delante (`.filaFil
 pesa más, no `!important`. ⚠️ En el código hay hoy unas 23 reglas así que el navegador ignora;
 no se han tocado.
 
+**Si el retoque es esconder o enseñar la pieza según el ancho, va como variante con nombre en la
+hoja compartida**, no como `composes` más `display` en la hoja de la pantalla. Es
+`.secundarioDelTelefono` en `piezas.module.css`: compone `secundario`, lo esconde, y hasta 640 px
+lo enseña; la pantalla compone esa variante y nada más. Ahí la regla de `display` y la pieza
+están en la misma hoja, y gana la que va después. Pasó con «Filtrar (n)» de `/vacantes`
+(25/09/2026): su `display: none` perdía contra `.secundario` y el botón salía en escritorio,
+junto a los filtros ya abiertos.
+
+**`whileTap` de `motion` convierte en parada de Tab lo que no es un control.** Le pone
+`tabindex="0"` a todo elemento con gesto de pulsar que no sea botón, campo o enlace y no traiga
+`tabindex` propio. Una tarjeta con `<motion.article whileTap>` y un enlace dentro eran **dos
+paradas**: el `<article>`, sin nombre y donde Enter no hacía nada, y después su enlace. Por eso
+`TarjetaQueResponde` (`src/ui/movimiento.tsx`) lleva `tabIndex={-1}`: la única parada es el
+enlace, y el toque sigue hundiendo la tarjeta. Cualquier superficie nueva con `whileTap` necesita
+lo mismo.
+
 ---
 
 ## La marca de obligatorio es una sola, y la decide el esquema

@@ -52,7 +52,9 @@ import {
   VACANTE_VACIA,
   camposParaGuardar,
   loQueFaltaEnLaVacante,
+  loQueFaltaEnLosDesplegables,
   type DatosDeVacante,
+  type ErroresDeLosDesplegables,
 } from './CamposDeLaVacante'
 import { FormularioDeEdicion } from './EditarVacante'
 import { ModalDeArchivo } from './ArchivarVacante'
@@ -489,9 +491,14 @@ function FormularioDeAlta({ alCrear }: { alCrear: () => Promise<void> }) {
   // tienen que cuadrar entre si, no una cadena mas. Ver `./Remuneracion`.
   const [remuneracion, setRemuneracion] = useState(REMUNERACION_VACIA)
   const [fallo, setFallo] = useState<string | null>(null)
+  // Lo que falta en los desplegables, cada uno bajo su campo. Se borra al tocar
+  // cualquier campo: lo que se corrige deja de estar marcado.
+  const [errores, setErrores] = useState<ErroresDeLosDesplegables>({})
 
-  const poner = (campo: keyof DatosDeVacante) => (valor: string) =>
+  const poner = (campo: keyof DatosDeVacante) => (valor: string) => {
+    setErrores({})
     setDatos((d) => ({ ...d, [campo]: valor }))
+  }
 
   // Solo las aprobadas y sin vacante admiten una nueva.
   const abiertas = useMemo(
@@ -540,6 +547,14 @@ function FormularioDeAlta({ alCrear }: { alCrear: () => Promise<void> }) {
     const falta = loQueFaltaEnLaVacante(datos)
     if (falta) {
       setFallo(falta)
+      return
+    }
+    // Al crear, la modalidad es obligatoria y la ciudad lo es si no es remota. Cada
+    // campo dice lo suyo, y arriba se avisa de que hay algo marcado.
+    const enLosDesplegables = loQueFaltaEnLosDesplegables(datos)
+    if (enLosDesplegables.modalidad || enLosDesplegables.ciudadUbigeo) {
+      setErrores(enLosDesplegables)
+      setFallo('Falta elegir algo en los campos marcados.')
       return
     }
     const sueldo = comoCuerpo(remuneracion)
@@ -652,7 +667,7 @@ function FormularioDeAlta({ alCrear }: { alCrear: () => Promise<void> }) {
           donde se escribio, con las mismas palabras y en el mismo orden. Ver
           `CamposDeLaVacante`.
         */}
-        <CamposComunes datos={datos} poner={poner} />
+        <CamposComunes datos={datos} poner={poner} errores={errores} />
       </div>
 
       {/*

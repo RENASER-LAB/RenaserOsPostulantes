@@ -51,6 +51,12 @@ export interface RestablecerClavePanel {
 
 // ---------- Vacantes ----------
 
+/** Una ciudad del catálogo como la ve el panel: el código que se guarda y el nombre que se lee. */
+export interface CiudadDeLaVacante {
+  codigo: string
+  nombre: string
+}
+
 export interface VacantePanel {
   id: number
   titulo: string
@@ -92,7 +98,13 @@ export interface VacantePanel {
   requisitos: string | null
   modalidad: string | null
   horario: string | null
+  /** La zona o referencia: barrio, distrito o dirección. Hasta la V62, «Ubicación». */
   ubicacion: string | null
+  /**
+   * La ciudad guardada, con su nombre, o `null` (V62). El código marca el
+   * desplegable al editar y viaja de vuelta tal cual si nadie lo toca.
+   */
+  ciudad: CiudadDeLaVacante | null
   plazas: number | null
   abreEn: FechaIso | null
   cierraEn: FechaIso | null
@@ -261,6 +273,12 @@ export interface GuardarVacante {
   modalidad?: string
   horario?: string
   ubicacion?: string
+  /**
+   * La ciudad, por su código del catálogo —el mismo nombre que usa el registro del
+   * candidato—. El backend rechaza uno que el catálogo no ofrezca con «Esa ciudad
+   * no está en el catálogo»; sin ciudad acepta.
+   */
+  ciudadUbigeo?: string
   /**
    * Lo que paga, si se dice ya. Vacio = `OCULTA`, que es como nacen todas las
    * vacantes que no digan lo contrario.

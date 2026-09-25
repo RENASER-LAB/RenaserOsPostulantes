@@ -94,7 +94,7 @@ function SalirDeLaCuenta() {
       className={estilos.salir}
       onClick={() => {
         salir()
-        navegar(rutas.vacantes())
+        navegar(rutas.inicio())
       }}
       data-rotulo="Cerrar sesión"
     >

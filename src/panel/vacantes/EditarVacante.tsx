@@ -56,8 +56,10 @@ import {
   Campo,
   camposParaGuardar,
   loQueFaltaEnLaVacante,
+  loQueFaltaEnLosDesplegables,
   vacanteComoFormulario,
   type DatosDeVacante,
+  type ErroresDeLosDesplegables,
 } from './CamposDeLaVacante'
 import { CamposDeRemuneracion, comoCuerpo, desdeLaVacante, mismoSueldo } from './Remuneracion'
 import estilos from './Vacantes.module.css'
@@ -90,13 +92,16 @@ export function FormularioDeEdicion({
   const [remuneracion, setRemuneracion] = useState(() => desdeLaVacante(vacante.remuneracion))
   const [motivo, setMotivo] = useState('')
   const [fallo, setFallo] = useState<string | null>(null)
+  const [errores, setErrores] = useState<ErroresDeLosDesplegables>({})
   /** Si se pidio cerrar con cambios sin guardar y falta decidir que se hace. */
   const [preguntandoSiDescartar, setPreguntandoSiDescartar] = useState(false)
   const cache = useQueryClient()
   const puestos = useQuery({ queryKey: ['panel-puestos'], queryFn: listarPuestos })
 
-  const poner = (campo: keyof DatosDeVacante) => (valor: string) =>
+  const poner = (campo: keyof DatosDeVacante) => (valor: string) => {
+    setErrores({})
     setDatos((actuales) => ({ ...actuales, [campo]: valor }))
+  }
 
   const publicada = vacante.estado === 'PUBLICADA'
   const sueldoNuevo = comoCuerpo(remuneracion)
@@ -196,6 +201,14 @@ export function FormularioDeEdicion({
       setFallo(falta)
       return
     }
+    // Una vacante vieja se guarda con «Sin indicar»; lo que se exige es la ciudad
+    // si acaba de elegirse Presencial o Híbrido en una que no la tiene.
+    const enLosDesplegables = loQueFaltaEnLosDesplegables(datos, vacante)
+    if (enLosDesplegables.modalidad || enLosDesplegables.ciudadUbigeo) {
+      setErrores(enLosDesplegables)
+      setFallo('Falta elegir algo en los campos marcados.')
+      return
+    }
     const sueldo = comoCuerpo(remuneracion)
     if ('error' in sueldo) {
       setFallo(sueldo.error)
@@ -283,7 +296,7 @@ export function FormularioDeEdicion({
         </div>
 
         <div className={estilos.rejilla}>
-          <CamposComunes datos={datos} poner={poner} />
+          <CamposComunes datos={datos} poner={poner} guardada={vacante} errores={errores} />
         </div>
 
         <div className={estilos.bloqueRemuneracion}>

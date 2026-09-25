@@ -51,6 +51,20 @@ vi.mock('../api/panel', () => ({
   aprobarSolicitud: () => Promise.resolve({}),
 }))
 
+/*
+  El catálogo de ciudades del desplegable del formulario llega del portal
+  (`GET /portal/catalogos/ubigeo`, público): aquí, dos provincias y «Fuera del
+  Perú». Sin este doble el formulario intentaría pedirlo de verdad.
+*/
+vi.mock('@/api/portal', () => ({
+  catalogoUbigeo: () =>
+    Promise.resolve([
+      { codigo: '0401', nombre: 'Arequipa', departamento: 'Arequipa' },
+      { codigo: '1501', nombre: 'Lima', departamento: 'Lima' },
+      { codigo: 'EXT', nombre: 'Fuera del Perú', departamento: null },
+    ]),
+}))
+
 const CATALOGOS: Catalogos = {
   nivelesPuesto: [
     { codigo: 'DIRECCION', nombre: 'Dirección' },
