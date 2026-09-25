@@ -2,7 +2,7 @@
  * Las pantallas de relleno: cargando, algo falló, hace falta cuenta, y no hay
  * nada que enseñar.
  *
- * Van juntas en una hoja porque son la misma forma —un bloque con regla, un
+ * Van juntas en una hoja porque son la misma forma —una superficie de nube, un
  * titular y una explicación— y separarlas solo duplicaba las medidas. Es el
  * mismo motivo por el que `Cuenta.module.css` lo comparten entrar y registrarse.
  *
@@ -10,12 +10,28 @@
  * botón, y ese sí lo lleva.
  */
 
+/*
+ * ⚠️ **Va sobre nube, y antes flotaba sobre el cielo.** Era un recuadro del
+ * mismo color que la pagina separado solo por una linea de `--regla`, que contra
+ * `--cielo` da 1,1:1 — es decir, nada. En este mundo lo que separa una
+ * superficie es la nube blanca encima del pastel, no su contorno; sin fondo, las
+ * cinco pantallas de relleno se leian como pagina y no como cosa. Es la misma
+ * correccion que ya llevaban `.formulario` y `.superficieDelFormulario` en
+ * `Cuenta.module.css`.
+ *
+ * ⚠️ **Repite las medidas de `bloqueHolgado` a mano y NO lo compone.** Componerlo
+ * pondria `.marco` y `.bloqueHolgado` con la misma especificidad, y el telefono
+ * de aqui abajo baja el relleno a `--e5`: cual de los dos gana lo decidiria el
+ * orden del bundle, que es justo la trampa que avisa `CLAUDE.md`. Mientras ese
+ * `@media` exista, esto se queda escrito.
+ */
 .marco {
   max-width: 44rem;
   margin: var(--e7) auto;
   border: 1px solid var(--regla);
   padding: var(--e6);
   border-radius: var(--radio);
+  background: var(--nube);
 }
 
 .eti {

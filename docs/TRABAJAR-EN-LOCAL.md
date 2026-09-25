@@ -73,6 +73,32 @@ Al comprobar el backend a mano, la base es `/api/v1/portal`, **no** `/api`. Pedi
 
 ---
 
+## La entrada de desarrollo del panel
+
+`/admin/entrar` lleva al final una entrada plegada, «Entrar con un id de desarrollo», que
+canjea un id de RENASER OS por una sesión sin contraseña. En una base local recién
+levantada puede ser lo único que abra el panel: el id que suele existir es **`andy-dev`**.
+
+⚠️ **No existe en producción, y no por estar escondida: no llega a compilarse.** El bloque
+va detrás de `import.meta.env.DEV || import.meta.env.VITE_PUERTA_DESARROLLO === '1'`, dos
+constantes que Vite sustituye al construir, así que el sacudido de árbol se lo lleva entero
+—ni el `<details>`, ni el manejador, ni el texto—. Vercel no define esa variable.
+
+| Cómo levantas el portal | ¿Está la puerta? |
+|---|---|
+| `npm run dev` | Sí: `DEV` es verdadero |
+| `vite preview` de un `npm run build` normal | **No** |
+| `VITE_PUERTA_DESARROLLO=1 npm run build` + `vite preview` | Sí |
+| Vercel | No |
+
+Esto importa para las pruebas: **`herramientas/e2e/13-etapas.spec.ts` la abre desde la
+interfaz**, igual que `herramientas/verificar-panel.mjs`. Contra `npm run dev` funcionan sin
+hacer nada; si levantas un preview para correr los e2e, constrúyelo con la bandera o ese
+escenario falla sin motivo aparente. Los demás escenarios no la tocan: llaman a
+`/panel/auth/dev-login` por HTTP, que es cosa del backend y no del portal.
+
+---
+
 ## E2E con un clon aislado
 
 `herramientas/e2e/base-de-datos.ts` es el helper compartido por todos los worktrees.

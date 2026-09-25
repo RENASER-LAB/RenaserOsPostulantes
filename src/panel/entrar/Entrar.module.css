@@ -31,18 +31,23 @@
 }
 
 /*
- * «¿Olvidaste tu contraseña?», pegado al formulario y no al pie: quien lo
- * necesita está mirando el campo de la contraseña. Mismo sitio que en el portal.
+ * La superficie de los dos formularios de la contraseña olvidada del panel:
+ * `/admin/clave` y `/admin/restablecer`.
+ *
+ * ⚠️ **Existe porque esos formularios NO son de esta hoja.** Viven en
+ * `ui/recuperacion`, compartidos con el portal, y llegaban a pelo sobre el
+ * fondo. Desde que `/admin/entrar` es una tarjeta de nube, el enlace de
+ * «¿Olvidaste tu contraseña?» llevaba de una superficie a una pantalla sin
+ * ninguna, y eso se lee como a medio cargar. Es la gemela de
+ * `.superficieDelFormulario` en `Cuenta.module.css`, por el mismo motivo.
+ *
+ * Solo trae la superficie. La direccion, el hueco entre campos y el aire de
+ * arriba ya los pone `.formulario` de la hoja compartida, y repetirlos aqui
+ * dependeria del orden del bundle para saber cual gana.
  */
-.olvidada {
-  margin-top: var(--e4);
-  font-size: var(--t-apoyo);
-}
-
-.olvidada a {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
+.superficieDelFormulario {
+  composes: bloqueHolgado from '../../estilos/pagina.module.css';
+  background: var(--nube);
 }
 
 /* La ayuda de un campo se ciñe como toda la prosa: era el único texto sin tope
@@ -161,4 +166,190 @@
     width: 100%;
     align-self: stretch;
   }
+}
+
+/* ---------- Entrar al panel, con la composicion de `/ingresar` ---------- */
+
+/*
+ * Solo las usa `Entrar.tsx`. Las clases de arriba se quedan intactas porque esta
+ * hoja la comparten cuatro pantallas —`/admin/clave`, `/admin/restablecer` y
+ * `/admin/invitacion`—, y tocar `.pagina`, `.formulario`, `.fallo` o `.enviar`
+ * las repintaria todas sin que nadie lo haya pedido.
+ *
+ * Centrada en lo que se ve, igual que `/ingresar`: el hueco entre la cabecera y
+ * el pie lo prepara `.armazonJusto` en `Armazon.module.css`, que `Armazon.tsx`
+ * enciende para esta ruta. Sin numeros magicos — el pie no tiene UNA altura,
+ * mide 61 px o 133 segun el ancho, y cualquier resta a mano salia mal en uno.
+ *
+ * ⚠️ **`justify-content: center` solo es seguro mientras la pantalla quepa.**
+ * Centrar en un hueco mas corto que el contenido desborda por los DOS lados, y a
+ * lo que se sale por arriba el navegador no deja llegar: el titular queda
+ * cortado y fuera de alcance. Aqui no pasa por dos razones, y las dos pueden
+ * romperse: el bloque «¿No puedes entrar?» se fue el 25/09/2026, y ningun
+ * eslabon de la cadena lleva `min-height: 0` —ver `.armazonJusto`—, asi que
+ * cuando no cabe crece la pagina y aparece el scroll. Si vuelve a colgar algo
+ * largo debajo de la tarjeta, esto deja de valer.
+ *
+ * La puerta de desarrollo sigue debajo, pero solo existe en local y es una
+ * linea plegada: entra de sobra.
+ */
+.paginaEntrar {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 100%;
+  max-width: 30rem;
+  margin-inline: auto;
+  /*
+   * Aire igual arriba y abajo, y menos del que habia.
+   *
+   * Cuando la pantalla fluia desde arriba, el `--e8` de abajo era el colchon
+   * antes del pie. Centrada ya no separa de nada —el hueco lo reparte el
+   * centrado— y ademas restaba 56 px al sitio disponible: en una ventana de
+   * 768 px con la puerta de desarrollo abajo, eso era la diferencia entre
+   * entrar y sacar scroll.
+   */
+  padding: var(--e5) var(--e4);
+  animation: llegaAlPanel 420ms var(--salida) both;
+}
+
+@keyframes llegaAlPanel {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .paginaEntrar {
+    animation: none;
+  }
+}
+
+/* La marca al centro: es lo unico que dice de que producto es esta puerta, y
+   sobre una tarjeta centrada, alineada a la izquierda, quedaba descolgada. */
+.marcaEntrar {
+  display: flex;
+  justify-content: center;
+  margin-bottom: var(--e5);
+  color: var(--tinta);
+}
+
+.tarjeta {
+  width: 100%;
+  padding: var(--e6);
+  background: var(--nube);
+  border: 1px solid var(--regla);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra-nube);
+}
+
+/*
+ * ⚠️ **30 px, la misma excepcion local que `/ingresar`.** La escala salta de
+ * `--t-titulo` (20) a `--t-portada` (clamp 36-60), y en una columna de 30 rem
+ * ese salto pesa mas que la tarea. Antes el `<h1>` iba a pelo y se llevaba
+ * `--t-portada`: por eso «Panel de Empresa.» salia del tamaño de una portada.
+ */
+.titularEntrar {
+  margin: 0;
+  font-size: 30px;
+  text-align: center;
+}
+
+/*
+ * El fallo, en una linea y con su icono, como en `/ingresar`.
+ *
+ * ⚠️ **`.fallo` llevaba un filete de 3 px a la izquierda y aqui no vuelve.** La
+ * barra de acento lateral esta prohibida en este mundo, y el bloque ambar entero
+ * pesaria mas que el formulario que lo provoca. El icono es decorativo, asi que
+ * quien no lo ve oye el texto igual y `role="alert"` lo anuncia al llegar.
+ */
+.falloEntrar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--e2);
+  margin: var(--e5) 0 0;
+  font-size: var(--t-apoyo);
+  line-height: 1.45;
+  color: var(--mal);
+  text-wrap: balance;
+}
+
+.formularioEntrar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e4);
+  margin-top: var(--e5);
+}
+
+/*
+ * El campo de la contraseña y su salida son UN grupo: el hueco del formulario
+ * separa campos, y entre un campo y su nota tiene que ser mas corto o la nota
+ * parece pertenecer a lo de abajo.
+ */
+.grupoClave {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+}
+
+.olvidadaEntrar {
+  margin: 0;
+  font-size: var(--t-apoyo);
+}
+
+.olvidadaEntrar a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+/*
+ * Sin el `margin-top: --e2` que sí lleva el de `/ingresar`: allí el enlace de la
+ * contraseña olvidada es texto corrido, y aquí va en una caja de 44 px —el
+ * blanco mínimo que hay que poder tocar con el pulgar—, que ya deja por debajo
+ * más aire del que el botón necesitaba.
+ */
+.enviarEntrar {
+  composes: acentoGrande from '../../estilos/piezas.module.css';
+  width: 100%;
+}
+
+/*
+ * En un telefono la tarjeta pierde contorno y sombra: a ese ancho ocupa la
+ * pantalla entera menos el aire de los lados, asi que el recuadro deja de rodear
+ * una cosa dentro de una pagina y pasa a dibujar un marco alrededor de la
+ * pantalla. Se queda el relleno, que es lo que separa. Igual que `/ingresar`.
+ */
+@media (max-width: 480px) {
+  .tarjeta {
+    padding: 0;
+    border: 0;
+    box-shadow: none;
+    background: none;
+  }
+}
+
+/*
+ * ⚠️ **El autorrelleno del navegador, que es lo que delata a un formulario de
+ * acceso.** Chrome pinta el campo autorrellenado de amarillo palido por encima
+ * de cualquier fondo, y no se cambia con `background`: lo unico que lo mueve es
+ * una sombra interior del tamaño del campo. La transicion larguisima es el truco
+ * para el resto: el amarillo se aplica con una animacion propia y solo se le
+ * gana retrasandola mas alla de lo que dura la pantalla.
+ */
+.formularioEntrar input:-webkit-autofill,
+.formularioEntrar input:-webkit-autofill:hover,
+.formularioEntrar input:-webkit-autofill:focus {
+  box-shadow: 0 0 0 100px var(--nube) inset;
+  -webkit-text-fill-color: var(--tinta);
+  caret-color: var(--activo);
+  transition: background-color 100000s ease-in-out 0s;
 }

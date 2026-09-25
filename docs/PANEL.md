@@ -449,7 +449,12 @@ El formulario, los textos y las reglas son **los mismos del portal** y viven en
 enlace» espera 60 segundos, el token sale de la barra al cargar y no se abre sesión al terminar.
 Lo que cambia es el mínimo (12, como la invitación) y que aquí no hay línea de talento: quien no
 recibe el correo o tiene la cuenta desactivada sigue pidiendo a su administrador que lo invite
-de nuevo, y la caja «¿No puedes entrar?» lo dice.
+de nuevo, y la caja «Si el correo no llega» de `/admin/clave` lo dice.
+
+⚠️ **En `/admin/entrar` había una caja «¿No puedes entrar?» y se fue el 25/09/2026**, junto con
+la bajada bajo el titular. Se quitaron por petición al convertir esa pantalla en una tarjeta
+centrada: lo que explicaban sigue donde hace falta, en `/admin/clave`, que es la pantalla a la
+que se llega buscándolo. El titular pasó a decir **«Panel de Empresa.»**.
 
 ⚠️ **El enlace del correo de equipo cae siempre en `/admin/restablecer`**, lleve o no `/admin`
 la dirección del panel configurada en el backend: `/restablecer` a secas es la pantalla del

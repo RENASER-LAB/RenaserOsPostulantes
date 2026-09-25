@@ -16,6 +16,66 @@ no se vuelve a subir el currículum. Lo del 07/09 se documentó en
 
 ---
 
+## Las pantallas de relleno se ponen encima, y las puertas del panel entran (24–25/09/2026)
+
+Cuatro cosas, todas pedidas mirando la pantalla.
+
+**Las cinco pantallas de relleno pasan a nube.** «Acceso necesario», «Proceso cerrado»,
+cargando, el fallo y el vacío comparten `.marco` en `Estados.module.css`, y ese marco era un
+recuadro del **mismo color que la página** separado solo por una línea de `--regla`: contra
+`--cielo` eso da **1,1:1**, es decir, nada. En este mundo lo que separa una superficie es la
+nube blanca encima del pastel, no su contorno. Son 14 archivos los que la usan, dos de ellos
+del panel, así que el cambio se vio en todo el portal de una vez.
+
+⚠️ **`.marco` sigue repitiendo a mano las medidas de `bloqueHolgado` y NO lo compone.**
+Componerlo pondría las dos clases con la misma especificidad, y el `@media` de teléfono de esa
+misma hoja baja el relleno a `--e5`: cuál gana lo decidiría el orden del bundle. Mientras ese
+`@media` exista, se queda escrito.
+
+**`/admin/entrar` pasa a ser una tarjeta centrada**, como `/ingresar`, y las tres puertas del
+panel —con `/admin/clave` y `/admin/restablecer`— se meten **dentro del armazón del portal**.
+Antes vivían fuera de los dos armazones, y al ir del pie del portal a `/admin/entrar` la
+cabecera desaparecía de golpe. Se eligió la cabecera del candidato entera a sabiendas de que
+deja dos «entrar» distintos en la misma pantalla; la alternativa descartada era una barra
+propia con la marca y «Volver al portal». `ArmazonPanel` sigue fuera: ahí vive el candado que
+manda a `/admin/entrar`, y meter esa pantalla dentro sería un bucle.
+
+Al entrar en el armazón, las tres perdieron su `<Marca>` propia —salían dos EX seguidas— y las
+dos de contraseña recibieron la superficie de nube por el mismo `claseFormulario` que ya usaba
+el portal.
+
+⚠️ **El centrado solo cupo al quitar el bloque «¿No puedes entrar?» y la bajada del titular**,
+las dos por petición. Con ellos la pantalla medía más que la ventana, y centrar lo que no cabe
+desborda por los dos lados: a lo que se sale por arriba el navegador no deja llegar. Medido en
+producción: 252 arriba / 243 abajo a 900 px, los mismos 9 px de asimetría cabecera-pie que
+tiene `/ingresar`. El titular pasó a **«Panel de Empresa.»**.
+
+**La puerta de desarrollo deja de existir en producción.** Estaba visible en el Vercel, donde
+el backend ya la rechaza pero cualquiera la veía y la probaba. Ahora va detrás de
+`import.meta.env.DEV || import.meta.env.VITE_PUERTA_DESARROLLO === '1'`: constantes que Vite
+sustituye al construir, así que el bloque entero se va en el sacudido de árbol —comprobado con
+`npm run build` y `grep` en `dist/`—. No está escondida: no llega a compilarse.
+
+⚠️ **`DEV` solo no bastaba.** Dos cosas la abren desde la interfaz —`verificar-panel.mjs:34` y
+`13-etapas.spec.ts:100`— y la configuración de Playwright habla de levantar un **preview**, que
+es un paquete construido donde `DEV` es falso. De ahí la bandera. Está en
+[TRABAJAR-EN-LOCAL.md](TRABAJAR-EN-LOCAL.md) con la tabla de los cuatro casos.
+
+**«Inicio» sube deslizándose.** Pulsarlo estando en la portada **no hacía absolutamente nada**:
+el efecto dependía de `[pathname, hash]` y ninguno de los dos cambia. Ahora va contra `key`,
+como `LlevarAlAncla`, y sube con el mismo deslizamiento con el que «Vacantes» baja. Medido
+frame a frame, porque un salto y un deslizamiento acaban los dos en 0 y lo que los separa es
+cuántas posiciones intermedias hay: **30** al bajar, **30** al subir, **2** al cambiar de
+pantalla o con `prefers-reduced-motion`. Cambiar de pantalla sigue saltando a propósito —lo que
+llega es contenido nuevo y no hay recorrido que seguir con la vista—.
+
+**Se probó el fondo en morado y se revirtió.** Quedó anotado que no es un valor sino dos: el
+`--cielo` y el `#f7ebe1` de la cinta hundida de la portada, que está en cálido a propósito
+porque es el único sitio donde algo hundido se apoya directo en el fondo. Con el morado puesto
+se vio además que el coral y el rosa del botón pasan de ser familia a ser complementarios.
+
+---
+
 ## La contraseña olvidada entra al escaparate (23/09/2026)
 
 Se trajo main a la rama del rediseño: cuatro commits (#52 a #55). Tres son del panel y quedan
