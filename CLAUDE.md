@@ -34,14 +34,14 @@ Solo commitea si te lo pido explícitamente.
 
 Tres avisos que no se ponen detrás de un enlace, porque llegan tarde:
 
-⚠️ **La paleta cambió el 25/09/2026 y ya no es la de «El escaparate».** Es la de una
-referencia que trajo el cliente (saasly.demos.tailgrids.com): la escala gris fría de Tailwind
-v4 —página `#F9FAFB`, superficies en nube blanca encima, que es lo que las separa—, **acción en
-índigo `#615FFF`** con radio **8 px**, y `--accion-fuerte` casi negro `#030712` solo para el
-botón de la cabecera. **Geist**, servida por el sitio, en vez de Figtree. **El coral y el crema ya no existen**, y con el coral se
-perdió el color propio de «te toca a ti»: ahora es el mismo índigo de la acción. **La fuente de
-verdad son los tokens de [`mundo.css`](src/estilos/mundo.css)**; DESIGN.md y EL-MUNDO-VISUAL
-todavía describen en detalle el mundo anterior.
+⚠️ **El mundo visual es «El cielo despejado» desde el 25/09/2026**, y sustituyó entero a «El
+escaparate». Sale de una referencia que trajo el cliente (saasly.demos.tailgrids.com): la
+escala gris fría de Tailwind v4 —página `#F9FAFB`, superficies en nube blanca encima, que es lo
+que las separa—, **acción en índigo `#615FFF`** con radio **8 px**, `--accion-fuerte` casi negro
+`#030712` solo para el botón de la cabecera, y **Geist** servida por el sitio. **El coral y el
+crema ya no existen**, y con el coral se perdió el color propio de «te toca a ti»: es el mismo
+índigo de la acción, y lo distingue la forma. **La fuente de verdad son los tokens de
+[`mundo.css`](src/estilos/mundo.css)**, y [DESIGN.md](DESIGN.md) los describe con su porqué.
 
 Las **dieciocho** pantallas del candidato están compuestas —la número dieciocho es
 `/restablecer`, que llegó de main el 23/09/2026 junto con la reescritura de `/clave`—; **el
@@ -90,7 +90,7 @@ El detalle, en [docs/TRABAJAR-EN-LOCAL.md](docs/TRABAJAR-EN-LOCAL.md).
 | Orientarte en los documentos | [docs/README.md](docs/README.md) |
 | Levantarlo, elegir backend, saber a qué base escribes, mirar pantallas sin tocar la base | [TRABAJAR-EN-LOCAL](docs/TRABAJAR-EN-LOCAL.md), [README.md](README.md) |
 | Tocar código: los 18 estados, la hora del servidor, la única puerta al backend, `grupoPrioridad`, las trampas que costaron un fallo, la marca de obligatorio de los formularios, cómo se nombra aquí | [REGLAS-DEL-CODIGO](docs/REGLAS-DEL-CODIGO.md) |
-| Tocar diseño: el mundo visual, sus reglas nombradas, la tipografía, el mapa de `src/` | [DESIGN.md](DESIGN.md) y [EL-MUNDO-VISUAL](docs/EL-MUNDO-VISUAL.md); los tokens con su porqué en [`src/estilos/mundo.css`](src/estilos/mundo.css) |
+| Tocar diseño: el mundo visual, sus reglas nombradas, la tipografía, el mapa de `src/`, qué lee `impeccable` | [DESIGN.md](DESIGN.md) y [EL-MUNDO-VISUAL](docs/EL-MUNDO-VISUAL.md); los tokens con su porqué en [`src/estilos/mundo.css`](src/estilos/mundo.css). **DESIGN.md y `.impeccable/design.json` se regeneran juntos**, con `/impeccable document` |
 | Entender qué ve y qué hace quien postula, pantalla por pantalla | [02-QUE-VE-EL-CANDIDATO](docs/02-QUE-VE-EL-CANDIDATO.md) |
 | Seguir el proceso entero, los dos lados, con lo que desbloquea cada paso | [06-FLUJO-COMPLETO](docs/06-FLUJO-COMPLETO.md) |
 | Tocar el panel: entrar y recuperar la contraseña, las tres pestañas, el ranking por etapas, qué exige publicar una vacante, corregirla en su modal, archivarla y dónde queda, eliminarla por borrado lógico, el plazo de su prueba, los huecos del backend | [PANEL](docs/PANEL.md) |

@@ -83,6 +83,39 @@ toca a ti» recupera un color propio.
 - ⚠️ **Un fallo de la vuelta anterior:** en teléfono «Inicio» seguía subrayado. Dos reglas de
   la media query, que van después en la hoja, le devolvían el filete quitado en escritorio.
 
+**Tercera vuelta: la documentación, reescrita para el mundo nuevo.** El mundo se bautizó **«El
+cielo despejado»**. `DESIGN.md` se reescribió de cero con `/impeccable document`, en el formato
+que lee la skill —su cabecera tenía claves que el formato no admite (`measure`, `shadows`, y
+`borderColor`/`shadow` dentro de los componentes) y pasaron al sidecar—, y
+`.impeccable/design.json` se regeneró copiando literal su narrativa. `EL-MUNDO-VISUAL.md` se
+reescribió en lo visual y conservó lo que no lo es. `README`, `PRODUCT.md`, el maquetado, `02`,
+`03` y la ficha de superficie del panel dejaron de dar el escaparate por vigente.
+
+Al pasar el detector de `impeccable` salieron nueve avisos, todos de cosas de ese mismo día. Los
+radios de la cabecera y del marco de cristal y la letra de 17 px **se nombraron como tokens**
+—`--radio-pildora`, `--radio-cristal`, `--radio-ventana`, `--t-navegacion`— en vez de
+silenciarlos; y quedaron tres excepciones con su motivo escrito: **Geist**, que el detector marca
+como fuente sobreexpuesta y es decisión del cliente, en `.impeccable/config.json`; y dos marcas en
+línea en la portada, la máscara del fundido y el rótulo en miniatura de una maqueta.
+
+**Cuarta vuelta: el cielo, y el pie de las puertas.**
+
+- **El cielo copia la luz de la foto de la referencia**, no su forma: un resplandor casi blanco
+  en el centro, detrás del titular, azul hacia los bordes, y un horizonte más saturado abajo.
+  Arriba pasó a ser azul: se había dejado blanco «para que la píldora no perdiera su
+  contorno», y era al revés.
+- **Las nubes son ruido fractal** (`feTurbulence`) en vez de óvalos, con una sombra azulada
+  bajo el cúmulo. Calcularlas en el navegador costaba ~100 ms de hilo principal en escritorio,
+  así que se pintan una vez con `herramientas/cielo/pintar-nubes.mjs` y se sirven como
+  `public/cielo-nubes.webp` (40 KB). ⚠️ La primera medida dio 135 ms y era ruido: de una carga a
+  otra variaba hasta 100 ms; las cifras buenas son medianas de cinco.
+- **El pie en columnas sacaba scroll en las pantallas de una tarjeta**: mide 290 px y
+  `/ingresar` se pasaba 24 px de una ventana de 900. Las puertas y «acceso necesario» llevan
+  ahora un pie corto de una línea. ⚠️ **La primera comprobación dijo que todo cabía y era
+  falsa**: Vite servía una versión a medio escribir de `Armazon.tsx` que fallaba, y lo que se
+  medía era la pantalla de error, que es corta. Lo delató `/registro` «cabiendo» en un
+  teléfono.
+
 ---
 
 ## Las pantallas de relleno se ponen encima, y las puertas del panel entran (24–25/09/2026)

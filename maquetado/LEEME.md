@@ -1,12 +1,11 @@
 # El maquetado aprobado
 
-> ⚠️ **Esto NO es el diseño del portal, y buena parte de lo que dice sobre color es falso
-> desde el 10/09/2026.**
+> ⚠️ **Esto NO es el diseño del portal.**
 >
-> El mundo visual es **«El escaparate»**: fondo gris `#F5F5F5`, acción en **negro** `#0A0A0A`,
-> coral `#FF7C61` para «te toca a ti», Figtree. El índigo `#4338CA` que se ve en estos
-> archivos y que este documento llegó a dar por indiscutible **se sustituyó**, y la migración
-> del portal del candidato ya está terminada.
+> El mundo visual es **«El cielo despejado»**, desde el 25/09/2026: gris frío de fondo, acción
+> en **índigo** `#615FFF` —que es también el color de «te toca a ti»—, Geist. El índigo
+> `#4338CA` que se ve en estos archivos no es ese: se sustituyó el 10/09 por negro y coral, y el
+> 25/09 el portal volvió a un índigo distinto. Los colores de aquí son de agosto.
 >
 > Lo que sigue valiendo de aquí, y por eso no se borra, es **qué información va en cada
 > pantalla y con qué palabras**. Para el color, la forma y el movimiento la verdad es
@@ -59,9 +58,10 @@ Cada pantalla es un `<div class="marco">` con la cabecera y el cuerpo. Las conve
 
 - **Los bloques grises con líneas** (`.linea`) son contenido real que existe en el backend,
   dibujado como barra para no distraer con texto de relleno. No son huecos.
-- **`.caja.toca`** y todo lo índigo es «te toca a ti». ⚠️ **En el portal ese color es hoy el
-  coral `#FF7C61`**; el índigo se quedó solo en estos archivos HTML. Lo que no cambió es la
-  regla: el color marca **solo** eso, y como mucho una vez por pantalla.
+- **`.caja.toca`** y todo lo índigo es «te toca a ti». En el portal hoy también es índigo, pero
+  otro —`#615FFF`— y compartido con la acción: lo que distingue el turno es la forma, un borde
+  de 2 px. Lo que no cambió es la regla: el color con intención marca solo lo que se pulsa,
+  dónde estás y lo que te toca.
 - **`.caja.gris`** es una espera o un contenido secundario.
 - **`.nota`** es un aviso para quien lee el maquetado, no texto de la pantalla.
 - **Lo que va entre corchetes** —`[FIGURA CONTRACTUAL]`, `[NOMBRE DEL RESPONSABLE]`— son datos
@@ -76,11 +76,11 @@ contratos del backend.
 ## Lo que ya está decidido y no se rediscute
 
 - **Solo tema claro.** Petición del cliente.
-- ~~**Fondo blanco puro, acento índigo `#4338CA`.**~~ **Sustituido el 10/09/2026** por el
-  fondo gris `#F5F5F5` con la acción en negro y el coral `#FF7C61` como único color. Lo que
-  sigue vigente de aquella decisión es el porqué: verde, ámbar y rojo ya tienen significado
-  fijo en el sistema —hecho, duda, error—, así que ni el acento ni la acción podían ser
-  ninguno de esos.
+- ~~**Fondo blanco puro, acento índigo `#4338CA`.**~~ Sustituido el 10/09/2026 por negro y
+  coral, y otra vez el 25/09 por **gris frío con acento índigo `#615FFF`**, que es lo vigente.
+  Lo que ha sobrevivido a los tres cambios es el porqué: verde, ámbar y rojo ya tienen
+  significado fijo en el sistema —hecho, duda, error—, así que ni el acento ni la acción
+  pueden ser ninguno de esos.
 - **Del portal viejo solo sobrevive** el nombre EX y su logotipo, la palabra con la hormiga
   dentro de la X.
 
