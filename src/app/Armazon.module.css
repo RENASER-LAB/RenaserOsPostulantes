@@ -61,46 +61,48 @@
   z-index: 0;
   pointer-events: none;
   /*
-   * ⚠️ **El cielo tiene que tener COLOR, o las nubes no existen.** La primera
-   * version del amanecer iba de `#fffaf6` a `#fbf1e9` —cuatro puntos de
-   * diferencia— con nubes blancas encima: blanco sobre casi blanco no se ve, asi
-   * que no se veia nada. La referencia funciona porque su azul esta saturado y
-   * la nube contrasta CONTRA el; aqui hace falta lo mismo.
+   * Tres capas, y cada una copia una cosa distinta de la foto de la referencia:
    *
-   * ⚠️ **Pero el color arranca POR DEBAJO de la barra.** Con azul hasta el borde
-   * de arriba, la pildora blanca de la cabecera pierde su contorno contra el
-   * fondo y deja de leerse como una pieza. Los primeros 100 px se quedan casi
-   * blancos: la barra se lee sobre claro y el cielo empieza justo detras del
-   * titular, que es donde se mira.
+   * 1. **Las nubes**, en `public/cielo-nubes.webp`: ruido fractal, no ovalos. La
+   *    version anterior eran seis degradados radiales y se leian como nubes de
+   *    dibujo animado —bordes lisos, blanco uniforme—. El ruido da los bordes
+   *    deshilachados de una nube de verdad. **Es una imagen pintada de antemano**
+   *    a partir de `herramientas/cielo/cielo-nubes.svg`: calcular el ruido en el
+   *    navegador costaba ~100 ms de hilo principal en escritorio en cada carga
+   *    (mediana de cinco). Si se toca el SVG, hay que volver a correr
+   *    `herramientas/cielo/pintar-nubes.mjs`.
+   * 2. **La luz en el centro.** La referencia no es un degradado de arriba abajo:
+   *    tiene un resplandor casi blanco justo detras del titular y se vuelve azul
+   *    hacia los bordes y las esquinas. Ademas de parecerse, es lo que mejor le
+   *    va al texto: la tinta cae sobre lo mas claro del cielo.
+   * 3. **El azul de fondo, con su horizonte**: una franja mas saturada cerca de
+   *    abajo, y luego el fundido hasta el gris de la pagina para que no se vea el
+   *    corte.
    *
-   * Las nubes van en capas de distinto tamaño y no en una sola mancha: una nube
-   * de verdad tiene bordes desiguales, y varios ovalos desplazados que se
-   * solapan lo dan mejor que uno grande difuminado. El blanco aguanta opaco
-   * hasta el 45 % del ovalo y solo despues se desvanece — desvaneciendo desde el
-   * centro sale un halo, no una nube.
+   * ⚠️ **Arriba es AZUL, y antes no.** La version anterior dejaba casi blancos
+   * los primeros 100 px con el argumento de que, con azul, la pildora de la
+   * cabecera «perdia su contorno». Era justo al reves: una pildora blanca se lee
+   * mejor sobre azul que sobre blanco, y la referencia lo hace asi.
+   *
+   * ⚠️ **El cielo tiene que tener COLOR, o las nubes no existen.** Blanco sobre
+   * casi blanco no se ve: el primer amanecer de todos fallo por eso.
    */
   background:
-    /* Nube alta a la izquierda: tres ovalos que se solapan. */
-    radial-gradient(26rem 8rem at 17% 27%, rgb(255 255 255 / 0.97) 45%, transparent 76%),
-    radial-gradient(17rem 6rem at 28% 33%, rgb(255 255 255 / 0.95) 48%, transparent 78%),
-    radial-gradient(12rem 4.5rem at 9% 33%, rgb(255 255 255 / 0.9) 45%, transparent 78%),
-    /* Nube baja a la derecha, mas suelta. */
-    radial-gradient(22rem 7rem at 88% 51%, rgb(255 255 255 / 0.95) 45%, transparent 76%),
-    radial-gradient(15rem 5rem at 77% 57%, rgb(255 255 255 / 0.88) 48%, transparent 78%),
-    /* Un jiron suelto abajo, para que la franja no acabe en linea recta. */
-    radial-gradient(20rem 5rem at 44% 71%, rgb(255 255 255 / 0.82) 42%, transparent 78%),
-    /*
-     * El cielo. Casi blanco donde va la barra, azul de verdad donde van el
-     * titular y las nubes, y de vuelta al fondo de la pagina abajo del todo para
-     * que no se vea el corte.
-     */
+    url('/cielo-nubes.webp') center top / cover no-repeat,
+    radial-gradient(
+      ellipse 58% 46% at 50% 36%,
+      rgb(255 255 255 / 0.96) 0%,
+      rgb(255 255 255 / 0.62) 38%,
+      rgb(255 255 255 / 0) 72%
+    ),
     linear-gradient(
       180deg,
-      #fbfdff 0%,
-      #eff7ff 9%,
-      #c7e2fb 34%,
-      #cfe6fc 48%,
-      #e8f1fa 74%,
+      #cfe3fc 0%,
+      #d8e8fd 28%,
+      #cbe1fb 52%,
+      #a9cdf7 73%,
+      #cfe3fa 86%,
+      #eef5fd 94%,
       var(--cielo) 100%
     );
 }
