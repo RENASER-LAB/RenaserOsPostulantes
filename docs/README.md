@@ -27,7 +27,7 @@ de hoy.
 | [05-AUDITORIA.md](05-AUDITORIA.md) | 24/08 · `impeccable audit` sobre el portal; el método de medición se repite |
 | [07-BRIEF-MI-PERFIL.md](07-BRIEF-MI-PERFIL.md) | 05/09 · el inventario de «Mi perfil» ANTES del rediseño, con las seis decisiones |
 | [superpowers/specs/](superpowers/specs/) | 28/08 · la versión móvil para Play Store |
-| [SUITE-E2E-CLASIFICACION-2026-09-25.md](SUITE-E2E-CLASIFICACION-2026-09-25.md) | 25/09 · las 329 pruebas e2e clasificadas una a una (Recorrido, Baja a unitario, Sobra), qué se borró y por qué, los `serial` que quedan, las que dependían del sembrador con el hueco para los tiempos, las de IA real y cómo correrlas, y los recorridos sin cobertura |
+| [SUITE-E2E-CLASIFICACION-2026-09-25.md](SUITE-E2E-CLASIFICACION-2026-09-25.md) | 25/09 · las 329 pruebas e2e clasificadas una a una (Recorrido, Baja a unitario, Sobra), qué se borró y por qué, cuántas quedan y cuánto tarda la suite (con las 44 que trajo #58), los `serial` que quedan, las que dependían del sembrador y los tiempos medidos de cada vía, las de IA real y cómo correrlas, los recorridos sin cobertura y la lista de las corridas enteras que cita como evidencia |
 
 ## Dónde busca cada tema en las bitácoras
 
@@ -42,6 +42,6 @@ Las secciones llevan título y fecha; busca por el título.
 | El banco de preguntas: su ciclo de vida y de dónde salen los minutos | [08](BITACORA-2026-08.md) | 28/08 noche, 27/08 noche |
 | Las sesiones de simulación, sus inscritos y los permisos por rol | [08](BITACORA-2026-08.md) | 27/08 |
 | Multiempresa y la entrada de las empresas | [08](BITACORA-2026-08.md) | 27/08 tarde, 26/08 |
-| Los e2e de Playwright y los guiones de captura | [09](BITACORA-2026-09.md) | 01/09 |
+| Los e2e de Playwright y los guiones de captura | [09](BITACORA-2026-09.md) | 25–26/09 (el recorte de la suite) y 01/09 |
 | Cómo quedó la suite e2e tras el recorte, y cómo se corre cada parte | [SUITE-E2E-CLASIFICACION-2026-09-25.md](SUITE-E2E-CLASIFICACION-2026-09-25.md) | — |
 | Corregir una vacante con el lápiz, y el sueldo sin correo | [09](BITACORA-2026-09.md) | 19-20/09 |

@@ -39,7 +39,6 @@ código antes de darlas por ciertas.
 | **Al retroceder con Shift+Tab, la cabecera fija tapa lo enfocado** | Al subir con el teclado, el control enfocado queda debajo de la cabecera y no se ve. Falta un `scroll-padding-top` con el alto de la cabecera. Visto el 25/09/2026, fuera de la entrega de la búsqueda |
 | **Un propósito de solo espacios deja vacía «El resultado que esperamos»** | En la ficha (`Vacante.tsx`) la sección sale con el título y sin texto. La tarjeta ya trata ese caso como vacío; la ficha no. Visto el 25/09/2026, fuera de la entrega |
 | **Al corregir, se puede dejar sin ciudad una vacante presencial** | A propósito: la ciudad solo se exige al crear, o al elegir Presencial o Híbrido en una que no la tiene. Así corregir una vacante vieja no obliga a decidir su ciudad |
-| **El E2E `14-vacante` falla en «poner en automático»** | Se vio el 25/09/2026 y no se encontró la causa; la búsqueda no toca ese tramo. Ya estaba entre los fallos de fondo anotados en los defectos conocidos del backend |
 
 Pendiente de comprobar: si hay evaluaciones ya entregadas con menos respuestas de las que
 deberían. Las que se perdieron **no se recuperan**, nunca llegaron al servidor.

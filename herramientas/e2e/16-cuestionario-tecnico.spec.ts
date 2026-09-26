@@ -99,10 +99,18 @@ test.describe('El ciclo 2 · la vacante elige el cuestionario y la candidata lo 
     const fila = page.locator('label').filter({ hasText: 'Cuánto tiempo tendrá' })
     const minutos = fila.locator('input[type="number"]')
     await minutos.fill('45')
+    // F-18: mientras guarda, el botón pasa a «Guardando…», así que buscar «Guardar»
+    // da 0 con el POST aún en vuelo y la recarga lo aborta. Se espera la respuesta.
+    const guardado = page.waitForResponse(
+      (r) =>
+        r.request().method() === 'POST' &&
+        new URL(r.url()).pathname.endsWith(`/vacantes/${recorrido.vacanteId}/instrumento-tecnico`),
+    )
     await fila.getByRole('button', { name: 'Guardar' }).click()
-    // El botón solo existe mientras lo escrito difiere de lo guardado: que se vaya
-    // es la señal de que el servidor contestó con 45.
-    await expect(fila.getByRole('button', { name: 'Guardar' })).toHaveCount(0)
+    expect((await guardado).ok()).toBe(true)
+    // El botón solo existe mientras lo escrito difiere de lo guardado: con la
+    // respuesta ya dentro, que no quede ni «Guardar» ni «Guardando…».
+    await expect(fila.getByRole('button', { name: /^(Guardar|Guardando…)$/ })).toHaveCount(0)
     await expect(minutos).toHaveValue('45')
     // Y sobrevive a recargar: está en la base, no en la pantalla.
     await page.reload()

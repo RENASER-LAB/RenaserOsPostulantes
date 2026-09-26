@@ -255,7 +255,15 @@ test.describe.serial('El recorrido entero de una vacante', () => {
         .toBeGreaterThan(0)
       console.log(`[VACANTE] pesos ofrecidos: ${await publicadas.count()}`)
       const elegida = (await publicadas.first().getAttribute('value')) as string
+      // La vacante puede nacer ya con esos pesos: entonces el valor coincide antes de que el
+      // servidor conteste, y la prueba acababa con el guardado en vuelo. Se espera la respuesta.
+      const guardados = page.waitForResponse(
+        (r) =>
+          r.request().method() === 'POST' &&
+          new URL(r.url()).pathname.endsWith(`/vacantes/${idVacante}/version-pesos`),
+      )
       await selPesos.selectOption(elegida)
+      expect((await guardados).ok()).toBe(true)
       await expect(selPesos).toHaveValue(elegida, { timeout: 15_000 })
     })
   })

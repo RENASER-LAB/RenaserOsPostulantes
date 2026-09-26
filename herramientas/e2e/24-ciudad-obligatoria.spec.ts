@@ -128,6 +128,9 @@ test.describe('AC-02 · sin ciudad no se crea la cuenta y se dice junto al campo
     const correo = nuevoCorreo()
     await page.goto('/registro')
     await rellenarTodoMenosLaCiudad(page, correo)
+    // Con la lista de ciudades ya llegada: mientras carga, el desplegable está apagado y no
+    // puede recibir el foco que se comprueba abajo.
+    await expect(elDesplegable(page)).toBeEnabled()
 
     await page.getByRole('button', { name: /Crear cuenta/i }).click()
 
@@ -235,6 +238,8 @@ test.describe('AC-03 · al elegir ciudad el aviso se retira y el registro contin
     await rellenarTodoMenosLaCiudad(page, correo)
 
     const ciudad = elDesplegable(page)
+    // Apagado mientras llega la lista de ciudades: enfocarlo antes no hace nada.
+    await expect(ciudad).toBeEnabled()
     await ciudad.focus()
     await expect(ciudad).toBeFocused()
     // La rueda nativa del `<select>`: bajar una opción ya es elegir.

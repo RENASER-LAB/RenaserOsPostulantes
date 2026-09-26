@@ -9,13 +9,13 @@ necesitan IA de verdad, y qué recorridos se quedaron sin cobertura.
 
 | | Antes | Después |
 |---|---|---|
-| Pruebas e2e (`npx playwright test --list`) | 329 en 43 archivos | **258** en 43 archivos: 250 en la corrida automática y 8 que solo corren a mano con IA real |
-| Pruebas unitarias (`npm test`) | 1 026 | **1 054** (+28; contadas antes de integrar main en eab1047, que las deja en 1 071 con el mismo +28) |
+| Pruebas e2e (`npx playwright test --list`) | 329 en 43 archivos | Este trabajo las dejó en **258** en los mismos 43 archivos: 250 en la corrida automática y 8 que solo corren a mano con IA real. Después llegaron de main las 44 de «Buscar vacantes en el portal» (#58, `af9214d`: 34 en `37-buscar-vacantes`, 5 en `38-buscar-vacantes-movil` y 5 en `39-buscar-vacantes-panel`), que no entran en esta clasificación. La suite integrada da **302 en 46 archivos**: **294** en la corrida automática y las mismas 8 de IA real; 21 corren en el proyecto `movil` (las 16 de antes más las 5 de `38`) y 281 en `escritorio` (`e2e/ciclo4-list.txt` en los artefactos del harness) |
+| Pruebas unitarias (`npm test`) | 1 026 | **1 054** (+28; contadas antes de integrar main en eab1047, que las dejó en 1 071, y #58, con el que el recibo del controlador del ciclo 4 da 1 146; las 28 de este trabajo siguen siendo las mismas) |
 | Archivos con `serial` | 15 | 14 (se quitó el de `18-ranking-contra-api`) |
-| Pruebas que fallaban en cada corrida | 16 (+8 más de `03-orden`, que no estaba en esa corrida) | Las 24 dependían de un escenario que la siembra no produce, y ahora se intercepta: ninguna de ellas falló en las corridas enteras. Esas corridas destaparon otras: 5 en la del ciclo 0 (`01`, `07-movil`, `14`, `18`, `23`; rotas por cambios de producto posteriores —#32, #41/V53, #55— o por la intercepción nueva) y 2 en la del ciclo 1 (`06-sin-ciudad`, `25-editar-vacante`; solo fallan cuando la suite ya corrió antes sobre la misma base). Seis se corrigieron y pasaron en las dos corridas enteras del ciclo 2. `23-movimiento` «al volver a la portada» siguió fallando en esas dos: su causa se encontró en el ciclo 3, y en la corrida entera de comprobación de ese ciclo pasó. QA destapó además `13-etapas` «la misma ficha en Prueba del puesto», que con la traza puesta fallaba siempre, y en el ciclo 3 dos huecos que no se veían en rojo: un 500 que `13` dejaba pasar y un `09` que gastaba a una persona sembrada en cada corrida (F-12, F-13; corregidos en el ciclo 4). Todo en «Lo que destapó la corrida entera». Cuántas quedan en rojo en la versión final lo dice la corrida de QA que registra el harness, no este documento |
+| Pruebas que fallaban en cada corrida | 16 (+8 más de `03-orden`, que no estaba en esa corrida) | Las 24 dependían de un escenario que la siembra no produce, y ahora se intercepta: ninguna de ellas falló en las corridas enteras. Esas corridas destaparon otras: 5 en la del ciclo 0 (`01`, `07-movil`, `14`, `18`, `23`; rotas por cambios de producto posteriores —#32, #41/V53, #55— o por la intercepción nueva) y 2 en la del ciclo 1 (`06-sin-ciudad`, `25-editar-vacante`; solo fallan cuando la suite ya corrió antes sobre la misma base). Seis se corrigieron y pasaron en las dos corridas enteras del ciclo 2. `23-movimiento` «al volver a la portada» siguió fallando en esas dos: su causa se encontró en el ciclo 3, y en la corrida entera de comprobación de ese ciclo pasó. QA destapó además `13-etapas` «la misma ficha en Prueba del puesto», que con la traza puesta fallaba siempre, y en el ciclo 3 dos huecos que no se veían en rojo: un 500 que `13` dejaba pasar y un `09` que gastaba a una persona sembrada en cada corrida (F-12, F-13; corregidos en el ciclo 4). La corrida entera de QA del ciclo 5 dejó en rojo `37-buscar-vacantes` AC-01, que no venía de este trabajo sino de #58 (F-16; corregida en el ciclo 6 junto con cuatro vecinas del mismo hueco). La del ciclo 7 dejó en rojo `16-cuestionario-tecnico` paso 3, que venía de upstream (#25): recargaba con el guardado de los minutos todavía en vuelo, y por ir en `serial` los diez pasos siguientes no corrieron (F-18). Se corrigió en el ciclo 8 con un barrido del mismo hueco —leer o navegar antes de que termine lo que la prueba acaba de disparar— por los 46 archivos, que corrigió además `14-vacante` (los pesos), `15-componer-prueba` (traer del catálogo), dos de `24-ciudad-obligatoria` y `37-buscar-vacantes` «Ciclo 2 · en escritorio». Todo en «Lo que destapó la corrida entera», y cada corrida citada, con su resultado, en «Las corridas enteras que cita este documento». Cuántas quedan en rojo en la versión final lo dice la corrida de QA que registra el harness, no este documento |
 | Pruebas que se saltaban siempre en la base sembrada | 14 | 0: se borraron y quedan anotadas abajo como recorridos sin cobertura |
 | Pruebas que llamaban a DeepSeek | 2 archivos (`16`, `17`) | 0 en la corrida automática: 8 pruebas detrás de `E2E_IA_REAL=1` |
-| Tiempo de la suite | ~12 min (329 pruebas) | **Entre 7,8 y 8,3 minutos** para las 258 en las cuatro corridas enteras en verde que hay medidas, frente a ~12 min para 329. Medido el 25/09/2026, de reloj, headless y con un worker, en el mismo clon: **467,1 s (7,8 min)** en la corrida de comprobación de la implementación del ciclo 3, sin traza; y **495,4 s (8,3 min)** y **477,5 s (8,0 min)** en las dos corridas seguidas de QA de ese ciclo (`e2e/ciclo3-suite-completa.log` y `e2e/ciclo3-segunda-suite-completa.log` en los artefactos del harness); y **481,8 s (8,0 min)** en la corrida de confirmación de la implementación del ciclo 4. Las cuatro dieron 250 pasan, ninguna falla y 8 saltadas, que son las de IA real y se saltan en un instante. Las corridas de QA anteriores, con fallos, tardaron 589,6 s (ciclo 0), 483,8 s (ciclo 1) y 487,5 s y 521,9 s (ciclo 2). Ese margen no es una promesa: el tiempo cambia con la carga de la máquina, y la cifra que vale para la versión final es la de la corrida de QA que registra el harness. Las cinco del escenario, una a una, están en la tabla de AC-10 |
+| Tiempo de la suite | ~12 min (329 pruebas; la cifra de partida de la spec, no medida en el clon) | **594,2 s (9,9 min)** y **587,9 s (9,8 min)** para las 302 de la suite integrada, en las dos corridas seguidas de QA del ciclo 4 (`e2e/ciclo4-suite-completa.log` y `e2e/ciclo4-segunda-suite-completa.log` en los artefactos del harness), frente a ~12 min para 329. Las dos dieron 294 pasan, ninguna falla y 8 saltadas, que son las de IA real y se saltan en un instante. De ese tiempo, las 44 de #58 suman ~91 s por corrida según el junit (71,8 s `37`, 13,6 s `39` y 6,0 s `38` en `e2e/ciclo4-suite-completa.xml`; lo mismo en la segunda): sin ellas la corrida rondaría los 500 s, según estima QA, en línea con las de antes de #58. Medido el 25/09/2026, de reloj, headless y con un worker, en el clon del harness. **Antes de integrar #58**, las 258 de este trabajo tardaron entre 7,8 y 8,3 minutos en las cuatro corridas enteras en verde que hay medidas: **467,1 s** en la de comprobación de la implementación del ciclo 3, sin traza; **495,4 s** y **477,5 s** en las dos seguidas de QA de ese ciclo (`e2e/ciclo3-suite-completa.log` y `e2e/ciclo3-segunda-suite-completa.log`); y **481,8 s** en la de confirmación de la implementación del ciclo 4. Las cuatro dieron 250 pasan, ninguna falla y 8 saltadas. Las corridas de QA anteriores, con fallos, tardaron 589,6 s (ciclo 0), 483,8 s (ciclo 1) y 487,5 s y 521,9 s (ciclo 2). Estas y las demás corridas enteras que cita el documento están, una a una y con su artefacto, en «Las corridas enteras que cita este documento». Ninguna de estas cifras es una promesa: el tiempo cambia con la carga de la máquina, y el que vale para la versión final es el de la corrida de QA que registra el harness. Las cinco del escenario, una a una, están en la tabla de AC-10 |
 
 Ningún cambio toca código de producción ni `playwright.config.ts`: sigue Playwright test,
 headless, un worker.
@@ -229,7 +229,10 @@ desde cambios de producto de #41/V53 y dejaban una vacante publicada en el porta
 corrida: `abrirLaVacante` ahora pulsa la tuerca cuando la vacante ya está publicada (la
 configuración solo se abre sola en borrador), el interruptor del recorrido automático se pulsa
 y se espera al servidor (la casilla la manda el backend, como la del banco), y el cierre se
-confirma con «Confirmar cierre».
+confirma con «Confirmar cierre». En el ciclo 8, el tramo de los pesos espera la respuesta del
+servidor: la vacante nace ya con esos pesos y el desplegable no bastaba para saber que se
+guardaron. En `15`, la ayuda que trae preguntas del catálogo espera a que el catálogo haya
+llegado antes de leer sus opciones. Los dos, en «Lo que destapó la corrida entera».
 
 ### 16-cuestionario-tecnico (13 → 13; 7 solo con IA real)
 
@@ -237,7 +240,7 @@ confirma con «Confirmar cierre».
 |---|---|---|
 | 1 · nace en borrador rindiendo la prueba del puesto | R | |
 | 2 · elegido el cuestionario, lo de la prueba del puesto desaparece | R | |
-| 3 · cuarenta y cinco minutos, guardados a mano | R | |
+| 3 · cuarenta y cinco minutos, guardados a mano | R | venía de upstream (#25) y recargaba con el guardado todavía en vuelo; desde el ciclo 8 espera la respuesta del servidor antes de recargar (F-18, en «Lo que destapó la corrida entera») |
 | 4 · la evaluación del banco se apaga | R | |
 | 5 · publicar está apagado, y dice que falta el cuestionario | R | |
 | 6 · la ficha queda completa | IA | no llama a la IA, pero solo existe para que el 7 tenga ficha; la ficha la cubre `17` paso 2 |
@@ -342,14 +345,14 @@ CPU x4 y x8, y 70 de 70 aislada con y sin traza.
 | Prueba | Cubo | Nota |
 |---|---|---|
 | AC-01 · la etiqueta lo marca, el desplegable lo anuncia | R | absorbe los `optgroup` de `02` |
-| AC-02 · con el botón: no navega, marca el campo, no nace ninguna cuenta | R | |
+| AC-02 · con el botón: no navega, marca el campo, no nace ninguna cuenta | R | desde el ciclo 8 espera a que llegue la lista de ciudades antes de enviar: un campo apagado no recibe el foco que comprueba |
 | con la tecla Enter: el mismo rechazo | R | el envío implícito es del navegador |
 | el doble envío tampoco cuela | S | cada clic revalida; `Registro.test.tsx` «sin ciudad no se crea la cuenta…» |
 | recargar no deja la ciudad puesta ni el error colgado | S | no puede romperse por sí solo: recargar reinicia el estado |
 | AC-03 · el error se va al corregirlo, el registro termina | R | |
 | el doble clic en «Crear cuenta» crea UNA cuenta, no dos | R | guarda EXT y lo lee de la base |
 | «Fuera del Perú» (EXT) es una elección válida | S | lo demuestra la anterior |
-| se elige y se envía solo con el teclado | R | |
+| se elige y se envía solo con el teclado | R | desde el ciclo 8 espera a que el desplegable esté encendido antes de enfocarlo |
 | en pantalla de teléfono (375 px) el campo, su marca y su error se ven | R | absorbe el desborde de `07` |
 | el catálogo de ciudades no carga: se informa, se reintenta | R | con `page.route`, como estaba |
 | AC-05 · a quien ya tenía cuenta sin ciudad no se le pide nada | R | |
@@ -418,6 +421,29 @@ ya existía) y nuevo en `RecuperarClavePanel.test.tsx` (panel).
 «los correos no dicen «S.A.C..»»: R. «una contraseña de más de 72 bytes no termina en un
 mensaje técnico»: U, «F-01 · más de 72 bytes se para en el campo» en `Restablecer.test.tsx` y
 `RecuperarClavePanel.test.tsx` (ya existían: la pantalla lo para antes de llamar).
+
+### 37-buscar-vacantes · 38-buscar-vacantes-movil · 39-buscar-vacantes-panel (34 · 5 · 5, llegaron con #58)
+
+Fuera de la clasificación: llegaron de main con «Buscar vacantes en el portal» (#58, `af9214d`)
+después de clasificar las 329. `38` corre en el proyecto `movil`. Ninguna va en `serial` ni le
+pide nada a la IA, y las 44 pasaron en las dos corridas enteras de QA del ciclo 4.
+
+Se integraron sin tocarlas salvo dos correcciones de sincronización en `37`: la de F-16 (ciclo
+6), que se cuenta aquí, y la de «Ciclo 2 · en escritorio…» (ciclo 8), que medía la página con
+dos lecturas separadas durante un desplazamiento suave (en «Lo que destapó la corrida entera»).
+La de F-16 venía de upstream y fallaba igual sobre `af9214d`. Tras un clic en el orden, cinco
+pruebas leían la lista con `allTextContents()`, que no reintenta, esperando solo a la dirección o sin esperar
+nada. React Router escribe la dirección antes de pintar, y el orden y los filtros llegan en una
+transición, así que se podía leer el orden anterior. La corrida entera de QA del ciclo 5 lo cazó
+en AC-01: fallaba ~10-15 % sin frenar y 10 de 10 con la CPU x4. Ahora cada lectura espera antes
+a algo que sale del mismo render que la lista. En AC-01, AC-09, AC-15 y «sin texto, «Relevantes»
+cuenta el sueldo…» es el radio del orden marcado. En «Ver las N vacantes» son las nueve tarjetas:
+ahí «Recientes» ya estaba marcado, y el texto vacío se pinta antes de que se quite Lima. Lo que
+afirman no cambia. Con la CPU x6, AC-15, la de completitud y «Ver las N» fallaban 5 de 5 sin la
+corrección y pasan 20 de 20 con ella. AC-01 pasa 20 de 20 sin frenar y 10 de 10 con x4 y con x6.
+En AC-09 la búsqueda no da resultados y el fallo no podía verse, pero el hueco era el mismo. `38`
+y `39` se revisaron y no se tocaron: sus lecturas van detrás de un estado pintado, sea la cuenta,
+la casilla marcada o el desplegable habilitado.
 
 ## Las cuentas de lo que bajó a unitario (AC-02 y AC-08)
 
@@ -574,21 +600,27 @@ haría falta sembrar para tenerla. No se añaden pruebas nuevas: el objetivo era
 
 Otros pendientes que deja este trabajo:
 
-- QA corrió la suite entera seis veces en el harness el 25/09/2026: 589,6 s en el ciclo 0,
-  483,8 s en el ciclo 1, 487,5 s y 521,9 s en el ciclo 2, y 495,4 s y 477,5 s en el ciclo 3,
-  estas dos en verde. Las de comprobación de la implementación tardaron 467,1 s (ciclo 3) y
-  481,8 s (ciclo 4). Antes eran ~12 minutos para las 329 (tabla «En números»). El tiempo cambia con la
-  carga de la máquina. El de la versión final es el de la corrida de QA que registra el harness.
+- El tiempo de la suite no tiene una cifra fija: cambia con la carga de la máquina. El de la
+  versión final es el de la corrida de QA que registra el harness; las corridas que este
+  documento cita están en «Las corridas enteras que cita este documento».
 - Cada corrida entera deja en la base cosas que no se pueden borrar: postulaciones con su
-  transición (`12`, `22`) y doce vacantes: una CERRADA de `14`, dos en BORRADOR de `16` y `17`
-  y nueve PUBLICADAS de `29`–`35` (ocho «QA-ELIMINA-830D…» y una «QA-FILTROS-43CA…»). Desde el
-  ciclo 4 deja además una vacante «QA-AVANCE-09…» marcada eliminada, con la cuenta de `09`
-  retirada: no sale ni en el panel ni en el portal. `09` ya no mueve a nadie de la siembra. Las
-  publicadas salen en el panel pero no en el portal: QA lo comprobó antes, entre y después de
-  las dos corridas del ciclo 2, y el tablón siguió con las tres vacantes sembradas. La
-  suite está hecha para volver a correr sobre esa base, con la regla que se explica en «Lo que
-  destapó la corrida entera». Lo que se acumula no se limpia: el panel enseña cada vez más
-  vacantes y las dos vacantes sembradas, más postulantes retirados.
+  transición (`12`, `22`) y trece vacantes. Tres se quedan a la vista en el panel: una CERRADA
+  de `14` y dos en BORRADOR de `16` y `17`. Las otras diez quedan PUBLICADAS pero marcadas
+  eliminadas, y no salen ni en el panel ni en el portal: nueve de `29`–`35` (ocho
+  «QA-ELIMINA-830D…» y una «QA-FILTROS-43CA…») y, desde el ciclo 4, una «QA-AVANCE-09…» con la
+  cuenta de `09` retirada. `09` ya no mueve a nadie de la siembra. Las de #58 (`37`–`39`) no
+  dejan nada: retiran lo que siembran, y `37` y `38` esconden las publicadas ajenas pasándolas
+  a borrador y las devuelven como estaban. QA lo midió antes y después de sus corridas de los
+  ciclos 4, 5 y 6, y entre las dos seguidas de los ciclos 4 y 6 (`clon/ciclo4-*`,
+  `clon/ciclo5-*` y `clon/ciclo6-*` en los artefactos del harness): cada corrida sumó una
+  CERRADA, dos BORRADOR y diez eliminadas; no quedó ninguna vacante, solicitud ni cuenta con la
+  marca de #58; el panel no enseñó ninguna vacante con título «QA-», y el tablón siguió con las
+  tres vacantes sembradas. Cuántas vacantes enseña el panel no es una cifra fija: crece con cada
+  corrida. Eran 42 tras las dos del ciclo 4, 45 tras la del ciclo 5, y 48 tras la primera del
+  ciclo 6 y 51 tras la segunda, siempre con las 3 publicadas sembradas y el resto en borrador o cerradas. La suite
+  está hecha para volver a correr sobre esa base, con la regla que se explica en «Lo que destapó
+  la corrida entera». Lo que se acumula no se limpia: el panel enseña tres vacantes más por
+  corrida, y las dos vacantes sembradas, más postulantes retirados.
 - `22-perfil-con-foto-y-cv` «el currículum se guarda… deja de estar EN_CURSO» espera hasta dos
   minutos a que la lectura del currículum termine. Con la IA apagada termina en `NO_LEGIBLE` sin
   llamar a nadie (el PDF de prueba no tiene texto extraíble); si un día la lectura llamara al
@@ -596,7 +628,7 @@ Otros pendientes que deja este trabajo:
 - Los números repetidos `33`–`35` entre filtros y contraseña siguen (ya estaban en
   [PENDIENTES.md](PENDIENTES.md)).
 
-## Lo que destapó la corrida entera (ciclos de corrección 1 a 4, 25/09/2026)
+## Lo que destapó la corrida entera (25/09/2026)
 
 La primera pasada clasificó sin correr la suite completa, y la corrida de QA sacó cinco fallos
 que la clasificación daba por verdes. La del ciclo 1 sacó dos más, que solo aparecen cuando la
@@ -604,13 +636,23 @@ suite ya corrió antes sobre la misma base. Ninguno es del producto, y todos se 
 las pruebas sin bajar ninguna expectativa.
 
 Las dos corridas enteras del ciclo 2 (487,5 s y 521,9 s, seguidas sobre la misma base) dieron
-249 pasan, 1 falla y 8 saltadas las dos veces. Seis de los siete arreglos aguantaron. El
-séptimo, `23-movimiento`, no: falló en las dos (F-09). Además, QA vio que `13-etapas` fallaba
+249 pasan, 1 falla y 8 saltadas las dos veces. De los siete fallos de los ciclos 0 y 1, seis
+siguieron corregidos; `23-movimiento` no: falló en las dos (F-09). Además, QA vio que `13-etapas` fallaba
 siempre con la traza puesta (F-10). Las dos se corrigieron en el ciclo 3. La corrida entera de
 comprobación de ese ciclo (467,1 s, sin traza) dio 250 pasan, ninguna falla y 8 saltadas, y
 las dos de QA (495,4 s y 477,5 s), lo mismo. QA encontró en ese ciclo dos huecos que no se veían
 en rojo: `13-etapas` perdonaba por la URL sin mirar el estado (F-12), y `09-avance` gastaba una
-etapa de una persona sembrada en cada corrida (F-13). Los dos se corrigieron en el ciclo 4:
+etapa de una persona sembrada en cada corrida (F-13). Los dos se corrigieron en el ciclo 4. La
+corrida entera de QA del ciclo 5 dejó en rojo una prueba que no venía de este trabajo sino de
+main (#58): `37-buscar-vacantes` AC-01 (F-16). Se corrigió en el ciclo 6, junto con sus vecinas
+del mismo hueco. La del ciclo 7 dejó en rojo otra que tampoco era de este trabajo, sino de
+upstream (#25): `16-cuestionario-tecnico` paso 3 (F-18). Ese fallo dependía del tiempo, como
+otros antes: las corridas enteras habían destapado F-05 y F-09 en `23-movimiento` (ciclos 0 y
+2) y F-16 en `37-buscar-vacantes` (ciclo 5), y el prefijo de diagnóstico con traza del ciclo 2,
+F-10 en `13-etapas`. Todos tenían la misma forma: el resultado dependía de qué llegaba antes, la
+prueba o lo que acababa de disparar. En el ciclo 8 se corrigió y
+se barrió ese hueco por los 46 archivos y sus ayudas (ver «El barrido del ciclo 8», debajo de
+la tabla):
 
 | Archivo | Qué pasaba | Qué se hizo |
 |---|---|---|
@@ -625,10 +667,41 @@ etapa de una persona sembrada en cada corrida (F-13). Los dos se corrigieron en 
 | `06-sin-ciudad` «MEZCLA» (ciclo 2) | afirmaba la lista exacta de «Analista de experiencia del cliente». Cada corrida de `22` deja ahí una postulación de «Prueba De Archivos» que no se puede borrar, así que fallaba desde la segunda corrida | afirma sobre sus tres personas sembradas: el orden entre ellas, la fila sin ciudad la última de toda la tabla y el desplegable contra las ciudades reales de la vacante |
 | `25-editar-vacante` «la tabla no se mueve» (ciclo 2) | comparaba `boundingBox()`, que mide contra la ventana. Las vacantes que dejan las corridas empujan «Desarrollador web» bajo el pliegue, el clic en el lápiz desplaza la página y la medida cambia sin que la tabla se mueva | trae la fila a la vista y compara su posición en el documento (caja más desplazamiento) antes y después de abrir el modal |
 | `22-perfil-con-foto-y-cv`, las dos que postulan (ciclo 2) | apareció al revisar quién deja postulaciones: el texto que se esperaba ya está en el formulario, y la primera postulación nunca llegaba a crearse porque la vacante pedía la pretensión | escribe la pretensión si la vacante la pide y exige «Mis procesos» y la postulación en el backend |
+| `37-buscar-vacantes` AC-01 y cuatro vecinas (F-16, ciclo 6) | venía de upstream (#58) y fallaba igual sobre `af9214d`. Tras pulsar «Relevantes» leía la lista esperando solo a la dirección, que React Router escribe antes de pintar, y a veces leía el orden anterior. La corrida entera del ciclo 5 la dejó en rojo | antes de leer, espera al radio del orden marcado; en «Ver las N vacantes», a las nueve tarjetas. Lo mismo en AC-09, AC-15, «sin texto, «Relevantes» cuenta el sueldo…» y «Ver las N vacantes». Lo que afirman no cambia. Comprobado frenando la CPU x4 y x6; el detalle está en la sección de `37` |
+| `16-cuestionario-tecnico` paso 3 (F-18, ciclo 8) | venía de upstream (#25). Mientras guarda, el botón pasa a «Guardando…», así que esperar a que no hubiera ningún «Guardar» no esperaba al servidor, y la recarga abortaba el POST de `/instrumento-tecnico`: la vacante quedaba con los minutos vacíos. La corrida entera del ciclo 7 la dejó en rojo, y los pasos 4 a 13 sin correr | registra la respuesta del POST antes del clic, exige que sea correcta y solo entonces recarga; después espera a que no quede ni «Guardar» ni «Guardando…». Lo que afirma no cambia. Con el POST frenado 1,5 s, la versión anterior falla 5 de 5 y la corregida pasa 5 de 5 |
+| `14-vacante` «se eligen la prueba del puesto y los pesos» (ciclo 8) | la vacante nace ya con los pesos que la prueba elige, así que el desplegable tenía ese valor antes de que el servidor contestara y la prueba terminaba con el POST de `/version-pesos` en vuelo: «el servidor los deja puestos» se daba por bueno sin respuesta | espera la respuesta del POST y exige que sea correcta. Con las escrituras frenadas 1,5 s, la versión anterior acaba con el POST en vuelo y la corregida pasa el archivo 2 de 2. La prueba del puesto ya esperaba bien —el desplegable nace vacío y solo cambia con la respuesta— y no se tocó |
+| `15-componer-prueba`, traer del catálogo (ciclo 8) | el catálogo de preguntas llega aparte y el desplegable no se apaga mientras tanto; la ayuda leía sus opciones sin esperar y, con la red lenta, solo encontraba «Elige una pregunta…» y decía que el catálogo se había quedado sin preguntas | antes de leer, espera a que haya alguna opción del tipo pedido. Con toda la API a 700 ms, la versión anterior falla y deja siete tramos sin correr; la corregida pasa el archivo 2 de 2 |
+| `24-ciudad-obligatoria` «con el botón…» y «solo con el teclado» (ciclo 8) | el desplegable de ciudad está apagado mientras llega la lista, y un campo apagado no recibe el foco: la primera enviaba el formulario antes y la segunda lo enfocaba antes, y con la red lenta el foco no llegaba | esperan a que el desplegable esté encendido antes de enviar y de enfocar. No va dentro de la ayuda común porque la prueba del catálogo caído la usa con el desplegable apagado. Con toda la API a 700 ms, 6 de 6 en rojo antes y 10 de 10 en verde después |
+| `37-buscar-vacantes` «Ciclo 2 · en escritorio…» (ciclo 8) | medía cada pieza en la página sumando la caja y `scrollY`, leídos por separado. Marcar una casilla cambia la dirección y la página sube con un desplazamiento suave, así que las dos lecturas caían en momentos distintos: el barrido la vio mover 3 px la columna de filtros | lee caja y desplazamiento en una sola lectura. Con la página bajada 150 px antes de marcar, la versión anterior falla 3 de 5 y la corregida pasa 5 de 5 |
+
+**El barrido del ciclo 8.** Se leyeron los 46 archivos y sus ayudas buscando tres formas del
+mismo hueco: una acción que escribe seguida de recargar, navegar o consultar la base sin esperar
+la respuesta; una espera a que desaparezca un botón o un texto que cambia durante la operación;
+y una lectura que no reintenta (`allTextContents`, `textContent`, `count`, `boundingBox`,
+`evaluate`) justo después de un clic o una navegación. Para no quedarse en la lectura, se
+corrieron los 46 archivos en copias temporales con tres frenos: las escrituras de la API
+retrasadas 1,5 s vigilando las que se abortan o siguen en vuelo al terminar la prueba, la CPU
+frenada x4 por CDP, y toda la API retrasada 700 ms. De ahí salieron los cinco casos de la tabla
+(el de `16` es F-18), y se corrigieron y se comprobaron uno a uno como dice su fila. Con la CPU
+x4 no falló ninguna. Se revisó y no se tocó:
+
+- `26-editar-vacante-avisos` «el aviso lleva al proceso del candidato…» termina con el POST que
+  marca el aviso como leído todavía en vuelo. Lo dispara la pantalla al abrir el aviso, la
+  prueba no afirma nada sobre él y es la última del archivo.
+- `37` «a 768 px los filtros se apilan…» también mide en la ventana después de marcar, pero sus
+  comparaciones aguantan el desplazamiento: con la página bajada 400 px pasa 5 de 5.
+- Las demás esperas ya iban detrás de un estado que solo existe tras la respuesta o que sale del
+  mismo render que lo que se lee: el aviso de «Cambios guardados», «Guardado.», el cambio de
+  pantalla tras enviar, la cifra o la marca que pinta el servidor, el radio o la cuenta de
+  filas. En el panel, los cortes, los filtros y el orden del ranking se aplican en el propio
+  navegador y se pintan en el mismo clic. La ayuda `guardar` del portal ya esperaba a que no
+  quedara «Guardar» ni «Guardando…». Los pasos de IA real de `16` (6 a 12) no pueden correr sin
+  la clave y no se tocaron.
 
 **La regla de volver a correr sobre la misma base.** Una postulación hecha desde el portal nace
-con su transición, que la base no deja borrar. Una vacante con historial tampoco desaparece del
-panel. Así que una prueba que escribe no puede prometer que deja la base como estaba, y una
+con su transición, que la base no deja borrar. Una vacante con historial tampoco se borra: la
+que la prueba no marca eliminada —la cerrada de `14`, los borradores de `16` y `17`— se queda
+en el panel. Así que una prueba que escribe no puede prometer que deja la base como estaba, y una
 prueba que lee no puede dar por hecho que la base es la de la siembra. Las listas exactas y las
 posiciones en pantalla se afirman sobre el escenario de la propia prueba (sus personas, sus
 vacantes), nunca sobre todo lo que haya en una vacante o en un listado compartido. Las medidas
@@ -638,6 +711,38 @@ sobre la misma base: `22` + `06` y `25-editar-vacante` pasan las dos veces, y `0
 Las vacantes publicadas que dejaron las corridas rotas de `14` en el clon del harness se
 cerraron por la misma vía que usa la prueba (el cierre del panel).
 
+## Las corridas enteras que cita este documento
+
+Es una lista cerrada de la evidencia, no la cuenta de todas las corridas: cada revisión de QA
+vuelve a correr la suite, y las corridas posteriores no se añaden aquí. Son corridas completas
+de `npx playwright test`, todas del 25/09/2026,
+headless, con un worker y en el clon del harness. La hora es la de inicio (Lima, UTC−5), y el
+artefacto está en `e2e/`, dentro de los artefactos del harness del trabajo. **La cifra vigente
+—cuántas pasan, cuántas fallan y cuánto tarda— es la de la corrida de QA que el harness registra
+para la versión aprobada**, no la de esta tabla. El tiempo cambia con la carga de la máquina;
+antes eran ~12 minutos para las 329 (tabla «En números»).
+
+| Ciclo | Quién y cuándo | Pruebas | Pasan | Fallan | Saltadas | Tiempo | Artefacto |
+|---|---|---|---|---|---|---|---|
+| 0 | QA, 11:53 | 258 | 244 | 5: `01`, `07-movil`, `14`, `18`, `23-movimiento` | 8, y 1 que no llegó a correr: el último tramo de `14` («se cierra…»), en `serial` detrás del que falló | 589,6 s | `ciclo0-suite-completa.log` |
+| 1 | QA, 14:25 | 258 | 248 | 2: `06-sin-ciudad`, `25-editar-vacante` | 8 | 483,8 s | `ciclo1-suite-completa.log` |
+| 2 | QA, 15:14 | 258 | 249 | 1: `23-movimiento` (F-09) | 8 | 487,5 s | `ciclo2-suite-completa.log` |
+| 2 | QA, 15:22, seguida de la anterior | 258 | 249 | 1: `23-movimiento` (F-09) | 8 | 521,9 s | `ciclo2-segunda-suite-completa.log` |
+| 3 | implementación, comprobación sin traza | 258 | 250 | 0 | 8 | 467,1 s | del implementador; no está entre los artefactos de QA |
+| 3 | QA, 16:53 | 258 | 250 | 0 | 8 | 495,4 s | `ciclo3-suite-completa.log` |
+| 3 | QA, 17:02, seguida de la anterior | 258 | 250 | 0 | 8 | 477,5 s | `ciclo3-segunda-suite-completa.log` |
+| 4 | implementación, confirmación antes de integrar #58 | 258 | 250 | 0 | 8 | 481,8 s | del implementador; no está entre los artefactos de QA |
+| 4 | QA, 19:48, con #58 integrado | 302 | 294 | 0 | 8 | 594,2 s | `ciclo4-suite-completa.log` |
+| 4 | QA, 19:58, seguida de la anterior | 302 | 294 | 0 | 8 | 587,9 s | `ciclo4-segunda-suite-completa.log` |
+| 5 | QA, 22:00 | 302 | 293 | 1: `37-buscar-vacantes` AC-01 (F-16) | 8 | 596,0 s | `ciclo5-suite-completa.log` |
+| 6 | QA, 22:57, con la corrección de F-16 | 302 | 294 | 0 | 8 | 593,8 s | `ciclo6-suite-completa.log` |
+| 6 | QA, 23:06, seguida de la anterior | 302 | 294 | 0 | 8 | 632,4 s | `ciclo6-segunda-suite-completa.log` |
+| 7 | QA, 23:48 | 302 | 290 | 1: `16-cuestionario-tecnico` paso 3 (F-18) | 1, la de IA real de `17`, y 10 que no llegaron a correr: los pasos 4 a 13 de `16`, en `serial` detrás del que falló (siete de ellos, los de IA real) | 611,7 s | `ciclo7-suite-completa.log` |
+
+Las 8 saltadas son las de IA real (`16` y `17`) en todas menos en la del ciclo 7, donde siete de
+ellas no llegaron a correr por el fallo anterior en `serial`, como dice su fila. La del ciclo 7
+es la última que recoge la lista.
+
 ## Cómo se corre lo que queda
 
 Sin cambios en el montaje: las seis variables de [TRABAJAR-EN-LOCAL.md](TRABAJAR-EN-LOCAL.md),
@@ -645,9 +750,9 @@ el contenedor etiquetado y `npx playwright test` (headless, un worker). Los dos 
 siguen: `escritorio` corre todo menos `*movil.spec.ts`, y `movil` solo esos.
 
 ```bash
-npx playwright test                              # las 250 automáticas
-npx playwright test --project=escritorio         # sin las 16 de móvil
-E2E_IA_REAL=1 npx playwright test 16- 17-        # las 8 de IA, a mano
+npx playwright test                              # las 302: 294 corren y las 8 de IA real se saltan
+npx playwright test --project=escritorio         # 281, sin las 21 de móvil
+E2E_IA_REAL=1 npx playwright test 16- 17-        # las 8 de IA, a mano, con los pasos de 16 y 17 que las preparan (19)
 npx vite-node herramientas/e2e/sembrar-escenario-desarrollador-web.ts \
   && E2E_ESCENARIO=base npx playwright test 03-orden 04-filtros 05-excel 07-movil 08-teclado   # repetir la medición de AC-10; deja la base escrita
 ```
