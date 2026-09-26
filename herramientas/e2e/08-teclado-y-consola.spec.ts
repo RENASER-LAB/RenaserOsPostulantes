@@ -1,5 +1,15 @@
 import { expect, test } from '@playwright/test'
-import { abrirFiltros, botonFiltros, cabecera, cerrarFiltros, corte, entrarAlPanel, filasDelRanking, irAVacante, nombresVisibles, panelFiltros, VACANTES } from './ayuda'
+import { abrirFiltros, botonFiltros, cabecera, cerrarFiltros, corte, entrarAlPanel, filasDelRanking, irAVacante, panelFiltros, VACANTES } from './ayuda'
+import { interceptarEscenario } from './escenario-desarrollador-web'
+
+/**
+ * El panel de filtros y las cabeceras, sin ratón.
+ *
+ * ⚠️ **El escenario viene interceptado** (`escenario-desarrollador-web.ts`): así
+ * la columna de Pretensión y sus dos campos existen seguro en el recorrido con
+ * Tab. Ordenar entero con el teclado —Enter, Espacio y el foco que no se
+ * pierde— vive en `03-orden`.
+ */
 
 /** Cómo se llama lo que tiene el foco ahora mismo. */
 const enfocado = (page: import('@playwright/test').Page) =>
@@ -19,6 +29,7 @@ test.describe('Teclado sin ratón', () => {
   */
   test.beforeEach(async ({ page }) => {
     await entrarAlPanel(page)
+    await interceptarEscenario(page)
     await irAVacante(page, VACANTES.LLENA)
     await corte(page, 'Toda la tanda').click()
   })
@@ -101,25 +112,20 @@ test.describe('Teclado sin ratón', () => {
     await expect(filasDelRanking(page)).toHaveCount(4)
     await expect(botonFiltros(page)).toBeFocused()
   })
-
-  test('se puede ordenar entero sin tocar el ratón', async ({ page }) => {
-    await cabecera(page, 'Pretensión').getByRole('button').focus()
-    await page.keyboard.press('Enter')
-    await expect(cabecera(page, 'Pretensión')).toHaveAttribute('aria-sort', 'ascending')
-    expect((await nombresVisibles(page)).at(-1)).toBe('Sebastián Cárdenas Rojo')
-    await page.keyboard.press('Enter')
-    await expect(cabecera(page, 'Pretensión')).toHaveAttribute('aria-sort', 'descending')
-    // El vacío sigue el último, y el foco no se perdió al reordenar.
-    expect((await nombresVisibles(page)).at(-1)).toBe('Sebastián Cárdenas Rojo')
-    await expect(cabecera(page, 'Pretensión').getByRole('button')).toBeFocused()
-  })
 })
 
 /**
  * Los 404 de `/ficha` y de `plantillas-prueba/versiones/N` son PREEXISTENTES:
  * ya estaban en `main` y no se cuentan.
+ *
+ * ⚠️ **Se perdonan por su ruta Y su estado, y se juzgan en la respuesta.** El
+ * aviso de la consola —«Failed to load resource: … status of 500»— no trae la
+ * URL en el texto, y perdonarlo por ese texto dejaba pasar cualquier error de
+ * red del recorrido, un 500 incluido. Así que en la consola solo se descarta
+ * ese eco, y la respuesta decide: un 404 de estas dos rutas pasa; cualquier
+ * otro estado de 400 para arriba, en estas rutas o en otras, es fallo.
  */
-const CONOCIDOS = [/\/ficha\b/, /plantillas-prueba\/versiones\/\d+/, /Failed to load resource/]
+const CONOCIDOS_404 = [/\/ficha\b/, /\/plantillas-prueba\/versiones\/\d+$/]
 
 test.describe('La consola, sin los fallos conocidos', () => {
   test('recorrer el ranking no levanta errores nuevos', async ({ page }) => {
@@ -127,8 +133,13 @@ test.describe('La consola, sin los fallos conocidos', () => {
     page.on('console', (m) => {
       if (m.type() !== 'error') return
       const texto = m.text()
-      if (CONOCIDOS.some((r) => r.test(texto))) return
+      if (texto.startsWith('Failed to load resource')) return
       errores.push(texto)
+    })
+    page.on('response', (r) => {
+      if (r.status() < 400) return
+      if (r.status() === 404 && CONOCIDOS_404.some((ruta) => ruta.test(new URL(r.url()).pathname))) return
+      errores.push(`${r.status()} · ${r.request().method()} ${r.url()}`)
     })
     page.on('pageerror', (e) => errores.push(`pageerror: ${e.message}`))
 

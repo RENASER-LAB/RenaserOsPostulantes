@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Locator } from '@playwright/test'
 import { entrarAlPanel, VACANTES } from './ayuda'
 
 /**
@@ -14,8 +14,12 @@ import { entrarAlPanel, VACANTES } from './ayuda'
  * Lo que sí se comprueba aquí y no puede comprobar una prueba de servicio: que
  * el lápiz exista con un nombre que distinga una fila de otra, que el modal se
  * abra con los datos de ahora **sin mover la tabla de debajo**, que la solicitud
- * y el puesto no se puedan cambiar, que cerrar con algo escrito pregunte antes
- * de tirarlo, y que no queden dos formularios abiertos a la vez.
+ * y el puesto no se puedan cambiar, que Escape devuelva el foco al lápiz, y que
+ * reenviar lo mismo diga que no había nada que guardar.
+ *
+ * Cancelar con y sin cambios, «Seguir editando» y «Descartar cambios», y que
+ * abrir la edición cierre el alta son comportamientos del componente y se
+ * fijan sin navegador en `EditarVacante.test.tsx`.
  */
 test.describe('Editar una vacante desde la lista', () => {
   test.beforeEach(async ({ page }) => {
@@ -30,11 +34,30 @@ test.describe('Editar una vacante desde la lista', () => {
   const elModal = (page: import('@playwright/test').Page) =>
     page.getByRole('dialog', { name: 'Editar vacante' })
 
+  /**
+   * Dónde está en la PÁGINA, no en la ventana.
+   *
+   * ⚠️ `boundingBox()` mide contra la ventana. Cada corrida entera deja en la lista
+   * vacantes que no se pueden borrar (las de `14`, `16`, `17`, `29`–`35`), y el
+   * panel las pone arriba: con doce filas «Desarrollador web» queda bajo el pliegue
+   * de los 720 px, el clic en el lápiz desplaza la página para alcanzarlo y la
+   * segunda medida sale 300 px más arriba sin que la tabla se haya movido. Sumando
+   * el desplazamiento, lo que se compara es la posición en el documento: solo
+   * cambia si algo empuja las filas, que es lo que la prueba vigila.
+   */
+  const posicionEnLaPagina = (fila: Locator) =>
+    fila.evaluate((el) => {
+      const r = el.getBoundingClientRect()
+      return { x: r.x + window.scrollX, y: r.y + window.scrollY, ancho: r.width, alto: r.height }
+    })
+
   test('el lápiz de la fila abre un modal con los datos de ahora, y la tabla no se mueve', async ({
     page,
   }) => {
     const laFila = page.getByRole('row').filter({ hasText: VACANTES.LLENA })
-    const antes = await laFila.boundingBox()
+    // A la vista antes de medir: así el clic tampoco tiene que desplazar nada.
+    await laFila.scrollIntoViewIfNeeded()
+    const antes = await posicionEnLaPagina(laFila)
 
     await elLapiz(page, VACANTES.LLENA).click()
 
@@ -43,7 +66,7 @@ test.describe('Editar una vacante desde la lista', () => {
     await expect(page.getByLabel('Descripción')).not.toHaveValue('')
 
     // La tabla sigue donde estaba: el modal se pone encima, no empuja las filas.
-    expect(await laFila.boundingBox()).toEqual(antes)
+    expect(await posicionEnLaPagina(laFila)).toEqual(antes)
 
     // La solicitud y el puesto, como texto fijo y con el porqué: cambiarlos
     // cambiaría el nivel y la familia de toda la evaluación.
@@ -55,36 +78,6 @@ test.describe('Editar una vacante desde la lista', () => {
     await expect(elModal(page).getByRole('button', { name: 'Cerrar' })).toBeVisible()
     await expect(elModal(page).getByRole('button', { name: 'Cancelar' })).toBeVisible()
     await expect(elModal(page).getByRole('button', { name: 'Guardar cambios' })).toBeVisible()
-  })
-
-  test('cancelar sin cambios cierra; con cambios pregunta y no los pierde', async ({ page }) => {
-    await elLapiz(page, VACANTES.LLENA).click()
-    await expect(elModal(page)).toBeVisible()
-
-    // Sin tocar nada: cierra y ya.
-    await elModal(page).getByRole('button', { name: 'Cancelar' }).click()
-    await expect(elModal(page)).toHaveCount(0)
-
-    // Con algo escrito: pregunta, y «Seguir editando» devuelve lo escrito.
-    await elLapiz(page, VACANTES.LLENA).click()
-    await page.getByLabel('Horario').fill('Turnos rotativos de prueba')
-    await elModal(page).getByRole('button', { name: 'Cancelar' }).click()
-
-    const pregunta = page.getByRole('alertdialog', { name: 'Cambios sin guardar' })
-    await expect(pregunta).toBeVisible()
-    await pregunta.getByRole('button', { name: 'Seguir editando' }).click()
-    await expect(page.getByLabel('Horario')).toHaveValue('Turnos rotativos de prueba')
-
-    // Y «Descartar cambios» cierra sin guardar: al reabrir está lo de antes.
-    await elModal(page).getByRole('button', { name: 'Cancelar' }).click()
-    await page
-      .getByRole('alertdialog', { name: 'Cambios sin guardar' })
-      .getByRole('button', { name: 'Descartar cambios' })
-      .click()
-    await expect(elModal(page)).toHaveCount(0)
-
-    await elLapiz(page, VACANTES.LLENA).click()
-    await expect(page.getByLabel('Horario')).not.toHaveValue('Turnos rotativos de prueba')
   })
 
   test('Escape sin cambios cierra el modal y el foco vuelve al lápiz', async ({ page }) => {
@@ -118,25 +111,5 @@ test.describe('Editar una vacante desde la lista', () => {
       // Y el modal se cierra: no hay nada pendiente que decidir.
       await expect(elModal(page)).toHaveCount(0)
     }
-  })
-
-  test('abrir la edición cierra el alta: un solo formulario a la vez', async ({ page }) => {
-    await page.getByRole('button', { name: 'Crear vacante' }).click()
-    await expect(page.getByRole('heading', { name: /Vacante nueva/ })).toBeVisible()
-
-    await elLapiz(page, VACANTES.LLENA).click()
-
-    await expect(elModal(page)).toBeVisible()
-    await expect(page.getByRole('heading', { name: 'Vacante nueva' })).toHaveCount(0)
-  })
-
-  test('el lápiz se alcanza con el tabulador y se abre con Enter', async ({ page }) => {
-    const lapiz = elLapiz(page, VACANTES.LLENA)
-    await lapiz.focus()
-    await expect(lapiz).toBeFocused()
-
-    await page.keyboard.press('Enter')
-
-    await expect(elModal(page)).toBeVisible()
   })
 })

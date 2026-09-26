@@ -129,3 +129,19 @@ describe('el currículum', () => {
     )
   })
 })
+
+/*
+  Bajó de `22-perfil-con-foto-y-cv.spec.ts` («un PDF no vale como foto, y lo
+  dice sin jerga»): la regla decide aquí, antes de subir nada.
+*/
+describe('un PDF no vale como foto', () => {
+  it('se rechaza antes de subirlo, diciendo qué formatos sí valen', () => {
+    expect(revisarImagen(archivoDe('curriculum.pdf', 'application/pdf', 1000), 'La foto')).toBe(
+      'La foto tiene que ser JPG, PNG o WebP.',
+    )
+    // Y la portada, que usa la misma regla, dice lo mismo con su nombre.
+    expect(revisarImagen(archivoDe('curriculum.pdf', 'application/pdf', 1000), 'La portada')).toBe(
+      'La portada tiene que ser JPG, PNG o WebP.',
+    )
+  })
+})

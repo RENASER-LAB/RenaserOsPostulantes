@@ -4,65 +4,15 @@ import { cabecera, corte, entrarAlPanel, filasDelRanking, irAVacante, pestana, V
 /**
  * Lo que YA existía antes de la rama y no puede haberse roto.
  *
- * Es la mitad que más importa del encargo: el listado, el embudo, las cinco
- * pestañas, los tres cortes con sus cifras, el detalle desplegable, y el resto
- * del panel (Simulación, Configuración, Banco de preguntas).
+ * Lo que aquí había y ya miran otros archivos no se repite: el listado con las
+ * tres sembradas y entrar a una lo hace `00-humo`; las cinco pestañas, los tres
+ * cortes con sus cifras y lo que trae cada uno lo contrasta con la API
+ * `18-ranking-contra-api`; y qué etapas exportan a Excel es una regla de
+ * `ranking.ts` que se prueba sin navegador (`seExportaAExcel`).
  */
 test.describe('Regresión · el panel del equipo', () => {
   test.beforeEach(async ({ page }) => {
     await entrarAlPanel(page)
-  })
-
-  test('el listado de vacantes trae las tres publicadas y se entra a una', async ({ page }) => {
-    await page.goto('/admin')
-    await expect(page.getByRole('heading', { level: 1, name: 'Vacantes.' })).toBeVisible()
-
-    const filas = page.locator('table tbody tr')
-    await expect(filas.first()).toBeVisible()
-    expect(await filas.count()).toBeGreaterThanOrEqual(3)
-    for (const titulo of ['Desarrollador web', 'Líder de operaciones', 'Analista de experiencia del cliente']) {
-      await expect(page.getByRole('cell', { name: titulo, exact: true }).first()).toBeVisible()
-    }
-
-    await page.getByRole('row', { name: /Analista de experiencia del cliente/ }).first()
-      .getByRole('link', { name: /Ver postulantes/ }).click()
-    await expect(page).toHaveURL(/\/admin\/vacantes\/\d+$/)
-    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
-  })
-
-  test('las cinco pestañas de etapa existen y se pueden recorrer', async ({ page }) => {
-    await irAVacante(page, VACANTES.LLENA)
-    const etapas = ['Perfil integral', 'Prueba del puesto', 'Simulación', 'Validación', 'Decisión']
-    await expect(page.getByRole('tab')).toHaveCount(5)
-
-    for (const nombre of etapas) {
-      await pestana(page, nombre).click()
-      await expect(pestana(page, nombre)).toHaveAttribute('aria-selected', 'true')
-      // La tabla del ranking sigue montada en las cinco.
-      await expect(page.locator('table').last()).toBeVisible()
-    }
-  })
-
-  test('los tres cortes y sus contadores cuadran con las filas', async ({ page }) => {
-    await irAVacante(page, VACANTES.LLENA)
-
-    /*
-      Perfil integral: 1 pendiente —el de PERFIL_POR_CONFIRMAR— y ninguno a
-      quien le toque hacer algo. Los dos cortes son disjuntos: no puede salir
-      la misma fila en los dos.
-    */
-    const esperado: [string, number][] = [
-      ['Pendiente', 1],
-      ['Le toca al candidato', 0],
-      ['Toda la tanda', 4],
-    ]
-    for (const [nombre, cuantas] of esperado) {
-      const boton = corte(page, nombre)
-      await expect(boton).toContainText(String(cuantas))
-      await boton.click()
-      await expect(boton).toHaveAttribute('aria-pressed', 'true')
-      await expect(filasDelRanking(page)).toHaveCount(cuantas)
-    }
   })
 
   test('el detalle de un candidato se despliega y se pliega', async ({ page }) => {
@@ -88,40 +38,30 @@ test.describe('Regresión · el panel del equipo', () => {
     await expect(page.getByText(/banco de preguntas/i).first()).toBeVisible()
   })
 
-  test('las tres etapas que no exportan no enseñan el botón de Excel', async ({ page }) => {
-    await irAVacante(page, VACANTES.LLENA)
-    for (const nombre of ['Simulación', 'Validación', 'Decisión']) {
-      await pestana(page, nombre).click()
-      await expect(page.getByRole('button', { name: /Descargar Excel|Nada que descargar|Preparando el Excel/ })).toHaveCount(0)
-    }
-    // Y en las dos que sí, existe.
-    for (const nombre of ['Perfil integral', 'Prueba del puesto']) {
-      await pestana(page, nombre).click()
-      await expect(page.getByRole('button', { name: /Descargar Excel|Nada que descargar/ })).toHaveCount(1)
-    }
-  })
-
-  test('cambiar de pestaña con filtros puestos los limpia, pero el corte se conserva', async ({ page }) => {
+  /*
+    Qué sobrevive al cambio de pestaña y qué no. `<Ranking key={etapa}>` se
+    remonta con cada etapa, y solo muere lo que vive dentro: el orden. La
+    búsqueda (`filtros.texto`) y el corte (`vista`) viven en el padre desde
+    #55 justo para que no se pierdan al cambiar de etapa; que los demás filtros
+    también se conservan lo prueba `33-filtros-y-seleccion-en-lote`.
+  */
+  test('cambiar de pestaña reinicia el orden, pero la búsqueda y el corte se conservan', async ({ page }) => {
     await irAVacante(page, VACANTES.LLENA)
     await corte(page, 'Toda la tanda').click()
     await page.getByRole('searchbox').fill('camila')
     await expect(filasDelRanking(page)).toHaveCount(1)
-
-    await pestana(page, 'Prueba del puesto').click()
-    // `<Ranking key={etapa}>` remonta: los filtros mueren con él.
-    await expect(page.getByRole('searchbox')).toHaveValue('')
-    // `vista` vive en el padre y NO se reinicia.
-    await expect(corte(page, 'Toda la tanda')).toHaveAttribute('aria-pressed', 'true')
-    await expect(filasDelRanking(page)).toHaveCount(4)
-  })
-
-  test('el orden puesto tampoco sobrevive al cambio de pestaña', async ({ page }) => {
-    await irAVacante(page, VACANTES.LLENA)
     await cabecera(page, 'Candidato').getByRole('button').click()
     await expect(cabecera(page, 'Candidato')).toHaveAttribute('aria-sort', 'ascending')
 
-    await pestana(page, 'Decisión').click()
-    await pestana(page, 'Perfil integral').click()
+    await pestana(page, 'Prueba del puesto').click()
+    // El orden vive dentro de `<Ranking>` y muere con el remontaje.
     await expect(cabecera(page, 'Candidato')).toHaveAttribute('aria-sort', 'none')
+    // La búsqueda y el corte viven en el padre y siguen aplicados: una sola fila.
+    await expect(page.getByRole('searchbox')).toHaveValue('camila')
+    await expect(corte(page, 'Toda la tanda')).toHaveAttribute('aria-pressed', 'true')
+    await expect(filasDelRanking(page)).toHaveCount(1)
+    // Y al vaciar la búsqueda, el corte entero de esta etapa.
+    await page.getByRole('searchbox').clear()
+    await expect(filasDelRanking(page)).toHaveCount(4)
   })
 })

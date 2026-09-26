@@ -1,5 +1,6 @@
-import { expect, test, type Page } from '@playwright/test'
+import { expect, type Page } from '@playwright/test'
 import { API, corte, entrarAlPanel, idDeVacante, nombresVisibles, pestana, tokenDelPanel, VACANTES } from './ayuda'
+import { test } from './ayuda-candidato'
 
 /**
  * El ranking, CONTRASTADO con lo que dice la API.
@@ -26,6 +27,11 @@ import { API, corte, entrarAlPanel, idDeVacante, nombresVisibles, pestana, token
  *
  * Se mira la vacante LLENA, que reparte su gente entre tres etapas y tiene una
  * postulación cerrada: es la que ejercita las dos mitades.
+ *
+ * Las pruebas no dependen unas de otras —cada una abre la vacante por su
+ * cuenta y `contexto` se llena una vez en `beforeAll`—, así que no van en
+ * serie: un fallo en una no deja sin correr a las demás. Los errores de página
+ * los vigila el `test` de `ayuda-candidato` en cada prueba.
  */
 
 /**
@@ -96,20 +102,13 @@ const contexto = {
   vacanteId: 0,
   /** La tanda entera según la API sin `?etapa=`. */
   todas: [] as Fila[],
-  erroresDePagina: [] as string[],
 }
 
 test.describe('El ranking contra la API · lo pintado es lo que el backend dijo', () => {
-  test.describe.configure({ mode: 'serial' })
-
   test.beforeAll(async () => {
     contexto.vacanteId = await idDeVacante(VACANTES.LLENA)
     const base = await rankingPorApi(contexto.vacanteId)
     contexto.todas = base.filas ?? []
-  })
-
-  test.beforeEach(async ({ page }) => {
-    page.on('pageerror', (e) => contexto.erroresDePagina.push(String(e).slice(0, 200)))
   })
 
   test('el contrato: la tanda entera, y «?etapa=» cambia la nota y NO la lista', async () => {
@@ -295,26 +294,36 @@ test.describe('El ranking contra la API · lo pintado es lo que el backend dijo'
     /*
       El porqué de cada guion. Un guion significaba cinco cosas y la más confusa
       era «el currículum está calificado y esta etapa no».
+
+      Desde #32 la celda pinta el motivo en dos palabras (`porQueNoHayNotaCorto`)
+      y la frase entera va en su `title` (`porQueNoHayNota`): `textContent` no
+      la trae. Se leen las dos y se exige que casen, no solo que haya alguna.
     */
-    const cuerpo = (await cuerpoDeLaTabla(page).textContent()) ?? ''
-    const motivos = [
-      'Su proceso está en',
-      'Terminó su proceso sin nota de esta etapa',
-      'Le toca a la persona',
-      'Ya la hizo: su nota se calcula en la ficha',
-      'pendiente de que el equipo la cierre',
-      'El equipo no la ha habilitado',
-      'Sin nota de esta etapa',
-    ].filter((m) => cuerpo.includes(m))
-    test.info().annotations.push({ type: 'motivos', description: `${motivos.length} motivo(s) distintos en pantalla` })
-    expect(motivos.length, 'ninguna fila sin nota explicaba su guion').toBeGreaterThan(0)
+    const MOTIVOS: ReadonlyArray<readonly [largo: RegExp, corto: string]> = [
+      [/^Su proceso está en /, 'en otra etapa'],
+      [/^Terminó su proceso sin nota de esta etapa$/, 'proceso cerrado'],
+      [/^Le toca a la persona/, 'no la ha hecho'],
+      [/^Ya la hizo: su nota se calcula en la ficha$/, 'sin ponderar'],
+      [/pendiente de que el equipo la cierre$/, 'sin cerrar'],
+      [/^El equipo no la ha habilitado$/, 'sin habilitar'],
+      [/^Sin nota de esta etapa$/, 'sin nota'],
+    ]
+    const guiones = await cuerpoDeLaTabla(page)
+      .locator('td span[title]')
+      .evaluateAll((els) =>
+        els.map((e) => ({ corto: (e.textContent ?? '').trim(), largo: e.getAttribute('title') ?? '' })),
+      )
+    const explicados = guiones.filter((g) => MOTIVOS.some(([largo]) => largo.test(g.largo)))
+    const distintos = new Set(explicados.map((g) => g.largo))
+    test.info().annotations.push({ type: 'motivos', description: `${distintos.size} motivo(s) distintos en pantalla` })
+    expect(explicados.length, 'ninguna fila sin nota explicaba su guion').toBeGreaterThan(0)
+    for (const g of explicados) {
+      const [, corto] = MOTIVOS.find(([largo]) => largo.test(g.largo))!
+      expect(g.corto, `«${g.largo}» debía resumirse en la celda como «${corto}»`).toBe(corto)
+    }
 
     // Que el corte sobreviva al cambio de pestaña ya lo cubre `01-regresion-panel`
-    // («cambiar de pestaña con filtros puestos los limpia, pero el corte se
-    // conserva»): no se repite aquí.
-  })
-
-  test('sin errores de página en todo el recorrido', () => {
-    expect(contexto.erroresDePagina, contexto.erroresDePagina.join(' · ')).toEqual([])
+    // («cambiar de pestaña reinicia el orden, pero la búsqueda y el corte se
+    // conservan»): no se repite aquí.
   })
 })

@@ -230,34 +230,9 @@ test.describe('QA · filtros y selección en lote, con la tanda de 32', () => {
     await expect(panel.getByLabel('Postulados desde')).toBeEditable()
   })
 
-  // Comportamiento 10: quien no tiene fecha queda fuera de un filtro de fecha, y se dice.
-  test('una fila sin fecha de postulación (nula o ausente) queda fuera de un rango que abarca todo', async ({ page }) => {
-    const sinFecha = [la(3).nombre, la(6).nombre]
-    await page.route(`**/panel/vacantes/${terreno.tanda}/ranking**`, async (ruta) => {
-      const respuesta = await ruta.fetch()
-      const cuerpo = await respuesta.json()
-      cuerpo.filas = cuerpo.filas.map((f: { candidato: string; postuladoEn?: string | null }) => {
-        if (f.candidato === sinFecha[0]) return { ...f, postuladoEn: null }
-        if (f.candidato === sinFecha[1]) {
-          const sinCampo = { ...f }
-          delete sinCampo.postuladoEn
-          return sinCampo
-        }
-        return f
-      })
-      await ruta.fulfill({ response: respuesta, json: cuerpo })
-    })
-    await abrirVacante(page)
-    await corte(page, 'Toda la tanda').click()
-    await abrirFiltros(page)
-    const panel = panelFiltros(page)
-    await panel.getByRole('radio', { name: 'Rango' }).check()
-    await panel.getByLabel('Postulados desde').fill('2000-01-01')
-    await expect(filasDelRanking(page)).toHaveCount(terreno.filas.length - 2)
-    const visibles = await nombresVisibles(page)
-    for (const nombre of sinFecha) expect(visibles).not.toContain(nombre)
-    await expect(panel.getByText('Quien no tiene fecha queda fuera.')).toBeVisible()
-  })
+  // Comportamiento 10 —quien no tiene fecha, nula o ausente, queda fuera de un
+  // filtro de fecha— es una regla de `filtrarFino` y se fija sin navegador en
+  // `ranking.test.ts` («quien no tiene fecha queda fuera en cuanto hay filtro de fecha»).
 
   // AC-20, AC-06, AC-19 y AC-15 (intermedio).
   test('seis marcadas y un filtro que esconde dos: la barra dice 4 · 2 fuera de vista, «Descartar…» nombra solo a las 4 y «Borrar filtros» no toca las marcas', async ({ page }) => {
@@ -484,20 +459,9 @@ test.describe('QA · regresiones de lo encontrado explorando', () => {
     await expect(botonFiltros(page)).toBeFocused()
   })
 
-  test('F-06 · «Borrar filtros» de la barra, con teclado: quita los filtros y el foco no cae al vacío', async ({ page }) => {
-    await abrirVacante(page)
-    await corte(page, 'Toda la tanda').click()
-    await abrirFiltros(page)
-    await panelFiltros(page).getByRole('checkbox', { name: /^Fallida/ }).check()
-    await cerrarFiltros(page)
-    const borrar = page.getByRole('button', { name: 'Borrar filtros' })
-    await borrar.focus()
-    await page.keyboard.press('Enter')
-    await expect(borrar).toHaveCount(0)
-    await expect(filasDelRanking(page)).toHaveCount(terreno.filas.length)
-    const perdido = await page.evaluate(() => !document.activeElement || document.activeElement === document.body)
-    expect(perdido, 'el foco quedó en <body>: quien va con teclado pierde su sitio').toBe(false)
-  })
+  // F-06 · «Borrar filtros» de la barra: a dónde va el foco lo fija con exactitud
+  // `08-teclado-y-consola` («la barra lo manda a «Filtros» y el pie lo conserva»);
+  // Enter sobre un botón dispara el mismo clic.
 
   test('F-06 · «Borrar filtros» de la tabla vacía, con teclado: devuelve las filas y el foco no cae al vacío', async ({ page }) => {
     await abrirVacante(page)

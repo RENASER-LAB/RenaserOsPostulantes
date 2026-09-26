@@ -499,4 +499,24 @@ describe('Al guardar', () => {
       remuneracion: { tipo: 'FIJA', min: 3500 },
     })
   })
+
+  /*
+    Bajó de `26-editar-vacante-avisos.spec.ts` («sin decir por qué cambia el
+    sueldo no se envía nada, y lo escrito se conserva»): la segunda mitad.
+  */
+  it('sin el motivo del sueldo, lo escrito en los demás campos se queda donde estaba', async () => {
+    await abrirLaEdicion()
+    fireEvent.change(screen.getByLabelText('Horario'), { target: { value: 'Híbrido, 3 días' } })
+    fireEvent.change(screen.getByLabelText(/Monto mensual/), { target: { value: '3600' } })
+    await screen.findByLabelText('Por qué cambia el sueldo')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }))
+    await screen.findByRole('alert')
+
+    expect(editarVacante).not.toHaveBeenCalled()
+    // Lo escrito sigue donde estaba: nadie vuelve a teclear tres párrafos por un campo.
+    expect((screen.getByLabelText('Horario') as HTMLInputElement).value).toBe('Híbrido, 3 días')
+    expect((screen.getByLabelText(/Monto mensual/) as HTMLInputElement).value).toBe('3600')
+    expect(screen.getByRole('dialog')).toBeTruthy()
+  })
 })

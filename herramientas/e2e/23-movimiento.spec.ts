@@ -21,6 +21,14 @@
  * esperar un evento que no va a repetirse. El observador se instala ANTES de
  * cargar y anota lo que pasa, asi que da igual cuando mire la prueba.
  *
+ * ⚠️ **Y muestrea en el instante en que la franja entra al DOM, no solo frame a
+ * frame.** Con solo `requestAnimationFrame`, bajo carga el primer frame que se
+ * pinta puede llegar con la animacion ya avanzada —en una corrida entera se
+ * vio un minimo de 0,88 al volver a la portada—: el reloj de `motion` corre
+ * aunque el navegador no pinte. La franja nace con `transform: scaleX(0)`
+ * escrito en su estilo (y en `none`, escala 1, con el movimiento reducido),
+ * asi que leerla al entrar da su punto de partida real.
+ *
  * ⚠️ **No comprueban que quede bonito.** Eso no lo sabe una prueba; para eso hay
  * que mirarlo.
  */
@@ -43,25 +51,61 @@ import { expect, test, type Page } from '@playwright/test'
  */
 const FRANJA = 'ol li div[aria-hidden="true"]'
 
-/** El observador, en el idioma del navegador. Anota la escala minima y maxima. */
+/** Lo que anota el observador por cada vez que la franja entra al DOM. */
+interface Escala {
+  min: number
+  max: number
+  visto: number
+  /** Ya pasaron los `ms` de la anotacion: se puede leer. */
+  listo: boolean
+}
+
+/**
+ * El observador, en el idioma del navegador. Cada vez que la franja entra al
+ * DOM abre una anotacion en `window.__escalas` y le sigue la escala durante
+ * `ms`: la primera muestra en el mismo instante en que aparece —un
+ * `MutationObserver`, antes del primer frame— y las siguientes, frame a frame.
+ *
+ * ⚠️ **Va con `addInitScript`, que corre una vez por documento, y las
+ * navegaciones dentro del portal no cambian de documento.** Por eso el mismo
+ * observador ve tambien la vuelta a la portada: cada aparicion de la franja es
+ * una anotacion mas, y la prueba lee la que le toca.
+ */
 const OBSERVADOR = ([selector, ms]: readonly [string, number]) => {
-  const w = window as unknown as Record<string, unknown>
-  let min = Number.POSITIVE_INFINITY
-  let max = Number.NEGATIVE_INFINITY
-  let visto = 0
-  const t0 = performance.now()
-  const mirar = () => {
-    const e = document.querySelector(selector)
-    if (e) {
-      const a = new DOMMatrixReadOnly(getComputedStyle(e).transform).a
-      if (a < min) min = a
-      if (a > max) max = a
-      visto += 1
+  const w = window as unknown as { __escalas: Escala[] }
+  const escalas: Escala[] = []
+  w.__escalas = escalas
+  let vigilada: Element | null = null
+
+  const seguir = (franja: Element) => {
+    const anotacion: Escala = {
+      min: Number.POSITIVE_INFINITY,
+      max: Number.NEGATIVE_INFINITY,
+      visto: 0,
+      listo: false,
     }
-    if (performance.now() - t0 < ms) requestAnimationFrame(mirar)
-    else w.__escala = { min, max, visto }
+    escalas.push(anotacion)
+    const t0 = performance.now()
+    const mirar = () => {
+      if (franja.isConnected) {
+        const a = new DOMMatrixReadOnly(getComputedStyle(franja).transform).a
+        if (a < anotacion.min) anotacion.min = a
+        if (a > anotacion.max) anotacion.max = a
+        anotacion.visto += 1
+      }
+      if (performance.now() - t0 < ms) requestAnimationFrame(mirar)
+      else anotacion.listo = true
+    }
+    mirar()
   }
-  requestAnimationFrame(mirar)
+
+  const buscar = () => {
+    const franja = document.querySelector(selector)
+    if (franja !== null && franja !== vigilada) seguir(franja)
+    vigilada = franja
+  }
+  new MutationObserver(buscar).observe(document, { childList: true, subtree: true })
+  buscar()
 }
 
 /** Instala el observador para la proxima carga. Hay que llamarlo antes de `goto`. */
@@ -69,18 +113,19 @@ async function observarAlCargar(pagina: Page, ms = 2000) {
   await pagina.addInitScript(OBSERVADOR, [FRANJA, ms] as const)
 }
 
-async function leerEscala(pagina: Page) {
-  await pagina.waitForFunction(() => (window as unknown as Record<string, unknown>).__escala, null, {
-    timeout: 8_000,
-  })
-  return pagina.evaluate(
-    () =>
-      (window as unknown as Record<string, unknown>).__escala as {
-        min: number
-        max: number
-        visto: number
-      },
+/** Cuantas veces ha entrado la franja al DOM hasta ahora. */
+function apariciones(pagina: Page) {
+  return pagina.evaluate(() => ((window as unknown as { __escalas?: Escala[] }).__escalas ?? []).length)
+}
+
+/** La anotacion numero `cual` (desde 0), una vez cerrada. */
+async function leerEscala(pagina: Page, cual = 0) {
+  await pagina.waitForFunction(
+    (i) => (window as unknown as { __escalas?: Escala[] }).__escalas?.[i]?.listo === true,
+    cual,
+    { timeout: 8_000 },
   )
+  return pagina.evaluate((i) => (window as unknown as { __escalas: Escala[] }).__escalas[i]!, cual)
 }
 
 /** La primera tarjeta de vacante de la portada. */
@@ -100,44 +145,55 @@ test.describe('El movimiento de la portada', () => {
   })
 
   test('C · y tambien al volver a la portada desde dentro del portal', async ({ page }) => {
+    // El mismo observador de la carga: sigue vivo en la vuelta, que no cambia
+    // de documento. Antes se instalaba con `page.evaluate` justo antes de
+    // volver y solo por frames, y bajo carga su primera muestra llegaba con la
+    // franja ya casi entera (0,88 en una corrida completa).
+    await observarAlCargar(page)
     await page.goto('/')
-    await expect(primeraVacante(page)).toBeVisible()
-    await primeraVacante(page).locator('a').first().click()
+    const tarjeta = primeraVacante(page)
+    await expect(tarjeta).toBeVisible()
+    const titulo = await tarjeta.locator('h3').innerText()
+    await tarjeta.locator('a').first().click()
     await expect(page).toHaveURL(/\/vacantes\/\d+$/)
 
-    // Aqui el observador se instala en la pagina ya cargada, para la vuelta.
-    await page.evaluate(
-      ([sel, ms]) => {
-        const w = window as unknown as Record<string, unknown>
-        let min = Number.POSITIVE_INFINITY
-        let max = Number.NEGATIVE_INFINITY
-        let visto = 0
-        const t0 = performance.now()
-        const mirar = () => {
-          const e = document.querySelector(sel as string)
-          if (e) {
-            const a = new DOMMatrixReadOnly(getComputedStyle(e).transform).a
-            if (a < min) min = a
-            if (a > max) max = a
-            visto += 1
-          }
-          if (performance.now() - t0 < (ms as number)) requestAnimationFrame(mirar)
-          else w.__escala = { min, max, visto }
-        }
-        requestAnimationFrame(mirar)
-      },
-      [FRANJA, 2000] as const,
-    )
+    /*
+     * ⚠️ **La URL cambia antes de que la portada se vaya, asi que hay que
+     * esperar a la ficha pintada.** React Router escribe la direccion con
+     * `pushState` en el mismo clic, y React monta la ficha un poco despues.
+     * Esta prueba volvia atras en cuanto cambiaba la URL: con la maquina
+     * cargada —la corrida entera, o la CPU frenada x4 por CDP, que lo reproduce
+     * siempre— el `popstate` llegaba antes de que React desmontara la portada,
+     * las dos navegaciones se resolvian en una y la portada no llegaba a irse.
+     * Sin salida no hay vuelta que animar: la franja era la misma, el
+     * observador no abria anotacion nueva y `leerEscala` agotaba sus 8 s.
+     *
+     * El titular de la tarjeta en el `h1` dice que la ficha se pinto, y sin
+     * franjas en el documento, que la portada salio de verdad.
+     */
+    await expect(page.getByRole('heading', { level: 1, name: titulo })).toBeVisible()
+    await expect(page.locator(FRANJA), 'la portada no salio al abrir la ficha').toHaveCount(0)
+
+    // Lo anotado hasta aqui es de la primera carga; la vuelta abre la siguiente.
+    const antes = await apariciones(page)
     await page.goBack()
+    await expect(page).toHaveURL(/\/$/)
+
+    // La portada montada otra vez: su recorrido vuelve al documento y la
+    // franja nueva abre su anotacion.
+    await expect(page.locator(FRANJA).first()).toBeAttached()
+    await expect
+      .poll(() => apariciones(page), { message: 'la franja no volvio a entrar al volver a la portada' })
+      .toBeGreaterThan(antes)
 
     /*
-     * El umbral es mas flojo que en la carga inicial —0,6 y no 0,2— porque aqui
-     * el observador se instala DESPUES de que la pagina exista: entre que
-     * arranca y toma su primera muestra caben un par de frames, y la franja ya
-     * ha crecido. Lo que se comprueba es que empezo claramente encogida y
-     * termino entera, no el valor exacto del primer frame.
+     * El umbral se deja mas flojo que en la carga inicial —0,6 y no 0,2—: en la
+     * vuelta la pantalla vieja se funde primero (`AnimatePresence mode="wait"`)
+     * y hay mas trabajo entre que la franja entra y su primer frame. Lo que se
+     * comprueba es que empezo claramente encogida y termino entera, no el
+     * valor exacto del primer frame.
      */
-    const { min, max, visto } = await leerEscala(page)
+    const { min, max, visto } = await leerEscala(page, antes)
     expect(visto, 'no se llego a ver la franja al volver').toBeGreaterThan(0)
     expect(min, 'la franja no se dibujo al volver').toBeLessThan(0.6)
     expect(max, 'la franja no llego a su ancho completo').toBeCloseTo(1, 1)

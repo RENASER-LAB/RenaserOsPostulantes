@@ -2,10 +2,35 @@ import { expect, test } from '@playwright/test'
 import { abrirFiltros, cabecera, corte, entrarAlPanel, irAVacante, nombresVisibles, VACANTES } from './ayuda'
 import { sql, literal } from './base-de-datos'
 
+/**
+ * La ciudad que falta, sobre «Analista de experiencia del cliente».
+ *
+ * ⚠️ **El escenario son las tres personas que siembra el sembrador, no la vacante
+ * entera.** Esa vacante la usan también las pruebas que postulan de verdad desde
+ * el portal —`22-perfil-con-foto-y-cv` manda ahí su «LA TRAMPA»—, y esas
+ * postulaciones no se pueden borrar después: nacen con su transición, que es
+ * inmutable (ver `borrarCuentasDePrueba`). Cada corrida entera deja una fila más
+ * de «Prueba De Archivos», con Lima. Afirmar la lista exacta de la vacante hacía
+ * que esta prueba pasara solo la primera vez sobre una base limpia.
+ *
+ * Así que se afirma el orden de las tres personas sembradas entre sí, que la fila
+ * sin ciudad es la ÚLTIMA de toda la tabla —con o sin filas ajenas delante—, y el
+ * desplegable contra las ciudades que de verdad hay en la vacante, leídas de la
+ * base. Las filas ajenas se toleran solo si traen ciudad: si alguna no la trae,
+ * «una sola fila sin ciudad» ya no sería cierto y la prueba lo dice por su nombre.
+ */
+
 /** Se guardan los datos existentes antes de escribir, siempre dentro de la vacante esperada. */
 type Persona = { id: number; ciudad: string | null; nombre: string; apellidos: string }
 let originales: Persona[] = []
 let mateo: number
+
+const FERNANDA = 'Fernanda Quispe Mamani' // Cusco
+const RENATA = 'Renata Espinoza León' // Puno
+const MATEO = 'Mateo Ibáñez Flores' // Callao; la prueba se la quita
+const ESCENARIO: readonly string[] = [FERNANDA, RENATA, MATEO]
+const nombreDe = (p: Persona) => `${p.nombre} ${p.apellidos}`
+const delEscenario = (nombres: string[]) => nombres.filter(n => ESCENARIO.includes(n))
 
 const leerPersonas = () => {
   const vacantes: { id: number }[] = JSON.parse(sql(`select coalesce(json_agg(v), '[]') from
@@ -15,10 +40,13 @@ const leerPersonas = () => {
     select distinct pe.id, pe.ciudad_ubigeo as ciudad, pe.nombre, pe.apellidos
     from postulacion p join usuario u on u.id = p.usuario_id join persona pe on pe.id = u.persona_id
     where p.vacante_id = ${vacantes[0]!.id}) p;`))
-  const candidatos = filas.filter(p => p.nombre === 'Mateo' && p.apellidos === 'Ibáñez Flores')
-  if (!filas.length || candidatos.length !== 1) throw new Error('Falta Mateo en la vacante esperada o es ambiguo; no se modificó nada.')
+  for (const nombre of ESCENARIO) {
+    const suyas = filas.filter(p => nombreDe(p) === nombre)
+    if (suyas.length !== 1) throw new Error(`Falta ${nombre} en la vacante esperada o es ambiguo; no se modificó nada.`)
+    if (nombre !== MATEO && suyas[0]!.ciudad === null) throw new Error(`${nombre} llegó sin ciudad: el sembrador se la pone; no se modificó nada.`)
+  }
   originales = filas
-  mateo = candidatos[0]!.id
+  mateo = filas.find(p => nombreDe(p) === MATEO)!.id
 }
 const restaurar = () => {
   if (!originales.length) return
@@ -39,6 +67,11 @@ test.describe('Nuevo · cuando la ciudad falta', () => {
   })
 
   test('MEZCLA: una sola fila sin ciudad se va al final, suba o baje el orden', async ({ page }) => {
+    // Una fila ajena sin ciudad haría dos sin dato, y el caso dejaría de ser «una sola».
+    expect(
+      originales.filter(p => p.id !== mateo && p.ciudad === null).map(nombreDe),
+      'postulaciones sin ciudad en la vacante, aparte de la de Mateo',
+    ).toEqual([])
     restaurar()
     sinCiudad([mateo])
 
@@ -52,23 +85,23 @@ test.describe('Nuevo · cuando la ciudad falta', () => {
     const th = cabecera(page, 'Ciudad')
     await th.getByRole('button').click()
     await expect(th).toHaveAttribute('aria-sort', 'ascending')
-    expect(await nombresVisibles(page)).toEqual([
-      'Fernanda Quispe Mamani', // Lima
-      'Renata Espinoza León', // Puno
-      'Mateo Ibáñez Flores', // sin ciudad -> al final
-    ])
+    const subiendo = await nombresVisibles(page)
+    expect(delEscenario(subiendo)).toEqual([FERNANDA, RENATA, MATEO])
+    // Sin ciudad -> al final de TODA la tabla, también detrás de las filas ajenas.
+    expect(subiendo.at(-1)).toBe(MATEO)
 
     await th.getByRole('button').click()
     await expect(th).toHaveAttribute('aria-sort', 'descending')
-    expect(await nombresVisibles(page)).toEqual([
-      'Renata Espinoza León',
-      'Fernanda Quispe Mamani',
-      'Mateo Ibáñez Flores', // sin ciudad -> SIGUE al final
-    ])
+    const bajando = await nombresVisibles(page)
+    expect(delEscenario(bajando)).toEqual([RENATA, FERNANDA, MATEO])
+    // Sin ciudad -> SIGUE al final: el orden inverso no la sube arriba.
+    expect(bajando.at(-1)).toBe(MATEO)
 
-    // Y el desplegable de ciudad solo ofrece las dos que de verdad hay.
+    // Y el desplegable de ciudad solo ofrece las que de verdad hay: las de quien la
+    // conserva, sin la que se le quitó a Mateo. Sobre la siembra limpia son dos.
+    const ciudades = new Set(originales.filter(p => p.id !== mateo).map(p => p.ciudad))
     await abrirFiltros(page)
-    await expect(page.getByRole('group', { name: 'Ciudad' }).getByRole('button')).toHaveCount(2)
+    await expect(page.getByRole('group', { name: 'Ciudad' }).getByRole('button')).toHaveCount(ciudades.size)
   })
 
   test('TODA VACÍA: la columna Ciudad desaparece y se dice por qué', async ({ page }) => {
