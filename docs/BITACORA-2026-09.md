@@ -16,6 +16,36 @@ no se vuelve a subir el currículum. Lo del 07/09 se documentó en
 
 ---
 
+## El Excel de la prueba usa la prueba vigente, y su cabecera se lee entera (26/09/2026)
+
+El Excel de «Prueba del puesto» de la vacante 13 traía, detrás de los 7 criterios de la prueba
+de Administrador, 4 columnas de la prueba demo que nadie tenía puntuadas: la vacante cambió de
+prueba cuando ya había gente dentro, y la hoja juntaba las rúbricas de todas las filas. El
+cambio es solo del backend; en este repositorio no se tocó ninguna pantalla.
+
+- **La hoja saca solo los criterios de la prueba que la vacante tiene puesta hoy**, aunque
+  nadie tenga nota o el filtro deje fuera a todos los que la tienen. Las notas de quien rindió la
+  demo siguen en «Justificación detallada».
+- **En los dos Excel del ranking la fila de cabeceras se abre con la altura justa** para leer
+  los rótulos enteros, hasta 8 líneas. Antes se abría con una y había que agrandarla a mano.
+- **La tabla del panel no cambió, a propósito** (decidido el 25/09/2026): en la 13 sigue
+  enseñando las 4 columnas de la demo al marcar «Ver los criterios en la tabla», así que
+  pantalla y hoja ya no coinciden. Queda en [PENDIENTES.md](PENDIENTES.md).
+
+QA comprobó que en Excel el rótulo más largo de la 13 cabe justo (5 de 5 líneas, simulado) y en
+LibreOffice se ve entero. De paso vio que la casilla «Ponderado» del menú «Columnas» se monta
+sobre otras; viene de antes y también queda en PENDIENTES.
+
+### Cómo se comprueba
+
+`npx playwright test herramientas/e2e/40-rubrica-vigente-en-el-excel.spec.ts`: 7 pruebas que
+bajan la hoja desde el panel y por la API y la leen de verdad. ⚠️ **Escriben**: siembran por SQL
+una vacante con dos pruebas —la API ya no deja fabricar esa mezcla— con la marca
+`QA-RUBRICA-180F`, y la retiran al terminar. Necesitan las variables de
+[TRABAJAR-EN-LOCAL.md](TRABAJAR-EN-LOCAL.md). La ayuda vive en `ayuda-rubrica-vigente.ts`.
+
+---
+
 ## La suite e2e se recorta, prueba a prueba (25–26/09/2026)
 
 La suite de `herramientas/e2e/` tardaba unos 12 minutos en sus 329 pruebas y siempre salía con

@@ -37,7 +37,7 @@ Las secciones llevan título y fecha; busca por el título.
 |---|---|---|
 | «Mi perfil», la cronología, el medidor, la foto y la portada | [09](BITACORA-2026-09.md) | 06/09 y 05/09 |
 | La ficha del candidato: qué marcó la IA, y lo que entregó en la prueba | [09](BITACORA-2026-09.md) | 04/09, 02/09 |
-| El ranking: ordenar, filtrar, descargar el Excel, los cortes, qué dice una nota que falta | [09](BITACORA-2026-09.md) · [08](BITACORA-2026-08.md) | 18/09 y 01/09 · 28/08 y 27/08 |
+| El ranking: ordenar, filtrar, descargar el Excel, los cortes, qué dice una nota que falta | [09](BITACORA-2026-09.md) · [08](BITACORA-2026-08.md) | 26/09, 18/09 y 01/09 · 28/08 y 27/08 |
 | Las pruebas del puesto: componer, versionar, calificar y ponderar en lote | [08](BITACORA-2026-08.md) | 31/08, 30/08, 28/08 |
 | El banco de preguntas: su ciclo de vida y de dónde salen los minutos | [08](BITACORA-2026-08.md) | 28/08 noche, 27/08 noche |
 | Las sesiones de simulación, sus inscritos y los permisos por rol | [08](BITACORA-2026-08.md) | 27/08 |

@@ -136,7 +136,11 @@ mover postulaciones no sale— y «Soltar selección». Es `position: sticky` y 
 tapa la última fila ni el pie. El resultado se queda en ella hasta cerrarlo con «×».
 
 **El Excel** sigue bajando exactamente las filas que se ven, en su orden, filtros nuevos
-incluidos.
+incluidos. ⚠️ **En «Prueba del puesto» sus columnas de criterio no siempre son las de la tabla**
+(26/09/2026): la hoja saca las de la prueba que la vacante tiene puesta hoy, y la tabla, al
+marcar «Ver los criterios en la tabla», junta las de todas sus filas. En una vacante que cambió
+de prueba con gente dentro —la 13— la tabla enseña además las de la prueba anterior y la hoja
+no. Lo decide el backend; el panel no cambió. Ver [PENDIENTES.md](PENDIENTES.md).
 
 **Foco y teclado.** Esc, «Listo» y un clic fuera sobre algo que no es un control devuelven el
 foco a «Filtros». Un clic fuera sobre un control —una casilla, un botón— hace lo suyo y el foco
