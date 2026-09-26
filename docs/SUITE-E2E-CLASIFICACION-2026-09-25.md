@@ -445,6 +445,15 @@ En AC-09 la búsqueda no da resultados y el fallo no podía verse, pero el hueco
 y `39` se revisaron y no se tocaron: sus lecturas van detrás de un estado pintado, sea la cuenta,
 la casilla marcada o el desplegable habilitado.
 
+### 40-rubrica-vigente-en-el-excel (7, llegó el 26/09/2026)
+
+Fuera de la clasificación: la añadió QA con «El Excel de la prueba del puesto usa la prueba
+vigente», después de este recorte. Con ella la suite pasa a **309 pruebas en 47 archivos**, 301
+en la corrida automática. No va en `serial` ni le pide nada a la IA. ⚠️ **Escribe**: siembra por
+SQL, con la marca `QA-RUBRICA-180F`, una vacante que cambió de prueba con gente dentro, y la
+retira al terminar (su ayuda es `ayuda-rubrica-vigente.ts`). Qué comprueba, en la
+[bitácora](BITACORA-2026-09.md) del 26/09.
+
 ## Las cuentas de lo que bajó a unitario (AC-02 y AC-08)
 
 Bajaron 27 pruebas. Se añadieron 28 unitarias: 25 en
@@ -750,8 +759,8 @@ el contenedor etiquetado y `npx playwright test` (headless, un worker). Los dos 
 siguen: `escritorio` corre todo menos `*movil.spec.ts`, y `movil` solo esos.
 
 ```bash
-npx playwright test                              # las 302: 294 corren y las 8 de IA real se saltan
-npx playwright test --project=escritorio         # 281, sin las 21 de móvil
+npx playwright test                              # las 309 (302 + las 7 del 40): 301 corren y las 8 de IA real se saltan
+npx playwright test --project=escritorio         # 288, sin las 21 de móvil
 E2E_IA_REAL=1 npx playwright test 16- 17-        # las 8 de IA, a mano, con los pasos de 16 y 17 que las preparan (19)
 npx vite-node herramientas/e2e/sembrar-escenario-desarrollador-web.ts \
   && E2E_ESCENARIO=base npx playwright test 03-orden 04-filtros 05-excel 07-movil 08-teclado   # repetir la medición de AC-10; deja la base escrita
