@@ -840,8 +840,10 @@
  * de al lado se resienta, y el copyright baja a su propia franja — que es donde
  * se busca.
  *
- * La marca ocupa su propia columna y es mas ancha que las de enlaces: lleva
- * prosa, y una columna de enlaces con un parrafo dentro se lee torcida.
+ * La marca ocupa su propia columna, mas ancha que las de enlaces, y es la que
+ * empuja los enlaces a la derecha. Debajo llevaba una frase —«El portal donde
+ * Renaser abre sus convocatorias…»— que se quito por peticion el 26/09/2026:
+ * repetia lo que ya dice la portada justo encima.
  */
 .pieDentro {
   max-width: var(--ancho);
@@ -866,14 +868,6 @@
   align-self: flex-start;
   color: var(--tinta);
   text-decoration: none;
-}
-
-.pieQueEs {
-  margin: 0;
-  max-width: 34ch;
-  font-size: var(--t-menor);
-  line-height: 1.6;
-  color: var(--tinta3);
 }
 
 .pieColumnas {

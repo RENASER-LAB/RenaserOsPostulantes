@@ -417,10 +417,6 @@ function PieEnColumnas() {
             <Link className={estilos.marcaDelPie} to={rutas.inicio()} aria-label="EX, inicio">
               <Marca tamano={20} />
             </Link>
-            <p className={estilos.pieQueEs}>
-              El portal donde Renaser abre sus convocatorias. Cinco etapas para conocer cómo
-              trabajas, y una persona decidiendo al final.
-            </p>
           </div>
 
           <nav className={estilos.pieColumnas} aria-label="Enlaces del pie">
