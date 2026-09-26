@@ -1,3 +1,15 @@
 {
-  "buildPath": "code"
+  "buildPath": "code",
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "geist",
+        "createdAt": "2026-09-25T20:27:33.187Z",
+        "reason": "Decisión del cliente el 25/09/2026: igualar la tipografía de su referencia (saasly.demos.tailgrids.com). Ver DESIGN.md, Typography."
+      }
+    ]
+  }
 }

@@ -606,8 +606,8 @@ respuesta antes que el cuerpo.
 **Modo claro, y ya no hay nada que limpiar.** ~~`src/app/Tema.tsx`~~, ~~`ProveedorTema`~~, el
 bloque `html[data-theme="dark"]` y ~~`variables.css`~~ **se borraron**; `index.html` abre en
 claro. El champagne `#816220` que aquí se citaba tampoco existe: el mundo visual se sustituyó
-dos veces desde entonces y hoy es «El escaparate» —fondo pastel cálido, acción negra, coral para «te
-toca a ti»—. Ver [EL-MUNDO-VISUAL.md](EL-MUNDO-VISUAL.md).
+tres veces desde entonces y hoy es «El cielo despejado» —gris frío, superficies blancas y un solo
+acento índigo para la acción y para «te toca a ti»—. Ver [EL-MUNDO-VISUAL.md](EL-MUNDO-VISUAL.md).
 
 ⚠️ **Lo que sigue vigente de este documento es el contrato de datos**: los dieciocho estados,
 qué ve el candidato en cada uno y de quién se espera algo. Eso sale del backend y no ha

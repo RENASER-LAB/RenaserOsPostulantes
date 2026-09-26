@@ -1,23 +1,25 @@
 ---
 name: EX · Portal del candidato
-description: Un escaparate en un cuarto de luz cálida; la acción es negra y el único color aparece una sola vez.
+description: Un cielo despejado — gris frío, superficies blancas y un solo acento índigo — para un proceso de semanas que tiene que leerse sin dudas.
 colors:
-  cielo: "#fbf1e9"
+  cielo: "#f9fafb"
+  cielo-hundido: "#f3f4f6"
   nube: "#ffffff"
-  nube-hundida: "#f4f4f4"
-  nube-honda: "#e6e6e6"
-  tinta: "#333333"
-  tinta2: "#5b5b5b"
-  tinta3: "#6b6b6b"
+  nube-hundida: "#f3f4f6"
+  nube-honda: "#e5e7eb"
+  tinta: "#101828"
+  tinta2: "#364153"
+  tinta3: "#6a7282"
   tinta-invertida: "#ffffff"
-  tinta-pulsado: "#0a0a0a"
-  regla: "#e6e6e6"
-  regla2: "#cbcbcb"
-  borde-control: "#8a8a8a"
-  activo: "#0a0a0a"
-  activo-pulsado: "#404040"
-  activo-bruma: "rgba(255, 136, 150, 0.2)"
-  activo-regla: "#ff7c61"
+  regla: "#e5e7eb"
+  regla2: "#d1d5dc"
+  borde-control: "#6a7282"
+  activo: "#615fff"
+  activo-pulsado: "#4f46e5"
+  activo-regla: "#615fff"
+  activo-bruma: "rgb(97 95 255 / 0.2)"
+  accion-fuerte: "#030712"
+  accion-fuerte-pulsado: "#1e2939"
   bien: "#0b7a63"
   bien-bruma: "#e6f5f0"
   duda: "#8f5a0a"
@@ -30,76 +32,81 @@ colors:
   mal-regla: "#f3c3cc"
 typography:
   display:
-    fontFamily: "Figtree, system-ui, sans-serif"
+    fontFamily: "Geist, system-ui, sans-serif"
     fontSize: "clamp(36px, 5.2vw, 60px)"
     fontWeight: 600
-    lineHeight: 1.13
-    letterSpacing: "-0.03em"
+    lineHeight: 1
+    letterSpacing: "normal"
   cifra:
-    fontFamily: "Figtree, system-ui, sans-serif"
+    fontFamily: "Geist, system-ui, sans-serif"
     fontSize: "clamp(28px, 5vw, 34px)"
     fontWeight: 600
     lineHeight: 1.1
     letterSpacing: "-0.02em"
   headline:
-    fontFamily: "Figtree, system-ui, sans-serif"
+    fontFamily: "Geist, system-ui, sans-serif"
     fontSize: "clamp(24px, 2.4vw, 30px)"
-    fontWeight: 700
+    fontWeight: 600
     lineHeight: 1.2
-    letterSpacing: "-0.03em"
+    letterSpacing: "-0.02em"
+  navegacion:
+    fontFamily: "Geist, system-ui, sans-serif"
+    fontSize: "17px"
+    fontWeight: 400
+    lineHeight: 1.5
+    letterSpacing: "normal"
   title:
-    fontFamily: "Figtree, system-ui, sans-serif"
+    fontFamily: "Geist, system-ui, sans-serif"
     fontSize: "20px"
     fontWeight: 600
     lineHeight: 1.25
-    letterSpacing: "-0.02em"
+    letterSpacing: "-0.015em"
   entradilla:
-    fontFamily: "Figtree, system-ui, sans-serif"
+    fontFamily: "Geist, system-ui, sans-serif"
     fontSize: "18px"
     fontWeight: 600
     lineHeight: 1.5
-    letterSpacing: "-0.015em"
+    letterSpacing: "-0.014em"
   body:
-    fontFamily: "Figtree, system-ui, sans-serif"
+    fontFamily: "Geist, system-ui, sans-serif"
     fontSize: "16px"
     fontWeight: 400
     lineHeight: 1.5
     letterSpacing: "normal"
   prosa:
-    fontFamily: "Figtree, system-ui, sans-serif"
+    fontFamily: "Geist, system-ui, sans-serif"
     fontSize: "15px"
     fontWeight: 400
     lineHeight: 1.55
     letterSpacing: "normal"
   apoyo:
-    fontFamily: "Figtree, system-ui, sans-serif"
+    fontFamily: "Geist, system-ui, sans-serif"
     fontSize: "14px"
-    fontWeight: 500
-    lineHeight: 1.5
+    fontWeight: 400
+    lineHeight: 1.55
     letterSpacing: "normal"
   menor:
-    fontFamily: "Figtree, system-ui, sans-serif"
+    fontFamily: "Geist, system-ui, sans-serif"
     fontSize: "13px"
     fontWeight: 400
-    lineHeight: 1.45
+    lineHeight: 1.5
     letterSpacing: "normal"
   label:
-    fontFamily: "Figtree, system-ui, sans-serif"
+    fontFamily: "Geist, system-ui, sans-serif"
     fontSize: "12px"
     fontWeight: 600
     lineHeight: 1.4
-    letterSpacing: "0.04em"
+    letterSpacing: "normal"
 rounded:
-  superficie: "12px"
-  menor: "8px"
-  control: "4px"
   marca: "4px"
-  barra: "999px"
+  control: "8px"
+  menor: "8px"
+  superficie: "12px"
+  ventana: "14px"
+  pildora: "18px"
   escaparate: "20px"
-measure:
-  ancho: "68rem"
-  medida: "50ch"
-  medida-corta: "44ch"
+  cristal: "26px"
+  barra: "999px"
 spacing:
   e1: "4px"
   e2: "8px"
@@ -109,16 +116,10 @@ spacing:
   e6: "32px"
   e7: "48px"
   e8: "72px"
-shadows:
-  nube: "0 1px 2px rgba(10,10,10,.05), 0 8px 24px rgba(10,10,10,.06)"
-  aviso: "0 12px 24px rgba(10,10,10,.10), 0 32px 64px rgba(10,10,10,.14)"
-  control: "0 3px 7px rgba(130,130,130,.15), 0 12px 12px rgba(130,130,130,.13), 0 27px 16px rgba(130,130,130,.08), 0 48px 19px rgba(130,130,130,.02)"
-  control-alta: "0 10px 15px -3px rgba(10,10,10,.1), 0 4px 6px -4px rgba(10,10,10,.1)"
 components:
   button-accion:
     backgroundColor: "{colors.activo}"
     textColor: "{colors.tinta-invertida}"
-    borderColor: "{colors.activo}"
     rounded: "{rounded.control}"
     padding: "12px 20px"
     height: "44px"
@@ -126,7 +127,6 @@ components:
   button-accion-hover:
     backgroundColor: "{colors.activo-pulsado}"
     textColor: "{colors.tinta-invertida}"
-    shadow: "{shadows.control-alta}"
   button-accion-disabled:
     backgroundColor: "{colors.nube-honda}"
     textColor: "{colors.tinta3}"
@@ -140,18 +140,26 @@ components:
   button-secundario:
     backgroundColor: "{colors.nube}"
     textColor: "{colors.tinta}"
-    shadow: "{shadows.control}"
     rounded: "{rounded.control}"
     padding: "12px 20px"
     height: "44px"
     typography: "{typography.apoyo}"
+  button-cabecera:
+    backgroundColor: "{colors.accion-fuerte}"
+    textColor: "{colors.tinta-invertida}"
+    rounded: "{rounded.control}"
+    padding: "12px 16px"
+    height: "44px"
+    typography: "{typography.prosa}"
   button-peligroso:
     backgroundColor: "{colors.mal}"
     textColor: "{colors.tinta-invertida}"
-    borderColor: "{colors.mal}"
     rounded: "{rounded.control}"
     padding: "0 32px"
     height: "48px"
+  button-peligroso-hover:
+    backgroundColor: "{colors.mal-pulsado}"
+    textColor: "{colors.tinta-invertida}"
   input:
     backgroundColor: "{colors.nube}"
     textColor: "{colors.tinta}"
@@ -177,959 +185,499 @@ components:
   panel-en-duda:
     backgroundColor: "{colors.duda-bruma}"
     textColor: "{colors.duda-tinta}"
-    borderColor: "{colors.duda}"
     rounded: "{rounded.superficie}"
     padding: "16px"
-  etiqueta-te-toca:
-    backgroundColor: "{colors.activo-bruma}"
-    textColor: "{colors.tinta-pulsado}"
-    rounded: "{rounded.marca}"
-    padding: "4px 10px"
-    typography: "{typography.label}"
+  nav-enlace:
+    textColor: "{colors.tinta}"
+    padding: "0 16px"
+    height: "44px"
+    typography: "{typography.navegacion}"
+  nav-enlace-activo:
+    textColor: "{colors.activo-regla}"
 ---
 
 # Design System: EX · Portal del candidato
 
-> **Estado de la migración (10/09/2026).** Los tokens de este documento son la verdad
-> construida: viven en [`src/estilos/mundo.css`](src/estilos/mundo.css) y los consumen las 17
-> pantallas, igual que el kit de [`piezas.module.css`](src/estilos/piezas.module.css) y el
-> esqueleto de [`pagina.module.css`](src/estilos/pagina.module.css). **En el código del
-> candidato ya no queda ningún color del mundo anterior escrito a mano**, y el `<Canto>` está
-> borrado.
+> **Este documento describe el mundo que hay en el código desde el 25/09/2026.** Sustituye
+> entero a «El escaparate» —crema `#FBF1E9`, acción negra, un solo coral, Figtree—, que vivió
+> del 10 al 25/09 y cuya historia está en [BITACORA-2026-09](docs/BITACORA-2026-09.md), no
+> aquí. **Los valores normativos son los de la cabecera de este archivo y los de
+> [`src/estilos/mundo.css`](src/estilos/mundo.css)**, que dicen lo mismo; si alguna vez no
+> coinciden, manda `mundo.css` y este documento está desactualizado.
 >
-> **La migración terminó el 10/09/2026: las diecisiete pantallas del candidato están
-> compuestas.** `/admin` queda fuera por decisión de alcance y conserva su composición
-> anterior — **salvo sus tres puertas, que entraron el 25/09/2026**: ver «Las puertas del
-> panel» más abajo.
->
-> **El 23/09/2026 entraron dos más y son dieciocho.** `/clave` dejó de ser un cartel que
-> explicaba y pasó a pedir el enlace de verdad, y `/restablecer` es nueva. Las dos se apoyan
-> en `ui/recuperacion`, que el portal **comparte con el panel**: por eso su formulario recibe
-> la superficie desde fuera —`claseFormulario`— en vez de traerla puesta. Ver «La contraseña
-> olvidada» más abajo.
->
-> **El detector encuentra dos cosas en el código del candidato, y las dos son deliberadas:**
-> el `#ff5d6e` de `--canto` en `mundo.css` —el token vive solo para el panel sin migrar— y el
-> degradado de la pieza coral de la portada, que es el componente firma y no se tokeniza hasta
-> que un segundo sitio lo pida. Los otros ocho hallazgos están todos en `src/panel/` y son el
-> mundo anterior intacto: la pizarra `rgb(35 43 54)` y el violeta `rgb(86 56 214)`.
+> Lo que se toca al componer una pantalla vive en tres sitios, y ninguno se escribe a mano en
+> la hoja de la pantalla: los tokens en `mundo.css`, los botones y paneles en
+> [`piezas.module.css`](src/estilos/piezas.module.css), y el carril y los bloques en
+> [`pagina.module.css`](src/estilos/pagina.module.css).
 
 ## Overview
 
-**Creative North Star: «El escaparate»**
+**Creative North Star: "El cielo despejado"**
 
-Un cuarto de luz cálida con una sola pieza iluminada. El fondo no es blanco: es un pastel
-anaranjado que hace que las superficies blancas de encima se lean como objetos puestos sobre
-una mesa, no como más página. En medio de ese cuarto hay una vitrina —una tarjeta blanca de
-borde grueso— y dentro está el producto: el recorrido del candidato, sus cinco etapas, lo
-que le toca ahora. No hay una metáfora que explicar antes de entender la pantalla; hay una
-cosa mirándote de frente.
+Quien postula aquí entra en un proceso de semanas: postula, rinde una evaluación, una prueba
+con reloj, una sesión con el equipo, un periodo de trabajo, y espera. La mayor parte de ese
+tiempo no tiene nada que hacer. El portal es el sitio al que vuelve a mirar el cielo: tiene
+que estar despejado. Fondo gris muy claro y frío, superficies blancas que se apoyan en él por
+tono, tinta casi negra con un matiz azul, y **un solo color con intención —el índigo— que
+aparece donde hay que pulsar, donde estás o donde te toca**. Nada más compite.
 
-De ahí sale la disciplina entera. **La acción es negra**, no de color, porque el negro pleno
-sobre el pastel del fondo es el contraste más alto disponible y no compite con nada. **El color
-aparece una sola vez**: el resplandor coral detrás del escaparate, y la bruma rosa que marca
-lo que reclama tu turno. Y las superficies no flotan: se separan del fondo porque están un
-punto más claras, no porque tengan sombra.
+La densidad es de producto, no de revista: carriles de 68rem, prosa cortada a unos 65
+caracteres, controles de 44 px como mínimo. La calma no viene de quitar información —el
+producto se debe a decir con honestidad en qué punto está cada candidatura— sino de que cada
+cosa tenga un solo sitio y un solo peso. La portada es la única pantalla que se permite
+atmósfera: un cielo azul con nubes detrás del titular y una ventana de cristal que enseña el
+recorrido. Dentro del portal, el cielo se queda en su gris y el trabajo es de la tipografía.
 
-Se reemplazó a «El canto» —la nube difractando luz, con su espectro y su violeta— el
-10/09/2026, después de once direcciones exploradas. El motivo no fue el concepto sino su
-rendición: el fondo y las superficies quedaban a un 2 % de diferencia, el espectro salía
-pastel, y el portal entero se leía apagado. El tema oscuro no existe y no va a existir: es
-petición del cliente.
+El mundo sale de una referencia que trajo el cliente —la plantilla SaaS
+`saasly.demos.tailgrids.com`— medida en su propia página, no copiada a ojo: la escala gris de
+Tailwind v4, el índigo `#615FFF`, Geist, el radio de 8 px y la cabecera en píldora blanca. **No
+se copió todo**: su cielo es una foto de una plantilla comercial y aquí es una reconstrucción
+propia —degradados y nubes generadas con ruido fractal—; y donde la referencia no llega a los
+contrastes de WCAG, este sistema no la sigue (ver Colors y Components).
 
 **Key Characteristics:**
 
-- La acción es negra; el color no es nunca una acción.
-- Un solo color en toda la pantalla, y significa «te toca a ti».
-- El fondo es un pastel cálido, no blanco: las superficies blancas son objetos encima.
-- Los controles tienen esquina corta (4 px), no son píldoras.
-- El estado se lee en la forma antes que en el color.
-- Solo tema claro.
+- Gris frío de página y superficies blancas encima: la profundidad es tono, no sombra.
+- Un único acento, índigo, para acción, ubicación y turno.
+- El estado se dice en la **forma** —franja maciza, filete, borde de 2 px— y el color lo
+  acompaña.
+- Geist en todo, servida por el propio sitio; titulares de peso 600 sin apretar.
+- Esquina de 8 px en los controles y 12 en las superficies; ninguna píldora en un botón.
+- Movimiento corto y con propósito, apagado dentro de la prueba cronometrada.
 
 ## Colors
 
-Un pastel cálido de fondo, blancos de superficie, tres tintas neutras y un solo coral. La paleta se
-divide en dos: los neutros hacen todo el trabajo de lectura, y el color solo marca turno.
+Una escala gris fría con matiz azul, blanco puro para las superficies y un índigo eléctrico
+como única voz; verde, ámbar y rojo existen, pero significan estados del proceso y nada más.
 
 ### Primary
 
-- **Tinta plena** (`#0a0a0a`): la acción. Todo botón que empieza algo va relleno de este
-  negro con texto blanco encima —19,8:1— y esquina de 4 px. **No es un color de marca**: es
-  el contraste máximo puesto donde hay que pulsar.
-- **Tinta plena pulsada** (`#404040`): el mismo al pasar por encima o al pulsar.
-- **Coral** (`#ff7c61`): el borde de 2 px del panel que reclama al candidato, y lo único que
-  todavía significa «te toca a ti» en color. **Nunca como texto sobre claro**: da 2,3:1.
-- **Bruma rosa** (`rgba(255, 136, 150, 0.2)`): el relleno de la etiqueta que dice que algo
-  es tuyo, y el anillo que se abre alrededor de un control activo.
+- **Índigo de acción** (`activo`): lo que se pulsa —el botón principal de cada pantalla—, la
+  franja viva del recorrido, el anillo de foco de todo el portal. Blanco encima da **4,57:1**:
+  pasa el 4,5 de WCAG por poco, y por eso **no se aclara**.
+- **Índigo de acción, pulsado** (`activo-pulsado`): el mismo botón bajo el ratón. Se oscurece
+  en vez de aclararse, para que el texto blanco gane contraste al interactuar, no lo pierda.
+- **Índigo de ubicación y turno** (`activo-regla`): hoy vale lo mismo que el de acción. Marca
+  el destino actual en la cabecera y el borde de lo que te toca hacer. Tiene nombre propio
+  porque significa otra cosa, y el día que el turno recupere un color propio se separa aquí.
+- **Bruma índigo** (`activo-bruma`): el índigo al 20 %, para halos y fondos de selección. Hoy
+  solo lo usa el panel del equipo.
+- **El canto** (`--canto`, un degradado de cuatro índigos): **legado**. Es lo último que queda de
+  un mundo anterior y solo lo usa la barra del panel del equipo. No se usa en composiciones
+  nuevas; como es un degradado y no un color, no va en la cabecera de este archivo sino en el
+  sidecar.
 
 ### Neutral
 
-- **Cielo** (`#fbf1e9`): el fondo de la página. Pastel cálido, para que la nube blanca de encima
-  se lea como un objeto puesto sobre una mesa. Pasó por `#f5f5f5`, `#fafafa` y blanco puro.
-- **Nube** (`#ffffff`): la superficie donde se lee.
-- **Nube hundida** (`#f4f4f4`): bloques de apoyo y esperas — lo que acompaña sin pedir nada.
-- **Nube honda** (`#e6e6e6`): barras de esqueleto y fondo de lo deshabilitado.
-- **Tinta** (`#333333`): titulares y datos. 12,6:1 sobre nube.
-- **Tinta segunda** (`#5b5b5b`): la prosa que explica. 6,8:1. Es el color de la mayor parte
-  del texto.
-- **Tinta tercera** (`#6b6b6b`): pies, unidades, plazos. 5,3:1 sobre nube y 4,9:1 sobre
-  cielo. **No bajar de aquí.**
-- **Regla** (`#e6e6e6`) y **regla segunda** (`#cbcbcb`): la que divide dentro de un bloque y
-  la que cierra uno.
-- **Borde de control** (`#8a8a8a`): el contorno de cualquier cosa que se pueda tocar. 3,45:1
-  sobre nube. ⚠️ La referencia usaba `#cbcbcb` aquí y da 1,6:1: un campo con ese contorno no
-  se ve. Es más oscuro a propósito.
+- **Cielo** (`cielo`): el fondo de todas las pantallas. Casi blanco y frío; es lo que hace que
+  el blanco de encima se lea como una cosa y no como más página.
+- **Cielo hundido** (`cielo-hundido`): lo hundido que se apoya directamente en la página —la
+  cinta de cifras de la portada, la banda de «Por qué este proceso es distinto»—. Hoy vale lo
+  mismo que `nube-hundida`; nació para que lo hundido sobre una página cálida no se leyera
+  sucio, y conserva el nombre porque su papel es distinto.
+- **Nube** (`nube`): toda superficie: tarjetas, formularios, la cabecera, la ventana de la
+  portada.
+- **Nube hundida** (`nube-hundida`): lo que va DENTRO de una superficie blanca y baja un
+  escalón —los paneles de espera, la mesa sobre la que se apoyan las maquetas—.
+- **Nube honda** (`nube-honda`): barras de esqueleto y el fondo de un control deshabilitado.
+- **Tinta** (`tinta`): titulares, enlaces de la cabecera y el texto de lectura principal.
+  18,2:1 sobre nube.
+- **Tinta de prosa** (`tinta2`): la prosa que explica. 10,3:1 sobre nube.
+- **Tinta apagada** (`tinta3`): lo secundario —etiquetas, fechas, pistas—. Es **el gris más
+  claro que se puede usar para texto**: 4,83:1 sobre nube, 4,67 sobre cielo y 4,56 sobre nube
+  hundida. El siguiente escalón de la escala no pasa en ninguno de los tres.
+- **Regla** (`regla`) y **regla marcada** (`regla2`): divisores y el contorno de las
+  superficies; la segunda para lo que tiene que verse un poco más.
+- **Borde de control** (`borde-control`): el límite de un campo de texto. Es el gris de la
+  tinta apagada, 4,83:1, porque WCAG pide 3:1 al límite visible de un control y el gris de
+  reglas no llega.
+- **Casi negro de cabecera** (`accion-fuerte`): **solo** el botón «Iniciar sesión» de la
+  barra. Existe para que ese botón y el destino actual en índigo, que están a un palmo, no
+  compitan con el mismo color. 18,9:1 con texto blanco.
 
-### Tertiary — el semáforo del sistema
+### Estado
 
-Los tres significaban algo fijo en el producto antes que en el diseño, y **no cambiaron al
-cambiar de mundo**. Por eso la acción no podía ser ninguno de ellos.
+El semáforo del proceso. Cada color significa algo fijo del producto antes que del diseño.
 
-- **Verde de hecho** (`#0b7a63`), sobre **bruma verde** (`#e6f5f0`): lo confirmado.
-- **Ámbar de duda** (`#8f5a0a`), sobre **bruma ámbar** (`#fbf2e4`) y con **tinta ámbar**
-  (`#6d4406`): lo que no es un error del candidato pero le cambia la decisión.
-- **Rojo de fallo** (`#c22a3f`), con **pulsado** (`#9e2134`), **bruma** (`#fdedf0`) y
-  **regla** (`#f3c3cc`): el error real y la acción destructiva. Nada más.
+- **Verde hecho** (`bien`, sobre `bien-bruma`): lo confirmado. 5,3:1.
+- **Ámbar en duda** (`duda`, sobre `duda-bruma`, con `duda-tinta` y `duda-tinta2` para el texto
+  encima): lo que no es un error del candidato pero le cambia la decisión —un requisito que no
+  cumple, la última plaza libre—.
+- **Rojo error** (`mal`, `mal-pulsado`, sobre `mal-bruma` con `mal-regla`): el error real y lo
+  que borra.
 
 ### Named Rules
 
-**La regla de la acción negra.** Lo que se pulsa para empezar algo va en `#0a0a0a`. Un botón
-de color en esta pantalla compite con la única cosa que tiene permiso para llamar la
-atención, que es el turno del candidato.
+**La regla de la voz única.** El índigo es el único color con intención en una pantalla. Si
+algo es índigo, se pulsa, es donde estás, o te toca. Nada decorativo se pinta de índigo.
 
-**La regla del color que aparece una vez.** Por pantalla hay **un** sitio con color: el
-resplandor del escaparate, o la etiqueta que dice «te toca a ti». Dos ya es ninguno.
+**La regla del semáforo.** Verde, ámbar y rojo significan hecho, duda y error, y **nunca**
+jerarquía ni categoría. Un dato pendiente de mirar no es una duda sobre la candidatura: no
+lleva ámbar.
 
-**La regla del semáforo prestado.** Verde, ámbar y rojo ya significan hecho, duda y error.
-No se usan para jerarquía, para categorizar ni para decorar.
+**La regla de la luz, no del matiz.** Toda señal que se dé solo con color tiene que diferir en
+luz al menos 3:1 de lo que tiene al lado, para que se lea sin distinguir tonos. El destino
+actual de la cabecera, en índigo frente a la tinta de los otros, da 3,88:1: por eso puede ir
+sin peso ni subrayado.
 
 ## Typography
 
-**Display / Body / Label:** Figtree (con `system-ui, sans-serif`), **servida por el propio
-sitio** desde `public/tipografia/`. Una sola familia para todo, variable, rango 400–700.
+**Display Font:** Geist (con system-ui y sans-serif de respaldo)
+**Body Font:** Geist (con system-ui y sans-serif de respaldo)
 
-**Character:** una geométrica humanista de formas abiertas y terminales rectos, que a peso
-600 y tamaño grande da un titular firme sin gritar. No se usan Inter, Roboto, Geist,
-Instrument Sans ni Space Grotesk — el detector las marca como sobreexpuestas.
+**Character:** Una sola familia geométrica y de corte técnico, cerrada de serie, que habla
+igual en el titular de la portada que en la hora de una sesión. La jerarquía la hacen el
+tamaño y el peso, nunca una segunda fuente.
 
-⚠️ **Es variable y no hay cursiva.** El rango es 400–700: por debajo de 400 el navegador no
-tiene nada que interpolar, así que **el peso 200 del mundo anterior ya no existe**. Los
-titulares van en 600.
+Se sirve **desde el propio sitio** —`public/tipografia/`, fuente variable 400-700, subconjuntos
+latino y latino extendido—, no desde Google Fonts: la aplicación instalada no puede abrir con
+los titulares en otra letra por falta de cobertura. No hay cursiva: no se usa en ninguna hoja,
+y el navegador la fabricaría inclinando la recta.
 
 ### Hierarchy
 
-Diez escalones, y cada uno tiene un trabajo, no un tamaño. Viven como tokens en `mundo.css`
-—`--t-micro` … `--t-portada`—.
-
-- **Display** `--t-portada` (600, `clamp(36px, 5.2vw, 60px)`, 1.13, `-0.03em`, balanceado):
-  el titular de cada pantalla. Uno por pantalla y ninguno más.
-- **Cifra** `--t-cifra` (600, `clamp(28px, 5vw, 34px)`): el cronómetro y las cifras que hay
-  que leer de un vistazo. Siempre con `tabular-nums`.
-- **Headline** `--t-destacado` (700, `clamp(24px, 2.4vw, 30px)`, `-0.03em`): el titular de
-  una sección dentro de una pantalla.
-- **Title** `--t-titulo` (600, 20px): el título de un bloque. Es el valor de `h2`.
-- **Entradilla** `--t-entradilla` (600, 18px): el título de una pregunta plegable y el del
-  tramo abierto.
-- **Body** `--t-base` (400, 16px): el cuerpo y los campos. **Nunca por debajo en un campo de
-  texto**: a menos de 16 px iOS hace zoom al enfocarlo.
-- **Prosa** `--t-prosa` (400, 15px): la prosa que explica.
-- **Apoyo** `--t-apoyo` (500, 14px): el texto de los controles y la interfaz secundaria.
-- **Menor** `--t-menor` (400, 13px): pies, unidades, pistas bajo un campo.
-- **Label** `--t-micro` (600, 12px, `0.04em`): etiquetas de bloque y píldoras de estado.
+- **Display** (600, `clamp(36px, 5.2vw, 60px)`, interlínea 1, espaciado normal): el titular de
+  la pantalla. Llega a 60 px en escritorio. La interlínea 1 se comprobó contra los acentos con
+  las cajas de tinta de Geist: en el peor caso entre «j», «p», «í» y «ó» quedan 6 px de aire a
+  1440 de ancho y 3 a 390.
+- **Cifra** (600, `clamp(28px, 5vw, 34px)`, 1,1, -0,02em): el cronómetro y las cifras que se
+  leen de un vistazo.
+- **Headline** (600, `clamp(24px, 2.4vw, 30px)`, 1,2, -0,02em): lo mayor por debajo del
+  titular — los títulos de sección de la portada, el nombre de la vacante en «Mis procesos»,
+  el enunciado de una pregunta de la evaluación, la fecha de la simulación, el sueldo.
+- **Navegación** (400, 17 px): los destinos de la cabecera, y nada más. Está fuera de la
+  progresión a propósito: se pidió un punto más que los 16 de la referencia, y 18 ya se probó y
+  se bajó.
+- **Title** (600, 20 px, 1,25, -0,015em): el título de un bloque; es el `h2` por defecto.
+- **Entradilla** (600, 18 px, 1,5): la entradilla y el título del tramo abierto del recorrido.
+- **Body** (400, 16 px, 1,5): el cuerpo y los campos. **Nunca por debajo de 16 en un campo**:
+  iOS hace zoom al enfocar cualquier cosa más pequeña.
+- **Prosa** (400, 15 px, 1,55): la prosa que explica, cortada a `--medida` (50ch). Con Geist
+  eso son **65-69 caracteres por línea** en prosa real.
+- **Apoyo** (400, 14 px, 1,55): el texto secundario de la interfaz y los botones del kit.
+- **Menor** (400, 13 px, 1,5): pies, unidades, pistas.
+- **Label** (600, 12 px): etiquetas de bloque. Su variante en mayúsculas va a 700 con 0,08em.
 
 ### Named Rules
 
-**La regla de la jerarquía tipográfica.** El tamaño y el peso hacen los niveles. Ningún
-recuadro, sombra ni fondo existe para crear un nivel que el tamaño ya crea.
+**La regla del titular único.** Un titular a escala de portada por pantalla, y ninguno más.
+Si una pantalla tiene dos, uno de los dos no es un titular.
 
-**La regla de la frase entera.** No se parten frases con elementos dentro. Poner `<b>`
-alrededor de los números de «Pregunta 2 de 4» rompió cuatro pruebas, y por la misma razón por
-la que rompe a un lector de pantalla: la frase deja de leerse de una pieza.
+**La regla de la fuente única.** Geist para todo. La jerarquía se hace con tamaño y peso; una
+segunda familia, o una cursiva, pide traer otro archivo y rompe la voz.
+
+**La regla de la medida en `ch`.** `--medida` y `--medida-corta` están en `ch`, que depende de
+la fuente. **Cambiar la fuente obliga a volver a medir** en el navegador cuántos caracteres
+compra cada una, con prosa real.
 
 ## Layout
 
-**El portal mide `--ancho` (68rem) en escritorio, y ese ancho es para componer, no para
-leer.** La prosa sigue cortada por `--medida`, así que ensancharlo no alarga una sola línea.
+Un carril centrado de **68rem** (`--ancho`) para el portal y **120rem** (`--ancho-panel`)
+para las tablas del panel del equipo. Dentro, la prosa se corta a `--medida` (50ch) o
+`--medida-corta` (44ch). El espaciado va en una escala de ocho pasos —4, 8, 12, 16, 24, 32,
+48 y 72 px (`--e1` a `--e8`)— y las pantallas respiran en los dos escalones de arriba entre
+secciones.
 
-**No todas las pantallas lo usan.** Entrar, crear cuenta, la contraseña olvidada y postular
-se quedan en 34–44rem: son formularios, y un formulario ancho se lee peor.
+La cabecera es una píldora que flota a 16 px del borde y mide **84 px** con su aire
+(`--alto-cabecera`). Todo lo que se pega debajo de ella —la barra de avance del examen, el
+cronómetro— se engancha a ese token. **Se mide en el navegador, no se calcula**: si cambia el
+relleno de la cabecera o el alto de su botón, hay que volver a medirlo.
 
-**La medida de la línea son dos tokens:** `--medida` (50ch) para la prosa corriente y
-`--medida-corta` (44ch) dentro de un bloque de apoyo.
+Las pantallas que son **una tarjeta sola** se centran en el hueco que queda entre la cabecera
+y el pie: `/ingresar`, `/clave`, `/restablecer` y sus tres del panel. Todas llevan la misma
+composición —la tarjeta de nube, el titular dentro a 30 px y centrado, el botón a todo el
+ancho, y dentro también la vuelta atrás y la salida de quien no puede—. Solo es seguro
+mientras quepan: centrar lo que no cabe desborda por los dos lados, y a lo que se sale por
+arriba el navegador no deja llegar.
 
-El ritmo sale de ocho escalones —4, 8, 12, 16, 24, 32, 48 y 72 px— y de una sola regla: se
-agrupa apretando y se separa con holgura. Sobre un título va más aire que debajo. Las
-secciones de la portada respiran a 72 px y las rejillas se separan 12.
+La contraseña olvidada —pedir el enlace y elegir la nueva— es **la misma pieza en el portal y
+en el panel** (`src/ui/recuperacion/`), y se pinta pensando que va dentro de una tarjeta: la
+tarjeta la pone cada pantalla.
 
-**Puntos de corte: dos del sistema y cuatro de una pantalla.** Los que mandan son **900 px**
-—las rejillas de tres pasan a dos y el reparto en columnas se apila— y **640 px**, donde todo
-cae a una columna y los carriles estrechan su relleno.
+**Hay dos pies.** El **pie en columnas** (290 px: la marca, «El portal», «Tus datos»,
+«Empresas» y el copyright) va en las páginas que se leen: la portada, la búsqueda de
+vacantes, la ficha de una vacante y la política. El **pie corto** (una línea, ~60 px) va en las puertas —entrar, crear cuenta, el
+enlace del correo, la contraseña olvidada y las tres del panel— y en cualquier pantalla privada
+vista sin cuenta. Con el grande, esas pantallas de una sola tarea sacaban scroll en un
+escritorio normal. Con el corto y la composición en tarjeta, **todas caben** a 1910×922,
+1440×900, 1366×768 y en un teléfono de 390×844; la única que se desplaza es `/registro`, que
+es un formulario largo.
 
-Los otros cuatro son locales, y cada uno vive en una sola hoja porque responde a una pieza y
-no al sistema: **1066** (la rejilla de vacantes de la portada), **860** (el encargo y el
-trabajo de la prueba dejan de ir en paralelo), **760** (el recorrido de cinco tramos se pone
-de pie) y **700** (la portada de «Mi perfil» se sale a sangre). Añadir uno nuevo es una
-decisión: si la pieza cabe en 900 o en 640, va ahí.
+La portada es la única que rompe el carril: su cielo y la banda de «Por qué este proceso es
+distinto» van **a sangre**, a `100vw`. Eso solo es seguro porque su armazón recorta con
+`overflow-x: clip` —y no con `hidden`, que rompería el `sticky` de la cabecera—.
+
+El corte principal es **640 px**, el del teléfono. Además hay cortes propios de una pieza
+—900, 860, 760, 700, 620, 480, 470 y 368 px— donde esa pieza lo necesita. A 900 la banda de
+tres tarjetas pasa a una columna, la lista de vacantes a dos, los filtros de `/vacantes` se
+apilan encima de la lista, y la ventana de la portada deja de cortarse; por debajo de 620 la
+cabecera pierde su columna central; por debajo de 470 se aprieta; por debajo de 368 se cae el
+destino «Vacantes».
 
 **Y un umbral que no es de la ventana:** la tarjeta a lo ancho de `/vacantes` se apila cuando
 **ella** mide menos de **36rem** (`@container`, en `Tarjeta.module.css`). La columna de
 resultados mide 704 px a 1280, 517 a 901 —la de filtros se lleva 19rem— y 343 en un teléfono de
-375: ningún corte de ventana acierta los tres, y con uno de 640 el título se quedaba en 220 px
-de 901 a 1000.
+375: ningún corte de ventana acierta los tres.
 
-**Cualquier cosa que se pueda tocar mide 44 px de alto como mínimo**, aunque su texto mida
-catorce. Los campos de texto suben a 48 px y nunca bajan de 16 px de letra.
-
-### El esqueleto, en una hoja
-
-El sitio donde se ponen las cosas vive en [`src/estilos/pagina.module.css`](src/estilos/pagina.module.css),
-separado de `piezas.module.css` porque son dos preguntas distintas: una pantalla puede
-componerse entera sin usar ni un botón. Se trae igual, con `composes`.
-
-| Pieza | Qué es |
-|---|---|
-| `.hoja` | El carril de 68rem, centrado, con `--e7` de aire arriba |
-| `.hojaProsa` · `.hojaFormulario` · `.hojaCorta` | Los otros tres anchos legales: 48, 44 y 34rem |
-| `.bloqueHolgado` | El bloque con `--e6` dentro, para lo que llena una pantalla: un formulario |
-| `.encabezado` · `.titular` · `.bajada` | El `h1` y la línea que lo sitúa |
-| `.reparto` · `.columna` | Una columna que manda y una de 19rem que acompaña; a 900 px se apilan |
-| `.repartoConFiltros` | El reparto al revés: la de 19rem va a la **izquierda** porque acota lo de al lado (los filtros de `/vacantes`); 12 px entre filas y 32 entre columnas; a 900 px se apila igual |
-| `.bloque` · `.bloqueHundido` · `.tituloBloque` · `.texto` | La superficie de nube y su contenido |
-| `.hueco` | **El hueco declarado**: lo que el portal no sabe todavía y dice en vez de rellenar |
-
-⚠️ **Los cuatro anchos son variantes declaradas, no un `max-width` que la pantalla se
-escribe encima.** Pisar el de `.hoja` desde la hoja de la pantalla funciona, pero funciona por
-el orden en que se juntan las hojas, no porque nadie lo haya decidido. Gana la que se nombra.
-
-⚠️ **Son clases sueltas, nunca selectores de descendiente.** `.encabezado h1` sería más
-corto, pero un descendiente que llega por `composes` pesa (0,1,1) y le gana a la clase propia
-del consumidor, que pesa (0,1,0): la pantalla que quisiera su bajada en tinta plena no
-podría, y el fallo se ve en la pantalla y no en la hoja que lo causa.
-
-⚠️ **`composes` solo admite un selector de clase simple.** No en un compuesto
-(`.estadoActual.turno`), no en una lista (`.enviar, .enviar:hover`). PostCSS devuelve un 500
-y **la aplicación entera deja de montar**, así que el fallo no es sutil — pero el mensaje
-apunta a la hoja, no a lo que lo causó.
+**El esqueleto de una pantalla** vive en `src/estilos/pagina.module.css` —el carril, el
+encabezado, el bloque, el hueco declarado y los repartos en columnas—. `.reparto` pone una
+columna que manda y una de 19rem que acompaña a la derecha; **`.repartoConFiltros`** la pone a
+la **izquierda**, porque acota lo de al lado: son los filtros de `/vacantes`. Las dos se apilan
+a 900 px. Son variantes con nombre y no un `grid-template-columns` que la pantalla se escribe
+encima: entre archivos gana el orden en que se juntan las hojas, no el que se escribe.
 
 ### Named Rules
 
-**La regla del panel con dueño.** El tope de línea va en el panel, no en los párrafos de
-dentro. Con el tope en el panel, la medida tiene un solo dueño y el bloque no se queda con
-medio relleno vacío al ensanchar la ventana.
-
-**La regla del desfase medido.** Un elemento pegajoso que se pega debajo de otro no adivina
-su altura: la mide y la guarda en un token junto a la barra que la produce —`--alto-cabecera`,
-61 px—.
+**La regla del carril.** Nada de texto corre de borde a borde. Lo que va a sangre es fondo;
+dentro, el carril vuelve.
 
 ## Elevation & Depth
 
-**La profundidad es tono, no papel levantado.** Una superficie se separa del fondo porque
-está un punto más clara —blanco sobre el pastel del cielo—, no porque tenga contorno grueso ni sombra.
-Las sombras que hay son difusas, frías y de tinta plena con muy poca opacidad, y aparecen
-como respuesta a un estado, nunca en reposo.
+**Plano por tono.** Las superficies se separan de la página porque son más claras que ella
+—blanco sobre gris frío—, no porque floten. En reposo, casi nada lleva sombra: ni las
+tarjetas, ni la cabecera, ni la ventana de la portada. La sombra se reserva a dos cosas: los
+controles que se pulsan y lo que flota de verdad por encima de la página.
 
 ### Shadow Vocabulary
 
-- **La nube** (`0 1px 2px rgb(10 10 10 / 0.05), 0 8px 24px rgb(10 10 10 / 0.06)`): el
-  escaparate, el botón secundario y la tarjeta al pasar por encima.
-- **El aviso** (`0 12px 24px rgb(10 10 10 / 0.10), 0 32px 64px rgb(10 10 10 / 0.14)`): el
-  modal, para que se despegue del fondo apagado.
-- **El halo del control activo** (`0 0 0 4px var(--activo-bruma)`): un anillo coral sin
-  desenfoque. Es un ensanche, no una sombra.
-- **El velo** (`--velo`, `rgb(10 10 10 / 0.4)`): lo que se apaga detrás de un modal. Es token
-  y no pieza porque sus cuatro consumidores no pueden compartir clase — tres son el
-  `::backdrop` de un `<dialog>` nativo, que no acepta `composes`.
+- **Control** (`--sombra-control`, cuatro capas neutras): sostiene los botones secundarios,
+  que son blancos y sin contorno.
+- **Control alzado** (`--sombra-control-alta`): el botón de acción bajo el ratón.
+- **Nube** (`--sombra-nube`): superficies que se levantan por un estado — la tarjeta de lo que
+  te toca, la tarjeta de «Entrar».
+- **Aviso** (`--sombra-aviso`): lo que flota encima de todo — modales y avisos.
 
 ### Named Rules
 
-**La regla del plano por defecto.** Una sombra aparece como respuesta a un estado —pasar por
-encima, interrumpir, reclamar—, nunca para sugerir que una tarjeta flota.
+**La regla del plano en reposo.** Una superficie en reposo no lleva sombra. Si hace falta
+separar una cosa blanca de otra blanca, baja un escalón de tono (`nube-hundida`); no se
+apilan sombras.
 
 ## Shapes
 
-**Esquina corta, no píldora.** Seis radios y ninguno más: `--radio` (12px) en superficies,
-`--radio-menor` (8px) en campos, `--radio-control` (**4px**) en todos los controles,
-`--radio-marca` (4px) en lo más pequeño que se redondea, `--radio-escaparate` (20px) en el
-escaparate y su caja de cierre —la única pieza que se permite una curva mayor— y
-`--radio-barra` (999px) en las franjas del recorrido y **nada más**: una barra de 6 px con los
-extremos redondos es un estadio, que es la forma correcta de una barra; ese mismo valor en
-cualquier otra cosa la convierte en píldora.
+Esquina corta y constante. Los controles —botones y campos— llevan **8 px**; las superficies,
+**12 px**; lo más pequeño que se redondea —una casilla, un avatar cuadrado— lleva 4. La única
+forma completamente redonda son las barras del recorrido y los indicadores (999 px): **ningún
+botón es una píldora**.
 
-⚠️ **`--radio-control` valía 999px en el mundo anterior.** Los botones eran píldoras enteras
-y ahora no lo son; cualquier hoja que dé por hecho una píldora está desactualizada.
-
-Los contornos son de 1 px, salvo cuando el grosor está diciendo algo: 2 px marcan el panel
-que reclama al candidato, lo elegido y lo erróneo.
-
-El vocabulario de estado del recorrido está **en el grosor y el relleno de la franja**, no en
-su color:
-
-| Forma | Qué dice |
-|---|---|
-| Franja maciza en tinta plena | Formada: etapa superada |
-| Franja maciza con la etiqueta de bruma rosa al lado | Viva: te toca a ti |
-| Franja en regla | Ausente: todavía no se ha llegado aquí |
-| Franja punteada | Dispersa: aquí se detuvo |
-
-### Named Rules
-
-**La regla de la forma primero.** Todo estado tiene que leerse en la forma antes que en el
-color. Si al quitarle el color a una pantalla deja de saberse qué pasa, la pantalla está mal.
-
-**La regla de la caja constante.** La caja de una franja mide siempre lo mismo aunque la
-franja de dentro cambie. Sin eso, las cinco etapas dejan de leerse como una fila.
+Tres piezas llevan su propio radio, medido en la referencia y con token propio aunque solo
+lo use cada una: la **píldora de la cabecera** (`rounded.pildora`), el **marco de cristal** de
+la portada (`rounded.cristal`) y la **ventana** de dentro (`rounded.ventana`). El marco y la
+ventana se cortan por abajo —radio arriba y cero abajo—, porque la ventana no termina, se
+desvanece. Un valor de radio fuera de esta escala no se escribe a mano: o se nombra aquí, o no
+se usa.
 
 ## Components
 
 ### Buttons
 
-**Una sola especificación, y vive en `src/estilos/piezas.module.css`.** Los botones **no se
-escriben en el JSX**: cada pantalla los trae con `composes` desde su propia hoja, de modo que
-el botón conserva el nombre de lo que hace y comparte la forma. Ninguna pantalla se dibuja el
-suyo.
+Precisos y serenos: esquina de 8 px, 44 px de alto como mínimo, un solo color con intención.
 
-**Desde el 15/09/2026 la cara del botón es la de `originx.demos.tailgrids.com`**, medida en el
-navegador. Una sola altura, **44 px**, que además es el suelo táctil: 20 px de línea más 12 y 12
-de relleno. Lo que distingue a la pieza grande de la menor es el relleno horizontal, 20 px contra
-16, y nada más.
-
-| | grande | menor |
-|---|---|---|
-| **Acción** — negro pleno, texto blanco | `.acentoGrande` | `.acentoMenor` |
-| **Secundario** — nube con sombra, **sin contorno** | `.secundarioGrande` | `.secundario` |
-| **Firme** — relleno de tinta | — | `.solido` |
-| **Peligroso** — rojo | `.peligroso` | `.peligrosoMenor`, `.peligrosoContorno` |
-
-- **Shape:** esquina de 4 px (`--radio-control`), sin contorno, letra de **14 px y peso 500** con
-  línea fija de 20 px. Sin `letter-spacing` propio.
-- **Hover:** el de acción aclara a `#404040` y levanta `--sombra-control-alta`; el secundario
-  **no cambia nada**, igual que en la referencia: lo único que se mueve es el rótulo. Todo a
-  `300ms` con `--curva-control`, y siempre bajo `:not(:disabled)`.
-- **Peligroso:** relleno cuando es la acción destructiva principal de donde está —de la
-  pantalla, o del aviso que la confirma—; de contorno cuando es una entre varias, como el
-  «Retirarme» de cada fila. El contorno es `--mal` pleno y no `--mal-regla`, que da 1,56:1.
-  **No gira el rótulo**: un rótulo que juega no es el gesto de algo que no se puede deshacer.
-- **Disabled:** fondo de nube honda, sin contorno propio, tinta tercera, cursor normal.
-
-⚠️ **El secundario PERDIÓ su contorno, y eso empeora el contraste.** `--borde-control` daba
-3,45:1 contra el fondo, que es lo que WCAG 1.4.11 pide al límite visible de un control; lo que
-lo sostiene ahora es `--sombra-control`, cuatro capas de gris de 3 a 48 px que ni se acercan a
-medirse. Este documento decía, literalmente, que el contorno no era negociable. Se cambió el
-15/09/2026 a petición expresa, con el número delante: la vuelta atrás es una línea,
-`border: 1px solid var(--borde-control)`.
-
-⚠️ **Se fue también el halo coral del hover**, que era un anillo de 4 px en `--activo-bruma`.
-La referencia levanta la pieza con una sombra neutra, y de paso el coral deja de aparecer en
-pantallas donde no hay ningún turno que marcar.
-
-#### El rótulo que gira
-
-Al pasar por encima, el rótulo sale por arriba y entra otro idéntico por abajo, en 300 ms. Es el
-gesto de todos los botones de la referencia.
-
-⚠️ **Hacen falta dos copias del rótulo, y ninguna es el texto real.** La referencia duplica la
-etiqueta en el árbol, y eso deja el nombre accesible del botón como «Enviar Enviar» — que además
-rompería las 620 pruebas, porque todas localizan por rol y nombre. Aquí las dos copias son
-`::before` y `::after`: el texto real se queda, sigue dando el ancho y sigue siendo el nombre
-accesible, pero se pinta transparente.
-
-⚠️ **La barra de `content: attr(data-rotulo) / ''` no es un adorno:** le da al pseudoelemento un
-texto alternativo **vacío**. Sin ella, las dos copias se sumarían al nombre accesible y
-estaríamos donde la referencia. Comprobado leyendo el árbol de accesibilidad del navegador: el
-enlace se anuncia una sola vez.
-
-⚠️ **El texto real se apaga con `-webkit-text-fill-color`, no con `color`, y esto costó un
-fallo.** Con `color: transparent` a secas el texto real **reaparecía al pasar por encima** y se
-veían tres rótulos a la vez: el fijo más los dos que giran. El motivo es especificidad —
-`.acentoGrande:hover:not(:disabled)` es (0,3,0) y declara `color`, por encima del (0,2,0) de
-`.acentoGrande[data-rotulo]`—, y lo mismo haría cualquier pantalla que le ponga color a su botón
-desde su propia hoja, donde además el orden entre archivos no es fiable. Con qué se pinta el
-glifo lo decide `-webkit-text-fill-color`, que **nadie más declara en todo el proyecto**: no hay
-pelea de cascada posible. `color` se queda también, porque es lo único que entiende un navegador
-que no llegue al `@supports`.
-
-⚠️ **Y por eso va todo dentro de un `@supports (content: 'a' / '')`.** Si el navegador no
-entiende esa sintaxis la declaración entera es inválida, no habría pseudoelementos y el botón se
-quedaría con su texto real transparente, o sea en blanco. Fuera del bloque no se toca nada.
-
-**El giro se activa con `data-rotulo` en el elemento, y eso es deliberado.** Un botón cuyo
-rótulo cambia solo —«Guardando…», «Entregando…»— recibe el atributo con la misma expresión, así
-que las dos copias cambian a la vez; los cuatro que llevan un icono dentro del rótulo no lo
-llevan y se quedan quietos, porque girar texto y dejar el icono parado se ve mal. De 88 botones,
-82 giran.
-
-**«Iniciar sesión» también gira, y su regla está escrita aparte.** Esa pieza son dos cajas —el marco
-rosa y la cara con la rampa—, así que quien recorta y lleva las dos copias es la cara mientras
-quien recibe el ratón es el marco: `.entrar:hover .entrarCara::before`. Es la misma técnica, no
-la misma regla, y por eso vive en `Armazon.module.css` y no se compone de `piezas.module.css`.
-
-**Si una pantalla necesita otro color de rótulo, lo pone en `--rotulo-tinta`, no en `color`.**
-`color` ya no pinta nada en un botón que gira. Dos lo hacían —`.enviarIgual` y
-`.volverAlProceso`— y ahora declaran las dos cosas: la variable para el giro, y `color` para el
-navegador que se quede con el texto real.
-
-### Inputs / Fields
-
-- **Style:** 48 px de alto, nube, contorno de 1 px de borde de control, 16 px de letra,
-  `--radio-menor`.
-- **Focus:** el anillo global —2 px de tinta plena con 3 px de separación— sobre
-  `:focus-visible`.
-- **Error:** el borde **engorda a 2 px** y se vuelve rojo, en ese orden de importancia. El
-  mensaje va debajo, atado al campo con `aria-describedby`, y **dice el problema y cómo se
-  arregla** — nunca «campo inválido». El mensaje **no lleva filete lateral**: el borde ya es
-  la señal de forma y el texto ya va en `--mal` a 5,68:1; tres señales para una cosa son dos
-  de más.
-- **Un fallo del formulario entero va ARRIBA del formulario, no pegado al botón.** Es otra
-  pieza que el error de campo: el servidor de «Entrar» no dice cuál de los dos campos falla,
-  así que el mensaje no puede colgar de ninguno. Al pie solo se leería después de haber
-  vuelto a mirar el formulario entero; arriba se lee al volver del envío, que es cuando
-  aparece. Lleva `role="alert"` y su icono de aviso en `currentColor`.
-- **Un formulario corto vive en una superficie de nube.** Flotando sobre el cielo se lee como
-  página, no como cosa, y en este mundo lo blanco son objetos puestos encima. El titular y el
-  pie se quedan fuera: sitúan la pantalla, no forman parte de lo que se rellena. ⚠️ **Entrar
-  es la excepción y está sola:** ahí el titular, la bajada y la salida a crear cuenta viven
-  DENTRO de la tarjeta, porque es la única pantalla que se compone centrada en lo que se ve y
-  la tarjeta es todo lo que hay. Crear cuenta y la contraseña olvidada siguen la regla.
-- **Pero una superficie envuelve una cosa, no un recorrido.** Entrar son dos campos y un
-  botón negro, con la salida de contorno a crear cuenta debajo de una regla que la nombra:
-  una cosa sobre la mesa. Postular son varias secciones separadas por reglas que se
-  leen de arriba abajo: eso es un documento y va sobre el cielo. Un documento largo metido
-  entero en una tarjeta blanca es una losa, no un objeto.
+- **Shape:** esquina de 8 px (`rounded.control`); 44 px de alto (48 en el peligroso).
+- **Acción** (`button-accion`): índigo con texto blanco, 14 px peso 500, relleno 12 × 20. Es la
+  acción principal de la pantalla, y hay una.
+- **Hover / Focus:** al pasar por encima se oscurece a `activo-pulsado` y se levanta con la
+  sombra de control alzado; el foco es un anillo índigo de 2 px a 3 px de distancia, el mismo
+  en todo el portal.
+- **Rótulo que gira:** los botones del kit y el de la cabecera llevan su texto dos veces en
+  `data-rotulo`; al pasar por encima la copia de arriba sube y la de abajo entra. Es la única
+  respuesta que tiene el secundario, así que **si algún día se quita el giro hay que darle
+  otra**.
+- **Secundario** (`button-secundario`): blanco, sin contorno, sostenido por la sombra de
+  control. ⚠️ Su límite **no llega al 3:1 que WCAG pide al borde de un control**: blanco sobre
+  el gris de la página casi no se distingue y la sombra no cuenta para el contraste. Es una
+  decisión del cliente, tomada a sabiendas; volver atrás es una línea
+  (`border: 1px solid var(--borde-control)`).
+- **Cabecera** (`button-cabecera`): «Iniciar sesión», macizo en casi negro, 15 px peso 600.
+  Se levanta 1 px al pasar por encima y se encoge un 2 % al pulsar.
+- **Peligroso** (`button-peligroso`): rojo, solo para lo que borra.
+- **Deshabilitado:** fondo `nube-honda` y texto `tinta3`, sin sombra.
 
 ### Cards / Containers
 
-Superficies de nube: fondo blanco sobre el cielo cálido, contorno de 1 px de regla, `--radio`,
-y 24 px de relleno. **Nunca se anidan superficies con sombra**; lo que va dentro de una
-superficie cambia de fondo —a nube hundida— y no de elevación.
+- **Corner Style:** 12 px (`rounded.superficie`).
+- **Background:** nube blanca sobre el cielo; `nube-hundida` para lo que va dentro de otra
+  superficie.
+- **Shadow Strategy:** ninguna en reposo (ver Elevation & Depth).
+- **Border:** 1 px de `regla`.
+- **Internal Padding:** 24 px.
+- **Te toca** (`panel-te-toca`): la superficie que reclama algo del candidato. Borde de **2 px
+  índigo** además de su sombra de nube: el grosor es la forma que lo distingue, el color la
+  acompaña.
+- **Espera** (`panel-espera`): hundida en `nube-hundida`, sin nada que pulsar.
+- **En duda** (`panel-en-duda`): ámbar, solo cuando algo le cambia la decisión.
 
-**Tres paneles, y cada uno dice algo distinto sobre de quién depende que el proceso siga.**
-Viven en `piezas.module.css` junto a los botones, se distinguen por el borde —que es lo que
-se ve de lejos— y ninguno lleva relleno propio: cuánto respiran por dentro es del sitio.
+### Inputs / Fields
 
-| Pieza | Qué dice | Piel |
-|---|---|---|
-| `.turno` | Te toca a ti | 2 px coral, nube, sombra de la nube |
-| `.panelDeEspera` | Se espera a otro | 1 px regla, nube hundida, sin sombra |
-| `.enDuda` | Esto te cambia la decisión | 1 px ámbar, bruma ámbar, tinta ámbar |
-| `.indispensable` | …y además te descarta | el mismo ámbar, con el borde al doble |
-
-**Una superficie en reposo va plana.** La sombra la lleva lo que reclama —el panel de
-turno—, no la caja que lo contiene: si la tarjeta entera ya flota, lo que reclama deja de
-distinguirse de lo que no. Las tarjetas de «Mis procesos» eran el caso: llevaban
-`--sombra-nube` en reposo y ahora la lleva solo el panel coral de dentro.
-
-⚠️ **Una pantalla pinta `.turno` como mucho una vez, y solo si hay algo contra lo que
-discriminar.** El coral sirve para *encontrar* tu turno entre cosas que no lo son; en una
-pantalla a la que llegaste porque te tocaba y donde solo hay una cosa que hacer no discrimina
-nada, y ahí lo que separa es el titular. Eso deja tres pantallas con coral: «Mis procesos»
-(n postulaciones, 0..n reclaman), el detalle de un proceso (cinco etapas, una viva) y «Mi
-perfil» (n datos, m sin confirmar).
-
-**El ámbar es la tercera cosa que puede decir un panel**: ni te toca a ti, ni esperas a otro
-— mírate esto antes de seguir. Sus dos casos reales son los requisitos indispensables de una
-vacante y el aviso de que el formulario de la decisión todavía no envía. El texto de apoyo
-que vaya dentro necesita `--duda-tinta2`: `--tinta3` da 4,9:1 sobre el cielo y es el suelo,
-sobre un fondo con tinte se cae.
+- **Style:** blanco, 48 px de alto, esquina de 8 px, borde de 1 px en `borde-control`, texto a
+  16 px.
+- **Focus:** el anillo índigo de 2 px del sistema.
+- **Error:** el mensaje en `mal` a 13 px debajo del campo, y al enviar el foco salta al primer
+  campo con error.
+- **Obligatorio:** un asterisco en tinta plena y peso 700 en la etiqueta, explicado una vez
+  antes del primer campo.
 
 ### La tarjeta de vacante — de pie y a lo ancho
 
 `src/paginas/vacantes/Tarjeta.tsx` tiene **dos formas y un solo enlace**: en las dos, la
 tarjeta entera es un enlace cuyo nombre es el título, y el título es el mismo `TituloQueViaja`
-que cruza hasta el titular de la ficha.
+que cruza hasta el titular de la ficha. Nube sobre el cielo, filete de `regla`, esquina de
+12 px y, al pasar por encima, la sombra de nube y la pieza D.
 
-- **De pie** (`forma="dePie"`, la de siempre): la portada, tres en fila. Modalidad · ciudad
-  arriba, título, empresa, resumen de tres líneas y un pie con horario, sueldo y fecha.
-- **A lo ancho** (`forma="aLoAncho"`, desde el 25/09/2026): la lista de `/vacantes`, una por
-  fila. A la izquierda «Publicada hace…», el título, la empresa y el resumen en **dos** líneas;
-  a la derecha, tras una línea fina de 1 px en regla —separador neutro, no barra de acento—,
-  una columna de 13rem con **dónde** (la ciudad o, sin ella, la zona), **modalidad**, **horario**
-  y **sueldo**, cada uno con su icono de 16 px en `currentColor`. El dato que falta no se pinta;
-  el sueldo siempre, porque `OCULTA` se nombra: «Sueldo sin publicar» en tinta2, el monto
-  publicado en tinta plena y 600, que es lo que el ojo busca al bajar. Se apila —datos debajo
-  del resumen, en una fila que se parte— cuando la tarjeta mide menos de 36rem.
+- **De pie** (`forma="dePie"`): la portada, tres en fila. Modalidad · ciudad arriba, título,
+  empresa, resumen de tres líneas y un pie con horario, sueldo y fecha.
+- **A lo ancho** (`forma="aLoAncho"`): la lista de `/vacantes`, una por fila. A la izquierda
+  «Publicada hace…», el título, la empresa y el resumen en **dos** líneas; a la derecha, tras
+  una línea de 1 px en `regla` —separador neutro, no barra de acento—, una columna de 13rem con
+  **dónde** (la ciudad o, sin ella, la zona), **modalidad**, **horario** y **sueldo**, cada uno
+  con su icono de 16 px en `currentColor`. El dato que falta no se pinta; el sueldo siempre,
+  porque `OCULTA` se nombra: «Sueldo sin publicar» en `tinta2`, el monto publicado en tinta
+  plena y 600. Se apila cuando la tarjeta mide menos de 36rem.
 
-En las dos formas **el resumen es el propósito o, si falta, la descripción, y un campo con solo
-espacios falta**: lo decide `resumenDe` de `busqueda.ts`, la misma función con la que el orden
-cuenta si la vacante trae resumen, para que la tarjeta y el orden no discrepen. La empresa y
-el horario en blanco tampoco dejan hueco.
+**El resumen es el propósito o, si falta, la descripción, y un campo con solo espacios falta**:
+lo decide `resumenDe` de `busqueda.ts`, la misma función con la que el orden cuenta si la
+vacante trae resumen, para que la tarjeta y el orden no discrepen.
 
-La pantalla de `/vacantes` que la usa pone **los filtros en una columna de 19rem a la izquierda**
-(`.repartoConFiltros`), que en escritorio es una superficie de nube con los grupos plegables.
-Encima de las dos columnas, a todo el ancho, la fila del contador con «Ordenar por». **Las
-etiquetas activas y «Quitar filtros» van siempre justo encima de la lista**, en la columna de
-resultados y no en la de filtros (decisión del 25/09/2026): marcar una casilla mueve la lista,
-nunca los grupos bajo el puntero, y lo que se ve sigue el orden de Tab del punto 38 —la fila,
-la columna de filtros, las etiquetas y las tarjetas—, sin que el foco baje por una columna y
-vuelva a subir por ella. De 641 a 900 los filtros se apilan abiertos y hasta 640 se pliegan tras
-«Filtrar (n)»; en los dos las etiquetas quedan igual, entre los filtros y la lista. El
-conmutador «Ordenar por» son dos caras pegadas con esquina de 4 px por fuera: la marcada
-rellena en tinta, la otra con el contorno de control. **Ningún color en la pantalla**: nadie
-tiene turno en una lista de vacantes.
+### La búsqueda de vacantes
 
-### La contraseña olvidada — dos pantallas prestadas
+`/vacantes` pone **los filtros en una columna de 19rem a la izquierda** (`.repartoConFiltros`),
+sobre nube y con los grupos plegables. Encima de las dos columnas, a todo el ancho, el contador
+y «Ordenar por». **Las etiquetas activas y «Quitar filtros» van siempre justo encima de la
+lista**, en la columna de resultados: marcar una casilla mueve la lista, nunca los grupos bajo
+el puntero, y lo que se ve sigue el orden de Tab. De 641 a 900 px los filtros se apilan
+abiertos, y hasta 640 se pliegan tras «Filtrar (n)» —`.secundarioDelTelefono` de
+`piezas.module.css`, que existe porque un `display: none` en la hoja de la pantalla perdía
+contra el `inline-flex` del secundario—.
 
-`/clave` y `/restablecer` llegaron de main el 23/09/2026 y **su formulario no es de este
-mundo**: vive en `src/ui/recuperacion/`, que el portal comparte con el panel. Una sola pieza,
-dos puertas con dos mundos visuales distintos.
-
-**La superficie entra desde fuera.** En el portal, todo formulario de esta familia se lee sobre
-nube —`/registro`, `/acceso` y el de entrar lo hacen—; en el panel, el formulario va a pelo
-sobre el fondo, que es su disposición de siempre. Poner la superficie dentro de la pieza
-compartida habría arrastrado al panel a un mundo al que no entró, y no ponerla dejaba el único
-formulario desnudo del portal justo al lado de los que sí la tienen.
-
-La salida es un `claseFormulario` opcional: el portal pasa `.superficieDelFormulario` de
-`Cuenta.module.css` —que solo compone `bloqueHolgado` y el fondo nube—, el panel no pasa nada.
-
-⚠️ **Esa clase trae la superficie y nada más.** La dirección, el hueco entre campos y el aire
-de arriba los pone `.formulario` de la hoja compartida; repetirlos en la clase del portal
-dejaría en manos del orden del bundle saber cuál gana, que es el fallo que ya costó un 500 en
-este proyecto.
-
-⚠️ **El `22ch` del titular está escrito a mano en `Recuperacion.module.css`, no compuesto.**
-Es la medida de `.titular` de `pagina.module.css`, pero componerla desde una hoja compartida
-arrastraría el carril del portal al panel. Copiar un número es aquí menos malo que exportar un
-mundo entero.
-
-### Las puertas del panel — lo único de `/admin` dentro del escaparate
-
-`/admin/entrar`, `/admin/clave` y `/admin/restablecer` entraron el **25/09/2026**. El resto del
-panel sigue fuera por alcance.
-
-**Van dentro del armazón del portal**, no sueltas: por eso llevan su cabecera y su pie. Antes
-vivían fuera de los dos armazones y al pasar del pie del portal —«Entrar al panel de
-empresas»— a `/admin/entrar` la barra desaparecía de golpe. Lo que sigue fuera es
-`ArmazonPanel`, que es donde vive el candado: ese armazón manda a `/admin/entrar` a quien no
-tiene sesión de equipo, y meter ahí la propia pantalla de entrar sería un bucle.
-
-⚠️ **Al entrar en el armazón perdieron su marca propia.** Cada una dibujaba un `<Marca>` porque
-no tenía cabecera de la que colgar; con la del portal encima salían dos EX seguidas.
-
-⚠️ **La cabecera que se ve es la del candidato**, con «Iniciar sesión» llevando a `/ingresar`.
-Es a sabiendas: la pantalla tiene dos entradas distintas, la del equipo en su tarjeta y la del
-candidato en la barra. La alternativa descartada era una barra propia con la marca y «Volver al
-portal».
-
-**`/admin/entrar` es una tarjeta centrada**, como `/ingresar`, y usa el mismo `.armazonJusto`.
-Sus clases viven aparte en `Entrar.module.css` —`.paginaEntrar`, `.tarjeta`, `.titularEntrar`…—
-porque esa hoja la comparten cuatro pantallas y tocar `.pagina` o `.formulario` las repintaría
-todas.
-
-⚠️ **El centrado solo es seguro mientras la pantalla quepa.** Solo pudo entrar al quitarle el
-bloque «¿No puedes entrar?» y su bajada: con ellos medía más que la ventana, y centrar lo que
-no cabe desborda por los dos lados — a lo que se sale por arriba el navegador no deja llegar.
-Si vuelve a colgar algo largo debajo de la tarjeta, hay que quitar el centrado.
-
-**Las otras dos reciben la superficie desde fuera**, con el mismo `claseFormulario` de la
-sección anterior: `.superficieDelFormulario` existe ahora también en `Entrar.module.css`. Sin
-ella quedaban desnudas justo al lado de una tarjeta, que es la incoherencia que la pieza
-compartida existe para evitar.
-
-### La pieza del titular
-
-Dentro de la frase «Tu próximo trabajo ▣ puede empezar aquí» hay una loseta coral con un
-maletín blanco y una flecha que sube dejando una estela. Es un PNG,
-`public/pieza-trabajo.png`, 256×256 y 60 KB.
-
-⚠️ **Hasta el 11/09/2026 era un cuadrado con degradado y su comentario presumía de que «no es
-un icono ni significa nada».** Ya no: ahora significa trabajo que progresa, y es **la única
-figura literal de todo el portal**. El resto del sistema dice las cosas con forma y color.
-
-⚠️ **El ancho declarado no es el tamaño que se ve**, porque el dibujo no llena la imagen: la
-loseta de delante ocupa el **78,5 % del lado** y el resto lo ocupan la loseta girada de detrás y
-el aire. Con **1,08em** de imagen se ven 45 px de loseta, que es la medida con la que se compuso
-el titular.
-
-⚠️ **Esa fracción cambia con el archivo, y ya cambió una vez.** El PNG del 11/09/2026 traía un
-halo rosa pintado dentro y la loseta era el 73 %, así que hacían falta 1,32em para los mismos
-45 px. El del 15/09 va recortado al ras: con la anchura de antes la loseta salía a 55 px y se
-metía dentro de la palabra «trabajo». **Si se cambia la imagen, se mide la fracción y se vuelve a
-sacar el ancho**, no se hereda el número.
-
-⚠️ **Y por lo mismo el margen horizontal pasó de negativo a positivo.** Con el PNG anterior había
-que recuperar el aire que el halo transparente metía a los lados; con el de ahora hace falta justo
-lo contrario, separarlo de la palabra que tiene al lado.
-
-⚠️ **Se alinea con `vertical-align: middle` Y margen vertical negativo, las dos cosas.** Con un
-descuelgue desde la línea base la imagen caía 20 px por debajo y la fuente solo desciende 13:
-el titular pasaba de 106 a 111 px. Con `middle` a secas se iba a 115. Juntas, 106 —lo mismo que
-sin imagen—.
-
-### El fondo
-
-El cielo es `#FBF1E9`, un pastel cálido, y las superficies de encima son nube blanca: la
-separación es de **1,113:1** y vuelve a ser de tono, no solo de contorno. Los contornos de 1 px
-se quedan y son los que sostienen lo que va DENTRO de otra superficie.
-
-⚠️ **Está plano a propósito, y el grano procedural se probó y se fue.** Una capa de
-`feTurbulence` mezclada con `background-blend-mode: overlay` funciona técnicamente —conserva el
-tono cálido, tesela sin costura, pesa ~300 bytes— pero **a tamaño real, en este color tan claro
-y sobre una página llena de superficies blancas, no se ve**. Se subió hasta donde se veía y ahí
-ya se leía como pantalla sucia, no como papel. No vale la pena volver a intentarlo por CSS: si
-el fondo tiene que tener materia, tiene que venir de una imagen con estructura, no de ruido por
-píxel.
-
-El 11/09/2026 se probaron además dos resplandores corales desenfocados por toda la página —primero solo arriba, luego repetidos de arriba abajo con una baldosa de 1100 px— y
-se retiraron. Lo que dejaron escrito y conviene no volver a aprender:
-
-- **Un degradado que todavía tiene color al llegar al borde de su baldosa se corta en seco
-  ahí**, y la repetición convierte ese corte en una raya horizontal visible. La regla es que
-  cada degradado se apague dentro de su baldosa: centro = radio, y los dos radios juntos = la
-  baldosa.
-- **Un tinte de fondo le pone techo al gris más claro del sistema.** Con el coral al 28 %,
-  `--tinta3` caía a 3,99:1; el máximo que lo mantenía en 4,5:1 era 0,146.
-- **`z-index: -1` no sirve para poner algo detrás**, porque `mundo.css` pinta el cielo en `html`
-  **y** en `body`: la de `html` es el lienzo y la de `body` pasa a ser el fondo de una caja de
-  bloque normal, que se pinta después de los descendientes de z negativo.
+- **«Ordenar por»** son dos caras pegadas con la esquina de 8 px por fuera: la marcada, rellena
+  en índigo con texto blanco (4,57:1); la otra, con el contorno de control.
+- **El índigo es solo lo marcado** —el orden elegido, las casillas y los radios—, que es
+  «dónde estás». Nadie tiene turno en una lista de vacantes, así que aquí no hay borde de 2 px
+  en ninguna parte.
 
 ### Navigation
 
-Cabecera fija de 70 px, pegajosa: una barra **insertada 8 px del borde**, con radio
-`--radio-menor`, que **en reposo no se ve** —solo la marca y los enlaces sobre el cielo— y saca
-su superficie de nube maciza, contorno de `--regla` y `--sombra-nube` **en cuanto la página se
-mueve**. La marca a la izquierda; a la derecha, cuatro destinos.
+Una píldora blanca que flota a 16 px del borde, **sin filete ni sombra**, en reposo y al bajar
+la página, con radio de 18 px. Tres columnas: la marca a la izquierda, los destinos en el
+centro exacto y la acción a la derecha — las columnas de los lados valen lo mismo para que
+«Iniciar sesión» y «Mi cuenta», que no miden igual, no descentren los destinos.
 
-El aire de arriba va de relleno y no de margen: así la barra guarda los mismos 8 px en reposo
-y pegada, porque el relleno viaja con la caja pegajosa y un margen se quedaría arriba.
+- **Destinos:** Geist 17 px peso 400 en tinta (15 px en teléfono), con 44 px de área táctil.
+- **Hover:** se abre un filete gris de 2 px bajo el destino.
+- **Activo:** índigo, **sin peso ni filete**. Se sostiene solo por la regla de la luz (3,88:1
+  frente a los otros), y `aria-current="page"` lo dice a quien usa lector.
+- **«Inicio» y «Vacantes» son dos pantallas.** «Inicio» es la portada; «Vacantes» es
+  `/vacantes`, la búsqueda, y va sin `end` para encenderse también en la ficha de cualquier
+  vacante.
+- **Teléfono:** por debajo de 620 px las tres columnas pasan a un reparto simple. **Por debajo
+  de 470 se aprieta**: los destinos bajan a 13 px y los rellenos al mínimo, sin bajar de los 44
+  px táctiles — con la letra de 15, de 431 a 454 px la barra se salía hasta 24 px. **Por debajo
+  de 368 se cae «Vacantes»**: a 320 no caben los cuatro ni apretados, y es el destino con más
+  caminos alternativos (el botón grande de la portada y «← Volver a las vacantes» de cada
+  ficha). Medido: a 375 sobran 11 px, a 369 sobran 5 y a 320, con tres destinos, 17.
 
-**Tres columnas: marca a la izquierda, destinos al centro, acción a la derecha.** La rejilla es
-`1fr auto 1fr` y no `space-between`, porque los destinos tienen que quedar centrados respecto a
-la barra y no repartidos: con `space-between` el centro se mueve cada vez que cambia el ancho de
-la marca o el texto de la acción —«Iniciar sesión» y «Mi cuenta» no miden lo mismo—. Medido, la
-desviación es de 0 px.
+⚠️ Sobre el gris claro de más abajo en la página la píldora casi no se distingue, y el
+contenido pasa por detrás sin línea que lo corte. Es lo que hace la referencia, aceptado a
+sabiendas.
 
-**Los enlaces son texto haciendo de botón**, a **16 px, peso 500 y 32 px de separación de texto
-a texto** en **tinta plena** (12,63:1): sin contorno, sin relleno y sin pastilla; lo único que dibuja el área táctil de 44 px
-es el `min-height`. **La página en la que estás se dice con el color del texto
-—`--activo-regla`—, el peso 700 y un filete coral de 2 px que se abre desde el centro** en
-300 ms; al pasar por encima de los demás, ese filete se abre en gris.
+### El cielo de la portada
 
-⚠️ **El peso es lo que los sostiene, no el tamaño.** A 14 px y peso normal los cuatro destinos
-se perdían: son lo único que hay en medio de una barra muy ancha y blanca, sin nada debajo. Por
-eso subieron a 18 px el 11/09/2026 y **pudieron volver a 16 px el 15/09** —la medida de la
-referencia— sin perderse: lo que los sostiene es el 500. En teléfono bajan a 14 px pero **el 500
-se queda**.
+Un cielo azul con nubes, **solo en la portada**, que pasa por detrás de la cabecera y se apaga
+hacia abajo hasta el gris de la página. Tres capas, cada una copiada de una cosa de la foto de
+la referencia:
 
-⚠️ **Los 32 px de separación salen del relleno, no de un `gap`.** `.navegacion` lleva `gap: 0` a
-propósito: cada `.enlace` pone 16 px por lado, así que dos contiguos dejan exactamente los 32 px
-de la referencia. Un hueco declarado aquí se sumaría al relleno y la barra dejaría de coincidir. Figtree es variable de 400 a 700, así que el
-500 no cuesta una descarga más.
+- **La luz en el centro.** Un resplandor casi blanco justo detrás del titular que se vuelve
+  azul hacia los bordes y las esquinas. Además de parecerse, es lo que mejor le va al texto: la
+  tinta cae sobre lo más claro del cielo.
+- **El azul con su horizonte:** azul desde arriba del todo, una franja más saturada cerca de
+  abajo, y el fundido al gris de la página. **Arriba es azul a propósito**: una píldora blanca
+  se lee mejor sobre azul que sobre blanco.
+- **Las nubes, de ruido fractal**, en los bordes y nunca en el centro: jirones estirados en
+  horizontal y un cúmulo abajo a la izquierda con una sombra azulada que le da volumen. Se
+  **generan** a partir de `herramientas/cielo/cielo-nubes.svg` y se sirven ya pintadas como
+  `public/cielo-nubes.webp` (40 KB): calcular el ruido en el navegador costaba ~100 ms de hilo
+  principal en escritorio en cada carga. **Si se toca el SVG, hay que volver a correr
+  `herramientas/cielo/pintar-nubes.mjs`.**
 
-⚠️ **El filete anima `left` y `right`, no `transform: scaleX()`.** Un filete de 2 px escalado
-en X sigue midiendo 2 px de alto, pero el navegador lo compone desde una caja de ancho completo
-y en pantallas densas se ve un pelo más grueso al arrancar; así la caja es de 2 px reales en
-todo momento.
+En un teléfono las nubes casi no asoman: la imagen se ajusta al alto y en 390 px solo se ve su
+centro, que es el que queda limpio para el titular. Es a propósito.
 
-WCAG 1.4.1 pide que el color no vaya solo, y no va: le acompañan el peso 700 y el filete.
+### La ventana de cristal
 
-«Iniciar sesión» es la excepción y la única acción de la barra, y desde el 15/09/2026 es **la pieza de
-`originx.demos.tailgrids.com` copiada al valor**, medida en el navegador y no sacada a ojo de una
-captura.
+La pieza grande de la portada: el recorrido de cinco etapas, presentado como una ventana del
+portal dentro de un marco de vidrio.
 
-Son **dos cajas**, y por eso el enlace lleva un `<span>` dentro que no se puede quitar:
+- **El marco:** filete blanco de 1 px, 12 px de relleno con un blanco al 25 % que se desvanece
+  hacia abajo, radio 26 solo arriba. Por el relleno se ve el cielo. Sin sombra ni resplandor.
+- **La ventana:** una barra que retrata la cabecera, el recorrido, y una ficha que asoma y se
+  corta contra el borde; todo se funde en los últimos 120 px.
+- **Lo que se corta es solo decoración** (`aria-hidden`, sin texto ni enlaces). El recorrido
+  queda entero por encima del fundido — **medido a seis anchos**, entre 15 y 40 px de margen.
+- **Por debajo de 900 px la ventana termina de verdad:** se cierra entera y no se funde, porque
+  apilado el recorrido crece y el recorte cortaría la última etapa.
 
-- **El marco** —el `<a>`— es rosa translúcido `rgba(255,136,150,.20)`, 4 px de relleno y esquina
-  viva, con **cuatro cuadrados de 3×3 px en las esquinas** en rampa `#FF8268 → #FE7EB2`.
-- **La cara** —el `<span>`— lleva la rampa `#FF7C61 → #FF68A5` a 270°, radio 4 px, texto blanco a
-  14 px/600, y **dos luces interiores blancas al 20 %**, una arriba y otra abajo, que son las que
-  la abomban. Sin ellas la rampa se ve plana y deja de parecerse.
+### El recorrido
 
-⚠️ **Los cuatro puntos de las esquinas son parte del botón.** En la captura de referencia parecen
-marcas de selección de una herramienta de diseño; no lo son. En el original son cuatro `<span>`
-absolutos a −1 px. Aquí son cuatro capas de fondo, sin tocar el árbol: el elemento lleva un
-**borde transparente de 1 px** para que puedan asomar por fuera del marco —un fondo no se sale de
-su caja, pero la caja de borde va 1 px más allá— y `background-clip` mixto, porque **el color de
-fondo usa siempre el último valor de esa lista**.
+Cinco tramos —Perfil, Prueba, Simulación, Validación, Decisión— **dibujados igual en la
+portada que dentro del portal**: lo que se ve antes de entrar es lo que se verá después.
 
-⚠️ **El texto blanco sobre esta rampa da entre 2,70:1 y 2,53:1**, donde WCAG 1.4.3 pide 4,5:1 a
-14 px, y **tampoco cumple el 3:1 de 1.4.11** para el límite del control. Es **peor que la rampa
-magenta que hubo antes** —`#E0218A → #FF3B5C`, que daba 4,42:1 y 3,48:1— y va así **por petición
-expresa del cliente**, que quería la pieza de la referencia igual. El marco rosa se ve, pero al
-20 % sobre nube da 1,18:1 y no lo salva. Si algún día hay que cumplirlo, el cambio es de dos
-valores: la misma rampa con la luz bajada, `#D81B7E → #C4304B`, que da 4,80:1 y 5,42:1.
+- **El estado va en la forma:** el tramo en curso es una franja maciza en índigo; los que
+  faltan, en `regla`. Con la pantalla en gris se distinguen igual, que es la comprobación.
+- La franja **se dibuja de izquierda a derecha en cada carga**.
 
-⚠️ **Se fue el destello que cruzaba el botón**, y con él lo único que se movía solo en todo el
-portal. La pieza de la referencia no lo tiene, y sobre esta rampa un reflejo blanco al 45 %
-bajaba todavía más un contraste que ya no llega.
+### Movimiento
 
-⚠️ **El enlace activo en coral da 2,53:1 sobre la nube**, donde 1.4.3 pide 4,5. Se eligió así
-**a sabiendas y mirando el número**: se probó también `#bf4526` —el mismo tono con la luz
-bajada, 5,13:1— y se prefirió el coral de marca. El peso 700 acompaña al color, así que la
-segunda señal que pide 1.4.1 está; lo que no se cumple es el contraste del texto.
+Cuatro piezas independientes en [`src/ui/movimiento.tsx`](src/ui/movimiento.tsx), para poder
+quedarse con unas y tirar otras sin desmontar el resto:
 
-**El coral en la cabecera ya no es solo un filete.** Era la única excepción a «el coral solo
-marca te toca a ti» y era pequeña; ahora el coral es el texto activo y el relleno de la
-acción. Dentro de las pantallas el coral sigue significando turno y solo turno.
+- **B · El título que viaja:** el título de una vacante pasa de su tarjeta a la ficha.
+- **C · La franja que se llena:** la barra del recorrido se dibuja de izquierda a derecha.
+- **D · La tarjeta que responde:** la tarjeta de vacante se levanta al pasar por encima.
+  ⚠️ **Su superficie lleva `tabIndex={-1}`, y no es un descuido.** `motion` pone `tabindex="0"`
+  a todo lo que tenga `whileTap` y no sea un control: cada tarjeta eran dos paradas de Tab, una
+  caja sin nombre y después su enlace. Con `-1` la única parada es el enlace, y el toque sigue
+  hundiendo la superficie porque el `pointerdown` del enlace sube hasta ella.
+- **E · Al asomarse:** un bloque de la portada entra al asomar por el borde de la ventana, y sus
+  hermanos en fila, de 200 en 200 ms. Solo en la portada.
 
-**«Inicio» y «Vacantes» son dos pantallas desde el 25/09/2026.** «Inicio» es la portada y
-«Vacantes» es `/vacantes`, la lista con buscador y filtros; va de `NavLink` sin `end` para
-encenderse también en la ficha de cualquier vacante. **Por debajo de 430 px la barra se
-aprieta** —letra de 13 px en los destinos, rellenos mínimos— para que los cuatro quepan en un
-teléfono de 375 sin scroll horizontal, y **por debajo de 368 px desaparece «Vacantes»**: a 320
-px no caben ni apretados, y es el destino con más caminos alternativos (el botón grande de la
-portada y «← Volver a las vacantes» de cada ficha).
-
-**El movimiento de la barra son dos cosas y ninguna más.** La cascada de entrada, 420 ms con
-60 ms de desfase entre destinos, que corre **una vez por carga de página** porque `Armazon` se
-queda montado mientras el candidato navega. Y el filete del enlace, que **se abre desde el centro
-hacia los dos lados** en 300 ms —gris al pasar por encima, coral en el que está activo—.
-
-⚠️ **Eran tres hasta el 15/09/2026.** La tercera era un reflejo blanco que cruzaba «Iniciar sesión»
-cada 4,5 s, y se fue con la pieza nueva. Costó acertarle la curva —`--salida` lo hacía saltar en
-vez de cruzar—, y esa nota se queda aquí porque el problema vuelve con cualquier destello: una
-curva de entrada no sirve para algo que pasa por encima y sale por el otro lado.
-
-El filete anima `left` y `right`, no `transform: scaleX()`: un filete de 2 px escalado en X se
-compone desde una caja de ancho completo y en pantallas densas se ve un pelo más grueso al
-arrancar.
-
-Con `prefers-reduced-motion` se van la cascada y los desplazamientos; **se quedan el color del
-activo y su filete**, que son los que dicen dónde estás.
-
-⚠️ **`--alto-cabecera` se mide, no se calcula.** Son 70 px —8 de aire + 62 de barra—. El
-11/09/2026 pasaron por 61 (barra a sangre) y 76 (vaina ovalada flotante), y el 15/09/2026 de 68
-a 70, **porque cambió el botón**: «Iniciar sesión» copió la pieza de la referencia y pasó de 44 a
-46 px. Seis reglas de cuatro hojas se pinchan debajo de ese número, así que la lista de lo que
-obliga a volver a medir incluye el alto del botón, no solo los rellenos.
-
-⚠️ **La barra es transparente mientras no se baja**, así que lo que se pincha bajo
-`--alto-cabecera` aparece sobre el cielo hasta el primer scroll. No es un problema: en cuanto
-hay scroll —que es cuando algo pasaría por debajo— la barra ya tiene su velo puesto. Medido:
-el carril pegajoso se posa exactamente en 70, sin hueco ni solape.
-
-⚠️ **El velo es nube MACIZA, y se probó traslúcida.** Nube al 85 % con `backdrop-filter:
-blur(12px)` dejaba leer entero el botón negro de la portada al pasar por debajo: un 15 % de
-transparencia no perdona una pieza de máximo contraste. Y el desenfoque detrás de un relleno
-opaco no pinta nada, que es por lo que se quitó el vidrio empañado el 10/09/2026.
-
-⚠️ **Aquí hubo un vidrio empañado y se fue el 10/09/2026.** Existía para que la cabecera
-dejara ver el canto irisado por detrás; sin canto, desenfocaba un `--cielo` plano en las
-diecisiete pantallas a cambio de una capa de compositor en cada una. Quitarlo arregló además
-que las barras pegajosas del examen se transparentaran a través de ella al hacer scroll.
-
-### Signature Component — el escaparate
-
-La pieza grande de la portada: una tarjeta blanca de **borde de 12 px en blanco al 40 %** y
-radio 20 px, con `background-clip: padding-box` —sin él, el blanco de dentro se cuela por
-debajo del borde y lo anula—. Dentro va el recorrido del candidato.
-
-**Detrás de la tarjeta, no dentro**, hay un neón de dos colores: cálido `#FF7C61` por la
-izquierda y frío `#FF47B8` por la derecha. **Es un halo ceñido al pie, no un baño**: arranca al
-58 % de la altura de la tarjeta, asoma 30 px por debajo y 2 % por los lados, con 24 px de
-desenfoque. En teléfono arranca al 80 %, porque ahí la tarjeta mide el doble. La tarjeta no tiene fondo propio —lo pinta `.escaparateDentro`—, así que la luz
-cabe entre las dos capas, y su borde translúcido de 12 px la deja intuir por el canto.
-
-⚠️ **Estuvo dentro de la tarjeta hasta el 15/09/2026 y ahí tenía un problema de fondo**: la
-tarjeta es lo único que hay que leer en la portada, y meterle luz bajo el texto obligaba a
-pelear cada tono —las cuatro capas se suman, `--tinta3` caía a 3,85:1, hubo que subir el texto
-de las etapas—. Fuera, el interior vuelve a ser blanco limpio y el problema no existe.
-
-⚠️ **El rosa `#FF47B8` es el único tono del portal fuera de la familia coral.** No es un token
-y no debe serlo: existe solo aquí, como luz, y no significa nada.
-
-⚠️ **NO lleva `z-index: -1`, y se intentó.** Es la misma trampa que en el armazón: `mundo.css`
-pinta el cielo en `html` **y** en `body`, y el fondo de `body` se pinta después de los
-descendientes de z negativo, así que la luz quedaba enterrada —se comprobó poniéndola en rojo
-plano y sin desenfoque: no aparecía—. Lo que la coloca bien es el orden natural: el `::before`
-va antes que `.escaparateDentro` en el árbol, los dos están posicionados, y sin `z-index` gana
-el último.
-
-### El recorrido — cinco tramos, y el estado en la forma
-
-La pieza que sostiene el portal: cinco franjas en fila, una por etapa, y **lo formado se queda
-formado**. Vive en `src/paginas/procesos/Seguimiento.module.css`.
-
-El estado se dice con el **grosor y el relleno**, nunca con el color:
-
-| Tramo | Forma |
-|---|---|
-| Formada | 8 px, maciza en tinta |
-| Viva | 12 px, maciza en tinta, con filete blanco alrededor |
-| Formándose | 8 px que se desvanecen a la mitad |
-| Ausente | filete de 2 px en regla segunda |
-| Dispersa | 8 px punteados |
-
-**Con la pantalla en gris se distinguen las cinco.** Es la comprobación de esa hoja y hay que
-rehacerla si se toca.
-
-⚠️ **La viva no lleva coral, aunque sea el tramo que te reclama.** El coral lo lleva el panel
-`.turno` que cuelga justo debajo, que además lo dice con palabras: dos corales en la misma
-postulación no marcan el doble.
-
-### Resto del mundo anterior — el canto
-
-**Ya no queda ninguno en pantalla.** `src/ui/Canto.tsx` y su hoja se borraron el 10/09/2026, y
-`Seguimiento` —el último sitio que pintaba `--canto`— adoptó las cinco formas de arriba.
-
-Los tokens `--canto-menta / aqua / rosa / violeta` siguen declarados en `mundo.css` con valores
-de la familia coral, y **su único consumidor es la galería de portadas de «Mi perfil»**:
-`PORTADAS_DE_LA_CASA` en `src/api/perfil.ts` guarda los códigos `CANTO_*` en el backend, así
-que renombrarlos rompería la portada de cualquier perfil existente. Hoy las opciones que el
-candidato ve se llaman «Menta», «Aqua», «Rosa» y «Violeta» y se pintan en coral: **eso hay que
-resolverlo cuando se recomponga el perfil.** No se usan en composiciones nuevas.
-
-### Motion
-
-**El movimiento aquí sirve a la continuidad y al cambio de estado, no a la decoración.** La
-curva es siempre `cubic-bezier(0.16, 1, 0.3, 1)` y la duración por defecto son 300 ms.
-
-Tres registros, y cada uno tiene su trabajo:
-
-**Cuatro piezas construidas, tres en uso, y una quinta traída de la referencia.**
-
-⚠️ **A se retiró el 22/09/2026 y el motivo es de uso, no de gusto.** Ligaba una pantalla con
-la siguiente, pero como envolvía al `<Outlet>` corría en **cada** cambio de ruta: el contenido
-llegaba 280 ms tarde y eso se lee como un fallo, no como una transición. El código sigue en
-`movimiento.tsx`; lo que ya no hace es envolver al `<Outlet>`. Recuperarla es volver a ponerlo
-en `Armazon.tsx`.
-
-B, C y D siguen: ninguna es gratuita —C dice hasta dónde llegaste, B sostiene la continuidad al
-abrir una ficha y D es la respuesta al puntero—.
-
-La librería es **`motion`** (la antigua Framer Motion). ⚠️ Se probó antes con la View
-Transitions API nativa y **se descartó el 10/09/2026 por criterio visual**; no reintentarla sin
-que alguien lo pida. Las cinco piezas viven separadas en
-[`src/ui/movimiento.tsx`](src/ui/movimiento.tsx) para poder quitar una sin desmontar el resto:
-
-- **A · La pantalla que entra.** *Retirada del armazón el 22/09/2026, ver arriba.* Fundía la
-  pantalla vieja y entraba la nueva con un desplazamiento corto. `mode="wait"`, porque con el
-  ancho fijo del portal dos capas a la vez dan un salto de altura.
-- **B · El título que viaja.** `layoutId` con el número de la vacante: el título de la tarjeta
-  interpola posición y tamaño hasta ser el titular de la ficha. El id lleva el número porque
-  en la portada hay una tarjeta por puesto y dos `layoutId` iguales pelean.
-- **C · La franja que se llena.** La barra de cada etapa se dibuja de izquierda a derecha,
-  escalonada. Es la única cuyo movimiento **significa algo del producto**: dice hasta dónde
-  llegaste.
-- **D · La tarjeta que responde.** Se levanta al pasar por encima y se hunde al pulsarla. Con
-  muelle y no con duración: al pulsar y soltar rápido, una duración fija se siente pegajosa.
-  ⚠️ **El levantarse es solo de motion.** Hasta el 10/09/2026 la hoja de la portada subía la
-  tarjeta 2 px y la pieza D la subía 4: dos animaciones peleando por el mismo `transform` con
-  dos curvas distintas.
-  ⚠️ **La superficie lleva `tabIndex={-1}`, y no es un descuido.** `motion` pone
-  `tabindex="0"` a todo lo que tenga `whileTap` y no sea un control: cada tarjeta eran dos
-  paradas de Tab, un `<article>` sin nombre ni acción y después su enlace (25/09/2026, en la
-  portada y en `/vacantes`). Con `-1` la única parada es el enlace, y el toque sigue hundiendo
-  la superficie porque el `pointerdown` del enlace sube hasta ella.
-
-- **E · Lo que entra al asomarse.** `AlAsomarse` y `AsomanEnFila`, traídas de OriginX con sus
-  valores exactos, sacados de su bundle. **No es una transición de ruta aunque lo parezca**: es
-  `whileInView`, y cada bloque se anima cuando asoma por el borde de la ventana, una sola vez.
-  Al cargar, lo que cae sobre el pliegue entra junto —y eso es lo que se lee como «la pantalla
-  entró animada»—; al bajar, cada sección va entrando por su cuenta.
-
-  Variantes `fadeInUp` (y 50), `fadeInLeft` (x −50), `fadeInRight` (x 50) y `scaleUp`
-  (escala 0,8); `viewport {once: true, amount: 0.2}`; escalonado de 200 ms.
-
-  ⚠️ **Su curva y su duración NO son las del mundo, y es deliberado.** Usa `[.25,.1,.25,1]`
-  —el `ease` de CSS— y 500 ms, contra los `cubic-bezier(0.16, 1, 0.3, 1)` y 300 ms del resto.
-  Se pidió replicar la referencia exactamente; cambiarlo son dos constantes.
-
-  ⚠️ **Solo está en la portada.** Retrasa medio segundo lo que el visitante vino a ver, y eso
-  solo se paga donde la pantalla se lee. En «Mis procesos» no va: alguien entra a comprobar si
-  hay novedad, y además ahí ya se mueve C, que sí significa algo.
-
-⚠️ **Con el reloj corriendo no se mueve nada, y eso se aplica en cada pieza.** La regla la
-tenían las piezas, pero mientras `PantallaConEntrada` envolvió al `<Outlet>` la evaluación, la
-prueba y el cuestionario técnico entraban desplazándose igual que las demás: **la única pieza
-que una pantalla no puede rechazar es la que le pone su contenedor**. El rechazo vive en
-`movimiento.tsx`, que compara la ruta contra los tres patrones cronometrados, y lo heredan
-también `AlAsomarse` y `AsomanEnFila`.
-- **La franja se llena al entrar**, de izquierda a derecha y escalonada por etapa. ⚠️ **Esto
-  decía que solo corría «cuando el estado cambió desde la última visita», y era falso**: corre
-  en cada montaje, y nunca hubo código que comparase con una visita anterior. Se corrigió el
-  texto y no el código porque para comparar hace falta guardar el estado por postulación en el
-  navegador, y esa es una decisión de producto que nadie ha tomado. Queda anotado en
-  [PENDIENTES](docs/PENDIENTES.md).
-- **La microinteracción.** Pasar por encima, pulsar, plegar y desplegar, y el paso de
-  esqueleto a contenido con un fundido corto. Son transiciones de estado, no animaciones.
-
-⚠️ **La única prohibición que queda: dentro de la prueba del puesto no se mueve nada.** El
-reloj corre y cualquier cosa que se mueva compite con una tarea cronometrada.
-
-### Las pantallas con el reloj corriendo
-
-La evaluación, la prueba y el cuestionario técnico. Tres reglas propias, además de la de no
-moverse:
-
-- **El `h1` es la pregunta**, no el nombre de la pantalla, y baja a `--t-titulo`. Un titular de
-  60 px sobre un enunciado de tres líneas es ilegible con el reloj corriendo. Lo único que
-  sube a `--t-cifra` es el reloj.
-- **El cronómetro dice «queda poco» con palabras, no solo con el rojo.** La frase del umbral
-  —«Quedan diez minutos»— la emite `Cronometro` en un `role="status"` y vivía en
-  `.solo-lectores`: llegaba al lector de pantalla y a nadie más, así que para quien ve y no
-  distingue el rojo no había ninguna señal (WCAG 1.4.1). Se hace visible pasándole
-  `classNameAviso`. **No es texto nuevo: es texto que ya se decía y no se veía.**
-- **Cero superficies anidadas.** El mapa lateral es una lista con regla, no veinte tarjetas con
-  sombra: veinte sombras son veinte cosas que llaman.
-
-⚠️ **Al hacer visible la frase, la barra del reloj cambia de alto**, y debajo hay un elemento
-pegajoso. `--alto-reloj` —que es local de `Prueba.module.css`, no un token global— guarda el **peor caso medido** —111 px con la frase, 77 sin
-ella—, no el común: un hueco de más no molesta, pero tapar el encargo durante los últimos diez
-minutos de una prueba cronometrada sí. Es la regla del desfase medido llevada a su caso
-difícil: no se mide una vez, se mide en el estado en que el elemento es más alto.
-
-**`prefers-reduced-motion` se respeta en todo lo anterior, sin excepciones.** Esto es un
-portal de empleo: una barrera aquí impide postular a un trabajo.
+La pieza A —cada pantalla entraba desplazándose— existe pero **no se usa** desde el 22/09: al
+cambiar de pestaña el contenido llegaba tarde y se leía como un fallo. «Inicio» sube
+deslizándose cuando no cambias de pantalla, y cambiar de pantalla salta: lo que llega es
+contenido nuevo.
 
 ### Named Rules
 
-**La regla del indicador honesto.** Si algo dice que está guardado, tiene que salir de
-comparar con el servidor. «Respuesta guardada» como texto fijo ya costó respuestas perdidas.
-Y una pregunta en blanco no está guardada: está **sin responder**, que es otra cosa.
+**La regla del reloj.** Dentro de la prueba del puesto no se mueve nada. El reloj corre, y
+cualquier cosa que se mueva compite con una tarea cronometrada.
 
-**La regla de la plataforma primero.** Antes de traer una librería de componentes, se mira si
-el HTML ya lo resuelve. Las preguntas frecuentes usan `<details>`, el aviso de postular usa
-`<dialog>` y el formulario apagado de la decisión es un `<fieldset disabled>`: foco atrapado,
-tecla de escape y teclado vienen gratis.
+**La regla de la barrera.** Todas las piezas respetan `prefers-reduced-motion` y se montan ya
+en su estado final. Esto es un portal de empleo: una barrera aquí impide postular a un trabajo.
 
 ## Do's and Don'ts
 
 ### Do:
 
-- **Do** poner la acción en `#0a0a0a` con esquina de 4 px. Es la afordancia más importante
-  del producto.
-- **Do** reservar el coral `#ff7c61` y la bruma rosa para «te toca a ti»: el borde del panel
-  que reclama y la etiqueta que lo dice.
-- **Do** codificar cada estado en la forma —grosor, relleno, punteado— antes que en el color,
-  y comprobarlo con la pantalla en gris.
-- **Do** separar una superficie del fondo subiéndola de tono, no poniéndole contorno grueso.
-- **Do** traer los botones con `composes` desde `piezas.module.css`, dejando en la hoja local
-  solo lo que depende de dónde está el botón.
-- **Do** dar 44 px de alto mínimo a todo lo que se pueda tocar, y 48 px con 16 px de letra a
-  los campos de texto.
-- **Do** usar `tabular-nums` en fechas, cuentas y plazos.
-- **Do** decir en voz alta lo que el sistema todavía no puede hacer. Si una evidencia no se
-  puede enviar, el formulario va apagado y se explica; no se finge.
-- **Do** respetar `prefers-reduced-motion` en cada transición que escribas.
-- **Do** adelantarle a la pantalla siguiente el dato que la actual ya tiene, para que abra con
-  su contenido en vez de con su esqueleto. La ficha de una vacante lo hace desde la lista.
+- **Do** separar una superficie de la página por tono —blanco sobre `cielo`— y bajar a
+  `nube-hundida` lo que va dentro de otra superficie.
+- **Do** pintar de índigo solo lo que se pulsa, dónde estás y lo que te toca.
+- **Do** decir cada estado con una forma —franja maciza, borde de 2 px, filete— además del
+  color.
+- **Do** medir en el navegador, no calcular: el alto de la cabecera, los caracteres por línea,
+  los contrastes y dónde corta un fundido.
+- **Do** usar los tokens de `mundo.css` y las piezas de `piezas.module.css`; una variante
+  nueva se declara con nombre en la hoja compartida.
+- **Do** mantener 44 px de área táctil en todo lo que se pulsa.
 
 ### Don't:
 
-- **Don't** poner color en un botón. El color no es una acción en este mundo.
-- **Don't** usar el coral como texto sobre fondo claro: da 2,3:1.
-- **Don't** usar `#cbcbcb` como contorno de un control: da 1,6:1. Los controles piden 3:1 y
-  para eso está `--borde-control`.
-- **Don't** volver a hacer píldoras: `--radio-control` vale 4 px.
-- **Don't** usar verde, ámbar o rojo para jerarquía o categoría: ya significan hecho, duda y
-  error.
-- **Don't** usar los tokens `--canto*` en nada nuevo. El componente `Canto` ya no existe.
-- **Don't** marcar un aviso con un filete de acento a la izquierda. Es la barra lateral de
-  siempre, está prohibida en este mundo, y el bloque ya se distingue por su fondo y su
-  contorno enteros. **Quedan trece en pantallas sin migrar**; cada tanda se lleva las suyas.
-- **Don't** escribir `composes` en un selector que no sea una clase simple. Ni compuesto
-  (`.estadoActual.turno`) ni en lista (`.enviar, .enviar:hover`): PostCSS devuelve un 500 y la
-  aplicación entera deja de montar.
-- **Don't** apoyarse en el orden de las hojas para que un `composes` pierda contra tu regla.
-  Si el kit trae `:hover:not(:disabled)` —(0,3,0)— tu `.algo:hover` —(0,2,0)— no gana: átalo a
-  un atributo que el marcado ya tenga.
-- **Don't** anidar superficies con sombra, ni crear un nivel de jerarquía con un recuadro
-  cuando el tamaño de letra ya lo crea.
-- **Don't** mover nada dentro de la prueba del puesto, salvo el aviso de que queda poco
-  tiempo.
-- **Don't** animar por decorar: si el movimiento no dice un cambio de estado ni sostiene la
-  continuidad entre dos pantallas, sobra.
-- **Don't** repetir en cada carga una animación que significa «algo cambió». Se dispara cuando
-  cambió, y solo entonces.
-- **Don't** volver a introducir el tema oscuro. Es petición expresa del cliente.
-- **Don't** partir una frase con elementos dentro para enfatizar un número.
+- **Don't** usar verde, ámbar o rojo para jerarquía o categoría.
+- **Don't** redondear un botón en píldora; la esquina de un control es de 8 px.
+- **Don't** poner dos titulares a escala de portada en una misma pantalla.
+- **Don't** aclarar el índigo de acción: blanco encima da 4,57:1 y un escalón más claro deja de
+  pasar.
+- **Don't** usar para texto un gris más claro que `tinta3`.
+- **Don't** mover nada dentro de la prueba del puesto.
+- **Don't** traer una segunda familia tipográfica ni una cursiva.
+- **Don't** usar `overflow: hidden` para recortar un fondo a sangre: rompe la cabecera
+  pegajosa. Es `clip`.
+- **Don't** meter crema, negro pleno como acción, ni coral: son del mundo anterior.

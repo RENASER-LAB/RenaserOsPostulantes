@@ -6,7 +6,7 @@
  */
 
 import { Link, NavLink, Outlet, matchPath, useLocation, useNavigationType } from 'react-router-dom'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { patrones, rutas } from '@/rutas'
 import { useSesion } from './Sesion'
 import { Campana } from '@/ui/Campana'
@@ -60,6 +60,39 @@ const TITULOS: Array<[string, string]> = [
   [patrones.adminEntrar, 'Entrar al panel'],
   [patrones.adminClave, 'Recuperar la contraseña'],
   [patrones.adminRestablecer, 'Elegir contraseña nueva'],
+]
+
+/** Las pantallas que son una tarjeta sola y se centran en la ventana. */
+const CENTRADAS = [
+  patrones.ingresar,
+  patrones.clave,
+  patrones.restablecer,
+  patrones.adminEntrar,
+  patrones.adminClave,
+  patrones.adminRestablecer,
+]
+
+/** Las puertas: pantallas de una sola tarea, que llevan el pie corto. */
+const PUERTAS = [
+  patrones.ingresar,
+  patrones.acceso,
+  patrones.registro,
+  patrones.clave,
+  patrones.restablecer,
+  patrones.adminEntrar,
+  patrones.adminClave,
+  patrones.adminRestablecer,
+]
+
+/**
+ * Las publicas con contenido que leer: llevan el pie en columnas aunque no haya
+ * cuenta. Cualquier otra pantalla sin cuenta es «acceso necesario».
+ */
+const PUBLICAS_CON_CONTENIDO = [
+  { path: patrones.inicio, end: true },
+  patrones.vacantes,
+  patrones.vacante,
+  patrones.politica,
 ]
 
 function TituloDeLaPagina() {
@@ -191,60 +224,77 @@ function claseDelEnlaceQueCede(estado: { isActive: boolean }) {
   return `${claseDelEnlace(estado)} ${estilos.enlaceQueCede}`
 }
 
-/**
- * Si la pagina ya se movio de arriba.
- *
- * Es lo unico que separa la cabecera en reposo —solo la marca y los enlaces
- * sobre el cielo— de la cabecera posada, que saca su superficie para que el
- * contenido no se le mezcle por debajo.
- *
- * ⚠️ **Se lee una vez al montar, ademas de escuchar.** Al volver a una pantalla
- * con el navegador ya desplazado, un oyente que solo reacciona a `scroll` deja
- * la barra transparente sobre contenido.
- *
- * El oyente va en `passive`: no llama a `preventDefault` y sin la marca el
- * navegador tiene que esperar a saber si lo hara antes de desplazar.
+/*
+ * Aqui vivia `usarPosada`, que escuchaba el desplazamiento para saber si la
+ * pagina se habia movido de arriba y ponerle `.posada` a la cabecera: primero
+ * para sacar su superficie, y luego para hondear su sombra. Se fue el
+ * 25/09/2026, cuando la pildora paso a ser blanca a secas en reposo y al bajar,
+ * como la de la referencia del cliente: ya no habia nada que cambiar al bajar,
+ * y un oyente de `scroll` que no pinta nada es trabajo en cada frame para nada.
  */
-function usarPosada() {
-  const [posada, setPosada] = useState(false)
-
-  useEffect(() => {
-    const mirar = () => setPosada(window.scrollY > 4)
-    mirar()
-    window.addEventListener('scroll', mirar, { passive: true })
-    return () => window.removeEventListener('scroll', mirar)
-  }, [])
-
-  return posada
-}
 
 export function Armazon() {
   const { hayCuenta } = useSesion()
-  const posada = usarPosada()
   const { pathname } = useLocation()
 
   /*
-   * Las dos pantallas que son UNA tarjeta sola: se centran en lo que se ve en
-   * vez de fluir desde arriba. Eso cambia el armazon —la cadena de altos y el
-   * aire del pie—, asi que la decision se toma aqui. Ver `.armazonJusto`.
+   * Las pantallas que son UNA tarjeta sola: se centran en lo que se ve en vez de
+   * fluir desde arriba. Eso cambia el armazon —la cadena de altos y el aire del
+   * pie—, asi que la decision se toma aqui. Ver `.armazonJusto`.
    *
-   * ⚠️ **`/admin/entrar` entro el 25/09/2026, y solo pudo entrar al quitarle el
-   * bloque «¿No puedes entrar?»**: con el, la pantalla medía mas que la ventana,
-   * y centrar lo que no cabe desborda por los dos lados —a lo que se sale por
-   * arriba el navegador no deja llegar—. Si algun dia vuelve a crecer por
-   * debajo de la tarjeta, esto hay que quitarlo.
+   * ⚠️ **Centrar solo es seguro mientras la tarjeta quepa.** Centrar lo que no
+   * cabe desborda por los dos lados, y a lo que se sale por arriba el navegador
+   * no deja llegar. `/admin/entrar` solo pudo entrar al quitarle el bloque «¿No
+   * puedes entrar?», y la contraseña olvidada —las cuatro— al pasar a tarjeta con
+   * titular de 30 px, el 25/09/2026. Si alguna vuelve a crecer por debajo de la
+   * tarjeta, hay que sacarla de aqui.
    */
-  const justo =
-    matchPath(patrones.ingresar, pathname) !== null ||
-    matchPath(patrones.adminEntrar, pathname) !== null
+  const justo = CENTRADAS.some((patron) => matchPath(patron, pathname) !== null)
+
+  /*
+   * El amanecer de la portada. Va detras de la cabecera, asi que la decision es
+   * del armazon y no de la pantalla. Ver `.armazonConCielo` en la hoja.
+   *
+   * `end` importa: sin el, `/` casa con todo y el cielo saldria en las dieciocho
+   * pantallas.
+   */
+  const conCielo = matchPath({ path: patrones.inicio, end: true }, pathname) !== null
+
+  /*
+   * El pie corto: una sola linea, para las pantallas que son una tarjeta.
+   *
+   * ⚠️ **El pie en columnas mide 290 px, y en estas pantallas sacaba scroll.**
+   * Medido el 25/09/2026 a 1440×900: `/ingresar` se pasaba 24 px, `/clave` 289 y
+   * «acceso necesario» 39 — pantallas que tienen UNA cosa que hacer y ningun
+   * motivo para bajar. El pie grande es para las paginas que se leen; en una
+   * puerta, el pie tiene que estar y apartarse.
+   *
+   * Van con el corto las puertas —entrar, crear cuenta, el enlace del correo, la
+   * contraseña olvidada, y las tres del panel— y cualquier pantalla privada vista
+   * SIN cuenta, que es «acceso necesario». Con el largo, las publicas que tienen
+   * contenido que leer: la portada, el buscador de vacantes, la ficha de una
+   * vacante y la politica.
+   *
+   * `hayCuenta` sale del token guardado y se sabe desde el primer render, asi que
+   * quien tiene cuenta no ve parpadear el pie al abrir «Mis procesos».
+   */
+  const esPuerta = PUERTAS.some((patron) => matchPath(patron, pathname) !== null)
+  const publicaConContenido = PUBLICAS_CON_CONTENIDO.some(
+    (patron) => matchPath(patron, pathname) !== null,
+  )
+  const pieCorto = esPuerta || (!hayCuenta && !publicaConContenido)
 
   return (
-    <div className={`${estilos.armazon} ${justo ? estilos.armazonJusto : ''}`}>
+    <div
+      className={`${estilos.armazon} ${justo ? estilos.armazonJusto : ''} ${
+        conCielo ? estilos.armazonConCielo : ''
+      }`}
+    >
       <ArribaAlCambiarDePagina />
       <LlevarAlAncla />
       <TituloDeLaPagina />
 
-      <header className={`${estilos.cabecera} ${posada ? estilos.posada : ''}`}>
+      <header className={estilos.cabecera}>
         <div className={estilos.cabeceraDentro}>
           <Link className={estilos.marca} to={rutas.inicio()} aria-label="EX, inicio">
             <Marca tamano={22} />
@@ -324,35 +374,92 @@ export function Armazon() {
         <Outlet />
       </main>
 
-      <footer className={estilos.pie}>
-        <div className={estilos.pieDentro}>
-          <span>© 2026 Renaser Consulting</span>
-          {/*
-            La entrada de las empresas vive en el pie y no en la barra de
-            arriba, y es una decision, no una rebaja. Esos tres enlaces son el
-            camino de quien postula; un cuarto para otro publico distinto los
-            diluye justo cuando quien busca trabajo mas los necesita. Quien
-            trabaja en el panel entra una vez y lo guarda: lo que necesita es
-            que exista un sitio donde encontrarlo, no que le compita al
-            candidato.
-
-            Y dice «Entrar», nunca «Crear cuenta»: las cuentas del panel nacen
-            solo por invitacion. Un enlace que prometa registrarse lleva a una
-            pantalla que no puede cumplirlo.
-          */}
-          <nav className={estilos.enlacesDelPie} aria-label="Enlaces del pie">
-            {/*
-              Son dos y se llaman distinto a proposito. «Privacidad y control»
-              es el panel de acciones y necesita sesion; la politica es el
-              documento y se lee sin cuenta — Google Play exige poder enlazarla
-              asi. Con el mismo nombre, la que pide sesion pareceria un error.
-            */}
-            <Link to={rutas.politica()}>Política de privacidad</Link>
-            <Link to={rutas.privacidad()}>Privacidad y control</Link>
-            <Link to={rutas.adminEntrar()}>Entrar al panel de empresas</Link>
-          </nav>
-        </div>
+      <footer className={`${estilos.pie} ${pieCorto ? estilos.pieCorto : ''}`}>
+        {pieCorto ? (
+          /*
+            Los tres enlaces que no llevan a una pantalla de la cabecera: la
+            politica —que Google Play exige poder leer sin cuenta—, el panel de
+            los datos y la entrada de las empresas. Los destinos del portal ya
+            estan arriba, a un palmo.
+          */
+          <div className={estilos.pieLinea}>
+            <span>© 2026 Renaser Consulting</span>
+            <nav className={estilos.pieLineaEnlaces} aria-label="Enlaces del pie">
+              <Link to={rutas.politica()}>Política de privacidad</Link>
+              <Link to={rutas.privacidad()}>Privacidad y control</Link>
+              <Link to={rutas.adminEntrar()}>Entrar al panel de empresas</Link>
+            </nav>
+          </div>
+        ) : (
+          <PieEnColumnas />
+        )}
       </footer>
     </div>
+  )
+}
+
+/**
+ * El pie en columnas, desde el 25/09/2026, para las paginas que se leen.
+ *
+ * Era una linea con el copyright y tres enlaces apretados a la derecha; en
+ * columnas cada grupo dice de que va y se puede crecer sin que el de al lado se
+ * resienta.
+ *
+ * ⚠️ **Los enlaces son los que ya existian mas los tres destinos de la
+ * cabecera.** Aqui no se invento ningun sitio nuevo: un pie con enlaces que no
+ * llevan a nada es peor que un pie corto.
+ */
+function PieEnColumnas() {
+  return (
+    <>
+        <div className={estilos.pieDentro}>
+          <div className={estilos.pieMarca}>
+            <Link className={estilos.marcaDelPie} to={rutas.inicio()} aria-label="EX, inicio">
+              <Marca tamano={20} />
+            </Link>
+          </div>
+
+          <nav className={estilos.pieColumnas} aria-label="Enlaces del pie">
+            <div className={estilos.pieColumna}>
+              <h2 className={estilos.pieTitulo}>El portal</h2>
+              <Link to={rutas.inicio()}>Inicio</Link>
+              <Link to={rutas.vacantes()}>Vacantes abiertas</Link>
+              <Link to={rutas.procesos()}>Mis procesos</Link>
+            </div>
+
+            <div className={estilos.pieColumna}>
+              <h2 className={estilos.pieTitulo}>Tus datos</h2>
+              {/*
+                Son dos y se llaman distinto a proposito. «Privacidad y control»
+                es el panel de acciones y necesita sesion; la politica es el
+                documento y se lee sin cuenta — Google Play exige poder enlazarla
+                asi. Con el mismo nombre, la que pide sesion pareceria un error.
+              */}
+              <Link to={rutas.politica()}>Política de privacidad</Link>
+              <Link to={rutas.privacidad()}>Privacidad y control</Link>
+            </div>
+
+            <div className={estilos.pieColumna}>
+              <h2 className={estilos.pieTitulo}>Empresas</h2>
+              {/*
+                La entrada de las empresas vive en el pie y no en la barra de
+                arriba, y es una decision, no una rebaja. Los tres destinos de
+                arriba son el camino de quien postula; un cuarto para otro
+                publico distinto los diluye justo cuando quien busca trabajo mas
+                los necesita.
+
+                Y dice «Entrar», nunca «Crear cuenta»: las cuentas del panel
+                nacen solo por invitacion. Un enlace que prometa registrarse
+                lleva a una pantalla que no puede cumplirlo.
+              */}
+              <Link to={rutas.adminEntrar()}>Entrar al panel de empresas</Link>
+            </div>
+          </nav>
+        </div>
+
+        <div className={estilos.pieAbajo}>
+          <span>© 2026 Renaser Consulting</span>
+        </div>
+    </>
   )
 }

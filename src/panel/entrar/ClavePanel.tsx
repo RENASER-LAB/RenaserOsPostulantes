@@ -21,30 +21,38 @@ import estilos from './Entrar.module.css'
 export function ClavePanel() {
   useTituloDelPanel('Recuperar la contraseña')
 
+  /*
+   * Una tarjeta centrada, como `/admin/entrar`, desde el 25/09/2026. Era una
+   * columna con un titular de dos lineas a 60 px y el formulario en su propia
+   * superficie, y en un portatil de 768 px de alto se podia desplazar. «Si el
+   * correo no llega» entra en la tarjeta como `alternativa`: asi sale tambien en
+   * el estado de enviado, que es justo cuando alguien lo necesita.
+   */
   return (
-    <div className={estilos.pagina}>
-      {/* La marca la pone ahora la cabecera del portal, que envuelve esta
-          pantalla desde el 24/09/2026. Repetirla aquí ponía dos EX seguidas. */}
-      <div className={estilos.vuelta}>
-        <Link className={estilos.volver} to={rutas.adminEntrar()}>
-          ← Volver a entrar
-        </Link>
+    <div className={estilos.paginaEntrar}>
+      <div className={estilos.tarjeta}>
+        <div className={estilos.vuelta}>
+          <Link className={estilos.volver} to={rutas.adminEntrar()}>
+            ← Volver a entrar
+          </Link>
+        </div>
+
+        <PedirEnlace
+          pedir={pedirRecuperacionPanel}
+          titulo="Recupera tu acceso al panel."
+          bajada="Escribe el correo de tu cuenta del panel y te enviamos un enlace para elegir una contraseña nueva."
+          alternativa={
+            <section className={estilos.notaEnTarjeta}>
+              <h2 className={estilos.tituloCamino}>Si el correo no llega</h2>
+              <p className={estilos.queEsEnTarjeta}>
+                Espera un minuto y pide otro. Si sigue sin llegar, pídele a quien administra tu
+                equipo que te invite de nuevo: la invitación también te deja poner una
+                contraseña.
+              </p>
+            </section>
+          }
+        />
       </div>
-
-      <PedirEnlace
-        pedir={pedirRecuperacionPanel}
-        titulo="Recupera tu acceso al panel."
-        bajada="Escribe el correo de tu cuenta del panel y te enviamos un enlace para elegir una contraseña nueva."
-        claseFormulario={estilos.superficieDelFormulario}
-      />
-
-      <section className={estilos.camino}>
-        <h2 className={estilos.tituloCamino}>Si el correo no llega</h2>
-        <p className={estilos.queEs}>
-          Espera un minuto y pide otro. Si sigue sin llegar, pídele a quien administra tu
-          equipo que te invite de nuevo: la invitación también te deja poner una contraseña.
-        </p>
-      </section>
     </div>
   )
 }

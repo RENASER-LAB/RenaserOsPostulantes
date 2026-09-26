@@ -16,8 +16,7 @@
  * `--cielo` da 1,1:1 — es decir, nada. En este mundo lo que separa una
  * superficie es la nube blanca encima del pastel, no su contorno; sin fondo, las
  * cinco pantallas de relleno se leian como pagina y no como cosa. Es la misma
- * correccion que ya llevaban `.formulario` y `.superficieDelFormulario` en
- * `Cuenta.module.css`.
+ * correccion que ya llevaba `.formulario` en `Cuenta.module.css`.
  *
  * ⚠️ **Repite las medidas de `bloqueHolgado` a mano y NO lo compone.** Componerlo
  * pondria `.marco` y `.bloqueHolgado` con la misma especificidad, y el telefono

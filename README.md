@@ -97,24 +97,26 @@ demás son CSS Modules, uno por pantalla; lo que se repite se trae con `composes
 
 ## De dónde sale el diseño
 
-El mundo visual se llama **«El escaparate»**, desde el 10/09/2026: un cuarto gris con una
-sola pieza iluminada. El fondo es un pastel cálido y las superficies de encima son nube blanca,
-así que las superficies
-blancas de encima se leen como objetos puestos sobre una mesa.
+El mundo visual se llama **«El cielo despejado»**, desde el 25/09/2026: gris muy claro y frío
+de fondo, superficies blancas que se apoyan en él por tono, y un solo color con intención. Sale
+de una plantilla de referencia que trajo el cliente
+([saasly.demos.tailgrids.com](https://saasly.demos.tailgrids.com/)), medida en su página.
 
-- **La acción es negra** (`#0A0A0A`), con esquina de 4 px. Un botón de color compite con lo
-  único que tiene permiso para llamar la atención.
-- **El coral `#FF7C61` aparece una vez y significa «te toca a ti».** Es un discriminador:
-  sirve para encontrar tu turno entre cosas que no lo son, así que una pantalla donde no hay
-  nada contra lo que discriminar no lo pinta.
-- **El estado se lee en la forma antes que en el color**, para que quien no distingue colores
-  lea el mismo recorrido.
+- **La acción es índigo** (`#615FFF`), con esquina de 8 px. Es también el color de «estás aquí»
+  y de «te toca a ti»: un solo acento para las tres cosas.
+- **El estado se lee en la forma antes que en el color** —franja maciza, borde de 2 px—, para
+  que quien no distingue colores lea el mismo recorrido. Es lo que distingue tu turno ahora que
+  no tiene color propio.
+- **Geist**, servida por el propio sitio.
+- **La portada lleva un cielo azul con nubes** y el recorrido dentro de una ventana de cristal;
+  el resto del portal, no.
 - **Solo tema claro**, por petición del cliente.
 
-⚠️ **Hubo dos mundos antes y sus nombres siguen apareciendo en documentos viejos.** «El
-seguimiento» —hitos impresos, cero radios— y «El canto» —espectro irisado, violeta `#5638d6`,
-Mulish, controles en píldora—. Si encuentras alguno nombrado como si fuera el actual, está
-desactualizado.
+⚠️ **Hubo tres mundos antes y sus nombres siguen apareciendo en documentos viejos.** «El
+seguimiento» —hitos impresos, cero radios—, «El canto» —espectro irisado, violeta `#5638d6`,
+Mulish— y «El escaparate» —pastel cálido `#FBF1E9`, acción negra, coral `#FF7C61`, Figtree—. Si
+encuentras alguno nombrado como si fuera el actual, está desactualizado. El detalle, en
+[docs/EL-MUNDO-VISUAL.md](docs/EL-MUNDO-VISUAL.md).
 
 - Los tokens con su razón de ser están en [`src/estilos/mundo.css`](src/estilos/mundo.css);
   el sistema entero, con sus reglas nombradas, en [DESIGN.md](DESIGN.md).

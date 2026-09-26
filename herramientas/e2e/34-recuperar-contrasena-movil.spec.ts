@@ -27,6 +27,10 @@ async function sinScrollHorizontal(page: Page) {
  * de relleno y 1 px de borde por lado: el botón salía 50 px «corto» estando
  * perfectamente a ras. Restando el relleno se mide lo que la prueba quiere decir,
  * y deja de depender de que la caja no tenga ninguno.
+ *
+ * Esa superficie se fue el 25/09/2026, cuando las cuatro pantallas pasaron a la
+ * tarjeta de `/ingresar` y el formulario volvió a no tener relleno. La resta se
+ * queda: sigue midiendo lo mismo si algún día vuelve a tenerlo.
  */
 async function botonAlAncho(page: Page, nombre: string) {
   const medidas = await page.getByRole('button', { name: nombre }).evaluate((b) => {

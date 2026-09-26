@@ -3,8 +3,8 @@
 Última actualización: 2026-09-11
 
 ⚠️ **Este documento cuenta el rediseño de agosto de 2026, y su mundo visual ya no es el
-actual.** Aquél se llamaba «El seguimiento»; después vino «El canto» y desde el 10/09/2026
-rige **«El escaparate»**, cuya migración está completa. Lo que sigue vigente de aquí son las
+actual.** Aquél se llamaba «El seguimiento»; después vinieron «El canto», «El escaparate» (del
+10 al 25/09/2026) y desde el 25/09/2026 rige **«El cielo despejado»**. Lo que sigue vigente de aquí son las
 decisiones de producto y las reglas del código, no el color. Para el diseño de hoy:
 [EL-MUNDO-VISUAL.md](EL-MUNDO-VISUAL.md) y [DESIGN.md](../DESIGN.md).
 
@@ -46,9 +46,9 @@ y las doce del recorrido.
 | Evaluación | **A · Una pregunta por pantalla, con mapa** | Mapa lateral con todas las preguntas y su estado. Resuelve el problema conocido: saltarse una y no poder volver |
 | Sin nada que hacer | **A · La espera no ocupa sitio** | Se dice claro que no hay nada pendiente y se ofrece algo útil mientras tanto |
 
-**Color.** ⚠️ Esta decisión es del 23/08/2026 y quedó **sustituida el 10/09/2026**: hoy el
-fondo es un pastel cálido `#FBF1E9` y la acción va en negro pleno `#0A0A0A`, con el coral `#FF7C61`
-como único color. Ver [EL-MUNDO-VISUAL.md](EL-MUNDO-VISUAL.md) y [DESIGN.md](../DESIGN.md).
+**Color.** ⚠️ Esta decisión es del 23/08/2026 y quedó sustituida dos veces: el 10/09 por negro
+y coral, y el 25/09/2026 por lo vigente, **gris frío con un solo acento índigo `#615FFF`**. Ver
+[EL-MUNDO-VISUAL.md](EL-MUNDO-VISUAL.md) y [DESIGN.md](../DESIGN.md).
 Lo que sigue vigente **no son los colores de aquel día** —el índigo `#4338CA` que sustituía al
 champagne `#816220` se fue con ellos—, sino el razonamiento: verde, ámbar y rojo ya tienen significado fijo en el
 sistema —aprobado, en duda, error— así que el acento no podía ser ninguno de esos ni un

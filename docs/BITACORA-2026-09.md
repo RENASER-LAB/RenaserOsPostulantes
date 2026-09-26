@@ -16,6 +16,35 @@ no se vuelve a subir el currículum. Lo del 07/09 se documentó en
 
 ---
 
+## La suite recortada llega a «El cielo despejado» (26/09/2026)
+
+Se juntó la suite e2e recortada de main (#59, la entrada siguiente). No trae pantallas ni hojas
+de estilo, así que no hubo diseño que aplicar; se corrió la suite entera para ver qué pruebas
+daban por hecho algo que esta rama cambió.
+
+- **Tres chocaban con el diseño nuevo, y las tres eran de la prueba, no del portal:**
+  - `38-buscar-vacantes-movil` pedía una cabecera de entre 60 y 80 px, y ahora mide 84. Compara
+    contra `--alto-cabecera`, como hace AC-19 en el mismo archivo.
+  - AC-19, en ese mismo archivo, medía los destinos mientras entraban en cascada: a medio
+    `translateY`, «Inicio» salía de 43,999996 px y no llegaba a los 44. Ahora espera a que la
+    barra esté quieta antes de medir, en cada ancho.
+  - `22-perfil-con-foto-y-cv` pulsaba «Mis procesos» en toda la página, y el pie en columnas lo
+    repite: casaba con dos. Lo busca dentro de `header`.
+- **Resultado: 294 pasan, 0 fallan y 8 se saltan** (las de IA real), en 10,1 minutos. Es lo
+  mismo que dio QA en el harness.
+
+⚠️ **La suite necesita la base del snapshot, y no una base vacía.** Lo que borró #59 fue el
+sembrador del escenario del ranking (`sembrar-escenario-e2e.py`), no los datos de partida: QA
+corre sobre un clon restaurado de `renaser-sintetico-20260917.dump` —la ruta está en
+`.harness/setup.json` del backend—, que ya trae «Desarrollador web», «Líder de operaciones», sus
+áreas, puestos y personas. Contra una base vacía fallaron 81 pruebas con «¿Se sembró la base?».
+Se repitió como lo hace el harness: la imagen `renaser-harness-postgres:pg16` —trae pgvector y
+las extensiones—, `pg_restore --no-owner --no-acl --schema=public` del snapshot, backend en 9081
+contra ese clon y con su propio RabbitMQ, y portal en 5274. Al terminar se borraron los
+contenedores.
+
+---
+
 ## La suite e2e se recorta, prueba a prueba (25–26/09/2026)
 
 La suite de `herramientas/e2e/` tardaba unos 12 minutos en sus 329 pruebas y siempre salía con
@@ -62,6 +91,142 @@ de la prueba: la casilla la manda el servidor y no se le esperaba. Salió de
 La última corrida entera de QA: **294 pasan, 0 fallan y 8 se saltan** (las de IA real), en unos
 10-11 minutos, frente a ~12 para las 329. Ya no hay rojo de fondo: si algo sale en rojo, hay que
 mirarlo.
+
+---
+
+## La búsqueda de vacantes entra en «El cielo despejado» (25/09/2026)
+
+`/vacantes` —la búsqueda con filtros, de la entrada siguiente— llegó de main el mismo día en
+que el portal cambió de paleta, así que se juntaron las dos ramas y se revisó qué heredaba cada
+pantalla nueva.
+
+- **La búsqueda y su tarjeta no hubo que repintarlas.** Sus dos hojas solo usan tokens, así que
+  al juntarse ya salían con el índigo, el radio de 8 px y Geist. El conmutador «Ordenar por»,
+  que en main se rellenaba en negro, ahora se rellena en índigo: es `--activo`, y en este mundo
+  «estás aquí» es índigo. El detector de `impeccable` no marca nada en ninguna de las dos.
+- **La cabecera de teléfono se apretaba en 430 px y hubo que subirlo a 470.** Main midió su
+  corte con Figtree a 14 px; con Geist a 15 la barra de escritorio pide 439 px de caja, y de
+  431 a 454 px de ventana se salía hasta 24 px. Medido con el corte en 470: a 375 sobran 11
+  px, a 369 sobran 5 y a 320, con tres destinos, 17. El de 368 px, donde se cae «Vacantes», se
+  queda: con Geist los cuatro apretados caben desde 364.
+- **`/` y `/vacantes` dejaron de ser lo mismo**, y lo que en esta rama decía «la portada»
+  usando `patrones.vacantes` pasó a `patrones.inicio`: el cielo, el pie en columnas y el
+  enlace «Inicio» del pie. «Vacantes abiertas» del pie ya no es el ancla de la portada sino la
+  búsqueda, y la búsqueda lleva el pie en columnas porque es una página que se lee.
+- **La portada se queda con lo de las dos**: el titular sin loseta, la ventana de cristal y la
+  banda de «Por qué este proceso es distinto» de esta rama, y las tres vacantes más recientes
+  con «Ver las N vacantes» de main. La tarjeta vieja que vivía en `Vacantes.tsx` se fue: la
+  portada usa la `Tarjeta` compartida.
+
+---
+
+## La portada copia la estructura de una referencia, y el portal entero cambia de paleta (25/09/2026)
+
+El cliente trajo una plantilla SaaS de referencia —saasly.demos.tailgrids.com— y pidió
+replicarla adaptada. Se hizo por capas, y cada capa acabó pidiendo la siguiente.
+
+**Primero la estructura, sin tocar el mundo.** Cielo detrás del hero, banda a sangre «Por qué
+este proceso es distinto» con tres tarjetas y su maqueta dibujada con divs, ritmo alterno de
+secciones, y pie en columnas. Precios, integraciones y testimonios **no** se trajeron: los dos
+primeros no existen en un portal de empleo gratuito y los testimonios el código se niega a
+inventarlos. La banda destapó un problema viejo —lo hundido en gris frío sobre página cálida se
+lee sucio— y la solución ya estaba escrita en la cinta de la portada, con una nota que decía que
+se nombrara el día que hiciera falta en otra pantalla: nació `--cielo-hundido`.
+
+⚠️ **El primer cielo no se veía.** Iba de `#fffaf6` a `#fbf1e9` con nubes blancas encima: blanco
+sobre casi blanco. El de la referencia funciona porque su azul está saturado y la nube contrasta
+*contra* él. Hubo que darle color de verdad.
+
+**Luego la paleta entera, por petición.** Gris frío de Tailwind v4 e índigo `#615FFF`, sacados
+de los `oklch` de la referencia pintándolos en un canvas. Radio de botón de 4 a 8 px. La
+cabecera pasó a píldora visible desde el primer píxel, con el botón en casi negro
+—`--accion-fuerte`— para no competir con el índigo del destino actual, y perdió su marco rosa
+con los cuatro cuadraditos; **la animación del rótulo que gira se quedó**, como se pidió.
+
+**Lo que se perdió, dicho claro:** el coral significaba «te toca a ti» en las dieciocho
+pantallas, y la referencia no tiene un segundo acento. El turno se pinta ahora del mismo índigo
+que la acción.
+
+**Lo que no se copió, y por qué:** el borde de sus botones da 1,24:1 contra blanco —WCAG 1.4.11
+pide 3:1— y su verde da 3,22:1, por debajo del 4,5 para texto. Tampoco la foto del cielo: es
+`images/covers/hero.jpg` de una plantilla comercial, así que se reconstruyó en degradados.
+
+**El escaparate se volvió ventana**, como la captura de producto de la referencia: barra
+arriba, el recorrido, y una ficha que asoma y se corta contra el borde. Lo que se corta es solo
+decoración, con `aria-hidden`; el recorrido queda entero. Por debajo de 900 px el recorte se
+suelta, porque cortaba por encima de la última etapa. La loseta del maletín se retiró del
+titular.
+
+⚠️ **`--alto-cabecera` se quedó en 70 con la barra midiendo 84.** Se tocó el relleno y el botón y
+no se volvió a medir hasta el momento del commit, que es justo lo que el propio aviso del token
+pide no hacer. Corregido a 84, medido a 1440, 768 y 390.
+
+Pendiente: reescribir DESIGN.md y EL-MUNDO-VISUAL con la paleta nueva —hoy llevan un aviso
+arriba y el detalle del mundo anterior debajo—, repintar la loseta si vuelve, y decidir si «te
+toca a ti» recupera un color propio.
+
+**Segunda vuelta, el mismo día: tipografía, marco de cristal y cabecera.**
+
+- **Geist en vez de Figtree**, la de la referencia, servida por el sitio como lo estaba
+  Figtree: la app instalada no puede quedarse sin titulares por falta de cobertura. El titular
+  pasó a interlínea 1 y espaciado normal, que es lo que mide la referencia; el `-0,03em` se
+  le había puesto a Figtree, que es ancha, y sobre Geist amontonaba las letras. Medido con las
+  cajas de tinta que la «j» de «trabajo» no pisa la «í» de «aquí»: 6 px de aire a 1440, 3 a
+  390. `--medida` no se movió: con Geist compra 65-69 caracteres, casi lo mismo que antes.
+- **El escaparate, de cristal**: filete blanco de 1 px, 12 px de relleno con blanco al 25 %
+  desvaneciéndose, radio 26 solo arriba, y fundido abajo. Fuera la sombra y el resplandor. El
+  fundido **se comía el recorrido entre 901 y ~1100 px** —ahí las etapas ocupan más líneas— y
+  se subió el alto mínimo del recorte hasta dejar 15 px de margen.
+- **El destino actual, solo con color**, como la referencia: sin peso 700 ni filete. Antes de
+  quitarlos se midió que el color aguanta solo: 3,88:1 contra los otros destinos y 4,58:1
+  como texto — el coral daba 2,53 y era un incumplimiento aceptado.
+- **La cabecera, sin filete ni sombra**, en reposo y al bajar; radio 18. Se fue el oyente de
+  desplazamiento que existía para cambiar la sombra. Letra de la barra un punto más grande
+  —17 en escritorio, 15 en teléfono y en el botón—; a 320 px el botón se salía 4 px y ahí
+  volvió a 14.
+- ⚠️ **Un fallo de la vuelta anterior:** en teléfono «Inicio» seguía subrayado. Dos reglas de
+  la media query, que van después en la hoja, le devolvían el filete quitado en escritorio.
+
+**Tercera vuelta: la documentación, reescrita para el mundo nuevo.** El mundo se bautizó **«El
+cielo despejado»**. `DESIGN.md` se reescribió de cero con `/impeccable document`, en el formato
+que lee la skill —su cabecera tenía claves que el formato no admite (`measure`, `shadows`, y
+`borderColor`/`shadow` dentro de los componentes) y pasaron al sidecar—, y
+`.impeccable/design.json` se regeneró copiando literal su narrativa. `EL-MUNDO-VISUAL.md` se
+reescribió en lo visual y conservó lo que no lo es. `README`, `PRODUCT.md`, el maquetado, `02`,
+`03` y la ficha de superficie del panel dejaron de dar el escaparate por vigente.
+
+Al pasar el detector de `impeccable` salieron nueve avisos, todos de cosas de ese mismo día. Los
+radios de la cabecera y del marco de cristal y la letra de 17 px **se nombraron como tokens**
+—`--radio-pildora`, `--radio-cristal`, `--radio-ventana`, `--t-navegacion`— en vez de
+silenciarlos; y quedaron tres excepciones con su motivo escrito: **Geist**, que el detector marca
+como fuente sobreexpuesta y es decisión del cliente, en `.impeccable/config.json`; y dos marcas en
+línea en la portada, la máscara del fundido y el rótulo en miniatura de una maqueta.
+
+**Cuarta vuelta: el cielo, y el pie de las puertas.**
+
+- **El cielo copia la luz de la foto de la referencia**, no su forma: un resplandor casi blanco
+  en el centro, detrás del titular, azul hacia los bordes, y un horizonte más saturado abajo.
+  Arriba pasó a ser azul: se había dejado blanco «para que la píldora no perdiera su
+  contorno», y era al revés.
+- **Las nubes son ruido fractal** (`feTurbulence`) en vez de óvalos, con una sombra azulada
+  bajo el cúmulo. Calcularlas en el navegador costaba ~100 ms de hilo principal en escritorio,
+  así que se pintan una vez con `herramientas/cielo/pintar-nubes.mjs` y se sirven como
+  `public/cielo-nubes.webp` (40 KB). ⚠️ La primera medida dio 135 ms y era ruido: de una carga a
+  otra variaba hasta 100 ms; las cifras buenas son medianas de cinco.
+- **El pie en columnas sacaba scroll en las pantallas de una tarjeta**: mide 290 px y
+  `/ingresar` se pasaba 24 px de una ventana de 900. Las puertas y «acceso necesario» llevan
+  ahora un pie corto de una línea. ⚠️ **La primera comprobación dijo que todo cabía y era
+  falsa**: Vite servía una versión a medio escribir de `Armazon.tsx` que fallaba, y lo que se
+  medía era la pantalla de error, que es corta. Lo delató `/registro` «cabiendo» en un
+  teléfono.
+- **La contraseña olvidada, en tarjeta.** Con el pie corto, `/clave`, `/restablecer` y sus dos
+  del panel seguían desplazándose en un portátil de 1366×768: su propio contenido medía más que
+  la ventana —un titular de dos líneas a 60 px y el formulario en su propia superficie—. Pasaron
+  a la tarjeta de `/ingresar`: titular a 30 px dentro, el formulario sin superficie, y la
+  vuelta atrás y la salida de quien no puede también dentro. La pieza compartida
+  (`ui/recuperacion`) dejó de aceptar `claseFormulario`, porque una superficie dentro de la
+  tarjeta no separa nada, y su fallo perdió el filete lateral, que en este mundo está prohibido.
+  Ahora caben las siete pantallas de tarjeta a los cuatro tamaños medidos.
 
 ---
 

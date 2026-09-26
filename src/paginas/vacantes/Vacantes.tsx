@@ -2,14 +2,13 @@
  * La portada: qué es este proceso y qué vacantes hay abiertas.
  *
  * Es la única pantalla en modo Persuade —quien llega todavía no ha postulado y
- * tiene que decidir si le merece la pena—, y desde el rediseño de 09/2026 la
- * compone el mundo nuevo: fondo blanco, titular centrado, acción en negro y dos
- * piezas de color —la loseta con el maletín incrustada en el titular y el
- * resplandor coral dentro del escaparate—.
+ * tiene que decidir si le merece la pena—, y desde el 25/09/2026 la compone
+ * «El cielo despejado»: el cielo azul detrás de la cabecera —solo aquí—, el
+ * titular centrado y la acción en casi negro.
  *
- * La pieza grande es el escaparate: una tarjeta blanca de borde grueso con el
- * recorrido dentro, que enseña el producto en vez de decorar la pantalla. En su
- * sitio hubo una banda irisada, que se fue con el mundo anterior.
+ * La pieza grande es el escaparate: un marco de cristal con una ventana del
+ * portal dentro y el recorrido en ella, que enseña el producto en vez de
+ * decorar la pantalla.
  *
  * Lo que no cambia es la promesa: lo que ve antes de entrar es lo mismo que verá
  * después, porque el recorrido se dibuja igual aquí que dentro del portal.
@@ -44,6 +43,39 @@ const QUE_ES: Record<string, string> = {
   VALIDACION: 'Un periodo corto trabajando de verdad. Pagado.',
   DECISION: 'Decide una persona, no un puntaje.',
 }
+
+/**
+ * Las tres cosas que distinguen a este proceso, con una maqueta cada una.
+ *
+ * ⚠️ **Las tres son reglas del producto, no logros.** La portada no tiene
+ * testimonios ni número de contratados a propósito —el sistema no ha pasado por
+ * su primer candidato real—, y estas tarjetas no son la puerta de atrás para
+ * meterlos: cada una se puede comprobar hoy mismo en el portal.
+ *
+ * La cuarta etapa, que es un periodo pagado, **no está aquí a propósito**: ya lo
+ * dice el escaparate, y darle el tamaño de una tarjeta convierte una línea del
+ * recorrido en una promesa destacada de dinero.
+ */
+const LO_NUESTRO = [
+  {
+    clave: 'curriculum',
+    titulo: 'Tu currículum no te descarta',
+    texto:
+      'Entra al proceso y lo lee una persona, pero por diseño no cierra tu postulación. Lo único que la cierra en el acto es no cumplir un requisito indispensable.',
+  },
+  {
+    clave: 'sin-cuenta',
+    titulo: 'Mirar no exige cuenta',
+    texto:
+      'Puedes ver las vacantes abiertas, leer una ficha entera y leer los textos legales sin registrarte. La cuenta se crea recién cuando decides postular.',
+  },
+  {
+    clave: 'persona',
+    titulo: 'Decide una persona, no un puntaje',
+    texto:
+      'Una inteligencia artificial ayuda a ordenar y a resumir, pero no elige. Al final del recorrido mira alguien del equipo, y mira todo lo que hiciste.',
+  },
+] as const
 
 /** Lo que casi todo el mundo pregunta antes de postular. */
 const PREGUNTAS = [
@@ -85,17 +117,15 @@ export function Vacantes() {
     <div className={estilos.pagina}>
       <section className={estilos.portada}>
         <AlAsomarse>
-          <h1 className={estilos.entrada}>
-            Tu próximo trabajo{' '}
-            <img className={estilos.pieza} src="/pieza-trabajo.png" alt="" aria-hidden="true" />{' '}
-            puede
-            empezar aquí
-          </h1>
           {/*
-            La accion va en negro y no en color. En este mundo el negro es la
-            accion y el coral solo marca «te toca a ti», que aqui todavia no
-            existe: quien llega no tiene turno, tiene curiosidad.
+            ⚠️ **Aquí iba incrustada la loseta del maletín y se fue el
+            25/09/2026.** Era un PNG pintado en el coral y el rosa del mundo
+            anterior; con la paleta nueva quedaba como la única mancha cálida de
+            la portada. Se probó a girarle el tono por CSS y se retiró entera por
+            petición. El archivo sigue en `public/pieza-trabajo.png` por si vuelve
+            en la paleta nueva — repintado, no rotado.
           */}
+          <h1 className={estilos.entrada}>Tu próximo trabajo puede empezar aquí</h1>
           <div className={estilos.acciones}>
             <Link
               className={estilos.accionPrincipal}
@@ -117,15 +147,40 @@ export function Vacantes() {
 
         {/*
           El escaparate: la pieza grande del mundo. Dentro va el recorrido, que
-          es el producto, no un adorno. El resplandor coral es lo unico de color
-          en toda la pantalla.
+          es el producto, no un adorno.
+
+          ⚠️ **Desde el 25/09/2026 finge ser una ventana del portal**, como la
+          captura de producto que la referencia del cliente pone en el mismo
+          sitio. Era una tarjeta blanca cerrada con el recorrido dentro; ahora
+          lleva su barra arriba, su título, y por debajo asoma una segunda ficha
+          que se corta contra el borde — que es lo que dice «esto sigue» sin
+          tener que enseñarlo.
+
+          ⚠️ **Lo que se corta es SOLO decoración.** La barra de arriba y la
+          ficha que asoma van con `aria-hidden` y no llevan ningún enlace: son el
+          retrato de una pantalla, no la pantalla. El recorrido —lo único que de
+          verdad promete algo— queda entero y por encima del recorte, porque es
+          la promesa de esta portada: lo que se ve antes de entrar es lo mismo
+          que se verá después.
         */}
         <AlAsomarse variante="scaleUp" retraso={0.2}>
           <div className={estilos.escaparate}>
-            <div className={estilos.escaparateDentro}>
-              <p className={estilos.pieEscaparate}>
-                Cinco etapas para conocer cómo trabajas
-              </p>
+            <div className={estilos.marcoVentana}>
+              <div className={estilos.ventana}>
+                <div className={estilos.ventanaBarra} aria-hidden="true">
+                  <span className={estilos.ventanaMarca} />
+                  <span className={estilos.ventanaDestinos}>
+                    <span />
+                    <span />
+                    <span className={estilos.ventanaDestinoVivo} />
+                  </span>
+                  <span className={estilos.ventanaAvatar} />
+                </div>
+
+                <div className={estilos.escaparateDentro}>
+                  <p className={estilos.pieEscaparate}>
+                    Cinco etapas para conocer cómo trabajas
+                  </p>
               <ol className={estilos.recorrido} role="list">
                 {ETAPAS.map((etapa, indice) => (
                   <li className={estilos.tramo} key={etapa.clave}>
@@ -146,8 +201,31 @@ export function Vacantes() {
                       <p className={estilos.queEsEtapa}>{QUE_ES[etapa.clave]}</p>
                     </AlAsomarse>
                   </li>
-                ))}
-              </ol>
+                    ))}
+                  </ol>
+                </div>
+
+                {/*
+                  La ficha que asoma y se corta contra el borde. Es el truco de
+                  la referencia: su captura de producto no termina, se sale del
+                  marco, y eso dice que la pantalla sigue sin tener que
+                  enseñarla entera.
+
+                  Decoración pura —`aria-hidden`, sin enlaces ni texto— porque
+                  la mitad de ella no se ve y lo que promete algo ya está arriba.
+                */}
+                <div className={estilos.fichaQueAsoma} aria-hidden="true">
+                  <span className={estilos.fichaLinea} style={{ width: '38%' }} />
+                  <span className={estilos.fichaLineaMenor} style={{ width: '26%' }} />
+                  <div className={estilos.fichaBarras}>
+                    <span className={estilos.fichaBarraViva} />
+                    <span className={estilos.fichaBarra} />
+                    <span className={estilos.fichaBarra} />
+                    <span className={estilos.fichaBarra} />
+                    <span className={estilos.fichaBarra} />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </AlAsomarse>
@@ -246,6 +324,36 @@ export function Vacantes() {
         </section>
       </AlAsomarse>
 
+      {/*
+        La banda de «Por qué aquí». Va DESPUÉS de las vacantes y no antes: quien
+        llega a un portal de empleo viene a ver puestos, y tres tarjetas
+        explicando el método entre la portada y la lista retrasan justo eso.
+        Aquí ya vio lo que hay y la pregunta que le queda es si merece la pena.
+
+        La banda va a sangre y en nube, que es lo que da el ritmo alterno: cielo
+        arriba, nube aquí, cielo otra vez en las preguntas.
+      */}
+      <AlAsomarse>
+        <section className={estilos.banda} aria-labelledby="por-que-aqui">
+          <div className={estilos.bandaDentro}>
+            <div className={estilos.cabeceraSeccion}>
+              <h2 id="por-que-aqui">Por qué este proceso es distinto</h2>
+              <p>Tres reglas que puedes comprobar hoy mismo, sin cuenta.</p>
+            </div>
+
+            <ul className={estilos.rejillaTres} role="list">
+              {LO_NUESTRO.map((cosa) => (
+                <li className={estilos.tarjetaNuestra} key={cosa.clave}>
+                  <Maqueta que={cosa.clave} />
+                  <h3 className={estilos.tituloNuestra}>{cosa.titulo}</h3>
+                  <p className={estilos.textoNuestra}>{cosa.texto}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      </AlAsomarse>
+
       <AlAsomarse>
         <section className={estilos.seccion} aria-labelledby="preguntas-frecuentes">
           <div className={estilos.cabeceraSeccion}>
@@ -309,3 +417,58 @@ export function Vacantes() {
     </div>
   )
 }
+
+/**
+ * La maqueta que corona cada tarjeta de «Por qué este proceso es distinto».
+ *
+ * ⚠️ **Son piezas del portal, no ilustraciones.** La referencia que pidió esto
+ * pone capturas de su panel; aquí se dibuja lo mismo con divs y los tokens del
+ * mundo. Una captura serían tres PNG que hay que volver a hacer cada vez que
+ * cambie una pantalla —y que ya estarían desactualizados—; esto se repinta solo
+ * el día que cambie `mundo.css`.
+ *
+ * ⚠️ **Todas van `aria-hidden`.** Lo que dicen ya está en el título y el texto
+ * de al lado: leerlas otra vez sería repetirle lo mismo dos veces a quien usa
+ * lector de pantalla.
+ */
+function Maqueta({ que }: { que: 'curriculum' | 'sin-cuenta' | 'persona' }) {
+  if (que === 'curriculum') {
+    return (
+      <div className={estilos.maqueta} aria-hidden="true">
+        <div className={estilos.maquetaFicha}>
+          <span className={estilos.maquetaLinea} style={{ width: '62%' }} />
+          <span className={estilos.maquetaLinea} style={{ width: '88%' }} />
+          <span className={estilos.maquetaLinea} style={{ width: '74%' }} />
+        </div>
+        <span className={estilos.maquetaSello}>Sigue en proceso</span>
+      </div>
+    )
+  }
+
+  if (que === 'sin-cuenta') {
+    return (
+      <div className={estilos.maqueta} aria-hidden="true">
+        <div className={estilos.maquetaFicha}>
+          <span className={estilos.maquetaEtiqueta}>Vacante abierta</span>
+          <span className={estilos.maquetaTitulo} />
+          <span className={estilos.maquetaLinea} style={{ width: '70%' }} />
+        </div>
+        <span className={estilos.maquetaSello}>Sin iniciar sesión</span>
+      </div>
+    )
+  }
+
+  return (
+    <div className={estilos.maqueta} aria-hidden="true">
+      <div className={estilos.maquetaFicha}>
+        <div className={estilos.maquetaFila}>
+          <span className={estilos.maquetaCara} />
+          <span className={estilos.maquetaLinea} style={{ width: '54%' }} />
+        </div>
+        <span className={estilos.maquetaLinea} style={{ width: '80%' }} />
+      </div>
+      <span className={estilos.maquetaSello}>Decide el equipo</span>
+    </div>
+  )
+}
+

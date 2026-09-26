@@ -164,24 +164,11 @@
 }
 
 /*
- * La superficie de los dos formularios de la contraseña olvidada: `/clave` y
- * `/restablecer`.
- *
- * ⚠️ **Existe porque esos formularios NO son de esta hoja.** Viven en
- * `ui/recuperacion`, compartidos con el panel, y alli el formulario va a pelo
- * sobre el fondo —es la disposicion del panel, que no entro al escaparate—. En
- * el portal, en cambio, todo formulario de esta familia se lee sobre nube:
- * `/registro`, `/acceso` y el de entrar lo hacen, y uno solo sin superficie,
- * justo al lado, se lee como una pantalla a medio cargar.
- *
- * Solo trae la superficie. La direccion, el hueco entre campos y el aire de
- * arriba ya los pone `.formulario` de la hoja compartida, y repetirlos aqui
- * dependeria del orden del bundle para saber cual gana.
+ * Aqui estaba `.superficieDelFormulario`, la superficie de nube que el portal le
+ * ponia al formulario de `/clave` y `/restablecer`. Se fue el 25/09/2026, cuando
+ * las dos pasaron a ser una tarjeta como `/ingresar`: la superficie ahora es la
+ * tarjeta entera.
  */
-.superficieDelFormulario {
-  composes: bloqueHolgado from '../../estilos/pagina.module.css';
-  background: var(--nube);
-}
 
 .aparte {
   margin-top: var(--e5);
@@ -468,4 +455,28 @@
 .obligatorioEnLaLeyenda {
   color: var(--tinta);
   font-weight: 700;
+}
+
+/* ---------- `/clave` y `/restablecer`, en la tarjeta de `/ingresar` ---------- */
+
+/*
+ * Las dos usan `.paginaEntrar` y `.tarjetaEntrar` tal cual, y aqui solo va lo
+ * que lleva cada una debajo del formulario. Centrado, como todo en la tarjeta;
+ * en una columna suelta iba a la izquierda.
+ *
+ * ⚠️ **Se recompusieron el 25/09/2026 porque se podian desplazar.** Eran una
+ * columna con un titular de dos lineas a 60 px y el formulario en su propia
+ * superficie: en un portatil de 1366×768 median 86-120 px mas que la ventana.
+ */
+.aparteEnTarjeta {
+  composes: aparte;
+  text-align: center;
+  text-wrap: balance;
+}
+
+.pieEnTarjeta {
+  margin: var(--e5) 0 0;
+  text-align: center;
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
 }
