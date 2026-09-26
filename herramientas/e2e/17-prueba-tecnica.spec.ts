@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { entrarAlPanel } from './ayuda'
+import { entrarAlPanel, IA_REAL, SIN_IA_REAL } from './ayuda'
 import {
   crearVacanteEnBorrador,
   escribirLaFicha,
@@ -18,10 +18,11 @@ import {
  *
  * ⚠️ **ESCRIBE**: crea una vacante y le guarda la ficha. Nunca contra producción.
  *
- * ⚠️ **Le pide el cuestionario a la IA de verdad**, y aquí la clave es ficticia:
- * la generación acaba en FALLIDA en segundos y el paso que corrige y publica se
- * salta con ese motivo. Con la clave real cuesta una llamada al modelo y cuenta
- * contra el tope mensual de la empresa.
+ * ⚠️ **El paso 5 le pide el cuestionario a la IA de verdad**, y por eso solo
+ * corre con `E2E_IA_REAL=1` (ver `IA_REAL` en `ayuda.ts`): la corrida
+ * automática no le pide nada al proveedor, ni para que falle con una clave
+ * ficticia. Los pasos 1 a 4 y el 6 corren siempre. Con la clave real cuesta una
+ * llamada al modelo y cuenta contra el tope mensual de la empresa.
  */
 const recorrido = {
   vacanteId: 0,
@@ -111,6 +112,7 @@ test.describe('La prueba técnica del puesto · la ficha y el cuestionario', () 
   })
 
   test('5 · de verdad: la IA redacta, el dueño corrige una pregunta y publica', async ({ page }) => {
+    test.skip(!IA_REAL, SIN_IA_REAL)
     test.setTimeout(420_000)
     await irAPrepararLaPruebaTecnica(page, recorrido.vacanteId)
 

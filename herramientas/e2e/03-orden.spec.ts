@@ -1,40 +1,51 @@
 import { expect, test } from '@playwright/test'
-import { cabecera, corte, entrarAlPanel, irAVacante, nombresVisibles, pestana, VACANTES } from './ayuda'
+import { cabecera, corte, entrarAlPanel, irAVacante, nombresVisibles, VACANTES } from './ayuda'
+import { interceptarEscenario, ORDEN_DEL_BACKEND } from './escenario-desarrollador-web'
 
 /**
- * Orden en la vacante 7. El orden del backend es:
- *   Lucía  (ALTA, 74, Arequipa — Camaná,     3100–3600)
- *   Camila (ALTA, 55, Lima — Lima,           2500–3000)
- *   Sebastián (NO_PRIORIZADO, 61, Junín — Huancayo, sin pretensión)
- *   Joaquín (INCOMPATIBLE, 95, La Libertad — Trujillo, 4000–5200)
+ * Ordenar desde la cabecera: lo que SOLO se ve en el navegador.
+ *
+ * El orden en sí —por nombre, ciudad, nota y pretensión; los vacíos al final
+ * suba o baje; la nota cruzando grupos; una columna entera vacía que no
+ * descoloca nada— es lógica de `ranking.ts` y se prueba sin navegador en
+ * `ranking.test.ts` y en `ranking.escenario-e2e.test.ts`, con este mismo
+ * escenario. Aquí queda lo que ninguna prueba unitaria puede ver: que el clic y
+ * el teclado sobre el `<th>` recorran los tres estados con su `aria-sort`, que
+ * una sola columna lleve el orden, que el foco no se pierda al reordenar y que
+ * el veredicto siga pintado en la fila.
+ *
+ * ⚠️ **El escenario viene interceptado** (`escenario-desarrollador-web.ts`): el
+ * ranking se pide al backend de verdad y a las cuatro filas se les ponen encima
+ * las notas, los grupos, las ciudades y las pretensiones que estas pruebas dan
+ * por sabidas. Con `E2E_ESCENARIO=base` se fía de la base en vez de interceptar.
+ *
+ *   Lucía     (ALTA,           74, Arequipa — Camaná,      3100–3600)
+ *   Camila    (ALTA,           55, Lima — Lima,            2500–3000)
+ *   Sebastián (NO_PRIORIZADO,  61, Junín — Huancayo,       sin pretensión)
+ *   Joaquín   (INCOMPATIBLE,   95, La Libertad — Trujillo, 4000–5200)
  */
-const DEL_BACKEND = [
-  'Lucía Chávez Paredes',
-  'Camila Torres Rivas',
-  'Sebastián Cárdenas Rojo',
-  'Joaquín Vargas Ureta',
-]
-
-test.describe('Nuevo · ordenar por las cuatro columnas', () => {
+test.describe('Ordenar desde la cabecera', () => {
   /*
     La pantalla abre por «Pendiente», que solo trae a quien espera una
-    decisión. Lo que se mide aquí es otra cosa —los filtros, el orden, el
-    teclado—, así que se abre la tanda entera para tener filas con las que
-    trabajar; es lo que traía el corte de antes, «Con nota», en esta vacante.
+    decisión. Lo que se mide aquí es el orden, así que se abre la tanda entera
+    para tener las cuatro filas con las que trabajar.
   */
   test.beforeEach(async ({ page }) => {
     await entrarAlPanel(page)
+    await interceptarEscenario(page)
     await irAVacante(page, VACANTES.LLENA)
     await corte(page, 'Toda la tanda').click()
   })
 
-  test('los tres estados de Candidato, con aria-sort coherente', async ({ page }) => {
-    const th = cabecera(page, 'Candidato')
-    await expect(th).toHaveAttribute('aria-sort', 'none')
-    expect(await nombresVisibles(page)).toEqual(DEL_BACKEND)
+  test('el clic recorre los tres estados con aria-sort coherente, una sola columna a la vez, y el veredicto sigue en la fila', async ({
+    page,
+  }) => {
+    const candidato = cabecera(page, 'Candidato')
+    await expect(candidato).toHaveAttribute('aria-sort', 'none')
+    expect(await nombresVisibles(page)).toEqual(ORDEN_DEL_BACKEND)
 
-    await th.getByRole('button').click()
-    await expect(th).toHaveAttribute('aria-sort', 'ascending')
+    await candidato.getByRole('button').click()
+    await expect(candidato).toHaveAttribute('aria-sort', 'ascending')
     expect(await nombresVisibles(page)).toEqual([
       'Camila Torres Rivas',
       'Joaquín Vargas Ureta',
@@ -42,8 +53,8 @@ test.describe('Nuevo · ordenar por las cuatro columnas', () => {
       'Sebastián Cárdenas Rojo',
     ])
 
-    await th.getByRole('button').click()
-    await expect(th).toHaveAttribute('aria-sort', 'descending')
+    await candidato.getByRole('button').click()
+    await expect(candidato).toHaveAttribute('aria-sort', 'descending')
     expect(await nombresVisibles(page)).toEqual([
       'Sebastián Cárdenas Rojo',
       'Lucía Chávez Paredes',
@@ -52,136 +63,55 @@ test.describe('Nuevo · ordenar por las cuatro columnas', () => {
     ])
 
     // Tercer clic: vuelve al orden del backend.
-    await th.getByRole('button').click()
-    await expect(th).toHaveAttribute('aria-sort', 'none')
-    expect(await nombresVisibles(page)).toEqual(DEL_BACKEND)
-  })
+    await candidato.getByRole('button').click()
+    await expect(candidato).toHaveAttribute('aria-sort', 'none')
+    expect(await nombresVisibles(page)).toEqual(ORDEN_DEL_BACKEND)
 
-  test('Ciudad ordena alfabéticamente en los dos sentidos', async ({ page }) => {
-    const th = cabecera(page, 'Ciudad')
-    await th.getByRole('button').click()
-    await expect(th).toHaveAttribute('aria-sort', 'ascending')
+    // Solo una columna a la vez: la nota abre por la MAYOR y apaga a las demás.
+    const nota = cabecera(page, 'Nota')
+    await nota.getByRole('button').click()
+    await expect(nota).toHaveAttribute('aria-sort', 'descending')
+    for (const otra of ['Candidato', 'Ciudad', 'Pretensión']) {
+      await expect(cabecera(page, otra)).toHaveAttribute('aria-sort', 'none')
+    }
+    // Manda la nota, cruzando grupos: el 95 sube aunque su grupo sea el último.
     expect(await nombresVisibles(page)).toEqual([
-      'Lucía Chávez Paredes', // Arequipa
-      'Sebastián Cárdenas Rojo', // Junín
-      'Joaquín Vargas Ureta', // La Libertad
-      'Camila Torres Rivas', // Lima
-    ])
-    await th.getByRole('button').click()
-    await expect(th).toHaveAttribute('aria-sort', 'descending')
-    expect(await nombresVisibles(page)).toEqual([
-      'Camila Torres Rivas',
       'Joaquín Vargas Ureta',
-      'Sebastián Cárdenas Rojo',
       'Lucía Chávez Paredes',
-    ])
-  })
-
-  /*
-    El orden es PLANO: manda la nota y cruza los grupos de prioridad. Ordenaba
-    dentro de cada grupo, y producía una mesa 55, 74, 61, 95 que se lee como
-    rota. Se quitó al ver quién escribe ese grupo: INCOMPATIBLE —el único que
-    podía contradecir a la nota— no lo escribe nadie, y los otros tres cuelgan de
-    la propia nota, así que casi siempre iban en el mismo sentido.
-  */
-  test('Nota abre por la MAYOR y manda la nota, cruzando grupos', async ({ page }) => {
-    const th = cabecera(page, 'Nota')
-    await th.getByRole('button').click()
-    // El primer clic de nota es descendente: el ranking ES eso.
-    await expect(th).toHaveAttribute('aria-sort', 'descending')
-    expect(await nombresVisibles(page)).toEqual([
-      'Joaquín Vargas Ureta', // 95, aunque su grupo sea el último
-      'Lucía Chávez Paredes', // 74
-      'Sebastián Cárdenas Rojo', // 61
-      'Camila Torres Rivas', // 55
-    ])
-
-    await th.getByRole('button').click()
-    await expect(th).toHaveAttribute('aria-sort', 'ascending')
-    expect(await nombresVisibles(page)).toEqual([
+      'Sebastián Cárdenas Rojo',
       'Camila Torres Rivas',
-      'Sebastián Cárdenas Rojo',
-      'Lucía Chávez Paredes',
-      'Joaquín Vargas Ureta',
     ])
 
     // El grupo sigue pintándose aunque ya no mueva a nadie: quien mira tiene que
-    // ver que ese 95 arrastra algo antes de descolgar el teléfono.
-    await expect(page.getByText('Incompatible').first()).toBeVisible()
-
-    await th.getByRole('button').click()
-    await expect(th).toHaveAttribute('aria-sort', 'none')
-    expect(await nombresVisibles(page)).toEqual(DEL_BACKEND)
-  })
-
-  test('el grupo de prioridad se ve en la fila, para que el orden no parezca roto', async ({ page }) => {
-    // Acotado a la TABLA: los mismos rótulos salen también en la leyenda que
-    // explica los grupos, así que sin acotar `getByText` resuelve dos elementos
-    // y el modo estricto lo rechaza. Y es lo que este test mide: la fila.
+    // ver que ese 95 arrastra algo antes de descolgar el teléfono. Acotado a la
+    // TABLA: los mismos rótulos salen también en la leyenda que explica los grupos.
     const tabla = page.getByRole('table')
     await expect(tabla.getByTitle('Prioridad alta').first()).toBeVisible()
     await expect(tabla.getByTitle('Incompatible')).toBeVisible()
     await expect(tabla.getByTitle('No priorizado')).toBeVisible()
   })
 
-  test('Pretensión: los vacíos al final SUBA O BAJE el orden', async ({ page }) => {
-    const th = cabecera(page, 'Pretensión')
-    await th.getByRole('button').click()
-    await expect(th).toHaveAttribute('aria-sort', 'ascending')
-    expect(await nombresVisibles(page)).toEqual([
-      'Camila Torres Rivas', // 2500
-      'Lucía Chávez Paredes', // 3100
-      'Joaquín Vargas Ureta', // 4000
-      'Sebastián Cárdenas Rojo', // sin declarar -> al final
-    ])
-
-    await th.getByRole('button').click()
-    await expect(th).toHaveAttribute('aria-sort', 'descending')
-    expect(await nombresVisibles(page)).toEqual([
-      'Joaquín Vargas Ureta', // 4000
-      'Lucía Chávez Paredes', // 3100
-      'Camila Torres Rivas', // 2500
-      'Sebastián Cárdenas Rojo', // sin declarar -> SIGUE al final
-    ])
-  })
-
-  test('solo una columna a la vez lleva aria-sort distinto de none', async ({ page }) => {
-    await cabecera(page, 'Ciudad').getByRole('button').click()
-    await expect(cabecera(page, 'Ciudad')).toHaveAttribute('aria-sort', 'ascending')
-    for (const otra of ['Candidato', 'Nota', 'Pretensión']) {
-      await expect(cabecera(page, otra)).toHaveAttribute('aria-sort', 'none')
-    }
-    await cabecera(page, 'Pretensión').getByRole('button').click()
-    await expect(cabecera(page, 'Pretensión')).toHaveAttribute('aria-sort', 'ascending')
-    await expect(cabecera(page, 'Ciudad')).toHaveAttribute('aria-sort', 'none')
-  })
-
-  test('las cabeceras de orden se pulsan con el teclado', async ({ page }) => {
-    const boton = cabecera(page, 'Candidato').getByRole('button')
+  test('las cabeceras se pulsan con Enter y con Espacio, y el foco no se pierde al reordenar', async ({
+    page,
+  }) => {
+    const pretension = cabecera(page, 'Pretensión')
+    const boton = pretension.getByRole('button')
     await boton.focus()
     await expect(boton).toBeFocused()
+
     await page.keyboard.press('Enter')
-    await expect(cabecera(page, 'Candidato')).toHaveAttribute('aria-sort', 'ascending')
+    await expect(pretension).toHaveAttribute('aria-sort', 'ascending')
+    // Los vacíos al final, suba o baje el orden: Sebastián no declaró pretensión.
+    expect((await nombresVisibles(page)).at(-1)).toBe('Sebastián Cárdenas Rojo')
+
     await page.keyboard.press('Space')
-    await expect(cabecera(page, 'Candidato')).toHaveAttribute('aria-sort', 'descending')
+    await expect(pretension).toHaveAttribute('aria-sort', 'descending')
+    expect((await nombresVisibles(page)).at(-1)).toBe('Sebastián Cárdenas Rojo')
+    // El foco no se perdió al reordenar: quien va con teclado sigue en su sitio.
+    await expect(boton).toBeFocused()
+
     await page.keyboard.press('Enter')
-    await expect(cabecera(page, 'Candidato')).toHaveAttribute('aria-sort', 'none')
-  })
-
-  test('ordenar una columna ENTERA vacía no rompe nada', async ({ page }) => {
-    // En «Prueba del puesto» nadie tiene nota: la columna es toda guiones.
-    await pestana(page, 'Prueba del puesto').click()
-    await corte(page, 'Toda la tanda').click()
-    const antes = await nombresVisibles(page)
-    expect(antes).toHaveLength(4)
-
-    const th = cabecera(page, 'Nota')
-    await th.getByRole('button').click()
-    await expect(th).toHaveAttribute('aria-sort', 'descending')
-    // Todas empatan a vacío, así que manda el grupo y luego el orden de origen.
-    expect(await nombresVisibles(page)).toEqual(antes)
-    await th.getByRole('button').click()
-    await expect(th).toHaveAttribute('aria-sort', 'ascending')
-    expect(await nombresVisibles(page)).toEqual(antes)
+    await expect(pretension).toHaveAttribute('aria-sort', 'none')
+    expect(await nombresVisibles(page)).toEqual(ORDEN_DEL_BACKEND)
   })
 })

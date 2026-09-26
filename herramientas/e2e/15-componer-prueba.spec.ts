@@ -88,6 +88,12 @@ const pedirEntregable = async (page: Page, nombre: string, detalle: string, form
 const traerPregunta = async (page: Page, tipo: 'UNIVERSAL' | 'ESPECIFICA'): Promise<string> => {
   const preguntas = bloque(page, BLOQUE.PREGUNTAS)
   const desplegable = campo(preguntas, 'Traer una del catálogo').locator('select')
+  // El catálogo llega aparte y el desplegable no se apaga mientras tanto: leer sus opciones
+  // antes solo encuentra «Elige una pregunta…». Se espera a que haya alguna de ese tipo.
+  await expect(
+    desplegable.locator('option').filter({ hasText: ` · ${tipo} · ` }).first(),
+    `El catálogo no ofrece preguntas de tipo ${tipo}`,
+  ).toBeAttached({ timeout: 20_000 })
   for (const opcion of await desplegable.locator('option').all()) {
     const valor = await opcion.getAttribute('value')
     const texto = (await opcion.textContent()) ?? ''

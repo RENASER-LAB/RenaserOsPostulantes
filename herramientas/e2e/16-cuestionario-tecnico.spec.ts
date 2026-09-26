@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { API, corte, entrarAlPanel, entrarAlPortal, filasDelRanking, pestana } from './ayuda'
+import { API, corte, entrarAlPanel, entrarAlPortal, filasDelRanking, IA_REAL, pestana, SIN_IA_REAL } from './ayuda'
 import {
   crearVacanteEnBorrador,
   escribirLaFicha,
@@ -20,16 +20,25 @@ import {
  * que apunte el backend. Nunca contra producción.
  *
  * ⚠️ **Depende DOS VECES de la IA de verdad** —el REDACTOR que escribe el
- * cuestionario y el EVALUADOR_TECNICO que lo califica— y aquí la clave es
- * ficticia: la generación se pide de verdad y acaba en FALLIDA en segundos. Todo
- * lo que viene después de ese punto se salta con ese motivo, y por eso los
- * pasos van en serie compartiendo lo que ya se consiguió.
+ * cuestionario y el EVALUADOR_TECNICO que lo califica—. Por eso **los pasos 6 a
+ * 12 solo corren con `E2E_IA_REAL=1`** (ver `IA_REAL` en `ayuda.ts`): la corrida
+ * automática no puede pedirle nada al proveedor, ni siquiera para que falle con
+ * una clave ficticia. Sin la variable, los pasos 1 a 5 y el 13 corren igual —la
+ * vacante que elige el cuestionario, sus minutos, el banco apagado y el
+ * publicar que espera— y el resto se salta diciendo por qué. Con ella, todo va
+ * en serie compartiendo lo que ya se consiguió; con la clave real cuesta dos
+ * llamadas al modelo y cuenta contra el tope mensual de la empresa.
  *
  * El corte de salida del ranking es «con nota de esta etapa», y quien acaba de
  * postular no tiene ninguna: la fila existe y no se ve. Hay que pedir «Está aquí
  * ahora» antes de buscar a nadie.
  */
 const CLAVE = 'Demo12345!'
+
+/** El paso 6 no llama a la IA, pero solo existe para que el 7 tenga ficha; sin IA la ficha la cubre `17`. */
+const SOLO_PREPARA_LA_IA =
+  'Solo escribe la ficha para que la IA redacte el cuestionario (paso 7), que está excluido de la ' +
+  'corrida automática; la ficha completa la cubre 17-prueba-tecnica. Se corre con E2E_IA_REAL=1.'
 
 const recorrido = {
   vacanteId: 0,
@@ -90,10 +99,18 @@ test.describe('El ciclo 2 · la vacante elige el cuestionario y la candidata lo 
     const fila = page.locator('label').filter({ hasText: 'Cuánto tiempo tendrá' })
     const minutos = fila.locator('input[type="number"]')
     await minutos.fill('45')
+    // F-18: mientras guarda, el botón pasa a «Guardando…», así que buscar «Guardar»
+    // da 0 con el POST aún en vuelo y la recarga lo aborta. Se espera la respuesta.
+    const guardado = page.waitForResponse(
+      (r) =>
+        r.request().method() === 'POST' &&
+        new URL(r.url()).pathname.endsWith(`/vacantes/${recorrido.vacanteId}/instrumento-tecnico`),
+    )
     await fila.getByRole('button', { name: 'Guardar' }).click()
-    // El botón solo existe mientras lo escrito difiere de lo guardado: que se vaya
-    // es la señal de que el servidor contestó con 45.
-    await expect(fila.getByRole('button', { name: 'Guardar' })).toHaveCount(0)
+    expect((await guardado).ok()).toBe(true)
+    // El botón solo existe mientras lo escrito difiere de lo guardado: con la
+    // respuesta ya dentro, que no quede ni «Guardar» ni «Guardando…».
+    await expect(fila.getByRole('button', { name: /^(Guardar|Guardando…)$/ })).toHaveCount(0)
     await expect(minutos).toHaveValue('45')
     // Y sobrevive a recargar: está en la base, no en la pantalla.
     await page.reload()
@@ -128,6 +145,7 @@ test.describe('El ciclo 2 · la vacante elige el cuestionario y la candidata lo 
   // ============================================================
 
   test('6 · la ficha, con las palabras del dueño, queda completa', async ({ page }) => {
+    test.skip(!IA_REAL, SOLO_PREPARA_LA_IA)
     await entrarAlPanel(page)
     await irALaVacante(page, recorrido.vacanteId, recorrido.titulo)
     await page.getByRole('link', { name: /la prueba técnica →/ }).click()
@@ -154,6 +172,7 @@ test.describe('El ciclo 2 · la vacante elige el cuestionario y la candidata lo 
   // ============================================================
 
   test('7 · la IA escribe el cuestionario y el dueño lo publica', async ({ page }) => {
+    test.skip(!IA_REAL, SIN_IA_REAL)
     test.setTimeout(420_000)
     await entrarAlPanel(page)
     await irAPrepararLaPruebaTecnica(page, recorrido.vacanteId)
@@ -180,6 +199,7 @@ test.describe('El ciclo 2 · la vacante elige el cuestionario y la candidata lo 
   // ============================================================
 
   test('8 · con el cuestionario publicado, la vacante dice que está lista y se publica', async ({ page }) => {
+    test.skip(!IA_REAL, SIN_IA_REAL)
     test.skip(!recorrido.cuestionarioPublicado, 'Sin cuestionario publicado no hay vacante que publicar: la IA no lo escribió.')
     await entrarAlPanel(page)
     await irALaVacante(page, recorrido.vacanteId, recorrido.titulo)
@@ -199,6 +219,7 @@ test.describe('El ciclo 2 · la vacante elige el cuestionario y la candidata lo 
   // ============================================================
 
   test('9 · una candidata crea su cuenta y postula a la vacante', async ({ page }) => {
+    test.skip(!IA_REAL, SIN_IA_REAL)
     test.skip(!recorrido.vacantePublicada, 'La vacante no llegó a publicarse: no hay a qué postular.')
 
     const publicadas = (await (await fetch(`${API}/portal/vacantes`)).json()) as { id: number; titulo: string }[]
@@ -241,6 +262,7 @@ test.describe('El ciclo 2 · la vacante elige el cuestionario y la candidata lo 
   // ============================================================
 
   test('10 · el equipo la hace avanzar hasta que le toca la etapa técnica', async ({ page }) => {
+    test.skip(!IA_REAL, SIN_IA_REAL)
     test.skip(!recorrido.postulo, 'Nadie postuló: no hay a quién avanzar.')
     await entrarAlPanel(page)
     await irALaVacante(page, recorrido.vacanteId, recorrido.titulo)
@@ -286,6 +308,7 @@ test.describe('El ciclo 2 · la vacante elige el cuestionario y la candidata lo 
   // ============================================================
 
   test('11 · la candidata ve que le toca su prueba técnica, la rinde y la entrega', async ({ page }) => {
+    test.skip(!IA_REAL, SIN_IA_REAL)
     test.skip(!recorrido.enLaPrueba, 'La candidata no llegó a la etapa técnica: no hay prueba que rendir.')
     test.setTimeout(240_000)
     await entrarAlPortal(page, recorrido.correo, CLAVE)
@@ -374,6 +397,7 @@ test.describe('El ciclo 2 · la vacante elige el cuestionario y la candidata lo 
   // ============================================================
 
   test('12 · el equipo lee lo que escribió, y la nota de la etapa llega al ranking', async ({ page }) => {
+    test.skip(!IA_REAL, SIN_IA_REAL)
     test.skip(!recorrido.entrego, 'No hay entrega que leer: la candidata no rindió.')
     test.setTimeout(240_000)
     await entrarAlPanel(page)

@@ -146,8 +146,10 @@ hay forma de borrarla.
 npx playwright test herramientas/e2e/13-etapas.spec.ts
 ```
 
-El ranking por etapas: las cinco pestañas, el filtro de «aquí ahora», y la ficha que
-cambia con la etapa — las dos tablas del perfil integral incluidas.
+La entrada de desarrollo al panel y la ficha que cambia con la etapa — las dos tablas del
+perfil integral incluidas. Las cinco pestañas y sus cortes, contrastados con la API, van en
+`18-ranking-contra-api.spec.ts`. La suite entera, clasificada prueba a prueba, en
+[docs/SUITE-E2E-CLASIFICACION-2026-09-25.md](docs/SUITE-E2E-CLASIFICACION-2026-09-25.md).
 
 ## Desplegado: Vercel por delante, AWS por detrás
 

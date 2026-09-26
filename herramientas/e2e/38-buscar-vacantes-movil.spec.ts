@@ -81,9 +81,13 @@ test.describe('Buscar vacantes en el teléfono · el muro de cuarenta', () => {
     for (const destino of ['Inicio', 'Vacantes', 'Mis procesos']) {
       await expect(page.locator('header nav').getByRole('link', { name: destino, exact: true })).toBeVisible()
     }
+    // Contra el token y no contra un número: la cabecera pasó de 70 a 84 px el
+    // 25/09/2026 con «El cielo despejado», y un tope escrito aquí ya se quedó viejo una vez.
     const cabecera = await page.locator('header').boundingBox()
-    expect(cabecera?.height, 'la cabecera dejó de medir 70 px').toBeGreaterThanOrEqual(60)
-    expect(cabecera?.height).toBeLessThanOrEqual(80)
+    const prometido = await page.evaluate(() =>
+      parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--alto-cabecera')),
+    )
+    expect(Math.abs((cabecera?.height ?? 0) - prometido), `la cabecera mide ${cabecera?.height} px y promete ${prometido}`).toBeLessThanOrEqual(1)
 
     // El orden queda bajo el contador, también sin texto (ciclo 2: se ve siempre).
     const orden = page.getByRole('radiogroup', { name: 'Ordenar por' })

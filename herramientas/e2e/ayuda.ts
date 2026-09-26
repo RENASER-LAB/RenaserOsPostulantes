@@ -22,6 +22,23 @@ export const API = configuracion().E2E_API
  */
 export const EQUIPO = process.env.E2E_EQUIPO ?? 'dev-equipo'
 
+/**
+ * Si esta corrida puede pedirle algo a DeepSeek de verdad.
+ *
+ * ⚠️ **Por defecto NO.** La corrida automática (`npx playwright test`) no
+ * dispara ninguna llamada real al proveedor: cada prueba que la necesita para
+ * pasar se salta con `SIN_IA_REAL` como motivo. Se corren a mano, con la clave
+ * real puesta en el backend y esta variable:
+ *
+ *     E2E_IA_REAL=1 npx playwright test herramientas/e2e/16-cuestionario-tecnico.spec.ts
+ *
+ * Cómo y cuáles, en `docs/SUITE-E2E-CLASIFICACION-2026-09-25.md`.
+ */
+export const IA_REAL = Boolean(process.env.E2E_IA_REAL)
+export const SIN_IA_REAL =
+  'Le pide una calificación a DeepSeek de verdad: excluida de la corrida automática. ' +
+  'Se corre a mano con E2E_IA_REAL=1 y la clave real (ver docs/SUITE-E2E-CLASIFICACION-2026-09-25.md).'
+
 /** El token del panel: `dev-login` da todos los roles. */
 export async function tokenDelPanel(): Promise<string> {
   const r = await fetch(`${API}/panel/auth/dev-login`, {

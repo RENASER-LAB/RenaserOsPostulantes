@@ -305,14 +305,7 @@ test.describe('Me olvidé mi contraseña · criterios y bordes', () => {
     expect(guardadas, 'doble clic en «Guardar contraseña»').toBe(1)
   })
 
-  test('enlace sin token: lo dice y lleva a pedir otro en su propia puerta', async ({ page }) => {
-    await page.goto('/restablecer')
-    await expect(page.getByRole('heading', { name: 'El enlace está incompleto.' })).toBeVisible()
-    await expect(page.getByText(/^Cópialo entero desde el correo\./)).toBeVisible()
-    await expect(page.getByRole('link', { name: 'Pedir un enlace nuevo' })).toHaveAttribute('href', '/clave')
-
-    await page.goto('/admin/restablecer?token=')
-    await expect(page.getByRole('heading', { name: 'El enlace está incompleto.' })).toBeVisible()
-    await expect(page.getByRole('link', { name: 'Pedir un enlace nuevo' })).toHaveAttribute('href', '/admin/clave')
-  })
+  // El enlace sin token —«El enlace está incompleto» y «Pedir un enlace nuevo» en
+  // su propia puerta— se fija sin navegador en `Restablecer.test.tsx` (portal) y
+  // `RecuperarClavePanel.test.tsx` (panel).
 })

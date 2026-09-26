@@ -93,6 +93,8 @@ test.describe('Buscar vacantes · las nueve como producción', () => {
     await expect(page).toHaveURL(/\/vacantes\?orden=recientes$/)
     expect(await titulos(page)).toEqual(ORDEN_POR_FECHA)
     await page.getByText('Relevantes', { exact: true }).click()
+    // F-16: la dirección se escribe antes de pintar; el radio sale del mismo render que la lista.
+    await expect(orden(page).getByRole('radio', { name: 'Relevantes' })).toBeChecked()
     await expect(page).toHaveURL(/\/vacantes$/)
     expect(await titulos(page)).toEqual(ORDEN_POR_COMPLETITUD)
     // AC-32: el título de la pestaña.
@@ -226,6 +228,7 @@ test.describe('Buscar vacantes · las nueve como producción', () => {
     await buscador(page).fill('ingeniero')
     await marcar(page.getByRole('group', { name: 'Ciudad' }).getByRole('checkbox', { name: /^Arequipa/ }))
     await page.getByText('Recientes', { exact: true }).click()
+    await expect(orden(page).getByRole('radio', { name: 'Recientes' })).toBeChecked()
     await expect(page).toHaveURL(/q=ingeniero/)
     await expect(page).toHaveURL(/ciudad=0401/)
     await expect(page).toHaveURL(/orden=recientes/)
@@ -682,10 +685,13 @@ test.describe('Buscar vacantes · las nueve como producción', () => {
     // Decisión del usuario del 25/09/2026: un filtro puesto sale como etiqueta en la columna de
     // resultados, bajo la fila del contador y encima de las tarjetas; la de filtros no se mueve.
     // Se mide en la página y no en la ventana: el clic puede desplazarla para alcanzar la casilla.
-    const enLaPagina = async (l: Locator) => {
-      const b = await caja(l)
-      return { ...b, y: b.y + (await page.evaluate(() => window.scrollY)) }
-    }
+    // Caja y desplazamiento en una sola lectura: marcar cambia la dirección y la página sube con
+    // un desplazamiento suave, así que leídos por separado caían en momentos distintos.
+    const enLaPagina = (l: Locator) =>
+      l.evaluate((e) => {
+        const r = e.getBoundingClientRect()
+        return { x: r.x + window.scrollX, y: r.y + window.scrollY, width: r.width, height: r.height }
+      })
     const publicadaAntes = await enLaPagina(page.getByRole('button', { name: 'Publicada', exact: true }))
     await marcar(page.getByRole('group', { name: 'Ciudad' }).getByRole('checkbox', { name: 'Lima (2)' }))
     await expect(contador(page, '2 de 9 vacantes')).toHaveText('2 de 9 vacantes en Lima')
@@ -747,6 +753,7 @@ test.describe('Buscar vacantes · las fechas', () => {
     await expect(tarjetas(page)).toHaveCount(2)
     expect(await titulos(page)).toEqual(['Perito de Datos', 'Coordinador de Peritos'])
     await page.getByText('Recientes', { exact: true }).click()
+    await expect(orden(page).getByRole('radio', { name: 'Recientes' })).toBeChecked()
     expect(await titulos(page)).toEqual(['Coordinador de Peritos', 'Perito de Datos'])
     // Cambiar el orden no mueve la búsqueda.
     await expect(buscador(page)).toHaveValue('perito')
@@ -935,6 +942,7 @@ test.describe('Buscar vacantes · el rediseño del ciclo 2 (QA)', () => {
     await expect(page.getByRole('link', { name: 'Completa sin fecha', exact: true })).toContainText('S/ 3 000 a 4 500')
 
     await page.getByText('Recientes', { exact: true }).click()
+    await expect(orden(page).getByRole('radio', { name: 'Recientes' })).toBeChecked()
     await expect(page).toHaveURL(/\/vacantes\?orden=recientes$/)
     expect(await titulos(page)).toEqual(['Reciente con sueldo y poco más', 'Media sin sueldo', 'Completa sin fecha'])
   })
@@ -988,6 +996,9 @@ test.describe('Buscar vacantes · el rediseño del ciclo 2 (QA)', () => {
     await expect(buscador(page)).toHaveValue('')
     await expect(buscador(page)).toBeFocused()
     await expect(orden(page).getByRole('radio', { name: 'Recientes' })).toBeChecked()
+    // «Recientes» ya estaba marcado: el texto vacío se pinta primero, con Lima aún puesta (2),
+    // y quitar el filtro llega en la transición del router. Se espera a las nueve.
+    await expect(tarjetas(page)).toHaveCount(9)
     expect(await titulos(page)).toEqual(ORDEN_POR_FECHA)
   })
 })

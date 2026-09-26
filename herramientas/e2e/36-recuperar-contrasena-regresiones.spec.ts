@@ -14,15 +14,14 @@ import { literal, sql } from './base-de-datos'
 /**
  * «Me olvidé mi contraseña»: regresiones de lo que encontró QA explorando.
  *
- *   1. Una contraseña de más de 72 bytes (el tope de BCrypt) llegaba al campo
- *      como «password cannot be more than 72 bytes», el texto crudo de Spring
- *      Security.
- *   2. La organización plataforma se llama «RENASER CONSULTING S.A.C.», y las
- *      plantillas sembradas ponen un punto detrás de `{{nombre_empresa}}`: los
- *      correos salían con «S.A.C..».
+ * La organización plataforma se llama «RENASER CONSULTING S.A.C.», y las
+ * plantillas sembradas ponen un punto detrás de `{{nombre_empresa}}`: los
+ * correos salían con «S.A.C..». Solo el backend puede demostrar que ya no.
  *
- * Cada prueba es independiente —crea su cuenta y la borra— para que un hallazgo
- * abierto no deje sin correr al otro.
+ * El otro hallazgo —una contraseña de más de 72 bytes, el tope de BCrypt, que
+ * llegaba al campo como «password cannot be more than 72 bytes»— se para hoy en
+ * la pantalla, y eso se fija sin navegador en `Restablecer.test.tsx` y
+ * `RecuperarClavePanel.test.tsx` (F-01, en las dos puertas).
  *
  * ⚠️ **ESCRIBE**: crea cuentas `e2e.rcr.*.<uuid>@example.com` y las borra al
  * terminar. La auditoría de cada solicitud queda, sin usuario ni token.
@@ -42,39 +41,6 @@ test.describe('Me olvidé mi contraseña · regresiones de QA', () => {
   })
   test.afterAll(() => {
     devolverElTope()
-  })
-
-  test('una contraseña de más de 72 bytes no termina en un mensaje técnico en inglés', async ({ page }) => {
-    const larga = correoDePrueba('e2e.rcr.larga')
-    try {
-      await crearCuentaDeCandidato({ nombre: 'Larga', apellidos: 'Recupera', correo: larga })
-      expect(await pedirPorApi('portal', larga)).toBe(202)
-      const enlace = await esperarEnlace(larga, PLANTILLA_CANDIDATO)
-      await page.goto(enlace)
-
-      // 40 «ñ»: 40 caracteres y 80 bytes. Pasa el mínimo de 8 y no cabe en BCrypt.
-      const clave = 'ñ'.repeat(40)
-      await page.getByLabel(/^Contraseña nueva/).fill(clave)
-      await page.getByLabel('Repetir contraseña').fill(clave)
-      await page.getByRole('button', { name: 'Guardar contraseña' }).click()
-
-      // Vale que se acepte o que se rechace; lo que no vale es el texto crudo.
-      const errorDelCampo = page.locator('[id$="-error"]').first()
-      await expect(page.getByText('Contraseña cambiada exitosamente').or(errorDelCampo)).toBeVisible({
-        timeout: 15_000,
-      })
-      await expect(page.getByText(/password cannot|bytes/i)).toHaveCount(0)
-      if (!/\/ingresar$/.test(page.url())) {
-        await expect(errorDelCampo, 'el motivo se dice en español').toContainText(/contraseña/i)
-        // Y el enlace no se perdió
-        await page.getByLabel(/^Contraseña nueva/).fill('otraClaveMasCorta2026')
-        await page.getByLabel('Repetir contraseña').fill('otraClaveMasCorta2026')
-        await page.getByRole('button', { name: 'Guardar contraseña' }).click()
-        await expect(page).toHaveURL(/\/ingresar$/, { timeout: 15_000 })
-      }
-    } finally {
-      borrarCuentasDePrueba([larga])
-    }
   })
 
   test('los correos de recuperación no dicen «S.A.C..» con el punto repetido', async () => {

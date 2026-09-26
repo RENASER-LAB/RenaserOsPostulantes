@@ -16,6 +16,72 @@ no se vuelve a subir el currículum. Lo del 07/09 se documentó en
 
 ---
 
+## La suite recortada llega a «El cielo despejado» (26/09/2026)
+
+Se juntó la suite e2e recortada de main (#59, la entrada siguiente). No trae pantallas ni hojas
+de estilo, así que no hubo diseño que aplicar; se revisó qué pruebas daban por hecho algo que
+esta rama cambió.
+
+- **Solo una chocaba: la altura de la cabecera en `38-buscar-vacantes-movil`**, que pedía entre
+  60 y 80 px y ahora mide 84. Ya no compara contra un número sino contra `--alto-cabecera`, como
+  hace AC-19 en el mismo archivo.
+- **Lo demás se comprobó sin clon de base**, replicando las afirmaciones contra el portal local:
+  `34-recuperar-contrasena-movil` pasa entero con las pantallas ya en tarjeta, y los selectores
+  de `23-movimiento`, `37-buscar-vacantes` y `20-prueba-y-empresas` siguen encontrando lo que
+  buscan en la portada nueva. La suite entera no se corrió: necesita el clon aislado de
+  [TRABAJAR-EN-LOCAL.md](TRABAJAR-EN-LOCAL.md).
+
+---
+
+## La suite e2e se recorta, prueba a prueba (25–26/09/2026)
+
+La suite de `herramientas/e2e/` tardaba unos 12 minutos en sus 329 pruebas y siempre salía con
+las mismas en rojo, así que el rojo no decía nada. Se leyeron una a una y cada una quedó como
+recorrido (se queda), bajó a unitario o sobraba. Qué pasó con cada una, los tiempos medidos y
+cómo se corre cada parte está en
+[SUITE-E2E-CLASIFICACION-2026-09-25.md](SUITE-E2E-CLASIFICACION-2026-09-25.md); aquí va el
+porqué. No se tocó código de producto.
+
+- **Quedaron 258.** Lo que una regla de `src/` ya puede afirmar sin navegador bajó a 28
+  pruebas unitarias nuevas (por ejemplo, `ranking.escenario-e2e.test.ts`). Las que se saltaban
+  siempre, porque la base nunca trae lo que piden, se borraron: no protegían nada y quedan
+  anotadas como recorridos sin cobertura.
+- **El escenario de «Desarrollador web» se pone en el navegador, no en la base**
+  (`escenario-desarrollador-web.ts`). Veinticuatro pruebas del ranking contaban con unas notas
+  que el sembrador del backend no llegaba a escribir, y fallaban en cada corrida. Se midió
+  interceptar contra sembrar con Python y con TypeScript: interceptar ganó en las cinco pruebas
+  y no deja la base escrita, así que **`scripts/sembrar-escenario-e2e.py` se borró del
+  backend**. La vía de TypeScript (`E2E_ESCENARIO=base`) queda solo para repetir la medición.
+- **La IA de verdad sale de la corrida automática.** Las 8 pruebas que le piden algo a DeepSeek
+  se saltan salvo con `E2E_IA_REAL=1`. Antes lo pedían con la clave ficticia y esperaban el fallo.
+- **Se puede volver a correr sobre la misma base.** Lo que deja una corrida no siempre se puede
+  borrar, así que cada prueba afirma sobre sus propias personas y vacantes, no sobre listas
+  compartidas.
+- **Llegaron de main las 44 de «Buscar vacantes»** (#58), que no entran en la clasificación: la
+  suite integrada tiene 302 pruebas en 46 archivos, 294 automáticas y las 8 de IA real.
+
+### Lo que destapó correr la suite entera
+
+La clasificación se hizo leyendo; correrla entera sacó fallos que la lectura daba por buenos.
+QA dejó 19 hallazgos y todos eran de las pruebas, no del producto. Casi todos tenían la misma
+forma: **la prueba leía o navegaba antes de que terminara lo que acababa de disparar** —un
+guardado todavía en camino, una lista sin pintar—, y fallaba o no según lo cargada que estuviera
+la máquina. Se corrigió cada caso y se revisaron los 46 archivos con la red y el procesador
+frenados a propósito. Dos venían de main y no de este trabajo: `37-buscar-vacantes` (#58) y el
+paso 3 de `16-cuestionario-tecnico` (#25).
+
+El fallo de `14-vacante` en «poner en automático», anotado el mismo 25/09 sin causa, también era
+de la prueba: la casilla la manda el servidor y no se le esperaba. Salió de
+[PENDIENTES.md](PENDIENTES.md).
+
+### Cómo se comprueba
+
+La última corrida entera de QA: **294 pasan, 0 fallan y 8 se saltan** (las de IA real), en unos
+10-11 minutos, frente a ~12 para las 329. Ya no hay rojo de fondo: si algo sale en rojo, hay que
+mirarlo.
+
+---
+
 ## La búsqueda de vacantes entra en «El cielo despejado» (25/09/2026)
 
 `/vacantes` —la búsqueda con filtros, de la entrada siguiente— llegó de main el mismo día en

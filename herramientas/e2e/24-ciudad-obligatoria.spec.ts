@@ -115,6 +115,9 @@ test.describe('AC-01 · la pantalla dice que la ciudad es obligatoria antes de p
     // abajo y no con un número exacto: el catálogo es dato, no contrato.
     expect(await ciudad.locator('option').count()).toBeGreaterThan(100)
     await expect(ciudad.locator('option[value="EXT"]')).toHaveText('Fuera del Perú')
+    // Agrupado por departamento, y «Fuera del Perú» suelta al final, fuera de todo `optgroup`.
+    await expect(ciudad.locator('optgroup').first()).toHaveAttribute('label', /\w+/)
+    await expect(ciudad.locator('> option')).toHaveCount(2) // la vacía + EXT
   })
 })
 
@@ -125,6 +128,9 @@ test.describe('AC-02 · sin ciudad no se crea la cuenta y se dice junto al campo
     const correo = nuevoCorreo()
     await page.goto('/registro')
     await rellenarTodoMenosLaCiudad(page, correo)
+    // Con la lista de ciudades ya llegada: mientras carga, el desplegable está apagado y no
+    // puede recibir el foco que se comprueba abajo.
+    await expect(elDesplegable(page)).toBeEnabled()
 
     await page.getByRole('button', { name: /Crear cuenta/i }).click()
 
@@ -174,35 +180,6 @@ test.describe('AC-02 · sin ciudad no se crea la cuenta y se dice junto al campo
     expect(cuantasCuentas(correo)).toBe(0)
   })
 
-  test('el doble envío tampoco cuela: cada intento vuelve a validar la ciudad', async ({ page }) => {
-    const correo = nuevoCorreo()
-    await page.goto('/registro')
-    await rellenarTodoMenosLaCiudad(page, correo)
-
-    const boton = page.getByRole('button', { name: /Crear cuenta/i })
-    await boton.click()
-    await boton.click()
-
-    await expect(page).toHaveURL(/\/registro/)
-    await expect(await elErrorDelCampo(page)).toHaveText(EL_ERROR)
-    expect(cuantasCuentas(correo)).toBe(0)
-  })
-
-  test('recargar no deja la ciudad puesta ni el error colgado', async ({ page }) => {
-    const correo = nuevoCorreo()
-    await page.goto('/registro')
-    await rellenarTodoMenosLaCiudad(page, correo)
-    await page.getByRole('button', { name: /Crear cuenta/i }).click()
-    await expect(await elErrorDelCampo(page)).toHaveText(EL_ERROR)
-
-    await page.reload()
-
-    // El formulario vuelve a estar en blanco y sin acusar a nadie: nada de una
-    // ciudad elegida «por si acaso» ni de un error de un intento anterior.
-    await expect(elDesplegable(page)).toHaveValue('')
-    await expect(page.getByText(EL_ERROR)).toHaveCount(0)
-    expect(cuantasCuentas(correo)).toBe(0)
-  })
 })
 
 test.describe('AC-03 · al elegir ciudad el aviso se retira y el registro continúa', () => {
@@ -252,17 +229,8 @@ test.describe('AC-03 · al elegir ciudad el aviso se retira y el registro contin
     expect(laCiudadGuardadaDe(correo)).toBe('EXT')
   })
 
-  test('«Fuera del Perú» (EXT) es una elección válida y se guarda tal cual', async ({ page }) => {
-    const correo = nuevoCorreo()
-    await page.goto('/registro')
-    await rellenarTodoMenosLaCiudad(page, correo)
-    await elDesplegable(page).selectOption('EXT')
-
-    await page.getByRole('button', { name: /Crear cuenta/i }).click()
-
-    await expect(page).toHaveURL(/\/procesos/, { timeout: 20_000 })
-    expect(laCiudadGuardadaDe(correo)).toBe('EXT')
-  })
+  // Que «Fuera del Perú» (EXT) sea una elección válida y se guarde tal cual lo
+  // demuestra el doble clic de arriba, que crea la cuenta con EXT y lo lee de la base.
 
   test('se elige y se envía solo con el teclado, sin tocar el ratón', async ({ page }) => {
     const correo = nuevoCorreo()
@@ -270,6 +238,8 @@ test.describe('AC-03 · al elegir ciudad el aviso se retira y el registro contin
     await rellenarTodoMenosLaCiudad(page, correo)
 
     const ciudad = elDesplegable(page)
+    // Apagado mientras llega la lista de ciudades: enfocarlo antes no hace nada.
+    await expect(ciudad).toBeEnabled()
     await ciudad.focus()
     await expect(ciudad).toBeFocused()
     // La rueda nativa del `<select>`: bajar una opción ya es elegir.
@@ -309,6 +279,11 @@ test.describe('AC-03 · al elegir ciudad el aviso se retira y el registro contin
     expect(caja, 'el error tiene que ocupar sitio en pantalla').toBeTruthy()
     expect(caja!.x).toBeGreaterThanOrEqual(0)
     expect(caja!.x + caja!.width).toBeLessThanOrEqual(375)
+    // Y el formulario entero, con su desplegable, cabe sin scroll horizontal.
+    const desborda = await page.evaluate(
+      () => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
+    )
+    expect(desborda, 'el registro no debe poder desplazarse en horizontal').toBe(false)
 
     await ciudad.selectOption('EXT')
     await expect(page.getByText(EL_ERROR)).toHaveCount(0)
