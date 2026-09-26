@@ -81,9 +81,13 @@ test.describe('Buscar vacantes en el teléfono · el muro de cuarenta', () => {
     for (const destino of ['Inicio', 'Vacantes', 'Mis procesos']) {
       await expect(page.locator('header nav').getByRole('link', { name: destino, exact: true })).toBeVisible()
     }
+    // Contra el token y no contra un número: la cabecera pasó de 70 a 84 px el
+    // 25/09/2026 con «El cielo despejado», y un tope escrito aquí ya se quedó viejo una vez.
     const cabecera = await page.locator('header').boundingBox()
-    expect(cabecera?.height, 'la cabecera dejó de medir 70 px').toBeGreaterThanOrEqual(60)
-    expect(cabecera?.height).toBeLessThanOrEqual(80)
+    const prometido = await page.evaluate(() =>
+      parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--alto-cabecera')),
+    )
+    expect(Math.abs((cabecera?.height ?? 0) - prometido), `la cabecera mide ${cabecera?.height} px y promete ${prometido}`).toBeLessThanOrEqual(1)
 
     // El orden queda bajo el contador, también sin texto (ciclo 2: se ve siempre).
     const orden = page.getByRole('radiogroup', { name: 'Ordenar por' })
@@ -149,12 +153,17 @@ test.describe('Buscar vacantes en el teléfono · el muro de cuarenta', () => {
   /**
    * F-01 del ciclo 0 de QA: de 369 a 420 px la cabecera desbordaba y toda página
    * del portal tenía scroll horizontal. Se mide por ancho y por pantalla, y se
-   * mide también lo que la cabecera promete: sus 70 px y los 44 px táctiles.
+   * mide también lo que la cabecera promete: su `--alto-cabecera` y los 44 px
+   * táctiles.
+   *
+   * 455, 470 y 471 desde el 25/09/2026: con la barra de «El cielo despejado» —Geist
+   * a 15 px— el apretado pasó de 430 a 470, porque de 431 a 454 la barra sin
+   * apretar se salía hasta 24 px.
    */
-  test('AC-19 · de 320 a 431 px la cabecera cabe en portada, lista y ficha, mide lo que promete y sus destinos son táctiles', async ({
+  test('AC-19 · de 320 a 471 px la cabecera cabe en portada, lista y ficha, mide lo que promete y sus destinos son táctiles', async ({
     page,
   }) => {
-    const anchos = [320, 360, 368, 369, 375, 390, 412, 430, 431]
+    const anchos = [320, 360, 368, 369, 375, 390, 412, 430, 431, 455, 470, 471]
     const pantallas = ['/', '/vacantes', `/vacantes/${ids['muro-1']}`]
     const DESTINOS = ['Inicio', 'Vacantes', 'Mis procesos', 'Iniciar sesión']
     for (const camino of pantallas) {
@@ -162,6 +171,16 @@ test.describe('Buscar vacantes en el teléfono · el muro de cuarenta', () => {
       await expect(page.locator('header').getByRole('link', { name: 'Iniciar sesión' })).toBeVisible()
       for (const ancho of anchos) {
         await page.setViewportSize({ width: ancho, height: 812 })
+        /*
+         * Se mide con la barra quieta. Sus destinos entran en cascada con un
+         * `translateY` de 420 ms, y a medio camino la caja sale 43,999996 px por
+         * redondeo: la corrida del 26/09/2026 falló así en «Inicio» a 368 px, con
+         * la carga de la portada todavía animándose. Y la cascada vuelve a correr
+         * cada vez que «Vacantes» reaparece al cruzar los 368 px.
+         */
+        await page.waitForFunction(() =>
+          document.querySelector('header')!.getAnimations({ subtree: true }).every((a) => a.playState !== 'running'),
+        )
         const m = await page.evaluate((nombres) => {
           const cabecera = document.querySelector('header')!
           const visibles = [...cabecera.querySelectorAll<HTMLElement>('a, button')].filter((e) => e.getClientRects().length > 0)

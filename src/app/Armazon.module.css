@@ -9,6 +9,116 @@
   flex-direction: column;
 }
 
+/* ================================================================== *
+ * EL CIELO DE LA PORTADA
+ * ================================================================== */
+
+/*
+ * El cielo de la portada, **solo en la portada**.
+ *
+ * ⚠️ **Nacio como un amanecer calido y es azul desde el 25/09/2026.** Cuando el
+ * mundo era pastel calido con acento coral, un cielo azul habria sido su
+ * complementario exacto; ese mismo dia la paleta paso a la de la referencia
+ * —gris frio e indigo— y entonces el que desentonaba era el amanecer.
+ *
+ * ⚠️ **La referencia usa una FOTO**, `images/covers/hero.jpg` de su servidor.
+ * Esto es una reconstruccion en degradados: no se trae el archivo de una
+ * plantilla comercial ajena. A cambio no hay recurso que pese ni que mantener,
+ * y las nubes se repintan solas si cambia la paleta.
+ *
+ * ⚠️ **Vive aqui y no en la hoja de la portada porque tiene que pasar por
+ * DETRAS de la cabecera.** La cabecera es del armazon y la portada empieza
+ * dentro de `main`: desde su hoja, el cielo arrancaria por debajo de la barra y
+ * dejaria una franja de fondo plano arriba del todo. Es el mismo motivo por el
+ * que `.armazonJusto` vive aqui y no en `Cuenta.module.css`.
+ */
+.armazonConCielo {
+  position: relative;
+  /*
+   * ⚠️ **`clip` y NO `hidden`.** Los dos recortan lo que se sale, pero `hidden`
+   * crea un contenedor de desplazamiento y eso **rompe el `position: sticky` de
+   * la cabecera**: dejaria de posarse. `clip` recorta sin crear ese contenedor.
+   * Hace falta porque el cielo mide `100vw` para ir a sangre, y `100vw` incluye
+   * el ancho de la barra de desplazamiento: sin recortar, la pagina entera se
+   * puede mover en horizontal.
+   */
+  overflow-x: clip;
+}
+
+.armazonConCielo::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 100vw;
+  /*
+   * Hasta donde llega. Es el alto del hero mas el escaparate: por debajo la
+   * pagina vuelve a ser crema plano y las secciones se apoyan en el.
+   */
+  height: 1100px;
+  transform: translateX(-50%);
+  /* Detras de todo lo que se lee, y de la superficie de la cabecera. */
+  z-index: 0;
+  pointer-events: none;
+  /*
+   * Tres capas, y cada una copia una cosa distinta de la foto de la referencia:
+   *
+   * 1. **Las nubes**, en `public/cielo-nubes.webp`: ruido fractal, no ovalos. La
+   *    version anterior eran seis degradados radiales y se leian como nubes de
+   *    dibujo animado —bordes lisos, blanco uniforme—. El ruido da los bordes
+   *    deshilachados de una nube de verdad. **Es una imagen pintada de antemano**
+   *    a partir de `herramientas/cielo/cielo-nubes.svg`: calcular el ruido en el
+   *    navegador costaba ~100 ms de hilo principal en escritorio en cada carga
+   *    (mediana de cinco). Si se toca el SVG, hay que volver a correr
+   *    `herramientas/cielo/pintar-nubes.mjs`.
+   * 2. **La luz en el centro.** La referencia no es un degradado de arriba abajo:
+   *    tiene un resplandor casi blanco justo detras del titular y se vuelve azul
+   *    hacia los bordes y las esquinas. Ademas de parecerse, es lo que mejor le
+   *    va al texto: la tinta cae sobre lo mas claro del cielo.
+   * 3. **El azul de fondo, con su horizonte**: una franja mas saturada cerca de
+   *    abajo, y luego el fundido hasta el gris de la pagina para que no se vea el
+   *    corte.
+   *
+   * ⚠️ **Arriba es AZUL, y antes no.** La version anterior dejaba casi blancos
+   * los primeros 100 px con el argumento de que, con azul, la pildora de la
+   * cabecera «perdia su contorno». Era justo al reves: una pildora blanca se lee
+   * mejor sobre azul que sobre blanco, y la referencia lo hace asi.
+   *
+   * ⚠️ **El cielo tiene que tener COLOR, o las nubes no existen.** Blanco sobre
+   * casi blanco no se ve: el primer amanecer de todos fallo por eso.
+   */
+  background:
+    url('/cielo-nubes.webp') center top / cover no-repeat,
+    radial-gradient(
+      ellipse 58% 46% at 50% 36%,
+      rgb(255 255 255 / 0.96) 0%,
+      rgb(255 255 255 / 0.62) 38%,
+      rgb(255 255 255 / 0) 72%
+    ),
+    linear-gradient(
+      180deg,
+      #cfe3fc 0%,
+      #d8e8fd 28%,
+      #cbe1fb 52%,
+      #a9cdf7 73%,
+      #cfe3fa 86%,
+      #eef5fd 94%,
+      var(--cielo) 100%
+    );
+}
+
+/*
+ * Lo que se lee va por encima del cielo.
+ *
+ * `main` y el pie necesitan contexto de apilamiento propio: sin el, el
+ * `::before` del armazon —que es hermano suyo y va despues en el orden de
+ * pintado— se les pondria encima y taparia el titular.
+ */
+.armazonConCielo > * {
+  position: relative;
+  z-index: 1;
+}
+
 /*
  * El armazon ajustado a la ventana, que hoy usa una sola pantalla: «Entrar».
  *
@@ -77,25 +187,38 @@
   z-index: 10;
   /*
    * El hueco que la separa del borde va de relleno y no de margen: asi la barra
-   * guarda los mismos 8 px arriba en reposo y pegada, porque el relleno viaja
-   * con la caja pegajosa y un margen se quedaria arriba.
+   * guarda el mismo aire arriba en reposo y pegada, porque el relleno viaja con
+   * la caja pegajosa y un margen se quedaria arriba.
+   *
+   * ⚠️ **Eran 8 px y son 16 desde el 25/09/2026.** Ahora la pildora se ve desde
+   * el primer pixel, asi que el hueco no es un detalle: es lo que la separa del
+   * borde de la ventana y lo que la hace leerse como una pieza flotando encima
+   * de la pagina, que es lo que hace la referencia.
    */
-  padding: var(--e2) var(--e2) 0;
+  padding: var(--e4) var(--e2) 0;
 }
 
 /*
- * La barra en si. **En reposo no existe**: solo se ven la marca y los enlaces
- * sobre el cielo, y la superficie aparece al bajar.
+ * La barra en si: una pildora blanca flotando sobre la pagina.
  *
- * Es lo contrario de la vaina ovalada que se probo y se descarto esta misma
- * mañana: aquella tapaba la pagina desde el primer pixel.
+ * ⚠️ **Cuarta forma, y esta se ve desde el primer pixel.** Las tres anteriores
+ * fueron: barra a sangre con filete; vaina ovalada flotante, descartada el
+ * 10/09 por tapar la pagina desde arriba; y barra insertada **invisible en
+ * reposo** que sacaba su superficie al bajar. El 25/09/2026 se pidio igualar la
+ * referencia del cliente, cuya cabecera es una pildora blanca siempre presente,
+ * asi que la superficie dejo de esconderse.
+ *
+ * La objecion que mato a la vaina —«tapa la pagina desde el primer pixel»—
+ * sigue siendo cierta, y ahora se acepta a sabiendas: es el precio de que la
+ * barra se lea como una pieza y no como texto suelto sobre el fondo.
  */
 .cabeceraDentro {
   position: relative;
   max-width: var(--ancho);
   margin: 0 auto;
-  padding: var(--e2) var(--e5);
-  border-radius: var(--radio-menor);
+  padding: var(--e3) var(--e5);
+  /* El radio de la pildora de la referencia, medido en su pagina. */
+  border-radius: var(--radio-pildora);
   /*
    * Tres columnas y no `space-between`: los destinos tienen que quedar centrados
    * respecto a la BARRA, no repartidos entre la marca y el boton. Con
@@ -118,7 +241,7 @@
 }
 
 /*
- * El velo que aparece al bajar.
+ * La superficie de la pildora.
  *
  * Va en `::before` y no en un `<div>`: no hay nada que anunciar a un lector de
  * pantalla y un elemento mas en el arbol solo habria que esconderlo.
@@ -127,13 +250,17 @@
  * cabecera, que ya es contexto de apilamiento por su `z-index: 10`.
  *
  * ⚠️ **Nube maciza, y se probo la otra.** Se probo nube al 85 % con
- * `backdrop-filter: blur(12px)`, y mirandolo con contenido pasando por debajo el
- * boton negro de la portada se leia entero a traves del velo: un 15 % de
- * transparencia no perdona una pieza de maximo contraste.
+ * `backdrop-filter: blur(12px)`, y con contenido pasando por debajo el boton de
+ * maximo contraste de la portada se leia entero a traves del velo.
  *
- * ⚠️ **Y ahora la pagina es blanca, asi que el velo es del mismo color que el
- * fondo.** Lo que dice donde acaba la barra es su contorno de `--regla` y su
- * sombra, no el relleno. Por eso los dos son obligatorios aqui.
+ * ⚠️ **Sin borde y sin sombra desde el 25/09/2026, en reposo y al bajar.** Llevo
+ * un filete de `--regla` y `--sombra-nube`, y al bajar la sombra se hacia mas
+ * honda. Se quito todo para igualar la referencia del cliente, que es blanca a
+ * secas: medido en su pagina, sin borde ni sombra tanto arriba como con la
+ * pagina bajada. Sobre el cielo azul la separa el contraste; **mas abajo, sobre
+ * el gris claro de la pagina y las tarjetas blancas, casi no se distingue y el
+ * contenido pasa por detras sin linea que lo corte.** Es lo que hace la
+ * referencia, aceptado a sabiendas.
  */
 .cabeceraDentro::before {
   content: '';
@@ -142,22 +269,6 @@
   z-index: -1;
   border-radius: inherit;
   background: var(--nube);
-  border: 1px solid var(--regla);
-  box-shadow: var(--sombra-nube);
-  opacity: 0;
-  transition: opacity 200ms var(--salida);
-}
-
-.posada .cabeceraDentro::before {
-  opacity: 1;
-}
-
-/* Quien pide menos movimiento igual necesita ver donde acaba la barra cuando
-   el contenido pasa por debajo: el velo deja de aparecer y se queda puesto. */
-@media (prefers-reduced-motion: reduce) {
-  .cabeceraDentro::before {
-    transition: none;
-  }
 }
 
 .marca {
@@ -175,10 +286,11 @@
 }
 
 /*
- * ⚠️ **18 px y peso 500, no 14 y 400.** Con la tipografia de apoyo y peso normal
- * los cuatro destinos se perdian: son lo unico que hay en medio de una barra muy
- * ancha y blanca, sin contorno ni relleno que los sostenga. Figtree es variable
- * de 400 a 700, asi que el 500 no cuesta una descarga mas.
+ * ⚠️ **16 px y peso 400, como la referencia del cliente, desde el 25/09/2026.**
+ * Antes fueron 18/500 y luego 16/500: con peso normal los destinos se perdian en
+ * una barra ancha y blanca SIN contorno. Ahora la barra es una pildora con
+ * contorno y sombra, que es lo que los sostiene. Geist es variable de 400 a 700,
+ * asi que cualquier peso de ese rango no cuesta una descarga mas.
  */
 .navegacion {
   display: flex;
@@ -191,12 +303,14 @@
    */
   gap: 0;
   /*
-   * 16 px, medido en `originx.demos.tailgrids.com` el 15/09/2026 junto con el
-   * peso 500 y los 32 px de separacion. Estuvo en 18 px desde el 11/09/2026 y
-   * baja por peticion expresa: lo que evita que los destinos se pierdan es el
-   * peso, no el tamaño.
+   * ⚠️ **17 px desde el 25/09/2026, fuera de la progresion de la escala.** Se
+   * pidio «un poco» mas grande que los 16 de la referencia; 18 —el escalon
+   * siguiente— ya es lo que se tuvo el 11/09 y se bajo por peticion expresa el
+   * 15/09. Nacio como numero suelto y ese mismo dia se nombro `--t-navegacion`:
+   * el detector de `impeccable` lo marcaba fuera de la escala de DESIGN.md.
+   * Historial: 18 (11/09) → 16 (15/09) → 17 (25/09).
    */
-  font-size: var(--t-base);
+  font-size: var(--t-navegacion);
 }
 
 /*
@@ -255,7 +369,15 @@
   align-items: center;
   min-height: 44px;
   padding: 0 var(--e4);
-  font-weight: 500;
+  /*
+   * ⚠️ **400 desde el 25/09/2026, y antes 500.** El 500 existia porque los
+   * destinos «se perdian en una barra muy ancha y blanca, sin contorno ni relleno
+   * que los sostenga». Desde que la cabecera es una pildora con contorno y
+   * sombra, esa razon ya no vale, y la referencia del cliente pone sus enlaces
+   * de barra a 400. El destino actual sigue distinguiendose por el indigo y el
+   * subrayado, no por el peso.
+   */
+  font-weight: 400;
   /* Sin esto «Mis procesos» se parte en dos lineas en un telefono y la barra
      pasa de 61 a 85 px, justo el numero que `--alto-cabecera` promete fijo. */
   white-space: nowrap;
@@ -288,7 +410,8 @@
   right: 50%;
   bottom: 10px;
   height: 2px;
-  border-radius: 2px;
+  /* En una linea de 2 px de alto, redondo del todo: la barra de la escala. */
+  border-radius: var(--radio-barra);
   background: var(--activo-regla);
   transition:
     left 300ms var(--salida),
@@ -309,31 +432,42 @@
 }
 
 /*
- * La pagina en la que estas se dice con el color del texto y con el peso 700.
+ * La pagina en la que estas se dice SOLO con el color: indigo, peso 400, sin
+ * filete. Es lo que hace la referencia del cliente, medido en su barra el
+ * 25/09/2026.
  *
- * ⚠️ **`--activo-regla` como TEXTO da 2,53:1 sobre nube, donde WCAG 1.4.3 pide
- * 4,5:1.** Es una decision tomada a sabiendas el 11/09/2026, mirando el numero:
- * se probo tambien `#bf4526` —el mismo tono con la luz bajada, 5,13:1— y se
- * eligio el coral de marca. El peso 700 acompaña al color, asi que quien no
- * distingue el naranja tiene la segunda señal que pide 1.4.1; lo que no se
- * cumple es el contraste del texto.
+ * ⚠️ **Hasta ese dia llevaba peso 700 y un filete de 2 px debajo, y no eran
+ * adorno**: eran la segunda señal que pide WCAG 1.4.1 para que el color no vaya
+ * solo. Se quitaron por peticion, y se comprobo que el color aguanta la señal
+ * sin ellos:
  *
- * WCAG 1.4.1 pide que el color no vaya solo, y no va: le acompañan el peso 700 y
- * el filete de abajo, que es decoracion y no le aplica el 3:1 de un control.
+ * - **Contra los otros destinos da 3,88:1** (indigo `#615fff` frente a la tinta
+ *   `#101828`). Por encima de 3:1, quien no distingue el tono lo sigue viendo
+ *   como el mas claro de los tres: la diferencia es de luz, no solo de matiz.
+ *   Es el mismo umbral que WCAG acepta para un enlace que se distingue del texto
+ *   de alrededor solo por color (tecnica G183).
+ * - **Como texto da 4,58:1 sobre nube**, y pasa el 4,5 de 1.4.3. El coral de
+ *   antes daba 2,53 y era un incumplimiento aceptado a sabiendas; con el indigo
+ *   ese incumplimiento desaparecio.
  *
- * El coral de texto amplia la excepcion a «el coral solo marca te toca a ti»: en
- * la cabecera pasa a significar tambien «estas aqui».
+ * Quien usa lector de pantalla lo recibe por `aria-current="page"`, que pone
+ * `NavLink` solo.
+ *
+ * ⚠️ **Si algun dia se aclara el indigo o se oscurece la tinta, hay que volver a
+ * medir el 3,88**: por debajo de 3 el color se queda solo de verdad y hay que
+ * devolverle el filete o el peso.
  */
 .enlaceActivo {
   color: var(--activo-regla);
-  font-weight: 700;
+  font-weight: 400;
 }
 
+/* Sin filete tambien al pasar por encima: ya estas ahi, no hay gesto que
+   anunciar. El de los otros destinos sigue abriendose en gris. */
 .enlaceActivo::after,
 .enlaceActivo:hover::after {
-  left: var(--e4);
-  right: var(--e4);
-  background: var(--activo-regla);
+  left: 50%;
+  right: 50%;
 }
 
 .enlaceActivo:hover {
@@ -370,41 +504,39 @@
  * Si algun dia hay que cumplirlo, el cambio es de dos valores: la misma rampa
  * con la luz bajada. `#d81b7e → #c4304b` da 4,80:1 y 5,42:1.
  */
+/*
+ * ⚠️ **Aqui habia un marco rosa con cuatro cuadraditos en las esquinas, y se
+ * fue el 25/09/2026.** Era una pieza de «El escaparate»: 4 px de marco en
+ * degradado coral-rosa, con cuatro cuadrados de 3 px asomando 1 px por fuera
+ * gracias a un borde transparente. Se retiro al igualar la paleta de la
+ * referencia del cliente, donde el boton de la barra es macizo y sin adornos.
+ *
+ * El envoltorio se queda porque sigue haciendo falta: es quien recibe el raton
+ * y el foco mientras la cara de dentro recorta el rotulo que gira.
+ */
 .entrar {
   display: block;
   margin-left: var(--e2);
-  /* El marco rosa: 4 px de relleno y esquina viva, como la referencia. */
-  padding: 4px;
-  /*
-   * ⚠️ **Un borde transparente de 1 px, y hace falta.** Los cuadrados de las
-   * esquinas tienen que asomar 1 px POR FUERA del marco, y un fondo no se puede
-   * salir de su caja: lo que se hace es agrandar la caja de pintado con un borde
-   * invisible y colocarlos en su esquina.
-   */
-  border: 1px solid transparent;
-  background-color: rgb(255 136 150 / 0.2);
-  background-image:
-    linear-gradient(270deg, #ff8268 0%, #fe7eb2 100%),
-    linear-gradient(270deg, #ff8268 0%, #fe7eb2 100%),
-    linear-gradient(270deg, #ff8268 0%, #fe7eb2 100%),
-    linear-gradient(270deg, #ff8268 0%, #fe7eb2 100%);
-  background-repeat: no-repeat;
-  background-size: 3px 3px;
-  background-position: 0 0, 100% 0, 0 100%, 100% 100%;
-  background-origin: border-box;
-  /*
-   * Los cuatro cuadrados llegan al borde; el rosa del marco se queda en el
-   * relleno, o el marco mediria 5 px en vez de 4. **El color de fondo usa
-   * siempre el ULTIMO valor de esta lista**, y por eso `padding-box` va al final.
-   */
-  background-clip: border-box, border-box, border-box, border-box, padding-box;
   text-decoration: none;
   transition: transform 180ms var(--salida);
 }
 
 /*
- * La cara. De aqui sale el area tactil: 20 de linea + 16 de relleno = 36, mas
- * 4+1 de marco por lado = 46 px, por encima de los 44 que pide 2.5.5.
+ * La cara: el boton en si.
+ *
+ * ⚠️ **Macizo y sin luces interiores desde el 25/09/2026.** Llevaba un
+ * degradado coral-rosa con dos luces blancas al 20 % que lo abombaban; los dos
+ * eran de «El escaparate» y se fueron al igualar la paleta de la referencia,
+ * cuyo boton de barra es un solido sin relieve.
+ *
+ * ⚠️ **Va en `--accion-fuerte` y no en `--activo`.** A un palmo tiene «Inicio»,
+ * que se pinta con el indigo de `--activo-regla` por ser el destino actual: si
+ * el boton fuera del mismo indigo, los dos acentos competirian dentro de la
+ * misma barra. Es la misma reparticion que hace la referencia.
+ *
+ * El area tactil: 20 de linea + 24 de relleno = 44 px, justo lo que pide
+ * WCAG 2.5.5. **Antes salian 46 porque el marco rosa sumaba 5 px por lado**, y
+ * al quitarlo el relleno vertical tuvo que subir de 8 a 12 para no bajar de 44.
  */
 .entrarCara {
   display: block;
@@ -412,19 +544,13 @@
   /* Recorta el rotulo que gira. No recorta el anillo de foco, que va en el
      `<a>` de fuera y ademas es `outline`. */
   overflow: hidden;
-  padding: 8px 16px;
-  border-radius: 4px;
-  background: linear-gradient(270deg, #ff7c61 0%, #ff68a5 100%);
-  /*
-   * Las dos luces interiores de la referencia, blancas al 20 %: una arriba y
-   * otra abajo. Son lo que abomba la pieza; sin ellas la rampa se ve plana y
-   * deja de parecerse.
-   */
-  box-shadow:
-    inset 0 -4px 8px rgb(255 255 255 / 0.2),
-    inset 0 4px 4px rgb(255 255 255 / 0.2);
+  padding: 12px 16px;
+  border-radius: var(--radio-control);
+  background: var(--accion-fuerte);
   color: var(--tinta-invertida);
-  font-size: var(--t-apoyo);
+  /* 15 px desde el 25/09/2026, que era 14: sube con el resto de la barra. La
+     linea se queda en 20 px, asi que el boton no crece de alto. */
+  font-size: var(--t-prosa);
   font-weight: 600;
   line-height: 20px;
   text-align: center;
@@ -549,20 +675,21 @@
     gap: var(--e2);
   }
 
-  /* Un punto menos que en escritorio, pero **el peso 500 se queda**: es el peso,
-     no el tamaño, lo que hacia que los destinos se perdieran. */
+  /* Dos puntos menos que en escritorio: 15 px, que era 14 hasta el 25/09/2026
+     y subio con el resto de la barra. */
   .navegacion {
     gap: 0;
-    font-size: var(--t-apoyo);
+    font-size: var(--t-prosa);
   }
 
   .enlace {
     padding: 0 var(--e2);
   }
 
-  .enlace:hover::after,
-  .enlaceActivo::after,
-  .enlaceActivo:hover::after {
+  /* Solo el de pasar por encima: el activo no lleva filete en ningun ancho. Aqui
+     estaba tambien `.enlaceActivo::after`, y como esta regla va despues en la
+     hoja, en un telefono le devolvia el filete que se le quito en escritorio. */
+  .enlace:hover::after {
     left: var(--e2);
     right: var(--e2);
   }
@@ -577,21 +704,25 @@
 }
 
 /*
- * ⚠️ **Por debajo de 430 px se aprieta todo, y es lo que permite ver los cuatro
+ * ⚠️ **Por debajo de 470 px se aprieta todo, y es lo que permite ver los cuatro
  * destinos en un telefono de 375.** Con el relleno de arriba —12 px de caja,
- * 8 por lado en cada destino, 12 en la cara del boton— la marca, «Inicio»,
- * «Vacantes», «Mis procesos» y «Iniciar sesión» piden 418 px: a 375 la barra
- * desbordaba y «Iniciar sesión» salia cortado (medido el 25/09/2026, con la
- * pagina entera haciendo scroll horizontal). Aqui baja la letra de los destinos
- * un punto mas —13 px, `--t-menor`, con el peso 500 que es lo que los sostiene—
- * y se aprietan los rellenos sin bajar de los 44 px tactiles: 3 px por lado en
- * cada destino, 4 de hueco entre piezas y 6 en la cara del boton.
+ * 8 por lado en cada destino, 12 en la cara del boton— y la letra de 15 px, la
+ * marca, «Inicio», «Vacantes», «Mis procesos» y «Iniciar sesión» piden 439 px de
+ * caja: la barra desborda por debajo de 455 px de ventana. Aqui baja la letra de
+ * los destinos a 13 px, `--t-menor`, y se aprietan los rellenos sin bajar de los
+ * 44 px tactiles: 3 px por lado en cada destino, 4 de hueco entre piezas y 6 en
+ * la cara del boton. Con eso piden 348.
  *
- * Medido con esto: a 375 px sobran 12; a 369, 6; a 320 con tres destinos, 14.
- * **Si se toca cualquiera de estos rellenos hay que volver a medir**, y no
- * cambia el alto: la cabecera sigue en sus 70 px.
+ * ⚠️ **Estuvo en 430 y subio a 470 el 25/09/2026**, al juntarse con la barra de
+ * «El cielo despejado»: el corte de 430 se midio con Figtree a 14 px, y con
+ * Geist a 15 de 431 a 454 px la barra se salia hasta 24 px. Los 15 px de margen
+ * son por si la letra del sistema es mas ancha que Geist mientras carga.
+ *
+ * Medido con esto: a 375 px sobran 11; a 369, 5; a 320 con tres destinos, 17.
+ * **Si se toca cualquiera de estos rellenos, o la letra de la barra, hay que
+ * volver a medir**. No cambia el alto: la cabecera sigue en sus 84 px.
  */
-@media (max-width: 430px) {
+@media (max-width: 470px) {
   .cabeceraDentro {
     padding-inline: var(--e2);
     gap: var(--e1);
@@ -605,9 +736,8 @@
     padding: 0 3px;
   }
 
-  .enlace:hover::after,
-  .enlaceActivo::after,
-  .enlaceActivo:hover::after {
+  /* Solo el de pasar por encima, como en la de 620: el activo no lleva filete. */
+  .enlace:hover::after {
     left: 3px;
     right: 3px;
   }
@@ -631,8 +761,8 @@
  *
  * El corte estuvo en 400 y bajo a 368 el 25/09/2026: un telefono de 375 —el
  * ancho con el que se comprueba la pantalla— tiene que ver los cuatro, y con el
- * apretado de arriba caben desde 363. Los 5 px de margen son por si la letra
- * del sistema es mas ancha que Figtree mientras esta carga.
+ * apretado de arriba caben desde 364 (medido con Geist). Los 4 px de margen son por si la letra
+ * del sistema es mas ancha que Geist mientras esta carga.
  */
 @media (max-width: 368px) {
   .enlaceQueCede {
@@ -662,16 +792,108 @@
 }
 
 /*
-  Los dos enlaces del pie van juntos a la derecha y no repartidos por el
-  `space-between`: separar «Privacidad» de «Entrar al panel» dejaria el copyright
-  en un extremo y un enlace suelto en el medio, que se lee como tres bloques sin
-  relacion. Son dos salidas del mismo sitio.
-*/
-.enlacesDelPie {
+ * El pie corto de las puertas: una linea, ~60 px, como fue el pie hasta el
+ * 25/09/2026. Ver `pieCorto` en `Armazon.tsx` para cuales lo llevan y por que.
+ *
+ * ⚠️ **Sin los 72 px de aire encima, y hace falta.** El aire de `.pie` separa el
+ * pie de una pagina que se lee; en una puerta, lo de encima ya trae el suyo —el
+ * relleno de abajo de `.hoja`, el margen de la tarjeta— y sumarle 72 mas era
+ * justo lo que empujaba `/clave` fuera de la ventana.
+ */
+.pieCorto {
+  margin-top: 0;
+}
+
+.pieLinea {
+  max-width: var(--ancho);
+  margin: 0 auto;
+  padding: var(--e2) var(--e5);
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: space-between;
   gap: var(--e2) var(--e5);
+  font-size: var(--t-menor);
+  color: var(--tinta3);
+}
+
+/* Los enlaces juntos a la derecha: son tres salidas del mismo sitio, y
+   repartidos por el `space-between` se leerian como bloques sin relacion. */
+.pieLineaEnlaces {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--e5);
+}
+
+.pieLinea a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+/*
+ * El pie en columnas, desde el 25/09/2026.
+ *
+ * Era una linea: el copyright a la izquierda y tres enlaces apretados a la
+ * derecha. En columnas cada grupo lleva su rotulo, se puede crecer sin que el
+ * de al lado se resienta, y el copyright baja a su propia franja — que es donde
+ * se busca.
+ *
+ * La marca ocupa su propia columna, mas ancha que las de enlaces, y es la que
+ * empuja los enlaces a la derecha. Debajo llevaba una frase —«El portal donde
+ * Renaser abre sus convocatorias…»— que se quito por peticion el 26/09/2026:
+ * repetia lo que ya dice la portada justo encima.
+ */
+.pieDentro {
+  max-width: var(--ancho);
+  margin: 0 auto;
+  padding: var(--e7) var(--e5) var(--e6);
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 2fr);
+  gap: var(--e7);
+  font-size: var(--t-menor);
+  color: var(--tinta3);
+}
+
+.pieMarca {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+}
+
+/* El color va sobre el enlace y no se hereda: `mundo.css` le declara su tinta
+   al propio `.marca`, y una tinta declarada no la hereda de nadie. */
+.marcaDelPie {
+  align-self: flex-start;
+  color: var(--tinta);
+  text-decoration: none;
+}
+
+.pieColumnas {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--e5);
+}
+
+.pieColumna {
+  display: flex;
+  flex-direction: column;
+}
+
+/*
+ * El rotulo del grupo.
+ *
+ * Es un `<h2>` porque encabeza una lista de destinos y quien navega por
+ * encabezados tiene que poder saltar a el; lo que no puede es *parecer* un
+ * titular, asi que va del tamaño del resto del pie y se distingue por el peso
+ * y la tinta, no por el cuerpo.
+ */
+.pieTitulo {
+  margin: 0 0 var(--e2);
+  font-size: var(--t-menor);
+  font-weight: 600;
+  color: var(--tinta);
 }
 
 .pieDentro a {
@@ -680,22 +902,42 @@
   min-height: 44px;
 }
 
-.pieDentro {
+/* La franja del copyright, separada por una regla: no es un destino y no
+   compite con los que si lo son. */
+.pieAbajo {
   max-width: var(--ancho);
   margin: 0 auto;
-  padding: var(--e2) var(--e5);
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--e3);
+  padding: var(--e4) var(--e5);
+  border-top: 1px solid var(--regla);
   font-size: var(--t-menor);
   color: var(--tinta3);
+}
+
+@media (max-width: 900px) {
+  /* La marca deja de compartir fila con los enlaces antes de que su prosa se
+     estreche: a dos columnas justas, 34ch se parten en cinco lineas. */
+  .pieDentro {
+    grid-template-columns: 1fr;
+    gap: var(--e6);
+  }
 }
 
 @media (max-width: 640px) {
   .pieDentro {
     padding-left: var(--e4);
     padding-right: var(--e4);
+  }
+
+  .pieAbajo,
+  .pieLinea {
+    padding-left: var(--e4);
+    padding-right: var(--e4);
+  }
+
+  /* Tres columnas de enlaces en 375 px dejan cada rotulo partido en dos lineas
+     y cada enlace en tres. Dos columnas es lo que cabe leyendose. */
+  .pieColumnas {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--e5) var(--e4);
   }
 }

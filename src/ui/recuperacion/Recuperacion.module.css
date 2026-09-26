@@ -2,23 +2,55 @@
  * «Me olvidé mi contraseña», en el portal y en el panel.
  *
  * Una sola hoja para las dos puertas porque es el mismo formulario: el portal y
- * el panel ya comparten los campos (`Campo`) y los botones (`piezas`). La
- * columna, la marca y el pie son de cada pantalla; aquí solo lo de dentro.
+ * el panel ya comparten los campos (`Campo`) y los botones (`piezas`).
+ *
+ * ⚠️ **Desde el 25/09/2026 esto se pinta DENTRO de una tarjeta**, como
+ * `/ingresar`: la tarjeta la pone cada pantalla —`/clave`, `/restablecer` y sus
+ * dos del panel— y aqui solo va lo de dentro. Antes cada pantalla era una columna
+ * con un titular de portada de dos lineas a 60 px y el formulario sobre su propia
+ * superficie, y eso media mas que un portatil de 768 px de alto: se podia
+ * desplazar una pantalla que no tiene nada que leer.
+ *
+ * Por eso ya no existe `claseFormulario`, la clase con la que cada puerta le
+ * ponia una superficie al formulario: la superficie ahora es la tarjeta entera, y
+ * una superficie dentro de otra no separa nada.
  */
 
+/*
+ * El titular de las cuatro caras, a 30 px y centrado: la misma excepcion local
+ * que `/ingresar`. La escala salta de `--t-titulo` (20) a `--t-portada` (hasta
+ * 60), y en una tarjeta estrecha ese salto pesa mas que la tarea.
+ *
+ * ⚠️ **Interlinea 1,15 y no 1.** «Elige una contraseña nueva.» se parte en dos
+ * lineas en la tarjeta, y a 1 un descendente de arriba y un acento de abajo se
+ * quedan a un par de pixeles. `/ingresar` va a 1 porque su titular cabe en una.
+ *
+ * `overflow-wrap` es por «Este enlace ya no sirve.» y sus vecinas: son frases
+ * cortas, pero el estado de enlace roto llego a enseñar el correo entero.
+ */
+.titular {
+  margin: 0;
+  font-size: 30px;
+  line-height: 1.15;
+  text-align: center;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+
 .bajada {
-  font-size: var(--t-base);
+  margin: var(--e3) 0 0;
+  font-size: var(--t-prosa);
   line-height: 1.55;
   color: var(--tinta2);
-  margin-top: var(--e3);
-  max-width: var(--medida-corta);
+  text-align: center;
+  text-wrap: pretty;
 }
 
 .formulario {
   display: flex;
   flex-direction: column;
-  gap: var(--e5);
-  margin-top: var(--e6);
+  gap: var(--e4);
+  margin-top: var(--e5);
 }
 
 /* `fieldset` nativo para apagar el formulario mientras se envía: un solo
@@ -26,48 +58,50 @@
 .grupo {
   display: flex;
   flex-direction: column;
-  gap: var(--e5);
+  gap: var(--e4);
   border: 0;
   padding: 0;
   margin: 0;
   min-width: 0;
 }
 
+/* A todo el ancho, como el de `/ingresar`: en una tarjeta es la unica accion. */
 .enviar {
   composes: acentoGrande from '../../estilos/piezas.module.css';
-  align-self: flex-start;
+  width: 100%;
+  margin-top: var(--e2);
 }
 
-/* El fallo del envío, arriba del botón y no como aviso flotante: si desaparece
-   solo, quien lee despacio no llega a enterarse. Mismo trazo que el de entrar. */
+/*
+ * El fallo, en una linea y con su icono, como en `/ingresar`.
+ *
+ * ⚠️ **Llevaba un filete de 3 px a la izquierda y se fue el 25/09/2026.** La
+ * barra de acento lateral esta prohibida en este mundo, y el bloque rojo entero
+ * pesaba mas que el formulario que lo provoca. El icono es decorativo: quien no
+ * lo ve oye el texto igual, y `role="alert"` lo anuncia al llegar.
+ */
 .fallo {
   display: flex;
-  gap: var(--e3);
-  border: 1px solid var(--mal-regla);
-  background: var(--mal-bruma);
-  padding: var(--e4);
-  font-size: var(--t-apoyo);
-  line-height: 1.5;
-  color: var(--mal);
-  border-radius: var(--radio);
+  align-items: center;
+  justify-content: center;
+  gap: var(--e2);
   margin: 0;
-}
-
-.fallo::before {
-  content: '';
-  flex: none;
-  width: 3px;
-  background: var(--mal);
+  font-size: var(--t-apoyo);
+  line-height: 1.45;
+  color: var(--mal);
+  text-align: center;
+  text-wrap: balance;
 }
 
 /* ---------- Enviado ---------- */
 
 .mensaje {
-  font-size: var(--t-base);
+  margin: var(--e3) 0 0;
+  font-size: var(--t-prosa);
   line-height: 1.55;
   color: var(--tinta2);
-  margin-top: var(--e3);
-  max-width: var(--medida-corta);
+  text-align: center;
+  text-wrap: pretty;
 }
 
 /* El foco llega aquí al enviar, para que el lector de pantalla lo lea; el anillo
@@ -78,9 +112,10 @@
 }
 
 .para {
-  margin-top: var(--e3);
+  margin: var(--e3) 0 0;
   font-size: var(--t-apoyo);
   color: var(--tinta3);
+  text-align: center;
   overflow-wrap: anywhere;
 }
 
@@ -89,48 +124,35 @@
   font-weight: 600;
 }
 
+/* Una encima de otra y a todo el ancho: en una tarjeta estrecha, dos botones
+   lado a lado parten su rotulo en dos lineas. */
 .acciones {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: var(--e3);
-  margin-top: var(--e6);
+  margin-top: var(--e5);
 }
 
 /* Las dos son secundarias: después de pedir el enlace lo que le toca a la
    persona es abrir su correo, no pulsar nada aquí. */
 .secundario {
   composes: secundario from '../../estilos/piezas.module.css';
+  width: 100%;
   font-variant-numeric: tabular-nums;
 }
 
 .enlaceSecundario {
   composes: secundario from '../../estilos/piezas.module.css';
-  align-self: flex-start;
-  margin-top: var(--e6);
-}
-
-/* ---------- El titular de las cuatro caras ---------- */
-
-/*
- * `22ch` es la medida de los titulares del portal —la misma que `.titular` de
- * `pagina.module.css`—, y aqui se escribe a mano en vez de componerla: esta
- * hoja la comparten las dos puertas, y el panel no entro al escaparate. Copiar
- * un numero es menos malo que arrastrar al panel el carril del portal.
- *
- * `overflow-wrap` es por «Este enlace ya no sirve.» y sus vecinas: son frases
- * cortas, pero el estado de enlace roto llego a enseñar el correo entero.
- */
-.titular {
-  max-width: 22ch;
-  overflow-wrap: anywhere;
+  width: 100%;
+  margin-top: var(--e5);
 }
 
 /* ---------- El aviso de éxito en la pantalla de entrar ---------- */
 
 /*
  * Verde de hecho sobre su bruma: «lo confirmado», que es lo único que significa
- * en este mundo. El filete a la izquierda repite la forma del fallo, así el
- * estado se lee también con la pantalla en gris.
+ * en este mundo. El contorno entero y el icono lo distinguen tambien con la
+ * pantalla en gris: el color no va solo.
  */
 .exito {
   display: flex;
@@ -149,17 +171,4 @@
 
 .exito:focus {
   outline: none;
-}
-
-@media (max-width: 640px) {
-  .enviar,
-  .secundario,
-  .enlaceSecundario {
-    width: 100%;
-    align-self: stretch;
-  }
-
-  .acciones {
-    flex-direction: column;
-  }
 }

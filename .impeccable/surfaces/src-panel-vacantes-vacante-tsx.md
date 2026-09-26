@@ -18,6 +18,6 @@ Cerrar una vacante requiere abrir un formulario independiente con motivo visible
 
 Las pestañas se recorren con flechas, Inicio y Fin. Cada candidato tiene un botón accesible para abrir su detalle. Búsqueda, filtros, columnas y exportación comparten barra. Los criterios adicionales se eligen dentro de Columnas.
 
-En móvil se apilan campos y grupos; la tabla conserva su desplazamiento horizontal interno. ⚠️ Desde el 10/09/2026 la acción va en negro pleno `#0A0A0A`, no en violeta: el mundo cambió y esta pantalla del panel todavía no se ha migrado. No se inventa una fecha vigente que el backend no expone.
+En móvil se apilan campos y grupos; la tabla conserva su desplazamiento horizontal interno. ⚠️ Desde el 25/09/2026 la acción va en índigo `#615FFF`, que le llega por el token global `--activo` de `mundo.css` aunque esta pantalla del panel no se haya migrado a mano; antes fue negro pleno y antes violeta. Su disposición sigue siendo la anterior. No se inventa una fecha vigente que el backend no expone.
 
 Verificación inicial: 137 pruebas de vacante, calificación y plazos aprobadas; build de producción aprobado; detector sin alertas. Revisión visual a 1280 y 390 px, sin desbordamiento horizontal de la página. La vista local usa fixtures y no acredita la integración con producción.

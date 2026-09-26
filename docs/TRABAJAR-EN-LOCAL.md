@@ -121,7 +121,9 @@ identidad `resourceKey` ya registrada en el trabajo. La configuración E2E recib
 
 Para un clon independiente, su creador debe asignar al contenedor la etiqueta
 `renaser.e2e.clone=mi-prueba-01`. El harness usa `claude-harness.job`.
-Con el clon ya restaurado y el backend ya conectado a él, por ejemplo:
+Con el clon ya restaurado y el backend ya conectado a él —cómo se monta a mano, paso a
+paso, en [«El clon a mano, desde el snapshot de QA»](#el-clon-a-mano-desde-el-snapshot-de-qa)—,
+por ejemplo:
 
 ```bash
 # Terminal del frontend: API_URL debe apuntar al backend de ese mismo clon.
@@ -180,3 +182,66 @@ Esta integración comprueba limpieza exacta, preservación de registros previos,
 restauración tras un fallo y las huellas de todas las tablas del segundo clon.
 También provoca una restricción real de auditoría, verifica el rollback y deja
 la cuenta de diagnóstico en el primer clon para inspección. No usa bases de trabajo.
+
+### El clon a mano, desde el snapshot de QA
+
+Lo que hace el harness, hecho a mano. Comprobado el 26/09/2026: **294 pasan, 0 fallan y 8 se
+saltan** (las de IA real), en unos 10 minutos, lo mismo que QA.
+
+⚠️ **La suite necesita los datos del snapshot, no una base vacía.** El #59 borró el sembrador
+del escenario del ranking (`sembrar-escenario-e2e.py`), no los datos de partida: las pruebas
+dan por hechas las vacantes «Desarrollador web», «Líder de operaciones» y «Analista de
+experiencia del cliente», con sus áreas, puestos y personas. Contra una base vacía fallan 81
+con «No hay ninguna vacante titulada «Desarrollador web». ¿Se sembró la base?». Con el snapshot
+no hace falta correr ningún sembrador.
+
+**El snapshot** es `~/Documentos/renaser-harness-snapshots/renaser-sintetico-20260917.dump`:
+datos sintéticos, el único que hay y el que restaura el harness (su ruta y su huella están en
+`.harness/setup.json` del backend). Está en la migración 56; el backend lo sube a la última al
+arrancar.
+
+⚠️ **No se clona la base de desarrollo.** Puede tener datos de personas; el snapshot es
+sintético a propósito.
+
+Todo va en puertos propios —Postgres 5434, RabbitMQ 5673, API 9081, portal 5274—, así que el
+entorno de siempre (5433, 8081, 5201) sigue arriba y no se toca.
+
+```bash
+# 1 · La base, con la imagen del harness: trae pgvector y las extensiones que el volcado
+#     no crea (ver harness/postgres/Dockerfile en el backend). Si no existe:
+#     docker build -t renaser-harness-postgres:pg16 harness/postgres   (desde el backend)
+docker run -d --name renaser-e2e --label renaser.e2e.clone=mi-prueba-01 \
+  -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgrespassword -e POSTGRES_DB=renaser_db \
+  -p 127.0.0.1:5434:5432 renaser-harness-postgres:pg16
+
+# 2 · Su propia cola. Con la del entorno de siempre, el backend de 8081 se comería
+#     mensajes del clon y los procesaría contra la otra base.
+docker run -d --name renaser-e2e-rabbit -p 127.0.0.1:5673:5672 rabbitmq:4.2-management-alpine
+
+# 3 · El snapshot dentro (espera a que `pg_isready` responda antes).
+docker cp ~/Documentos/renaser-harness-snapshots/renaser-sintetico-20260917.dump renaser-e2e:/tmp/s.dump
+docker exec renaser-e2e pg_restore -U postgres -d renaser_db --no-owner --no-acl --schema=public /tmp/s.dump
+
+# 4 · El backend contra el clon (desde ~/Documentos/RENASER-RECLUTAMIENTO). Las variables de
+#     entorno ganan al application-local.yaml; el correo se queda en el log.
+SERVER_PORT=9081 SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5434/renaser_db \
+  SPRING_RABBITMQ_PORT=5673 RENASER_CORREO_TRANSPORTE=log PORTAL_URL=http://127.0.0.1:5274 \
+  ./mvnw spring-boot:test-run
+
+# 5 · El portal contra ese backend (desde este repo).
+API_URL=http://127.0.0.1:9081 VITE_ORIGEN_API= npm run dev -- --host 127.0.0.1 --port 5274 --strictPort
+
+# 6 · La suite entera: los dos proyectos, escritorio y móvil.
+E2E_PG=renaser-e2e PGUSER=postgres PGDATABASE=renaser_db E2E_CLONE_ID=mi-prueba-01 \
+  E2E_API=http://127.0.0.1:9081/api/v1 E2E_PORTAL=http://127.0.0.1:5274 npx playwright test
+
+# 7 · Al terminar: parar el backend y el portal de 9081/5274, y borrar el clon.
+docker rm -f renaser-e2e renaser-e2e-rabbit
+```
+
+Antes de lanzar la suite, dos comprobaciones que ahorran una corrida en blanco:
+`curl -s http://127.0.0.1:5274/api/v1/portal/vacantes` tiene que traer las tres vacantes —si
+trae `[]`, el portal habla con otra base—, y en el clon
+`select max(version::int) from flyway_schema_history` tiene que dar la última migración del
+backend. Si se mata la suite a medias, la reserva `/tmp/renaser-e2e-en-ejecucion` se queda
+dentro del contenedor; borrando el clon se va con él.

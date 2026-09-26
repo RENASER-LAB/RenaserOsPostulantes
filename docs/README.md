@@ -11,7 +11,7 @@ en los temáticos, y lo que se hizo un día concreto, en las dos bitácoras.
 | Seguir el proceso entero, los dos lados, con lo que desbloquea cada paso | [06-FLUJO-COMPLETO.md](06-FLUJO-COMPLETO.md) |
 | Tocar el panel del equipo: entrar, las tres pestañas, el ranking por etapas, qué exige publicar una vacante, corregirla con el lápiz, archivarla o eliminarla, el plazo de su prueba | [PANEL.md](PANEL.md) |
 | Escribir código: los comportamientos que no se reescriben, las trampas que ya costaron un fallo, cómo se nombra aquí | [REGLAS-DEL-CODIGO.md](REGLAS-DEL-CODIGO.md) |
-| Levantarlo, apuntarlo a un backend y saber a qué base escribes | [TRABAJAR-EN-LOCAL.md](TRABAJAR-EN-LOCAL.md) |
+| Levantarlo, apuntarlo a un backend, saber a qué base escribes y correr los e2e sobre el snapshot de QA | [TRABAJAR-EN-LOCAL.md](TRABAJAR-EN-LOCAL.md) |
 | Tocar diseño: el mundo visual, sus cuatro reglas de forma y dónde está cada carpeta de `src/` | [EL-MUNDO-VISUAL.md](EL-MUNDO-VISUAL.md) |
 | Saber qué falta y qué está a medias | [PENDIENTES.md](PENDIENTES.md), [03-ESTADO-DEL-REDISENO.md](03-ESTADO-DEL-REDISENO.md) |
 | Saber por qué algo quedó así, o qué se probó al construirlo | [BITACORA-2026-09.md](BITACORA-2026-09.md), [BITACORA-2026-08.md](BITACORA-2026-08.md) |

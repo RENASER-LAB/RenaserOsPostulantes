@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1100" preserveAspectRatio="xMidYMid slice">
+  <!--
+    Las nubes de la portada, generadas y no fotografiadas.
+
+    Ruido fractal (`feTurbulence`) estirado en horizontal, que es como se ven los
+    jirones de un cielo: mas anchos que altos. La matriz de color tira el canal
+    rojo del ruido a la transparencia y lo sube: solo los picos pasan a blanco, y
+    el resto se queda en nada. De ahi los bordes deshilachados, que es justo lo
+    que los ovalos de degradado no sabian hacer.
+
+    La mascara decide DONDE hay nubes: en los bordes y abajo, nunca en el centro,
+    que es donde va el titular. Los valores de la mascara estan copiados de la
+    composicion de la referencia del cliente: una nube grande abajo a la
+    izquierda, jirones a la derecha, uno bajo en el centro y algo en las esquinas
+    de arriba.
+
+    ⚠️ La semilla (`seed`) fija la forma. Cambiarla cambia todas las nubes.
+  -->
+  <defs>
+    <filter id="jirones" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.0032 0.0105" numOctaves="5" seed="11" />
+      <feColorMatrix values="0 0 0 0 1
+                             0 0 0 0 1
+                             0 0 0 0 1
+                             3.6 0 0 0 -1.56" />
+    </filter>
+    <filter id="cumulo" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.0048 0.0068" numOctaves="5" seed="4" result="ruido" />
+      <!-- El cuerpo: blanco donde el ruido pasa del umbral. -->
+      <feColorMatrix in="ruido" result="cuerpo" values="0 0 0 0 1
+                                                        0 0 0 0 1
+                                                        0 0 0 0 1
+                                                        5.2 0 0 0 -2.05" />
+      <!--
+        La sombra: la misma forma, en un azul grisaceo y bajada 14 px. Asoma solo
+        por debajo del cuerpo, que es donde una nube de verdad se oscurece, y es
+        lo que la saca de ser una mancha plana.
+      -->
+      <feColorMatrix in="ruido" result="forma" values="0 0 0 0 0.62
+                                                       0 0 0 0 0.74
+                                                       0 0 0 0 0.9
+                                                       5.2 0 0 0 -2.05" />
+      <feOffset in="forma" dy="14" result="bajada" />
+      <feGaussianBlur in="bajada" stdDeviation="6" result="sombra" />
+      <feComponentTransfer in="sombra" result="sombraSuave">
+        <feFuncA type="linear" slope="0.45" />
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode in="sombraSuave" />
+        <feMergeNode in="cuerpo" />
+      </feMerge>
+    </filter>
+
+    <radialGradient id="zonaJirones" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#fff" />
+      <stop offset="0.55" stop-color="#fff" stop-opacity="0.55" />
+      <stop offset="1" stop-color="#fff" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="zonaCumulo" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#fff" />
+      <stop offset="0.6" stop-color="#fff" stop-opacity="0.7" />
+      <stop offset="1" stop-color="#fff" stop-opacity="0" />
+    </radialGradient>
+
+    <mask id="dondeJirones" maskUnits="userSpaceOnUse" x="0" y="0" width="1600" height="1100">
+      <!-- Derecha, a media altura. -->
+      <ellipse cx="1420" cy="700" rx="360" ry="120" fill="url(#zonaJirones)" />
+      <!-- Derecha, arriba. -->
+      <ellipse cx="1470" cy="170" rx="300" ry="90" fill="url(#zonaJirones)" />
+      <!-- Abajo, en el centro: bajo la ventana de cristal. -->
+      <ellipse cx="760" cy="850" rx="330" ry="95" fill="url(#zonaJirones)" />
+      <!-- Izquierda, sobre la nube grande. -->
+      <ellipse cx="240" cy="510" rx="300" ry="90" fill="url(#zonaJirones)" />
+      <!-- Arriba a la izquierda, apenas. -->
+      <ellipse cx="220" cy="0" rx="300" ry="80" fill="url(#zonaJirones)" />
+      <!-- Abajo a la derecha. -->
+      <ellipse cx="1500" cy="1040" rx="240" ry="90" fill="url(#zonaJirones)" />
+    </mask>
+    <mask id="dondeCumulo" maskUnits="userSpaceOnUse" x="0" y="0" width="1600" height="1100">
+      <!-- La nube grande de abajo a la izquierda. -->
+      <ellipse cx="110" cy="690" rx="400" ry="210" fill="url(#zonaCumulo)" />
+    </mask>
+  </defs>
+
+  <rect width="1600" height="1100" filter="url(#jirones)" mask="url(#dondeJirones)" />
+  <rect width="1600" height="1100" filter="url(#cumulo)" mask="url(#dondeCumulo)" />
+</svg>

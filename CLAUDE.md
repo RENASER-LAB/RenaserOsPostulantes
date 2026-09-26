@@ -34,14 +34,19 @@ Solo commitea si te lo pido explícitamente.
 
 Tres avisos que no se ponen detrás de un enlace, porque llegan tarde:
 
-⚠️ **El mundo visual es «El escaparate» desde el 10/09/2026, y la migración del portal del
-candidato está completa.** Fondo **pastel cálido `#FBF1E9`** con las superficies en nube blanca
-encima, que es lo que las separa. **Acción en negro `#0A0A0A`** con radio 4 px, coral `#FF7C61`
-para «te toca a ti» —y, en la
-cabecera, también para el destino actual y el botón «Iniciar sesión»—, Figtree. Las **dieciocho**
-pantallas están compuestas —la número dieciocho es `/restablecer`, que llegó de main el
-23/09/2026 junto con la reescritura de `/clave`—; **el panel sigue fuera de alcance, salvo sus
-tres puertas.**
+⚠️ **El mundo visual es «El cielo despejado» desde el 25/09/2026**, y sustituyó entero a «El
+escaparate». Sale de una referencia que trajo el cliente (saasly.demos.tailgrids.com): la
+escala gris fría de Tailwind v4 —página `#F9FAFB`, superficies en nube blanca encima, que es lo
+que las separa—, **acción en índigo `#615FFF`** con radio **8 px**, `--accion-fuerte` casi negro
+`#030712` solo para el botón de la cabecera, y **Geist** servida por el sitio. **El coral y el
+crema ya no existen**, y con el coral se perdió el color propio de «te toca a ti»: es el mismo
+índigo de la acción, y lo distingue la forma. **La fuente de verdad son los tokens de
+[`mundo.css`](src/estilos/mundo.css)**, y [DESIGN.md](DESIGN.md) los describe con su porqué.
+
+Las **dieciocho** pantallas del candidato están compuestas —la número dieciocho es
+`/restablecer`, que llegó de main el 23/09/2026 junto con la reescritura de `/clave`—; **el
+panel sigue fuera de alcance, salvo sus tres puertas**, aunque `mundo.css` es global y el
+cambio de paleta también lo repintó.
 
 ⚠️ **`/admin/entrar`, `/admin/clave` y `/admin/restablecer` entraron al escaparate el
 25/09/2026 y ya no viven sueltas: van DENTRO del armazón del portal**, así que llevan su
@@ -49,9 +54,12 @@ cabecera y su pie. Lo que sigue fuera es `ArmazonPanel` —el candado—, y por 
 `/admin/invitacion` no entró: a esa se llega desde un enlace del correo, no desde el portal.
 El resto de `/admin` conserva la disposición anterior.
 
-⚠️ **La cabecera no se ve hasta que bajas.** Es una barra insertada 8 px del borde que saca su
-superficie al primer scroll. `--alto-cabecera` son **70 px medidos**, y ha pasado por 61, 76 y
-68: si tocas su relleno **o el alto del botón «Iniciar sesión»**, vuelve a medirlo en el navegador.
+⚠️ **La cabecera se ve desde el primer píxel.** Es una píldora blanca flotante a 16 px del
+borde, **sin filete ni sombra** en reposo ni al bajar, como la de la referencia; sobre el gris
+claro de más abajo casi no se distingue, y es a sabiendas. `--alto-cabecera` son **84 px medidos**, y
+ha pasado por 61, 76, 68 y 70: si tocas su relleno **o el alto del botón «Iniciar sesión»**,
+vuelve a medirlo en el navegador. El 25/09/2026 se olvidó y el token se quedó en 70 con la barra
+midiendo 84.
 
 Lo que se toca al componer una pantalla nueva vive en tres sitios y **ninguno se escribe a
 mano en la hoja de la pantalla**: los tokens en [`mundo.css`](src/estilos/mundo.css), los
@@ -80,9 +88,9 @@ El detalle, en [docs/TRABAJAR-EN-LOCAL.md](docs/TRABAJAR-EN-LOCAL.md).
 | Si vas a… | Lee |
 |---|---|
 | Orientarte en los documentos | [docs/README.md](docs/README.md) |
-| Levantarlo, elegir backend, saber a qué base escribes, mirar pantallas sin tocar la base | [TRABAJAR-EN-LOCAL](docs/TRABAJAR-EN-LOCAL.md), [README.md](README.md) |
+| Levantarlo, elegir backend, saber a qué base escribes, mirar pantallas sin tocar la base, correr los e2e (sobre el snapshot de QA, no sobre una base vacía) | [TRABAJAR-EN-LOCAL](docs/TRABAJAR-EN-LOCAL.md), [README.md](README.md) |
 | Tocar código: los 18 estados, la hora del servidor, la única puerta al backend, `grupoPrioridad`, las trampas que costaron un fallo, la marca de obligatorio de los formularios, cómo se nombra aquí | [REGLAS-DEL-CODIGO](docs/REGLAS-DEL-CODIGO.md) |
-| Tocar diseño: el mundo visual, sus reglas nombradas, la tipografía, el mapa de `src/` | [DESIGN.md](DESIGN.md) y [EL-MUNDO-VISUAL](docs/EL-MUNDO-VISUAL.md); los tokens con su porqué en [`src/estilos/mundo.css`](src/estilos/mundo.css) |
+| Tocar diseño: el mundo visual, sus reglas nombradas, la tipografía, el mapa de `src/`, qué lee `impeccable` | [DESIGN.md](DESIGN.md) y [EL-MUNDO-VISUAL](docs/EL-MUNDO-VISUAL.md); los tokens con su porqué en [`src/estilos/mundo.css`](src/estilos/mundo.css). **DESIGN.md y `.impeccable/design.json` se regeneran juntos**, con `/impeccable document` |
 | Entender qué ve y qué hace quien postula, pantalla por pantalla | [02-QUE-VE-EL-CANDIDATO](docs/02-QUE-VE-EL-CANDIDATO.md) |
 | Seguir el proceso entero, los dos lados, con lo que desbloquea cada paso | [06-FLUJO-COMPLETO](docs/06-FLUJO-COMPLETO.md) |
 | Tocar el panel: entrar y recuperar la contraseña, las tres pestañas, el ranking por etapas, qué exige publicar una vacante, corregirla en su modal, archivarla y dónde queda, eliminarla por borrado lógico, el plazo de su prueba, los huecos del backend | [PANEL](docs/PANEL.md) |

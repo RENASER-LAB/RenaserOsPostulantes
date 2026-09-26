@@ -24,28 +24,35 @@ import estilos from './Cuenta.module.css'
 const CORREO = 'talento@renaser.pe'
 
 export function Clave() {
+  /*
+   * Una tarjeta centrada, como `/ingresar`, desde el 25/09/2026. Era una columna
+   * con un titular de dos lineas a 60 px y se podia desplazar en un portatil de
+   * 768 px de alto. La vuelta a entrar, el formulario, la linea de talento y la
+   * de crear cuenta van TODAS dentro: fuera se leian como de otra pantalla.
+   */
   return (
-    <div className={estilos.pagina}>
-      <Link className={estilos.volver} to={rutas.ingresar()}>
-        ← Volver a entrar
-      </Link>
+    <div className={estilos.paginaEntrar}>
+      <div className={estilos.tarjetaEntrar}>
+        <Link className={estilos.volver} to={rutas.ingresar()}>
+          ← Volver a entrar
+        </Link>
 
-      <PedirEnlace
-        pedir={pedirRecuperacion}
-        claseFormulario={estilos.superficieDelFormulario}
-        titulo="Te ayudamos a entrar."
-        bajada="Escribe el correo con el que creaste tu cuenta y te enviamos un enlace para elegir una contraseña nueva. Tu proceso sigue igual: no pierdes nada de lo que ya respondiste."
-        alternativa={
-          <p className={estilos.aparte}>
-            ¿No te llega? Escríbenos a{' '}
-            <a href={`mailto:${CORREO}?subject=No%20puedo%20entrar%20al%20portal`}>{CORREO}</a>
-          </p>
-        }
-      />
+        <PedirEnlace
+          pedir={pedirRecuperacion}
+          titulo="Te ayudamos a entrar."
+          bajada="Escribe el correo con el que creaste tu cuenta y te enviamos un enlace para elegir una contraseña nueva. Tu proceso sigue igual: no pierdes nada de lo que ya respondiste."
+          alternativa={
+            <p className={estilos.aparteEnTarjeta}>
+              ¿No te llega? Escríbenos a{' '}
+              <a href={`mailto:${CORREO}?subject=No%20puedo%20entrar%20al%20portal`}>{CORREO}</a>
+            </p>
+          }
+        />
 
-      <p className={estilos.pie}>
-        ¿Todavía no tienes cuenta? <Link to={rutas.registro()}>Créala aquí</Link>.
-      </p>
+        <p className={estilos.pieEnTarjeta}>
+          ¿Todavía no tienes cuenta? <Link to={rutas.registro()}>Créala aquí</Link>.
+        </p>
+      </div>
     </div>
   )
 }

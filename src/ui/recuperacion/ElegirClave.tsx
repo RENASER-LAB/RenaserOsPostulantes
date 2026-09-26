@@ -21,6 +21,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { ErrorApi } from '@/api/puerta'
 import { Campo } from '@/ui/campos/Campo'
+import { IconoAviso } from '@/ui/Iconos'
 import {
   COPIALO_ENTERO,
   ENLACE_INCOMPLETO,
@@ -43,14 +44,12 @@ interface Props {
   rutaPedirEnlace: string
   /** Cuando la contraseña ya cambió: cada puerta lleva a su pantalla de entrar. */
   alCambiar: () => void
-  /**
-   * La superficie del formulario, si quien lo usa tiene una.
-   *
-   * El portal pone el suyo sobre nube, como el resto de sus formularios; el
-   * panel lo deja a pelo sobre el fondo, que es su disposición. La decisión es
-   * de cada puerta y no de esta pieza, que es la misma para las dos.
+  /*
+   * Aquí había `claseFormulario`, la superficie que cada puerta le ponía al
+   * formulario. Se fue el 25/09/2026: esta pieza se pinta ahora DENTRO de una
+   * tarjeta que pone cada pantalla, y una superficie dentro de otra no separa
+   * nada. Ver `Recuperacion.module.css`.
    */
-  claseFormulario?: string
 }
 
 type Errores = Partial<Record<keyof CamposClaveNueva, string>>
@@ -62,7 +61,6 @@ export function ElegirClave({
   restablecer,
   rutaPedirEnlace,
   alCambiar,
-  claseFormulario,
 }: Props) {
   const [parametros, setParametros] = useSearchParams()
   // Se lee una vez, al montar: en cuanto la barra se limpia, la dirección ya no
@@ -166,7 +164,7 @@ export function ElegirClave({
       </p>
 
       <form
-        className={`${estilos.formulario} ${claseFormulario ?? ''}`}
+        className={estilos.formulario}
         onSubmit={alEnviar}
         noValidate
       >
@@ -191,6 +189,7 @@ export function ElegirClave({
 
           {fallo && (
             <p className={estilos.fallo} role="alert">
+              <IconoAviso tamano={18} />
               {fallo}
             </p>
           )}
