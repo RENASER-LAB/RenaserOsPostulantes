@@ -88,7 +88,7 @@ El detalle, en [docs/TRABAJAR-EN-LOCAL.md](docs/TRABAJAR-EN-LOCAL.md).
 | Si vas a… | Lee |
 |---|---|
 | Orientarte en los documentos | [docs/README.md](docs/README.md) |
-| Levantarlo, elegir backend, saber a qué base escribes, mirar pantallas sin tocar la base | [TRABAJAR-EN-LOCAL](docs/TRABAJAR-EN-LOCAL.md), [README.md](README.md) |
+| Levantarlo, elegir backend, saber a qué base escribes, mirar pantallas sin tocar la base, correr los e2e (sobre el snapshot de QA, no sobre una base vacía) | [TRABAJAR-EN-LOCAL](docs/TRABAJAR-EN-LOCAL.md), [README.md](README.md) |
 | Tocar código: los 18 estados, la hora del servidor, la única puerta al backend, `grupoPrioridad`, las trampas que costaron un fallo, la marca de obligatorio de los formularios, cómo se nombra aquí | [REGLAS-DEL-CODIGO](docs/REGLAS-DEL-CODIGO.md) |
 | Tocar diseño: el mundo visual, sus reglas nombradas, la tipografía, el mapa de `src/`, qué lee `impeccable` | [DESIGN.md](DESIGN.md) y [EL-MUNDO-VISUAL](docs/EL-MUNDO-VISUAL.md); los tokens con su porqué en [`src/estilos/mundo.css`](src/estilos/mundo.css). **DESIGN.md y `.impeccable/design.json` se regeneran juntos**, con `/impeccable document` |
 | Entender qué ve y qué hace quien postula, pantalla por pantalla | [02-QUE-VE-EL-CANDIDATO](docs/02-QUE-VE-EL-CANDIDATO.md) |

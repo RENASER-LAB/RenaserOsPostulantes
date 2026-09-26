@@ -119,9 +119,12 @@ test.describe('Regresión · el perfil guarda tu foto, tu portada y tu currícul
     await expect(page.getByRole('img', { name: /tu foto/i })).toBeVisible({ timeout: 15_000 })
 
     // Los enlaces de la cabecera, que es como se mueve la gente por el portal.
-    await page.getByRole('link', { name: 'Mis procesos', exact: true }).click()
+    // Dentro de `header` y no en toda la página: desde el 25/09/2026 el pie en
+    // columnas repite «Mis procesos», y sin acotar el localizador casa con dos.
+    const cabecera = page.locator('header')
+    await cabecera.getByRole('link', { name: 'Mis procesos', exact: true }).click()
     await expect(page.getByRole('img', { name: /tu foto/i })).toHaveCount(0)
-    await page.getByRole('link', { name: 'Mi cuenta', exact: true }).click()
+    await cabecera.getByRole('link', { name: 'Mi cuenta', exact: true }).click()
 
     // Lo que se comprueba es que la imagen CARGÓ, no que el `<img>` esté ahí:
     // con la url revocada el elemento sale igual, vacío por dentro, y

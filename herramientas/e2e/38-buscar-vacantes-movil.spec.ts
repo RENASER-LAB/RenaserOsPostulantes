@@ -171,6 +171,16 @@ test.describe('Buscar vacantes en el teléfono · el muro de cuarenta', () => {
       await expect(page.locator('header').getByRole('link', { name: 'Iniciar sesión' })).toBeVisible()
       for (const ancho of anchos) {
         await page.setViewportSize({ width: ancho, height: 812 })
+        /*
+         * Se mide con la barra quieta. Sus destinos entran en cascada con un
+         * `translateY` de 420 ms, y a medio camino la caja sale 43,999996 px por
+         * redondeo: la corrida del 26/09/2026 falló así en «Inicio» a 368 px, con
+         * la carga de la portada todavía animándose. Y la cascada vuelve a correr
+         * cada vez que «Vacantes» reaparece al cruzar los 368 px.
+         */
+        await page.waitForFunction(() =>
+          document.querySelector('header')!.getAnimations({ subtree: true }).every((a) => a.playState !== 'running'),
+        )
         const m = await page.evaluate((nombres) => {
           const cabecera = document.querySelector('header')!
           const visibles = [...cabecera.querySelectorAll<HTMLElement>('a, button')].filter((e) => e.getClientRects().length > 0)

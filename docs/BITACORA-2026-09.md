@@ -19,17 +19,29 @@ no se vuelve a subir el currículum. Lo del 07/09 se documentó en
 ## La suite recortada llega a «El cielo despejado» (26/09/2026)
 
 Se juntó la suite e2e recortada de main (#59, la entrada siguiente). No trae pantallas ni hojas
-de estilo, así que no hubo diseño que aplicar; se revisó qué pruebas daban por hecho algo que
-esta rama cambió.
+de estilo, así que no hubo diseño que aplicar; se corrió la suite entera para ver qué pruebas
+daban por hecho algo que esta rama cambió.
 
-- **Solo una chocaba: la altura de la cabecera en `38-buscar-vacantes-movil`**, que pedía entre
-  60 y 80 px y ahora mide 84. Ya no compara contra un número sino contra `--alto-cabecera`, como
-  hace AC-19 en el mismo archivo.
-- **Lo demás se comprobó sin clon de base**, replicando las afirmaciones contra el portal local:
-  `34-recuperar-contrasena-movil` pasa entero con las pantallas ya en tarjeta, y los selectores
-  de `23-movimiento`, `37-buscar-vacantes` y `20-prueba-y-empresas` siguen encontrando lo que
-  buscan en la portada nueva. La suite entera no se corrió: necesita el clon aislado de
-  [TRABAJAR-EN-LOCAL.md](TRABAJAR-EN-LOCAL.md).
+- **Tres chocaban con el diseño nuevo, y las tres eran de la prueba, no del portal:**
+  - `38-buscar-vacantes-movil` pedía una cabecera de entre 60 y 80 px, y ahora mide 84. Compara
+    contra `--alto-cabecera`, como hace AC-19 en el mismo archivo.
+  - AC-19, en ese mismo archivo, medía los destinos mientras entraban en cascada: a medio
+    `translateY`, «Inicio» salía de 43,999996 px y no llegaba a los 44. Ahora espera a que la
+    barra esté quieta antes de medir, en cada ancho.
+  - `22-perfil-con-foto-y-cv` pulsaba «Mis procesos» en toda la página, y el pie en columnas lo
+    repite: casaba con dos. Lo busca dentro de `header`.
+- **Resultado: 294 pasan, 0 fallan y 8 se saltan** (las de IA real), en 10,1 minutos. Es lo
+  mismo que dio QA en el harness.
+
+⚠️ **La suite necesita la base del snapshot, y no una base vacía.** Lo que borró #59 fue el
+sembrador del escenario del ranking (`sembrar-escenario-e2e.py`), no los datos de partida: QA
+corre sobre un clon restaurado de `renaser-sintetico-20260917.dump` —la ruta está en
+`.harness/setup.json` del backend—, que ya trae «Desarrollador web», «Líder de operaciones», sus
+áreas, puestos y personas. Contra una base vacía fallaron 81 pruebas con «¿Se sembró la base?».
+Se repitió como lo hace el harness: la imagen `renaser-harness-postgres:pg16` —trae pgvector y
+las extensiones—, `pg_restore --no-owner --no-acl --schema=public` del snapshot, backend en 9081
+contra ese clon y con su propio RabbitMQ, y portal en 5274. Al terminar se borraron los
+contenedores.
 
 ---
 
