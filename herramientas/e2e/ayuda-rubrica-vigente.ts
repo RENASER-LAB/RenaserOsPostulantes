@@ -367,10 +367,10 @@ for f in tabla[1:]:
         continue
     en_pie = True
     pie.extend(c for c in f if c.strip())
-ns = {'s': 'http://schemas.openxmlformats.org/spreadsheetml/2006/main'}
 with zipfile.ZipFile(ruta) as z:
     nombre = [n for n in z.namelist() if re.match(r'xl/worksheets/sheet\\d+\\.xml$', n)][0]
     raiz = ET.fromstring(z.read(nombre))
+ns = {'s': raiz.tag[1:].split('}')[0]}
 fila1 = raiz.find('.//s:sheetData/s:row[@r="1"]', ns)
 anchos = {}
 for col in raiz.findall('.//s:cols/s:col', ns):
