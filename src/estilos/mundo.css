@@ -684,35 +684,42 @@ time,
 }
 
 /*
- * El logotipo de EX, lo unico que sobrevive de los portales anteriores: la
- * palabra con la hormiga metida dentro de la X.
+ * El logotipo de EX: una «E» maciza y una «X» de trazos huecos, cruzada por una
+ * hormiga de perfil. Desde el 28/09/2026; antes era la palabra «EX» en Geist 700
+ * con la hormiga vista desde arriba posada sobre la X.
  *
- * El peso es 700 y no 800: el 800 es notablemente mas ancho y la hormiga se
- * quedaba sin sitio sobre el vertice de la X.
+ * Es un PNG negro sobre transparente usado como MASCARA sobre un fondo
+ * `currentColor`: sale en la tinta y no en el negro del archivo. La imagen la
+ * pone `Marca` en linea —es quien importa el archivo, y asi Vite le pone huella—
+ * con el alto y el ancho, que se reservan aunque el PNG tarde en llegar. Si no
+ * llega, la mascara no deja ver nada y la caja se queda: ni imagen rota ni salto.
+ *
+ * El color se le declara al propio `.marca` y no se hereda: quien lo quiera de
+ * otro color se lo pone a `.marca` —la marca de agua gris de `Estados.module.css`
+ * y los pies lo hacen asi—.
+ *
+ * `vertical-align: top` para que, dentro de un bloque, la linea mida lo que el
+ * dibujo y no le sume el hueco de los descendentes.
  */
 .marca {
-  position: relative;
   display: inline-block;
-  line-height: 1;
+  flex: none;
+  vertical-align: top;
   color: var(--tinta);
-  /* Sitio para que la hormiga no quede recortada por el borde de la caja. */
-  padding: 0.16em 0.1em 0 0;
+  background-color: currentColor;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
 }
 
-.marca-letras {
-  display: block;
-  font-size: 1em;
-  font-weight: 700;
-  letter-spacing: -0.05em;
-}
-
-.marca-hormiga {
-  position: absolute;
-  /* Posada en el vertice superior derecho de la X, solapandola apenas. Encima
-     del trazo se perderia —hormiga y letra van del mismo color— y del todo
-     fuera dejaria de ser «la hormiga dentro de la X». */
-  top: -0.14em;
-  right: -0.04em;
-  width: 0.5em;
-  height: 0.5em;
+/* Con colores forzados el sistema anula el fondo, y un logotipo hecho de fondo
+   desapareceria. Se le devuelve a mano en el color de texto del sistema. */
+@media (forced-colors: active) {
+  .marca {
+    forced-color-adjust: none;
+    background-color: CanvasText;
+  }
 }

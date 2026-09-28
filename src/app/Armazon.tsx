@@ -298,7 +298,7 @@ export function Armazon() {
       <header className={estilos.cabecera}>
         <div className={estilos.cabeceraDentro}>
           <Link className={estilos.marca} to={rutas.inicio()} aria-label="EX, inicio">
-            <Marca tamano={22} />
+            <Marca tamano={28} />
           </Link>
 
           <nav className={estilos.navegacion}>
@@ -420,7 +420,7 @@ function PieEnColumnas({ portada = false }: { portada?: boolean }) {
         <div className={estilos.pieDentro}>
           <div className={estilos.pieMarca}>
             <Link className={estilos.marcaDelPie} to={rutas.inicio()} aria-label="EX, inicio">
-              <Marca tamano={portada ? 48 : 20} />
+              <Marca tamano={portada ? 56 : 24} />
             </Link>
           </div>
 

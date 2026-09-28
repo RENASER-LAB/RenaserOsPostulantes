@@ -186,3 +186,49 @@ test.describe('Móvil 375px', () => {
     }
   })
 })
+
+/**
+ * El logotipo nuevo en la cabecera del teléfono (spec `cambiar-el-logo.md`,
+ * AC-08). Un visitante sin sesión, sin panel ni escenario: solo se mira la barra.
+ *
+ * El logotipo mide 31,7 px de ancho a 28 de alto, 2,7 más que la palabra de
+ * antes; a 375 px quedaban 11 de sobra. Si esto falla, la marca empuja los
+ * destinos. El alto se compara con `--alto-cabecera`, los 84 px medidos antes
+ * del cambio. A 1280 px, en `41-logotipo.spec.ts`.
+ */
+test.describe('Móvil · el logotipo en la cabecera', () => {
+  for (const ancho of [360, 375]) {
+    test(`a ${ancho} px la cabecera no crece, cabe entera y no hay scroll horizontal`, async ({ page }) => {
+      await page.setViewportSize({ width: ancho, height: 812 })
+      await page.goto('/')
+      const barra = page.getByRole('banner')
+      const marca = barra.getByRole('link', { name: 'EX, inicio' })
+      await expect(marca).toBeVisible()
+
+      const medido = await page.evaluate(() =>
+        parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--alto-cabecera')),
+      )
+      const alto = (await barra.boundingBox())!.height
+      expect(Math.abs(alto - medido), `la cabecera mide ${alto} y medía ${medido}`).toBeLessThanOrEqual(0.5)
+
+      const logotipo = (await marca.locator('.marca').boundingBox())!
+      expect(Math.abs(logotipo.height - 28)).toBeLessThanOrEqual(1)
+
+      // Los destinos que se ven no se montan sobre la marca ni se salen por la derecha.
+      const destinos = barra.getByRole('navigation').getByRole('link')
+      const cajaDeLaMarca = (await marca.boundingBox())!
+      for (let i = 0; i < (await destinos.count()); i++) {
+        const destino = destinos.nth(i)
+        if (!(await destino.isVisible())) continue
+        const caja = (await destino.boundingBox())!
+        expect(caja.x, `el destino ${i} pisa la marca`).toBeGreaterThanOrEqual(cajaDeLaMarca.x + cajaDeLaMarca.width - 0.5)
+        expect(caja.x + caja.width, `el destino ${i} se sale`).toBeLessThanOrEqual(ancho)
+      }
+
+      const desborda = await page.evaluate(
+        () => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
+      )
+      expect(desborda, 'la página no debe poder desplazarse en horizontal').toBe(false)
+    })
+  }
+})

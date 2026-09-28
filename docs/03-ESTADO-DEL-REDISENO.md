@@ -16,9 +16,9 @@ qué queda por hacer y en qué orden.
 ## Dónde estamos
 
 El maquetado está hecho y aprobado, **el portal entero está construido sobre él**, y los
-comandos de cierre corrieron. No queda nada del `src/` viejo salvo el nombre EX y su
-logotipo: `base.css` y `variables.css` se borraron el 24/08 con la última pantalla, y todo
-el estilo son ya CSS Modules.
+comandos de cierre corrieron. No queda nada del `src/` viejo salvo el nombre EX: `base.css`
+y `variables.css` se borraron el 24/08 con la última pantalla, y todo el estilo son ya CSS
+Modules. El logotipo también es nuevo desde el 28/09/2026.
 
 **Desde el 25/08 hay una segunda cara en el mismo repositorio**: el panel del equipo, en
 `/admin`. Es provisional a sabiendas —debería estar en RENASER OS— y su estado vive en
@@ -62,8 +62,12 @@ sueltos o titulares, deja de leerse.
 **Solo hay tema claro.** Es petición del cliente. El bloque `data-theme="dark"` y el proveedor
 de tema **ya desaparecieron**.
 
-**Lo único que se conserva del portal viejo** es el nombre **EX** y su logotipo: la palabra
-con la hormiga dentro de la X.
+**Lo único que se conserva del portal viejo** es el nombre **EX**. El logotipo se cambió el
+28/09/2026: la palabra con la hormiga vista desde arriba dentro de la X dio paso a una «E»
+maciza y una «X» de trazos huecos cruzada por una hormiga de perfil. Es un PNG
+(`src/ui/logotipo.png`) que solo conoce `Marca`, y sus derivados —favicon, iconos de Android y
+pantallas de arranque— salen de `herramientas/derivados-del-logotipo.py`. Cómo se pinta y a
+qué tamaños, en [DESIGN.md](../DESIGN.md) › El logotipo.
 
 ---
 
