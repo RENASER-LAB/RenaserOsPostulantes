@@ -89,6 +89,7 @@ import {
   columnasDelRanking,
   columnasVisibles,
   comoSeOrdena,
+  cuantasApagadas,
   criteriosQueSePintan,
   cuantasPorCalificacion,
   cuantoCubre,
@@ -941,6 +942,8 @@ function Ranking({
   const todasLasColumnas = columnasDelRanking(etapa, trae, criterios)
   const columnasDeLaTabla = columnasVisibles(todasLasColumnas, apagadas)
   const columnas = columnasDeLaTabla.length
+  // Las apagadas que ESTA tabla tiene, no las que el conjunto recuerda: ver `cuantasApagadas`.
+  const columnasOcultas = cuantasApagadas(todasLasColumnas, apagadas)
   /*
     ⚠️ **La única fuente de «¿se pinta esta celda?».** La cabecera sale de
     `columnasDeLaTabla` y el cuerpo va escrito a mano: con dos condiciones por
@@ -1245,8 +1248,8 @@ function Ranking({
         <details className={estilos.selectorColumnas}>
           <summary>
             Columnas
-            {apagadas.size > 0 && (
-              <span className={estilos.cuantasApagadas}>{apagadas.size} ocultas</span>
+            {columnasOcultas > 0 && (
+              <span className={estilos.cuantasApagadas}>{columnasOcultas} ocultas</span>
             )}
           </summary>
           <div className={estilos.listaColumnas}>
@@ -1282,11 +1285,16 @@ function Ranking({
                       })
                     }
                   />
-                  {/* La inicial no dice nada suelta: aquí va el nombre entero. */}
+                  {/*
+                    La inicial no dice nada suelta: aquí va el nombre entero.
+                    Solo el nombre: la `ayuda` de una columna —el párrafo del
+                    ponderado— se queda en su cabecera, o la casilla ocupa seis
+                    líneas.
+                  */}
                   {c.completo ?? c.titulo}
                 </label>
               ))}
-            {apagadas.size > 0 && (
+            {columnasOcultas > 0 && (
               <button
                 className={estilos.verTodasLasColumnas}
                 type="button"
@@ -1451,7 +1459,11 @@ function Ranking({
                 }
                 if (!columna.ordenable) {
                   return (
-                    <th key={columna.clave} className={clase} title={columna.completo}>
+                    <th
+                      key={columna.clave}
+                      className={clase}
+                      title={columna.ayuda ?? columna.completo}
+                    >
                       {columna.titulo}
                     </th>
                   )
@@ -1481,6 +1493,7 @@ function Ranking({
                       .filter(Boolean)
                       .join(' ')}
                     aria-sort={como}
+                    title={columna.ayuda}
                   >
                     <button
                       type="button"
@@ -1488,7 +1501,19 @@ function Ranking({
                       onClick={() => setOrden((antes) => alternarOrden(antes, cual))}
                       title={`Ordenar por ${columna.completo ?? columna.titulo}`}
                     >
-                      {columna.titulo}
+                      {/*
+                        ⚠️ **La ayuda va en el rótulo, no solo en el `<th>`.** El
+                        botón llena la celda entera, y el título emergente es el
+                        del elemento más interior que lo tenga: con la ayuda solo
+                        en la celda saldría siempre «Ordenar por …» y nunca la
+                        explicación. Sobre la palabra se lee la ayuda; sobre la
+                        flecha y el relleno, a qué ordena el botón.
+                      */}
+                      {columna.ayuda ? (
+                        <span title={columna.ayuda}>{columna.titulo}</span>
+                      ) : (
+                        columna.titulo
+                      )}
                       <FlechaDeOrden como={como} />
                     </button>
                   </th>
@@ -1641,25 +1666,34 @@ function Ranking({
 
                     El guion es «la IA todavía no ha calificado su currículum»:
                     el grupo se asigna al terminar esa pasada.
+
+                    ⚠️ **Con `ve('veredicto')`, como su cabecera.** Fue la única
+                    celda ocultable pintada sin condición: al apagar Veredicto se
+                    iba la cabecera y la celda seguía, y cada fila corría una
+                    columna —el veredicto bajo ESTADO, el estado bajo CIUDAD—. Lo
+                    vigila «ninguna columna apagada descuadra la tabla», en
+                    `Vacante.test.tsx`.
                   */}
-                  <td className={estilos.columnaCifra}>
-                    {rotuloCortoDelGrupo(fila.grupoPrioridad) ? (
-                      <span
-                        className={estilos.grupo}
-                        /*
-                          El nombre entero al pasar el cursor, y en la leyenda de
-                          debajo para quien no usa el ratón. «Potencial con
-                          riesgo» son veinte caracteres y decidían el ancho de
-                          esta columna entera.
-                        */
-                        title={nombreDelGrupo(fila.grupoPrioridad) ?? undefined}
-                      >
-                        {rotuloCortoDelGrupo(fila.grupoPrioridad)}
-                      </span>
-                    ) : (
-                      '—'
-                    )}
-                  </td>
+                  {ve('veredicto') && (
+                    <td className={estilos.columnaCifra}>
+                      {rotuloCortoDelGrupo(fila.grupoPrioridad) ? (
+                        <span
+                          className={estilos.grupo}
+                          /*
+                            El nombre entero al pasar el cursor, y en la leyenda
+                            de debajo para quien no usa el ratón. «Potencial con
+                            riesgo» son veinte caracteres y decidían el ancho de
+                            esta columna entera.
+                          */
+                          title={nombreDelGrupo(fila.grupoPrioridad) ?? undefined}
+                        >
+                          {rotuloCortoDelGrupo(fila.grupoPrioridad)}
+                        </span>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
+                  )}
                   {/*
                     Una columna por criterio, en el MISMO orden que la cabecera
                     —las dos salen de `criterios`—.
