@@ -251,6 +251,40 @@ describe('el bloque de la empresa autora', () => {
     expect(api.reportarRespuesta).toHaveBeenCalledTimes(1)
   })
 
+  it('RES-QA-05: «Reportar la respuesta» cerrado sin enviar —Escape, aspa, «Volver» o fondo— devuelve el foco a su botón', async () => {
+    const respuesta = {
+      texto: 'Gracias por la oportunidad, aprendí mucho con el equipo.',
+      publicadaEn: dias(-4),
+      editada: false,
+      ocultada: false,
+      notaReporte: null,
+      reporte: null,
+      puedeReportar: true,
+    }
+    api.verResenas.mockResolvedValue(conBloque(publicada('EDITABLE', { respuesta })))
+    pintar()
+
+    const reportar = await screen.findByRole('button', { name: 'Reportar la respuesta' })
+    const cierres = {
+      Escape: () => fireEvent.keyDown(document, { key: 'Escape' }),
+      aspa: () => fireEvent.click(screen.getByRole('button', { name: 'Cerrar' })),
+      Volver: () => fireEvent.click(screen.getByRole('button', { name: 'Volver' })),
+      fondo: () => fireEvent.click(screen.getByRole('dialog').previousElementSibling!),
+    }
+    for (const [como, cerrar] of Object.entries(cierres)) {
+      reportar.focus()
+      fireEvent.click(reportar)
+      const ventana = await screen.findByRole('dialog', { name: 'Reportar la respuesta' })
+      // Se abre con el foco en el primer motivo.
+      expect(document.activeElement).toBe(within(ventana).getAllByRole('radio')[0])
+
+      act(() => cerrar())
+      await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+      expect(document.activeElement, `cerrado con ${como}`).toBe(reportar)
+    }
+    expect(api.reportarRespuesta).not.toHaveBeenCalled()
+  })
+
   it('AC-39: la respuesta reportada dice «en revisión», y la mantenida dice la nota', async () => {
     const respuesta = {
       texto: 'Gracias por la oportunidad, aprendí mucho con el equipo.',

@@ -320,6 +320,55 @@ describe('los pasos dentro de la misma ventana', () => {
     expect(api.responderResena).toHaveBeenCalledTimes(1)
   })
 
+  it('RES-QA-05: cerrar sin enviar un paso abierto desde la sección —Escape, aspa o fondo— devuelve el foco a su botón', async () => {
+    api.misResenas.mockResolvedValue({
+      ...conTres,
+      resenas: [
+        resena(1, 5, 'Acme', 3, {
+          puedeResponder: false,
+          respuesta: {
+            texto: RESPUESTA,
+            publicadaEn: haceDias(2),
+            editada: false,
+            editableHasta: haceDias(-28),
+            editable: true,
+            ocultada: false,
+            notaOcultacion: null,
+          },
+        }),
+        resena(2, 4, 'Constructora Andina', 10),
+      ],
+    })
+    pintar()
+    await screen.findAllByRole('article')
+
+    const cierres = {
+      Escape: () => fireEvent.keyDown(document, { key: 'Escape' }),
+      aspa: () => fireEvent.click(screen.getByRole('button', { name: 'Cerrar' })),
+      fondo: () => fireEvent.click(screen.getByRole('dialog').previousElementSibling!),
+    }
+    // «Reportar» y «Responder» de una; «Editar» de la respuesta de la otra.
+    for (const accion of ['reportar-1', 'responder-2', 'editar-1', 'reportar-2']) {
+      for (const [como, cerrar] of Object.entries(cierres)) {
+        const boton = document.querySelector<HTMLElement>(`[data-foco="${accion}"]`)!
+        boton.focus()
+        fireEvent.click(boton)
+        const paso = await screen.findByRole('dialog')
+        // El paso se abre con el foco en su primer campo, no en el aspa.
+        expect(paso.querySelector('input, textarea')).toBe(document.activeElement)
+
+        act(() => cerrar())
+        await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+        expect(document.activeElement, `«${accion}» cerrado con ${como}`).toBe(
+          document.querySelector(`[data-foco="${accion}"]`),
+        )
+      }
+    }
+    expect(api.reportarResena).not.toHaveBeenCalled()
+    expect(api.responderResena).not.toHaveBeenCalled()
+    expect(api.editarRespuesta).not.toHaveBeenCalled()
+  })
+
   it('borrar tu respuesta: el foco va a «Cancelar» de la confirmación y, al cancelar, vuelve a «Borrar»', async () => {
     api.misResenas.mockResolvedValue({
       ...conTres,

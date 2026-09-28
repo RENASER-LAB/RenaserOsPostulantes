@@ -5,8 +5,14 @@
  * el fondo no hace scroll y el foco no se escapa fuera.
  */
 
-import { useEffect, useRef, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import estilos from './Modal.module.css'
+
+/** El elemento con el foco ahora mismo, si es uno al que se puede volver. */
+const conElFoco = (): HTMLElement | null =>
+  document.activeElement instanceof HTMLElement && document.activeElement !== document.body
+    ? document.activeElement
+    : null
 
 interface Props {
   abierto: boolean
@@ -49,12 +55,39 @@ export function Modal({ abierto, titulo, onCerrar, children, pie, pantallaComple
   const alCerrar = useRef(onCerrar)
   alCerrar.current = onCerrar
 
+  /*
+    ⚠️ **Adónde vuelve el foco se apunta AL PINTAR la apertura, no en el efecto.**
+
+    Los efectos corren de dentro hacia fuera: los del contenido antes que el de
+    este modal. Un formulario que enfoca su primer campo al montarse —el paso de
+    reportar lo hace en un `useLayoutEffect`, el de responder en un `useEffect`—
+    ya se había llevado el foco cuando el efecto de aquí leía «el que lo tenía
+    antes». Guardaba ese campo, y al cerrar devolvía el foco a un control que ya
+    no existía: caía en `<body>` y el siguiente Tab empezaba por arriba de la
+    página. Al pintar, nada de dentro existe todavía y el foco sigue en el botón
+    que abrió el modal.
+
+    Es estado, y no un ref, para que un pintado descartado no deje nada a medias:
+    es el patrón de React para ajustar estado cuando cambia una prop.
+  */
+  const [apertura, setApertura] = useState<{ abierto: boolean; volverA: HTMLElement | null }>({
+    abierto: false,
+    volverA: null,
+  })
+  if (apertura.abierto !== abierto) {
+    setApertura({ abierto, volverA: abierto ? conElFoco() : null })
+  }
+  const volverA = apertura.volverA
+
   useEffect(() => {
     if (!abierto) return
 
-    const anterior = document.activeElement as HTMLElement | null
     document.body.style.overflow = 'hidden'
-    caja.current?.querySelector<HTMLElement>(ENFOCABLES)?.focus()
+    // Si el contenido ya puso el foco dentro —su primer campo—, se respeta: el
+    // aspa es solo para cuando nada de dentro lo pidió.
+    if (!caja.current?.contains(document.activeElement)) {
+      caja.current?.querySelector<HTMLElement>(ENFOCABLES)?.focus()
+    }
 
     function alPulsar(e: KeyboardEvent) {
       if (e.key === 'Escape') {
@@ -81,8 +114,9 @@ export function Modal({ abierto, titulo, onCerrar, children, pie, pantallaComple
     return () => {
       document.removeEventListener('keydown', alPulsar)
       document.body.style.overflow = ''
-      anterior?.focus()
+      if (volverA?.isConnected) volverA.focus()
     }
+    // `volverA` cambia solo a la vez que `abierto`: el efecto no se rehace aparte.
   }, [abierto])
 
   if (!abierto) return null

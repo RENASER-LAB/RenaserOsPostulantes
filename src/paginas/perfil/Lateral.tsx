@@ -21,7 +21,11 @@ import { IconoDescargar, IconoDocumento, IconoPapelera, IconoSubir, IconoVisto }
 import { FORMATOS_CV, revisarCurriculum } from './archivos'
 import { anclaDe } from './Listas'
 import { ANCLA_RESENAS } from './Resenas'
+import { seccionAMarcar } from './indice'
 import estilos from './Lateral.module.css'
+
+/** Lo que tapa la cabecera fija por arriba: ni la banda ni «se ve» lo cuentan. */
+const CABECERA = 88
 
 /**
  * En qué punto está una lista: vacía, con datos por revisar, o terminada.
@@ -140,9 +144,11 @@ function Indice({ perfil }: { perfil: PerfilCompleto }) {
   const [aqui, setAqui] = useState<string | null>(null)
   /*
     La sección que se acaba de pulsar en el índice. Manda mientras siga en la
-    banda activa, y se olvida en cuanto sale de ella.
+    banda activa —y, en el fondo de la página, mientras se vea—, y se olvida en
+    cuanto sale de la banda o, después de haberse visto, de la ventana.
   */
   const pulsada = useRef<string | null>(null)
+  const pulsadaVista = useRef(false)
 
   useEffect(() => {
     const secciones = SECCIONES.map((s) => document.getElementById(anclaDeLaSeccion(s))).filter(
@@ -165,27 +171,37 @@ function Indice({ perfil }: { perfil: PerfilCompleto }) {
     const enOrden = secciones.map((s) => s.id)
 
     /*
-      ⚠️ **Al final de la página gana la última, no la primera.** Las últimas
-      secciones no pueden subir hasta arriba porque la página se acaba: con
-      «Enlaces» y unas «Reseñas» cortas a la vez en la banda, la primera en
-      orden era siempre «Enlaces», también después de pulsar «Reseñas». Si se
-      pulsó una y está en la banda, manda ella; si no, en el fondo de la página
-      se marca la última de la banda, y en el resto, la primera.
+      ⚠️ **Al final de la página no manda la banda, manda lo que se ve.** Las
+      últimas secciones no pueden subir hasta arriba porque la página se acaba,
+      y en una ventana alta una sección final corta nunca llega a la banda. En
+      el fondo se marca la pulsada si se ve y, si no, la última que se ve; en el
+      resto, la pulsada si está en la banda y, si no, la primera de la banda.
+      La regla vive en `seccionAMarcar`; aquí solo se mide.
     */
+    const seVe = (s: HTMLElement) => {
+      const caja = s.getBoundingClientRect()
+      return caja.bottom > CABECERA && caja.top < window.innerHeight
+    }
     const elegir = () => {
-      const enBanda = enOrden.filter((id) => dentro.has(id))
-      // Sin ninguna dentro de la banda —entre dos secciones largas— se queda
-      // la última marcada: apagarlo todo parpadea y no dice nada mejor.
-      if (enBanda.length === 0) return
-      if (pulsada.current && dentro.has(pulsada.current)) {
-        setAqui(pulsada.current)
-        return
+      const visibles = new Set(secciones.filter(seVe).map((s) => s.id))
+      // Una pulsada que se llegó a ver y ya no se ve se olvida: quien se ha ido
+      // con la rueda a otra parte ya no está mirándola.
+      if (pulsada.current !== null) {
+        if (visibles.has(pulsada.current)) pulsadaVista.current = true
+        else if (pulsadaVista.current) pulsada.current = null
       }
-      // Solo si la página se desplaza: una que cabe entera no tiene «fondo».
-      const alFondo =
-        window.scrollY > 0 &&
-        window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2
-      setAqui(alFondo ? enBanda[enBanda.length - 1]! : enBanda[0]!)
+      const alto = document.documentElement.scrollHeight
+      const cabeEntera = alto <= window.innerHeight + 2
+      const marcar = seccionAMarcar({
+        enOrden,
+        enBanda: dentro,
+        visibles,
+        pulsada: pulsada.current,
+        // Solo si la página se desplaza: una que cabe entera no tiene «fondo».
+        alFondo: !cabeEntera && window.scrollY > 0 && window.innerHeight + window.scrollY >= alto - 2,
+        cabeEntera,
+      })
+      if (marcar !== null) setAqui(marcar)
     }
 
     const vigia = new IntersectionObserver(
@@ -199,7 +215,7 @@ function Indice({ perfil }: { perfil: PerfilCompleto }) {
         }
         elegir()
       },
-      { rootMargin: '-88px 0px -60% 0px', threshold: 0 },
+      { rootMargin: `-${CABECERA}px 0px -60% 0px`, threshold: 0 },
     )
     secciones.forEach((s) => vigia.observe(s))
 
@@ -244,6 +260,7 @@ function Indice({ perfil }: { perfil: PerfilCompleto }) {
                 href={`#${ancla}`}
                 onClick={() => {
                   pulsada.current = ancla
+                  pulsadaVista.current = false
                   setAqui(ancla)
                 }}
                 className={aqui === ancla ? estilos.aqui : undefined}

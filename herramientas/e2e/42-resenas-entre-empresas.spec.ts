@@ -857,17 +857,105 @@ test('RES-QA-03 · un doble clic en «Publicar respuesta» envía una sola respu
 })
 
 test('RES-QA-04 · el índice marca «Reseñas» al pulsarla aunque la sección sea corta', async ({ page }) => {
-  // La ventana de la exploración: con 900 px de alto, «Enlaces» y la sección vacía
-  // de reseñas caben a la vez en la banda que vigila el índice.
-  await page.setViewportSize({ width: 1366, height: 900 })
+  // Las ventanas de la exploración. Con 900 px de alto, «Enlaces» y la sección vacía
+  // de reseñas caben a la vez en la banda que vigila el índice. Con 1300 o 1440 px
+  // (ciclo 2), la página se acaba antes de que «Reseñas» llegue a la banda.
   await page.addInitScript(([k, v]) => window.localStorage.setItem(k as string, v as string), [
     'renaser_portal_token',
     await tokenDelCandidato(c.bruno!.correo),
   ])
+  for (const ventana of [
+    { width: 1366, height: 900 },
+    { width: 1440, height: 1300 },
+    { width: 2560, height: 1440 },
+  ]) {
+    await page.setViewportSize(ventana)
+    await page.goto('/perfil')
+    const indice = page.getByRole('navigation', { name: 'Secciones de tu perfil' })
+    await indice.getByRole('link', { name: /^Reseñas/ }).click()
+    await expect(page).toHaveURL(/#resenas$/)
+    await page.waitForTimeout(800)
+    await expect(
+      indice.locator('[aria-current]'),
+      `a ${ventana.width}×${ventana.height} el índice no marca «Reseñas»`,
+    ).toHaveText(/^Reseñas/)
+  }
+})
+
+test('RES-QA-04 · bajando con la rueda hasta el fondo, el índice marca la última sección y no «Idiomas»', async ({ page }) => {
+  // El otro recorrido de la exploración: sin pulsar nada, con la rueda. En una
+  // ventana alta la sección vacía de reseñas se ve entera pero nunca entra en la banda.
+  await page.addInitScript(([k, v]) => window.localStorage.setItem(k as string, v as string), [
+    'renaser_portal_token',
+    await tokenDelCandidato(c.bruno!.correo),
+  ])
+  for (const ventana of [
+    { width: 1366, height: 900 },
+    { width: 1440, height: 1300 },
+    { width: 2560, height: 1440 },
+  ]) {
+    await page.setViewportSize(ventana)
+    await page.goto('/perfil')
+    const indice = page.getByRole('navigation', { name: 'Secciones de tu perfil' })
+    await expect(page.locator('#resenas')).toBeVisible()
+    await page.mouse.move(ventana.width / 2, ventana.height / 2)
+    for (let i = 0; i < 12; i++) await page.mouse.wheel(0, 600)
+    await expect
+      .poll(() => page.evaluate(() => innerHeight + scrollY >= document.documentElement.scrollHeight - 2))
+      .toBe(true)
+    await page.waitForTimeout(300)
+    await expect(
+      indice.locator('[aria-current]'),
+      `a ${ventana.width}×${ventana.height}, al fondo con la rueda el índice no marca «Reseñas»`,
+    ).toHaveText(/^Reseñas/)
+  }
+})
+
+test('RES-QA-05 · cerrar sin enviar un paso abierto desde la sección, o «Reportar la respuesta», devuelve el foco al botón', async ({
+  page,
+  browser,
+}) => {
+  const olga = c.olga!
+  const resena = resenaDeA(vaUno, olga, 4, A_TEXTO('Olga', 'para cerrar sin enviar'), 1)
+  sembrarRespuesta(resena, olga.usuario, 'Olga responde: gracias por la reseña y por la oportunidad.', 1, 29)
+
+  // Portal: Escape en «Reportar» y la aspa en «Editar» la respuesta, desde la sección.
+  await page.addInitScript(([k, v]) => window.localStorage.setItem(k as string, v as string), [
+    'renaser_portal_token',
+    await tokenDelCandidato(olga.correo),
+  ])
   await page.goto('/perfil')
-  const indice = page.getByRole('navigation', { name: 'Secciones de tu perfil' })
-  await indice.getByRole('link', { name: /^Reseñas/ }).click()
-  await expect(page).toHaveURL(/#resenas$/)
-  await page.waitForTimeout(800)
-  await expect(indice.locator('[aria-current]')).toHaveText(/^Reseñas/)
+  const enLaSeccion = tarjeta(page.locator('#resenas'), 'para cerrar sin enviar')
+  for (const [accion, cerrar] of [
+    ['Reportar', 'Escape'],
+    ['Editar', 'aspa'],
+  ] as const) {
+    const boton = enLaSeccion.getByRole('button', { name: accion, exact: true })
+    await boton.click()
+    await expect(page.getByRole('dialog')).toBeVisible()
+    if (cerrar === 'Escape') await page.keyboard.press('Escape')
+    else await page.getByRole('dialog').getByRole('button', { name: 'Cerrar' }).click()
+    await expect(page.getByRole('dialog')).toHaveCount(0)
+    await expect(boton, `tras cerrar «${accion}» con ${cerrar}, el foco no volvió al botón`).toBeFocused()
+  }
+
+  // Panel: «Reportar la respuesta» cerrado con Escape y con la aspa, sin enviar.
+  const panel = await browser.newPage()
+  await entrarAlPanel(panel)
+  await abrirFicha(panel, vaUno, olga)
+  const reportar = bloqueAutora(panel).getByRole('button', { name: 'Reportar la respuesta' })
+  const focos: string[] = []
+  for (const cerrar of ['Escape', 'aspa'] as const) {
+    await reportar.click()
+    await expect(panel.getByRole('dialog')).toBeVisible()
+    if (cerrar === 'Escape') await panel.keyboard.press('Escape')
+    else await panel.getByRole('dialog').getByRole('button', { name: 'Cerrar' }).click()
+    await expect(panel.getByRole('dialog')).toHaveCount(0)
+    focos.push(`${cerrar}: ${await panel.evaluate(() => document.activeElement?.textContent?.trim() || document.activeElement?.tagName)}`)
+  }
+  await panel.close()
+  expect(focos, 'tras cerrar «Reportar la respuesta», el foco no volvió al botón').toEqual([
+    'Escape: Reportar la respuesta',
+    'aspa: Reportar la respuesta',
+  ])
 })
