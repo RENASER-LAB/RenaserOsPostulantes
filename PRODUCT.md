@@ -151,8 +151,10 @@ puntuó; y no ve la matriz, que es justamente lo que se espera que descubra o pr
   25/09/2026: la escala gris fría de Tailwind v4, **un solo acento índigo `#615FFF`** para la
   acción, el destino actual y el turno, y **Geist**. Sustituyó a la de OriginX —crema, acción
   negra y coral para «te toca a ti»—, que rigió del 10 al 25/09. ⚠️ Es una plantilla comercial:
-  se replicaron medidas y valores, no se trajo ninguno de sus archivos —su cielo es una foto y
-  aquí es un degradado—, pero hay que mirar su licencia antes de lanzar.
+  se replicaron medidas y valores, no se trajo ninguno de sus archivos. Desde el 27/09, el
+  cielo es una imagen propia generada con IA, reservada a la entrada y al cierre de la portada;
+  las secciones intermedias alternan blanco y gris claro. Su procedencia está en
+  `herramientas/cielo/GENERACION.md`.
 - **Todo en español**, incluidos los nombres del código.
 - Al cliente le gusta la estética de Apple, pero pidió expresamente que no fuera su azul.
 

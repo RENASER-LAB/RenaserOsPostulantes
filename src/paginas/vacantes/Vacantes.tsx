@@ -330,8 +330,8 @@ export function Vacantes() {
         explicando el método entre la portada y la lista retrasan justo eso.
         Aquí ya vio lo que hay y la pregunta que le queda es si merece la pena.
 
-        La banda va a sangre y en nube, que es lo que da el ritmo alterno: cielo
-        arriba, nube aquí, cielo otra vez en las preguntas.
+        Las secciones intermedias alternan el blanco y el gris claro. El cielo
+        se reserva para la entrada y el cierre, por petición del cliente.
       */}
       <AlAsomarse>
         <section className={estilos.banda} aria-labelledby="por-que-aqui">
@@ -387,10 +387,9 @@ export function Vacantes() {
       </AlAsomarse>
 
       <AlAsomarse>
-        <section className={estilos.cierre}>
+        <section id="empezamos" className={estilos.cierre} aria-labelledby="titulo-cierre">
           <div className={estilos.cajaCierre}>
-            <span className={estilos.halo} aria-hidden="true" />
-            <h2>¿Empezamos?</h2>
+            <h2 id="titulo-cierre">¿Empezamos?</h2>
             <p>
               Elige un puesto, lee sus requisitos y postula. Lo demás te lo vamos contando en
               pantalla, paso a paso.
@@ -471,4 +470,3 @@ function Maqueta({ que }: { que: 'curriculum' | 'sin-cuenta' | 'persona' }) {
     </div>
   )
 }
-
