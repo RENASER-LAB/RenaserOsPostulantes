@@ -31,6 +31,9 @@ import { conElEscenario } from './escenario-desarrollador-web'
  * criterios los siembra nadie: sin ellos la columna Ponderado sale en guiones y
  * el interruptor de los criterios no aparece. Por eso esta intercepción es
  * propia y corre también con `E2E_ESCENARIO=base`: la base no puede dárselos.
+ *
+ * **Reseñas.** Con las reseñas de empresas la tabla tiene una columna más que
+ * arranca apagada: los contadores y «Ver todas» cuentan con ella (ver `RESENAS`).
  */
 
 /** Una fila del ranking tal como la deja el escenario: lo justo y el resto tal cual. */
@@ -102,9 +105,17 @@ async function interceptarRanking(page: Page): Promise<Map<string, FilaServida>>
 const laTabla = (page: Page): Locator =>
   page.locator('table', { has: page.getByRole('button', { name: 'Candidato', exact: true }) })
 
-/** El `summary` del menú «Columnas», que al ocultar algo dice además «N ocultas». */
+/** El `summary` del menú «Columnas», que al ocultar algo dice además «1 oculta» o «N ocultas». */
 const resumenColumnas = (page: Page): Locator =>
   page.locator('summary').filter({ hasText: /^Columnas/ })
+
+/**
+ * La casilla de «Reseñas de empresas» (spec `resenas-de-empresas-a-contratados`,
+ * V63). Para quien puede verlas —`dev-equipo` puede— la columna existe y
+ * **arranca apagada**: el menú ya dice «1 oculta» antes de tocar nada, ocultar
+ * Veredicto lo deja en «2 ocultas», y «Ver todas» la enciende también, al final.
+ */
+const RESENAS = 'Reseñas de empresas'
 
 const casilla = (page: Page, nombre: string): Locator =>
   page.getByRole('checkbox', { name: nombre, exact: true })
@@ -258,9 +269,13 @@ test.describe('El selector de columnas del ranking', () => {
   test('AC-04/05 · ocultar Veredicto se lleva cabecera y celdas, y la leyenda', async ({ page }) => {
     const antes = await laTablaCuadra(page, servidas, 'con todas')
     expect(antes.cabeceras).toContain('Veredicto')
+    // «Reseñas» arranca apagada: ya hay una oculta, y se dice en singular.
+    expect(antes.cabeceras).not.toContain('Reseñas')
+    await expect(resumenColumnas(page)).toHaveText(/^Columnas\s*1 oculta$/)
     await expect(leyendaDeVeredictos(page)).toBeVisible()
 
     await resumenColumnas(page).click()
+    await expect(casilla(page, RESENAS)).not.toBeChecked()
     await casilla(page, 'Veredicto').uncheck()
     await esperarCabeceras(page, antes.cabeceras.length - 1)
 
@@ -272,7 +287,8 @@ test.describe('El selector de columnas del ranking', () => {
       }
     }
     await expect(leyendaDeVeredictos(page)).toHaveCount(0)
-    await expect(resumenColumnas(page)).toContainText('1 ocultas')
+    // Veredicto y la «Reseñas» que arrancó apagada.
+    await expect(resumenColumnas(page)).toHaveText(/^Columnas\s*2 ocultas$/)
   })
 
   test('AC-06 · Veredicto vuelve a su sitio al marcarlo y con «Ver todas»', async ({ page }) => {
@@ -292,10 +308,27 @@ test.describe('El selector de columnas del ranking', () => {
     await casilla(page, 'Veredicto').uncheck()
     await esperarCabeceras(page, deSiempre.length - 1)
     await page.getByRole('button', { name: 'Ver todas', exact: true }).click()
-    await esperarCabeceras(page, deSiempre.length)
-    expect((await laTablaCuadra(page, servidas, 'tras «Ver todas»')).cabeceras).toEqual(deSiempre)
-    await expect(resumenColumnas(page)).not.toContainText('ocultas')
+    // «Ver todas» es todas: también «Reseñas», que arrancaba apagada y sale al final.
+    await esperarCabeceras(page, deSiempre.length + 1)
+    const conTodas = await laTablaCuadra(page, servidas, 'tras «Ver todas»')
+    expect(conTodas.cabeceras).toEqual([...deSiempre, 'Reseñas'])
+    for (const fila of conTodas.filas) {
+      expect(fila.celdas[fila.celdas.length - 1], `bajo «Reseñas», «${fila.nombre}»`).toMatch(
+        /^(—|\d,\d \(\d+\))$/,
+      )
+    }
+    await expect(casilla(page, RESENAS)).toBeChecked()
+    await expect(resumenColumnas(page)).not.toContainText('oculta')
+    await expect(page.getByRole('button', { name: 'Ver todas', exact: true })).toHaveCount(0)
     await expect(leyendaDeVeredictos(page)).toBeVisible()
+
+    // Apagar «Reseñas» devuelve la tabla de siempre, con su «1 oculta».
+    await casilla(page, RESENAS).uncheck()
+    await esperarCabeceras(page, deSiempre.length)
+    expect((await laTablaCuadra(page, servidas, 'Reseñas apagada otra vez')).cabeceras).toEqual(
+      deSiempre,
+    )
+    await expect(resumenColumnas(page)).toHaveText(/^Columnas\s*1 oculta$/)
   })
 
   test('AC-08/09 · sin Veredicto, la ficha y el «no hay» de un filtro ocupan el ancho entero', async ({
@@ -382,7 +415,8 @@ test.describe('El selector de columnas en un teléfono de 360 px', () => {
     const antes = await medir(page)
     await casilla(page, 'Veredicto').uncheck()
     await esperarCabeceras(page, antes.cabeceras.length - 1)
-    await expect(resumenColumnas(page)).toContainText('1 ocultas')
+    // Veredicto y la «Reseñas» que arranca apagada.
+    await expect(resumenColumnas(page)).toHaveText(/^Columnas\s*2 ocultas$/)
     await laTablaCuadra(page, servidas, '360 px sin Veredicto')
 
     // La página no rueda en horizontal: la tabla lo hace dentro de su envoltura.

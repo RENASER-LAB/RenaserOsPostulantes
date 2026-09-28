@@ -9,7 +9,7 @@ en los temáticos, y lo que se hizo un día concreto, en las dos bitácoras.
 |---|---|
 | Entender qué ve y qué hace quien postula, pantalla por pantalla | [02-QUE-VE-EL-CANDIDATO.md](02-QUE-VE-EL-CANDIDATO.md) |
 | Seguir el proceso entero, los dos lados, con lo que desbloquea cada paso | [06-FLUJO-COMPLETO.md](06-FLUJO-COMPLETO.md) |
-| Tocar el panel del equipo: entrar, las tres pestañas, el ranking por etapas, qué exige publicar una vacante, corregirla con el lápiz, archivarla o eliminarla, el plazo de su prueba | [PANEL.md](PANEL.md) |
+| Tocar el panel del equipo: entrar, las tres pestañas, el ranking por etapas, qué exige publicar una vacante, corregirla con el lápiz, archivarla o eliminarla, el plazo de su prueba, las reseñas de empresas y su moderación | [PANEL.md](PANEL.md) |
 | Escribir código: los comportamientos que no se reescriben, las trampas que ya costaron un fallo, cómo se nombra aquí | [REGLAS-DEL-CODIGO.md](REGLAS-DEL-CODIGO.md) |
 | Levantarlo, apuntarlo a un backend, saber a qué base escribes y correr los e2e sobre el snapshot de QA | [TRABAJAR-EN-LOCAL.md](TRABAJAR-EN-LOCAL.md) |
 | Tocar diseño: el mundo visual, sus cuatro reglas de forma y dónde está cada carpeta de `src/` | [EL-MUNDO-VISUAL.md](EL-MUNDO-VISUAL.md) |
@@ -45,3 +45,4 @@ Las secciones llevan título y fecha; busca por el título.
 | Los e2e de Playwright y los guiones de captura | [09](BITACORA-2026-09.md) | 25–26/09 (el recorte de la suite) y 01/09 |
 | Cómo quedó la suite e2e tras el recorte, y cómo se corre cada parte | [SUITE-E2E-CLASIFICACION-2026-09-25.md](SUITE-E2E-CLASIFICACION-2026-09-25.md) | — |
 | Corregir una vacante con el lápiz, y el sueldo sin correo | [09](BITACORA-2026-09.md) | 19-20/09 |
+| Las reseñas de empresas: perfil, ficha, columna y moderación | [09](BITACORA-2026-09.md) | 28/09 |

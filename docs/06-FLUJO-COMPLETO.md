@@ -419,6 +419,17 @@ formulario **entero y apagado**, y dice por qué antes de que nadie escriba: no
 hay ruta para leer qué evidencia se pide ni para enviarla. Lo que sí funciona
 es escribirle al equipo, y es lo que lleva el acento.
 
+### 12 · Después de contratar: la reseña (28/09/2026)
+
+Contratar todavía se hace por la API. A partir del mes, la empresa abre la
+ficha de esa persona —en «Toda la tanda» de su vacante— y le deja de 1 a 5
+estrellas y una opinión, que puede cambiar durante 30 días. A la persona le
+llega un aviso en la campana; la lee en su perfil y puede responderla o
+reportarla. Cuando se postule a otra empresa, esa empresa la lee en la ficha y
+en la columna «Reseñas» de la tabla. **No cambia ninguna nota ni el orden de
+nadie.** El detalle: [PANEL.md](PANEL.md) › Reseñas de empresas y
+[02-QUE-VE-EL-CANDIDATO.md](02-QUE-VE-EL-CANDIDATO.md), 2.15.
+
 ---
 
 ## Cómo el equipo mueve a la gente de etapa
@@ -722,6 +733,7 @@ blanco ahí puede ser un permiso y no un candidato que no pidió sueldo.
 | Áreas | La estructura de la empresa: crear, renombrar, retirar, reactivar y borrar (paso 0) |
 | Equipo | Quién tiene acceso, y en qué área está cada quien |
 | Permisos | El reparto de permisos por rol |
+| Reseñas reportadas | **Solo la plataforma**: mantener u ocultar, con una nota, lo que se reportó de una reseña o de una respuesta. A cualquier otra empresa no le aparece |
 | Solo lectura | Las plantillas **de evaluación** y las versiones de pesos que existen |
 
 Las áreas van justo antes del equipo, y no es cosmética: un área es dónde

@@ -1,7 +1,8 @@
 # El panel del equipo (`/admin`)
 
 Qué es, cómo se entra, qué enseña cada pestaña, qué exige el backend antes de publicar una
-vacante, cómo se eligen su modalidad y su ciudad, y cómo se corrige después. El recorrido de los dos lados —equipo y candidato— está en
+vacante, cómo se eligen su modalidad y su ciudad, cómo se corrige después, y las reseñas de
+empresas: escribirlas, leerlas y moderarlas. El recorrido de los dos lados —equipo y candidato— está en
 [06-FLUJO-COMPLETO.md](06-FLUJO-COMPLETO.md).
 
 ---
@@ -27,7 +28,7 @@ vacantes (modelo Indeed), el panel se construye en este repositorio, bajo `/admi
 - Tres pestañas: **Vacantes** (el CRUD, y dentro de cada una el embudo, el ranking con las
   notas de la IA, la ficha de cada postulante y avanzar de etapa), **Simulación** (crear y
   gestionar las sesiones presenciales) y **Configuración** (parámetros, banco de preguntas por
-  Excel, usuarios y roles, áreas).
+  Excel, usuarios y roles, áreas y, solo para la plataforma, las reseñas reportadas).
 - ⚠️ **Huecos del backend, comprobados el 27/08**: `GET /panel/bandeja` devuelve 500; y **no hay
   forma de listar las versiones de una plantilla de prueba**, solo de pedir una suelta por su
   id. Se enseña lo que existe, como hizo el portal con la decisión ámbar.
@@ -108,10 +109,12 @@ todos») · calificar y «Descargar Excel». En el teléfono, «Columnas» y las
 se recogen en «Más».
 
 **«Columnas»** oculta y devuelve columnas de la tabla, cabecera y celdas a la vez; «Candidato» y
-la casilla de avanzar no se pueden ocultar. El botón dice «N ocultas», contando solo las que la
-tabla tiene en ese momento, y ofrece «Ver todas». Lo ocultado no se guarda: al recargar o al
-cambiar de pestaña la tabla vuelve entera. Un criterio ocultado sí se recuerda al apagar y volver
-a encender «Ver los criterios en la tabla». La casilla del ponderado dice «Ponderado» a secas: su
+la casilla de avanzar no se pueden ocultar. El botón dice «1 oculta» o «N ocultas», contando solo
+las que la tabla tiene en ese momento, y ofrece «Ver todas», que también enciende «Reseñas». Lo
+ocultado no se guarda: al recargar o al cambiar de pestaña la tabla vuelve a como se abrió, **con
+todas encendidas menos «Reseñas»**, que arranca apagada a propósito (ver «Reseñas de empresas»,
+abajo). Por eso quien puede ver reseñas encuentra el botón diciendo «1 oculta» nada más entrar.
+Un criterio ocultado sí se recuerda al apagar y volver a encender «Ver los criterios en la tabla». La casilla del ponderado dice «Ponderado» a secas: su
 explicación —qué mezcla y que no es la nota final— sale al pasar el cursor por su cabecera. En el
 teléfono, dentro de «Más», la lista se abre hacia la derecha para caber en la pantalla.
 
@@ -508,5 +511,69 @@ ciudad que el backend no reconoce responde «Esa ciudad no está en el catálogo
 Comprobarlo: `npx playwright test herramientas/e2e/39-buscar-vacantes-panel.spec.ts` ⚠️
 **escribe**: siembra su propia solicitud, vacantes y postulantes, y lo retira al terminar.
 Necesita las variables de [TRABAJAR-EN-LOCAL.md](TRABAJAR-EN-LOCAL.md).
+
+### Reseñas de empresas: la columna, la ficha y la moderación (28/09)
+
+La empresa que contrató a alguien por EX le deja, a partir del primer mes, de 1 a 5 estrellas y
+una opinión. Las demás empresas donde esa persona postula las leen. **No puntúan**: ni la nota, ni
+el orden por defecto de la tabla, ni el pase automático, ni el Excel cambian por ellas. Lo que ve
+la persona está en [02-QUE-VE-EL-CANDIDATO.md](02-QUE-VE-EL-CANDIDATO.md), 2.15.
+
+⚠️ **Contratar todavía no tiene pantalla**: se hace por la API (la decisión en verde o una
+transición a `CONTRATADO`). La persona contratada se encuentra en la vista «Toda la tanda» de su
+vacante; no hay lista de «contratados pendientes de reseña».
+
+**La columna «Reseñas»**, en las cinco pestañas y al final de la tabla:
+
+| Qué | Cómo es |
+|---|---|
+| Al abrir la vacante | **Apagada.** Se enciende en «Columnas». Encendida por defecto se leería junto a la nota como si pesara en ella |
+| Al recargar o cambiar de pestaña | **Vuelve apagada.** Como el resto de la elección de columnas, no se guarda: es la convención de la pantalla, no un fallo |
+| La celda | «★ 4,5 (3)» —promedio con coma y cuántas—, o «—» sin reseñas visibles. Pulsarla abre la ficha de esa fila |
+| Ordenar | Por promedio y, a igualdad, por cuántas; las «—» siempre al final. El tercer clic vuelve al orden del servidor |
+| Quién la ve | Solo quien tiene `ver_resenas_candidato` con alcance en esa vacante: lo dice `puedeVerResenas` del ranking. Sin él la columna no existe y no cuenta como oculta |
+
+**En la ficha del postulante**, al final y a lo ancho, en las cinco pestañas, hay dos bloques:
+
+- **«La reseña de [Empresa]»**, el de la empresa autora. Sale solo si la postulación es
+  `CONTRATADO` de la propia empresa y quien mira tiene `resenar_contratado` (`puedeResenar`).
+  Tiene cinco estados: «Podrás dejar una reseña desde el [fecha]» (aún no toca); el formulario con
+  estrellas —se eligen también con las flechas—, opinión de 30 a 1000 caracteres con su contador,
+  el aviso de quién la verá y «Publicar reseña»; la reseña con «Editar» y «Borrar» y «Puedes
+  cambiarla hasta el [fecha]»; «Ya no se puede cambiar»; y la reseña atenuada con «La plataforma
+  la ocultó: [nota]». Si la persona ya respondió, editar avisa antes de guardar que se le
+  avisará. Debajo de la respuesta, «Reportar la respuesta», con el estado del reporte cuando lo
+  hay.
+- **«Reseñas de empresas»**, el de lectura, para quien tiene `ver_resenas_candidato`: el resumen
+  con el reparto, las dos más recientes y «Ver todas», con la misma ventana y los mismos filtros
+  que el candidato, pero sin «Reportar» ni «Responder». Salen las de todas las empresas, la propia
+  incluida, cada una con su autora y la respuesta de la persona debajo («Respuesta de [nombre]»).
+  Sin ninguna, «Sin reseñas de empresas».
+
+Si la carga falla, el bloque dice «No pudimos cargar las reseñas» con «Reintentar», y el resto de
+la ficha sigue igual. Un 403 o un 404 aquí no pinta nada: es «no te toca verlo».
+
+**Configuración › «Reseñas reportadas»** es de la plataforma y de nadie más: pide
+`moderar_resenas` —solo el Administrador de la plataforma lo tiene, y el alta de empresas no lo
+copia— **y** ser la plataforma. A cualquier otra empresa el backend le contesta 403 y la sección
+ni se pinta. Tiene dos listas, «Pendientes (N)», de la más antigua a la más reciente, y
+«Resueltas»; en las dos entran los reportes de reseñas —de la persona— y de respuestas —de la
+empresa autora—. Cada tarjeta dice qué se reporta, empresa y persona, estrellas y textos —si se
+juzga la respuesta, la reseña va encima de contexto—, motivo, comentario y fecha. «Mantener» y
+«Ocultar» exigen las dos una «Nota de la revisión»; ocultar es definitivo. Lo retirado antes de
+revisarse sale como «Retirada por la empresa» o «Retirada por la persona».
+
+Dónde está: `ResenasDeLaFicha.tsx` y la columna en `ranking.ts` (`COLUMNAS_APAGADAS_AL_ABRIR`,
+`comparadorDeResenas`), en `src/panel/vacantes/`; la moderación en
+`src/panel/configuracion/ResenasReportadas.tsx`; y lo que comparten portal y panel —resumen,
+tarjeta, ventana con filtros y selector de estrellas— en `src/ui/resenas/`.
+
+Comprobarlo: `npx playwright test herramientas/e2e/41-resenas-de-empresas.spec.ts` (los
+recorridos de punta a punta con una empresa), `42-resenas-entre-empresas.spec.ts` (la empresa B
+leyendo, y el reporte de una respuesta) y `43-resenas-de-empresas-movil.spec.ts` (375 px, textos
+de 1000 caracteres y nombres largos). ⚠️ **Los tres escriben**: siembran sus contrataciones
+insertando la transición a `CONTRATADO` con fechas relativas a hoy, y lo retiran al terminar.
+Necesitan las variables de [TRABAJAR-EN-LOCAL.md](TRABAJAR-EN-LOCAL.md). ⚠️ El 41 y el 42 repiten
+número con `41-logotipo` y `42-selector-de-columnas`: ver [PENDIENTES.md](PENDIENTES.md).
 
 ---
