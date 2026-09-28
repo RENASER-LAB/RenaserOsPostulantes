@@ -107,6 +107,14 @@ insignia de cuántos hay puestos · «Columnas» · **«Borrar filtros»** (sust
 todos») · calificar y «Descargar Excel». En el teléfono, «Columnas» y las acciones de la tanda
 se recogen en «Más».
 
+**«Columnas»** oculta y devuelve columnas de la tabla, cabecera y celdas a la vez; «Candidato» y
+la casilla de avanzar no se pueden ocultar. El botón dice «N ocultas», contando solo las que la
+tabla tiene en ese momento, y ofrece «Ver todas». Lo ocultado no se guarda: al recargar o al
+cambiar de pestaña la tabla vuelve entera. Un criterio ocultado sí se recuerda al apagar y volver
+a encender «Ver los criterios en la tabla». La casilla del ponderado dice «Ponderado» a secas: su
+explicación —qué mezcla y que no es la nota final— sale al pasar el cursor por su cabecera. En el
+teléfono, dentro de «Más», la lista se abre hacia la derecha para caber en la pantalla.
+
 **El panel «Filtros»** flota sobre la tabla en escritorio, sin oscurecer ni mover nada, y la
 tabla cambia detrás mientras se toca. En el teléfono es una hoja que sube desde abajo, con el
 fondo apagado y el foco atrapado dentro. Los cambios se aplican al momento; el pie dice «Se ven X

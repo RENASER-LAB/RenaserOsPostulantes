@@ -1887,9 +1887,22 @@ export interface ColumnaDelRanking {
    */
   peso?: number
   /**
-   * Lo que dice la cabecera cuando el título es una abreviatura. Va al `title`.
+   * El nombre entero cuando el título es una abreviatura: la inicial de un
+   * criterio da su nombre y «Nota» da «Nota de la prueba del puesto». Va al
+   * `title` de la cabecera, al del botón de ordenar y al menú «Columnas».
+   *
+   * ⚠️ **Un nombre, nunca una explicación.** Lo que se lee aquí sale tal cual en
+   * una casilla del menú y en «Ordenar por …»: el párrafo del ponderado vivía
+   * aquí y la casilla ocupaba seis líneas. Las explicaciones van en `ayuda`.
    */
   completo?: string
+  /**
+   * Lo que explica la cabecera al pasar el cursor, cuando el nombre no basta.
+   *
+   * Solo va a la cabecera de la tabla: ni al menú «Columnas», que lista nombres,
+   * ni al botón de ordenar, que dice «Ordenar por» y el nombre.
+   */
+  ayuda?: string
   /**
    * Si se puede apagar desde el selector de columnas.
    *
@@ -2080,7 +2093,9 @@ export function columnasDelRanking(
           {
             clave: 'ponderado',
             titulo: 'Ponderado',
-            completo: PONDERADO_EXPLICADO,
+            // «Ponderado» no abrevia nada: lo que necesita es una explicación,
+            // y va en `ayuda` para no llegar al menú ni a «Ordenar por …».
+            ayuda: PONDERADO_EXPLICADO,
             cifra: true,
             ordenable: 'ponderado',
             ocultable: true,
@@ -2140,7 +2155,10 @@ export function columnasDelRanking(
           {
             clave: 'resenas',
             titulo: 'Reseñas',
-            completo: 'Reseñas de empresas: promedio y cuántas',
+            // El nombre, que es lo que sale en el menú y en «Ordenar por …»; lo
+            // que cuenta la celda va en `ayuda`, como el ponderado.
+            completo: 'Reseñas de empresas',
+            ayuda: 'Reseñas de empresas: promedio y cuántas',
             ordenable: 'resenas',
             ocultable: true,
           },
@@ -2181,6 +2199,26 @@ export const columnasVisibles = (
   columnas: ColumnaDelRanking[],
   apagadas: ReadonlySet<string>,
 ): ColumnaDelRanking[] => columnas.filter((c) => !(c.ocultable && apagadas.has(c.clave)))
+
+/**
+ * Cuántas columnas de ESTA tabla hay apagadas: lo que dice «Columnas · N
+ * ocultas» y lo que decide si sale «Ver todas».
+ *
+ * ⚠️ **No es `apagadas.size`.** El conjunto recuerda claves de columnas que ya
+ * no están en la tabla —un criterio apagado antes de desactivar «Ver los
+ * criterios»— y se guardan a propósito: al volver a encender los criterios, ese
+ * sigue oculto. Pero mientras no existe no se puede contar: el menú decía «1
+ * ocultas» con todas sus casillas marcadas. Sale de `columnasVisibles` para que
+ * el contador y la tabla no puedan discrepar.
+ *
+ * Lo mismo con «Reseñas» (V63): su clave arranca en el conjunto —ver
+ * `COLUMNAS_APAGADAS_AL_ABRIR`—, y sin el permiso de verlas la columna no existe
+ * y no cuenta.
+ */
+export const cuantasApagadas = (
+  columnas: ColumnaDelRanking[],
+  apagadas: ReadonlySet<string>,
+): number => columnas.length - columnasVisibles(columnas, apagadas).length
 
 /**
  * Las etapas donde `notasCriterio` habla de lo que se está mirando.

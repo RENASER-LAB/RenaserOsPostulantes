@@ -2172,9 +2172,16 @@ th.columnaCifra {
   .buscador {
     width: 100%;
   }
+  /*
+   * ⚠️ **Anclada a la IZQUIERDA de «Columnas» en el teléfono.** Aquí «Columnas»
+   * vive dentro de «Más», en su propia línea y pegado al borde izquierdo: con
+   * `right: 0` la lista crecía hacia la izquierda desde su borde derecho y salía
+   * de la pantalla (x ≈ −200), sin una casilla que se pudiera tocar. En
+   * escritorio sigue anclada a la derecha, donde «Columnas» tiene sitio delante.
+   */
   .listaColumnas {
-    right: 0;
-    left: auto;
+    left: 0;
+    right: auto;
   }
 }
 

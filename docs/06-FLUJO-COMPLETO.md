@@ -571,8 +571,10 @@ Se puede ordenar por ella, y va también al Excel del ranking.
 
 ⚠️ **No es la nota final.** La final la calcula la Decisión con las cuatro etapas
 y es la que se compara con los umbrales del semáforo. Esta mezcla dos, y por eso
-el título emergente lo dice con todas las letras: una columna llamada «Ponderado»
-al lado de una llamada «Nota» se leería como el resultado del proceso.
+el título emergente de su cabecera lo dice con todas las letras: una columna llamada
+«Ponderado» al lado de una llamada «Nota» se leería como el resultado del proceso.
+Solo ahí: en el menú «Columnas» la casilla dice «Ponderado» a secas, y el botón de
+ordenar, «Ordenar por Ponderado».
 
 ### Por qué esa prueba no tiene nota (18/09/2026)
 
