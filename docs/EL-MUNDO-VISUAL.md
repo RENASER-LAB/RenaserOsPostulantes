@@ -129,6 +129,7 @@ cómo se ve: eso es DESIGN.md.
 | `src/paginas/privacidad/` | La política pública y las tres acciones sobre los datos |
 | `src/panel/entrar/` | Las tres puertas del panel —entrar, pedir el enlace y elegir contraseña—, **dentro del armazón del portal** y con su aspecto. El resto de `/admin` va con su propia disposición |
 | `src/ui/recuperacion/` | La contraseña olvidada —pedir el enlace y elegir la nueva—, **la misma pieza en el portal y en el panel**. Se pinta para ir dentro de una tarjeta, que pone cada pantalla |
+| `src/ui/Marca.tsx` y `logotipo.png` | El logotipo, el único sitio que conoce el archivo. Sus derivados —favicon, iconos y arranque de Android— los rehace `python3 herramientas/derivados-del-logotipo.py`. Ver DESIGN.md › El logotipo |
 | `src/ui/Estados.module.css` | Cargando, fallo, acceso necesario, vacío y el salvavidas, sobre nube. Comparten hoja porque comparten forma |
 | `src/ui/movimiento.tsx` | Las piezas de movimiento, documentadas en DESIGN.md |
 | `src/ui/Modal.tsx` | El aviso compartido: entregas y confirmaciones |

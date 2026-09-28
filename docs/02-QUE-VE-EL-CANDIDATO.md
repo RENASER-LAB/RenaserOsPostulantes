@@ -584,8 +584,9 @@ falla, pero el 403 es posible y las pantallas de simulación deberían saber pin
 ## 5. Estado del portal actual (qué se conserva y qué se tira)
 
 **Lo único que sobrevive como archivo:** el nombre **EX** y el **logotipo**
-(`src/ui/Marca.tsx`) — la palabra EX con la hormiga dentro de la X, incluida la variante en
-champagne. Todo lo demás se puede borrar: CSS, páginas, armazón, capa de datos, componentes.
+(`src/ui/Marca.tsx`) — entonces, la palabra EX con la hormiga dentro de la X, incluida la
+variante en champagne; desde el 28/09/2026 es otro dibujo, ver [DESIGN.md](../DESIGN.md) › El
+logotipo. Todo lo demás se puede borrar: CSS, páginas, armazón, capa de datos, componentes.
 
 **Pero cinco comportamientos hay que reimplementar**, cada uno porque saltarlo ya costó un fallo
 real. Los archivos pueden morir; estas reglas no:

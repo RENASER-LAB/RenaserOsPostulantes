@@ -2,9 +2,9 @@
  * Lo que se enseña cuando no hay nada que enseñar.
  *
  * Se usa donde antes habia un recuadro de una linea: sin vacantes abiertas y
- * sin postulaciones. La hormiga en gris hace de marca de agua; es el unico
- * sitio donde sale sola, y por eso va del color de las lineas y nunca del
- * acento, que aqui significaria que hay algo que hacer.
+ * sin postulaciones. El logotipo en gris hace de marca de agua, y por eso va
+ * del color de las lineas y nunca del acento, que aqui significaria que hay
+ * algo que hacer.
  */
 
 import type { ReactNode } from 'react'
@@ -22,7 +22,7 @@ export function Vacio({ titulo, children, accion }: Props) {
   return (
     <div className={estilos.marco}>
       <span className={estilos.hormiga} aria-hidden="true">
-        <Marca tamano={30} />
+        <Marca tamano={36} />
       </span>
       <b className={estilos.tituloVacio}>{titulo}</b>
       <p className={estilos.texto}>{children}</p>
