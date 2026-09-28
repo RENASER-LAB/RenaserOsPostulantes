@@ -16,6 +16,50 @@ no se vuelve a subir el currículum. Lo del 07/09 se documentó en
 
 ---
 
+## El menú «Columnas» del ranking se lee de un vistazo, y ocultar Veredicto ya no descuadra la tabla (28/09/2026)
+
+Quien revisa el ranking de una vacante puede ocultar columnas con «Columnas», encima de la
+tabla. Tenía dos fallos, y en el teléfono un tercero. Cómo funciona hoy está en
+[PANEL.md](PANEL.md) › Filtrar la tanda; aquí va lo que se corrigió. El backend no se tocó.
+
+- **La casilla del ponderado dice «Ponderado», a secas.** Llevaba como nombre su explicación
+  entera —seis líneas que se montaban sobre «#» y «Veredicto»— y el botón de ordenar decía
+  «Ordenar por Ponderado sobre 100 de…». La explicación no se perdió: sale al pasar el cursor por
+  la palabra «Ponderado» de la cabecera, y el botón dice «Ordenar por Ponderado». En el código, el
+  nombre de una columna y su explicación van ahora en campos distintos de `ColumnaDelRanking`:
+  `completo` es solo un nombre y `ayuda`, la explicación, que no llega al menú.
+- **Ocultar Veredicto se lleva la columna entera.** Se iba la cabecera y la celda se quedaba, así
+  que en las cinco pestañas cada fila corría una columna: el veredicto bajo ESTADO, el estado bajo
+  CIUDAD y la ciudad en una columna sin cabecera. Ahora se van las dos, y con ellas la leyenda de
+  veredictos de debajo.
+- **En el teléfono la lista de «Columnas» cabe en la pantalla.** Dentro de «Más» se abría hacia
+  la izquierda y se salía por el borde, sin una casilla que se pudiera tocar; venía del #55. Ahora
+  se abre hacia la derecha. En escritorio sigue como estaba.
+- **«N ocultas» y «Ver todas» cuentan solo lo que la tabla tiene ahora.** Un criterio ocultado se
+  recuerda al apagar «Ver los criterios en la tabla», para que vuelva oculto al encenderlos; entre
+  medias, el botón decía «1 ocultas» con todas las casillas marcadas.
+
+⚠️ **Ninguna prueba lo vio porque contaban cabeceras, nunca celdas.** La red nueva de
+`Vacante.test.tsx` recorre las cinco pestañas, con los criterios apagados y encendidos, apaga cada
+casilla del propio menú —de una en una y todas juntas— y exige en cada paso tantas celdas por fila
+como cabeceras, con el dato correcto bajo «Estado», «Ciudad» y «Veredicto». La lista sale del menú,
+no de una escrita a mano: una columna nueva queda cubierta sin tocar la prueba.
+
+QA dejó una observación sin decidir, anotada en [PENDIENTES.md](PENDIENTES.md): con la página al
+fondo, ocultar Veredicto quita la leyenda, la página se acorta y un doble clic puede apagar otra
+casilla.
+
+### Cómo se comprueba
+
+`npx playwright test herramientas/e2e/42-selector-de-columnas.spec.ts` (el 41 ya era
+`41-logotipo`): 6 pruebas, una de ellas a 360 px dentro de «Más». Cuentan las celdas de cada fila,
+leen lo que hay bajo «Estado» y «Ciudad» y miden que la cabecera y cada fila acaben en el borde
+derecho de la tabla. No escriben en la base: interceptan el ranking de «Desarrollador web» y le
+añaden un ponderado y dos criterios, que nadie siembra, también con `E2E_ESCENARIO=base`. Las
+unitarias, en `Vacante.test.tsx` y `ranking.test.ts`.
+
+---
+
 ## EX estrena logotipo, también en la app de Android (28/09/2026)
 
 El usuario entregó el logotipo nuevo: una «E» maciza y una «X» de trazos huecos, cruzada por una

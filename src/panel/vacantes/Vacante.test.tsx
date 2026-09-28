@@ -37,6 +37,12 @@ import { Link, MemoryRouter, Route, Routes } from 'react-router-dom'
 import { VacantePanelDetalle } from './Vacante'
 import { ErrorApi } from '../api/cliente'
 import type { FilaRanking, VersionBanco } from '../api/tipos'
+import {
+  ETAPAS_PANEL,
+  laEtapaTieneRubrica,
+  PONDERADO_EXPLICADO,
+  rotuloCortoDelGrupo,
+} from './ranking'
 
 const verRanking = vi.fn()
 const elegirInstrumento = vi.fn()
@@ -1154,18 +1160,174 @@ describe('los criterios como columnas de color', () => {
   })
 })
 
-describe('elegir qué columnas se ven', () => {
-  const abrirSelector = () =>
-    fireEvent.click(screen.getByText('Columnas', { selector: 'summary' }))
+/*
+  El selector de columnas y lo que vigila que la tabla siga cuadrada.
 
+  ⚠️ **Contar solo cabeceras no prueba nada.** Así se escaparon las dos pruebas
+  de aquí: apagar Veredicto quitaba su `<th>` y dejaba su `<td>` en cada fila,
+  así que la cabecera daba la cuenta buena y la tabla salía corrida una columna
+  —«No priorizado» bajo ESTADO, el estado bajo CIUDAD y la ciudad sin cabecera—.
+  Cada comprobación de aquí mira las FILAS: cuántas celdas tienen y qué hay
+  debajo de las cabeceras que se pueden reconocer.
+*/
+
+/**
+ * Los rótulos de la cabecera de la tabla, en orden. La flecha de orden no tiene
+ * texto. Solo los de ESTA tabla: la ficha abierta puede traer otra dentro.
+ */
+const cabecerasDeLaTabla = () =>
+  Array.from(laTabla().querySelectorAll(':scope > thead > tr > th')).map(
+    (th) => th.textContent?.trim() ?? '',
+  )
+
+/**
+ * Las filas de personas, sin la de la ficha abierta ni la del «no hay»: las que
+ * empiezan por la casilla de avanzar.
+ */
+const filasDePersonas = () =>
+  Array.from(laTabla().querySelectorAll<HTMLTableRowElement>(':scope > tbody > tr')).filter((tr) =>
+    tr.cells[0]?.querySelector('input[aria-label^="Avanza"]'),
+  )
+
+/**
+ * La tabla cuadra: cada fila tiene tantas celdas como cabeceras, y debajo de
+ * cada cabecera que se reconoce por su dato está ese dato y no el de al lado.
+ *
+ * ⚠️ Las anclas son las columnas cuyo contenido se sabe sin repetir la lógica
+ * de la pantalla —el nombre, el puesto, el estado, la ciudad, el veredicto—.
+ * Una celda de más o de menos en cualquier punto de la fila corre al menos una
+ * de ellas, y el mensaje dice en qué situación pasó.
+ */
+function laTablaCuadra(tanda: FilaRanking[], situacion: string) {
+  const rotulos = cabecerasDeLaTabla()
+  const bajo = (rotulo: string) => rotulos.indexOf(rotulo)
+  const filas = filasDePersonas()
+  expect(filas.length, `${situacion}: la tabla no tiene filas`).toBeGreaterThan(0)
+  for (const tr of filas) {
+    const celdas = Array.from(tr.cells)
+    expect(
+      celdas.length,
+      `${situacion}: una fila con ${celdas.length} celdas bajo ${rotulos.length} cabeceras (${rotulos.join(' | ')})`,
+    ).toBe(rotulos.length)
+    const nombre = celdas[bajo('Candidato')]?.querySelector('button')?.textContent
+    const persona = tanda.find((f) => f.candidato === nombre)
+    expect(persona, `${situacion}: bajo «Candidato» no hay nadie de la tanda`).toBeDefined()
+    const dato = (rotulo: string) => celdas[bajo(rotulo)]?.textContent
+    if (bajo('#') >= 0) {
+      expect(dato('#'), `${situacion}: bajo «#»`).toBe(String(persona!.puesto))
+    }
+    if (bajo('Veredicto') >= 0) {
+      expect(dato('Veredicto'), `${situacion}: bajo «Veredicto»`).toBe(
+        rotuloCortoDelGrupo(persona!.grupoPrioridad) ?? '—',
+      )
+    }
+    if (bajo('Estado') >= 0) {
+      // Las dos líneas del estado, pegadas: `textContent` no pone el « · ».
+      expect(dato('Estado'), `${situacion}: bajo «Estado»`).toBe(
+        persona!.estadoNombre.replace(' · ', ''),
+      )
+    }
+    if (bajo('Ciudad') >= 0) {
+      expect(dato('Ciudad'), `${situacion}: bajo «Ciudad»`).toBe(persona!.ciudad ?? '—')
+    }
+  }
+}
+
+/** El menú «Columnas» entero: el `<details>` que abre su `summary`. */
+const elSelector = () => screen.getByText('Columnas', { selector: 'summary' }).closest('details')!
+const abrirSelector = () =>
+  fireEvent.click(screen.getByText('Columnas', { selector: 'summary' }))
+/** Marca o desmarca una casilla del menú por lo que dice. */
+const alternarColumna = (nombre: string) =>
+  fireEvent.click(within(elSelector()).getByRole('checkbox', { name: nombre }))
+/**
+ * Lo que dice cada casilla del menú, sin el interruptor de los criterios.
+ *
+ * ⚠️ **Sale de la pantalla, no de una lista escrita aquí.** El menú pinta una
+ * casilla por cada columna que la tabla marca como ocultable; recorriéndolo, una
+ * columna nueva queda cubierta sin tocar esta prueba.
+ */
+const casillasDelSelector = () =>
+  within(elSelector())
+    .getAllByRole('checkbox')
+    .map((casilla) => casilla.closest('label')?.textContent?.trim() ?? '')
+    .filter((rotulo) => !rotulo.startsWith('Ver los criterios'))
+
+/**
+ * Una tanda donde existen TODAS las columnas ocultables.
+ *
+ * Con ciudad y pretensión —si nadie las trae, esas columnas no salen y no se
+ * probarían—, con criterios para poder encenderlos, con veredicto y ponderado.
+ * Y una persona sin nada de eso: sus guiones también tienen que irse con su
+ * columna.
+ */
+const CRITERIOS_DE_RODRIGO = [
+  {
+    criterio: 'Resultados demostrables',
+    codigo: 'CV_RESULTADOS',
+    puntaje: 20,
+    maximo: 25,
+    peso: 25,
+    explicacion: 'Cifras concretas en tres puestos.',
+    origen: 'AGENTE',
+    confianza: 88,
+    motivoAjuste: null,
+  },
+  {
+    criterio: 'Complejidad y alcance',
+    codigo: 'CV_COMPLEJIDAD',
+    puntaje: null,
+    maximo: 20,
+    peso: 20,
+    explicacion: null,
+    origen: null,
+    confianza: null,
+    motivoAjuste: null,
+  },
+]
+const TANDA_CON_TODO = [
+  fila(91, 'Rodrigo Ayala', 'PERFIL_POR_CONFIRMAR', 84, {
+    estadoNombre: 'Perfil Integral · por confirmar',
+    grupoPrioridad: 'ALTA',
+    ciudad: 'Lima',
+    pretensionDeclarada: 3500,
+    pretensionDeclaradaMoneda: 'PEN',
+    notasCriterio: CRITERIOS_DE_RODRIGO,
+    ponderado: { sobre100: 78.14, cv: 76.5, perfil: 82, prueba: 73 },
+  }),
+  fila(93, 'Camila Reyes', 'PRUEBA_TURNO_CANDIDATO', 75, {
+    estadoNombre: 'Prueba del puesto · le toca al candidato',
+    grupoPrioridad: 'NO_PRIORIZADO',
+    ciudad: 'Arequipa — Camaná',
+    ponderado: { sobre100: null, cv: 70, perfil: 75, prueba: null },
+  }),
+  fila(94, 'Lucía Ferrer', 'NO_CONTINUA', 52, { estadoNombre: 'No continúa' }),
+]
+
+/** La tanda entera en la pestaña pedida, con sus tres filas ya pintadas. */
+async function pintarConTodo(pestana = 'Perfil integral') {
+  await pintar(TANDA_CON_TODO)
+  // «Toda la tanda» sobrevive al cambio de pestaña: así las cinco tienen filas.
+  verCorte('Toda la tanda')
+  if (pestana !== 'Perfil integral') irA(pestana)
+  await waitFor(() => expect(filasDePersonas()).toHaveLength(TANDA_CON_TODO.length))
+}
+
+describe('elegir qué columnas se ven', () => {
   it('apagar una columna la quita de la cabecera y de todas las filas', async () => {
-    await pintar()
+    await pintarConTodo()
     expect(within(laTabla()).queryByRole('columnheader', { name: 'Estado' })).toBeTruthy()
     abrirSelector()
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Estado' }))
+    alternarColumna('Estado')
     await waitFor(() =>
       expect(within(laTabla()).queryByRole('columnheader', { name: 'Estado' })).toBeNull(),
     )
+    // Y de las filas: ninguna celda con el estado de nadie.
+    for (const persona of TANDA_CON_TODO) {
+      const estado = persona.estadoNombre.split(' · ')[0]!
+      expect(within(laTabla()).queryByText(estado)).toBeNull()
+    }
+    laTablaCuadra(TANDA_CON_TODO, 'sin Estado')
   })
 
   /*
@@ -1188,19 +1350,17 @@ describe('elegir qué columnas se ven', () => {
     })
   })
 
-  it('«Ver todas» las devuelve de una vez', async () => {
-    await pintar()
-    const columnasAntes = laTabla().querySelectorAll('thead th').length
+  it('«Ver todas» las devuelve de una vez, con sus celdas', async () => {
+    await pintarConTodo()
+    const columnasAntes = cabecerasDeLaTabla()
     abrirSelector()
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Estado' }))
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Veredicto' }))
-    await waitFor(() =>
-      expect(laTabla().querySelectorAll('thead th').length).toBe(columnasAntes - 2),
-    )
+    alternarColumna('Estado')
+    alternarColumna('Veredicto')
+    await waitFor(() => expect(cabecerasDeLaTabla()).toHaveLength(columnasAntes.length - 2))
+    laTablaCuadra(TANDA_CON_TODO, 'sin Estado ni Veredicto')
     fireEvent.click(screen.getByRole('button', { name: 'Ver todas' }))
-    await waitFor(() =>
-      expect(laTabla().querySelectorAll('thead th').length).toBe(columnasAntes),
-    )
+    await waitFor(() => expect(cabecerasDeLaTabla()).toEqual(columnasAntes))
+    laTablaCuadra(TANDA_CON_TODO, 'tras «Ver todas»')
   })
 
   it('el candidato no está entre las que se pueden apagar', async () => {
@@ -1208,6 +1368,244 @@ describe('elegir qué columnas se ven', () => {
     abrirSelector()
     expect(screen.queryByRole('checkbox', { name: 'Candidato' })).toBeNull()
   })
+
+  /*
+    ⚠️ **El fallo de la captura.** La celda del veredicto era la única ocultable
+    pintada sin `ve(...)`: al apagarla se iba la cabecera y la celda se quedaba,
+    y cada fila corría una columna a la derecha.
+  */
+  it('apagar Veredicto se lleva su celda de cada fila, y Estado y Ciudad siguen con lo suyo', async () => {
+    await pintarConTodo('Prueba del puesto')
+    expect(within(laTabla()).getByText('Alta')).toBeTruthy()
+    abrirSelector()
+    alternarColumna('Veredicto')
+
+    expect(within(laTabla()).queryByRole('columnheader', { name: 'Veredicto' })).toBeNull()
+    // Ni la píldora ni el guion de quien todavía no tiene veredicto.
+    expect(within(laTabla()).queryByText('Alta')).toBeNull()
+    expect(within(laTabla()).queryByText('No priorizado')).toBeNull()
+    laTablaCuadra(TANDA_CON_TODO, 'sin Veredicto')
+    // La cabecera acaba donde acaban las filas: Ciudad es la última de las dos,
+    // y ninguna celda queda a su derecha sin rótulo.
+    expect(cabecerasDeLaTabla().at(-1)).toBe('Ciudad')
+  })
+
+  it('con Veredicto apagado la leyenda se va y el botón dice «1 ocultas»', async () => {
+    await pintarConTodo('Prueba del puesto')
+    expect(screen.getByText('Prioridad alta')).toBeTruthy()
+    abrirSelector()
+    alternarColumna('Veredicto')
+    expect(screen.queryByText('Prioridad alta')).toBeNull()
+    expect(screen.getByText('Columnas', { selector: 'summary' }).textContent).toContain(
+      '1 ocultas',
+    )
+  })
+
+  /*
+    Vuelve a su sitio de siempre: detrás de Nota y del Ponderado, delante de
+    Estado. Y marcar y desmarcar deprisa no deja la tabla a medias.
+  */
+  it('Veredicto vuelve a su sitio al marcarlo y con «Ver todas»', async () => {
+    await pintarConTodo('Prueba del puesto')
+    const deSiempre = cabecerasDeLaTabla()
+    expect(deSiempre.indexOf('Veredicto')).toBe(deSiempre.indexOf('Ponderado') + 1)
+    expect(deSiempre.indexOf('Estado')).toBe(deSiempre.indexOf('Veredicto') + 1)
+    abrirSelector()
+
+    alternarColumna('Veredicto')
+    alternarColumna('Veredicto')
+    expect(cabecerasDeLaTabla()).toEqual(deSiempre)
+    laTablaCuadra(TANDA_CON_TODO, 'Veredicto marcado otra vez')
+
+    for (let vez = 0; vez < 5; vez++) alternarColumna('Veredicto')
+    expect(cabecerasDeLaTabla()).not.toContain('Veredicto')
+    laTablaCuadra(TANDA_CON_TODO, 'tras cinco pulsaciones seguidas')
+
+    fireEvent.click(within(elSelector()).getByRole('button', { name: 'Ver todas' }))
+    expect(cabecerasDeLaTabla()).toEqual(deSiempre)
+    laTablaCuadra(TANDA_CON_TODO, 'Veredicto de vuelta con «Ver todas»')
+  })
+
+  it('con Veredicto apagado, la ficha abierta ocupa el ancho entero', async () => {
+    await pintarConTodo('Prueba del puesto')
+    abrirSelector()
+    alternarColumna('Veredicto')
+    fireEvent.click(within(laTabla()).getByText('Rodrigo Ayala'))
+    await waitFor(() => expect(laTabla().querySelector('#ficha-91')).toBeTruthy())
+    const ficha = laTabla().querySelector<HTMLTableCellElement>('#ficha-91')!
+    expect(ficha.colSpan).toBe(cabecerasDeLaTabla().length)
+    laTablaCuadra(TANDA_CON_TODO, 'sin Veredicto y con la ficha abierta')
+  })
+
+  it('con Veredicto apagado, el «no hay» de un filtro ocupa el ancho entero', async () => {
+    await pintarConTodo('Prueba del puesto')
+    abrirSelector()
+    alternarColumna('Veredicto')
+    fireEvent.change(screen.getByRole('searchbox', { name: /buscar por nombre/i }), {
+      target: { value: 'nadie se llama así' },
+    })
+    const aviso = await screen.findByText(/Ningún resultado con estos filtros/)
+    expect(aviso.closest('td')!.colSpan).toBe(cabecerasDeLaTabla().length)
+  })
+
+  /*
+    ⚠️ **La casilla del ponderado se leía como un párrafo.** El menú escribe el
+    nombre entero de cada columna, y el del ponderado era su explicación: seis
+    líneas. La explicación no se pierde: sigue en la cabecera de la tabla.
+  */
+  it('la casilla del ponderado dice «Ponderado» y ninguna trae la explicación', async () => {
+    await pintarConTodo('Prueba del puesto')
+    abrirSelector()
+    expect(within(elSelector()).getByRole('checkbox', { name: 'Ponderado' })).toBeTruthy()
+    expect(casillasDelSelector()).toContain('Ponderado')
+    for (const rotulo of casillasDelSelector()) {
+      expect(rotulo).not.toContain('No es la nota final')
+    }
+  })
+
+  it('la explicación del ponderado sale en su cabecera, y el botón solo ordena', async () => {
+    await pintarConTodo('Prueba del puesto')
+    const boton = within(laTabla()).getByRole('button', { name: 'Ponderado' })
+    expect(boton.title).toBe('Ordenar por Ponderado')
+    // Sobre la palabra —el botón llena la celda y su título taparía el de ella—.
+    expect(within(boton).getByText('Ponderado').title).toBe(PONDERADO_EXPLICADO)
+    expect(boton.closest('th')!.title).toBe(PONDERADO_EXPLICADO)
+    expect(PONDERADO_EXPLICADO).toContain('No es la nota final')
+  })
+
+  it('con los criterios encendidos, el menú los nombra enteros y no por su letra', async () => {
+    await pintarConTodo()
+    abrirSelector()
+    fireEvent.click(within(elSelector()).getByRole('checkbox', { name: /Ver los criterios/ }))
+    expect(cabecerasDeLaTabla()).toContain('R')
+    const casillas = casillasDelSelector()
+    expect(casillas).toContain('Resultados demostrables')
+    expect(casillas).toContain('Complejidad y alcance')
+    expect(casillas).not.toContain('R')
+    expect(casillas).not.toContain('C')
+  })
+
+  /*
+    ⚠️ **«N ocultas» habla de la tabla que se ve.** Un criterio apagado sigue en
+    la memoria del menú al desactivar «Ver los criterios» —para que vuelva oculto
+    al encenderlos—, pero su columna ya no existe: el botón decía «1 ocultas» y
+    ofrecía «Ver todas» con todas las casillas marcadas.
+  */
+  it('apagar un criterio y luego los criterios no deja «1 ocultas» ni «Ver todas»', async () => {
+    await pintarConTodo()
+    abrirSelector()
+    const interruptor = () =>
+      within(elSelector()).getByRole('checkbox', { name: /Ver los criterios/ })
+    const resumen = () => screen.getByText('Columnas', { selector: 'summary' })
+
+    fireEvent.click(interruptor())
+    alternarColumna('Resultados demostrables')
+    expect(resumen().textContent).toContain('1 ocultas')
+    expect(within(elSelector()).queryByRole('button', { name: 'Ver todas' })).toBeTruthy()
+
+    fireEvent.click(interruptor())
+    expect(resumen().textContent).not.toContain('ocultas')
+    expect(within(elSelector()).queryByRole('button', { name: 'Ver todas' })).toBeNull()
+    for (const casilla of within(elSelector()).getAllByRole('checkbox')) {
+      if (casilla !== interruptor()) expect((casilla as HTMLInputElement).checked).toBe(true)
+    }
+    laTablaCuadra(TANDA_CON_TODO, 'criterios apagados con uno oculto dentro')
+
+    // Con otra columna apagada cuenta esa sola, y no la del criterio.
+    alternarColumna('Estado')
+    expect(resumen().textContent).toContain('1 ocultas')
+
+    // Al volver a encenderlos, el criterio sigue oculto y vuelve a contar.
+    fireEvent.click(interruptor())
+    expect(resumen().textContent).toContain('2 ocultas')
+    expect(cabecerasDeLaTabla()).not.toContain('R')
+    expect(cabecerasDeLaTabla()).toContain('C')
+    laTablaCuadra(TANDA_CON_TODO, 'criterios encendidos de nuevo, uno oculto')
+  })
+
+  /*
+    Las apagadas viven en la tabla de cada pestaña, que se monta de nuevo al
+    cambiar: la pestaña nueva lo enseña todo, y el Ponderado apagado en la prueba
+    no deja ni celda ni hueco en las otras.
+  */
+  it('cambiar de pestaña con columnas apagadas no deja rastro', async () => {
+    await pintarConTodo('Prueba del puesto')
+    abrirSelector()
+    alternarColumna('Veredicto')
+    alternarColumna('Ponderado')
+    laTablaCuadra(TANDA_CON_TODO, 'prueba sin Veredicto ni Ponderado')
+
+    irA('Decisión')
+    await waitFor(() => expect(filasDePersonas()).toHaveLength(TANDA_CON_TODO.length))
+    expect(cabecerasDeLaTabla()).toContain('Veredicto')
+    expect(cabecerasDeLaTabla()).not.toContain('Ponderado')
+    laTablaCuadra(TANDA_CON_TODO, 'Decisión después de apagar en la prueba')
+
+    irA('Prueba del puesto')
+    await waitFor(() => expect(filasDePersonas()).toHaveLength(TANDA_CON_TODO.length))
+    expect(cabecerasDeLaTabla()).toContain('Ponderado')
+    laTablaCuadra(TANDA_CON_TODO, 'de vuelta en la prueba')
+  })
+})
+
+/*
+  ⚠️ **La red que impide que vuelva a pasar, con cualquier columna.** En cada
+  pestaña, con los criterios apagados y —donde hay rúbrica— encendidos, apaga
+  cada columna del menú de una en una, y luego todas acumuladas; tras cada paso
+  la tabla tiene que seguir cuadrada. La lista sale del menú y las pestañas de
+  `ETAPAS_PANEL`: una columna o una etapa nueva entra sola.
+*/
+describe('ninguna columna apagada descuadra la tabla', () => {
+  function recorrerElMenu(situacion: string) {
+    const nombres = casillasDelSelector()
+    expect(nombres.length, `${situacion}: el menú no ofrece columnas`).toBeGreaterThan(0)
+    const deSiempre = cabecerasDeLaTabla()
+    laTablaCuadra(TANDA_CON_TODO, `${situacion}, con todas`)
+
+    for (const nombre of nombres) {
+      alternarColumna(nombre)
+      expect(cabecerasDeLaTabla(), `${situacion}: apagar «${nombre}»`).toHaveLength(
+        deSiempre.length - 1,
+      )
+      laTablaCuadra(TANDA_CON_TODO, `${situacion}, sin «${nombre}»`)
+      alternarColumna(nombre)
+      expect(cabecerasDeLaTabla(), `${situacion}: volver a marcar «${nombre}»`).toEqual(deSiempre)
+      laTablaCuadra(TANDA_CON_TODO, `${situacion}, «${nombre}» de vuelta`)
+    }
+
+    // Varias a la vez: se acumulan hasta dejar solo las que no se pueden apagar.
+    nombres.forEach((nombre, i) => {
+      alternarColumna(nombre)
+      laTablaCuadra(TANDA_CON_TODO, `${situacion}, sin ${nombres.slice(0, i + 1).join(', ')}`)
+    })
+    expect(cabecerasDeLaTabla()).toHaveLength(deSiempre.length - nombres.length)
+
+    fireEvent.click(within(elSelector()).getByRole('button', { name: 'Ver todas' }))
+    expect(cabecerasDeLaTabla()).toEqual(deSiempre)
+    laTablaCuadra(TANDA_CON_TODO, `${situacion}, tras «Ver todas»`)
+  }
+
+  it.each(ETAPAS_PANEL.map((e) => [e.nombre, e.codigo] as const))(
+    'en «%s», con y sin los criterios',
+    async (pestana, codigo) => {
+      await pintarConTodo(pestana)
+      abrirSelector()
+      recorrerElMenu(`«${pestana}»`)
+
+      // Donde hay rúbrica el interruptor sale, y con él se recorre otra vez.
+      const interruptor = within(elSelector()).queryByRole('checkbox', {
+        name: /Ver los criterios/,
+      })
+      expect(Boolean(interruptor), `«${pestana}»: el interruptor de los criterios`).toBe(
+        laEtapaTieneRubrica(codigo),
+      )
+      if (interruptor) {
+        fireEvent.click(interruptor)
+        expect(cabecerasDeLaTabla()).toContain('R')
+        recorrerElMenu(`«${pestana}» con los criterios`)
+      }
+    },
+  )
 })
 
 describe('el veredicto es el grupo de prioridad', () => {

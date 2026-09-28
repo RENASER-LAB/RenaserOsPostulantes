@@ -34,6 +34,7 @@ import {
   criteriosQueSePintan,
   lecturaDeLaNota,
   columnasVisibles,
+  cuantasApagadas,
   inicialesDeLaTanda,
   cuantoCubre,
   notaEscrita,
@@ -83,6 +84,7 @@ import {
   notaDelCriterio,
   tonoDelCriterio,
   desgloseDelPonderado,
+  PONDERADO_EXPLICADO,
 } from './ranking'
 import type { FilaRanking, NotaCriterio, RespuestaAbiertaVista } from '../api/tipos'
 
@@ -1552,6 +1554,45 @@ describe('cuántas columnas tiene la tabla', () => {
   })
 
   /*
+    ⚠️ **Su explicación NO es su nombre.** Vivía en `completo`, que es el nombre
+    entero de una abreviatura, y de ahí salía tal cual en la casilla del menú
+    «Columnas» —seis líneas— y en «Ordenar por Ponderado sobre 100 de…». Va en
+    `ayuda`, que solo lee la cabecera.
+  */
+  it('el ponderado lleva su explicación en `ayuda`, no en su nombre', () => {
+    const ponderado = columnasDelRanking('PRUEBA_PUESTO').find((c) => c.clave === 'ponderado')!
+    expect(ponderado.titulo).toBe('Ponderado')
+    expect(ponderado.completo).toBeUndefined()
+    expect(ponderado.ayuda).toBe(PONDERADO_EXPLICADO)
+    expect(ponderado.ayuda).toContain('No es la nota final')
+  })
+
+  /*
+    Y ninguna otra columna guarda una explicación en `completo`: lo que haya ahí
+    se lee en una casilla del menú, así que tiene que ser un nombre y caber en
+    una línea. El umbral es holgado —«Nota de la prueba del puesto» y el nombre
+    de un criterio largo caben—; un párrafo no.
+  */
+  it('`completo` es siempre un nombre corto, en las cinco etapas', () => {
+    const criterios = criteriosDeLaTanda([
+      fila('PERFIL_POR_CONFIRMAR', 80, {
+        notasCriterio: [nota('Resultados demostrables', 20, 25)],
+      }),
+    ])
+    for (const etapa of [
+      'PERFIL_INTEGRAL',
+      'PRUEBA_PUESTO',
+      'SIMULACION',
+      'VALIDACION',
+      'DECISION',
+    ] as const) {
+      for (const columna of columnasDelRanking(etapa, undefined, criterios)) {
+        expect(columna.completo?.length ?? 0).toBeLessThan(80)
+      }
+    }
+  })
+
+  /*
     ⚠️ **Veredicto está en las CINCO etapas, y eso es a propósito.** No sale del
     currículum como Adecuación y Potencial: es el grupo de prioridad, que es una
     lectura de la persona y no de la etapa. Meterlo en `esDelCurriculum` lo
@@ -1597,6 +1638,33 @@ describe('cuántas columnas tiene la tabla', () => {
     expect(menos).toHaveLength(todas.length - 2)
     expect(menos.map((c) => c.clave)).not.toContain('ciudad')
     expect(menos.map((c) => c.clave)).not.toContain('estado')
+  })
+
+  /*
+    ⚠️ **El contador de «Columnas · N ocultas» cuenta lo que ESTA tabla oculta.**
+    El conjunto de apagadas recuerda un criterio apagado aunque «Ver los
+    criterios» se desactive —al volver a encenderlos, sigue oculto—, pero
+    mientras su columna no existe no puede sumar: el menú decía «1 ocultas» con
+    todas sus casillas marcadas. Tampoco suman la marca de avance ni el
+    candidato, que no se apagan aunque alguien meta su clave.
+  */
+  it('solo cuenta como apagadas las columnas que la tabla tiene', () => {
+    const criterios = [
+      { nombre: 'Resultados demostrables', rotulo: 'Resultados', inicial: 'R', peso: 25, maximo: 100 },
+    ]
+    const apagadas = new Set(['criterio:Resultados demostrables', 'estado'])
+    const conCriterios = columnasDelRanking('PERFIL_INTEGRAL', undefined, criterios)
+    const sinCriterios = columnasDelRanking('PERFIL_INTEGRAL')
+
+    expect(cuantasApagadas(conCriterios, apagadas)).toBe(2)
+    expect(cuantasApagadas(sinCriterios, apagadas)).toBe(1)
+    expect(cuantasApagadas(sinCriterios, new Set(['criterio:Resultados demostrables']))).toBe(0)
+    expect(cuantasApagadas(sinCriterios, new Set(['avance', 'candidato']))).toBe(0)
+    expect(cuantasApagadas(sinCriterios, new Set())).toBe(0)
+    // Y cuadra con la tabla: lo que se cuenta es lo que falta.
+    expect(cuantasApagadas(conCriterios, apagadas)).toBe(
+      conCriterios.length - columnasVisibles(conCriterios, apagadas).length,
+    )
   })
 
   /*
