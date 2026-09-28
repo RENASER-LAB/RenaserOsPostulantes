@@ -231,8 +231,8 @@ recorrido. Dentro del portal, el cielo se queda en su gris y el trabajo es de la
 El mundo sale de una referencia que trajo el cliente —la plantilla SaaS
 `saasly.demos.tailgrids.com`— medida en su propia página, no copiada a ojo: la escala gris de
 Tailwind v4, el índigo `#615FFF`, Geist, el radio de 8 px y la cabecera en píldora blanca. **No
-se copió todo**: su cielo es una foto de una plantilla comercial y aquí es una reconstrucción
-propia —degradados y nubes generadas con ruido fractal—; y donde la referencia no llega a los
+se copió todo**: el cielo es una imagen propia generada con IA, optimizada a WebP, y las
+secciones adaptan sus fondos al contenido del portal; donde la referencia no llega a los
 contrastes de WCAG, este sistema no la sigue (ver Colors y Components).
 
 **Key Characteristics:**
@@ -582,25 +582,40 @@ sabiendas.
 
 ### El cielo de la portada
 
-Un cielo azul con nubes, **solo en la portada**, que pasa por detrás de la cabecera y se apaga
-hacia abajo hasta el gris de la página. Tres capas, cada una copiada de una cosa de la foto de
-la referencia:
+El cielo aparece en la entrada, detrás de la cabecera, el titular y el escaparate, y en la
+llamada a la acción final. El cliente pidió recuperar el cielo en el cierre siguiendo su
+captura de SaaSly. Las secciones intermedias conservan sus fondos planos.
 
-- **La luz en el centro.** Un resplandor casi blanco justo detrás del titular que se vuelve
-  azul hacia los bordes y las esquinas. Además de parecerse, es lo que mejor le va al texto: la
-  tinta cae sobre lo más claro del cielo.
-- **El azul con su horizonte:** azul desde arriba del todo, una franja más saturada cerca de
-  abajo, y el fundido al gris de la página. **Arriba es azul a propósito**: una píldora blanca
-  se lee mejor sobre azul que sobre blanco.
-- **Las nubes, de ruido fractal**, en los bordes y nunca en el centro: jirones estirados en
-  horizontal y un cúmulo abajo a la izquierda con una sombra azulada que le da volumen. Se
-  **generan** a partir de `herramientas/cielo/cielo-nubes.svg` y se sirven ya pintadas como
-  `public/cielo-nubes.webp` (40 KB): calcular el ruido en el navegador costaba ~100 ms de hilo
-  principal en escritorio en cada carga. **Si se toca el SVG, hay que volver a correr
-  `herramientas/cielo/pintar-nubes.mjs`.**
+`public/cielo-portada-v2.webp` es una imagen propia regenerada con IA: centro luminoso,
+azul claro en los bordes y nubes con más detalle. Su resolución nativa es 1536 × 1024 y se
+sirve en WebP **sin pérdida** (787 KiB) para conservar los matices y los bordes de las nubes.
+El prompt y la procedencia están en `herramientas/cielo/GENERACION.md`.
 
-En un teléfono las nubes casi no asoman: la imagen se ajusta al alto y en 390 px solo se ve su
-centro, que es el que queda limpio para el titular. Es a propósito.
+Los fondos de la portada siguen este orden:
+
+- Entrada: cielo que empieza detrás de la cabecera y se funde al blanco.
+- Cinta de cifras: blanco, sin recuadro.
+- Vacantes: banda gris muy clara `--cielo`, con tarjetas blancas.
+- Por qué este proceso es distinto: blanco.
+- Preguntas: banda gris muy clara `--cielo`.
+- Cierre: cielo con fundido al blanco; pie: blanco.
+
+La imagen se declara en `.portada::before` y `.cierre`, dentro de `Vacantes.module.css`.
+El fondo de entrada sigue el alto real de `.portada` y sube `--alto-cabecera`, de modo que el recorrido
+puede apilarse sin que el cielo invada la sección siguiente. En teléfono el encuadre prioriza
+el centro luminoso.
+
+### El cierre y el pie de la portada
+
+El cierre reutiliza el cielo con un encuadre a 52 % y un fundido completo al blanco. El
+titular centrado escala de 36 a 48 px, peso 500. Las dos acciones tienen texto de 16 px;
+la secundaria usa borde y fondo transparente. El contenido sigue siendo el de EX.
+
+El pie de la portada continúa en blanco, sin línea divisoria: logotipo de 48 px a la izquierda,
+tres columnas de enlaces a la derecha y una fila inferior con copyright y «Volver arriba».
+El enlace usa el desplazamiento a anclas existente, respetando movimiento reducido. Por debajo
+de 900 px, la marca ocupa su propia fila; en móvil, los enlaces se organizan en dos columnas.
+Estos ajustes están acotados a `.piePortada`; las demás pantallas conservan su pie habitual.
 
 ### La ventana de cristal
 

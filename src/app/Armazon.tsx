@@ -286,6 +286,7 @@ export function Armazon() {
 
   return (
     <div
+      id="inicio-pagina"
       className={`${estilos.armazon} ${justo ? estilos.armazonJusto : ''} ${
         conCielo ? estilos.armazonConCielo : ''
       }`}
@@ -374,7 +375,11 @@ export function Armazon() {
         <Outlet />
       </main>
 
-      <footer className={`${estilos.pie} ${pieCorto ? estilos.pieCorto : ''}`}>
+      <footer
+        className={`${estilos.pie} ${pieCorto ? estilos.pieCorto : ''} ${
+          conCielo ? estilos.piePortada : ''
+        }`}
+      >
         {pieCorto ? (
           /*
             Los tres enlaces que no llevan a una pantalla de la cabecera: la
@@ -391,7 +396,7 @@ export function Armazon() {
             </nav>
           </div>
         ) : (
-          <PieEnColumnas />
+          <PieEnColumnas portada={conCielo} />
         )}
       </footer>
     </div>
@@ -409,13 +414,13 @@ export function Armazon() {
  * cabecera.** Aqui no se invento ningun sitio nuevo: un pie con enlaces que no
  * llevan a nada es peor que un pie corto.
  */
-function PieEnColumnas() {
+function PieEnColumnas({ portada = false }: { portada?: boolean }) {
   return (
     <>
         <div className={estilos.pieDentro}>
           <div className={estilos.pieMarca}>
             <Link className={estilos.marcaDelPie} to={rutas.inicio()} aria-label="EX, inicio">
-              <Marca tamano={20} />
+              <Marca tamano={portada ? 48 : 20} />
             </Link>
           </div>
 
@@ -459,6 +464,22 @@ function PieEnColumnas() {
 
         <div className={estilos.pieAbajo}>
           <span>© 2026 Renaser Consulting</span>
+          {portada && (
+            <Link className={estilos.volverArriba} to="#inicio-pagina">
+              Volver arriba
+              <span className={estilos.flechaArriba} aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M12 19V5m-6 6 6-6 6 6"
+                    stroke="currentColor"
+                    strokeWidth="1.75"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </span>
+            </Link>
+          )}
         </div>
     </>
   )

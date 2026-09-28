@@ -1,19 +1,5 @@
-/*
- * La portada, en el mundo de 09/2026.
- *
- * Todo sale de los tokens de `mundo.css`; esta hoja solo compone. Las tres
- * cosas que la distinguen de cualquier portada de esta categoria:
- *
- *   1. **La accion es negra, el color no.** `--activo` es tinta plena y el
- *      unico color de la pantalla es el resplandor coral del escaparate. El
- *      coral —`--activo-regla`— sigue queriendo decir «te toca a ti», y aqui
- *      no hay turno de nadie, asi que no aparece.
- *   2. **El escaparate ensena el producto.** Es la pieza grande del mundo: una
- *      tarjeta blanca de borde grueso con el recorrido dentro, no un adorno.
- *   3. **Ninguna cifra inventada.** La cinta cuenta vacantes y ciudades del
- *      dato real, y el «0 descartes por curriculum» es una regla del producto,
- *      no una metrica de resultados: de esas no hay ninguna todavia.
- */
+/* Cielo fotografico en la entrada y el cierre; entre ambos, blanco y gris claro.
+   La procedencia de la imagen vive en herramientas/cielo/GENERACION.md. */
 
 .pagina {
   width: 100%;
@@ -25,8 +11,27 @@
 /* ---------- portada ---------- */
 
 .portada {
-  padding-block: var(--e8) 0;
+  position: relative;
+  isolation: isolate;
+  padding-block: var(--e8) var(--e6);
   text-align: center;
+}
+
+/* El fondo sigue el alto real del contenido, tambien cuando las etapas se
+   apilan. Sube detras de la cabecera y se funde a blanco antes de la cinta. */
+.portada::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  top: calc(-1 * var(--alto-cabecera));
+  bottom: 0;
+  left: 50%;
+  width: 100vw;
+  transform: translateX(-50%);
+  background:
+    linear-gradient(to bottom, transparent 72%, var(--nube) 100%),
+    url('/cielo-portada-v2.webp') center top / cover no-repeat;
+  pointer-events: none;
 }
 
 .entrada {
@@ -314,21 +319,8 @@
   align-items: center;
   justify-content: center;
   gap: var(--e3) var(--e7);
-  margin-top: var(--e8);
-  padding-block: var(--e5);
-  border-block: 1px solid var(--regla);
-  /*
-   * ⚠️ **Hundida en calido y no en `--nube-hundida`, que es gris frio.** Todo lo
-   * que usa `--nube-hundida` vive dentro de una superficie blanca, donde el gris
-   * frio es lo correcto; apoyado en el cielo calido se lee como una mancha
-   * sucia.
-   *
-   * Nacio aqui como un valor suelto el 15/09/2026, con la nota de que se
-   * nombrara el dia que hiciera falta en otra pantalla. Hizo falta el 25/09 en
-   * la banda de «Por que este proceso es distinto», asi que ya es `--cielo-hundido`
-   * en `mundo.css`, con su medida de contraste.
-   */
-  background-color: var(--cielo-hundido);
+  padding: var(--e7) var(--e5);
+  background-color: var(--nube);
   font-size: var(--t-apoyo);
   color: var(--tinta2);
 }
@@ -340,9 +332,13 @@
 
 /* ---------- secciones ---------- */
 
+/* Vacantes y preguntas separan los bloques con un gris muy claro. */
 .seccion,
 .seccionVacantes {
-  padding-block: var(--e8);
+  padding-block: clamp(var(--e8), 7vw, 112px);
+  margin-inline: calc(50% - 50vw);
+  padding-inline: max(var(--e5), calc((100vw - var(--ancho)) / 2 + var(--e5)));
+  background: var(--cielo);
 }
 
 /*
@@ -377,32 +373,15 @@
 
 /* ---------- «Por qué este proceso es distinto» ---------- */
 
-/*
- * Una banda a sangre en nube, que es lo que da el ritmo alterno de la portada:
- * cielo en el hero, nube aquí, cielo otra vez en las preguntas.
- *
- * ⚠️ **Sale del carril con `100vw`, y eso solo es seguro porque el armazón de
- * la portada recorta.** `.armazonConCielo` lleva `overflow-x: clip` —puesto
- * para el cielo— y es lo que impide que la barra de desplazamiento sume ancho y
- * la página entera se pueda mover en horizontal. Si algún día esta banda se usa
- * en una pantalla sin ese recorte, hay que llevárselo con ella.
- *
- * `margin-inline` negativo en vez de `position: absolute`: así la banda sigue
- * ocupando su sitio en el flujo y las secciones de al lado no se le meten
- * debajo.
- */
-/*
- * ⚠️ **La banda va en `--cielo-hundido` y no en nube blanca.** En blanco, las
- * tarjetas de dentro tenían que ser lo hundido —`--nube-hundida`, gris frío—, y
- * un gris frío encima de una página cálida es la mancha sucia que este mundo
- * lleva evitando desde el 15/09. Hundiendo la banda en cálido, las tarjetas
- * suben a nube blanca y la escala queda en orden: cielo, hundido, nube.
- */
+/* Las secciones intermedias usan superficies planas; el cielo reaparece en el cierre. */
 .banda {
   margin-inline: calc(50% - 50vw);
-  padding-block: var(--e8);
-  background: var(--cielo-hundido);
-  border-block: 1px solid var(--regla);
+  padding-block: clamp(var(--e8), 7vw, 112px);
+  background: var(--nube);
+}
+
+.banda .cabeceraSeccion p {
+  color: var(--tinta2);
 }
 
 /* Dentro de la banda vuelve el carril, o el texto correría de borde a borde. */
@@ -421,8 +400,7 @@
   padding: 0;
 }
 
-/* La tarjeta es nube sobre la banda hundida: lo mismo que hace cualquier
-   superficie de este mundo sobre el cielo. */
+/* Las tarjetas conservan una superficie blanca con un borde sutil. */
 .tarjetaNuestra {
   display: flex;
   flex-direction: column;
@@ -655,24 +633,25 @@
 /* ---------- el cierre ---------- */
 
 .cierre {
-  padding-bottom: var(--e8);
+  scroll-margin-top: var(--alto-cabecera);
+  margin-inline: calc(50% - 50vw);
+  padding: clamp(var(--e8), 7vw, 112px) var(--e5) var(--e7);
+  background:
+    linear-gradient(to bottom, rgb(255 255 255 / 0.08), var(--nube) 94%),
+    url('/cielo-portada-v2.webp') center 52% / cover no-repeat;
 }
 
 .cajaCierre {
-  position: relative;
-  padding: var(--e8) var(--e5);
-  border: 1px solid var(--regla);
-  border-radius: var(--radio-escaparate);
-  background-color: var(--nube);
-  overflow: hidden;
+  max-width: 48rem;
+  margin-inline: auto;
   text-align: center;
 }
 
 .cajaCierre h2 {
   position: relative;
   margin: 0;
-  font-size: var(--t-destacado);
-  font-weight: 600;
+  font-size: clamp(36px, 4vw, 48px);
+  font-weight: 500;
   letter-spacing: -0.03em;
   line-height: 1.1;
   color: var(--tinta);
@@ -681,23 +660,29 @@
 .cajaCierre p {
   position: relative;
   margin: var(--e4) auto 0;
-  max-width: 44ch;
-  color: var(--tinta3);
+  max-width: 44rem;
+  color: var(--tinta2);
 }
 
-.halo {
-  position: absolute;
-  left: 50%;
-  top: -30%;
-  width: 62%;
-  height: 90%;
-  transform: translateX(-50%);
-  background: radial-gradient(
-    50% 50% at 50% 50%,
-    rgb(97 95 255 / 0.26) 0%,
-    rgb(97 95 255 / 0) 72%
-  );
-  pointer-events: none;
+.cierre .acciones {
+  margin-top: 36px;
+  gap: var(--e4);
+}
+
+.cierre .accionPrincipal,
+.cierre .accionSecundaria {
+  font-size: var(--t-base);
+}
+
+.cierre .accionSecundaria {
+  border: 1px solid var(--regla);
+  background: transparent;
+  box-shadow: none;
+}
+
+.cierre .accionSecundaria:hover {
+  background: var(--cielo);
+  border-color: var(--regla2);
 }
 
 /* ---------- adaptacion ---------- */
@@ -737,7 +722,14 @@
 }
 
 @media (max-width: 640px) {
-  .pagina {
+  .pagina,
+  .bandaDentro {
+    padding-inline: var(--e4);
+  }
+
+  .seccion,
+  .seccionVacantes,
+  .cierre {
     padding-inline: var(--e4);
   }
 

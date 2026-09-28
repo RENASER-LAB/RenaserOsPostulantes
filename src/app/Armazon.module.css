@@ -13,110 +13,17 @@
  * EL CIELO DE LA PORTADA
  * ================================================================== */
 
-/*
- * El cielo de la portada, **solo en la portada**.
- *
- * ⚠️ **Nacio como un amanecer calido y es azul desde el 25/09/2026.** Cuando el
- * mundo era pastel calido con acento coral, un cielo azul habria sido su
- * complementario exacto; ese mismo dia la paleta paso a la de la referencia
- * —gris frio e indigo— y entonces el que desentonaba era el amanecer.
- *
- * ⚠️ **La referencia usa una FOTO**, `images/covers/hero.jpg` de su servidor.
- * Esto es una reconstruccion en degradados: no se trae el archivo de una
- * plantilla comercial ajena. A cambio no hay recurso que pese ni que mantener,
- * y las nubes se repintan solas si cambia la paleta.
- *
- * ⚠️ **Vive aqui y no en la hoja de la portada porque tiene que pasar por
- * DETRAS de la cabecera.** La cabecera es del armazon y la portada empieza
- * dentro de `main`: desde su hoja, el cielo arrancaria por debajo de la barra y
- * dejaria una franja de fondo plano arriba del todo. Es el mismo motivo por el
- * que `.armazonJusto` vive aqui y no en `Cuenta.module.css`.
- */
+/* El cielo de entrada y cierre vive en `Vacantes.module.css`.
+   Los fondos del resto del portal se definen en `mundo.css`. */
 .armazonConCielo {
   position: relative;
-  /*
-   * ⚠️ **`clip` y NO `hidden`.** Los dos recortan lo que se sale, pero `hidden`
-   * crea un contenedor de desplazamiento y eso **rompe el `position: sticky` de
-   * la cabecera**: dejaria de posarse. `clip` recorta sin crear ese contenedor.
-   * Hace falta porque el cielo mide `100vw` para ir a sangre, y `100vw` incluye
-   * el ancho de la barra de desplazamiento: sin recortar, la pagina entera se
-   * puede mover en horizontal.
-   */
+  /* Recorta las bandas sin crear un scroll que rompa la cabecera sticky. */
   overflow-x: clip;
+  background: var(--nube);
 }
 
-.armazonConCielo::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 50%;
-  width: 100vw;
-  /*
-   * Hasta donde llega. Es el alto del hero mas el escaparate: por debajo la
-   * pagina vuelve a ser crema plano y las secciones se apoyan en el.
-   */
-  height: 1100px;
-  transform: translateX(-50%);
-  /* Detras de todo lo que se lee, y de la superficie de la cabecera. */
-  z-index: 0;
-  pointer-events: none;
-  /*
-   * Tres capas, y cada una copia una cosa distinta de la foto de la referencia:
-   *
-   * 1. **Las nubes**, en `public/cielo-nubes.webp`: ruido fractal, no ovalos. La
-   *    version anterior eran seis degradados radiales y se leian como nubes de
-   *    dibujo animado —bordes lisos, blanco uniforme—. El ruido da los bordes
-   *    deshilachados de una nube de verdad. **Es una imagen pintada de antemano**
-   *    a partir de `herramientas/cielo/cielo-nubes.svg`: calcular el ruido en el
-   *    navegador costaba ~100 ms de hilo principal en escritorio en cada carga
-   *    (mediana de cinco). Si se toca el SVG, hay que volver a correr
-   *    `herramientas/cielo/pintar-nubes.mjs`.
-   * 2. **La luz en el centro.** La referencia no es un degradado de arriba abajo:
-   *    tiene un resplandor casi blanco justo detras del titular y se vuelve azul
-   *    hacia los bordes y las esquinas. Ademas de parecerse, es lo que mejor le
-   *    va al texto: la tinta cae sobre lo mas claro del cielo.
-   * 3. **El azul de fondo, con su horizonte**: una franja mas saturada cerca de
-   *    abajo, y luego el fundido hasta el gris de la pagina para que no se vea el
-   *    corte.
-   *
-   * ⚠️ **Arriba es AZUL, y antes no.** La version anterior dejaba casi blancos
-   * los primeros 100 px con el argumento de que, con azul, la pildora de la
-   * cabecera «perdia su contorno». Era justo al reves: una pildora blanca se lee
-   * mejor sobre azul que sobre blanco, y la referencia lo hace asi.
-   *
-   * ⚠️ **El cielo tiene que tener COLOR, o las nubes no existen.** Blanco sobre
-   * casi blanco no se ve: el primer amanecer de todos fallo por eso.
-   */
-  background:
-    url('/cielo-nubes.webp') center top / cover no-repeat,
-    radial-gradient(
-      ellipse 58% 46% at 50% 36%,
-      rgb(255 255 255 / 0.96) 0%,
-      rgb(255 255 255 / 0.62) 38%,
-      rgb(255 255 255 / 0) 72%
-    ),
-    linear-gradient(
-      180deg,
-      #cfe3fc 0%,
-      #d8e8fd 28%,
-      #cbe1fb 52%,
-      #a9cdf7 73%,
-      #cfe3fa 86%,
-      #eef5fd 94%,
-      var(--cielo) 100%
-    );
-}
-
-/*
- * Lo que se lee va por encima del cielo.
- *
- * `main` y el pie necesitan contexto de apilamiento propio: sin el, el
- * `::before` del armazon —que es hermano suyo y va despues en el orden de
- * pintado— se les pondria encima y taparia el titular.
- */
-.armazonConCielo > * {
-  position: relative;
-  z-index: 1;
+.armazonConCielo .pie {
+  margin-top: 0;
 }
 
 /*
@@ -913,16 +820,84 @@
   color: var(--tinta3);
 }
 
+/* El pie de la portada continua el fundido del cierre sin una linea divisoria.
+   La marca amplia y las tres columnas siguen la referencia SaaSly. */
+.piePortada {
+  border-top: 0;
+  background: var(--nube);
+}
+
+.piePortada .pieDentro {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  padding-block: var(--e8);
+  font-size: var(--t-apoyo);
+}
+
+.piePortada .pieTitulo {
+  margin-bottom: var(--e5);
+  font-size: var(--t-base);
+  font-weight: 500;
+}
+
+.piePortada .pieColumna a {
+  color: var(--tinta2);
+  text-decoration: none;
+}
+
+.piePortada .pieColumna a:hover {
+  color: var(--activo-pulsado);
+  text-decoration: underline;
+}
+
+.piePortada .pieAbajo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e3) var(--e5);
+  padding-block: var(--e4) var(--e5);
+  border-top: 0;
+  font-size: var(--t-apoyo);
+}
+
+.volverArriba {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  gap: var(--e3);
+  color: var(--tinta2);
+  text-decoration: none;
+}
+
+.flechaArriba {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--activo);
+  color: var(--tinta-invertida);
+}
+
+.volverArriba:hover .flechaArriba {
+  background: var(--activo-pulsado);
+}
+
 @media (max-width: 900px) {
   /* La marca deja de compartir fila con los enlaces antes de que su prosa se
      estreche: a dos columnas justas, 34ch se parten en cinco lineas. */
-  .pieDentro {
+  .pieDentro,
+  .piePortada .pieDentro {
     grid-template-columns: 1fr;
     gap: var(--e6);
   }
 }
 
 @media (max-width: 640px) {
+  .piePortada .pieDentro {
+    padding-block: var(--e7);
+  }
+
   .pieDentro {
     padding-left: var(--e4);
     padding-right: var(--e4);
