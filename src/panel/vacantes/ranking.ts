@@ -1216,7 +1216,13 @@ export const pretensionParaOrdenar = (fila: FilaRanking): number | null =>
 
 // ---------- Ordenar ----------
 
-export type ColumnaOrdenable = 'nombre' | 'ciudad' | 'nota' | 'pretension' | 'ponderado'
+export type ColumnaOrdenable =
+  | 'nombre'
+  | 'ciudad'
+  | 'nota'
+  | 'pretension'
+  | 'ponderado'
+  | 'resenas'
 export type Sentido = 'asc' | 'desc'
 
 export interface Orden {
@@ -1238,6 +1244,8 @@ const SENTIDO_INICIAL: Record<ColumnaOrdenable, Sentido> = {
   pretension: 'asc',
   // Como la nota, y por lo mismo: se pide para ver quién va arriba.
   ponderado: 'desc',
+  // Las reseñas de empresas (V63), también de la mejor a la peor.
+  resenas: 'desc',
 }
 
 /**
@@ -1294,9 +1302,28 @@ const cifraDe = (fila: FilaRanking, columna: ColumnaOrdenable): number | null =>
   return pretensionParaOrdenar(fila)
 }
 
+/**
+ * Las reseñas de empresas se ordenan por promedio y, a igualdad, por cuántas
+ * son: un 4,5 con diez reseñas va antes que un 4,5 con una. Sin reseñas, al
+ * final siempre, suba o baje el orden —la misma regla que el resto—.
+ *
+ * ⚠️ **Solo cuando alguien pulsa la cabecera.** El orden por defecto de la tanda
+ * es el del backend y no sabe nada de reseñas: no influyen en él.
+ */
+function comparadorDeResenas(signo: number): (a: FilaRanking, b: FilaRanking) => number {
+  return (a, b) => {
+    const ra = a.resenas ?? null
+    const rb = b.resenas ?? null
+    const hueco = elHuecoAlFinal(ra, rb)
+    if (hueco !== null) return hueco
+    return signo * (ra!.promedio - rb!.promedio || ra!.cantidad - rb!.cantidad)
+  }
+}
+
 function comparadorDe(orden: Orden): (a: FilaRanking, b: FilaRanking) => number {
   const signo = orden.sentido === 'asc' ? 1 : -1
   const esTexto = orden.columna === 'nombre' || orden.columna === 'ciudad'
+  if (orden.columna === 'resenas') return comparadorDeResenas(signo)
 
   return (a, b) => {
     /*
@@ -1917,6 +1944,14 @@ export interface QueTraeLaTanda {
    * único que es una decisión de la empresa y no del candidato.
    */
   vacanteMuestraSueldo: boolean
+  /**
+   * Si quien mira puede ver las reseñas de empresas (V63). Al revés que ciudad y
+   * pretensión, la columna «Reseñas» se ofrece aunque ninguna fila tenga
+   * reseñas: «—» dice algo cierto —nadie le dejó una— y quien la enciende tiene
+   * que poder comprobarlo. Sin el permiso, ni se ofrece. Opcional: sin decirlo,
+   * no se ofrece —el dato es de un permiso, y ante la duda no se enseña—.
+   */
+  puedeVerResenas?: boolean
 }
 
 /** Lo que se supone cuando nadie ha mirado las filas: que están las dos. */
@@ -1925,12 +1960,14 @@ const TRAE_TODO: QueTraeLaTanda = {
   hayPretension: true,
   puedeVerPretension: true,
   vacanteMuestraSueldo: true,
+  puedeVerResenas: false,
 }
 
 export const queTraeLaTanda = (
   filas: FilaRanking[],
   puedeVerPretension = true,
   vacanteMuestraSueldo = true,
+  puedeVerResenas = false,
 ): QueTraeLaTanda => ({
   hayCiudad: filas.some((f) => f.ciudad != null || f.ciudadCodigo != null),
   hayPretension:
@@ -1943,6 +1980,7 @@ export const queTraeLaTanda = (
     ),
   puedeVerPretension,
   vacanteMuestraSueldo,
+  puedeVerResenas,
 })
 
 /**
@@ -2106,8 +2144,49 @@ export function columnasDelRanking(
           { clave: 'ciudad', titulo: 'Ciudad', ordenable: 'ciudad', ocultable: true },
         ] as ColumnaDelRanking[])
       : []),
+    /*
+      Las reseñas de empresas (V63), en las cinco pestañas y al final: son de la
+      persona y no de la etapa, y se leen después de todo lo que sí la califica
+      aquí. **Arranca apagada** —ver `COLUMNAS_APAGADAS_AL_ABRIR`—, y solo se
+      ofrece con `ver_resenas_candidato`.
+    */
+    ...(trae.puedeVerResenas
+      ? ([
+          {
+            clave: 'resenas',
+            titulo: 'Reseñas',
+            // El nombre, que es lo que sale en el menú y en «Ordenar por …»; lo
+            // que cuenta la celda va en `ayuda`, como el ponderado.
+            completo: 'Reseñas de empresas',
+            ayuda: 'Reseñas de empresas: promedio y cuántas',
+            ordenable: 'resenas',
+            ocultable: true,
+          },
+        ] as ColumnaDelRanking[])
+      : []),
   ]
 }
+
+/**
+ * Las columnas que arrancan apagadas al abrir la vacante. Todas las demás que
+ * se pueden ocultar arrancan encendidas; los criterios tienen su propio
+ * interruptor.
+ *
+ * «Reseñas» arranca apagada a propósito: no califica a nadie en ninguna etapa,
+ * y encendida por defecto se leería junto a la nota como si pesara en ella.
+ * Quien la quiere, la enciende. Como el resto de la elección, no se guarda al
+ * recargar.
+ */
+export const COLUMNAS_APAGADAS_AL_ABRIR: readonly string[] = ['resenas']
+
+/**
+ * Lo que dice la celda de reseñas: «4,5 (3)», o «—» sin reseñas visibles. La
+ * estrella se dibuja aparte, en la tabla.
+ */
+export const resenasDichas = (fila: FilaRanking): string | null =>
+  fila.resenas
+    ? `${fila.resenas.promedio.toFixed(1).replace('.', ',')} (${fila.resenas.cantidad})`
+    : null
 
 /**
  * Las columnas que de verdad se pintan, quitando las apagadas.
@@ -2131,6 +2210,10 @@ export const columnasVisibles = (
  * sigue oculto. Pero mientras no existe no se puede contar: el menú decía «1
  * ocultas» con todas sus casillas marcadas. Sale de `columnasVisibles` para que
  * el contador y la tabla no puedan discrepar.
+ *
+ * Lo mismo con «Reseñas» (V63): su clave arranca en el conjunto —ver
+ * `COLUMNAS_APAGADAS_AL_ABRIR`—, y sin el permiso de verlas la columna no existe
+ * y no cuenta.
  */
 export const cuantasApagadas = (
   columnas: ColumnaDelRanking[],
@@ -2197,6 +2280,7 @@ const ROTULO_DE_COLUMNA: Record<ColumnaOrdenable, string> = {
   nota: 'Nota',
   pretension: 'Pretensión',
   ponderado: 'Ponderado',
+  resenas: 'Reseñas',
 }
 
 /**

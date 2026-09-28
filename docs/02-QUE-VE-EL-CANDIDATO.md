@@ -542,6 +542,46 @@ encargados uno a uno —DeepSeek, Google, Supabase, Amazon Web Services y Vercel
 cada uno. Y enumera **las tres cosas que pasan sin que intervenga una persona**, porque la
 versión anterior prometía lo contrario y era falso.
 
+### 2.15 Mi perfil · las reseñas de empresas (28/09/2026)
+
+La empresa que contrató a la persona por EX puede dejarle, a partir del primer mes, de 1 a 5
+estrellas y una opinión. **No las acepta ni las rechaza**: puede **responder** a cada una y
+**reportar** la que incumpla las normas. Las ven también las empresas donde se postula, y **no
+cambian ninguna nota**. `GET /portal/resenas` trae la lista entera de una vez; el resumen de la
+cabecera viaja con `GET /portal/perfil`.
+
+| Dónde | Qué se ve |
+|---|---|
+| Cabecera | «★ 4,5 · 3 reseñas» debajo de los años de experiencia, como enlace a la sección. Con una sola, «★ 5,0 · 1 reseña». Sin reseñas visibles la línea no sale |
+| Índice «En esta página» | «Reseñas», al final, después de «Enlaces», con cuántas hay. **Sale siempre**, también sin reseñas, para que la persona sepa que existe |
+| Sección «Reseñas de empresas» | Al final de la columna principal: la explicación, el resumen —promedio grande, estrellas con medias, y cinco barras de 5★ a 1★— y las **dos más recientes**, con la empresa, «Contratado como [puesto]», la fecha, «Editada» si toca, el texto cortado a 4 líneas con «Leer más», su respuesta debajo y «Responder» y «Reportar». «Ver todas las reseñas (N)» solo con más de dos. Sin ninguna: «Todavía no tienes reseñas…» |
+| Ventana «Ver todas» | El mismo resumen, con **las barras pulsables** para filtrar por esas estrellas; chips de estrellas que se combinan —los que están en 0, apagados—; «Empresa» solo si hay reseñas de dos o más; y el orden: más recientes, más antiguas, mejor y peor calificadas. Textos completos. Pie «Se ven X de N» y «Quitar filtros». En el teléfono ocupa la pantalla y los chips se desplazan de lado |
+
+**Una sola ventana, siempre.** «Reportar» y «Responder» son pasos de la misma ventana: desde
+«Ver todas» se pasa al paso y se vuelve, y desde la sección la ventana se abre directamente en él.
+Al cerrar, el foco vuelve al botón que la abrió.
+
+- **Reportar** pide el motivo —insultos, datos personales o de salud, discriminación, que es falsa
+  u otro, que exige contarlo, hasta 500 caracteres— y avisa de que la reseña sigue visible mientras
+  se revisa. Enviado, la tarjeta dice «Reportada · en revisión» y el botón desaparece. La reseña
+  sigue contando en el promedio: reportar no la esconde.
+- **Responder** pide «Tu respuesta», de 30 a 500 caracteres con su contador, y avisa de que la
+  verán las empresas donde se postule. Publicada, sale debajo de la reseña como «Tu respuesta»,
+  cortada a 3 líneas en la sección y entera en la ventana. Durante 30 días lleva «Editar» y
+  «Borrar»; borrarla deja volver a responder. Si la plataforma la oculta, se ve atenuada con la
+  nota y ya no se puede cambiar ni volver a responder.
+
+⚠️ **Lo que puede cambiar con el paso abierto lo decide el servidor**: si la empresa borró la
+reseña o la plataforma la ocultó, la ventana dice «Esta reseña ya no está disponible»; si venció el
+plazo, «Ya no se puede cambiar». En los dos casos la sección se refresca. Si la sección no carga,
+dice «No pudimos cargar las reseñas» con «Reintentar», y el resto del perfil sigue funcionando.
+
+**La campana suma cuatro avisos**, sin correo, que llevan a `/perfil#resenas`: la empresa le dejó
+una reseña; la empresa editó una que ya había respondido, con la fecha hasta la que puede revisar
+su respuesta; se revisó su reporte —se ocultó o se mantuvo—; y la plataforma ocultó su respuesta.
+
+La **descarga de mis datos** lleva sus reseñas, sus respuestas y sus reportes con el resultado.
+
 ---
 
 ## 3. Qué es público y qué no (frontera del backend)

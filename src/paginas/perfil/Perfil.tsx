@@ -42,6 +42,7 @@ import { Trayectoria } from './Trayectoria'
 import { Aptitudes, leerTodas } from './Aptitudes'
 import { CabeceraDelPerfil } from './Cabecera'
 import { Lateral } from './Lateral'
+import { ResenasDelPerfil } from './Resenas'
 import estilos from './Perfil.module.css'
 
 /** Mientras la lectura corre de verdad. Ver `sondeo`. */
@@ -297,6 +298,13 @@ export function Perfil() {
           catalogoCaido={idiomas.isError}
         />
         <Enlaces filas={perfil.enlaces} />
+        {/*
+          Al final de la columna principal: lo que opinan las empresas que la
+          contrataron no es algo que la persona escriba ni revise, así que va
+          detrás de todo lo que sí es suyo. Sale también sin reseñas, para que
+          sepa que existe.
+        */}
+        <ResenasDelPerfil />
         </div>
 
         <Lateral perfil={perfil} />

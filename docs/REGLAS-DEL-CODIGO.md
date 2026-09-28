@@ -113,6 +113,20 @@ paradas**: el `<article>`, sin nombre y donde Enter no hacía nada, y después s
 enlace, y el toque sigue hundiendo la tarjeta. Cualquier superficie nueva con `whileTap` necesita
 lo mismo.
 
+**Leer en un efecto adónde devolver el foco del `Modal`.** Los efectos corren de dentro hacia
+fuera: un contenido que enfoca su primer campo al montarse —los pasos de reportar y de responder
+de las reseñas, 28/09/2026— ya se había llevado el foco cuando el efecto del `Modal` apuntaba «el
+que lo tenía antes». Guardaba ese campo, al cerrar lo devolvía a un control que ya no existía, y
+el foco caía en `<body>`. Por eso `src/ui/Modal.tsx` **apunta adónde volver al pintar la
+apertura**, como estado —no como ref ni en el efecto—, cuando el foco sigue en el botón que la
+abrió. Y **respeta el foco que el contenido ya puso dentro**: el aspa de la cabecera solo se
+enfoca si nada de dentro lo pidió. Esto va además del `onCerrar` por ref, que es lo que dejaba
+escribir una sola letra (11/09/2026).
+
+**Un solo `Modal` abierto a la vez.** Su título lleva un `id` fijo (`titulo-modal`) y no admite
+dos. Lo que en otra interfaz sería una segunda ventana encima —reportar o responder desde «Ver
+todas las reseñas»— es un paso dentro de la misma ventana.
+
 ---
 
 ## La marca de obligatorio es una sola, y la decide el esquema

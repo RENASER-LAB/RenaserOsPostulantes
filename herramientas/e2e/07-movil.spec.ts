@@ -133,10 +133,10 @@ test.describe('Móvil 375px', () => {
   test('«Columnas» y las acciones de la tanda van dentro de «Más»', async ({ page }) => {
     await irAVacante(page, VACANTES.LLENA)
     await expect(page.getByRole('button', { name: /Descargar Excel|Nada que descargar/ })).toBeHidden()
-    await expect(page.getByText('Columnas', { exact: true })).toBeHidden()
+    await expect(page.locator('summary').filter({ hasText: /^Columnas/ })).toBeHidden()
     await page.getByRole('button', { name: 'Más', exact: true }).click()
     await expect(page.getByRole('button', { name: /Descargar Excel|Nada que descargar/ })).toBeVisible()
-    await expect(page.getByText('Columnas', { exact: true })).toBeVisible()
+    await expect(page.locator('summary').filter({ hasText: /^Columnas/ })).toBeVisible()
     const desborda = await page.evaluate(
       () => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
     )

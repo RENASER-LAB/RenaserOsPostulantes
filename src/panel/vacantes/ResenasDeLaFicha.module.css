@@ -1,0 +1,149 @@
+/*
+ * Las reseñas de empresas en la ficha del postulante (V63). La banda, los
+ * títulos y los datos son los de la ficha (`Vacante.module.css`); las reseñas,
+ * el resumen y la ventana son las piezas compartidas de `ui/resenas`.
+ *
+ * ⚠️ **Nada en `--activo`.** El violeta del panel es «te toca a ti»: ni las
+ * estrellas ni el formulario lo usan. El único botón con acento es «Publicar
+ * reseña», que es la acción del bloque.
+ */
+
+/* Los dos bloques, lado a lado en escritorio y uno debajo del otro en estrecho. */
+.bloques {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+  gap: var(--e6);
+  align-items: start;
+}
+
+.bloque {
+  min-width: 0;
+}
+
+.cargando,
+.espera {
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+  max-width: var(--medida);
+}
+
+.falloDeCarga {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e3) var(--e4);
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+}
+
+.recientes {
+  margin-top: var(--e2);
+}
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e1);
+  max-width: 40rem;
+}
+
+.aviso,
+.yaRespondio {
+  margin-top: var(--e3);
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+  max-width: var(--medida);
+}
+
+/* Avisar ANTES de guardar que la persona recibirá un aviso: se lee en tinta
+   plena, porque cambia lo que pasa al pulsar. */
+.yaRespondio {
+  padding: var(--e3) var(--e4);
+  border-radius: var(--radio-control);
+  background: var(--nube-hundida);
+  color: var(--tinta);
+}
+
+.botonesFormulario,
+.botones {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--e3);
+  margin-top: var(--e3);
+}
+
+.accionesMias {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e2) var(--e4);
+  margin-top: var(--e2);
+}
+
+.detalle {
+  font-size: var(--t-menor);
+  color: var(--tinta3);
+}
+
+.confirmar {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e2) var(--e4);
+  font-size: var(--t-apoyo);
+  color: var(--tinta);
+}
+
+/* Ocultada por la plataforma: se lee, atenuada, con la nota en palabras. */
+.ocultada article {
+  opacity: 0.62;
+}
+
+.notaPlataforma {
+  margin-top: var(--e2);
+  font-size: var(--t-apoyo);
+  font-weight: 500;
+  color: var(--tinta);
+}
+
+.fallo {
+  margin-top: var(--e3);
+  padding: var(--e3) var(--e4);
+  border: 1px solid var(--mal-regla);
+  border-radius: var(--radio-menor);
+  background: var(--mal-bruma);
+  font-size: var(--t-apoyo);
+  color: var(--mal);
+}
+
+.contextoTitulo {
+  font-size: var(--t-apoyo);
+  color: var(--tinta);
+}
+
+.contextoTexto {
+  margin-top: var(--e2);
+  max-height: 9.5em;
+  overflow-y: auto;
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.secundario {
+  composes: secundario from '../../estilos/piezas.module.css';
+}
+
+.acento {
+  composes: acentoMenor from '../../estilos/piezas.module.css';
+}
+
+.peligroso {
+  composes: peligrosoMenor from '../../estilos/piezas.module.css';
+}

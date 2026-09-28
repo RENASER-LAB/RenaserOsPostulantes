@@ -22,11 +22,17 @@
  *   1. **Dejar de escuchar Escape.** Sacar `onCerrar` de las dependencias sin
  *      ponerlo en un ref congela la primera version: Escape seguiria llamando a
  *      la de hace veinte renders, que ya no ve el estado de ahora.
+ *   2. **Apuntar el foco de vuelta en el efecto (RES-QA-05).** Los efectos del
+ *      contenido corren antes que el del modal: un formulario que enfoca su
+ *      primer campo al montarse ya se habia llevado el foco cuando el modal
+ *      leia «quien lo tenia». Guardaba ese campo y, al cerrar, devolvia el foco
+ *      a un control desmontado: `<body>`. Los casos de aqui abren desde un
+ *      boton de verdad, con un contenido que se enfoca solo.
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { useState } from 'react'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Modal } from './Modal'
 
 afterEach(cleanup)
@@ -83,5 +89,112 @@ describe('escribir dentro de un modal', () => {
     // Lo que el efecto sí tiene que hacer, y solo entonces: al abrir.
     render(<PadreConCampo />)
     expect(screen.getByRole('dialog').contains(document.activeElement)).toBe(true)
+  })
+})
+
+/**
+ * Un disparador de verdad y un modal cuyo contenido se enfoca solo al montarse,
+ * como los pasos de reportar (`useLayoutEffect`) y de responder (`useEffect`).
+ */
+function Contenido({ como }: { como: 'layout' | 'efecto' | 'nada' }) {
+  const campo = useRef<HTMLInputElement>(null)
+  useLayoutEffect(() => {
+    if (como === 'layout') campo.current?.focus()
+  }, [como])
+  useEffect(() => {
+    if (como === 'efecto') campo.current?.focus()
+  }, [como])
+  return (
+    <label>
+      Primer campo
+      <input ref={campo} />
+    </label>
+  )
+}
+
+function ConDisparador({ como, montarAbierto = false }: { como: 'layout' | 'efecto' | 'nada'; montarAbierto?: boolean }) {
+  const [abierto, setAbierto] = useState(false)
+  const cerrar = () => setAbierto(false)
+  const modal = (
+    <Modal
+      abierto={montarAbierto || abierto}
+      titulo="Un paso"
+      onCerrar={cerrar}
+      pie={
+        <button type="button" onClick={cerrar}>
+          Volver
+        </button>
+      }
+    >
+      <Contenido como={como} />
+    </Modal>
+  )
+  return (
+    <>
+      <button type="button" onClick={() => setAbierto(true)}>
+        Abrir
+      </button>
+      <button type="button">Otro de la página</button>
+      {/* Montado solo al abrir, como los modales que se pintan con `&&`. */}
+      {montarAbierto ? abierto && modal : modal}
+    </>
+  )
+}
+
+function abrirDesdeElBoton() {
+  const abrir = screen.getByRole('button', { name: 'Abrir' })
+  abrir.focus()
+  fireEvent.click(abrir)
+  return abrir
+}
+
+const CIERRES = {
+  Escape: () => fireEvent.keyDown(document, { key: 'Escape' }),
+  aspa: () => fireEvent.click(screen.getByRole('button', { name: 'Cerrar' })),
+  fondo: () => fireEvent.click(screen.getByRole('dialog').previousElementSibling!),
+  Volver: () => fireEvent.click(screen.getByRole('button', { name: 'Volver' })),
+} as const
+
+describe('adónde vuelve el foco al cerrar (RES-QA-05)', () => {
+  for (const como of ['layout', 'efecto'] as const) {
+    for (const [cierre, cerrar] of Object.entries(CIERRES)) {
+      it(`con un campo que se enfoca solo (${como}), ${cierre} devuelve el foco al botón que abrió`, () => {
+        render(<ConDisparador como={como} />)
+        const abrir = abrirDesdeElBoton()
+        // Al abrir, el campo que se enfocó solo se queda el foco: el aspa no se lo quita.
+        expect(document.activeElement).toBe(screen.getByLabelText('Primer campo'))
+
+        act(() => cerrar())
+        expect(screen.queryByRole('dialog')).toBeNull()
+        expect(document.activeElement).toBe(abrir)
+      })
+    }
+  }
+
+  it('sin nada que se enfoque solo, el foco entra por el aspa y vuelve al botón', () => {
+    render(<ConDisparador como="nada" />)
+    const abrir = abrirDesdeElBoton()
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Cerrar' }))
+
+    act(() => CIERRES.Escape())
+    expect(document.activeElement).toBe(abrir)
+  })
+
+  it('un modal que se monta ya abierto también sabe a quién volver', () => {
+    render(<ConDisparador como="layout" montarAbierto />)
+    const abrir = abrirDesdeElBoton()
+    expect(screen.getByRole('dialog').contains(document.activeElement)).toBe(true)
+
+    act(() => CIERRES.aspa())
+    expect(document.activeElement).toBe(abrir)
+  })
+
+  it('abrir dos veces seguidas vuelve cada vez al botón, no al campo de la vez anterior', () => {
+    render(<ConDisparador como="layout" />)
+    for (let vez = 0; vez < 2; vez++) {
+      const abrir = abrirDesdeElBoton()
+      act(() => CIERRES.fondo())
+      expect(document.activeElement).toBe(abrir)
+    }
   })
 })

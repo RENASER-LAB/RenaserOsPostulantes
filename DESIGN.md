@@ -555,6 +555,27 @@ contra el `inline-flex` del secundario—.
   «dónde estás». Nadie tiene turno en una lista de vacantes, así que aquí no hay borde de 2 px
   en ninguna parte.
 
+### Las reseñas de empresas
+
+La sección «Reseñas de empresas» de `/perfil`, su ventana «Ver todas» y los bloques de la ficha
+del panel comparten piezas en [`src/ui/resenas/`](src/ui/resenas/Resenas.tsx).
+
+- **Las estrellas van en tinta, nunca en índigo.** La llena es `tinta` (18,2:1 sobre nube); la
+  vacía, `tinta3` —el gris más claro que pasa como texto—, para que se lea como hueco sin
+  desaparecer. Las barras del reparto, `tinta2` sobre `nube-honda`. Una estrella no se pulsa ni
+  dice dónde estás, así que la regla de la voz única la deja fuera del índigo; en el panel
+  tampoco lleva el violeta `--activo`, que allí es «te toca a ti». Ni ámbar: no es una duda.
+  Lo mismo la «★ 4,5 · 3 reseñas» de la cabecera y la columna «Reseñas» de la tabla del panel.
+- **El chip marcado de «Ver todas» es tinta maciza con texto blanco**: la forma dice que está
+  marcado, no solo el color.
+- **Una reseña es una fila, no una caja.** Vive dentro de una sección que ya es tarjeta: se
+  separa con la regla, y la respuesta baja un escalón a `nube-hundida`, sangrada.
+- **En el teléfono «Ver todas» ocupa la pantalla** (`Modal` con `pantallaCompleta`): los chips
+  se desplazan en horizontal y Empresa y Orden van uno debajo del otro. Un `<select>` mide su
+  opción más larga, así que lleva `min-width: 0` y un tope de 18rem; y la columna de los
+  desplegables no se parte (`nowrap`), porque una columna flexible que se parte se ensancha
+  hasta su hijo más ancho.
+
 ### Navigation
 
 Una píldora blanca que flota a 16 px del borde, **sin filete ni sombra**, en reposo y al bajar

@@ -501,6 +501,37 @@
 }
 
 /*
+ * «★ 4,5 · 3 reseñas» (V63), debajo de las señas. En una sola línea también en
+ * el teléfono: partida en dos, la estrella se queda sola arriba y la cifra baja.
+ * La estrella en tinta, como las de la sección: no es una acción.
+ */
+.lineaResenas {
+  margin-top: var(--e2);
+  font-size: var(--t-apoyo);
+  white-space: nowrap;
+}
+
+.lineaResenas a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  min-height: 32px;
+  color: var(--tinta2);
+  text-decoration: underline;
+  text-decoration-color: var(--regla2);
+  text-underline-offset: 3px;
+}
+
+.lineaResenas a:hover {
+  color: var(--tinta);
+  text-decoration-color: currentColor;
+}
+
+.lineaResenas svg {
+  color: var(--tinta);
+}
+
+/*
  * ⚠️ No lleva `--bien`. En todo el sistema ese verde significa «confirmado», y
  * la disponibilidad no la ha confirmado nadie: la escribió la persona como
  * escribió su titular. Un punto en tinta separa dos señas, que es su trabajo.

@@ -41,6 +41,7 @@ import {
   ETAPAS_PANEL,
   laEtapaTieneRubrica,
   PONDERADO_EXPLICADO,
+  resenasDichas,
   rotuloCortoDelGrupo,
 } from './ranking'
 
@@ -356,6 +357,22 @@ const FICHA_PELADA = { candidato: 'Rodrigo Ayala', estado: 'PERFIL_POR_CONFIRMAR
 
 let FICHA: Record<string, unknown> = FICHA_PELADA
 
+/*
+  La ficha monta el bloque de las reseñas de empresas (V63). Por defecto quien
+  mira no tiene ninguno de sus dos permisos —403—, que es cuando no se pinta
+  nada: así las pruebas de la ficha siguen mirando lo que miraban.
+*/
+vi.mock('../api/resenas', async () => {
+  const { ErrorApi } = await import('../api/cliente')
+  return {
+    verResenas: () => Promise.reject(new ErrorApi(403, 'Permiso denegado')),
+    publicarResena: vi.fn(),
+    editarResena: vi.fn(),
+    borrarResena: vi.fn(),
+    reportarRespuesta: vi.fn(),
+  }
+})
+
 vi.mock('../api/panel', () => ({
   verVacante: () => sinRuido.verVacante(),
   verEmbudo: () => sinRuido.verEmbudo(),
@@ -464,17 +481,23 @@ const tanda = (filas: FilaRanking[], puedeVerPretension = true) => ({
   filas,
 })
 
-async function pintar(filas: FilaRanking[] = TANDA, puedeVerPretension = true) {
+async function pintar(
+  filas: FilaRanking[] = TANDA,
+  puedeVerPretension = true,
+  /** Lo que la tanda trae además: `puedeVerResenas`, por ejemplo. */
+  extra: Record<string, unknown> = {},
+) {
   verRanking.mockImplementation((_id: number, etapa = 'PERFIL_INTEGRAL') => {
     const notas = NOTAS_POR_ETAPA[etapa] ?? {}
-    return Promise.resolve(
-      tanda(
+    return Promise.resolve({
+      ...tanda(
         filas.map((f) =>
           f.postulacionId in notas ? { ...f, notaEtapa: notas[f.postulacionId]! } : f,
         ),
         puedeVerPretension,
       ),
-    )
+      ...extra,
+    })
   })
   const cliente = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   render(
@@ -1230,6 +1253,12 @@ function laTablaCuadra(tanda: FilaRanking[], situacion: string) {
     if (bajo('Ciudad') >= 0) {
       expect(dato('Ciudad'), `${situacion}: bajo «Ciudad»`).toBe(persona!.ciudad ?? '—')
     }
+    // Las reseñas de empresas (V63): solo existe con el permiso y encendida a mano.
+    if (bajo('Reseñas') >= 0) {
+      expect(dato('Reseñas'), `${situacion}: bajo «Reseñas»`).toBe(
+        resenasDichas(persona!) ?? '—',
+      )
+    }
   }
 }
 
@@ -1294,6 +1323,8 @@ const TANDA_CON_TODO = [
     pretensionDeclaradaMoneda: 'PEN',
     notasCriterio: CRITERIOS_DE_RODRIGO,
     ponderado: { sobre100: 78.14, cv: 76.5, perfil: 82, prueba: 73 },
+    // Solo se ve con `puedeVerResenas` y la columna encendida: ver la red de abajo.
+    resenas: { promedio: 4.5, cantidad: 3 },
   }),
   fila(93, 'Camila Reyes', 'PRUEBA_TURNO_CANDIDATO', 75, {
     estadoNombre: 'Prueba del puesto · le toca al candidato',
@@ -1304,9 +1335,12 @@ const TANDA_CON_TODO = [
   fila(94, 'Lucía Ferrer', 'NO_CONTINUA', 52, { estadoNombre: 'No continúa' }),
 ]
 
-/** La tanda entera en la pestaña pedida, con sus tres filas ya pintadas. */
-async function pintarConTodo(pestana = 'Perfil integral') {
-  await pintar(TANDA_CON_TODO)
+/**
+ * La tanda entera en la pestaña pedida, con sus tres filas ya pintadas. `extra`
+ * es lo que la tanda trae además: `puedeVerResenas`, por ejemplo.
+ */
+async function pintarConTodo(pestana = 'Perfil integral', extra: Record<string, unknown> = {}) {
+  await pintar(TANDA_CON_TODO, true, extra)
   // «Toda la tanda» sobrevive al cambio de pestaña: así las cinco tienen filas.
   verCorte('Toda la tanda')
   if (pestana !== 'Perfil integral') irA(pestana)
@@ -1370,6 +1404,44 @@ describe('elegir qué columnas se ven', () => {
   })
 
   /*
+    Las reseñas de empresas (V63): la única columna que arranca apagada. Ni
+    cambia el orden de la tanda ni pesa en ninguna nota: solo se lee.
+  */
+  it('AC-23: «Reseñas» sale apagada; al encenderla dice «4,5 (3)» o «—»', async () => {
+    const conResenas = TANDA.map((f, i) =>
+      i === 0 ? { ...f, resenas: { promedio: 4.5, cantidad: 3 } } : f,
+    )
+    await pintar(conResenas, true, { puedeVerResenas: true })
+    // La tanda entera: el corte por defecto deja fuera a quien no espera a la empresa.
+    verCorte('Toda la tanda')
+    const ordenAntes = elOrdenDeLaTabla()
+    expect(within(laTabla()).queryByRole('columnheader', { name: /Reseñas/ })).toBeNull()
+    expect(screen.getByText('1 oculta')).toBeTruthy()
+
+    abrirSelector()
+    const casilla = screen.getByRole('checkbox', { name: /Reseñas de empresas/ })
+    expect((casilla as HTMLInputElement).checked).toBe(false)
+    fireEvent.click(casilla)
+
+    await waitFor(() =>
+      expect(within(laTabla()).queryByRole('columnheader', { name: /Reseñas/ })).toBeTruthy(),
+    )
+    expect(within(laTabla()).getByRole('button', { name: /4,5 \(3\)/ })).toBeTruthy()
+    expect(within(laTabla()).getAllByTitle('Sin reseñas de empresas').length).toBe(
+      TANDA.length - 1,
+    )
+    // Encenderla no reordena nada: el orden sigue siendo el del servidor.
+    expect(elOrdenDeLaTabla()).toEqual(ordenAntes)
+  })
+
+  it('AC-27: sin el permiso, ni está en el menú ni cuenta como oculta', async () => {
+    await pintar(TANDA, true, { puedeVerResenas: false })
+    expect(screen.queryByText(/oculta/)).toBeNull()
+    abrirSelector()
+    expect(screen.queryByRole('checkbox', { name: /Reseñas/ })).toBeNull()
+  })
+
+  /*
     ⚠️ **El fallo de la captura.** La celda del veredicto era la única ocultable
     pintada sin `ve(...)`: al apagarla se iba la cabecera y la celda se quedaba,
     y cada fila corría una columna a la derecha.
@@ -1390,15 +1462,16 @@ describe('elegir qué columnas se ven', () => {
     expect(cabecerasDeLaTabla().at(-1)).toBe('Ciudad')
   })
 
-  it('con Veredicto apagado la leyenda se va y el botón dice «1 ocultas»', async () => {
+  it('con Veredicto apagado la leyenda se va y el botón dice «1 oculta»', async () => {
     await pintarConTodo('Prueba del puesto')
     expect(screen.getByText('Prioridad alta')).toBeTruthy()
     abrirSelector()
     alternarColumna('Veredicto')
     expect(screen.queryByText('Prioridad alta')).toBeNull()
-    expect(screen.getByText('Columnas', { selector: 'summary' }).textContent).toContain(
-      '1 ocultas',
-    )
+    // En singular desde la V63: exacta, para que «1 ocultas» no pase.
+    expect(
+      within(screen.getByText('Columnas', { selector: 'summary' })).getByText('1 oculta'),
+    ).toBeTruthy()
   })
 
   /*
@@ -1489,9 +1562,10 @@ describe('elegir qué columnas se ven', () => {
     ⚠️ **«N ocultas» habla de la tabla que se ve.** Un criterio apagado sigue en
     la memoria del menú al desactivar «Ver los criterios» —para que vuelva oculto
     al encenderlos—, pero su columna ya no existe: el botón decía «1 ocultas» y
-    ofrecía «Ver todas» con todas las casillas marcadas.
+    ofrecía «Ver todas» con todas las casillas marcadas. Con una sola, «1 oculta»
+    en singular desde la V63.
   */
-  it('apagar un criterio y luego los criterios no deja «1 ocultas» ni «Ver todas»', async () => {
+  it('apagar un criterio y luego los criterios no deja «1 oculta» ni «Ver todas»', async () => {
     await pintarConTodo()
     abrirSelector()
     const interruptor = () =>
@@ -1500,11 +1574,12 @@ describe('elegir qué columnas se ven', () => {
 
     fireEvent.click(interruptor())
     alternarColumna('Resultados demostrables')
-    expect(resumen().textContent).toContain('1 ocultas')
+    expect(within(resumen()).getByText('1 oculta')).toBeTruthy()
     expect(within(elSelector()).queryByRole('button', { name: 'Ver todas' })).toBeTruthy()
 
     fireEvent.click(interruptor())
-    expect(resumen().textContent).not.toContain('ocultas')
+    // Ni «1 oculta» ni «N ocultas».
+    expect(resumen().textContent).not.toMatch(/oculta/)
     expect(within(elSelector()).queryByRole('button', { name: 'Ver todas' })).toBeNull()
     for (const casilla of within(elSelector()).getAllByRole('checkbox')) {
       if (casilla !== interruptor()) expect((casilla as HTMLInputElement).checked).toBe(true)
@@ -1513,7 +1588,7 @@ describe('elegir qué columnas se ven', () => {
 
     // Con otra columna apagada cuenta esa sola, y no la del criterio.
     alternarColumna('Estado')
-    expect(resumen().textContent).toContain('1 ocultas')
+    expect(within(resumen()).getByText('1 oculta')).toBeTruthy()
 
     // Al volver a encenderlos, el criterio sigue oculto y vuelve a contar.
     fireEvent.click(interruptor())
@@ -1588,8 +1663,16 @@ describe('ninguna columna apagada descuadra la tabla', () => {
   it.each(ETAPAS_PANEL.map((e) => [e.nombre, e.codigo] as const))(
     'en «%s», con y sin los criterios',
     async (pestana, codigo) => {
-      await pintarConTodo(pestana)
+      /*
+        Con el permiso de las reseñas (V63), para que su celda —escrita a mano,
+        como la del veredicto— entre en la red. Arranca apagada: se enciende
+        antes de recorrer, y así el menú parte de «todas a la vista».
+      */
+      await pintarConTodo(pestana, { puedeVerResenas: true })
       abrirSelector()
+      expect(cabecerasDeLaTabla()).not.toContain('Reseñas')
+      alternarColumna('Reseñas de empresas')
+      expect(cabecerasDeLaTabla().at(-1)).toBe('Reseñas')
       recorrerElMenu(`«${pestana}»`)
 
       // Donde hay rúbrica el interruptor sale, y con él se recorre otra vez.

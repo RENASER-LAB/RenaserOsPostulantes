@@ -660,6 +660,83 @@ export interface PerfilCompleto {
   portada: PortadaDelPerfil
   /** Su curriculum guardado, el que se reutiliza al postular. Null si no tiene. */
   cv: CurriculumDelPerfil | null
+  /**
+   * El resumen de sus reseñas de empresas, para la linea «★ 4,5 · 3 reseñas» de
+   * la cabecera. Solo del portal; opcional porque un backend anterior no lo manda.
+   */
+  resenas?: ResumenResenas | null
+  /** Sus reseñas, respuestas y reportes: solo en la descarga de sus datos. */
+  misResenas?: unknown
+}
+
+// ---------- Las reseñas de empresas (V63) ----------
+
+/**
+ * El promedio y el reparto de las reseñas VISIBLES: sin las que la plataforma
+ * oculto.
+ */
+export interface ResumenResenas {
+  /** Con un decimal. Nulo si no hay ninguna. */
+  promedio: number | null
+  cantidad: number
+  /** Las cinco barras, de 5★ a 1★, con las que estan en cero. */
+  reparto: BarraDeResenas[]
+}
+
+export interface BarraDeResenas {
+  estrellas: number
+  cantidad: number
+}
+
+/** La sección «Reseñas de empresas» y la ventana «Ver todas». */
+export interface MisResenas {
+  resumen: ResumenResenas
+  /** Las visibles, las mas recientes arriba. */
+  resenas: ResenaMia[]
+}
+
+export interface ResenaMia {
+  id: number
+  estrellas: number
+  /** El nombre ACTUAL de la empresa autora. */
+  empresa: string
+  /** El titulo de la vacante: «Contratado como …». */
+  puesto: string | null
+  texto: string
+  publicadaEn: FechaIso
+  editada: boolean
+  respuesta: MiRespuesta | null
+  /** Si aun no respondio, o borro su respuesta. Nunca si la plataforma oculto la suya. */
+  puedeResponder: boolean
+  /** Una vez; otra mas si la plataforma la mantuvo y la empresa la edito despues. */
+  puedeReportar: boolean
+  /** Su reporte sigue pendiente: «Reportada · en revision». */
+  reportadaEnRevision: boolean
+}
+
+export interface MiRespuesta {
+  texto: string
+  publicadaEn: FechaIso
+  editada: boolean
+  /** Se mueve si la empresa edita la reseña ya respondida. */
+  editableHasta: FechaIso
+  /** Dentro de su plazo y sin ocultar. */
+  editable: boolean
+  ocultada: boolean
+  notaOcultacion: string | null
+}
+
+/** `OTRO` exige comentario, hasta 500 caracteres. */
+export type MotivoDeReporte =
+  | 'OFENSIVA'
+  | 'DATOS_PERSONALES'
+  | 'DISCRIMINATORIA'
+  | 'FALSA'
+  | 'OTRO'
+
+export interface ReportarResena {
+  motivo: MotivoDeReporte
+  comentario: string | null
 }
 
 /** O una del catalogo de la casa, o la suya, o ninguna. Nunca dos. */

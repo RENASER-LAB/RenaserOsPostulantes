@@ -16,6 +16,51 @@ no se vuelve a subir el currículum. Lo del 07/09 se documentó en
 
 ---
 
+## Las empresas reseñan a quien contrataron (28/09/2026)
+
+La empresa que contrató a alguien por EX le deja, a partir del primer mes, de 1 a 5 estrellas y
+una opinión; la persona la lee en su perfil, la responde o la reporta, y las demás empresas donde
+postula la leen en el panel. Cómo funciona hoy está en [PANEL.md](PANEL.md) › Reseñas de empresas
+y en [02-QUE-VE-EL-CANDIDATO.md](02-QUE-VE-EL-CANDIDATO.md), 2.15; el backend trae la `V63` y
+sus rutas.
+
+- **Portal:** la línea «★ 4,5 · 3 reseñas» en la cabecera de `/perfil`, la entrada «Reseñas» del
+  índice, la sección «Reseñas de empresas» y la ventana «Ver todas» con filtros, los pasos de
+  reportar y responder dentro de esa misma ventana, y cuatro avisos nuevos en la campana.
+- **Panel:** la columna «Reseñas» en las cinco pestañas, los dos bloques de la ficha y
+  Configuración › «Reseñas reportadas», solo para la plataforma.
+- **Compartido:** el resumen, la tarjeta, la ventana con filtros y el selector de estrellas viven
+  en `src/ui/resenas/` y los usan las dos caras.
+- **El `Modal` compartido cambió** para que el foco vuelva al botón que lo abrió aunque el
+  contenido enfoque su primer campo al montarse: ver [REGLAS-DEL-CODIGO.md](REGLAS-DEL-CODIGO.md).
+
+### Decisiones que aprobó el usuario
+
+- La media se escribe con coma decimal, «4,5», y siempre con cuántas reseñas son.
+- La columna arranca apagada y **no se guarda entre recargas**, como el resto de las columnas:
+  al recargar vuelve apagada.
+- Las reseñas no influyen en la nota, el ranking, el pase automático ni la IA, y **el Excel no
+  cambia**.
+- El texto de consentimiento que las mencione queda fuera: lo prepara el usuario.
+- Contratar sigue haciéndose por la API.
+
+QA dejó anotadas dos deudas que ya venían de antes, en [PENDIENTES.md](PENDIENTES.md): a las
+secciones de `/perfil` les falta `scroll-margin-top`, y las ventanas que se abren desde la ficha
+del ranking quedan bajo la cabecera fija del panel. Y los e2e nuevos repiten número con dos que
+llegaron a la vez: también en PENDIENTES.
+
+### Cómo se comprueba
+
+`npx playwright test herramientas/e2e/41-resenas-de-empresas.spec.ts
+herramientas/e2e/42-resenas-entre-empresas.spec.ts herramientas/e2e/43-resenas-de-empresas-movil.spec.ts`.
+⚠️ **Escriben**: siembran contrataciones con fechas relativas a hoy, una segunda empresa y sus
+reseñas, y lo retiran al terminar. Las unitarias, en `src/ui/resenas/modelo.test.ts`,
+`src/paginas/perfil/Resenas.test.tsx` e `indice.test.ts`, `src/ui/Campana.test.tsx`,
+`ResenasDeLaFicha.test.tsx`, `Vacante.test.tsx`, `ranking.test.ts` y
+`ResenasReportadas.test.tsx`. En el backend, `FlujoResenasIT`.
+
+---
+
 ## El menú «Columnas» del ranking se lee de un vistazo, y ocultar Veredicto ya no descuadra la tabla (28/09/2026)
 
 Quien revisa el ranking de una vacante puede ocultar columnas con «Columnas», encima de la

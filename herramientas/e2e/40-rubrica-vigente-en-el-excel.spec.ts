@@ -139,14 +139,16 @@ test('AC-09 · el panel sigue igual: el JSON no trae campos nuevos y la tabla si
   const { campos, filas } = await rankingPorLaApi(terreno.mezclada, 'PRUEBA_PUESTO')
   expect(campos.sort()).toEqual(['calificados', 'conPasadaFina', 'enCurso', 'fallidos', 'filas', 'nivelPuesto',
     'puedeMoverPostulacion', 'puedeVerPretension', 'puesto', 'total', 'vacante', 'vacanteId',
-    'vacanteMuestraSueldo'].sort())
+    // `puedeVerResenas` lo añade a propósito la spec de reseñas de empresas (V63).
+    'vacanteMuestraSueldo', 'puedeVerResenas'].sort())
   const nombresDe = (id: number) => filas.find((f) => f.postulacionId === id)!.notasCriterio.map((n) => n.criterio)
   expect(nombresDe(terreno.bruno.postulacionId)).toEqual(DEMO.map(([, n]) => n))
   expect(nombresDe(terreno.ana.postulacionId)).toEqual(ADMINISTRADOR.map(([, n]) => n))
 
   await abrirLaPrueba(page, terreno.mezclada)
   const antes = await page.locator('table thead th').count()
-  await page.getByText('Columnas', { exact: true }).click()
+  // Desde la V63 el resumen puede decir «Columnas 1 oculta» (Reseñas arranca apagada).
+  await page.locator('summary').filter({ hasText: /^Columnas/ }).click()
   // Fuera de alcance a propósito: la tabla junta las de las filas, 7 de A y 4 de B.
   await expect(page.getByText(`${DE_A.length + DE_B.length} columnas más, una por criterio`)).toBeVisible()
   await page.getByRole('checkbox', { name: 'Ver los criterios en la tabla' }).check()

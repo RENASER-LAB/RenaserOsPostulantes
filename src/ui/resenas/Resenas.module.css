@@ -1,0 +1,675 @@
+/*
+ * Las piezas de las reseñas de empresas, compartidas por el perfil del portal y
+ * la ficha del panel.
+ *
+ * ⚠️ **Ningún índigo aquí.** Las estrellas y las barras van en tinta: el índigo
+ * es lo que se pulsa y lo que te toca, y en el panel `--activo` es «te toca a
+ * ti». Los únicos controles de acción con color propio son los que componen
+ * `acentoMenor` de la hoja compartida, y los pone quien usa estas piezas.
+ */
+
+/* ---------- Las estrellas ---------- */
+
+.estrellas {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  color: var(--tinta);
+  flex: none;
+}
+
+/* La vacía se dibuja en el gris de texto más claro que pasa: se ve como hueco y
+   no desaparece sobre la nube. */
+.vacia {
+  color: var(--tinta3);
+}
+
+/* ---------- El selector ---------- */
+
+.selector {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.leyenda {
+  padding: 0;
+  margin-bottom: var(--e2);
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  color: var(--tinta);
+}
+
+.opciones {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--e1);
+}
+
+/* 44 px de área de toque por estrella, aunque la figura mida 28. */
+.opcion {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radio-control);
+  color: var(--tinta);
+  cursor: pointer;
+}
+
+.opcion:has(input:focus-visible) {
+  outline: 2px solid var(--activo);
+  outline-offset: 2px;
+}
+
+.selector:disabled .opcion {
+  cursor: default;
+}
+
+.rotuloElegido {
+  margin-left: var(--e3);
+  font-size: var(--t-apoyo);
+  font-weight: 500;
+  color: var(--tinta2);
+  min-width: 9ch;
+}
+
+/* ---------- El resumen ---------- */
+
+.resumen {
+  display: grid;
+  grid-template-columns: minmax(9rem, auto) minmax(0, 1fr);
+  gap: var(--e5);
+  align-items: center;
+  margin-top: var(--e4);
+}
+
+.promedio {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--e1);
+}
+
+.cifraPromedio {
+  font-size: var(--t-cifra);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--tinta);
+}
+
+.cuantas {
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+}
+
+.reparto {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.barra {
+  display: grid;
+  grid-template-columns: 2.6rem minmax(0, 1fr) 2.2rem;
+  align-items: center;
+  gap: var(--e3);
+  width: 100%;
+  min-height: 28px;
+  padding: 0 var(--e2);
+  border: 0;
+  border-radius: var(--radio-menor);
+  background: none;
+  font: inherit;
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+  text-align: left;
+}
+
+/* Como botón, en la ventana: filtra por esas estrellas. */
+button.barra {
+  min-height: 32px;
+  cursor: pointer;
+}
+
+button.barra:hover:not(:disabled) {
+  background: var(--nube-hundida);
+}
+
+button.barra:focus-visible {
+  outline: 2px solid var(--activo);
+  outline-offset: 1px;
+}
+
+button.barra:disabled {
+  cursor: default;
+}
+
+.etiquetaBarra {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-variant-numeric: tabular-nums;
+  color: var(--tinta);
+}
+
+.pista {
+  display: block;
+  height: 8px;
+  border-radius: var(--radio-pildora);
+  background: var(--nube-honda);
+  overflow: clip;
+}
+
+.relleno {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--tinta2);
+}
+
+.numeroBarra {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 640px) {
+  /* En el teléfono se apila: el promedio arriba y las barras debajo. */
+  .resumen {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--e4);
+  }
+
+  .promedio {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--e3);
+  }
+}
+
+/* ---------- La reseña ---------- */
+
+/*
+ * ⚠️ **Una fila, no una caja.** Las reseñas se separan con la regla de arriba,
+ * como las filas del resto del perfil; la sección que las contiene ya es la
+ * tarjeta.
+ */
+.lista {
+  display: flex;
+  flex-direction: column;
+  margin: var(--e4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lista > li + li,
+.resena + .resena {
+  border-top: 1px solid var(--regla);
+}
+
+/* La fila recibe el foco al volver de un paso cuyo botón ya no existe. */
+.lista > li:focus {
+  outline: none;
+}
+
+.lista > li:focus-visible {
+  outline: 2px solid var(--activo);
+  outline-offset: 2px;
+  border-radius: var(--radio-menor);
+}
+
+.resena {
+  padding: var(--e4) 0;
+  min-width: 0;
+}
+
+.cabezaResena {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e2) var(--e3);
+}
+
+/* Un nombre de empresa largo se parte; no empuja la fila fuera del ancho. */
+.empresa {
+  font-weight: 600;
+  color: var(--tinta);
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+.puesto {
+  margin-top: var(--e1);
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+  overflow-wrap: anywhere;
+}
+
+.fecha {
+  margin-top: 2px;
+  font-size: var(--t-menor);
+  color: var(--tinta3);
+}
+
+.marca {
+  margin-left: var(--e2);
+  font-weight: 600;
+  color: var(--tinta2);
+}
+
+.marca::before {
+  content: '· ';
+  font-weight: 400;
+}
+
+.texto,
+.textoRecortado {
+  margin-top: var(--e3);
+  font-size: var(--t-prosa);
+  line-height: 1.6;
+  color: var(--tinta);
+  max-width: var(--medida);
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.textoRecortado {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.enlaceDiscreto {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: var(--t-apoyo);
+  font-weight: 500;
+  color: var(--tinta2);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.enlaceDiscreto:hover {
+  color: var(--tinta);
+}
+
+.enlaceDiscreto:focus-visible {
+  outline: 2px solid var(--activo);
+  outline-offset: 2px;
+  border-radius: var(--radio-menor);
+}
+
+/* La respuesta: un escalón abajo y sangrada, sin filete de color. */
+.respuesta {
+  margin: var(--e3) 0 0 var(--e5);
+  padding: var(--e3) var(--e4);
+  border-radius: var(--radio-control);
+  background: var(--nube-hundida);
+  min-width: 0;
+}
+
+.respuesta .texto,
+.respuesta .textoRecortado {
+  margin-top: var(--e2);
+}
+
+.tituloRespuesta {
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+}
+
+.tituloRespuesta b {
+  color: var(--tinta);
+  font-weight: 600;
+}
+
+/* Ocultada por la plataforma: se lee, pero dice que ya no cuenta. La palabra
+   va en `.nota`; la atenuación la acompaña, no la sustituye. */
+.atenuada .texto,
+.atenuada .textoRecortado,
+.atenuada .tituloRespuesta {
+  color: var(--tinta3);
+}
+
+.nota {
+  margin-top: var(--e2);
+  font-size: var(--t-apoyo);
+  font-weight: 500;
+  color: var(--tinta2);
+}
+
+.detalle {
+  margin-top: var(--e2);
+  font-size: var(--t-menor);
+  color: var(--tinta3);
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--e1) var(--e4);
+  margin-top: var(--e2);
+}
+
+@media (max-width: 640px) {
+  .respuesta {
+    margin-left: var(--e3);
+  }
+}
+
+/* ---------- El campo con su cuenta ---------- */
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e1);
+  margin-top: var(--e4);
+}
+
+.etiqueta {
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  color: var(--tinta);
+}
+
+.ayuda {
+  font-size: var(--t-menor);
+  color: var(--tinta2);
+}
+
+.area {
+  width: 100%;
+  min-height: 7rem;
+  padding: var(--e3);
+  border: 1px solid var(--borde-control);
+  border-radius: var(--radio-control);
+  background: var(--nube);
+  font: inherit;
+  font-size: var(--t-base);
+  line-height: 1.55;
+  color: var(--tinta);
+  resize: vertical;
+}
+
+.area:focus-visible {
+  outline: 2px solid var(--activo);
+  outline-offset: 2px;
+}
+
+.area[aria-invalid='true'] {
+  border-color: var(--mal);
+}
+
+.cuenta {
+  align-self: flex-end;
+  font-size: var(--t-menor);
+  font-variant-numeric: tabular-nums;
+  color: var(--tinta3);
+}
+
+.pasado {
+  color: var(--mal);
+  font-weight: 600;
+}
+
+.error {
+  margin-top: var(--e1);
+  font-size: var(--t-menor);
+  color: var(--mal);
+}
+
+.fallo {
+  margin-top: var(--e3);
+  padding: var(--e3) var(--e4);
+  border-radius: var(--radio-control);
+  background: var(--mal-bruma);
+  font-size: var(--t-apoyo);
+  color: var(--tinta);
+}
+
+/* ---------- Reportar y responder ---------- */
+
+.paso {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Lo que se reporta o se responde, arriba y un escalón abajo: se lee, no se toca. */
+.contexto {
+  padding: var(--e3) var(--e4);
+  border-radius: var(--radio-control);
+  background: var(--nube-hundida);
+}
+
+.contexto .texto,
+.contexto .textoRecortado {
+  margin-top: var(--e2);
+}
+
+.motivos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e1);
+  margin: var(--e4) 0 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.motivo {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--e3);
+  min-height: 44px;
+  padding: var(--e2) 0;
+  font-size: var(--t-prosa);
+  line-height: 1.45;
+  color: var(--tinta);
+  cursor: pointer;
+}
+
+.motivo input {
+  flex: none;
+  margin-top: 3px;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--tinta);
+}
+
+.aviso {
+  margin-top: var(--e3);
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+  max-width: var(--medida);
+}
+
+/* ---------- La ventana «Ver todas» ---------- */
+
+.filtros {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+  margin-top: var(--e5);
+  padding-bottom: var(--e4);
+  border-bottom: 1px solid var(--regla);
+}
+
+.grupoChips {
+  display: flex;
+  align-items: center;
+  gap: var(--e3);
+  min-width: 0;
+}
+
+.etiquetaFiltro {
+  font-size: var(--t-menor);
+  font-weight: 600;
+  color: var(--tinta2);
+  flex: none;
+}
+
+/*
+ * Los chips en una sola fila: en el teléfono se desplazan en horizontal en vez
+ * de partirse en tres renglones que empujan la lista fuera de la pantalla.
+ */
+.chips {
+  display: flex;
+  gap: var(--e2);
+  overflow-x: auto;
+  min-width: 0;
+  padding: 2px;
+  scrollbar-width: thin;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex: none;
+  min-height: 36px;
+  padding: 0 var(--e3);
+  border: 1px solid var(--regla2);
+  border-radius: var(--radio-control);
+  background: var(--nube);
+  font: inherit;
+  font-size: var(--t-apoyo);
+  color: var(--tinta);
+  cursor: pointer;
+}
+
+.chip:hover:not(:disabled) {
+  border-color: var(--tinta3);
+}
+
+.chip:focus-visible {
+  outline: 2px solid var(--activo);
+  outline-offset: 2px;
+}
+
+/* Marcado: en tinta maciza. La forma lo dice además del color. */
+.chip[aria-pressed='true'] {
+  border-color: var(--tinta);
+  background: var(--tinta);
+  color: var(--tinta-invertida);
+}
+
+.chip:disabled {
+  border-color: var(--regla);
+  background: var(--nube-hundida);
+  color: var(--tinta3);
+  cursor: default;
+}
+
+.cuentaChip {
+  margin-left: 3px;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.8;
+}
+
+.desplegables {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--e3) var(--e5);
+}
+
+.desplegable {
+  display: flex;
+  align-items: center;
+  gap: var(--e3);
+  min-width: 0;
+}
+
+/*
+ * ⚠️ **Un `<select>` mide lo que su opción más larga**, y un nombre de empresa
+ * de treinta caracteres sin espacios lo sacaba de la ventana. `min-width: 0`
+ * lo deja encoger dentro de su fila —como elemento flexible, por defecto no baja
+ * de ese ancho— y el tope evita que en el escritorio ocupe la ventana entera.
+ * La lista que se despliega sigue enseñando los nombres completos.
+ */
+.desplegable select {
+  flex: 0 1 auto;
+  min-width: 0;
+  min-height: 40px;
+  max-width: 18rem;
+  padding: 0 var(--e3);
+  text-overflow: ellipsis;
+  border: 1px solid var(--borde-control);
+  border-radius: var(--radio-control);
+  background: var(--nube);
+  font: inherit;
+  font-size: var(--t-apoyo);
+  color: var(--tinta);
+}
+
+.desplegable select:focus-visible {
+  outline: 2px solid var(--activo);
+  outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+  /*
+   * Empresa y Orden, uno debajo del otro.
+   *
+   * ⚠️ **`nowrap`, y no el `wrap` de arriba.** Una columna flexible que puede
+   * partirse mide cada columna por su hijo más ancho, no por el contenedor: el
+   * `<select>` de la empresa larga ensanchaba la columna a 776 px en un
+   * teléfono de 375.
+   */
+  .desplegables {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+  }
+
+  .desplegable {
+    justify-content: space-between;
+  }
+
+  .desplegable select {
+    flex: 1;
+    min-width: 0;
+    max-width: none;
+  }
+}
+
+.pieVentana {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e3);
+  width: 100%;
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+}
+
+.ningunaConFiltros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e3);
+  padding: var(--e5) 0;
+  color: var(--tinta2);
+}
+
+.botonSecundario {
+  composes: secundario from '../../estilos/piezas.module.css';
+}
