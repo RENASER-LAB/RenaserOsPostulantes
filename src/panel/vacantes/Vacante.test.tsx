@@ -350,6 +350,22 @@ const FICHA_PELADA = { candidato: 'Rodrigo Ayala', estado: 'PERFIL_POR_CONFIRMAR
 
 let FICHA: Record<string, unknown> = FICHA_PELADA
 
+/*
+  La ficha monta el bloque de las reseñas de empresas (V63). Por defecto quien
+  mira no tiene ninguno de sus dos permisos —403—, que es cuando no se pinta
+  nada: así las pruebas de la ficha siguen mirando lo que miraban.
+*/
+vi.mock('../api/resenas', async () => {
+  const { ErrorApi } = await import('../api/cliente')
+  return {
+    verResenas: () => Promise.reject(new ErrorApi(403, 'Permiso denegado')),
+    publicarResena: vi.fn(),
+    editarResena: vi.fn(),
+    borrarResena: vi.fn(),
+    reportarRespuesta: vi.fn(),
+  }
+})
+
 vi.mock('../api/panel', () => ({
   verVacante: () => sinRuido.verVacante(),
   verEmbudo: () => sinRuido.verEmbudo(),
@@ -458,17 +474,23 @@ const tanda = (filas: FilaRanking[], puedeVerPretension = true) => ({
   filas,
 })
 
-async function pintar(filas: FilaRanking[] = TANDA, puedeVerPretension = true) {
+async function pintar(
+  filas: FilaRanking[] = TANDA,
+  puedeVerPretension = true,
+  /** Lo que la tanda trae además: `puedeVerResenas`, por ejemplo. */
+  extra: Record<string, unknown> = {},
+) {
   verRanking.mockImplementation((_id: number, etapa = 'PERFIL_INTEGRAL') => {
     const notas = NOTAS_POR_ETAPA[etapa] ?? {}
-    return Promise.resolve(
-      tanda(
+    return Promise.resolve({
+      ...tanda(
         filas.map((f) =>
           f.postulacionId in notas ? { ...f, notaEtapa: notas[f.postulacionId]! } : f,
         ),
         puedeVerPretension,
       ),
-    )
+      ...extra,
+    })
   })
   const cliente = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   render(
@@ -1207,6 +1229,44 @@ describe('elegir qué columnas se ven', () => {
     await pintar()
     abrirSelector()
     expect(screen.queryByRole('checkbox', { name: 'Candidato' })).toBeNull()
+  })
+
+  /*
+    Las reseñas de empresas (V63): la única columna que arranca apagada. Ni
+    cambia el orden de la tanda ni pesa en ninguna nota: solo se lee.
+  */
+  it('AC-23: «Reseñas» sale apagada; al encenderla dice «4,5 (3)» o «—»', async () => {
+    const conResenas = TANDA.map((f, i) =>
+      i === 0 ? { ...f, resenas: { promedio: 4.5, cantidad: 3 } } : f,
+    )
+    await pintar(conResenas, true, { puedeVerResenas: true })
+    // La tanda entera: el corte por defecto deja fuera a quien no espera a la empresa.
+    verCorte('Toda la tanda')
+    const ordenAntes = elOrdenDeLaTabla()
+    expect(within(laTabla()).queryByRole('columnheader', { name: /Reseñas/ })).toBeNull()
+    expect(screen.getByText('1 oculta')).toBeTruthy()
+
+    abrirSelector()
+    const casilla = screen.getByRole('checkbox', { name: /Reseñas de empresas/ })
+    expect((casilla as HTMLInputElement).checked).toBe(false)
+    fireEvent.click(casilla)
+
+    await waitFor(() =>
+      expect(within(laTabla()).queryByRole('columnheader', { name: /Reseñas/ })).toBeTruthy(),
+    )
+    expect(within(laTabla()).getByRole('button', { name: /4,5 \(3\)/ })).toBeTruthy()
+    expect(within(laTabla()).getAllByTitle('Sin reseñas de empresas').length).toBe(
+      TANDA.length - 1,
+    )
+    // Encenderla no reordena nada: el orden sigue siendo el del servidor.
+    expect(elOrdenDeLaTabla()).toEqual(ordenAntes)
+  })
+
+  it('AC-27: sin el permiso, ni está en el menú ni cuenta como oculta', async () => {
+    await pintar(TANDA, true, { puedeVerResenas: false })
+    expect(screen.queryByText(/oculta/)).toBeNull()
+    abrirSelector()
+    expect(screen.queryByRole('checkbox', { name: /Reseñas/ })).toBeNull()
   })
 })
 

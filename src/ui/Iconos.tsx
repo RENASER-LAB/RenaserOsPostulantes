@@ -235,6 +235,47 @@ export function IconoCamara(props: PropsIcono) {
   )
 }
 
+/*
+ * La estrella de las reseñas de empresas, en sus tres versiones (V63).
+ *
+ * Una estrella de cinco puntas dibujada sobre la misma rejilla que el resto, y
+ * simetrica respecto a x = 12: por eso la media es exactamente su mitad
+ * izquierda rellena, sin recortes ni `clipPath` —un `id` repetido en cada una
+ * de las cincuenta estrellas de la ventana «Ver todas» no seria un documento
+ * valido—.
+ *
+ * ⚠️ **Pintan en `currentColor`, como todos**: quien las usa decide el color, y
+ * no puede ser el indigo de accion. Una estrella no se pulsa ni dice «te toca».
+ */
+const ESTRELLA =
+  'M12 3.3 14.35 9.56 21.04 9.86 15.8 14.04 17.58 20.49 12 16.8 6.42 20.49 8.2 14.04 2.96 9.86 9.65 9.56Z'
+const MITAD_IZQUIERDA = 'M12 3.3 9.65 9.56 2.96 9.86 8.2 14.04 6.42 20.49 12 16.8Z'
+
+export function IconoEstrella(props: PropsIcono) {
+  return (
+    <Icono {...props}>
+      <path d={ESTRELLA} fill="currentColor" />
+    </Icono>
+  )
+}
+
+export function IconoEstrellaMedia(props: PropsIcono) {
+  return (
+    <Icono {...props}>
+      <path d={MITAD_IZQUIERDA} fill="currentColor" stroke="none" />
+      <path d={ESTRELLA} />
+    </Icono>
+  )
+}
+
+export function IconoEstrellaVacia(props: PropsIcono) {
+  return (
+    <Icono {...props}>
+      <path d={ESTRELLA} />
+    </Icono>
+  )
+}
+
 /** El tipo de enlace decide el icono; lo que no se reconoce cae en la cadena. */
 export function IconoDeEnlace({ tipo, ...props }: PropsIcono & { tipo: string }) {
   if (tipo === 'LINKEDIN') {

@@ -136,7 +136,8 @@ test.describe('Regresión · «Mi perfil», lista por lista', () => {
     ] as const) {
       await page.getByRole('button', { name: 'Añadir un empleo' }).click()
       await page.getByLabel('Puesto').fill(puesto)
-      await page.getByLabel('Empresa').fill(empresa)
+      // Exacto: desde la V63 la sección «Reseñas de empresas» también responde a «Empresa».
+      await page.getByLabel('Empresa', { exact: true }).fill(empresa)
       await page.getByLabel('Desde', { exact: true }).fill(desde)
       await guardar(page)
     }

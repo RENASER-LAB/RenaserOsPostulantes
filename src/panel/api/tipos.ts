@@ -734,6 +734,22 @@ export interface FilaRanking {
    * dice. Quien lo lea comprueba con `!= null`.
    */
   postuladoEn?: FechaIso | null
+  /**
+   * El promedio de sus reseñas de empresas y cuántas son (V63): «★ 4,5 (3)».
+   *
+   * Nulo sin `puedeVerResenas` —sin permiso el dato no viaja— y nulo también sin
+   * reseñas visibles, que la tabla pinta «—». Opcional por un backend anterior.
+   *
+   * ⚠️ **No ordena nada por defecto ni pesa en ninguna nota**, ni en el Excel.
+   */
+  resenas?: PromedioResenas | null
+}
+
+/** Lo justo para la columna «Reseñas» y para ordenarla. */
+export interface PromedioResenas {
+  /** Con un decimal. */
+  promedio: number
+  cantidad: number
 }
 
 /**
@@ -970,6 +986,12 @@ export interface RankingVacante {
    * decidir qué se pinta, nunca la defensa.
    */
   puedeMoverPostulacion: boolean
+  /**
+   * Si quien mira puede ver las reseñas de empresas de esta tanda (V63): el
+   * permiso `ver_resenas_candidato` con alcance sobre ESTA vacante. Es lo que
+   * ofrece la columna «Reseñas» en el menú «Columnas».
+   */
+  puedeVerResenas?: boolean
   filas: FilaRanking[]
 }
 
@@ -1522,4 +1544,118 @@ export interface CorregirPreguntaTecnica {
   c3Esperado: string | null
   c4Esperado: string | null
   senalDeCero: string | null
+}
+
+// ---------- Las reseñas de empresas (V63) ----------
+
+/** El promedio y el reparto de las reseñas VISIBLES. */
+export interface ResumenResenasPanel {
+  promedio: number | null
+  cantidad: number
+  reparto: { estrellas: number; cantidad: number }[]
+}
+
+/** Una reseña visible, tal como la lee cualquier empresa. */
+export interface ResenaVisible {
+  id: number
+  estrellas: number
+  /** El nombre ACTUAL de la empresa autora. */
+  empresa: string
+  puesto: string | null
+  texto: string
+  publicadaEn: FechaIso
+  editada: boolean
+  /** La respuesta de la persona, si se ve. La ocultada no viaja. */
+  respuesta: { texto: string; publicadaEn: FechaIso; editada: boolean } | null
+}
+
+/**
+ * Las reseñas de la persona de una postulación y, si toca, el bloque de la
+ * empresa autora.
+ *
+ * ⚠️ El panel no tiene endpoint de «mis permisos»: `puedeVerResenas` y
+ * `puedeResenar` dicen qué pintar. Sin permiso, los datos ni viajan.
+ */
+export interface ResenasDeLaPostulacion {
+  /** Cómo se llama la persona: «Respuesta de …». */
+  persona: string
+  puedeVerResenas: boolean
+  resumen?: ResumenResenasPanel
+  resenas?: ResenaVisible[]
+  /** Con `resenar_contratado` sobre esta contratación y la postulación en CONTRATADO. */
+  puedeResenar: boolean
+  miResena?: LaResenaDeMiEmpresa
+}
+
+export type EstadoDeMiResena =
+  | 'AUN_NO_TOCA'
+  | 'SE_PUEDE_ESCRIBIR'
+  | 'EDITABLE'
+  | 'FIJA'
+  | 'OCULTADA'
+
+export interface LaResenaDeMiEmpresa {
+  estado: EstadoDeMiResena
+  empresa: string
+  puesto: string | null
+  contratadoEn: FechaIso
+  /** La contratación más 30 días. */
+  abreEn: FechaIso
+  resena: ResenaDeMiEmpresa | null
+}
+
+export interface ResenaDeMiEmpresa {
+  id: number
+  estrellas: number
+  texto: string
+  publicadaEn: FechaIso
+  editada: boolean
+  /** La primera publicación más 30 días; editarla no lo alarga. */
+  editableHasta: FechaIso
+  notaOcultacion: string | null
+  respuesta: RespuestaParaLaAutora | null
+}
+
+export interface RespuestaParaLaAutora {
+  texto: string
+  publicadaEn: FechaIso
+  editada: boolean
+  ocultada: boolean
+  /** `EN_REVISION`, `MANTENIDA`, `OCULTADA` o nulo. */
+  reporte: 'EN_REVISION' | 'MANTENIDA' | 'OCULTADA' | null
+  notaReporte: string | null
+  puedeReportar: boolean
+}
+
+export interface EscribirResena {
+  estrellas: number
+  texto: string
+}
+
+export interface ReportarRespuesta {
+  motivo: 'OFENSIVA' | 'DATOS_PERSONALES' | 'DISCRIMINATORIA' | 'FALSA' | 'OTRO'
+  comentario: string | null
+}
+
+/** Una tarjeta de «Reseñas reportadas». */
+export interface ReporteParaModerar {
+  id: number
+  /** Qué se juzga: la reseña, o la respuesta a ella. */
+  objeto: 'RESENA' | 'RESPUESTA'
+  empresa: string
+  persona: string
+  estrellas: number
+  textoResena: string
+  textoRespuesta: string | null
+  motivo: ReportarRespuesta['motivo']
+  comentario: string | null
+  reportadoEn: FechaIso
+  estado: 'PENDIENTE' | 'MANTENIDA' | 'OCULTADA' | 'RETIRADA'
+  resueltoEn: FechaIso | null
+  notaRevision: string | null
+}
+
+export interface ResolverReporte {
+  decision: 'MANTENER' | 'OCULTAR'
+  nota: string
 }

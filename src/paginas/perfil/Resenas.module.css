@@ -1,0 +1,123 @@
+/*
+ * «Reseñas de empresas» en «Mi perfil». La sección usa la tarjeta, el título y
+ * la explicación de `Perfil.module.css`; las reseñas, el resumen y la ventana
+ * son las piezas compartidas de `ui/resenas`. Aquí solo va lo propio del perfil.
+ */
+
+/* El título recibe el foco al cerrar un paso cuyo botón ya no existe. */
+.seccion h2:focus-visible {
+  outline: 2px solid var(--activo);
+  outline-offset: 4px;
+  border-radius: var(--radio-menor);
+}
+
+.recientes {
+  margin-top: var(--e3);
+}
+
+.verTodas {
+  composes: secundario from '../../estilos/piezas.module.css';
+  margin-top: var(--e3);
+}
+
+.cargando {
+  margin-top: var(--e4);
+}
+
+.falloDeCarga {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e3) var(--e4);
+  margin-top: var(--e4);
+  font-size: var(--t-prosa);
+  color: var(--tinta2);
+}
+
+.reintentar {
+  composes: secundario from '../../estilos/piezas.module.css';
+}
+
+/* Borrar la respuesta pide confirmación ahí mismo: no abre otra ventana. */
+.confirmar {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--e2) var(--e4);
+  font-size: var(--t-apoyo);
+  color: var(--tinta);
+}
+
+.borrar {
+  composes: peligrosoMenor from '../../estilos/piezas.module.css';
+}
+
+.falloEnLinea {
+  font-size: var(--t-menor);
+  color: var(--mal);
+}
+
+/* ---------- Los pasos de la ventana ---------- */
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+}
+
+.contexto {
+  padding: var(--e3) var(--e4);
+  border-radius: var(--radio-control);
+  background: var(--nube-hundida);
+}
+
+.contextoCabeza {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e2) var(--e3);
+  overflow-wrap: anywhere;
+}
+
+/* Lo que se responde o se reporta, entero pero contenido: una reseña de mil
+   caracteres no puede empujar el formulario fuera de la ventana. */
+.contextoTexto {
+  margin-top: var(--e2);
+  max-height: 9.5em;
+  overflow-y: auto;
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.aviso {
+  margin-top: var(--e3);
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+  max-width: var(--medida);
+}
+
+.fallo {
+  margin-top: var(--e3);
+  padding: var(--e3) var(--e4);
+  border: 1px solid var(--mal-regla);
+  border-radius: var(--radio-menor);
+  background: var(--mal-bruma);
+  font-size: var(--t-apoyo);
+  color: var(--mal);
+}
+
+.noDisponible {
+  font-size: var(--t-prosa);
+  color: var(--tinta);
+}
+
+.volver {
+  composes: secundario from '../../estilos/piezas.module.css';
+}
+
+.enviar {
+  composes: acentoMenor from '../../estilos/piezas.module.css';
+}

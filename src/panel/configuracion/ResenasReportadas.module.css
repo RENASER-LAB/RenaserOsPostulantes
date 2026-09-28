@@ -1,0 +1,189 @@
+/*
+ * «Reseñas reportadas» (V63). Las tarjetas se separan por la regla y no son
+ * cajas dentro de cajas; la sección y su título son los de Configuración.
+ *
+ * ⚠️ Las estrellas en tinta, nunca en `--activo`. «Ocultar» va en rojo porque
+ * retira algo para siempre; «Mantener» es la acción neutra.
+ */
+
+.pestanas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e2);
+  margin-bottom: var(--e4);
+}
+
+.pestana {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 var(--e4);
+  border: 1px solid var(--regla2);
+  border-radius: var(--radio-control);
+  background: var(--nube);
+  font: inherit;
+  font-size: var(--t-apoyo);
+  font-weight: 500;
+  color: var(--tinta);
+  cursor: pointer;
+}
+
+.pestana:focus-visible {
+  outline: 2px solid var(--activo);
+  outline-offset: 2px;
+}
+
+/* La elegida, maciza en tinta: la forma lo dice además del color. */
+.pestana[aria-pressed='true'] {
+  border-color: var(--tinta);
+  background: var(--tinta);
+  color: var(--tinta-invertida);
+}
+
+.tarjetas {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--regla);
+  max-width: 52rem;
+}
+
+.tarjetas > li {
+  border-bottom: 1px solid var(--regla);
+}
+
+.tarjeta {
+  padding: var(--e4) 0;
+  min-width: 0;
+}
+
+.que {
+  font-size: var(--t-menor);
+  color: var(--tinta2);
+}
+
+.quien {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e2) var(--e4);
+  margin-top: var(--e1);
+  font-weight: 600;
+  color: var(--tinta);
+  overflow-wrap: anywhere;
+}
+
+.juzgado,
+.contexto {
+  margin-top: var(--e2);
+  font-size: var(--t-prosa);
+  line-height: 1.55;
+  max-width: var(--medida);
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.juzgado {
+  color: var(--tinta);
+}
+
+/* La reseña, cuando lo que se juzga es la respuesta: se lee, pero baja un tono. */
+.contexto {
+  color: var(--tinta2);
+}
+
+.respuestaJuzgada {
+  margin: var(--e3) 0 0 var(--e5);
+  padding: var(--e3) var(--e4);
+  border-radius: var(--radio-control);
+  background: var(--nube-hundida);
+}
+
+.etiqueta {
+  display: block;
+  font-size: var(--t-menor);
+  font-weight: 600;
+  color: var(--tinta2);
+}
+
+.motivo {
+  margin-top: var(--e3);
+  font-size: var(--t-apoyo);
+  color: var(--tinta);
+}
+
+.comentario {
+  margin-top: var(--e1);
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+  overflow-wrap: anywhere;
+}
+
+.revision {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e1);
+  margin-top: var(--e4);
+  max-width: 40rem;
+}
+
+.area {
+  width: 100%;
+  padding: var(--e3);
+  border: 1px solid var(--borde-control);
+  border-radius: var(--radio-control);
+  background: var(--nube);
+  font: inherit;
+  font-size: var(--t-base);
+  color: var(--tinta);
+  resize: vertical;
+}
+
+.area:focus-visible {
+  outline: 2px solid var(--activo);
+  outline-offset: 2px;
+}
+
+.area[aria-invalid='true'] {
+  border-color: var(--mal);
+}
+
+.error {
+  font-size: var(--t-menor);
+  color: var(--mal);
+}
+
+.botones {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--e3);
+  margin-top: var(--e2);
+}
+
+.mantener {
+  composes: secundario from '../../estilos/piezas.module.css';
+}
+
+.ocultar {
+  composes: peligrosoMenor from '../../estilos/piezas.module.css';
+}
+
+.resultado {
+  margin-top: var(--e3);
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+  overflow-wrap: anywhere;
+}
+
+.enlace {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}

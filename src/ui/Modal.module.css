@@ -90,4 +90,22 @@
   .cuerpo {
     padding: var(--e4);
   }
+
+  /*
+   * La variante que en el teléfono ocupa la pantalla entera: sin marco, sin
+   * esquinas y sin el hueco de alrededor, que en 375 px es espacio que se le
+   * quita a la lectura. `dvh` y no `vh`: con la barra del navegador a la vista,
+   * `100vh` deja el pie debajo del borde.
+   */
+  .cajaCompleta {
+    inset: 0;
+    left: 0;
+    top: 0;
+    transform: none;
+    width: 100vw;
+    height: 100dvh;
+    max-height: none;
+    border: 0;
+    border-radius: 0;
+  }
 }

@@ -201,6 +201,48 @@ describe('la campana', () => {
     expect(screen.queryByRole('link')).toBeNull()
   })
 
+  it('AC-11: el aviso de una reseña lleva a la sección de reseñas del perfil, no a un proceso', async () => {
+    avisos = {
+      sinLeer: 1,
+      avisos: [
+        {
+          ...UN_AVISO,
+          id: 11,
+          tipo: 'RESENA_PUBLICADA',
+          titulo: 'Constructora Andina te dejó una reseña',
+          cuerpo: 'Puedes leerla en tu perfil y, si quieres, responderla.',
+          postulacionUuid: null,
+          vacanteId: null,
+        },
+      ],
+    }
+    montar()
+    await screen.findByRole('button', { name: /1 sin leer/i })
+    fireEvent.click(screen.getByRole('button'))
+
+    const enlace = await screen.findByRole('link', { name: /te dejó una reseña/i })
+    expect(enlace.getAttribute('href')).toBe('/perfil#resenas')
+  })
+
+  it('los otros tres avisos de reseñas también llevan allí', async () => {
+    avisos = {
+      sinLeer: 3,
+      avisos: ['RESENA_EDITADA', 'REPORTE_RESENA_RESUELTO', 'RESPUESTA_RESENA_OCULTADA'].map(
+        (tipo, i) => ({ ...UN_AVISO, id: 20 + i, tipo, titulo: `Aviso ${tipo}`, postulacionUuid: null }),
+      ),
+    }
+    montar()
+    await screen.findByRole('button', { name: /3 sin leer/i })
+    fireEvent.click(screen.getByRole('button'))
+
+    const enlaces = await screen.findAllByRole('link', { name: /Aviso/ })
+    expect(enlaces.map((e) => e.getAttribute('href'))).toEqual([
+      '/perfil#resenas',
+      '/perfil#resenas',
+      '/perfil#resenas',
+    ])
+  })
+
   it('se cierra con Escape', async () => {
     avisos = { sinLeer: 1, avisos: [UN_AVISO] }
     montar()

@@ -227,6 +227,24 @@ export function Campana() {
 }
 
 /**
+ * Los avisos de las reseñas de empresas (V63). No cuelgan de ningún proceso —la
+ * reseña es de la persona, no de una postulación— y llevan a su sección del
+ * perfil, donde puede leerla, responderla o ver en qué quedó su reporte.
+ */
+const DE_LAS_RESENAS = new Set([
+  'RESENA_PUBLICADA',
+  'RESENA_EDITADA',
+  'REPORTE_RESENA_RESUELTO',
+  'RESPUESTA_RESENA_OCULTADA',
+])
+
+/** A dónde lleva un aviso, o `null` si no lleva a ninguna parte. */
+export function destinoDelAviso(aviso: AvisoDelPortal): string | null {
+  if (DE_LAS_RESENAS.has(aviso.tipo)) return rutas.resenasDelPerfil()
+  return aviso.postulacionUuid ? rutas.proceso(aviso.postulacionUuid) : null
+}
+
+/**
  * Un aviso de la lista.
  *
  * Entra desde la derecha desenfocandose, con un retraso proporcional a su
@@ -281,10 +299,10 @@ function Aviso({
         alcanzable con el tabulador ni responde a Enter. Se ve igual y funciona
         para mas gente.
       */}
-      {aviso.postulacionUuid ? (
+      {destinoDelAviso(aviso) ? (
         <Link
           className={estilos.zona}
-          to={rutas.proceso(aviso.postulacionUuid)}
+          to={destinoDelAviso(aviso)!}
           onClick={() => {
             alAbrir()
             alNavegar()

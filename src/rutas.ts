@@ -123,6 +123,8 @@ export const rutas = {
   /** Solo para pruebas y documentación: el enlace lo arma el backend. */
   restablecer: (token: string) => `/restablecer?token=${encodeURIComponent(token)}`,
   perfil: () => '/perfil',
+  /** La sección «Reseñas de empresas» del perfil: a donde llevan sus avisos (V63). */
+  resenasDelPerfil: () => '/perfil#resenas',
   procesos: () => '/procesos',
   proceso: (uuid: string) => `/procesos/${uuid}`,
   evaluacion: (uuid: string) => `/procesos/${uuid}/evaluacion`,

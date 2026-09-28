@@ -20,6 +20,7 @@ import {
 import { Areas } from './Areas'
 import { BancoDePreguntas } from './BancoDePreguntas'
 import { Permisos } from './Permisos'
+import { ResenasReportadas } from './ResenasReportadas'
 import tabla from '../ui/Tabla.module.css'
 import estilos from './Configuracion.module.css'
 
@@ -42,6 +43,11 @@ export function ConfiguracionPanel() {
       <Areas />
       <Equipo />
       <Permisos />
+      {/*
+        Solo para la plataforma, con `moderar_resenas`: a cualquier otra empresa
+        el backend le contesta 403 y la sección no se pinta.
+      */}
+      <ResenasReportadas />
       <SoloLectura />
     </div>
   )

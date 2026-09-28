@@ -436,7 +436,8 @@ test.describe('QA · regresiones de lo encontrado explorando', () => {
   test('F-01 · en escritorio no se pinta «Más»: lo que recoge ya está a la vista', async ({ page }) => {
     await page.setViewportSize({ width: 1366, height: 768 })
     await abrirVacante(page)
-    await expect(page.getByText('Columnas', { exact: true })).toBeVisible()
+    // Desde la V63 el resumen puede decir «Columnas 1 oculta» (Reseñas arranca apagada).
+    await expect(page.locator('summary').filter({ hasText: /^Columnas/ })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Más', exact: true })).toBeHidden()
   })
 

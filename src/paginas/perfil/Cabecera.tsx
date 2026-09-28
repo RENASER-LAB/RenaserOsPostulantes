@@ -41,7 +41,16 @@ import {
 import type { PerfilCompleto } from '@/api/tipos'
 import { useSesion } from '@/app/Sesion'
 import { useAviso } from '@/ui/Avisos'
-import { IconoCamara, IconoDeEnlace, IconoLapiz, IconoReloj, IconoUbicacion } from '@/ui/Iconos'
+import {
+  IconoCamara,
+  IconoDeEnlace,
+  IconoEstrella,
+  IconoLapiz,
+  IconoReloj,
+  IconoUbicacion,
+} from '@/ui/Iconos'
+import { cuantasResenas, estrellasDichas, promedioEscrito } from '@/ui/resenas/modelo'
+import { ANCLA_RESENAS } from './Resenas'
 import { FORMATOS_IMAGEN, revisarImagen } from './archivos'
 import { aniosYMeses } from './textos'
 import estilos from './Cabecera.module.css'
@@ -379,6 +388,25 @@ export function CabeceraDelPerfil({
               </li>
             )}
           </ul>
+
+          {/*
+            Lo que opinan las empresas que la contrataron (V63), en su propia línea
+            debajo de las señas y como enlace a la sección. Sin reseñas visibles no
+            sale: un «0 reseñas» en la cabecera se lee como un suspenso.
+          */}
+          {perfil.resenas && perfil.resenas.cantidad > 0 && perfil.resenas.promedio != null && (
+            <p className={estilos.lineaResenas}>
+              <a
+                href={`#${ANCLA_RESENAS}`}
+                aria-label={`${estrellasDichas(perfil.resenas.promedio)} · ${cuantasResenas(
+                  perfil.resenas.cantidad,
+                )}. Ir a tus reseñas`}
+              >
+                <IconoEstrella tamano={16} />
+                {promedioEscrito(perfil.resenas.promedio)} · {cuantasResenas(perfil.resenas.cantidad)}
+              </a>
+            </p>
+          )}
 
           {perfil.enlaces.length > 0 && (
             <ul className={estilos.enlaces}>

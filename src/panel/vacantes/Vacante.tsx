@@ -88,6 +88,7 @@ import {
   ciudadesDelRanking,
   columnasDelRanking,
   columnasVisibles,
+  COLUMNAS_APAGADAS_AL_ABRIR,
   comoSeOrdena,
   criteriosQueSePintan,
   cuantasPorCalificacion,
@@ -115,6 +116,7 @@ import {
   queTraeLaTanda,
   quitarFiltro,
   recuentos,
+  resenasDichas,
   resumenDeLaTanda,
   rotuloDeVista,
   seExportaAExcel,
@@ -131,6 +133,8 @@ import {
   type Vista,
 } from './ranking'
 import { RemuneracionDeLaVacante } from './Remuneracion'
+import { ResenasDeLaFicha } from './ResenasDeLaFicha'
+import { IconoEstrella } from '@/ui/Iconos'
 import estilos from './Vacante.module.css'
 
 /**
@@ -874,7 +878,14 @@ function Ranking({
     y eso ya es la convención de esta pantalla. Guardarlo sería otra decisión
     —dónde, y si es por persona o por vacante— y no una que se toma de paso.
   */
-  const [apagadas, setApagadas] = useState<ReadonlySet<string>>(new Set())
+  /*
+    «Reseñas» (V63) es la única que arranca apagada: ver
+    `COLUMNAS_APAGADAS_AL_ABRIR`. Sin el permiso de verlas la columna ni existe,
+    y su clave aquí dentro no cuenta como oculta —ver `cuantasOcultas`—.
+  */
+  const [apagadas, setApagadas] = useState<ReadonlySet<string>>(
+    () => new Set(COLUMNAS_APAGADAS_AL_ABRIR),
+  )
 
   const laEtapa = laEtapaDe(etapa)
   /*
@@ -915,6 +926,9 @@ function Ranking({
     // se arregla desde el panel: esta vacante no publica lo que paga, así que a
     // nadie se le exigió decir lo suyo. Ver `porQueNoHayPretension`.
     cabeceraDelCv.vacanteMuestraSueldo !== false,
+    // Las reseñas de empresas (V63): el permiso con alcance sobre ESTA vacante.
+    // Sin él la columna no se ofrece, y el dato ni viaja en las filas.
+    cabeceraDelCv.puedeVerResenas === true,
   )
   /*
     Adecuacion y potencial son dimensiones del retrato que sale del curriculum,
@@ -940,6 +954,14 @@ function Ranking({
   const criterios = criteriosQueSePintan(etapa, filas, verCriterios)
   const todasLasColumnas = columnasDelRanking(etapa, trae, criterios)
   const columnasDeLaTabla = columnasVisibles(todasLasColumnas, apagadas)
+  /*
+    Las ocultas que de verdad existen en esta tabla. `apagadas.size` a secas
+    contaría «Reseñas» a quien no puede verlas, y le diría «1 oculta» de una
+    columna que no aparece en su menú.
+  */
+  const cuantasOcultas = todasLasColumnas.filter(
+    (c) => c.ocultable && apagadas.has(c.clave),
+  ).length
   const columnas = columnasDeLaTabla.length
   /*
     ⚠️ **La única fuente de «¿se pinta esta celda?».** La cabecera sale de
@@ -1245,8 +1267,10 @@ function Ranking({
         <details className={estilos.selectorColumnas}>
           <summary>
             Columnas
-            {apagadas.size > 0 && (
-              <span className={estilos.cuantasApagadas}>{apagadas.size} ocultas</span>
+            {cuantasOcultas > 0 && (
+              <span className={estilos.cuantasApagadas}>
+                {cuantasOcultas} {cuantasOcultas === 1 ? 'oculta' : 'ocultas'}
+              </span>
             )}
           </summary>
           <div className={estilos.listaColumnas}>
@@ -1286,7 +1310,7 @@ function Ranking({
                   {c.completo ?? c.titulo}
                 </label>
               ))}
-            {apagadas.size > 0 && (
+            {cuantasOcultas > 0 && (
               <button
                 className={estilos.verTodasLasColumnas}
                 type="button"
@@ -1729,6 +1753,35 @@ function Ranking({
                   {/* La ciudad, al final: ver el comentario de `columnasDelRanking`. */}
                   {ve('ciudad') && (
                     <td className={estilos.celdaCiudad}>{fila.ciudad ?? '—'}</td>
+                  )}
+                  {/*
+                    Las reseñas de empresas (V63). Pulsar la celda abre la ficha de
+                    esa fila, que es donde se leen enteras. El guion es «ninguna
+                    reseña visible», y solo puede significar eso: sin permiso la
+                    columna no existe.
+                  */}
+                  {ve('resenas') && (
+                    <td className={estilos.celdaResenas}>
+                      {resenasDichas(fila) ? (
+                        <button
+                          type="button"
+                          className={estilos.abrirResenas}
+                          aria-expanded={abierta === fila.postulacionId}
+                          aria-label={`Reseñas de ${fila.candidato}: ${resenasDichas(fila)}. Abrir la ficha`}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setAbierta(abierta === fila.postulacionId ? null : fila.postulacionId)
+                          }}
+                        >
+                          <IconoEstrella tamano={14} />
+                          {resenasDichas(fila)}
+                        </button>
+                      ) : (
+                        <span className={estilos.porQue} title="Sin reseñas de empresas">
+                          —
+                        </span>
+                      )}
+                    </td>
                   )}
                 </tr>
                 {abierta === fila.postulacionId && (
@@ -2402,6 +2455,14 @@ function DetalleDelPostulante({ fila, etapa }: { fila: FilaRanking; etapa: Etapa
           <LaEvaluacionDelBanco fila={fila} />
         </div>
       )}
+
+      {/*
+        Las reseñas de empresas (V63), al final de la ficha y a lo ancho: la de
+        mi empresa si la contrató, y las que le dejaron todas. Son de la persona y
+        no de la etapa, así que salen igual en las cinco pestañas —y no puntúan en
+        ninguna—.
+      */}
+      <ResenasDeLaFicha postulacionId={fila.postulacionId} />
     </div>
   )
 }

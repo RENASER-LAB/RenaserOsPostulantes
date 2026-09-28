@@ -1346,6 +1346,36 @@ thead .celdaCandidato {
 }
 
 /*
+ * Las reseñas de empresas (V63): «★ 4,5 (3)» en una línea. La estrella va en
+ * tinta y NUNCA en `--activo`: el violeta es «te toca a ti», y una reseña no le
+ * pide nada a nadie. El botón abre la ficha, donde se leen enteras.
+ */
+.celdaResenas {
+  white-space: nowrap;
+}
+
+.abrirResenas {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  color: var(--tinta);
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: var(--regla2);
+  text-underline-offset: 0.2em;
+}
+
+.abrirResenas:hover {
+  text-decoration-color: currentColor;
+}
+
+/*
  * El grupo de prioridad, ahora en su columna «Veredicto».
  *
  * Pildora de bruma, como las demas etiquetas de estado de esta pantalla. **Sin

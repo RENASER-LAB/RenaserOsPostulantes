@@ -15,12 +15,17 @@ interface Props {
   children: ReactNode
   /** Los botones del pie. Sin esto se pone uno de «Cerrar». */
   pie?: ReactNode
+  /**
+   * En el teléfono ocupa la pantalla entera. Para ventanas que se leen largo
+   * —las reseñas, con sus filtros— y no para un aviso de dos líneas.
+   */
+  pantallaCompleta?: boolean
 }
 
 const ENFOCABLES =
   'a[href], button:not([disabled]), input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])'
 
-export function Modal({ abierto, titulo, onCerrar, children, pie }: Props) {
+export function Modal({ abierto, titulo, onCerrar, children, pie, pantallaCompleta }: Props) {
   const caja = useRef<HTMLElement>(null)
 
   /*
@@ -86,7 +91,7 @@ export function Modal({ abierto, titulo, onCerrar, children, pie }: Props) {
     <>
       <div className={estilos.fondo} onClick={onCerrar} />
       <section
-        className={estilos.caja}
+        className={pantallaCompleta ? `${estilos.caja} ${estilos.cajaCompleta}` : estilos.caja}
         role="dialog"
         aria-modal="true"
         aria-labelledby="titulo-modal"

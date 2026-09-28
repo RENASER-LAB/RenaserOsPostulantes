@@ -83,6 +83,8 @@ import {
   notaDelCriterio,
   tonoDelCriterio,
   desgloseDelPonderado,
+  COLUMNAS_APAGADAS_AL_ABRIR,
+  resenasDichas,
 } from './ranking'
 import type { FilaRanking, NotaCriterio, RespuestaAbiertaVista } from '../api/tipos'
 
@@ -2438,6 +2440,8 @@ describe('una columna entera vacía no se pinta: se dice por qué', () => {
       hayPretension: false,
       puedeVerPretension: true,
       vacanteMuestraSueldo: true,
+      // Sin decir que se pueden ver, las reseñas (V63) no se ofrecen.
+      puedeVerResenas: false,
     })
   })
 
@@ -2447,6 +2451,8 @@ describe('una columna entera vacía no se pinta: se dice por qué', () => {
       hayPretension: true,
       puedeVerPretension: true,
       vacanteMuestraSueldo: true,
+      // Sin decir que se pueden ver, las reseñas (V63) no se ofrecen.
+      puedeVerResenas: false,
     })
   })
 
@@ -2626,5 +2632,77 @@ describe('el desglose del ponderado', () => {
     expect(desgloseDelPonderado(fila('PRUEBA_CALIFICANDO', null))).toContain(
       'faltan las dos notas',
     )
+  })
+})
+
+// ---------- Las reseñas de empresas (V63) ----------
+
+describe('la columna «Reseñas»', () => {
+  const trae = (puedeVerResenas: boolean) =>
+    queTraeLaTanda([fila('POSTULADA', 70)], true, true, puedeVerResenas)
+
+  it('AC-23 y AC-25: con el permiso se ofrece en las cinco etapas, al final y ordenable', () => {
+    for (const etapa of ETAPAS_PANEL.map((e) => e.codigo)) {
+      const columnas = columnasDelRanking(etapa, trae(true))
+      const resenas = columnas.find((c) => c.clave === 'resenas')
+      expect(resenas, etapa).toBeDefined()
+      expect(resenas!.ocultable).toBe(true)
+      expect(resenas!.ordenable).toBe('resenas')
+      expect(columnas.at(-1)!.clave).toBe('resenas')
+    }
+  })
+
+  it('AC-27: sin el permiso, ni se ofrece', () => {
+    const claves = columnasDelRanking('PERFIL_INTEGRAL', trae(false)).map((c) => c.clave)
+    expect(claves).not.toContain('resenas')
+  })
+
+  it('AC-23: arranca apagada al abrir la vacante, y es la única', () => {
+    expect(COLUMNAS_APAGADAS_AL_ABRIR).toEqual(['resenas'])
+    const visibles = columnasVisibles(
+      columnasDelRanking('PERFIL_INTEGRAL', trae(true)),
+      new Set(COLUMNAS_APAGADAS_AL_ABRIR),
+    ).map((c) => c.clave)
+    expect(visibles).not.toContain('resenas')
+    expect(visibles).toContain('estado')
+  })
+
+  it('la celda dice «4,5 (3)», o nada sin reseñas visibles', () => {
+    expect(resenasDichas(fila('POSTULADA', 70, { resenas: { promedio: 4.5, cantidad: 3 } }))).toBe(
+      '4,5 (3)',
+    )
+    expect(resenasDichas(fila('POSTULADA', 70, { resenas: { promedio: 5, cantidad: 1 } }))).toBe(
+      '5,0 (1)',
+    )
+    expect(resenasDichas(fila('POSTULADA', 70, { resenas: null }))).toBeNull()
+    expect(resenasDichas(fila('POSTULADA', 70))).toBeNull()
+  })
+
+  describe('AC-24: ordenar por reseñas', () => {
+    const tanda = [
+      fila('POSTULADA', 90, { postulacionId: 1, resenas: null }),
+      fila('POSTULADA', 80, { postulacionId: 2, resenas: { promedio: 4.5, cantidad: 1 } }),
+      fila('POSTULADA', 70, { postulacionId: 3, resenas: { promedio: 3, cantidad: 2 } }),
+      fila('POSTULADA', 60, { postulacionId: 4, resenas: { promedio: 4.5, cantidad: 3 } }),
+      fila('POSTULADA', 50, { postulacionId: 5 }),
+    ]
+
+    it('primero por promedio, a igualdad por cuántas, y las «—» al final', () => {
+      const orden = alternarOrden(null, 'resenas')
+      expect(orden).toEqual({ columna: 'resenas', sentido: 'desc' })
+      expect(ordenar(tanda, orden).map((f) => f.postulacionId)).toEqual([4, 2, 3, 1, 5])
+    })
+
+    it('al darle la vuelta, las «—» siguen al final', () => {
+      const orden = alternarOrden(alternarOrden(null, 'resenas'), 'resenas')
+      expect(orden).toEqual({ columna: 'resenas', sentido: 'asc' })
+      expect(ordenar(tanda, orden).map((f) => f.postulacionId)).toEqual([3, 2, 4, 1, 5])
+    })
+
+    it('el tercer clic vuelve al orden del servidor, que no sabe nada de reseñas', () => {
+      const tercero = alternarOrden(alternarOrden(alternarOrden(null, 'resenas'), 'resenas'), 'resenas')
+      expect(tercero).toBeNull()
+      expect(ordenar(tanda, tercero)).toBe(tanda)
+    })
   })
 })

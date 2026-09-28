@@ -20,6 +20,7 @@ import { useAviso } from '@/ui/Avisos'
 import { IconoDescargar, IconoDocumento, IconoPapelera, IconoSubir, IconoVisto } from '@/ui/Iconos'
 import { FORMATOS_CV, revisarCurriculum } from './archivos'
 import { anclaDe } from './Listas'
+import { ANCLA_RESENAS } from './Resenas'
 import estilos from './Lateral.module.css'
 
 /**
@@ -97,8 +98,17 @@ export function Lateral({ perfil }: { perfil: PerfilCompleto }) {
   )
 }
 
-/** Las secciones del perfil, en el orden en que se pintan. */
-const SECCIONES = [
+/**
+ * Las secciones del perfil, en el orden en que se pintan.
+ *
+ * `ancla` solo cuando no sale del título: «Reseñas» vive en `#resenas`, que es
+ * la dirección a la que llevan la cabecera y la campana.
+ */
+const SECCIONES: readonly {
+  titulo: string
+  cuenta: readonly ('experiencia' | 'educacion' | 'certificaciones' | 'idiomas' | 'enlaces')[]
+  ancla?: string
+}[] = [
   { titulo: 'Acerca de ti', cuenta: [] },
   // Empleos y estudios comparten sección desde que hay una cronología; las
   // certificaciones salieron de ella el 06/09 porque son puntos, no tramos.
@@ -106,7 +116,14 @@ const SECCIONES = [
   { titulo: 'Certificaciones', cuenta: ['certificaciones'] },
   { titulo: 'Idiomas', cuenta: ['idiomas'] },
   { titulo: 'Enlaces', cuenta: ['enlaces'] },
-] as const
+  /*
+    Las reseñas de empresas (V63), al final. Llevan su número como «Tu
+    trayectoria», pero nunca «por revisar»: la persona no edita sus reseñas.
+  */
+  { titulo: 'Reseñas', cuenta: [], ancla: ANCLA_RESENAS },
+]
+
+const anclaDeLaSeccion = (s: { titulo: string; ancla?: string }) => s.ancla ?? anclaDe(s.titulo)
 
 /**
  * Dónde estás y qué te queda por delante.
@@ -121,9 +138,14 @@ const SECCIONES = [
  */
 function Indice({ perfil }: { perfil: PerfilCompleto }) {
   const [aqui, setAqui] = useState<string | null>(null)
+  /*
+    La sección que se acaba de pulsar en el índice. Manda mientras siga en la
+    banda activa, y se olvida en cuanto sale de ella.
+  */
+  const pulsada = useRef<string | null>(null)
 
   useEffect(() => {
-    const secciones = SECCIONES.map((s) => document.getElementById(anclaDe(s.titulo))).filter(
+    const secciones = SECCIONES.map((s) => document.getElementById(anclaDeLaSeccion(s))).filter(
       (e): e is HTMLElement => e !== null,
     )
     if (secciones.length === 0) return
@@ -141,21 +163,62 @@ function Indice({ perfil }: { perfil: PerfilCompleto }) {
     */
     const dentro = new Set<string>()
     const enOrden = secciones.map((s) => s.id)
+
+    /*
+      ⚠️ **Al final de la página gana la última, no la primera.** Las últimas
+      secciones no pueden subir hasta arriba porque la página se acaba: con
+      «Enlaces» y unas «Reseñas» cortas a la vez en la banda, la primera en
+      orden era siempre «Enlaces», también después de pulsar «Reseñas». Si se
+      pulsó una y está en la banda, manda ella; si no, en el fondo de la página
+      se marca la última de la banda, y en el resto, la primera.
+    */
+    const elegir = () => {
+      const enBanda = enOrden.filter((id) => dentro.has(id))
+      // Sin ninguna dentro de la banda —entre dos secciones largas— se queda
+      // la última marcada: apagarlo todo parpadea y no dice nada mejor.
+      if (enBanda.length === 0) return
+      if (pulsada.current && dentro.has(pulsada.current)) {
+        setAqui(pulsada.current)
+        return
+      }
+      // Solo si la página se desplaza: una que cabe entera no tiene «fondo».
+      const alFondo =
+        window.scrollY > 0 &&
+        window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2
+      setAqui(alFondo ? enBanda[enBanda.length - 1]! : enBanda[0]!)
+    }
+
     const vigia = new IntersectionObserver(
       (entradas) => {
         for (const e of entradas) {
           if (e.isIntersecting) dentro.add(e.target.id)
-          else dentro.delete(e.target.id)
+          else {
+            dentro.delete(e.target.id)
+            if (e.target.id === pulsada.current) pulsada.current = null
+          }
         }
-        const primera = enOrden.find((id) => dentro.has(id))
-        // Sin ninguna dentro de la banda —entre dos secciones largas— se queda
-        // la última marcada: apagarlo todo parpadea y no dice nada mejor.
-        if (primera) setAqui(primera)
+        elegir()
       },
       { rootMargin: '-88px 0px -60% 0px', threshold: 0 },
     )
     secciones.forEach((s) => vigia.observe(s))
-    return () => vigia.disconnect()
+
+    // Llegar al fondo no cruza ningún borde de la banda: el observador no avisa
+    // y hay que mirarlo al desplazar, una vez por cuadro.
+    let cuadro = 0
+    const alDesplazar = () => {
+      if (cuadro) return
+      cuadro = requestAnimationFrame(() => {
+        cuadro = 0
+        elegir()
+      })
+    }
+    window.addEventListener('scroll', alDesplazar, { passive: true })
+    return () => {
+      vigia.disconnect()
+      window.removeEventListener('scroll', alDesplazar)
+      cancelAnimationFrame(cuadro)
+    }
   }, [])
 
   return (
@@ -163,7 +226,7 @@ function Indice({ perfil }: { perfil: PerfilCompleto }) {
       <h2 className={estilos.titulo}>En esta página</h2>
       <ul className={estilos.indice}>
         {SECCIONES.map((s) => {
-          const ancla = anclaDe(s.titulo)
+          const ancla = anclaDeLaSeccion(s)
           // El tipo se ensancha a propósito: aquí solo se cuentan filas y su
           // origen, que es lo único que las cinco listas tienen en común.
           const filas: { origen?: string; confirmado?: boolean }[] = s.cuenta.flatMap(
@@ -172,10 +235,17 @@ function Indice({ perfil }: { perfil: PerfilCompleto }) {
           const sinConfirmar = filas.filter(
             (f) => f.origen === 'CURRICULUM' && !f.confirmado,
           ).length
+          // Las reseñas no son filas del perfil: su número viaja en el resumen.
+          const cuantas =
+            s.ancla === ANCLA_RESENAS ? (perfil.resenas?.cantidad ?? 0) : filas.length
           return (
             <li key={s.titulo}>
               <a
                 href={`#${ancla}`}
+                onClick={() => {
+                  pulsada.current = ancla
+                  setAqui(ancla)
+                }}
                 className={aqui === ancla ? estilos.aqui : undefined}
                 /* La sección en la que estás, dicha y no solo pintada. */
                 aria-current={aqui === ancla ? 'true' : undefined}
@@ -183,8 +253,8 @@ function Indice({ perfil }: { perfil: PerfilCompleto }) {
                 <span className={estilos.nombreSeccion}>{s.titulo}</span>
                 {sinConfirmar > 0 ? (
                   <span className={estilos.porRevisar}>{sinConfirmar} por revisar</span>
-                ) : filas.length > 0 ? (
-                  <span className={estilos.cuantas}>{filas.length}</span>
+                ) : cuantas > 0 ? (
+                  <span className={estilos.cuantas}>{cuantas}</span>
                 ) : null}
               </a>
             </li>
