@@ -16,6 +16,49 @@ no se vuelve a subir el currículum. Lo del 07/09 se documentó en
 
 ---
 
+## EX estrena logotipo, también en la app de Android (28/09/2026)
+
+El usuario entregó el logotipo nuevo: una «E» maciza y una «X» de trazos huecos, cruzada por una
+hormiga de perfil. Sustituye a la palabra «EX» con la hormiga vista desde arriba en los ocho
+sitios donde salía el anterior, en la pestaña del navegador y en la app de Android. Cómo se
+pinta y a qué tamaños está en [DESIGN.md](../DESIGN.md) › El logotipo; aquí va lo que se decidió
+y lo que se probó. El backend no se tocó.
+
+- **El PNG se usa tal cual** (`src/ui/logotipo.png`, 808 × 714): no se vectorizó ni se
+  redibujó. `Marca` lo pinta como máscara sobre `currentColor`, así que sale en tinta `#101828`
+  y no en el negro del archivo, y en gris donde hace de marca de agua. No hay versión para fondo
+  oscuro: el portal solo tiene tema claro.
+- **`tamano` pasa a ser el alto total del dibujo**, y todos los tamaños subieron —la cabecera, de
+  22 a 28 px— porque la «E» nueva ocupa unos 3/5 del alto. La barra sigue en sus 84 px.
+- **El favicon es `public/favicon.png`**, el logotipo sobre un cuadrado claro para que se vea en
+  pestañas oscuras. `public/hormiga.svg` se borró.
+- **La app de Android estrena icono y pantalla de arranque**, que todavía era la X de Capacitor
+  de la plantilla. Los 15 `mipmap`, `android/icono-play-512.png` y los 11 `splash.png` salen de
+  `python3 herramientas/derivados-del-logotipo.py`, que parte siempre del PNG original: si el
+  logotipo vuelve a cambiar, se sustituye el archivo y se corre otra vez.
+- **«Ningún error en consola» es ningún error de la app**, lo decidió el usuario. Si la imagen no
+  llega, Chrome escribe por su cuenta un «Failed to load resource», y ese no cuenta.
+
+⚠️ **Los teléfonos todavía no ven el icono nuevo.** Hace falta publicar una versión en Play
+(`versionCode` 10) y subir el icono a la ficha de Play Console, y eso lo hace el usuario. Queda en
+[PENDIENTES.md](PENDIENTES.md).
+
+⚠️ **Compilar Android pide el JDK 21, y no cualquiera.** Funcionó `~/.jdks/azul-21.0.8`. El JBR de
+IntelliJ no trae `jlink` y el plugin de Android falla; el 25 y el 17 tampoco sirven.
+
+### Cómo se comprueba
+
+`npx playwright test herramientas/e2e/41-logotipo.spec.ts`: 11 pruebas, 9 del portal y 2 del
+panel, que miden el alto, el color calculado y el nombre accesible en cada sitio, el favicon, los
+colores forzados y qué pasa si el PNG no carga. Solo leen: no escriben en la base. La cabecera a
+360 y 375 px está en `07-movil.spec.ts` (AC-08), y el componente, en `src/ui/Marca.test.tsx`. La
+nitidez a 2× y 3× y si la hormiga se reconoce a 28 px se miran con `herramientas/capturar-logo.mjs`.
+
+Los iconos se comprobaron dentro del paquete compilado y no en la carpeta: un `.aab` de depuración
+(`bundleDebug`, que no pide la llave de subida) lleva los 26 PNG, iguales a los del repositorio.
+
+---
+
 ## El Excel de la prueba usa la prueba vigente, y su cabecera se lee entera (26/09/2026)
 
 El Excel de «Prueba del puesto» de la vacante 13 traía, detrás de los 7 criterios de la prueba

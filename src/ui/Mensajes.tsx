@@ -72,7 +72,7 @@ export function AccesoNecesario() {
   return (
     <div className={estilos.marco}>
       <span className={estilos.hormiga} aria-hidden="true">
-        <Marca tamano={30} />
+        <Marca tamano={36} />
       </span>
       <span className={estilos.eti}>Acceso necesario</span>
       <h1 className={estilos.titulo}>Ingresa para ver tu proceso.</h1>

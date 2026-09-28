@@ -144,8 +144,12 @@ puntuó; y no ve la matriz, que es justamente lo que se espera que descubra o pr
 
 ## Brand Commitments
 
-- **El nombre es EX**, y su logotipo —la palabra con la hormiga dentro de la X— se conserva
-  tal cual. Es lo único que sobrevive del portal anterior.
+- **El nombre es EX.** Su logotipo es, desde el 28/09/2026, una «E» maciza y una «X» de trazos
+  huecos cruzada por una hormiga de perfil; sustituyó a la palabra «EX» con la hormiga vista
+  desde arriba posada sobre la X. Es el PNG que entregó el usuario y se usa tal cual, sin
+  vectorizar ni redibujar. Va siempre monocromo, en la tinta del texto —gris cuando hace de
+  marca de agua—, nunca en índigo ni animado. El favicon y el icono de la app llevan el
+  logotipo entero: no hay una versión que sea solo la hormiga.
 - **Solo tema claro**, por petición del cliente.
 - **La paleta y la tipografía de la plantilla SaaSly de TailGrids**, elegidas por el cliente el
   25/09/2026: la escala gris fría de Tailwind v4, **un solo acento índigo `#615FFF`** para la

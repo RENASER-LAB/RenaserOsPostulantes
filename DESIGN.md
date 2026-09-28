@@ -579,8 +579,8 @@ del panel comparten piezas en [`src/ui/resenas/`](src/ui/resenas/Resenas.tsx).
 ### Navigation
 
 Una píldora blanca que flota a 16 px del borde, **sin filete ni sombra**, en reposo y al bajar
-la página, con radio de 18 px. Tres columnas: la marca a la izquierda, los destinos en el
-centro exacto y la acción a la derecha — las columnas de los lados valen lo mismo para que
+la página, con radio de 18 px. Tres columnas: el logotipo —28 px de alto— a la izquierda, los
+destinos en el centro exacto y la acción a la derecha — las columnas de los lados valen lo mismo para que
 «Iniciar sesión» y «Mi cuenta», que no miden igual, no descentren los destinos.
 
 - **Destinos:** Geist 17 px peso 400 en tinta (15 px en teléfono), con 44 px de área táctil.
@@ -595,11 +595,47 @@ centro exacto y la acción a la derecha — las columnas de los lados valen lo m
   px táctiles — con la letra de 15, de 431 a 454 px la barra se salía hasta 24 px. **Por debajo
   de 368 se cae «Vacantes»**: a 320 no caben los cuatro ni apretados, y es el destino con más
   caminos alternativos (el botón grande de la portada y «← Volver a las vacantes» de cada
-  ficha). Medido: a 375 sobran 11 px, a 369 sobran 5 y a 320, con tres destinos, 17.
+  ficha). Medido: a 375 sobran 11 px, a 369 sobran 5 y a 320, con tres destinos, 17. El
+  logotipo del 28/09/2026 mide 2,7 px más de ancho que la palabra de antes: salen 8, 2 y 14,
+  por cuenta y sin volver a medir.
 
 ⚠️ Sobre el gris claro de más abajo en la página la píldora casi no se distingue, y el
 contenido pasa por detrás sin línea que lo corte. Es lo que hace la referencia, aceptado a
 sabiendas.
+
+### El logotipo
+
+Una «E» maciza y una «X» de trazos huecos, cruzada por una hormiga de perfil. Llegó el
+28/09/2026 y sustituyó a la palabra «EX» en Geist 700 con la hormiga vista desde arriba
+posada sobre la X. Es el PNG que entregó el usuario (`src/ui/logotipo.png`, 808 × 714, negro
+sobre transparente y sin margen), **usado tal cual**: no se vectorizó ni se redibujó.
+
+- **Se pinta como máscara.** `Marca` pone el PNG en `mask-image` —y en `-webkit-mask-image`,
+  que es lo que entiende una WebView de Android sin actualizar— sobre un fondo
+  `currentColor`. Sale en `tinta` y no en el negro del archivo, y donde hace de marca de agua
+  (vacíos y «Acceso necesario») sale en `regla2` sin tocar nada más que el color.
+- **`Marca` es el único sitio que conoce el archivo.** Lo importa, así Vite le pone huella al
+  nombre y un logotipo nuevo no deja a nadie con el viejo en caché. Ninguna pantalla importa
+  el PNG.
+- **`tamano` es el alto total del dibujo.** El ancho sale de la proporción del archivo
+  (≈ 1,13) y la caja se reserva aunque la imagen tarde: nada salta. Si no llega, no se ve,
+  pero el hueco y el nombre del enlace se quedan.
+- **Tamaños:** 28 px en las cabeceras del portal y del panel y en la invitación al panel
+  —el valor por defecto—, 24 en el pie en columnas, 56 en el pie de la portada, 48 en el
+  enlace del correo y 36 como marca de agua. Ninguno baja de 24: la «E» ocupa unos 3/5 del
+  alto y a 16 px no se lee. Con 28 px la cabecera sigue en sus 84.
+- **Accesibilidad:** se anuncia como imagen llamada «EX». Donde el enlace lleva su etiqueta
+  («EX, inicio», «Panel del equipo, inicio») manda la del enlace; donde el envoltorio va con
+  `aria-hidden`, sigue oculta.
+- **Colores forzados:** el sistema anularía el fondo y el logotipo desaparecería. Se le pone
+  `forced-color-adjust: none` y `CanvasText`.
+- **Fuera de la página:** el favicon (`public/favicon.png`, 64 × 64) es el logotipo entero en
+  tinta sobre un cuadrado `#F6F8FB` de esquinas redondeadas, para verse también en una barra
+  de pestañas oscura. El icono de Android lo lleva en tinta sobre `#F6F8FB` —en el
+  adaptativo, el dibujo entero cabe en el círculo central de 66 dp—, y la pantalla de
+  arranque, centrado sobre `cielo` a un 30 % del lado corto. Todos salen de
+  `python3 herramientas/derivados-del-logotipo.py`, que parte siempre del PNG original: si el
+  logotipo cambia, se sustituye el archivo y se corre otra vez.
 
 ### El cielo de la portada
 
@@ -632,7 +668,7 @@ El cierre reutiliza el cielo con un encuadre a 52 % y un fundido completo al bla
 titular centrado escala de 36 a 48 px, peso 500. Las dos acciones tienen texto de 16 px;
 la secundaria usa borde y fondo transparente. El contenido sigue siendo el de EX.
 
-El pie de la portada continúa en blanco, sin línea divisoria: logotipo de 48 px a la izquierda,
+El pie de la portada continúa en blanco, sin línea divisoria: logotipo de 56 px a la izquierda,
 tres columnas de enlaces a la derecha y una fila inferior con copyright y «Volver arriba».
 El enlace usa el desplazamiento a anclas existente, respetando movimiento reducido. Por debajo
 de 900 px, la marca ocupa su propia fila; en móvil, los enlaces se organizan en dos columnas.
@@ -717,3 +753,5 @@ en su estado final. Esto es un portal de empleo: una barrera aquí impide postul
 - **Don't** usar `overflow: hidden` para recortar un fondo a sangre: rompe la cabecera
   pegajosa. Es `clip`.
 - **Don't** meter crema, negro pleno como acción, ni coral: son del mundo anterior.
+- **Don't** pintar el logotipo en índigo ni en coral, animarlo, ni importar su PNG fuera de
+  `Marca`.

@@ -626,8 +626,12 @@
  * son por si la letra del sistema es mas ancha que Geist mientras carga.
  *
  * Medido con esto: a 375 px sobran 11; a 369, 5; a 320 con tres destinos, 17.
- * **Si se toca cualquiera de estos rellenos, o la letra de la barra, hay que
- * volver a medir**. No cambia el alto: la cabecera sigue en sus 84 px.
+ * El logotipo del 28/09/2026 mide a 28 px de alto 31,7 de ancho, 2,7 mas que
+ * la palabra de antes: salen 8, 2 y 14 por cuenta, sin volver a medir. La
+ * prueba de `07-movil` comprueba que a 360 y 375 la pagina no se desplaza en
+ * horizontal. **Si se toca cualquiera de estos rellenos, la letra de la barra
+ * o el tamaño de la marca, hay que volver a medir**. No cambia el alto: la
+ * cabecera sigue en sus 84 px.
  */
 @media (max-width: 470px) {
   .cabeceraDentro {

@@ -51,7 +51,7 @@ export function ArmazonPanel() {
       <header className={estilos.cabecera}>
         <div className={estilos.cabeceraDentro}>
           <Link className={estilos.marca} to={rutas.adminVacantes()} aria-label="Panel del equipo, inicio">
-            <Marca tamano={22} />
+            <Marca tamano={28} />
             {/* La palabra distingue este lado del portal del candidato: mismo
                 mundo visual, otra persona delante. */}
             <span className={estilos.quienEs}>Panel del equipo</span>
