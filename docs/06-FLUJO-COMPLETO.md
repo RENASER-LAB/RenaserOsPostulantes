@@ -491,11 +491,12 @@ desarrollable y falta de evidencia**. Una falta de evidencia no es un riesgo —
 riesgo es algo que la persona hace mal, un hueco es algo que no sabemos— y suele
 ser lo que decide qué preguntar en la entrevista.
 
-⚠️ **No sale en la ficha de la prueba del puesto, aunque la columna de Veredicto
-sí esté ahí.** Ese veredicto lo escribe la etapa 1 y no se recalcula por etapa,
-así que para saber cuál es el riesgo de un «Con riesgo» hay que abrir a esa misma
-persona en la pestaña de Perfil integral. Se probó a enseñarlo también en la
-prueba y se quitó: ahí «¿Por qué contratarlo?» y «Lectura de la prueba» salen
+⚠️ **No sale en la ficha de la prueba del puesto, y la columna de Veredicto
+tampoco.** Ese veredicto lo escribe la etapa 1 y no se recalcula por etapa, así
+que desde el 29/09/2026 solo existe en la pestaña de Perfil integral: en las otras
+cuatro contradecía la nota de al lado. Para saber cuál es el riesgo de un «Con
+riesgo» hay que abrir a esa misma persona en Perfil integral. Se probó a enseñar
+los hallazgos también en la prueba y se quitó: ahí «¿Por qué contratarlo?» y «Lectura de la prueba» salen
 enteros de la rúbrica de esa prueba, y una segunda lista de fortalezas sacada del
 currículum invita a confundir las dos fuentes.
 

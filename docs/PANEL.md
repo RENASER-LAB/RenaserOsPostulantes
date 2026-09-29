@@ -53,6 +53,15 @@ juego en el backend) y **qué enseña la ficha** al abrir una fila:
 Cada pestaña enseña **solo a quien está parado en esa etapa** — ver «La prueba por dentro, y la entrada de las
 empresas» en la [bitácora de agosto](BITACORA-2026-08.md). Se deriva del prefijo del estado (`PRUEBA_*`, `SIMULACION_*`…).
 
+**El Veredicto solo está en «Perfil integral» (29/09).** Es el grupo de prioridad
+(`grupoPrioridad`), que se asigna una vez al calificar el currículum y nadie recalcula, así que en
+las demás pestañas contradecía la nota de al lado —un 95 en la prueba junto a «No priorizado»—.
+En «Prueba del puesto», «Simulación», «Validación» y «Decisión» no hay cabecera, celda, leyenda de
+veredictos ni casilla «Veredicto» en «Columnas», aunque el backend siga mandando el dato en todas.
+En «Prueba del puesto» la columna de resumen es **Ponderado**, tras «Nota» (ver «El ponderado de lo
+ya rendido» en [06-FLUJO-COMPLETO](06-FLUJO-COMPLETO.md)). El riesgo crítico de alguien se consulta
+abriéndolo en «Perfil integral».
+
 ⚠️ **La clave de DeepSeek del `application-secrets.yaml` local está muerta** (401 del
 proveedor desde el 25/08; el 24/08 funcionaba). Sin ella la IA no califica: las abiertas
 de la evaluación quedan «pendiente de calificar», que el panel enseña sin fingir. Hay una
@@ -60,8 +69,10 @@ evaluación entregada de verdad en la base local —sembrada con
 `scripts/sembrar-evaluacion-local.py` del backend— esperando esa clave.
 
 Verificarlo: `npx playwright test herramientas/e2e/13-etapas.spec.ts` (la entrada de desarrollo
-y la ficha que cambia con la pestaña; solo lee) y `18-ranking-contra-api.spec.ts` (las cinco
-pestañas, los cortes y las cifras, contrastados con la API).
+y la ficha que cambia con la pestaña; solo lee), `18-ranking-contra-api.spec.ts` (las cinco
+pestañas, los cortes y las cifras, contrastados con la API) y `44-veredicto-solo-en-el-perfil.spec.ts`
+(el Veredicto y su casilla solo en «Perfil integral», el Ponderado tras «Nota» en la prueba, y el
+menú «Columnas» a 360 px; solo lee).
 
 ### Descartar a un candidato, desde su ficha (11/09)
 

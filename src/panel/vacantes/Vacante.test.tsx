@@ -1444,10 +1444,11 @@ describe('elegir qué columnas se ven', () => {
   /*
     ⚠️ **El fallo de la captura.** La celda del veredicto era la única ocultable
     pintada sin `ve(...)`: al apagarla se iba la cabecera y la celda se quedaba,
-    y cada fila corría una columna a la derecha.
+    y cada fila corría una columna a la derecha. En «Perfil integral», la única
+    pestaña con Veredicto desde la spec `veredicto-solo-en-el-perfil-integral`.
   */
   it('apagar Veredicto se lleva su celda de cada fila, y Estado y Ciudad siguen con lo suyo', async () => {
-    await pintarConTodo('Prueba del puesto')
+    await pintarConTodo()
     expect(within(laTabla()).getByText('Alta')).toBeTruthy()
     abrirSelector()
     alternarColumna('Veredicto')
@@ -1463,7 +1464,7 @@ describe('elegir qué columnas se ven', () => {
   })
 
   it('con Veredicto apagado la leyenda se va y el botón dice «1 oculta»', async () => {
-    await pintarConTodo('Prueba del puesto')
+    await pintarConTodo()
     expect(screen.getByText('Prioridad alta')).toBeTruthy()
     abrirSelector()
     alternarColumna('Veredicto')
@@ -1475,13 +1476,13 @@ describe('elegir qué columnas se ven', () => {
   })
 
   /*
-    Vuelve a su sitio de siempre: detrás de Nota y del Ponderado, delante de
-    Estado. Y marcar y desmarcar deprisa no deja la tabla a medias.
+    Vuelve a su sitio de siempre en «Perfil integral»: detrás de Nota, delante
+    de Estado. Y marcar y desmarcar deprisa no deja la tabla a medias.
   */
   it('Veredicto vuelve a su sitio al marcarlo y con «Ver todas»', async () => {
-    await pintarConTodo('Prueba del puesto')
+    await pintarConTodo()
     const deSiempre = cabecerasDeLaTabla()
-    expect(deSiempre.indexOf('Veredicto')).toBe(deSiempre.indexOf('Ponderado') + 1)
+    expect(deSiempre.indexOf('Veredicto')).toBe(deSiempre.indexOf('Nota') + 1)
     expect(deSiempre.indexOf('Estado')).toBe(deSiempre.indexOf('Veredicto') + 1)
     abrirSelector()
 
@@ -1500,7 +1501,7 @@ describe('elegir qué columnas se ven', () => {
   })
 
   it('con Veredicto apagado, la ficha abierta ocupa el ancho entero', async () => {
-    await pintarConTodo('Prueba del puesto')
+    await pintarConTodo()
     abrirSelector()
     alternarColumna('Veredicto')
     fireEvent.click(within(laTabla()).getByText('Rodrigo Ayala'))
@@ -1511,7 +1512,7 @@ describe('elegir qué columnas se ven', () => {
   })
 
   it('con Veredicto apagado, el «no hay» de un filtro ocupa el ancho entero', async () => {
-    await pintarConTodo('Prueba del puesto')
+    await pintarConTodo()
     abrirSelector()
     alternarColumna('Veredicto')
     fireEvent.change(screen.getByRole('searchbox', { name: /buscar por nombre/i }), {
@@ -1601,18 +1602,21 @@ describe('elegir qué columnas se ven', () => {
   /*
     Las apagadas viven en la tabla de cada pestaña, que se monta de nuevo al
     cambiar: la pestaña nueva lo enseña todo, y el Ponderado apagado en la prueba
-    no deja ni celda ni hueco en las otras.
+    no deja ni celda ni hueco en las otras. El Veredicto no sale en «Decisión»
+    porque allí no existe (spec `veredicto-solo-en-el-perfil-integral`), no
+    porque se apagara en la prueba, donde tampoco está.
   */
   it('cambiar de pestaña con columnas apagadas no deja rastro', async () => {
     await pintarConTodo('Prueba del puesto')
     abrirSelector()
-    alternarColumna('Veredicto')
+    alternarColumna('Estado')
     alternarColumna('Ponderado')
-    laTablaCuadra(TANDA_CON_TODO, 'prueba sin Veredicto ni Ponderado')
+    laTablaCuadra(TANDA_CON_TODO, 'prueba sin Estado ni Ponderado')
 
     irA('Decisión')
     await waitFor(() => expect(filasDePersonas()).toHaveLength(TANDA_CON_TODO.length))
-    expect(cabecerasDeLaTabla()).toContain('Veredicto')
+    expect(cabecerasDeLaTabla()).toContain('Estado')
+    expect(cabecerasDeLaTabla()).not.toContain('Veredicto')
     expect(cabecerasDeLaTabla()).not.toContain('Ponderado')
     laTablaCuadra(TANDA_CON_TODO, 'Decisión después de apagar en la prueba')
 
@@ -1728,6 +1732,221 @@ describe('el veredicto es el grupo de prioridad', () => {
   })
 })
 
+/*
+  El Veredicto, solo en «Perfil integral» (spec
+  `veredicto-solo-en-el-perfil-integral`).
+
+  ⚠️ **Es el grupo de prioridad, y el backend lo calcula una vez, con la nota
+  del PERFIL.** En las otras cuatro pestañas contradecía la nota de al lado —un
+  95 en la prueba junto a «No priorizado»—, así que allí no hay cabecera, ni
+  celda, ni guion, ni leyenda, ni casilla en «Columnas». `grupoPrioridad` sigue
+  llegando en todas: lo que se prueba es que no se pinta.
+*/
+describe('el Veredicto, solo en «Perfil integral»', () => {
+  /** Los cuatro rótulos cortos del catálogo, que en ninguna otra pestaña pueden salir. */
+  const ROTULOS_DE_GRUPO = ['Alta', 'Con riesgo', 'No priorizado', 'Incompatible']
+
+  /**
+   * La tanda con todas las columnas y los tres grupos que el backend escribe
+   * hoy, más quien todavía no tiene: así la leyenda del perfil tiene «Prioridad
+   * alta» y «Potencial con riesgo» que echar en falta en las demás.
+   */
+  const TANDA_CON_LOS_GRUPOS = [
+    ...TANDA_CON_TODO,
+    fila(95, 'Martín Salas Ugarte', 'PRUEBA_POR_CONFIRMAR', 69, {
+      estadoNombre: 'Prueba del puesto · por confirmar',
+      grupoPrioridad: 'POTENCIAL_CON_RIESGO',
+      riesgosCriticos: 1,
+      ciudad: 'Cusco — Cusco',
+      notasCriterio: CRITERIOS_DE_RODRIGO,
+      ponderado: { sobre100: 71.5, cv: 68, perfil: 69, prueba: 74 },
+    }),
+  ]
+
+  /** Las cuatro pestañas que ya no lo tienen, con su código. */
+  const SIN_VEREDICTO = ETAPAS_PANEL.filter((e) => e.codigo !== 'PERFIL_INTEGRAL').map(
+    (e) => [e.nombre, e.codigo] as const,
+  )
+
+  /** La tanda entera en la pestaña pedida, con todas sus filas ya pintadas. */
+  async function pintarEn(pestana: string, filas: FilaRanking[] = TANDA_CON_LOS_GRUPOS) {
+    await pintar(filas)
+    // «Toda la tanda» sobrevive al cambio de pestaña: así las cinco tienen filas.
+    verCorte('Toda la tanda')
+    if (pestana !== 'Perfil integral') irA(pestana)
+    await waitFor(() => expect(filasDePersonas()).toHaveLength(filas.length))
+  }
+
+  /** Ninguna celda de ninguna fila dice un grupo, ni lo lleva en su título. */
+  function sinRotulosDeGrupo(situacion: string) {
+    for (const tr of filasDePersonas()) {
+      for (const td of Array.from(tr.cells)) {
+        expect(ROTULOS_DE_GRUPO, `${situacion}: una celda dice «${td.textContent}»`).not.toContain(
+          td.textContent?.trim(),
+        )
+      }
+    }
+    expect(laTabla().querySelector('[title="Prioridad alta"]'), situacion).toBeNull()
+    expect(laTabla().querySelector('[title="Potencial con riesgo"]'), situacion).toBeNull()
+  }
+
+  it('AC-01: en «Perfil integral» sigue igual: cabecera, píldoras, leyenda y casilla', async () => {
+    await pintarEn('Perfil integral')
+    const cabeceras = cabecerasDeLaTabla()
+    expect(cabeceras.indexOf('Veredicto')).toBe(cabeceras.indexOf('Nota') + 1)
+    // La píldora con el rótulo corto y el nombre entero en el título emergente.
+    expect(within(laTabla()).getByText('Alta').title).toBe('Prioridad alta')
+    expect(within(laTabla()).getByText('Con riesgo').title).toBe('Potencial con riesgo')
+    expect(within(laTabla()).getByText('No priorizado')).toBeTruthy()
+    // La leyenda, con los que hay en la tanda.
+    expect(screen.getByText('Prioridad alta')).toBeTruthy()
+    expect(screen.getByText('Potencial con riesgo')).toBeTruthy()
+    // Quien todavía no tiene grupo lleva un guion bajo «Veredicto».
+    laTablaCuadra(TANDA_CON_LOS_GRUPOS, 'perfil integral')
+    abrirSelector()
+    expect(within(elSelector()).getByRole('checkbox', { name: 'Veredicto' })).toBeTruthy()
+    expect(casillasDelSelector()).toContain('Veredicto')
+  })
+
+  it.each(SIN_VEREDICTO)(
+    'AC-02 a AC-05: en «%s» no hay cabecera, ni rótulos, ni leyenda, ni casilla',
+    async (pestana, codigo) => {
+      await pintarEn(pestana)
+      const cabeceras = cabecerasDeLaTabla()
+      expect(cabeceras).not.toContain('Veredicto')
+      expect(within(laTabla()).queryByRole('columnheader', { name: 'Veredicto' })).toBeNull()
+      sinRotulosDeGrupo(pestana)
+      // Cada fila tiene tantas celdas como cabeceras, y Estado y Ciudad bajo las suyas.
+      laTablaCuadra(TANDA_CON_LOS_GRUPOS, pestana)
+      // AC-04: ni la leyenda, aunque las filas traigan su grupo.
+      expect(screen.queryByText('Prioridad alta')).toBeNull()
+      expect(screen.queryByText('Potencial con riesgo')).toBeNull()
+      // AC-02, solo en la prueba: «Ponderado» justo después de «Nota».
+      if (codigo === 'PRUEBA_PUESTO') {
+        expect(cabeceras.indexOf('Ponderado')).toBe(cabeceras.indexOf('Nota') + 1)
+      } else {
+        expect(cabeceras).not.toContain('Ponderado')
+      }
+      // AC-03: el menú no ofrece Veredicto; en la prueba sí ofrece Ponderado.
+      abrirSelector()
+      expect(within(elSelector()).queryByRole('checkbox', { name: 'Veredicto' })).toBeNull()
+      expect(casillasDelSelector()).not.toContain('Veredicto')
+      expect(casillasDelSelector().includes('Ponderado')).toBe(codigo === 'PRUEBA_PUESTO')
+    },
+  )
+
+  it.each(SIN_VEREDICTO)(
+    'AC-07: en «%s», la ficha abierta y el «no hay» de un filtro ocupan el ancho entero',
+    async (pestana) => {
+      await pintarEn(pestana)
+      const ancho = cabecerasDeLaTabla().length
+      fireEvent.click(within(laTabla()).getByText('Rodrigo Ayala'))
+      await waitFor(() => expect(laTabla().querySelector('#ficha-91')).toBeTruthy())
+      expect(laTabla().querySelector<HTMLTableCellElement>('#ficha-91')!.colSpan).toBe(ancho)
+      laTablaCuadra(TANDA_CON_LOS_GRUPOS, `${pestana} con la ficha abierta`)
+
+      fireEvent.change(screen.getByRole('searchbox', { name: /buscar por nombre/i }), {
+        target: { value: 'nadie se llama así' },
+      })
+      const aviso = await screen.findByText(/Ningún resultado con estos filtros/)
+      expect(aviso.closest('td')!.colSpan).toBe(ancho)
+    },
+  )
+
+  /*
+    Los criterios solo se encienden donde hay rúbrica: de las cuatro, la prueba
+    y la decisión.
+  */
+  it.each(SIN_VEREDICTO.filter(([, codigo]) => laEtapaTieneRubrica(codigo)))(
+    'AC-08: en «%s», con los criterios encendidos cada nota queda bajo su letra',
+    async (pestana) => {
+      await pintarEn(pestana)
+      abrirSelector()
+      fireEvent.click(within(elSelector()).getByRole('checkbox', { name: /Ver los criterios/ }))
+      const cabeceras = cabecerasDeLaTabla()
+      expect(cabeceras).toContain('R')
+      expect(cabeceras).not.toContain('Veredicto')
+      laTablaCuadra(TANDA_CON_LOS_GRUPOS, `${pestana} con los criterios`)
+      sinRotulosDeGrupo(`${pestana} con los criterios`)
+      for (const tr of filasDePersonas()) {
+        const celdas = Array.from(tr.cells)
+        expect(celdas[cabeceras.indexOf('R')]!.title).toMatch(/^Resultados demostrables: /)
+        expect(celdas[cabeceras.indexOf('C')]!.title).toMatch(/^Complejidad y alcance: /)
+      }
+    },
+  )
+
+  it('AC-06: un 95 en la prueba sin rótulo al lado, y su «No priorizado» sigue en el perfil', async () => {
+    const filas = [
+      fila(96, 'Sebastián Cárdenas Rojo', 'PRUEBA_POR_CONFIRMAR', 58, {
+        estadoNombre: 'Prueba del puesto · por confirmar',
+        grupoPrioridad: 'NO_PRIORIZADO',
+      }),
+    ]
+    const NOTA: Record<string, number> = { PERFIL_INTEGRAL: 58, PRUEBA_PUESTO: 95 }
+    await pintarEn('Perfil integral', filas)
+    verRanking.mockImplementation((_id: number, etapa = 'PERFIL_INTEGRAL') =>
+      Promise.resolve(tanda(filas.map((f) => ({ ...f, notaEtapa: NOTA[etapa] ?? null })))),
+    )
+    const bajo = (rotulo: string) =>
+      filasDePersonas()[0]!.cells[cabecerasDeLaTabla().indexOf(rotulo)]?.textContent
+
+    expect(bajo('Veredicto')).toBe('No priorizado')
+
+    irA('Prueba del puesto')
+    await waitFor(() => expect(bajo('Nota')).toContain('95'))
+    expect(cabecerasDeLaTabla()).not.toContain('Veredicto')
+    sinRotulosDeGrupo('la prueba, con un 95')
+
+    irA('Perfil integral')
+    await waitFor(() => expect(cabecerasDeLaTabla()).toContain('Veredicto'))
+    expect(elCorte('Toda la tanda').getAttribute('aria-pressed')).toBe('true')
+    await waitFor(() => expect(bajo('Veredicto')).toBe('No priorizado'))
+  })
+
+  it('AC-09: con Veredicto apagado en el perfil, la prueba dice «Columnas» a secas, y al volver está', async () => {
+    await pintarEn('Perfil integral')
+    abrirSelector()
+    alternarColumna('Veredicto')
+    const resumen = () => screen.getByText('Columnas', { selector: 'summary' })
+    expect(within(resumen()).getByText('1 oculta')).toBeTruthy()
+
+    irA('Prueba del puesto')
+    await waitFor(() => expect(cabecerasDeLaTabla()).toContain('Ponderado'))
+    expect(resumen().textContent).not.toMatch(/oculta/)
+    expect(cabecerasDeLaTabla()).not.toContain('Veredicto')
+    laTablaCuadra(TANDA_CON_LOS_GRUPOS, 'la prueba tras apagarlo en el perfil')
+
+    irA('Perfil integral')
+    await waitFor(() => expect(cabecerasDeLaTabla()).toContain('Veredicto'))
+    expect(resumen().textContent).not.toMatch(/oculta/)
+    laTablaCuadra(TANDA_CON_LOS_GRUPOS, 'de vuelta en el perfil')
+  })
+
+  /*
+    AC-10: quitar una columna no reordena nada. Sin orden puesto, las filas van
+    en el orden en que las manda el servidor, en las cinco pestañas.
+  */
+  it.each(ETAPAS_PANEL.map((e) => [e.nombre] as const))(
+    'AC-10: en «%s» las filas van en el orden del servidor',
+    async (pestana) => {
+      await pintarEn(pestana)
+      expect(elOrdenDeLaTabla()).toEqual(TANDA_CON_LOS_GRUPOS.map((f) => f.candidato))
+    },
+  )
+
+  it('cambiar de pestaña deprisa no deja celdas del veredicto sueltas', async () => {
+    await pintarEn('Perfil integral')
+    for (const pestana of ['Prueba del puesto', 'Simulación', 'Perfil integral', 'Validación', 'Decisión']) {
+      irA(pestana)
+    }
+    await waitFor(() => expect(filasDePersonas()).toHaveLength(TANDA_CON_LOS_GRUPOS.length))
+    expect(cabecerasDeLaTabla()).not.toContain('Veredicto')
+    sinRotulosDeGrupo('Decisión tras cambiar deprisa')
+    laTablaCuadra(TANDA_CON_LOS_GRUPOS, 'Decisión tras cambiar deprisa')
+  })
+})
+
 describe('la ficha, al abrir una fila', () => {
   /*
     ⚠️ **Los criterios se pintan de la FILA, no de la petición.** Ya viajan en
@@ -1816,7 +2035,9 @@ describe('la ficha, al abrir una fila', () => {
  *      riesgo— y se decidió que no: en esa pantalla «¿Por qué contratarlo?» y
  *      «Lectura de la prueba» salen ENTEROS de la rúbrica de la prueba, así que
  *      una segunda lista de fortalezas sacada del currículum no añade contexto,
- *      invita a confundir las dos fuentes. El último caso lo deja fijado.
+ *      invita a confundir las dos fuentes. El último caso lo deja fijado. Y
+ *      desde la spec `veredicto-solo-en-el-perfil-integral` la prueba ya ni
+ *      tiene esa columna: el riesgo se consulta en «Perfil integral».
  */
 describe('lo que marcó la IA se lee en la ficha', () => {
   const unHallazgo = (tipo: string, descripcion: string, evidencia: string | null = null) => ({
@@ -1941,9 +2162,10 @@ describe('lo que marcó la IA se lee en la ficha', () => {
 
   /*
     ⚠️ **El retrato de la etapa 1 NO se asoma a la ficha de la prueba**, ni
-    siquiera cuando esa persona arrastra un riesgo crítico y la columna de
-    Veredicto dice «Con riesgo». Es una decisión, no un descuido: la ficha de la
-    prueba habla de la rúbrica de la prueba y de nada más.
+    siquiera cuando esa persona arrastra un riesgo crítico. Es una decisión, no
+    un descuido: la ficha de la prueba habla de la rúbrica de la prueba y de nada
+    más. Su «Con riesgo» tampoco sale en la tabla de la prueba —el Veredicto
+    solo existe en «Perfil integral»—: quien quiera saberlo lo mira allí.
   */
   it('el retrato del perfil no se cuela en la ficha de la prueba del puesto', async () => {
     PERFIL = { ...PERFIL_PELADO, hallazgos: HALLAZGOS }

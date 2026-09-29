@@ -226,8 +226,10 @@ const losQueSeEnsenan = (hallazgos: Hallazgo[]): Hallazgo[] =>
  * columna de Veredicto —que sale de la etapa 1 y no de la prueba—, y se quitó: en
  * esa pantalla los dos párrafos de arriba salen ENTEROS de la rúbrica de la
  * prueba, así que una segunda lista de fortalezas sacada del currículum no añade
- * contexto, invita a confundir las dos fuentes. Quien vea «Con riesgo» en la
- * columna lo mira en su pestaña.
+ * contexto, invita a confundir las dos fuentes. Desde la spec
+ * `veredicto-solo-en-el-perfil-integral` esa columna ya no existe en la prueba:
+ * el Veredicto solo sale en «Perfil integral», y quien quiera saber si alguien
+ * arrastra un riesgo del currículum lo mira allí, en su fila o en su ficha.
  */
 function Hallazgos({ hallazgos }: { hallazgos: Hallazgo[] }) {
   if (hallazgos.length === 0) return null
@@ -1666,11 +1668,18 @@ function Ranking({
                   {/*
                     ⚠️ **El veredicto es el grupo de prioridad, no una etiqueta
                     nueva.** El informe del cliente traía un «Fuerte / Sólido /
-                    Parcial» calculado de la nota, y sus cortes —80 y 65— son
-                    exactamente los de este grupo. Con una diferencia a favor del
-                    grupo: mira además el riesgo crítico, así que baja a alguien
-                    de 92 que la nota sola dejaría arriba. Dos rótulos que casi
-                    siempre dicen lo mismo obligan a explicar el caso en que no.
+                    Parcial» calculado con la nota de la PRUEBA, y se reutilizó
+                    este grupo porque tiene los mismos cortes —80 y 65—. Pero el
+                    grupo se calcula con la nota del PERFIL, una sola vez, cuando
+                    la IA termina de calificar el currículum, y además mira el
+                    riesgo crítico.
+
+                    ⚠️ **Por eso solo existe en «Perfil integral».** En las otras
+                    cuatro pestañas contradecía la nota de al lado —un 95 en la
+                    prueba junto a «No priorizado»—, y `columnasDelRanking` ya no
+                    la ofrece allí: con `ve('veredicto')` en falso no queda ni
+                    la celda ni el guion. Spec
+                    `veredicto-solo-en-el-perfil-integral`.
 
                     Sube de píldora dentro del candidato a columna propia porque
                     ahora se lee al comparar, no al identificar.
@@ -1905,7 +1914,9 @@ function Ranking({
         se niega a hacer —«pinta lo que llega»—. Y antes de la primera pasada de
         la IA no hay ningún grupo: entonces esta línea no sale.
 
-        ⚠️ Sale con la columna: si alguien la apaga, esta línea sobra.
+        ⚠️ Sale con la columna: si alguien la apaga, esta línea sobra. Y la
+        columna solo existe en «Perfil integral», así que en las otras cuatro
+        pestañas tampoco sale, aunque las filas traigan su grupo.
       */}
       {ve('veredicto') && veredictosDeLaTanda(filas).length > 0 && (
         <p className={estilos.leyendaLetras}>
