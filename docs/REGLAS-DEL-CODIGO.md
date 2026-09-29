@@ -29,7 +29,7 @@ que la pantalla pueda enseñar, apunta la hora del servidor y cierra la sesión 
 
 **`grupoPrioridad` nunca se pinta en el portal.** Llega en la respuesta de las postulaciones del
 candidato, pero es la clasificación interna del equipo y nadie tiene que enterarse por su propio
-portal de en qué casilla lo pusieron. **En el panel sí se pinta**, en cada fila del ranking: ahí
+portal de en qué casilla lo pusieron. **En el panel sí se pinta**, en cada fila del ranking de «Perfil integral»: ahí
 quien mira es el dueño de esa clasificación. La regla se lee sobre la sesión del candidato, y lo
 que no puede pasar es que el dato cruce de una cara a la otra.
 
