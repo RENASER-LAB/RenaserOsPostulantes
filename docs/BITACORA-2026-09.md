@@ -16,6 +16,29 @@ no se vuelve a subir el currículum. Lo del 07/09 se documentó en
 
 ---
 
+## El Veredicto, solo en la pestaña «Perfil integral» (29/09/2026)
+
+La columna Veredicto del ranking —el grupo de prioridad— salía en las cinco pestañas, pero se
+asigna una vez con la nota del perfil y nadie la recalcula: en la prueba podía leerse un 95 junto
+a «No priorizado». Ahora solo existe en «Perfil integral»; en las otras cuatro no hay cabecera,
+celda, leyenda ni casilla en «Columnas». Cómo queda, en [PANEL.md](PANEL.md) › El ranking es por
+etapas. El backend y el Excel no se tocaron: `grupoPrioridad` sigue llegando en todas.
+
+### Decisiones que aprobó el usuario (28/09/2026)
+
+- Quitar la columna, no sustituirla por un veredicto propio de la prueba.
+- En las cuatro pestañas posteriores al perfil, no solo en la prueba.
+- En «Prueba del puesto» la columna de resumen es «Ponderado», tras «Nota», sin más cambios.
+- El riesgo crítico de alguien se consulta abriéndolo en «Perfil integral».
+
+### Cómo se comprueba
+
+`npx playwright test herramientas/e2e/44-veredicto-solo-en-el-perfil.spec.ts` (el 43 ya estaba
+ocupado): 5 pruebas, una a 360 px dentro de «Más»; solo lee, con intercepción propia sobre
+«Desarrollador web». Las unitarias, en `ranking.test.ts` y `Vacante.test.tsx`.
+
+---
+
 ## Las empresas reseñan a quien contrataron (28/09/2026)
 
 La empresa que contrató a alguien por EX le deja, a partir del primer mes, de 1 a 5 estrellas y

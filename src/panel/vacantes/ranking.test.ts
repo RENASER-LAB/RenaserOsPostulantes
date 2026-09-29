@@ -1522,20 +1522,23 @@ describe('cuántas columnas tiene la tabla', () => {
     lista, añadir una columna no puede volver a descuadrarlo.
   */
   /*
-    Ocho en cuatro etapas y nueve en la prueba del puesto.
+    Ocho en el perfil integral y en la prueba del puesto, siete en las otras tres.
 
     Adecuación, Potencial y Riesgos dejaron de ser columnas —se leen en la ficha,
     con su explicación al lado—, y con ellas se fue lo último que cambiaba con la
-    etapa... hasta que llegó el Ponderado, que vuelve a hacer que el recuento
-    dependa de la pestaña. De ahí que este test cuente los dos casos: si mañana
-    alguien pusiera el Ponderado en todas, el `colSpan` de las otras cuatro se
-    descuadraría en silencio y esta es la prueba que lo caza.
+    etapa... hasta que llegaron el Ponderado, solo en la prueba, y el Veredicto,
+    solo en el perfil integral (spec `veredicto-solo-en-el-perfil-integral`). La
+    prueba cambia uno por otro y se queda en ocho; simulación, validación y
+    decisión no tienen ninguno de los dos. De ahí que este test cuente los tres
+    casos: si mañana alguien pusiera una de las dos en otra pestaña, su
+    `colSpan` se descuadraría en silencio y esta es la prueba que lo caza.
   */
-  it('ocho en cuatro etapas y nueve en la prueba del puesto', () => {
-    for (const etapa of ['SIMULACION', 'VALIDACION', 'PERFIL_INTEGRAL', 'DECISION'] as const) {
-      expect(columnasDelRanking(etapa)).toHaveLength(8)
+  it('ocho en el perfil y en la prueba, siete en simulación, validación y decisión', () => {
+    expect(columnasDelRanking('PERFIL_INTEGRAL')).toHaveLength(8)
+    expect(columnasDelRanking('PRUEBA_PUESTO')).toHaveLength(8)
+    for (const etapa of ['SIMULACION', 'VALIDACION', 'DECISION'] as const) {
+      expect(columnasDelRanking(etapa), etapa).toHaveLength(7)
     }
-    expect(columnasDelRanking('PRUEBA_PUESTO')).toHaveLength(9)
   })
 
   it('el ponderado solo es columna en la prueba del puesto', () => {
@@ -1549,10 +1552,22 @@ describe('cuántas columnas tiene la tabla', () => {
     Se puede apagar como cualquier otra: es una cifra de apoyo, y quien esté
     comparando otra cosa tiene que poder quitarla de en medio.
   */
-  it('el ponderado se puede apagar, y entonces la tabla vuelve a ocho', () => {
+  it('el ponderado se puede apagar, y entonces la tabla baja a siete', () => {
     const todas = columnasDelRanking('PRUEBA_PUESTO')
     expect(todas.find((c) => c.clave === 'ponderado')?.ocultable).toBe(true)
-    expect(columnasVisibles(todas, new Set(['ponderado']))).toHaveLength(8)
+    expect(columnasVisibles(todas, new Set(['ponderado']))).toHaveLength(7)
+  })
+
+  /*
+    AC-02 y AC-03: en la prueba, el Ponderado es la columna de resumen, justo
+    después de «Nota», y no queda casilla de Veredicto que ofrecer en el menú.
+  */
+  it('en la prueba, el Ponderado va justo después de la nota y no hay Veredicto', () => {
+    const claves = columnasDelRanking('PRUEBA_PUESTO').map((c) => c.clave)
+    expect(claves).toEqual([
+      'avance', 'puesto', 'candidato', 'pretension', 'nota', 'ponderado', 'estado', 'ciudad',
+    ])
+    expect(claves.indexOf('ponderado')).toBe(claves.indexOf('nota') + 1)
   })
 
   /*
@@ -1595,14 +1610,46 @@ describe('cuántas columnas tiene la tabla', () => {
   })
 
   /*
-    ⚠️ **Veredicto está en las CINCO etapas, y eso es a propósito.** No sale del
-    currículum como Adecuación y Potencial: es el grupo de prioridad, que es una
-    lectura de la persona y no de la etapa. Meterlo en `esDelCurriculum` lo
-    borraría de la mesa de la prueba, que es donde más se decide.
+    ⚠️ **Veredicto solo está en el perfil integral, y eso es a propósito.** Es el
+    grupo de prioridad, que el backend calcula una sola vez con la nota del
+    PERFIL, cuando la IA termina de calificar el currículum. En las otras cuatro
+    pestañas contradecía la nota de al lado —un 95 en la prueba junto a «No
+    priorizado»—, así que allí no hay columna ni, por tanto, casilla en
+    «Columnas». Spec `veredicto-solo-en-el-perfil-integral`, AC-01 a AC-05.
   */
-  it('Veredicto está en las cinco, y no es del retrato del currículum', () => {
-    for (const etapa of ['PERFIL_INTEGRAL', 'PRUEBA_PUESTO', 'VALIDACION'] as const) {
-      expect(columnasDelRanking(etapa).map((c) => c.clave)).toContain('veredicto')
+  it('Veredicto solo está en el perfil integral, tras la nota y ocultable', () => {
+    const enPerfil = columnasDelRanking('PERFIL_INTEGRAL')
+    const claves = enPerfil.map((c) => c.clave)
+    expect(claves.indexOf('veredicto')).toBe(claves.indexOf('nota') + 1)
+    expect(enPerfil.find((c) => c.clave === 'veredicto')).toMatchObject({
+      titulo: 'Veredicto',
+      estrecha: true,
+      ocultable: true,
+    })
+    for (const etapa of ['PRUEBA_PUESTO', 'SIMULACION', 'VALIDACION', 'DECISION'] as const) {
+      expect(columnasDelRanking(etapa).map((c) => c.clave), etapa).not.toContain('veredicto')
+    }
+  })
+
+  /*
+    AC-08: con los criterios encendidos las cuatro pestañas sin Veredicto
+    siguen contando bien: cada criterio es una columna más, y nada ocupa el
+    hueco que dejó el Veredicto.
+  */
+  it('sin Veredicto, los criterios encendidos se cuentan igual en las otras cuatro', () => {
+    const criterios = [
+      { nombre: 'Resultados demostrables', rotulo: 'Resultados', inicial: 'R', peso: 25, maximo: 100 },
+      { nombre: 'Complejidad y alcance', rotulo: 'Complejidad', inicial: 'C', peso: 20, maximo: 100 },
+    ]
+    for (const etapa of ['PRUEBA_PUESTO', 'SIMULACION', 'VALIDACION', 'DECISION'] as const) {
+      const sin = columnasDelRanking(etapa)
+      const con = columnasDelRanking(etapa, undefined, criterios)
+      expect(con, etapa).toHaveLength(sin.length + 2)
+      expect(con.map((c) => c.clave), etapa).not.toContain('veredicto')
+      // Los criterios van justo después de la nota —o del Ponderado, en la prueba—.
+      const claves = con.map((c) => c.clave)
+      const resumen = etapa === 'PRUEBA_PUESTO' ? 'ponderado' : 'nota'
+      expect(claves[claves.indexOf(resumen) + 1], etapa).toBe('criterio:Resultados demostrables')
     }
   })
 
@@ -2555,9 +2602,12 @@ describe('una columna entera vacía no se pinta: se dice por qué', () => {
   it('sin las dos, la tabla baja de ocho a seis columnas', () => {
     const nada = { hayCiudad: false, hayPretension: false, puedeVerPretension: true, vacanteMuestraSueldo: true }
     expect(columnasDelRanking('PERFIL_INTEGRAL', nada)).toHaveLength(6)
-    // Una más en la prueba del puesto: el Ponderado no depende de lo que traiga
-    // la tanda, sino de la pestaña, así que no se va con la ciudad y la pretensión.
-    expect(columnasDelRanking('PRUEBA_PUESTO', nada)).toHaveLength(7)
+    // Las mismas en la prueba del puesto: el Ponderado y el Veredicto no dependen
+    // de lo que traiga la tanda, sino de la pestaña, así que no se van con la
+    // ciudad y la pretensión; y la prueba tiene el primero en vez del segundo.
+    expect(columnasDelRanking('PRUEBA_PUESTO', nada)).toHaveLength(6)
+    // Una menos en las demás, que no tienen ninguno de los dos.
+    expect(columnasDelRanking('DECISION', nada)).toHaveLength(5)
   })
 
   it('con solo una de las dos, ocho menos una', () => {

@@ -2103,12 +2103,24 @@ export function columnasDelRanking(
         ] as ColumnaDelRanking[])
       : []),
     /*
+      ⚠️ **El Veredicto, solo en el perfil integral**, que es la etapa de la que
+      sale: el grupo de prioridad se asigna una vez, cuando la IA termina de
+      calificar el currículum, y nadie lo recalcula después. En las otras cuatro
+      pestañas contradecía la nota de al lado —un 95 en la prueba junto a «No
+      priorizado»—, así que allí no hay columna, ni celda, ni leyenda, ni casilla
+      en «Columnas». En la prueba, la columna de resumen es el Ponderado. Spec
+      `veredicto-solo-en-el-perfil-integral`.
+
       Se estrecha, pero NO es una cifra: el rótulo va a la izquierda como
       cualquier texto. `cifra` traería además el alineado a la derecha de la hoja
       compartida, y una palabra pegada al borde derecho junto a la columna de
       números se lee como si fuera otro número.
     */
-    { clave: 'veredicto', titulo: 'Veredicto', estrecha: true, ocultable: true },
+    ...(etapa === 'PERFIL_INTEGRAL'
+      ? ([
+          { clave: 'veredicto', titulo: 'Veredicto', estrecha: true, ocultable: true },
+        ] as ColumnaDelRanking[])
+      : []),
     ...criterios.map(
       (c): ColumnaDelRanking => ({
         clave: `criterio:${c.nombre}`,

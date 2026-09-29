@@ -18,6 +18,12 @@ import { conElEscenario } from './escenario-desarrollador-web'
  *
  * El número 41 ya lo tenía `41-logotipo`: este es el 42.
  *
+ * ⚠️ **Desde la spec `veredicto-solo-en-el-perfil-integral` el Veredicto solo
+ * existe en «Perfil integral».** Los recorridos que lo ocultan (AC-04/05, AC-06
+ * y AC-08/09) se hacen allí; los de la prueba (AC-07/10 y AC-11) apagan el
+ * Ponderado, que es su columna de resumen. La casilla «Ponderado» (AC-01..03 y
+ * la de AC-11) se sigue comprobando en la prueba.
+ *
  * ⚠️ **Lo que se comprueba es la tabla que se VE, fila a fila.** El fallo se
  * escapó porque las pruebas contaban cabeceras: al ocultar Veredicto se iba su
  * `<th>` y su `<td>` seguía en cada fila, así que «No priorizado» caía bajo
@@ -113,7 +119,7 @@ const resumenColumnas = (page: Page): Locator =>
  * La casilla de «Reseñas de empresas» (spec `resenas-de-empresas-a-contratados`,
  * V63). Para quien puede verlas —`dev-equipo` puede— la columna existe y
  * **arranca apagada**: el menú ya dice «1 oculta» antes de tocar nada, ocultar
- * Veredicto lo deja en «2 ocultas», y «Ver todas» la enciende también, al final.
+ * otra columna lo deja en «2 ocultas», y «Ver todas» la enciende también, al final.
  */
 const RESENAS = 'Reseñas de empresas'
 
@@ -227,7 +233,21 @@ async function abrirLaPrueba(page: Page): Promise<Map<string, FilaServida>> {
   return servidas
 }
 
-test.describe('El selector de columnas del ranking', () => {
+/**
+ * La vacante LLENA en «Perfil integral» —la pestaña por defecto, y la única con
+ * Veredicto—, con la tanda entera a la vista.
+ */
+async function abrirElPerfil(page: Page): Promise<Map<string, FilaServida>> {
+  await entrarAlPanel(page)
+  const servidas = await interceptarRanking(page)
+  await irAVacante(page, VACANTES.LLENA)
+  await corte(page, 'Toda la tanda').click()
+  await expect(page.getByRole('columnheader', { name: 'Veredicto', exact: true })).toBeVisible()
+  await expect(filasDelRanking(page).nth(1)).toBeVisible()
+  return servidas
+}
+
+test.describe('El selector de columnas del ranking, en la prueba del puesto', () => {
   let servidas: Map<string, FilaServida>
   test.beforeEach(async ({ page }) => {
     servidas = await abrirLaPrueba(page)
@@ -266,6 +286,35 @@ test.describe('El selector de columnas del ranking', () => {
     expect(titulo).toContain('No es la nota final')
   })
 
+  test('AC-07/10 · con los criterios encendidos, el menú los nombra enteros y la tabla cuadra', async ({
+    page,
+  }) => {
+    await resumenColumnas(page).click()
+    await page.getByRole('checkbox', { name: /Ver los criterios/ }).check()
+    for (const { criterio } of CRITERIOS) await expect(casilla(page, criterio)).toBeVisible()
+    const conCriterios = await laTablaCuadra(page, servidas, 'con los criterios')
+    // En la prueba no hay Veredicto que apagar: se apaga su columna de resumen.
+    expect(conCriterios.cabeceras).not.toContain('Veredicto')
+    await expect(casilla(page, 'Veredicto')).toHaveCount(0)
+
+    await casilla(page, 'Ponderado').uncheck()
+    await casilla(page, 'Estado').uncheck()
+    await casilla(page, 'Ciudad').uncheck()
+    await esperarCabeceras(page, conCriterios.cabeceras.length - 3)
+    await laTablaCuadra(page, servidas, 'con los criterios y sin Ponderado, Estado ni Ciudad')
+  })
+})
+
+/*
+  Los recorridos que ocultan Veredicto, en la única pestaña donde existe (spec
+  `veredicto-solo-en-el-perfil-integral`).
+*/
+test.describe('El selector de columnas del ranking, en el perfil integral', () => {
+  let servidas: Map<string, FilaServida>
+  test.beforeEach(async ({ page }) => {
+    servidas = await abrirElPerfil(page)
+  })
+
   test('AC-04/05 · ocultar Veredicto se lleva cabecera y celdas, y la leyenda', async ({ page }) => {
     const antes = await laTablaCuadra(page, servidas, 'con todas')
     expect(antes.cabeceras).toContain('Veredicto')
@@ -293,7 +342,8 @@ test.describe('El selector de columnas del ranking', () => {
 
   test('AC-06 · Veredicto vuelve a su sitio al marcarlo y con «Ver todas»', async ({ page }) => {
     const deSiempre = (await medir(page)).cabeceras
-    expect(deSiempre.indexOf('Veredicto')).toBe(deSiempre.indexOf('Ponderado') + 1)
+    // En el perfil integral va justo detrás de «Nota»: allí no hay Ponderado.
+    expect(deSiempre.indexOf('Veredicto')).toBe(deSiempre.indexOf('Nota') + 1)
     expect(deSiempre.indexOf('Estado')).toBe(deSiempre.indexOf('Veredicto') + 1)
 
     await resumenColumnas(page).click()
@@ -361,21 +411,6 @@ test.describe('El selector de columnas del ranking', () => {
     await expect(vacia).toBeVisible()
     await anchoEntero(vacia, 'el «no hay» del filtro')
   })
-
-  test('AC-07/10 · con los criterios encendidos, el menú los nombra enteros y la tabla cuadra', async ({
-    page,
-  }) => {
-    await resumenColumnas(page).click()
-    await page.getByRole('checkbox', { name: /Ver los criterios/ }).check()
-    for (const { criterio } of CRITERIOS) await expect(casilla(page, criterio)).toBeVisible()
-    const conCriterios = await laTablaCuadra(page, servidas, 'con los criterios')
-
-    await casilla(page, 'Veredicto').uncheck()
-    await casilla(page, 'Estado').uncheck()
-    await casilla(page, 'Ciudad').uncheck()
-    await esperarCabeceras(page, conCriterios.cabeceras.length - 3)
-    await laTablaCuadra(page, servidas, 'con los criterios y sin Veredicto, Estado ni Ciudad')
-  })
 })
 
 /*
@@ -385,7 +420,7 @@ test.describe('El selector de columnas del ranking', () => {
 test.describe('El selector de columnas en un teléfono de 360 px', () => {
   test.use({ viewport: { width: 360, height: 780 } })
 
-  test('AC-11 · «Más» → «Columnas» dice «Ponderado», y sin Veredicto la tabla no se descuadra', async ({
+  test('AC-11 · «Más» → «Columnas» dice «Ponderado», no ofrece Veredicto y la tabla no se descuadra', async ({
     page,
   }) => {
     const servidas = await abrirLaPrueba(page)
@@ -412,12 +447,15 @@ test.describe('El selector de columnas en un teléfono de 360 px', () => {
       'la lista de «Columnas» acaba dentro de la pantalla',
     ).toBeLessThanOrEqual(ancho)
 
+    // En la prueba no hay Veredicto (spec `veredicto-solo-en-el-perfil-integral`).
+    await expect(casilla(page, 'Veredicto')).toHaveCount(0)
     const antes = await medir(page)
-    await casilla(page, 'Veredicto').uncheck()
+    expect(antes.cabeceras).not.toContain('Veredicto')
+    await casilla(page, 'Ponderado').uncheck()
     await esperarCabeceras(page, antes.cabeceras.length - 1)
-    // Veredicto y la «Reseñas» que arranca apagada.
+    // El Ponderado y la «Reseñas» que arranca apagada.
     await expect(resumenColumnas(page)).toHaveText(/^Columnas\s*2 ocultas$/)
-    await laTablaCuadra(page, servidas, '360 px sin Veredicto')
+    await laTablaCuadra(page, servidas, '360 px sin Ponderado')
 
     // La página no rueda en horizontal: la tabla lo hace dentro de su envoltura.
     await resumenColumnas(page).click()
