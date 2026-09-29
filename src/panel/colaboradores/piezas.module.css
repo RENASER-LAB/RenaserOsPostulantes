@@ -1,0 +1,81 @@
+/* El estado y el fin de contrato de un colaborador, iguales en la lista y en la ficha. */
+
+.estado {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.marca {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--e3);
+  border-radius: var(--radio-control);
+  font-size: var(--t-micro);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+/* Relleno: está dentro. */
+.activo {
+  background: var(--bien-bruma);
+  color: var(--bien);
+  border: 1px solid transparent;
+}
+
+/* Contorno: todavía no entra. */
+.porIngresar {
+  background: var(--nube);
+  color: var(--tinta2);
+  border: 1px solid var(--regla2);
+}
+
+/* Punteado: ya salió, y sigue en el sistema. */
+.cesado {
+  background: var(--nube-hundida);
+  color: var(--tinta2);
+  border: 1px dashed var(--borde-control);
+}
+
+.cesa {
+  font-size: var(--t-micro);
+  color: var(--duda-tinta);
+  white-space: nowrap;
+}
+
+.fin {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.sinFin {
+  color: var(--tinta3);
+}
+
+.vence,
+.vencido {
+  font-size: var(--t-micro);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.vence {
+  color: var(--duda-tinta);
+}
+
+.vencido {
+  color: var(--mal);
+}
+
+.soloLectores {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

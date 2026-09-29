@@ -296,3 +296,47 @@ export function IconoDeEnlace({ tipo, ...props }: PropsIcono & { tipo: string })
   }
   return <IconoEnlace {...props} />
 }
+
+// ---------- El menú lateral del panel (V64) ----------
+
+/** Dos personas: los colaboradores de la empresa. */
+export function IconoPersonas(props: PropsIcono) {
+  return (
+    <Icono {...props}>
+      <circle cx="9" cy="8" r="3.2" />
+      <path d="M3 19.5c.6-3.3 3.1-5.3 6-5.3s5.4 2 6 5.3" />
+      <path d="M15.5 5.2a3 3 0 0 1 0 5.8" />
+      <path d="M17.5 14.6c1.8.6 3.1 2.3 3.5 4.9" />
+    </Icono>
+  )
+}
+
+/** Tres reguladores: la configuración. */
+export function IconoAjustes(props: PropsIcono) {
+  return (
+    <Icono {...props}>
+      <path d="M4 7h9M17 7h3M4 12h3M11 12h9M4 17h11M19 17h1" />
+      <circle cx="15" cy="7" r="2" />
+      <circle cx="9" cy="12" r="2" />
+      <circle cx="17" cy="17" r="2" />
+    </Icono>
+  )
+}
+
+/** Tres rayas: abre el menú en una pantalla estrecha. */
+export function IconoMenu(props: PropsIcono) {
+  return (
+    <Icono {...props}>
+      <path d="M4 6.5h16M4 12h16M4 17.5h16" />
+    </Icono>
+  )
+}
+
+/** Dos picos hacia la izquierda: plegar. Girado, desplegar. */
+export function IconoPlegar(props: PropsIcono) {
+  return (
+    <Icono {...props}>
+      <path d="m11.5 6.5-5.5 5.5 5.5 5.5M18 6.5 12.5 12l5.5 5.5" />
+    </Icono>
+  )
+}

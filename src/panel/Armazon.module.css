@@ -1,61 +1,57 @@
 /*
- * El armazon del panel.
+ * El armazon del panel: una barra fina arriba y el menu lateral a la izquierda.
  *
- * El mismo mundo que el portal —«El canto»: bruma, nube, Mulish, pildoras— y
- * ninguna paleta inventada. Lo que cambia es la DENSIDAD y el aire, porque el
- * publico es otro: el portal lo abre alguien nervioso cada tres dias, y esto lo
- * habita el equipo de Talento la jornada entera. El canto irisado a sangre que
- * abre «Mis procesos» aqui no entra: doscientos pixeles de atmosfera son un
- * regalo en una pantalla que se visita, y un estorbo en una herramienta.
+ * El mismo mundo que el portal y ninguna paleta inventada. Lo que cambia es la
+ * DENSIDAD y el aire, porque el publico es otro: esto lo habita el equipo de
+ * Talento la jornada entera.
  *
- * De todo el mundo se queda **un filete del espectro** cruzando la cabecera.
- * Es la firma de la casa reducida a lo que cabe en una herramienta, y ademas
- * distingue las dos pestañas de un vistazo: el portal lleva la nube entera,
- * el panel solo su canto.
+ * De todo el mundo se queda **un filete del espectro** cruzando la barra: la
+ * firma de la casa reducida a lo que cabe en una herramienta.
+ *
+ * Desde la V64 la navegacion no cabe en una fila de pestañas y vive en un menu
+ * lateral, agrupado por familias. El lateral es la segunda capa neutra —la nube
+ * hundida— para que la pagina, en nube, se lea encima de él; y no lleva color
+ * de accion: el indigo ya es de los botones.
  */
 
 .armazon {
+  --alto-barra: 58px;
+  --ancho-lateral: 15rem;
+  --ancho-plegado: 4.25rem;
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
 }
 
-.cabecera {
+/* ---------- La barra fina ---------- */
+
+.barra {
   position: sticky;
   top: 0;
-  z-index: 10;
-  background: rgb(255 255 255 / 0.82);
-  backdrop-filter: blur(18px) saturate(1.4);
-  border-bottom: 1px solid rgb(203 210 220 / 0.6);
-}
-
-/* Donde el navegador no empaña, se cierra el fondo. */
-@supports not (backdrop-filter: blur(1px)) {
-  .cabecera {
-    background: var(--nube);
-  }
+  z-index: 20;
+  background: var(--nube);
+  border-bottom: 1px solid var(--regla);
 }
 
 /* El filete del espectro: la firma de la casa, a dos pixeles. */
-.cabecera::before {
+.barra::before {
   content: '';
   display: block;
   height: 2px;
   background: var(--canto);
 }
 
-.cabeceraDentro {
-  max-width: var(--ancho-panel);
-  margin: 0 auto;
-  padding: var(--e2) var(--e5);
+.barraDentro {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--e4);
-  min-height: 44px;
+  gap: var(--e3) var(--e4);
+  min-height: calc(var(--alto-barra) - 3px);
+  padding: 0 var(--e5);
+  min-width: 0;
 }
 
 .marca {
+  flex: none;
   display: inline-flex;
   align-items: center;
   gap: var(--e3);
@@ -71,8 +67,8 @@
 
 /*
  * «Panel del equipo», en versalitas junto a la marca. No es un antetitulo
- * encima de un titular —eso el suelo de calidad lo veta— sino la etiqueta que
- * dice de que producto es esta pestaña.
+ * encima de un titular sino la etiqueta que dice de que producto es esta
+ * pestaña.
  */
 .quienEs {
   font-size: var(--t-micro);
@@ -82,78 +78,51 @@
   color: var(--tinta2);
   border-left: 1px solid var(--regla2);
   padding-left: var(--e3);
+  white-space: nowrap;
 }
 
-/*
- * La navegación se desliza cuando no cabe, en vez de empujar la página.
- *
- * ⚠️ **Con un flex a secas, cada enlace nuevo estrecha el teléfono.** Al añadir
- * «Pruebas» la barra pasó a medir 379 px en una pantalla de 375 y el desborde
- * salió del `<body>`: la página entera se movía en horizontal, y con ella el
- * titular y la tabla. Un `min-width: 0` y un scroll propio dejan el desbordo
- * dentro de la barra, que es donde no molesta a nada.
- *
- * Los enlaces no encogen (`flex: none`) ni parten su texto: un «Configuración»
- * en dos líneas rompe los 44 px de alto mínimo de lo que se puede tocar.
- */
-.navegacion {
+/* La empresa: de quien son los datos que se estan mirando. */
+.empresa {
+  min-width: 0;
+  flex: 0 1 auto;
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  color: var(--tinta);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding-left: var(--e4);
+  border-left: 1px solid var(--regla);
+}
+
+/* Encoge antes que la marca: un nombre largo se corta y «Salir» no se mueve. */
+.persona {
+  margin-left: auto;
+  flex: 0 1 auto;
   display: flex;
   align-items: center;
-  gap: var(--e2);
-  font-size: var(--t-apoyo);
+  gap: var(--e3);
   min-width: 0;
-  overflow-x: auto;
-  /* La barra de scroll no se enseña: son cuatro enlaces, no un panel de datos. */
-  scrollbar-width: none;
 }
 
-.navegacion::-webkit-scrollbar {
-  display: none;
-}
-
-.enlace {
-  flex: none;
-  white-space: nowrap;
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  padding: 0 var(--e3);
-  border-radius: var(--radio-control);
+.nombre {
+  min-width: 0;
+  max-width: 16rem;
+  font-size: var(--t-apoyo);
   color: var(--tinta2);
-  text-decoration: none;
-  transition:
-    background 160ms var(--salida),
-    color 160ms var(--salida);
-}
-
-.enlace:hover {
-  color: var(--tinta);
-  text-decoration: none;
-  background: rgb(35 43 54 / 0.05);
-}
-
-/*
- * La pestaña activa se marca con el peso y un fondo de bruma gris, no con el
- * violeta: aqui el violeta ya lo llevan los botones de accion, y darselo
- * tambien a la navegacion lo dejaria sin decir nada.
- */
-.enlaceActivo {
-  color: var(--tinta);
-  font-weight: 700;
-  background: rgb(35 43 54 / 0.06);
-}
-
-.enlaceActivo:hover {
-  background: rgb(35 43 54 / 0.09);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .salir {
+  flex: none;
   display: inline-flex;
   align-items: center;
   min-height: 44px;
   background: none;
   border: 0;
-  padding: 0;
+  padding: 0 var(--e2);
   font-size: var(--t-apoyo);
   color: var(--tinta2);
   cursor: pointer;
@@ -166,25 +135,338 @@
   color: var(--tinta);
 }
 
-.principal {
-  flex: 1;
+/* Solo en pantallas estrechas: abre el cajon. */
+.botonMenu {
+  display: none;
+  flex: none;
+  align-items: center;
+  gap: var(--e2);
+  min-height: 44px;
+  padding: 0 var(--e3);
+  border: 1px solid var(--regla2);
+  border-radius: var(--radio-control);
+  background: var(--nube);
+  color: var(--tinta);
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  cursor: pointer;
 }
 
-@media (max-width: 640px) {
-  .cabeceraDentro {
-    padding: var(--e2) var(--e4);
-    flex-wrap: wrap;
+.botonMenu:hover {
+  background: var(--nube-hundida);
+}
+
+/* ---------- El cuerpo: lateral y pagina ---------- */
+
+.cuerpo {
+  flex: 1;
+  display: grid;
+  grid-template-columns: var(--ancho-lateral) minmax(0, 1fr);
+  transition: grid-template-columns 200ms var(--salida);
+}
+
+.armazon[data-plegado='true'] .cuerpo {
+  grid-template-columns: var(--ancho-plegado) minmax(0, 1fr);
+}
+
+.lateral {
+  position: sticky;
+  top: var(--alto-barra);
+  align-self: start;
+  height: calc(100dvh - var(--alto-barra));
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+  padding: var(--e4) var(--e3);
+  background: var(--nube-hundida);
+  border-right: 1px solid var(--regla);
+  /* Sin overflow propio: el tooltip de un icono plegado sale por la derecha. */
+  z-index: 10;
+}
+
+.principal {
+  min-width: 0;
+}
+
+/* ---------- El menu ---------- */
+
+.menu {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e4);
+  min-height: 0;
+}
+
+.familias {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e4);
+}
+
+.familia {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e1);
+}
+
+.tituloFamilia {
+  margin: 0;
+  padding: 0 var(--e3);
+  font-size: var(--t-micro);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tinta3);
+}
+
+/* Plegado, la familia se separa con una regla y no con su nombre. */
+.tituloFamiliaOculto {
+  margin: 0 var(--e2);
+  height: 1px;
+  overflow: hidden;
+  background: var(--regla);
+  color: transparent;
+}
+
+.entradas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* Configuracion, al pie y separada. */
+.pie {
+  margin-top: auto;
+  padding-top: var(--e3);
+  border-top: 1px solid var(--regla);
+}
+
+.enlace {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--e3);
+  min-height: 44px;
+  padding: 0 var(--e3);
+  border-radius: var(--radio-control);
+  color: var(--tinta2);
+  font-size: var(--t-apoyo);
+  text-decoration: none;
+  transition:
+    background 160ms var(--salida),
+    color 160ms var(--salida);
+}
+
+.enlace:hover {
+  color: var(--tinta);
+  text-decoration: none;
+  background: var(--nube-honda);
+}
+
+/*
+ * La activa se marca con el peso y la nube, no con el indigo: el indigo ya lo
+ * llevan los botones de accion, y darselo a la navegacion lo dejaria sin decir
+ * nada.
+ */
+.enlaceActivo {
+  color: var(--tinta);
+  font-weight: 700;
+  background: var(--nube);
+  box-shadow: var(--sombra-control);
+}
+
+.enlaceActivo:hover {
+  background: var(--nube);
+}
+
+.icono {
+  flex: none;
+  display: inline-flex;
+  width: 20px;
+  justify-content: center;
+}
+
+.texto {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.plegar {
+  display: flex;
+  align-items: center;
+  gap: var(--e3);
+  min-height: 44px;
+  padding: 0 var(--e3);
+  border: 0;
+  border-radius: var(--radio-control);
+  background: none;
+  color: var(--tinta2);
+  font-size: var(--t-apoyo);
+  cursor: pointer;
+  position: relative;
+}
+
+.plegar:hover {
+  color: var(--tinta);
+  background: var(--nube-honda);
+}
+
+.iconoGirado {
+  display: inline-flex;
+  transform: rotate(180deg);
+}
+
+/*
+ * Plegado: una columna de iconos. El nombre de cada entrada se queda en el
+ * enlace —es su nombre accesible— y pasa a ser el tooltip, a la derecha, que
+ * sale al pasar por encima o al llegar con el teclado. Se esconde con
+ * opacidad y no con display, que lo sacaria del arbol de accesibilidad.
+ */
+.armazon[data-plegado='true'] .lateral .enlace,
+.armazon[data-plegado='true'] .plegar {
+  justify-content: center;
+  padding: 0;
+}
+
+.armazon[data-plegado='true'] .lateral .texto {
+  position: absolute;
+  left: calc(100% + var(--e3));
+  top: 50%;
+  transform: translateY(-50%);
+  padding: var(--e1) var(--e3);
+  border-radius: var(--radio-menor);
+  background: var(--accion-fuerte);
+  color: var(--tinta-invertida);
+  font-size: var(--t-micro);
+  font-weight: 600;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms var(--salida);
+  z-index: 30;
+}
+
+.armazon[data-plegado='true'] .lateral .enlace:hover .texto,
+.armazon[data-plegado='true'] .lateral .enlace:focus-visible .texto,
+.armazon[data-plegado='true'] .lateral .plegar:hover .texto,
+.armazon[data-plegado='true'] .lateral .plegar:focus-visible .texto {
+  opacity: 1;
+}
+
+/* ---------- El cajon, en pantallas estrechas ---------- */
+
+.velo {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: var(--velo);
+}
+
+.cajon {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 41;
+  width: min(20rem, 86vw);
+  display: flex;
+  flex-direction: column;
+  gap: var(--e4);
+  padding: var(--e4);
+  background: var(--nube-hundida);
+  box-shadow: var(--sombra-nube);
+  overflow-y: auto;
+  animation: entraElCajon 200ms var(--salida);
+}
+
+@keyframes entraElCajon {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cajon {
+    animation: none;
   }
 
-  .quienEs {
+  .cuerpo {
+    transition: none;
+  }
+}
+
+.cajon nav {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.cabeceraCajon {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tituloCajon {
+  font-size: var(--t-micro);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tinta3);
+}
+
+.cerrarCajon {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: var(--radio-control);
+  background: none;
+  color: var(--tinta2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.cerrarCajon:hover {
+  background: var(--nube-honda);
+  color: var(--tinta);
+}
+
+/* ---------- Menos de 1024 px: sin lateral, con cajon ---------- */
+
+@media (max-width: 1023.98px) {
+  .cuerpo,
+  .armazon[data-plegado='true'] .cuerpo {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .lateral {
     display: none;
   }
 
-  .navegacion {
-    gap: var(--e1);
+  .botonMenu {
+    display: inline-flex;
+  }
+}
+
+@media (max-width: 640px) {
+  .barraDentro {
+    padding: 0 var(--e4);
+    gap: var(--e2);
   }
 
-  .enlace {
-    padding: 0 var(--e2);
+  .quienEs,
+  .empresa,
+  .nombre {
+    display: none;
   }
 }

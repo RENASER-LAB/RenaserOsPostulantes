@@ -1,0 +1,288 @@
+/*
+ * La ficha del colaborador: la cabecera, las tres pestañas y los bloques de
+ * datos. En el teléfono los bloques se apilan y los modales ocupan la pantalla.
+ */
+
+.cabecera {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+  margin-bottom: var(--e5);
+}
+
+.quien {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--e2) var(--e4);
+}
+
+.nombre {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.documento {
+  margin: 0;
+  font-size: var(--t-prosa);
+  color: var(--tinta2);
+  font-variant-numeric: tabular-nums;
+}
+
+.resumen {
+  margin: 0;
+  font-size: var(--t-prosa);
+  color: var(--tinta2);
+  overflow-wrap: anywhere;
+}
+
+/* ---------- Las pestañas ---------- */
+
+.pestanas {
+  display: flex;
+  gap: var(--e1);
+  border-bottom: 1px solid var(--regla2);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.pestanas::-webkit-scrollbar {
+  display: none;
+}
+
+.pestana {
+  flex: none;
+  min-height: 44px;
+  padding: 0 var(--e4);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  background: none;
+  color: var(--tinta2);
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.pestana:hover {
+  color: var(--tinta);
+}
+
+.pestanaActiva {
+  color: var(--tinta);
+  border-bottom-color: var(--tinta);
+}
+
+.panel {
+  padding-top: var(--e5);
+}
+
+/* ---------- Los bloques de datos ---------- */
+
+.bloques {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e5);
+}
+
+.accionesPestana {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e3);
+  justify-content: flex-end;
+}
+
+.bloque {
+  padding: var(--e4) var(--e5);
+  background: var(--nube);
+  border: 1px solid var(--regla);
+  border-radius: var(--radio);
+}
+
+.tituloBloque {
+  font-size: var(--t-base);
+  font-weight: 700;
+  margin: 0 0 var(--e3);
+}
+
+.datos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: var(--e3) var(--e5);
+  margin: 0;
+}
+
+.dato {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.dato dt {
+  font-size: var(--t-micro);
+  font-weight: 600;
+  color: var(--tinta3);
+  letter-spacing: 0.02em;
+}
+
+.dato dd {
+  margin: 0;
+  font-size: var(--t-apoyo);
+  color: var(--tinta);
+  overflow-wrap: anywhere;
+}
+
+.programados {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+}
+
+.programado {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e3);
+  padding: var(--e2) var(--e3);
+  background: var(--duda-bruma);
+  border-radius: var(--radio-menor);
+  font-size: var(--t-apoyo);
+}
+
+/* ---------- El historial ---------- */
+
+.historial {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.linea {
+  display: grid;
+  grid-template-columns: 8rem minmax(0, 1fr);
+  gap: var(--e4);
+  padding: var(--e4) 0;
+  border-bottom: 1px solid var(--regla);
+}
+
+.linea:last-child {
+  border-bottom: 0;
+}
+
+.cuando {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e1);
+  align-items: flex-start;
+}
+
+.fechaLinea {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.programadoMarca,
+.anuladoMarca {
+  font-size: var(--t-micro);
+  font-weight: 700;
+  padding: 1px var(--e2);
+  border-radius: var(--radio-control);
+}
+
+.programadoMarca {
+  color: var(--duda-tinta);
+  background: var(--duda-bruma);
+}
+
+.anuladoMarca {
+  color: var(--tinta2);
+  border: 1px dashed var(--borde-control);
+}
+
+.que {
+  min-width: 0;
+}
+
+.tituloLinea {
+  margin: 0 0 var(--e1);
+  font-weight: 600;
+}
+
+.cambios {
+  list-style: none;
+  margin: 0 0 var(--e1);
+  padding: 0;
+  font-size: var(--t-apoyo);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-wrap: anywhere;
+}
+
+.detalle {
+  margin: 0 0 var(--e1);
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+}
+
+.autor {
+  margin: 0;
+  font-size: var(--t-micro);
+  color: var(--tinta3);
+}
+
+/* Lo anulado se tacha y se aparta, pero se sigue leyendo. */
+.anulada .tituloLinea,
+.anulada .cambios {
+  text-decoration: line-through;
+  text-decoration-color: var(--tinta3);
+  color: var(--tinta2);
+}
+
+/* ---------- Las consecuencias del cese ---------- */
+
+.consecuencias {
+  padding: var(--e3) var(--e4);
+  background: var(--duda-bruma);
+  border-radius: var(--radio-menor);
+  font-size: var(--t-apoyo);
+}
+
+.consecuencias ul {
+  margin: 0;
+  padding-left: var(--e4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--e1);
+}
+
+.tituloConsecuencias {
+  margin: 0 0 var(--e2);
+  font-size: var(--t-apoyo);
+  font-weight: 700;
+  color: var(--duda-tinta);
+}
+
+@media (max-width: 640px) {
+  .bloque {
+    padding: var(--e3) var(--e4);
+  }
+
+  .linea {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--e2);
+  }
+
+  .cuando {
+    flex-direction: row;
+    align-items: center;
+  }
+}

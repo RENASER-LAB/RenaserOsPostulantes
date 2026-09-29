@@ -1,0 +1,58 @@
+/* La carga por Excel: tres pasos en fila, y la tabla de errores. */
+
+.pasos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e5);
+}
+
+.paso {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  gap: var(--e3);
+}
+
+/* El número dice el orden: primero la plantilla, después el archivo. */
+.numero {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radio-pildora);
+  background: var(--nube-hundida);
+  color: var(--tinta2);
+  font-weight: 700;
+  font-size: var(--t-apoyo);
+  font-variant-numeric: tabular-nums;
+}
+
+.contenido {
+  min-width: 0;
+}
+
+.tituloPaso {
+  font-size: var(--t-base);
+  font-weight: 600;
+  margin: var(--e1) 0 var(--e2);
+}
+
+.subir {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--e3);
+}
+
+.archivo {
+  font-size: var(--t-apoyo);
+  max-width: 100%;
+}
+
+.valor {
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}

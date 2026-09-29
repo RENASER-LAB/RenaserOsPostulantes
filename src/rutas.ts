@@ -98,6 +98,13 @@ export const patrones = {
   adminPruebas: '/admin/pruebas',
   adminComponerPrueba: '/admin/pruebas/versiones/:versionId',
   adminConfiguracion: '/admin/configuracion',
+  /**
+   * La gestión de personas (V64): la lista, el alta y la ficha. `nuevo` va
+   * antes que `:id` solo por legibilidad: el enrutador ya prefiere el tramo fijo.
+   */
+  adminColaboradores: '/admin/colaboradores',
+  adminNuevoColaborador: '/admin/colaboradores/nuevo',
+  adminColaborador: '/admin/colaboradores/:id',
 } as const
 
 export const rutas = {
@@ -165,4 +172,21 @@ export const rutas = {
   adminComponerPrueba: (versionId: number | string) =>
     `/admin/pruebas/versiones/${versionId}`,
   adminConfiguracion: () => '/admin/configuracion',
+  adminColaboradores: () => '/admin/colaboradores',
+  /** Con `postulacion`, el alta sale precargada con lo que se sabe del contratado. */
+  adminNuevoColaborador: (postulacionId?: number) =>
+    postulacionId === undefined
+      ? '/admin/colaboradores/nuevo'
+      : `/admin/colaboradores/nuevo?postulacion=${postulacionId}`,
+  /**
+   * La ficha. Con `reingreso`, abre el reingreso; con `postulacion` además, el
+   * periodo nuevo queda enlazado a esa contratación.
+   */
+  adminColaborador: (id: number | string, reingreso?: { postulacionId?: number }) => {
+    const base = `/admin/colaboradores/${id}`
+    if (reingreso === undefined) return base
+    return reingreso.postulacionId === undefined
+      ? `${base}?reingreso=1`
+      : `${base}?reingreso=1&postulacion=${reingreso.postulacionId}`
+  },
 } as const

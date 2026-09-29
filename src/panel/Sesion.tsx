@@ -8,11 +8,11 @@
  * **El mismo correo puede existir en los dos mundos sin chocar**, y eso es a
  * proposito: son cuentas y puertas distintas. No se unifican.
  *
- * ⚠️ **El backend no dice como se llama quien entro**: la sesion es solo
- * `{ token, usuarioId }`. La unica pantalla que conoce el nombre es la de
- * aceptar la invitacion, porque lo escribe la propia persona, asi que se guarda
- * ahi — igual que hace el portal del candidato al crear la cuenta. Quien entre
- * despues desde otro navegador vera el panel sin su nombre, que es la verdad.
+ * ⚠️ **El login no dice como se llama quien entro**: la respuesta es solo
+ * `{ token, usuarioId }`. Desde la V64 el armazon pide `GET /panel/sesion`
+ * —nombre, empresa y permisos, para pintar el menu— y es de ahi de donde sale
+ * el nombre de la barra. El de aqui es el que la persona escribio al aceptar la
+ * invitacion, y queda como respaldo si esa consulta no llega.
  */
 
 import {
