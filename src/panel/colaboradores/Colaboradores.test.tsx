@@ -185,6 +185,29 @@ describe('el aviso de contratados pendientes (AC-14)', () => {
     await waitFor(() => expect(descartar).toHaveBeenCalledWith(50, 'Ya no trabaja aquí'))
   })
 
+  it('«No dar de alta» con doble clic manda una sola petición mientras envía', async () => {
+    pendientes.mockResolvedValue(DOS)
+    let terminar: () => void = () => {}
+    descartar.mockImplementation(
+      () =>
+        new Promise<void>((resolver) => {
+          terminar = resolver
+        }),
+    )
+    montar()
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver' }))
+    fireEvent.click(screen.getAllByRole('button', { name: 'No dar de alta' })[0]!)
+    const modal = await screen.findByRole('dialog')
+    fireEvent.change(within(modal).getByLabelText('Motivo'), { target: { value: 'Ya no trabaja aquí' } })
+    const confirmar = within(modal).getByRole('button', { name: 'No dar de alta' })
+    fireEvent.click(confirmar)
+    fireEvent.click(confirmar)
+    await waitFor(() => expect(descartar).toHaveBeenCalledTimes(1))
+    terminar()
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect(descartar).toHaveBeenCalledTimes(1)
+  })
+
   it('sin pendientes no hay aviso', async () => {
     montar()
     await screen.findByRole('table')

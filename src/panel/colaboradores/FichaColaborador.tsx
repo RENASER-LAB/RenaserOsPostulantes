@@ -58,6 +58,8 @@ import {
   type FormSituacion,
 } from './formulario'
 import { EtiquetaDeEstado, FinDeContrato } from './piezas'
+import { useRetenerLaSesion } from '../Sesion'
+import { AvisoDeFallo, explicarFallo, useUnaVez } from '../ui/Envio'
 import estilos from './Colaboradores.module.css'
 import formularios from './Formularios.module.css'
 import propios from './FichaColaborador.module.css'
@@ -112,7 +114,9 @@ export function FichaDelColaborador() {
       </div>
     )
   }
-  if (ficha.isError) {
+  // Con datos ya pintados, un fallo al refrescar no tira la ficha: debajo puede
+  // haber un formulario a medias (una sesión que caduca, por ejemplo).
+  if (ficha.isError && !ficha.data) {
     const noExiste = ficha.error instanceof ErrorApi && ficha.error.esAjeno
     return (
       <div className={estilos.pagina}>
@@ -354,6 +358,7 @@ function EditarPerfil({
   const [errores, setErrores] = useState<Errores>({})
   const [fallo, setFallo] = useState<ReactNode>(null)
 
+  const unaVez = useUnaVez()
   const guardado = useMutation({
     mutationFn: () => editarPerfil(ficha.id, personaParaLaApi(persona)),
     onSuccess: async () => {
@@ -373,9 +378,10 @@ function EditarPerfil({
         )
         return
       }
-      setFallo(causa instanceof Error ? causa.message : 'No se pudo guardar.')
+      setFallo(explicarFallo(causa, 'No se pudo guardar.'))
     },
   })
+  useRetenerLaSesion(true)
 
   return (
     <form
@@ -392,7 +398,7 @@ function EditarPerfil({
           enfocarElPrimerError(raiz.current)
           return
         }
-        guardado.mutate()
+        unaVez(() => guardado.mutateAsync())
       }}
     >
       <p className={estilos.explica}>
@@ -416,11 +422,7 @@ function EditarPerfil({
           opciones={opciones}
         />
       </section>
-      {fallo && (
-        <p className={estilos.avisoMalo} role="alert">
-          {fallo}
-        </p>
-      )}
+      {fallo && <AvisoDeFallo className={estilos.avisoMalo}>{fallo}</AvisoDeFallo>}
       <div className={formularios.botones}>
         <button className={formularios.enviar} type="submit" disabled={guardado.isPending}>
           {guardado.isPending ? 'Guardando…' : 'Guardar'}
@@ -629,10 +631,6 @@ function useRefrescarLaFicha(id: number) {
   }
 }
 
-function mensajeDe(causa: unknown, porDefecto: string): string {
-  return causa instanceof Error ? causa.message : porDefecto
-}
-
 function Pie({
   alCerrar,
   enviando,
@@ -678,7 +676,7 @@ function ModalCambio({
   const [detalle, setDetalle] = useState('')
   const [situacion, setSituacion] = useState<FormSituacion>(() => (base ? situacionDesde(base) : situacionVacia()))
   const [errores, setErrores] = useState<Errores>({})
-  const [fallo, setFallo] = useState<string | null>(null)
+  const [fallo, setFallo] = useState<ReactNode>(null)
 
   // Cada vez que se abre, parte de la situación de ahora.
   useEffect(() => {
@@ -691,6 +689,7 @@ function ModalCambio({
     setFallo(null)
   }, [abierto, base])
 
+  const unaVez = useUnaVez()
   const cambio = useMutation({
     mutationFn: () =>
       registrarCambio(ficha.id, {
@@ -703,8 +702,9 @@ function ModalCambio({
       await refrescar()
       alCerrar()
     },
-    onError: (causa) => setFallo(mensajeDe(causa, 'No se pudo registrar el cambio.')),
+    onError: (causa) => setFallo(explicarFallo(causa, 'No se pudo registrar el cambio.')),
   })
+  useRetenerLaSesion(abierto)
 
   function enviar(e: FormEvent) {
     e.preventDefault()
@@ -728,7 +728,7 @@ function ModalCambio({
       setFallo('El cambio tiene que cambiar al menos un dato.')
       return
     }
-    cambio.mutate()
+    unaVez(() => cambio.mutateAsync())
   }
 
   const futuro = desde !== '' && diasEntre(hoy, desde) > 0
@@ -788,11 +788,7 @@ function ModalCambio({
           actual={base}
           excluirJefe={ficha.id}
         />
-        {fallo && (
-          <p className={estilos.avisoMalo} role="alert">
-            {fallo}
-          </p>
-        )}
+        {fallo && <AvisoDeFallo className={estilos.avisoMalo}>{fallo}</AvisoDeFallo>}
       </form>
     </Modal>
   )
@@ -832,7 +828,7 @@ function ModalCese({
   const [motivo, setMotivo] = useState('')
   const [observacion, setObservacion] = useState('')
   const [errores, setErrores] = useState<Errores>({})
-  const [fallo, setFallo] = useState<string | null>(null)
+  const [fallo, setFallo] = useState<ReactNode>(null)
 
   useEffect(() => {
     if (!abierto) return
@@ -843,6 +839,7 @@ function ModalCese({
     setFallo(null)
   }, [abierto])
 
+  const unaVez = useUnaVez()
   const cese = useMutation({
     mutationFn: () =>
       registrarCese(ficha.id, {
@@ -854,8 +851,9 @@ function ModalCese({
       await refrescar()
       alCerrar()
     },
-    onError: (causa) => setFallo(mensajeDe(causa, 'No se pudo registrar el cese.')),
+    onError: (causa) => setFallo(explicarFallo(causa, 'No se pudo registrar el cese.')),
   })
+  useRetenerLaSesion(abierto)
 
   const seAnulan = fecha === '' ? [] : ficha.programados.filter((p) => diasEntre(fecha, p.vigenteDesde) > 0)
 
@@ -870,7 +868,7 @@ function ModalCese({
     if (motivo === '') nuevos.motivo = 'Elige el motivo.'
     setErrores(nuevos)
     setFallo(null)
-    if (Object.keys(nuevos).length === 0) cese.mutate()
+    if (Object.keys(nuevos).length === 0) unaVez(() => cese.mutateAsync())
   }
 
   return (
@@ -935,11 +933,7 @@ function ModalCese({
             )}
           </ul>
         </div>
-        {fallo && (
-          <p className={estilos.avisoMalo} role="alert">
-            {fallo}
-          </p>
-        )}
+        {fallo && <AvisoDeFallo className={estilos.avisoMalo}>{fallo}</AvisoDeFallo>}
       </form>
     </Modal>
   )
@@ -966,7 +960,7 @@ function ModalReingreso({
     ficha.base ? situacionDesde(ficha.base) : situacionVacia(),
   )
   const [errores, setErrores] = useState<Errores>({})
-  const [fallo, setFallo] = useState<string | null>(null)
+  const [fallo, setFallo] = useState<ReactNode>(null)
 
   useEffect(() => {
     if (!abierto) return
@@ -976,6 +970,7 @@ function ModalReingreso({
     setFallo(null)
   }, [abierto, ficha.base])
 
+  const unaVez = useUnaVez()
   const reingreso = useMutation({
     mutationFn: () =>
       reingresar(ficha.id, {
@@ -987,8 +982,9 @@ function ModalReingreso({
       await Promise.all([refrescar(), cache.invalidateQueries({ queryKey: ['panel-colaboradores-pendientes'] })])
       alCerrar()
     },
-    onError: (causa) => setFallo(mensajeDe(causa, 'No se pudo reingresar.')),
+    onError: (causa) => setFallo(explicarFallo(causa, 'No se pudo reingresar.')),
   })
+  useRetenerLaSesion(abierto)
 
   function enviar(e: FormEvent) {
     e.preventDefault()
@@ -1005,7 +1001,7 @@ function ModalReingreso({
       enfocarElPrimerError(raiz.current)
       return
     }
-    reingreso.mutate()
+    unaVez(() => reingreso.mutateAsync())
   }
 
   return (
@@ -1039,11 +1035,7 @@ function ModalReingreso({
           opciones={opciones}
           excluirJefe={ficha.id}
         />
-        {fallo && (
-          <p className={estilos.avisoMalo} role="alert">
-            {fallo}
-          </p>
-        )}
+        {fallo && <AvisoDeFallo className={estilos.avisoMalo}>{fallo}</AvisoDeFallo>}
       </form>
     </Modal>
   )
@@ -1069,7 +1061,7 @@ function ModalConMotivo({
 }) {
   const refrescar = useRefrescarLaFicha(id)
   const [motivo, setMotivo] = useState('')
-  const [fallo, setFallo] = useState<string | null>(null)
+  const [fallo, setFallo] = useState<ReactNode>(null)
 
   useEffect(() => {
     if (!abierto) return
@@ -1077,14 +1069,17 @@ function ModalConMotivo({
     setFallo(null)
   }, [abierto])
 
+  // Anular dos veces no es un doble clic inocente: el segundo envío duplicaría la anulación.
+  const unaVez = useUnaVez()
   const accion = useMutation({
     mutationFn: () => alConfirmar(motivo.trim()),
     onSuccess: async () => {
       await refrescar()
       alCerrar()
     },
-    onError: (causa) => setFallo(mensajeDe(causa, 'No se pudo guardar.')),
+    onError: (causa) => setFallo(explicarFallo(causa, 'No se pudo guardar.')),
   })
+  useRetenerLaSesion(abierto)
 
   const formulario = `form-motivo-${confirmar.replace(/\s+/g, '-').toLowerCase()}`
 
@@ -1109,16 +1104,14 @@ function ModalConMotivo({
         noValidate
         onSubmit={(e) => {
           e.preventDefault()
-          if (!accion.isPending && motivo.trim() !== '') accion.mutate()
+          if (accion.isPending || motivo.trim() === '') return
+          setFallo(null)
+          unaVez(() => accion.mutateAsync())
         }}
       >
         <p className={estilos.explica}>{explicacion}</p>
         <Campo etiqueta="Motivo" obligatorio value={motivo} onChange={(e) => setMotivo(e.target.value)} />
-        {fallo && (
-          <p className={estilos.avisoMalo} role="alert">
-            {fallo}
-          </p>
-        )}
+        {fallo && <AvisoDeFallo className={estilos.avisoMalo}>{fallo}</AvisoDeFallo>}
       </form>
     </Modal>
   )

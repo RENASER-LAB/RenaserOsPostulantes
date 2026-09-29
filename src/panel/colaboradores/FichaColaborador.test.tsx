@@ -12,7 +12,9 @@ import type {
   EntradaHistorial,
   FichaColaborador,
   OpcionesColaborador,
+  RegistrarCambio,
   RegistrarCese,
+  Reingreso,
   Situacion,
 } from '../api/tiposPersonas'
 import { FichaDelColaborador } from './FichaColaborador'
@@ -21,16 +23,20 @@ import { hoyEnLima, sumarDias } from './fechas'
 const ver = vi.fn<(id: number) => Promise<FichaColaborador>>()
 const historial = vi.fn<(id: number) => Promise<EntradaHistorial[]>>()
 const cese = vi.fn<(id: number, datos: RegistrarCese) => Promise<void>>()
+const cambio = vi.fn<(id: number, datos: RegistrarCambio) => Promise<{ id: number }>>()
+const reingreso = vi.fn<(id: number, datos: Reingreso) => Promise<void>>()
+const anulacionDelCambio = vi.fn<(id: number, situacionId: number, motivo: string) => Promise<void>>()
+const anulacionDelCese = vi.fn<(id: number, motivo: string) => Promise<void>>()
 
 vi.mock('../api/colaboradores', () => ({
   verColaborador: (id: number) => ver(id),
   historialDelColaborador: (id: number) => historial(id),
   opcionesDeColaborador: () => Promise.resolve(OPCIONES),
   registrarCese: (id: number, datos: RegistrarCese) => cese(id, datos),
-  registrarCambio: vi.fn(),
-  anularCambio: vi.fn(),
-  anularCese: vi.fn(),
-  reingresar: vi.fn(),
+  registrarCambio: (id: number, datos: RegistrarCambio) => cambio(id, datos),
+  anularCambio: (id: number, situacionId: number, motivo: string) => anulacionDelCambio(id, situacionId, motivo),
+  anularCese: (id: number, motivo: string) => anulacionDelCese(id, motivo),
+  reingresar: (id: number, datos: Reingreso) => reingreso(id, datos),
   editarPerfil: vi.fn(),
   listarColaboradores: vi.fn(),
 }))
@@ -251,5 +257,100 @@ describe('el historial', () => {
     expect(screen.getByText(/Registrado por Tania Rojas/)).toBeTruthy()
     expect(screen.getByText(/Anulado por Diego Díaz/)).toBeTruthy()
     expect(screen.getByText('Anulado')).toBeTruthy()
+  })
+})
+
+describe('cuando el servidor rechaza un formulario', () => {
+  it('«Registrar un cambio»: el rechazo se ve y el foco queda en él, dentro del modal (AC-10)', async () => {
+    cambio.mockRejectedValue(
+      new ErrorApi(400, 'Ese jefe crearía un círculo: esa persona ya depende, directa o indirectamente, de este colaborador'),
+    )
+    montar()
+    fireEvent.click(await screen.findByRole('tab', { name: 'Puesto y contrato' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Registrar un cambio' }))
+    const modal = await screen.findByRole('dialog')
+    fireEvent.change(within(modal).getByLabelText(/^Tipo de motivo/), { target: { value: 'PROMOCION' } })
+    fireEvent.change(within(modal).getByLabelText(/^Fin del periodo de prueba/), {
+      target: { value: sumarDias(HOY, 60) },
+    })
+    fireEvent.click(within(modal).getByRole('button', { name: 'Guardar el cambio' }))
+
+    const aviso = await within(modal).findByRole('alert')
+    expect(aviso.textContent).toContain('círculo')
+    await waitFor(() => expect(document.activeElement).toBe(aviso))
+    expect(modal.contains(document.activeElement)).toBe(true)
+  })
+
+  it('una sesión caducada en el reingreso se dice, con cómo volver a entrar, y lo escrito sigue ahí', async () => {
+    reingreso.mockRejectedValue(new ErrorApi(401, 'Tu sesión terminó. Vuelve a ingresar.'))
+    ver.mockResolvedValue({
+      ...FICHA,
+      estado: 'CESADO',
+      periodo: { ...FICHA.periodo, fechaCese: '2026-01-10', motivoCese: '01', motivoCeseNombre: 'Renuncia' },
+    })
+    montar()
+    fireEvent.click(await screen.findByRole('tab', { name: 'Puesto y contrato' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Reingresar' }))
+    const modal = await screen.findByRole('dialog')
+    const fecha = within(modal).getByLabelText(/^Fecha de reingreso/) as HTMLInputElement
+    fireEvent.change(fecha, { target: { value: sumarDias(HOY, 1) } })
+    fireEvent.click(within(modal).getByRole('button', { name: 'Reingresar' }))
+
+    const aviso = await within(modal).findByRole('alert')
+    expect(aviso.textContent).toContain('Tu sesión caducó y esto no se guardó')
+    expect(within(aviso).getByRole('link', { name: 'entra de nuevo en otra pestaña' }).getAttribute('target')).toBe(
+      '_blank',
+    )
+    expect(screen.getByRole('dialog')).toBe(modal)
+    expect(fecha.value).toBe(sumarDias(HOY, 1))
+  })
+})
+
+describe('un doble clic en una anulación (QA-PER-08)', () => {
+  /** Una petición que no termina hasta que el test la suelta: el segundo clic llega con la primera en vuelo. */
+  function enVuelo(simulada: ReturnType<typeof vi.fn>) {
+    let soltar: () => void = () => {}
+    simulada.mockImplementation(() => new Promise<void>((resolver) => (soltar = resolver)))
+    return () => soltar()
+  }
+
+  it('«Anular el cambio» manda una sola anulación', async () => {
+    const soltar = enVuelo(anulacionDelCambio)
+    montar()
+    fireEvent.click(await screen.findByRole('tab', { name: 'Puesto y contrato' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Anular' }))
+    const modal = await screen.findByRole('dialog', { name: 'Anular el cambio programado' })
+    fireEvent.change(within(modal).getByLabelText(/^Motivo/), { target: { value: 'Se renueva por menos tiempo' } })
+    const confirmar = within(modal).getByRole('button', { name: 'Anular el cambio' })
+    fireEvent.click(confirmar)
+    fireEvent.click(confirmar)
+    await waitFor(() => expect(anulacionDelCambio).toHaveBeenCalled())
+    soltar()
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect(anulacionDelCambio).toHaveBeenCalledTimes(1)
+    expect(anulacionDelCambio).toHaveBeenCalledWith(7, 101, 'Se renueva por menos tiempo')
+  })
+
+  it('«Anular el cese» manda una sola anulación', async () => {
+    const soltar = enVuelo(anulacionDelCese)
+    ver.mockResolvedValue({
+      ...FICHA,
+      estado: 'CESADO',
+      puedeAnularCese: true,
+      periodo: { ...FICHA.periodo, fechaCese: '2026-01-10', motivoCese: '01', motivoCeseNombre: 'Renuncia' },
+    })
+    montar()
+    fireEvent.click(await screen.findByRole('tab', { name: 'Puesto y contrato' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Anular el cese' }))
+    const modal = await screen.findByRole('dialog', { name: 'Anular el cese' })
+    fireEvent.change(within(modal).getByLabelText(/^Motivo/), { target: { value: 'Se queda' } })
+    const confirmar = within(modal).getByRole('button', { name: 'Anular el cese' })
+    fireEvent.click(confirmar)
+    fireEvent.click(confirmar)
+    await waitFor(() => expect(anulacionDelCese).toHaveBeenCalled())
+    soltar()
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect(anulacionDelCese).toHaveBeenCalledTimes(1)
+    expect(anulacionDelCese).toHaveBeenCalledWith(7, 'Se queda')
   })
 })

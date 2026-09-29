@@ -11,7 +11,7 @@
  * nuevas; lo que ya lo usa lo conserva.
  */
 
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { verCatalogos } from '../api/panel'
 import {
@@ -23,12 +23,14 @@ import {
 } from '../api/estructura'
 import type { CargoPanel } from '../api/tiposPersonas'
 import estilos from './Areas.module.css'
+import { useRetenerLaSesion } from '../Sesion'
+import { AvisoDeFallo, explicarFallo, useUnaVez } from '../ui/Envio'
 
 export function Cargos() {
   const cache = useQueryClient()
   const cargos = useQuery({ queryKey: ['panel-cargos'], queryFn: listarCargos })
   const [renombrando, setRenombrando] = useState<number | null>(null)
-  const [fallo, setFallo] = useState<string | null>(null)
+  const [fallo, setFallo] = useState<ReactNode>(null)
 
   async function refrescar() {
     setRenombrando(null)
@@ -46,7 +48,7 @@ export function Cargos() {
   }
 
   const noSePudo = (causa: unknown, porDefecto: string) =>
-    setFallo(causa instanceof Error ? causa.message : porDefecto)
+    setFallo(explicarFallo(causa, porDefecto))
 
   const puedeEditar = cargos.data?.puedeEditar ?? false
 
@@ -71,11 +73,7 @@ export function Cargos() {
         <>
           {puedeEditar && <AnadirCargo alHecho={refrescar} alFallar={noSePudo} />}
 
-          {fallo && (
-            <p className={estilos.avisoMalo} role="alert">
-              {fallo}
-            </p>
-          )}
+          {fallo && <AvisoDeFallo className={estilos.avisoMalo}>{fallo}</AvisoDeFallo>}
 
           {cargos.data.cargos.length === 0 ? (
             <p className={estilos.vacio}>Todavía no hay ningún cargo.</p>
@@ -116,6 +114,9 @@ function AnadirCargo({
   const [nivel, setNivel] = useState('')
   const [familia, setFamilia] = useState('')
 
+  // `isPending` llega un pintado tarde: con un doble clic saldrían dos altas y la segunda
+  // diría que el cargo ya existe, aunque se acaba de crear.
+  const unaVez = useUnaVez()
   const alta = useMutation({
     mutationFn: () => crearCargo({ nombre: nombre.trim(), nivelPuestoCodigo: nivel, familiaCodigo: familia }),
     onSuccess: async () => {
@@ -128,6 +129,8 @@ function AnadirCargo({
   })
 
   const listo = nombre.trim() !== '' && nivel !== '' && familia !== ''
+  // Con algo escrito, una sesión que caduca no lo tira.
+  useRetenerLaSesion(nombre.trim() !== '' || nivel !== '' || familia !== '')
 
   return (
     <form
@@ -135,7 +138,7 @@ function AnadirCargo({
       noValidate
       onSubmit={(e) => {
         e.preventDefault()
-        if (listo && !alta.isPending) alta.mutate()
+        if (listo && !alta.isPending) unaVez(() => alta.mutateAsync())
       }}
     >
       <label className={estilos.campo}>
@@ -194,6 +197,7 @@ function FilaDeCargo({
   alHecho: () => Promise<void>
   alFallar: (causa: unknown, porDefecto: string) => void
 }) {
+  const unaVez = useUnaVez()
   const actividad = useMutation({
     mutationFn: () => (cargo.esActivo ? desactivarCargo(cargo.id) : reactivarCargo(cargo.id)),
     onSuccess: alHecho,
@@ -222,7 +226,7 @@ function FilaDeCargo({
           <button
             className={estilos.chico}
             type="button"
-            onClick={() => actividad.mutate()}
+            onClick={() => unaVez(() => actividad.mutateAsync())}
             disabled={actividad.isPending}
           >
             {cargo.esActivo ? 'Desactivar' : 'Reactivar'}
@@ -254,6 +258,8 @@ function Renombrar({
     onSuccess: alHecho,
     onError: (causa) => alFallar(causa, 'No se pudo renombrar el cargo.'),
   })
+  const unaVez = useUnaVez()
+  useRetenerLaSesion(true)
   const cambia = nombre.trim() !== '' && nombre.trim() !== cargo.nombre
   const usos = [
     cargo.vacantes > 0 && `${cargo.vacantes} ${cargo.vacantes === 1 ? 'vacante' : 'vacantes'}`,
@@ -280,7 +286,7 @@ function Renombrar({
           className={estilos.guardar}
           type="button"
           disabled={cambio.isPending || !cambia}
-          onClick={() => cambio.mutate()}
+          onClick={() => unaVez(() => cambio.mutateAsync())}
         >
           {cambio.isPending ? 'Guardando…' : 'Guardar'}
         </button>

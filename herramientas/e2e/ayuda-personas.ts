@@ -197,10 +197,22 @@ export async function altaPorLaApi(d: DatosDeAlta): Promise<number> {
 export function retirarLoSembrado(e: Estructura | null, vacantes: number[]): void {
   if (!e) return
   const sedes = `${e.sedeNorte.id}, ${e.sedeSur.id}`
-  const deLaPrueba = `select c.id from colaborador c where c.organizacion_id = ${e.organizacion}
-      and (c.apellido_paterno like ${literal(`%${MARCA}%`)} or c.numero_documento like '7%'
-           and exists (select 1 from situacion_laboral s where s.colaborador_id = c.id and s.sede_id in (${sedes})))`
+  const deSusVacantes = `select id from postulacion where vacante_id in (${vacantes.length ? vacantes.join(', ') : 'null'})`
+  // Las fichas se fijan UNA vez, antes de borrar nada: si el criterio se volviera
+  // a evaluar en cada sentencia, borrar sus situaciones dejaría fuera a quien se
+  // reconocía por su sede, y su ficha quedaría huérfana (sin situación).
+  const deLaPrueba = 'select id from qa_personas_fichas'
   sql(`
+    begin;
+    create temp table qa_personas_fichas on commit drop as
+      select c.id from colaborador c where c.organizacion_id = ${e.organizacion}
+        and (c.apellido_paterno like ${literal(`%${MARCA}%`)}
+             or c.postulacion_id in (${deSusVacantes})
+             or exists (select 1 from periodo_laboral p where p.colaborador_id = c.id
+                        and p.postulacion_id in (${deSusVacantes}))
+             or c.numero_documento like '7%'
+                and exists (select 1 from situacion_laboral s where s.colaborador_id = c.id
+                            and s.sede_id in (${sedes})));
     update situacion_laboral set jefe_colaborador_id = null where jefe_colaborador_id in (${deLaPrueba});
     delete from situacion_laboral where colaborador_id in (${deLaPrueba});
     delete from cese_anulado where periodo_id in (select id from periodo_laboral where colaborador_id in (${deLaPrueba}));
@@ -208,11 +220,13 @@ export function retirarLoSembrado(e: Estructura | null, vacantes: number[]): voi
     delete from colaborador where id in (${deLaPrueba});
     delete from contratado_sin_alta where postulacion_id in (select id from postulacion
       where vacante_id in (${vacantes.length ? vacantes.join(', ') : 'null'}));
-    delete from sede where id in (${sedes})
+    delete from sede where (id in (${sedes}) or (organizacion_id = ${e.organizacion}
+        and nombre like ${literal(`${MARCA} %`)}))
       and not exists (select 1 from situacion_laboral s where s.sede_id = sede.id);
     update vacante set eliminada_en = now() where id in (${vacantes.length ? vacantes.join(', ') : 'null'});
     update puesto set es_activo = false where id in (${e.cargoAnalista.id}, ${e.cargoJefe.id});
     update area set es_activa = false where id = ${e.area.id};
     update usuario set es_activo = false where usuario_renaser_os_id like ${literal(`${PREFIJO_PANEL}%`)};
+    commit;
   `)
 }

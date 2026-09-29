@@ -225,6 +225,9 @@ test('3 · contratar desde la ficha y dar de alta precargado, con la ficha enlaz
   await corte(page, 'Toda la tanda').click()
   await page.getByRole('button', { name: `Carla De la Cruz ${SUFIJO}`, exact: true }).click()
 
+  // Crear la cuenta ya deja su correo de bienvenida (CUENTA_CREADA): lo que no
+  // puede aparecer es ninguno nuevo por contratar.
+  const correosAntes = contar(`select 1 from correo_enviado where usuario_id = ${usuario}`)
   await page.getByRole('button', { name: 'Contratar', exact: true }).click()
   const modal = page.getByRole('dialog', { name: `Contratar a Carla De la Cruz ${SUFIJO}` })
   await expect(modal).toContainText('Todavía está en la etapa')
@@ -233,8 +236,11 @@ test('3 · contratar desde la ficha y dar de alta precargado, con la ficha enlaz
   await modal.getByRole('button', { name: 'Contratar', exact: true }).click()
   await expect(page.getByText(`Carla De la Cruz ${SUFIJO} quedó contratado.`)).toBeVisible()
   expect(uno(`select estado_codigo from postulacion where id = ${postulacion}`).estado_codigo).toBe('CONTRATADO')
-  expect(uno(`select semaforo from decision where postulacion_id = ${postulacion}`).semaforo).toBe('VERDE')
-  expect(contar(`select 1 from correo_enviado where usuario_id = ${usuario}`)).toBe(0)
+  expect(uno(`select semaforo, motivo from decision where postulacion_id = ${postulacion}`)).toMatchObject({
+    semaforo: 'VERDE',
+    motivo: 'Resolvió el caso mejor que nadie',
+  })
+  expect(contar(`select 1 from correo_enviado where usuario_id = ${usuario}`)).toBe(correosAntes)
 
   await page.getByRole('link', { name: 'Dar de alta como colaborador' }).click()
   await expect(page.getByLabel('Nombres')).toHaveValue('Carla')

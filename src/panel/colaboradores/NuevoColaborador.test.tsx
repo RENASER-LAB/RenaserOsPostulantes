@@ -101,6 +101,20 @@ describe('el alta', () => {
     expect(alta.mock.calls[0]![0].situacion).not.toHaveProperty('sueldoBase')
   })
 
+  it('con doble clic en «Dar de alta» sale una sola alta', async () => {
+    let soltar: () => void = () => {}
+    alta.mockImplementation(() => new Promise((resolver) => (soltar = () => resolver({ id: 77 }))))
+    montar()
+    await rellenar()
+    const boton = screen.getByRole('button', { name: 'Dar de alta' })
+    fireEvent.click(boton)
+    fireEvent.click(boton)
+    await waitFor(() => expect(alta).toHaveBeenCalled())
+    soltar()
+    expect(await screen.findByText('La ficha nueva')).toBeTruthy()
+    expect(alta).toHaveBeenCalledTimes(1)
+  })
+
   it('sin los obligatorios no envía y marca los campos', async () => {
     montar()
     fireEvent.click(await screen.findByRole('button', { name: 'Dar de alta' }))
@@ -116,7 +130,11 @@ describe('el alta', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Dar de alta' }))
     const enlace = await screen.findByRole('link', { name: 'Ver su ficha' })
     expect(enlace.getAttribute('href')).toBe('/admin/colaboradores/12')
-    expect(screen.getByRole('alert').textContent).toContain('Ya es colaborador')
+    const aviso = screen.getByRole('alert')
+    expect(aviso.textContent).toContain('Ya es colaborador')
+    // El botón se desactivó al enviar y soltó el foco: el aviso lo toma, con el enlace a un Tab (QA-PER-09).
+    await waitFor(() => expect(document.activeElement).toBe(aviso))
+    expect(aviso.contains(enlace)).toBe(true)
   })
 
   it('con una ficha cesada ofrece reingresarla, enlazando la contratación', async () => {
@@ -139,6 +157,9 @@ describe('el alta', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Dar de alta' }))
     const enlace = await screen.findByRole('link', { name: 'Reingresar desde su ficha' })
     expect(enlace.getAttribute('href')).toBe('/admin/colaboradores/12?reingreso=1&postulacion=40')
+    const aviso = screen.getByRole('alert')
+    await waitFor(() => expect(document.activeElement).toBe(aviso))
+    expect(aviso.contains(enlace)).toBe(true)
   })
 })
 

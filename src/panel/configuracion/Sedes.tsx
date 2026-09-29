@@ -7,7 +7,7 @@
  * mientras quien ya está en ella la conserva.
  */
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { catalogoUbigeo } from '@/api/portal'
 import { agrupadasPorDepartamento } from '@/dominio/ubigeo'
@@ -20,6 +20,8 @@ import {
 } from '../api/estructura'
 import type { GuardarSede, SedePanel } from '../api/tiposPersonas'
 import estilos from './Areas.module.css'
+import { useRetenerLaSesion } from '../Sesion'
+import { AvisoDeFallo, explicarFallo, useUnaVez } from '../ui/Envio'
 
 const VACIA: GuardarSede = { nombre: '', direccion: null, provinciaUbigeo: null, codigoSunat: null }
 
@@ -27,7 +29,7 @@ export function Sedes() {
   const cache = useQueryClient()
   const sedes = useQuery({ queryKey: ['panel-sedes'], queryFn: listarSedes })
   const [editando, setEditando] = useState<number | null>(null)
-  const [fallo, setFallo] = useState<string | null>(null)
+  const [fallo, setFallo] = useState<ReactNode>(null)
 
   async function refrescar() {
     setEditando(null)
@@ -39,7 +41,7 @@ export function Sedes() {
   }
 
   const noSePudo = (causa: unknown, porDefecto: string) =>
-    setFallo(causa instanceof Error ? causa.message : porDefecto)
+    setFallo(explicarFallo(causa, porDefecto))
 
   const puedeEditar = sedes.data?.puedeEditar ?? false
 
@@ -74,11 +76,7 @@ export function Sedes() {
             />
           )}
 
-          {fallo && (
-            <p className={estilos.avisoMalo} role="alert">
-              {fallo}
-            </p>
-          )}
+          {fallo && <AvisoDeFallo className={estilos.avisoMalo}>{fallo}</AvisoDeFallo>}
 
           {sedes.data.sedes.length === 0 ? (
             <p className={estilos.vacio}>
@@ -126,6 +124,7 @@ function FilaDeSede({
   alHecho: () => Promise<void>
   alFallar: (causa: unknown, porDefecto: string) => void
 }) {
+  const unaVez = useUnaVez()
   const actividad = useMutation({
     mutationFn: () => (sede.esActiva ? desactivarSede(sede.id) : reactivarSede(sede.id)),
     onSuccess: alHecho,
@@ -156,7 +155,7 @@ function FilaDeSede({
           <button
             className={estilos.chico}
             type="button"
-            onClick={() => actividad.mutate()}
+            onClick={() => unaVez(() => actividad.mutateAsync())}
             disabled={actividad.isPending}
           >
             {sede.esActiva ? 'Desactivar' : 'Reactivar'}
@@ -216,6 +215,7 @@ function FormularioDeSede({
     [ubigeo.data],
   )
 
+  const unaVez = useUnaVez()
   const guardado = useMutation({
     mutationFn: () =>
       enviar({
@@ -235,6 +235,8 @@ function FormularioDeSede({
     },
     onError: (causa) => alFallar(causa, 'No se pudo guardar la sede.'),
   })
+  // Editar una sede, o empezar a escribir una nueva: si la sesión caduca, no se pierde.
+  useRetenerLaSesion(!limpiarAlTerminar || nombre.trim() !== '' || direccion.trim() !== '' || codigo.trim() !== '')
 
   return (
     <form
@@ -248,7 +250,7 @@ function FormularioDeSede({
           return
         }
         setErrorCodigo(null)
-        guardado.mutate()
+        unaVez(() => guardado.mutateAsync())
       }}
     >
       <label className={estilos.campo}>

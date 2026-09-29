@@ -15,7 +15,7 @@
  * la defensa.
  */
 
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { rutas } from '@/rutas'
@@ -23,6 +23,8 @@ import { AreaTexto } from '@/ui/campos/Campo'
 import { Modal } from '@/ui/Modal'
 import { ErrorApi } from '../api/cliente'
 import { contratar } from '../api/colaboradores'
+import { useRetenerLaSesion } from '../Sesion'
+import { AvisoDeFallo, explicarFallo as explicarElFallo, useUnaVez } from '../ui/Envio'
 import estilos from './ContratarDesdeLaFicha.module.css'
 
 interface Props {
@@ -42,14 +44,15 @@ interface Props {
   alContratar: () => void
 }
 
-function explicarFallo(causa: unknown): string {
+function explicarFallo(causa: unknown): ReactNode {
   if (causa instanceof ErrorApi && causa.estado === 403) {
     return 'Tu rol no puede tomar esta decisión: hace falta el permiso de decidir la contratación.'
   }
   if (causa instanceof ErrorApi && causa.estado === 409) {
     return 'Esta postulación ya terminó su recorrido, así que no se puede contratar. Vuelve a cargar la ficha para ver en qué estado quedó.'
   }
-  return causa instanceof Error ? causa.message : 'No se pudo contratar.'
+  // Un 401 es la sesión que caducó: se dice así y el motivo escrito se queda.
+  return explicarElFallo(causa, 'No se pudo contratar.')
 }
 
 export function ContratarDesdeLaFicha({
@@ -68,8 +71,10 @@ export function ContratarDesdeLaFicha({
   const [abierto, setAbierto] = useState(false)
   const [motivo, setMotivo] = useState('')
   const [error, setError] = useState<string | undefined>()
-  const [fallo, setFallo] = useState<string | null>(null)
+  const [fallo, setFallo] = useState<ReactNode>(null)
   const [recien, setRecien] = useState(false)
+  useRetenerLaSesion(abierto)
+  const unaVez = useUnaVez()
 
   const contratacion = useMutation({
     mutationFn: () => contratar(postulacionId, motivo.trim()),
@@ -98,7 +103,7 @@ export function ContratarDesdeLaFicha({
       return
     }
     setError(undefined)
-    contratacion.mutate()
+    unaVez(() => contratacion.mutateAsync())
   }
 
   // Recién contratado, el mensaje sale ya, sin esperar a que la ficha vuelva con
@@ -185,9 +190,7 @@ export function ContratarDesdeLaFicha({
         />
         <p className={estilos.nota}>No se le envía ningún correo.</p>
         {fallo && (
-          <p className={estilos.fallo} role="alert">
-            {fallo}
-          </p>
+          <AvisoDeFallo className={estilos.fallo}>{fallo}</AvisoDeFallo>
         )}
       </Modal>
     </div>

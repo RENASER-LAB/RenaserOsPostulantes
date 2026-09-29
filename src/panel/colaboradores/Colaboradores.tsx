@@ -11,7 +11,7 @@
  * día de trabajo no suelen coincidir.
  */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { rutas } from '@/rutas'
@@ -35,6 +35,8 @@ import type {
 import { CargarExcel } from './CargarExcel'
 import { formatearDia } from './fechas'
 import { EtiquetaDeEstado, FinDeContrato } from './piezas'
+import { useRetenerLaSesion } from '../Sesion'
+import { AvisoDeFallo, explicarFallo, useUnaVez } from '../ui/Envio'
 import tabla from '../ui/Tabla.module.css'
 import estilos from './Colaboradores.module.css'
 
@@ -461,7 +463,8 @@ function NoDarDeAlta({
 }) {
   const cache = useQueryClient()
   const [motivo, setMotivo] = useState('')
-  const [fallo, setFallo] = useState<string | null>(null)
+  const [fallo, setFallo] = useState<ReactNode>(null)
+  const unaVez = useUnaVez()
 
   const descarte = useMutation({
     mutationFn: () => noDarDeAlta(contratado!.postulacionId, motivo.trim()),
@@ -471,8 +474,19 @@ function NoDarDeAlta({
       alCerrar()
       await cache.invalidateQueries({ queryKey: ['panel-colaboradores-pendientes'] })
     },
-    onError: (causa) => setFallo(causa instanceof Error ? causa.message : 'No se pudo guardar.'),
+    onError: (causa) => setFallo(explicarFallo(causa, 'No se pudo guardar.')),
   })
+  useRetenerLaSesion(contratado !== null)
+
+  function descartar() {
+    if (motivo.trim() === '') return
+    // Un doble clic llega antes de que el botón se pinte desactivado: sin esto
+    // salían dos peticiones y la segunda contestaba «ya se sacó del aviso».
+    unaVez(() => {
+      setFallo(null)
+      return descarte.mutateAsync()
+    })
+  }
 
   return (
     <Modal
@@ -488,7 +502,7 @@ function NoDarDeAlta({
             className={estilos.crearChico}
             type="button"
             disabled={descarte.isPending || motivo.trim() === ''}
-            onClick={() => descarte.mutate()}
+            onClick={descartar}
           >
             {descarte.isPending ? 'Guardando…' : 'No dar de alta'}
           </button>
@@ -509,11 +523,7 @@ function NoDarDeAlta({
           onChange={(e) => setMotivo(e.target.value)}
         />
       </label>
-      {fallo && (
-        <p className={estilos.avisoMalo} role="alert">
-          {fallo}
-        </p>
-      )}
+      {fallo && <AvisoDeFallo className={estilos.avisoMalo}>{fallo}</AvisoDeFallo>}
     </Modal>
   )
 }

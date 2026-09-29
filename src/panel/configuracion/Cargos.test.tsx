@@ -11,16 +11,21 @@ import { Cargos } from './Cargos'
 
 const listar = vi.fn<() => Promise<ListaDeCargos>>()
 const renombrar = vi.fn<(id: number, nombre: string) => Promise<void>>()
+const crear = vi.fn<(datos: { nombre: string; nivelPuestoCodigo: string; familiaCodigo: string }) => Promise<unknown>>()
 
 vi.mock('../api/estructura', () => ({
   listarCargos: () => listar(),
   renombrarCargo: (id: number, nombre: string) => renombrar(id, nombre),
-  crearCargo: vi.fn(),
+  crearCargo: (datos: { nombre: string; nivelPuestoCodigo: string; familiaCodigo: string }) => crear(datos),
   desactivarCargo: vi.fn(),
   reactivarCargo: vi.fn(),
 }))
 vi.mock('../api/panel', () => ({
-  verCatalogos: () => Promise.resolve({ nivelesPuesto: [], familias: [] }),
+  verCatalogos: () =>
+    Promise.resolve({
+      nivelesPuesto: [{ codigo: 'EJECUCION', nombre: 'Ejecución' }],
+      familias: [{ codigo: 'TECNOLOGIA', nombre: 'Tecnología' }],
+    }),
 }))
 
 const CARGO = {
@@ -68,5 +73,27 @@ describe('los cargos', () => {
     expect(await screen.findByText('Asistente')).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Renombrar' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Añadir' })).toBeNull()
+  })
+})
+
+describe('añadir un cargo', () => {
+  it('con doble clic en «Añadir» sale una sola alta y no se enseña un error falso (QA-PER-07)', async () => {
+    let soltar: () => void = () => {}
+    crear.mockImplementation(() => new Promise((resolver) => (soltar = () => resolver({ id: 9 }))))
+    montar()
+    fireEvent.change(await screen.findByLabelText('Nombre del cargo'), { target: { value: 'Analista de datos' } })
+    await screen.findByRole('option', { name: 'Ejecución' })
+    fireEvent.change(screen.getByLabelText('Nivel'), { target: { value: 'EJECUCION' } })
+    await screen.findByRole('option', { name: 'Tecnología' })
+    fireEvent.change(screen.getByLabelText('Familia'), { target: { value: 'TECNOLOGIA' } })
+    const anadir = screen.getByRole('button', { name: 'Añadir' })
+    fireEvent.click(anadir)
+    fireEvent.click(anadir)
+    await waitFor(() => expect(crear).toHaveBeenCalled())
+    soltar()
+    await waitFor(() => expect((screen.getByLabelText('Nombre del cargo') as HTMLInputElement).value).toBe(''))
+    expect(crear).toHaveBeenCalledTimes(1)
+    expect(crear).toHaveBeenCalledWith({ nombre: 'Analista de datos', nivelPuestoCodigo: 'EJECUCION', familiaCodigo: 'TECNOLOGIA' })
+    expect(screen.queryByRole('alert')).toBeNull()
   })
 })

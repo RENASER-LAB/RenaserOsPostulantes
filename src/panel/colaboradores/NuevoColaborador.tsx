@@ -7,12 +7,15 @@
  * la ficha queda enlazada a esa contratación. La fecha de ingreso nunca se
  * precarga: contratar y empezar a trabajar no suelen ser el mismo día.
  *
- * ⚠️ **Lo escrito se guarda en `sessionStorage` mientras se escribe.** Si la
- * sesión caduca a mitad del formulario, el panel manda a entrar; al volver, el
- * alta recupera lo escrito y lo dice. Sin esto, un 401 tiraba media ficha.
+ * ⚠️ **Si la sesión caduca a mitad del formulario, no se sale de él.** El alta
+ * retiene la sesión (`useRetenerLaSesion`): el 401 al guardar se dice ahí mismo,
+ * con un enlace para entrar en otra pestaña, y al volver basta con guardar. Por
+ * si se sale igual —se cierra la pestaña, se recarga—, lo escrito también se
+ * guarda en `sessionStorage` mientras se escribe, y al volver el alta lo
+ * recupera y lo dice.
  */
 
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { rutas } from '@/rutas'
@@ -37,6 +40,8 @@ import {
 } from './formulario'
 import estilos from './Colaboradores.module.css'
 import formularios from './Formularios.module.css'
+import { useRetenerLaSesion } from '../Sesion'
+import { AvisoDeFallo, explicarFallo, useUnaVez } from '../ui/Envio'
 
 interface Borrador {
   persona: FormPersona
@@ -92,7 +97,9 @@ export function NuevoColaborador() {
       </div>
     )
   }
-  if (opciones.isError) {
+  // Con las opciones ya traídas, un fallo al refrescarlas (al volver a la
+  // pestaña con la sesión caducada) no desmonta el formulario.
+  if (!opciones.data) {
     return (
       <div className={estilos.pagina}>
         <Fallo error={opciones.error} reintentar={() => opciones.refetch()} />
@@ -109,7 +116,7 @@ export function NuevoColaborador() {
       </div>
     )
   }
-  if (postulacionId !== null && precarga.isError) {
+  if (postulacionId !== null && precarga.isError && !precarga.data) {
     return (
       <div className={estilos.pagina}>
         <h1>Nuevo colaborador.</h1>
@@ -164,7 +171,9 @@ function Formulario({
   // Solo se guarda lo que alguien escribió: abrir el alta y salir no deja borrador.
   const [tocado, setTocado] = useState(false)
   const [choque, setChoque] = useState<Choque | null>(null)
-  const [fallo, setFallo] = useState<string | null>(null)
+  const [fallo, setFallo] = useState<ReactNode>(null)
+  useRetenerLaSesion(true)
+  const unaVez = useUnaVez()
 
   useEffect(() => {
     if (tocado) guardarBorrador(clave, { persona, ingreso, situacion })
@@ -195,7 +204,7 @@ function Formulario({
         return
       }
       setChoque(null)
-      setFallo(causa instanceof Error ? causa.message : 'No se pudo dar de alta.')
+      setFallo(explicarFallo(causa, 'No se pudo dar de alta.'))
     },
   })
 
@@ -214,7 +223,7 @@ function Formulario({
       enfocarElPrimerError(raiz.current)
       return
     }
-    alta.mutate()
+    unaVez(() => alta.mutateAsync())
   }
 
   if (precarga?.colaboradorId != null) {
@@ -305,7 +314,9 @@ function Formulario({
         </section>
 
         {choque && (
-          <p className={estilos.avisoMalo} role="alert">
+          // Con AvisoDeFallo, como cualquier rechazo: al enviar, el botón se desactiva y suelta el
+          // foco; el aviso lo toma y quien usa el teclado llega al enlace sin volver arriba.
+          <AvisoDeFallo className={estilos.avisoMalo}>
             {choque.mensaje}.{' '}
             <Link
               to={
@@ -318,13 +329,9 @@ function Formulario({
             >
               {choque.cesado ? 'Reingresar desde su ficha' : 'Ver su ficha'}
             </Link>
-          </p>
+          </AvisoDeFallo>
         )}
-        {fallo && (
-          <p className={estilos.avisoMalo} role="alert">
-            {fallo}
-          </p>
-        )}
+        {fallo && <AvisoDeFallo className={estilos.avisoMalo}>{fallo}</AvisoDeFallo>}
 
         <div className={formularios.botones}>
           <button className={formularios.enviar} type="submit" disabled={alta.isPending}>

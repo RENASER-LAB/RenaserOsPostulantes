@@ -7,7 +7,7 @@
  * misma lista y su pantalla no la enseñaba; esta sí.
  */
 
-import { useRef, useState } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Modal } from '@/ui/Modal'
 import { ErrorApi } from '../api/cliente'
@@ -16,6 +16,8 @@ import type { ErrorDeCarga, ResultadoCarga } from '../api/tiposPersonas'
 import tabla from '../ui/Tabla.module.css'
 import estilos from './Colaboradores.module.css'
 import propios from './CargarExcel.module.css'
+import { useRetenerLaSesion } from '../Sesion'
+import { AvisoDeFallo, explicarFallo, useUnaVez } from '../ui/Envio'
 
 const DIEZ_MB = 10 * 1024 * 1024
 
@@ -23,7 +25,7 @@ export function CargarExcel({ alCerrar }: { alCerrar: () => void }) {
   const cache = useQueryClient()
   const entrada = useRef<HTMLInputElement>(null)
   const [archivo, setArchivo] = useState<File | null>(null)
-  const [aviso, setAviso] = useState<string | null>(null)
+  const [aviso, setAviso] = useState<ReactNode>(null)
   const [errores, setErrores] = useState<ErrorDeCarga[] | null>(null)
   const [resultado, setResultado] = useState<ResultadoCarga | null>(null)
 
@@ -37,7 +39,7 @@ export function CargarExcel({ alCerrar }: { alCerrar: () => void }) {
       enlace.click()
       URL.revokeObjectURL(url)
     },
-    onError: (causa) => setAviso(causa instanceof Error ? causa.message : 'No se pudo descargar la plantilla.'),
+    onError: (causa) => setAviso(explicarFallo(causa, 'No se pudo descargar la plantilla.')),
   })
 
   const carga = useMutation({
@@ -59,10 +61,24 @@ export function CargarExcel({ alCerrar }: { alCerrar: () => void }) {
         setAviso(null)
       } else {
         setErrores(null)
-        setAviso(causa instanceof Error ? causa.message : 'No se pudo cargar el archivo.')
+        setAviso(explicarFallo(causa, 'No se pudo cargar el archivo.'))
       }
     },
   })
+
+  // El archivo elegido se queda si la sesión caduca: basta con volver a entrar y cargar.
+  useRetenerLaSesion(true)
+  const unaVez = useUnaVez()
+
+  function validarYCargar() {
+    if (archivo === null) return
+    unaVez(() => {
+      setResultado(null)
+      setErrores(null)
+      setAviso(null)
+      return carga.mutateAsync()
+    })
+  }
 
   function elegir(elegido: File | null) {
     setResultado(null)
@@ -108,7 +124,7 @@ export function CargarExcel({ alCerrar }: { alCerrar: () => void }) {
               className={estilos.secundario}
               type="button"
               disabled={plantilla.isPending}
-              onClick={() => plantilla.mutate()}
+              onClick={() => unaVez(() => plantilla.mutateAsync())}
             >
               {plantilla.isPending ? 'Descargando…' : 'Descargar plantilla'}
             </button>
@@ -139,7 +155,7 @@ export function CargarExcel({ alCerrar }: { alCerrar: () => void }) {
                 className={estilos.crear}
                 type="button"
                 disabled={archivo === null || carga.isPending}
-                onClick={() => carga.mutate()}
+                onClick={validarYCargar}
               >
                 {carga.isPending ? 'Validando…' : 'Validar y cargar'}
               </button>
@@ -152,11 +168,7 @@ export function CargarExcel({ alCerrar }: { alCerrar: () => void }) {
           </span>
           <div className={propios.contenido} aria-live="polite">
             <h3 className={propios.tituloPaso}>Resultado</h3>
-            {aviso && (
-              <p className={estilos.avisoMalo} role="alert">
-                {aviso}
-              </p>
-            )}
+            {aviso && <AvisoDeFallo className={estilos.avisoMalo}>{aviso}</AvisoDeFallo>}
             {resultado && (
               <p className={estilos.avisoBueno} role="status">
                 Se dieron de alta {resultado.altas}{' '}
@@ -166,11 +178,11 @@ export function CargarExcel({ alCerrar }: { alCerrar: () => void }) {
             )}
             {errores && (
               <>
-                <p className={estilos.avisoMalo} role="alert">
+                <AvisoDeFallo className={estilos.avisoMalo}>
                   {errores.length === 1
                     ? 'El archivo tiene 1 error. No se guardó nada.'
                     : `El archivo tiene ${errores.length} errores. No se guardó nada.`}
-                </p>
+                </AvisoDeFallo>
                 <div className={tabla.envoltura}>
                   <table className={tabla.tabla} aria-label="Errores del archivo">
                     <thead>

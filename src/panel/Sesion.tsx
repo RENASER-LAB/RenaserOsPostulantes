@@ -21,6 +21,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react'
@@ -40,6 +41,8 @@ interface Sesion {
   /** Solo para local. Ver `entrarComoEquipo`. */
   entrarConIdDeDesarrollo: (usuarioRenaserOsId: string) => Promise<void>
   salir: () => void
+  /** Ver `useRetenerLaSesion`. Devuelve cómo soltarla. */
+  retener: () => () => void
 }
 
 const Contexto = createContext<Sesion | null>(null)
@@ -73,17 +76,48 @@ export function ProveedorSesionPanel({ children }: { children: ReactNode }) {
   const [hayEquipo, setHayEquipo] = useState(() => leerToken() !== null)
   const [nombre, setNombre] = useState(leerNombre)
 
+  const cerrar = useCallback(() => {
+    setHayEquipo(false)
+    olvidarNombre()
+    setNombre(null)
+  }, [])
+
+  /*
+    Los formularios abiertos que retienen la sesion, y si cayo mientras tanto.
+    Refs y no estado: cambian sin que nada tenga que volver a pintarse.
+  */
+  const retenidos = useRef(0)
+  const caidaRetenida = useRef(false)
+
   // Un 401 en cualquier llamada borra el token en la puerta; aqui solo hay que
-  // enterarse para volver a enseñar la pantalla de entrar.
+  // enterarse para volver a enseñar la pantalla de entrar. Salvo si hay un
+  // formulario abierto: saltar a «Entrar» lo desmontaria con lo escrito dentro.
+  // Ese formulario ya dice que la sesion caduco; aqui se espera a que se cierre.
   useEffect(
     () =>
       alCaerLaSesion(() => {
-        setHayEquipo(false)
-        olvidarNombre()
-        setNombre(null)
+        if (retenidos.current > 0) {
+          caidaRetenida.current = true
+          return
+        }
+        cerrar()
       }),
-    [],
+    [cerrar],
   )
+
+  const retener = useCallback(() => {
+    retenidos.current += 1
+    let suelta = false
+    return () => {
+      if (suelta) return
+      suelta = true
+      retenidos.current -= 1
+      if (retenidos.current > 0 || !caidaRetenida.current) return
+      caidaRetenida.current = false
+      // Si entro de nuevo en otra pestaña, el token ya esta otra vez: se sigue.
+      if (leerToken() === null) cerrar()
+    }
+  }, [cerrar])
 
   const entrar = useCallback(async (datos: LoginPanel) => {
     const sesion = await entrarAlPanel(datos)
@@ -119,8 +153,8 @@ export function ProveedorSesionPanel({ children }: { children: ReactNode }) {
   }, [])
 
   const valor = useMemo(
-    () => ({ hayEquipo, nombre, entrar, aceptar, entrarConIdDeDesarrollo, salir }),
-    [hayEquipo, nombre, entrar, aceptar, entrarConIdDeDesarrollo, salir],
+    () => ({ hayEquipo, nombre, entrar, aceptar, entrarConIdDeDesarrollo, salir, retener }),
+    [hayEquipo, nombre, entrar, aceptar, entrarConIdDeDesarrollo, salir, retener],
   )
 
   return <Contexto value={valor}>{children}</Contexto>
@@ -130,4 +164,24 @@ export function useSesionPanel(): Sesion {
   const sesion = use(Contexto)
   if (!sesion) throw new Error('useSesionPanel necesita estar dentro de <ProveedorSesionPanel>')
   return sesion
+}
+
+/**
+ * Mientras `activo`, una sesión que caduca no saca de la pantalla.
+ *
+ * Es para los formularios con algo escrito: un 401 al guardar desmontaría el
+ * formulario con el salto a «Entrar», y la spec pide avisar sin perder lo
+ * escrito. El formulario dice que la sesión caducó (`explicarFallo`) y ofrece
+ * entrar en otra pestaña; al volver, guardar funciona con el token nuevo. Si se
+ * cierra sin haber vuelto a entrar, entonces sí se va a «Entrar».
+ *
+ * Fuera del proveedor —las pruebas de una pantalla suelta— no hace nada.
+ */
+export function useRetenerLaSesion(activo: boolean): void {
+  const sesion = use(Contexto)
+  const retener = sesion?.retener
+  useEffect(() => {
+    if (!activo || !retener) return
+    return retener()
+  }, [activo, retener])
 }

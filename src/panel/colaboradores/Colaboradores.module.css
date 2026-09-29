@@ -229,6 +229,17 @@
 
 /* ---------- La tabla y las tarjetas ---------- */
 
+/*
+ * La envoltura rueda en horizontal, pero sin posición no es el bloque que
+ * contiene a lo absoluto: el texto para lectores del «vencido» (`piezas`) se
+ * colocaba respecto de la página, en la columna que queda fuera de la vista, y
+ * la página entera rodaba 130 px entre 1024 y 1199. Con `relative` queda
+ * dentro de la envoltura y la envoltura lo recorta.
+ */
+.soloAncho {
+  position: relative;
+}
+
 .celdaNombre {
   min-width: 12rem;
 }

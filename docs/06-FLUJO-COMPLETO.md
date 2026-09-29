@@ -421,7 +421,9 @@ es escribirle al equipo, y es lo que lleva el acento.
 
 ### 12 · Después de contratar: la reseña (28/09/2026)
 
-Contratar todavía se hace por la API. A partir del mes, la empresa abre la
+Desde el 29/09/2026 se contrata con «Contratar» en la ficha del postulante, y
+después se le puede dar de alta como colaborador ([PANEL.md](PANEL.md) ›
+Gestión de personas). A partir del mes, la empresa abre la
 ficha de esa persona —en «Toda la tanda» de su vacante— y le deja de 1 a 5
 estrellas y una opinión, que puede cambiar durante 30 días. A la persona le
 llega un aviso en la campana; la lee en su perfil y puede responderla o
