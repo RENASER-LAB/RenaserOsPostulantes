@@ -1,0 +1,108 @@
+/*
+ * «De dónde salen sus preguntas»: tres opciones apiladas, una por línea.
+ *
+ * Es el mismo patrón de los radios que ya tiene el panel —el tipo de sueldo en
+ * `Remuneracion.module.css` y el nivel del puesto en `Vacantes.module.css`—: una
+ * pastilla con contorno por opción, y la elegida en índigo con su bruma. Apiladas
+ * y no en fila porque en fila, dentro de media columna, cada nombre se partía en
+ * dos y la segunda línea caía debajo del radio.
+ *
+ * ⚠️ El radio va en su propia columna de la rejilla y el texto en la otra, así
+ * que un nombre que se parta sigue alineado con su primera línea, nunca bajo el
+ * radio. La marca mide `1lh` —una línea del nombre— para quedar centrada con esa
+ * primera línea sin escribir píxeles a mano.
+ */
+
+.opciones {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+  min-width: 0;
+}
+
+.opcion {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    'marca nombre'
+    '.     ayuda';
+  align-items: start;
+  gap: var(--e1) var(--e3);
+  min-height: 44px;
+  padding: var(--e3) var(--e4);
+  border: 1px solid var(--regla2);
+  border-radius: var(--radio-menor);
+  background: var(--nube);
+  cursor: pointer;
+  transition: border-color 160ms var(--salida), background-color 160ms var(--salida);
+}
+
+.opcion:hover:not(:has(input:checked, input[aria-disabled='true'])) {
+  border-color: var(--borde-control);
+}
+
+/*
+ * La elegida. El índigo es aquí «lo marcado», que es lo único que la regla del
+ * mundo le deja a ese color en una lista de opciones.
+ */
+.opcion:has(input:checked) {
+  border-color: var(--activo);
+  background: var(--activo-bruma);
+}
+
+/* El anillo lo lleva la pastilla entera: el del radio solo quedaría encerrado en ella. */
+.opcion:has(input:focus-visible) {
+  outline: 2px solid var(--activo);
+  outline-offset: 2px;
+}
+
+.opcion input:focus-visible {
+  outline: none;
+}
+
+/*
+ * Mientras el servidor confirma, ninguna se puede pulsar: se dice con el puntero.
+ * Con `aria-disabled` y no `:disabled`: un radio deshabilitado pierde el foco (QA-PP-10).
+ */
+.opcion:has(input[aria-disabled='true']) {
+  cursor: progress;
+}
+
+.marca {
+  grid-area: marca;
+  display: flex;
+  align-items: center;
+  height: 1lh;
+  font-size: var(--t-apoyo);
+  line-height: 1.4;
+}
+
+.marca input {
+  margin: 0;
+}
+
+.nombre {
+  grid-area: nombre;
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--tinta);
+}
+
+.ayuda {
+  grid-area: ayuda;
+  font-size: var(--t-menor);
+  line-height: 1.45;
+  color: var(--tinta2);
+}
+
+/*
+ * Lo que sale de elegir las propias, en la otra columna: el estado como dato
+ * y, aparte, el botón que lleva al editor. Antes iban en la misma línea, y un
+ * `display: flex` se comía el espacio: «Sin preguntasEscribir las preguntas →».
+ */
+.escribir {
+  composes: secundario from '../../../estilos/piezas.module.css';
+  align-self: flex-start;
+  white-space: nowrap;
+}

@@ -421,7 +421,9 @@ test.describe('Las preguntas propias, respondidas y calificadas', () => {
     await form.getByRole('button', { name: 'Sí, volver a calificar' }).click()
     const ventana = page.getByRole('dialog', { name: 'La IA no tiene saldo' })
     await expect(ventana).toBeVisible({ timeout: 20_000 })
-    await expect(ventana).toContainText('el cambio no se guardó')
+    // Dice que no se guardó: con el mensaje del servidor («No se guardó el cambio…») o, si
+    // el servidor no lo explica, con la frase propia de la ventana (QA-PP-09).
+    await expect(ventana).toContainText(/no se guardó/i)
 
     const despues = (await editorDe(equipo, vacante)).publicada
     expect(despues.guiaCalificacion).toBe(antes.guiaCalificacion)

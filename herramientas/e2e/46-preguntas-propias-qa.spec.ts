@@ -116,26 +116,149 @@ test.describe('El origen de las preguntas', () => {
     }
   })
 
-  test('AC-01b · una vacante nueva de RENASER nace con su banco del nivel y ofrece las tres', async ({ page }) => {
+  // Decisión del 30/09/2026: toda vacante nueva nace con sus preguntas propias, también
+  // en una empresa con banco propio publicado para el nivel. El banco sigue ofreciéndose.
+  test('AC-01b · una vacante nueva de RENASER nace con sus preguntas propias y sigue ofreciendo su banco', async ({ page }) => {
     const nombre = 'Origen RENASER'
     const id = await crearVacante(equipo, nombre, ejecucion)
     const v = await vacanteDe(equipo, id)
-    expect(v.origenPreguntas).toBe('NIVEL')
+    expect(v.origenPreguntas).toBe('VACANTE')
+    expect(v.aplicaEvaluacion).toBe(true)
     expect(v.bancoDelNivelPropio).toBe(true)
     expect(v.bancoPrestado).toBe(false)
 
     await entrarAlPanel(page)
     const grupo = await abrirConfiguracion(page, id, nombre)
     await expect(grupo.getByRole('radio')).toHaveCount(3)
-    await expect(grupo.getByRole('radio', { name: 'El banco de la empresa para su nivel' })).toBeChecked()
-    await expect(grupo.getByRole('radio', { name: 'Preguntas propias de esta vacante' })).not.toBeChecked()
+    await expect(grupo.getByRole('radio').first()).toHaveAccessibleName('Preguntas propias de esta vacante')
+    await expect(grupo.getByRole('radio', { name: 'Preguntas propias de esta vacante' })).toBeChecked()
+    await expect(grupo.getByRole('radio', { name: 'El banco de la empresa para su nivel' })).not.toBeChecked()
     await expect(grupo.getByRole('radio', { name: 'Sin evaluación' })).not.toBeChecked()
-
-    await grupo.getByText('Preguntas propias de esta vacante').click()
-    await expect(grupo.getByRole('radio', { name: 'Preguntas propias de esta vacante' })).toBeChecked({ timeout: 15_000 })
     await expect(grupo.getByText(/Sin preguntas/)).toBeVisible({ timeout: 15_000 })
     await expect(grupo.getByRole('link', { name: 'Escribir las preguntas →' })).toBeVisible()
-    expect((await vacanteDe(equipo, id)).origenPreguntas).toBe('VACANTE')
+
+    await grupo.getByText('El banco de la empresa para su nivel').click()
+    await expect(grupo.getByRole('radio', { name: 'El banco de la empresa para su nivel' })).toBeChecked({ timeout: 15_000 })
+    // Lo confirma el servidor: la vacante vuelve con el banco y la línea que lo nombra aparece
+    await expect(grupo.getByText(/^Qué evaluación responderá/)).toBeVisible({ timeout: 15_000 })
+    expect((await vacanteDe(equipo, id)).origenPreguntas).toBe('NIVEL')
+  })
+
+  /*
+   * QA-PP-10 (exploración del ciclo 3). En un grupo de radios las flechas son la forma de
+   * elegir con el teclado: cada flecha marca la siguiente y la guarda. Los radios se
+   * deshabilitaban mientras el servidor confirmaba, y un control enfocado que se
+   * deshabilita suelta el foco al <body>: tras la primera flecha el anillo desaparecía y la
+   * segunda ya no llegaba a la tercera opción.
+   */
+  test('QA-PP-10 · con el teclado, cambiar de opción con las flechas no saca el foco del grupo', async ({ page }) => {
+    const nombre = 'Origen con teclado'
+    const id = await crearVacante(equipo, nombre, ejecucion)
+
+    await entrarAlPanel(page)
+    const grupo = await abrirConfiguracion(page, id, nombre)
+    const propias = grupo.getByRole('radio', { name: 'Preguntas propias de esta vacante' })
+    const delNivel = grupo.getByRole('radio', { name: 'El banco de la empresa para su nivel' })
+    const sinEvaluacion = grupo.getByRole('radio', { name: 'Sin evaluación' })
+    await expect(propias).toBeChecked()
+    await propias.focus()
+
+    await page.keyboard.press('ArrowDown')
+    await expect(delNivel).toBeChecked({ timeout: 15_000 })
+    await expect.poll(async () => (await vacanteDe(equipo, id)).origenPreguntas, { timeout: 15_000 }).toBe('NIVEL')
+    await expect(grupo.getByText(/^Qué evaluación responderá/)).toBeVisible({ timeout: 15_000 })
+    await expect(delNivel).toBeFocused()
+
+    await page.keyboard.press('ArrowDown')
+    await expect(sinEvaluacion).toBeChecked({ timeout: 15_000 })
+    await expect.poll(async () => (await vacanteDe(equipo, id)).aplicaEvaluacion, { timeout: 15_000 }).toBe(false)
+    await expect(sinEvaluacion).toBeFocused()
+  })
+
+  /*
+   * QA-PP-11 (exploración del ciclo 4). La columna «Evaluación» de la lista dice de dónde
+   * salen las preguntas y, con las propias, en qué punto están. La celda es texto corrido y,
+   * cuando no cabe en una línea, se partía por cualquier espacio: «Sin preguntas» quedaba
+   * «Preguntas propias · Sin» / «preguntas» (en la lista de RENASER ya a 1440 y 1280 px con
+   * el menú abierto, y de 1024 a 375 px en cualquier lista). El estado se lee entero, se
+   * parta la celda por donde se parta; y a 375 px la tabla se desplaza dentro de su caja,
+   * no la página.
+   */
+  test('QA-PP-11 · la lista dice de dónde salen las preguntas y no parte su estado en dos líneas', async ({ page }) => {
+    const sinPreguntas = 'Lista sin preguntas'
+    const enBorrador = 'Lista en borrador'
+    const delNivel = 'Lista del nivel'
+    const apagada = 'Lista sin evaluación'
+    await crearVacante(equipo, sinPreguntas, ejecucion)
+    const borrador = await crearVacante(equipo, enBorrador, ejecucion)
+    await escribirBorrador(equipo, borrador, [
+      {
+        nombre: 'Caja',
+        queEvalua: 'Cuadra la caja.',
+        preguntas: [{ tipo: 'ABIERTA', enunciado: 'Cuéntanos un arqueo que no cuadró.', puntos: 30, queDebeTener: 'El monto y la causa.' }],
+      },
+    ])
+    const nivel = await crearVacante(equipo, delNivel, ejecucion)
+    await exigir(`/panel/vacantes/${nivel}/origen-preguntas`, equipo, 'POST', { origen: 'NIVEL' })
+    const sinEval = await crearVacante(equipo, apagada, ejecucion)
+    await exigir(`/panel/vacantes/${sinEval}/origen-preguntas`, equipo, 'POST', { origen: 'SIN_EVALUACION' })
+
+    await entrarAlPanel(page)
+    await page.goto('/admin')
+    await expect(page.getByRole('cell', { name: titulo(sinPreguntas), exact: true })).toBeVisible({ timeout: 20_000 })
+    const cabeceras = await page.getByRole('columnheader').allTextContents()
+    const columna = cabeceras.findIndex((c) => c.trim() === 'Evaluación')
+    expect(columna, `cabeceras: ${cabeceras.join(' | ')}`).toBeGreaterThanOrEqual(0)
+    const celda = (nombre: string) =>
+      page
+        .getByRole('row')
+        .filter({ has: page.getByRole('cell', { name: titulo(nombre), exact: true }) })
+        .getByRole('cell')
+        .nth(columna)
+
+    // Lo que dice, con los nombres de la configuración de la vacante
+    await expect(celda(sinPreguntas)).toHaveText(/^Preguntas propias\s*·?\s*Sin preguntas$/)
+    await expect(celda(enBorrador)).toHaveText(/^Preguntas propias\s*·?\s*Borrador$/)
+    await expect(celda(delNivel)).toHaveText('Banco de la empresa por nivel')
+    await expect(celda(apagada)).toHaveText('Sin evaluación')
+
+    /** En cuántas líneas se pinta `trozo` dentro de la celda (cada letra, por su renglón). */
+    const lineasDe = (nombre: string, trozo: string) =>
+      celda(nombre).evaluate((td, buscado) => {
+        const letras: { c: string; top: number | null }[] = []
+        const recorrido = document.createTreeWalker(td, NodeFilter.SHOW_TEXT)
+        for (let n = recorrido.nextNode() as Text | null; n; n = recorrido.nextNode() as Text | null) {
+          for (let i = 0; i < n.length; i++) {
+            const r = document.createRange()
+            r.setStart(n, i)
+            r.setEnd(n, i + 1)
+            const caja = r.getClientRects()[0]
+            letras.push({ c: n.data[i]!, top: caja && caja.width > 0 ? Math.round(caja.top) : null })
+          }
+        }
+        const texto = letras.map((l) => l.c).join('').replace(/\s/g, ' ')
+        const desde = texto.indexOf(buscado)
+        if (desde < 0) return -1
+        const renglones = new Set(
+          letras
+            .slice(desde, desde + buscado.length)
+            .filter((l) => l.c.trim() !== '' && l.top !== null)
+            .map((l) => l.top),
+        )
+        return renglones.size
+      }, trozo)
+
+    for (const ancho of [1440, 1280, 1024, 800, 375]) {
+      await page.setViewportSize({ width: ancho, height: 900 })
+      await expect
+        .poll(() => lineasDe(sinPreguntas, 'Sin preguntas'), { message: `«Sin preguntas» a ${ancho} px` })
+        .toBe(1)
+      expect(await lineasDe(enBorrador, 'Borrador'), `«Borrador» a ${ancho} px`).toBe(1)
+      expect(
+        await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+        `a ${ancho} px la página no se desplaza en horizontal`,
+      ).toBe(true)
+    }
   })
 })
 

@@ -5,7 +5,7 @@ import { crearVacanteEnBorrador, irALaVacante, marcaDeHora } from './ayuda-tecni
 /**
  * Las preguntas propias de una vacante (V66, fase 1), de punta a punta en el panel:
  *
- *   1. La vacante elige «Preguntas propias de esta vacante» y enseña su estado.
+ *   1. La vacante nace con «Preguntas propias de esta vacante» y enseña su estado.
  *   2. La primera pregunta sin criterio crea «General»; con 95 puntos y un criterio
  *      vacío, publicar devuelve la lista entera de lo que falta.
  *   3. Con 100 se publican, y la vacante lo dice.
@@ -46,13 +46,14 @@ test.describe('Las preguntas propias de una vacante', () => {
     await entrarAlPanel(page)
   })
 
-  test('1 · la vacante elige sus preguntas propias y dice que todavía no hay', async ({ page }) => {
+  test('1 · la vacante nace con sus preguntas propias y dice que todavía no hay', async ({ page }) => {
     await irALaVacante(page, recorrido.vacanteId, recorrido.titulo)
     const propias = page.getByRole('radio', { name: 'Preguntas propias de esta vacante' })
     await expect(propias).toBeVisible({ timeout: 20_000 })
     await expect(page.getByRole('radio', { name: 'Sin evaluación' })).toBeVisible()
 
-    await propias.click()
+    // Toda vacante nueva nace con sus preguntas propias marcadas (decisión del 30/09/2026):
+    // no hay que elegirlas.
     await expect(propias).toBeChecked({ timeout: 20_000 })
     await expect(page.getByText(/Sin preguntas/)).toBeVisible({ timeout: 20_000 })
     await expect(page.getByRole('link', { name: 'Escribir las preguntas →' })).toBeVisible()

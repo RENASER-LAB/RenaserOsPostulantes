@@ -2,8 +2,9 @@
 
 Qué es, cómo se entra, qué enseña cada entrada del menú lateral, qué exige el backend antes de
 publicar una vacante, cómo se eligen su modalidad y su ciudad, cómo se corrige después, las
-reseñas de empresas —escribirlas, leerlas y moderarlas— y la gestión de personas: colaboradores,
-sedes y cargos, y contratar desde la ficha. El recorrido de los dos lados —equipo y candidato— está en
+reseñas de empresas —escribirlas, leerlas y moderarlas—, la gestión de personas: colaboradores,
+sedes y cargos, y contratar desde la ficha; y las preguntas propias de cada vacante: de dónde
+salen, el editor y su nota en la ficha. El recorrido de los dos lados —equipo y candidato— está en
 [06-FLUJO-COMPLETO.md](06-FLUJO-COMPLETO.md).
 
 ---
@@ -198,12 +199,13 @@ tres viven en el detalle de la vacante, bajo **«Qué responderá quien postule�
 
 | Qué | Obligatorio |
 |---|---|
-| **Banco publicado del nivel del puesto** | **Sí, si `aplicaEvaluacion` está encendido.** No se elige aquí: se publica en Configuración y la vacante lo hereda de su puesto (V44) |
+| **Sus preguntas, según de dónde salgan** | Desde el 30/09 se elige en «De dónde salen sus preguntas» (ver «Las preguntas propias de cada vacante», al final). **Con «Preguntas propias de esta vacante» —con la que nace toda vacante nueva— hay que tenerlas publicadas**; con «El banco de la empresa para su nivel», que esté publicado en Configuración para el nivel del puesto (V44); con «Sin evaluación», nada |
 | Versión de plantilla de prueba | **Solo si la vacante rinde la prueba del puesto.** Si eligió el cuestionario técnico, lo obligatorio es tenerlo publicado — ver «La vacante elige qué prueba se rinde» en la [bitácora de agosto](BITACORA-2026-08.md) |
 | Versión de pesos | No: sin elegir, rigen los generales |
 
 ⚠️ **La plantilla de evaluación ya NO se elige ni se exige** — ver «El tiempo viaja con el
-banco» en la [bitácora de agosto](BITACORA-2026-08.md). La resuelve el nivel.
+banco» en la [bitácora de agosto](BITACORA-2026-08.md). La resuelve el nivel, cuando la vacante
+rinde el banco.
 
 Y antes que todo eso, la vacante misma exige **una solicitud de talento aprobada** que no haya
 usado ninguna otra. **Escribir una solicitud se ofrece siempre, desde la cabecera** —puede haber
@@ -674,5 +676,111 @@ cese y el reingreso; y el sueldo oculto en pantalla y en la API) y
 escriben**: siembran estructura, cuentas, vacantes, postulaciones y colaboradores con la marca `QA-PERSONAS-3E62`
 o un DNI al azar y fechas relativas a hoy en Lima, y lo retiran al terminar. ⚠️ El 44 repite
 número con `44-veredicto-solo-en-el-perfil`: ver [PENDIENTES.md](PENDIENTES.md).
+
+### Las preguntas propias de cada vacante (30/09)
+
+Hasta ahora, para que quien postula respondiera preguntas, alguien tenía que llenar un Excel con
+los 15 formatos del método de RENASER. Desde el 30/09/2026 **cada empresa escribe, en el panel y
+para cada vacante, las preguntas de su Perfil Integral**: cuatro tipos, agrupados en criterios con
+nombre que suman 100 puntos. Es la **fase 1**; la fase 2 —la prueba del puesto con el mismo
+editor— no está hecha, y **la sección «Prueba técnica» de la vacante no cambió**: sus
+desplegables y su tiempo se van con la fase 2. El backend trae la `V66`; sus rutas y reglas están
+en `docs/` del backend (`09-APIS.md`, «Las preguntas propias de la vacante», y
+`CALIFICACION-CON-IA.md`).
+
+**De dónde salen las preguntas.** En el detalle de la vacante, dentro de «Qué responderá quien
+postule», **«De dónde salen sus preguntas»** ofrece tres opciones:
+
+| Opción | Cuándo sale |
+|---|---|
+| **Preguntas propias de esta vacante** | Siempre, y la primera. **Toda vacante nueva nace con ella marcada**, también en RENASER (decisión del usuario del 30/09/2026). Al lado, «Sus preguntas propias» dice cómo van —«Sin preguntas», «Borrador» o «Publicadas», con sus puntos— y «Escribir las preguntas →» lleva al editor |
+| **El banco de la empresa para su nivel** | Solo si la empresa tiene uno **propio** publicado para ese nivel (`bancoDelNivelPropio`). A las demás no se les habla de un banco que no tienen |
+| **El banco de RENASER para su nivel** | Solo en una vacante de antes que lo rinde prestado (`bancoPrestado`), con su nombre real. Si se elige otra opción, desaparece y no se puede volver a elegir |
+| **Sin evaluación** | Siempre. Quien postule no responde preguntas: lo siguiente que rinde es la etapa técnica |
+
+Cada elección se guarda al marcarla. **Desde la primera postulación no se puede cambiar**: el
+servidor responde 409 con el motivo, y se enseña en el aviso común de la sección. Mientras se
+guarda, las opciones no se apagan —con el teclado, cada flecha marca y guarda la siguiente, y un
+radio desactivado soltaba el foco—: el cambio en vuelo simplemente se ignora. **Con preguntas
+propias, la vacante no se publica hasta tenerlas publicadas**, y el cartel «Todo listo» y el botón
+de publicar miran esa misma regla.
+
+**El editor** (`/admin/vacantes/:id/preguntas`). Arriba, **el balance siempre a la vista**:
+cuántos puntos van de 100, cuántos criterios y preguntas, y lo que frena la publicación. Queda
+pegado justo debajo de la cabecera del panel al bajar (ver `--alto-cabecera-panel`, más abajo).
+Debajo, un bloque por criterio —nombre, «qué evalúa» y sus puntos, que se suman solos— con sus
+preguntas, cada una con su tipo y sus puntos:
+
+- **Abierta**, con «Qué debe tener una buena respuesta», que solo lee la IA.
+- **Opción única** y **opción múltiple**, con los puntos de cada opción; en la múltiple una opción
+  puede restar.
+- **Escala**, con sus niveles en orden, los puntos de cada uno y un rótulo opcional por nivel.
+
+Quien no quiere pensar en criterios no está obligado: la primera pregunta sin criterio crea
+«General». Se escriben además **la guía de calificación** para la IA y los **minutos estimados**, y
+criterios y preguntas se ordenan con flechas. **El balance lo cuadra el servidor**: cada cambio
+devuelve el editor entero y se pinta tal cual. **«Publicar las preguntas» con algo pendiente
+enseña la lista entera de lo que falta** —la suma no da 100, una pregunta sin criterio…— para
+arreglarlo de una pasada.
+
+- **«Copiar de otra vacante»** abre las vacantes de la misma empresa con preguntas publicadas,
+  con búsqueda por nombre y filtro por nivel, deja ver sus preguntas antes y, si ya hay un
+  borrador, pide confirmar que lo reemplaza.
+- **«Recomendaciones por IA»** completa lo que falta, no empieza de cero: antes de pedirla dice
+  cuántos puntos va a proponer, y con el borrador en 100 no llama a nadie. La propuesta llega por
+  sondeo; con la IA apagada o sin cupo se dice como un estado, no como un error. **Nada se agrega
+  solo**: cada criterio y cada pregunta tiene «Agregar», y hay «Agregar todo».
+- **Las publicadas se leen, salvo dos cosas que alcanzan a todos a la vez.** Los puntos: al
+  guardarlos pide confirmar y **se recalcula a todos al instante, sin IA**. Y las instrucciones de
+  la IA —la guía, el «qué evalúa» y el «qué debe tener»—: con «Sí, volver a calificar» **se vuelve
+  a calificar a quien ya tenía nota**, y el editor cuenta cómo va, con «Reintentar» para quien se quedó con la guía anterior.
+  Si la IA está apagada, la empresa suspendida o sin saldo, no se guarda nada y una ventana dice el
+  motivo, **con el texto que manda el servidor**. Mientras nadie haya postulado, lo que se hace es
+  abrir un borrador. Sin `editar_vacante` —o con la vacante cerrada o archivada— todo se ve en
+  lectura: lo dice `puedeEditar` del propio editor.
+
+**En la ficha del candidato**, dentro del Perfil Integral, cada criterio sale con su nota y de
+dónde viene —«Conocimiento contable 24/30 · Sistema 8/10 + IA 16/20»—; al abrirlo, sus preguntas
+con lo que respondió o marcó, lo que sacó y, en las abiertas, la explicación y la cita de la IA.
+**Un criterio con una abierta sin calificar se ve pendiente, no con una nota parcial.** Quien tiene
+`ajustar_nota` (lo dice `puedeAjustar` del desglose) ajusta una abierta —o la califica si la IA no
+pudo— con motivo obligatorio; la nota de la IA se sigue viendo al lado, y **ajustar no mueve a nadie
+de etapa**.
+
+**En el listado de vacantes, la columna se llama «Evaluación»** y dice, en corto, lo que responde
+quien postule: «Preguntas propias · Sin preguntas», «· Borrador» o «· Publicadas», «Banco de la
+empresa por nivel», «Banco de RENASER por nivel» o «Sin evaluación». Antes decía «Evaluación del
+banco · Encendida», también con preguntas propias, y como toda vacante nueva nace con ellas
+engañaba en casi todas. El estado de las propias va en una pieza que no se parte: la celda es
+estrecha y «Preguntas propias · Sin» / «preguntas» se leía como otra cosa.
+
+**El armazón publica su alto.** La cabecera del panel es fija arriba, y lo que una pantalla quiera
+pegar debajo —el balance del editor— necesita saber cuánto mide. `src/panel/altoDeLaCabecera.ts` la
+**mide** y deja el resultado en `--alto-cabecera-panel`, en el padre de la cabecera, así que lo
+heredan todas las pantallas del panel; se vuelve a medir al girar el teléfono o cambiar el ancho.
+**Se mide, no se escribe**: un número fijo se queda viejo al cambiar la barra, que es lo que le
+pasó a `--alto-cabecera` del portal.
+
+⚠️ **La IA no se puede probar en el preview del harness**: corre sin cola de mensajes y con la
+calificación apagada, así que las recomendaciones, la calificación de las abiertas y la
+recalificación se prueban en el backend con el agente simulado, y en los e2e sembrando las notas
+por SQL. Mirarlo de verdad pide un backend local con la cola y la IA encendidas.
+
+Dónde está: `src/panel/vacantes/preguntas/` —`OrigenDeLasPreguntas.tsx`, `EditorDePreguntas.tsx`,
+`PreguntasPublicadas.tsx`, `CopiarDeOtraVacante.tsx`, `Recomendaciones.tsx` y
+`DesglosePorPuntos.tsx`—, `src/panel/api/preguntasPropias.ts`, la columna en
+`src/panel/vacantes/Vacantes.tsx` y `src/panel/altoDeLaCabecera.ts`. El portal responde los cuatro
+tipos en `src/paginas/evaluacion/Formatos.tsx` (ver
+[02-QUE-VE-EL-CANDIDATO.md](02-QUE-VE-EL-CANDIDATO.md), «2.8 Evaluación»).
+
+Comprobarlo: `npx playwright test herramientas/e2e/45-preguntas-propias.spec.ts
+herramientas/e2e/46-preguntas-propias-qa.spec.ts
+herramientas/e2e/47-preguntas-propias-calificacion.spec.ts`, junto con `14-vacante.spec.ts`. ⚠️
+**Escriben**: siembran vacantes, cuentas y una segunda empresa con la marca `QA-PP-0553`, casi todo
+por la API y por SQL solo lo que la API ya no deja crear —una vacante con el banco prestado— o lo
+que la IA apagada no produce; al terminar retiran las cuentas y marcan eliminadas las vacantes.
+Las unitarias, en `src/panel/vacantes/preguntas/*.test.*` y `Formatos.test.tsx`; en el backend,
+`FlujoPreguntasPropiasIT`. ⚠️ El 45 repite número con `45-gestion-de-personas-regresiones`: ver
+[PENDIENTES.md](PENDIENTES.md). Lo que QA dejó para decidir está en [PENDIENTES.md](PENDIENTES.md).
 
 ---

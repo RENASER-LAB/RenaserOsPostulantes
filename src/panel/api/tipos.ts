@@ -191,15 +191,22 @@ export interface VacantePanel {
   origenPreguntas?: 'NIVEL' | 'VACANTE'
   /**
    * Si la empresa tiene un banco PROPIO publicado para el nivel del puesto:
-   * solo entonces se ofrece «El banco de la empresa para su nivel». Solo en el
-   * detalle; en la lista llega vacio.
+   * solo entonces se ofrece «El banco de la empresa para su nivel». En el
+   * detalle y en la lista.
    */
   bancoDelNivelPropio?: boolean | null
   /**
    * Si rinde el banco de RENASER prestado (vacante de antes de la V66): se
-   * enseña con su nombre real y, si se cambia de opcion, ya no vuelve.
+   * enseña con su nombre real y, si se cambia de opcion, ya no vuelve. En el
+   * detalle y en la lista.
    */
   bancoPrestado?: boolean | null
+  /**
+   * En que punto estan sus preguntas propias, con la regla del resumen del
+   * editor; `null` si no rinde preguntas propias. **Solo en la lista**: el
+   * detalle lo lee del editor, que trae ademas los puntos.
+   */
+  estadoPreguntasPropias?: 'SIN_PREGUNTAS' | 'BORRADOR' | 'PUBLICADAS' | null
 }
 
 /**

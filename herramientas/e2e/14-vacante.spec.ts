@@ -201,13 +201,14 @@ test.describe.serial('El recorrido entero de una vacante', () => {
    */
   test('la evaluación se apaga y se vuelve a encender con el banco de la empresa, y lo confirma el servidor', async ({ page }) => {
     await abrirLaVacante(page)
-    // Desde la V66, «Qué responderá quien postule» son tres opciones. La empresa del
-    // equipo de pruebas tiene banco propio publicado para el nivel, así que la vacante
-    // nueva nace con él marcado. Si no lo tuviera, la opción ni aparecería.
+    // Desde la V66, «Qué responderá quien postule» son tres opciones. Toda vacante nueva
+    // nace con sus preguntas propias marcadas (decisión del 30/09/2026); la empresa del
+    // equipo de pruebas tiene banco propio publicado para el nivel, así que también se
+    // ofrece. Si no lo tuviera, la opción ni aparecería. Esta vacante rinde el banco.
     const delNivel = page.getByRole('radio', { name: 'El banco de la empresa para su nivel' })
     const sinEvaluacion = page.getByRole('radio', { name: 'Sin evaluación' })
-    await expect(delNivel).toBeChecked({ timeout: 15_000 })
-    await expect(page.getByRole('radio', { name: 'Preguntas propias de esta vacante' })).toBeVisible()
+    await expect(page.getByRole('radio', { name: 'Preguntas propias de esta vacante' })).toBeChecked({ timeout: 15_000 })
+    await expect(delNivel).not.toBeChecked()
 
     await sinEvaluacion.click()
     await expect(sinEvaluacion).toBeChecked({ timeout: 15_000 })
