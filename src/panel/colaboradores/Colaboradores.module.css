@@ -1,0 +1,325 @@
+/*
+ * La gestión de personas: la lista, el alta, la ficha y la carga por Excel.
+ *
+ * Mismo carril y misma densidad que el resto del panel (`--ancho-panel`, la
+ * tabla del ranking), y ningún color nuevo: el índigo es de la acción, el ámbar
+ * de lo que pide atención y el rojo de lo que ya pasó.
+ */
+
+.pagina {
+  max-width: var(--ancho-panel);
+  margin: 0 auto;
+  padding: var(--e5) var(--e5) var(--e8);
+}
+
+.cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--e4);
+  margin-bottom: var(--e5);
+}
+
+.bajada {
+  font-size: var(--t-prosa);
+  line-height: 1.55;
+  color: var(--tinta2);
+  margin-top: var(--e2);
+  max-width: var(--medida);
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e3);
+}
+
+.crear {
+  composes: acentoMenor from '../../estilos/piezas.module.css';
+}
+
+.crearChico {
+  composes: acentoMenor from '../../estilos/piezas.module.css';
+}
+
+.secundario {
+  composes: secundario from '../../estilos/piezas.module.css';
+}
+
+.peligro {
+  composes: peligrosoMenor from '../../estilos/piezas.module.css';
+}
+
+.chico {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 var(--e3);
+  border: 1px solid var(--regla2);
+  border-radius: var(--radio-control);
+  background: var(--nube);
+  color: var(--tinta);
+  font-size: var(--t-apoyo);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.chico:hover:not(:disabled) {
+  background: var(--nube-hundida);
+}
+
+.chico:disabled {
+  color: var(--tinta3);
+  cursor: default;
+}
+
+.avisoMalo {
+  font-size: var(--t-apoyo);
+  color: var(--mal);
+  background: var(--mal-bruma);
+  border-radius: var(--radio-menor);
+  padding: var(--e3) var(--e4);
+  margin: var(--e3) 0;
+  max-width: var(--medida);
+}
+
+.avisoBueno {
+  font-size: var(--t-apoyo);
+  color: var(--bien);
+  background: var(--bien-bruma);
+  border-radius: var(--radio-menor);
+  padding: var(--e3) var(--e4);
+  margin: var(--e3) 0;
+}
+
+.explica {
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+  max-width: var(--medida);
+  margin: 0 0 var(--e3);
+}
+
+/* ---------- El aviso de contratados pendientes ---------- */
+
+.pendientes {
+  margin-bottom: var(--e5);
+  padding: var(--e3) var(--e4);
+  background: var(--duda-bruma);
+  border-radius: var(--radio);
+}
+
+.cabeceraPendientes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e3);
+}
+
+.textoPendientes {
+  margin: 0;
+  font-weight: 600;
+  color: var(--duda-tinta);
+}
+
+.listaPendientes {
+  list-style: none;
+  margin: var(--e3) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+}
+
+.pendiente {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e3);
+  padding: var(--e3);
+  background: var(--nube);
+  border-radius: var(--radio-menor);
+}
+
+.quienPendiente {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.accionesPendiente {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e2);
+}
+
+/* ---------- Los filtros ---------- */
+
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--e3);
+  margin-bottom: var(--e4);
+}
+
+.buscador {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e1);
+  flex: 1 1 16rem;
+  max-width: 24rem;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e1);
+  flex: 0 1 11rem;
+  min-width: 9rem;
+}
+
+.campoModal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e1);
+  margin-bottom: var(--e3);
+}
+
+.rotulo {
+  font-size: var(--t-micro);
+  font-weight: 600;
+  color: var(--tinta2);
+}
+
+.entrada {
+  min-height: 40px;
+  padding: 0 var(--e3);
+  border: 1px solid var(--borde-control);
+  border-radius: var(--radio-control);
+  background: var(--nube);
+  color: var(--tinta);
+  font-size: var(--t-apoyo);
+  width: 100%;
+}
+
+.casilla {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  min-height: 40px;
+  font-size: var(--t-apoyo);
+  color: var(--tinta);
+  cursor: pointer;
+}
+
+.contador {
+  margin: 0 0 0 auto;
+  align-self: center;
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  color: var(--tinta2);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- La tabla y las tarjetas ---------- */
+
+/*
+ * La envoltura rueda en horizontal, pero sin posición no es el bloque que
+ * contiene a lo absoluto: el texto para lectores del «vencido» (`piezas`) se
+ * colocaba respecto de la página, en la columna que queda fuera de la vista, y
+ * la página entera rodaba 130 px entre 1024 y 1199. Con `relative` queda
+ * dentro de la envoltura y la envoltura lo recorta.
+ */
+.soloAncho {
+  position: relative;
+}
+
+.celdaNombre {
+  min-width: 12rem;
+}
+
+.nombre {
+  font-weight: 600;
+  color: var(--tinta);
+  overflow-wrap: anywhere;
+}
+
+.celdaDocumento,
+.celdaFecha {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.tarjetas {
+  display: none;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex-direction: column;
+  gap: var(--e2);
+}
+
+.tarjeta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e1);
+  padding: var(--e3) var(--e4);
+  background: var(--nube);
+  border: 1px solid var(--regla);
+  border-radius: var(--radio-menor);
+}
+
+.detalleTarjeta {
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+  overflow-wrap: anywhere;
+}
+
+.paginas {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--e3);
+  margin-top: var(--e4);
+}
+
+.paginaActual {
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 640px) {
+  .pagina {
+    padding: var(--e4) var(--e4) var(--e7);
+  }
+
+  .soloAncho {
+    display: none;
+  }
+
+  .tarjetas {
+    display: flex;
+  }
+
+  .contador {
+    margin-left: 0;
+    flex-basis: 100%;
+  }
+
+  .campo,
+  .buscador {
+    flex: 1 1 100%;
+    max-width: none;
+  }
+}
+
+.volver {
+  composes: volver from '../../estilos/piezas.module.css';
+}

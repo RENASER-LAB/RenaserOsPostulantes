@@ -1,0 +1,80 @@
+/*
+ * Contratar desde la ficha, y dar de alta después (V64).
+ *
+ * «Contratar» es la acción de la ficha, así que va en índigo; el modal repite el
+ * índigo en su confirmación. El aviso de las etapas que se salta va en ámbar:
+ * pide atención, no es un error.
+ */
+
+.bloque {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--e2);
+  margin-top: var(--e4);
+}
+
+.contratar,
+.darDeAlta,
+.confirmar {
+  composes: acentoMenor from '../../estilos/piezas.module.css';
+}
+
+.cancelar {
+  composes: secundario from '../../estilos/piezas.module.css';
+}
+
+.enlace {
+  font-weight: 600;
+}
+
+.hecho {
+  margin: 0;
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  color: var(--bien);
+}
+
+.datos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: var(--e3);
+  margin: 0 0 var(--e4);
+}
+
+.datos dt {
+  font-size: var(--t-micro);
+  font-weight: 600;
+  color: var(--tinta3);
+}
+
+.datos dd {
+  margin: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.aviso {
+  margin: 0 0 var(--e4);
+  padding: var(--e3) var(--e4);
+  border-radius: var(--radio-menor);
+  background: var(--duda-bruma);
+  color: var(--duda-tinta);
+  font-size: var(--t-apoyo);
+  line-height: 1.5;
+}
+
+.nota {
+  margin: var(--e3) 0 0;
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+}
+
+.fallo {
+  margin: var(--e3) 0 0;
+  padding: var(--e3) var(--e4);
+  border-radius: var(--radio-menor);
+  background: var(--mal-bruma);
+  color: var(--mal);
+  font-size: var(--t-apoyo);
+}

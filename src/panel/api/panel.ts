@@ -230,7 +230,18 @@ export const eliminarVacante = (id: number, motivo: string) =>
     cuerpo: { motivo },
   })
 
-export const listarPuestos = () => pedir<PuestoPanel[]>('/puestos')
+/**
+ * Los puestos para elegir: solo los activos. Con `todos`, también los
+ * desactivados desde Configuración (V64), para NOMBRAR el de una vacante que ya
+ * lo tenía; nunca para ofrecerlo en un desplegable.
+ *
+ * ⚠️ **`=== true` y no un valor por defecto**: casi todas las pantallas la pasan
+ * tal cual como `queryFn`, y react-query la llama con su contexto —un objeto,
+ * que es «verdadero»—. Con `todos = false` esas pantallas habrían empezado a
+ * ofrecer los puestos desactivados sin que nadie lo pidiera.
+ */
+export const listarPuestos = (todos?: unknown) =>
+  pedir<PuestoPanel[]>(todos === true ? '/puestos?todos=true' : '/puestos')
 /** El código interno lo genera el servidor cuando el panel no lo envía. */
 export const crearPuesto = async (datos: GuardarPuesto) =>
   (await pedir<{ id: number }>('/puestos', { metodo: 'POST', cuerpo: datos })).id

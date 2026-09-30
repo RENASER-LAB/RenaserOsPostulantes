@@ -64,6 +64,7 @@ const GRUPOS: Record<string, string> = {
   CONFIGURACION: 'Configuración',
   EVALUACION: 'Evaluación y decisión',
   METRICAS: 'Métricas',
+  PERSONAS: 'Personas',
   SESIONES: 'Simulación',
   SOLICITUDES: 'Solicitudes de talento',
   VACANTES: 'Vacantes',

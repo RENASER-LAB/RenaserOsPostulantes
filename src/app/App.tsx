@@ -46,6 +46,9 @@ import { SesionesPanel } from '@/panel/simulacion/Sesiones'
 import { PlantillasDePrueba } from '@/panel/pruebas/PlantillasDePrueba'
 import { ComponerPrueba } from '@/panel/pruebas/ComponerPrueba'
 import { ConfiguracionPanel } from '@/panel/configuracion/Configuracion'
+import { ColaboradoresPanel } from '@/panel/colaboradores/Colaboradores'
+import { NuevoColaborador } from '@/panel/colaboradores/NuevoColaborador'
+import { FichaDelColaborador } from '@/panel/colaboradores/FichaColaborador'
 
 const datos = crearClienteDeDatos()
 
@@ -116,6 +119,9 @@ export function App() {
                     <Route path={patrones.adminPruebas} element={<PlantillasDePrueba />} />
                     <Route path={patrones.adminComponerPrueba} element={<ComponerPrueba />} />
                     <Route path={patrones.adminConfiguracion} element={<ConfiguracionPanel />} />
+                    <Route path={patrones.adminColaboradores} element={<ColaboradoresPanel />} />
+                    <Route path={patrones.adminNuevoColaborador} element={<NuevoColaborador />} />
+                    <Route path={patrones.adminColaborador} element={<FichaDelColaborador />} />
                   </Route>
 
                   <Route element={<Armazon />}>

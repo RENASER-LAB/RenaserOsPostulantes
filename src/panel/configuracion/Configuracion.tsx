@@ -19,6 +19,8 @@ import {
 } from '../api/panel'
 import { Areas } from './Areas'
 import { BancoDePreguntas } from './BancoDePreguntas'
+import { Cargos } from './Cargos'
+import { Sedes } from './Sedes'
 import { Permisos } from './Permisos'
 import { ResenasReportadas } from './ResenasReportadas'
 import tabla from '../ui/Tabla.module.css'
@@ -41,6 +43,12 @@ export function ConfiguracionPanel() {
         lista. Y crear la primera área es lo que desbloquea registrar solicitudes.
       */}
       <Areas />
+      {/*
+        Sedes y cargos junto a las áreas (V64): son la misma estructura de la
+        empresa, con el mismo patrón de lista y acciones.
+      */}
+      <Sedes />
+      <Cargos />
       <Equipo />
       <Permisos />
       {/*
