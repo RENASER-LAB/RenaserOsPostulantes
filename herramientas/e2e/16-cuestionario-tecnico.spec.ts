@@ -117,19 +117,17 @@ test.describe('El ciclo 2 · la vacante elige el cuestionario y la candidata lo 
     await expect(page.locator('label').filter({ hasText: 'Cuánto tiempo tendrá' }).locator('input[type="number"]')).toHaveValue('45')
   })
 
-  test('4 · la evaluación del banco se apaga: aquí se juega todo en el cuestionario', async ({ page }) => {
+  test('4 · la evaluación se apaga: aquí se juega todo en el cuestionario', async ({ page }) => {
     await entrarAlPanel(page)
     await irALaVacante(page, recorrido.vacanteId, recorrido.titulo)
 
-    const banco = page.locator('label').filter({ hasText: 'La evaluación del banco' })
-    const interruptor = banco.locator('input[type="checkbox"]')
-    // ⚠️ Es un interruptor mandado por el servidor: la marca no cambia al pulsar,
-    // cambia cuando la respuesta vuelve. `uncheck()` se queja de eso; se pulsa y
-    // se espera al texto.
-    if (await interruptor.isChecked()) await interruptor.click()
-    await expect(page.getByText(/Apagada: la prueba del puesto será su única evaluación/)).toBeVisible({
-      timeout: 20_000,
-    })
+    // Desde la V66 son tres opciones en «Qué responderá quien postule»; apagar la
+    // evaluación es «Sin evaluación». La marca la confirma el servidor: se pulsa y
+    // se espera a que quede marcada.
+    const sinEvaluacion = page.getByRole('radio', { name: 'Sin evaluación' })
+    if (!(await sinEvaluacion.isChecked())) await sinEvaluacion.click()
+    await expect(sinEvaluacion).toBeChecked({ timeout: 20_000 })
+    await expect(page.getByText(/· sin evaluación/)).toBeVisible({ timeout: 20_000 })
   })
 
   test('5 · publicar está apagado, y dice que lo que falta es el cuestionario', async ({ page }) => {

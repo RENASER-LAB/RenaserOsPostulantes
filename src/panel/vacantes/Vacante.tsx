@@ -19,7 +19,6 @@ import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   activarCalificacionAutomatica,
-  aplicarEvaluacion,
   elegirInstrumentoTecnico,
   asignarPlantillaPrueba,
   asignarVersionPesos,
@@ -136,6 +135,9 @@ import {
 import { RemuneracionDeLaVacante } from './Remuneracion'
 import { ResenasDeLaFicha } from './ResenasDeLaFicha'
 import { IconoEstrella } from '@/ui/Iconos'
+import { DesglosePorPuntos } from './preguntas/DesglosePorPuntos'
+import { OrigenDeLasPreguntas, usePreguntasListas } from './preguntas/OrigenDeLasPreguntas'
+import { loQueFaltaParaPublicar } from './loQueFaltaParaPublicar'
 import estilos from './Vacante.module.css'
 
 /**
@@ -267,6 +269,9 @@ export function VacantePanelDetalle() {
     —misma `queryKey`— asi que no cuesta una peticion mas.
   */
   const elBanco = useBancoDelNivel(vacante.data?.puestoId)
+  // Si las preguntas propias ya estan publicadas (V66): el boton de publicar y el
+  // cartel «Todo listo» miran la misma regla que el backend.
+  const preguntasListas = usePreguntasListas(vacante.data)
   // Lo mismo para el otro instrumento: sin esto la puerta de publicar solo sabría mirar
   // la plantilla, y una vacante con cuestionario listo se quedaría sin poder publicarse.
   const cuestionarioPublicado = useCuestionarioPublicado(vacanteId)
@@ -407,6 +412,9 @@ export function VacantePanelDetalle() {
     deja la vacante atascada por un permiso que no es el de publicar.
   */
   const faltaElBanco = !elBanco.buscando && !elBanco.noSePuedeSaber && !elBanco.banco
+  // Con preguntas propias (V66) lo que falta no es el banco del nivel, es su versión
+  // publicada. `null` = todavía no se sabe: no se afirma que falte.
+  const propias = v.aplicaEvaluacion && v.origenPreguntas === 'VACANTE'
 
   /*
     Lo que el backend rechaza al publicar, dicho antes de pulsar en vez de
@@ -424,16 +432,12 @@ export function VacantePanelDetalle() {
   // ella. Pedir siempre la plantilla dejaría «Publicar» apagado para siempre en una
   // vacante que eligió el cuestionario y lo tiene listo.
   const rindeElCuestionario = v.instrumentoEtapaTecnica === 'CUESTIONARIO_TECNICO'
-  const leFalta = [
-    v.aplicaEvaluacion && faltaElBanco ? 'un banco de preguntas publicado de su nivel' : null,
-    rindeElCuestionario
-      ? cuestionarioPublicado === false
-        ? 'publicar su cuestionario técnico'
-        : null
-      : v.versionPlantillaPruebaId === null
-        ? 'la prueba del puesto'
-        : null,
-  ].filter(Boolean)
+  const leFalta = loQueFaltaParaPublicar({
+    bancoDelNivel: v.aplicaEvaluacion && !propias && faltaElBanco,
+    preguntasPropias: propias && preguntasListas === false,
+    cuestionarioTecnico: rindeElCuestionario && cuestionarioPublicado === false,
+    pruebaDelPuesto: !rindeElCuestionario && v.versionPlantillaPruebaId === null,
+  })
 
   return (
     <div className={estilos.pagina}>
@@ -457,7 +461,11 @@ export function VacantePanelDetalle() {
             */}
             {archivada && ` · Archivada el ${formatearFechaCorta(v.archivadaEn!)}`}
             {' · '}
-            {v.aplicaEvaluacion ? 'con evaluación del banco' : 'sin evaluación del banco'}
+            {!v.aplicaEvaluacion
+              ? 'sin evaluación'
+              : v.origenPreguntas === 'VACANTE'
+                ? 'con preguntas propias'
+                : 'con evaluación del banco'}
           </p>
         </div>
 
@@ -495,13 +503,21 @@ export function VacantePanelDetalle() {
               className={estilos.publicar}
               type="button"
               onClick={() => publicacion.mutate()}
-              disabled={publicacion.isPending || leFalta.length > 0}
+              disabled={publicacion.isPending || leFalta.hayAlgo}
             >
               {publicacion.isPending ? 'Publicando…' : 'Publicar en el portal'}
             </button>
-            {leFalta.length > 0 && (
+            {leFalta.hayAlgo && (
               <span className={estilos.pista}>
-                Antes hay que elegir {leFalta.join(' y ')}, aquí abajo.
+                Antes hay que{' '}
+                {leFalta.aquiAbajo !== null && <>{leFalta.aquiAbajo}, aquí abajo</>}
+                {leFalta.preguntasPropias && (
+                  <>
+                    {leFalta.aquiAbajo !== null ? ', y ' : ''}publicar sus preguntas propias, desde{' '}
+                    <Link to={rutas.adminPreguntasPropias(v.id)}>Escribir las preguntas</Link>
+                  </>
+                )}
+                .
               </span>
             )}
           </div>
@@ -2716,6 +2732,12 @@ function TablaDeLaEvaluacion({ desglose }: { desglose: DesgloseEvaluacion }) {
     )
   }
 
+  // Las preguntas propias de la vacante (V66) se leen por criterios, con su propia cuenta:
+  // la nota es la suma de los criterios, no la mezcla de cerradas y abiertas.
+  if (desglose.porPuntos) {
+    return <DesglosePorPuntos postulacionId={desglose.postulacionId} desglose={desglose.porPuntos} />
+  }
+
   const sinNota = desglose.abiertas.filter((a) => a.puntaje === null).length
 
   return (
@@ -3570,11 +3592,6 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
     onSuccess: refrescar,
     onError: alFallar,
   })
-  const banco = useMutation({
-    mutationFn: (aplica: boolean) => aplicarEvaluacion(vacante.id, aplica),
-    onSuccess: refrescar,
-    onError: alFallar,
-  })
   const automatica = useMutation({
     mutationFn: (activa: boolean) => activarCalificacionAutomatica(vacante.id, activa),
     onSuccess: refrescar,
@@ -3655,8 +3672,10 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
   // tecnica. Si las dos se separan, el boton y el cartel se contradicen en la misma
   // pantalla — que es como se descubrio la vez anterior.
   const cuestionarioPublicado = useCuestionarioPublicado(vacante.id)
+  const preguntasListas = usePreguntasListas(vacante)
   const listaParaPublicar =
-    (!vacante.aplicaEvaluacion || bancoDelNivel != null) &&
+    (!vacante.aplicaEvaluacion ||
+      (vacante.origenPreguntas === 'VACANTE' ? preguntasListas === true : bancoDelNivel != null)) &&
     (vacante.instrumentoEtapaTecnica === 'CUESTIONARIO_TECNICO'
       ? cuestionarioPublicado === true
       : vacante.versionPlantillaPruebaId !== null)
@@ -3691,21 +3710,8 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
         </fieldset>
 
         <fieldset className={estilos.grupoConfiguracion}>
-          <legend>Evaluación del banco</legend>
-        <label className={estilos.ajuste}>
-          <span className={estilos.etiquetaAjuste}>La evaluación del banco</span>
-          <span className={estilos.interruptor}>
-            <input
-              type="checkbox"
-              checked={vacante.aplicaEvaluacion}
-              onChange={(e) => banco.mutate(e.target.checked)}
-              disabled={banco.isPending}
-            />
-            {vacante.aplicaEvaluacion
-              ? 'Encendida: responderá el cuestionario del banco'
-              : 'Apagada: la prueba del puesto será su única evaluación'}
-          </span>
-        </label>
+          <legend>Las preguntas del Perfil Integral</legend>
+        <OrigenDeLasPreguntas vacante={vacante} alCambiar={refrescar} alFallar={alFallar} />
 
         {/*
           Qué banco responderá quien postule. **Es una línea, no un desplegable**,
@@ -3720,7 +3726,7 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
           quien publicaba una vacante no tenía forma de saber qué se iba a
           responder ni cuánto duraría.
         */}
-        {vacante.aplicaEvaluacion && (
+        {vacante.aplicaEvaluacion && vacante.origenPreguntas !== 'VACANTE' && (
           <div className={estilos.ajuste}>
             <span className={estilos.etiquetaAjuste}>
               Qué evaluación responderá{nivel ? ` · nivel ${nivel}` : ''}

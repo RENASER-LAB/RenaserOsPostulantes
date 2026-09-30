@@ -415,3 +415,86 @@
     order: 3;
   }
 }
+
+/* ---------- ESCALA · las preguntas propias de una vacante (V66) ---------- */
+
+/*
+ * Los niveles en fila, del menor al mayor, con los rótulos de los extremos debajo
+ * (reutiliza `.leyendaEscala`). Con más de cinco niveles —o en un teléfono— pasan
+ * a una columna, y cada nivel lleva su rótulo al lado: diez botones de 44 px en
+ * fila no caben en un teléfono sin cortarse.
+ */
+.niveles,
+.nivelesEnColumna {
+  display: flex;
+  gap: var(--e2);
+}
+
+.niveles {
+  max-width: 28rem;
+}
+
+.nivelesEnColumna {
+  flex-direction: column;
+  max-width: 28rem;
+}
+
+.nivel {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--e3);
+  flex: 1;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 var(--e3);
+  border: 1px solid var(--borde-control);
+  background: var(--nube);
+  cursor: pointer;
+  border-radius: var(--radio-control);
+}
+
+.nivelesEnColumna .nivel {
+  justify-content: flex-start;
+}
+
+.nivel.puesto {
+  background: var(--tinta);
+  border-color: var(--tinta);
+  color: var(--nube);
+}
+
+.nivel:has(.control:focus-visible) {
+  outline: 2px solid var(--activo);
+  outline-offset: 2px;
+}
+
+.numeroNivel {
+  font-size: var(--t-prosa);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.rotuloNivel {
+  font-size: var(--t-apoyo);
+  display: none;
+}
+
+.nivelesEnColumna .rotuloNivel {
+  display: inline;
+}
+
+@media (max-width: 600px) {
+  .niveles {
+    flex-direction: column;
+  }
+
+  .niveles .nivel {
+    justify-content: flex-start;
+  }
+
+  .niveles .rotuloNivel {
+    display: inline;
+  }
+}

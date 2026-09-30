@@ -1,0 +1,782 @@
+/*
+ * El editor de preguntas propias de una vacante (V66).
+ *
+ * Tres reglas del panel que aqui se notan:
+ *   - Una sola accion principal por pantalla: «Publicar las preguntas». El resto
+ *     son secundarios (nube blanca con sombra de control).
+ *   - El indigo solo en lo que se pulsa. El tipo y los puntos de una pregunta son
+ *     chips neutros, sin color.
+ *   - El ambar solo para lo que frena la publicacion: un criterio vacio, una
+ *     pregunta sin criterio, los avisos del balance. Nunca para marcar un tipo.
+ *
+ * El criterio es una superficie blanca; sus preguntas van hundidas dentro, en
+ * `nube-hundida`. Los botones de mover, editar y quitar miden 44 px.
+ */
+
+/*
+ * El mismo margen que la ficha de la vacante (24 px; 16 en el teléfono), de la
+ * que se viene y a la que se vuelve. El ancho de lectura sigue en 960 px de
+ * contenido: el padding va aparte.
+ */
+.pagina {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e5);
+  max-width: calc(960px + 2 * var(--e5));
+  padding: var(--e5) var(--e5) var(--e8);
+}
+
+.volver {
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+  text-decoration: none;
+  align-self: flex-start;
+}
+
+.volver:hover {
+  color: var(--tinta);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.cabecera {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+}
+
+.cabecera h1 {
+  margin: 0;
+  font-size: var(--t-titulo);
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+
+.explica {
+  margin: 0;
+  font-size: var(--t-prosa);
+  line-height: 1.55;
+  color: var(--tinta2);
+  max-width: var(--medida);
+}
+
+/* ---------- El balance ---------- */
+
+/*
+ * ⚠️ Se pega DEBAJO de la cabecera del panel, que también es sticky y va por
+ * encima (z-index 10). Con `top: 12px` a secas quedaba escondido detrás al
+ * bajar: el botón «Publicar» recibía los clics de «Configuración» y en el
+ * teléfono, con la cabecera en dos líneas (123 px), la línea del balance
+ * desaparecía entera. El alto lo mide el armazón (`altoDeLaCabecera.ts`).
+ */
+.balance {
+  position: sticky;
+  top: calc(var(--alto-cabecera-panel, 64px) + var(--e3));
+  z-index: 2;
+  background: var(--nube);
+  border-radius: var(--radio-control);
+  box-shadow: var(--sombra-nube);
+  padding: var(--e4) var(--e5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+}
+
+.lineaBalance {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e3) var(--e4);
+}
+
+.cifras {
+  margin: 0;
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+  font-variant-numeric: tabular-nums;
+}
+
+.cifras b {
+  color: var(--tinta);
+  font-weight: 600;
+}
+
+.estadoVersion {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px var(--e3);
+  border-radius: var(--radio-control);
+  font-size: var(--t-micro);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  border: 1px solid var(--regla2);
+  color: var(--tinta2);
+}
+
+.publicar {
+  composes: acentoMenor from '../../../estilos/piezas.module.css';
+  margin-left: auto;
+}
+
+.avisos {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e1);
+  font-size: var(--t-apoyo);
+  color: var(--duda-tinta);
+}
+
+.avisos li::before {
+  content: '▸ ';
+}
+
+.faltas {
+  margin: 0;
+  padding: var(--e3) var(--e4);
+  border-radius: var(--radio-control);
+  background: var(--duda-bruma);
+  color: var(--duda-tinta);
+  font-size: var(--t-apoyo);
+  line-height: 1.5;
+}
+
+.faltas p {
+  margin: 0 0 var(--e2);
+  font-weight: 600;
+}
+
+.faltas ul {
+  margin: 0;
+  padding-left: var(--e5);
+}
+
+.balanceCorto {
+  display: none;
+}
+
+/* ---------- Entradas ---------- */
+
+.entradas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e3);
+}
+
+.secundario {
+  composes: secundario from '../../../estilos/piezas.module.css';
+  gap: var(--e2);
+}
+
+.secundarioPequeno {
+  composes: secundario from '../../../estilos/piezas.module.css';
+  gap: var(--e2);
+  align-self: flex-start;
+}
+
+/* ---------- La guía y los minutos ---------- */
+
+.guia {
+  display: grid;
+  grid-template-columns: 1fr 180px;
+  gap: var(--e3) var(--e5);
+  align-items: start;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+}
+
+.etiqueta {
+  font-size: var(--t-menor);
+  font-weight: 600;
+  color: var(--tinta2);
+}
+
+.cuenta {
+  font-weight: 400;
+  color: var(--tinta3);
+  font-variant-numeric: tabular-nums;
+}
+
+.area,
+.entrada,
+.eleccion {
+  font: inherit;
+  font-size: var(--t-apoyo);
+  color: var(--tinta);
+  background: var(--nube);
+  border: 1px solid var(--borde-control);
+  border-radius: var(--radio-control);
+  padding: 10px var(--e3);
+  min-height: 44px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.area {
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.area:focus-visible,
+.entrada:focus-visible,
+.eleccion:focus-visible {
+  outline: 2px solid var(--activo);
+  outline-offset: 1px;
+}
+
+.entradaPuntos {
+  composes: entrada;
+  width: 96px;
+  font-variant-numeric: tabular-nums;
+}
+
+.conQueCalifica {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: var(--t-menor);
+  color: var(--tinta3);
+  line-height: 1.5;
+}
+
+/* ---------- El criterio ---------- */
+
+.criterios {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e4);
+}
+
+.criterio {
+  background: var(--nube);
+  border-radius: var(--radio-control);
+  box-shadow: var(--sombra-nube);
+  padding: var(--e4) var(--e5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+}
+
+.cabeceraCriterio {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e2) var(--e4);
+}
+
+.nombreCriterio {
+  margin: 0;
+  font-size: var(--t-entradilla);
+  font-weight: 600;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  flex: 1 1 280px;
+}
+
+.puntosCriterio {
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.queEvalua {
+  margin: 0;
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.botones {
+  display: flex;
+  gap: var(--e1);
+  margin-left: auto;
+}
+
+.icono {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: var(--radio-control);
+  background: transparent;
+  color: var(--tinta2);
+  cursor: pointer;
+}
+
+.icono:hover:not(:disabled) {
+  background: var(--nube-hundida);
+  color: var(--tinta);
+}
+
+.icono:focus-visible {
+  outline: 2px solid var(--activo);
+  outline-offset: 1px;
+}
+
+.icono:disabled {
+  color: var(--regla2);
+  cursor: default;
+}
+
+.aviso {
+  margin: 0;
+  padding: var(--e2) var(--e3);
+  border-radius: var(--radio-control);
+  background: var(--duda-bruma);
+  color: var(--duda-tinta);
+  font-size: var(--t-apoyo);
+  line-height: 1.5;
+}
+
+.confirmacion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e3);
+  padding: var(--e3);
+  border-radius: var(--radio-control);
+  background: var(--nube-hundida);
+  font-size: var(--t-apoyo);
+}
+
+.peligroso {
+  composes: peligrosoMenor from '../../../estilos/piezas.module.css';
+}
+
+/* ---------- La pregunta ---------- */
+
+.preguntas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pregunta {
+  background: var(--nube-hundida);
+  border-radius: var(--radio-control);
+  padding: var(--e3) var(--e4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+}
+
+.cabeceraPregunta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e2);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--e2);
+  border-radius: var(--radio-control);
+  border: 1px solid var(--regla2);
+  font-size: var(--t-micro);
+  font-weight: 600;
+  color: var(--tinta2);
+  background: var(--nube);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.enunciado {
+  margin: 0;
+  font-size: var(--t-prosa);
+  line-height: 1.55;
+  color: var(--tinta);
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+
+.opciones {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+}
+
+.opcion {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--e3);
+  overflow-wrap: anywhere;
+}
+
+.opcion span:last-child {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--tinta);
+}
+
+.queDebeTener {
+  margin: 0;
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.queDebeTener b {
+  font-weight: 600;
+  color: var(--tinta);
+}
+
+/* ---------- El formulario de una pregunta ---------- */
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+  background: var(--nube-hundida);
+  border-radius: var(--radio-control);
+  padding: var(--e4);
+}
+
+.filaFormulario {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e3);
+  align-items: flex-end;
+}
+
+.filaFormulario > .campo {
+  flex: 1 1 180px;
+}
+
+.filaOpcion {
+  display: flex;
+  gap: var(--e2);
+  align-items: center;
+}
+
+.filaOpcion .entrada {
+  flex: 1 1 auto;
+}
+
+.nivel {
+  font-size: var(--t-menor);
+  color: var(--tinta3);
+  width: 56px;
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.ayuda {
+  margin: 0;
+  font-size: var(--t-menor);
+  color: var(--tinta3);
+  line-height: 1.5;
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e3);
+}
+
+.guardar {
+  composes: solido from '../../../estilos/piezas.module.css';
+}
+
+.error {
+  margin: 0;
+  padding: var(--e3) var(--e4);
+  border-radius: var(--radio-control);
+  background: var(--mal-bruma);
+  color: var(--mal);
+  font-size: var(--t-apoyo);
+  line-height: 1.5;
+}
+
+.estado {
+  margin: 0;
+  padding: var(--e3) var(--e4);
+  border-radius: var(--radio-control);
+  background: var(--nube-hundida);
+  color: var(--tinta2);
+  font-size: var(--t-apoyo);
+  line-height: 1.5;
+}
+
+/* ---------- Vacío y cargando ---------- */
+
+.vacio {
+  background: var(--nube);
+  border-radius: var(--radio-control);
+  box-shadow: var(--sombra-nube);
+  padding: var(--e6) var(--e5);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--e3);
+}
+
+.vacio h2 {
+  margin: 0;
+  font-size: var(--t-entradilla);
+}
+
+.esqueleto {
+  composes: criterio;
+  gap: var(--e3);
+}
+
+.huesoTitulo,
+.huesoPregunta {
+  border-radius: var(--radio-control);
+  background: var(--nube-hundida);
+}
+
+.huesoTitulo {
+  height: 24px;
+  width: 40%;
+}
+
+.huesoPregunta {
+  height: 72px;
+}
+
+/* ---------- La propuesta de la IA ---------- */
+
+.panelIa {
+  background: var(--nube);
+  border-radius: var(--radio-control);
+  box-shadow: var(--sombra-nube);
+  padding: var(--e4) var(--e5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+}
+
+.panelIa h2 {
+  margin: 0;
+  font-size: var(--t-entradilla);
+}
+
+.propuesto {
+  border: 1px solid var(--regla);
+  border-radius: var(--radio-control);
+  padding: var(--e3) var(--e4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+}
+
+.nueva {
+  composes: chip;
+}
+
+/* ---------- Publicada ---------- */
+
+.cartel {
+  margin: 0;
+  padding: var(--e3) var(--e4);
+  border-radius: var(--radio-control);
+  background: var(--nube-hundida);
+  color: var(--tinta2);
+  font-size: var(--t-apoyo);
+  line-height: 1.5;
+}
+
+.recalificando {
+  composes: cartel;
+}
+
+/* ---------- Copiar de otra vacante ---------- */
+
+/*
+ * ⚠️ `grid-template-rows: auto 1fr`: con pocas vacantes en la lista, el alto
+ * mínimo se repartía entre las dos filas y el buscador y el filtro se estiraban
+ * a 126 px. La fila del buscador mide lo que sus controles (44 px); el resto es
+ * para la lista y la vista previa.
+ */
+.copiar {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) 2fr;
+  grid-template-rows: auto 1fr;
+  gap: var(--e4);
+  min-height: 320px;
+}
+
+.buscador {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--e2);
+  grid-column: 1 / -1;
+}
+
+.buscador .entrada {
+  flex: 1 1 200px;
+}
+
+.buscador .eleccion {
+  flex: 0 1 180px;
+}
+
+.lista {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.copiable {
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  background: var(--nube);
+  border: 1px solid var(--regla);
+  border-radius: var(--radio-control);
+  padding: var(--e3);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 44px;
+}
+
+.copiable:hover {
+  border-color: var(--regla2);
+}
+
+.copiable[aria-pressed='true'] {
+  border-color: var(--activo);
+  box-shadow: 0 0 0 1px var(--activo);
+}
+
+.copiable b {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.copiable span {
+  font-size: var(--t-menor);
+  color: var(--tinta3);
+}
+
+.previa {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.previaEnLaLista {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .pagina {
+    padding: var(--e4) var(--e4) var(--e7);
+  }
+}
+
+@media (max-width: 720px) {
+  .guia {
+    grid-template-columns: 1fr;
+  }
+
+  .balance {
+    padding: var(--e3) var(--e4);
+  }
+
+  .balanceLargo {
+    display: none;
+  }
+
+  .balanceCorto {
+    display: block;
+  }
+
+  .balanceCorto summary {
+    cursor: pointer;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    font-size: var(--t-apoyo);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .balanceCorto[open] summary {
+    margin-bottom: var(--e2);
+  }
+
+  .entradas {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .criterio {
+    padding: var(--e3) var(--e4);
+  }
+
+  .puntosCriterio {
+    flex-basis: 100%;
+    order: 2;
+  }
+
+  .botones {
+    margin-left: 0;
+  }
+
+  .copiar {
+    grid-template-columns: 1fr;
+  }
+
+  .previa {
+    display: none;
+  }
+
+  .previaEnLaLista {
+    display: flex;
+    flex-direction: column;
+    gap: var(--e3);
+    padding: var(--e3);
+    border-left: 1px solid var(--regla2);
+    margin-left: var(--e2);
+  }
+}
+
+/* ---------- Opciones dentro de un formulario ---------- */
+
+.grupoOpciones {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+  min-width: 0;
+}
+
+.textoOpcion {
+  flex: 1 1 auto;
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+  overflow-wrap: anywhere;
+}

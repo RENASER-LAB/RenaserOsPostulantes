@@ -218,6 +218,24 @@ export function IconoMas(props: PropsIcono) {
   )
 }
 
+/** Subir un puesto: mover arriba un criterio o una pregunta. */
+export function IconoArriba(props: PropsIcono) {
+  return (
+    <Icono {...props}>
+      <path d="M12 18.5v-13M6.5 11 12 5.5l5.5 5.5" />
+    </Icono>
+  )
+}
+
+/** Bajar un puesto. */
+export function IconoAbajo(props: PropsIcono) {
+  return (
+    <Icono {...props}>
+      <path d="M12 5.5v13M6.5 13l5.5 5.5 5.5-5.5" />
+    </Icono>
+  )
+}
+
 export function IconoVisto(props: PropsIcono) {
   return (
     <Icono {...props}>

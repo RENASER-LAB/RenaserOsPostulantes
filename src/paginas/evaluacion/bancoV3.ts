@@ -26,8 +26,12 @@ import type { DetalleRespuesta, OpcionCandidato, PreguntaEvaluacion } from '@/ap
 /** Como se responde una pregunta: con detalle, con una opcion o escribiendo. */
 export type ModoRespuesta = 'DETALLE' | 'OPCION' | 'TEXTO'
 
-/** Los seis formatos que no caben en «una opcion» ni en «un texto». */
-const CON_DETALLE = ['EF-4', 'SJT-R', 'SEC', 'INV', 'DE', 'CD']
+/**
+ * Los formatos que no caben en «una opcion» ni en «un texto»: los seis del banco
+ * v3 y la opcion multiple de las preguntas propias de una vacante (V66), que se
+ * responde marcando varias, como un INV.
+ */
+const CON_DETALLE = ['EF-4', 'SJT-R', 'SEC', 'INV', 'DE', 'CD', 'OPCION_MULTIPLE']
 
 export function necesitaDetalle(tipo: string): boolean {
   return CON_DETALLE.includes(tipo)
@@ -37,8 +41,10 @@ export function modoDeRespuesta(pregunta: PreguntaEvaluacion): ModoRespuesta {
   // Primero el tipo: los formatos con detalle tambien traen opciones, asi que
   // mirar las opciones antes que el tipo los pintaria como si fueran radios.
   if (necesitaDetalle(pregunta.tipo)) return 'DETALLE'
-  // `PC` es la opcion unica del banco v3 y `OPCION_MULTIPLE` la del banco
-  // viejo. Se responden igual, asi que basta con que traiga opciones.
+  // `PC` es la opcion unica del banco v3; `OPCION_UNICA` y `ESCALA`, las de las
+  // preguntas propias (V66). Las tres se responden con una sola opcion, asi que
+  // basta con que traiga opciones. (La `OPCION_MULTIPLE` de las preguntas propias
+  // marca varias y va por detalle, arriba.)
   if (pregunta.opciones?.length) return 'OPCION'
   return 'TEXTO'
 }
@@ -515,6 +521,13 @@ export function queFalta(
       return 'Marca lo que esté mal. Si no encuentras nada, dilo con la última casilla.'
     }
 
+    // La multiple de las preguntas propias: sin «ninguna». Para darla por respondida
+    // hace falta al menos una marcada, y el backend lo exige igual.
+    case 'OPCION_MULTIPLE': {
+      if ((valor?.marcadas?.length ?? 0) > 0) return null
+      return 'Marca al menos una opción.'
+    }
+
     case 'CD': {
       const campos = valor?.campos ?? {}
       const faltan = camposDeCaso(pregunta).filter(
@@ -566,6 +579,7 @@ export function detalleParaEnviar(
       return { orden: valor.orden ?? [] }
     case 'INV':
     case 'DE':
+    case 'OPCION_MULTIPLE':
       return { marcadas: valor.marcadas ?? [] }
     case 'CD': {
       const campos: Record<string, string> = {}

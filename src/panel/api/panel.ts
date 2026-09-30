@@ -274,6 +274,8 @@ export const verFicha = (postulacionId: number) =>
   pedir<FichaPostulacion>(`/postulaciones/${postulacionId}`)
 export const verPerfilIntegral = (postulacionId: number) =>
   pedir<PerfilIntegral>(`/postulaciones/${postulacionId}/perfil-integral`)
+/** Si la empresa tiene banco por nivel propio (V66). Sin el, se escribe en cada vacante. */
+export const verSiElBancoEsPropio = () => pedir<{ propio: boolean }>('/banco-preguntas/propio')
 export const verDesgloseEvaluacion = (postulacionId: number) =>
   pedir<DesgloseEvaluacion>(`/postulaciones/${postulacionId}/evaluacion`)
 export const verNotasPrueba = (postulacionId: number) =>

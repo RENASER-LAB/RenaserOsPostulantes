@@ -11,6 +11,7 @@ import { Link, Navigate, NavLink, Outlet, matchPath, useLocation } from 'react-r
 import { patrones, rutas } from '@/rutas'
 import { Marca } from '@/ui/Marca'
 import { useSesionPanel } from './Sesion'
+import { useAltoDeLaCabecera } from './altoDeLaCabecera'
 import estilos from './Armazon.module.css'
 
 const TITULOS: Array<[string, string]> = [
@@ -41,6 +42,8 @@ function claseDelEnlace({ isActive }: { isActive: boolean }) {
 
 export function ArmazonPanel() {
   const { hayEquipo, salir } = useSesionPanel()
+  // Lo que se pega arriba en una pantalla (el balance del editor) va debajo de ella.
+  const medirCabecera = useAltoDeLaCabecera()
 
   if (!hayEquipo) return <Navigate to={rutas.adminEntrar()} replace />
 
@@ -48,7 +51,7 @@ export function ArmazonPanel() {
     <div className={estilos.armazon}>
       <TituloDelPanel />
 
-      <header className={estilos.cabecera}>
+      <header className={estilos.cabecera} ref={medirCabecera}>
         <div className={estilos.cabeceraDentro}>
           <Link className={estilos.marca} to={rutas.adminVacantes()} aria-label="Panel del equipo, inicio">
             <Marca tamano={28} />

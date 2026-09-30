@@ -33,6 +33,7 @@ import {
   descartarBorradorBanco,
   importarBanco,
   listarVersionesBanco,
+  verSiElBancoEsPropio,
   publicarVersionBanco,
   renombrarVersionBanco,
   verCatalogos,
@@ -44,6 +45,28 @@ import estilos from './BancoDePreguntas.module.css'
 
 export function BancoDePreguntas() {
   const cache = useQueryClient()
+  /*
+    Una empresa sin banco propio ya no ve el de RENASER en solo lectura ni la
+    invitacion a personalizarlo (V66): cada empresa usa solo su propio banco, y
+    sus preguntas se escriben en cada vacante. Mientras no se sabe, se pinta lo
+    de siempre; el backend decide igual.
+  */
+  const propio = useQuery({ queryKey: ['panel-banco-propio'], queryFn: verSiElBancoEsPropio })
+  if (propio.data?.propio === false) {
+    return (
+      <section className={estilos.seccion}>
+        <h2 className={estilos.tituloSeccion}>El banco de preguntas</h2>
+        <p className={estilos.nota} role="status">
+          Tu empresa no tiene banco por nivel: las preguntas se escriben en cada vacante, en
+          «Preguntas propias de esta vacante».
+        </p>
+      </section>
+    )
+  }
+  return <ElBancoDeLaEmpresa cache={cache} />
+}
+
+function ElBancoDeLaEmpresa({ cache }: { cache: ReturnType<typeof useQueryClient> }) {
   const versiones = useQuery({ queryKey: ['panel-banco'], queryFn: listarVersionesBanco })
   /*
     El catalogo vive aqui y no solo en el formulario de importar: sin el, el
