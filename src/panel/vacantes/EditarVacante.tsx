@@ -96,7 +96,9 @@ export function FormularioDeEdicion({
   /** Si se pidio cerrar con cambios sin guardar y falta decidir que se hace. */
   const [preguntandoSiDescartar, setPreguntandoSiDescartar] = useState(false)
   const cache = useQueryClient()
-  const puestos = useQuery({ queryKey: ['panel-puestos'], queryFn: listarPuestos })
+  // Todos, también los desactivados (V64): aquí se NOMBRA el puesto de la vacante,
+  // que lo conserva aunque ya no se ofrezca para vacantes nuevas.
+  const puestos = useQuery({ queryKey: ['panel-puestos-todos'], queryFn: () => listarPuestos(true) })
 
   const poner = (campo: keyof DatosDeVacante) => (valor: string) => {
     setErrores({})

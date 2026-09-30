@@ -1,8 +1,9 @@
 # El panel del equipo (`/admin`)
 
-Qué es, cómo se entra, qué enseña cada pestaña, qué exige el backend antes de publicar una
-vacante, cómo se eligen su modalidad y su ciudad, cómo se corrige después, y las reseñas de
-empresas: escribirlas, leerlas y moderarlas. El recorrido de los dos lados —equipo y candidato— está en
+Qué es, cómo se entra, qué enseña cada entrada del menú lateral, qué exige el backend antes de
+publicar una vacante, cómo se eligen su modalidad y su ciudad, cómo se corrige después, las
+reseñas de empresas —escribirlas, leerlas y moderarlas— y la gestión de personas: colaboradores,
+sedes y cargos, y contratar desde la ficha. El recorrido de los dos lados —equipo y candidato— está en
 [06-FLUJO-COMPLETO.md](06-FLUJO-COMPLETO.md).
 
 ---
@@ -25,10 +26,13 @@ vacantes (modelo Indeed), el panel se construye en este repositorio, bajo `/admi
   UUID; el id es **texto**, no número.
 - **La base del panel es `/api/v1/panel`**, con token propio (`renaser_panel_token`), aparte
   del token del candidato. Un 401 del panel no puede cerrar la sesión del portal ni al revés.
-- Tres pestañas: **Vacantes** (el CRUD, y dentro de cada una el embudo, el ranking con las
-  notas de la IA, la ficha de cada postulante y avanzar de etapa), **Simulación** (crear y
-  gestionar las sesiones presenciales) y **Configuración** (parámetros, banco de preguntas por
-  Excel, usuarios y roles, áreas y, solo para la plataforma, las reseñas reportadas).
+- **Un menú lateral por familias** desde el 29/09/2026 (antes, pestañas arriba): en
+  **Selección**, **Vacantes** (el CRUD, y dentro de cada una el embudo, el ranking con las notas
+  de la IA, la ficha de cada postulante, avanzar de etapa y contratar), **Simulación** (las
+  sesiones presenciales) y **Pruebas**; en **Personas**, **Colaboradores**; y al pie
+  **Configuración** (parámetros, banco de preguntas por Excel, usuarios y roles, áreas, sedes,
+  cargos y, solo para la plataforma, las reseñas reportadas). Cada uno ve solo lo que puede usar:
+  ver «Gestión de personas: el menú lateral, los colaboradores y contratar».
 - ⚠️ **Huecos del backend, comprobados el 27/08**: `GET /panel/bandeja` devuelve 500; y **no hay
   forma de listar las versiones de una plantilla de prueba**, solo de pedir una suelta por su
   id. Se enseña lo que existe, como hizo el portal con la decisión ámbar.
@@ -530,9 +534,9 @@ una opinión. Las demás empresas donde esa persona postula las leen. **No punt�
 el orden por defecto de la tabla, ni el pase automático, ni el Excel cambian por ellas. Lo que ve
 la persona está en [02-QUE-VE-EL-CANDIDATO.md](02-QUE-VE-EL-CANDIDATO.md), 2.15.
 
-⚠️ **Contratar todavía no tiene pantalla**: se hace por la API (la decisión en verde o una
-transición a `CONTRATADO`). La persona contratada se encuentra en la vista «Toda la tanda» de su
-vacante; no hay lista de «contratados pendientes de reseña».
+Desde el 29/09/2026 se contrata con **«Contratar»** en la ficha del postulante (ver «Gestión de
+personas»), y también sigue valiendo la API. La persona contratada se encuentra en la vista
+«Toda la tanda» de su vacante; no hay lista de «contratados pendientes de reseña».
 
 **La columna «Reseñas»**, en las cinco pestañas y al final de la tabla:
 
@@ -586,5 +590,89 @@ de 1000 caracteres y nombres largos). ⚠️ **Los tres escriben**: siembran sus
 insertando la transición a `CONTRATADO` con fechas relativas a hoy, y lo retiran al terminar.
 Necesitan las variables de [TRABAJAR-EN-LOCAL.md](TRABAJAR-EN-LOCAL.md). ⚠️ El 41 y el 42 repiten
 número con `41-logotipo` y `42-selector-de-columnas`: ver [PENDIENTES.md](PENDIENTES.md).
+
+### Gestión de personas: el menú lateral, los colaboradores y contratar (29/09)
+
+El primer apartado de la ampliación de RR.HH.: la ficha de cada persona que trabaja en la
+empresa, el mapa de la empresa (sedes, áreas, cargos y jefes) y contratar sin salir del panel.
+El backend trae la `V64` y la `V65`; sus rutas, sus permisos y sus reglas están en `docs/` del
+backend (`09-APIS.md`, «Gestión de personas», y `04-ROLES-Y-PERMISOS.md`, «Personas»).
+
+**El armazón.** La barra de pestañas se fue: arriba queda una barra fina con la marca —sigue
+siendo el enlace a `/admin` con nombre accesible «Panel del equipo, inicio»—, el nombre de la
+empresa y el de la persona con «Salir». A la izquierda, el menú:
+
+| Qué | Cómo es |
+|---|---|
+| Familias | **Selección** (Vacantes, Simulación, Pruebas), **Personas** (Colaboradores) y, al pie y separada, **Configuración**. Una familia sin entradas no sale, y no hay entradas de módulos futuros |
+| Quién ve qué | Al entrar, el panel pide `GET /panel/sesion` (nombre, correo, empresa y permisos con su alcance) y pinta solo lo que cada uno puede usar, con los permisos que ya exigía cada pantalla. «Colaboradores» pide `ver_colaboradores` con alcance `TODO`. **El Administrador no ve «Vacantes»**, porque esas pantallas ya le daban 403. Si la sesión no carga, salen las cuatro entradas de siempre y el panel sigue funcionando. Es solo para pintar: quien decide sigue siendo el backend |
+| Entrada activa | También en las rutas hijas: `/admin/vacantes/:id` y `/admin/archivadas` marcan «Vacantes»; `/admin/colaboradores/:id`, «Colaboradores» |
+| Plegar | «Plegar menú» deja una columna de iconos; cada uno conserva su nombre accesible y lo enseña como tooltip. Se recuerda en ese navegador (`renaser_panel_menu_plegado`); sin almacenamiento, sale desplegado |
+| Menos de 1024 px | El menú se oculta y «Menú», en la barra, lo abre como un cajón. Se cierra al elegir una entrada, con Escape o al tocar fuera; el foco no sale de él mientras está abierto y vuelve a «Menú» al cerrarlo |
+
+Ninguna dirección de página cambió, y el nombre de la barra sale de la sesión: el de la
+invitación queda de respaldo.
+
+**Colaboradores** (`/admin/colaboradores`). Una tabla por apellidos, en páginas de 50 servidas por
+el backend: nombre, documento, cargo, área y sede vigentes, jefe, ingreso, fin de contrato y
+estado —«Por ingresar», «Activo» o «Cesado», calculados en hora de Lima—. El fin de contrato
+lleva «vence en N días» a 30 días o menos, y «vencido» si ya pasó y la persona sigue activa,
+explicando que entonces su contrato pasa a indefinido. Filtros: estado (por defecto Activos y Por
+ingresar), sede, área, cargo, **«Contratos por vencer», que incluye los ya vencidos de personas
+activas**, y la búsqueda por nombre o documento, con el contador «N colaboradores». Con
+`editar_colaboradores`, «Nuevo colaborador» y «Cargar Excel». Arriba, si los hay, **«N personas
+contratadas por selección esperan su alta»**: cada una con «Dar de alta» y «No dar de alta», que
+pide un motivo.
+
+**La ficha** (`/admin/colaboradores/:id`) tiene tres pestañas: **Perfil** (identidad, contacto,
+domicilio y formación; «Editar» corrige sin historial), **Puesto y contrato** (la situación
+vigente hoy, el periodo, los cambios programados con «Anular», y «Registrar un cambio» y
+«Registrar el cese», o «Reingresar» y «Anular el cese» si está cesada) e **Historial** (cada
+cambio como «antes → después», con motivo, quién y cuándo; los anulados, tachados). Si vino de
+selección, la cabecera dice «Contratado por la vacante {título}», con enlace mientras la vacante
+exista. **Sin `ver_sueldos` el sueldo no aparece en ninguna parte**, y un ajuste que solo toca el
+sueldo no sale ni en «Cambios programados», ni en el historial, ni en el aviso del cese.
+
+**El alta** (`/admin/colaboradores/nuevo`) es un formulario en tres bloques. Un documento que ya
+tiene ficha se rechaza con un aviso que toma el foco y enlaza a esa ficha; si está cesada, lleva a
+reingresarla. **La carga por Excel** es un panel en tres pasos —descargar la plantilla, subir el
+archivo, ver el resultado—: es todo o nada, y si algo falla **la pantalla enseña todos los errores
+en una tabla** (fila, columna, valor y qué pasa) sin haber guardado nada.
+
+**Contratar, desde la ficha del postulante.** En la ficha que se despliega en el ranking sale
+**«Contratar»** si el backend dice `puedeContratar`: la postulación no está terminada y quien
+mira puede decidir la contratación sobre ella (Dirección y el responsable del área; Talento no),
+en cualquier etapa. El modal «Contratar a {nombre}» dice la vacante y la etapa; fuera de Decisión
+avisa de que cierra el proceso sin pasar por las etapas que faltan; pide un motivo y dice «No se
+le envía ningún correo». Confirmar registra la decisión en verde y la postulación pasa a
+Contratado; un error conserva el motivo. Después ofrece **«Dar de alta como colaborador»** con
+`editar_colaboradores`, que abre el alta precargada con lo que ya se sabe (`?postulacion=`). Una
+postulación ya contratada enseña «Dar de alta como colaborador» o «Ver su ficha de colaborador».
+
+**Configuración › «Sedes» y «Cargos»**, junto a «Áreas» y con su mismo patrón. Las ve todo el
+equipo; las acciones —añadir, editar o renombrar, desactivar y reactivar— solo con
+`editar_estructura`. Los cargos son los puestos de siempre: renombrar uno avisa antes de que el
+nombre cambia en todas partes, vacantes incluidas.
+
+**Un formulario abierto no se pierde si la sesión caduca.** Los formularios de esta entrega
+retienen la sesión (`useRetenerLaSesion`, en `src/panel/Sesion.tsx`): un 401 al guardar no salta a
+«Entrar», sino que el formulario dice «Tu sesión caducó y esto no se guardó. Lo que escribiste
+sigue aquí», con un enlace para entrar en otra pestaña y volver a guardar. Si se cierra sin
+haber vuelto a entrar, entonces sí se va a «Entrar». Junto a eso, `src/panel/ui/Envio.tsx` da a
+esos formularios un solo envío por clic (`useUnaVez`) y un aviso de fallo que toma el foco
+(`AvisoDeFallo`), porque un botón desactivado al enviar suelta el foco fuera del modal.
+
+Dónde está: `src/panel/Armazon.tsx` y `src/panel/menu.ts` (las reglas del menú, sin pintar
+nada); `src/panel/colaboradores/`; `src/panel/configuracion/Sedes.tsx` y `Cargos.tsx`;
+`src/panel/vacantes/ContratarDesdeLaFicha.tsx`; y `src/panel/ui/Envio.tsx`.
+
+Comprobarlo: `npx playwright test herramientas/e2e/44-gestion-de-personas.spec.ts` (los siete
+recorridos de la spec: el menú por rol, plegado y en cajón; el alta y el documento duplicado;
+contratar y dar de alta; la carga con errores y la válida; cambios programados y su anulación; el
+cese y el reingreso; y el sueldo oculto en pantalla y en la API) y
+`45-gestion-de-personas-regresiones.spec.ts` (lo que encontró QA en el navegador). ⚠️ **Los dos
+escriben**: siembran estructura, cuentas, vacantes, postulaciones y colaboradores con la marca `QA-PERSONAS-3E62`
+o un DNI al azar y fechas relativas a hoy en Lima, y lo retiran al terminar. ⚠️ El 44 repite
+número con `44-veredicto-solo-en-el-perfil`: ver [PENDIENTES.md](PENDIENTES.md).
 
 ---

@@ -1,0 +1,164 @@
+/*
+ * Los formularios de la ficha: el alta, el perfil, el cambio, el cese y el
+ * reingreso. Bloques con título, una rejilla que reparte los campos, y los
+ * botones al final.
+ */
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e6);
+}
+
+.bloque {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e4);
+  padding-top: var(--e5);
+  border-top: 1px solid var(--regla);
+}
+
+.bloque:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.tituloBloque {
+  font-size: var(--t-titulo);
+  letter-spacing: -0.012em;
+  margin: 0;
+}
+
+.rejilla {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: var(--e4);
+  align-items: start;
+}
+
+.anchoDoble {
+  grid-column: span 2;
+}
+
+.anchoEntero {
+  grid-column: 1 / -1;
+}
+
+.etiqueta {
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  letter-spacing: -0.006em;
+}
+
+.error {
+  margin: 0;
+  font-size: var(--t-menor);
+  color: var(--mal);
+}
+
+.botones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e3);
+  align-items: center;
+}
+
+.enviar {
+  composes: acentoMenor from '../../estilos/piezas.module.css';
+}
+
+.chico {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 var(--e3);
+  border: 1px solid var(--regla2);
+  border-radius: var(--radio-control);
+  background: var(--nube);
+  color: var(--tinta);
+  font-size: var(--t-apoyo);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.chico:hover:not(:disabled) {
+  background: var(--nube-hundida);
+}
+
+/* ---------- El jefe directo ---------- */
+
+.jefe {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+  position: relative;
+  min-width: 0;
+}
+
+.jefeElegido {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e3);
+  min-height: 48px;
+  padding: 0 var(--e2) 0 var(--e3);
+  border: 1px solid var(--borde-control);
+  border-radius: var(--radio-menor);
+  background: var(--nube-hundida);
+  overflow-wrap: anywhere;
+}
+
+.resultados {
+  list-style: none;
+  margin: 0;
+  padding: var(--e1);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border: 1px solid var(--regla2);
+  border-radius: var(--radio-menor);
+  background: var(--nube);
+  box-shadow: var(--sombra-nube);
+  max-height: 16rem;
+  overflow-y: auto;
+}
+
+.resultado {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  min-height: 44px;
+  padding: var(--e2) var(--e3);
+  border: 0;
+  border-radius: var(--radio-control);
+  background: none;
+  color: var(--tinta);
+  font-size: var(--t-apoyo);
+  text-align: left;
+  cursor: pointer;
+}
+
+.resultado span {
+  color: var(--tinta2);
+  font-size: var(--t-micro);
+}
+
+.resultado:hover,
+.resultado:focus-visible {
+  background: var(--nube-hundida);
+}
+
+.sinResultados {
+  padding: var(--e2) var(--e3);
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+}
+
+@media (max-width: 640px) {
+  .anchoDoble {
+    grid-column: 1 / -1;
+  }
+}

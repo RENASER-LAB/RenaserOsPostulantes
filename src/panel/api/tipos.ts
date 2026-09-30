@@ -317,6 +317,8 @@ export interface PuestoPanel {
   /** El nivel manda: la plantilla de evaluacion tiene que ser del mismo. */
   nivelPuestoCodigo: string
   familiaCodigo: string | null
+  /** Desactivado desde Configuración (V64): se conserva, no se elige. */
+  esActivo?: boolean
 }
 
 export interface GuardarPuesto {
@@ -1043,6 +1045,18 @@ export interface FichaPostulacion {
    * que acusa al candidato.
    */
   porQueSinPretension: string | null
+  /**
+   * Si quien mira puede contratar desde aquí (V64): la decisión en verde, con
+   * `decidir_contratacion` —o `cambiar_decision` si ya hubo una— y la
+   * postulación sin terminar. Opcional porque una ficha de antes no lo traía.
+   */
+  puedeContratar?: boolean
+  /** La ficha de colaborador que salió de esta contratación, para quien puede verla. */
+  colaboradorId?: number | null
+  /** Contratado, sin ficha todavía, y quien mira puede darla de alta. */
+  puedeDarDeAlta?: boolean
+  /** Ya tiene ficha y quien mira puede abrirla. */
+  puedeVerColaborador?: boolean
 }
 
 export interface PasoHistorialPanel {

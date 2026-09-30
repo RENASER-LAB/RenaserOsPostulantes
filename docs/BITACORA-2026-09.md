@@ -16,6 +16,51 @@ no se vuelve a subir el currículum. Lo del 07/09 se documentó en
 
 ---
 
+## La gestión de personas, y el panel pasa a un menú lateral (29/09/2026)
+
+El primer apartado de la ampliación de RR.HH.: la persona contratada por fin existe en el panel,
+con su ficha, su historial de puesto y contrato, su cese y su reingreso. Cómo funciona hoy, en
+[PANEL.md](PANEL.md) › Gestión de personas; el backend trae la `V64` y la `V65`.
+
+- **Armazón:** la barra de pestañas se cambia por un menú lateral por familias —Selección,
+  Personas y Configuración al pie—, plegable, que por debajo de 1024 px se abre como cajón. Lo
+  pinta `GET /panel/sesion`, y si no carga salen las cuatro entradas de siempre.
+- **Personas:** `/admin/colaboradores` con el aviso de contratados que esperan su alta, la ficha
+  con tres pestañas, el alta manual o precargada desde una contratación, la carga por Excel con
+  la tabla de errores, los cambios programados y su anulación, el cese y el reingreso.
+- **Configuración:** «Sedes» y «Cargos», junto a «Áreas».
+- **Selección:** «Contratar» en la ficha del postulante —la decisión en verde de siempre— y, al
+  terminar, «Dar de alta como colaborador».
+- **Formularios:** los de esta entrega retienen la sesión ante un 401 y avisan sin perder lo
+  escrito, mandan una sola petición por clic y llevan el foco al error (`src/panel/ui/Envio.tsx`).
+
+### Decisiones que aprobó el usuario
+
+- El menú lateral agrupado por familias, plegable y con cajón en móvil (28/09/2026).
+- El Administrador no ve «Vacantes»: esas pantallas ya le daban 403.
+- «Contratos por vencer» incluye los ya vencidos de personas activas.
+- Sin `ver_sueldos`, un ajuste de solo sueldo no existe para esa persona, programado o vigente.
+- Un cambio anulado se compara con lo que tenía detrás al anularlo, no con lo que vino después.
+- Talento puede anular un programado que también toca el sueldo, y con él se deshace el sueldo;
+  anular un programado en medio de una cadena hace que el siguiente traiga esos datos en su fecha,
+  sin aviso.
+- Sedes y cargos los ve todo el equipo; editarlos pide `editar_estructura`.
+- Renovar un contrato no tiene flujo propio: se registra como un cambio con motivo «renovación de
+  contrato» y queda pendiente, sin apartado asignado ([PENDIENTES.md](PENDIENTES.md)).
+
+`DESIGN.md` no describe todavía el menú lateral: también en [PENDIENTES.md](PENDIENTES.md).
+
+### Cómo se comprueba
+
+`npx playwright test herramientas/e2e/44-gestion-de-personas.spec.ts
+herramientas/e2e/45-gestion-de-personas-regresiones.spec.ts`. ⚠️ **Escriben**: siembran lo suyo
+con la marca `QA-PERSONAS-3E62` y lo retiran al terminar. El 44 repite número con
+`44-veredicto-solo-en-el-perfil`. Las unitarias, en `menu.test.ts`, `Armazon.test.tsx`,
+`Sesion.test.tsx`, `ui/Envio.test.tsx`, `src/panel/colaboradores/*.test.*`, `Sedes.test.tsx`,
+`Cargos.test.tsx` y `ContratarDesdeLaFicha.test.tsx`. En el backend, `FlujoColaboradoresIT`.
+
+---
+
 ## El Veredicto, solo en la pestaña «Perfil integral» (29/09/2026)
 
 La columna Veredicto del ranking —el grupo de prioridad— salía en las cinco pestañas, pero se

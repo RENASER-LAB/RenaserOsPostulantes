@@ -53,6 +53,7 @@ import {
 } from '../api/panel'
 import { ErrorApi } from '../api/cliente'
 import type {
+  Catalogos,
   DesgloseEvaluacion,
   ElegirInstrumentoTecnico as DatosDelInstrumento,
   Hallazgo,
@@ -67,6 +68,7 @@ import { ahora, formatearFechaCorta, formatearFechaLarga } from '@/dominio/reloj
 import tabla from '../ui/Tabla.module.css'
 import { DescargarCv } from './DescargarCv'
 import { DescartarPostulacion } from './DescartarPostulacion'
+import { ContratarDesdeLaFicha } from './ContratarDesdeLaFicha'
 import { BarraDeLaSeleccion } from './BarraDeLaSeleccion'
 import { EtiquetasDeFiltros, FiltrosDelRanking } from './FiltrosDelRanking'
 import { EntregablesDePrueba } from './EntregablesDePrueba'
@@ -2213,6 +2215,16 @@ function BarraDeFiltros({
 
 // ---------- La ficha, abierta debajo de la fila ----------
 
+/**
+ * En qué etapa está una postulación, con su nombre del catálogo. Antes de la
+ * primera etapa (Postulada) no hay etapa: se dice el estado.
+ */
+function etapaDeLaFicha(estado: string, estadoNombre: string, catalogos: Catalogos | undefined): string {
+  const codigo = catalogos?.estados.find((e) => e.codigo === estado)?.etapaCodigo
+  const nombre = codigo ? catalogos?.etapas.find((e) => e.codigo === codigo)?.nombre : undefined
+  return nombre ?? estadoNombre
+}
+
 function DetalleDelPostulante({ fila, etapa }: { fila: FilaRanking; etapa: EtapaPanel }) {
   const catalogos = useQuery({
     queryKey: ['panel-catalogos'],
@@ -2341,6 +2353,32 @@ function DetalleDelPostulante({ fila, etapa }: { fila: FilaRanking; etapa: Etapa
                 cache.invalidateQueries({ queryKey: ['panel-ficha', fila.postulacionId] })
                 cache.invalidateQueries({ queryKey: ['panel-historial', fila.postulacionId] })
                 cache.invalidateQueries({ queryKey: ['panel-ranking'] })
+              }}
+            />
+            {/*
+              Contratar (V64): la decisión en verde, desde cualquier etapa. La
+              etapa sale del catálogo, como `esFinal` arriba; sin catálogo se usa
+              el nombre del estado, que la ficha ya trae.
+            */}
+            <ContratarDesdeLaFicha
+              postulacionId={fila.postulacionId}
+              candidato={ficha.data.candidato}
+              vacante={ficha.data.vacante}
+              etapa={etapaDeLaFicha(ficha.data.estado, ficha.data.estadoNombre, catalogos.data)}
+              enDecision={
+                catalogos.data?.estados.find((e) => e.codigo === ficha.data.estado)?.etapaCodigo ===
+                'DECISION'
+              }
+              puedeContratar={Boolean(ficha.data.puedeContratar) && catalogos.isSuccess}
+              contratado={ficha.data.estado === 'CONTRATADO'}
+              colaboradorId={ficha.data.colaboradorId ?? null}
+              puedeDarDeAlta={Boolean(ficha.data.puedeDarDeAlta)}
+              puedeVerColaborador={Boolean(ficha.data.puedeVerColaborador)}
+              alContratar={() => {
+                cache.invalidateQueries({ queryKey: ['panel-ficha', fila.postulacionId] })
+                cache.invalidateQueries({ queryKey: ['panel-historial', fila.postulacionId] })
+                cache.invalidateQueries({ queryKey: ['panel-ranking'] })
+                cache.invalidateQueries({ queryKey: ['panel-colaboradores-pendientes'] })
               }}
             />
           </>
@@ -3430,7 +3468,9 @@ function useCuestionarioPublicado(vacanteId: number) {
 }
 
 function useBancoDelNivel(puestoId: number | undefined) {
-  const puestos = useQuery({ queryKey: ['panel-puestos'], queryFn: listarPuestos })
+  // Todos, también los desactivados (V64): una vacante conserva su puesto aunque
+  // Configuración lo haya retirado de las opciones, y su nivel sigue mandando.
+  const puestos = useQuery({ queryKey: ['panel-puestos-todos'], queryFn: () => listarPuestos(true) })
   const bancos = useQuery({
     queryKey: ['panel-versiones-banco'],
     queryFn: listarVersionesBanco,
@@ -3447,8 +3487,9 @@ function useBancoDelNivel(puestoId: number | undefined) {
     afirmaria «no hay ningun banco publicado para este nivel» —que es mentira, y
     ademas contradice al backend, que si lo ve y deja publicar—.
 
-    Lo mismo con el puesto: `listarPuestos` solo devuelve los ACTIVOS, asi que
-    una vacante de un puesto desactivado se quedaria en «buscando» para siempre.
+    Lo mismo con el puesto: si no llega —la lista falla, o no lo trae—, la
+    vacante se quedaria en «buscando» para siempre. Por eso se pide la lista con
+    los desactivados, que una vacante conserva (V64).
   */
   const noSePuedeSaber =
     bancos.isError ||
