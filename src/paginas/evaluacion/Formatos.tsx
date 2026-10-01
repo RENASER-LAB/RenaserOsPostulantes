@@ -57,6 +57,9 @@ export function RespuestaDeLaPregunta(props: Props) {
   const { pregunta } = props
   const modo = modoDeRespuesta(pregunta)
 
+  // La escala de las preguntas propias (V66) se responde con una opcion, pero se
+  // pinta como una fila de niveles del menor al mayor, con los rotulos de los extremos.
+  if (pregunta.tipo === 'ESCALA') return <NivelesDeEscala {...props} />
   if (modo === 'OPCION') return <OpcionUnica {...props} />
   if (modo === 'TEXTO') {
     // Un `V` no es una pregunta suelta: son varios datos en un mismo enunciado,
@@ -110,6 +113,8 @@ function PorFormato(props: Props) {
       return <MarcarVarias {...props} etiquetaNinguna="No encuentro ningún error" />
     case 'CD':
       return <CasoDescompuesto {...props} />
+    case 'OPCION_MULTIPLE':
+      return <MarcarAlMenosUna {...props} />
     default:
       return null
   }
@@ -493,6 +498,96 @@ function MarcarVarias({
           <span className={estilos.textoOpcion}>{etiquetaNinguna}</span>
         </label>
       </div>
+    </div>
+  )
+}
+
+// ---------- Preguntas propias de la vacante (V66) ----------
+
+/**
+ * La opcion multiple de las preguntas propias: casillas, y al menos una marcada
+ * para darla por respondida. Sin «ninguna», a diferencia de un INV: aqui no
+ * marcar nada es no haber respondido.
+ */
+function MarcarAlMenosUna({ pregunta, detalle, onDetalle }: Props) {
+  const marcadas = detalle?.marcadas ?? []
+  const alternar = (id: number) =>
+    onDetalle({
+      ...detalle,
+      marcadas: marcadas.includes(id) ? marcadas.filter((x) => x !== id) : [...marcadas, id],
+    })
+  return (
+    <div>
+      <p className={estilos.guia}>Marca todas las que correspondan.</p>
+      <div className={estilos.opciones}>
+        {(pregunta.opciones ?? []).map((opcion) => {
+          const puesta = marcadas.includes(opcion.id)
+          return (
+            <label
+              className={`${estilos.opcion}${puesta ? ` ${estilos.elegida}` : ''}`}
+              key={opcion.id}
+            >
+              <input
+                className={estilos.control}
+                type="checkbox"
+                checked={puesta}
+                onChange={() => alternar(opcion.id)}
+              />
+              <span className={estilos.marca} aria-hidden="true" />
+              <span className={estilos.textoOpcion}>{opcion.texto}</span>
+            </label>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+/**
+ * La escala de las preguntas propias: los niveles en fila, del menor al mayor,
+ * con los rotulos de los extremos debajo. Con mas de cinco niveles, o en un
+ * telefono, pasan a una columna y cada nivel lleva su rotulo al lado.
+ *
+ * El orden es el que manda el servidor (el numero del nivel): ordenar por la
+ * letra como texto dejaria 1, 10, 2…
+ */
+function NivelesDeEscala({ pregunta, opcionElegida, onOpcion }: Props) {
+  const niveles = pregunta.opciones ?? []
+  const rotulo = (o: OpcionCandidato) => (o.texto && o.texto !== o.letra ? o.texto : null)
+  const primero = niveles[0]
+  const ultimo = niveles[niveles.length - 1]
+  const enColumna = niveles.length > 5
+  return (
+    <div className={estilos.escala}>
+      <div
+        className={enColumna ? estilos.nivelesEnColumna : estilos.niveles}
+        role="radiogroup"
+        aria-label="Niveles, del menor al mayor"
+      >
+        {niveles.map((o) => {
+          const puesto = opcionElegida === o.id
+          return (
+            <label className={`${estilos.nivel}${puesto ? ` ${estilos.puesto}` : ''}`} key={o.id}>
+              <input
+                className={estilos.control}
+                type="radio"
+                name={`nivel-${pregunta.id}`}
+                checked={puesto}
+                onChange={() => onOpcion(o.id)}
+                aria-label={rotulo(o) ? `${o.letra}, ${rotulo(o)}` : (o.letra ?? o.texto)}
+              />
+              <span className={estilos.numeroNivel}>{o.letra ?? o.texto}</span>
+              {rotulo(o) && <span className={estilos.rotuloNivel}>{rotulo(o)}</span>}
+            </label>
+          )
+        })}
+      </div>
+      {!enColumna && primero && ultimo && (rotulo(primero) || rotulo(ultimo)) && (
+        <p className={estilos.leyendaEscala} aria-hidden="true">
+          <span>{rotulo(primero) ?? ''}</span>
+          <span>{rotulo(ultimo) ?? ''}</span>
+        </p>
+      )}
     </div>
   )
 }

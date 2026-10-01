@@ -399,3 +399,52 @@ describe('al volver a entrar', () => {
     await waitFor(() => expect(ultimoDetalle()).toEqual({ orden: [12, 11, 13, 14] }))
   })
 })
+
+// ---------- Las preguntas propias de una vacante (V66) ----------
+
+describe('OPCION_MULTIPLE de las preguntas propias', () => {
+  it('manda las marcadas, y no sale nada sin al menos una', async () => {
+    await montar(pregunta('OPCION_MULTIPLE', { opciones: CUATRO }))
+    expect(screen.getByText('Marca al menos una opción.')).toBeTruthy()
+    // Sin «ninguna»: aquí no marcar nada es no haber respondido
+    expect(screen.queryByRole('checkbox', { name: /ninguna/i })).toBeNull()
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Aviso antes de mover nada' }))
+    await waitFor(() => expect(ultimoDetalle()).toEqual({ marcadas: [11] }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Espero instrucciones' }))
+    await waitFor(() => expect(ultimoDetalle()).toEqual({ marcadas: [11, 13] }))
+  })
+})
+
+describe('ESCALA de las preguntas propias', () => {
+  const DIEZ = Array.from({ length: 10 }, (_, i) => ({
+    id: 100 + i,
+    letra: String(i + 1),
+    texto: i === 0 ? 'Nada' : i === 9 ? 'Mucho' : String(i + 1),
+  }))
+
+  it('los niveles salen del 1 al 10 en ese orden, con los rótulos de los extremos (AC-22)', async () => {
+    await montar(pregunta('ESCALA', { opciones: DIEZ }))
+    const niveles = screen.getAllByRole('radio').map((r) => r.getAttribute('aria-label'))
+    expect(niveles).toEqual(['1, Nada', '2', '3', '4', '5', '6', '7', '8', '9', '10, Mucho'])
+  })
+
+  it('se responde con la opción del nivel elegido', async () => {
+    await montar(pregunta('ESCALA', { opciones: DIEZ.slice(0, 5) }))
+    fireEvent.click(screen.getByRole('radio', { name: '4' }))
+    await waitFor(() => expect(enviado[enviado.length - 1]?.opcionId).toBe(103))
+  })
+
+  it('con cinco niveles o menos, los rótulos de los extremos van debajo de la fila', async () => {
+    const cinco = [
+      { id: 1, letra: '1', texto: 'Nada' },
+      { id: 2, letra: '2', texto: '2' },
+      { id: 3, letra: '3', texto: '3' },
+      { id: 4, letra: '4', texto: '4' },
+      { id: 5, letra: '5', texto: 'Mucho' },
+    ]
+    await montar(pregunta('ESCALA', { opciones: cinco }))
+    expect(screen.getAllByText('Nada').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Mucho').length).toBeGreaterThan(0)
+  })
+})

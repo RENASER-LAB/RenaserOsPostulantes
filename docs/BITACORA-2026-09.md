@@ -16,6 +16,61 @@ no se vuelve a subir el currículum. Lo del 07/09 se documentó en
 
 ---
 
+## Cada vacante escribe sus propias preguntas: la fase 1 (30/09/2026)
+
+Hasta hoy, para que quien postula respondiera preguntas alguien tenía que llenar un Excel con los
+15 formatos del método de RENASER. Ahora **cada empresa las escribe en el panel, para cada
+vacante**: cuatro tipos, agrupados en criterios con nombre que suman 100 puntos. Cómo funciona hoy,
+en [PANEL.md](PANEL.md) › Las preguntas propias de cada vacante; el backend trae la `V66`.
+
+- **De dónde salen las preguntas:** en «Qué responderá quien postule», tres opciones —preguntas
+  propias, el banco propio de la empresa para su nivel, o sin evaluación—. **Toda vacante nueva
+  nace con las propias.** El banco de RENASER ya no se ofrece a las demás empresas, y las vacantes
+  de antes que lo rendían lo enseñan con su nombre real.
+- **El editor:** criterios con sus preguntas y un balance pegado bajo la cabecera, la guía de
+  calificación, publicar con la lista entera de lo que falta, «Copiar de otra vacante» y
+  «Recomendaciones por IA», que completa lo que falta hasta 100.
+- **Con gente dentro:** solo se tocan los puntos —se recalcula a todos al instante— y las
+  instrucciones de la IA —se vuelve a calificar a todos, sin moverlos de etapa—.
+- **La ficha:** el desglose por criterio, «Sistema 8/10 + IA 16/20», y el ajuste a mano de una
+  abierta con motivo.
+- **El portal:** responde los cuatro tipos (`Formatos.tsx`).
+- **El listado de vacantes:** la columna pasa a llamarse «Evaluación» y dice qué responde quien
+  postule. Lo pidió el usuario durante la revisión, fuera de la spec.
+- **El armazón del panel:** mide su cabecera y publica `--alto-cabecera-panel`.
+
+La sección «Prueba técnica» de la vacante no cambió: sus desplegables y su tiempo se van en la
+fase 2, que es otro trabajo.
+
+### Decisiones que aprobó el usuario
+
+- Cuatro tipos; todo suma 100 con puntos enteros; el banco de RENASER, su método y su importador
+  no se tocan.
+- **Toda vacante nueva nace con «Preguntas propias de esta vacante», también en RENASER**, y el
+  banco por nivel se elige a mano (30/09/2026). Sustituye a lo que decía la spec: que naciera con
+  el banco marcado si la empresa tenía uno propio.
+- Cada empresa usa solo su propio banco: el de RENASER deja de prestarse a las vacantes nuevas y
+  deja de poder copiarse; las que ya lo rinden lo conservan.
+- Con candidatos dentro se pueden cambiar los puntos y las instrucciones de la IA, nunca un
+  texto.
+- Una persona con `ajustar_nota` ajusta una abierta, o la pone si la IA no pudo, con motivo.
+- La columna «Evaluación» del listado, con sus textos.
+
+### Cómo se comprueba
+
+`npx playwright test herramientas/e2e/14-vacante.spec.ts herramientas/e2e/45-preguntas-propias.spec.ts
+herramientas/e2e/46-preguntas-propias-qa.spec.ts
+herramientas/e2e/47-preguntas-propias-calificacion.spec.ts`: 44 pruebas en verde en la última
+corrida de QA. ⚠️ **Escriben**, con la marca `QA-PP-0553`, y lo retiran al terminar. El 45 repite
+número con `45-gestion-de-personas-regresiones`. Las unitarias, en
+`src/panel/vacantes/preguntas/*.test.*` y `Formatos.test.tsx`; en el backend,
+`FlujoPreguntasPropiasIT`. **La IA no se probó en el preview**, que va sin cola de mensajes: la
+calificación, las recomendaciones y la recalificación se cubren en el backend con el agente
+simulado. La revisión visual del editor y del desglose queda para el usuario. Lo que QA dejó
+abierto está en [PENDIENTES.md](PENDIENTES.md).
+
+---
+
 ## La gestión de personas, y el panel pasa a un menú lateral (29/09/2026)
 
 El primer apartado de la ampliación de RR.HH.: la persona contratada por fin existe en el panel,

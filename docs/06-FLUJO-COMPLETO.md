@@ -108,15 +108,16 @@ Queda en `BORRADOR`: **todavía no aparece en el portal**.
 
 | Qué se elige | Es obligatorio |
 |---|---|
-| La evaluación del banco, encendida o apagada | — |
-| Qué evaluación responderá | **Sí, si el banco está encendido** |
+| De dónde salen sus preguntas: preguntas propias, el banco de la empresa para su nivel o sin evaluación | Siempre hay una marcada: **toda vacante nueva nace con «Preguntas propias de esta vacante»** (30/09/2026) |
+| Sus preguntas propias, publicadas | **Sí, si la vacante rinde preguntas propias** (paso 3c) |
 | Qué prueba del puesto rendirá | **Sí, salvo si la vacante rinde el cuestionario técnico** (paso 3a) |
 | Qué pesos rigen la decisión | No: sin elegir, rigen los generales |
 
-Solo se ofrecen las evaluaciones **publicadas y del nivel del puesto**. El
-backend rechaza las de otro nivel, así que ofrecerlas sería dejar elegir algo
-que va a fallar. Si la lista sale vacía, no hay ninguna publicada para ese
-nivel y hay que crearla aparte.
+«El banco de la empresa para su nivel» solo se ofrece si la empresa tiene uno
+**propio** publicado para el nivel del puesto: el de RENASER ya no se presta a
+las vacantes nuevas de otras empresas, y **en RENASER hay que elegirlo a mano**
+si la vacante tiene que rendir los 15 formatos. Desde la primera postulación, de
+dónde salen las preguntas ya no se cambia.
 
 Con las pruebas del puesto, la misma idea: **solo se ofrecen las versiones
 publicadas**, porque asignar un borrador lo rechaza el backend. Si no hay
@@ -134,6 +135,20 @@ prepararla.
 vacante eligió rendir el cuestionario técnico, publicar exige tenerlo publicado
 —y entonces la versión de plantilla de prueba deja de exigirse—. Cuál de las
 dos se pide lo decide el paso 3a.
+
+### 3c · Las preguntas propias de la vacante (30/09/2026)
+
+**Panel · la vacante → «Escribir las preguntas →»** (`/admin/vacantes/:id/preguntas`)
+
+Con «Preguntas propias de esta vacante», el equipo escribe ahí las preguntas del
+Perfil Integral: criterios con nombre y, dentro, preguntas abiertas, de opción
+única, de opción múltiple o de escala, cada una con sus puntos, hasta sumar 100.
+Puede copiarlas de otra vacante suya o pedir a la IA que complete lo que falta,
+y publicarlas; **hasta que estén publicadas, la vacante no se publica**. Quien
+postula las responde en la misma pantalla de evaluación de siempre; lo cerrado
+lo puntúa el sistema y lo abierto la IA, y la ficha enseña la nota criterio por
+criterio. El detalle, en [PANEL.md](PANEL.md) › Las preguntas propias de cada
+vacante.
 
 ### 3b · La prueba técnica del puesto
 

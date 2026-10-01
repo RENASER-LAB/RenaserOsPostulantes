@@ -107,7 +107,11 @@ vi.mock('../api/panel', () => ({
   verPreguntasDeVersion: (id: number) => preguntas(id),
   importarBanco: (...args: unknown[]) => importar(...args),
   verCatalogos: () => Promise.resolve({ nivelesPuesto: [{ codigo: 'DIRECCION', nombre: 'Directivo' }] }),
+  verSiElBancoEsPropio: () => propio(),
 }))
+
+/** Si la empresa tiene banco propio (V66). Por defecto sí: lo de siempre. */
+const propio = vi.fn(() => Promise.resolve({ propio: true }))
 
 /* Tres versiones en pantalla: «Ver qué contiene» sale tres veces. La fila del
    borrador es la unica con boton de publicar, y por ahi se la encuentra. */
@@ -452,5 +456,17 @@ describe('importar el Excel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Importar el Excel' }))
 
     expect(await screen.findByText(/85 preguntas, 340 opciones/)).toBeTruthy()
+  })
+})
+
+describe('una empresa sin banco propio (V66)', () => {
+  it('no ve el banco de RENASER ni la invitación a personalizarlo: sus preguntas van en cada vacante', async () => {
+    propio.mockResolvedValueOnce({ propio: false })
+    montar()
+    expect(
+      await screen.findByText(/Tu empresa no tiene banco por nivel: las preguntas se escriben en cada vacante/),
+    ).toBeTruthy()
+    expect(screen.queryByText('Se asigna a quien empiece ahora')).toBeNull()
+    expect(screen.queryByLabelText('La plantilla Excel del banco')).toBeNull()
   })
 })

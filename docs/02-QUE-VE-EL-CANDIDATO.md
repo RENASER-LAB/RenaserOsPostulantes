@@ -49,8 +49,11 @@ cinco acciones y el candidato no distingue "tengo que hacer algo" de "no tengo q
 
 ### ⚠️ Hay dos caminos, no uno
 
-Cada vacante decide si aplica la evaluación del banco (`vacante.aplica_evaluacion`). Eso parte el
-recorrido en dos experiencias distintas desde el primer minuto:
+Cada vacante decide si aplica una evaluación (`vacante.aplica_evaluacion`) y, desde el
+30/09/2026, de dónde salen sus preguntas: el banco de su nivel o **las preguntas propias que la
+empresa escribió para esa vacante**. Para quien postula las dos se recorren igual —la misma
+pantalla, ver «2.8 Evaluación»—; lo que parte el recorrido en dos experiencias distintas desde el
+primer minuto es que haya evaluación o no:
 
 | | Camino A · con evaluación | Camino B · sin evaluación (vacante Administrador) |
 |---|---|---|
@@ -369,7 +372,8 @@ separa los pares de consistencia). El plazo por defecto son **14 días**.
 ⚠️ **El número lo manda el backend en `EvaluacionCandidato.total`.** Nunca una constante: un
 examen de 50 y uno de 85 se recorren igual, pero el maquetado no puede dar por hecho ninguno.
 
-**Ocho formatos de respuesta**, y solo dos son "marca una opción" o "escribe un texto":
+**Ocho formatos de respuesta** en el banco, y solo dos son "marca una opción" o "escribe un
+texto" (las preguntas propias traen otros cuatro, debajo de la tabla):
 
 | Formato | Cómo se responde | Qué se manda |
 |---|---|---|
@@ -382,6 +386,20 @@ examen de 50 y uno de 85 se recorren igual, pero el maquetado no puede dar por h
 | `CD` | Rellena N campos, cada uno con su etiqueta | `{campos}` |
 
 Los `CD` traen `casosPedidos` (cuántas casillas) y `campos` (qué pide cada una).
+
+**Las preguntas propias de una vacante** (30/09/2026) se responden en esta misma pantalla, con
+cuatro tipos (`src/paginas/evaluacion/Formatos.tsx`):
+
+| Tipo | Cómo se responde | Qué se manda |
+|---|---|---|
+| `ABIERTA` | Texto | `texto` |
+| `OPCION_UNICA` | Una opción, como un `PC` | `opcionId` |
+| `OPCION_MULTIPLE` | Casillas, **al menos una**: aquí no marcar nada es no haber respondido, y no hay casilla de «ninguna» como en un `INV` | `{marcadas}` |
+| `ESCALA` | Un nivel, de menor a mayor en fila y con los rótulos de los extremos debajo. Con más de cinco niveles, o en un teléfono, pasan a una columna con el rótulo de cada nivel al lado | `opcionId` |
+
+El orden de los niveles es el que manda el servidor: ordenarlos por la letra como texto dejaría
+1, 10, 2… 🚫 A esta pantalla no llegan sus puntos, sus criterios ni «qué debe tener una buena
+respuesta».
 
 Reglas duras que el maquetado no puede romper:
 - **Se puede volver atrás y corregir.** El backend acepta guardar en cualquier orden.

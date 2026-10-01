@@ -13,7 +13,7 @@
  * habia forma de escribir la segunda desde el panel.
  */
 
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
@@ -67,6 +67,43 @@ const ESTADO_VACANTE: Record<string, string> = {
   BORRADOR: 'Borrador',
   PUBLICADA: 'Publicada',
   CERRADA: 'Cerrada',
+}
+
+/** Las mismas palabras que el estado de las propias en la configuración de la vacante. */
+const ESTADO_DE_LAS_PROPIAS: Record<string, string> = {
+  SIN_PREGUNTAS: 'Sin preguntas',
+  BORRADOR: 'Borrador',
+  PUBLICADAS: 'Publicadas',
+}
+
+/**
+ * De dónde salen las preguntas de la vacante, en corto y con los nombres de
+ * «De dónde salen sus preguntas» (V66).
+ *
+ * ⚠️ Antes decía «Evaluación del banco · Encendida», también con preguntas
+ * propias: como toda vacante nueva nace con ellas, engañaba en casi todas. Un
+ * backend anterior no manda el estado ni el préstamo, y entonces se dice lo que
+ * se sabe, sin inventar.
+ *
+ * ⚠️ El estado va en su propio elemento, de una pieza: la celda es estrecha y,
+ * como texto corrido, se partía en «Preguntas propias · Sin» / «preguntas»,
+ * que se lee como otra cosa (QA-PP-11). Puede cortarse junto al «·», no dentro.
+ */
+function evaluacionDeLaFila(v: VacantePanel): ReactNode {
+  if (!v.aplicaEvaluacion) return 'Sin evaluación'
+  if (v.origenPreguntas === 'VACANTE') {
+    const estado = v.estadoPreguntasPropias ? ESTADO_DE_LAS_PROPIAS[v.estadoPreguntasPropias] : undefined
+    if (!estado) return 'Preguntas propias'
+    return (
+      <>
+        Preguntas propias ·{' '}
+        <span className={estilos.estadoDeLasPropias}>{estado}</span>
+      </>
+    )
+  }
+  if (v.bancoPrestado === true) return 'Banco de RENASER por nivel'
+  if (v.bancoDelNivelPropio === true) return 'Banco de la empresa por nivel'
+  return 'Banco por nivel'
 }
 
 export function VacantesPanel() {
@@ -352,7 +389,7 @@ export function VacantesPanel() {
               <tr>
                 <th>Vacante</th>
                 <th>Estado</th>
-                <th>Evaluación del banco</th>
+                <th>Evaluación</th>
                 <th>Publicada</th>
                 <th />
               </tr>
@@ -362,7 +399,7 @@ export function VacantesPanel() {
                 <tr key={v.id}>
                   <td className={estilos.titulo}>{v.titulo}</td>
                   <td>{ESTADO_VACANTE[v.estado] ?? v.estado}</td>
-                  <td>{v.aplicaEvaluacion ? 'Encendida' : 'Apagada'}</td>
+                  <td>{evaluacionDeLaFila(v)}</td>
                   <td>{v.publicadaEn ? formatearFechaCorta(v.publicadaEn) : '—'}</td>
                   <td className={estilos.acciones}>
                     <Link to={rutas.adminVacante(v.id)}>Ver postulantes y gestionar</Link>

@@ -22,13 +22,15 @@
  *      otra a dar de alta un puesto; en gris son la misma linea apagada.
  */
 
+import { readFileSync } from 'node:fs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
 import { VacantesPanel } from './Vacantes'
-import type { Catalogos, SolicitudResumen } from '../api/tipos'
+import type { Catalogos, SolicitudResumen, VacantePanel } from '../api/tipos'
 
+const listarVacantes = vi.fn()
 const listarSolicitudes = vi.fn()
 const listarPuestos = vi.fn()
 const listarUsuarios = vi.fn()
@@ -38,7 +40,7 @@ const crearSolicitud = vi.fn()
 const crearPuesto = vi.fn()
 
 vi.mock('../api/panel', () => ({
-  listarVacantes: () => Promise.resolve([]),
+  listarVacantes: () => listarVacantes(),
   contarVacantesArchivadas: () => Promise.resolve({ archivadas: 0 }),
   listarAreas: () => Promise.resolve([{ id: 1, nombre: 'Tecnología', esActiva: true }]),
   listarSolicitudes: () => listarSolicitudes(),
@@ -131,6 +133,7 @@ afterEach(() => {
 })
 
 beforeEach(() => {
+  listarVacantes.mockResolvedValue([])
   crearVacante.mockResolvedValue({})
   crearSolicitud.mockResolvedValue(41)
   crearPuesto.mockResolvedValue(9)
@@ -366,5 +369,104 @@ describe('el formulario de vacante nueva espera a saber si puede existir', () =>
     }))
     expect(await screen.findByText('Coordinador de sede')).toBeTruthy()
     expect(document.querySelectorAll('form form').length).toBe(0)
+  })
+})
+
+/*
+ * La columna de la lista decía «Evaluación del banco · Encendida» también con
+ * preguntas propias, y toda vacante nueva nace con ellas (V66): engañaba en casi
+ * todas. Ahora dice de dónde salen, con los nombres de la configuración.
+ */
+describe('la lista dice de dónde salen las preguntas de cada vacante', () => {
+  const fila = (id: number, titulo: string, parte: Partial<VacantePanel>) =>
+    ({ id, titulo, estado: 'BORRADOR', publicadaEn: null, aplicaEvaluacion: true, ...parte }) as VacantePanel
+
+  async function pintarLaLista(filas: VacantePanel[]) {
+    listarVacantes.mockResolvedValue(filas)
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <MemoryRouter><VacantesPanel /></MemoryRouter>
+      </QueryClientProvider>,
+    )
+    await screen.findByRole('cell', { name: filas[0]!.titulo })
+  }
+
+  /** La celda de la columna «Evaluación» en la fila de esa vacante. */
+  const celdaDeEvaluacion = (titulo: string) => {
+    const celdas = screen.getByRole('cell', { name: titulo }).closest('tr')!.querySelectorAll('td')
+    const columna = screen.getAllByRole('columnheader').findIndex((c) => c.textContent === 'Evaluación')
+    return celdas[columna]
+  }
+
+  /** El texto de la columna «Evaluación» en la fila de esa vacante. */
+  const evaluacionDe = (titulo: string) => celdaDeEvaluacion(titulo)?.textContent
+
+  it('la cabecera ya no habla del banco', async () => {
+    await pintarLaLista([fila(1, 'Analista', { origenPreguntas: 'VACANTE', estadoPreguntasPropias: 'SIN_PREGUNTAS' })])
+    expect(screen.getByRole('columnheader', { name: 'Evaluación' })).toBeTruthy()
+    expect(screen.queryByRole('columnheader', { name: /banco/i })).toBeNull()
+    expect(screen.queryByText(/Encendida|Apagada/)).toBeNull()
+  })
+
+  it('preguntas propias, con su estado: sin preguntas, borrador o publicadas', async () => {
+    await pintarLaLista([
+      fila(1, 'Sin escribir', { origenPreguntas: 'VACANTE', estadoPreguntasPropias: 'SIN_PREGUNTAS' }),
+      fila(2, 'A medias', { origenPreguntas: 'VACANTE', estadoPreguntasPropias: 'BORRADOR' }),
+      fila(3, 'Lista', { origenPreguntas: 'VACANTE', estadoPreguntasPropias: 'PUBLICADAS' }),
+      // Un backend anterior no manda el estado: se dice el origen, sin inventar uno
+      fila(4, 'Sin dato', { origenPreguntas: 'VACANTE' }),
+    ])
+    expect(evaluacionDe('Sin escribir')).toBe('Preguntas propias · Sin preguntas')
+    expect(evaluacionDe('A medias')).toBe('Preguntas propias · Borrador')
+    expect(evaluacionDe('Lista')).toBe('Preguntas propias · Publicadas')
+    expect(evaluacionDe('Sin dato')).toBe('Preguntas propias')
+  })
+
+  /*
+   * QA-PP-11: como texto corrido, la celda se partía en «Preguntas propias · Sin» /
+   * «preguntas». El estado va en su propio elemento y ese elemento no se corta por
+   * dentro. jsdom no aplica los CSS Modules, así que la regla se lee de la hoja.
+   */
+  it('el estado de las propias va en su propio elemento, que no se parte por dentro', async () => {
+    await pintarLaLista([
+      fila(1, 'Sin escribir', { origenPreguntas: 'VACANTE', estadoPreguntasPropias: 'SIN_PREGUNTAS' }),
+      fila(2, 'A medias', { origenPreguntas: 'VACANTE', estadoPreguntasPropias: 'BORRADOR' }),
+      fila(3, 'Lista', { origenPreguntas: 'VACANTE', estadoPreguntasPropias: 'PUBLICADAS' }),
+    ])
+    for (const [titulo, estado] of [
+      ['Sin escribir', 'Sin preguntas'],
+      ['A medias', 'Borrador'],
+      ['Lista', 'Publicadas'],
+    ] as const) {
+      const pieza = [...celdaDeEvaluacion(titulo)!.querySelectorAll('span')].find((s) => s.textContent === estado)
+      expect(pieza, `«${estado}» en su propio elemento`).toBeTruthy()
+      expect(pieza!.className).toMatch(/estadoDeLasPropias/)
+    }
+    const hoja = readFileSync(`${process.cwd()}/src/panel/vacantes/Vacantes.module.css`, 'utf8')
+    expect(hoja).toMatch(/\.estadoDeLasPropias\s*\{[^}]*white-space:\s*nowrap;/)
+  })
+
+  it('el banco por nivel dice de quién es, y el prestado lleva «de RENASER»', async () => {
+    await pintarLaLista([
+      fila(1, 'Con el suyo', { origenPreguntas: 'NIVEL', bancoDelNivelPropio: true, bancoPrestado: false }),
+      fila(2, 'De antes', { origenPreguntas: 'NIVEL', bancoDelNivelPropio: false, bancoPrestado: true }),
+      fila(3, 'Sin origen', { bancoDelNivelPropio: null, bancoPrestado: null }),
+    ])
+    expect(evaluacionDe('Con el suyo')).toBe('Banco de la empresa por nivel')
+    expect(evaluacionDe('De antes')).toBe('Banco de RENASER por nivel')
+    expect(evaluacionDe('Sin origen')).toBe('Banco por nivel')
+  })
+
+  it('con la evaluación apagada dice «Sin evaluación», sea cual sea el último origen', async () => {
+    await pintarLaLista([
+      fila(1, 'Apagada con propias', {
+        aplicaEvaluacion: false,
+        origenPreguntas: 'VACANTE',
+        estadoPreguntasPropias: 'PUBLICADAS',
+      }),
+      fila(2, 'Apagada con banco', { aplicaEvaluacion: false, origenPreguntas: 'NIVEL', bancoPrestado: false }),
+    ])
+    expect(evaluacionDe('Apagada con propias')).toBe('Sin evaluación')
+    expect(evaluacionDe('Apagada con banco')).toBe('Sin evaluación')
   })
 })

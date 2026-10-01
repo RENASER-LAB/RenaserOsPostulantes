@@ -52,6 +52,15 @@
   font-weight: 600;
 }
 
+/*
+ * El estado de las preguntas propias en la columna «Evaluación», de una pieza.
+ * La celda puede partirse junto al «·», nunca dentro: «Sin» / «preguntas» se
+ * leía como otra cosa (QA-PP-11). La tabla ya rueda dentro de su envoltura.
+ */
+.estadoDeLasPropias {
+  white-space: nowrap;
+}
+
 .aviso {
   font-size: var(--t-prosa);
   color: var(--tinta2);

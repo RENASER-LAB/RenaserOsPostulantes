@@ -199,17 +199,24 @@ test.describe.serial('El recorrido entero de una vacante', () => {
    * a esta misma pantalla la casilla «Ver la tanda entera» —y una por fila del
    * ranking—, así que el selector anónimo se rompe por ambigüedad.
    */
-  test('el interruptor del banco se apaga y se vuelve a encender, y lo confirma el servidor', async ({ page }) => {
+  test('la evaluación se apaga y se vuelve a encender con el banco de la empresa, y lo confirma el servidor', async ({ page }) => {
     await abrirLaVacante(page)
-    const interruptor = page.getByRole('checkbox', { name: /La evaluación del banco/ })
+    // Desde la V66, «Qué responderá quien postule» son tres opciones. Toda vacante nueva
+    // nace con sus preguntas propias marcadas (decisión del 30/09/2026); la empresa del
+    // equipo de pruebas tiene banco propio publicado para el nivel, así que también se
+    // ofrece. Si no lo tuviera, la opción ni aparecería. Esta vacante rinde el banco.
+    const delNivel = page.getByRole('radio', { name: 'El banco de la empresa para su nivel' })
+    const sinEvaluacion = page.getByRole('radio', { name: 'Sin evaluación' })
+    await expect(page.getByRole('radio', { name: 'Preguntas propias de esta vacante' })).toBeChecked({ timeout: 15_000 })
+    await expect(delNivel).not.toBeChecked()
 
-    await interruptor.click()
-    await expect(page.getByText(/Apagada: la prueba del puesto/)).toBeVisible({ timeout: 15_000 })
-    await expect(interruptor).not.toBeChecked()
+    await sinEvaluacion.click()
+    await expect(sinEvaluacion).toBeChecked({ timeout: 15_000 })
+    await expect(page.getByText(/^Qué evaluación responderá/)).toBeHidden({ timeout: 15_000 })
 
-    await interruptor.click()
-    await expect(page.getByText(/Encendida: responderá el cuestionario/)).toBeVisible({ timeout: 15_000 })
-    await expect(interruptor).toBeChecked()
+    await delNivel.click()
+    await expect(delNivel).toBeChecked({ timeout: 15_000 })
+    await expect(page.getByText(/^Qué evaluación responderá/)).toBeVisible({ timeout: 15_000 })
   })
 
   /**

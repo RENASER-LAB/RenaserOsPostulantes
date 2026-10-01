@@ -33,6 +33,7 @@ import {
 import { verSesionDelPanel } from './api/sesion'
 import { entradaActiva, guardarPlegado, leerPlegado, menuDe, type ClaveDeEntrada, type Entrada } from './menu'
 import { useSesionPanel } from './Sesion'
+import { useAltoDeLaCabecera } from './altoDeLaCabecera'
 import estilos from './Armazon.module.css'
 
 const TITULOS: Array<[string, string]> = [
@@ -75,6 +76,9 @@ export function ArmazonPanel() {
   const { hayEquipo, nombre, salir } = useSesionPanel()
   const cache = useQueryClient()
   const { pathname } = useLocation()
+  // La barra es sticky: lo que una pantalla pega arriba (el balance del editor
+  // de preguntas) va debajo de ella, con su alto medido en --alto-cabecera-panel.
+  const medirCabecera = useAltoDeLaCabecera()
 
   const sesion = useQuery({
     queryKey: ['panel-sesion'],
@@ -131,7 +135,7 @@ export function ArmazonPanel() {
     <div className={estilos.armazon} data-plegado={plegado ? 'true' : 'false'}>
       <TituloDelPanel />
 
-      <header className={estilos.barra}>
+      <header className={estilos.barra} ref={medirCabecera}>
         <div className={estilos.barraDentro}>
           <button
             ref={botonMenu}

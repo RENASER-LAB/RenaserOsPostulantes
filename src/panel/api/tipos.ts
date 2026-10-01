@@ -183,6 +183,30 @@ export interface VacantePanel {
   intentosAbiertosSinPlazoPropio?: number | null
   /** Y cuantos se quedarian como estan por tener fecha propia. */
   intentosAbiertosConPlazoPropio?: number | null
+  /**
+   * De donde salen sus preguntas (V66): el banco del nivel o las propias de la
+   * vacante. Con la evaluacion apagada sigue diciendo el ultimo origen; lo que
+   * se marca entonces es «Sin evaluacion».
+   */
+  origenPreguntas?: 'NIVEL' | 'VACANTE'
+  /**
+   * Si la empresa tiene un banco PROPIO publicado para el nivel del puesto:
+   * solo entonces se ofrece «El banco de la empresa para su nivel». En el
+   * detalle y en la lista.
+   */
+  bancoDelNivelPropio?: boolean | null
+  /**
+   * Si rinde el banco de RENASER prestado (vacante de antes de la V66): se
+   * enseña con su nombre real y, si se cambia de opcion, ya no vuelve. En el
+   * detalle y en la lista.
+   */
+  bancoPrestado?: boolean | null
+  /**
+   * En que punto estan sus preguntas propias, con la regla del resumen del
+   * editor; `null` si no rinde preguntas propias. **Solo en la lista**: el
+   * detalle lo lee del editor, que trae ademas los puntos.
+   */
+  estadoPreguntasPropias?: 'SIN_PREGUNTAS' | 'BORRADOR' | 'PUBLICADAS' | null
 }
 
 /**
@@ -947,6 +971,62 @@ export interface DesgloseEvaluacion {
   abiertas: RespuestaAbiertaVista[]
   alineacion: AlineacionVista[]
   patrones: PatronDelCuestionario[]
+  /**
+   * El desglose por criterios de las preguntas propias de la vacante (V66).
+   * Vacio en los demas bancos, que se siguen leyendo con `abiertas` y `cerradas`.
+   */
+  porPuntos?: DesglosePorPuntos | null
+}
+
+/** Las preguntas propias, criterio por criterio, con de donde sale cada punto. */
+export interface DesglosePorPuntos {
+  /** La suma de lo que ya tiene nota. */
+  total: number
+  /** Si todas las preguntas con puntos tienen nota: solo entonces hay nota del banco. */
+  completo: boolean
+  /** Si quien mira tiene `ajustar_nota`: el panel no sabe sus permisos. */
+  puedeAjustar: boolean
+  recalificacion: 'EN_CURSO' | 'PENDIENTE' | null
+  motivoRecalificacion: string | null
+  criterios: CriterioDelDesglose[]
+  sinCriterio: PreguntaDelDesglose[]
+}
+
+export interface CriterioDelDesglose {
+  id: number
+  nombre: string
+  queEvalua: string | null
+  maximo: number
+  /** Vacia mientras falte alguna abierta: un criterio a medias no enseña nota parcial. */
+  nota: number | null
+  sistema: number
+  sistemaMaximo: number
+  ia: number
+  iaMaximo: number
+  pendiente: boolean
+  preguntas: PreguntaDelDesglose[]
+}
+
+export interface PreguntaDelDesglose {
+  preguntaId: number
+  respuestaId: number | null
+  tipo: string
+  enunciado: string
+  maximo: number
+  obtenido: number | null
+  pendiente: boolean
+  respuesta: string | null
+  opcionesElegidas: string[]
+  explicacion: string | null
+  evidenciaCitada: string | null
+  /** La nota que puso la IA, cuando una persona la ajusto despues. */
+  puntajeIa: number | null
+  ajustada: boolean
+  ajustadaPor: string | null
+  ajustadaEn: FechaIso | null
+  motivoAjuste: string | null
+  /** Una pregunta de 0 puntos: se guarda y se ve, pero no suma. */
+  sinPuntos: boolean
 }
 
 export interface RankingVacante {
