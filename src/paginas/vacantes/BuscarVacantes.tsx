@@ -28,7 +28,17 @@
  * hasta esa tarjeta. Si la lista se abre de nuevo desde la navegación, la
  * entrada es otra y no se desplaza nada.
  *
- * ## La disposición (ciclo 2, 25/09/2026)
+ * ## La disposición desde el 01/10/2026: a la manera de LinkedIn
+ *
+ * Desde 641 px los filtros salen de la columna y pasan a una barra de
+ * desplegables bajo la banda de búsqueda, con «Ordenar por» a su derecha. Desde 1024
+ * px, además, la pantalla se parte: la lista a la izquierda y, a la derecha, la
+ * vacante elegida entera (`FichaDeVacante`), que se elige pulsando su tarjeta
+ * sin salir de aquí. Hasta 640 px sigue lo que viene a continuación, que fue la
+ * disposición de todos los anchos hasta esa fecha. Cuál se pinta lo decide
+ * `useCorte`.
+ *
+ * ## La disposición del ciclo 2 (25/09/2026), que queda en el teléfono
  *
  * En escritorio, la fila del contador con «Ordenar por» a todo el ancho; debajo,
  * una columna de filtros a la izquierda —los grupos Publicada, Ciudad, Modalidad
@@ -61,9 +71,18 @@ import { useQuery } from '@tanstack/react-query'
 import { useLocation, useSearchParams } from 'react-router-dom'
 import { catalogoUbigeo, listarVacantes } from '@/api/portal'
 import { ahora as ahoraDelServidor } from '@/dominio/reloj'
-import { IconoCruz, IconoDesplegar } from '@/ui/Iconos'
-import { Tarjeta } from './Tarjeta'
+import { IconoCruz, IconoDesplegar, IconoLupa } from '@/ui/Iconos'
+import { Button } from '@/ui/shadcn/button'
+import { Checkbox } from '@/ui/shadcn/checkbox'
+import { Input } from '@/ui/shadcn/input'
+import { Popover, PopoverContent, PopoverTrigger } from '@/ui/shadcn/popover'
+import { RadioGroup, RadioGroupItem } from '@/ui/shadcn/radio-group'
+import { ToggleGroup, ToggleGroupItem } from '@/ui/shadcn/toggle-group'
+import { cn } from '@/ui/shadcn/utils'
+import { FilaDeVacante } from './FilaDeVacante'
+import { PanelDeVacante } from './PanelDeVacante'
 import {
+  bajadaDeLaBanda,
   contador,
   detalleDelContador,
   escribirEstado,
@@ -92,6 +111,56 @@ const CLAVE_DE_VUELTA = 'vacantes:vuelta'
 /** Cuánto se espera desde la última letra antes de anunciar el contador. */
 const ESPERA_DEL_ANUNCIO = 500
 
+/**
+ * Desde aquí los filtros son una barra de desplegables encima de la lista; por
+ * debajo, la columna que se pliega tras «Filtrar» del teléfono.
+ */
+const EN_BARRA = '(min-width: 641px)'
+
+/** Desde aquí la pantalla se parte: la lista a la izquierda y la vacante elegida a la derecha. */
+const PARTIDA = '(min-width: 1024px)'
+
+/**
+ * Si la ventana cumple el corte, y se entera si cambia.
+ *
+ * ⚠️ **La forma la decide el CSS; esto decide solo lo que el CSS no puede**: si
+ * los filtros se pintan en la barra o en la columna, y si una tarjeta elige o
+ * abre. Sin `matchMedia` —jsdom, o un WebView muy viejo— se queda en la
+ * disposición de una columna, que funciona a cualquier ancho.
+ */
+function useCorte(consulta: string): boolean {
+  const [cumple, setCumple] = useState(
+    () => typeof window.matchMedia === 'function' && window.matchMedia(consulta).matches,
+  )
+  useEffect(() => {
+    if (typeof window.matchMedia !== 'function') return
+    const medida = window.matchMedia(consulta)
+    const alCambiar = () => setCumple(medida.matches)
+    alCambiar()
+    medida.addEventListener('change', alCambiar)
+    return () => medida.removeEventListener('change', alCambiar)
+  }, [consulta])
+  return cumple
+}
+
+/**
+ * Un grupo de filtros, como datos: la barra lo pinta con las piezas de shadcn y
+ * la columna del teléfono con casillas del sistema.
+ */
+interface GrupoDeFiltro {
+  clave: string
+  titulo: string
+  /** Cuántas opciones del grupo están marcadas: lo dice el botón de la barra. */
+  marcadas: number
+  /** «Publicada» elige una; ciudad, modalidad y empresa, varias. */
+  tipo: 'una' | 'varias'
+  opciones: Array<{ valor: string; nombre: string; cantidad: number; marcada: boolean }>
+  elegir: (valor: string) => void
+}
+
+/** El valor de «Cualquier fecha» en los radios: Radix no admite uno vacío. */
+const CUALQUIER_FECHA = 'cualquiera'
+
 const NOMBRE_DEL_ORDEN: Record<Orden, string> = {
   relevantes: 'Ordenadas por relevancia',
   recientes: 'Ordenadas por más recientes',
@@ -110,6 +179,17 @@ export function BuscarVacantes() {
   const botonesDeEtiqueta = useRef<(HTMLButtonElement | null)[]>([])
   /** Qué etiqueta recibe el foco después de quitar una, o `null`. */
   const focoPendiente = useRef<number | null>(null)
+  const enBarra = useCorte(EN_BARRA)
+  const partida = useCorte(PARTIDA)
+  const panel = useRef<HTMLElement>(null)
+  /** Si la vacante se eligió con el teclado: entonces el foco salta al panel. */
+  const focoAlPanel = useRef(false)
+  /*
+    La vacante elegida viaja en la dirección (`?vacante=27`) para que se pueda
+    compartir y para que, al volver de postular, siga elegida. Se guarda aparte
+    porque `escribir` arma la dirección desde el estado y la perdería.
+  */
+  const vacanteVigente = useRef<string | null>(params.get('vacante'))
 
   const consulta = useQuery({ queryKey: ['vacantes'], queryFn: listarVacantes })
   const vacantes = useMemo(
@@ -177,6 +257,7 @@ export function BuscarVacantes() {
   useEffect(() => {
     const direccion = params.toString()
     const alcanzada = enVuelo.current.findIndex((e) => e.direccion === direccion)
+    if (alcanzada === -1) vacanteVigente.current = params.get('vacante')
     enVuelo.current = alcanzada === -1 ? [] : enVuelo.current.slice(alcanzada + 1)
   }, [params])
 
@@ -186,8 +267,16 @@ export function BuscarVacantes() {
 
   function escribir(siguiente: Estado) {
     const direccion = escribirEstado(siguiente)
+    if (vacanteVigente.current) direccion.set('vacante', vacanteVigente.current)
     enVuelo.current.push({ direccion: direccion.toString(), estado: siguiente })
     setParams(direccion, { replace: true })
+  }
+
+  /* Elegir no ensucia el historial, como filtrar: atrás sale de `/vacantes`. */
+  function elegir(id: number, porTeclado: boolean) {
+    vacanteVigente.current = String(id)
+    focoAlPanel.current = porTeclado
+    escribir(vigente())
   }
 
   function cambiarQ(texto: string) {
@@ -321,22 +410,414 @@ export function BuscarVacantes() {
     return () => cancelAnimationFrame(cuadro)
   }, [cargando, fallo, location.key])
 
+  /*
+    La vacante del panel: la que pide la dirección si sigue en la lista, y si no
+    —un filtro la dejó fuera, o no se eligió ninguna— la primera. El panel pinta
+    con los datos de la lista: `GET /vacantes` trae lo mismo que la ficha.
+  */
+  const pedida = Number(params.get('vacante')) || null
+  const laElegida = partida ? (lista.find((v) => v.vacante.id === pedida) ?? lista[0] ?? null) : null
+  const elegida = laElegida?.vacante ?? null
+
+  // Al cambiar de vacante, el panel vuelve arriba; y si se eligió con Intro, el foco va a su título.
+  useEffect(() => {
+    if (!elegida) return
+    panel.current?.scrollTo?.({ top: 0 })
+    if (focoAlPanel.current) {
+      focoAlPanel.current = false
+      document.getElementById('vacante-elegida-titulo')?.focus()
+    }
+    // Solo cuando cambia cuál: el objeto se rehace en cada render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [elegida?.id])
+
   function recordar(id: number) {
     sessionStorage.setItem(CLAVE_DE_VUELTA, JSON.stringify({ id, key: location.key }))
   }
 
-  /* La tecla «Buscar» del teclado del teléfono cierra el teclado; no recarga ni navega. */
+  /* «Buscar» —el botón o la tecla del teléfono— cierra el teclado; no recarga ni navega. */
   function alEnviar(evento: FormEvent) {
     evento.preventDefault()
     buscador.current?.blur()
   }
 
+  /*
+    Las piezas que las dos disposiciones comparten —la de la barra, desde 641
+    px, y la de la columna que se pliega, en el teléfono—: se escriben una vez y
+    cada disposición las coloca donde le toca.
+  */
+  const elAviso = ninguna ? (
+    <div className={estilos.ninguna}>
+      <p className={estilos.contador}>{textoDelContador}.</p>
+      <p className={estilos.hayVacantes}>Hay {vacantesEnPlural(total)}.</p>
+      <button
+        className={estilos.verTodas}
+        type="button"
+        onClick={verTodas}
+        data-rotulo={`Ver las ${total} vacantes`}
+      >
+        Ver las {total} vacantes
+      </button>
+    </div>
+  ) : (
+    !cargando && (
+      <p className={estilos.contador}>
+        <span className={estilos.cuenta}>{textoDelContador}</span>
+        {detalle && <span className={estilos.detalle}> {detalle}</span>}
+      </p>
+    )
+  )
+
+  const losGrupos: GrupoDeFiltro[] = [
+    ...(fechas.length > 0
+      ? [
+          {
+            clave: 'publicada',
+            titulo: 'Publicada',
+            marcadas: estado.filtros.publicada ? 1 : 0,
+            tipo: 'una' as const,
+            opciones: fechas.map((opcion) => ({
+              valor: opcion.valor ?? CUALQUIER_FECHA,
+              nombre: opcion.nombre,
+              cantidad: opcion.cantidad,
+              marcada: estado.filtros.publicada === opcion.valor,
+            })),
+            elegir: (valor: string) =>
+              cambiarFiltros({
+                ...vigente().filtros,
+                publicada: valor === CUALQUIER_FECHA ? null : (valor as Ventana),
+              }),
+          },
+        ]
+      : []),
+    ...grupos.map((grupo) => ({
+      clave: grupo.clave,
+      titulo: grupo.titulo,
+      marcadas: estado.filtros[grupo.clave].length,
+      tipo: 'varias' as const,
+      opciones: grupo.opciones.map((opcion) => ({
+        valor: opcion.valor,
+        nombre: opcion.nombre,
+        cantidad: opcion.cantidad,
+        marcada: estado.filtros[grupo.clave].includes(opcion.valor),
+      })),
+      elegir: (valor: string) => alternar(grupo.clave, valor),
+    })),
+  ]
+
+  /* Las opciones con las casillas del sistema: la columna que se pliega del teléfono. */
+  function opcionesDelSistema(g: GrupoDeFiltro) {
+    return g.opciones.map((opcion) => (
+      <label className={estilos.opcion} key={opcion.valor}>
+        <input
+          className={estilos.casilla}
+          type={g.tipo === 'una' ? 'radio' : 'checkbox'}
+          name={g.tipo === 'una' ? g.clave : undefined}
+          value={opcion.valor}
+          checked={opcion.marcada}
+          onChange={() => g.elegir(opcion.valor)}
+        />
+        <span className={estilos.nombreDeOpcion}>{opcion.nombre}</span>{' '}
+        <span className={estilos.cantidad}>({opcion.cantidad})</span>
+      </label>
+    ))
+  }
+
+  /*
+    Las opciones dentro del desplegable de la barra, con las casillas y los radios
+    de shadcn (Radix por dentro). Cada fila es una etiqueta entera de 44 px: se
+    acierta pulsando el texto, no solo la casilla.
+  */
+  function opcionesDelDesplegable(g: GrupoDeFiltro) {
+    const fila =
+      'flex min-h-11 cursor-pointer items-center gap-3 rounded-md px-2.5 text-sm text-foreground hover:bg-accent'
+    const cuantas = (cantidad: number) => (
+      <span className="ml-auto pl-3 text-xs text-muted-foreground tabular-nums">({cantidad})</span>
+    )
+    if (g.tipo === 'una') {
+      return (
+        <RadioGroup
+          id={`opciones-${g.clave}`}
+          aria-labelledby={`grupo-${g.clave}`}
+          value={g.opciones.find((o) => o.marcada)?.valor ?? CUALQUIER_FECHA}
+          onValueChange={g.elegir}
+          className="gap-0"
+        >
+          {g.opciones.map((opcion) => (
+            <label className={fila} key={opcion.valor}>
+              <RadioGroupItem value={opcion.valor} />
+              <span className="min-w-0 break-words">{opcion.nombre}</span>
+              {cuantas(opcion.cantidad)}
+            </label>
+          ))}
+        </RadioGroup>
+      )
+    }
+    return (
+      <div id={`opciones-${g.clave}`} role="group" aria-labelledby={`grupo-${g.clave}`} className="flex flex-col">
+        {g.opciones.map((opcion) => (
+          <label className={fila} key={opcion.valor}>
+            <Checkbox checked={opcion.marcada} onCheckedChange={() => g.elegir(opcion.valor)} />
+            <span className="min-w-0 break-words">{opcion.nombre}</span>
+            {cuantas(opcion.cantidad)}
+          </label>
+        ))}
+      </div>
+    )
+  }
+
+  /*
+    La barra de filtros desde 641 px: un desplegable por grupo (Popover de
+    shadcn) y, empujado a la derecha, el orden. Radix lleva lo que antes se
+    escribía a mano: Escape cierra y devuelve el foco al botón, pulsar fuera
+    cierra, y abrir uno cierra el anterior.
+  */
+  const laBarra = (
+    <div
+      className={cn(
+        'relative z-[2] flex flex-wrap items-center gap-2 border-b border-border-strong pb-5',
+        partida && 'col-span-2',
+      )}
+    >
+      {cargando &&
+        [0, 1, 2].map((n) => (
+          <span
+            key={n}
+            aria-hidden="true"
+            className="h-10 w-28 animate-pulse rounded-md bg-muted motion-reduce:animate-none"
+          />
+        ))}
+      {hayQueAcotar &&
+        losGrupos.map((g) => (
+          <Popover key={g.clave}>
+            <PopoverTrigger asChild>
+              <Button
+                id={`grupo-${g.clave}`}
+                variant="outline"
+                className={cn(
+                  'group h-10 gap-2 border-input bg-card px-3.5 text-sm font-medium text-foreground shadow-none',
+                  g.marcadas > 0 && 'border-primary bg-primary/[0.06] text-primary-hover hover:bg-primary/10',
+                )}
+              >
+                {g.titulo}
+                {/* Se ve el número; se oye «Ciudad, 2 marcadas». */}
+                {g.marcadas > 0 && (
+                  <>
+                    <span
+                      aria-hidden="true"
+                      className="grid h-5 min-w-5 place-items-center rounded-full bg-primary px-1.5 text-[11px] font-semibold text-primary-foreground tabular-nums"
+                    >
+                      {g.marcadas}
+                    </span>
+                    <span className="sr-only">
+                      , {g.marcadas} {g.marcadas === 1 ? 'marcada' : 'marcadas'}
+                    </span>
+                  </>
+                )}
+                <IconoDesplegar
+                  tamano={16}
+                  className="text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180 motion-reduce:transition-none"
+                />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="max-h-[min(60vh,26rem)] w-72 overflow-y-auto p-1.5">
+              {opcionesDelDesplegable(g)}
+            </PopoverContent>
+          </Popover>
+        ))}
+      {/* A la derecha, como en LinkedIn: primero se acota y después se ordena (01/10/2026). */}
+      <div className="ml-auto flex items-center gap-3">
+        <span id="ordenar-por" className="text-sm text-muted-foreground">
+          Ordenar por
+        </span>
+        <ToggleGroup
+          type="single"
+          variant="outline"
+          value={estado.orden}
+          onValueChange={(orden) => {
+            // Radix deja desmarcar la elegida; aquí siempre hay un orden.
+            if (orden) cambiarOrden(orden as Orden)
+          }}
+          aria-labelledby="ordenar-por"
+          className="bg-card"
+        >
+          {(['relevantes', 'recientes'] as const).map((orden) => (
+            <ToggleGroupItem
+              key={orden}
+              value={orden}
+              className="h-10 border-input px-4 text-sm font-medium data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+            >
+              {orden === 'relevantes' ? 'Relevantes' : 'Recientes'}
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
+      </div>
+    </div>
+  )
+
+  /*
+    El orden en el teléfono: dos radios del sistema bajo el contador. Siempre,
+    con o sin texto, y con «Relevantes» marcado de entrada. Sin texto,
+    «Relevantes» pone primero las vacantes que más dicen de sí mismas (ver
+    `completitudDe`).
+  */
+  const elOrdenDelTelefono = (
+    <div className={estilos.orden} role="radiogroup" aria-labelledby="ordenar-por">
+      <span className={estilos.tituloDelOrden} id="ordenar-por">
+        Ordenar por
+      </span>
+      <span className={estilos.opcionesDeOrden}>
+        {(['relevantes', 'recientes'] as const).map((orden) => (
+          <label className={estilos.opcionDeOrden} key={orden}>
+            <input
+              className={estilos.soloLectores}
+              type="radio"
+              name="orden"
+              value={orden}
+              checked={estado.orden === orden}
+              onChange={() => cambiarOrden(orden)}
+            />
+            <span className={estilos.caraDelOrden}>
+              {orden === 'relevantes' ? 'Relevantes' : 'Recientes'}
+            </span>
+          </label>
+        ))}
+      </span>
+    </div>
+  )
+
+  /* Las etiquetas de lo que está filtrando, con su equis: quitar una es pulsarla. */
+  const lasEtiquetas = activas.length > 0 && (
+    <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Filtros activos">
+      <ul role="list" className="m-0 flex max-w-full list-none flex-wrap gap-2 p-0">
+        {activas.map((etiqueta, i) => (
+          <li key={`${etiqueta.grupo}-${etiqueta.valor}`} className="max-w-full min-w-0">
+            <Button
+              ref={(nodo: HTMLButtonElement | null) => {
+                botonesDeEtiqueta.current[i] = nodo
+              }}
+              type="button"
+              variant="outline"
+              aria-label={`Quitar filtro ${etiqueta.nombre}`}
+              onClick={() => quitarEtiqueta(etiqueta, i)}
+              className="h-11 max-w-full gap-1.5 rounded-full border-border-strong bg-card pr-2.5 pl-3.5 text-left text-sm font-medium break-words whitespace-normal shadow-none sm:h-9"
+            >
+              {etiqueta.nombre}
+              <IconoCruz tamano={14} className="text-muted-foreground" />
+            </Button>
+          </li>
+        ))}
+      </ul>
+      {hayFiltros(estado.filtros) && (
+        <Button
+          type="button"
+          variant="link"
+          onClick={quitarFiltros}
+          className="h-11 px-2 text-sm text-tinta2 underline underline-offset-4 hover:text-foreground sm:h-9"
+        >
+          Quitar filtros
+        </Button>
+      )}
+    </div>
+  )
+
+  const laLista = cargando ? (
+    <div className="flex flex-col gap-3" aria-busy="true" aria-label="Buscando vacantes">
+      {[0, 1, 2].map((n) => (
+        <div key={n} className="flex gap-4 rounded-xl border border-border-strong bg-card p-4">
+          <div className="size-11 shrink-0 animate-pulse rounded-lg bg-muted motion-reduce:animate-none" />
+          <div className="flex flex-1 flex-col gap-2.5 pt-1">
+            <div className="h-3.5 w-3/5 animate-pulse rounded bg-muted motion-reduce:animate-none" />
+            <div className="h-3 w-2/5 animate-pulse rounded bg-muted motion-reduce:animate-none" />
+            <div className="h-5 w-4/5 animate-pulse rounded bg-muted motion-reduce:animate-none" />
+          </div>
+        </div>
+      ))}
+    </div>
+  ) : (
+    lista.length > 0 && (
+      <ul role="list" aria-label="Vacantes" className="m-0 flex list-none flex-col gap-3 p-0">
+        {lista.map((v) => (
+          <li id={`vacante-${v.vacante.id}`} key={v.vacante.id}>
+            <FilaDeVacante
+              vacante={v.vacante}
+              publicada={publicadaHace(v.publicadaEn, ahora)}
+              // Pantalla partida: la fila elige la vacante del panel; si no, abre su ficha.
+              elegida={partida && elegida?.id === v.vacante.id}
+              alElegir={partida ? (porTeclado) => elegir(v.vacante.id, porTeclado) : undefined}
+              alAbrir={partida ? undefined : () => recordar(v.vacante.id)}
+            />
+          </li>
+        ))}
+      </ul>
+    )
+  )
+
   botonesDeEtiqueta.current.length = activas.length
 
   return (
     <div className={estilos.pagina}>
-      <div className={estilos.encabezado}>
-        <h1 className={estilos.titular}>Vacantes abiertas</h1>
+      {/*
+        La banda de búsqueda (01/10/2026): el titular, cuántas hay y el buscador,
+        juntos en una superficie arriba, con el campo y el botón de shadcn.
+      */}
+      <div className="mt-2 rounded-xl border border-border-strong bg-card px-5 py-6 sm:px-8 sm:py-7">
+        <h1 className="m-0 text-[length:var(--t-encabezado)] leading-tight font-semibold tracking-tight text-foreground">
+          Vacantes abiertas
+        </h1>
+        {!sinVacantes && (
+          <>
+            <p className="mt-2 text-base text-tinta2">{bajadaDeLaBanda(cargando || fallo ? null : total)}</p>
+            <form className="mt-5 flex max-w-3xl gap-3" role="search" onSubmit={alEnviar}>
+              {/* Oculta a la vista desde el 01/10/2026: repetía el titular de encima, y la lupa
+                  ya dice que es un buscador. Los lectores de pantalla la siguen leyendo. */}
+              <label className="sr-only" htmlFor="buscar-vacantes">
+                Buscar vacantes
+              </label>
+              <div className="relative min-w-0 flex-1">
+                <IconoLupa
+                  tamano={20}
+                  className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-muted-foreground"
+                />
+                {/* 16 px de letra también en escritorio: por debajo iOS hace zoom al enfocar. */}
+                <Input
+                  ref={buscador}
+                  id="buscar-vacantes"
+                  type="search"
+                  enterKeyHint="search"
+                  autoComplete="off"
+                  placeholder="Puesto, empresa o ciudad"
+                  value={q}
+                  onChange={(e) => cambiarQ(e.target.value)}
+                  className="h-12 bg-card pr-12 pl-11 text-base shadow-none md:text-base [&::-webkit-search-cancel-button]:appearance-none"
+                />
+                {q !== '' && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Borrar búsqueda"
+                    onClick={() => {
+                      cambiarQ('')
+                      buscador.current?.focus()
+                    }}
+                    className="absolute top-1/2 right-1 size-10 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    <IconoCruz tamano={18} />
+                  </Button>
+                )}
+              </div>
+              {/*
+                La lista ya se acota al escribir, así que «Buscar» no trae nada nuevo: es el
+                gesto que espera quien viene de cualquier bolsa de empleo. En el teléfono
+                se va: el teclado trae su tecla, que hace lo mismo.
+              */}
+              <Button type="submit" className="h-12 px-6 text-sm hover:bg-primary-hover max-sm:hidden">
+                Buscar
+              </Button>
+            </form>
+          </>
+        )}
       </div>
 
       {sinVacantes ? (
@@ -348,38 +829,6 @@ export function BuscarVacantes() {
         </div>
       ) : (
         <>
-          <form className={estilos.buscador} role="search" onSubmit={alEnviar}>
-            <label className={estilos.etiquetaBuscador} htmlFor="buscar-vacantes">
-              Buscar vacantes
-            </label>
-            <div className={estilos.cajaBuscador}>
-              <input
-                ref={buscador}
-                id="buscar-vacantes"
-                className={estilos.entrada}
-                type="search"
-                enterKeyHint="search"
-                autoComplete="off"
-                placeholder="Puesto, empresa o ciudad"
-                value={q}
-                onChange={(e) => cambiarQ(e.target.value)}
-              />
-              {q !== '' && (
-                <button
-                  className={estilos.borrar}
-                  type="button"
-                  aria-label="Borrar búsqueda"
-                  onClick={() => {
-                    cambiarQ('')
-                    buscador.current?.focus()
-                  }}
-                >
-                  <IconoCruz tamano={18} />
-                </button>
-              )}
-            </div>
-          </form>
-
           <p className={estilos.soloLectores} aria-live="polite" aria-atomic="true">
             {anuncio}
           </p>
@@ -401,6 +850,45 @@ export function BuscarVacantes() {
                 Intentar de nuevo
               </button>
             </div>
+          ) : enBarra ? (
+            /*
+              Desde 641 px: la barra a todo el ancho y, debajo, la lista; desde
+              1024, a su derecha, el panel con la vacante elegida. En el
+              documento va como se ve: filtros y orden, contador, etiquetas,
+              filas y panel.
+            */
+            <div
+              className={cn(
+                'mt-8 grid items-start gap-5',
+                partida && 'grid-cols-[minmax(0,26rem)_minmax(0,1fr)]',
+              )}
+            >
+              {laBarra}
+              <div className="flex min-w-0 flex-col gap-3">
+                <div className={estilos.filaContador}>{elAviso}</div>
+                {lasEtiquetas}
+                {laLista}
+              </div>
+              {laElegida && (
+                /*
+                  Pegado bajo la cabecera mientras la lista baja, y con su propio
+                  desplazamiento: una vacante larga se lee entera sin perder la
+                  lista de vista.
+                */
+                <section
+                  ref={panel}
+                  aria-labelledby="vacante-elegida-titulo"
+                  className="sticky top-[calc(var(--alto-cabecera)+12px)] max-h-[calc(100vh-var(--alto-cabecera)-24px)] overflow-y-auto overscroll-contain rounded-xl"
+                >
+                  <PanelDeVacante
+                    key={laElegida.vacante.id}
+                    vacante={laElegida.vacante}
+                    publicada={publicadaHace(laElegida.publicadaEn, ahora)}
+                    idTitulo="vacante-elegida-titulo"
+                  />
+                </section>
+              )}
+            </div>
           ) : (
             <div className={estilos.reparto}>
               {/*
@@ -414,54 +902,8 @@ export function BuscarVacantes() {
                 dice «no hay vacantes»: las hay, solo que ninguna coincide.
               */}
               <div className={estilos.filaContador}>
-                {ninguna ? (
-                  <div className={estilos.ninguna}>
-                    <p className={estilos.contador}>{textoDelContador}.</p>
-                    <p className={estilos.hayVacantes}>Hay {vacantesEnPlural(total)}.</p>
-                    <button
-                      className={estilos.verTodas}
-                      type="button"
-                      onClick={verTodas}
-                      data-rotulo={`Ver las ${total} vacantes`}
-                    >
-                      Ver las {total} vacantes
-                    </button>
-                  </div>
-                ) : (
-                  !cargando && (
-                    <p className={estilos.contador}>
-                      <span className={estilos.cuenta}>{textoDelContador}</span>
-                      {detalle && <span className={estilos.detalle}> {detalle}</span>}
-                    </p>
-                  )
-                )}
-                {/*
-                  Siempre, con o sin texto, y con «Relevantes» marcado de
-                  entrada. Sin texto, «Relevantes» pone primero las vacantes
-                  que más dicen de sí mismas (ver `completitudDe`).
-                */}
-                <div className={estilos.orden} role="radiogroup" aria-labelledby="ordenar-por">
-                  <span className={estilos.tituloDelOrden} id="ordenar-por">
-                    Ordenar por
-                  </span>
-                  <span className={estilos.opcionesDeOrden}>
-                    {(['relevantes', 'recientes'] as const).map((orden) => (
-                      <label className={estilos.opcionDeOrden} key={orden}>
-                        <input
-                          className={estilos.soloLectores}
-                          type="radio"
-                          name="orden"
-                          value={orden}
-                          checked={estado.orden === orden}
-                          onChange={() => cambiarOrden(orden)}
-                        />
-                        <span className={estilos.caraDelOrden}>
-                          {orden === 'relevantes' ? 'Relevantes' : 'Recientes'}
-                        </span>
-                      </label>
-                    ))}
-                  </span>
-                </div>
+                {elAviso}
+                {elOrdenDelTelefono}
                 {hayQueAcotar && (
                   <button
                     className={estilos.filtrar}
@@ -489,68 +931,22 @@ export function BuscarVacantes() {
                     id="filtros-de-vacantes"
                     className={`${estilos.filtros} ${filtrosAbiertos ? estilos.filtrosAbiertos : ''}`}
                   >
-                    {fechas.length > 0 && (
-                      <div className={estilos.grupo}>
+                    {losGrupos.map((g) => (
+                      <div className={estilos.grupo} key={g.clave}>
                         <CabezaDelGrupo
-                          clave="publicada"
-                          titulo="Publicada"
-                          abierto={!plegados.has('publicada')}
+                          clave={g.clave}
+                          titulo={g.titulo}
+                          abierto={!plegados.has(g.clave)}
                           alPulsar={plegar}
                         />
                         <div
-                          id="opciones-publicada"
+                          id={`opciones-${g.clave}`}
                           className={estilos.opciones}
-                          role="radiogroup"
-                          aria-labelledby="grupo-publicada"
-                          hidden={plegados.has('publicada')}
+                          role={g.tipo === 'una' ? 'radiogroup' : 'group'}
+                          aria-labelledby={`grupo-${g.clave}`}
+                          hidden={plegados.has(g.clave)}
                         >
-                          {fechas.map((opcion) => (
-                            <label className={estilos.opcion} key={opcion.valor ?? 'cualquiera'}>
-                              <input
-                                className={estilos.casilla}
-                                type="radio"
-                                name="publicada"
-                                value={opcion.valor ?? ''}
-                                checked={estado.filtros.publicada === opcion.valor}
-                                onChange={() =>
-                                  cambiarFiltros({ ...vigente().filtros, publicada: opcion.valor as Ventana | null })
-                                }
-                              />
-                              <span className={estilos.nombreDeOpcion}>{opcion.nombre}</span>{' '}
-                              <span className={estilos.cantidad}>({opcion.cantidad})</span>
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {grupos.map((grupo) => (
-                      <div className={estilos.grupo} key={grupo.clave}>
-                        <CabezaDelGrupo
-                          clave={grupo.clave}
-                          titulo={grupo.titulo}
-                          abierto={!plegados.has(grupo.clave)}
-                          alPulsar={plegar}
-                        />
-                        <div
-                          id={`opciones-${grupo.clave}`}
-                          className={estilos.opciones}
-                          role="group"
-                          aria-labelledby={`grupo-${grupo.clave}`}
-                          hidden={plegados.has(grupo.clave)}
-                        >
-                          {grupo.opciones.map((opcion) => (
-                            <label className={estilos.opcion} key={opcion.valor}>
-                              <input
-                                className={estilos.casilla}
-                                type="checkbox"
-                                checked={estado.filtros[grupo.clave].includes(opcion.valor)}
-                                onChange={() => alternar(grupo.clave, opcion.valor)}
-                              />
-                              <span className={estilos.nombreDeOpcion}>{opcion.nombre}</span>{' '}
-                              <span className={estilos.cantidad}>({opcion.cantidad})</span>
-                            </label>
-                          ))}
+                          {opcionesDelSistema(g)}
                         </div>
                       </div>
                     ))}
@@ -560,74 +956,13 @@ export function BuscarVacantes() {
 
               {/*
                 La columna de resultados: las etiquetas activas encima de las
-                tarjetas. Van aquí y no en la de filtros para que marcar una
+                filas. Van aquí y no en la de filtros para que marcar una
                 casilla no mueva los grupos bajo el puntero; en el documento
                 siguen después de los filtros, que es su turno en Tab.
               */}
               <div className={estilos.resultados}>
-                {activas.length > 0 && (
-                  <div className={estilos.etiquetas} role="group" aria-label="Filtros activos">
-                    <ul className={estilos.listaDeEtiquetas} role="list">
-                      {activas.map((etiqueta, i) => (
-                        <li key={`${etiqueta.grupo}-${etiqueta.valor}`}>
-                          <button
-                            ref={(nodo) => {
-                              botonesDeEtiqueta.current[i] = nodo
-                            }}
-                            className={estilos.etiqueta}
-                            type="button"
-                            aria-label={`Quitar filtro ${etiqueta.nombre}`}
-                            onClick={() => quitarEtiqueta(etiqueta, i)}
-                          >
-                            {etiqueta.nombre}
-                            <IconoCruz tamano={16} className={estilos.cruz} />
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                    {hayFiltros(estado.filtros) && (
-                      <button className={estilos.quitarFiltros} type="button" onClick={quitarFiltros}>
-                        Quitar filtros
-                      </button>
-                    )}
-                  </div>
-                )}
-
-                {cargando ? (
-                  <div className={estilos.lista} aria-busy="true" aria-label="Buscando vacantes">
-                    {[0, 1, 2].map((n) => (
-                      <div className={estilos.esqueleto} key={n}>
-                        <div className={estilos.esqueletoDentro}>
-                          <div className={estilos.esqueletoCuerpo}>
-                            <div className={`${estilos.barra} ${estilos.barraCorta}`} />
-                            <div className={estilos.barra} />
-                            <div className={`${estilos.barra} ${estilos.barraMedia}`} />
-                          </div>
-                          <div className={estilos.esqueletoDatos}>
-                            <div className={`${estilos.barra} ${estilos.barraMedia}`} />
-                            <div className={`${estilos.barra} ${estilos.barraMedia}`} />
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  lista.length > 0 && (
-                    <ul className={estilos.lista} role="list" aria-label="Vacantes">
-                      {lista.map((v) => (
-                        <li id={`vacante-${v.vacante.id}`} key={v.vacante.id}>
-                          <Tarjeta
-                            vacante={v.vacante}
-                            publicada={publicadaHace(v.publicadaEn, ahora)}
-                            desdeLaLista
-                            forma="aLoAncho"
-                            alAbrir={() => recordar(v.vacante.id)}
-                          />
-                        </li>
-                      ))}
-                    </ul>
-                  )
-                )}
+                {lasEtiquetas}
+                {laLista}
               </div>
             </div>
           )}

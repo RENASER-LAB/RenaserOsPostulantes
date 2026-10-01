@@ -178,6 +178,36 @@ export function recortado(texto: string | null | undefined): string | null {
   return (texto ?? '').trim() || null
 }
 
+/** «S.A.C.», «SRL», «E.I.R.L.»: lo que dice qué clase de sociedad es, no quién. */
+const FORMA_SOCIETARIA = /^(sac|sa|saa|srl|eirl|sacs)$/
+
+/**
+ * Las dos letras del cuadro de la empresa en `/vacantes`: la primera de cada una
+ * de sus dos primeras palabras, sin la forma societaria. «RENASER CONSULTING
+ * S.A.C.» da «RC»; un nombre de una palabra, su primera letra; sin nombre, nada.
+ */
+export function inicialesDe(nombre: string | null | undefined): string {
+  return (nombre ?? '')
+    .split(/\s+/)
+    .map((palabra) => palabra.replace(/[^\p{L}\p{N}]/gu, ''))
+    .filter((palabra) => palabra !== '' && !FORMA_SOCIETARIA.test(palabra.toLowerCase()))
+    .slice(0, 2)
+    .map((palabra) => palabra[0]!.toUpperCase())
+    .join('')
+}
+
+/**
+ * El backend manda «Lo que harás» y «Lo que buscamos» como un texto con saltos
+ * de línea, uno por punto, a veces con su guion o su viñeta delante. Esto da los
+ * puntos limpios; con menos de dos, quien pinta lo trata como un párrafo.
+ */
+export function puntosDe(texto: string): string[] {
+  return texto
+    .split('\n')
+    .map((linea) => linea.trim().replace(/^[-•*]\s*/, ''))
+    .filter(Boolean)
+}
+
 /** Un texto que trae algo: `null`, vacío o solo espacios no cuentan. */
 function lleno(texto: string | null | undefined): boolean {
   return recortado(texto) !== null
@@ -528,6 +558,17 @@ export function sinEtiqueta(estado: Estado, etiqueta: Etiqueta): Estado {
 
 export function vacantesEnPlural(n: number): string {
   return n === 1 ? '1 vacante abierta' : `${n} vacantes abiertas`
+}
+
+/**
+ * La línea bajo el titular de la banda: el total, que no cambia al filtrar —eso
+ * lo dice el contador—, y qué se puede buscar. Sin total —cargando o tras un
+ * fallo— dice solo lo segundo: un «Hay 0» mientras carga mentiría.
+ */
+export function bajadaDeLaBanda(total: number | null): string {
+  const queBuscar = 'Encuentra la tuya por puesto, empresa o ciudad.'
+  if (total === null) return queBuscar
+  return `Hay ${vacantesEnPlural(total)}. ${queBuscar}`
 }
 
 /** «9 vacantes abiertas», «2 de 9 vacantes», «1 de 1 vacante», «Ninguna vacante coincide…». */

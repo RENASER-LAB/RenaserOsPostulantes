@@ -9,17 +9,38 @@
  * que va con muelle. Aqui solo la sombra. Ver `src/ui/movimiento.tsx`.
  */
 
+/*
+ * ⚠️ **Filete en `--regla2` desde el 01/10/2026, y no en `--regla`.** Con el
+ * filete claro, una tarjeta blanca sobre el gris `--cielo` casi no se despegaba:
+ * en una lista de cuatro se leian como una sola franja. Se marca el filete y no
+ * se añade sombra en reposo, por la regla del plano en reposo de DESIGN.md: la
+ * sombra de nube llega solo con el puntero encima.
+ */
 .vacante {
   position: relative;
   height: 100%;
-  border: 1px solid var(--regla);
+  border: 1px solid var(--regla2);
   border-radius: var(--radio);
   background-color: var(--nube);
-  transition: box-shadow 300ms var(--salida);
+  transition:
+    box-shadow 300ms var(--salida),
+    border-color 300ms var(--salida);
 }
 
 .vacante:hover {
+  border-color: var(--borde-control);
   box-shadow: var(--sombra-nube);
+}
+
+/* El titulo dice que la tarjeta entera es un enlace: al pasar, toma el color de la accion. */
+.vacante:hover .tituloVacante {
+  color: var(--activo-pulsado);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vacante {
+    transition: none;
+  }
 }
 
 .enlaceVacante {

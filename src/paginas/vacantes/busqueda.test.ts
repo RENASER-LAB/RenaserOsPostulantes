@@ -24,6 +24,9 @@
 import { describe, expect, it } from 'vitest'
 import type { VacantePublica } from '@/api/tipos'
 import {
+  bajadaDeLaBanda,
+  inicialesDe,
+  puntosDe,
   ciudadesDistintas,
   completitudDe,
   contador,
@@ -428,6 +431,25 @@ describe('Las etiquetas y el contador', () => {
       .toBe('Ninguna vacante coincide en Cusco')
     // El singular también en «de 1 vacante».
     expect(contador(1, 1, estado({ q: 'x' }), [])).toBe('1 de 1 vacante')
+  })
+
+  it('las iniciales de la empresa dejan fuera la forma societaria', () => {
+    expect(inicialesDe('RENASER CONSULTING S.A.C.')).toBe('RC')
+    expect(inicialesDe('Constructora del Sur SRL')).toBe('CD')
+    expect(inicialesDe('  ácido  ')).toBe('Á')
+    expect(inicialesDe('S.A.C.')).toBe('')
+    expect(inicialesDe(null)).toBe('')
+  })
+
+  it('los puntos salen limpios de su guion o viñeta, y sin líneas vacías', () => {
+    expect(puntosDe('- Atender clientes\n\n• Documentar\n* Medir')).toEqual(['Atender clientes', 'Documentar', 'Medir'])
+    expect(puntosDe('Un solo párrafo')).toEqual(['Un solo párrafo'])
+  })
+
+  it('la banda dice el total con su singular y, sin total, solo qué se puede buscar', () => {
+    expect(bajadaDeLaBanda(4)).toBe('Hay 4 vacantes abiertas. Encuentra la tuya por puesto, empresa o ciudad.')
+    expect(bajadaDeLaBanda(1)).toBe('Hay 1 vacante abierta. Encuentra la tuya por puesto, empresa o ciudad.')
+    expect(bajadaDeLaBanda(null)).toBe('Encuentra la tuya por puesto, empresa o ciudad.')
   })
 
   it('el contador se acompaña con lo buscado y, si es el único filtro, la ciudad', () => {

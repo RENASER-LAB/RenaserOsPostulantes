@@ -75,7 +75,7 @@ const LADO_FOTO = 512
  * lienzo las tira, igual que en la foto — la regla estaba escrita ahí al lado y
  * no se le había aplicado.
  *
- * 4:1 porque la banda se pinta a 168px de alto en un carril de 68rem, y esto la
+ * 4:1 porque la banda se pinta a 168px de alto en un carril de 80rem, y esto la
  * cubre en pantallas de mucha densidad sin subir el archivo entero por datos.
  */
 const PORTADA = { ancho: 1600, alto: 400 }

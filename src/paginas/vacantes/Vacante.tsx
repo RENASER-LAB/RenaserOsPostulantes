@@ -160,8 +160,9 @@ export function Vacante() {
         {v.nombreEmpresa && <p className={estilos.empresa}>{v.nombreEmpresa}</p>}
         {datos.length > 0 && (
           <div className={estilos.donde}>
-            {datos.map((d) => (
-              <span className={estilos.dato} key={d}>
+            {/* Por posición y texto: dos datos pueden decir lo mismo («test · test»). */}
+            {datos.map((d, i) => (
+              <span className={estilos.dato} key={`${i}-${d}`}>
                 {d}
               </span>
             ))}

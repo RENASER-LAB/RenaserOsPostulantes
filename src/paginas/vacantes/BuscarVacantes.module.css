@@ -1,12 +1,16 @@
 /*
  * Buscar vacantes.
  *
- * El esqueleto viene de `estilos/pagina.module.css` —el carril y el reparto
- * con la columna de filtros a la izquierda, `.repartoConFiltros`— y los
- * botones de `estilos/piezas.module.css`. Lo que esta hoja compone es lo que
- * solo existe aqui: el buscador, la fila del contador con el conmutador de
- * orden, la columna de filtros y la de resultados con sus etiquetas activas.
- * La tarjeta a lo ancho es de `Tarjeta.module.css`.
+ * ⚠️ **Desde el 01/10/2026 casi toda la pantalla es de shadcn/ui, con clases
+ * de Tailwind en el propio componente**: la banda de búsqueda, la barra de
+ * desplegables, el orden de la barra, las etiquetas, la lista
+ * (`FilaDeVacante`) y el panel (`PanelDeVacante`). Es la prueba piloto de
+ * shadcn en el portal; ver `src/estilos/tailwind.css`.
+ *
+ * Lo que queda en esta hoja es lo del teléfono, que no cambió: la fila del
+ * contador con el orden de dos caras, la columna de filtros que se pliega tras
+ * «Filtrar», y los avisos de «ninguna coincide» y de fallo. El esqueleto viene
+ * de `estilos/pagina.module.css` y los botones de `estilos/piezas.module.css`.
  *
  * Cuatro decisiones que no se ven en las reglas:
  *
@@ -20,10 +24,12 @@
  *      lista cambia y ya. Lo unico con movimiento son las tarjetas al pasar por
  *      encima, que es de `motion`, y el pico de un grupo al plegarse; los dos
  *      respetan `prefers-reduced-motion`.
- *   4. **Tres anchos, tres disposiciones.** Por encima de 900 px, la columna
- *      de filtros es una superficie de nube a la izquierda. De 641 a 900 se
- *      apila encima de la lista, abierta. Hasta 640 se pliega tras «Filtrar»,
- *      como en el ciclo anterior: en el telefono no cambia nada.
+ *   4. **Tres anchos, tres disposiciones** (01/10/2026). Desde 1024 px, la
+ *      barra de desplegables y la pantalla partida, lista y panel. De 641 a
+ *      1023, la barra y la lista a todo el ancho. Hasta 640, los filtros se
+ *      pliegan tras «Filtrar», como en el ciclo anterior. La columna de
+ *      filtros y sus cortes de 900 solo se ven ya en el telefono —y en jsdom,
+ *      que no tiene `matchMedia`—.
  *   5. **Las etiquetas activas van siempre justo encima de la lista**, en los
  *      tres anchos. Marcar una casilla mueve la lista, nunca los filtros que
  *      se estan tocando.
@@ -31,14 +37,6 @@
 
 .pagina {
   composes: hoja from '../../estilos/pagina.module.css';
-}
-
-.encabezado {
-  composes: encabezado from '../../estilos/pagina.module.css';
-}
-
-.titular {
-  composes: titular from '../../estilos/pagina.module.css';
 }
 
 /* Lo que se lee y no se ve: el anuncio del lector de pantalla y los radios de verdad. */
@@ -52,89 +50,6 @@
   clip: rect(0 0 0 0);
   white-space: nowrap;
   border: 0;
-}
-
-/* ---------- el buscador ---------- */
-
-.buscador {
-  margin-top: var(--e6);
-}
-
-.etiquetaBuscador {
-  display: block;
-  margin-bottom: var(--e2);
-  font-size: var(--t-apoyo);
-  font-weight: 600;
-  color: var(--tinta);
-}
-
-.cajaBuscador {
-  position: relative;
-  max-width: 40rem;
-}
-
-/* Las equis de «Borrar busqueda» y de cada etiqueta son el icono dibujado, no un caracter. */
-.cruz {
-  flex: none;
-}
-
-/*
- * 48 px de alto y 16 px de letra: por debajo de 16 iOS hace zoom al enfocar.
- * El relleno de la derecha deja sitio a la equis sin que el texto pase por debajo.
- */
-.entrada {
-  width: 100%;
-  min-height: 48px;
-  padding: 0 52px 0 var(--e3);
-  background-color: var(--nube);
-  color: var(--tinta);
-  border: 1px solid var(--borde-control);
-  border-radius: var(--radio-menor);
-  font: inherit;
-  font-size: var(--t-base);
-  -webkit-appearance: none;
-  appearance: none;
-}
-
-/* La equis nativa de WebKit sobraria al lado de la propia. */
-.entrada::-webkit-search-cancel-button,
-.entrada::-webkit-search-decoration {
-  -webkit-appearance: none;
-  appearance: none;
-}
-
-.entrada:focus-visible {
-  outline: 2px solid var(--activo);
-  outline-offset: 3px;
-}
-
-.borrar {
-  position: absolute;
-  top: 50%;
-  right: 4px;
-  transform: translateY(-50%);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  border: 0;
-  border-radius: var(--radio-control);
-  background: transparent;
-  color: var(--tinta2);
-  font: inherit;
-  font-size: var(--t-base);
-  cursor: pointer;
-}
-
-.borrar:hover {
-  color: var(--tinta);
-  background-color: var(--nube-hundida);
-}
-
-.borrar:focus-visible {
-  outline: 2px solid var(--activo);
-  outline-offset: 2px;
 }
 
 /* ---------- el reparto: la columna de filtros y la lista ---------- */
@@ -336,7 +251,7 @@
   flex-direction: column;
   min-width: 0;
   padding: var(--e2) var(--e4);
-  border: 1px solid var(--regla);
+  border: 1px solid var(--regla2);
   border-radius: var(--radio);
   background-color: var(--nube);
 }
@@ -469,142 +384,6 @@
   min-width: 0;
 }
 
-/* ---------- las etiquetas activas ---------- */
-
-.etiquetas {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--e2) var(--e3);
-}
-
-.listaDeEtiquetas {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--e2);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  max-width: 100%;
-}
-
-.listaDeEtiquetas > li {
-  min-width: 0;
-  max-width: 100%;
-}
-
-/*
- * Una etiqueta se distingue por la forma —contorno y equis—, no por el color.
- * Un nombre largo —una empresa de 200 letras— se parte dentro de la etiqueta y
- * la equis se queda a su lado; no empuja la fila ni saca la pagina de su ancho.
- */
-.etiqueta {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--e2);
-  min-height: 44px;
-  max-width: 100%;
-  padding: 0 var(--e2) 0 var(--e3);
-  text-align: left;
-  overflow-wrap: anywhere;
-  border: 1px solid var(--borde-control);
-  border-radius: var(--radio-control);
-  background-color: var(--nube);
-  color: var(--tinta);
-  font: inherit;
-  font-size: var(--t-apoyo);
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.etiqueta:hover {
-  background-color: var(--nube-hundida);
-}
-
-.etiqueta:focus-visible {
-  outline: 2px solid var(--activo);
-  outline-offset: 3px;
-}
-
-.quitarFiltros {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  padding: 0 var(--e2);
-  border: 0;
-  background: transparent;
-  color: var(--tinta2);
-  font: inherit;
-  font-size: var(--t-apoyo);
-  font-weight: 500;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  cursor: pointer;
-}
-
-.quitarFiltros:hover {
-  color: var(--tinta);
-}
-
-.quitarFiltros:focus-visible {
-  outline: 2px solid var(--activo);
-  outline-offset: 3px;
-  border-radius: var(--radio-control);
-}
-
-/* ---------- la lista ---------- */
-
-/* Una tarjeta por fila, a todo el ancho; 12 px entre ellas, como cualquier rejilla del portal. */
-.lista {
-  display: flex;
-  flex-direction: column;
-  gap: var(--e3);
-  min-width: 0;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.lista > li {
-  min-width: 0;
-}
-
-/* ---------- cargando, fallo y sin vacantes ---------- */
-
-/* El esqueleto tiene la forma de la tarjeta a lo ancho, y se apila igual que ella. */
-.esqueleto {
-  container-type: inline-size;
-  border: 1px solid var(--regla);
-  border-radius: var(--radio);
-  background-color: var(--nube);
-}
-
-.esqueletoDentro {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 13rem;
-  gap: var(--e5);
-  padding: var(--e5);
-}
-
-.esqueletoDatos {
-  padding-left: var(--e5);
-  border-left: 1px solid var(--regla);
-}
-
-@container (max-width: 36rem) {
-  .esqueletoDentro {
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--e4);
-    padding: var(--e4);
-  }
-
-  .esqueletoDatos {
-    padding: var(--e3) 0 0;
-    border-left: 0;
-    border-top: 1px solid var(--regla);
-  }
-}
-
 /* Mientras llegan las vacantes, la columna de filtros guarda su sitio sin inventar cantidades. */
 .esqueletoDeFiltros {
   padding: var(--e3) 0;
@@ -719,6 +498,9 @@
  * «Filtrar» o bajo el panel abierto: encima de la lista, como en los otros dos.
  */
 @media (max-width: 640px) {
+
+  
+
   .filaContador {
     grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas:

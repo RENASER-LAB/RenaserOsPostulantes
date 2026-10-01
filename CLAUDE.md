@@ -66,6 +66,12 @@ mano en la hoja de la pantalla**: los tokens en [`mundo.css`](src/estilos/mundo.
 botones y paneles en [`piezas.module.css`](src/estilos/piezas.module.css), y el carril, el
 encabezado y los bloques en [`pagina.module.css`](src/estilos/pagina.module.css).
 
+⚠️ **`/vacantes` es la excepción desde el 01/10/2026: la prueba piloto de shadcn/ui.** Lleva
+clases de Tailwind en el componente y piezas de [`src/ui/shadcn/`](src/ui/shadcn); Tailwind va
+**sin preflight** y con `!important` ([`tailwind.css`](src/estilos/tailwind.css)) para no tocar
+las demás pantallas. Si se reinicia Vite y la página sale sin estilos, el plugin no cargó:
+pararlo del todo y volver a lanzarlo.
+
 ⚠️ **`composes` solo admite una clase simple** —ni `.a.b`, ni listas—: PostCSS devuelve un 500
 y la aplicación entera deja de montar. Y **un `composes` entre archivos no gana por escribirlo
 después**: si necesitas una variante, se declara con nombre en la hoja compartida. Si migras

@@ -847,7 +847,7 @@ test.describe('Buscar vacantes · el rediseño del ciclo 2 (QA)', () => {
     })
 
   // ---------- puntos 38 y 40: una parada por tarjeta ----------
-  test('Tab recorre buscador → borrar → orden → grupos → etiquetas → resultados, y cada tarjeta es UNA parada: su enlace', async ({
+  test('Tab recorre buscador → borrar → «Buscar» → orden → grupos → etiquetas → resultados, y cada tarjeta es UNA parada: su enlace', async ({
     page,
   }) => {
     const ids = sembrar(COMO_PRODUCCION)
@@ -865,7 +865,8 @@ test.describe('Buscar vacantes · el rediseño del ciclo 2 (QA)', () => {
     const posicion = (texto: string) => nombres.findIndex((n) => n === texto || n.startsWith(texto))
     expect(posicion('Buscar vacantes')).toBe(0)
     expect(posicion('Borrar búsqueda')).toBe(1)
-    expect(posicion('Relevantes')).toBe(2)
+    expect(nombres[2]).toBe('Buscar')
+    expect(posicion('Relevantes')).toBe(3)
     expect(posicion('Publicada')).toBeGreaterThan(posicion('Relevantes'))
     expect(posicion('Ciudad')).toBeGreaterThan(posicion('Publicada'))
     expect(posicion('Quitar filtro Lima')).toBeGreaterThan(posicion('Modalidad'))
