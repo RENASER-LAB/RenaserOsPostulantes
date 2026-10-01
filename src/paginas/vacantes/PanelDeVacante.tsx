@@ -48,7 +48,7 @@ export function PanelDeVacante({
             <h2
               id={idTitulo}
               tabIndex={-1}
-              className="m-0 rounded-sm text-2xl leading-tight font-semibold tracking-tight text-foreground break-words focus:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+              className="m-0 rounded-sm text-2xl leading-tight font-semibold tracking-tight text-foreground [overflow-wrap:anywhere] focus:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
             >
               {v.titulo}
             </h2>

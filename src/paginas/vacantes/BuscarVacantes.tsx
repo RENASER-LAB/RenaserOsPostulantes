@@ -546,7 +546,7 @@ export function BuscarVacantes() {
           {g.opciones.map((opcion) => (
             <label className={fila} key={opcion.valor}>
               <RadioGroupItem value={opcion.valor} />
-              <span className="min-w-0 break-words">{opcion.nombre}</span>
+              <span className="min-w-0 break-words">{opcion.nombre}</span>{' '}
               {cuantas(opcion.cantidad)}
             </label>
           ))}
@@ -558,7 +558,7 @@ export function BuscarVacantes() {
         {g.opciones.map((opcion) => (
           <label className={fila} key={opcion.valor}>
             <Checkbox checked={opcion.marcada} onCheckedChange={() => g.elegir(opcion.valor)} />
-            <span className="min-w-0 break-words">{opcion.nombre}</span>
+            <span className="min-w-0 break-words">{opcion.nombre}</span>{' '}
             {cuantas(opcion.cantidad)}
           </label>
         ))}
@@ -593,6 +593,13 @@ export function BuscarVacantes() {
             <PopoverTrigger asChild>
               <Button
                 id={`grupo-${g.clave}`}
+                // Con algo marcado se oye «Ciudad, 2 marcadas». Con un `<span>` oculto, Chrome
+                // leía «Ciudad , 2 marcadas»: mete un espacio en la juntura.
+                aria-label={
+                  g.marcadas > 0
+                    ? `${g.titulo}, ${g.marcadas} ${g.marcadas === 1 ? 'marcada' : 'marcadas'}`
+                    : undefined
+                }
                 variant="outline"
                 className={cn(
                   'group h-10 gap-2 border-input bg-card px-3.5 text-sm font-medium text-foreground shadow-none',
@@ -600,19 +607,13 @@ export function BuscarVacantes() {
                 )}
               >
                 {g.titulo}
-                {/* Se ve el número; se oye «Ciudad, 2 marcadas». */}
                 {g.marcadas > 0 && (
-                  <>
-                    <span
-                      aria-hidden="true"
-                      className="grid h-5 min-w-5 place-items-center rounded-full bg-primary px-1.5 text-[11px] font-semibold text-primary-foreground tabular-nums"
-                    >
-                      {g.marcadas}
-                    </span>
-                    <span className="sr-only">
-                      , {g.marcadas} {g.marcadas === 1 ? 'marcada' : 'marcadas'}
-                    </span>
-                  </>
+                  <span
+                    aria-hidden="true"
+                    className="grid h-5 min-w-5 place-items-center rounded-full bg-primary px-1.5 text-[11px] font-semibold text-primary-foreground tabular-nums"
+                  >
+                    {g.marcadas}
+                  </span>
                 )}
                 <IconoDesplegar
                   tamano={16}
@@ -700,7 +701,7 @@ export function BuscarVacantes() {
               variant="outline"
               aria-label={`Quitar filtro ${etiqueta.nombre}`}
               onClick={() => quitarEtiqueta(etiqueta, i)}
-              className="h-11 max-w-full gap-1.5 rounded-full border-border-strong bg-card pr-2.5 pl-3.5 text-left text-sm font-medium break-words whitespace-normal shadow-none sm:h-9"
+              className="h-auto min-h-11 max-w-full min-w-0 shrink gap-1.5 rounded-full border-border-strong bg-card py-2 pr-2.5 pl-3.5 text-left text-sm font-medium whitespace-normal shadow-none [overflow-wrap:anywhere] sm:min-h-9 sm:py-1.5"
             >
               {etiqueta.nombre}
               <IconoCruz tamano={14} className="text-muted-foreground" />

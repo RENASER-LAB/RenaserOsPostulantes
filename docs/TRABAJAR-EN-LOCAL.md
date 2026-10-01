@@ -185,8 +185,9 @@ la cuenta de diagnóstico en el primer clon para inspección. No usa bases de tr
 
 ### El clon a mano, desde el snapshot de QA
 
-Lo que hace el harness, hecho a mano. Comprobado el 26/09/2026: **294 pasan, 0 fallan y 8 se
-saltan** (las de IA real), en unos 10 minutos, lo mismo que QA.
+Lo que hace el harness, hecho a mano. Comprobado el 01/10/2026, con los pasos 3b y 4 de
+abajo: **401 pasan, 0 fallan y 8 se saltan** (las de IA real), en unos 15 minutos. Sin el 3b
+fallaban 6, y sin la IA apagada, otras 2.
 
 ⚠️ **La suite necesita los datos del snapshot, no una base vacía.** El #59 borró el sembrador
 del escenario del ranking (`sembrar-escenario-e2e.py`), no los datos de partida: las pruebas
@@ -202,6 +203,18 @@ arrancar.
 
 ⚠️ **No se clona la base de desarrollo.** Puede tener datos de personas; el snapshot es
 sintético a propósito.
+
+⚠️ **El snapshot caduca: sus evaluaciones vencían el 01/10/2026, y el paso 3b las rejuvenece.**
+Se crearon el 17/09 con 14 días de plazo. En cuanto el backend arranca, su barrido de
+vencidas (`cerrarVencidas`) las marca `VENCIDA` y **cierra sus postulaciones con
+`PLAZO_VENCIDO` aunque ya estén en otra etapa**, y todo lo que mira el ranking se queda vacío:
+el 01/10/2026 eso tumbó el Excel, los filtros del ranking en el móvil y la selección en lote
+(«Pendiente 0» en «Prueba del puesto»). Por eso el paso 3b va **antes** del 4: si el backend
+ya arrancó, cerró las postulaciones, y hay que volver a restaurar.
+
+⚠️ **Y la IA apagada** (`RENASER_AI_CALIFICACION_HABILITADA=false`, paso 4). Con la del perfil
+`local`, encendida, las de las preguntas propias (46 y 47) reciben un 202 «encolado» donde
+esperan «la IA está apagada».
 
 Todo va en puertos propios —Postgres 5434, RabbitMQ 5673, API 9081, portal 5274—, así que el
 entorno de siempre (5433, 8081, 5201) sigue arriba y no se toca.
@@ -222,11 +235,16 @@ docker run -d --name renaser-e2e-rabbit -p 127.0.0.1:5673:5672 rabbitmq:4.2-mana
 docker cp ~/Documentos/renaser-harness-snapshots/renaser-sintetico-20260917.dump renaser-e2e:/tmp/s.dump
 docker exec renaser-e2e pg_restore -U postgres -d renaser_db --no-owner --no-acl --schema=public /tmp/s.dump
 
+# 3b · Los plazos del snapshot, hacia delante. ANTES de arrancar el backend (ver el aviso).
+docker exec renaser-e2e psql -U postgres -d renaser_db -c \
+  "update evaluacion set vence_en = now() + interval '14 days' where estado in ('PENDIENTE', 'EN_CURSO')"
+
 # 4 · El backend contra el clon (desde ~/Documentos/RENASER-RECLUTAMIENTO). Las variables de
-#     entorno ganan al application-local.yaml; el correo se queda en el log.
+#     entorno ganan al application-local.yaml; el correo se queda en el log, y la IA apagada,
+#     como en el entorno de QA: las pruebas de las preguntas propias lo dan por hecho.
 SERVER_PORT=9081 SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5434/renaser_db \
-  SPRING_RABBITMQ_PORT=5673 RENASER_CORREO_TRANSPORTE=log PORTAL_URL=http://127.0.0.1:5274 \
-  ./mvnw spring-boot:test-run
+  SPRING_RABBITMQ_PORT=5673 RENASER_CORREO_TRANSPORTE=log RENASER_AI_CALIFICACION_HABILITADA=false \
+  PORTAL_URL=http://127.0.0.1:5274 ./mvnw spring-boot:test-run
 
 # 5 · El portal contra ese backend (desde este repo).
 API_URL=http://127.0.0.1:9081 VITE_ORIGEN_API= npm run dev -- --host 127.0.0.1 --port 5274 --strictPort

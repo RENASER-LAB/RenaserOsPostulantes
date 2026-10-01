@@ -94,13 +94,13 @@ export function FilaDeVacante({
           id={vacante.id}
           idDom={idTitulo}
           className={cn(
-            'm-0 text-base leading-snug font-semibold tracking-tight text-foreground break-words group-hover:text-primary-hover',
+            'm-0 text-base leading-snug font-semibold tracking-tight text-foreground [overflow-wrap:anywhere] group-hover:text-primary-hover',
             elegida && 'text-primary-hover',
           )}
         >
           {vacante.titulo}
         </TituloQueViaja>
-        {empresa && <p className="mt-0.5 text-sm text-tinta2">{empresa}</p>}
+        {empresa && <p className="mt-0.5 text-sm text-tinta2 [overflow-wrap:anywhere]">{empresa}</p>}
         {!alElegir && resumen && (
           <p className="mt-2 line-clamp-2 max-w-[60ch] text-sm leading-relaxed text-muted-foreground">
             {resumen}
@@ -135,7 +135,9 @@ export function Iniciales({ empresa, grande = false }: { empresa: string | null;
 /** Dónde, modalidad, horario y sueldo, en insignias. Lo que falta no se pinta; el sueldo, siempre. */
 export function DatosDeLaVacante({ vacante, className }: { vacante: VacantePublica; className?: string }) {
   const datos = datosDeLaTarjeta(vacante)
-  const insignia = 'h-6 gap-1.5 rounded-md px-2 text-xs font-medium [&>svg]:size-3.5'
+  // Las de shadcn no parten (`whitespace-nowrap`): una zona de 60 letras sacaba la fila de su ancho.
+  const insignia =
+    'h-auto min-h-6 max-w-full shrink justify-start gap-1.5 rounded-md px-2 py-0.5 text-left text-xs font-medium whitespace-normal [overflow-wrap:anywhere] [&>svg]:size-3.5'
   return (
     <div className={cn('flex flex-wrap gap-1.5', className)}>
       {datos.donde && (
