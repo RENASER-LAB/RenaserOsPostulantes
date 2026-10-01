@@ -87,6 +87,8 @@ export const patrones = {
   adminPruebaTecnica: '/admin/vacantes/:id/prueba-tecnica',
   /** Las preguntas propias de la vacante, agrupadas por criterios (V66). */
   adminPreguntasPropias: '/admin/vacantes/:id/preguntas',
+  /** La prueba técnica de una vacante nueva, escrita en el editor (V67). */
+  adminPruebaPropia: '/admin/vacantes/:id/prueba',
   adminSesiones: '/admin/simulacion',
   /**
    * Las pruebas del puesto: las plantillas y sus versiones.
@@ -170,6 +172,7 @@ export const rutas = {
   adminVacante: (id: number | string) => `/admin/vacantes/${id}`,
   adminPruebaTecnica: (id: number | string) => `/admin/vacantes/${id}/prueba-tecnica`,
   adminPreguntasPropias: (id: number | string) => `/admin/vacantes/${id}/preguntas`,
+  adminPruebaPropia: (id: number | string) => `/admin/vacantes/${id}/prueba`,
   adminSesiones: () => '/admin/simulacion',
   adminPruebas: () => '/admin/pruebas',
   adminComponerPrueba: (versionId: number | string) =>

@@ -18,6 +18,20 @@ export const responderPrueba = (uuid: string, preguntaId: number, texto: string)
     cuerpo: { texto },
   })
 
+/**
+ * Una cerrada de la prueba del editor (V67): la opción elegida (opción única y
+ * escala) o las marcadas (opción múltiple). Nula o vacía = sin responder.
+ */
+export const responderPruebaCerrada = (
+  uuid: string,
+  preguntaId: number,
+  respuesta: { opcionId: number | null } | { marcadas: number[] },
+) =>
+  pedir<void>(`/prueba/${uuid}/respuestas/${preguntaId}`, {
+    metodo: 'PUT',
+    cuerpo: respuesta,
+  })
+
 export function subirArchivo(uuid: string, entregableId: number, archivo: File) {
   const formulario = new FormData()
   formulario.append('archivo', archivo)

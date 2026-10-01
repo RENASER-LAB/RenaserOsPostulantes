@@ -332,6 +332,44 @@ describe('quitar el cierre es otra operación', () => {
   })
 })
 
+describe('una vacante con la prueba del editor no tiene plantilla (V67)', () => {
+  const laSuya = {
+    instrumentoEtapaTecnica: 'PRUEBA_PROPIA' as const,
+    versionPlantillaPruebaId: null,
+  }
+
+  it('lo que rige, la explicación y la pregunta de quitar hablan de la prueba de la vacante', () => {
+    montarVacante(() => {}, { ...laSuya, modalidadPrueba: 'PLAZO_ABIERTO' })
+
+    expect(screen.getByText(/cuando pasen los días que diga la prueba de la vacante/i)).toBeTruthy()
+    expect(screen.getByText(/cada persona tiene los días que diga la prueba de la vacante/i)).toBeTruthy()
+    escribir(/Por qué se fija esta fecha/, 'Se alarga la convocatoria sin fecha fija.')
+    fireEvent.click(screen.getByRole('button', { name: 'Quitar el cierre de la vacante' }))
+    expect(screen.getByText(/vuelven a los días de la prueba de la vacante/i)).toBeTruthy()
+    expect(screen.queryByText(/plantilla/i)).toBeNull()
+  })
+
+  it('cronometrada sin minutos leídos: los de la prueba de la vacante', () => {
+    montarVacante(() => {}, { ...laSuya, modalidadPrueba: 'CRONOMETRADA' })
+
+    expect(screen.getByText(/los minutos de la prueba de la vacante desde que cada persona/i)).toBeTruthy()
+  })
+
+  it('al quitar el cierre, lo que queda tampoco nombra una plantilla', async () => {
+    montarVacante(() => {}, laSuya)
+    cierre.mockResolvedValue({ cierraEn: null, intentosMovidos: 1, intentosConPlazoPropio: 0 })
+    escribir(/Por qué se fija esta fecha/, 'Se alarga la convocatoria sin fecha fija.')
+    fireEvent.click(screen.getByRole('button', { name: 'Quitar el cierre de la vacante' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Sí, quitar el cierre' }))
+
+    expect(
+      await screen.findByText(/Cada intento vuelve a contar los días de la prueba de la vacante desde que la persona/),
+    ).toBeTruthy()
+    expect(screen.getByText('1 examen ya abierto vuelve a contar los días de la prueba de la vacante.')).toBeTruthy()
+    expect(screen.queryByText(/plantilla/i)).toBeNull()
+  })
+})
+
 describe('lo que devuelve el cierre', () => {
   it('dice cuántas personas NO cambiaron por tener fecha propia', async () => {
     cierre.mockResolvedValue({ cierraEn: NOCHE_UTC, intentosMovidos: 4, intentosConPlazoPropio: 2 })

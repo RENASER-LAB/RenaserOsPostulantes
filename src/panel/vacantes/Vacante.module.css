@@ -2306,3 +2306,48 @@ th.columnaCifra {
   font-size: var(--t-menor);
   color: var(--tinta2);
 }
+
+/* ---------- La prueba del editor en la ficha (V67) ----------
+ *
+ * Las preguntas de un criterio, debajo de su nombre: lista compacta, con la
+ * opción marcada en tinta plena y las demás en la secundaria. La marca no es
+ * solo el color: lleva su círculo lleno.
+ */
+
+.preguntasDelCriterio {
+  margin: var(--e2) 0 0;
+  padding-left: var(--e4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+}
+
+.preguntaDelCriterio {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-wrap: anywhere;
+}
+
+.opcionesDelCriterio {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  color: var(--tinta2);
+}
+
+.opcionMarcada {
+  color: var(--tinta);
+  font-weight: 600;
+}
+
+.puntosOpcion {
+  font-weight: 400;
+  color: var(--tinta2);
+  font-variant-numeric: tabular-nums;
+}
+
+/* «pendiente» y «entregó» no caben en los 3,5 rem de una cifra. */
+.notaAncha {
+  width: 5rem;
+}

@@ -16,7 +16,17 @@ que conviene leer antes de tirarlos.
 ve el candidato: etapa, título, ayuda y botón. Ninguna pantalla sabe qué estados existen. Si
 el backend añade uno, se toca ahí y en ningún otro sitio. La regla que lo ordena: si acaba en
 `TURNO_CANDIDATO` hay botón; si acaba en `CALIFICANDO`, `POR_HABILITAR` o `POR_CONFIRMAR`,
-solo se informa y se espera.
+solo se informa y se espera. ⚠️ **En la etapa de la prueba el estado no basta** (01/10/2026): la
+prueba del editor que venció con algo pendiente deja la postulación en `PRUEBA_TURNO_CANDIDATO`
+sin nada que hacer. Por eso «le toca» se pregunta con la postulación entera
+—`leTocaAlCandidatoEn`, y `momentoDeLaEtapa` con `pruebaSinCompletar`—, no con
+`leTocaAlCandidato(estado)` suelto.
+
+**Una columna de criterio se identifica por su `clave`, no por su nombre** (01/10/2026). Con
+criterios escritos por cada vacante hay muchos «Comunicación», y agrupar por nombre —como hacía la
+tabla hasta entonces— juntaría en una columna notas de criterios distintos. El servidor manda `clave` (`prueba:<id>`, `banco:<id>`) y el
+panel la lee con `claveDeLaNota` y `claveDelCriterio` (`src/panel/vacantes/ranking.ts`); el nombre
+solo vale para los criterios de siempre, que no la traen.
 
 **La hora la manda el servidor.** El cronómetro de la prueba no cuenta hacia atrás desde un
 número: recalcula cuánto falta hasta la hora de vencimiento del backend, descontando el
@@ -86,6 +96,12 @@ llega.
 
 **Mirar el cuerpo antes que el estado.** Un 500 vacío se colaba como éxito. Primero el
 estado, después el cuerpo.
+
+**Leer una fecha `YYYY-MM-DD` con `new Date(...)`.** Es la medianoche UTC, que en Lima (UTC-5)
+todavía es el día anterior: `new Date('2024-10-01').getMonth()` da septiembre. En la trayectoria
+del perfil, `mesesDelTramo` y `huecoEntre` contaban un mes de más o de menos frente a lo que
+pintaba `mesYAno` (corregido el 01/10/2026). Una fecha sin hora se lee de la propia cadena, como
+hace `src/paginas/perfil/textos.ts`.
 
 **`<button>` sin `type`.** Por defecto es de envío. Dentro de un formulario, lo envía.
 

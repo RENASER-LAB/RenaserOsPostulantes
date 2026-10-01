@@ -29,6 +29,7 @@ import {
   paraGuardar,
   type PreguntaEnEdicion,
 } from './formulario'
+import { esPrueba, useModoDelEditor } from './modo'
 import { BotonIcono, MostrarFallo } from './piezas'
 import estilos from './EditorDePreguntas.module.css'
 
@@ -51,14 +52,17 @@ export function FormularioPregunta({
   alCancelar,
 }: Props) {
   const id = useId()
+  const modo = useModoDelEditor()
+  // En la prueba (V67) la abierta no lleva puntos: la califica el criterio entero.
+  const sinPuntosEnAbiertas = esPrueba(modo)
   const [p, setP] = useState<PreguntaEnEdicion>(inicial)
   const [fallo, setFallo] = useState<Fallo | null>(null)
 
   const guardado = useMutation({
     mutationFn: () =>
       preguntaId === null
-        ? agregarPregunta(vacanteId, paraGuardar(p))
-        : editarPregunta(vacanteId, preguntaId, paraGuardar(p)),
+        ? agregarPregunta(vacanteId, paraGuardar(p, sinPuntosEnAbiertas), modo.ruta)
+        : editarPregunta(vacanteId, preguntaId, paraGuardar(p, sinPuntosEnAbiertas), modo.ruta),
     onSuccess: (editor) => {
       setFallo(null)
       alGuardar(editor)
@@ -69,7 +73,8 @@ export function FormularioPregunta({
   const cerrada = esCerrada(p.tipo)
   const escala = p.tipo === 'ESCALA'
   const minimo = escala ? 3 : 2
-  const evidente = faltaEvidente(p)
+  const evidente = faltaEvidente(p, sinPuntosEnAbiertas)
+  const conPuntos = !(sinPuntosEnAbiertas && p.tipo === 'ABIERTA')
 
   const opcion = (i: number, campo: 'texto' | 'puntos', valor: string) =>
     setP((v) => ({
@@ -101,19 +106,21 @@ export function FormularioPregunta({
             ))}
           </select>
         </label>
-        <label className={estilos.campo}>
-          <span className={estilos.etiqueta}>Puntos</span>
-          <input
-            className={estilos.entradaPuntos}
-            type="number"
-            inputMode="numeric"
-            step={1}
-            min={0}
-            max={100}
-            value={p.puntos}
-            onChange={(e) => setP((v) => ({ ...v, puntos: e.target.value }))}
-          />
-        </label>
+        {conPuntos && (
+          <label className={estilos.campo}>
+            <span className={estilos.etiqueta}>Puntos</span>
+            <input
+              className={estilos.entradaPuntos}
+              type="number"
+              inputMode="numeric"
+              step={1}
+              min={0}
+              max={100}
+              value={p.puntos}
+              onChange={(e) => setP((v) => ({ ...v, puntos: e.target.value }))}
+            />
+          </label>
+        )}
         <label className={estilos.campo}>
           <span className={estilos.etiqueta}>Criterio</span>
           <select
@@ -159,8 +166,9 @@ export function FormularioPregunta({
             onChange={(e) => setP((v) => ({ ...v, queDebeTener: e.target.value }))}
           />
           <span className={estilos.ayuda}>
-            Llega a la IA cuando califica. Con 0 puntos, la respuesta se guarda y se ve, pero no
-            se manda a la IA.
+            {sinPuntosEnAbiertas
+              ? 'En la prueba, una abierta no lleva puntos: la IA o una persona califican la parte calificada de su criterio mirando la respuesta y esto.'
+              : 'Llega a la IA cuando califica. Con 0 puntos, la respuesta se guarda y se ve, pero no se manda a la IA.'}
           </span>
         </label>
       )}

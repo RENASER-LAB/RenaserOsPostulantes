@@ -224,7 +224,7 @@ function LoQueLlego({ fila }: { fila: EntregaDeLaPrueba }) {
  * sin el cual la pestana abierta con `_blank` puede reescribir la nuestra desde
  * el otro lado.
  */
-function ElEnlaceQuePego({ enlace }: { enlace: string }) {
+export function ElEnlaceQuePego({ enlace }: { enlace: string }) {
   let navegable = false
   try {
     const url = new URL(enlace)
@@ -258,7 +258,7 @@ function ElEnlaceQuePego({ enlace }: { enlace: string }) {
  * descarga por el backend. Sin la caida esta pantalla no se podria mirar en
  * local, que es donde se mira.
  */
-function AbrirElArchivo({
+export function AbrirElArchivo({
   archivoId,
   nombre,
   deQue,

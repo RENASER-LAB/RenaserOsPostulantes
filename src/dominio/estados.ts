@@ -255,8 +255,25 @@ const MOMENTOS: Record<EstadoPostulacion, Momento> = {
  * <p>Un instrumento nulo o desconocido se trata como la prueba de siempre: es lo que hacían
  * todas las vacantes antes de que esto existiera, y lo que manda el backend por defecto.
  */
-export function momentoDeLaEtapa(estado: string, instrumentoEtapaTecnica: string | null): Momento {
+export function momentoDeLaEtapa(
+  estado: string,
+  instrumentoEtapaTecnica: string | null,
+  pruebaSinCompletar?: boolean | null,
+): Momento {
   const momento = momentoDe(estado)
+  // La prueba del editor (V67) que venció con huecos: el intento ya está cerrado y la
+  // postulación sigue en su etapa hasta que el equipo cierre su proceso. Ofrecerle
+  // «Abrir prueba» lo mandaría a una pantalla donde ya no puede hacer nada.
+  if (quedoSinCompletar({ estado, pruebaSinCompletar })) {
+    return {
+      ...momento,
+      esperaA: 'EQUIPO',
+      titulo: 'Tu tiempo terminó y la prueba quedó sin completar',
+      ayuda:
+        'Faltaba responder alguna pregunta o subir algún entregable obligatorio, así que no se entregó ni se va a calificar. Quien lleva tu proceso lo ve y te escribirá.',
+      accion: null,
+    }
+  }
   if (instrumentoEtapaTecnica !== 'CUESTIONARIO_TECNICO') {
     return momento
   }
@@ -298,6 +315,31 @@ export function esFinal(estado: string): boolean {
 /** Le toca al candidato: hay boton y hay algo que hacer. */
 export function leTocaAlCandidato(estado: string): boolean {
   return momentoDe(estado).esperaA === 'CANDIDATO' && !esFinal(estado)
+}
+
+/** Lo que hace falta de una postulación para saber si su prueba quedó sin completar. */
+export interface ConSuPrueba {
+  estado: string
+  /** La prueba del editor venció con huecos (V67). Nulo contra un backend anterior. */
+  pruebaSinCompletar?: boolean | null
+}
+
+/**
+ * Sigue en la etapa de la prueba, pero su intento ya se cerró sin entregar (V67).
+ *
+ * El estado es el mismo que cuando le toca rendirla —nadie cambia de etapa solo—, así que
+ * sin este dato el portal le seguiría diciendo que abra una prueba que ya no puede rendir.
+ */
+export function quedoSinCompletar(postulacion: ConSuPrueba): boolean {
+  return postulacion.estado === 'PRUEBA_TURNO_CANDIDATO' && postulacion.pruebaSinCompletar === true
+}
+
+/**
+ * Le toca al candidato, mirando la postulación entera y no solo su estado: una prueba que
+ * quedó sin completar ya no es algo que él pueda hacer.
+ */
+export function leTocaAlCandidatoEn(postulacion: ConSuPrueba): boolean {
+  return leTocaAlCandidato(postulacion.estado) && !quedoSinCompletar(postulacion)
 }
 
 /**

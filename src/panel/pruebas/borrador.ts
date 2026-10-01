@@ -61,7 +61,7 @@ export const comoFormulario = (v: VersionPrueba): GuardarVersionPrueba => ({
  */
 export function explicarFallo(causa: unknown): string {
   if (causa instanceof ErrorApi && causa.estado === 404) {
-    return 'Esta prueba no es de tu empresa: es de la plataforma, que tu empresa usa pero no administra. Para cambiarla hay que personalizar las pruebas.'
+    return 'Esta prueba no es de tu empresa: es de la plataforma, que tu empresa usa pero no administra. Las vacantes nuevas no la usan: cada una escribe su propia prueba técnica en «Armar la prueba».'
   }
   if (causa instanceof Error && causa.message) return causa.message
   return 'No se pudo completar la operación.'

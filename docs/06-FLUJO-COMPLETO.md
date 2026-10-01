@@ -110,8 +110,13 @@ Queda en `BORRADOR`: **todavía no aparece en el portal**.
 |---|---|
 | De dónde salen sus preguntas: preguntas propias, el banco de la empresa para su nivel o sin evaluación | Siempre hay una marcada: **toda vacante nueva nace con «Preguntas propias de esta vacante»** (30/09/2026) |
 | Sus preguntas propias, publicadas | **Sí, si la vacante rinde preguntas propias** (paso 3c) |
-| Qué prueba del puesto rendirá | **Sí, salvo si la vacante rinde el cuestionario técnico** (paso 3a) |
+| Su prueba técnica, publicada | **Sí, en toda vacante nueva** desde el 01/10/2026 (paso 3e) |
+| Qué prueba del puesto rendirá | Solo en una vacante de antes, **salvo si rinde el cuestionario técnico** (paso 3a) |
 | Qué pesos rigen la decisión | No: sin elegir, rigen los generales |
+
+⚠️ **Desde el 01/10/2026 una vacante nueva no elige nada para su etapa técnica**: no tiene los
+desplegables del paso 3a ni la tarjeta del 3b, y escribe su prueba en el editor (paso 3e). Los
+pasos 3a, 3b y el cuestionario del candidato que sigue son de las vacantes de antes.
 
 «El banco de la empresa para su nivel» solo se ofrece si la empresa tiene uno
 **propio** publicado para el nivel del puesto: el de RENASER ya no se presta a
@@ -149,6 +154,23 @@ postula las responde en la misma pantalla de evaluación de siempre; lo cerrado
 lo puntúa el sistema y lo abierto la IA, y la ficha enseña la nota criterio por
 criterio. El detalle, en [PANEL.md](PANEL.md) › Las preguntas propias de cada
 vacante.
+
+### 3e · La prueba técnica de una vacante nueva (01/10/2026)
+
+**Panel · la vacante → «Armar la prueba →»** (`/admin/vacantes/:id/prueba`)
+
+En el mismo editor, el equipo escribe el caso, el tiempo (en minutos o en días,
+sin cambio inesperado), los entregables y los criterios: cada uno con sus
+preguntas cerradas y una parte que califica la IA o una persona mirando sus
+abiertas y los entregables que se le asignen, hasta sumar 100. Sin entregables
+es un cuestionario. Puede copiarla de otra vacante suya o pedir a la IA que la
+complete; **hasta que esté publicada, la vacante no se publica**. Quien postula
+la rinde en la pantalla de la prueba con los cuatro tipos de pregunta, y **solo
+puede entregar con todo respondido**: si el tiempo vence con algo pendiente,
+queda sin completar, no se califica y el equipo la ve en «No completaron la
+prueba», desde donde cierra su proceso. El detalle, en [PANEL.md](PANEL.md) ›
+La prueba técnica de cada vacante nueva, y en
+[02-QUE-VE-EL-CANDIDATO.md](02-QUE-VE-EL-CANDIDATO.md) › 2.9.
 
 ### 3b · La prueba técnica del puesto
 

@@ -19,8 +19,11 @@ import {
   quitarPregunta,
   type CriterioDeLaVersion,
   type EditorDePreguntas,
+  type EntregableDeLaVersion,
   type PreguntaDeLaVersion,
 } from '../../api/preguntasPropias'
+import { FormularioCriterioDePrueba, LineaDeLaParteCalificada } from './CriterioDePrueba'
+import { esPrueba, useModoDelEditor } from './modo'
 import { IconoAbajo, IconoArriba, IconoCruz, IconoLapiz, IconoMas } from '@/ui/Iconos'
 import { falloDe, type Fallo } from './consultas'
 import { FormularioPregunta } from './FormularioPregunta'
@@ -44,6 +47,8 @@ interface PropsBloque {
   primero: boolean
   ultimo: boolean
   alCambiar: (editor: EditorDePreguntas) => void
+  /** Solo en la prueba (V67): sus entregables, para decir y elegir qué mira. */
+  entregables?: EntregableDeLaVersion[]
 }
 
 export function BloqueCriterio({
@@ -55,7 +60,10 @@ export function BloqueCriterio({
   primero,
   ultimo,
   alCambiar,
+  entregables = [],
 }: PropsBloque) {
+  const modo = useModoDelEditor()
+  const deLaPrueba = esPrueba(modo)
   const [editando, setEditando] = useState(false)
   const [nombre, setNombre] = useState(criterio?.nombre ?? '')
   const [queEvalua, setQueEvalua] = useState(criterio?.queEvalua ?? '')
@@ -82,12 +90,13 @@ export function BloqueCriterio({
     onError: alFallar,
   })
   const mover = useMutation({
-    mutationFn: (direccion: 'ARRIBA' | 'ABAJO') => moverCriterio(vacanteId, criterio!.id, direccion),
+    mutationFn: (direccion: 'ARRIBA' | 'ABAJO') =>
+      moverCriterio(vacanteId, criterio!.id, direccion, modo.ruta),
     onSuccess: alTerminar,
     onError: alFallar,
   })
   const quitar = useMutation({
-    mutationFn: () => quitarCriterio(vacanteId, criterio!.id),
+    mutationFn: () => quitarCriterio(vacanteId, criterio!.id, modo.ruta),
     onSuccess: alTerminar,
     onError: alFallar,
   })
@@ -138,7 +147,18 @@ export function BloqueCriterio({
         )}
       </header>
 
-      {criterio && editando ? (
+      {criterio && editando && deLaPrueba ? (
+        <FormularioCriterioDePrueba
+          vacanteId={vacanteId}
+          criterio={criterio}
+          entregables={entregables}
+          alGuardar={(e) => {
+            setEditando(false)
+            alTerminar(e)
+          }}
+          alCancelar={() => setEditando(false)}
+        />
+      ) : criterio && editando ? (
         <form
           className={estilos.formulario}
           aria-label={`Editar el criterio ${criterio.nombre}`}
@@ -179,11 +199,16 @@ export function BloqueCriterio({
           </div>
         </form>
       ) : (
-        criterio?.queEvalua && (
-          <p className={estilos.queEvalua}>
-            <b>Qué evalúa:</b> {criterio.queEvalua}
-          </p>
-        )
+        <>
+          {criterio?.queEvalua && (
+            <p className={estilos.queEvalua}>
+              <b>Qué evalúa:</b> {criterio.queEvalua}
+            </p>
+          )}
+          {criterio && deLaPrueba && (
+            <LineaDeLaParteCalificada criterio={criterio} entregables={entregables} />
+          )}
+        </>
       )}
 
       {quitando && criterio && (
@@ -205,8 +230,11 @@ export function BloqueCriterio({
         </div>
       )}
 
-      {criterio && preguntas.length === 0 && (
+      {criterio && preguntas.length === 0 && !deLaPrueba && (
         <p className={estilos.aviso}>Sin preguntas: así no se publica.</p>
+      )}
+      {criterio && preguntas.length === 0 && deLaPrueba && (criterio.puntosCalificados ?? 0) === 0 && (
+        <p className={estilos.aviso}>Sin cerradas ni parte calificada: así no se publica.</p>
       )}
       {!criterio && (
         <p className={estilos.aviso}>
@@ -277,6 +305,7 @@ function TarjetaPregunta({
   ultima,
   alCambiar,
 }: PropsTarjeta) {
+  const modo = useModoDelEditor()
   const [editando, setEditando] = useState(false)
   const [fallo, setFallo] = useState<Fallo | null>(null)
 
@@ -286,12 +315,13 @@ function TarjetaPregunta({
     alCambiar(editor)
   }
   const mover = useMutation({
-    mutationFn: (direccion: 'ARRIBA' | 'ABAJO') => moverPregunta(vacanteId, pregunta.id, direccion),
+    mutationFn: (direccion: 'ARRIBA' | 'ABAJO') =>
+      moverPregunta(vacanteId, pregunta.id, direccion, modo.ruta),
     onSuccess: alTerminar,
     onError: alFallar,
   })
   const quitar = useMutation({
-    mutationFn: () => quitarPregunta(vacanteId, pregunta.id),
+    mutationFn: () => quitarPregunta(vacanteId, pregunta.id, modo.ruta),
     onSuccess: alTerminar,
     onError: alFallar,
   })
@@ -317,7 +347,10 @@ function TarjetaPregunta({
     <article className={estilos.pregunta} aria-label={`Pregunta: ${pregunta.enunciado}`}>
       <div className={estilos.cabeceraPregunta}>
         <span className={estilos.chip}>{nombreDelTipo(pregunta.tipo)}</span>
-        <span className={estilos.chip}>{pregunta.puntos} pts</span>
+        {/* En la prueba la abierta no lleva puntos: la califica su criterio entero. */}
+        {!(esPrueba(modo) && pregunta.tipo === 'ABIERTA') && (
+          <span className={estilos.chip}>{pregunta.puntos} pts</span>
+        )}
         {editable && (
           <div className={estilos.botones}>
             <BotonIcono etiqueta="Subir la pregunta" onClick={() => mover.mutate('ARRIBA')} disabled={primera || ocupado}>

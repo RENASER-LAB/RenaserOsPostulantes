@@ -7,8 +7,8 @@
  * de lo que parece, y la pantalla tiene que pintar la fila igual.
  */
 
-import { describe, expect, it } from 'vitest'
-import { aniosYMeses, huecoEntre, mesesDelTramo } from './textos'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { aniosYMeses, duracion, huecoEntre, mesesDelTramo } from './textos'
 
 describe('mesesDelTramo', () => {
   it('cuenta los dos extremos: enero a marzo son tres meses', () => {
@@ -16,9 +16,12 @@ describe('mesesDelTramo', () => {
   })
 
   it('un tramo abierto llega hasta hoy', () => {
-    const hace2anios = new Date()
-    hace2anios.setFullYear(hace2anios.getFullYear() - 2)
-    expect(mesesDelTramo(hace2anios.toISOString().slice(0, 10), null)).toBe(25)
+    // El día 1 del mes de hoy, hace dos años, escrito en hora local: con
+    // `toISOString()` la fecha salía en UTC y la noche del último día del mes
+    // en Lima ya era el mes siguiente.
+    const hoy = new Date()
+    const hace2anios = `${hoy.getFullYear() - 2}-${String(hoy.getMonth() + 1).padStart(2, '0')}-01`
+    expect(mesesDelTramo(hace2anios, null)).toBe(25)
   })
 
   it('sin fecha de inicio no se inventa una duración', () => {
@@ -52,6 +55,46 @@ describe('huecoEntre', () => {
     // Las filas se reordenan a mano: dos que no van seguidas en el tiempo
     // darían un hueco negativo si no se comprobara.
     expect(huecoEntre('2022-01-01', '2019-01-01')).toBeNull()
+  })
+})
+
+/*
+ * ⚠️ **En Lima `new Date('2024-10-01')` todavía es el 30 de septiembre.** Es la
+ * medianoche UTC, y Lima va cinco horas por detrás todo el año. Contar meses
+ * con `getMonth()` sobre esa fecha daba un mes de más a cada tramo abierto. Se
+ * fijan la zona y el reloj para que el caso no dependa de dónde ni de qué día
+ * corra la suite.
+ */
+describe('las fechas de un currículum, vistas desde Lima', () => {
+  beforeEach(() => {
+    vi.stubEnv('TZ', 'America/Lima')
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.unstubAllEnvs()
+  })
+
+  it('un tramo abierto que empezó un día 1 no gana un mes', () => {
+    // Mediodía del 1 de octubre: en UTC también es el día 1.
+    vi.setSystemTime(new Date('2026-10-01T12:00:00-05:00'))
+    expect(mesesDelTramo('2024-10-01', null)).toBe(25)
+    expect(duracion('2024-10-01', null)).toBe('2 años y 1 mes')
+  })
+
+  it('el «hoy» de un tramo abierto es el de Lima, aunque en UTC ya sea otro mes', () => {
+    // 23:30 del 30 de septiembre en Lima son las 04:30Z del 1 de octubre.
+    vi.setSystemTime(new Date('2026-09-30T23:30:00-05:00'))
+    expect(mesesDelTramo('2024-09-01', null)).toBe(25)
+  })
+
+  it('un tramo cerrado cuenta igual empiece o no en día 1', () => {
+    expect(mesesDelTramo('2024-10-01', '2024-12-15')).toBe(3)
+  })
+
+  it('un hueco de tres meses que acaba un día 1 sigue siendo un hueco', () => {
+    expect(huecoEntre('2020-01-15', '2020-04-01')).toBe(3)
   })
 })
 

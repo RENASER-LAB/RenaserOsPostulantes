@@ -32,7 +32,7 @@ cinco acciones y el candidato no distingue "tengo que hacer algo" de "no tengo q
 | `PERFIL_TURNO_CANDIDATO` | Perfil | **Sí** | Evaluación |
 | `PERFIL_CALIFICANDO` | Perfil | No (sistema) | — |
 | `PERFIL_POR_CONFIRMAR` | Perfil | No (equipo) | — |
-| `PRUEBA_TURNO_CANDIDATO` | Prueba | **Sí** | Prueba del puesto **o** cuestionario técnico — lo dice la vacante, ver 2.9b |
+| `PRUEBA_TURNO_CANDIDATO` | Prueba | **Sí**, salvo con `pruebaSinCompletar` | Prueba del puesto (también la escrita en el editor de una vacante nueva) **o** cuestionario técnico — lo dice la vacante, ver 2.9 y 2.9b. Si su prueba del editor quedó sin completar, ya no le toca: ver 2.9 |
 | `PRUEBA_CALIFICANDO` | Prueba | No (sistema) | — |
 | `PRUEBA_POR_CONFIRMAR` | Prueba | No (equipo) | — |
 | `SIMULACION_POR_HABILITAR` | Simulación | No (equipo) | — |
@@ -317,7 +317,15 @@ de privacidad, que es donde se lee el texto.
 
 ### 2.6 Mis procesos — el centro del portal
 `GET /portal/postulaciones` → por postulación: `uuid`, `vacante`, `estado`, `estadoNombre`,
-`grupoPrioridad`, `diasSinCambio`, `creadoEn`.
+`grupoPrioridad`, `diasSinCambio`, `creadoEn`, `instrumentoEtapaTecnica` y, desde el 01/10/2026,
+`pruebaSinCompletar`.
+
+⚠️ **`pruebaSinCompletar` cambia lo que dice una fila en `PRUEBA_TURNO_CANDIDATO`.** Su prueba del
+editor venció con algo pendiente, el intento se cerró y la postulación sigue en ese estado hasta
+que el equipo cierre su proceso: sin este dato, el portal le seguiría diciendo que abra una prueba
+que ya no puede rendir. Con él, la fila dice «Tu tiempo terminó y la prueba quedó sin completar»,
+sin botón, y no cuenta como algo que le toca. Lo resuelven `momentoDeLaEtapa` y
+`leTocaAlCandidatoEn` en `src/dominio/estados.ts`, para «Mis procesos» y el seguimiento.
 
 🚫 **`grupoPrioridad` llega en la respuesta y NUNCA debe pintarse aquí.** Es la clasificación
 interna del equipo, y esta es la pantalla del candidato: nadie tiene que enterarse por su propio
@@ -459,15 +467,36 @@ Reglas:
   quien cierra el intento es un barrido que corre cada minuto. La pantalla tiene que detectarlo.
 - La consigna llega como texto libre con párrafos y direcciones dentro.
 
+**La prueba escrita en el editor de la vacante (01/10/2026).** Es la de toda vacante nueva y va
+por la misma pantalla (`src/paginas/prueba/Prueba.tsx`), con `delEditor: true`; sin entregables
+llega `cuestionario: true` y la pantalla la llama cuestionario. Diferencias con la de plantilla:
+
+- **Las preguntas vienen en los cuatro tipos** —abierta, opción única, opción múltiple y escala—,
+  con los mismos componentes que la evaluación. Cada una trae sus opciones (id, texto y orden) y
+  su número; **nunca puntos, claves, criterios ni calificadores**. Se responde con `texto`,
+  `opcionId` o `marcadas`.
+- **No hay cambio inesperado.**
+- **Solo se entrega con todas las preguntas respondidas y los entregables obligatorios
+  subidos.** Hasta entonces, «Entregar» no entrega: dice qué falta —«Para entregar te falta
+  responder 2 preguntas (la 3 y la 7)»— y lleva a la primera sin responder. Un texto en blanco
+  no cuenta, y una múltiple necesita al menos una marcada. El servidor lo exige también.
+- **Antes de empezar se avisa** de que, si el tiempo termina con algo pendiente, queda sin
+  completar y no se califica.
+- **Al vencer**, con todo completo se entrega sola; si falta algo, `estadoIntento` llega
+  `NO_COMPLETADA` y la pantalla dice **«Tu tiempo terminó y la prueba quedó sin completar»**, sin
+  nada que hacer. Su proceso no cambia de etapa: el equipo lo ve y lo cierra.
+
 
 ### 2.9b Cuestionario técnico — la OTRA forma de esa misma etapa (30/08/2026)
 
 `GET /portal/cuestionario-tecnico/{uuid}` → `estado`, `iniciadaEn`, `terminadaEn`, `venceEn`,
 `minutosObjetivo`, `total`, `respondidas`, `preguntas[]`.
 
-**No es una variante de 2.9: es un instrumento distinto, y cada vacante rinde uno de los dos.**
+**No es una variante de 2.9: es un instrumento distinto, y cada vacante rinde uno.**
 La vacante lo dice en `instrumentoEtapaTecnica`, que viaja con la postulación
-(`PLANTILLA` | `CUESTIONARIO_TECNICO`).
+(`PLANTILLA` | `CUESTIONARIO_TECNICO` | `PRUEBA_PROPIA`). Las vacantes nuevas, desde el
+01/10/2026, rinden siempre `PRUEBA_PROPIA` —la de 2.9, escrita en el editor—: este cuestionario
+queda para las vacantes de antes.
 
 | | Prueba del puesto (2.9) | Cuestionario técnico |
 |---|---|---|
