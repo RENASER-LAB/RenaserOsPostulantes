@@ -595,3 +595,34 @@
     margin-top: 0;
   }
 }
+
+/* ---------- La prueba del editor (V67) ----------
+ *
+ * Una cerrada es un `fieldset`: sin el marco del navegador y con la misma caja
+ * que una abierta. El número de la pregunta va en la misma línea que el
+ * enunciado, en voz baja: es lo que se nombra en «te falta la 3 y la 7».
+ */
+
+fieldset.pregunta {
+  margin: 0;
+  min-width: 0;
+}
+
+fieldset.pregunta > legend {
+  padding: 0;
+  float: left;
+  width: 100%;
+}
+
+fieldset.pregunta > legend + * {
+  clear: both;
+}
+
+.numeroPregunta {
+  font-weight: 500;
+  color: var(--tinta2);
+}
+
+.aviso.malo .reintentar {
+  margin-top: var(--e3);
+}

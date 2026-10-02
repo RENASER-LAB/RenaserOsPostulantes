@@ -688,11 +688,15 @@ export const cuantoCubre = (nota: NotaCriterio): number | null =>
  * Un «40/100» sería ruido —el 100 no añade nada— y un «40/null» era el error.
  */
 export const notaEscrita = (nota: NotaCriterio | null): string =>
-  nota == null || nota.puntaje == null
-    ? '—'
-    : nota.maximo == null || nota.maximo === 0
-      ? `${nota.puntaje}`
-      : `${nota.puntaje}/${nota.maximo}`
+  nota?.estado === 'EN_BLANCO'
+    ? ''
+    : nota?.estado === 'PENDIENTE' && nota.puntaje == null
+      ? 'pendiente'
+      : nota == null || nota.puntaje == null
+        ? '—'
+        : nota.maximo == null || nota.maximo === 0
+          ? `${nota.puntaje}`
+          : `${nota.puntaje}/${nota.maximo}`
 
 export type TonoDelCriterio = 'bien' | 'duda' | 'mal' | 'hueco'
 
@@ -808,7 +812,13 @@ export function inicialesDeLaTanda(nombresCortos: string[]): string[] {
 }
 
 export interface CriterioDeLaTanda {
-  /** El nombre completo, que es la clave: es lo único que llega en todas las filas. */
+  /**
+   * Lo que identifica la columna: la `clave` de la nota (V67, `prueba:<id>` o
+   * `banco:<id>`) o, sin ella, el nombre. Ver `claveDeLaNota` y
+   * `claveDelCriterio`, que es como se lee.
+   */
+  clave?: string
+  /** El nombre completo, que es lo que se lee. */
   nombre: string
   /** El nombre corto, de una palabra. Es lo que se lee en la leyenda. */
   rotulo: string
@@ -850,18 +860,32 @@ export interface CriterioDeLaTanda {
  * Dejaría de serlo el día en que dos filas de la misma tanda pudieran pesar
  * distinto en el mismo criterio; hoy no hay ningún camino que lo produzca.
  */
+/**
+ * La clave de la columna de una nota: la que manda el servidor (V67) o el
+ * nombre. ⚠️ **Por id, no por nombre**, cuando el servidor la manda: dos
+ * criterios «Comunicación» de vacantes o versiones distintas no se juntan.
+ */
+export const claveDeLaNota = (nota: Pick<NotaCriterio, 'clave' | 'criterio'>): string =>
+  nota.clave ?? nota.criterio
+
+/** La clave de una columna de criterio: la suya o, sin ella, el nombre. */
+export const claveDelCriterio = (c: Pick<CriterioDeLaTanda, 'clave' | 'nombre'>): string =>
+  c.clave ?? c.nombre
+
 export function criteriosDeLaTanda(filas: FilaRanking[]): CriterioDeLaTanda[] {
   const vistos = new Map<string, CriterioDeLaTanda>()
   for (const fila of filas) {
     for (const nota of fila.notasCriterio ?? []) {
-      const ya = vistos.get(nota.criterio)
+      const clave = claveDeLaNota(nota)
+      const ya = vistos.get(clave)
       // El máximo se queda con el primero que lo declare: una fila sin calificar
       // lo trae nulo, y esa nulidad no debe borrar el que ya se sabía.
       if (ya) {
         if (ya.maximo == null && nota.maximo != null) ya.maximo = nota.maximo
         continue
       }
-      vistos.set(nota.criterio, {
+      vistos.set(clave, {
+        clave,
         nombre: nota.criterio,
         rotulo: rotuloCorto(nota.codigo, nota.criterio),
         // Se rellena abajo: la inicial depende de las OTRAS, no de esta sola.
@@ -881,8 +905,8 @@ export function criteriosDeLaTanda(filas: FilaRanking[]): CriterioDeLaTanda[] {
 /** La nota de un criterio concreto en una fila, o `null` si esa fila no lo trae. */
 export const notaDelCriterio = (
   fila: FilaRanking,
-  nombre: string,
-): NotaCriterio | null => fila.notasCriterio?.find((n) => n.criterio === nombre) ?? null
+  clave: string,
+): NotaCriterio | null => fila.notasCriterio?.find((n) => claveDeLaNota(n) === clave) ?? null
 
 /**
  * Los dos párrafos de la ficha: «¿Por qué contratarlo?» y «Lectura del test».
@@ -2123,7 +2147,7 @@ export function columnasDelRanking(
       : []),
     ...criterios.map(
       (c): ColumnaDelRanking => ({
-        clave: `criterio:${c.nombre}`,
+        clave: `criterio:${claveDelCriterio(c)}`,
         // La cabecera lleva la INICIAL; la palabra vive en la leyenda de debajo,
         // siempre a la vista, y el nombre entero en el título emergente.
         titulo: c.inicial,

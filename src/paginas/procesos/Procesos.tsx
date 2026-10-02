@@ -16,7 +16,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { misPostulaciones } from '@/api/portal'
 import type { MiPostulacion } from '@/api/tipos'
-import { esFinal, estaCalificando, leTocaAlCandidato, momentoDeLaEtapa } from '@/dominio/estados'
+import { esFinal, estaCalificando, leTocaAlCandidatoEn, momentoDeLaEtapa } from '@/dominio/estados'
 import { formatearFechaCorta } from '@/dominio/reloj'
 import { rutas } from '@/rutas'
 import { Seguimiento } from './Seguimiento'
@@ -104,9 +104,9 @@ export function Procesos() {
   // Lo que de verdad depende del candidato va primero. Dentro de cada grupo se
   // respeta el orden del servidor.
   const ordenados = [...procesos].sort(
-    (a, b) => Number(leTocaAlCandidato(b.estado)) - Number(leTocaAlCandidato(a.estado)),
+    (a, b) => Number(leTocaAlCandidatoEn(b)) - Number(leTocaAlCandidatoEn(a)),
   )
-  const pendientes = procesos.filter((p) => leTocaAlCandidato(p.estado)).length
+  const pendientes = procesos.filter((p) => leTocaAlCandidatoEn(p)).length
   const vivos = procesos.filter((p) => !esFinal(p.estado)).length
 
   return (
@@ -157,9 +157,13 @@ export function Procesos() {
 
 function Proceso({ postulacion }: { postulacion: MiPostulacion }) {
   const final = esFinal(postulacion.estado)
-  const leToca = leTocaAlCandidato(postulacion.estado)
+  const leToca = leTocaAlCandidatoEn(postulacion)
   const termino = COMO_TERMINO[postulacion.estado]
-  const momento = momentoDeLaEtapa(postulacion.estado, postulacion.instrumentoEtapaTecnica)
+  const momento = momentoDeLaEtapa(
+    postulacion.estado,
+    postulacion.instrumentoEtapaTecnica,
+    postulacion.pruebaSinCompletar,
+  )
   const idTitulo = `vacante-${postulacion.uuid}`
 
   // Si tiene algo sin ver de ESTE proceso. Es lo que enciende el punto de la
@@ -299,12 +303,12 @@ function Proceso({ postulacion }: { postulacion: MiPostulacion }) {
  * si hay que hacer algo.
  */
 function resumenParaLectores(procesos: MiPostulacion[]): string {
-  const pendientes = procesos.filter((p) => leTocaAlCandidato(p.estado))
+  const pendientes = procesos.filter((p) => leTocaAlCandidatoEn(p))
   if (pendientes.length === 0) return 'Ninguna de tus postulaciones necesita nada de ti.'
   return pendientes
     .map((p) => {
       const donde = p.empresa ? ` en ${p.empresa}` : ''
-      return `${p.vacante}${donde}: ${momentoDeLaEtapa(p.estado, p.instrumentoEtapaTecnica).titulo}.`
+      return `${p.vacante}${donde}: ${momentoDeLaEtapa(p.estado, p.instrumentoEtapaTecnica, p.pruebaSinCompletar).titulo}.`
     })
     .join(' ')
 }

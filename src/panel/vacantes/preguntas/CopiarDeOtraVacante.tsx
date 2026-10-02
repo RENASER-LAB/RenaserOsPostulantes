@@ -23,6 +23,7 @@ import {
 import { Modal } from '@/ui/Modal'
 import { falloDe, type Fallo } from './consultas'
 import { NIVELES_DE_PUESTO, nombreDelNivel } from './formulario'
+import { esPrueba, useModoDelEditor } from './modo'
 import { MostrarFallo } from './piezas'
 import { VistaDeVersion } from './VistaDeVersion'
 import estilos from './EditorDePreguntas.module.css'
@@ -51,6 +52,8 @@ interface Props {
 }
 
 export function CopiarDeOtraVacante({ vacanteId, abierto, hayBorrador, alCerrar, alCopiar }: Props) {
+  const modo = useModoDelEditor()
+  const deLaPrueba = esPrueba(modo)
   const [buscar, setBuscar] = useState('')
   const [nivel, setNivel] = useState('')
   const [elegida, setElegida] = useState<number | null>(null)
@@ -58,17 +61,17 @@ export function CopiarDeOtraVacante({ vacanteId, abierto, hayBorrador, alCerrar,
   const [fallo, setFallo] = useState<Fallo | null>(null)
 
   const lista = useQuery({
-    queryKey: ['panel-preguntas-copiables', vacanteId, buscar.trim(), nivel],
-    queryFn: () => listarCopiables(vacanteId, buscar, nivel),
+    queryKey: ['panel-preguntas-copiables', modo.ruta, vacanteId, buscar.trim(), nivel],
+    queryFn: () => listarCopiables(vacanteId, buscar, nivel, modo.ruta),
     enabled: abierto,
   })
   const previa = useQuery({
-    queryKey: ['panel-preguntas-previa', vacanteId, elegida],
-    queryFn: () => verVistaPrevia(vacanteId, elegida!),
+    queryKey: ['panel-preguntas-previa', modo.ruta, vacanteId, elegida],
+    queryFn: () => verVistaPrevia(vacanteId, elegida!, modo.ruta),
     enabled: abierto && elegida !== null,
   })
   const copia = useMutation({
-    mutationFn: () => copiarDeOtraVacante(vacanteId, elegida!),
+    mutationFn: () => copiarDeOtraVacante(vacanteId, elegida!, modo.ruta),
     onSuccess: (editor) => {
       setConfirmando(false)
       alCopiar(editor)
@@ -86,14 +89,16 @@ export function CopiarDeOtraVacante({ vacanteId, abierto, hayBorrador, alCerrar,
 
   const vistaPrevia =
     elegida === null ? (
-      <p className={estilos.estado}>Elige una vacante para ver sus preguntas.</p>
+      <p className={estilos.estado}>
+        {deLaPrueba ? 'Elige una vacante para ver su prueba.' : 'Elige una vacante para ver sus preguntas.'}
+      </p>
     ) : previa.isPending ? (
       <p className={estilos.estado} role="status">
-        Abriendo sus preguntas…
+        {deLaPrueba ? 'Abriendo su prueba…' : 'Abriendo sus preguntas…'}
       </p>
     ) : previa.isError ? (
       <p className={estilos.error} role="alert">
-        No se pudieron abrir sus preguntas.
+        {deLaPrueba ? 'No se pudo abrir su prueba.' : 'No se pudieron abrir sus preguntas.'}
       </p>
     ) : (
       <>
@@ -144,12 +149,17 @@ export function CopiarDeOtraVacante({ vacanteId, abierto, hayBorrador, alCerrar,
           </select>
         </div>
 
-        <ul className={estilos.lista} aria-label="Vacantes con preguntas propias">
+        <ul
+          className={estilos.lista}
+          aria-label={deLaPrueba ? 'Vacantes con prueba técnica' : 'Vacantes con preguntas propias'}
+        >
           {lista.isPending && <li className={estilos.estado}>Buscando…</li>}
           {lista.isError && <li className={estilos.error}>No se pudo leer la lista.</li>}
           {lista.data?.length === 0 && (
             <li className={estilos.estado}>
-              Ninguna vacante de tu empresa tiene preguntas propias publicadas
+              {deLaPrueba
+                ? 'Ninguna vacante de tu empresa tiene su prueba técnica publicada'
+                : 'Ninguna vacante de tu empresa tiene preguntas propias publicadas'}
               {buscar.trim() || nivel ? ' con ese filtro' : ''}.
             </li>
           )}

@@ -32,6 +32,7 @@ import {
   resultadoDelReintento,
 } from './formulario'
 import { ContenidoDePregunta } from './BloqueCriterio'
+import { esPrueba, useModoDelEditor } from './modo'
 import { MostrarFallo } from './piezas'
 import { VistaDeVersion } from './VistaDeVersion'
 import estilos from './EditorDePreguntas.module.css'
@@ -47,20 +48,23 @@ interface Props {
 export function PreguntasPublicadas({ editor, publicada, alCambiar }: Props) {
   const cache = useQueryClient()
   const vacanteId = editor.vacanteId
+  const modoDelEditor = useModoDelEditor()
+  const deLaPrueba = esPrueba(modoDelEditor)
   const [modo, setModo] = useState<Modo>('LEER')
   const [hecho, setHecho] = useState<string | null>(null)
   const [fallo, setFallo] = useState<Fallo | null>(null)
   const recalificacion = editor.recalificacion
   const enCurso = (recalificacion?.recalificando ?? 0) > 0
-  const refrescar = () => cache.invalidateQueries({ queryKey: claveDelEditor(vacanteId) })
+  const refrescar = () =>
+    cache.invalidateQueries({ queryKey: claveDelEditor(vacanteId, modoDelEditor.ruta) })
 
   const borrador = useMutation({
-    mutationFn: () => abrirBorrador(vacanteId),
+    mutationFn: () => abrirBorrador(vacanteId, modoDelEditor.ruta),
     onSuccess: alCambiar,
     onError: (c) => setFallo(falloDe(c, 'No se pudo abrir el borrador.')),
   })
   const reintento = useMutation({
-    mutationFn: () => reintentarRecalificacion(vacanteId),
+    mutationFn: () => reintentarRecalificacion(vacanteId, modoDelEditor.ruta),
     onSuccess: (r) => {
       setHecho(resultadoDelReintento(r))
       void refrescar()
@@ -70,10 +74,18 @@ export function PreguntasPublicadas({ editor, publicada, alCambiar }: Props) {
 
   return (
     <div className={estilos.criterios}>
-      <p className={estilos.cartel}>
-        Publicadas. Desde la primera postulación solo se cambian los puntos y las instrucciones de
-        la IA, y cualquiera de los dos vuelve a calcular la nota de todos.
-      </p>
+      {deLaPrueba ? (
+        <p className={estilos.cartel}>
+          Publicada. Desde que alguien empieza a rendirla solo se cambian los puntos y las
+          instrucciones de la IA, y cualquiera de los dos vuelve a calcular la nota de todos.
+          {!editor.hayPostulantes && ' Mientras nadie la haya abierto, se puede abrir un borrador y publicar otra.'}
+        </p>
+      ) : (
+        <p className={estilos.cartel}>
+          Publicadas. Desde la primera postulación solo se cambian los puntos y las instrucciones de
+          la IA, y cualquiera de los dos vuelve a calcular la nota de todos.
+        </p>
+      )}
 
       {recalificacion && (recalificacion.recalificando > 0 || recalificacion.pendientes > 0) && (
         <div className={estilos.recalificando} role="status">
@@ -120,7 +132,7 @@ export function PreguntasPublicadas({ editor, publicada, alCambiar }: Props) {
               onClick={() => borrador.mutate()}
               disabled={borrador.isPending}
             >
-              Abrir un borrador para cambiarlas
+              {deLaPrueba ? 'Abrir un borrador' : 'Abrir un borrador para cambiarlas'}
             </button>
           )}
           <button
@@ -206,9 +218,19 @@ function CambiarLosPuntos({
   alTerminar: (mensaje: string) => void
   alCancelar: () => void
 }) {
+  const modoDelEditor = useModoDelEditor()
+  const deLaPrueba = esPrueba(modoDelEditor)
+  // En la prueba (V67) las abiertas no llevan puntos: no se ofrecen.
   const preguntas = useMemo(
-    () => [...publicada.criterios.flatMap((c) => c.preguntas), ...publicada.sinCriterio],
-    [publicada],
+    () =>
+      [...publicada.criterios.flatMap((c) => c.preguntas), ...publicada.sinCriterio].filter(
+        (p) => !(deLaPrueba && p.tipo === 'ABIERTA'),
+      ),
+    [publicada, deLaPrueba],
+  )
+  const conParte = publicada.criterios.filter((c) => (c.puntosCalificados ?? 0) > 0)
+  const [calificadas, setCalificadas] = useState<Record<number, string>>(
+    () => Object.fromEntries(conParte.map((c) => [c.id, String(c.puntosCalificados ?? 0)])),
   )
   const [puntos, setPuntos] = useState<Record<number, string>>(
     () => Object.fromEntries(preguntas.map((p) => [p.id, String(p.puntos)])),
@@ -219,17 +241,26 @@ function CambiarLosPuntos({
   const [confirmando, setConfirmando] = useState(false)
   const [fallo, setFallo] = useState<Fallo | null>(null)
 
-  const suma = preguntas.reduce((s, p) => s + (Number(puntos[p.id]) || 0), 0)
+  const suma =
+    preguntas.reduce((s, p) => s + (Number(puntos[p.id]) || 0), 0) +
+    conParte.reduce((s, c) => s + (Number(calificadas[c.id]) || 0), 0)
 
   const guardado = useMutation({
     mutationFn: () =>
-      cambiarPuntos(vacanteId, {
-        preguntas: preguntas.map((p) => ({
-          id: p.id,
-          puntos: Number(puntos[p.id]),
-          opciones: p.opciones.map((o) => ({ id: o.id, puntos: Number(opciones[o.id]) })),
-        })),
-      }),
+      cambiarPuntos(
+        vacanteId,
+        {
+          preguntas: preguntas.map((p) => ({
+            id: p.id,
+            puntos: Number(puntos[p.id]),
+            opciones: p.opciones.map((o) => ({ id: o.id, puntos: Number(opciones[o.id]) })),
+          })),
+          ...(deLaPrueba
+            ? { criterios: conParte.map((c) => ({ id: c.id, puntosCalificados: Number(calificadas[c.id]) })) }
+            : {}),
+        },
+        modoDelEditor.ruta,
+      ),
     onSuccess: (r) =>
       alTerminar(
         r.personas === 0
@@ -264,7 +295,22 @@ function CambiarLosPuntos({
             <h3 className={estilos.nombreCriterio}>{c.nombre}</h3>
             <span className={estilos.puntosCriterio}>{puntosDelCriterio(c)}</span>
           </header>
-          {c.preguntas.map((p) => (
+          {deLaPrueba && (c.puntosCalificados ?? 0) > 0 && (
+            <label className={estilos.filaOpcion}>
+              <span className={estilos.textoOpcion}>
+                Parte calificada ({c.calificador === 'PERSONA' ? 'una persona' : 'la IA'})
+              </span>
+              <input
+                className={estilos.entradaPuntos}
+                type="number"
+                step={1}
+                aria-label={`Parte calificada de «${c.nombre}»`}
+                value={calificadas[c.id]}
+                onChange={(e) => setCalificadas((v) => ({ ...v, [c.id]: e.target.value }))}
+              />
+            </label>
+          )}
+          {c.preguntas.filter((p) => !(deLaPrueba && p.tipo === 'ABIERTA')).map((p) => (
             <div className={estilos.pregunta} key={p.id}>
               <div className={estilos.cabeceraPregunta}>
                 <span className={estilos.chip}>{nombreDelTipo(p.tipo)}</span>
@@ -348,17 +394,30 @@ function CorregirLasInstrucciones({
   const [queDebeTener, setQueDebeTener] = useState<Record<number, string>>(
     () => Object.fromEntries(abiertas.map((p) => [p.id, p.queDebeTener ?? ''])),
   )
+  const modoDelEditor = useModoDelEditor()
+  // En la prueba (V67) se corrige también lo que debe tener cada entregable.
+  const entregables = publicada.prueba?.entregables ?? []
+  const [deEntregables, setDeEntregables] = useState<Record<number, string>>(
+    () => Object.fromEntries(entregables.map((e) => [e.id, e.queDebeTener ?? ''])),
+  )
   const [confirmando, setConfirmando] = useState(false)
   const [sinSaldo, setSinSaldo] = useState<string | null>(null)
   const [fallo, setFallo] = useState<Fallo | null>(null)
 
   const guardado = useMutation({
     mutationFn: () =>
-      corregirInstrucciones(vacanteId, {
-        guiaCalificacion: guia,
-        criterios: publicada.criterios.map((c) => ({ id: c.id, texto: queEvalua[c.id] ?? '' })),
-        preguntas: abiertas.map((p) => ({ id: p.id, texto: queDebeTener[p.id] ?? '' })),
-      }),
+      corregirInstrucciones(
+        vacanteId,
+        {
+          guiaCalificacion: guia,
+          criterios: publicada.criterios.map((c) => ({ id: c.id, texto: queEvalua[c.id] ?? '' })),
+          preguntas: abiertas.map((p) => ({ id: p.id, texto: queDebeTener[p.id] ?? '' })),
+          ...(entregables.length > 0
+            ? { entregables: entregables.map((e) => ({ id: e.id, texto: deEntregables[e.id] ?? '' })) }
+            : {}),
+        },
+        modoDelEditor.ruta,
+      ),
     onSuccess: (r) =>
       alTerminar(
         r.personas === 0
@@ -428,6 +487,23 @@ function CorregirLasInstrucciones({
             ))}
         </section>
       ))}
+      {entregables.length > 0 && (
+        <section className={estilos.criterio} aria-label="Los entregables">
+          <h3 className={estilos.nombreCriterio}>Entregables</h3>
+          {entregables.map((e) => (
+            <label className={estilos.campo} key={e.id}>
+              <span className={estilos.etiqueta}>Qué debe tener una buena entrega · {e.nombre}</span>
+              <textarea
+                className={estilos.area}
+                rows={2}
+                maxLength={1000}
+                value={deEntregables[e.id]}
+                onChange={(ev) => setDeEntregables((v) => ({ ...v, [e.id]: ev.target.value }))}
+              />
+            </label>
+          ))}
+        </section>
+      )}
       {confirmando && (
         <div className={estilos.confirmacion} role="alertdialog" aria-label="Volver a calificar">
           <span>{avisoAntesDeRecalificar(conNota)}</span>

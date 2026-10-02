@@ -822,7 +822,7 @@ const listar = (versiones: VersionBanco[]) =>
 */
 function explicar(causa: unknown): string {
   if (causa instanceof ErrorApi && causa.estado === 404) {
-    return 'Esta versión no es de tu empresa: es del banco de la plataforma, que tu empresa usa pero no administra. Para cambiarla hay que personalizar el banco.'
+    return 'Esta versión no es de tu empresa: es del banco de la plataforma, que tu empresa usa pero no administra. Cada vacante escribe sus propias preguntas en su editor.'
   }
   if (causa instanceof Error && causa.message) return causa.message
   return 'No se pudo completar la operación.'

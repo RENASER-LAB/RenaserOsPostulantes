@@ -669,6 +669,13 @@ describe('el ranking filtra por la etapa de su pestaña', () => {
     await waitFor(() => expect(within(laTabla()).queryByText('Recién Llegada')).toBeTruthy())
   })
 
+  it('con la plantilla, la pestaña de la prueba sí trae el lote de sus notas', async () => {
+    // Rita entregó y sigue sin nota: es a quien alcanza el lote.
+    await pintar([...TANDA, fila(97, 'Rita Entregó', 'PRUEBA_CALIFICANDO', null)])
+    irA('Prueba del puesto')
+    expect(await screen.findByRole('heading', { name: 'Las notas de la prueba' })).toBeTruthy()
+  })
+
   it('cambia de gente al cambiar de pestaña', async () => {
     await pintar()
     verCorte('Le toca al candidato')
@@ -4109,5 +4116,117 @@ describe('el Excel con los filtros nuevos', () => {
     const pedido = pedirExcel.mock.calls[0]?.[1] as { postulacionIds: number[]; filtroDescrito: string }
     expect(pedido.postulacionIds).toEqual([103, 105])
     expect(pedido.filtroDescrito).toContain('IA: fallida')
+  })
+})
+
+/*
+ * Una vacante nueva (V67) rinde la prueba que se escribe en su editor: el bloque
+ * «Prueba técnica» no tiene nada que elegir, solo el estado y «Armar la prueba»,
+ * y publicar la vacante exige esa prueba publicada (AC-01, AC-03).
+ *
+ * `verPreguntasPropias` solo se llama con la ruta de la prueba: ninguna otra
+ * prueba de este archivo tiene preguntas propias.
+ */
+const verLaPruebaPropia = vi.fn()
+vi.mock('../api/preguntasPropias', async (original) => ({
+  ...(await original<typeof import('../api/preguntasPropias')>()),
+  verPreguntasPropias: (id: number, ruta?: string) => verLaPruebaPropia(id, ruta),
+}))
+// «No completaron la prueba»: solo la pide una vacante con la prueba del editor.
+const verNoCompletaron = vi.fn(() => Promise.resolve([] as unknown[]))
+vi.mock('../api/pruebaPropia', async (original) => ({
+  ...(await original<typeof import('../api/pruebaPropia')>()),
+  verQuienesNoCompletaron: () => verNoCompletaron(),
+}))
+
+describe('una vacante nueva rinde la prueba de su editor (V67)', () => {
+  const conLaPrueba = (estado: 'BORRADOR' | 'PUBLICADA', vacante: Record<string, unknown> = {}) => {
+    sinRuido.verVacante = () =>
+      Promise.resolve({ ...VACANTE, instrumentoEtapaTecnica: 'PRUEBA_PROPIA', ...vacante })
+    verLaPruebaPropia.mockResolvedValue({
+      vacanteId: 1,
+      titulo: 'Ingeniera',
+      nivel: 'EJECUCION',
+      origen: 'PRUEBA_PROPIA',
+      aplicaEvaluacion: true,
+      puedeEditar: true,
+      hayPostulantes: false,
+      borrador: null,
+      publicada: null,
+      recalificacion: null,
+      proposito: 'PRUEBA_PUESTO',
+      resumen:
+        estado === 'BORRADOR'
+          ? { estado, puntos: 70, criterios: 3, preguntas: 8, entregables: 2 }
+          : { estado, puntos: 100, criterios: 5, preguntas: 9, entregables: 2, minutos: 90, cuestionario: false },
+    })
+  }
+  afterEach(() => {
+    sinRuido.verVacante = () => Promise.resolve(VACANTE)
+  })
+
+  it('sin desplegables ni minutos ni la tarjeta de la ficha: el estado y «Armar la prueba» (AC-01)', async () => {
+    conLaPrueba('BORRADOR')
+    await pintar()
+
+    expect(await screen.findByText('Borrador · 70 de 100 puntos · 2 entregables')).toBeTruthy()
+    expect(verLaPruebaPropia).toHaveBeenCalledWith(1, 'prueba-propia')
+    expect(screen.queryByRole('combobox', { name: /qué rendirá en la etapa técnica/i })).toBeNull()
+    expect(screen.queryByRole('combobox', { name: /prueba del puesto/i })).toBeNull()
+    expect(screen.queryByText('Cuánto tiempo tendrá')).toBeNull()
+    expect(screen.queryByRole('link', { name: /la prueba técnica →/ })).toBeNull()
+    expect(screen.getByRole('link', { name: 'Armar la prueba →' }).getAttribute('href')).toBe(
+      '/admin/vacantes/1/prueba',
+    )
+    // «Pesos de la decisión» sigue igual.
+    expect(screen.getByRole('combobox', { name: /qué pesos rigen la decisión/i })).toBeTruthy()
+  })
+
+  it('con la prueba en borrador no se publica, y lo dice (AC-03)', async () => {
+    conLaPrueba('BORRADOR', { estado: 'BORRADOR' })
+    await pintar()
+
+    await screen.findByText('Borrador · 70 de 100 puntos · 2 entregables')
+    const boton = screen.getByRole('button', { name: 'Publicar en el portal' })
+    expect((boton as HTMLButtonElement).disabled).toBe(true)
+    expect(screen.queryByText('Todo listo: ya se puede publicar.')).toBeNull()
+    expect(screen.getByText(/publicar su\s+prueba técnica/)).toBeTruthy()
+  })
+
+  /*
+    H-03: el bloque de lote de la prueba pondera y califica la rúbrica de una PLANTILLA.
+    Con la prueba del editor esa rúbrica no existe, y el bloque acababa diciendo que la
+    persona «no tiene rúbrica de prueba que calificar» (AC-15).
+  */
+  it('la pestaña de la prueba no monta el lote de la plantilla (AC-15)', async () => {
+    conLaPrueba('PUBLICADA', { estado: 'PUBLICADA' })
+    verNoCompletaron.mockResolvedValueOnce([
+      {
+        postulacionId: 77,
+        candidato: 'Saúl Vence',
+        estado: 'PRUEBA_TURNO_CANDIDATO',
+        queFalto: 'le faltó 1 pregunta',
+        cerradaEn: null,
+        procesoCerrado: false,
+      },
+    ])
+    // Rita entregó y espera a la persona que califica: con la plantilla, el lote la contaría.
+    await pintar([...TANDA, fila(97, 'Rita Entregó', 'PRUEBA_CALIFICANDO', null)])
+    irA('Prueba del puesto')
+
+    // La pestaña es la de la prueba del editor: su lista aparte sí está.
+    expect(await screen.findByText(/No completaron la prueba \(1\)/)).toBeTruthy()
+    expect(screen.queryByRole('heading', { name: 'Las notas de la prueba' })).toBeNull()
+    expect(screen.queryByRole('button', { name: /Ver qué le falta/ })).toBeNull()
+  })
+
+  it('con la prueba publicada, el botón y el cartel dicen lo mismo', async () => {
+    conLaPrueba('PUBLICADA', { estado: 'BORRADOR' })
+    await pintar()
+
+    expect(await screen.findByText('Publicada · 5 criterios · 2 entregables · 90 min')).toBeTruthy()
+    await waitFor(() => expect(screen.getByText('Todo listo: ya se puede publicar.')).toBeTruthy())
+    const boton = screen.getByRole('button', { name: 'Publicar en el portal' })
+    expect((boton as HTMLButtonElement).disabled).toBe(false)
   })
 })

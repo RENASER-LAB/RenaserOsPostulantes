@@ -1,5 +1,6 @@
 import { expect, type Page } from '@playwright/test'
 import { API, tokenDelPanel } from './ayuda'
+import { sql } from './base-de-datos'
 
 /**
  * Lo que comparten los recorridos de la prueba técnica (16 y 17): una vacante en
@@ -79,6 +80,14 @@ export async function crearVacanteEnBorrador(titulo: string): Promise<number> {
     tipoCierre: 'PERMANENTE',
     responsableUsuarioId: usuarios[0]!.id,
   })
+  // Desde la V67 una vacante nueva rinde la prueba escrita en su editor. Estos recorridos son
+  // los de la prueba del puesto de antes (plantilla o cuestionario técnico), que siguen igual
+  // en las vacantes que ya existían: se la deja como una de ellas.
+  //
+  // ⚠️ Por la base y no por la API: el instrumento técnico ya no saca a una vacante nueva del
+  // editor (400, AC-02). Así se fija el valor de una «vacante de antes», igual que
+  // `sembrarVacantePropia` en ayuda-eliminar-vacante.ts.
+  sql(`update vacante set instrumento_etapa_tecnica = 'PLANTILLA' where id = ${Number(id)};`)
   return id
 }
 

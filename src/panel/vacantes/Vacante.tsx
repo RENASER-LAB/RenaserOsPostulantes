@@ -124,6 +124,7 @@ import {
   seExportaAExcel,
   estadoEnDos,
   notaDelCriterio,
+  claveDelCriterio,
   notaEscrita,
   tonoDelCriterio,
   type CiudadDelRanking,
@@ -139,6 +140,9 @@ import { ResenasDeLaFicha } from './ResenasDeLaFicha'
 import { IconoEstrella } from '@/ui/Iconos'
 import { DesglosePorPuntos } from './preguntas/DesglosePorPuntos'
 import { OrigenDeLasPreguntas, usePreguntasListas } from './preguntas/OrigenDeLasPreguntas'
+import { PruebaDeLaVacante, rindeLaPruebaPropia, usePruebaLista } from './preguntas/PruebaDeLaVacante'
+import { PruebaDelCandidato } from './PruebaDelCandidato'
+import { NoCompletaron } from './NoCompletaron'
 import { loQueFaltaParaPublicar } from './loQueFaltaParaPublicar'
 import estilos from './Vacante.module.css'
 
@@ -274,6 +278,7 @@ export function VacantePanelDetalle() {
   // Si las preguntas propias ya estan publicadas (V66): el boton de publicar y el
   // cartel «Todo listo» miran la misma regla que el backend.
   const preguntasListas = usePreguntasListas(vacante.data)
+  const pruebaLista = usePruebaLista(vacante.data)
   // Lo mismo para el otro instrumento: sin esto la puerta de publicar solo sabría mirar
   // la plantilla, y una vacante con cuestionario listo se quedaría sin poder publicarse.
   const cuestionarioPublicado = useCuestionarioPublicado(vacanteId)
@@ -434,11 +439,15 @@ export function VacantePanelDetalle() {
   // ella. Pedir siempre la plantilla dejaría «Publicar» apagado para siempre en una
   // vacante que eligió el cuestionario y lo tiene listo.
   const rindeElCuestionario = v.instrumentoEtapaTecnica === 'CUESTIONARIO_TECNICO'
+  // Una vacante nueva (V67) rinde la prueba escrita en su editor: no elige plantilla y
+  // lo que le falta es publicar esa prueba, que se hace en su página.
+  const rindeLaSuya = rindeLaPruebaPropia(v)
   const leFalta = loQueFaltaParaPublicar({
     bancoDelNivel: v.aplicaEvaluacion && !propias && faltaElBanco,
     preguntasPropias: propias && preguntasListas === false,
     cuestionarioTecnico: rindeElCuestionario && cuestionarioPublicado === false,
-    pruebaDelPuesto: !rindeElCuestionario && v.versionPlantillaPruebaId === null,
+    pruebaDelPuesto: !rindeElCuestionario && !rindeLaSuya && v.versionPlantillaPruebaId === null,
+    pruebaTecnica: rindeLaSuya && pruebaLista === false,
   })
 
   return (
@@ -517,6 +526,12 @@ export function VacantePanelDetalle() {
                   <>
                     {leFalta.aquiAbajo !== null ? ', y ' : ''}publicar sus preguntas propias, desde{' '}
                     <Link to={rutas.adminPreguntasPropias(v.id)}>Escribir las preguntas</Link>
+                  </>
+                )}
+                {leFalta.pruebaTecnica && (
+                  <>
+                    {leFalta.aquiAbajo !== null || leFalta.preguntasPropias ? ', y ' : ''}publicar su
+                    prueba técnica, desde <Link to={rutas.adminPruebaPropia(v.id)}>Armar la prueba</Link>
                   </>
                 )}
                 .
@@ -718,7 +733,14 @@ export function VacantePanelDetalle() {
           defecto.
         */}
         {/* La otra tanda que escribe: tampoco se ofrece sobre una archivada. */}
-        {etapa === 'PRUEBA_PUESTO' && !archivada && ranking.data && (
+        {/*
+          ⚠️ **Ni sobre la prueba del editor (V67).** Este bloque pondera y califica la
+          rúbrica de una PLANTILLA: con la prueba del editor la API de esa rúbrica
+          devuelve vacío y el bloque acababa diciendo que la persona «no tiene rúbrica de
+          prueba que calificar». Ahí las cerradas se puntúan al entregar, la IA califica
+          sola y lo de una persona se califica en su ficha; lo pendiente lo dice la tabla.
+        */}
+        {etapa === 'PRUEBA_PUESTO' && !archivada && !rindeLaPruebaPropia(v) && ranking.data && (
           <LaTandaDeLaPrueba
             filas={ranking.data.filas}
             alTerminar={() => {
@@ -732,6 +754,7 @@ export function VacantePanelDetalle() {
             key={etapa}
             vacanteId={vacanteId}
             etapa={etapa}
+            pruebaPropia={rindeLaPruebaPropia(v)}
             filas={ranking.data.filas}
             cabeceraDelCv={ranking.data}
             vista={vista}
@@ -744,6 +767,13 @@ export function VacantePanelDetalle() {
                 queryKey: ['panel-ranking', vacanteId],
               })
             }}
+          />
+        )}
+        {/* V67: quien dejó vencer la prueba del editor con huecos no sale en la tabla. */}
+        {etapa === 'PRUEBA_PUESTO' && rindeLaPruebaPropia(v) && ranking.data && (
+          <NoCompletaron
+            vacanteId={vacanteId}
+            puedeMover={!archivada && ranking.data.puedeMoverPostulacion}
           />
         )}
         </div>
@@ -837,9 +867,12 @@ function Ranking({
   archivada,
   filtros,
   alCambiarFiltros,
+  pruebaPropia = false,
 }: {
   vacanteId: number
   etapa: EtapaPanel
+  /** La vacante rinde la prueba escrita en su editor (V67). */
+  pruebaPropia?: boolean
   filas: FilaRanking[]
   /** Las cuatro cifras del backend, que son de la cola del currículum. */
   cabeceraDelCv: RankingVacante
@@ -1625,6 +1658,12 @@ function Ranking({
                     {delCurriculum && fila.pasada === 'RAPIDA' && fila.notaEtapa !== null && (
                       <span className={estilos.provisional}>provisional</span>
                     )}
+                    {/* V67: la guía cambió y sus criterios de IA se están volviendo a calificar. */}
+                    {fila.recalificando && (
+                      <span className={estilos.provisional} title="Recalificando con la guía nueva">
+                        Recalificando con la guía nueva
+                      </span>
+                    )}
                     {/*
                       ⚠️ **El guion tenía cinco significados y no decía cuál.**
                       «Están calificados pero no se ve su nota» era exactamente
@@ -1758,17 +1797,19 @@ function Ranking({
                     ocho columnas estrechas se vuelven ilegibles sin él.
                   */}
                   {criterios
-                    .filter((c) => ve(`criterio:${c.nombre}`))
+                    .filter((c) => ve(`criterio:${claveDelCriterio(c)}`))
                     .map((criterio) => {
-                    const nota = notaDelCriterio(fila, criterio.nombre)
+                    const nota = notaDelCriterio(fila, claveDelCriterio(criterio))
                     const tono = nota ? tonoDelCriterio(nota) : 'hueco'
                     const cubre = nota ? cuantoCubre(nota) : null
                     return (
                       <td
-                        key={criterio.nombre}
+                        key={claveDelCriterio(criterio)}
                         className={`${tabla.cifra} ${estilos.celdaCriterio} ${estilos[tono]!}`}
                         title={
-                          cubre === null
+                          nota?.estado === 'PENDIENTE' && cubre === null
+                            ? `${criterio.nombre}: pendiente, le falta su parte calificada`
+                            : cubre === null
                             ? `${criterio.nombre}: todavía sin nota`
                             : `${criterio.nombre}: ${Math.round(cubre * 100)} % del criterio` +
                               (criterio.peso === 0
@@ -1844,7 +1885,7 @@ function Ranking({
                 {abierta === fila.postulacionId && (
                   <tr>
                     <td id={`ficha-${fila.postulacionId}`} colSpan={columnas} className={estilos.celdaDetalle}>
-                      <DetalleDelPostulante fila={fila} etapa={etapa} />
+                      <DetalleDelPostulante fila={fila} etapa={etapa} pruebaPropia={pruebaPropia} />
                     </td>
                   </tr>
                 )}
@@ -1946,12 +1987,12 @@ function Ranking({
         </p>
       )}
 
-      {criterios.filter((c) => ve(`criterio:${c.nombre}`)).length > 0 && (
+      {criterios.filter((c) => ve(`criterio:${claveDelCriterio(c)}`)).length > 0 && (
         <p className={estilos.leyendaLetras}>
           {criterios
-            .filter((c) => ve(`criterio:${c.nombre}`))
+            .filter((c) => ve(`criterio:${claveDelCriterio(c)}`))
             .map((c) => (
-              <span key={c.nombre} title={c.nombre}>
+              <span key={claveDelCriterio(c)} title={c.nombre}>
                 <b>{c.inicial}</b> {c.rotulo}
                 {/*
                   El peso, aqui y no en la cabecera. No es decoracion: un 90 en
@@ -1964,7 +2005,7 @@ function Ranking({
         </p>
       )}
 
-      {criterios.filter((c) => ve(`criterio:${c.nombre}`)).length > 0 && (
+      {criterios.filter((c) => ve(`criterio:${claveDelCriterio(c)}`)).length > 0 && (
         <p className={estilos.leyendaCriterios}>
           <span>
             <i className={estilos.bien} /> cubre 70 % o más del criterio
@@ -2241,7 +2282,16 @@ function etapaDeLaFicha(estado: string, estadoNombre: string, catalogos: Catalog
   return nombre ?? estadoNombre
 }
 
-function DetalleDelPostulante({ fila, etapa }: { fila: FilaRanking; etapa: EtapaPanel }) {
+function DetalleDelPostulante({
+  fila,
+  etapa,
+  pruebaPropia = false,
+}: {
+  fila: FilaRanking
+  etapa: EtapaPanel
+  /** La vacante rinde la prueba escrita en su editor (V67): otra pestaña «Prueba». */
+  pruebaPropia?: boolean
+}) {
   const catalogos = useQuery({
     queryKey: ['panel-catalogos'],
     queryFn: verCatalogos,
@@ -2422,7 +2472,17 @@ function DetalleDelPostulante({ fila, etapa }: { fila: FilaRanking; etapa: Etapa
       </div>
 
       <div className={estilos.columnaDetalle}>
-        {etapa === 'PRUEBA_PUESTO' ? (
+        {etapa === 'PRUEBA_PUESTO' && pruebaPropia ? (
+          <>
+            {/*
+              La prueba del editor (V67) no tiene rúbrica de plantilla: su desglose
+              es otro y se ajusta por su propio endpoint (decisión 3). El plazo de
+              la persona sigue siendo el mismo intento, y por eso se queda.
+            */}
+            <PruebaDelCandidato postulacionId={fila.postulacionId} />
+            <PlazoDeUnaPersona postulacionId={fila.postulacionId} alGuardar={noHayNadaQueRefrescar} />
+          </>
+        ) : etapa === 'PRUEBA_PUESTO' ? (
           <>
             {/*
               ⚠️ **`ponerNota` es lo que convierte esta lista en el sitio donde
@@ -3714,12 +3774,16 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
   // pantalla — que es como se descubrio la vez anterior.
   const cuestionarioPublicado = useCuestionarioPublicado(vacante.id)
   const preguntasListas = usePreguntasListas(vacante)
+  const pruebaLista = usePruebaLista(vacante)
+  const laSuya = rindeLaPruebaPropia(vacante)
   const listaParaPublicar =
     (!vacante.aplicaEvaluacion ||
       (vacante.origenPreguntas === 'VACANTE' ? preguntasListas === true : bancoDelNivel != null)) &&
-    (vacante.instrumentoEtapaTecnica === 'CUESTIONARIO_TECNICO'
-      ? cuestionarioPublicado === true
-      : vacante.versionPlantillaPruebaId !== null)
+    (laSuya
+      ? pruebaLista === true
+      : vacante.instrumentoEtapaTecnica === 'CUESTIONARIO_TECNICO'
+        ? cuestionarioPublicado === true
+        : vacante.versionPlantillaPruebaId !== null)
 
   return (
     <section className={estilos.seccion}>
@@ -3823,6 +3887,10 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
         </fieldset>
         <fieldset className={estilos.grupoConfiguracion}>
           <legend>Prueba técnica</legend>
+        {/* Una vacante nueva (V67): sin nada que elegir, el estado y «Armar la prueba». */}
+        {laSuya && <PruebaDeLaVacante vacante={vacante} />}
+        {!laSuya && (
+        <>
         <label className={`${estilos.ajuste} ${estilos.instrumentoTecnico}`}>
           <span className={estilos.etiquetaAjuste}>Qué rendirá en la etapa técnica</span>
           <select
@@ -3908,6 +3976,8 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
           <MinutosDeLaEtapa vacante={vacante} alGuardar={instrumento.mutate}
                             guardando={instrumento.isPending} />
         </label>
+        </>
+        )}
         </fieldset>
         <fieldset className={estilos.grupoConfiguracion}>
           <legend>Pesos de la decisión</legend>
@@ -3954,7 +4024,8 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
         estado y el enlace. No entra en `leFalta` ni en `listaParaPublicar`: el
         servidor no lo exige para publicar la vacante.
       */}
-      <EstadoDeLaPruebaTecnica vacanteId={vacante.id} />
+      {/* La vacante nueva (V67) no tiene la tarjeta de la ficha y el cuestionario. */}
+      {!laSuya && <EstadoDeLaPruebaTecnica vacanteId={vacante.id} />}
 
       {/*
         Fuera de la rejilla de los tres desplegables, y no como un cuarto: una
@@ -4000,6 +4071,16 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
               : 'Esta vacante rinde el cuestionario técnico: cada persona tiene los minutos que rijan desde que lo abre, así que no se cierra con una fecha.'}{' '}
             <a href="#tiempo-de-la-etapa-tecnica">Ajustar los minutos →</a>
           </p>
+        ) : laSuya ? (
+          pruebaLista === true ? (
+            <CierreDeLaVacante vacante={vacante} alGuardar={refrescar} />
+          ) : (
+            <p className={estilos.ayudaAjuste}>
+              Para fijar cuándo cierra la prueba hay que publicarla antes, desde{' '}
+              <Link to={rutas.adminPruebaPropia(vacante.id)}>Armar la prueba</Link>: el plazo se
+              cuenta sobre la prueba publicada.
+            </p>
+          )
         ) : vacante.versionPlantillaPruebaId === null ? (
           <p className={estilos.ayudaAjuste}>
             Para fijar cuándo cierra la prueba hay que elegir antes cuál rendirá, aquí

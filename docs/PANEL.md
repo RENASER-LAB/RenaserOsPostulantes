@@ -3,8 +3,9 @@
 Qué es, cómo se entra, qué enseña cada entrada del menú lateral, qué exige el backend antes de
 publicar una vacante, cómo se eligen su modalidad y su ciudad, cómo se corrige después, las
 reseñas de empresas —escribirlas, leerlas y moderarlas—, la gestión de personas: colaboradores,
-sedes y cargos, y contratar desde la ficha; y las preguntas propias de cada vacante: de dónde
-salen, el editor y su nota en la ficha. El recorrido de los dos lados —equipo y candidato— está en
+sedes y cargos, y contratar desde la ficha; las preguntas propias de cada vacante: de dónde
+salen, el editor y su nota en la ficha; y la prueba técnica de cada vacante nueva, escrita en ese
+mismo editor. El recorrido de los dos lados —equipo y candidato— está en
 [06-FLUJO-COMPLETO.md](06-FLUJO-COMPLETO.md).
 
 ---
@@ -52,7 +53,7 @@ juego en el backend) y **qué enseña la ficha** al abrir una fila:
 | Pestaña | La ficha muestra |
 |---|---|
 | Perfil integral y Decisión | **Dos tablas**: el CV criterio a criterio, y la evaluación del banco —cada respuesta abierta con la nota, el porqué y la evidencia citada por la IA (`GET /postulaciones/{id}/evaluacion`, nuevo)— |
-| Prueba / Simulación | La rúbrica con nota, explicación y origen (IA o ajuste a mano). Comparten componente porque el backend les da la misma forma |
+| Prueba / Simulación | La rúbrica con nota, explicación y origen (IA o ajuste a mano). Comparten componente porque el backend les da la misma forma. **En una vacante nueva (01/10/2026), la pestaña Prueba enseña su prueba criterio a criterio**: ver «La prueba técnica de cada vacante nueva», al final |
 | Validación | La cabecera del periodo y sus métricas. **El panel sí tiene ruta de validación**; la que falta es la del candidato |
 
 Cada pestaña enseña **solo a quien está parado en esa etapa** — ver «La prueba por dentro, y la entrada de las
@@ -200,7 +201,7 @@ tres viven en el detalle de la vacante, bajo **«Qué responderá quien postule�
 | Qué | Obligatorio |
 |---|---|
 | **Sus preguntas, según de dónde salgan** | Desde el 30/09 se elige en «De dónde salen sus preguntas» (ver «Las preguntas propias de cada vacante», al final). **Con «Preguntas propias de esta vacante» —con la que nace toda vacante nueva— hay que tenerlas publicadas**; con «El banco de la empresa para su nivel», que esté publicado en Configuración para el nivel del puesto (V44); con «Sin evaluación», nada |
-| Versión de plantilla de prueba | **Solo si la vacante rinde la prueba del puesto.** Si eligió el cuestionario técnico, lo obligatorio es tenerlo publicado — ver «La vacante elige qué prueba se rinde» en la [bitácora de agosto](BITACORA-2026-08.md) |
+| Su prueba técnica | **En una vacante nueva (desde el 01/10/2026), su prueba publicada** desde «Armar la prueba» — ver «La prueba técnica de cada vacante nueva», al final. En una de antes: la versión de plantilla de prueba si rinde la prueba del puesto, o el cuestionario técnico publicado si eligió ese — ver «La vacante elige qué prueba se rinde» en la [bitácora de agosto](BITACORA-2026-08.md) |
 | Versión de pesos | No: sin elegir, rigen los generales |
 
 ⚠️ **La plantilla de evaluación ya NO se elige ni se exige** — ver «El tiempo viaja con el
@@ -213,7 +214,8 @@ varias `ABIERTA` a la vez, ver «El desplegable se cerraba solo» en la [bitáco
 aprobar un borrador ahi mismo; el backend le exige **entre 3 y 5 resultados esperados**, cada
 uno con su indicador.
 
-⚠️ **La prueba del puesto sí se elige, y se filtra por el puesto de la vacante.** La genérica
+⚠️ **En una vacante de antes, la prueba del puesto sí se elige, y se filtra por el puesto de la
+vacante.** A una nueva no se le ofrece ningún desplegable. La genérica
 —`puestoId: null`— vale para cualquiera y sigue saliendo; la que la vacante ya tiene puesta no
 se filtra nunca, porque el backend admite asignaciones cruzadas.
 
@@ -419,6 +421,10 @@ callado: la vacante **cerrada** («ya no admite una fecha nueva»), la que rinde
 técnico** —su tiempo son los minutos de la vacante, con el enlace «Ajustar los minutos →» al
 ajuste que está unas líneas más arriba en la misma página— y la que **no ha elegido prueba**,
 que manda a elegirla antes. El desplegable se abre igual: es donde quien busca la fecha mira.
+
+**En una vacante nueva (01/10/2026) el plazo es el de su prueba**: los minutos o los días salen de
+la prueba publicada en «Armar la prueba», y la línea dice «la prueba de la vacante» donde las de
+antes dicen «su plantilla». Mientras la prueba no está publicada, el servidor rechaza la fecha.
 
 ⚠️ **Una prueba `CRONOMETRADA` sí admite fecha desde el 22/09/2026**, y la regla vieja del panel
 la escondía junto a esos tres casos. El reloj y la fecha **conviven**: al empezar rige el que
@@ -682,9 +688,9 @@ número con `44-veredicto-solo-en-el-perfil`: ver [PENDIENTES.md](PENDIENTES.md)
 Hasta ahora, para que quien postula respondiera preguntas, alguien tenía que llenar un Excel con
 los 15 formatos del método de RENASER. Desde el 30/09/2026 **cada empresa escribe, en el panel y
 para cada vacante, las preguntas de su Perfil Integral**: cuatro tipos, agrupados en criterios con
-nombre que suman 100 puntos. Es la **fase 1**; la fase 2 —la prueba del puesto con el mismo
-editor— no está hecha, y **la sección «Prueba técnica» de la vacante no cambió**: sus
-desplegables y su tiempo se van con la fase 2. El backend trae la `V66`; sus rutas y reglas están
+nombre que suman 100 puntos. Es la **fase 1**; la fase 2 —la prueba técnica con el mismo
+editor— llegó el 01/10/2026 y está en «La prueba técnica de cada vacante nueva», más abajo. El
+backend trae la `V66`; sus rutas y reglas están
 en `docs/` del backend (`09-APIS.md`, «Las preguntas propias de la vacante», y
 `CALIFICACION-CON-IA.md`).
 
@@ -782,5 +788,88 @@ que la IA apagada no produce; al terminar retiran las cuentas y marcan eliminada
 Las unitarias, en `src/panel/vacantes/preguntas/*.test.*` y `Formatos.test.tsx`; en el backend,
 `FlujoPreguntasPropiasIT`. ⚠️ El 45 repite número con `45-gestion-de-personas-regresiones`: ver
 [PENDIENTES.md](PENDIENTES.md). Lo que QA dejó para decidir está en [PENDIENTES.md](PENDIENTES.md).
+
+### La prueba técnica de cada vacante nueva (01/10)
+
+Desde el 01/10/2026 **toda vacante nueva escribe su prueba técnica en el mismo editor** que sus
+preguntas propias, también en RENASER. Las plantillas, el cuestionario CAZATALENTOS y la ficha ya
+no se le ofrecen; **una vacante de antes sigue viendo lo de siempre**. Lo distingue
+`instrumentoEtapaTecnica === 'PRUEBA_PROPIA'` (`rindeLaPruebaPropia`). El backend trae la `V67`; sus
+rutas, en `docs/` del backend (`09-APIS.md`, «La prueba técnica escrita en el editor», y
+`PRUEBA-DEL-PUESTO.md`).
+
+**El bloque de la vacante.** En «Qué responderá quien postule», el bloque de la prueba **no tiene
+nada que elegir**: ni «Qué rendirá en la etapa técnica», ni «Qué prueba del puesto rendirá», ni
+«Cuánto tiempo tendrá», ni la tarjeta de la ficha. Enseña el estado —«Sin prueba», «Borrador · 70
+de 100 puntos · 2 entregables», «Publicada · 5 criterios · 2 entregables · 90 min» o «Publicada ·
+cuestionario · 12 preguntas · 30 min»— y «Armar la prueba →». «Pesos de la decisión» sigue igual.
+**Publicar la vacante exige la prueba publicada**, y el cartel «Todo listo», el botón de publicar
+y `loQueFaltaParaPublicar.ts` miran la misma regla (`usePruebaLista`).
+
+**El editor** (`/admin/vacantes/:id/prueba`). Es el de las preguntas propias —bloques, balance,
+publicadas, recomendaciones y copia— elegido con un modo (`preguntas/modo.tsx`: `MODO_PRUEBA`
+cambia la ruta de la API, la clave de la consulta y los textos), más:
+
+- **El caso**: enunciado (obligatorio si hay entregables), adjunto en PDF o Word, materiales y
+  herramientas. **El tiempo**: cronometrada en minutos o plazo abierto en días, **sin cambio
+  inesperado**.
+- **Los entregables**: nombre, qué debe contener, formato, si es obligatorio y «Qué debe tener una
+  buena entrega». Quitar uno que miran criterios pide confirmar y lo saca de sus «Mira».
+- **En cada criterio, la parte calificada**: sus puntos, quién la califica (IA o persona) y «Mira»,
+  una casilla por entregable. La cabecera dice «30 pts · sistema 10 + IA 20». **Las abiertas no
+  llevan puntos**, solo su «Qué debe tener una buena respuesta».
+- **Sin entregables es un cuestionario**: la cabecera y los textos lo dicen así, y el caso pasa a
+  ser opcional.
+- «Publicar la prueba» con algo pendiente enseña **la lista entera** del servidor. Hasta que
+  alguien empiece a rendirla se puede abrir un borrador desde la publicada; desde entonces solo
+  se cambian los puntos y las instrucciones de la IA, como en la fase 1. Sin `editar_vacante`, todo
+  en lectura.
+
+**La pestaña «Prueba» de la ficha** (`PruebaDelCandidato.tsx`, sobre
+`GET /postulaciones/{id}/prueba-propia`): cada criterio con su nota y de dónde sale —«Sistema 8/10
++ IA 16/20» o «Sistema 8/10 + persona pendiente»—; al abrirlo, sus cerradas con la opción marcada,
+sus abiertas y los entregables que mira; la explicación de la IA y quién ajustó, cuándo y por qué.
+Arriba, la nota de la etapa o qué falta para tenerla. Quien tiene `ajustar_nota` (lo dice
+`puedeAjustar`) ajusta o pone **solo la parte calificada**, de 0 a sus puntos y con motivo; si era
+lo último que faltaba, la persona pasa a «por confirmar». No se mezcla con la rúbrica de las
+plantillas (`CriteriosDeEtapa`).
+
+**El ranking y el Excel.** Las columnas de criterio se agrupan por la **`clave`** que manda el
+servidor (`prueba:<id>`, `banco:<id>`; `claveDeLaNota` en `ranking.ts`), no por el nombre: dos
+«Comunicación» de dos vacantes no se juntan. Un criterio pendiente dice «pendiente» y uno de
+persona sin nota queda en blanco. En «Perfil Integral», una vacante con preguntas propias suma una
+columna por criterio de su banco junto a las del currículum. Mientras dure una recalificación, la
+fila dice «Recalificando con la guía nueva», en las dos pestañas. «Las notas de la prueba, para la
+tanda entera» (`LaTandaDeLaPrueba`) es solo de las plantillas y no sale en una vacante nueva.
+
+**«No completaron la prueba (N)».** Quien dejó vencer el tiempo con algo sin responder o sin subir
+no sale en el ranking ni en el Excel. Debajo del ranking de la prueba, una lista plegada
+(`NoCompletaron.tsx`, por su propio endpoint) los nombra con lo que les faltó y el botón «Cerrar su
+proceso», que es el descarte de siempre con su motivo. Si la lista falla —un permiso—, no sale y el
+ranking sigue.
+
+**La personalización de las pruebas ya no existe**: la pantalla de pruebas ya no le dice a una
+empresa que «hay que personalizar las pruebas»; ahora le dice que las vacantes nuevas escriben la
+suya en «Armar la prueba» (`src/panel/pruebas/borrador.ts`).
+
+⚠️ **Lo visual lo comprueba el usuario**: el editor, la ficha y los rankings van detrás del inicio
+de sesión del panel. Y la IA, como en la fase 1, se prueba con el agente simulado y sembrando sus
+notas, no en el preview.
+
+Dónde está: `src/panel/vacantes/preguntas/` —`PruebaDeLaVacante.tsx`, `EditorDeLaPrueba.tsx`,
+`CriterioDePrueba.tsx`, `modo.tsx`—, `src/panel/vacantes/PruebaDelCandidato.tsx`,
+`src/panel/vacantes/NoCompletaron.tsx`, `src/panel/api/pruebaPropia.ts` y la clave en
+`src/panel/vacantes/ranking.ts`. El portal, en [02-QUE-VE-EL-CANDIDATO.md](02-QUE-VE-EL-CANDIDATO.md),
+«2.9 Prueba del puesto».
+
+Comprobarlo: `npx playwright test herramientas/e2e/48-prueba-del-puesto-con-el-editor.spec.ts
+herramientas/e2e/49-prueba-del-puesto-con-el-editor-regresiones.spec.ts
+herramientas/e2e/50-editores-de-la-vacante-rutas-comunes.spec.ts`. ⚠️ **Escriben** en el clon
+y lo retiran al terminar (marca `QA-PE-0067`); el reloj se adelanta en la base y el barrido de 60 s
+del backend cierra el intento, por eso «recorrido 6» de la 48 y «H-02» de la 49 se dan 3 minutos.
+La 50 va solo por la API: recorre las rutas que comparten los dos editores —las preguntas propias y
+la prueba— y las de la ficha con tres sesiones (quien edita, quien solo ve y otra empresa), para que
+contesten igual en los dos. Las unitarias, en `src/panel/vacantes/preguntas/*.test.*`; en el
+backend, `FlujoPruebaPropiaIT`.
 
 ---

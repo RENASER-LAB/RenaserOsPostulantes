@@ -110,12 +110,14 @@ export function conOtroTipo(p: PreguntaEnEdicion, tipo: TipoDePreguntaPropia): P
  * decimales si los hay—: rechazarlos es cosa del servidor, que devuelve la
  * lista entera de lo que falta.
  */
-export function paraGuardar(p: PreguntaEnEdicion): GuardarPregunta {
+export function paraGuardar(p: PreguntaEnEdicion, abiertasSinPuntos = false): GuardarPregunta {
   const numero = (texto: string) => (texto.trim() === '' ? Number.NaN : Number(texto))
   return {
     tipo: p.tipo,
     enunciado: p.enunciado.trim(),
-    puntos: numero(p.puntos),
+    // En la prueba (V67) la abierta no lleva puntos: la IA o una persona califican el
+    // criterio entero. Se manda 0, que es lo que el servidor guarda.
+    puntos: abiertasSinPuntos && p.tipo === 'ABIERTA' ? 0 : numero(p.puntos),
     criterioId: p.criterioId,
     queDebeTener: p.tipo === 'ABIERTA' && p.queDebeTener.trim() ? p.queDebeTener.trim() : null,
     opciones: esCerrada(p.tipo)
@@ -128,19 +130,68 @@ export function paraGuardar(p: PreguntaEnEdicion): GuardarPregunta {
 }
 
 /** Lo que falta a la vista, antes de mandar: lo evidente. El resto lo dice el servidor. */
-export function faltaEvidente(p: PreguntaEnEdicion): string | null {
+export function faltaEvidente(p: PreguntaEnEdicion, abiertasSinPuntos = false): string | null {
   if (p.enunciado.trim() === '') return 'Falta el enunciado.'
+  if (abiertasSinPuntos && p.tipo === 'ABIERTA') return null
   if (p.puntos.trim() === '' || Number.isNaN(Number(p.puntos))) return 'Faltan los puntos.'
   return null
 }
 
-/** «30 pts · sistema 10 + IA 20», o solo lo que haya. */
+/**
+ * «30 pts · sistema 10 + IA 20», o solo lo que haya. En la prueba (V67) la
+ * segunda parte es la parte calificada del criterio, y dice quién la califica:
+ * «sistema 10 + persona 20».
+ */
 export function puntosDelCriterio(c: CriterioDeLaVersion): string {
   if (c.puntos === 0) return '0 pts'
   const partes: string[] = []
   if (c.puntosSistema > 0) partes.push(`sistema ${c.puntosSistema}`)
-  if (c.puntosIa > 0) partes.push(`IA ${c.puntosIa}`)
+  if (c.puntosCalificados != null) {
+    if (c.puntosCalificados > 0) {
+      partes.push(`${c.calificador === 'PERSONA' ? 'persona' : 'IA'} ${c.puntosCalificados}`)
+    }
+  } else if (c.puntosIa > 0) {
+    partes.push(`IA ${c.puntosIa}`)
+  }
   return `${c.puntos} pts · ${partes.join(' + ')}`
+}
+
+/**
+ * El estado de la prueba técnica de una vacante (V67), para su bloque en la
+ * vacante: «Sin prueba», «Borrador · 70 de 100 puntos · 2 entregables»,
+ * «Publicada · 5 criterios · 2 entregables · 90 min» o, sin entregables,
+ * «Publicada · cuestionario · 12 preguntas · 30 min».
+ */
+export function textoDeLaPrueba(r: ResumenDePreguntas | null | undefined): string {
+  if (!r || r.estado === 'SIN_PRUEBA' || r.estado === 'SIN_PREGUNTAS') return 'Sin prueba'
+  const entregables = r.entregables ?? 0
+  const deEntregables = `${entregables} ${entregables === 1 ? 'entregable' : 'entregables'}`
+  if (r.estado === 'BORRADOR') {
+    return `Borrador · ${r.puntos ?? 0} de 100 puntos${entregables > 0 ? ` · ${deEntregables}` : ''}`
+  }
+  const tiempo =
+    typeof r.minutos === 'number'
+      ? ` · ${r.minutos} min`
+      : typeof r.dias === 'number'
+        ? ` · ${r.dias} ${r.dias === 1 ? 'día' : 'días'}`
+        : ''
+  if (r.cuestionario) {
+    const preguntas = r.preguntas ?? 0
+    return `Publicada · cuestionario · ${preguntas} ${preguntas === 1 ? 'pregunta' : 'preguntas'}${tiempo}`
+  }
+  const criterios = r.criterios ?? 0
+  return `Publicada · ${criterios} ${criterios === 1 ? 'criterio' : 'criterios'} · ${deEntregables}${tiempo}`
+}
+
+/** Los formatos de un entregable, con su nombre para leer. */
+export const FORMATOS: { valor: 'ARCHIVO' | 'ENLACE' | 'CUALQUIERA'; nombre: string }[] = [
+  { valor: 'ARCHIVO', nombre: 'Archivo' },
+  { valor: 'ENLACE', nombre: 'Enlace' },
+  { valor: 'CUALQUIERA', nombre: 'Archivo o enlace' },
+]
+
+export function nombreDelFormato(formato: string): string {
+  return FORMATOS.find((f) => f.valor === formato)?.nombre.toLowerCase() ?? formato
 }
 
 /** «Sin preguntas», «Borrador · 68 de 100 puntos», «Publicadas · 4 criterios · 12 preguntas». */
