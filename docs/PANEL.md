@@ -863,9 +863,13 @@ Dónde está: `src/panel/vacantes/preguntas/` —`PruebaDeLaVacante.tsx`, `Edito
 «2.9 Prueba del puesto».
 
 Comprobarlo: `npx playwright test herramientas/e2e/48-prueba-del-puesto-con-el-editor.spec.ts
-herramientas/e2e/49-prueba-del-puesto-con-el-editor-regresiones.spec.ts`. ⚠️ **Escriben** en el clon
+herramientas/e2e/49-prueba-del-puesto-con-el-editor-regresiones.spec.ts
+herramientas/e2e/50-editores-de-la-vacante-rutas-comunes.spec.ts`. ⚠️ **Escriben** en el clon
 y lo retiran al terminar (marca `QA-PE-0067`); el reloj se adelanta en la base y el barrido de 60 s
-del backend cierra el intento. Las unitarias, en `src/panel/vacantes/preguntas/*.test.*`; en el
+del backend cierra el intento, por eso «recorrido 6» de la 48 y «H-02» de la 49 se dan 3 minutos.
+La 50 va solo por la API: recorre las rutas que comparten los dos editores —las preguntas propias y
+la prueba— y las de la ficha con tres sesiones (quien edita, quien solo ve y otra empresa), para que
+contesten igual en los dos. Las unitarias, en `src/panel/vacantes/preguntas/*.test.*`; en el
 backend, `FlujoPruebaPropiaIT`.
 
 ---

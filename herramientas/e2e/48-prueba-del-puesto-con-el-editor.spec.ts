@@ -380,6 +380,8 @@ test.describe('La prueba del puesto escrita en el editor', () => {
   })
 
   test('recorrido 6: vencer con huecos deja la prueba sin completar; con todo, se entrega sola (AC-11)', async ({ page }) => {
+    // El barrido de vencimientos pasa cada 60 s: esperarlo no cabe en los 60 s por defecto.
+    test.setTimeout(180_000)
     quien.beto = await candidataEnLaPrueba(equipo, vacanteA, 'Beto', correos)
     quien.carla = await candidataEnLaPrueba(equipo, vacanteA, 'Carla', correos)
     await responderPorApi(quien.beto, { ou: 'Caja' })

@@ -84,6 +84,8 @@ test.describe('Regresiones de la prueba del editor', () => {
   })
 
   test('H-02: tras quedar «sin completar», su proceso no le dice que le toca abrir la prueba', async ({ page }) => {
+    // El barrido de vencimientos pasa cada 60 s: esperarlo no cabe en los 60 s por defecto.
+    test.setTimeout(180_000)
     // Por si H-01 no llegó a empezarla: el reloj tiene que estar corriendo para vencer
     if (uno(`select iniciado_en is null as sin_empezar from intento_prueba where postulacion_id = ${vence.postulacion}`).sin_empezar) {
       expect((await iniciarLaPrueba(vence)).estado).toBe(200)
