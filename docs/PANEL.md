@@ -585,7 +585,9 @@ personas»), y también sigue valiendo la API. La persona contratada se encuentr
   cambiarla hasta el [fecha]»; «Ya no se puede cambiar»; y la reseña atenuada con «La plataforma
   la ocultó: [nota]». Si la persona ya respondió, editar avisa antes de guardar que se le
   avisará. Debajo de la respuesta, «Reportar la respuesta», con el estado del reporte cuando lo
-  hay.
+  hay. Su ventana, si se cierra con algo escrito en «Cuéntanos más», pregunta antes de tirarlo,
+  igual que los pasos del perfil ([02-QUE-VE-EL-CANDIDATO.md](02-QUE-VE-EL-CANDIDATO.md), 2.15);
+  solo elegir el motivo no cuenta.
 - **«Reseñas de empresas»**, el de lectura, para quien tiene `ver_resenas_candidato`: el resumen
   con el reparto, las dos más recientes y «Ver todas», con la misma ventana y los mismos filtros
   que el candidato, pero sin «Reportar» ni «Responder». Salen las de todas las empresas, la propia
@@ -602,8 +604,25 @@ ni se pinta. Tiene dos listas, «Pendientes (N)», de la más antigua a la más 
 «Resueltas»; en las dos entran los reportes de reseñas —de la persona— y de respuestas —de la
 empresa autora—. Cada tarjeta dice qué se reporta, empresa y persona, estrellas y textos —si se
 juzga la respuesta, la reseña va encima de contexto—, motivo, comentario y fecha. «Mantener» y
-«Ocultar» exigen las dos una «Nota de la revisión»; ocultar es definitivo. Lo retirado antes de
-revisarse sale como «Retirada por la empresa» o «Retirada por la persona».
+«Ocultar» exigen las dos una «Nota de la revisión»; vacía o de más de 1000 caracteres, el error
+sale junto al campo y no se abre nada. Ocultar es definitivo. Lo retirado antes de revisarse sale
+como «Retirada por la empresa» o «Retirada por la persona».
+
+⚠️ **Ninguna de las dos decisiones sale con un clic** (05/10/2026). Con la nota válida, el botón
+abre una ventana titulada con la decisión y lo que se juzga —«Ocultar la reseña», «Mantener la
+reseña», «Ocultar la respuesta» o «Mantener la respuesta»—, que dice de quién es, lo que va a
+pasar —quién leerá la nota y a quién le llega aviso—, repite la nota entera para releerla y acaba en «No se podrá
+deshacer.». Solo su botón envía:
+
+| Qué | Cómo es |
+|---|---|
+| «Volver», Escape, el aspa o tocar fuera | Cierran sin enviar nada. La nota sigue escrita en la tarjeta y el foco vuelve al botón pulsado |
+| Mientras guarda | Los dos botones apagados, «Guardando…», y la ventana no se cierra. Un doble clic envía una vez |
+| Sale bien | Se cierra, el reporte sale de «Pendientes» y el foco va al título de la sección |
+| Ya no estaba pendiente (409): otra persona lo resolvió o se retiró mientras se leía | Se cierra, la lista se refresca y el porqué del servidor queda **encima de la lista**, no en la tarjeta que desaparece. Se quita al cambiar de pestaña |
+| Cualquier otro fallo | Se queda abierta con el error dentro, para reintentar sin perder la nota |
+
+La confirmación es solo de esta pantalla: la API resuelve igual sin ella.
 
 Dónde está: `ResenasDeLaFicha.tsx` y la columna en `ranking.ts` (`COLUMNAS_APAGADAS_AL_ABRIR`,
 `comparadorDeResenas`), en `src/panel/vacantes/`; la moderación en
@@ -612,7 +631,8 @@ tarjeta, ventana con filtros y selector de estrellas— en `src/ui/resenas/`.
 
 Comprobarlo: `npx playwright test herramientas/e2e/41-resenas-de-empresas.spec.ts` (los
 recorridos de punta a punta con una empresa), `42-resenas-entre-empresas.spec.ts` (la empresa B
-leyendo, y el reporte de una respuesta) y `43-resenas-de-empresas-movil.spec.ts` (375 px, textos
+leyendo, el reporte de una respuesta y, en sus pruebas «Confirmar ·», «QA-01» y «QA-02», la ventana de la
+moderación y la pregunta antes de tirar un borrador) y `43-resenas-de-empresas-movil.spec.ts` (375 px, textos
 de 1000 caracteres y nombres largos). ⚠️ **Los tres escriben**: siembran sus contrataciones
 insertando la transición a `CONTRATADO` con fechas relativas a hoy, y lo retiran al terminar.
 Necesitan las variables de [TRABAJAR-EN-LOCAL.md](TRABAJAR-EN-LOCAL.md). ⚠️ El 41 y el 42 repiten

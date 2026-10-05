@@ -198,14 +198,18 @@ test('3 · responde a una, reporta otra, y la plataforma la oculta', async ({ pa
   await expect(deDos.getByText('Reportada · en revisión')).toBeVisible()
   await expect(page.getByRole('link', { name: /3 reseñas/ })).toBeVisible()
 
-  // AC-20: la plataforma la oculta con una nota.
+  // AC-20: la plataforma la oculta con una nota, confirmándolo en la ventana.
   const panel = await browser.newPage()
   await entrarAlPanel(panel)
   await panel.goto('/admin/configuracion')
   const moderacion = panel.getByRole('region', { name: 'Reseñas reportadas' })
   const tarjeta = moderacion.getByRole('article').filter({ hasText: 'Le costó adaptarse' })
   await tarjeta.getByLabel('Nota de la revisión').fill('Describe hechos que la persona niega.')
-  await tarjeta.getByRole('button', { name: 'Ocultar' }).click()
+  await tarjeta.getByRole('button', { name: 'Ocultar', exact: true }).click()
+  const confirmacion = panel.getByRole('dialog', { name: 'Ocultar la reseña' })
+  await expect(confirmacion).toContainText('No se podrá deshacer.')
+  await confirmacion.getByRole('button', { name: 'Ocultar la reseña' }).click()
+  await expect(confirmacion).toHaveCount(0)
   await expect(tarjeta).toHaveCount(0)
   await panel.close()
 

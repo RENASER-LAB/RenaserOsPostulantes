@@ -39,12 +39,13 @@ import {
   BloqueDeRespuesta,
   CampoContado,
   FormularioDeReporte,
+  PreguntaDeDescartar,
   ResumenDeResenas,
   SelectorDeEstrellas,
   TarjetaDeResena,
   VentanaDeResenas,
 } from '@/ui/resenas/Resenas'
-import { useFocoPendiente, useUnSoloEnvio } from '@/ui/resenas/ganchos'
+import { useBorradorDeLaVentana, useFocoPendiente, useUnSoloEnvio } from '@/ui/resenas/ganchos'
 import { faltaEnElTexto, type MotivoDeReporte } from '@/ui/resenas/modelo'
 import piezas from '@/ui/resenas/Resenas.module.css'
 import ficha from './Vacante.module.css'
@@ -197,6 +198,7 @@ function LaResenaDeMiEmpresaBloque({
       reportarRespuesta(postulacionId, v),
     onSuccess: async () => {
       setReportando(false)
+      borrador.olvidar()
       setFalloDelReporte(null)
       // «Reportar la respuesta», que abrió la ventana, ya no existe: sin esto el
       // foco caería en <body> al cerrarse. Va al título del bloque.
@@ -225,6 +227,16 @@ function LaResenaDeMiEmpresaBloque({
   const publicando = publicacion.isPending || envioDeLaResena.ocupado
   const borrandoAhora = baja.isPending || envioDeLaBaja.ocupado
   const enviandoReporte = reporte.isPending || envioDelReporte.ocupado
+  /*
+    Con algo en «Cuéntanos más», cerrar «Reportar la respuesta» pregunta antes
+    de tirarlo, como en el perfil. Sin texto, o mientras se envía, cierra como
+    siempre y el `Modal` devuelve el foco a «Reportar la respuesta».
+  */
+  const borrador = useBorradorDeLaVentana(enviandoReporte)
+  const cerrarElReporte = () => {
+    setReportando(false)
+    borrador.olvidar()
+  }
 
   const pedirFoco = useFocoPendiente({
     zona: () => bloqueRef.current,
@@ -289,6 +301,7 @@ function LaResenaDeMiEmpresaBloque({
                   respuesta={resena.respuesta}
                   alReportar={() => {
                     setFalloDelReporte(null)
+                    borrador.olvidar()
                     setReportando(true)
                   }}
                 />
@@ -376,22 +389,33 @@ function LaResenaDeMiEmpresaBloque({
         <Modal
           abierto={reportando}
           titulo="Reportar la respuesta"
-          onCerrar={() => setReportando(false)}
+          onCerrar={(como) => borrador.intentar(como, cerrarElReporte)}
           pantallaCompleta
           pie={
-            <>
-              <button type="button" className={estilos.secundario} onClick={() => setReportando(false)}>
-                Volver
-              </button>
-              <button
-                type="submit"
-                form={ID_REPORTE}
-                className={estilos.acento}
-                disabled={enviandoReporte}
-              >
-                {enviandoReporte ? 'Enviando…' : 'Enviar reporte'}
-              </button>
-            </>
+            borrador.preguntando ? (
+              <PreguntaDeDescartar
+                alSeguir={borrador.seguir}
+                alDescartar={() => borrador.descartar(cerrarElReporte)}
+              />
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className={estilos.secundario}
+                  onClick={() => borrador.intentar('volver', cerrarElReporte)}
+                >
+                  Volver
+                </button>
+                <button
+                  type="submit"
+                  form={ID_REPORTE}
+                  className={estilos.acento}
+                  disabled={enviandoReporte}
+                >
+                  {enviandoReporte ? 'Enviando…' : 'Enviar reporte'}
+                </button>
+              </>
+            )
           }
         >
           <FormularioDeReporte
@@ -411,6 +435,7 @@ function LaResenaDeMiEmpresaBloque({
             alEnviar={(motivo, comentario) =>
               envioDelReporte.enviar(() => reporte.mutateAsync({ motivo, comentario }))
             }
+            alCambiarBorrador={borrador.avisar}
           />
         </Modal>
       )}
