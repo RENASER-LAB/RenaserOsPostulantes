@@ -1,12 +1,16 @@
 import { expect, test, type Page } from '@playwright/test'
-import { entrarAlPanel } from './ayuda'
+import { API, entrarAlPanel, tokenDelPanel } from './ayuda'
 import { PERDONADOS_DE_LA_VACANTE, vigilar, type Vigia } from './ayuda-prueba'
 
 /**
  * El recorrido entero de una vacante en el panel, contra el backend de verdad:
  * crearla en borrador —y antes, si no la hay, la solicitud que la respalda—,
- * apagar y encender la evaluación del banco, elegir la prueba del puesto y los
- * pesos, publicarla, verla en la portada del portal y cerrarla.
+ * apagar y encender la evaluación del banco, armar su prueba técnica y elegir
+ * los pesos, publicarla, verla en la portada del portal y cerrarla.
+ *
+ * Desde la V67 una vacante nueva no elige plantilla ni cuestionario: escribe su
+ * prueba en «Armar la prueba». Aquí se escribe por la API —un cuestionario de
+ * una pregunta— porque lo que se recorre es la vacante, no el editor.
  *
  * Es el camino que estuvo roto: publicar exige banco del nivel y versión de
  * prueba, y durante un tiempo no había dónde elegirlas.
@@ -186,8 +190,8 @@ test.describe.serial('El recorrido entero de una vacante', () => {
 
     // Lo que el backend exige antes de publicar: el botón lo espera, y dice qué falta.
     const publicar = page.getByRole('button', { name: /Publicar en el portal/ })
-    await expect(publicar, 'el botón de publicar no espera a que se elija la prueba').toBeDisabled()
-    await expect(page.getByText(/Antes hay que elegir/)).toBeVisible()
+    await expect(publicar, 'el botón de publicar no espera a que se publique la prueba').toBeDisabled()
+    await expect(page.getByText(/Antes hay que .*publicar su prueba técnica/)).toBeVisible()
   })
 
   /**
@@ -236,22 +240,53 @@ test.describe.serial('El recorrido entero de una vacante', () => {
     console.log(`[VACANTE] ${((await linea.innerText()).replace(/\n/g, ' · '))}`)
   })
 
-  test('se eligen la prueba del puesto y los pesos, y el servidor los deja puestos', async ({ page }) => {
+  test('se arma su prueba técnica y se eligen los pesos, y el servidor los deja puestos', async ({ page }) => {
     await abrirLaVacante(page)
 
-    await test.step('La prueba del puesto', async () => {
-      const selPrueba = page.getByLabel('Qué prueba del puesto rendirá')
-      // Un <option> nunca es «visible»: se espera a que haya alguno, no a verlo.
-      await expect
-        .poll(() => selPrueba.locator('option').count(), {
-          timeout: 30_000,
-          message: 'el desplegable de la prueba del puesto no ofrece ninguna versión publicada',
+    await test.step('La prueba técnica: sin nada que elegir, el estado y «Armar la prueba»', async () => {
+      await expect(page.getByLabel('Qué prueba del puesto rendirá')).toHaveCount(0)
+      await expect(page.getByLabel('Qué rendirá en la etapa técnica')).toHaveCount(0)
+      await expect(page.getByText('Sin prueba', { exact: true })).toBeVisible({ timeout: 15_000 })
+      await expect(page.getByRole('link', { name: /Armar la prueba/ }).first()).toBeVisible()
+
+      // Un cuestionario de una pregunta, publicado por la API.
+      const token = await tokenDelPanel()
+      const base = `${API}/panel/vacantes/${idVacante}/prueba-propia`
+      const enviar = async (ruta: string, cuerpo?: unknown, metodo = 'POST') => {
+        const r = await fetch(`${base}${ruta}`, {
+          method: metodo,
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo),
         })
-        .toBeGreaterThan(1)
-      const ofrecidas = await selPrueba.locator('option:not([value=""])').allTextContents()
-      console.log(`[VACANTE] pruebas ofrecidas: ${ofrecidas.join(' | ')}`)
-      await selPrueba.selectOption({ index: 1 })
-      await expect(selPrueba).not.toHaveValue('', { timeout: 15_000 })
+        expect(r.ok, `${metodo} ${ruta}: ${r.status} ${await r.clone().text()}`).toBe(true)
+        return r.json()
+      }
+      const conCriterio = await enviar('/criterios', {
+        nombre: 'Atención al cliente',
+        queEvalua: null,
+        puntosCalificados: 0,
+        calificador: null,
+        entregables: [],
+      })
+      const criterioId = conCriterio.borrador.criterios[0].id as number
+      await enviar('/preguntas', {
+        tipo: 'OPCION_UNICA',
+        enunciado: 'Un cliente reclama por un cobro doble. ¿Qué haces primero?',
+        puntos: 100,
+        criterioId,
+        queDebeTener: null,
+        opciones: [
+          { texto: 'Reviso el cobro con él y lo resuelvo', puntos: 100 },
+          { texto: 'Le pido que escriba un correo', puntos: 0 },
+        ],
+      })
+      await enviar('/borrador', { modalidad: 'CRONOMETRADA', duracionMinutos: 30 }, 'PUT')
+      await enviar('/publicacion')
+
+      await page.reload()
+      await expect(page.getByText(/Publicada · cuestionario · 1 pregunta · 30 min/)).toBeVisible({
+        timeout: 15_000,
+      })
     })
 
     await test.step('Los pesos que rigen la decisión', async () => {

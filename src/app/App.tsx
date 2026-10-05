@@ -42,6 +42,7 @@ import { VacantesArchivadas } from '@/panel/vacantes/VacantesArchivadas'
 import { VacantePanelDetalle } from '@/panel/vacantes/Vacante'
 import { PruebaTecnica } from '@/panel/vacantes/prueba-tecnica/PruebaTecnica'
 import { EditorDePreguntas } from '@/panel/vacantes/preguntas/EditorDePreguntas'
+import { EditorDeLaPrueba } from '@/panel/vacantes/preguntas/EditorDeLaPrueba'
 import { SesionesPanel } from '@/panel/simulacion/Sesiones'
 import { PlantillasDePrueba } from '@/panel/pruebas/PlantillasDePrueba'
 import { ComponerPrueba } from '@/panel/pruebas/ComponerPrueba'
@@ -115,6 +116,7 @@ export function App() {
                       path={patrones.adminPreguntasPropias}
                       element={<EditorDePreguntas />}
                     />
+                    <Route path={patrones.adminPruebaPropia} element={<EditorDeLaPrueba />} />
                     <Route path={patrones.adminSesiones} element={<SesionesPanel />} />
                     <Route path={patrones.adminPruebas} element={<PlantillasDePrueba />} />
                     <Route path={patrones.adminComponerPrueba} element={<ComponerPrueba />} />

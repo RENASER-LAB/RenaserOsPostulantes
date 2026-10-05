@@ -25,7 +25,8 @@ import {
 } from '../../api/preguntasPropias'
 import { useSondeoAcotado } from '../useSondeoAcotado'
 import { falloDe, type Fallo } from './consultas'
-import { nombreDelTipo, puntosQueFaltan } from './formulario'
+import { nombreDelFormato, nombreDelTipo, puntosQueFaltan } from './formulario'
+import { esPrueba, useModoDelEditor } from './modo'
 import { MostrarFallo } from './piezas'
 import estilos from './EditorDePreguntas.module.css'
 
@@ -42,14 +43,17 @@ interface Props {
 
 export function Recomendaciones({ vacanteId, total, criterios, alAgregar, alCerrar }: Props) {
   const cache = useQueryClient()
-  const clave = ['panel-preguntas-recomendacion', vacanteId]
+  const modo = useModoDelEditor()
+  const deLaPrueba = esPrueba(modo)
+  // Las de la prueba y las de las preguntas de una misma vacante no se pisan (V67).
+  const clave = [deLaPrueba ? 'panel-prueba-recomendacion' : 'panel-preguntas-recomendacion', vacanteId]
   const [indicacion, setIndicacion] = useState('')
   const [aviso, setAviso] = useState<string | null>(null)
   const [fallo, setFallo] = useState<Fallo | null>(null)
   /** Lo ya agregado de esta propuesta: «criterio» o «criterio-pregunta». */
   const [agregado, setAgregado] = useState<Set<string>>(new Set())
 
-  const estado = useQuery({ queryKey: clave, queryFn: () => verRecomendacion(vacanteId) })
+  const estado = useQuery({ queryKey: clave, queryFn: () => verRecomendacion(vacanteId, modo.ruta) })
   const sondeo = useSondeoAcotado(PASOS, () => void estado.refetch())
   const { empezar, parar, mirando } = sondeo
   const enCurso = estado.data?.estado === 'EN_CURSO'
@@ -62,7 +66,7 @@ export function Recomendaciones({ vacanteId, total, criterios, alAgregar, alCerr
   const faltan = puntosQueFaltan(total)
 
   const pedida = useMutation({
-    mutationFn: () => pedirRecomendaciones(vacanteId, indicacion.trim() || null),
+    mutationFn: () => pedirRecomendaciones(vacanteId, indicacion.trim() || null, modo.ruta),
     onSuccess: (r) => {
       setFallo(null)
       setAviso(r.encolada ? null : r.mensaje)
@@ -81,11 +85,22 @@ export function Recomendaciones({ vacanteId, total, criterios, alAgregar, alCerr
       criterios: number[]
       preguntas: { criterio: number; pregunta: number }[]
       marcas: string[]
+      caso?: boolean
+      entregables?: number[]
     }) =>
-      agregarDeLaPropuesta(vacanteId, datos.propuestaId, {
-        criterios: datos.criterios,
-        preguntas: datos.preguntas,
-      }),
+      agregarDeLaPropuesta(
+        vacanteId,
+        datos.propuestaId,
+        deLaPrueba
+          ? {
+              criterios: datos.criterios,
+              preguntas: datos.preguntas,
+              caso: datos.caso ?? false,
+              entregables: datos.entregables ?? [],
+            }
+          : { criterios: datos.criterios, preguntas: datos.preguntas },
+        modo.ruta,
+      ),
     onSuccess: (editor, datos) => {
       setFallo(null)
       setAgregado((antes) => new Set([...antes, ...datos.marcas]))
@@ -111,9 +126,9 @@ export function Recomendaciones({ vacanteId, total, criterios, alAgregar, alCerr
         !enCurso && (
           <>
             <p className={estilos.explica}>
-              La IA completará los {faltan} puntos que faltan, a partir de lo que describe la
-              vacante, su puesto y la solicitud de talento. Puede llenar tus criterios o proponer
-              otros. Nada se agrega hasta que tú lo elijas.
+              {deLaPrueba
+                ? `La IA completará los ${faltan} puntos que faltan, a partir de lo que describe la vacante, su puesto y la solicitud de talento: propone el caso si no lo hay, los entregables y los criterios con su parte calificada y quién la califica. Nada se agrega hasta que tú lo elijas.`
+                : `La IA completará los ${faltan} puntos que faltan, a partir de lo que describe la vacante, su puesto y la solicitud de talento. Puede llenar tus criterios o proponer otros. Nada se agrega hasta que tú lo elijas.`}
             </p>
             <label className={estilos.campo}>
               <span className={estilos.etiqueta}>
@@ -181,13 +196,75 @@ export function Recomendaciones({ vacanteId, total, criterios, alAgregar, alCerr
                   propuestaId: propuesta.propuestaId!,
                   criterios: propuesta.propuesta.map((_, i) => i),
                   preguntas: [],
-                  marcas: propuesta.propuesta.map((_, i) => `${i}`),
+                  marcas: [
+                    ...propuesta.propuesta.map((_, i) => `${i}`),
+                    'caso',
+                    ...(propuesta.entregables ?? []).map((_, k) => `e${k}`),
+                  ],
+                  caso: Boolean(propuesta.caso?.enunciado),
+                  entregables: (propuesta.entregables ?? []).map((_, k) => k),
                 })
               }
             >
               Agregar todo
             </button>
           </div>
+          {deLaPrueba && propuesta.caso?.enunciado && (
+            <article className={estilos.propuesto}>
+              <div className={estilos.cabeceraCriterio}>
+                <h3 className={estilos.nombreCriterio}>El caso</h3>
+                <button
+                  className={estilos.secundarioPequeno}
+                  type="button"
+                  disabled={agregar.isPending || agregado.has('caso')}
+                  onClick={() =>
+                    agregar.mutate({
+                      propuestaId: propuesta.propuestaId!,
+                      criterios: [],
+                      preguntas: [],
+                      marcas: ['caso'],
+                      caso: true,
+                    })
+                  }
+                >
+                  {agregado.has('caso') ? 'Agregado' : 'Agregar el caso'}
+                </button>
+              </div>
+              <p className={estilos.enunciadoLargo}>{propuesta.caso.enunciado}</p>
+              <p className={estilos.ayuda}>Solo llena lo que la prueba todavía no tenga escrito.</p>
+            </article>
+          )}
+          {deLaPrueba &&
+            (propuesta.entregables ?? []).map((e, k) => (
+              <article className={estilos.propuesto} key={`e${k}`}>
+                <div className={estilos.cabeceraCriterio}>
+                  <h3 className={estilos.nombreCriterio}>{e.nombre}</h3>
+                  <span className={estilos.chip}>{nombreDelFormato(e.formato)}</span>
+                  <button
+                    className={estilos.secundarioPequeno}
+                    type="button"
+                    disabled={agregar.isPending || agregado.has(`e${k}`)}
+                    onClick={() =>
+                      agregar.mutate({
+                        propuestaId: propuesta.propuestaId!,
+                        criterios: [],
+                        preguntas: [],
+                        marcas: [`e${k}`],
+                        entregables: [k],
+                      })
+                    }
+                  >
+                    {agregado.has(`e${k}`) ? 'Agregado' : 'Agregar el entregable'}
+                  </button>
+                </div>
+                {e.detalle && <p className={estilos.queEvalua}>{e.detalle}</p>}
+                {e.queDebeTener && (
+                  <p className={estilos.queDebeTener}>
+                    <b>Qué debe tener:</b> {e.queDebeTener}
+                  </p>
+                )}
+              </article>
+            ))}
           {propuesta.propuesta.map((c, i) => {
             const todoAgregado = agregado.has(`${i}`)
             return (
@@ -199,7 +276,7 @@ export function Recomendaciones({ vacanteId, total, criterios, alAgregar, alCerr
                       : c.nombre}
                   </h3>
                   <span className={estilos.puntosCriterio}>
-                    {c.preguntas.reduce((s, p) => s + p.puntos, 0)} pts
+                    {c.preguntas.reduce((s, p) => s + p.puntos, 0) + (c.parteCalificada ?? 0)} pts
                   </span>
                   <button
                     className={estilos.secundarioPequeno}
@@ -222,6 +299,16 @@ export function Recomendaciones({ vacanteId, total, criterios, alAgregar, alCerr
                     <b>Qué evalúa:</b> {c.queEvalua}
                   </p>
                 )}
+                {deLaPrueba && (c.parteCalificada ?? 0) > 0 && (
+                  <p className={estilos.queEvalua}>
+                    <b>Parte calificada:</b> {c.parteCalificada} pts ·{' '}
+                    {c.calificador === 'PERSONA' ? 'una persona' : 'la IA'}
+                    {(c.entregables ?? []).length > 0 &&
+                      ` · Mira: ${(c.entregables ?? [])
+                        .map((k) => propuesta.entregables?.[k]?.nombre ?? `entregable ${k + 1}`)
+                        .join(', ')}`}
+                  </p>
+                )}
                 <ol className={estilos.preguntas}>
                   {c.preguntas.map((p, j) => {
                     const hecha = todoAgregado || agregado.has(`${i}-${j}`)
@@ -230,7 +317,9 @@ export function Recomendaciones({ vacanteId, total, criterios, alAgregar, alCerr
                         <div className={estilos.cabeceraPregunta}>
                           {c.criterioExistenteId !== null && <span className={estilos.nueva}>Nueva</span>}
                           <span className={estilos.chip}>{nombreDelTipo(p.tipo)}</span>
-                          <span className={estilos.chip}>{p.puntos} pts</span>
+                          {!(deLaPrueba && p.tipo === 'ABIERTA') && (
+                            <span className={estilos.chip}>{p.puntos} pts</span>
+                          )}
                           <button
                             className={estilos.secundarioPequeno}
                             type="button"

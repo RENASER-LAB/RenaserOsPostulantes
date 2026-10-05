@@ -277,7 +277,8 @@ export interface RemuneracionActualizadaResponse {
   candidatosAvisados: number
 }
 
-export type InstrumentoTecnico = 'PLANTILLA' | 'CUESTIONARIO_TECNICO'
+/** `PRUEBA_PROPIA`: la prueba escrita en el editor de la vacante (V67), la de toda vacante nueva. */
+export type InstrumentoTecnico = 'PLANTILLA' | 'CUESTIONARIO_TECNICO' | 'PRUEBA_PROPIA'
 
 /** El cuerpo de elegir instrumento. Los minutos vacíos dejan los del instrumento. */
 export interface ElegirInstrumentoTecnico {
@@ -649,6 +650,18 @@ export interface NotaCriterio {
   confianza: number | null
   /** No-nulo significa que una PERSONA corrigio la nota, y por que. */
   motivoAjuste: string | null
+  /**
+   * La clave de la columna (V67): `prueba:<id>` o `banco:<id>`. Dos criterios
+   * con el mismo nombre de vacantes distintas no se juntan. Sin ella —filas de
+   * antes, la rúbrica de las plantillas y el currículum— la clave es el nombre.
+   */
+  clave?: string | null
+  /**
+   * `PENDIENTE`: le falta su parte calificada o una abierta, y la celda dice
+   * «pendiente». `EN_BLANCO`: no le toca (la celda va vacía). Sin dato, lo de
+   * siempre.
+   */
+  estado?: 'CALIFICADO' | 'PENDIENTE' | 'EN_BLANCO' | null
 }
 
 export interface FilaRanking {
@@ -769,6 +782,11 @@ export interface FilaRanking {
    * ⚠️ **No ordena nada por defecto ni pesa en ninguna nota**, ni en el Excel.
    */
   resenas?: PromedioResenas | null
+  /**
+   * Una recalificación con la guía nueva en curso para esta fila (V67): sus
+   * criterios de IA pueden cambiar en un momento. Opcional por un backend anterior.
+   */
+  recalificando?: boolean
 }
 
 /** Lo justo para la columna «Reseñas» y para ordenarla. */

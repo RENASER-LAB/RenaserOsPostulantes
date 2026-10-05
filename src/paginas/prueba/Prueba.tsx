@@ -16,6 +16,12 @@
  * El cambio inesperado no lo dispara el navegador: llega en `cambioTexto`
  * cuando al backend le toca enseñarlo, y por eso se vuelve a consultar cada
  * poco mientras la prueba esta en curso.
+ *
+ * **La prueba escrita en el editor de la vacante (V67, `delEditor`)** trae
+ * además cerradas —opción única, múltiple y escala— y no se entrega con
+ * huecos: «Entregar» dice cuáles faltan y lleva a la primera, y el servidor lo
+ * rechaza igual si alguien llama a la API. Si el tiempo vence con algo sin
+ * responder, queda «sin completar». Sin entregables se llama cuestionario.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -29,7 +35,7 @@ import {
   subirEnlace,
   verPrueba,
 } from '@/api/prueba'
-import type { EntregableRequerido, FechaIso, MiPrueba } from '@/api/tipos'
+import type { EntregableRequerido, FechaIso, MiPrueba, PreguntaPrueba as LaPregunta } from '@/api/tipos'
 import { formatearFechaLarga, segundosHasta } from '@/dominio/reloj'
 import { usePantallaAbierta } from '@/paginas/procesos/useVacanteRetirada'
 import { rutas } from '@/rutas'
@@ -38,6 +44,7 @@ import { Cronometro } from '@/ui/Cronometro'
 import { VacanteRetirada } from '@/ui/Mensajes'
 import { Modal } from '@/ui/Modal'
 import { TextoPlano } from '@/ui/TextoPlano'
+import { PreguntaCerrada } from './PreguntaCerrada'
 import estilos from './Prueba.module.css'
 
 const ESPERA_ANTES_DE_GUARDAR = 1000
@@ -272,6 +279,7 @@ function Entregable({
 function PreguntaPrueba({
   uuid,
   pregunta,
+  numero,
   bloqueado,
   registrarEnvio,
   registrarSiTieneTexto,
@@ -279,6 +287,8 @@ function PreguntaPrueba({
 }: {
   uuid: string
   pregunta: { id: number; enunciado: string; respuestaTexto: string | null }
+  /** Su número en la prueba del editor (V67): «Pregunta 3». Sin él, como siempre. */
+  numero?: number
   /** Con el tiempo agotado ya no se escribe ni se reintenta nada. */
   bloqueado: boolean
   /**
@@ -460,6 +470,12 @@ function PreguntaPrueba({
   return (
     <div className={estilos.pregunta}>
       <label className={estilos.enunciado} htmlFor={`pregunta-${pregunta.id}`}>
+        {numero !== undefined && (
+          <>
+            <span className={estilos.numeroPregunta}>Pregunta {numero}</span>
+            {' · '}
+          </>
+        )}
         {pregunta.enunciado}
       </label>
       {/* `readOnly` y no `disabled`: un campo deshabilitado se pinta en gris y
@@ -488,6 +504,81 @@ function PreguntaPrueba({
   )
 }
 
+// ---------- La prueba del editor (V67) ----------
+
+/** El enunciado adjunto en PDF o Word. Sin dirección (en local), solo su nombre. */
+function Consigna({ consigna }: { consigna: { nombre: string | null; url: string | null } }) {
+  const nombre = consigna.nombre ?? 'El enunciado adjunto'
+  return (
+    <p className={estilos.texto} style={{ marginTop: 'var(--e3)' }}>
+      {consigna.url ? (
+        <a href={consigna.url} target="_blank" rel="noopener noreferrer">
+          Abrir el enunciado adjunto: {nombre}
+        </a>
+      ) : (
+        <>Enunciado adjunto: {nombre}. Te llegó también en el correo que te avisó de la prueba.</>
+      )}
+    </p>
+  )
+}
+
+/** «la 3», «la 3 y la 7», «la 3, la 5 y la 7». */
+export function cualesFaltan(numeros: number[]): string {
+  const con = numeros.map((n) => `la ${n}`)
+  if (con.length <= 1) return con.join('')
+  return `${con.slice(0, -1).join(', ')} y ${con[con.length - 1]}`
+}
+
+/**
+ * Lo que falta para poder entregar, en vez del diálogo de confirmación: cuántas
+ * preguntas y cuáles, los entregables obligatorios, y un botón que lleva a la
+ * primera sin responder. Es lo mismo que rechaza el servidor.
+ */
+function LoQueFaltaParaEntregar({
+  preguntas,
+  entregables,
+  hayEntregables,
+  alIr,
+}: {
+  preguntas: { id: number; numero: number }[]
+  entregables: string[]
+  hayEntregables: boolean
+  alIr: (preguntaId: number) => void
+}) {
+  if (preguntas.length === 0 && entregables.length === 0) return null
+  const primera = preguntas[0]
+  return (
+    <div className={`${estilos.aviso} ${estilos.malo}`} role="alert">
+      <span>
+        {preguntas.length > 0 && (
+          <>
+            <b>
+              Para entregar te falta responder{' '}
+              {preguntas.length === 1 ? '1 pregunta' : `${preguntas.length} preguntas`} (
+              {cualesFaltan(preguntas.map((p) => p.numero))}).
+            </b>{' '}
+          </>
+        )}
+        {entregables.length > 0
+          ? `Te falta subir ${entregables.map((e) => `«${e}»`).join(', ')}.`
+          : hayEntregables
+            ? 'Los entregables obligatorios están completos.'
+            : ''}
+      </span>
+      {primera && (
+        <button
+          type="button"
+          className={estilos.reintentar}
+          onClick={() => alIr(primera.id)}
+          data-rotulo={`Ir a la pregunta ${primera.numero}`}
+        >
+          Ir a la pregunta {primera.numero}
+        </button>
+      )}
+    </div>
+  )
+}
+
 // ---------- La pantalla ----------
 
 export function Prueba() {
@@ -498,6 +589,8 @@ export function Prueba() {
 
   const [confirmarInicio, setConfirmarInicio] = useState(false)
   const [confirmarEntrega, setConfirmarEntrega] = useState(false)
+  /** V67: al pulsar «Entregar» con huecos, lo que falta en vez del diálogo. */
+  const [loQueFalta, setLoQueFalta] = useState(false)
   // Como forzar el envio de cada pregunta. Se llena solo, segun se montan.
   const envios = useRef<Map<number, () => Promise<unknown>>>(new Map())
   const registrarEnvio = useCallback(
@@ -652,6 +745,32 @@ export function Prueba() {
   // Lo que cada recuadro tiene puesto **ahora**, no lo que el servidor mandó al cargar: si
   // saliera de ahí, una respuesta recién borrada seguiría contando como respondida.
   const preguntasSinResponder = prueba.preguntas.filter((p) => conTexto[p.id] === false).length
+  // La prueba del editor (V67) no se entrega con huecos, y sin entregables se llama
+  // cuestionario. Las plantillas siguen como siempre.
+  const delEditor = prueba.delEditor === true
+  const cuestionario = delEditor && prueba.cuestionario === true
+  const laPrueba = cuestionario ? 'el cuestionario' : 'la prueba'
+  const numeroDe = (p: LaPregunta, i: number) => p.posicion ?? i + 1
+  const sinResponder = prueba.preguntas
+    .map((p, i) => ({ p, numero: numeroDe(p, i) }))
+    .filter(({ p }) => conTexto[p.id] !== true)
+  const obligatoriosQueFaltan = prueba.entregables.filter((e) => e.esObligatorio && !e.entregado)
+  const irAlaPregunta = (id: number) => {
+    const destino = document.getElementById(`pregunta-${id}`)
+    destino?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    const foco = destino?.matches('input, textarea')
+      ? destino
+      : destino?.querySelector<HTMLElement>('input, textarea')
+    foco?.focus({ preventScroll: true })
+  }
+  const pulsarEntregar = () => {
+    if (delEditor && (sinResponder.length > 0 || obligatoriosQueFaltan.length > 0)) {
+      setLoQueFalta(true)
+      return
+    }
+    setLoQueFalta(false)
+    setConfirmarEntrega(true)
+  }
 
   return (
     <div className={estilos.pagina}>
@@ -662,7 +781,7 @@ export function Prueba() {
       {/* ---------- Ya entregada ---------- */}
       {prueba.estadoIntento === 'ENTREGADA' && (
         <div className={estilos.cerrada}>
-          <h1>Prueba entregada.</h1>
+          <h1>{cuestionario ? 'Cuestionario entregado.' : 'Prueba entregada.'}</h1>
           <p className={estilos.cerradaTexto}>
             Estamos calificando tu trabajo y la explicación de tus decisiones. Te
             escribiremos cuando haya novedades.
@@ -679,10 +798,35 @@ export function Prueba() {
         </div>
       )}
 
+      {/* ---------- Venció con huecos (V67) ---------- */}
+      {prueba.estadoIntento === 'NO_COMPLETADA' && (
+        <div className={estilos.cerrada}>
+          <h1>Tu tiempo terminó y {laPrueba} quedó sin completar.</h1>
+          <p className={estilos.cerradaTexto}>
+            Cuando terminó el plazo faltaba responder alguna pregunta o subir algún entregable
+            obligatorio, así que no se entregó ni se va a calificar. Quien lleva tu proceso lo ve
+            y te escribirá.
+          </p>
+          <Link
+            className={estilos.volverAlProceso}
+            to={rutas.proceso(uuid)}
+            data-rotulo="Volver a mi proceso"
+          >
+            Volver a mi proceso
+          </Link>
+        </div>
+      )}
+
       {/* ---------- Antes de empezar ---------- */}
       {prueba.estadoIntento === 'PENDIENTE' && (
         <>
-          <h1>{hayEntregables ? 'Demuestra cómo trabajas.' : 'Tu prueba del puesto.'}</h1>
+          <h1>
+            {cuestionario
+              ? 'Tu cuestionario del puesto.'
+              : hayEntregables
+                ? 'Demuestra cómo trabajas.'
+                : 'Tu prueba del puesto.'}
+          </h1>
           <p className={estilos.texto} style={{ marginTop: 'var(--e3)' }}>
             Lee todo antes de empezar. <b>El tiempo empieza a contar cuando confirmes</b>, no
             antes.
@@ -697,8 +841,13 @@ export function Prueba() {
                 {prueba.enunciado ? (
                   <TextoPlano texto={prueba.enunciado} queEs="el enunciado de la prueba" />
                 ) : (
-                  <p className={estilos.texto}>Recibirás el enunciado al empezar.</p>
+                  <p className={estilos.texto}>
+                    {cuestionario
+                      ? 'Son preguntas para responder aquí mismo.'
+                      : 'Recibirás el enunciado al empezar.'}
+                  </p>
                 )}
+                {prueba.consigna && <Consigna consigna={prueba.consigna} />}
               </section>
 
               {prueba.materiales && (
@@ -764,6 +913,13 @@ export function Prueba() {
                       </span>
                     )}
                   </>
+                ) : prueba.plazoDias && !prueba.venceEn ? (
+                  <>
+                    <span className={estilos.etiquetaLateral}>Plazo</span>
+                    <span className={estilos.valorLateral}>
+                      {prueba.plazoDias} {prueba.plazoDias === 1 ? 'día' : 'días'} desde que empieces
+                    </span>
+                  </>
                 ) : prueba.venceEn ? (
                   <>
                     <span className={estilos.etiquetaLateral}>Tienes hasta</span>
@@ -801,8 +957,9 @@ export function Prueba() {
 
               <p className={estilos.aviso} style={{ marginBottom: 0 }}>
                 <span>
-                  Una vez empezada no se puede pausar. Si el tiempo termina, se entrega lo
-                  que hayas guardado.
+                  {delEditor
+                    ? `Una vez ${cuestionario ? 'empezado' : 'empezada'} no se puede pausar. Para entregar hay que responder todas las preguntas y subir los entregables obligatorios: si el tiempo termina con algo pendiente, queda sin completar.`
+                    : 'Una vez empezada no se puede pausar. Si el tiempo termina, se entrega lo que hayas guardado.'}
                 </span>
               </p>
 
@@ -811,9 +968,9 @@ export function Prueba() {
                 className={estilos.empezar}
                 style={{ width: '100%', marginTop: 'var(--e4)' }}
                 onClick={() => setConfirmarInicio(true)}
-                data-rotulo="Empezar prueba"
+                data-rotulo={cuestionario ? 'Empezar cuestionario' : 'Empezar prueba'}
               >
-                Empezar prueba
+                {cuestionario ? 'Empezar cuestionario' : 'Empezar prueba'}
               </button>
             </aside>
           </div>
@@ -852,9 +1009,13 @@ export function Prueba() {
           {tiempoAgotado && (
             <p className={`${estilos.aviso} ${estilos.malo}`} role="alert">
               <span>
-                <b>Terminó el plazo de esta prueba</b>. Ya no se puede escribir ni subir
-                nada: el servidor no lo admitiría. Quedó guardado todo lo que llegó a
-                tiempo, y en unos segundos se entregará sola con eso. No cierres la página.
+                <b>Terminó el plazo de {cuestionario ? 'este cuestionario' : 'esta prueba'}</b>. Ya no se
+                puede escribir ni subir nada: el servidor no lo admitiría. Quedó guardado todo lo que
+                llegó a tiempo,{' '}
+                {delEditor
+                  ? `y en unos segundos se entregará ${cuestionario ? 'solo si está completo' : 'sola si está completa'}; si falta algo, quedará sin completar`
+                  : 'y en unos segundos se entregará sola con eso'}
+                . No cierres la página.
               </span>
             </p>
           )}
@@ -894,6 +1055,7 @@ export function Prueba() {
                   {hayEntregables ? 'El encargo' : 'De qué va'}
                 </h2>
                 <TextoPlano texto={prueba.enunciado ?? ''} queEs="el enunciado de la prueba" />
+                {prueba.consigna && <Consigna consigna={prueba.consigna} />}
               </section>
 
               {/* Durante la prueba tambien hacen falta: el enlace al PDF puede estar
@@ -923,20 +1085,36 @@ export function Prueba() {
                   <p className={estilos.texto} style={{ marginBottom: 'var(--e4)' }}>
                     {tiempoAgotado
                       ? 'Así quedaron. Ya no se pueden cambiar.'
-                      : 'Se guardan solas mientras escribes.'}
+                      : delEditor
+                        ? 'Se guardan solas mientras respondes.'
+                        : 'Se guardan solas mientras escribes.'}
                   </p>
                   <div className={estilos.preguntas}>
-                    {prueba.preguntas.map((p) => (
-                      <PreguntaPrueba
-                        key={p.id}
-                        uuid={uuid}
-                        pregunta={p}
-                        bloqueado={tiempoAgotado}
-                        registrarEnvio={registrarEnvio}
-                        registrarSiTieneTexto={registrarSiTieneTexto}
-                        siSeCerroLaPuerta={siSeCerroLaPuerta}
-                      />
-                    ))}
+                    {prueba.preguntas.map((p, i) =>
+                      delEditor && p.tipo !== 'ABIERTA' ? (
+                        <PreguntaCerrada
+                          key={p.id}
+                          uuid={uuid}
+                          pregunta={p}
+                          numero={numeroDe(p, i)}
+                          bloqueado={tiempoAgotado}
+                          registrarEnvio={registrarEnvio}
+                          registrarSiTieneTexto={registrarSiTieneTexto}
+                          siSeCerroLaPuerta={siSeCerroLaPuerta}
+                        />
+                      ) : (
+                        <PreguntaPrueba
+                          key={p.id}
+                          uuid={uuid}
+                          pregunta={p}
+                          numero={delEditor ? numeroDe(p, i) : undefined}
+                          bloqueado={tiempoAgotado}
+                          registrarEnvio={registrarEnvio}
+                          registrarSiTieneTexto={registrarSiTieneTexto}
+                          siSeCerroLaPuerta={siSeCerroLaPuerta}
+                        />
+                      ),
+                    )}
                   </div>
                 </section>
               )}
@@ -984,14 +1162,22 @@ export function Prueba() {
                 <button
                   type="button"
                   className={estilos.entregar}
-                  onClick={() => setConfirmarEntrega(true)}
-                  data-rotulo="Entregar prueba"
+                  onClick={pulsarEntregar}
+                  data-rotulo={cuestionario ? 'Entregar cuestionario' : 'Entregar prueba'}
                 >
-                  Entregar prueba
+                  {cuestionario ? 'Entregar cuestionario' : 'Entregar prueba'}
                 </button>
               </>
             )}
           </div>
+          {delEditor && loQueFalta && !tiempoAgotado && (
+            <LoQueFaltaParaEntregar
+              preguntas={sinResponder.map(({ p, numero }) => ({ id: p.id, numero }))}
+              entregables={obligatoriosQueFaltan.map((e) => e.nombre)}
+              hayEntregables={hayEntregables}
+              alIr={irAlaPregunta}
+            />
+          )}
         </>
       )}
 
@@ -1024,7 +1210,12 @@ export function Prueba() {
         <p className={`${estilos.aviso} ${estilos.serio}`}>
           <span>
             <b>El tiempo no se detendrá</b>. Si cierras el navegador, el cronómetro sigue
-            corriendo. Al terminar se entrega lo que hayas guardado.
+            corriendo.{' '}
+            {/* La prueba del editor no se entrega con huecos (decisión 11): decirle aquí que
+                se entrega «lo guardado» sería prometerle algo que no pasa. */}
+            {delEditor
+              ? `Al terminar, ${laPrueba} se entrega ${cuestionario ? 'solo si está completo' : 'sola si está completa'}: si falta responder alguna pregunta o subir un entregable obligatorio, queda sin completar y no se califica.`
+              : 'Al terminar se entrega lo que hayas guardado.'}
           </span>
         </p>
         {/* Un 404 no se enseña mientras se comprueba: si es la vacante retirada, la pantalla
@@ -1040,7 +1231,7 @@ export function Prueba() {
 
       <Modal
         abierto={confirmarEntrega}
-        titulo="Entregar prueba"
+        titulo={cuestionario ? 'Entregar cuestionario' : 'Entregar prueba'}
         onCerrar={() => setConfirmarEntrega(false)}
         pie={
           <>

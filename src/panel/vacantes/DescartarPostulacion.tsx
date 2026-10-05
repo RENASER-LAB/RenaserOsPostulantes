@@ -123,6 +123,11 @@ interface Props {
   puedeMover: boolean
   /** Refrescar la ficha, el historial y el ranking: el estado cambia en los tres. */
   alDescartar: () => void
+  /**
+   * El texto del botón. «Descartar» por defecto; en la lista «No completaron la
+   * prueba» (V67) es «Cerrar su proceso», que es lo mismo dicho donde se lee.
+   */
+  textoDelBoton?: string
 }
 
 export function DescartarPostulacion({
@@ -131,6 +136,7 @@ export function DescartarPostulacion({
   yaTermino,
   puedeMover,
   alDescartar,
+  textoDelBoton = 'Descartar',
 }: Props) {
   const [abierto, setAbierto] = useState(false)
   const [motivo, setMotivo] = useState('')
@@ -246,7 +252,7 @@ export function DescartarPostulacion({
         acabaria enviando el de fuera.
       */}
       <button type="button" className={estilos.descartar} onClick={abrir}>
-        Descartar
+        {textoDelBoton}
       </button>
 
       {/*

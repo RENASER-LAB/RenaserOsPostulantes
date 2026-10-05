@@ -20,12 +20,34 @@ export function aniosYMeses(meses: number): string {
  */
 export function mesesDelTramo(desde: string | null, hasta: string | null): number | null {
   if (!desde) return null
-  const inicio = new Date(desde)
-  const fin = hasta ? new Date(hasta) : new Date()
-  if (Number.isNaN(inicio.getTime()) || Number.isNaN(fin.getTime())) return null
-  const meses =
-    (fin.getFullYear() - inicio.getFullYear()) * 12 + (fin.getMonth() - inicio.getMonth())
+  const inicio = mesContado(desde)
+  const fin = hasta ? mesContado(hasta) : mesDeHoy()
+  if (inicio === null || fin === null) return null
+  const meses = fin - inicio
   return meses < 0 ? null : meses + 1
+}
+
+/**
+ * El mes de una fecha como un número que se puede restar (`año * 12 + mes`), o
+ * `null` si no es una fecha.
+ *
+ * ⚠️ **Una fecha `YYYY-MM-DD` se lee de la propia cadena.** `new Date('2024-10-01')`
+ * es la medianoche UTC, que en Lima (UTC-5) todavía es el 30 de septiembre:
+ * `getMonth()` daba un mes menos que el que pinta `mesYAno`, y un tramo abierto
+ * contaba uno de más.
+ */
+function mesContado(fecha: string): number | null {
+  const instante = new Date(fecha)
+  if (Number.isNaN(instante.getTime())) return null
+  const iso = /^(\d{4})-(\d{2})/.exec(fecha)
+  if (iso) return Number(iso[1]) * 12 + Number(iso[2]) - 1
+  return instante.getFullYear() * 12 + instante.getMonth()
+}
+
+/** El «hoy» de un tramo abierto es el de quien mira la pantalla: hora local. */
+function mesDeHoy(): number {
+  const hoy = new Date()
+  return hoy.getFullYear() * 12 + hoy.getMonth()
 }
 
 /**
@@ -44,10 +66,10 @@ export function huecoEntre(
   masRecienteDesde: string | null,
 ): number | null {
   if (!masAntiguoHasta || !masRecienteDesde) return null
-  const fin = new Date(masAntiguoHasta)
-  const inicio = new Date(masRecienteDesde)
-  if (Number.isNaN(fin.getTime()) || Number.isNaN(inicio.getTime())) return null
-  const meses = (inicio.getFullYear() - fin.getFullYear()) * 12 + (inicio.getMonth() - fin.getMonth())
+  const fin = mesContado(masAntiguoHasta)
+  const inicio = mesContado(masRecienteDesde)
+  if (fin === null || inicio === null) return null
+  const meses = inicio - fin
   // Menos de tres meses no es un hueco: es cambiar de trabajo.
   return meses >= 3 ? meses : null
 }

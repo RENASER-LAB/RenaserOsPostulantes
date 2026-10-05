@@ -780,3 +780,107 @@
   color: var(--tinta2);
   overflow-wrap: anywhere;
 }
+
+/* ---------- La prueba técnica (V67): el caso, el tiempo y los entregables ----------
+ *
+ * Mismo lenguaje que un criterio: superficie blanca con la sombra de nube. El caso
+ * y el tiempo se apilan en el teléfono; «Mira» va una casilla por línea; cada
+ * casilla y cada radio miden 44 px para el dedo.
+ */
+
+.seccionPrueba {
+  background: var(--nube);
+  border-radius: var(--radio-control);
+  box-shadow: var(--sombra-nube);
+  padding: var(--e4) var(--e5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+}
+
+.subtitulo {
+  margin: 0;
+  font-size: var(--t-entradilla);
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.enunciadoLargo {
+  margin: 0;
+  font-size: var(--t-prosa);
+  line-height: 1.55;
+  color: var(--tinta);
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+  max-width: 72ch;
+}
+
+.casilla {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--e2);
+  min-height: 44px;
+  font-size: var(--t-apoyo);
+  color: var(--tinta);
+  cursor: pointer;
+}
+
+.casilla input[type='checkbox'],
+.casilla input[type='radio'] {
+  inline-size: 20px;
+  block-size: 20px;
+  accent-color: var(--activo);
+  margin: 0;
+}
+
+.radios {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e2) var(--e6);
+}
+
+.adjunto {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+}
+
+.filaAdjunto {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e3);
+}
+
+.enlaceBoton {
+  border: 0;
+  padding: 0;
+  min-height: 44px;
+  background: none;
+  font: inherit;
+  font-size: var(--t-apoyo);
+  color: var(--activo);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.soloLectores {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  .seccionPrueba {
+    padding: var(--e3) var(--e4);
+  }
+
+  .radios {
+    flex-direction: column;
+  }
+}

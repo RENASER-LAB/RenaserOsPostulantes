@@ -150,7 +150,11 @@ function explicarFallo(causa: unknown, permiso: string): string {
  * El `Number.isFinite` es defensivo a proposito: si el campo llegara vacio por
  * un desajuste del contrato, la frase lo dice en vez de pintar «undefined».
  */
-function fraseDeLosMovidos(r: CierrePruebaAplicado, quitando: boolean): string {
+function fraseDeLosMovidos(
+  r: CierrePruebaAplicado,
+  quitando: boolean,
+  origen = 'su plantilla',
+): string {
   if (!Number.isFinite(r.intentosMovidos)) {
     return 'No pudimos leer cuántos exámenes ya abiertos cambiaron de fecha.'
   }
@@ -159,11 +163,11 @@ function fraseDeLosMovidos(r: CierrePruebaAplicado, quitando: boolean): string {
   }
   if (r.intentosMovidos === 1) {
     return quitando
-      ? '1 examen ya abierto vuelve a contar los días de su plantilla.'
+      ? `1 examen ya abierto vuelve a contar los días de ${origen}.`
       : 'Se movió 1 examen ya abierto a esa fecha.'
   }
   return quitando
-    ? `${r.intentosMovidos} exámenes ya abiertos vuelven a contar los días de su plantilla.`
+    ? `${r.intentosMovidos} exámenes ya abiertos vuelven a contar los días de ${origen}.`
     : `Se movieron ${r.intentosMovidos} exámenes ya abiertos a esa fecha.`
 }
 
@@ -184,6 +188,17 @@ function fraseDelPlazoPropio(r: CierrePruebaAplicado): string {
 // ---------- Lo que rige hoy ----------
 
 /**
+ * De dónde salen los días o los minutos de cada persona cuando no hay fecha común.
+ *
+ * Una vacante nueva (V67) no tiene plantilla: rinde la prueba escrita en su editor, y es
+ * ella la que fija la modalidad, los minutos y los días. Hablarle de «su plantilla» a quien
+ * nunca eligió una le hace buscar un desplegable que ya no existe.
+ */
+export function origenDelPlazo(vacante: Pick<VacantePanel, 'instrumentoEtapaTecnica'>): string {
+  return vacante.instrumentoEtapaTecnica === 'PRUEBA_PROPIA' ? 'la prueba de la vacante' : 'su plantilla'
+}
+
+/**
  * La linea que contesta «¿que plazo rige ahora mismo?» antes de tocar nada.
  *
  * Son cuatro frases y no una con huecos porque son cuatro reglas distintas: una
@@ -197,6 +212,7 @@ function fraseDelPlazoPropio(r: CierrePruebaAplicado): string {
  * diria «7 dias» sobre una prueba que cierra en 45 minutos.
  */
 export function loQueRigeHoy(vacante: VacantePanel, zona: string): string {
+  const origen = origenDelPlazo(vacante)
   const cierra = vacante.pruebaCierraEn ?? null
   const cuando = cierra ? `${formatearFechaLarga(cierra)} (hora de tu equipo, ${zona})` : null
 
@@ -204,7 +220,7 @@ export function loQueRigeHoy(vacante: VacantePanel, zona: string): string {
     const minutos =
       typeof vacante.minutosPruebaVigentes === 'number'
         ? `${vacante.minutosPruebaVigentes} minutos`
-        : 'los minutos de su plantilla'
+        : `los minutos de ${origen}`
     return cuando === null
       ? `Cronometrada: ${minutos} desde que cada persona empieza, sin fecha límite para empezar.`
       : `Cronometrada: ${minutos} desde que cada persona empieza, y nadie puede seguir después del ${cuando}. Rige lo que caiga antes.`
@@ -214,7 +230,7 @@ export function loQueRigeHoy(vacante: VacantePanel, zona: string): string {
     if (cuando !== null) return `Cierra el ${cuando}.`
     return typeof vacante.diasPruebaVigentes === 'number'
       ? `Sin fecha para todos: a cada persona le cierra ${vacante.diasPruebaVigentes} días después de que empieza.`
-      : 'Sin fecha para todos: a cada persona le cierra cuando pasen los días que diga su plantilla.'
+      : `Sin fecha para todos: a cada persona le cierra cuando pasen los días que diga ${origen}.`
   }
 
   /*
@@ -268,6 +284,7 @@ export function CierreDeLaVacante({
   alGuardar: () => void
 }) {
   const vacanteId = vacante.id
+  const origen = origenDelPlazo(vacante)
   const vigente = vacante.pruebaCierraEn ?? null
   /*
     El campo nace con la fecha que rige, y vuelve a ella cuando el servidor
@@ -366,7 +383,7 @@ export function CierreDeLaVacante({
       <h3 className={estilos.titulo}>Cuándo cierra la prueba</h3>
       <p className={estilos.prosa}>
         Una sola fecha para toda la convocatoria: «hasta el domingo», igual para todos. Sin
-        ella, cada persona tiene los días que diga su plantilla contados desde que empieza,
+        ella, cada persona tiene los días que diga {origen} contados desde que empieza,
         que dan una fecha distinta a cada una.
       </p>
       {/*
@@ -483,12 +500,12 @@ export function CierreDeLaVacante({
             </p>
           ) : (
             <p className={estilos.loQueQueda}>
-              La prueba ya no tiene fecha de cierre. Cada intento vuelve a contar los días de
-              su plantilla desde que la persona lo abre.
+              La prueba ya no tiene fecha de cierre. Cada intento vuelve a contar los días de{' '}
+              {origen} desde que la persona lo abre.
             </p>
           )}
           <p className={estilos.detalle}>
-            {fraseDeLosMovidos(aplicado.r, aplicado.quitando)}
+            {fraseDeLosMovidos(aplicado.r, aplicado.quitando, origen)}
           </p>
           <p className={estilos.loQueSorprende}>{fraseDelPlazoPropio(aplicado.r)}</p>
         </div>
@@ -504,8 +521,8 @@ export function CierreDeLaVacante({
         <h4 className={estilos.tituloQuitar}>Quitar el cierre</h4>
         <p className={estilos.prosa}>
           Deja la vacante sin fecha común. No es lo mismo que poner una fecha más lejana:
-          cada intento vuelve a contar los días de su plantilla desde que cada persona lo
-          abre, así que cada una tendrá la suya.
+          cada intento vuelve a contar los días de {origen} desde que cada persona lo abre,
+          así que cada una tendrá la suya.
         </p>
 
         {preguntando === 'quitar' ? (
@@ -513,7 +530,7 @@ export function CierreDeLaVacante({
             <div className={estilos.cuerpoPregunta}>
               <p className={estilos.textoPregunta}>
                 Se quita la fecha común de la vacante y los exámenes ya abiertos vuelven a los
-                días de su plantilla. ¿Seguimos?
+                días de {origen}. ¿Seguimos?
               </p>
               <div className={estilos.botonesPregunta}>
                 <button

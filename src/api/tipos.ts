@@ -258,6 +258,14 @@ export interface MiPostulacion {
    */
   instrumentoEtapaTecnica: string | null
   /**
+   * La prueba del editor (V67) venció con algo sin responder y se cerró sin entregar. La
+   * postulación sigue en su etapa hasta que el equipo cierre su proceso, así que el estado
+   * solo diría que le toca rendirla. Solo dice eso: ni puntos ni criterios (RF-53).
+   *
+   * Puede faltar contra un backend anterior: entonces no quedó sin completar.
+   */
+  pruebaSinCompletar?: boolean
+  /**
    * Cuantos avisos de ESTE proceso siguen sin ver. Cero = sin punto.
    *
    * Es lo que enciende el punto de la fila en «Mis procesos». Se apaga al abrir
@@ -478,6 +486,23 @@ export interface PreguntaPrueba {
   tipo: string
   enunciado: string
   respuestaTexto: string | null
+  /**
+   * Solo en la prueba escrita en el editor (V67): las opciones de una cerrada,
+   * sin puntos ni cuál es la buena (RF-53), y lo que ya marcó. Opcionales: las
+   * plantillas no las mandan.
+   */
+  opciones?: OpcionDePrueba[] | null
+  respuestaOpcionId?: number | null
+  respuestaMarcadas?: number[] | null
+  /** Su número en la prueba, el que se dice en «te falta la 3 y la 7». */
+  posicion?: number | null
+}
+
+export interface OpcionDePrueba {
+  id: number
+  /** Nulo en un nivel de escala sin rótulo. */
+  texto: string | null
+  orden: number
 }
 
 export interface EntregableRequerido {
@@ -489,7 +514,11 @@ export interface EntregableRequerido {
   entregado: boolean
 }
 
-export type EstadoIntento = 'PENDIENTE' | 'EN_CURSO' | 'ENTREGADA'
+/**
+ * `NO_COMPLETADA` (V67, solo la prueba del editor): venció con algo sin
+ * responder o sin subir. No se entrega ni se califica.
+ */
+export type EstadoIntento = 'PENDIENTE' | 'EN_CURSO' | 'ENTREGADA' | 'NO_COMPLETADA'
 
 export interface MiPrueba {
   id: number
@@ -506,6 +535,17 @@ export interface MiPrueba {
   cambioTexto: string | null
   preguntas: PreguntaPrueba[]
   entregables: EntregableRequerido[]
+  /** V67: los días de una prueba de plazo abierto, desde que se empieza. */
+  plazoDias?: number | null
+  /** V67: sin entregables, la prueba es un cuestionario y así se llama. */
+  cuestionario?: boolean
+  /** V67: el enunciado adjunto en PDF o Word. `url` puede faltar en local. */
+  consigna?: { nombre: string | null; url: string | null } | null
+  /**
+   * V67: escrita en el editor de la vacante. Sus preguntas pueden ser cerradas y
+   * entregar exige responderlas todas.
+   */
+  delEditor?: boolean
 }
 
 export interface EntregaPrueba {

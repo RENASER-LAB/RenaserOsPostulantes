@@ -10,9 +10,19 @@
  * ⚠️ **Los puntos viajan como numero y el servidor exige que sean enteros.** Un
  * 2,5 no se redondea aqui: lo rechaza el backend con su lista de faltas, que es
  * la misma que se pinta al publicar.
+ *
+ * **Un solo editor para dos cosas (V67).** La prueba técnica de la vacante se
+ * escribe en el mismo editor, por otra ruta (`prueba-propia`) y con lo que le
+ * falta a una prueba: el caso, el tiempo, los entregables y la parte calificada
+ * de cada criterio. Cada función recibe al final la ruta; sin ella es la de las
+ * preguntas propias, como siempre. Lo que solo tiene la prueba vive en
+ * `pruebaPropia.ts`.
  */
 
 import { pedir } from './cliente'
+
+/** Por dónde va el editor: las preguntas del Perfil Integral o la prueba técnica. */
+export type RutaDelEditor = 'preguntas-propias' | 'prueba-propia'
 
 export type TipoDePreguntaPropia = 'ABIERTA' | 'OPCION_UNICA' | 'OPCION_MULTIPLE' | 'ESCALA'
 
@@ -45,6 +55,42 @@ export interface CriterioDeLaVersion {
   puntosSistema: number
   puntosIa: number
   preguntas: PreguntaDeLaVersion[]
+  /** Solo en la prueba (V67): los puntos de su parte calificada. */
+  puntosCalificados?: number | null
+  /** Solo en la prueba: quién califica la parte calificada. */
+  calificador?: 'IA' | 'PERSONA' | null
+  /** Solo en la prueba: los ids de los entregables que mira. */
+  entregables?: number[] | null
+}
+
+export type FormatoDeEntregable = 'ARCHIVO' | 'ENLACE' | 'CUALQUIERA'
+
+export interface EntregableDeLaVersion {
+  id: number
+  nombre: string
+  /** «Qué debe contener»: lo lee el candidato. */
+  detalle: string | null
+  formato: FormatoDeEntregable
+  obligatorio: boolean
+  /** «Qué debe tener una buena entrega»: lo leen la IA y quien califica. */
+  queDebeTener: string | null
+  orden: number
+  /** Los criterios que lo miran. */
+  criterios: number[]
+}
+
+/** Lo que una prueba tiene y unas preguntas no (V67). */
+export interface PruebaDeLaVersion {
+  enunciado: string | null
+  consigna: { archivoId: number; nombre: string | null } | null
+  materiales: string | null
+  herramientasPermitidas: string | null
+  modalidad: 'CRONOMETRADA' | 'PLAZO_ABIERTO' | null
+  duracionMinutos: number | null
+  plazoDias: number | null
+  /** Sin entregables es un cuestionario. */
+  cuestionario: boolean
+  entregables: EntregableDeLaVersion[]
 }
 
 export interface VersionDePreguntas {
@@ -61,13 +107,21 @@ export interface VersionDePreguntas {
   sinCriterio: PreguntaDeLaVersion[]
   /** Lo que frena la publicacion, dicho entero. Vacio = se puede publicar. */
   avisos: string[]
+  /** Solo en la prueba (V67). */
+  prueba?: PruebaDeLaVersion | null
 }
 
 export interface ResumenDePreguntas {
-  estado: 'SIN_PREGUNTAS' | 'BORRADOR' | 'PUBLICADAS'
+  /** En la prueba (V67): SIN_PRUEBA · BORRADOR · PUBLICADA. */
+  estado: 'SIN_PREGUNTAS' | 'BORRADOR' | 'PUBLICADAS' | 'SIN_PRUEBA' | 'PUBLICADA'
   puntos: number | null
   criterios: number | null
   preguntas: number | null
+  /** Solo en la prueba. */
+  entregables?: number | null
+  minutos?: number | null
+  dias?: number | null
+  cuestionario?: boolean | null
 }
 
 export interface Recalificacion {
@@ -85,15 +139,19 @@ export interface EditorDePreguntas {
   vacanteId: number
   titulo: string
   nivel: string | null
-  origen: 'NIVEL' | 'VACANTE'
+  /** En la prueba (V67) es el instrumento de la vacante (PRUEBA_PROPIA…). */
+  origen: 'NIVEL' | 'VACANTE' | string
   aplicaEvaluacion: boolean
   /** El panel no sabe sus permisos: viaja aqui. */
   puedeEditar: boolean
+  /** En la prueba: si alguien ya empezó a rendirla (la vara se congela ahí). */
   hayPostulantes: boolean
   borrador: VersionDePreguntas | null
   publicada: VersionDePreguntas | null
   resumen: ResumenDePreguntas
   recalificacion: Recalificacion | null
+  /** PERFIL_INTEGRAL o PRUEBA_PUESTO (V67). */
+  proposito?: 'PERFIL_INTEGRAL' | 'PRUEBA_PUESTO'
 }
 
 export interface GuardarOpcion {
@@ -144,6 +202,26 @@ export interface CriterioPropuesto {
   nombre: string | null
   queEvalua: string | null
   preguntas: PreguntaPropuesta[]
+  /** Solo en la prueba (V67). */
+  parteCalificada?: number | null
+  calificador?: 'IA' | 'PERSONA' | null
+  /** Posiciones de los entregables propuestos que mira. */
+  entregables?: number[] | null
+  entregablesExistentes?: number[] | null
+}
+
+export interface CasoPropuesto {
+  enunciado: string | null
+  materiales: string | null
+  herramientasPermitidas: string | null
+}
+
+export interface EntregablePropuesto {
+  nombre: string
+  detalle: string | null
+  formato: FormatoDeEntregable
+  obligatorio: boolean | null
+  queDebeTener: string | null
 }
 
 export interface EstadoDeLaRecomendacion {
@@ -153,6 +231,9 @@ export interface EstadoDeLaRecomendacion {
   puntosQueFaltan: number | null
   indicacion: string | null
   propuesta: CriterioPropuesto[]
+  /** Solo en la prueba (V67). */
+  caso?: CasoPropuesto | null
+  entregables?: EntregablePropuesto[] | null
 }
 
 export interface RecomendacionPedida {
@@ -170,27 +251,32 @@ export interface CorregirInstrucciones {
   guiaCalificacion: string | null
   criterios: { id: number; texto: string | null }[]
   preguntas: { id: number; texto: string | null }[]
+  /** Solo en la prueba (V67): el «qué debe tener» de cada entregable. */
+  entregables?: { id: number; texto: string | null }[]
 }
 
 export interface CambiarPuntos {
   preguntas: { id: number; puntos: number; opciones: { id: number; puntos: number }[] }[]
+  /** Solo en la prueba (V67): la parte calificada de cada criterio. */
+  criterios?: { id: number; puntosCalificados: number }[]
 }
 
-const base = (vacanteId: number) => `/vacantes/${vacanteId}/preguntas-propias`
+const base = (vacanteId: number, ruta: RutaDelEditor = 'preguntas-propias') =>
+  `/vacantes/${vacanteId}/${ruta}`
 
-export const verPreguntasPropias = (vacanteId: number) =>
-  pedir<EditorDePreguntas>(base(vacanteId))
+export const verPreguntasPropias = (vacanteId: number, ruta?: RutaDelEditor) =>
+  pedir<EditorDePreguntas>(base(vacanteId, ruta))
 
-export const abrirBorrador = (vacanteId: number) =>
-  pedir<EditorDePreguntas>(`${base(vacanteId)}/borrador`, { metodo: 'POST' })
+export const abrirBorrador = (vacanteId: number, ruta?: RutaDelEditor) =>
+  pedir<EditorDePreguntas>(`${base(vacanteId, ruta)}/borrador`, { metodo: 'POST' })
 
 export const guardarDatosDelBorrador = (
   vacanteId: number,
   datos: { guiaCalificacion: string | null; minutosObjetivo: number | null },
 ) => pedir<EditorDePreguntas>(`${base(vacanteId)}/borrador`, { metodo: 'PUT', cuerpo: datos })
 
-export const descartarBorrador = (vacanteId: number) =>
-  pedir<EditorDePreguntas>(`${base(vacanteId)}/borrador`, { metodo: 'DELETE' })
+export const descartarBorrador = (vacanteId: number, ruta?: RutaDelEditor) =>
+  pedir<EditorDePreguntas>(`${base(vacanteId, ruta)}/borrador`, { metodo: 'DELETE' })
 
 export const agregarCriterio = (vacanteId: number, datos: GuardarCriterio) =>
   pedir<EditorDePreguntas>(`${base(vacanteId)}/criterios`, { metodo: 'POST', cuerpo: datos })
@@ -201,81 +287,103 @@ export const editarCriterio = (vacanteId: number, criterioId: number, datos: Gua
     cuerpo: datos,
   })
 
-export const quitarCriterio = (vacanteId: number, criterioId: number) =>
-  pedir<EditorDePreguntas>(`${base(vacanteId)}/criterios/${criterioId}`, { metodo: 'DELETE' })
+export const quitarCriterio = (vacanteId: number, criterioId: number, ruta?: RutaDelEditor) =>
+  pedir<EditorDePreguntas>(`${base(vacanteId, ruta)}/criterios/${criterioId}`, { metodo: 'DELETE' })
 
-export const moverCriterio = (vacanteId: number, criterioId: number, direccion: 'ARRIBA' | 'ABAJO') =>
-  pedir<EditorDePreguntas>(`${base(vacanteId)}/criterios/${criterioId}/movimiento`, {
+export const moverCriterio = (
+  vacanteId: number,
+  criterioId: number,
+  direccion: 'ARRIBA' | 'ABAJO',
+  ruta?: RutaDelEditor,
+) =>
+  pedir<EditorDePreguntas>(`${base(vacanteId, ruta)}/criterios/${criterioId}/movimiento`, {
     metodo: 'POST',
     cuerpo: { direccion },
   })
 
-export const agregarPregunta = (vacanteId: number, datos: GuardarPregunta) =>
-  pedir<EditorDePreguntas>(`${base(vacanteId)}/preguntas`, { metodo: 'POST', cuerpo: datos })
+export const agregarPregunta = (vacanteId: number, datos: GuardarPregunta, ruta?: RutaDelEditor) =>
+  pedir<EditorDePreguntas>(`${base(vacanteId, ruta)}/preguntas`, { metodo: 'POST', cuerpo: datos })
 
-export const editarPregunta = (vacanteId: number, preguntaId: number, datos: GuardarPregunta) =>
-  pedir<EditorDePreguntas>(`${base(vacanteId)}/preguntas/${preguntaId}`, {
+export const editarPregunta = (
+  vacanteId: number,
+  preguntaId: number,
+  datos: GuardarPregunta,
+  ruta?: RutaDelEditor,
+) =>
+  pedir<EditorDePreguntas>(`${base(vacanteId, ruta)}/preguntas/${preguntaId}`, {
     metodo: 'PUT',
     cuerpo: datos,
   })
 
-export const quitarPregunta = (vacanteId: number, preguntaId: number) =>
-  pedir<EditorDePreguntas>(`${base(vacanteId)}/preguntas/${preguntaId}`, { metodo: 'DELETE' })
+export const quitarPregunta = (vacanteId: number, preguntaId: number, ruta?: RutaDelEditor) =>
+  pedir<EditorDePreguntas>(`${base(vacanteId, ruta)}/preguntas/${preguntaId}`, { metodo: 'DELETE' })
 
-export const moverPregunta = (vacanteId: number, preguntaId: number, direccion: 'ARRIBA' | 'ABAJO') =>
-  pedir<EditorDePreguntas>(`${base(vacanteId)}/preguntas/${preguntaId}/movimiento`, {
+export const moverPregunta = (
+  vacanteId: number,
+  preguntaId: number,
+  direccion: 'ARRIBA' | 'ABAJO',
+  ruta?: RutaDelEditor,
+) =>
+  pedir<EditorDePreguntas>(`${base(vacanteId, ruta)}/preguntas/${preguntaId}/movimiento`, {
     metodo: 'POST',
     cuerpo: { direccion },
   })
 
 /** 400 con `faltas` (la lista entera) si algo frena; 409 con postulantes. */
-export const publicarPreguntas = (vacanteId: number) =>
-  pedir<EditorDePreguntas>(`${base(vacanteId)}/publicacion`, { metodo: 'POST' })
+export const publicarPreguntas = (vacanteId: number, ruta?: RutaDelEditor) =>
+  pedir<EditorDePreguntas>(`${base(vacanteId, ruta)}/publicacion`, { metodo: 'POST' })
 
-export const corregirInstrucciones = (vacanteId: number, datos: CorregirInstrucciones) =>
-  pedir<CambioAplicado>(`${base(vacanteId)}/publicada/instrucciones`, {
+export const corregirInstrucciones = (vacanteId: number, datos: CorregirInstrucciones, ruta?: RutaDelEditor) =>
+  pedir<CambioAplicado>(`${base(vacanteId, ruta)}/publicada/instrucciones`, {
     metodo: 'PUT',
     cuerpo: datos,
   })
 
-export const reintentarRecalificacion = (vacanteId: number) =>
-  pedir<CambioAplicado>(`${base(vacanteId)}/publicada/recalificacion`, { metodo: 'POST' })
+export const reintentarRecalificacion = (vacanteId: number, ruta?: RutaDelEditor) =>
+  pedir<CambioAplicado>(`${base(vacanteId, ruta)}/publicada/recalificacion`, { metodo: 'POST' })
 
-export const cambiarPuntos = (vacanteId: number, datos: CambiarPuntos) =>
-  pedir<CambioAplicado>(`${base(vacanteId)}/publicada/puntos`, { metodo: 'PUT', cuerpo: datos })
+export const cambiarPuntos = (vacanteId: number, datos: CambiarPuntos, ruta?: RutaDelEditor) =>
+  pedir<CambioAplicado>(`${base(vacanteId, ruta)}/publicada/puntos`, { metodo: 'PUT', cuerpo: datos })
 
-export const listarCopiables = (vacanteId: number, buscar: string, nivel: string) => {
+export const listarCopiables = (vacanteId: number, buscar: string, nivel: string, ruta?: RutaDelEditor) => {
   const q = new URLSearchParams()
   if (buscar.trim()) q.set('buscar', buscar.trim())
   if (nivel) q.set('nivel', nivel)
   const consulta = q.toString()
-  return pedir<VacanteCopiable[]>(`${base(vacanteId)}/copiables${consulta ? `?${consulta}` : ''}`)
+  return pedir<VacanteCopiable[]>(`${base(vacanteId, ruta)}/copiables${consulta ? `?${consulta}` : ''}`)
 }
 
-export const verVistaPrevia = (vacanteId: number, vacanteOrigenId: number) =>
-  pedir<VersionDePreguntas>(`${base(vacanteId)}/copiables/${vacanteOrigenId}`)
+export const verVistaPrevia = (vacanteId: number, vacanteOrigenId: number, ruta?: RutaDelEditor) =>
+  pedir<VersionDePreguntas>(`${base(vacanteId, ruta)}/copiables/${vacanteOrigenId}`)
 
-export const copiarDeOtraVacante = (vacanteId: number, vacanteOrigenId: number) =>
-  pedir<EditorDePreguntas>(`${base(vacanteId)}/copia`, {
+export const copiarDeOtraVacante = (vacanteId: number, vacanteOrigenId: number, ruta?: RutaDelEditor) =>
+  pedir<EditorDePreguntas>(`${base(vacanteId, ruta)}/copia`, {
     metodo: 'POST',
     cuerpo: { vacanteOrigenId },
   })
 
-export const pedirRecomendaciones = (vacanteId: number, indicacion: string | null) =>
-  pedir<RecomendacionPedida>(`${base(vacanteId)}/recomendaciones`, {
+export const pedirRecomendaciones = (vacanteId: number, indicacion: string | null, ruta?: RutaDelEditor) =>
+  pedir<RecomendacionPedida>(`${base(vacanteId, ruta)}/recomendaciones`, {
     metodo: 'POST',
     cuerpo: { indicacion },
   })
 
-export const verRecomendacion = (vacanteId: number) =>
-  pedir<EstadoDeLaRecomendacion>(`${base(vacanteId)}/recomendaciones`)
+export const verRecomendacion = (vacanteId: number, ruta?: RutaDelEditor) =>
+  pedir<EstadoDeLaRecomendacion>(`${base(vacanteId, ruta)}/recomendaciones`)
 
 export const agregarDeLaPropuesta = (
   vacanteId: number,
   propuestaId: number,
-  datos: { criterios: number[]; preguntas: { criterio: number; pregunta: number }[] },
+  datos: {
+    criterios: number[]
+    preguntas: { criterio: number; pregunta: number }[]
+    /** Solo en la prueba (V67): agregar el caso propuesto y entregables sueltos. */
+    caso?: boolean
+    entregables?: number[]
+  },
+  ruta?: RutaDelEditor,
 ) =>
-  pedir<EditorDePreguntas>(`${base(vacanteId)}/recomendaciones/${propuestaId}/agregados`, {
+  pedir<EditorDePreguntas>(`${base(vacanteId, ruta)}/recomendaciones/${propuestaId}/agregados`, {
     metodo: 'POST',
     cuerpo: datos,
   })

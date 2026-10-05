@@ -15,14 +15,24 @@ import {
   faltasDe,
   verPreguntasPropias,
   type EditorDePreguntas,
+  type RutaDelEditor,
 } from '../../api/preguntasPropias'
+import { useModoDelEditor } from './modo'
 
-export const claveDelEditor = (vacanteId: number) => ['panel-preguntas-propias', vacanteId] as const
+/**
+ * La clave de la consulta del editor. La de la prueba (V67) es otra: las
+ * preguntas y la prueba de una misma vacante no se pisan en la caché.
+ */
+export const claveDelEditor = (vacanteId: number, ruta: RutaDelEditor = 'preguntas-propias') =>
+  ruta === 'preguntas-propias'
+    ? (['panel-preguntas-propias', vacanteId] as const)
+    : (['panel-prueba-propia', vacanteId] as const)
 
 export function useEditorDePreguntas(vacanteId: number, habilitado = true) {
+  const { ruta } = useModoDelEditor()
   return useQuery({
-    queryKey: claveDelEditor(vacanteId),
-    queryFn: () => verPreguntasPropias(vacanteId),
+    queryKey: claveDelEditor(vacanteId, ruta),
+    queryFn: () => verPreguntasPropias(vacanteId, ruta),
     enabled: habilitado && Number.isFinite(vacanteId),
   })
 }
@@ -30,14 +40,15 @@ export function useEditorDePreguntas(vacanteId: number, habilitado = true) {
 /** Pone el editor que devolvio el servidor y avisa a la ficha de la vacante. */
 export function usePonerEditor(vacanteId: number) {
   const cache = useQueryClient()
+  const { ruta } = useModoDelEditor()
   return useCallback(
     (editor: EditorDePreguntas) => {
-      cache.setQueryData(claveDelEditor(vacanteId), editor)
+      cache.setQueryData(claveDelEditor(vacanteId, ruta), editor)
       // La seccion «Que respondera quien postule» enseña el resumen, y el cartel
       // «Todo listo» depende de que esten publicadas.
       void cache.invalidateQueries({ queryKey: ['panel-vacante', vacanteId] })
     },
-    [cache, vacanteId],
+    [cache, vacanteId, ruta],
   )
 }
 

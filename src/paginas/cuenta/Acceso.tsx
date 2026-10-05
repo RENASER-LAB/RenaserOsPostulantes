@@ -17,7 +17,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { misPostulaciones } from '@/api/portal'
 import { useSesion } from '@/app/Sesion'
-import { leTocaAlCandidato } from '@/dominio/estados'
+import { leTocaAlCandidatoEn } from '@/dominio/estados'
 import { rutas } from '@/rutas'
 import { Marca } from '@/ui/Marca'
 import estilos from './Cuenta.module.css'
@@ -37,7 +37,7 @@ import estilos from './Cuenta.module.css'
 async function aDondeIr(): Promise<string> {
   try {
     const mias = await misPostulaciones()
-    const suyas = mias.filter((p) => leTocaAlCandidato(p.estado))
+    const suyas = mias.filter((p) => leTocaAlCandidatoEn(p))
     const unica = suyas[0]
     if (mias.length === 1 && suyas.length === 1 && unica) {
       return rutas.proceso(unica.uuid)

@@ -306,11 +306,22 @@ test.describe('Una empresa sin banco propio', () => {
   })
 
   test('AC-01d · ni ella ni la plataforma le copian el banco; los pesos sí se personalizan', async () => {
-    const porElla = await pedir('/panel/organizacion/personalizacion', tokenB, 'POST', { instrumento: 'BANCO' })
-    expect(porElla.estado).toBe(409)
+    // V67 (decisión 13, AC-26): personalizar el banco o las pruebas ya no existe. Encenderlo
+    // o apagarlo, lo pida ella o la plataforma, contesta 400 y no copia ni cambia nada.
+    const YA_NO_EXISTE = 'Esta personalización ya no existe'
     const motivo = { motivo: `${MARCA}: la empresa lo pidió por teléfono` }
-    const porLaPlataforma = await pedir(`/panel/plataforma/empresas/${b.id}/personalizacion/BANCO`, equipo, 'POST', motivo)
-    expect(porLaPlataforma.estado).toBe(409)
+    for (const instrumento of ['BANCO', 'PRUEBA']) {
+      const porElla = await pedir('/panel/organizacion/personalizacion', tokenB, 'POST', { instrumento })
+      expect(porElla.estado).toBe(400)
+      expect(porElla.cuerpo.detail).toContain(YA_NO_EXISTE)
+      expect((await pedir(`/panel/organizacion/personalizacion/${instrumento}`, tokenB, 'DELETE')).estado).toBe(400)
+      const porLaPlataforma = await pedir(
+        `/panel/plataforma/empresas/${b.id}/personalizacion/${instrumento}`, equipo, 'POST', motivo)
+      expect(porLaPlataforma.estado).toBe(400)
+      expect(porLaPlataforma.cuerpo.detail).toContain(YA_NO_EXISTE)
+      expect((await pedir(`/panel/plataforma/empresas/${b.id}/personalizacion/${instrumento}`, equipo, 'DELETE', motivo)).estado)
+        .toBe(400)
+    }
     expect((await exigir('/panel/organizacion/personalizacion', tokenB)).bancoPropio).toBe(false)
     expect(Number(consultar(`select count(*) as n from version_banco where organizacion_id = ${b.id} and vacante_id is null`)[0]!.n)).toBe(0)
 

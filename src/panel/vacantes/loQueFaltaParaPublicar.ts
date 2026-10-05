@@ -18,6 +18,11 @@ export interface FaltasDeLaVacante {
   cuestionarioTecnico: boolean
   /** Tiene preguntas propias y no están publicadas. */
   preguntasPropias: boolean
+  /**
+   * Rinde la prueba técnica escrita en el editor (V67) y no está publicada. Se
+   * publica en su página, «Armar la prueba», y por eso va aparte con su enlace.
+   */
+  pruebaTecnica?: boolean
 }
 
 export interface LoQueFalta {
@@ -25,6 +30,11 @@ export interface LoQueFalta {
   aquiAbajo: string | null
   /** Las preguntas propias, que se publican en su editor. */
   preguntasPropias: boolean
+  /**
+   * La prueba técnica escrita en el editor, que se publica en «Armar la prueba».
+   * Solo viaja cuando falta: las vacantes de antes no la tienen.
+   */
+  pruebaTecnica?: true
   hayAlgo: boolean
 }
 
@@ -41,9 +51,11 @@ export function loQueFaltaParaPublicar(f: FaltasDeLaVacante): LoQueFalta {
     f.cuestionarioTecnico ? 'publicar su cuestionario técnico' : null,
   ].filter((c): c is string => c !== null)
   const aquiAbajo = partes.length > 0 ? enumerar(partes) : null
+  const pruebaTecnica = f.pruebaTecnica === true
   return {
     aquiAbajo,
     preguntasPropias: f.preguntasPropias,
-    hayAlgo: aquiAbajo !== null || f.preguntasPropias,
+    ...(pruebaTecnica ? { pruebaTecnica: true as const } : {}),
+    hayAlgo: aquiAbajo !== null || f.preguntasPropias || pruebaTecnica,
   }
 }
