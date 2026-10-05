@@ -608,6 +608,15 @@ cabecera viaja con `GET /portal/perfil`.
 «Ver todas» se pasa al paso y se vuelve, y desde la sección la ventana se abre directamente en él.
 Al cerrar, el foco vuelve al botón que la abrió.
 
+**Cerrar no tira lo escrito** (05/10/2026). Si el paso tiene texto sin guardar —una respuesta
+nueva, una edición distinta de lo publicado o algo en «Cuéntanos más» al reportar; elegir solo el
+motivo y los espacios de los extremos no cuentan—, «Volver», Escape, el aspa o tocar fuera no
+cierran: el pie de la misma ventana pregunta «¿Descartar lo que escribiste? No se guardará.»,
+con el foco en «Seguir escribiendo». Ese botón, o Escape, devuelve al campo con el texto intacto;
+«Descartar» hace lo que iba a hacer el cierre —«Volver» desde «Ver todas» vuelve a la lista—.
+Sin texto nuevo, tras enviar o en «Esta reseña ya no está disponible», cierra sin preguntar.
+Recargar la página o el «atrás» de Android sí lo pierden: quedó fuera.
+
 - **Reportar** pide el motivo —insultos, datos personales o de salud, discriminación, que es falsa
   u otro, que exige contarlo, hasta 500 caracteres— y avisa de que la reseña sigue visible mientras
   se revisa. Enviado, la tarjeta dice «Reportada · en revisión» y el botón desaparece. La reseña

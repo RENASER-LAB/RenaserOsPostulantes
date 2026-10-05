@@ -758,7 +758,7 @@ blanco ahí puede ser un permiso y no un candidato que no pidió sueldo.
 | Áreas | La estructura de la empresa: crear, renombrar, retirar, reactivar y borrar (paso 0) |
 | Equipo | Quién tiene acceso, y en qué área está cada quien |
 | Permisos | El reparto de permisos por rol |
-| Reseñas reportadas | **Solo la plataforma**: mantener u ocultar, con una nota, lo que se reportó de una reseña o de una respuesta. A cualquier otra empresa no le aparece |
+| Reseñas reportadas | **Solo la plataforma**: mantener u ocultar, con una nota, lo que se reportó de una reseña o de una respuesta. Ninguna decisión sale con un clic: antes, una ventana dice lo que va a pasar y que no se puede deshacer. A cualquier otra empresa no le aparece |
 | Solo lectura | Las plantillas **de evaluación** y las versiones de pesos que existen |
 
 Las áreas van justo antes del equipo, y no es cosmética: un área es dónde

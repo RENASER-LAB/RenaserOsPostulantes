@@ -11,6 +11,11 @@
  * se reporta o se responde desde la sección, la ventana se abre directamente en
  * ese paso; «Volver» la cierra, porque no hay lista a la que volver.
  *
+ * ⚠️ **Lo escrito no se tira sin preguntar.** Con texto sin enviar en
+ * «Responder» o en «Cuéntanos más», cerrar el paso —«Volver», Escape, el aspa o
+ * el fondo— cambia el pie a «¿Descartar lo que escribiste?». Ver
+ * `useBorradorDeLaVentana`.
+ *
  * ⚠️ **La sección y su entrada en el índice salen siempre**, también sin
  * reseñas: quien nunca tuvo una tiene que saber que existe y cómo llega.
  *
@@ -36,12 +41,19 @@ import {
   CampoContado,
   Estrellas,
   FormularioDeReporte,
+  PreguntaDeDescartar,
   ResumenDeResenas,
   TarjetaDeResena,
   VentanaDeResenas,
   type PasoDeLaVentana,
 } from '@/ui/resenas/Resenas'
-import { useFocoPendiente, useUnSoloEnvio } from '@/ui/resenas/ganchos'
+import {
+  useAvisoDeBorrador,
+  useBorradorDeLaVentana,
+  useFocoPendiente,
+  useUnSoloEnvio,
+  type CierreDelPaso,
+} from '@/ui/resenas/ganchos'
 import { faltaEnElTexto, type MotivoDeReporte } from '@/ui/resenas/modelo'
 import piezasResenas from '@/ui/resenas/Resenas.module.css'
 import estilos from './Perfil.module.css'
@@ -142,6 +154,7 @@ export function ResenasDelPerfil() {
    */
   const terminarPaso = (paso: Paso) => {
     setFallo(null)
+    borrador.olvidar()
     setVentana(paso.desde === 'lista' ? { vista: 'lista' } : null)
     pedirFoco([boton(accionDelPaso(paso), paso.id), fila(paso.id)])
   }
@@ -203,6 +216,8 @@ export function ResenasDelPerfil() {
   const reportando = reporte.isPending || envioDelReporte.ocupado
   const respondiendo = respuesta.isPending || envioDeLaRespuesta.ocupado
   const borrandoAhora = baja.isPending || envioDeLaBaja.ocupado
+  // Mientras se envía no se pregunta: la ventana se cierra como siempre.
+  const borrador = useBorradorDeLaVentana(reportando || respondiendo)
 
   /*
     ⚠️ **El foco no se pierde.** Volver de un paso, terminarlo, abrir o cerrar
@@ -221,8 +236,23 @@ export function ResenasDelPerfil() {
 
   const abrirPaso = (siguiente: Paso) => {
     setFallo(null)
+    borrador.olvidar()
     setVentana(siguiente)
   }
+
+  const cerrarVentana = () => {
+    setVentana(null)
+    setFallo(null)
+    borrador.olvidar()
+  }
+
+  /*
+    Lo que hace cada cierre de un paso, sin borrador o tras «Descartar»: «Volver»
+    vuelve a la lista o cierra, según de dónde se abrió (`terminarPaso`); Escape,
+    el aspa y el fondo cierran la ventana entera, y el `Modal` devuelve el foco.
+  */
+  const cerrarPaso = (paso: Paso) => (como: CierreDelPaso) =>
+    como === 'volver' ? terminarPaso(paso) : cerrarVentana()
 
   const abrirBorrar = (id: number) => {
     setFalloDeBorrar(null)
@@ -345,18 +375,32 @@ export function ResenasDelPerfil() {
   )
 
   const datos: MisResenas | undefined = consulta.data
-  const paso = datos && ventana && ventana.vista !== 'lista'
-    ? pasoDeLaVentana(ventana, datos, {
+  const pasoAbierto = ventana && ventana.vista !== 'lista' ? ventana : null
+  const armado = datos && pasoAbierto
+    ? pasoDeLaVentana(pasoAbierto, datos, {
         enviandoReporte: reportando,
         enviandoRespuesta: respondiendo,
         fallo,
-        alVolver: () => terminarPaso(ventana),
+        alVolver: () => borrador.intentar('volver', cerrarPaso(pasoAbierto)),
         alReportar: (id, motivo, comentario) =>
           envioDelReporte.enviar(() => reporte.mutateAsync({ id, motivo, comentario })),
         alResponder: (id, texto, editando) =>
           envioDeLaRespuesta.enviar(() => respuesta.mutateAsync({ id, texto, editando })),
+        alCambiarBorrador: borrador.avisar,
       })
     : null
+  // Con la pregunta a la vista, el pie es la pregunta; el formulario sigue debajo.
+  const paso = armado && pasoAbierto && borrador.preguntando
+    ? {
+        ...armado,
+        pie: (
+          <PreguntaDeDescartar
+            alSeguir={borrador.seguir}
+            alDescartar={() => borrador.descartar(cerrarPaso(pasoAbierto))}
+          />
+        ),
+      }
+    : armado
 
   return (
     <section
@@ -417,10 +461,9 @@ export function ResenasDelPerfil() {
       {datos && (
         <VentanaDeResenas
           abierto={ventana !== null}
-          onCerrar={() => {
-            setVentana(null)
-            setFallo(null)
-          }}
+          onCerrar={(como) =>
+            pasoAbierto ? borrador.intentar(como, cerrarPaso(pasoAbierto)) : cerrarVentana()
+          }
           resumen={datos.resumen}
           resenas={datos.resenas}
           pintar={(r) => pintar(r, 'lista')}
@@ -442,6 +485,7 @@ function pasoDeLaVentana(
     alVolver: () => void
     alReportar: (id: number, motivo: MotivoDeReporte, comentario: string | null) => void
     alResponder: (id: number, texto: string, editando: boolean) => void
+    alCambiarBorrador: (hay: boolean) => void
   },
 ): PasoDeLaVentana {
   const resena = datos.resenas.find((r) => r.id === ventana.id)
@@ -486,6 +530,7 @@ function pasoDeLaVentana(
           enviando={acciones.enviandoReporte}
           fallo={acciones.fallo}
           alEnviar={(motivo, comentario) => acciones.alReportar(resena.id, motivo, comentario)}
+          alCambiarBorrador={acciones.alCambiarBorrador}
         />
       ),
       pie: (
@@ -516,6 +561,7 @@ function pasoDeLaVentana(
         enviando={acciones.enviandoRespuesta}
         fallo={acciones.fallo}
         alEnviar={(texto) => acciones.alResponder(resena.id, texto, ventana.editando)}
+        alCambiarBorrador={acciones.alCambiarBorrador}
       />
     ),
     pie: (
@@ -544,6 +590,10 @@ function pasoDeLaVentana(
  * «Tu respuesta»: de 30 a 500 caracteres sin contar los espacios de los
  * extremos, con la cuenta a la vista. Si falta algo se dice junto al campo y no
  * se envía nada.
+ *
+ * Hay borrador cuando el texto, sin los espacios de los extremos, no es el que
+ * ya está guardado: al responder por primera vez, cualquier texto; al editar,
+ * uno distinto. Cambiarlo y dejarlo como estaba no es borrador.
  */
 function FormularioDeRespuesta({
   contexto,
@@ -551,16 +601,19 @@ function FormularioDeRespuesta({
   enviando,
   fallo,
   alEnviar,
+  alCambiarBorrador,
 }: {
   contexto: React.ReactNode
   inicial: string
   enviando: boolean
   fallo: string | null
   alEnviar: (texto: string) => void
+  alCambiarBorrador: (hay: boolean) => void
 }) {
   const [texto, setTexto] = useState(inicial)
   const [error, setError] = useState<string | null>(null)
   const campo = useRef<HTMLTextAreaElement>(null)
+  const notarBorrador = useAvisoDeBorrador(alCambiarBorrador)
 
   useEffect(() => {
     campo.current?.focus()
@@ -586,7 +639,10 @@ function FormularioDeRespuesta({
       <CampoContado
         etiqueta="Tu respuesta"
         valor={texto}
-        alCambiar={setTexto}
+        alCambiar={(nuevo) => {
+          setTexto(nuevo)
+          notarBorrador(nuevo.trim() !== inicial.trim())
+        }}
         minimo={MIN_RESPUESTA}
         maximo={MAX_RESPUESTA}
         error={error}

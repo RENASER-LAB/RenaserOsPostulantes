@@ -4,7 +4,9 @@
  * Lo que se prueba: el resumen y las dos más recientes, «Ver todas» solo con
  * más de dos, el vacío y el fallo con «Reintentar»; los pasos de reportar y de
  * responder DENTRO de la misma ventana, con la validación junto al campo y sin
- * enviar nada; y lo que la tarjeta dice después —en revisión, ocultada—.
+ * enviar nada; lo que la tarjeta dice después —en revisión, ocultada—; y la
+ * pregunta antes de descartar lo escrito al cerrar un paso (AC-12…AC-19 de
+ * confirmaciones-en-las-resenas).
  *
  * Las fechas son relativas a hoy: las quemadas caducan.
  */
@@ -409,5 +411,280 @@ describe('los pasos dentro de la misma ventana', () => {
     const ventana = await screen.findByRole('dialog')
     expect(within(ventana).queryByLabelText('Empresa')).toBeNull()
     expect(within(ventana).getByLabelText('Orden')).toBeTruthy()
+  })
+})
+
+// ---------------------------------------------------------------------------
+// La pregunta antes de descartar un borrador (confirmaciones-en-las-resenas)
+// ---------------------------------------------------------------------------
+
+const PREGUNTA = '¿Descartar lo que escribiste? No se guardará.'
+const pregunta = () => screen.queryByRole('group', { name: PREGUNTA })
+
+/** Una de Acme con respuesta editable y otra de Constructora Andina sin responder. */
+const conRespuestaEditable: MisResenas = {
+  ...conTres,
+  resenas: [
+    resena(1, 5, 'Acme', 3, {
+      puedeResponder: false,
+      respuesta: {
+        texto: RESPUESTA,
+        publicadaEn: haceDias(2),
+        editada: false,
+        editableHasta: haceDias(-28),
+        editable: true,
+        ocultada: false,
+        notaOcultacion: null,
+      },
+    }),
+    resena(2, 4, 'Constructora Andina', 10),
+    resena(3, 4, 'Constructora Andina', 20),
+  ],
+}
+
+const CIERRES = {
+  Volver: () => fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Volver' })),
+  Escape: () => fireEvent.keyDown(document, { key: 'Escape' }),
+  aspa: () => fireEvent.click(screen.getByRole('button', { name: 'Cerrar' })),
+  fondo: () => fireEvent.click(screen.getByRole('dialog').previousElementSibling!),
+}
+
+/** Abre un paso con su botón, como lo haría el ratón: con el foco en él. */
+async function abrir(selector: string) {
+  const boton = await waitFor(() => {
+    const b = document.querySelector<HTMLElement>(selector)
+    if (!b) throw new Error(`no está ${selector}`)
+    return b
+  })
+  boton.focus()
+  fireEvent.click(boton)
+  return { boton, paso: await screen.findByRole('dialog') }
+}
+
+describe('preguntar antes de descartar un borrador', () => {
+  it('AC-12 y AC-13: «Responder» con texto pregunta en los cuatro cierres; «Seguir escribiendo» lo deja intacto y vuelve al campo', async () => {
+    api.misResenas.mockResolvedValue(conTres)
+    pintar()
+
+    const { paso } = await abrir('[data-foco="responder-1"]')
+    const campo = within(paso).getByLabelText('Tu respuesta') as HTMLTextAreaElement
+    fireEvent.change(campo, { target: { value: RESPUESTA } })
+
+    for (const [como, cerrar] of Object.entries(CIERRES)) {
+      act(() => cerrar())
+      expect(screen.getByRole('dialog', { name: 'Responder a la reseña de Constructora Andina' })).toBe(paso)
+      expect(pregunta(), `cerrado con ${como}`).toBeTruthy()
+      expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Seguir escribiendo' }))
+      // La pregunta sustituye al pie: ni «Volver» ni «Publicar respuesta».
+      expect(within(paso).queryByRole('button', { name: 'Publicar respuesta' })).toBeNull()
+
+      fireEvent.click(screen.getByRole('button', { name: 'Seguir escribiendo' }))
+      expect(pregunta()).toBeNull()
+      expect(campo.value).toBe(RESPUESTA)
+      await waitFor(() => expect(document.activeElement).toBe(campo))
+      expect(within(paso).getByRole('button', { name: 'Publicar respuesta' })).toBeTruthy()
+    }
+
+    // Escape con la pregunta a la vista hace lo mismo que «Seguir escribiendo».
+    act(() => CIERRES.Escape())
+    expect(pregunta()).toBeTruthy()
+    act(() => CIERRES.Escape())
+    expect(pregunta()).toBeNull()
+    expect(screen.getByRole('dialog')).toBe(paso)
+    expect(campo.value).toBe(RESPUESTA)
+    await waitFor(() => expect(document.activeElement).toBe(campo))
+    expect(api.responderResena).not.toHaveBeenCalled()
+  })
+
+  it('AC-19: con la pregunta a la vista, el fondo y el aspa no descartan nada', async () => {
+    api.misResenas.mockResolvedValue(conTres)
+    pintar()
+
+    const { paso } = await abrir('[data-foco="responder-1"]')
+    fireEvent.change(within(paso).getByLabelText('Tu respuesta'), { target: { value: RESPUESTA } })
+    act(() => CIERRES.aspa())
+    expect(pregunta()).toBeTruthy()
+
+    act(() => CIERRES.fondo())
+    act(() => CIERRES.aspa())
+    expect(screen.getByRole('dialog')).toBe(paso)
+    expect(pregunta()).toBeTruthy()
+    expect((within(paso).getByLabelText('Tu respuesta') as HTMLTextAreaElement).value).toBe(RESPUESTA)
+  })
+
+  it('AC-14: «Descartar» desde la sección cierra la ventana sin enviar, el foco vuelve a «Responder» y al reabrir el campo está vacío', async () => {
+    api.misResenas.mockResolvedValue(conTres)
+    pintar()
+
+    for (const [como, cerrar] of Object.entries(CIERRES)) {
+      const { boton, paso } = await abrir('[data-foco="responder-1"]')
+      expect((within(paso).getByLabelText('Tu respuesta') as HTMLTextAreaElement).value).toBe('')
+      fireEvent.change(within(paso).getByLabelText('Tu respuesta'), { target: { value: RESPUESTA } })
+      act(() => cerrar())
+      fireEvent.click(screen.getByRole('button', { name: 'Descartar' }))
+
+      await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+      await waitFor(() => expect(document.activeElement, `descartado tras ${como}`).toBe(boton))
+    }
+    expect(api.responderResena).not.toHaveBeenCalled()
+  })
+
+  it('AC-14: desde «Ver todas», «Volver» y «Descartar» vuelven a la lista con el foco en el botón del paso; Escape y «Descartar» cierran la ventana', async () => {
+    api.misResenas.mockResolvedValue(conTres)
+    pintar()
+
+    const verTodas = await screen.findByRole('button', { name: 'Ver todas las reseñas (3)' })
+    verTodas.focus()
+    fireEvent.click(verTodas)
+    const lista = await screen.findByRole('dialog', { name: 'Reseñas de empresas' })
+    const deAcme = within(lista).getAllByRole('article')[1]!
+    fireEvent.click(within(deAcme).getByRole('button', { name: 'Reportar' }))
+    const paso = await screen.findByRole('dialog', { name: 'Reportar la reseña de Acme' })
+    fireEvent.change(within(paso).getByLabelText(/Cuéntanos más/), { target: { value: 'Nunca trabajé ahí' } })
+
+    act(() => CIERRES.Volver())
+    expect(pregunta()).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Descartar' }))
+    const deVuelta = await screen.findByRole('dialog', { name: 'Reseñas de empresas' })
+    await waitFor(() => expect(document.activeElement?.getAttribute('data-foco')).toBe('reportar-2'))
+    expect(deVuelta.contains(document.activeElement)).toBe(true)
+
+    // Al volver a abrirlo, «Cuéntanos más» está vacío.
+    fireEvent.click(within(within(deVuelta).getAllByRole('article')[1]!).getByRole('button', { name: 'Responder' }))
+    const responder = await screen.findByRole('dialog', { name: 'Responder a la reseña de Acme' })
+    fireEvent.change(within(responder).getByLabelText('Tu respuesta'), { target: { value: RESPUESTA } })
+    act(() => CIERRES.Escape())
+    fireEvent.click(screen.getByRole('button', { name: 'Descartar' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect(document.activeElement).toBe(verTodas)
+
+    fireEvent.click(verTodas)
+    const otraVez = await screen.findByRole('dialog', { name: 'Reseñas de empresas' })
+    fireEvent.click(within(within(otraVez).getAllByRole('article')[1]!).getByRole('button', { name: 'Reportar' }))
+    const reportar = await screen.findByRole('dialog', { name: 'Reportar la reseña de Acme' })
+    expect((within(reportar).getByLabelText(/Cuéntanos más/) as HTMLTextAreaElement).value).toBe('')
+    expect(api.reportarResena).not.toHaveBeenCalled()
+    expect(api.responderResena).not.toHaveBeenCalled()
+  })
+
+  it('AC-15: «Editar» sin cambios, devuelto a como estaba o con solo espacios de más se cierra sin preguntar; cambiado, pregunta', async () => {
+    api.misResenas.mockResolvedValue(conRespuestaEditable)
+    pintar()
+
+    for (const valor of [RESPUESTA, `${RESPUESTA} y algo más`, `  ${RESPUESTA}  `]) {
+      const { boton, paso } = await abrir('[data-foco="editar-1"]')
+      const campo = within(paso).getByLabelText('Tu respuesta')
+      // Lo cambia y lo deja como dice `valor`: si es el guardado, no hay borrador.
+      fireEvent.change(campo, { target: { value: `${RESPUESTA} y algo más` } })
+      fireEvent.change(campo, { target: { value: valor } })
+      act(() => CIERRES.Volver())
+
+      if (valor.trim() === RESPUESTA) {
+        await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+        expect(pregunta()).toBeNull()
+        await waitFor(() => expect(document.activeElement).toBe(boton))
+      } else {
+        expect(pregunta()).toBeTruthy()
+        fireEvent.click(screen.getByRole('button', { name: 'Descartar' }))
+        await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+      }
+    }
+    expect(api.editarRespuesta).not.toHaveBeenCalled()
+  })
+
+  it('AC-16: «Reportar» con solo un motivo, o con espacios en «Cuéntanos más», se cierra sin preguntar; con texto, pregunta', async () => {
+    api.misResenas.mockResolvedValue(conTres)
+    pintar()
+
+    for (const comentario of ['', '   ']) {
+      const { paso } = await abrir('[data-foco="reportar-1"]')
+      fireEvent.click(within(paso).getAllByRole('radio')[0]!)
+      fireEvent.change(within(paso).getByLabelText(/Cuéntanos más/), { target: { value: comentario } })
+      act(() => CIERRES.Escape())
+      await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    }
+
+    const { paso } = await abrir('[data-foco="reportar-1"]')
+    fireEvent.change(within(paso).getByLabelText(/Cuéntanos más/), { target: { value: 'Nunca trabajé ahí' } })
+    act(() => CIERRES.Escape())
+    expect(screen.getByRole('dialog')).toBe(paso)
+    expect(pregunta()).toBeTruthy()
+    expect(api.reportarResena).not.toHaveBeenCalled()
+  })
+
+  it('AC-18: con texto, publicar o enviar con éxito cierra sin preguntar', async () => {
+    api.misResenas.mockResolvedValue(conTres)
+    pintar()
+
+    const { paso } = await abrir('[data-foco="responder-1"]')
+    fireEvent.change(within(paso).getByLabelText('Tu respuesta'), { target: { value: RESPUESTA } })
+    fireEvent.click(screen.getByRole('button', { name: 'Publicar respuesta' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect(pregunta()).toBeNull()
+    expect(api.responderResena).toHaveBeenCalledTimes(1)
+
+    const reporte = await abrir('[data-foco="reportar-2"]')
+    fireEvent.click(within(reporte.paso).getByLabelText('Otro motivo'))
+    fireEvent.change(within(reporte.paso).getByLabelText(/Cuéntanos más/), { target: { value: 'Nunca trabajé ahí' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Enviar reporte' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect(pregunta()).toBeNull()
+    expect(api.reportarResena).toHaveBeenCalledTimes(1)
+  })
+
+  it('no pregunta mientras se envía, ni en «Reseña no disponible»', async () => {
+    const { ErrorApi } = await import('@/api/puerta')
+    let fallar: () => void = () => undefined
+    api.misResenas.mockResolvedValueOnce(conTres).mockResolvedValue({
+      ...conTres,
+      resenas: conTres.resenas.slice(1),
+    })
+    api.responderResena.mockImplementation(
+      () => new Promise((_, mal) => (fallar = () => mal(new ErrorApi(404, 'Reseña not found')))),
+    )
+    pintar()
+
+    const { paso } = await abrir('[data-foco="responder-1"]')
+    fireEvent.change(within(paso).getByLabelText('Tu respuesta'), { target: { value: RESPUESTA } })
+    fireEvent.click(screen.getByRole('button', { name: 'Publicar respuesta' }))
+    expect(await screen.findByRole('button', { name: 'Publicando…' })).toBeTruthy()
+    // Mientras se envía, el aspa no pregunta: es lo que hacía antes, y no se toca.
+    act(() => CIERRES.aspa())
+    expect(pregunta()).toBeNull()
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    await act(async () => fallar())
+
+    // La reseña se fue mientras se escribía: el paso ya no tiene formulario.
+    const otro = await abrir('[data-foco="responder-2"]')
+    fireEvent.change(within(otro.paso).getByLabelText('Tu respuesta'), { target: { value: RESPUESTA } })
+    api.responderResena.mockRejectedValue(new ErrorApi(404, 'Reseña not found'))
+    api.misResenas.mockResolvedValue({ ...conTres, resenas: conTres.resenas.slice(2) })
+    fireEvent.click(screen.getByRole('button', { name: 'Publicar respuesta' }))
+    expect(await screen.findByRole('dialog', { name: 'Reseña no disponible' })).toBeTruthy()
+    act(() => CIERRES.Volver())
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect(pregunta()).toBeNull()
+  })
+
+  it('QA-01: con la pregunta a la vista, vaciar el campo y empezar de nuevo no hace volver la pregunta ni le quita el foco al campo', async () => {
+    api.misResenas.mockResolvedValue(conTres)
+    pintar()
+
+    const { paso } = await abrir('[data-foco="responder-1"]')
+    const campo = within(paso).getByLabelText('Tu respuesta') as HTMLTextAreaElement
+    fireEvent.change(campo, { target: { value: RESPUESTA } })
+    act(() => CIERRES.Escape())
+    expect(pregunta()).toBeTruthy()
+
+    // En vez de «Seguir escribiendo», vuelve al campo, lo vacía y escribe otra cosa.
+    campo.focus()
+    fireEvent.change(campo, { target: { value: '' } })
+    fireEvent.change(campo, { target: { value: 'M' } })
+
+    // Nadie pidió cerrar: la pregunta no sale sola ni se lleva el foco a mitad de palabra.
+    expect(pregunta()).toBeNull()
+    expect(document.activeElement).toBe(campo)
+    expect(within(paso).getByRole('button', { name: 'Publicar respuesta' })).toBeTruthy()
+    expect(api.responderResena).not.toHaveBeenCalled()
   })
 })
