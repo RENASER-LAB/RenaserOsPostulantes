@@ -1,10 +1,9 @@
 # De la solicitud a la decisión: el proceso entero
 
-Última actualización: 2026-09-25
+Última actualización: 2026-10-05
 
 **Los pasos 1 a 5 están corridos** contra el backend local con
-`herramientas/e2e/14-vacante.spec.ts`, y **la mitad del paso 0 que escribe una prueba**,
-con `15-componer-prueba.spec.ts`. Del 6 en adelante —y de las áreas del paso 0—, lo
+`herramientas/e2e/14-vacante.spec.ts`. Del 6 en adelante —y del paso 0—, lo
 que hay aquí está leído del código y de los tests, no de una ejecución.
 
 Los dos lados a la vez: qué hace el equipo en el panel y qué ve quien postula.
@@ -15,10 +14,11 @@ atascos del sistema son un requisito que el backend exige y nadie había dicho.
 
 ## Antes de que exista la vacante
 
-### 0 · Dos cosas que ya tienen que existir
+### 0 · Lo que ya tiene que existir
 
-Ninguna de las dos es parte del proceso, y las dos lo paran en seco si faltan.
-Hasta el 31/08 se creaban por fuera del panel y por eso no estaban aquí.
+Las áreas no son parte del proceso, pero lo paran en seco si faltan. Hasta el
+31/08 se creaban por fuera del panel y por eso no estaban aquí. Las pruebas del
+puesto, en cambio, ya no hace falta tenerlas escritas antes: ver más abajo.
 
 **Las áreas** · *Panel · Configuración → Áreas*
 
@@ -33,36 +33,20 @@ movimiento no se deshace. Antes de confirmar, la pantalla enseña cuántas
 solicitudes y cuántas personas cuelgan del área —los recuentos de verdad, no un
 «¿seguro?»—, y si no puede traerlos no ofrece el botón.
 
-**Las pruebas del puesto** · *Panel · Pruebas* (`/admin/pruebas`)
+**Las pruebas del puesto** · *ya no tienen pantalla propia*
 
-El paso 3 obliga a elegir una versión de prueba publicada, y hasta el 31/08 **no
-había ninguna pantalla para escribirla**: las que existen entraron por scripts de
-Python del backend. Ahora se compone entera desde el panel —datos y tiempos, el
-enunciado subido como archivo, la guía de calificación para la IA, las preguntas
-traídas del catálogo, los entregables, la rúbrica y las variantes del cambio
-inesperado— y se publica.
+Una vacante nueva escribe su prueba técnica en su propio editor (paso 3e), así
+que no hace falta tener ninguna escrita antes de crearla. La sección «Pruebas»
+del panel (`/admin/pruebas`), donde se escribían las plantillas que eligen las
+vacantes de antes, **se retiró el 05/10/2026** para todas las empresas, RENASER
+incluida: al abrir una versión pedía el catálogo de preguntas de toda la
+plataforma, es decir, el examen de las demás empresas. Quien abre esa dirección
+llega a la lista de vacantes.
 
-La prueba vive en un **catálogo propio, independiente de las vacantes**: primero
-existe la prueba, después alguna vacante la elige, y la misma puede servir a
-varias. Una plantilla sin puesto es genérica y vale para cualquiera.
-
-Mientras se compone, un balance arriba dice a la vez todo lo que falta. Existe
-porque publicar **para en la primera regla que falla**: el backend valida en
-cascada y devuelve un mensaje, así que con la rúbrica descuadrada y preguntas de
-menos hacían falta tres intentos para enterarse de tres cosas.
-
-⚠️ **Publicar congela la versión y no hay «despublicar».** Para cambiar algo se
-abre una versión nueva sobre ella.
-
-⚠️ **El archivo que se sube es el ENUNCIADO, no la prueba.** Subirlo no crea
-preguntas, ni entregables, ni rúbrica: publicar sigue exigiendo lo mismo. Y su
-enlace **caduca a los 180 días**.
-
-⚠️ **La subida no se ha probado contra un almacén de verdad.** En local los
-archivos viven en memoria y el enlace sale como `memoria://`, que ningún
-navegador abre: está comprobado que el enunciado se guarda y que sobrevive a
-volver a guardar la versión, **no que el archivo se pueda descargar**. Un fallo
-en la firma del almacén real no lo vería nadie hasta el primer candidato.
+Una vacante de antes sigue eligiendo la versión publicada que rinde (paso 3a).
+Una plantilla nueva solo la escribe RENASER, con sus guiones: el catálogo de
+preguntas es solo de la plataforma, y a cualquier otra empresa el backend le
+responde 404.
 
 ### 1 · La solicitud de contratación
 
@@ -126,9 +110,10 @@ dónde salen las preguntas ya no se cambia.
 
 Con las pruebas del puesto, la misma idea: **solo se ofrecen las versiones
 publicadas**, porque asignar un borrador lo rechaza el backend. Si no hay
-ninguna que valga, el cartel dice cuál de los tres motivos es —no se pudieron
-cargar, no hay ninguna prueba escrita, o ninguna es de este puesto— y enlaza al
-sitio donde se arregla, que desde el 31/08 existe (paso 0).
+ninguna que valga, el cartel dice cuál es el motivo —no se pudieron cargar, no
+hay ninguna prueba escrita, ninguna está publicada o ninguna es de este puesto—.
+Desde el 05/10/2026 ya no enlaza a ninguna pantalla, porque la sección «Pruebas»
+se retiró (paso 0).
 
 Mientras falte algo, el botón de publicar está apagado y dice qué falta.
 
@@ -781,9 +766,10 @@ trabaja alguien, así que la tabla del equipo no se entiende sin haber visto esa
 lista.
 
 ⚠️ **Las pruebas del puesto NO están aquí**, aunque suenen a configuración:
-tienen pestaña propia en el panel (`/admin/pruebas`, paso 0). Lo que sigue en
-solo lectura son las plantillas de **evaluación**, que se editan por un flujo
-propio que todavía no está en el panel.
+cada vacante nueva escribe la suya en su editor (paso 3e), y la sección propia
+de las plantillas se retiró el 05/10/2026 (paso 0). Lo que sigue en solo
+lectura son las plantillas de **evaluación**, que se editan por un flujo propio
+que todavía no está en el panel.
 
 ---
 
@@ -842,48 +828,14 @@ mensajes de la IA.
 ⚠️ **Escribe en la base local**, así que hace falta el Spring en `localhost:8081`
 y `API_URL=http://localhost:8081` en `.env.local`. Nunca contra producción.
 
-```bash
-npx playwright test herramientas/e2e/15-componer-prueba.spec.ts
-```
-
-**Escribir una prueba del puesto desde cero**, que es lo que hasta el 31/08 no
-se podía hacer desde ninguna pantalla. Crea la plantilla, compone su primera
-versión entera —datos y tiempos, el enunciado escrito y subido como PDF, la
-guía para la IA, once preguntas, dos entregables, la rúbrica y dos variantes
-del cambio inesperado—, intenta publicarla hasta que el servidor deja, y
-comprueba que la versión publicada aparece en el desplegable de una vacante y
-que la que quedó en borrador **no**.
-
-Es la única prueba que ejercita los quince endpoints de edición y borrado: las
-pantallas se probaron contra `backend-simulado.mjs`, que contesta `{ok:true}` a
-todo lo que no sea GET, así que ningún guardado real se había visto.
-
-⚠️ **No le pide nada a la IA**: no hay coste ni cola de por medio.
-
-⚠️ **Deja rastro que no se puede borrar**: una plantilla nueva por corrida (el
-nombre lleva la hora), una versión suya **publicada** —y publicar congela: no
-existe «despublicar»— y otra en borrador. No toca ninguna vacante: la del paso
-final solo se mira.
-
-⚠️ **Antes de abrir el navegador comprueba con quién habla.** El 8080 suele ser
-Adminer y contesta 200 a todo: apuntar ahí da una e2e que «pasa» sin probar
-nada. El paso 0 exige un 401 con JSON y se corta si no lo ve.
-
-Variables: `PORTAL`, `PAUSA`, `DEV_ID`, `VACANTE` (el título de la vacante donde
-se mira el desplegable; tiene que rendir la prueba del puesto) y `PUESTO` (en
-blanco escribe una prueba genérica, que es lo que hace que la vacante la
-ofrezca sea cual sea su puesto).
-
-**Lo que hace falta levantado.** Lo normal es lo de siempre —el Spring en
-`localhost:8081` y este portal en el 5174— y entonces `PORTAL` sobra. Los
-números del ejemplo de arriba (8091 y 5199) son los de *un* worktree con el
-8081 ya ocupado por el backend de otro; no son los del proyecto. Lo que no
-cambia de un sitio a otro son tres reglas:
+**Lo que hace falta levantado para las que escriben.** Lo normal es lo de
+siempre —el Spring en `localhost:8081` y este portal en el 5174— y entonces
+`PORTAL` sobra. Lo que no cambia de un sitio a otro son tres reglas:
 
 - **`API_URL` de `.env.local` tiene que apuntar a donde esté el backend de
   verdad**, sea el puerto que sea. El proxy de Vite se va al **8080** por
   defecto, y ahí suele estar **Adminer**, que contesta 200 a todo: apuntar mal
-  no da un error, da una e2e que pasa sin probar nada. El paso 0 lo caza.
+  no da un error, da una e2e que pasa sin probar nada.
 - **`PORTAL` tiene que ser el puerto de este portal**, no el del backend.
 - **La base tiene que ser propia del worktree** cuando hay más de uno vivo.
   `renaser_db` la comparten todos, y dos ramas pueden traer migraciones con el
@@ -891,5 +843,5 @@ cambia de un sitio a otro son tres reglas:
   con `docker exec renaser-postgres createdb -U postgres -T renaser_db <nombre>`
   y se apunta ahí con `spring.datasource.url`.
 
-⚠️ **Al terminar, node no se cierra**: el navegador queda abierto a propósito
-para poder mirar la prueba escrita, igual que en las demás e2e de esta familia.
+La e2e que escribía una prueba del puesto desde cero, `15-componer-prueba`, se
+borró el 05/10/2026 con la sección «Pruebas» del panel (paso 0).

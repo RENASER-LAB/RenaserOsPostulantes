@@ -54,13 +54,6 @@ import type {
   PlantillaPruebaPanel,
   VersionPrueba,
   VersionCompletaPrueba,
-  GuardarVersionPrueba,
-  ConsignaSubida,
-  PreguntaDePrueba,
-  GuardarPreguntaDePrueba,
-  TipoDePreguntaDePrueba,
-  GuardarEntregable,
-  GuardarCriterioRubrica,
   RespuestaDePrueba,
   CalificacionEncolada,
   PasadaEncolada,
@@ -585,21 +578,15 @@ export const listarPlantillasEvaluacion = () =>
 export const listarVersionesPesos = () => pedir<VersionPesos[]>('/pesos/versiones')
 
 // ---------- Las pruebas del puesto ----------
-// Una plantilla es «la prueba de Analista»; sus versiones son los intentos de
-// escribirla. Se compone en BORRADOR y publicar la congela: desde ahi solo se
-// corrige creando otra version, porque quien la este rindiendo queda atado a la
-// suya. Todos los `actualizar*` y `quitar*` de aqui abajo contestan **409 sobre
-// una PUBLICADA**, y ese 409 llega con su texto en español: se enseña tal cual.
+// Solo lo que lee la configuracion de una vacante antigua para elegir su
+// version. Componer pruebas (plantillas, versiones, preguntas, entregables,
+// rubrica y variantes) era de la seccion «Pruebas», que se retiro junto con
+// sus llamadas: el catalogo de preguntas es ahora solo de la plataforma (spec
+// fuga-del-catalogo-de-preguntas) y las vacantes nuevas arman su prueba en su
+// propio editor.
 
 export const listarPlantillasPrueba = () =>
   pedir<PlantillaPruebaPanel[]>('/plantillas-prueba')
-
-/** Sin `puestoId` la plantilla es generica y sirve para cualquier vacante. */
-export const crearPlantillaPrueba = (nombre: string, puestoId: number | null) =>
-  pedir<{ id: number }>('/plantillas-prueba', {
-    metodo: 'POST',
-    cuerpo: { nombre, puestoId },
-  })
 
 /**
  * Las versiones de una plantilla, de la mas nueva a la mas vieja.
@@ -610,9 +597,9 @@ export const crearPlantillaPrueba = (nombre: string, puestoId: number | null) =>
  * Ya no. Si vuelve a aparecer codigo que adivina ids, es que alguien deshizo
  * esto.
  *
- * Vienen **todas**, borradores incluidos: quien compone necesita ver el suyo, y
- * quien elige para una vacante necesita distinguir «no hay ninguna» de «hay una
- * sin publicar». El `estado` dice cual se puede usar.
+ * Vienen **todas**, borradores incluidos: quien elige para una vacante
+ * necesita distinguir «no hay ninguna» de «hay una sin publicar». El `estado`
+ * dice cual se puede usar.
  */
 export const listarVersionesPrueba = (plantillaId: number) =>
   pedir<VersionPrueba[]>(`/plantillas-prueba/${plantillaId}/versiones`)
@@ -620,138 +607,6 @@ export const listarVersionesPrueba = (plantillaId: number) =>
 /** La version entera: enunciado, variantes, preguntas, entregables y rubrica. */
 export const verVersionDePrueba = (versionId: number) =>
   pedir<VersionCompletaPrueba>(`/plantillas-prueba/versiones/${versionId}`)
-
-export const crearVersionDePrueba = (
-  plantillaId: number,
-  datos: GuardarVersionPrueba,
-) =>
-  pedir<{ id: number }>(`/plantillas-prueba/${plantillaId}/versiones`, {
-    metodo: 'POST',
-    cuerpo: datos,
-  })
-
-/** ⚠️ **Reemplaza la version entera.** Lo que no viaje en `datos` se borra. */
-export const actualizarVersionDePrueba = (
-  versionId: number,
-  datos: GuardarVersionPrueba,
-) =>
-  pedir<void>(`/plantillas-prueba/versiones/${versionId}`, {
-    metodo: 'PUT',
-    cuerpo: datos,
-  })
-
-/**
- * Publicar congela la version y la deja elegible para una vacante.
- *
- * ⚠️ **La validacion para en la primera regla que falla**, como la del banco: el
- * 400 nombra un solo problema aunque haya tres. Por eso la pantalla lleva los
- * contadores en vivo —la suma de la rubrica y las cuotas de preguntas—: para no
- * descubrir lo que falta de uno en uno.
- */
-export const publicarVersionDePrueba = (versionId: number) =>
-  pedir<void>(`/plantillas-prueba/versiones/${versionId}/publicacion`, {
-    metodo: 'POST',
-  })
-
-/**
- * Sube el ENUNCIADO como archivo (PDF o Word), y nada mas.
- *
- * ⚠️ **No es la prueba entera.** De un PDF no sale ninguna nota: subirlo no crea
- * preguntas, ni entregables, ni criterios, y publicar sigue exigiendo lo mismo.
- * Es el papel que lee el candidato y el que va enlazado en el correo.
- *
- * ⚠️ **El enlace caduca**: el bucket es privado y la firma dura 180 dias. Por eso
- * la respuesta trae `expira`.
- */
-export const subirConsignaDePrueba = (versionId: number, archivo: File) => {
-  const formulario = new FormData()
-  formulario.append('archivo', archivo)
-  return pedir<ConsignaSubida>(
-    `/plantillas-prueba/versiones/${versionId}/consigna`,
-    { metodo: 'POST', formulario },
-  )
-}
-
-/** El catalogo de preguntas, que es **global**: lo comparten todas las versiones. */
-export const listarPreguntasDePrueba = (tipo?: TipoDePreguntaDePrueba) =>
-  pedir<PreguntaDePrueba[]>(
-    tipo === undefined
-      ? '/plantillas-prueba/preguntas'
-      : `/plantillas-prueba/preguntas?tipo=${tipo}`,
-  )
-
-export const crearPreguntaDePrueba = (datos: GuardarPreguntaDePrueba) =>
-  pedir<{ id: number }>('/plantillas-prueba/preguntas', {
-    metodo: 'POST',
-    cuerpo: datos,
-  })
-
-export const elegirPreguntaDePrueba = (versionId: number, preguntaPruebaId: number) =>
-  pedir<void>(`/plantillas-prueba/versiones/${versionId}/preguntas`, {
-    metodo: 'POST',
-    cuerpo: { preguntaPruebaId },
-  })
-
-/** Quitarla de esta version. ⚠️ **Sigue en el catalogo**: otras versiones la usan. */
-export const quitarPreguntaDePrueba = (versionId: number, preguntaId: number) =>
-  pedir<void>(`/plantillas-prueba/versiones/${versionId}/preguntas/${preguntaId}`, {
-    metodo: 'DELETE',
-  })
-
-export const agregarEntregableDePrueba = (versionId: number, datos: GuardarEntregable) =>
-  pedir<{ id: number }>(`/plantillas-prueba/versiones/${versionId}/entregables`, {
-    metodo: 'POST',
-    cuerpo: datos,
-  })
-
-export const actualizarEntregableDePrueba = (
-  entregableId: number,
-  datos: GuardarEntregable,
-) =>
-  pedir<void>(`/plantillas-prueba/entregables/${entregableId}`, {
-    metodo: 'PUT',
-    cuerpo: datos,
-  })
-
-export const quitarEntregableDePrueba = (entregableId: number) =>
-  pedir<void>(`/plantillas-prueba/entregables/${entregableId}`, { metodo: 'DELETE' })
-
-export const agregarCriterioRubrica = (
-  versionId: number,
-  datos: GuardarCriterioRubrica,
-) =>
-  pedir<{ id: number }>(`/plantillas-prueba/versiones/${versionId}/rubrica`, {
-    metodo: 'POST',
-    cuerpo: datos,
-  })
-
-export const actualizarCriterioRubrica = (
-  criterioId: number,
-  datos: GuardarCriterioRubrica,
-) =>
-  pedir<void>(`/plantillas-prueba/rubrica/${criterioId}`, {
-    metodo: 'PUT',
-    cuerpo: datos,
-  })
-
-/** Es lo que deshace una rubrica que se paso de 100 puntos. */
-export const quitarCriterioRubrica = (criterioId: number) =>
-  pedir<void>(`/plantillas-prueba/rubrica/${criterioId}`, { metodo: 'DELETE' })
-
-export const agregarVarianteDeCambio = (versionId: number, texto: string) =>
-  pedir<{ id: number }>(`/plantillas-prueba/versiones/${versionId}/variantes`, {
-    metodo: 'POST',
-    cuerpo: { texto },
-  })
-
-export const actualizarVarianteDeCambio = (varianteId: number, texto: string) =>
-  pedir<void>(`/plantillas-prueba/variantes/${varianteId}`, {
-    metodo: 'PUT',
-    cuerpo: { texto },
-  })
-
-export const quitarVarianteDeCambio = (varianteId: number) =>
-  pedir<void>(`/plantillas-prueba/variantes/${varianteId}`, { metodo: 'DELETE' })
 
 // ---------- La configuracion de una vacante ----------
 // Sin estas cuatro no se puede publicar: el backend exige plantilla de

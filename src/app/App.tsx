@@ -44,8 +44,6 @@ import { PruebaTecnica } from '@/panel/vacantes/prueba-tecnica/PruebaTecnica'
 import { EditorDePreguntas } from '@/panel/vacantes/preguntas/EditorDePreguntas'
 import { EditorDeLaPrueba } from '@/panel/vacantes/preguntas/EditorDeLaPrueba'
 import { SesionesPanel } from '@/panel/simulacion/Sesiones'
-import { PlantillasDePrueba } from '@/panel/pruebas/PlantillasDePrueba'
-import { ComponerPrueba } from '@/panel/pruebas/ComponerPrueba'
 import { ConfiguracionPanel } from '@/panel/configuracion/Configuracion'
 import { ColaboradoresPanel } from '@/panel/colaboradores/Colaboradores'
 import { NuevoColaborador } from '@/panel/colaboradores/NuevoColaborador'
@@ -118,8 +116,22 @@ export function App() {
                     />
                     <Route path={patrones.adminPruebaPropia} element={<EditorDeLaPrueba />} />
                     <Route path={patrones.adminSesiones} element={<SesionesPanel />} />
-                    <Route path={patrones.adminPruebas} element={<PlantillasDePrueba />} />
-                    <Route path={patrones.adminComponerPrueba} element={<ComponerPrueba />} />
+                    {/*
+                      La sección «Pruebas» se retiró (spec
+                      fuga-del-catalogo-de-preguntas): las vacantes nuevas arman
+                      su prueba en su propio editor. Una dirección guardada o una
+                      pestaña que quedó abierta lleva a la lista de vacantes, sin
+                      pantalla de error. `/admin/pruebas` vuelve con el índice de
+                      las pruebas de la empresa (specs/pruebas-indice-de-la-empresa.md).
+                    */}
+                    <Route
+                      path={patrones.adminPruebasRetirada}
+                      element={<Navigate to={patrones.adminVacantes} replace />}
+                    />
+                    <Route
+                      path={patrones.adminVersionDePruebaRetirada}
+                      element={<Navigate to={patrones.adminVacantes} replace />}
+                    />
                     <Route path={patrones.adminConfiguracion} element={<ConfiguracionPanel />} />
                     <Route path={patrones.adminColaboradores} element={<ColaboradoresPanel />} />
                     <Route path={patrones.adminNuevoColaborador} element={<NuevoColaborador />} />

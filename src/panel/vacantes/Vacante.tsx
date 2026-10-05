@@ -3959,10 +3959,9 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
                 ? 'No hay ninguna prueba escrita todavía, y sin una la vacante no se puede publicar.'
                 : versionesUsables.length === 0
                   ? `Hay ${(plantillasPrueba.data ?? []).length} prueba(s) escritas, pero ninguna con una versión publicada que se pueda usar aquí. Falta terminar y publicar una versión.`
-                  : 'Ninguna de las pruebas escritas es de este puesto. Hace falta una para él, o una genérica que valga para cualquiera. Sin ella la vacante no se puede publicar.'}{' '}
-              {/* El sitio donde se arregla, y ahora existe: hasta hoy este texto
-                  mandaba a «el módulo de pruebas», que no era ninguna pantalla. */}
-              <Link to={rutas.adminPruebas()}>Ir a las pruebas del puesto</Link>.
+                  : 'Ninguna de las pruebas escritas es de este puesto. Hace falta una para él, o una genérica que valga para cualquiera. Sin ella la vacante no se puede publicar.'}
+              {/* Sin enlace: la pantalla «Pruebas» donde se escribían se retiró
+                  (spec fuga-del-catalogo-de-preguntas). Queda la explicación. */}
             </span>
           )}
         </label>

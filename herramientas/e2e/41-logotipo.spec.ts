@@ -232,7 +232,9 @@ test.describe('El logotipo nuevo en el panel', () => {
   // AC-02
   test('la cabecera lleva el logotipo de 28 px y «Panel del equipo», y lleva a Vacantes', async ({ page }) => {
     await entrarAlPanel(page)
-    await page.goto('/admin/pruebas')
+    // Cualquier pantalla del panel que no sea Vacantes, para que el clic de abajo
+    // lleve a algún sitio. Era `/admin/pruebas`, que se retiró y ahora redirige.
+    await page.goto('/admin/archivadas')
     const enlace = cabecera(page).getByRole('link', { name: 'Panel del equipo, inicio' })
     await expect(enlace).toBeVisible()
     await expect(enlace).toContainText('Panel del equipo')
