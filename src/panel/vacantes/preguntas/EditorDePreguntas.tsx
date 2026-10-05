@@ -1,9 +1,11 @@
 /**
  * Las preguntas propias de una vacante, agrupadas por criterios (V66, fase 1).
  *
- * Arriba, el balance siempre a la vista: cuántos puntos van de 100, cuántos
- * criterios y preguntas, y lo que frena la publicación. Debajo, un bloque por
- * criterio con sus preguntas. Quien no quiere pensar en criterios no está
+ * Arriba, la cabecera fija (V68): cuántos puntos van de 100, cuántos criterios y
+ * preguntas, una barra por criterio y lo que frena la publicación, cada aviso como
+ * un botón que lleva a donde se arregla. Debajo, un bloque plegable por criterio
+ * con sus preguntas: al entrar, plegados salvo los que tienen una falta. Solo
+ * cambia la interfaz: lo que exige publicar, los datos y la API son los de siempre. Quien no quiere pensar en criterios no está
  * obligado: la primera pregunta sin criterio crea «General».
  *
  * Tres estados de la pantalla, y cada uno dice lo suyo:
@@ -28,11 +30,13 @@ import {
 import { rutas } from '@/rutas'
 import { IconoMas } from '@/ui/Iconos'
 import { useTituloDelPanel } from '../../titulo'
-import { BloqueCriterio } from './BloqueCriterio'
+import { ListaDeCriterios } from './BloqueCriterio'
+import { CabeceraFija } from './CabeceraFija'
 import { CopiarDeOtraVacante } from './CopiarDeOtraVacante'
 import { falloDe, useEditorDePreguntas, usePonerEditor, type Fallo } from './consultas'
 import { FormularioPregunta } from './FormularioPregunta'
 import { preguntaNueva } from './formulario'
+import { irAlDestino, useCriteriosAbiertos, type Destino } from './navegacion'
 import { MostrarFallo } from './piezas'
 import { PreguntasPublicadas } from './PreguntasPublicadas'
 import { Recomendaciones } from './Recomendaciones'
@@ -80,6 +84,20 @@ function Contenido({ editor, poner }: { editor: Editor; poner: (e: Editor) => vo
   // dentro, no se abren borradores: la vara no se mueve.
   const puedeEscribir = editable && (borrador !== null || !(publicada && editor.hayPostulantes))
   const base: VersionDePreguntas | null = borrador ?? publicada
+  // Plegables y avisos que llevan a donde se arreglan (V68): solo la interfaz cambia.
+  const plegado = useCriteriosAbiertos(borrador)
+
+  const publicacion = useMutation({
+    mutationFn: () => publicarPreguntas(editor.vacanteId),
+    onSuccess: (e) => {
+      setFallo(null)
+      poner(e)
+    },
+    onError: (causa) =>
+      borrador && setFallo({ de: borrador, fallo: falloDe(causa, 'No se pudieron publicar las preguntas.') }),
+  })
+
+  const irA = (d: Destino) => irAlDestino(d, plegado)
 
   return (
     <>
@@ -102,16 +120,43 @@ function Contenido({ editor, poner }: { editor: Editor; poner: (e: Editor) => vo
         )}
       </header>
 
-      {borrador && (
-        <Balance
-          vacanteId={editor.vacanteId}
-          version={borrador}
-          editable={editable}
-          alPublicar={poner}
-          fallo={fallo !== null && fallo.de === borrador ? fallo.fallo : null}
-          setFallo={(f) => setFallo(f === null ? null : { de: borrador, fallo: f })}
+      {base && (
+        <CabeceraFija
+          nombre="Balance de las preguntas"
+          estado={borrador ? 'BORRADOR' : 'PUBLICADAS'}
+          balance={`${base.total} de 100 puntos`}
+          cifras={
+            <>
+              {base.cuantosCriterios} {base.cuantosCriterios === 1 ? 'criterio' : 'criterios'} ·{' '}
+              {base.cuantasPreguntas} {base.cuantasPreguntas === 1 ? 'pregunta' : 'preguntas'} ·{' '}
+              {base.avisos.length} {base.avisos.length === 1 ? 'aviso' : 'avisos'}
+            </>
+          }
+          version={base}
+          acciones={
+            editable &&
+            borrador && (
+              <button
+                className={estilos.publicar}
+                type="button"
+                aria-label={publicacion.isPending ? undefined : 'Publicar las preguntas'}
+                onClick={() => publicacion.mutate()}
+                disabled={publicacion.isPending}
+              >
+                {publicacion.isPending ? (
+                  'Publicando…'
+                ) : (
+                  <span>
+                    Publicar<span className={estilos.restoDelRotulo}> las preguntas</span>
+                  </span>
+                )}
+              </button>
+            )
+          }
+          alIr={irA}
         />
       )}
+      {fallo !== null && fallo.de === borrador && <MostrarFallo fallo={fallo.fallo} />}
 
       {puedeEscribir && (base === null || borrador !== null || !editor.hayPostulantes) && (
         <div className={estilos.entradas}>
@@ -182,32 +227,8 @@ function Contenido({ editor, poner }: { editor: Editor; poner: (e: Editor) => vo
       {borrador && (
         <>
           <GuiaYMinutos version={borrador} vacanteId={editor.vacanteId} editable={editable} alGuardar={poner} />
-          <div className={estilos.criterios}>
-            {borrador.criterios.map((c, i) => (
-              <BloqueCriterio
-                key={c.id}
-                vacanteId={editor.vacanteId}
-                criterio={c}
-                preguntas={c.preguntas}
-                todos={borrador.criterios}
-                editable={editable}
-                primero={i === 0}
-                ultimo={i === borrador.criterios.length - 1}
-                alCambiar={poner}
-              />
-            ))}
-            {borrador.sinCriterio.length > 0 && (
-              <BloqueCriterio
-                vacanteId={editor.vacanteId}
-                criterio={null}
-                preguntas={borrador.sinCriterio}
-                todos={borrador.criterios}
-                editable={editable}
-                primero
-                ultimo
-                alCambiar={poner}
-              />
-            )}
+          <div className={`${estilos.criterios} ${estilos.destino}`} id="criterios-y-preguntas" tabIndex={-1}>
+            <ListaDeCriterios vacanteId={editor.vacanteId} version={borrador} editable={editable} alCambiar={poner} plegado={plegado} />
           </div>
         </>
       )}
@@ -227,87 +248,6 @@ function Contenido({ editor, poner }: { editor: Editor; poner: (e: Editor) => vo
         }}
       />
     </>
-  )
-}
-
-// ---------- El balance ----------
-
-function Balance({
-  vacanteId,
-  version,
-  editable,
-  alPublicar,
-  fallo,
-  setFallo,
-}: {
-  vacanteId: number
-  version: VersionDePreguntas
-  editable: boolean
-  alPublicar: (e: Editor) => void
-  fallo: Fallo | null
-  setFallo: (f: Fallo | null) => void
-}) {
-  const publicacion = useMutation({
-    mutationFn: () => publicarPreguntas(vacanteId),
-    onSuccess: (e) => {
-      setFallo(null)
-      alPublicar(e)
-    },
-    onError: (causa) => setFallo(falloDe(causa, 'No se pudieron publicar las preguntas.')),
-  })
-  const avisos = version.avisos
-  const cifras = (
-    <>
-      <b>{version.total}</b> de 100 puntos · {version.cuantosCriterios}{' '}
-      {version.cuantosCriterios === 1 ? 'criterio' : 'criterios'} · {version.cuantasPreguntas}{' '}
-      {version.cuantasPreguntas === 1 ? 'pregunta' : 'preguntas'} · {avisos.length}{' '}
-      {avisos.length === 1 ? 'aviso' : 'avisos'}
-    </>
-  )
-  const detalle = (
-    <>
-      {avisos.length > 0 && (
-        <ul className={estilos.avisos} aria-label="Lo que frena la publicación">
-          {avisos.map((a) => (
-            <li key={a}>{a}</li>
-          ))}
-        </ul>
-      )}
-      <MostrarFallo fallo={fallo} />
-    </>
-  )
-  const boton = editable && (
-    <button
-      className={estilos.publicar}
-      type="button"
-      onClick={() => publicacion.mutate()}
-      disabled={publicacion.isPending}
-    >
-      {publicacion.isPending ? 'Publicando…' : 'Publicar las preguntas'}
-    </button>
-  )
-
-  return (
-    <section className={estilos.balance} aria-label="Balance de las preguntas">
-      <div className={estilos.balanceLargo}>
-        <div className={estilos.lineaBalance}>
-          <span className={estilos.estadoVersion}>BORRADOR</span>
-          <p className={estilos.cifras}>{cifras}</p>
-          {boton}
-        </div>
-        {detalle}
-      </div>
-      <details className={estilos.balanceCorto}>
-        <summary>
-          {version.total}/100 · {avisos.length} {avisos.length === 1 ? 'aviso' : 'avisos'}
-        </summary>
-        <div className={estilos.lineaBalance}>
-          <p className={estilos.cifras}>{cifras}</p>
-          {boton}
-        </div>
-        {detalle}
-      </details>
-    </section>
   )
 }
 

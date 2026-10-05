@@ -91,6 +91,8 @@ test.describe('Las preguntas propias de una vacante', () => {
     await page.goto(`/admin/vacantes/${recorrido.vacanteId}/preguntas`)
     const general = criterio(page, 'General')
     await expect(general).toBeVisible({ timeout: 20_000 })
+    // Los criterios salen plegados al entrar (V68): se despliegan para editar.
+    await page.getByRole('button', { name: 'Desplegar todo' }).click()
 
     await general.getByRole('button', { name: 'Editar la pregunta' }).click()
     await general.getByLabel('Puntos', { exact: true }).fill('100')

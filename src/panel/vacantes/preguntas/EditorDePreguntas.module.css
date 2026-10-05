@@ -83,13 +83,6 @@
   gap: var(--e3);
 }
 
-.lineaBalance {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--e3) var(--e4);
-}
-
 .cifras {
   margin: 0;
   font-size: var(--t-apoyo);
@@ -116,7 +109,6 @@
 
 .publicar {
   composes: acentoMenor from '../../../estilos/piezas.module.css';
-  margin-left: auto;
 }
 
 .avisos {
@@ -152,10 +144,6 @@
 .faltas ul {
   margin: 0;
   padding-left: var(--e5);
-}
-
-.balanceCorto {
-  display: none;
 }
 
 /* ---------- Entradas ---------- */
@@ -705,27 +693,6 @@
     padding: var(--e3) var(--e4);
   }
 
-  .balanceLargo {
-    display: none;
-  }
-
-  .balanceCorto {
-    display: block;
-  }
-
-  .balanceCorto summary {
-    cursor: pointer;
-    min-height: 44px;
-    display: flex;
-    align-items: center;
-    font-size: var(--t-apoyo);
-    font-variant-numeric: tabular-nums;
-  }
-
-  .balanceCorto[open] summary {
-    margin-bottom: var(--e2);
-  }
-
   .entradas {
     flex-direction: column;
     align-items: stretch;
@@ -882,5 +849,483 @@
 
   .radios {
     flex-direction: column;
+  }
+}
+
+/* ---------- La cabecera fija (V68): estado, balance, barra y faltas ----------
+ *
+ * La comparten la prueba técnica y las preguntas propias. Se pega debajo de la
+ * cabecera del panel (ver `.balance`). Una sola acción principal: «Publicar». El
+ * ámbar solo en lo que frena la publicación: las faltas y el chip del tiempo
+ * cuando le falta algo. En el teléfono se compacta: estado, balance y
+ * «Publicar» en una línea; el chip y las faltas debajo, desplazables.
+ */
+
+.cabeceraFija {
+  composes: balance;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'estado acciones'
+    'barra barra'
+    'faltas faltas';
+  gap: var(--e3) var(--e4);
+  align-items: center;
+}
+
+/* La prueba: el chip del tiempo va con los botones, debajo del balance. */
+.cabeceraConChip {
+  grid-template-areas:
+    'estado estado'
+    'chip acciones'
+    'barra barra'
+    'faltas faltas';
+}
+
+.lineaCabecera {
+  grid-area: estado;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e2) var(--e4);
+  min-width: 0;
+}
+
+/* El chip del tiempo y «Configuración», juntos: abren el mismo panel. En el
+   escritorio «Configuración» queda al final, junto a «Publicar»; en el
+   teléfono, al final de la línea del chip. */
+.herramientasCabecera {
+  grid-area: chip;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e2) var(--e3);
+  min-width: 0;
+}
+
+.cabeceraFija .barra {
+  grid-area: barra;
+}
+
+.cabeceraFija .faltasCabecera {
+  grid-area: faltas;
+}
+
+.balanceCabecera {
+  margin: 0;
+  font-size: var(--t-entradilla);
+  font-weight: 600;
+  color: var(--tinta);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.accionesCabecera {
+  grid-area: acciones;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--e2) var(--e3);
+}
+
+.configurar {
+  composes: secundario from '../../../estilos/piezas.module.css';
+  gap: var(--e2);
+}
+
+.chipTiempo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  min-height: 44px;
+  padding: 0 var(--e3);
+  border: 1px solid var(--regla2);
+  border-radius: var(--radio-control);
+  background: var(--nube);
+  color: var(--tinta2);
+  font: inherit;
+  font-size: var(--t-apoyo);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.chipTiempo:hover {
+  color: var(--tinta);
+  border-color: var(--borde-control);
+}
+
+.chipTiempo:focus-visible,
+.botonFalta:focus-visible,
+.plegador:focus-visible,
+.botonGuia:focus-visible,
+.enlacePlegar:focus-visible {
+  outline: 2px solid var(--activo);
+  outline-offset: 2px;
+}
+
+.chipTiempoFalta {
+  border-color: color-mix(in oklab, var(--duda) 55%, var(--nube));
+  background: var(--duda-bruma);
+  color: var(--duda-tinta);
+}
+
+/* Un tramo por criterio, en índigos que se aclaran; lo que falta, en gris. */
+.barra {
+  display: flex;
+  height: 10px;
+  border-radius: var(--radio-barra, 999px);
+  overflow: clip;
+  background: var(--nube-honda);
+}
+
+.tramo {
+  height: 100%;
+  min-width: 2px;
+  background: color-mix(in oklab, var(--activo) calc(100% - var(--paso, 0) * 16%), var(--nube));
+}
+
+.tramo + .tramo {
+  box-shadow: inset 2px 0 0 var(--nube);
+}
+
+.faltasCabecera {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.botonFalta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  min-height: 44px;
+  max-width: 100%;
+  padding: var(--e2) var(--e3);
+  border: 1px solid color-mix(in oklab, var(--duda) 40%, var(--nube));
+  border-radius: var(--radio-control);
+  background: var(--duda-bruma);
+  color: var(--duda-tinta);
+  font: inherit;
+  font-size: var(--t-apoyo);
+  line-height: 1.35;
+  text-align: left;
+  cursor: pointer;
+}
+
+.botonFalta:hover {
+  border-color: var(--duda);
+}
+
+.flechaFalta {
+  flex: none;
+  font-weight: 600;
+}
+
+/* ---------- Las secciones del editor de la prueba ---------- */
+
+.cabeceraSeccion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e2) var(--e4);
+}
+
+.cabeceraSeccion .subtitulo {
+  flex: 1 1 260px;
+}
+
+/*
+ * Lo que se baja a ver desde una falta se para DEBAJO de la cabecera fija: la
+ * del panel, el hueco con que se pega, su alto medido (crece con las faltas,
+ * ver `CabeceraFija.tsx`) y un respiro. Un margen fijo dejaba el criterio
+ * tapado en cuanto había tres o cuatro faltas (QA-03).
+ */
+.destino {
+  scroll-margin-top: calc(
+    var(--alto-cabecera-panel, 64px) + var(--e3) + var(--alto-cabecera-fija, 13rem) + var(--e3)
+  );
+}
+
+.destino:focus {
+  outline: none;
+}
+
+.destino:focus-visible {
+  outline: 2px solid var(--activo);
+  outline-offset: 4px;
+}
+
+.plegarTodo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e1) var(--e3);
+}
+
+.enlacePlegar {
+  border: 0;
+  padding: 0 var(--e1);
+  min-height: 44px;
+  background: none;
+  font: inherit;
+  font-size: var(--t-apoyo);
+  color: var(--activo);
+  cursor: pointer;
+}
+
+.enlacePlegar:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ---------- Un criterio plegable ---------- */
+
+.criterioConFalta {
+  box-shadow: inset 0 0 0 1px var(--duda), var(--sombra-nube);
+}
+
+.plegador {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: var(--tinta);
+  text-align: left;
+  cursor: pointer;
+}
+
+.flecha {
+  flex: none;
+  color: var(--tinta2);
+  transition: transform 160ms var(--salida, ease-out);
+}
+
+.flechaPlegada {
+  transform: rotate(-90deg);
+}
+
+.cuentaCriterio {
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+  white-space: nowrap;
+}
+
+.puntoFalta {
+  flex: none;
+  inline-size: 8px;
+  block-size: 8px;
+  border-radius: 50%;
+  background: var(--duda);
+}
+
+.faltaCriterio {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  font-size: var(--t-apoyo);
+  color: var(--duda-tinta);
+  overflow-wrap: anywhere;
+  flex-basis: 100%;
+}
+
+.chipAutomatico {
+  composes: chip;
+  margin: 0 var(--e1);
+}
+
+.numeroPregunta {
+  font-size: var(--t-micro);
+  font-weight: 600;
+  color: var(--tinta2);
+  letter-spacing: 0.01em;
+}
+
+/* ---------- El archivo de una pregunta y los generales ---------- */
+
+.archivo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e1) var(--e2);
+  padding: var(--e1) var(--e1) var(--e1) var(--e3);
+  border-radius: var(--radio-control);
+  background: var(--nube);
+  border: 1px solid var(--regla);
+  font-size: var(--t-apoyo);
+  color: var(--tinta);
+}
+
+.archivo .botones {
+  margin-left: auto;
+}
+
+.nombreArchivo {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.cubre {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--e3);
+  min-width: 0;
+}
+
+.cubre legend {
+  padding: 0;
+  margin-bottom: var(--e1);
+}
+
+/* ---------- La configuración y sus guías «!» ---------- */
+
+.configuracion {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e5);
+}
+
+.etiquetaConGuia {
+  display: flex;
+  align-items: center;
+  gap: var(--e1);
+  position: relative;
+}
+
+.botonGuia {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 44px;
+  block-size: 44px;
+  margin: calc(var(--e3) * -1) 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--tinta2);
+  cursor: pointer;
+}
+
+.botonGuia:hover {
+  color: var(--activo);
+}
+
+.textoGuia {
+  position: absolute;
+  z-index: 5;
+  top: calc(100% + var(--e1));
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: var(--e3) var(--e4);
+  border-radius: var(--radio-control);
+  background: var(--accion-fuerte);
+  color: var(--tinta-invertida);
+  font-size: var(--t-apoyo);
+  font-weight: 400;
+  line-height: 1.5;
+  box-shadow: var(--sombra-aviso);
+}
+
+.obligatoriaParaPublicar {
+  margin: 0;
+  font-size: var(--t-menor);
+  color: var(--duda-tinta);
+}
+
+@media (max-width: 720px) {
+  .cabeceraFija {
+    gap: var(--e2) var(--e3);
+    grid-template-areas:
+      'estado acciones'
+      'faltas faltas'
+      'barra barra';
+  }
+
+  .cabeceraConChip {
+    grid-template-areas:
+      'estado acciones'
+      'chip chip'
+      'faltas faltas'
+      'barra barra';
+  }
+
+  /*
+   * Estado, balance y «Publicar» en una línea (QA-01). El estado y el balance
+   * se parten en dos líneas antes que desbordar su celda: con `nowrap` el
+   * balance se metía debajo de «Publicar», que lo tapaba. Para que quepan en
+   * 375 px el estado se estrecha, el balance baja al cuerpo y «Publicar» pierde
+   * su complemento a la vista (el lector de pantalla lo sigue leyendo).
+   */
+  .lineaCabecera {
+    gap: var(--e1) var(--e2);
+  }
+
+  .lineaCabecera .estadoVersion {
+    padding: 2px var(--e2);
+  }
+
+  .balanceCabecera {
+    font-size: var(--t-base);
+  }
+
+  .restoDelRotulo {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .lineaCabecera .cifras {
+    display: none;
+  }
+
+  .textoConfigurar {
+    display: none;
+  }
+
+  .faltasCabecera {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    padding-bottom: 2px;
+  }
+
+  .botonFalta {
+    flex: none;
+    white-space: nowrap;
+  }
+
+  /* El chip comparte su línea con «Configuración»: si no cabe, se parte. */
+  .chipTiempo {
+    flex: 0 1 auto;
+    min-width: 0;
+    text-align: left;
+  }
+
+  .herramientasCabecera .configurar {
+    flex: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flecha {
+    transition: none;
   }
 }

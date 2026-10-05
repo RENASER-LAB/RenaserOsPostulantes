@@ -10,8 +10,8 @@
  *     de la consulta: las dos de una misma vacante no se pisan.
  *   - **Las abiertas no llevan puntos** en la prueba: la IA o una persona
  *     califican el criterio entero (decisión 3).
- *   - **Los textos**: «preguntas» o «prueba», y «cuestionario» cuando la prueba
- *     no tiene entregables.
+ *   - **Los textos**: «preguntas» o «prueba». Desde la V68 no hay «cuestionario»:
+ *     la prueba es una sola, con o sin entregables.
  *
  * Sin proveedor es el modo de siempre, el de la fase 1: sus pantallas y sus
  * pruebas no tienen que saber que esto existe.

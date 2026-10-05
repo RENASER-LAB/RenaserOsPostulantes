@@ -20,7 +20,9 @@ import {
   pedirRecomendaciones,
   verRecomendacion,
   type CriterioDeLaVersion,
+  type CriterioPropuesto,
   type EditorDePreguntas,
+  type EntregablePropuesto,
   type EstadoDeLaRecomendacion,
 } from '../../api/preguntasPropias'
 import { useSondeoAcotado } from '../useSondeoAcotado'
@@ -127,7 +129,7 @@ export function Recomendaciones({ vacanteId, total, criterios, alAgregar, alCerr
           <>
             <p className={estilos.explica}>
               {deLaPrueba
-                ? `La IA completará los ${faltan} puntos que faltan, a partir de lo que describe la vacante, su puesto y la solicitud de talento: propone el caso si no lo hay, los entregables y los criterios con su parte calificada y quién la califica. Nada se agrega hasta que tú lo elijas.`
+                ? `La IA completará los ${faltan} puntos que faltan, a partir de lo que describe la vacante, su puesto y la solicitud de talento: propone criterios con su parte calificada y quién la califica, sus preguntas, un caso si le sirve y los archivos donde se usan. Nada se agrega hasta que tú lo elijas.`
                 : `La IA completará los ${faltan} puntos que faltan, a partir de lo que describe la vacante, su puesto y la solicitud de talento. Puede llenar tus criterios o proponer otros. Nada se agrega hasta que tú lo elijas.`}
             </p>
             <label className={estilos.campo}>
@@ -235,11 +237,12 @@ export function Recomendaciones({ vacanteId, total, criterios, alAgregar, alCerr
             </article>
           )}
           {deLaPrueba &&
-            (propuesta.entregables ?? []).map((e, k) => (
+            (propuesta.entregables ?? []).map((e, k) => e.pregunta ? null : (
               <article className={estilos.propuesto} key={`e${k}`}>
                 <div className={estilos.cabeceraCriterio}>
                   <h3 className={estilos.nombreCriterio}>{e.nombre}</h3>
                   <span className={estilos.chip}>{nombreDelFormato(e.formato)}</span>
+                  <span className={estilos.chip}>{loQueCubreLaPropuesta(e, propuesta.propuesta)}</span>
                   <button
                     className={estilos.secundarioPequeno}
                     type="button"
@@ -303,10 +306,6 @@ export function Recomendaciones({ vacanteId, total, criterios, alAgregar, alCerr
                   <p className={estilos.queEvalua}>
                     <b>Parte calificada:</b> {c.parteCalificada} pts ·{' '}
                     {c.calificador === 'PERSONA' ? 'una persona' : 'la IA'}
-                    {(c.entregables ?? []).length > 0 &&
-                      ` · Mira: ${(c.entregables ?? [])
-                        .map((k) => propuesta.entregables?.[k]?.nombre ?? `entregable ${k + 1}`)
-                        .join(', ')}`}
                   </p>
                 )}
                 <ol className={estilos.preguntas}>
@@ -352,6 +351,15 @@ export function Recomendaciones({ vacanteId, total, criterios, alAgregar, alCerr
                             <b>Qué debe tener:</b> {p.queDebeTener}
                           </p>
                         )}
+                        {deLaPrueba &&
+                          (propuesta.entregables ?? [])
+                            .filter((e) => e.pregunta?.criterio === i && e.pregunta?.pregunta === j)
+                            .map((e) => (
+                              <p className={estilos.queEvalua} key={e.nombre}>
+                                <b>Archivo de esta pregunta:</b> {e.nombre} · {nombreDelFormato(e.formato)}
+                                {e.obligatorio === false ? ' · opcional' : ' · obligatorio'}
+                              </p>
+                            ))}
                       </li>
                     )
                   })}
@@ -364,4 +372,13 @@ export function Recomendaciones({ vacanteId, total, criterios, alAgregar, alCerr
       <MostrarFallo fallo={fallo} />
     </section>
   )
+}
+
+/** «Cubre: toda la prueba» o «Cubre: 2 preguntas propuestas», sin pedir «Mira». */
+function loQueCubreLaPropuesta(e: EntregablePropuesto, criterios: CriterioPropuesto[]): string {
+  if (e.todaLaPrueba !== false && (e.cubre ?? []).length === 0) return 'Cubre: toda la prueba'
+  const enunciados = (e.cubre ?? [])
+    .map((p) => criterios[p.criterio]?.preguntas[p.pregunta]?.enunciado)
+    .filter((t): t is string => Boolean(t))
+  return enunciados.length === 1 ? 'Cubre: 1 pregunta propuesta' : `Cubre: ${enunciados.length} preguntas propuestas`
 }

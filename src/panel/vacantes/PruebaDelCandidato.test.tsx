@@ -274,15 +274,11 @@ describe('la prueba de un candidato, criterio a criterio (AC-25)', () => {
     expect(within(criterios).getAllByText('—').length).toBeGreaterThan(0)
   })
 
-  it('un cuestionario concuerda en masculino: «lo abrió», «Entregado, solo» (AC-06)', async () => {
+  it('sin entregables ya no es «cuestionario» (V68): es la prueba, en femenino', async () => {
     ver.mockResolvedValue(prueba({ cuestionario: true, estado: 'EN_CURSO', entregadoEn: null }))
     pintar()
-    expect(await screen.findByText(/Está rindiendo el cuestionario: lo abrió el/)).toBeTruthy()
-    cleanup()
-
-    ver.mockResolvedValue(prueba({ cuestionario: true, entregaAutomatica: true }))
-    pintar()
-    expect(await screen.findByText(/^Entregado el .*, solo, al vencer el tiempo\.$/)).toBeTruthy()
+    expect(await screen.findByText(/Está rindiendo la prueba: la abrió el/)).toBeTruthy()
+    expect(screen.queryByText(/cuestionario/i)).toBeNull()
   })
 
   it('la prueba sigue en femenino: «la abrió», «Entregada, sola»', async () => {
@@ -294,5 +290,23 @@ describe('la prueba de un candidato, criterio a criterio (AC-25)', () => {
     ver.mockResolvedValue(prueba({ entregaAutomatica: true }))
     pintar()
     expect(await screen.findByText(/^Entregada el .*, sola, al vencer el tiempo\.$/)).toBeTruthy()
+  })
+
+  it('el archivo de una pregunta sale junto a su respuesta; los generales, en «Lo que entregó» (V68)', async () => {
+    const base = prueba()
+    ver.mockResolvedValue(
+      prueba({
+        criterios: [conocimiento()],
+        entregables: [{ ...base.entregables[0]!, preguntaId: 11 }, base.entregables[1]!],
+      }),
+    )
+    pintar()
+    const respuesta = (await screen.findByText('Conciliando el banco contra el mayor.')).closest('li')!
+    expect(within(respuesta).getByText(/Archivo de esta pregunta:/).closest('div')!.textContent).toMatch(
+      /Tablero\.xlsx · archivo · obligatorio · entregó/,
+    )
+    const entregado = screen.getByRole('heading', { name: 'Lo que entregó' }).nextElementSibling as HTMLElement
+    expect(within(entregado).queryByText('Tablero.xlsx')).toBeNull()
+    expect(within(entregado).getByText('Video de 2 min')).toBeTruthy()
   })
 })

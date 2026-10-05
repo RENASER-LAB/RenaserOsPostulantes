@@ -62,7 +62,7 @@ describe('el estado de la prueba en la vacante', () => {
         minutos: 30,
         cuestionario: true,
       }),
-    ).toBe('Publicada · cuestionario · 12 preguntas · 30 min')
+    ).toBe('Publicada · 3 criterios · 12 preguntas · 30 min')
     expect(
       textoDeLaPrueba({
         estado: 'PUBLICADA',

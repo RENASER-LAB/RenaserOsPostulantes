@@ -109,3 +109,26 @@
     border-radius: 0;
   }
 }
+
+/*
+ * El panel lateral: pegado a la derecha y de arriba abajo, para ajustar algo sin
+ * perder de vista lo que se ajusta. En el teléfono, la pantalla entera.
+ */
+.cajaLateral {
+  left: auto;
+  right: 0;
+  top: 0;
+  transform: none;
+  width: min(30rem, 100vw);
+  height: 100dvh;
+  max-height: none;
+  border-width: 0 0 0 1px;
+  border-radius: 0;
+}
+
+@media (max-width: 640px) {
+  .cajaLateral {
+    width: 100vw;
+    border: 0;
+  }
+}

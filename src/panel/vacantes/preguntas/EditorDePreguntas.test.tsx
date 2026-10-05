@@ -220,6 +220,8 @@ describe('sin permiso de editar (AC-20)', () => {
   it('lo ve en lectura, sin botones que acaben en 403', async () => {
     ver.mockResolvedValue(editor({ puedeEditar: false }))
     pintar()
+    // Plegar y desplegar sí funcionan en lectura (V68).
+    fireEvent.click(await screen.findByRole('button', { name: 'Desplegar todo' }))
     expect(await screen.findByText('Cuéntanos un cierre con un descuadre')).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Publicar las preguntas' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Agregar criterio' })).toBeNull()
@@ -373,5 +375,61 @@ describe('la escala en el formulario', () => {
     fireEvent.change(screen.getByLabelText('Tipo'), { target: { value: 'ESCALA' } })
     expect(screen.getByRole('spinbutton', { name: 'Puntos del nivel 1' })).toBeTruthy()
     expect(screen.queryByRole('spinbutton', { name: /de el nivel/ })).toBeNull()
+  })
+})
+
+describe('plegables y avisos que llevan a donde se arreglan (V68, AC-25)', () => {
+  it('al entrar están plegados salvo el que tiene una falta, y cada línea dice puntos, desglose y preguntas', async () => {
+    ver.mockResolvedValue(editor())
+    pintar()
+    const conocimiento = await screen.findByRole('region', { name: 'Criterio Conocimiento contable' })
+    expect(within(conocimiento).getByRole('button', { name: 'Conocimiento contable' }).getAttribute('aria-expanded')).toBe('false')
+    expect(within(conocimiento).getByText('85 pts (IA 85)')).toBeTruthy()
+    expect(within(conocimiento).getByText('· 1 pregunta')).toBeTruthy()
+    expect(within(conocimiento).queryByText('Cuéntanos un cierre con un descuadre')).toBeNull()
+    // «Manejo de Excel» tiene una falta: sale desplegado, con su aviso.
+    const excel = screen.getByRole('region', { name: 'Criterio Manejo de Excel' })
+    expect(within(excel).getByRole('button', { name: 'Manejo de Excel' }).getAttribute('aria-expanded')).toBe('true')
+    expect(within(excel).getByText('Sin preguntas: así no se publica.')).toBeTruthy()
+  })
+
+  it('desplegar todo, plegar todo y plegar uno a mano', async () => {
+    ver.mockResolvedValue(editor())
+    pintar()
+    fireEvent.click(await screen.findByRole('button', { name: 'Desplegar todo' }))
+    expect(screen.getByText('Cuéntanos un cierre con un descuadre')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Plegar todo' }))
+    expect(screen.queryByText('Cuéntanos un cierre con un descuadre')).toBeNull()
+    expect(screen.queryByText('Sin preguntas: así no se publica.')).toBeNull()
+    // Plegado, el criterio con falta la dice al lado de su línea.
+    const excel = screen.getByRole('region', { name: 'Criterio Manejo de Excel' })
+    expect(within(excel).getByText('El criterio «Manejo de Excel» no tiene preguntas.')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Conocimiento contable' }))
+    expect(screen.getByText('Cuéntanos un cierre con un descuadre')).toBeTruthy()
+  })
+
+  it('la cabecera tiene la barra por criterio y cada aviso es un botón que despliega su criterio', async () => {
+    ver.mockResolvedValue(
+      editor({
+        borrador: version({
+          avisos: [
+            'Los puntos suman 85 de 100: faltan 15.',
+            'La pregunta 1 («Cuéntanos un cierre con un descuadre»): falta el enunciado.',
+          ],
+        }),
+      }),
+    )
+    pintar()
+    const cabecera = await screen.findByRole('region', { name: 'Balance de las preguntas' })
+    expect(within(cabecera).getByRole('img').getAttribute('aria-label')).toBe(
+      '85 de 100 puntos · Conocimiento contable: 85',
+    )
+    const faltas = within(cabecera).getByRole('list', { name: 'Lo que frena la publicación' })
+    expect(within(faltas).getAllByRole('button')).toHaveLength(2)
+    // «Conocimiento contable» sale desplegado porque una de sus preguntas tiene una falta.
+    fireEvent.click(screen.getByRole('button', { name: 'Plegar todo' }))
+    expect(screen.queryByText('Cuéntanos un cierre con un descuadre', { selector: 'p' })).toBeNull()
+    fireEvent.click(within(faltas).getByRole('button', { name: /La pregunta 1/ }))
+    expect(await screen.findByText('Cuéntanos un cierre con un descuadre', { selector: 'p' })).toBeTruthy()
   })
 })

@@ -704,7 +704,18 @@ test.describe('Permisos del editor', () => {
       await expect(page.getByText('Las ves en lectura: cambiarlas pide el permiso de editar esta vacante.')).toBeVisible({
         timeout: 20_000,
       })
-      await expect(page.locator('main').getByRole('button')).toHaveCount(0)
+      // Ningún botón que actúe: solo plegar, desplegar y las faltas, que llevan a donde se arreglan (V68).
+      await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+      const queActuan = await page.locator('main button').evaluateAll(
+        (botones) =>
+          botones.filter(
+            (b) =>
+              !b.hasAttribute('aria-expanded') &&
+              !['Desplegar todo', 'Plegar todo'].includes((b.textContent ?? '').trim()) &&
+              !b.closest('[aria-label="Lo que frena la publicación"]'),
+          ).length,
+      )
+      expect(queActuan).toBe(0)
     }
   })
 })
@@ -731,10 +742,10 @@ test.describe('Regresiones del balance', () => {
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
     expect(await nadaLoTapa(page, { role: 'button', name: 'Publicar las preguntas' })).toBe(true)
 
-    // En el teléfono, la línea «95/100 · N avisos» también queda pegada arriba y a la vista.
+    // En el teléfono, la línea del balance («95 de 100 puntos» y «Publicar») también queda pegada arriba y a la vista.
     await page.setViewportSize({ width: 375, height: 812 })
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
-    const resumen = balance(page).locator('summary')
+    const resumen = balance(page).getByText('95 de 100 puntos', { exact: true })
     await expect(resumen).toBeVisible()
     const tapado = await resumen.evaluate((el) => {
       const r = el.getBoundingClientRect()
@@ -753,6 +764,8 @@ test.describe('Regresiones del balance', () => {
     await expect(faltas).toBeVisible({ timeout: 20_000 })
 
     // Se corrige: la primera abierta pasa de 20 a 25 y el borrador suma 100, sin avisos.
+    // Los criterios salen plegados al entrar (V68): se despliegan para llegar a ella.
+    await page.getByRole('button', { name: 'Desplegar todo' }).click()
     const primera = page.getByRole('article', { name: /Pregunta abierta 1 para alargar/ })
     await primera.getByRole('button', { name: 'Editar la pregunta' }).click()
     await page.getByLabel('Puntos', { exact: true }).fill('25')

@@ -626,3 +626,17 @@ fieldset.pregunta > legend + * {
 .aviso.malo .reintentar {
   margin-top: var(--e3);
 }
+
+/* V68: el archivo de una pregunta va pegado a ella, dentro de su bloque. */
+.conSuArchivo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+}
+
+/* Sin caso, materiales ni herramientas no queda nada que leer: una sola columna. */
+@media (min-width: 900px) {
+  .trabajandoSinLectura {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

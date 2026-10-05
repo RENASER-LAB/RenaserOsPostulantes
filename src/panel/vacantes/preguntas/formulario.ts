@@ -157,10 +157,28 @@ export function puntosDelCriterio(c: CriterioDeLaVersion): string {
 }
 
 /**
+ * La línea de un criterio plegado (V68): «30 pts (sistema 10 + IA 20)», o solo
+ * los puntos si no hay reparto que decir.
+ */
+export function puntosConDesglose(c: CriterioDeLaVersion): string {
+  const conDesglose = puntosDelCriterio(c)
+  const [puntos, desglose] = conDesglose.split(' · ')
+  return desglose ? `${puntos} (${desglose})` : (puntos ?? conDesglose)
+}
+
+/** «· 2 preguntas · 1 archivo», lo que sigue a los puntos en la línea de un criterio. */
+export function cuentaDelCriterio(preguntas: number, archivos: number): string {
+  const partes = [`${preguntas} ${preguntas === 1 ? 'pregunta' : 'preguntas'}`]
+  if (archivos > 0) partes.push(`${archivos} ${archivos === 1 ? 'archivo' : 'archivos'}`)
+  return `· ${partes.join(' · ')}`
+}
+
+/**
  * El estado de la prueba técnica de una vacante (V67), para su bloque en la
  * vacante: «Sin prueba», «Borrador · 70 de 100 puntos · 2 entregables»,
  * «Publicada · 5 criterios · 2 entregables · 90 min» o, sin entregables,
- * «Publicada · cuestionario · 12 preguntas · 30 min».
+ * «Publicada · 3 criterios · 12 preguntas · sin cronómetro». Desde la V68 no hay
+ * «cuestionario»: una sola prueba, con o sin entregables.
  */
 export function textoDeLaPrueba(r: ResumenDePreguntas | null | undefined): string {
   if (!r || r.estado === 'SIN_PRUEBA' || r.estado === 'SIN_PREGUNTAS') return 'Sin prueba'
@@ -174,13 +192,11 @@ export function textoDeLaPrueba(r: ResumenDePreguntas | null | undefined): strin
       ? ` · ${r.minutos} min`
       : typeof r.dias === 'number'
         ? ` · ${r.dias} ${r.dias === 1 ? 'día' : 'días'}`
-        : ''
-  if (r.cuestionario) {
-    const preguntas = r.preguntas ?? 0
-    return `Publicada · cuestionario · ${preguntas} ${preguntas === 1 ? 'pregunta' : 'preguntas'}${tiempo}`
-  }
+        : ' · sin cronómetro'
   const criterios = r.criterios ?? 0
-  return `Publicada · ${criterios} ${criterios === 1 ? 'criterio' : 'criterios'} · ${deEntregables}${tiempo}`
+  const preguntas = r.preguntas ?? 0
+  const deQue = entregables > 0 ? deEntregables : `${preguntas} ${preguntas === 1 ? 'pregunta' : 'preguntas'}`
+  return `Publicada · ${criterios} ${criterios === 1 ? 'criterio' : 'criterios'} · ${deQue}${tiempo}`
 }
 
 /** Los formatos de un entregable, con su nombre para leer. */

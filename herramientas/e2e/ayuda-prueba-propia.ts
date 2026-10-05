@@ -94,20 +94,26 @@ export interface PreguntaNueva {
   queDebeTener?: string
   opciones?: OpcionNueva[]
 }
+/**
+ * Un archivo de la prueba (V68), pedido donde se usa: el de una pregunta (`de`, su
+ * enunciado) o un general que cubre toda la prueba (`todaLaPrueba`) o unas preguntas
+ * (`cubre`, sus enunciados). Sin nada de eso, cubre toda la prueba.
+ */
 export interface EntregableNuevo {
   nombre: string
   detalle?: string
   formato: 'ARCHIVO' | 'ENLACE' | 'CUALQUIERA'
   obligatorio: boolean
   queDebeTener?: string
+  de?: string
+  todaLaPrueba?: boolean
+  cubre?: string[]
 }
 export interface CriterioNuevo {
   nombre: string
   queEvalua?: string
   puntosCalificados?: number | null
   calificador?: 'IA' | 'PERSONA' | null
-  /** Los nombres de los entregables que mira. */
-  mira?: string[]
   preguntas: PreguntaNueva[]
 }
 export interface PruebaNueva {
@@ -117,11 +123,15 @@ export interface PruebaNueva {
     herramientasPermitidas?: string | null
     modalidad?: 'CRONOMETRADA' | 'PLAZO_ABIERTO' | null
     duracionMinutos?: number | null
-    plazoDias?: number | null
     guiaCalificacion?: string | null
   }
   entregables?: EntregableNuevo[]
   criterios: CriterioNuevo[]
+  /**
+   * La fecha límite de la vacante (V68), obligatoria para publicar. Sin decir nada, dentro
+   * de veinte días; `null` la deja sin poner.
+   */
+  fechaLimite?: string | null
 }
 
 export const editorDe = (token: string, vacante: number) => exigir<any>(RUTA(vacante), token)
@@ -133,37 +143,69 @@ export const entregableDe = (editor: any, nombre: string): number =>
 export const criterioDe = (version: any, nombre: string): any =>
   (version.criterios as any[]).find((c) => c.nombre === nombre)
 
-/** Escribe un borrador entero por la API: entregables, criterios con su parte calificada y preguntas. */
+/** El id de una pregunta de la versión por su enunciado. */
+export const preguntaDe = (version: any, enunciado: string): number => {
+  const todas = [...(version.criterios as any[]).flatMap((c) => c.preguntas), ...(version.sinCriterio as any[])]
+  const encontrada = todas.find((p: any) => p.enunciado === enunciado)
+  if (!encontrada) throw new Error(`No está la pregunta «${enunciado}»`)
+  return encontrada.id
+}
+
+/** El cuerpo de un entregable con su alcance, con las preguntas ya por su id. */
+export function cuerpoDelEntregable(version: any, e: EntregableNuevo) {
+  const { de, todaLaPrueba, cubre, ...resto } = e
+  return {
+    ...resto,
+    preguntaId: de ? preguntaDe(version, de) : null,
+    todaLaPrueba: !de && (todaLaPrueba ?? !cubre?.length),
+    cubre: de ? [] : (cubre ?? []).map((t) => preguntaDe(version, t)),
+  }
+}
+
+export const enVeinteDias = () => new Date(Date.now() + 20 * 24 * 3_600_000).toISOString()
+
+/** La fecha límite de la vacante, desde el editor de la prueba (V68). */
+export const fijarFechaLimite = (token: string, vacante: number, cierraEn: string, motivo: string | null = null) =>
+  pedir(`${RUTA(vacante)}/fecha-limite`, token, 'PUT', { cierraEn, motivo })
+
+/**
+ * Escribe un borrador entero por la API: criterios con su parte calificada y preguntas,
+ * los archivos con su alcance, el caso y el tiempo, y la fecha límite.
+ */
 export async function escribirPrueba(token: string, vacante: number, prueba: PruebaNueva): Promise<any> {
   let editor: any = null
-  for (const e of prueba.entregables ?? []) {
-    editor = await exigir(`${RUTA(vacante)}/entregables`, token, 'POST', e)
-  }
   for (const c of prueba.criterios) {
     editor = await exigir(`${RUTA(vacante)}/criterios`, token, 'POST', {
       nombre: c.nombre,
       queEvalua: c.queEvalua,
       puntosCalificados: c.puntosCalificados ?? null,
       calificador: c.calificador ?? null,
-      entregables: (c.mira ?? []).map((n) => entregableDe(editor, n)),
     })
     const id = criterioDe(editor.borrador, c.nombre).id as number
     for (const p of c.preguntas) {
       editor = await exigir(`${RUTA(vacante)}/preguntas`, token, 'POST', { ...p, criterioId: id })
     }
   }
+  for (const e of prueba.entregables ?? []) {
+    editor = await exigir(`${RUTA(vacante)}/entregables`, token, 'POST', cuerpoDelEntregable(editor.borrador, e))
+  }
   if (prueba.datos) {
     editor = await exigir(`${RUTA(vacante)}/borrador`, token, 'PUT', prueba.datos)
+  }
+  if (prueba.fechaLimite !== null) {
+    const fijada = await fijarFechaLimite(token, vacante, prueba.fechaLimite ?? enVeinteDias())
+    if (fijada.estado !== 200) throw new Error(`fijar la fecha límite falló: ${fijada.estado}`)
+    editor = fijada.cuerpo
   }
   return editor
 }
 
-/** Cambia la parte calificada (y lo que mira) de un criterio del borrador. */
+/** Cambia la parte calificada de un criterio del borrador. Lo que mira no se escribe (V68). */
 export async function cambiarCriterio(
   token: string,
   vacante: number,
   nombre: string,
-  cambio: { puntosCalificados: number; calificador: 'IA' | 'PERSONA'; mira: string[]; queEvalua?: string },
+  cambio: { puntosCalificados: number; calificador: 'IA' | 'PERSONA'; queEvalua?: string },
 ): Promise<any> {
   const editor = await editorDe(token, vacante)
   const c = criterioDe(editor.borrador, nombre)
@@ -172,7 +214,6 @@ export async function cambiarCriterio(
     queEvalua: cambio.queEvalua ?? c.queEvalua,
     puntosCalificados: cambio.puntosCalificados,
     calificador: cambio.calificador,
-    entregables: cambio.mira.map((n) => entregableDe(editor, n)),
   })
 }
 

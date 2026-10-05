@@ -27,8 +27,7 @@ export interface GuardarCriterioDePrueba {
   /** Los puntos de su parte calificada; 0 o nulo = solo cerradas. */
   puntosCalificados: number | null
   calificador: Calificador | null
-  /** Los ids de los entregables que mira. */
-  entregables: number[]
+  // Lo que mira no se escribe (V68): lo deduce el servidor del alcance de los entregables.
 }
 
 export interface GuardarDatosDeLaPrueba {
@@ -36,9 +35,9 @@ export interface GuardarDatosDeLaPrueba {
   enunciado: string | null
   materiales: string | null
   herramientasPermitidas: string | null
+  /** «Cronometrada» o «Sin cronómetro» (PLAZO_ABIERTO, sin días: hasta la fecha límite). */
   modalidad: 'CRONOMETRADA' | 'PLAZO_ABIERTO' | null
   duracionMinutos: number | null
-  plazoDias: number | null
 }
 
 export interface GuardarEntregable {
@@ -47,6 +46,13 @@ export interface GuardarEntregable {
   formato: FormatoDeEntregable | null
   obligatorio: boolean
   queDebeTener: string | null
+  /**
+   * El alcance (V68): `preguntaId` para el archivo de una pregunta (como mucho
+   * uno); si no, es general y cubre `todaLaPrueba` o las preguntas de `cubre`.
+   */
+  preguntaId: number | null
+  todaLaPrueba: boolean
+  cubre: number[]
 }
 
 export const verPrueba = (vacanteId: number) => pedir<EditorDePreguntas>(base(vacanteId))
@@ -97,6 +103,14 @@ export const moverEntregable = (vacanteId: number, entregableId: number, direcci
     metodo: 'POST',
     cuerpo: { direccion },
   })
+
+/**
+ * La fecha límite para dar la prueba (V68): la de la vacante. Con la prueba
+ * publicada y gente en la etapa técnica pide un motivo, que queda en la
+ * auditoría; antes no.
+ */
+export const fijarFechaLimite = (vacanteId: number, datos: { cierraEn: string; motivo: string | null }) =>
+  pedir<EditorDePreguntas>(`${base(vacanteId)}/fecha-limite`, { metodo: 'PUT', cuerpo: datos })
 
 // ---------- Quienes no la completaron ----------
 
@@ -178,6 +192,8 @@ export interface EntregaVista {
   archivoNombre: string | null
   subidoEn: string | null
   porQueNoSeVe: string | null
+  /** V68: la pregunta de la que es el archivo; nulo en los generales. */
+  preguntaId?: number | null
 }
 
 export interface PruebaDelCandidato {

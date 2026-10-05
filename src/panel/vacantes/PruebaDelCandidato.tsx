@@ -51,11 +51,11 @@ export function deDondeSale(c: CriterioDelCandidato): string {
 const num = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(2).replace(/\.?0+$/, ''))
 
 function estadoDe(p: Prueba): string {
-  const nombre = p.cuestionario ? 'el cuestionario' : 'la prueba'
-  // El pronombre y los participios concuerdan con lo que es: «lo abrió», «Entregado, solo».
-  const pronombre = p.cuestionario ? 'lo' : 'la'
-  const entregada = p.cuestionario ? 'Entregado' : 'Entregada'
-  const sola = p.cuestionario ? 'solo' : 'sola'
+  // Una sola prueba, con o sin entregables (V68): ya no se llama «cuestionario».
+  const nombre = 'la prueba'
+  const pronombre = 'la'
+  const entregada = 'Entregada'
+  const sola = 'sola'
   switch (p.estado) {
     case 'SIN_PRUEBA':
       return 'Todavía no llegó a la prueba técnica.'
@@ -84,7 +84,7 @@ export function PruebaDelCandidato({ postulacionId }: { postulacionId: number })
   return (
     <>
       <h3 className={estilos.tituloDetalle}>
-        {p?.cuestionario ? 'El cuestionario, criterio a criterio' : 'La prueba técnica, criterio a criterio'}
+        La prueba técnica, criterio a criterio
       </h3>
       {consulta.isPending && <p className={estilos.dato}>Cargando la prueba…</p>}
       {consulta.isError && (
@@ -101,6 +101,9 @@ export function PruebaDelCandidato({ postulacionId }: { postulacionId: number })
 
 function Contenido({ prueba: p }: { prueba: Prueba }) {
   const entregada = p.estado === 'ENTREGADA'
+  // El archivo de una pregunta va junto a su respuesta (V68); aquí, los generales.
+  const generales = p.entregables.filter((e) => e.preguntaId == null)
+  const seVenLasEntregas = p.estado !== 'SIN_PRUEBA' && p.estado !== 'SIN_EMPEZAR'
   return (
     <>
       <p className={estilos.dato}>{estadoDe(p)}</p>
@@ -131,15 +134,16 @@ function Contenido({ prueba: p }: { prueba: Prueba }) {
               entregables={p.entregables}
               puedeAjustar={p.puedeAjustar}
               mostrarNota={entregada}
+              conEntregas={seVenLasEntregas}
             />
           ))}
         </ul>
       )}
-      {p.entregables.length > 0 && p.estado !== 'SIN_PRUEBA' && p.estado !== 'SIN_EMPEZAR' && (
+      {generales.length > 0 && seVenLasEntregas && (
         <>
           <h3 className={estilos.tituloDetalle}>Lo que entregó</h3>
           <ul className={estilos.criterios} role="list">
-            {p.entregables.map((e) => (
+            {generales.map((e) => (
               <Entrega key={e.entregableId} entrega={e} />
             ))}
           </ul>
@@ -155,12 +159,15 @@ function Criterio({
   entregables,
   puedeAjustar,
   mostrarNota,
+  conEntregas,
 }: {
   postulacionId: number
   criterio: CriterioDelCandidato
   entregables: EntregaVista[]
   puedeAjustar: boolean
   mostrarNota: boolean
+  /** Si ya empezó: el archivo de cada pregunta se enseña con su respuesta. */
+  conEntregas: boolean
 }) {
   const mira = entregables.filter((e) => c.entregables.includes(e.entregableId))
   const ajustada = c.ajustadaPor !== null
@@ -201,7 +208,11 @@ function Criterio({
         {c.preguntas.length > 0 && (
           <ol className={estilos.preguntasDelCriterio}>
             {c.preguntas.map((pr) => (
-              <Pregunta key={pr.preguntaId} pregunta={pr} />
+              <Pregunta
+                key={pr.preguntaId}
+                pregunta={pr}
+                archivo={conEntregas ? (entregables.find((e) => e.preguntaId === pr.preguntaId) ?? null) : null}
+              />
             ))}
           </ol>
         )}
@@ -213,7 +224,7 @@ function Criterio({
   )
 }
 
-function Pregunta({ pregunta: p }: { pregunta: PreguntaDelCandidato }) {
+function Pregunta({ pregunta: p, archivo }: { pregunta: PreguntaDelCandidato; archivo: EntregaVista | null }) {
   const abierta = p.tipo === 'ABIERTA'
   return (
     <li className={estilos.preguntaDelCriterio}>
@@ -238,6 +249,7 @@ function Pregunta({ pregunta: p }: { pregunta: PreguntaDelCandidato }) {
         </ul>
       ) : null}
       {!abierta && !p.respondida && <span className={estilos.explicacion}>Sin responder.</span>}
+      {archivo && <ArchivoDeLaRespuesta entrega={archivo} />}
     </li>
   )
 }
@@ -263,6 +275,22 @@ function Entrega({ entrega: e }: { entrega: EntregaVista }) {
         )}
       </span>
     </li>
+  )
+}
+
+/**
+ * El archivo de una pregunta, debajo de su respuesta (V68): lo que entregó para
+ * ella, con el mismo trato que un entregable general.
+ */
+function ArchivoDeLaRespuesta({ entrega: e }: { entrega: EntregaVista }) {
+  return (
+    <div className={estilos.explicacion}>
+      <b>Archivo de esta pregunta:</b> {e.nombre} · {nombreDelFormato(e.formato)} ·{' '}
+      {e.obligatorio ? 'obligatorio' : 'opcional'} · {e.loEntrego ? 'entregó' : 'falta'}
+      {e.enlace && <ElEnlaceQuePego enlace={e.enlace} />}
+      {e.archivoId !== null && <AbrirElArchivo archivoId={e.archivoId} nombre={e.archivoNombre} deQue={e.nombre} />}
+      {e.porQueNoSeVe && e.enlace === null && e.archivoId === null && <> · {e.porQueNoSeVe}</>}
+    </div>
   )
 }
 

@@ -26,12 +26,20 @@ interface Props {
    * —las reseñas, con sus filtros— y no para un aviso de dos líneas.
    */
   pantallaCompleta?: boolean
+  /**
+   * Un panel lateral a la derecha, de arriba abajo, en vez de una ventana en el
+   * centro: para lo que se ajusta al lado de lo que se está mirando (la
+   * configuración de la prueba). En el teléfono ocupa la pantalla entera.
+   */
+  lateral?: boolean
+  /** Sin pie: el contenido trae sus propios botones (un formulario con su «Listo»). */
+  sinPie?: boolean
 }
 
 const ENFOCABLES =
   'a[href], button:not([disabled]), input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])'
 
-export function Modal({ abierto, titulo, onCerrar, children, pie, pantallaCompleta }: Props) {
+export function Modal({ abierto, titulo, onCerrar, children, pie, pantallaCompleta, lateral, sinPie }: Props) {
   const caja = useRef<HTMLElement>(null)
 
   /*
@@ -125,7 +133,9 @@ export function Modal({ abierto, titulo, onCerrar, children, pie, pantallaComple
     <>
       <div className={estilos.fondo} onClick={onCerrar} />
       <section
-        className={pantallaCompleta ? `${estilos.caja} ${estilos.cajaCompleta}` : estilos.caja}
+        className={[estilos.caja, pantallaCompleta && estilos.cajaCompleta, lateral && estilos.cajaLateral]
+          .filter(Boolean)
+          .join(' ')}
         role="dialog"
         aria-modal="true"
         aria-labelledby="titulo-modal"
@@ -138,18 +148,20 @@ export function Modal({ abierto, titulo, onCerrar, children, pie, pantallaComple
           </button>
         </div>
         <div className={estilos.cuerpo}>{children}</div>
-        <div className={estilos.pie}>
-          {pie ?? (
-            <button
-              className={estilos.cerrarPie}
-              type="button"
-              onClick={onCerrar}
-              data-rotulo="Cerrar"
-            >
-              Cerrar
-            </button>
-          )}
-        </div>
+        {!sinPie && (
+          <div className={estilos.pie}>
+            {pie ?? (
+              <button
+                className={estilos.cerrarPie}
+                type="button"
+                onClick={onCerrar}
+                data-rotulo="Cerrar"
+              >
+                Cerrar
+              </button>
+            )}
+          </div>
+        )}
       </section>
     </>
   )

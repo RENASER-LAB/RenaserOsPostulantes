@@ -249,7 +249,7 @@ test.describe.serial('El recorrido entero de una vacante', () => {
       await expect(page.getByText('Sin prueba', { exact: true })).toBeVisible({ timeout: 15_000 })
       await expect(page.getByRole('link', { name: /Armar la prueba/ }).first()).toBeVisible()
 
-      // Un cuestionario de una pregunta, publicado por la API.
+      // Una prueba de una pregunta, publicada por la API (con su fecha límite, V68).
       const token = await tokenDelPanel()
       const base = `${API}/panel/vacantes/${idVacante}/prueba-propia`
       const enviar = async (ruta: string, cuerpo?: unknown, metodo = 'POST') => {
@@ -281,10 +281,11 @@ test.describe.serial('El recorrido entero de una vacante', () => {
         ],
       })
       await enviar('/borrador', { modalidad: 'CRONOMETRADA', duracionMinutos: 30 }, 'PUT')
+      await enviar('/fecha-limite', { cierraEn: new Date(Date.now() + 20 * 24 * 3_600_000).toISOString(), motivo: null }, 'PUT')
       await enviar('/publicacion')
 
       await page.reload()
-      await expect(page.getByText(/Publicada · cuestionario · 1 pregunta · 30 min/)).toBeVisible({
+      await expect(page.getByText(/Publicada · 1 criterio · 1 pregunta · 30 min/)).toBeVisible({
         timeout: 15_000,
       })
     })

@@ -3,13 +3,14 @@
  * propias no: su **parte calificada**.
  *
  * Cada criterio de la prueba tiene una parte automática —la suma de sus
- * cerradas, que cuenta el sistema— y una parte calificada: sus puntos, quién la
- * califica (la IA o una persona) y qué entregables mira. Las abiertas no llevan
- * puntos: la parte calificada califica el criterio entero mirando sus abiertas y
- * esos entregables.
+ * cerradas, que cuenta el sistema— y una parte calificada: sus puntos y quién la
+ * califica (la IA o una persona). Las abiertas no llevan puntos: la parte
+ * calificada califica el criterio entero mirando sus abiertas y sus archivos.
  *
- * «Mira» es una lista de casillas con los entregables de la prueba, una por
- * línea en el teléfono. Sin entregables, la línea no sale.
+ * **«Mira» no se marca** (V68): lo deduce el servidor. Un criterio mira el
+ * archivo de cada una de sus preguntas y los entregables generales que cubren
+ * toda la prueba o alguna de sus preguntas. Aquí solo se enseña, con el chip
+ * «automático».
  */
 
 import { useState } from 'react'
@@ -19,43 +20,50 @@ import type {
   EditorDePreguntas,
   EntregableDeLaVersion,
 } from '../../api/preguntasPropias'
-import {
-  agregarCriterioDePrueba,
-  editarCriterioDePrueba,
-  type Calificador,
-} from '../../api/pruebaPropia'
+import { agregarCriterioDePrueba, editarCriterioDePrueba, type Calificador } from '../../api/pruebaPropia'
 import { falloDe, type Fallo } from './consultas'
 import { MostrarFallo } from './piezas'
 import estilos from './EditorDePreguntas.module.css'
 
-/** «Parte calificada: 20 pts · IA · Mira: Tablero.xlsx», o que no tiene. */
+/** «Flujo de caja.xlsx (pregunta 4)», «Informe final (general)». */
+export function nombreEnMira(e: EntregableDeLaVersion, numeros: Map<number, number>): string {
+  if (e.alcance === 'PREGUNTA' && e.preguntaId != null) {
+    const n = numeros.get(e.preguntaId)
+    return n ? `${e.nombre} (pregunta ${n})` : e.nombre
+  }
+  return e.alcance ? `${e.nombre} (general)` : e.nombre
+}
+
+/** La parte calificada y lo que mira, deducido. */
 export function LineaDeLaParteCalificada({
   criterio,
   entregables,
+  numeros = new Map(),
 }: {
   criterio: CriterioDeLaVersion
   entregables: EntregableDeLaVersion[]
+  numeros?: Map<number, number>
 }) {
   const puntos = criterio.puntosCalificados ?? 0
-  if (puntos <= 0) {
-    return (
-      <p className={estilos.queEvalua}>
-        <b>Parte calificada:</b> no tiene. Este criterio solo suma sus cerradas.
-      </p>
-    )
-  }
   const mira = entregables.filter((e) => (criterio.entregables ?? []).includes(e.id))
   return (
-    <p className={estilos.queEvalua}>
-      <b>Parte calificada:</b> {puntos} pts ·{' '}
-      {criterio.calificador === 'PERSONA' ? 'la califica una persona' : 'la califica la IA'}
-      {entregables.length > 0 && (
-        <>
-          {' '}
-          · <b>Mira:</b> {mira.length === 0 ? 'ningún entregable' : mira.map((e) => e.nombre).join(', ')}
-        </>
+    <>
+      <p className={estilos.queEvalua}>
+        <b>Parte calificada:</b>{' '}
+        {puntos <= 0
+          ? 'no tiene. Este criterio solo suma sus cerradas.'
+          : `${puntos} pts · ${criterio.calificador === 'PERSONA' ? 'la califica una persona' : 'la califica la IA'}`}
+      </p>
+      {(puntos > 0 || mira.length > 0) && (
+        <p className={estilos.queEvalua}>
+          <b>Mira</b>
+          <span className={estilos.chipAutomatico}>automático</span>
+          {mira.length === 0
+            ? 'ningún archivo'
+            : mira.map((e) => nombreEnMira(e, numeros)).join(' · ')}
+        </p>
       )}
-    </p>
+    </>
   )
 }
 
@@ -63,38 +71,24 @@ interface PropsFormulario {
   vacanteId: number
   /** Nulo para un criterio nuevo. */
   criterio: CriterioDeLaVersion | null
-  entregables: EntregableDeLaVersion[]
   alGuardar: (editor: EditorDePreguntas) => void
   alCancelar: () => void
 }
 
 /**
- * El criterio entero: nombre, qué evalúa y su parte calificada. Los puntos van
- * como número tal cual se escribieron: si llevan decimales los rechaza el
- * servidor con su lista, que es la misma que se pinta al publicar.
+ * El criterio: nombre, qué evalúa y su parte calificada (puntos y quién la
+ * califica). Los puntos van como número tal cual se escribieron: si llevan
+ * decimales los rechaza el servidor con su lista.
  */
-export function FormularioCriterioDePrueba({
-  vacanteId,
-  criterio,
-  entregables,
-  alGuardar,
-  alCancelar,
-}: PropsFormulario) {
+export function FormularioCriterioDePrueba({ vacanteId, criterio, alGuardar, alCancelar }: PropsFormulario) {
   const [nombre, setNombre] = useState(criterio?.nombre ?? '')
   const [queEvalua, setQueEvalua] = useState(criterio?.queEvalua ?? '')
   const [puntos, setPuntos] = useState(String(criterio?.puntosCalificados ?? 0))
   const [calificador, setCalificador] = useState<Calificador>(criterio?.calificador ?? 'IA')
-  const [mira, setMira] = useState<number[]>(criterio?.entregables ?? [])
   const [fallo, setFallo] = useState<Fallo | null>(null)
 
   const comoNumero = puntos.trim() === '' ? 0 : Number(puntos)
   const conParte = !Number.isNaN(comoNumero) && comoNumero > 0
-  const soloEnlacesConIa =
-    conParte &&
-    calificador === 'IA' &&
-    mira.length > 0 &&
-    entregables.filter((e) => mira.includes(e.id)).every((e) => e.formato === 'ENLACE') &&
-    !(criterio?.preguntas ?? []).some((p) => p.tipo === 'ABIERTA')
 
   const guardado = useMutation({
     mutationFn: () => {
@@ -103,7 +97,6 @@ export function FormularioCriterioDePrueba({
         queEvalua: queEvalua.trim() || null,
         puntosCalificados: comoNumero,
         calificador: conParte ? calificador : null,
-        entregables: mira,
       }
       return criterio === null
         ? agregarCriterioDePrueba(vacanteId, datos)
@@ -178,37 +171,10 @@ export function FormularioCriterioDePrueba({
             </select>
           </label>
         </div>
-        {entregables.length > 0 && (
-          <div className={estilos.campo} role="group" aria-label="Qué entregables mira">
-            <span className={estilos.etiqueta}>Mira</span>
-            {entregables.map((e) => (
-              <label className={estilos.casilla} key={e.id}>
-                <input
-                  type="checkbox"
-                  checked={mira.includes(e.id)}
-                  onChange={(ev) =>
-                    setMira((antes) =>
-                      ev.target.checked ? [...antes, e.id] : antes.filter((id) => id !== e.id),
-                    )
-                  }
-                />
-                <span>
-                  {e.nombre} <span className={estilos.cuenta}>({e.formato === 'ENLACE' ? 'enlace' : e.formato === 'ARCHIVO' ? 'archivo' : 'archivo o enlace'})</span>
-                </span>
-              </label>
-            ))}
-          </div>
-        )}
         <p className={estilos.ayuda}>
-          La parte calificada califica el criterio entero mirando sus abiertas y los entregables
-          marcados. Con 0 puntos el criterio solo suma sus cerradas.
+          La parte calificada califica el criterio entero mirando sus abiertas y los archivos de
+          sus preguntas. Con 0 puntos el criterio solo suma sus cerradas.
         </p>
-        {soloEnlacesConIa && (
-          <p className={estilos.aviso} role="status">
-            La IA no abre enlaces: un criterio de IA que solo mira enlaces, sin abiertas, no se
-            publica. Pásalo a una persona o agrégale una abierta.
-          </p>
-        )}
       </fieldset>
 
       <div className={estilos.acciones}>
