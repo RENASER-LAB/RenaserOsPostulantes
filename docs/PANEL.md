@@ -193,6 +193,24 @@ eliminada. Necesitan las variables de [TRABAJAR-EN-LOCAL.md](TRABAJAR-EN-LOCAL.m
 números 33 a 35 están repetidos con los de «¿Olvidaste tu contraseña?»: ver
 [PENDIENTES.md](PENDIENTES.md).
 
+### Avanzar a Validación a quien ya tuvo un periodo (05/10)
+
+A quien se retrocedía —por la API: el panel no tiene cómo— después de abrirle su periodo de
+validación, «Avanzar» en la pestaña Simulación le respondía «No avanzaron: … (ya existe un
+registro con postulacion_id X)», y ahí se quedaba. Ahora avanza: su periodo se reutiliza tal cual
+y aparece en la pestaña Validación en el paso que le toca —por habilitar, su turno o por
+confirmar—. El historial de su ficha lo explica detrás del motivo: «· su periodo de validación ya
+estaba en curso», «… ya había vencido» o «… ya estaba cerrado». **El panel no cambió**: lo decide
+el backend, y «Avanzaron: …» no nombra el destino. Las reglas están en `docs/03-ESTADOS-POSTULACION.md`
+del backend, «Vuelve a una etapa por la que ya pasó».
+
+Comprobarlo: `npx playwright test herramientas/e2e/51-volver-a-validacion.spec.ts` (una persona
+con el periodo en curso, retrocedida por la API y avanzada desde el panel) y
+`51-volver-a-validacion-qa.spec.ts` (los cinco estados del periodo en lote, dos «Avanzar» a la
+vez, los movimientos a mano y el 409 al mover a la prueba de una vacante sin prueba lista). ⚠️ **Escriben** en el clon: siembran su
+propia vacante y, como lo avanzado no se borra, retiran las cuentas y dejan la vacante marcada
+eliminada. Necesitan las variables de [TRABAJAR-EN-LOCAL.md](TRABAJAR-EN-LOCAL.md).
+
 ### Publicar una vacante exige tres cosas antes (25/08)
 
 Era el atasco: el backend rechaza publicar y el panel no tenía dónde resolverlo. Ahora las
