@@ -27,7 +27,7 @@ import { libroDeUnaHoja } from './xlsx-minimo'
  * punta en el navegador.
  *
  * Los recorridos de la sección «Verificación» de la spec, menos el 8 (los E2E
- * del armazón que ya existían: `15`, `41` y `10` siguen tal cual):
+ * del armazón que ya existían: `41` y `10` siguen tal cual):
  *
  *   1. el menú por rol, plegar y recordar, y el cajón en pantallas estrechas;
  *   2. el alta manual y el documento duplicado, y una sede nueva en Configuración;
@@ -80,19 +80,20 @@ test.afterAll(async () => {
 test('1 · el menú por rol, plegado recordado y cajón en pantallas estrechas (AC-01 a AC-04)', async ({ page, browser }) => {
   await entrarCon(page, talento)
   await page.goto('/admin')
-  for (const nombre of ['Vacantes', 'Simulación', 'Pruebas', 'Colaboradores', 'Configuración']) {
+  // «Pruebas» ya no sale: la sección se retiró (spec fuga-del-catalogo-de-preguntas).
+  for (const nombre of ['Vacantes', 'Simulación', 'Colaboradores', 'Configuración']) {
     await expect(menu(page).getByRole('link', { name: nombre, exact: true })).toBeVisible()
   }
   await expect(menu(page).getByRole('region', { name: 'Selección' })).toBeVisible()
   await expect(menu(page).getByRole('region', { name: 'Personas' })).toBeVisible()
   await expect(menu(page).getByRole('link', { name: 'Vacantes', exact: true })).toHaveAttribute('href', '/admin')
 
-  // AC-02: el Responsable del área no ve Personas y conserva las cuatro de hoy.
+  // AC-02: el Responsable del área no ve Personas y conserva las tres de hoy.
   const otra = await browser.newPage()
   await entrarCon(otra, responsable)
   await otra.goto('/admin')
   await expect(menu(otra).getByRole('link', { name: 'Vacantes', exact: true })).toBeVisible()
-  for (const nombre of ['Simulación', 'Pruebas', 'Configuración']) {
+  for (const nombre of ['Simulación', 'Configuración']) {
     await expect(menu(otra).getByRole('link', { name: nombre, exact: true })).toBeVisible()
   }
   await expect(menu(otra).getByRole('link', { name: 'Colaboradores' })).toHaveCount(0)

@@ -2373,6 +2373,25 @@ describe('los desplegables que siguen existiendo', () => {
     expect(screen.queryByText(/Prueba de talento · convocatoria · v2/)).toBeNull()
     expect(screen.getByText(/Falta terminar y publicar una versión/)).toBeTruthy()
   })
+
+  /*
+   * La sección «Pruebas» se retiró (spec fuga-del-catalogo-de-preguntas, AC-08):
+   * el aviso sigue explicando por qué no hay nada que elegir, pero ya no manda a
+   * una pantalla que no existe.
+   */
+  it('el aviso sin pruebas conserva su explicación y no enlaza a la pantalla retirada', async () => {
+    VERSIONES_PRUEBA = []
+    await pintar()
+
+    const aviso = (await screen.findByText(/ninguna con una versión publicada/)).closest(
+      '[role="status"]',
+    )
+    expect(aviso).not.toBeNull()
+    expect(aviso!.textContent).toMatch(/Falta terminar y publicar una versión\.\s*$/)
+    expect(aviso!.querySelector('a')).toBeNull()
+    expect(screen.queryByRole('link', { name: /pruebas del puesto/i })).toBeNull()
+    expect(document.querySelector('a[href^="/admin/pruebas"]')).toBeNull()
+  })
 })
 
 /*

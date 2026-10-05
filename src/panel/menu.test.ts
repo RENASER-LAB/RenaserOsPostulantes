@@ -2,21 +2,30 @@
  * El menú lateral (V64): qué entradas ve cada rol, cuál se marca y el plegado.
  *
  * La regla que no se puede romper: **ningún rol pierde una entrada cuya
- * pantalla le funciona hoy**. Las cuatro de siempre siguen los permisos que ya
- * exige su pantalla, y sin sesión salen las cuatro.
+ * pantalla le funciona hoy**. Las tres de siempre siguen los permisos que ya
+ * exige su pantalla, y sin sesión salen las tres.
+ *
+ * «Pruebas» ya no sale para nadie, RENASER incluida (spec
+ * fuga-del-catalogo-de-preguntas, AC-01): la sección se retiró y sus
+ * direcciones llevan a la lista de vacantes.
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { SesionDelPanel } from './api/tiposPersonas'
 import { entradaActiva, guardarPlegado, leerPlegado, menuDe } from './menu'
 
-function sesion(permisos: Record<string, 'TODO' | 'SUS_VACANTES' | 'PROPIO'>): SesionDelPanel {
+function sesion(
+  permisos: Record<string, 'TODO' | 'SUS_VACANTES' | 'PROPIO'>,
+  empresa: { organizacionId: number; empresa: string } = {
+    organizacionId: 1,
+    empresa: 'Clínica Renaser S.A.C.',
+  },
+): SesionDelPanel {
   return {
     usuarioId: 1,
     nombre: 'Ana Pérez',
     correo: 'ana@equipo.pe',
-    organizacionId: 1,
-    empresa: 'Clínica Renaser S.A.C.',
+    ...empresa,
     permisos: Object.entries(permisos).map(([codigo, alcance]) => ({ codigo, alcance })),
   }
 }
@@ -38,19 +47,15 @@ describe('qué entradas ve cada rol', () => {
     )
     expect(nombres(menu)).toEqual({
       familias: [
-        ['Selección', ['Vacantes', 'Simulación', 'Pruebas']],
+        ['Selección', ['Vacantes', 'Simulación']],
         ['Personas', ['Colaboradores']],
       ],
       pie: ['Configuración'],
     })
-    expect(menu.familias[0]!.entradas.map((e) => e.ruta)).toEqual([
-      '/admin',
-      '/admin/simulacion',
-      '/admin/pruebas',
-    ])
+    expect(menu.familias[0]!.entradas.map((e) => e.ruta)).toEqual(['/admin', '/admin/simulacion'])
   })
 
-  it('el Responsable del área no ve Personas y conserva las cuatro de hoy con su alcance (AC-02)', () => {
+  it('el Responsable del área no ve Personas y conserva las tres de hoy con su alcance (AC-02)', () => {
     const menu = menuDe(
       sesion({
         ver_vacantes: 'TODO',
@@ -59,9 +64,28 @@ describe('qué entradas ve cada rol', () => {
       }),
     )
     expect(nombres(menu)).toEqual({
-      familias: [['Selección', ['Vacantes', 'Simulación', 'Pruebas']]],
+      familias: [['Selección', ['Vacantes', 'Simulación']]],
       pie: ['Configuración'],
     })
+  })
+
+  it('«Pruebas» no sale para nadie, de ninguna empresa, ni con los permisos de pruebas', () => {
+    const permisosDePruebas = {
+      ver_vacantes: 'TODO',
+      elegir_plantilla_prueba: 'TODO',
+      editar_plantillas_prueba: 'TODO',
+    } as const
+    for (const empresa of [
+      { organizacionId: 1, empresa: 'Clínica Renaser S.A.C.' },
+      { organizacionId: 2, empresa: 'Acme S.A.C.' },
+    ]) {
+      const menu = menuDe(sesion(permisosDePruebas, empresa))
+      const todas = [...menu.familias.flatMap((f) => f.entradas), ...menu.pie]
+      expect(todas.map((e) => e.nombre)).not.toContain('Pruebas')
+      expect(todas.some((e) => e.ruta.startsWith('/admin/pruebas'))).toBe(false)
+    }
+    // Solo con el permiso de elegir prueba, la familia Selección ni siquiera sale.
+    expect(menuDe(sesion({ elegir_plantilla_prueba: 'SUS_VACANTES' })).familias).toEqual([])
   })
 
   it('ver_colaboradores con otro alcance que TODO no da la entrada: no alcanzaría a nadie', () => {
@@ -75,10 +99,10 @@ describe('qué entradas ve cada rol', () => {
     expect(menu.pie.map((e) => e.nombre)).toEqual(['Configuración'])
   })
 
-  it('sin sesión —cargando o caída— salen las cuatro de siempre y nada nuevo', () => {
+  it('sin sesión —cargando o caída— salen las tres de siempre y nada nuevo', () => {
     for (const nada of [null, undefined]) {
       expect(nombres(menuDe(nada))).toEqual({
-        familias: [['Selección', ['Vacantes', 'Simulación', 'Pruebas']]],
+        familias: [['Selección', ['Vacantes', 'Simulación']]],
         pie: ['Configuración'],
       })
     }
@@ -96,11 +120,17 @@ describe('la entrada activa, también en las rutas hijas (AC-04)', () => {
     ['/admin/colaboradores/3', 'colaboradores'],
     ['/admin/colaboradores/nuevo', 'colaboradores'],
     ['/admin/simulacion', 'simulacion'],
-    ['/admin/pruebas/versiones/4', 'pruebas'],
     ['/admin/configuracion', 'configuracion'],
   ])('%s marca %s', (ruta, clave) => {
     expect(entradaActiva(ruta)).toBe(clave)
   })
+
+  it.each(['/admin/pruebas', '/admin/pruebas/versiones/4'])(
+    '%s, de la sección retirada, no marca ninguna entrada',
+    (ruta) => {
+      expect(entradaActiva(ruta)).toBeNull()
+    },
+  )
 })
 
 describe('el plegado se recuerda en este navegador (AC-03)', () => {

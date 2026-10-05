@@ -91,16 +91,15 @@ export const patrones = {
   adminPruebaPropia: '/admin/vacantes/:id/prueba',
   adminSesiones: '/admin/simulacion',
   /**
-   * Las pruebas del puesto: las plantillas y sus versiones.
-   *
-   * Pestaña propia y no un bloque mas de Configuracion, que es donde vive el
-   * banco de preguntas: componer una version es una tarea larga —enunciado,
-   * preguntas, entregables, rubrica y variantes— con su propia pantalla, y
-   * meterla dentro de una pagina que ya lleva cinco secciones dejaria el
-   * trabajo de todos los dias tres pantallazos por debajo del pliegue.
+   * La antigua sección «Pruebas» —las plantillas y el compositor de sus
+   * versiones—, retirada: las dos direcciones solo llevan a la lista de
+   * vacantes, para quien las tenga guardadas. Leía el catálogo de preguntas de
+   * toda la plataforma, que ahora es solo de la plataforma (spec
+   * fuga-del-catalogo-de-preguntas). `/admin/pruebas` no queda reservada:
+   * vuelve con el índice de las pruebas de la empresa.
    */
-  adminPruebas: '/admin/pruebas',
-  adminComponerPrueba: '/admin/pruebas/versiones/:versionId',
+  adminPruebasRetirada: '/admin/pruebas',
+  adminVersionDePruebaRetirada: '/admin/pruebas/versiones/:versionId',
   adminConfiguracion: '/admin/configuracion',
   /**
    * La gestión de personas (V64): la lista, el alta y la ficha. `nuevo` va
@@ -174,9 +173,6 @@ export const rutas = {
   adminPreguntasPropias: (id: number | string) => `/admin/vacantes/${id}/preguntas`,
   adminPruebaPropia: (id: number | string) => `/admin/vacantes/${id}/prueba`,
   adminSesiones: () => '/admin/simulacion',
-  adminPruebas: () => '/admin/pruebas',
-  adminComponerPrueba: (versionId: number | string) =>
-    `/admin/pruebas/versiones/${versionId}`,
   adminConfiguracion: () => '/admin/configuracion',
   adminColaboradores: () => '/admin/colaboradores',
   /** Con `postulacion`, el alta sale precargada con lo que se sabe del contratado. */

@@ -30,11 +30,12 @@ vacantes (modelo Indeed), el panel se construye en este repositorio, bajo `/admi
   del token del candidato. Un 401 del panel no puede cerrar la sesión del portal ni al revés.
 - **Un menú lateral por familias** desde el 29/09/2026 (antes, pestañas arriba): en
   **Selección**, **Vacantes** (el CRUD, y dentro de cada una el embudo, el ranking con las notas
-  de la IA, la ficha de cada postulante, avanzar de etapa y contratar), **Simulación** (las
-  sesiones presenciales) y **Pruebas**; en **Personas**, **Colaboradores**; y al pie
+  de la IA, la ficha de cada postulante, avanzar de etapa y contratar) y **Simulación** (las
+  sesiones presenciales); en **Personas**, **Colaboradores**; y al pie
   **Configuración** (parámetros, banco de preguntas por Excel, usuarios y roles, áreas, sedes,
   cargos y, solo para la plataforma, las reseñas reportadas). Cada uno ve solo lo que puede usar:
-  ver «Gestión de personas: el menú lateral, los colaboradores y contratar».
+  ver «Gestión de personas: el menú lateral, los colaboradores y contratar». **«Pruebas» ya no
+  existe** desde el 05/10/2026: ver «La sección «Pruebas» se retiró», al final.
 - ⚠️ **Huecos del backend, comprobados el 27/08**: `GET /panel/bandeja` devuelve 500; y **no hay
   forma de listar las versiones de una plantilla de prueba**, solo de pedir una suelta por su
   id. Se enseña lo que existe, como hizo el portal con la decisión ámbar.
@@ -630,8 +631,8 @@ empresa y el de la persona con «Salir». A la izquierda, el menú:
 
 | Qué | Cómo es |
 |---|---|
-| Familias | **Selección** (Vacantes, Simulación, Pruebas), **Personas** (Colaboradores) y, al pie y separada, **Configuración**. Una familia sin entradas no sale, y no hay entradas de módulos futuros |
-| Quién ve qué | Al entrar, el panel pide `GET /panel/sesion` (nombre, correo, empresa y permisos con su alcance) y pinta solo lo que cada uno puede usar, con los permisos que ya exigía cada pantalla. «Colaboradores» pide `ver_colaboradores` con alcance `TODO`. **El Administrador no ve «Vacantes»**, porque esas pantallas ya le daban 403. Si la sesión no carga, salen las cuatro entradas de siempre y el panel sigue funcionando. Es solo para pintar: quien decide sigue siendo el backend |
+| Familias | **Selección** (Vacantes, Simulación), **Personas** (Colaboradores) y, al pie y separada, **Configuración**. Una familia sin entradas no sale, y no hay entradas de módulos futuros. «Pruebas» se quitó el 05/10/2026 |
+| Quién ve qué | Al entrar, el panel pide `GET /panel/sesion` (nombre, correo, empresa y permisos con su alcance) y pinta solo lo que cada uno puede usar, con los permisos que ya exigía cada pantalla. «Colaboradores» pide `ver_colaboradores` con alcance `TODO`. **El Administrador no ve «Vacantes»**, porque esas pantallas ya le daban 403. Si la sesión no carga, salen las tres entradas de siempre —Vacantes, Simulación y Configuración— y el panel sigue funcionando. Es solo para pintar: quien decide sigue siendo el backend |
 | Entrada activa | También en las rutas hijas: `/admin/vacantes/:id` y `/admin/archivadas` marcan «Vacantes»; `/admin/colaboradores/:id`, «Colaboradores» |
 | Plegar | «Plegar menú» deja una columna de iconos; cada uno conserva su nombre accesible y lo enseña como tooltip. Se recuerda en ese navegador (`renaser_panel_menu_plegado`); sin almacenamiento, sale desplegado |
 | Menos de 1024 px | El menú se oculta y «Menú», en la barra, lo abre como un cajón. Se cierra al elegir una entrada, con Escape o al tocar fuera; el foco no sale de él mientras está abierto y vuelve a «Menú» al cerrarlo |
@@ -866,9 +867,9 @@ no sale en el ranking ni en el Excel. Debajo del ranking de la prueba, una lista
 proceso», que es el descarte de siempre con su motivo. Si la lista falla —un permiso—, no sale y el
 ranking sigue.
 
-**La personalización de las pruebas ya no existe**: la pantalla de pruebas ya no le dice a una
-empresa que «hay que personalizar las pruebas»; ahora le dice que las vacantes nuevas escriben la
-suya en «Armar la prueba» (`src/panel/pruebas/borrador.ts`).
+**La personalización de las pruebas ya no existe**, y desde el 05/10/2026 tampoco la pantalla de
+pruebas que la ofrecía: las vacantes nuevas escriben la suya en «Armar la prueba». Ver «La sección
+«Pruebas» se retiró», más abajo.
 
 ⚠️ **Lo visual lo comprueba el usuario**: el editor, la ficha y los rankings van detrás del inicio
 de sesión del panel. Y la IA, como en la fase 1, se prueba con el agente simulado y sembrando sus
@@ -889,5 +890,31 @@ La 50 va solo por la API: recorre las rutas que comparten los dos editores —la
 la prueba— y las de la ficha con tres sesiones (quien edita, quien solo ve y otra empresa), para que
 contesten igual en los dos. Las unitarias, en `src/panel/vacantes/preguntas/*.test.*`; en el
 backend, `FlujoPruebaPropiaIT`.
+
+### La sección «Pruebas» se retiró (05/10)
+
+Al abrir una versión, esa sección pedía el catálogo de preguntas de toda la plataforma, así que
+cualquier empresa leía el examen de las demás. Como las vacantes nuevas ya escriben su prueba en
+su propio editor, la sección se fue entera, para todas las empresas y también en RENASER. El
+backend, además, cerró el catálogo: solo la plataforma lo lista, le añade preguntas o las elige, y
+a cualquier otra empresa le responde 404 (`docs/` del backend, `PRUEBA-DEL-PUESTO.md`).
+
+- **El menú no la ofrece a nadie**, aunque tenga los permisos de pruebas.
+- **Una dirección guardada** —`/admin/pruebas` o `/admin/pruebas/versiones/:id`— lleva a la lista
+  de vacantes, sin pantalla de error. `/admin/pruebas` no queda reservada a esto: la ocupará el
+  índice de las pruebas de la empresa (`specs/pruebas-indice-de-la-empresa.md`, en el backend).
+- **Una vacante de antes no cambia**: en su configuración sigue eligiendo la versión publicada
+  que rinde. Cuando no hay ninguna que ofrecer, el aviso conserva su explicación —no se pudieron
+  cargar, no hay ninguna escrita, ninguna está publicada o ninguna es de este puesto—, pero ya no
+  enlaza a «Ir a las pruebas del puesto», porque esa pantalla no existe.
+- Se borraron `src/panel/pruebas/` y las funciones de `src/panel/api/panel.ts` que solo usaba esa
+  carpeta; queda lo que lee la configuración de una vacante antigua para elegir su versión.
+
+Comprobarlo: `npx playwright test herramientas/e2e/51-sin-la-seccion-pruebas.spec.ts`, con una
+sesión de RENASER y otra de una segunda empresa; mira también que el navegador no pida el
+catálogo. ⚠️ **Escribe** en el clon la segunda empresa, y la retira al terminar.
+`15-componer-prueba` se borró con la pantalla, y `41-logotipo` mira la cabecera en
+`/admin/archivadas`. Las unitarias, en `src/panel/menu.test.ts` y `src/panel/Armazon.test.tsx`; en
+el backend, `CatalogoDePreguntasSoloPlataformaIT`.
 
 ---

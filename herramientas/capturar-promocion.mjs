@@ -226,10 +226,8 @@ const RECORRIDO = [
     id: '29', nombre: 'panel-inscritos', ruta: '/admin/simulacion', espera: 'simulación',
     completa: true, conPanel: true, grupo: 'panel', pulsar: 'Ver quién viene',
   },
-  {
-    id: '30', nombre: 'panel-pruebas', ruta: '/admin/pruebas', espera: 'prueba',
-    completa: true, conPanel: true, grupo: 'panel',
-  },
+  // La 30 era «panel-pruebas», en `/admin/pruebas`: la sección se retiró (spec
+  // fuga-del-catalogo-de-preguntas) y la dirección ahora lleva a Vacantes.
   {
     id: '31', nombre: 'panel-configuracion', ruta: '/admin/configuracion', espera: 'Configuración',
     conPanel: true, grupo: 'panel',
