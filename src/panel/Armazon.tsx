@@ -23,7 +23,6 @@ import { Marca } from '@/ui/Marca'
 import {
   IconoAjustes,
   IconoCruz,
-  IconoDocumento,
   IconoMaletin,
   IconoMenu,
   IconoPersonas,
@@ -42,8 +41,6 @@ const TITULOS: Array<[string, string]> = [
   [patrones.adminVacante, 'Vacante · Panel'],
   [patrones.adminPruebaTecnica, 'Prueba técnica · Panel'],
   [patrones.adminSesiones, 'Simulación · Panel'],
-  [patrones.adminPruebas, 'Pruebas del puesto · Panel'],
-  [patrones.adminComponerPrueba, 'Componer una prueba · Panel'],
   [patrones.adminConfiguracion, 'Configuración · Panel'],
   [patrones.adminColaboradores, 'Colaboradores · Panel'],
   [patrones.adminNuevoColaborador, 'Nuevo colaborador · Panel'],
@@ -64,7 +61,6 @@ function TituloDelPanel() {
 const ICONOS: Record<ClaveDeEntrada, ReactNode> = {
   vacantes: <IconoMaletin />,
   simulacion: <IconoReloj />,
-  pruebas: <IconoDocumento />,
   colaboradores: <IconoPersonas />,
   configuracion: <IconoAjustes />,
 }

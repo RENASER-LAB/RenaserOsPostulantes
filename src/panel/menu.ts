@@ -6,16 +6,20 @@
  *
  * ⚠️ **Las entradas siguen los permisos que ya exige su pantalla**, no otros
  * nuevos: Vacantes pide `ver_vacantes`; Simulación, crear sesiones o ver sus
- * inscritos; Pruebas, `elegir_plantilla_prueba`. Configuración sale siempre,
- * porque su página abre para cualquiera y cada sección decide lo suyo. Ningún
- * rol pierde así una entrada cuya pantalla le funcionaba. Y si la sesión no se
- * puede cargar, salen las cuatro de siempre: el panel sigue funcionando.
+ * inscritos. Configuración sale siempre, porque su página abre para cualquiera
+ * y cada sección decide lo suyo. Ningún rol pierde así una entrada cuya
+ * pantalla le funcionaba. Y si la sesión no se puede cargar, salen las tres de
+ * siempre: el panel sigue funcionando.
+ *
+ * «Pruebas» ya no sale para nadie, RENASER incluida: la sección se retiró
+ * (spec fuga-del-catalogo-de-preguntas) y sus direcciones llevan a Vacantes.
+ * Vuelve con el índice de las pruebas de la empresa.
  */
 
 import { rutas } from '@/rutas'
 import type { SesionDelPanel } from './api/tiposPersonas'
 
-export type ClaveDeEntrada = 'vacantes' | 'simulacion' | 'pruebas' | 'colaboradores' | 'configuracion'
+export type ClaveDeEntrada = 'vacantes' | 'simulacion' | 'colaboradores' | 'configuracion'
 
 export interface Entrada {
   clave: ClaveDeEntrada
@@ -36,7 +40,6 @@ export interface Menu {
 
 const VACANTES: Entrada = { clave: 'vacantes', nombre: 'Vacantes', ruta: rutas.adminVacantes() }
 const SIMULACION: Entrada = { clave: 'simulacion', nombre: 'Simulación', ruta: rutas.adminSesiones() }
-const PRUEBAS: Entrada = { clave: 'pruebas', nombre: 'Pruebas', ruta: rutas.adminPruebas() }
 const COLABORADORES: Entrada = {
   clave: 'colaboradores',
   nombre: 'Colaboradores',
@@ -49,13 +52,13 @@ const CONFIGURACION: Entrada = {
 }
 
 /**
- * Las entradas que ve esta sesión. Sin sesión (cargando o caída), las cuatro de
+ * Las entradas que ve esta sesión. Sin sesión (cargando o caída), las tres de
  * siempre y nada nuevo.
  */
 export function menuDe(sesion: SesionDelPanel | null | undefined): Menu {
   if (!sesion) {
     return {
-      familias: [{ titulo: 'Selección', entradas: [VACANTES, SIMULACION, PRUEBAS] }],
+      familias: [{ titulo: 'Selección', entradas: [VACANTES, SIMULACION] }],
       pie: [CONFIGURACION],
     }
   }
@@ -67,7 +70,6 @@ export function menuDe(sesion: SesionDelPanel | null | undefined): Menu {
   if (tiene('crear_sesiones_simulacion') || tiene('ver_inscritos_simulacion')) {
     seleccion.push(SIMULACION)
   }
-  if (tiene('elegir_plantilla_prueba')) seleccion.push(PRUEBAS)
 
   // Solo cuenta el alcance TODO: con otro, el backend no alcanza a nadie y la
   // entrada llevaría a una lista vacía que nadie entendería.
@@ -89,7 +91,6 @@ export function entradaActiva(ruta: string): ClaveDeEntrada | null {
     return 'vacantes'
   }
   if (limpia.startsWith('/admin/simulacion')) return 'simulacion'
-  if (limpia.startsWith('/admin/pruebas')) return 'pruebas'
   if (limpia.startsWith('/admin/colaboradores')) return 'colaboradores'
   if (limpia.startsWith('/admin/configuracion')) return 'configuracion'
   return null

@@ -91,9 +91,11 @@ describe('el menú lateral', () => {
     montar()
     const menu = lateral()
     expect(await within(menu).findByRole('link', { name: 'Colaboradores' })).toBeTruthy()
-    for (const nombre of ['Vacantes', 'Simulación', 'Pruebas', 'Configuración']) {
+    for (const nombre of ['Vacantes', 'Simulación', 'Configuración']) {
       expect(within(menu).getByRole('link', { name: nombre })).toBeTruthy()
     }
+    // La sección «Pruebas» se retiró: no sale ni con elegir_plantilla_prueba.
+    expect(within(menu).queryByRole('link', { name: 'Pruebas' })).toBeNull()
     expect(within(menu).getByRole('region', { name: 'Selección' })).toBeTruthy()
     expect(within(menu).getByRole('region', { name: 'Personas' })).toBeTruthy()
   })
@@ -113,19 +115,21 @@ describe('el menú lateral', () => {
     const menu = lateral()
     expect(within(menu).queryByRole('link', { name: 'Colaboradores' })).toBeNull()
     expect(within(menu).queryByRole('region', { name: 'Personas' })).toBeNull()
-    for (const nombre of ['Vacantes', 'Simulación', 'Pruebas', 'Configuración']) {
+    for (const nombre of ['Vacantes', 'Simulación', 'Configuración']) {
       expect(within(menu).getByRole('link', { name: nombre })).toBeTruthy()
     }
+    expect(within(menu).queryByRole('link', { name: 'Pruebas' })).toBeNull()
   })
 
-  it('si la sesión no se puede cargar, salen las cuatro de siempre y el panel sigue', async () => {
+  it('si la sesión no se puede cargar, salen las tres de siempre y el panel sigue', async () => {
     verSesion.mockRejectedValue(new Error('sin red'))
     montar()
     await waitFor(() => expect(verSesion).toHaveBeenCalled())
     const menu = lateral()
-    for (const nombre of ['Vacantes', 'Simulación', 'Pruebas', 'Configuración']) {
+    for (const nombre of ['Vacantes', 'Simulación', 'Configuración']) {
       expect(within(menu).getByRole('link', { name: nombre })).toBeTruthy()
     }
+    expect(within(menu).queryByRole('link', { name: 'Pruebas' })).toBeNull()
     expect(screen.getByText('La lista de vacantes')).toBeTruthy()
   })
 

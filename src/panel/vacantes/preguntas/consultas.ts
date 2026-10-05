@@ -1,8 +1,8 @@
 /**
  * La consulta del editor y como se aplica cada cambio.
  *
- * ⚠️ **Cada cambio devuelve el editor entero y se pone tal cual**, igual que
- * `ComponerPrueba.tsx`: nada se parchea a mano en el navegador. El balance, los
+ * ⚠️ **Cada cambio devuelve el editor entero y se pone tal cual**: nada se
+ * parchea a mano en el navegador. El balance, los
  * avisos y los puntos de cada criterio los cuadra el servidor; si el panel
  * sumara por su cuenta, un fallo de red dejaria dos numeros distintos en la
  * misma pantalla.

@@ -407,30 +407,6 @@ export interface VersionPrueba {
  */
 export type ModalidadDePrueba = 'CRONOMETRADA' | 'PLAZO_ABIERTO'
 
-/**
- * Lo que se manda al crear o reemplazar una version en borrador.
- *
- * ⚠️ **`actualizarVersion` REEMPLAZA, no parchea**: el backend escribe todos
- * los campos con lo que llegue, asi que mandar el formulario a medias borra lo
- * que no viaje. Se manda siempre entero.
- */
-export interface GuardarVersionPrueba {
-  enunciado: string
-  materiales: string | null
-  herramientasPermitidas: string | null
-  modalidad: ModalidadDePrueba
-  duracionMinutos: number | null
-  plazoDias: number | null
-  /** El cambio inesperado no tiene minuto fijo: se sortea uno de este rango al empezar. */
-  minutoCambioMin: number | null
-  minutoCambioMax: number | null
-  minutosExtra: number | null
-  guiaCalificacion: string | null
-}
-
-/** El tope de la guia de calificacion, el mismo `@Size` que el backend. */
-export const MAXIMO_GUIA_CALIFICACION = 2000
-
 /** Una forma posible del cambio inesperado. Se sortea una al empezar el intento. */
 export interface VarianteDeCambio {
   id: number
@@ -453,15 +429,6 @@ export interface PreguntaDePrueba {
   tipo: TipoDePreguntaDePrueba
   /** Nulo = sirve para cualquier puesto. */
   puestoId: number | null
-}
-
-export interface GuardarPreguntaDePrueba {
-  codigo: string
-  enunciado: string
-  tipo: TipoDePreguntaDePrueba
-  puestoId: number | null
-  /** Que mide la pregunta. No se le enseña a quien lee la respuesta. */
-  revela: string | null
 }
 
 export type FormatoDeEntregable = 'ARCHIVO' | 'ENLACE' | 'CUALQUIERA'
@@ -498,14 +465,6 @@ export interface CriterioDeRubrica {
   metodoVerificacion: MetodoDeVerificacion
 }
 
-export interface GuardarCriterioRubrica {
-  codigo: string
-  nombre: string
-  descripcion: string | null
-  puntos: number
-  metodoVerificacion: MetodoDeVerificacion
-}
-
 /** La version entera: lo que hace falta para componerla y para publicarla. */
 export interface VersionCompletaPrueba {
   version: VersionPrueba
@@ -513,18 +472,6 @@ export interface VersionCompletaPrueba {
   preguntas: PreguntaDePrueba[]
   entregables: EntregableDePrueba[]
   rubrica: CriterioDeRubrica[]
-}
-
-/**
- * Lo que devuelve subir el enunciado.
- *
- * `expira` viaja a proposito: el enlace lo firma el almacen y caduca, asi que
- * se puede avisar antes de que salga un correo con un enlace muerto.
- */
-export interface ConsignaSubida {
-  archivoId: number
-  urlConsigna: string
-  expira: FechaIso
 }
 
 // ---------- La prueba del puesto, por dentro ----------
