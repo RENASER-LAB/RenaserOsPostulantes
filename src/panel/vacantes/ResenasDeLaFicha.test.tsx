@@ -1,7 +1,8 @@
 /**
  * Las reseñas en la ficha del postulante (V63): el bloque de la empresa autora
  * en sus estados, la validación junto al campo sin enviar nada, el 409 que
- * refresca, y la lectura para cualquier empresa —sin «Reportar» ni
+ * refresca, la pregunta antes de descartar lo escrito en «Reportar la
+ * respuesta» (AC-17), y la lectura para cualquier empresa —sin «Reportar» ni
  * «Responder»—.
  *
  * Las fechas son relativas a hoy: las quemadas caducan.
@@ -282,6 +283,158 @@ describe('el bloque de la empresa autora', () => {
       await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
       expect(document.activeElement, `cerrado con ${como}`).toBe(reportar)
     }
+    expect(api.reportarRespuesta).not.toHaveBeenCalled()
+  })
+
+  it('AC-17: «Reportar la respuesta» con texto en «Cuéntanos más» pregunta en los cuatro cierres; «Seguir escribiendo» lo deja intacto', async () => {
+    const respuesta = {
+      texto: 'Gracias por la oportunidad, aprendí mucho con el equipo.',
+      publicadaEn: dias(-4),
+      editada: false,
+      ocultada: false,
+      notaReporte: null,
+      reporte: null,
+      puedeReportar: true,
+    }
+    api.verResenas.mockResolvedValue(conBloque(publicada('EDITABLE', { respuesta })))
+    pintar()
+
+    const reportar = await screen.findByRole('button', { name: 'Reportar la respuesta' })
+    reportar.focus()
+    fireEvent.click(reportar)
+    const ventana = await screen.findByRole('dialog', { name: 'Reportar la respuesta' })
+    const campo = within(ventana).getByLabelText(/Cuéntanos más/) as HTMLTextAreaElement
+    fireEvent.change(campo, { target: { value: 'Atribuye hechos falsos a la empresa.' } })
+
+    const pregunta = () =>
+      screen.queryByRole('group', { name: '¿Descartar lo que escribiste? No se guardará.' })
+    const cierres = {
+      Volver: () => fireEvent.click(within(ventana).getByRole('button', { name: 'Volver' })),
+      Escape: () => fireEvent.keyDown(document, { key: 'Escape' }),
+      aspa: () => fireEvent.click(screen.getByRole('button', { name: 'Cerrar' })),
+      fondo: () => fireEvent.click(ventana.previousElementSibling!),
+    }
+    for (const [como, cerrar] of Object.entries(cierres)) {
+      act(() => cerrar())
+      expect(screen.getByRole('dialog')).toBe(ventana)
+      expect(pregunta(), `cerrado con ${como}`).toBeTruthy()
+      expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Seguir escribiendo' }))
+      expect(within(ventana).queryByRole('button', { name: 'Enviar reporte' })).toBeNull()
+
+      // AC-19: con la pregunta a la vista, el fondo y el aspa no descartan nada.
+      act(() => cierres.fondo())
+      act(() => cierres.aspa())
+      expect(pregunta()).toBeTruthy()
+
+      fireEvent.click(screen.getByRole('button', { name: 'Seguir escribiendo' }))
+      expect(pregunta()).toBeNull()
+      expect(campo.value).toBe('Atribuye hechos falsos a la empresa.')
+      await waitFor(() => expect(document.activeElement).toBe(campo))
+    }
+    expect(api.reportarRespuesta).not.toHaveBeenCalled()
+  })
+
+  it('AC-17: «Descartar» cierra sin enviar, el foco vuelve a «Reportar la respuesta» y al reabrir está vacío; con solo un motivo, no pregunta', async () => {
+    const respuesta = {
+      texto: 'Gracias por la oportunidad, aprendí mucho con el equipo.',
+      publicadaEn: dias(-4),
+      editada: false,
+      ocultada: false,
+      notaReporte: null,
+      reporte: null,
+      puedeReportar: true,
+    }
+    api.verResenas.mockResolvedValue(conBloque(publicada('EDITABLE', { respuesta })))
+    pintar()
+
+    const reportar = await screen.findByRole('button', { name: 'Reportar la respuesta' })
+    reportar.focus()
+    fireEvent.click(reportar)
+    let ventana = await screen.findByRole('dialog', { name: 'Reportar la respuesta' })
+    fireEvent.change(within(ventana).getByLabelText(/Cuéntanos más/), {
+      target: { value: 'Atribuye hechos falsos a la empresa.' },
+    })
+    fireEvent.keyDown(document, { key: 'Escape' })
+    fireEvent.click(screen.getByRole('button', { name: 'Descartar' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect(document.activeElement).toBe(reportar)
+
+    fireEvent.click(reportar)
+    ventana = await screen.findByRole('dialog', { name: 'Reportar la respuesta' })
+    expect((within(ventana).getByLabelText(/Cuéntanos más/) as HTMLTextAreaElement).value).toBe('')
+    // Solo un motivo elegido no es borrador: rehacerlo es un clic.
+    fireEvent.click(within(ventana).getAllByRole('radio')[0]!)
+    fireEvent.click(within(ventana).getByRole('button', { name: 'Volver' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect(document.activeElement).toBe(reportar)
+    expect(api.reportarRespuesta).not.toHaveBeenCalled()
+  })
+
+  it('AC-18: con texto en «Cuéntanos más», enviar el reporte cierra sin preguntar', async () => {
+    const respuesta = {
+      texto: 'Gracias por la oportunidad, aprendí mucho con el equipo.',
+      publicadaEn: dias(-4),
+      editada: false,
+      ocultada: false,
+      notaReporte: null,
+      reporte: null,
+      puedeReportar: true,
+    }
+    api.verResenas
+      .mockResolvedValueOnce(conBloque(publicada('EDITABLE', { respuesta })))
+      .mockResolvedValue(
+        conBloque(publicada('EDITABLE', { respuesta: { ...respuesta, reporte: 'EN_REVISION', puedeReportar: false } })),
+      )
+    api.reportarRespuesta.mockResolvedValue(undefined)
+    pintar()
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Reportar la respuesta' }))
+    const ventana = await screen.findByRole('dialog', { name: 'Reportar la respuesta' })
+    fireEvent.click(within(ventana).getAllByRole('radio')[0]!)
+    fireEvent.change(within(ventana).getByLabelText(/Cuéntanos más/), {
+      target: { value: 'Atribuye hechos falsos a la empresa.' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Enviar reporte' }))
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect(screen.queryByRole('group', { name: /Descartar lo que escribiste/ })).toBeNull()
+    expect(await screen.findByText('Reportada · en revisión')).toBeTruthy()
+    expect(api.reportarRespuesta).toHaveBeenCalledTimes(1)
+  })
+
+  it('QA-01: con la pregunta a la vista, vaciar «Cuéntanos más» y empezar de nuevo no hace volver la pregunta ni le quita el foco al campo', async () => {
+    const respuesta = {
+      texto: 'Gracias por la oportunidad, aprendí mucho con el equipo.',
+      publicadaEn: dias(-4),
+      editada: false,
+      ocultada: false,
+      notaReporte: null,
+      reporte: null,
+      puedeReportar: true,
+    }
+    api.verResenas.mockResolvedValue(conBloque(publicada('EDITABLE', { respuesta })))
+    pintar()
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Reportar la respuesta' }))
+    const ventana = await screen.findByRole('dialog', { name: 'Reportar la respuesta' })
+    const campo = within(ventana).getByLabelText(/Cuéntanos más/) as HTMLTextAreaElement
+    const pregunta = () =>
+      screen.queryByRole('group', { name: '¿Descartar lo que escribiste? No se guardará.' })
+    fireEvent.change(campo, { target: { value: 'Atribuye hechos falsos a la empresa.' } })
+    act(() => {
+      fireEvent.keyDown(document, { key: 'Escape' })
+    })
+    expect(pregunta()).toBeTruthy()
+
+    // En vez de «Seguir escribiendo», vuelve al campo, lo vacía y escribe otra cosa.
+    campo.focus()
+    fireEvent.change(campo, { target: { value: '' } })
+    fireEvent.change(campo, { target: { value: 'I' } })
+
+    // Nadie pidió cerrar: la pregunta no sale sola ni se lleva el foco a mitad de palabra.
+    expect(pregunta()).toBeNull()
+    expect(document.activeElement).toBe(campo)
+    expect(within(ventana).getByRole('button', { name: 'Enviar reporte' })).toBeTruthy()
     expect(api.reportarRespuesta).not.toHaveBeenCalled()
   })
 

@@ -36,7 +36,9 @@ import { sql } from './base-de-datos'
  * Recorridos de la spec cubiertos aquí: 3 (con la tabla de B), 4, 5 (empresa
  * ajena y alcance), 6, 7 y 8, más los permisos (AC-01, AC-03…AC-05, AC-22,
  * AC-27) y los errores de la ficha (AC-07, AC-10, punto 23). Las pruebas
- * «RES-QA-0n» son regresiones de hallazgos de la exploración.
+ * «RES-QA-0n» son regresiones de hallazgos de la exploración. Las «Confirmar ·»
+ * del final cubren la ventana que se interpone antes de mantener u ocultar y la
+ * pregunta antes de descartar un borrador (confirmaciones-en-las-resenas).
  */
 
 const A_TEXTO = (quien: string, que: string) =>
@@ -114,6 +116,17 @@ const lineaDeCabecera = (page: Page): Locator => page.getByRole('link', { name: 
 const tarjeta = (zona: Locator | Page, texto: string): Locator =>
   zona.getByRole('article').filter({ hasText: texto })
 
+/**
+ * «Ocultar» y «Mantener» abren una ventana que dice lo que pasará: solo su
+ * botón resuelve. Se confirma ahí, y la ventana se cierra.
+ */
+async function confirmarEnLaVentana(page: Page, decision: string) {
+  const ventana = page.getByRole('dialog', { name: decision })
+  await expect(ventana).toContainText('No se podrá deshacer.')
+  await ventana.getByRole('button', { name: decision }).click()
+  await expect(ventana).toHaveCount(0)
+}
+
 async function avisosDe(page: Page): Promise<string[]> {
   await page.getByRole('button', { name: /^Avisos/ }).click()
   const lista = page.getByRole('dialog', { name: 'Tus avisos' })
@@ -128,7 +141,7 @@ test.beforeAll(async () => {
   retirarLoSembrado([], null)
   empresaA = empresaDelEquipo()
   equipoA = usuarioDelEquipo()
-  for (const n of ['Valeria', 'Fabio', 'Diana', 'Elena', 'Bruno', 'Hilda', 'Irene', 'Julia', 'Karla', 'Lucia', 'Marta', 'Nora', 'Olga']) {
+  for (const n of ['Valeria', 'Fabio', 'Diana', 'Elena', 'Bruno', 'Hilda', 'Irene', 'Julia', 'Karla', 'Lucia', 'Marta', 'Nora', 'Olga', 'Paula', 'Rosa', 'Sara', 'Tania', 'Ulises']) {
     c[n.toLowerCase()] = await cuenta(n)
   }
   b = sembrarEmpresaB(c.valeria!.correo)
@@ -385,14 +398,17 @@ test('3 · la persona reporta; la plataforma oculta una y mantiene otra; cambia 
   const t1 = tarjeta(moderacion, 'reseña que se va a ocultar')
   await expect(t1).toContainText(`${empresaA} → ${hilda.nombre}`)
   await expect(t1).toContainText('Revela datos personales o de salud')
-  await t1.getByRole('button', { name: 'Ocultar' }).click()
+  await t1.getByRole('button', { name: 'Ocultar', exact: true }).click()
   await expect(t1.getByRole('alert')).toContainText('Escribe la nota de la revisión')
+  await expect(panel.getByRole('dialog')).toHaveCount(0)
   await t1.getByLabel('Nota de la revisión').fill('Menciona un diagnóstico médico de la persona.')
-  await t1.getByRole('button', { name: 'Ocultar' }).click()
+  await t1.getByRole('button', { name: 'Ocultar', exact: true }).click()
+  await confirmarEnLaVentana(panel, 'Ocultar la reseña')
   await expect(t1).toHaveCount(0)
   const t2 = tarjeta(moderacion, 'reseña que se va a mantener')
   await t2.getByLabel('Nota de la revisión').fill('Cumple las normas: describe el desempeño.')
-  await t2.getByRole('button', { name: 'Mantener' }).click()
+  await t2.getByRole('button', { name: 'Mantener', exact: true }).click()
+  await confirmarEnLaVentana(panel, 'Mantener la reseña')
   await expect(t2).toHaveCount(0)
 
   // AC-20: la empresa autora la ve atenuada, con la nota.
@@ -524,7 +540,8 @@ test('7 · A reporta la respuesta, la plataforma la oculta: B deja de verla y la
   await expect(t).toContainText('Respuesta')
   await expect(t).toContainText('con respuesta que se oculta')
   await t.getByLabel('Nota de la revisión').fill('Atribuye hechos falsos a la empresa.')
-  await t.getByRole('button', { name: 'Ocultar' }).click()
+  await t.getByRole('button', { name: 'Ocultar', exact: true }).click()
+  await confirmarEnLaVentana(page, 'Ocultar la respuesta')
   await expect(t).toHaveCount(0)
 
   // Mantener la otra por la API: nada cambia y a la persona no se le avisa.
@@ -958,4 +975,216 @@ test('RES-QA-05 · cerrar sin enviar un paso abierto desde la sección, o «Repo
     'Escape: Reportar la respuesta',
     'aspa: Reportar la respuesta',
   ])
+})
+
+// ---------------------------------------------------------------------------
+// Confirmaciones: moderar con ventana y descartar borradores
+// ---------------------------------------------------------------------------
+
+test('Confirmar · «Ocultar» abre la ventana con lo que pasa; «Volver» no resuelve nada y la nota sigue (AC-02, AC-03)', async ({
+  page,
+}) => {
+  const paula = c.paula!
+  const r = resenaDeA(vaUno, paula, 2, A_TEXTO('Paula', 'reseña que se lee y no se oculta'), 6)
+  const suya = await tokenDelCandidato(paula.correo)
+  expect((await pedir(`/portal/resenas/${r}/reporte`, suya, 'POST', { motivo: 'FALSA' })).estado).toBe(204)
+
+  await entrarAlPanel(page)
+  await page.goto('/admin/configuracion')
+  const moderacion = page.getByRole('region', { name: 'Reseñas reportadas' })
+  const t = tarjeta(moderacion, 'reseña que se lee y no se oculta')
+  const nota = 'Describe hechos que la persona niega con pruebas.'
+  await t.getByLabel('Nota de la revisión').fill(nota)
+  const ocultar = t.getByRole('button', { name: 'Ocultar', exact: true })
+  await ocultar.click()
+
+  const ventana = page.getByRole('dialog', { name: 'Ocultar la reseña' })
+  await expect(ventana).toContainText(`Reseña de ${empresaA} a ${paula.nombre}`)
+  await expect(ventana.getByRole('listitem')).toHaveCount(3)
+  await expect(ventana).toContainText('A la persona le llega «Revisamos tu reporte: la ocultamos».')
+  await expect(ventana).toContainText(`«${nota}»`)
+  await expect(ventana).toContainText('No se podrá deshacer.')
+  // El foco no empieza en el botón que resuelve.
+  await expect(ventana.getByRole('button', { name: 'Ocultar la reseña' })).not.toBeFocused()
+
+  await ventana.getByRole('button', { name: 'Volver' }).click()
+  await expect(ventana).toHaveCount(0)
+  await expect(t.getByLabel('Nota de la revisión')).toHaveValue(nota)
+  await expect(ocultar).toBeFocused()
+  expect(sql(`select estado from reporte_resena where resena_id = ${r};`)).toBe('PENDIENTE')
+})
+
+test('Confirmar · si otra persona lo resolvió antes, al confirmar se cierra y el porqué queda encima de la lista (AC-09)', async ({
+  page,
+}) => {
+  const paula = c.paula!
+  const r = resenaDeA(vaDos, paula, 3, A_TEXTO('Paula', 'reseña que otra persona resuelve antes'), 7)
+  const suya = await tokenDelCandidato(paula.correo)
+  expect((await pedir(`/portal/resenas/${r}/reporte`, suya, 'POST', { motivo: 'FALSA' })).estado).toBe(204)
+
+  await entrarAlPanel(page)
+  await page.goto('/admin/configuracion')
+  const moderacion = page.getByRole('region', { name: 'Reseñas reportadas' })
+  const t = tarjeta(moderacion, 'reseña que otra persona resuelve antes')
+  await t.getByLabel('Nota de la revisión').fill('Menciona datos que la persona no quiere publicar.')
+  await t.getByRole('button', { name: 'Ocultar', exact: true }).click()
+  const ventana = page.getByRole('dialog', { name: 'Ocultar la reseña' })
+  await expect(ventana).toBeVisible()
+
+  // Mientras se lee, otra persona de la plataforma lo mantiene por la API.
+  const equipo = await tokenDelEquipo()
+  const pendientes = (await pedir('/panel/resenas-reportadas', equipo)).cuerpo as { id: number; textoResena: string }[]
+  const otro = pendientes.find((p) => p.textoResena.includes('otra persona resuelve antes'))!
+  expect(
+    (await pedir(`/panel/resenas-reportadas/${otro.id}/resolucion`, equipo, 'POST', {
+      decision: 'MANTENER',
+      nota: 'Cumple las normas.',
+    })).estado,
+  ).toBe(200)
+
+  await ventana.getByRole('button', { name: 'Ocultar la reseña' }).click()
+  await expect(ventana).toHaveCount(0)
+  await expect(t).toHaveCount(0)
+  await expect(moderacion.getByRole('alert')).toContainText('ya se resolvió')
+  // Se resolvió una sola vez: queda lo que decidió quien llegó primero.
+  expect(sql(`select estado from reporte_resena where resena_id = ${r};`)).toBe('MANTENIDA')
+})
+
+test('Confirmar · mantener una respuesta confirmando: la empresa autora ve «La plataforma la mantuvo» con la nota (AC-06)', async ({
+  page,
+}) => {
+  const rosa = c.rosa!
+  const r = resenaDeA(vaUno, rosa, 4, A_TEXTO('Rosa', 'con respuesta que se mantiene al confirmar'), 5)
+  sembrarRespuesta(r, rosa.usuario, 'Rosa responde: agradezco la reseña, aunque no comparto todo.', 3, 27)
+  const equipo = await tokenDelEquipo()
+  expect(
+    (await pedir(`/panel/postulaciones/${postulacionDe(vaUno, rosa)}/resena/respuesta/reporte`, equipo, 'POST', {
+      motivo: 'OFENSIVA',
+    })).estado,
+  ).toBe(200)
+
+  await entrarAlPanel(page)
+  await page.goto('/admin/configuracion')
+  const moderacion = page.getByRole('region', { name: 'Reseñas reportadas' })
+  const t = tarjeta(moderacion, 'Rosa responde')
+  const nota = 'No incumple las normas: es su versión de los hechos.'
+  await t.getByLabel('Nota de la revisión').fill(nota)
+  await t.getByRole('button', { name: 'Mantener', exact: true }).click()
+  const ventana = page.getByRole('dialog', { name: 'Mantener la respuesta' })
+  await expect(ventana).toContainText(`Respuesta de ${rosa.nombre} a la reseña de ${empresaA}`)
+  await expect(ventana).toContainText('A la persona no se le avisa.')
+  await confirmarEnLaVentana(page, 'Mantener la respuesta')
+  await expect(t).toHaveCount(0)
+
+  await abrirFicha(page, vaUno, rosa)
+  await expect(bloqueAutora(page)).toContainText(`La plataforma la mantuvo: ${nota}`)
+})
+
+test('Confirmar · una respuesta a medio escribir: Escape pregunta, «Seguir escribiendo» la conserva y «Descartar» la tira (AC-12…AC-14)', async ({
+  page,
+}) => {
+  const sara = c.sara!
+  resenaDeA(vaUno, sara, 5, A_TEXTO('Sara', 'para el borrador'), 2)
+  const envios: string[] = []
+  page.on('request', (r) => {
+    if (r.method() !== 'GET' && /\/portal\/resenas\//.test(r.url())) envios.push(`${r.method()} ${r.url()}`)
+  })
+  await page.addInitScript(([k, v]) => window.localStorage.setItem(k as string, v as string), [
+    'renaser_portal_token',
+    await tokenDelCandidato(sara.correo),
+  ])
+  await page.goto('/perfil')
+  const responder = tarjeta(page.locator('#resenas'), 'para el borrador').getByRole('button', { name: 'Responder' })
+  await responder.click()
+  const ventana = page.getByRole('dialog', { name: `Responder a la reseña de ${empresaA}` })
+  const campo = ventana.getByLabel('Tu respuesta')
+  await campo.fill(RESPUESTA)
+
+  const pregunta = ventana.getByRole('group', { name: '¿Descartar lo que escribiste? No se guardará.' })
+  await page.keyboard.press('Escape')
+  await expect(pregunta).toBeVisible()
+  await expect(ventana.getByRole('button', { name: 'Seguir escribiendo' })).toBeFocused()
+  await ventana.getByRole('button', { name: 'Seguir escribiendo' }).click()
+  await expect(pregunta).toHaveCount(0)
+  await expect(campo).toHaveValue(RESPUESTA)
+  await expect(campo).toBeFocused()
+
+  // Con la pregunta a la vista, el aspa no descarta nada.
+  await page.keyboard.press('Escape')
+  await ventana.getByRole('button', { name: 'Cerrar' }).click()
+  await expect(pregunta).toBeVisible()
+  await ventana.getByRole('button', { name: 'Descartar', exact: true }).click()
+  await expect(ventana).toHaveCount(0)
+  await expect(responder).toBeFocused()
+
+  await responder.click()
+  await expect(page.getByRole('dialog').getByLabel('Tu respuesta')).toHaveValue('')
+  expect(envios, 'descartar no tenía que enviar nada').toEqual([])
+})
+
+// QA de confirmaciones-en-las-resenas: regresiones de la exploración.
+
+test('QA-01 · con la pregunta a la vista, vaciar la respuesta y empezar de nuevo no pierde lo que se teclea', async ({
+  page,
+}) => {
+  const tania = c.tania!
+  resenaDeA(vaUno, tania, 4, A_TEXTO('Tania', 'para empezar de nuevo'), 2)
+  await page.addInitScript(([k, v]) => window.localStorage.setItem(k as string, v as string), [
+    'renaser_portal_token',
+    await tokenDelCandidato(tania.correo),
+  ])
+  await page.goto('/perfil')
+  await tarjeta(page.locator('#resenas'), 'para empezar de nuevo').getByRole('button', { name: 'Responder' }).click()
+  const ventana = page.getByRole('dialog', { name: `Responder a la reseña de ${empresaA}` })
+  const campo = ventana.getByLabel('Tu respuesta')
+  const pregunta = ventana.getByRole('group', { name: '¿Descartar lo que escribiste? No se guardará.' })
+  await campo.fill(RESPUESTA)
+  await page.keyboard.press('Escape')
+  await expect(pregunta).toBeVisible()
+
+  // En vez de «Seguir escribiendo», vuelve al campo, lo vacía y escribe otra cosa.
+  await campo.click()
+  await page.keyboard.press('ControlOrMeta+a')
+  await page.keyboard.press('Backspace')
+  await expect(campo).toHaveValue('')
+  const NUEVA = 'Muchas gracias por la confianza y por todo lo que aprendí en la obra.'
+  await page.keyboard.type(NUEVA, { delay: 20 })
+
+  // Ninguna tecla se pierde y la pregunta no vuelve sola: nadie pidió cerrar.
+  await expect(campo).toHaveValue(NUEVA)
+  await expect(campo).toBeFocused()
+  await expect(pregunta).toHaveCount(0)
+})
+
+test('QA-02 · escribir y pulsar Escape en seguida siempre pregunta antes de tirar lo escrito', async ({ page }) => {
+  const ulises = c.ulises!
+  resenaDeA(vaUno, ulises, 5, A_TEXTO('Ulises', 'para cerrar en seguida'), 2)
+  await page.addInitScript(([k, v]) => window.localStorage.setItem(k as string, v as string), [
+    'renaser_portal_token',
+    await tokenDelCandidato(ulises.correo),
+  ])
+  await page.goto('/perfil')
+  const responder = tarjeta(page.locator('#resenas'), 'para cerrar en seguida').getByRole('button', { name: 'Responder' })
+  const ventana = page.getByRole('dialog')
+  const pregunta = ventana.getByRole('group', { name: '¿Descartar lo que escribiste? No se guardará.' })
+  const sinVentana = page.locator('body:not(:has([role="dialog"]))')
+
+  // El aviso de borrador no puede llegar tarde: hay texto en el campo cuando se pulsa Escape.
+  const cerradasSinPreguntar: number[] = []
+  for (let i = 1; i <= 25; i++) {
+    await responder.click()
+    const campo = ventana.getByLabel('Tu respuesta')
+    await expect(campo).toHaveValue('')
+    await campo.fill(RESPUESTA)
+    await page.keyboard.press('Escape')
+    // O sale la pregunta, o la ventana se cerró sin preguntar.
+    await expect(pregunta.or(sinVentana)).toBeVisible()
+    if ((await pregunta.count()) === 0) {
+      cerradasSinPreguntar.push(i)
+      continue
+    }
+    await ventana.getByRole('button', { name: 'Descartar', exact: true }).click()
+    await expect(ventana).toHaveCount(0)
+  }
+  expect(cerradasSinPreguntar, 'intentos en que Escape cerró sin preguntar').toEqual([])
 })

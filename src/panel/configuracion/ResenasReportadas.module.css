@@ -4,6 +4,11 @@
  *
  * ⚠️ Las estrellas en tinta, nunca en `--activo`. «Ocultar» va en rojo porque
  * retira algo para siempre; «Mantener» es la acción neutra.
+ *
+ * La ventana de confirmación usa las piezas de siempre: «Ocultar la …» el mismo
+ * rojo que «Ocultar», «Mantener la …» el botón principal de las ventanas del
+ * panel y «Volver» el secundario. Su lista de «lo que pasa» repite la de
+ * «Eliminar vacante» (`.loQuePasa` de `Vacantes.module.css`).
  */
 
 .pestanas {
@@ -186,4 +191,56 @@
   color: inherit;
   text-decoration: underline;
   cursor: pointer;
+}
+
+/* ---------- La ventana de confirmación ---------- */
+
+.volver {
+  composes: secundario from '../../estilos/piezas.module.css';
+}
+
+.confirmarMantener {
+  composes: acentoGrande from '../../estilos/piezas.module.css';
+}
+
+.queSeJuzga {
+  margin: 0;
+  font-size: var(--t-prosa);
+  font-weight: 600;
+  color: var(--tinta);
+  overflow-wrap: anywhere;
+}
+
+/* La misma lista que «Eliminar vacante». */
+.loQuePasa {
+  margin: var(--e3) 0 0;
+  padding-left: var(--e5);
+  font-size: var(--t-prosa);
+  line-height: 1.55;
+  color: var(--tinta2);
+}
+
+.loQuePasa > li + li {
+  margin-top: var(--e2);
+}
+
+.tuNotaEtiqueta {
+  composes: etiqueta;
+  margin-top: var(--e4);
+}
+
+/* La nota entera, con su propio desplazamiento: mil caracteres no empujan el
+   «No se podrá deshacer» fuera de la ventana. */
+.tuNota {
+  composes: juzgado;
+  margin-top: var(--e1);
+  max-height: 12em;
+  overflow-y: auto;
+}
+
+.sinDeshacer {
+  margin-top: var(--e4);
+  font-size: var(--t-prosa);
+  font-weight: 600;
+  color: var(--tinta);
 }
