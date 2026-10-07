@@ -441,9 +441,10 @@ técnico** —su tiempo son los minutos de la vacante, con el enlace «Ajustar l
 ajuste que está unas líneas más arriba en la misma página— y la que **no ha elegido prueba**,
 que manda a elegirla antes. El desplegable se abre igual: es donde quien busca la fecha mira.
 
-**En una vacante nueva (01/10/2026) el plazo es el de su prueba**: los minutos o los días salen de
-la prueba publicada en «Armar la prueba», y la línea dice «la prueba de la vacante» donde las de
-antes dicen «su plantilla». Mientras la prueba no está publicada, el servidor rechaza la fecha.
+**En una vacante nueva el desplegable no sale** (desde el 05/10/2026): su fecha límite se fija en
+la configuración del editor de la prueba, también antes de publicarla (ver «Un editor de la prueba
+más simple», más abajo). «Plazos de la prueba» queda para las vacantes de antes, y en las que rinden
+una plantilla funciona igual que siempre.
 
 ⚠️ **Una prueba `CRONOMETRADA` sí admite fecha desde el 22/09/2026**, y la regla vieja del panel
 la escondía junto a esos tres casos. El reloj y la fecha **conviven**: al empezar rige el que
@@ -750,11 +751,13 @@ radio desactivado soltaba el foco—: el cambio en vuelo simplemente se ignora. 
 propias, la vacante no se publica hasta tenerlas publicadas**, y el cartel «Todo listo» y el botón
 de publicar miran esa misma regla.
 
-**El editor** (`/admin/vacantes/:id/preguntas`). Arriba, **el balance siempre a la vista**:
-cuántos puntos van de 100, cuántos criterios y preguntas, y lo que frena la publicación. Queda
-pegado justo debajo de la cabecera del panel al bajar (ver `--alto-cabecera-panel`, más abajo).
-Debajo, un bloque por criterio —nombre, «qué evalúa» y sus puntos, que se suman solos— con sus
-preguntas, cada una con su tipo y sus puntos:
+**El editor** (`/admin/vacantes/:id/preguntas`). Arriba, **la cabecera fija**: el estado, cuántos
+puntos van de 100, cuántos criterios y preguntas, una barra hasta 100 con un tramo por criterio y
+lo que frena la publicación, en botones que llevan a donde se arregla. Queda pegada justo debajo de
+la cabecera del panel al bajar (ver `--alto-cabecera-panel`, más abajo). Es la misma del editor de
+la prueba desde el 05/10/2026, y sus criterios también se pliegan: ver «Un editor de la prueba más
+simple», más abajo. Debajo, un bloque por criterio —nombre, «qué evalúa» y sus puntos, que se suman
+solos— con sus preguntas, cada una con su tipo y sus puntos:
 
 - **Abierta**, con «Qué debe tener una buena respuesta», que solo lee la IA.
 - **Opción única** y **opción múltiple**, con los puntos de cada opción; en la múltiple una opción
@@ -839,35 +842,31 @@ rutas, en `docs/` del backend (`09-APIS.md`, «La prueba técnica escrita en el 
 
 **El bloque de la vacante.** En «Qué responderá quien postule», el bloque de la prueba **no tiene
 nada que elegir**: ni «Qué rendirá en la etapa técnica», ni «Qué prueba del puesto rendirá», ni
-«Cuánto tiempo tendrá», ni la tarjeta de la ficha. Enseña el estado —«Sin prueba», «Borrador · 70
-de 100 puntos · 2 entregables», «Publicada · 5 criterios · 2 entregables · 90 min» o «Publicada ·
-cuestionario · 12 preguntas · 30 min»— y «Armar la prueba →». «Pesos de la decisión» sigue igual.
+«Cuánto tiempo tendrá», ni la tarjeta de la ficha, ni —desde el 05/10/2026— «Plazos de la prueba».
+Enseña el estado —«Sin prueba», «Borrador · 70 de 100 puntos · 2 entregables», «Publicada · 5
+criterios · 2 entregables · 90 min» o, sin entregables, «Publicada · 3 criterios · 12 preguntas ·
+sin cronómetro»— y «Armar la prueba →». «Pesos de la decisión» sigue igual.
 **Publicar la vacante exige la prueba publicada**, y el cartel «Todo listo», el botón de publicar
 y `loQueFaltaParaPublicar.ts` miran la misma regla (`usePruebaLista`).
 
 **El editor** (`/admin/vacantes/:id/prueba`). Es el de las preguntas propias —bloques, balance,
 publicadas, recomendaciones y copia— elegido con un modo (`preguntas/modo.tsx`: `MODO_PRUEBA`
-cambia la ruta de la API, la clave de la consulta y los textos), más:
+cambia la ruta de la API, la clave de la consulta y los textos), más un caso opcional, los
+archivos que se piden, la configuración con el tiempo y la fecha límite, y **la parte calificada de
+cada criterio**: lo que no suman sus cerradas, que califica la IA o una persona. **Las abiertas no
+llevan puntos**, solo su «Qué debe tener una buena respuesta». Cómo es desde el 05/10/2026, en «Un
+editor de la prueba más simple», más abajo.
 
-- **El caso**: enunciado (obligatorio si hay entregables), adjunto en PDF o Word, materiales y
-  herramientas. **El tiempo**: cronometrada en minutos o plazo abierto en días, **sin cambio
-  inesperado**.
-- **Los entregables**: nombre, qué debe contener, formato, si es obligatorio y «Qué debe tener una
-  buena entrega». Quitar uno que miran criterios pide confirmar y lo saca de sus «Mira».
-- **En cada criterio, la parte calificada**: sus puntos, quién la califica (IA o persona) y «Mira»,
-  una casilla por entregable. La cabecera dice «30 pts · sistema 10 + IA 20». **Las abiertas no
-  llevan puntos**, solo su «Qué debe tener una buena respuesta».
-- **Sin entregables es un cuestionario**: la cabecera y los textos lo dicen así, y el caso pasa a
-  ser opcional.
-- «Publicar la prueba» con algo pendiente enseña **la lista entera** del servidor. Hasta que
-  alguien empiece a rendirla se puede abrir un borrador desde la publicada; desde entonces solo
-  se cambian los puntos y las instrucciones de la IA, como en la fase 1. Sin `editar_vacante`, todo
-  en lectura.
+«Publicar la prueba» con algo pendiente enseña **la lista entera** del servidor. Hasta que alguien
+empiece a rendirla se puede abrir un borrador desde la publicada; desde entonces solo se cambian
+los puntos, las instrucciones de la IA y la fecha límite. Sin `editar_vacante`, todo en lectura.
 
 **La pestaña «Prueba» de la ficha** (`PruebaDelCandidato.tsx`, sobre
 `GET /postulaciones/{id}/prueba-propia`): cada criterio con su nota y de dónde sale —«Sistema 8/10
 + IA 16/20» o «Sistema 8/10 + persona pendiente»—; al abrirlo, sus cerradas con la opción marcada,
-sus abiertas y los entregables que mira; la explicación de la IA y quién ajustó, cuándo y por qué.
+sus abiertas —con el archivo de la pregunta junto a su respuesta (`preguntaId`, desde el
+05/10/2026)— y los entregables generales que mira; la explicación de la IA y quién ajustó, cuándo y
+por qué.
 Arriba, la nota de la etapa o qué falta para tenerla. Quien tiene `ajustar_nota` (lo dice
 `puedeAjustar`) ajusta o pone **solo la parte calificada**, de 0 a sus puntos y con motivo; si era
 lo último que faltaba, la persona pasa a «por confirmar». No se mezcla con la rúbrica de las
@@ -909,6 +908,130 @@ del backend cierra el intento, por eso «recorrido 6» de la 48 y «H-02» de la
 La 50 va solo por la API: recorre las rutas que comparten los dos editores —las preguntas propias y
 la prueba— y las de la ficha con tres sesiones (quien edita, quien solo ve y otra empresa), para que
 contesten igual en los dos. Las unitarias, en `src/panel/vacantes/preguntas/*.test.*`; en el
+backend, `FlujoPruebaPropiaIT`.
+
+### Un editor de la prueba más simple (05-06/10)
+
+Pedir un archivo para una pregunta costaba cuatro pasos y el caso obligaba aunque la prueba no
+girara en torno a uno. Desde el 05-06/10/2026 el editor de la prueba (`/admin/vacantes/:id/prueba`)
+va en este orden: **cabecera fija → «Escenario o caso práctico (opcional)», plegado → «Criterios y
+preguntas» → «Guía de calificación para la IA» → «Entregables generales (opcional)»**. No hay
+selector de tipo ni la palabra «cuestionario», tampoco en la vacante ni en el portal. El backend
+trae la `V68` y la `V69` (`docs/` del backend, `PRUEBA-DEL-PUESTO.md`, «El editor más simple»).
+
+**La cabecera fija** (`CabeceraFija.tsx`) se queda arriba al bajar con el estado, el balance «80 de
+100 pts», el resumen, el chip del tiempo —«90 min · hasta vie 10/10, 23:59» o «Sin cronómetro ·
+hasta …», en ámbar si faltan los minutos o la fecha—, «Configuración» y «Publicar».
+
+- **Desde 56rem de ancho de la cabecera** (no de la ventana: el menú lateral se pliega) todo va en
+  una fila, con la barra por criterio debajo: un tramo por criterio en índigos que se aclaran y lo
+  que falta en gris; al pasar el cursor, cada tramo dice su criterio y sus puntos. Más estrecha, el
+  chip y «Configuración» bajan a su propia línea. Sin «Publicar» —publicada o en lectura— no queda
+  una columna vacía.
+- **Las faltas son botones compactos** que llevan a donde se arregla: los puntos, a los criterios;
+  un criterio, a ese criterio abierto (si falta quién califica, a su lápiz); una pregunta, a ella;
+  los minutos o la fecha, a la configuración con el cursor en el campo. Se ven cuatro y el resto tras
+  «Ver N más». Los textos son los del servidor (`navegacion.ts` los reconoce).
+- **En el teléfono**: estado, balance y «Publicar» en una línea; el chip y las faltas debajo, en
+  una fila que se desplaza. Su alto se mide en `--alto-cabecera-fija`, para que lo que se baja a ver
+  desde una falta quede debajo de ella.
+
+**Los criterios se pliegan.** Plegado, cada uno es una línea con puntos, desglose, preguntas y
+archivos —«Análisis financiero · 30 pts (sistema 5 + IA 25) · 2 preguntas · 1 archivo»—, con borde
+y punto ámbar si le falta algo. Al entrar están plegados salvo el recién creado y los que tienen
+una falta; encima, «Desplegar todo» y «Plegar todo». Desplegado: «Qué evalúa», «Parte calificada»,
+«Mira» con el chip «automático» y sus preguntas. Plegar funciona también en lectura.
+
+**Los puntos del criterio** (`V69`). El lápiz pide nombre, «Qué evalúa», **«Puntos del criterio»**
+—lo que vale entero, cerradas incluidas— y quién califica. Debajo dice en vivo cuánto suman sus
+cerradas y quién califica el resto: la parte calificada es el total menos las cerradas, y el total
+se mantiene si luego cambian. Si las cerradas lo suman todo, «Todo lo puntúa el sistema»; si lo
+pasan, la falta «Las cerradas de «X» suman N y el criterio vale T». Sin calificador, la línea del
+criterio dice «N sin asignar», el selector «Elige quién» —nunca se da por hecha la IA— y su falta
+lleva al lápiz. **Ya no tiene «Mira».**
+
+**Los archivos se piden donde se usan** (`Entregables.tsx`):
+
+- **Desde la pregunta**, «Pedir un archivo para esta pregunta»: nombre, formato (archivo, enlace o
+  los dos), si es obligatorio y «Qué debe tener una buena entrega». Uno por pregunta, y se quita con
+  ✕. Con «Enlace» en un criterio de IA avisa en el momento: «La IA no abre enlaces…».
+- **Generales**, al final, con lo mismo más **«Cubre»**: «Toda la prueba» o «Estas preguntas», con
+  una casilla por número. Sin ninguno: «Ninguno. Úsalo solo si un archivo reúne varias respuestas».
+- **«Mira» lo deduce el servidor**: el archivo de cada pregunta del criterio y los generales que
+  cubren toda la prueba o alguna de sus preguntas.
+
+**El caso** (`CasoYGuia.tsx`) sale plegado, con «Agregar un caso»: enunciado y PDF o Word. «Quitar el
+caso» con algo escrito pide confirmación y solo borra eso; uno abierto sin nada no se guarda. Bajo
+el adjunto ya no dice «Va también en el correo…», que dejó de ser cierto el 03/10/2026. Bajo la
+guía para la IA: «Vale para todo lo que califica la IA en esta prueba…».
+
+**La configuración** (`ConfiguracionDeLaPrueba.tsx`) es un panel lateral que se abre desde
+«Configuración» (en el teléfono ocupa la pantalla):
+
+- **Tiempo**: «Cronometrada N min» (5 como mínimo) o «Sin cronómetro». Sin días.
+- **Fecha límite para dar la prueba**, en hora de Lima: la de la vacante (`prueba_cierra_en`).
+  Vacía, dice «Obligatoria para publicar la prueba». Se puede poner antes de publicar, no se copia
+  con la prueba y, con la prueba publicada y alguien ya en la etapa técnica, pide un motivo, que
+  queda en la auditoría. «Listo» guarda primero el tiempo y lo demás (`PUT …/borrador`) y luego la
+  fecha (`PUT …/fecha-limite`); lo que el servidor rechazaría de la fecha se dice antes, para que no
+  quede guardada la mitad. Con la prueba publicada y sin borrador solo se cambia la fecha.
+- **Materiales y herramientas permitidas**, opcionales.
+- **La guía «!»** (`Guia.tsx`), junto a «Tiempo» y a la fecha. Textos cortos (decisión del usuario):
+  - Tiempo: «Cronometrada: N minutos desde que la abre, nunca después de la fecha límite. Sin
+    cronómetro: hasta la fecha límite.»
+  - Fecha: «Después de esta fecha nadie puede entregar. No se copia con la prueba. Para dar más
+    plazo a una persona, hazlo desde su ficha.»
+
+  Se abre al pasar el cursor, con el teclado o al tocar; se lee a 16 px en blanco sobre casi negro.
+  En el escritorio sale fuera del panel, a su lado y a la altura de la etiqueta; si ahí no cabe
+  —por debajo de unos 800 px—, en su propia línea bajo la etiqueta. **Nunca tapa los controles de
+  su campo.** Se cierra al pulsar fuera, sobre ella, con una segunda pulsación del «!» y con Escape
+  (que no cierra el panel), y se esconde si su etiqueta sale de la vista. El «!» mide 44 px. Funciona
+  en lectura.
+
+**El reloj** lo pone el servidor: al abrirla, una cronometrada vence a los N minutos o en la fecha,
+lo que llegue antes, y una sin cronómetro en la fecha. Mover la fecha no alarga el reloj de quien
+ya abrió una cronometrada. El plazo propio de una persona sigue en su ficha y sigue mandando.
+
+**Publicar** ya no exige el enunciado ni los días; exige la fecha futura, los minutos si es
+cronometrada, que todo entregable lo califique alguien («nadie lo califica») y que un general cubra
+algo.
+
+**«Cambiar los puntos»** de una publicada pide el total de cada criterio, que se ve en su línea
+plegada. Un total que no es un entero de 0 a 100 no se envía: despliega su criterio y lleva al campo,
+debajo de la cabecera fija. Si el servidor responde 400, la falta de la suma dice lo que suma lo
+escrito, o ninguna suma si algo lleva decimales. En el banco «Cambiar los puntos» abre con los
+criterios desplegados —sus únicos campos son los puntos de sus preguntas— y un 400 lleva a esa
+pregunta con el aviso bajo su campo.
+
+**El editor del banco** (`/admin/vacantes/:id/preguntas`) gana la misma cabecera fija —estado,
+balance, barra por criterio, «Publicar las preguntas» y sus avisos como botones— y los criterios
+plegables, con la misma línea sin archivos. **Solo cambia la interfaz**: sus reglas, sus datos, su
+cálculo y su API son los de siempre, y su guía para la IA y sus minutos siguen donde estaban.
+
+**El ancho** (decisión del usuario): los dos editores pasan al carril del panel, `--ancho-panel`
+(120rem), centrado, como la tabla y la ficha de la vacante. Lo que es una fila —la cabecera, la
+línea de cada criterio, las tarjetas de pregunta y los entregables— usa el carril entero; lo que se
+lee o se escribe conserva su medida: `--ancho-bloque` (60rem) para formularios y carteles,
+`--medida-bloque` (72ch) para enunciados y opciones (`EditorDePreguntas.module.css`).
+
+**Una vacante con plantilla no cambia**: sigue con «Plazos de la prueba» en su configuración, que
+funciona igual.
+
+Dónde está: `src/panel/vacantes/preguntas/` —`EditorDeLaPrueba.tsx`, `CabeceraFija.tsx`,
+`navegacion.ts`, `ConfiguracionDeLaPrueba.tsx`, `Guia.tsx`, `Entregables.tsx`, `CasoYGuia.tsx`,
+`CriterioDePrueba.tsx`, `BloqueCriterio.tsx`, `VistaDeVersion.tsx` y `PreguntasPublicadas.tsx`—,
+`src/panel/vacantes/PruebaDelCandidato.tsx` y `src/panel/api/pruebaPropia.ts`. El portal, en
+[02-QUE-VE-EL-CANDIDATO.md](02-QUE-VE-EL-CANDIDATO.md), «2.9 Prueba del puesto».
+
+⚠️ **Lo visual lo comprueba el usuario**: el editor, la configuración y la guía van detrás del
+inicio de sesión del panel.
+
+Comprobarlo: `npx playwright test herramientas/e2e/52-editor-de-la-prueba-mas-simple.spec.ts
+herramientas/e2e/53-editor-de-la-prueba-mas-simple-qa.spec.ts`, junto con
+`46-preguntas-propias-qa.spec.ts` para el banco. ⚠️ **Escriben** en el clon y lo retiran al terminar
+(marca `QA-PE-0067`); la IA va apagada. Las unitarias, en `src/panel/vacantes/preguntas/*.test.*`,
+`src/panel/vacantes/Vacante.test.tsx` y `src/paginas/prueba/PruebaDelEditor.test.tsx`; en el
 backend, `FlujoPruebaPropiaIT`.
 
 ### La sección «Pruebas» se retiró (05/10)

@@ -7,7 +7,9 @@
  *     primera (AC-10). Una abierta con solo espacios cuenta como sin responder.
  *   - Sin el entregable obligatorio, tampoco.
  *   - Vencida con huecos: «Tu tiempo terminó y la prueba quedó sin completar».
- *   - Sin entregables se llama cuestionario (AC-06).
+ *   - V68: sin «cuestionario». La pantalla previa dice la fecha límite y el
+ *     tiempo; el caso sale solo si existe; el archivo de una pregunta se sube
+ *     dentro de ella y «Entregar» lleva a lo primero que falta (AC-19, AC-20).
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -213,21 +215,44 @@ describe('la prueba del editor en el portal', () => {
     expect(dialogo.textContent).not.toContain('se entrega lo que hayas guardado')
   })
 
-  it('un cuestionario lo dice en masculino al empezar', async () => {
+  it('la pantalla previa sin caso: fecha límite, tiempo, cuántas preguntas y archivos; ningún bloque de caso (AC-19)', async () => {
     respuesta = delEditor({
       estadoIntento: 'PENDIENTE',
       iniciadoEn: null,
       venceEn: null,
-      cuestionario: true,
-      entregables: [],
       enunciado: null,
+      herramientasPermitidas: 'Excel',
+      fechaLimite: '2026-10-10T04:59:00Z',
+      entregables: [
+        { id: 301, nombre: 'Flujo de caja.xlsx', detalle: null, formato: 'ARCHIVO', esObligatorio: true, entregado: false, preguntaId: 24 },
+        { id: 302, nombre: 'Informe final', detalle: null, formato: 'ARCHIVO', esObligatorio: true, entregado: false },
+      ],
     })
     montar()
-    expect(await screen.findByText(/Una vez empezado no se puede pausar/)).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: 'Empezar cuestionario' }))
-    const dialogo = await screen.findByRole('dialog')
-    expect(dialogo.textContent).toContain('el cuestionario se entrega solo si está completo')
-    expect(dialogo.textContent).not.toContain('se entrega lo que hayas guardado')
+    expect(await screen.findByText('viernes 09/10 a las 23:59')).toBeTruthy()
+    expect(screen.getByText('Fecha límite')).toBeTruthy()
+    expect(screen.getByText('Tendrás 90 minutos desde que pulses Empezar')).toBeTruthy()
+    expect(screen.getByText('4 preguntas · 2 archivos que subir')).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Herramientas permitidas' })).toBeTruthy()
+    expect(screen.queryByRole('heading', { name: /El caso|El encargo|De qué va/ })).toBeNull()
+    expect(screen.getByText(/· en la pregunta 4/)).toBeTruthy()
+    expect(document.body.textContent).not.toMatch(/cuestionario/i)
+  })
+
+  it('sin cronómetro: «Puedes trabajar en ella hasta la fecha límite»; con caso, «El caso» y su PDF', async () => {
+    respuesta = delEditor({
+      estadoIntento: 'PENDIENTE',
+      iniciadoEn: null,
+      venceEn: null,
+      modalidad: 'PLAZO_ABIERTO',
+      duracionMinutos: null,
+      fechaLimite: '2026-10-10T04:59:00Z',
+      consigna: { nombre: 'caso.pdf', url: null },
+    })
+    montar()
+    expect(await screen.findByText('Puedes trabajar en ella hasta la fecha límite')).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'El caso' })).toBeTruthy()
+    expect(screen.getByText('Enunciado adjunto: caso.pdf.')).toBeTruthy()
   })
 
   it('la plantilla conserva su aviso de siempre al empezar', async () => {
@@ -239,20 +264,6 @@ describe('la prueba del editor en el portal', () => {
     expect(dialogo.textContent).not.toContain('sin completar')
   })
 
-  it('al llegar a cero, un cuestionario dice que se entregará solo si está completo (AC-06)', async () => {
-    respuesta = delEditor({
-      cuestionario: true,
-      entregables: [],
-      enunciado: null,
-      venceEn: new Date(Date.now() - 60_000).toISOString(),
-    })
-    montar()
-    const aviso = await screen.findByRole('alert')
-    expect(aviso.textContent).toContain('Terminó el plazo de este cuestionario')
-    expect(aviso.textContent).toContain('se entregará solo si está completo; si falta algo, quedará sin completar. No cierres la página.')
-    expect(aviso.textContent).not.toContain('sola')
-  })
-
   it('al llegar a cero, la prueba del editor dice que se entregará sola si está completa', async () => {
     respuesta = delEditor({ venceEn: new Date(Date.now() - 60_000).toISOString() })
     montar()
@@ -261,17 +272,48 @@ describe('la prueba del editor en el portal', () => {
     expect(aviso.textContent).toContain('se entregará sola si está completa; si falta algo, quedará sin completar.')
   })
 
-  it('sin entregables se llama cuestionario (AC-06)', async () => {
+  it('el archivo de una pregunta se sube dentro de ella; los generales van en «Entregables», al final', async () => {
     respuesta = delEditor({
-      estadoIntento: 'PENDIENTE',
-      iniciadoEn: null,
-      venceEn: null,
-      cuestionario: true,
-      entregables: [],
-      enunciado: null,
+      entregables: [
+        { id: 301, nombre: 'Flujo de caja.xlsx', detalle: null, formato: 'ARCHIVO', esObligatorio: true, entregado: false, preguntaId: 24 },
+        { id: 302, nombre: 'Informe final', detalle: null, formato: 'ARCHIVO', esObligatorio: true, entregado: true },
+      ],
     })
     montar()
-    expect(await screen.findByRole('heading', { name: 'Tu cuestionario del puesto.' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Empezar cuestionario' })).toBeTruthy()
+    expect(await screen.findByText('Archivo de esta pregunta:', { exact: false })).toBeTruthy()
+    const archivo = document.getElementById('entregable-301')!
+    expect(archivo.textContent).toMatch(/^Archivo de esta pregunta: Flujo de caja\.xlsx · obligatorio/)
+    const entregables = screen.getByRole('heading', { name: 'Entregables' }).closest('section')!
+    expect(within(entregables).queryByText('Flujo de caja.xlsx')).toBeNull()
+    expect(within(entregables).getByText(/Informe final/)).toBeTruthy()
+  })
+
+  it('«Entregar» sin el archivo de una pregunta lo dice y lleva a esa pregunta (AC-20)', async () => {
+    respuesta = delEditor({
+      preguntas: [PREGUNTAS[0]!, PREGUNTAS[1]!],
+      entregables: [
+        { id: 301, nombre: 'Flujo de caja.xlsx', detalle: null, formato: 'ARCHIVO', esObligatorio: true, entregado: false, preguntaId: 22 },
+        { id: 302, nombre: 'Informe final', detalle: null, formato: 'ARCHIVO', esObligatorio: true, entregado: false },
+      ],
+    })
+    montar()
+    fireEvent.click(await screen.findByRole('button', { name: 'Entregar prueba' }))
+    expect(await screen.findByText('Te falta subir «Flujo de caja.xlsx» (pregunta 2), «Informe final».')).toBeTruthy()
+    expect(screen.queryByRole('dialog')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Ir a la pregunta 2' }))
+    expect(Element.prototype.scrollIntoView).toHaveBeenCalled()
+  })
+
+  it('si solo falta un general, lleva a los entregables', async () => {
+    respuesta = delEditor({
+      preguntas: [PREGUNTAS[0]!],
+      entregables: [
+        { id: 302, nombre: 'Informe final', detalle: null, formato: 'ARCHIVO', esObligatorio: true, entregado: false },
+      ],
+    })
+    montar()
+    fireEvent.click(await screen.findByRole('button', { name: 'Entregar prueba' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Ir a los entregables' }))
+    expect(Element.prototype.scrollIntoView).toHaveBeenCalled()
   })
 })

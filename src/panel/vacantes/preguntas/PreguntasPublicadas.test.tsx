@@ -8,15 +8,19 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ErrorApi } from '../../api/cliente'
-import type { EditorDePreguntas as Editor, VersionDePreguntas } from '../../api/preguntasPropias'
+import type { EditorDePreguntas as Editor, EntregableDeLaVersion, VersionDePreguntas } from '../../api/preguntasPropias'
 import { PreguntasPublicadas } from './PreguntasPublicadas'
+import { ConModoDelEditor, MODO_PRUEBA } from './modo'
+import { VistaDeVersion } from './VistaDeVersion'
 
 const corregir = vi.fn()
 const reintentar = vi.fn()
+const cambiar = vi.fn()
 vi.mock('../../api/preguntasPropias', async (original) => ({
   ...(await original<typeof import('../../api/preguntasPropias')>()),
   corregirInstrucciones: (id: number, datos: unknown) => corregir(id, datos),
   reintentarRecalificacion: (id: number) => reintentar(id),
+  cambiarPuntos: (id: number, datos: unknown, ruta?: string) => cambiar(id, datos, ruta),
 }))
 
 const publicada: VersionDePreguntas = {
@@ -213,5 +217,473 @@ describe('los avisos con una sola persona (QA-PP-06)', () => {
     expect(screen.getByRole('alertdialog', { name: 'Recalcular las notas' }).textContent).toBe(
       'Se recalcularán las notas de las 3 personas que ya rindieron. No se llama a la IA.',
     )
+  })
+})
+
+describe('cambiar los puntos de la prueba publicada (V69)', () => {
+  // «Contable» vale 100: una cerrada de 60 y 40 de la IA mirando su abierta.
+  const prueba: VersionDePreguntas = {
+    ...publicada,
+    criterios: [
+      {
+        id: 5,
+        nombre: 'Contable',
+        queEvalua: null,
+        orden: 1,
+        puntos: 100,
+        puntosSistema: 60,
+        puntosIa: 40,
+        puntosCalificados: 40,
+        calificador: 'IA',
+        entregables: [],
+        preguntas: [
+          {
+            id: 10,
+            tipo: 'OPCION_UNICA',
+            enunciado: '¿Qué libro?',
+            puntos: 60,
+            criterioId: 5,
+            orden: 1,
+            queDebeTener: null,
+            opciones: [
+              { id: 1, texto: 'Diario', puntos: 60, orden: 1 },
+              { id: 2, texto: 'Mayor', puntos: 0, orden: 2 },
+            ],
+          },
+          { id: 11, tipo: 'ABIERTA', enunciado: '¿Cómo cuadras?', puntos: 0, criterioId: 5, orden: 2, queDebeTener: null, opciones: [] },
+        ],
+      },
+    ],
+  }
+
+  it('se escribe lo que vale el criterio; si baja una cerrada sigue valiendo lo mismo y su parte calificada crece', async () => {
+    cambiar.mockResolvedValue({ personas: 3 })
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })}>
+        <ConModoDelEditor modo={MODO_PRUEBA}>
+          <PreguntasPublicadas editor={editor({ publicada: prueba })} publicada={prueba} alCambiar={vi.fn()} />
+        </ConModoDelEditor>
+      </QueryClientProvider>,
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Cambiar los puntos' }))
+    const form = screen.getByRole('form', { name: 'Cambiar los puntos' })
+    const total = within(form).getByRole('spinbutton', { name: 'Puntos del criterio «Contable»' }) as HTMLInputElement
+    expect(total.value).toBe('100')
+    expect(form.textContent).toContain('Sus cerradas suman 60. Los otros 40 los califica la IA.')
+
+    // Sus preguntas salen plegadas: se despliega el criterio para cambiarlas.
+    fireEvent.click(within(form).getByRole('button', { name: 'Contable' }))
+    fireEvent.change(within(form).getByRole('spinbutton', { name: 'Puntos de «¿Qué libro?»' }), { target: { value: '50' } })
+    fireEvent.change(within(form).getByRole('spinbutton', { name: 'Puntos de la opción «Diario»' }), { target: { value: '50' } })
+    expect(form.textContent).toContain('Sus cerradas suman 50. Los otros 50 los califica la IA.')
+    expect(form.textContent).toContain('Suma de lo escrito: 100 de 100.')
+
+    fireEvent.change(total, { target: { value: '40' } })
+    expect(within(form).getByText('Las cerradas de «Contable» suman 50 y el criterio vale 40.')).toBeTruthy()
+    fireEvent.change(total, { target: { value: '50' } })
+    expect(form.textContent).toContain('no le queda nada que calificar')
+
+    // Un total que no es un entero de 0 a 100 no se reparte: se dice qué está mal.
+    fireEvent.change(total, { target: { value: '150' } })
+    expect(within(form).getByText('Los puntos del criterio van de 0 a 100.')).toBeTruthy()
+    expect(form.textContent).not.toContain('Los otros')
+    fireEvent.change(total, { target: { value: '25.5' } })
+    expect(within(form).getByText('Los puntos del criterio tienen que ser un número entero, sin decimales.')).toBeTruthy()
+
+    fireEvent.change(total, { target: { value: '100' } })
+    fireEvent.click(within(form).getByRole('button', { name: 'Guardar los puntos' }))
+    fireEvent.click(within(form).getByRole('button', { name: 'Sí, recalcular a todos' }))
+    await waitFor(() =>
+      expect(cambiar).toHaveBeenCalledWith(
+        40,
+        {
+          preguntas: [{ id: 10, puntos: 50, opciones: [{ id: 1, puntos: 50 }, { id: 2, puntos: 0 }] }],
+          criterios: [{ id: 5, puntos: 100 }],
+        },
+        'prueba-propia',
+      ),
+    )
+  })
+
+  it('con un total mal escrito no se envía nada: el campo queda señalado y se enfoca (QA-11)', async () => {
+    cambiar.mockResolvedValue({ personas: 0 })
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })}>
+        <ConModoDelEditor modo={MODO_PRUEBA}>
+          <PreguntasPublicadas
+            editor={editor({ publicada: prueba, recalificacion: { rindieron: 0, conNota: 0, alDia: 0, recalificando: 0, pendientes: 0, motivos: [] } })}
+            publicada={prueba}
+            alCambiar={vi.fn()}
+          />
+        </ConModoDelEditor>
+      </QueryClientProvider>,
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Cambiar los puntos' }))
+    const form = screen.getByRole('form', { name: 'Cambiar los puntos' })
+    const total = within(form).getByRole('spinbutton', { name: 'Puntos del criterio «Contable»' }) as HTMLInputElement
+    const guardar = within(form).getByRole('button', { name: 'Guardar los puntos' })
+    expect(total.getAttribute('aria-invalid')).toBeNull()
+
+    for (const malo of ['150', '25.5', '-1', '']) {
+      fireEvent.change(total, { target: { value: malo } })
+      expect(total.getAttribute('aria-invalid')).toBe('true')
+      // Lo describe su propia falta, la misma que se ve bajo el campo.
+      const falta = document.getElementById(total.getAttribute('aria-describedby')!)
+      expect(falta?.textContent).toMatch(/^(Los puntos del criterio|Faltan los puntos del criterio)/)
+      total.blur()
+      fireEvent.submit(form)
+      expect(document.activeElement).toBe(total)
+    }
+    expect(form.textContent).not.toMatch(/Los puntos suman/)
+    expect(cambiar).not.toHaveBeenCalled()
+    // Bien escrito, se envía y deja de estar señalado.
+    fireEvent.change(total, { target: { value: '100' } })
+    expect(total.getAttribute('aria-invalid')).toBeNull()
+    fireEvent.click(guardar)
+    await waitFor(() =>
+      expect(cambiar).toHaveBeenCalledWith(40, expect.objectContaining({ criterios: [{ id: 5, puntos: 100 }] }), 'prueba-propia'),
+    )
+    expect(cambiar).toHaveBeenCalledTimes(1)
+  })
+
+  it('con gente que ya rindió, un total mal escrito tampoco abre la confirmación (QA-11)', () => {
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })}>
+        <ConModoDelEditor modo={MODO_PRUEBA}>
+          <PreguntasPublicadas editor={editor({ publicada: prueba })} publicada={prueba} alCambiar={vi.fn()} />
+        </ConModoDelEditor>
+      </QueryClientProvider>,
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Cambiar los puntos' }))
+    const form = screen.getByRole('form', { name: 'Cambiar los puntos' })
+    const total = within(form).getByRole('spinbutton', { name: 'Puntos del criterio «Contable»' })
+    fireEvent.change(total, { target: { value: '150' } })
+    fireEvent.submit(form)
+    expect(within(form).queryByRole('alertdialog', { name: 'Recalcular las notas' })).toBeNull()
+    expect(within(form).getByRole('button', { name: 'Guardar los puntos' })).toBeTruthy()
+    expect(cambiar).not.toHaveBeenCalled()
+  })
+})
+
+describe('la prueba publicada se lee plegada', () => {
+  // «Contable» vale 60 (cerrada de 20 + IA 40) y su abierta pide un archivo; «Excel» vale 40 (persona).
+  const archivo: EntregableDeLaVersion = {
+    id: 90, nombre: 'Flujo.xlsx', detalle: null, formato: 'ARCHIVO', obligatorio: true, queDebeTener: null,
+    orden: 1, criterios: [5], alcance: 'PREGUNTA', preguntaId: 11, cubre: null,
+  }
+  const dos: VersionDePreguntas = {
+    ...publicada,
+    cuantosCriterios: 2,
+    cuantasPreguntas: 3,
+    criterios: [
+      {
+        id: 5, nombre: 'Contable', queEvalua: 'El cierre mensual', orden: 1, puntos: 60, puntosSistema: 20, puntosIa: 40,
+        puntosCalificados: 40, calificador: 'IA', entregables: [90],
+        preguntas: [
+          {
+            id: 10, tipo: 'OPCION_UNICA', enunciado: '¿Qué libro?', puntos: 20, criterioId: 5, orden: 1, queDebeTener: null,
+            opciones: [{ id: 1, texto: 'Diario', puntos: 20, orden: 1 }, { id: 2, texto: 'Mayor', puntos: 0, orden: 2 }],
+          },
+          { id: 11, tipo: 'ABIERTA', enunciado: '¿Cómo cuadras?', puntos: 0, criterioId: 5, orden: 2, queDebeTener: 'La cuenta', opciones: [] },
+        ],
+      },
+      {
+        id: 6, nombre: 'Excel', queEvalua: null, orden: 2, puntos: 40, puntosSistema: 0, puntosIa: 0,
+        puntosCalificados: 40, calificador: 'PERSONA', entregables: [],
+        preguntas: [{ id: 12, tipo: 'ABIERTA', enunciado: 'Arma el flujo de caja.', puntos: 0, criterioId: 6, orden: 1, queDebeTener: null, opciones: [] }],
+      },
+    ],
+    prueba: {
+      enunciado: null, consigna: null, materiales: null, herramientasPermitidas: null, modalidad: 'CRONOMETRADA',
+      duracionMinutos: 60, plazoDias: null, cuestionario: false, entregables: [archivo],
+    },
+  }
+  const nadie = { rindieron: 0, conNota: 0, alDia: 0, recalificando: 0, pendientes: 0, motivos: [] }
+  const pintarLaPrueba = (parte: Partial<Editor> = {}) =>
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })}>
+        <ConModoDelEditor modo={MODO_PRUEBA}>
+          <PreguntasPublicadas editor={editor({ publicada: dos, recalificacion: nadie, ...parte })} publicada={dos} alCambiar={vi.fn()} />
+        </ConModoDelEditor>
+      </QueryClientProvider>,
+    )
+  const criterio = (nombre: string) => screen.getByRole('region', { name: `Criterio ${nombre}` })
+  const desplegado = (nombre: string) =>
+    within(criterio(nombre)).getByRole('button', { name: nombre }).getAttribute('aria-expanded') === 'true'
+  const linea = (nombre: string) => criterio(nombre).querySelector('header')!.textContent
+
+  const scrollIntoView = Element.prototype.scrollIntoView
+  const bajar = vi.fn()
+  beforeEach(() => {
+    Element.prototype.scrollIntoView = bajar
+  })
+  afterEach(() => {
+    Element.prototype.scrollIntoView = scrollIntoView
+  })
+
+  it('al entrar todos están plegados; su línea dice puntos, desglose, preguntas y archivos (AC-15)', () => {
+    pintarLaPrueba()
+    expect(desplegado('Contable')).toBe(false)
+    expect(desplegado('Excel')).toBe(false)
+    expect(linea('Contable')).toContain('60 pts (sistema 20 + IA 40)')
+    expect(linea('Contable')).toContain('· 2 preguntas · 1 archivo')
+    expect(linea('Excel')).toContain('40 pts (persona 40)')
+    expect(linea('Excel')).toContain('· 1 pregunta')
+    expect(linea('Excel')).not.toContain('archivo')
+    expect(screen.queryByText('¿Qué libro?')).toBeNull()
+    expect(screen.queryByText('El cierre mensual')).toBeNull()
+    // La guía no se pliega.
+    expect(screen.getByText('Premia el dato concreto')).toBeTruthy()
+  })
+
+  it('«Desplegar todo», «Plegar todo» y cada criterio por su nombre', () => {
+    pintarLaPrueba()
+    fireEvent.click(screen.getByRole('button', { name: 'Desplegar todo' }))
+    expect(desplegado('Contable') && desplegado('Excel')).toBe(true)
+    expect(screen.getByText('¿Qué libro?')).toBeTruthy()
+    expect(screen.getByText('El cierre mensual')).toBeTruthy()
+    expect(screen.getByText('Arma el flujo de caja.')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Plegar todo' }))
+    expect(desplegado('Contable') || desplegado('Excel')).toBe(false)
+    expect(screen.queryByText('Arma el flujo de caja.')).toBeNull()
+
+    fireEvent.click(within(criterio('Excel')).getByRole('button', { name: 'Excel' }))
+    expect(desplegado('Excel')).toBe(true)
+    expect(desplegado('Contable')).toBe(false)
+    expect(screen.getByText('Arma el flujo de caja.')).toBeTruthy()
+  })
+
+  it('sin editar_vacante también se pliega y se despliega, y no hay botones que acaben en 403 (AC-23)', () => {
+    pintarLaPrueba({ puedeEditar: false })
+    expect(screen.queryByRole('button', { name: 'Cambiar los puntos' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Corregir las instrucciones de la IA' })).toBeNull()
+    fireEvent.click(within(criterio('Contable')).getByRole('button', { name: 'Contable' }))
+    expect(desplegado('Contable')).toBe(true)
+    expect(screen.getByText('¿Qué libro?')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Plegar todo' }))
+    expect(screen.queryByText('¿Qué libro?')).toBeNull()
+  })
+
+  it('otra versión vuelve a salir plegada, como al entrar', () => {
+    const { rerender } = render(<VistaDeVersion version={dos} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Desplegar todo' }))
+    expect(desplegado('Contable')).toBe(true)
+    rerender(<VistaDeVersion version={{ ...dos, id: 71 }} />)
+    expect(desplegado('Contable') || desplegado('Excel')).toBe(false)
+  })
+
+  describe('«Cambiar los puntos»', () => {
+    const abrirElFormulario = () => {
+      pintarLaPrueba()
+      fireEvent.click(screen.getByRole('button', { name: 'Cambiar los puntos' }))
+      return screen.getByRole('form', { name: 'Cambiar los puntos' })
+    }
+    const totalDe = (form: HTMLElement, nombre: string) =>
+      within(form).getByRole('spinbutton', { name: `Puntos del criterio «${nombre}»` }) as HTMLInputElement
+
+    it('cada criterio es su línea con el total a la vista; sus preguntas, plegadas', () => {
+      const form = abrirElFormulario()
+      for (const nombre of ['Contable', 'Excel']) {
+        expect(criterio(nombre).querySelector('header')!.contains(totalDe(form, nombre))).toBe(true)
+        expect(desplegado(nombre)).toBe(false)
+      }
+      expect(form.textContent).toContain('Sus cerradas suman 20. Los otros 40 los califica la IA.')
+      expect(within(form).queryByRole('spinbutton', { name: 'Puntos de «¿Qué libro?»' })).toBeNull()
+      fireEvent.click(within(form).getByRole('button', { name: 'Desplegar todo' }))
+      expect(within(form).getByRole('spinbutton', { name: 'Puntos de «¿Qué libro?»' })).toBeTruthy()
+    })
+
+    it('un total vacío despliega su criterio, baja a su línea y le da el foco (QA-12)', () => {
+      const form = abrirElFormulario()
+      const total = totalDe(form, 'Excel')
+      fireEvent.change(total, { target: { value: '' } })
+      fireEvent.submit(form)
+      expect(document.activeElement).toBe(total)
+      expect(desplegado('Excel')).toBe(true)
+      expect(desplegado('Contable')).toBe(false)
+      expect(bajar).toHaveBeenCalledWith({ block: 'start' })
+      expect(bajar.mock.contexts.at(-1)).toBe(criterio('Excel'))
+      expect(cambiar).not.toHaveBeenCalled()
+    })
+
+    it('cuando el navegador frena un total fuera de 0 a 100, se despliegan sus criterios y se baja al primero (QA-12)', () => {
+      const form = abrirElFormulario()
+      const contable = totalDe(form, 'Contable')
+      const excel = totalDe(form, 'Excel')
+      fireEvent.change(contable, { target: { value: '150' } })
+      fireEvent.change(excel, { target: { value: '-5' } })
+      // El navegador avisa a cada campo mal escrito, en orden, y da el foco al primero.
+      fireEvent.invalid(contable)
+      fireEvent.invalid(excel)
+      expect(desplegado('Contable') && desplegado('Excel')).toBe(true)
+      expect(bajar).toHaveBeenCalledTimes(1)
+      expect(bajar.mock.contexts[0]).toBe(criterio('Contable'))
+      expect(document.activeElement).toBe(contable)
+      expect(cambiar).not.toHaveBeenCalled()
+    })
+
+    it('decimales en una pregunta o una opción plegadas: se despliega su criterio y se lleva a ese campo', () => {
+      const form = abrirElFormulario()
+      const contable = within(criterio('Contable')).getByRole('button', { name: 'Contable' })
+      fireEvent.click(contable)
+      fireEvent.change(within(form).getByRole('spinbutton', { name: 'Puntos de «¿Qué libro?»' }), { target: { value: '1.5' } })
+      fireEvent.click(contable)
+      expect(within(form).queryByRole('spinbutton', { name: 'Puntos de «¿Qué libro?»' })).toBeNull()
+
+      fireEvent.submit(form)
+      const pregunta = within(form).getByRole('spinbutton', { name: 'Puntos de «¿Qué libro?»' })
+      expect(desplegado('Contable')).toBe(true)
+      expect(document.activeElement).toBe(pregunta)
+      expect((bajar.mock.contexts.at(-1) as HTMLElement).contains(pregunta)).toBe(true)
+
+      fireEvent.change(pregunta, { target: { value: '20' } })
+      fireEvent.change(within(form).getByRole('spinbutton', { name: 'Puntos de la opción «Diario»' }), { target: { value: '2.5' } })
+      fireEvent.click(contable)
+      fireEvent.submit(form)
+      expect(document.activeElement).toBe(within(form).getByRole('spinbutton', { name: 'Puntos de la opción «Diario»' }))
+      expect(cambiar).not.toHaveBeenCalled()
+    })
+
+    it('un 400 del servidor de una pregunta plegada despliega su criterio y lleva a ella (QA-13)', async () => {
+      const falta = 'La pregunta 1 («¿Qué libro?»): alguna opción tiene que dar los 20 puntos de la pregunta.'
+      cambiar.mockRejectedValue(new ErrorApi(400, 'Los puntos no se cambiaron: falta una cosa', { faltas: [falta] }))
+      const form = abrirElFormulario()
+      fireEvent.click(within(form).getByRole('button', { name: 'Guardar los puntos' }))
+      const pregunta = await within(form).findByRole('spinbutton', { name: 'Puntos de «¿Qué libro?»' })
+      expect(desplegado('Contable')).toBe(true)
+      expect(desplegado('Excel')).toBe(false)
+      expect(document.activeElement).toBe(pregunta)
+      expect((bajar.mock.contexts.at(-1) as HTMLElement).contains(pregunta)).toBe(true)
+      expect(document.getElementById(pregunta.getAttribute('aria-describedby')!)!.textContent).toBe(falta)
+    })
+
+    it('un 400 del servidor de un criterio lleva a su total, en su línea', async () => {
+      cambiar.mockRejectedValue(
+        new ErrorApi(400, 'Los puntos no se cambiaron: falta una cosa', {
+          faltas: ['El criterio «Excel»: su parte calificada no puede quedar en 0, porque tiene abiertas o entregables que alguien califica.'],
+        }),
+      )
+      const form = abrirElFormulario()
+      fireEvent.click(within(form).getByRole('button', { name: 'Guardar los puntos' }))
+      await within(form).findByRole('alert')
+      expect(document.activeElement).toBe(totalDe(form, 'Excel'))
+      expect(desplegado('Excel')).toBe(true)
+      expect(bajar.mock.contexts.at(-1)).toBe(criterio('Excel'))
+    })
+  })
+})
+
+describe('«Cambiar los puntos» del banco (QA-13)', () => {
+  // En el banco no hay total del criterio en su línea: los únicos campos son los
+  // puntos de sus preguntas. La spec (punto 19) dice que en el banco «el cambio de
+  // puntos» no cambia; la decisión de plegarlo es de la prueba publicada.
+  it('abre con los puntos de sus preguntas a la vista, sin desplegar nada', () => {
+    pintar(editor({ recalificacion: { rindieron: 0, conNota: 0, alDia: 0, recalificando: 0, pendientes: 0, motivos: [] } }))
+    fireEvent.click(screen.getByRole('button', { name: 'Cambiar los puntos' }))
+    const form = screen.getByRole('form', { name: 'Cambiar los puntos' })
+    expect(
+      within(form).queryByRole('spinbutton', { name: 'Puntos de «Cuéntanos un cierre con un descuadre»' }),
+      'el campo de la única pregunta, a la vista al abrir el formulario',
+    ).not.toBeNull()
+  })
+
+  // «Contabilidad» (una abierta de 60) y «Personal» (una cerrada de 40).
+  const banco: VersionDePreguntas = {
+    ...publicada,
+    cuantosCriterios: 2,
+    cuantasPreguntas: 2,
+    criterios: [
+      {
+        id: 5, nombre: 'Contabilidad', queEvalua: 'El cierre mensual', orden: 1, puntos: 60, puntosSistema: 0, puntosIa: 60,
+        preguntas: [
+          {
+            id: 10, tipo: 'ABIERTA', enunciado: 'Cuéntanos un cierre con un descuadre', puntos: 60, criterioId: 5, orden: 1,
+            queDebeTener: 'El monto y la cuenta', opciones: [],
+          },
+        ],
+      },
+      {
+        id: 6, nombre: 'Personal', queEvalua: null, orden: 2, puntos: 40, puntosSistema: 40, puntosIa: 0,
+        preguntas: [
+          {
+            id: 20, tipo: 'OPCION_UNICA', enunciado: '¿Cómo repartes los turnos?', puntos: 40, criterioId: 6, orden: 1,
+            queDebeTener: null,
+            opciones: [{ id: 21, texto: 'Por antigüedad', puntos: 40, orden: 1 }, { id: 22, texto: 'Al azar', puntos: 0, orden: 2 }],
+          },
+        ],
+      },
+    ],
+  }
+  const nadie = { rindieron: 0, conNota: 0, alDia: 0, recalificando: 0, pendientes: 0, motivos: [] }
+  const criterio = (nombre: string) => screen.getByRole('region', { name: `Criterio ${nombre}` })
+  const desplegado = (nombre: string) =>
+    within(criterio(nombre)).getByRole('button', { name: nombre }).getAttribute('aria-expanded') === 'true'
+  const scrollIntoView = Element.prototype.scrollIntoView
+  const bajar = vi.fn()
+  beforeEach(() => {
+    Element.prototype.scrollIntoView = bajar
+  })
+  afterEach(() => {
+    Element.prototype.scrollIntoView = scrollIntoView
+  })
+  const abrirElDelBanco = () => {
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })}>
+        <PreguntasPublicadas editor={editor({ publicada: banco, recalificacion: nadie })} publicada={banco} alCambiar={vi.fn()} />
+      </QueryClientProvider>,
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Cambiar los puntos' }))
+    return screen.getByRole('form', { name: 'Cambiar los puntos' })
+  }
+
+  it('con varios criterios, todos desplegados al abrir; «Plegar todo» y cada criterio siguen plegando', () => {
+    const form = abrirElDelBanco()
+    expect(desplegado('Contabilidad') && desplegado('Personal')).toBe(true)
+    expect(within(form).getByRole('spinbutton', { name: 'Puntos de la opción «Por antigüedad»' })).toBeTruthy()
+    fireEvent.click(within(form).getByRole('button', { name: 'Plegar todo' }))
+    expect(desplegado('Contabilidad') || desplegado('Personal')).toBe(false)
+    fireEvent.click(within(criterio('Personal')).getByRole('button', { name: 'Personal' }))
+    expect(desplegado('Personal')).toBe(true)
+  })
+
+  it('un 400 del servidor con los criterios plegados despliega el de la pregunta, la dice bajo su campo y lleva a él', async () => {
+    const falta = 'La pregunta 2 («¿Cómo repartes los turnos?»): alguna opción tiene que dar los 40 puntos de la pregunta.'
+    cambiar.mockRejectedValue(new ErrorApi(400, 'Los puntos no se cambiaron: falta una cosa', { faltas: [falta] }))
+    const form = abrirElDelBanco()
+    fireEvent.change(within(form).getByRole('spinbutton', { name: 'Puntos de la opción «Por antigüedad»' }), {
+      target: { value: '30' },
+    })
+    fireEvent.click(within(form).getByRole('button', { name: 'Plegar todo' }))
+    fireEvent.click(within(form).getByRole('button', { name: 'Guardar los puntos' }))
+
+    const pregunta = await within(form).findByRole('spinbutton', { name: 'Puntos de «¿Cómo repartes los turnos?»' })
+    expect(desplegado('Personal')).toBe(true)
+    expect(desplegado('Contabilidad')).toBe(false)
+    expect(document.activeElement).toBe(pregunta)
+    expect(bajar).toHaveBeenCalledWith({ block: 'start' })
+    expect((bajar.mock.contexts.at(-1) as HTMLElement).contains(pregunta)).toBe(true)
+    // Lo dice bajo su campo, además de en la lista de abajo.
+    expect(pregunta.getAttribute('aria-invalid')).toBe('true')
+    expect(document.getElementById(pregunta.getAttribute('aria-describedby')!)!.textContent).toBe(falta)
+    expect(within(form).getByRole('alert').textContent).toContain(falta)
+    // Al tocar la pregunta, su aviso se va: ya no es lo último que se dijo de ella.
+    fireEvent.change(within(form).getByRole('spinbutton', { name: 'Puntos de la opción «Por antigüedad»' }), {
+      target: { value: '40' },
+    })
+    expect(pregunta.getAttribute('aria-invalid')).toBeNull()
+    expect(within(criterio('Personal')).queryByText(falta)).toBeNull()
+  })
+
+  it('un 400 que solo dice la suma no despliega nada: la suma ya está arriba', async () => {
+    cambiar.mockRejectedValue(
+      new ErrorApi(400, 'Los puntos no se cambiaron: falta una cosa', { faltas: ['Los puntos suman 90 de 100: faltan 10.'] }),
+    )
+    const form = abrirElDelBanco()
+    fireEvent.click(within(form).getByRole('button', { name: 'Plegar todo' }))
+    fireEvent.click(within(form).getByRole('button', { name: 'Guardar los puntos' }))
+    expect(await within(form).findByRole('alert')).toBeTruthy()
+    expect(desplegado('Contabilidad') || desplegado('Personal')).toBe(false)
+    expect(bajar).not.toHaveBeenCalled()
   })
 })

@@ -12,6 +12,8 @@ import {
   editorDe,
   empresaB,
   entregableDe,
+  enVeinteDias,
+  fijarFechaLimite,
   entregarLaPrueba,
   escribirPrueba,
   estadoDe,
@@ -46,9 +48,9 @@ import { excelPorLaApi, leerElLibro } from './ayuda-rubrica-vigente'
  * adelanta en la base; el barrido de 60 s del backend cierra el intento solo.
  *
  * La prueba de la vacante A (100 puntos):
- *   Conocimiento contable · 30 = opción única 4 + múltiple 6 + parte calificada 20 (IA, mira Tablero.xlsx)
+ *   Conocimiento contable · 30 = opción única 4 + múltiple 6 + parte calificada 20 (IA; mira Tablero.xlsx, el archivo de su abierta)
  *   Manejo de Excel       · 20 = escala 10 + opción única 10
- *   Comunicación          · 50 = parte calificada 50 (persona, mira Video de 2 min)
+ *   Comunicación          · 50 = parte calificada 50 (persona; mira Video de 2 min, general de toda la prueba)
  *
  * ⚠️ **ESCRIBE** en el clon del trabajo; `afterAll` lo retira (marca QA-PE-0067).
  */
@@ -156,27 +158,19 @@ test.describe('La prueba del puesto escrita en el editor', () => {
     await expect(page.locator('main')).toContainText('publicar su prueba técnica')
     await expect(page.locator('main')).not.toContainText('Todo listo')
 
-    // El editor vacío, y el primer entregable desde el panel
+    // El editor vacío (V68): el caso plegado, los criterios, la guía y los generales
     await page.goto(`/admin/vacantes/${vacanteA}/prueba`)
-    await expect(page.getByRole('heading', { name: 'Todavía no hay prueba' })).toBeVisible({ timeout: 20_000 })
-    await page.getByRole('button', { name: 'Agregar entregable' }).click()
-    const nuevo = page.getByRole('form', { name: 'Entregable nuevo' })
-    await nuevo.getByRole('textbox', { name: 'Nombre' }).fill('Tablero.xlsx')
-    await nuevo.getByRole('textbox', { name: /Qué debe contener/ }).fill('La conciliación de marzo')
-    await nuevo.getByRole('button', { name: 'Agregar el entregable' }).click()
-    await expect(page.getByRole('article', { name: 'Entregable: Tablero.xlsx' })).toBeVisible()
+    await expect(page.getByRole('region', { name: 'Balance de la prueba' })).toBeVisible({ timeout: 20_000 })
+    await expect(page.getByRole('button', { name: 'Agregar un caso' })).toBeVisible()
+    await expect(page.locator('main')).not.toContainText(/cuestionario/i)
 
-    // El resto por la API, con las cuatro faltas del AC-04: 90 puntos, un entregable en
-    // ningún criterio, un criterio de IA que solo mira un enlace y sin enunciado.
+    // Por la API, con cuatro faltas: 90 puntos, un general que nadie califica, un criterio
+    // de IA que solo mira un enlace y sin fecha límite. Sin enunciado: no es falta (V68).
     await escribirPrueba(equipo, vacanteA, {
-      entregables: [
-        { nombre: 'Video de 2 min', formato: 'ENLACE', obligatorio: false },
-        { nombre: 'Informe.pdf', formato: 'ARCHIVO', obligatorio: false },
-      ],
       criterios: [
         {
           nombre: 'Conocimiento contable', queEvalua: 'Domina el registro y el cierre.',
-          puntosCalificados: 20, calificador: 'IA', mira: ['Tablero.xlsx'],
+          puntosCalificados: 20, calificador: 'IA',
           preguntas: [
             { tipo: 'OPCION_UNICA', enunciado: OU, puntos: 4, opciones: [{ texto: 'Libro diario', puntos: 4 }, { texto: 'Libro mayor', puntos: 0 }, { texto: 'Caja', puntos: 0 }] },
             { tipo: 'OPCION_MULTIPLE', enunciado: MULTI, puntos: 6, opciones: [{ texto: 'Factura', puntos: 3 }, { texto: 'Guía de remisión', puntos: 3 }, { texto: 'Recibo de luz', puntos: 0 }] },
@@ -190,29 +184,40 @@ test.describe('La prueba del puesto escrita en el editor', () => {
             { tipo: 'OPCION_UNICA', enunciado: OU2, puntos: 10, opciones: [{ texto: 'BUSCARV', puntos: 10 }, { texto: 'SUMA', puntos: 0 }] },
           ],
         },
-        { nombre: 'Comunicación', queEvalua: 'Explica con claridad.', puntosCalificados: 40, calificador: 'IA', mira: ['Video de 2 min'], preguntas: [] },
+        { nombre: 'Comunicación', queEvalua: 'Explica con claridad.', puntosCalificados: 40, calificador: 'IA', preguntas: [] },
+      ],
+      entregables: [
+        { nombre: 'Tablero.xlsx', detalle: 'La conciliación de marzo', formato: 'ARCHIVO', obligatorio: true, de: ABIERTA },
+        { nombre: 'Video de 2 min', formato: 'ENLACE', obligatorio: false, todaLaPrueba: true },
+        { nombre: 'Informe.pdf', formato: 'ARCHIVO', obligatorio: false, cubre: [OU2] },
       ],
       datos: { modalidad: 'CRONOMETRADA', duracionMinutos: 90, herramientasPermitidas: 'Excel' },
+      fechaLimite: null,
     })
     const conFaltas = await publicarPrueba(equipo, vacanteA)
     expect(conFaltas.estado).toBe(400)
     const faltas: string[] = conFaltas.cuerpo.faltas
     expect(faltas).toHaveLength(4)
     expect(faltas.some((f) => f.includes('suman 90 de 100'))).toBe(true)
-    expect(faltas.some((f) => f.includes('«Informe.pdf» no está en ningún criterio'))).toBe(true)
+    expect(faltas.some((f) => f.includes('«Informe.pdf»: nadie lo califica'))).toBe(true)
     expect(faltas.some((f) => f.includes('«Comunicación» lo califica la IA y solo mira enlaces'))).toBe(true)
-    expect(faltas.some((f) => f.includes('Falta el enunciado del caso'))).toBe(true)
+    expect(faltas.some((f) => f.includes('Falta la fecha límite'))).toBe(true)
     expect((await editorDe(equipo, vacanteA)).publicada).toBeNull()
 
-    // El panel lee la misma lista, y la cabecera del criterio mixto (AC-05)
+    // El panel lee la misma lista como botones, y la línea del criterio mixto (AC-05)
     await page.reload()
-    await expect(page.getByRole('list', { name: 'Lo que frena la publicación' }).getByRole('listitem')).toHaveCount(4, { timeout: 20_000 })
-    await page.getByRole('button', { name: 'Publicar la prueba' }).first().click()
+    const cabecera = page.getByRole('region', { name: 'Balance de la prueba' })
+    await expect(cabecera.getByRole('list', { name: 'Lo que frena la publicación' }).getByRole('button')).toHaveCount(4, { timeout: 20_000 })
+    await cabecera.getByRole('button', { name: 'Publicar la prueba' }).click()
     await expect(page.getByRole('alert').getByText('Faltan 4 cosas:')).toBeVisible()
-    await expect(page.getByText('30 pts · sistema 10 + IA 20')).toBeVisible()
-    await expect(page.getByText('20 pts · sistema 20')).toBeVisible()
+    await expect(page.getByText('30 pts (sistema 10 + IA 20)')).toBeVisible()
+    await expect(page.getByText('20 pts (sistema 20)')).toBeVisible()
+    // «Mira» lo deduce el sistema: el archivo de su pregunta y el general de toda la prueba
+    const conocimiento = page.getByRole('region', { name: 'Criterio Conocimiento contable' })
+    await conocimiento.getByRole('button', { name: 'Conocimiento contable', exact: true }).click()
+    await expect(conocimiento).toContainText('Tablero.xlsx (pregunta 3) · Video de 2 min (general)')
     // Una abierta no tiene campo de puntos
-    await page.getByRole('button', { name: 'Agregar pregunta', exact: true }).first().click()
+    await conocimiento.getByRole('button', { name: 'Agregar pregunta', exact: true }).click()
     const pregunta = page.getByRole('form', { name: 'Pregunta nueva' })
     await expect(pregunta.getByRole('combobox', { name: 'Tipo' })).toHaveValue('ABIERTA')
     await expect(pregunta.getByRole('spinbutton', { name: 'Puntos' })).toHaveCount(0)
@@ -220,17 +225,24 @@ test.describe('La prueba del puesto escrita en el editor', () => {
     await expect(pregunta.getByRole('spinbutton', { name: 'Puntos' }).first()).toBeVisible()
     await pregunta.getByRole('button', { name: 'Cancelar' }).click()
 
-    // Se corrigen las cuatro y se publica desde el panel
+    // Se corrigen las tres del contenido y la fecha se pone desde la configuración
     const editor = await editorDe(equipo, vacanteA)
     await exigir(`${RUTA(vacanteA)}/entregables/${entregableDe(editor, 'Informe.pdf')}`, equipo, 'DELETE')
-    await cambiarCriterio(equipo, vacanteA, 'Comunicación', { puntosCalificados: 50, calificador: 'PERSONA', mira: ['Video de 2 min'] })
+    await cambiarCriterio(equipo, vacanteA, 'Comunicación', { puntosCalificados: 50, calificador: 'PERSONA' })
     await exigir(`${RUTA(vacanteA)}/borrador`, equipo, 'PUT', {
       enunciado: ENUNCIADO, herramientasPermitidas: 'Excel', modalidad: 'CRONOMETRADA', duracionMinutos: 90,
     })
     await page.reload()
-    await expect(page.getByText('100 de 100 puntos', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
+    await page.getByRole('button', { name: /Falta la fecha límite para dar la prueba/ }).click()
+    const configuracion = page.getByRole('dialog', { name: 'Configuración de la prueba' })
+    const fecha = configuracion.getByLabel('Fecha límite para dar la prueba')
+    await expect(fecha).toBeFocused()
+    await fecha.fill(new Date(Date.now() + 20 * 24 * 3_600_000 - 5 * 3_600_000).toISOString().slice(0, 16))
+    await configuracion.getByRole('button', { name: 'Listo' }).click()
+    await expect(configuracion).toHaveCount(0, { timeout: 20_000 })
+    await expect(page.getByText('100 de 100 pts').first()).toBeVisible({ timeout: 20_000 })
     // Doble clic: no crea dos versiones
-    await page.getByRole('button', { name: 'Publicar la prueba' }).first().dblclick()
+    await page.getByRole('button', { name: 'Publicar la prueba' }).dblclick()
     await expect(page.getByText(/^Publicada\./)).toBeVisible({ timeout: 20_000 })
     expect(
       Number(uno(`select count(*) as n from version_banco where vacante_id = ${vacanteA} and proposito = 'PRUEBA_PUESTO'`).n),
@@ -276,7 +288,8 @@ test.describe('La prueba del puesto escrita en el editor', () => {
     await page.goto(`/procesos/${quien.ana.uuid}/prueba`)
     await expect(page.getByRole('heading', { name: 'Demuestra cómo trabajas.' })).toBeVisible({ timeout: 20_000 })
     await expect(page.getByText(ENUNCIADO)).toBeVisible()
-    await expect(page.getByText('90 minutos desde que empieces')).toBeVisible()
+    await expect(page.getByText('Tendrás 90 minutos desde que pulses Empezar')).toBeVisible()
+    await expect(page.getByText('Fecha límite', { exact: true })).toBeVisible()
     await page.getByRole('button', { name: 'Empezar prueba' }).click()
     await page.getByRole('dialog').getByRole('button', { name: 'Sí, empezar' }).click()
     await expect(page.getByText('Tiempo restante')).toBeVisible({ timeout: 20_000 })
@@ -449,7 +462,8 @@ test.describe('La prueba del puesto escrita en el editor', () => {
     const ou2 = criterioDe(pub, 'Manejo de Excel').preguntas.find((q: any) => q.enunciado === OU2)
     const cambio = await pedir(`${RUTA(vacanteA)}/publicada/puntos`, equipo, 'PUT', {
       preguntas: [{ id: ou2.id, puntos: 20, opciones: ou2.opciones.map((o: any) => ({ id: o.id, puntos: o.texto === 'BUSCARV' ? 20 : 0 })) }],
-      criterios: [{ id: c3, puntosCalificados: 40 }],
+      // «Comunicación» no tiene cerradas: vale lo que su parte calificada (V69)
+      criterios: [{ id: c3, puntos: 40 }],
     })
     expect(cambio.estado).toBe(200)
     const ana = await pruebaDe(quien.ana.postulacion)
@@ -500,18 +514,24 @@ test.describe('La prueba del puesto escrita en el editor', () => {
     await expect(dialogo).toContainText('90 min')
     await expect(dialogo).toContainText(ENUNCIADO)
     await dialogo.getByRole('button', { name: 'Copiar esta prueba' }).click()
-    await expect(page.getByRole('article', { name: 'Entregable: Tablero.xlsx' })).toContainText('Lo mira: Conocimiento contable.', { timeout: 20_000 })
-    await expect(page.getByRole('article', { name: 'Entregable: Video de 2 min' })).toContainText('Lo mira: Comunicación.')
+    // El alcance viaja con la copia (el archivo, en su pregunta; el general, en los generales)
+    // y la fecha límite no: es de la vacante (AC-14).
+    await expect(page.getByRole('region', { name: /Entregables generales/ })).toContainText('Video de 2 min', { timeout: 20_000 })
+    await expect(page.getByRole('region', { name: /Entregables generales/ })).toContainText('Cubre: toda la prueba')
+    await expect(page.getByRole('region', { name: 'Criterio Conocimiento contable' })).toContainText('· 3 preguntas · 1 archivo')
+    await expect(page.getByText('30 pts (sistema 10 + IA 20)')).toBeVisible()
+    await expect(page.getByRole('region', { name: 'Balance de la prueba' })).toContainText('90 min · falta la fecha límite')
+    await page.getByRole('button', { name: 'Ver el caso' }).click()
     await expect(page.getByRole('textbox', { name: /^Enunciado/ })).toHaveValue(ENUNCIADO)
-    await expect(page.getByRole('spinbutton', { name: 'Minutos' })).toHaveValue('90')
-    await expect(page.getByText('30 pts · sistema 10 + IA 20')).toBeVisible()
 
     // Otra empresa no la ve ni la copia
     const b = await empresaB(correos)
     expect((await pedir(`${RUTA(vacanteA)}`, b.token)).estado).toBe(404)
     expect((await pedir(`${RUTA(vacanteA)}/copia`, b.token, 'POST', { vacanteOrigenId: vacanteA })).estado).toBe(404)
 
-    // AC-22: «Comunicación» en dos vacantes son dos columnas distintas, por id
+    // AC-22: «Comunicación» en dos vacantes son dos columnas distintas, por id. La copia
+    // no trajo la fecha: se le pone la suya antes de publicar.
+    expect((await fijarFechaLimite(equipo, vacanteB, enVeinteDias())).estado).toBe(200)
     expect((await publicarPrueba(equipo, vacanteB)).estado).toBe(200)
     await exigir(`/panel/vacantes/${vacanteB}/publicacion`, equipo, 'POST')
     quien.dani = await candidataEnLaPrueba(equipo, vacanteB, 'Dani', correos)
@@ -530,8 +550,17 @@ test.describe('La prueba del puesto escrita en el editor', () => {
     expect((await pedir(`${RUTA(vacanteB)}/criterios`, token, 'POST', { nombre: 'X' })).estado).toBe(403)
     await entrarAlPanelCon(page, token)
     await page.goto(`/admin/vacantes/${vacanteA}/prueba`)
-    await expect(page.getByText('La ves en lectura: cambiarla pide el permiso de editar esta vacante.')).toBeVisible({ timeout: 20_000 })
-    await expect(page.locator('main').getByRole('button')).toHaveCount(0)
+    await expect(page.getByText('La ves en lectura: cambiarla pide el permiso de editar esta vacante.').first()).toBeVisible({ timeout: 20_000 })
+    // AC-23 (V68): ningún botón que acabe en 403; la configuración se abre en lectura.
+    const main = page.locator('main')
+    for (const nombre of ['Publicar la prueba', 'Abrir un borrador', 'Cambiar los puntos', 'Corregir las instrucciones de la IA', 'Agregar criterio']) {
+      await expect(main.getByRole('button', { name: nombre })).toHaveCount(0)
+    }
+    await main.getByRole('button', { name: 'Configuración', exact: true }).click()
+    const configuracion = page.getByRole('dialog', { name: 'Configuración de la prueba' })
+    await expect(configuracion.getByLabel('Fecha límite para dar la prueba')).not.toBeEditable()
+    await configuracion.getByRole('button', { name: 'Guía: Tiempo' }).hover()
+    await expect(configuracion.getByRole('tooltip')).toContainText(/^Cronometrada: .*desde que la abre, nunca después de la fecha límite\. Sin cronómetro: hasta la fecha límite\.$/)
 
     // AC-26: encender o apagar, desde la empresa o desde la plataforma: 400 y nada cambia
     const b = await empresaB(correos)

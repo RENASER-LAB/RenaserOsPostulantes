@@ -14,16 +14,41 @@
  */
 
 /*
- * El mismo margen que la ficha de la vacante (24 px; 16 en el teléfono), de la
- * que se viene y a la que se vuelve. El ancho de lectura sigue en 960 px de
- * contenido: el padding va aparte.
+ * El carril del panel (`--ancho-panel`, el de las tablas y la ficha de la
+ * vacante, de la que se viene y a la que se vuelve), centrado y con su mismo
+ * margen (24 px; 16 en el teléfono).
+ *
+ * Lo que es una fila —la cabecera fija con su barra, la línea de cada criterio,
+ * las tarjetas de pregunta y los entregables, con sus botones al final— usa el
+ * carril entero, como las filas de una tabla. Lo que se lee o se escribe no:
+ * tiene su propia medida, para que en 1920 px no salgan líneas de 1800:
+ *   - `--ancho-bloque` (960 px, el carril de antes): los formularios, los
+ *     campos de texto largo y los carteles y avisos;
+ *   - `--medida-bloque` (72ch): un enunciado, sus opciones, «qué evalúa» y «qué
+ *     debe tener»;
+ *   - `--medida` (la de `mundo.css`): la prosa que explica.
  */
 .pagina {
+  --ancho-bloque: 60rem;
+  --medida-bloque: 72ch;
   display: flex;
   flex-direction: column;
   gap: var(--e5);
-  max-width: calc(960px + 2 * var(--e5));
+  max-width: var(--ancho-panel);
+  margin: 0 auto;
   padding: var(--e5) var(--e5) var(--e8);
+}
+
+.formulario,
+.area,
+.guia,
+.cartel,
+.estado,
+.error,
+.faltas,
+.aviso,
+.confirmacion {
+  max-width: var(--ancho-bloque);
 }
 
 .volver {
@@ -83,13 +108,6 @@
   gap: var(--e3);
 }
 
-.lineaBalance {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--e3) var(--e4);
-}
-
 .cifras {
   margin: 0;
   font-size: var(--t-apoyo);
@@ -116,7 +134,6 @@
 
 .publicar {
   composes: acentoMenor from '../../../estilos/piezas.module.css';
-  margin-left: auto;
 }
 
 .avisos {
@@ -152,10 +169,6 @@
 .faltas ul {
   margin: 0;
   padding-left: var(--e5);
-}
-
-.balanceCorto {
-  display: none;
 }
 
 /* ---------- Entradas ---------- */
@@ -237,6 +250,12 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Un total mal escrito engorda el borde, como en los campos del panel: la forma lo dice antes que el color. */
+.entradaPuntos[aria-invalid='true'] {
+  border-width: 2px;
+  border-color: var(--mal);
+}
+
 .conQueCalifica {
   grid-column: 1 / -1;
   margin: 0;
@@ -276,7 +295,18 @@
   font-weight: 600;
   line-height: 1.35;
   overflow-wrap: anywhere;
+}
+
+/*
+ * La base de 280 px es solo para la fila de la cabecera, donde el nombre se
+ * reparte la línea con los puntos y los botones. Como título de un bloque en
+ * columna («El caso», «Entregables») esa base sería su alto (QA-06).
+ */
+.cabeceraCriterio > .nombreCriterio {
   flex: 1 1 280px;
+  /* En el carril ancho, los puntos de todas las líneas empiezan en la misma
+     columna y no a 1500 px del nombre; los botones siguen al final. */
+  max-width: 40rem;
 }
 
 .puntosCriterio {
@@ -292,12 +322,22 @@
   color: var(--tinta2);
   line-height: 1.5;
   overflow-wrap: anywhere;
+  max-width: var(--medida-bloque);
 }
 
 .botones {
   display: flex;
   gap: var(--e1);
   margin-left: auto;
+}
+
+/* «Cambiar los puntos»: el total del criterio va al final de su línea, como los botones en el editor. */
+.totalEnLaLinea {
+  margin-left: auto;
+}
+
+.totalEnLaLinea > .textoOpcion {
+  flex: none;
 }
 
 .icono {
@@ -401,9 +441,12 @@
   color: var(--tinta);
   overflow-wrap: anywhere;
   white-space: pre-line;
+  max-width: var(--medida-bloque);
 }
 
+/* Con su medida, los puntos de cada opción quedan a la vista de su texto. */
 .opciones {
+  max-width: var(--medida-bloque);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -433,6 +476,7 @@
   color: var(--tinta2);
   line-height: 1.5;
   overflow-wrap: anywhere;
+  max-width: var(--medida-bloque);
 }
 
 .queDebeTener b {
@@ -485,6 +529,29 @@
   font-size: var(--t-menor);
   color: var(--tinta3);
   line-height: 1.5;
+  max-width: var(--medida);
+}
+
+/*
+ * El reparto de lo que vale un criterio (V69), en vivo bajo sus puntos: «Sus
+ * cerradas suman 10. Los otros 20 los califica [La IA] mirando…». El selector va
+ * dentro de la frase y mide sus 44 px; si no cabe, la frase sigue debajo.
+ */
+.reparto {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e1) var(--e2);
+  font-size: var(--t-apoyo);
+  color: var(--tinta);
+  line-height: 1.5;
+  max-width: var(--medida-bloque);
+}
+
+.eleccionEnLinea {
+  composes: eleccion;
+  width: auto;
 }
 
 .acciones {
@@ -705,27 +772,6 @@
     padding: var(--e3) var(--e4);
   }
 
-  .balanceLargo {
-    display: none;
-  }
-
-  .balanceCorto {
-    display: block;
-  }
-
-  .balanceCorto summary {
-    cursor: pointer;
-    min-height: 44px;
-    display: flex;
-    align-items: center;
-    font-size: var(--t-apoyo);
-    font-variant-numeric: tabular-nums;
-  }
-
-  .balanceCorto[open] summary {
-    margin-bottom: var(--e2);
-  }
-
   .entradas {
     flex-direction: column;
     align-items: stretch;
@@ -740,7 +786,21 @@
     order: 2;
   }
 
-  .botones {
+  /*
+   * En el editor los puntos no bajan al final: van con su cuenta, en la fila
+   * que sigue al nombre y antes que los botones (QA-05).
+   */
+  .resumenCriterio {
+    flex-basis: 100%;
+  }
+
+  .filasDelResumen > .puntosCriterio {
+    flex-basis: auto;
+    order: 0;
+  }
+
+  .botones,
+  .totalEnLaLinea {
     margin-left: 0;
   }
 
@@ -812,7 +872,7 @@
   color: var(--tinta);
   overflow-wrap: anywhere;
   white-space: pre-line;
-  max-width: 72ch;
+  max-width: var(--medida-bloque);
 }
 
 .casilla {
@@ -882,5 +942,779 @@
 
   .radios {
     flex-direction: column;
+  }
+}
+
+/* ---------- La cabecera fija (V68): estado, balance, barra y faltas ----------
+ *
+ * La comparten la prueba técnica y las preguntas propias. Se pega debajo de la
+ * cabecera del panel (ver `.balance`). Una sola acción principal: «Publicar». El
+ * ámbar solo en lo que frena la publicación: las faltas y el chip del tiempo
+ * cuando le falta algo.
+ *
+ * Se reparte según el ancho de la PROPIA cabecera (`@container`) y no el de la
+ * ventana: con el menú lateral plegado o abierto, la misma ventana le deja más o
+ * menos sitio, y en el carril del panel llega a pasar de 1600 px. Las faltas no
+ * se estiran con él: cada una mide como mucho 20rem. Dos repartos:
+ *   - estrecha (hasta 56rem; 1024 px con el menú): estado y balance con
+ *     «Publicar»; debajo, el chip y «Configuración»; la barra con el resumen;
+ *   - ancha (desde 56rem; 1280 px con el menú): una fila —estado, balance,
+ *     chip, «Configuración» y «Publicar»— y la barra con el resumen al final.
+ * El banco, que no tiene chip, sube además el resumen a la fila y deja la
+ * barra sola.
+ * En el teléfono manda la regla de más abajo: estado, balance y «Publicar» en
+ * una línea; el chip y las faltas debajo, desplazables.
+ */
+
+.cabeceraFija {
+  composes: balance;
+  container: cabecera-fija / inline-size;
+}
+
+.rejillaCabecera {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'linea acciones'
+    'pie pie'
+    'faltas faltas';
+  gap: var(--e3) var(--e4);
+  align-items: center;
+}
+
+.cabeceraConChip .rejillaCabecera {
+  grid-template-areas:
+    'linea acciones'
+    'herramientas herramientas'
+    'pie pie'
+    'faltas faltas';
+}
+
+/*
+ * Sin «Publicar» (la publicada, o en lectura) no queda su columna vacía: su
+ * hueco apartaba del borde derecho lo último de la fila (QA-08). Se repite en
+ * cada reparto.
+ */
+.sinAcciones .rejillaCabecera {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    'linea'
+    'pie'
+    'faltas';
+}
+
+.cabeceraConChip.sinAcciones .rejillaCabecera {
+  grid-template-areas:
+    'linea'
+    'herramientas'
+    'pie'
+    'faltas';
+}
+
+.lineaCabecera {
+  grid-area: linea;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e2) var(--e4);
+  min-width: 0;
+}
+
+/* El chip del tiempo y «Configuración», juntos: abren el mismo panel. Cuando
+   bajan a su propia línea, «Configuración» se queda a la derecha, bajo
+   «Publicar». */
+.herramientasCabecera {
+  grid-area: herramientas;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e2) var(--e3);
+  min-width: 0;
+}
+
+.accionesCabecera {
+  grid-area: acciones;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--e2) var(--e3);
+}
+
+/* La barra y, al final de la barra, el resumen. */
+.pieDeLaBarra {
+  grid-area: pie;
+  display: flex;
+  align-items: center;
+  gap: var(--e4);
+  min-width: 0;
+}
+
+.pieDeLaBarra .barra {
+  grid-area: barra;
+  flex: 1 1 auto;
+  min-width: 8rem;
+}
+
+.pieDeLaBarra .cifras {
+  grid-area: cifras;
+  flex: none;
+  justify-self: start;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+@container cabecera-fija (min-width: 56rem) {
+  /* El banco: estado, balance, resumen y «Publicar» en una fila; la barra sola. */
+  .rejillaCabecera {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      'linea cifras acciones'
+      'barra barra barra'
+      'faltas faltas faltas';
+  }
+
+  .rejillaCabecera .pieDeLaBarra {
+    display: contents;
+  }
+
+  .rejillaCabecera .cifras {
+    white-space: normal;
+  }
+
+  /* La prueba: estado, balance, chip, «Configuración» y «Publicar» en una fila;
+     debajo, la barra con el resumen al final. */
+  .cabeceraConChip .rejillaCabecera {
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      'linea . herramientas acciones'
+      'pie pie pie pie'
+      'faltas faltas faltas faltas';
+  }
+
+  .cabeceraConChip .pieDeLaBarra {
+    display: flex;
+  }
+
+  .cabeceraConChip .cifras {
+    white-space: nowrap;
+  }
+
+  .cabeceraConChip .herramientasCabecera {
+    justify-content: flex-end;
+  }
+
+  .sinAcciones .rejillaCabecera {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+      'linea cifras'
+      'barra barra'
+      'faltas faltas';
+  }
+
+  .cabeceraConChip.sinAcciones .rejillaCabecera {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      'linea . herramientas'
+      'pie pie pie'
+      'faltas faltas faltas';
+  }
+}
+
+.balanceCabecera {
+  margin: 0;
+  font-size: var(--t-entradilla);
+  font-weight: 600;
+  color: var(--tinta);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.configurar {
+  composes: secundario from '../../../estilos/piezas.module.css';
+  gap: var(--e2);
+}
+
+.chipTiempo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  min-height: 44px;
+  padding: 0 var(--e3);
+  border: 1px solid var(--regla2);
+  border-radius: var(--radio-control);
+  background: var(--nube);
+  color: var(--tinta2);
+  font: inherit;
+  font-size: var(--t-apoyo);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.chipTiempo:hover {
+  color: var(--tinta);
+  border-color: var(--borde-control);
+}
+
+.chipTiempo:focus-visible,
+.botonFalta:focus-visible,
+.verMasFaltas:focus-visible,
+.plegador:focus-visible,
+.botonGuia:focus-visible,
+.enlacePlegar:focus-visible {
+  outline: 2px solid var(--activo);
+  outline-offset: 2px;
+}
+
+.chipTiempoFalta {
+  border-color: color-mix(in oklab, var(--duda) 55%, var(--nube));
+  background: var(--duda-bruma);
+  color: var(--duda-tinta);
+}
+
+/* Un tramo por criterio, en índigos que se aclaran; lo que falta, en gris. */
+.barra {
+  display: flex;
+  height: 10px;
+  border-radius: var(--radio-barra, 999px);
+  overflow: clip;
+  background: var(--nube-honda);
+}
+
+.tramo {
+  height: 100%;
+  min-width: 2px;
+  background: color-mix(in oklab, var(--activo) calc(100% - var(--paso, 0) * 16%), var(--nube));
+}
+
+.tramo + .tramo {
+  box-shadow: inset 2px 0 0 var(--nube);
+}
+
+/*
+ * Las faltas: bajas, en línea y varias por fila. Cada una mide lo que su texto,
+ * hasta 20rem —dos por fila aun con la cabecera estrecha—; lo que pase se corta
+ * con «…» a la vista (el botón lo dice entero, y al pasar el cursor también).
+ *
+ * «Ver N más» queda fuera de la lista, abajo a la derecha. No se le reserva una
+ * columna, que estrecharía todas las filas: un hueco invisible al final de la
+ * lista (`::after`) le guarda sitio solo en la última, y si ahí no cabe, baja.
+ */
+.faltasCabecera {
+  grid-area: faltas;
+  position: relative;
+  min-width: 0;
+}
+
+.listaFaltas {
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e3) var(--e2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.listaFaltas > li {
+  display: flex;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-inline-size: min(100%, 20rem);
+}
+
+/* 34 px a la vista y 44 al pulsar: el `::before` estira el toque 5 px arriba y
+   abajo, dentro del hueco entre filas. */
+.botonFalta {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  inline-size: 100%;
+  min-width: 0;
+  min-height: 34px;
+  padding: 6px var(--e3);
+  border: 1px solid color-mix(in oklab, var(--duda) 40%, var(--nube));
+  border-radius: var(--radio-control);
+  background: var(--duda-bruma);
+  color: var(--duda-tinta);
+  font: inherit;
+  font-size: var(--t-apoyo);
+  line-height: 1.35;
+  text-align: left;
+  cursor: pointer;
+}
+
+.botonFalta::before,
+.verMasFaltas::before {
+  content: '';
+  position: absolute;
+  inset: -5px 0;
+}
+
+.botonFalta:hover {
+  border-color: var(--duda);
+}
+
+.textoFalta {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.flechaFalta {
+  flex: none;
+  font-weight: 600;
+}
+
+.verMasFaltas {
+  position: absolute;
+  inset-inline-end: 0;
+  inset-block-end: 0;
+  min-height: 34px;
+  padding: 0 var(--e2);
+  border: 0;
+  border-radius: var(--radio-control);
+  background: none;
+  font: inherit;
+  font-size: var(--t-apoyo);
+  font-weight: 500;
+  color: var(--activo);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.verMasFaltas:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ---------- Las secciones del editor de la prueba ---------- */
+
+.cabeceraSeccion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e2) var(--e4);
+}
+
+.cabeceraSeccion .subtitulo {
+  flex: 1 1 260px;
+}
+
+/*
+ * Lo que se baja a ver desde una falta se para DEBAJO de la cabecera fija: la
+ * del panel, el hueco con que se pega, su alto medido (crece con las faltas,
+ * ver `CabeceraFija.tsx`) y un respiro. Un margen fijo dejaba el criterio
+ * tapado en cuanto había tres o cuatro faltas (QA-03).
+ *
+ * `.campoQueFrena` es lo mismo para un campo de «Cambiar los puntos» al que el
+ * navegador lleva cuando frena el guardado (`min`, `max`, `step`): sin él lo
+ * dejaba bajo la barra del panel y la cabecera fija, sin verse (QA-12).
+ */
+.destino,
+.campoQueFrena {
+  scroll-margin-top: calc(
+    var(--alto-cabecera-panel, 64px) + var(--e3) + var(--alto-cabecera-fija, 13rem) + var(--e3)
+  );
+}
+
+.destino:focus {
+  outline: none;
+}
+
+.destino:focus-visible {
+  outline: 2px solid var(--activo);
+  outline-offset: 4px;
+}
+
+.plegarTodo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e1) var(--e3);
+}
+
+.enlacePlegar {
+  border: 0;
+  padding: 0 var(--e1);
+  min-height: 44px;
+  background: none;
+  font: inherit;
+  font-size: var(--t-apoyo);
+  color: var(--activo);
+  cursor: pointer;
+}
+
+.enlacePlegar:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ---------- Un criterio plegable ---------- */
+
+.criterioConFalta {
+  box-shadow: inset 0 0 0 1px var(--duda), var(--sombra-nube);
+}
+
+.plegador {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: var(--tinta);
+  text-align: left;
+  cursor: pointer;
+}
+
+.flecha {
+  flex: none;
+  color: var(--tinta2);
+  transition: transform 160ms var(--salida, ease-out);
+}
+
+.flechaPlegada {
+  transform: rotate(-90deg);
+}
+
+/*
+ * La línea del criterio en el editor: «30 pts (sistema 5 + IA 25) · 2 preguntas ·
+ * 1 archivo», siempre en ese orden (QA-05). Si la cuenta no cabe junto a los
+ * puntos baja a la fila siguiente, y su «·» —una caja de 16 px— cae en el margen
+ * negativo y se recorta: ninguna fila empieza por un separador.
+ */
+.resumenCriterio {
+  overflow: hidden;
+  min-width: 0;
+}
+
+.filasDelResumen {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  row-gap: var(--e1);
+  margin-inline-start: calc(-1 * var(--e4));
+}
+
+.filasDelResumen > .puntosCriterio {
+  padding-inline-start: var(--e4);
+  white-space: normal;
+}
+
+.cuentaCriterio {
+  display: flex;
+  align-items: baseline;
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+  white-space: nowrap;
+}
+
+.separadorCuenta {
+  flex: none;
+  inline-size: var(--e4);
+  text-align: center;
+}
+
+.cuentaCriterio > .puntoFalta {
+  align-self: center;
+  margin-inline-start: var(--e3);
+}
+
+.puntoFalta {
+  flex: none;
+  inline-size: 8px;
+  block-size: 8px;
+  border-radius: 50%;
+  background: var(--duda);
+}
+
+.faltaCriterio {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  font-size: var(--t-apoyo);
+  color: var(--duda-tinta);
+  overflow-wrap: anywhere;
+  flex-basis: 100%;
+}
+
+.chipAutomatico {
+  composes: chip;
+  margin: 0 var(--e1);
+}
+
+.numeroPregunta {
+  font-size: var(--t-micro);
+  font-weight: 600;
+  color: var(--tinta2);
+  letter-spacing: 0.01em;
+}
+
+/* ---------- El archivo de una pregunta y los generales ---------- */
+
+.archivo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e1) var(--e2);
+  padding: var(--e1) var(--e1) var(--e1) var(--e3);
+  border-radius: var(--radio-control);
+  background: var(--nube);
+  border: 1px solid var(--regla);
+  font-size: var(--t-apoyo);
+  color: var(--tinta);
+}
+
+.archivo .botones {
+  margin-left: auto;
+}
+
+.nombreArchivo {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.cubre {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--e3);
+  min-width: 0;
+}
+
+.cubre legend {
+  padding: 0;
+  margin-bottom: var(--e1);
+}
+
+/* ---------- La configuración y sus guías «!» ---------- */
+
+.configuracion {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e5);
+}
+
+/*
+ * ⚠️ A todo el ancho, y no lo que mide su texto: la guía, cuando entra en la
+ * página, ocupa su propia línea dentro de esta. En el «Tiempo» la línea es la
+ * `legend`, que encoge a su contenido, y la guía salía de 120 px de ancho y
+ * once líneas de alto.
+ */
+.etiquetaConGuia {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e1);
+  inline-size: 100%;
+}
+
+/*
+ * Mide 44 px y encoge su línea con el margen negativo: su parte baja cae sobre
+ * la fila de debajo («Cronometrada»), que al ir después en la página se pintaba
+ * encima y le dejaba 32 px útiles. Posicionado, el «!» queda por encima y
+ * conserva sus 44.
+ */
+.botonGuia {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 44px;
+  block-size: 44px;
+  margin: calc(var(--e3) * -1) 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--tinta2);
+  cursor: pointer;
+}
+
+.botonGuia:hover {
+  color: var(--activo);
+}
+
+/*
+ * La guía se lee como el cuerpo: 16 px, blanco sobre casi negro (19:1) y unas
+ * 45-50 letras por línea. Nunca tapa los controles de su campo (QA-07): quien
+ * la lee y baja a rellenarlo tiene que poder pulsarlo. Dos sitios (los elige
+ * `Guia.tsx`):
+ *   - en la página, en su propia línea bajo la etiqueta, a lo ancho del campo:
+ *     empuja el campo hacia abajo. Arranca por debajo del anillo de foco del
+ *     «!», que así se sigue viendo entero al llegar con el teclado (AC-18);
+ *   - fuera del panel lateral, a su izquierda y a la altura de la etiqueta,
+ *     sobre el fondo velado, cuando ahí cabe con 18-26rem de ancho.
+ */
+.textoGuia {
+  flex: 0 0 100%;
+  margin: calc(var(--e3) + 2px) 0 0;
+  padding: var(--e3) var(--e4);
+  border-radius: var(--radio-control);
+  background: var(--accion-fuerte);
+  color: var(--tinta-invertida);
+  font-size: var(--t-base);
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: normal;
+  overflow-wrap: break-word;
+  box-shadow: var(--sombra-aviso);
+}
+
+/* Fuera del panel: `top`, `left` y el ancho los pone `Guia.tsx`; la punta
+   señala la etiqueta (`--punta`: el centro de la etiqueta desde arriba). */
+.textoGuiaAlLado {
+  position: fixed;
+  z-index: 1;
+  margin: 0;
+}
+
+.textoGuiaAlLado::after {
+  content: "";
+  position: absolute;
+  top: calc(var(--punta, 24px) - 6px);
+  right: -6px;
+  border-block: 6px solid transparent;
+  border-inline-start: 6px solid var(--accion-fuerte);
+}
+
+.obligatoriaParaPublicar {
+  margin: 0;
+  font-size: var(--t-menor);
+  color: var(--duda-tinta);
+}
+
+@media (max-width: 720px) {
+  .rejillaCabecera {
+    gap: var(--e2) var(--e3);
+    grid-template-areas:
+      'linea acciones'
+      'faltas faltas'
+      'pie pie';
+  }
+
+  .cabeceraConChip .rejillaCabecera {
+    grid-template-areas:
+      'linea acciones'
+      'herramientas herramientas'
+      'faltas faltas'
+      'pie pie';
+  }
+
+  .sinAcciones .rejillaCabecera {
+    grid-template-areas:
+      'linea'
+      'faltas'
+      'pie';
+  }
+
+  .cabeceraConChip.sinAcciones .rejillaCabecera {
+    grid-template-areas:
+      'linea'
+      'herramientas'
+      'faltas'
+      'pie';
+  }
+
+  /*
+   * Estado, balance y «Publicar» en una línea (QA-01). El estado y el balance
+   * se parten en dos líneas antes que desbordar su celda: con `nowrap` el
+   * balance se metía debajo de «Publicar», que lo tapaba. Para que quepan en
+   * 375 px el estado se estrecha, el balance baja al cuerpo y «Publicar» pierde
+   * su complemento a la vista (el lector de pantalla lo sigue leyendo).
+   */
+  .lineaCabecera {
+    gap: var(--e1) var(--e2);
+  }
+
+  .lineaCabecera .estadoVersion {
+    padding: 2px var(--e2);
+  }
+
+  .balanceCabecera {
+    font-size: var(--t-base);
+  }
+
+  .restoDelRotulo {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .pieDeLaBarra .cifras {
+    display: none;
+  }
+
+  .textoConfigurar {
+    display: none;
+  }
+
+  /*
+   * Todas las faltas, enteras y en una fila que se desplaza. El relleno de
+   * arriba y abajo es el sitio de su toque de 44 px: un `overflow` recorta lo
+   * que se sale de él.
+   */
+  .listaFaltas {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    padding-block: 5px;
+  }
+
+  .listaFaltas > li {
+    flex: none;
+    max-inline-size: none;
+  }
+
+  .verMasFaltas {
+    display: none;
+  }
+
+  /* El chip comparte su línea con «Configuración»: si no cabe, se parte. */
+  .chipTiempo {
+    flex: 0 1 auto;
+    min-width: 0;
+    text-align: left;
+  }
+
+  .herramientasCabecera .configurar {
+    flex: none;
+  }
+}
+
+/* En el escritorio, las que pasan de las cuatro primeras esperan a «Ver N más»,
+   que tiene guardado su sitio al final de la última fila. */
+@media (min-width: 721px) {
+  .listaFaltas > .faltaEscondida {
+    display: none;
+  }
+
+  .listaConVerMas::after {
+    content: "";
+    flex: none;
+    inline-size: 7rem;
+    block-size: 34px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flecha {
+    transition: none;
   }
 }

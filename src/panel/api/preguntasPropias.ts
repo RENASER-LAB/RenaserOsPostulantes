@@ -50,7 +50,11 @@ export interface CriterioDeLaVersion {
   nombre: string
   queEvalua: string | null
   orden: number
-  /** La suma de sus preguntas: no se escribe. */
+  /**
+   * La suma de sus preguntas: no se escribe. En la prueba (V69) es lo que vale
+   * el criterio, que sí se escribe: su parte calificada es esto menos
+   * `puntosSistema`, sus cerradas.
+   */
   puntos: number
   puntosSistema: number
   puntosIa: number
@@ -59,7 +63,10 @@ export interface CriterioDeLaVersion {
   puntosCalificados?: number | null
   /** Solo en la prueba: quién califica la parte calificada. */
   calificador?: 'IA' | 'PERSONA' | null
-  /** Solo en la prueba: los ids de los entregables que mira. */
+  /**
+   * Solo en la prueba: los ids de los entregables que mira. Desde la V68 nadie
+   * lo marca: lo deduce el servidor del alcance de cada entregable.
+   */
   entregables?: number[] | null
 }
 
@@ -75,9 +82,18 @@ export interface EntregableDeLaVersion {
   /** «Qué debe tener una buena entrega»: lo leen la IA y quien califica. */
   queDebeTener: string | null
   orden: number
-  /** Los criterios que lo miran. */
+  /** Los criterios que lo miran, deducidos del alcance. */
   criterios: number[]
+  /**
+   * Su alcance (V68): `PREGUNTA` (el archivo de `preguntaId`), `TODA_LA_PRUEBA`
+   * o `PREGUNTAS` (las de `cubre`). Nulo en los de antes, con «Mira» a mano.
+   */
+  alcance?: AlcanceDeEntregable | null
+  preguntaId?: number | null
+  cubre?: number[] | null
 }
+
+export type AlcanceDeEntregable = 'PREGUNTA' | 'TODA_LA_PRUEBA' | 'PREGUNTAS'
 
 /** Lo que una prueba tiene y unas preguntas no (V67). */
 export interface PruebaDeLaVersion {
@@ -87,8 +103,9 @@ export interface PruebaDeLaVersion {
   herramientasPermitidas: string | null
   modalidad: 'CRONOMETRADA' | 'PLAZO_ABIERTO' | null
   duracionMinutos: number | null
+  /** Solo las publicadas de antes de la V68, sin fecha límite. */
   plazoDias: number | null
-  /** Sin entregables es un cuestionario. */
+  /** Ya no se pinta: desde la V68 no hay «cuestionario». */
   cuestionario: boolean
   entregables: EntregableDeLaVersion[]
 }
@@ -152,6 +169,11 @@ export interface EditorDePreguntas {
   recalificacion: Recalificacion | null
   /** PERFIL_INTEGRAL o PRUEBA_PUESTO (V67). */
   proposito?: 'PERFIL_INTEGRAL' | 'PRUEBA_PUESTO'
+  /**
+   * Solo en la prueba (V68): la fecha límite para dar la prueba, que es de la
+   * vacante, y si cambiarla pide un motivo (publicada y con gente dentro).
+   */
+  fechaLimite?: { cierraEn: string | null; pideMotivo: boolean } | null
 }
 
 export interface GuardarOpcion {
@@ -202,10 +224,16 @@ export interface CriterioPropuesto {
   nombre: string | null
   queEvalua: string | null
   preguntas: PreguntaPropuesta[]
-  /** Solo en la prueba (V67). */
+  /** Solo en la prueba (V67): lo que no suman sus cerradas, ya deducido. */
   parteCalificada?: number | null
+  /**
+   * Solo en la prueba (V69): lo que vale un criterio nuevo entero. Nulo en uno
+   * que ya está en el borrador —sigue valiendo lo mismo— y en las propuestas
+   * de antes, que solo traían la parte calificada.
+   */
+  puntos?: number | null
   calificador?: 'IA' | 'PERSONA' | null
-  /** Posiciones de los entregables propuestos que mira. */
+  /** Ya no se usan (V68): «Mira» no lo propone la IA, se deduce. */
   entregables?: number[] | null
   entregablesExistentes?: number[] | null
 }
@@ -216,12 +244,23 @@ export interface CasoPropuesto {
   herramientasPermitidas: string | null
 }
 
+/** Una pregunta de la propuesta: la posición de su criterio y la suya, desde 0. */
+export interface PosicionDePregunta {
+  criterio: number
+  pregunta: number
+}
+
 export interface EntregablePropuesto {
   nombre: string
   detalle: string | null
   formato: FormatoDeEntregable
   obligatorio: boolean | null
   queDebeTener: string | null
+  /** V68: el archivo de una pregunta de la propuesta… */
+  pregunta?: PosicionDePregunta | null
+  /** …o un general de toda la prueba o de unas preguntas. Sin nada, de toda la prueba. */
+  todaLaPrueba?: boolean | null
+  cubre?: PosicionDePregunta[] | null
 }
 
 export interface EstadoDeLaRecomendacion {
@@ -257,8 +296,12 @@ export interface CorregirInstrucciones {
 
 export interface CambiarPuntos {
   preguntas: { id: number; puntos: number; opciones: { id: number; puntos: number }[] }[]
-  /** Solo en la prueba (V67): la parte calificada de cada criterio. */
-  criterios?: { id: number; puntosCalificados: number }[]
+  /**
+   * Solo en la prueba: lo que vale cada criterio con parte calificada (V69).
+   * Su parte es eso menos sus cerradas nuevas; uno solo de cerradas vale lo que
+   * sumen.
+   */
+  criterios?: { id: number; puntos: number }[]
 }
 
 const base = (vacanteId: number, ruta: RutaDelEditor = 'preguntas-propias') =>

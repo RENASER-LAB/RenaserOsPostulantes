@@ -91,6 +91,8 @@ test.describe('Las preguntas propias de una vacante', () => {
     await page.goto(`/admin/vacantes/${recorrido.vacanteId}/preguntas`)
     const general = criterio(page, 'General')
     await expect(general).toBeVisible({ timeout: 20_000 })
+    // Los criterios salen plegados al entrar (V68): se despliegan para editar.
+    await page.getByRole('button', { name: 'Desplegar todo' }).click()
 
     await general.getByRole('button', { name: 'Editar la pregunta' }).click()
     await general.getByLabel('Puntos', { exact: true }).fill('100')
@@ -126,6 +128,8 @@ test.describe('Las preguntas propias de una vacante', () => {
 
     // La vista previa no copia nada: solo al pulsar «Copiar esta prueba». Se pinta dos veces
     // (al lado en escritorio y debajo de la vacante tocada en móvil): vale la que se ve.
+    // Sus criterios salen plegados: se despliegan para leer sus preguntas.
+    await dialogo.getByRole('button', { name: 'Desplegar todo' }).filter({ visible: true }).first().click({ timeout: 20_000 })
     await expect(dialogo.getByText('Cuéntanos un cierre con un descuadre. ¿Cómo lo hallaste?').filter({ visible: true }).first()).toBeVisible({
       timeout: 20_000,
     })

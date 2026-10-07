@@ -40,7 +40,7 @@ test.describe('Regresiones de la prueba del editor', () => {
 
   test.beforeAll(async () => {
     equipo = await tokenDePanel()
-    vacante = await crearVacante(equipo, 'Regresiones del cuestionario', await lugarDe(equipo))
+    vacante = await crearVacante(equipo, 'Regresiones de la prueba del editor', await lugarDe(equipo))
     await exigir(`/panel/vacantes/${vacante}/aplicacion-evaluacion`, equipo, 'POST', { aplica: false })
     await escribirPrueba(equipo, vacante, {
       criterios: [
@@ -74,7 +74,7 @@ test.describe('Regresiones de la prueba del editor', () => {
   test('H-01: al empezar, el aviso no promete que al vencer se entrega lo guardado', async ({ page }) => {
     await entrarAlPortalCon(page, vence.token)
     await page.goto(`/procesos/${vence.uuid}/prueba`)
-    await page.getByRole('button', { name: 'Empezar cuestionario' }).click()
+    await page.getByRole('button', { name: 'Empezar prueba' }).click()
     const dialogo = page.getByRole('dialog')
     await expect(dialogo).toContainText('¿Empezar ahora?')
     // Con algo sin responder al vencer, queda «sin completar» y NO se entrega (decisión 11)
@@ -103,7 +103,7 @@ test.describe('Regresiones de la prueba del editor', () => {
     await expect(page.locator('main')).not.toContainText('Prueba del puesto habilitada')
     await expect(page.getByRole('link', { name: 'Abrir prueba' })).toHaveCount(0)
     await page.goto('/procesos')
-    await expect(page.locator('main')).toContainText('Regresiones del cuestionario', { timeout: 20_000 })
+    await expect(page.locator('main')).toContainText('Regresiones de la prueba del editor', { timeout: 20_000 })
     await expect(page.locator('main')).not.toContainText('Tienes una cosa pendiente')
   })
 
@@ -121,10 +121,11 @@ test.describe('Regresiones de la prueba del editor', () => {
     await expect(page.locator('main')).not.toContainText('no tiene rúbrica de prueba que calificar')
   })
 
-  test('H-04: el balance de un cuestionario se anuncia bien a un lector de pantalla', async ({ page }) => {
+  test('H-04: sin entregables ya no es «cuestionario» (V68), y el balance se anuncia bien a un lector de pantalla', async ({ page }) => {
     await entrarAlPanel(page)
     await page.goto(`/admin/vacantes/${vacante}/prueba`)
-    await expect(page.getByRole('heading', { level: 1 })).toContainText('Cuestionario', { timeout: 20_000 })
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('Prueba técnica', { timeout: 20_000 })
+    await expect(page.getByRole('heading', { level: 1 })).not.toContainText(/cuestionario/i)
     // Hace falta un borrador para que se pinte el balance: se abre desde la publicada
     // (alguien ya empezó, así que no se puede) → se comprueba en una vacante sin rendiciones.
     const otra = await crearVacante(equipo, 'Regresiones del balance', await lugarDe(equipo))
@@ -134,6 +135,6 @@ test.describe('Regresiones de la prueba del editor', () => {
     await page.goto(`/admin/vacantes/${otra}/prueba`)
     const balance = page.locator('section[aria-label^="Balance"]')
     await expect(balance).toBeVisible({ timeout: 20_000 })
-    await expect(balance).not.toHaveAttribute('aria-label', 'Balance de la cuestionario')
+    await expect(balance).toHaveAttribute('aria-label', 'Balance de la prueba')
   })
 })
