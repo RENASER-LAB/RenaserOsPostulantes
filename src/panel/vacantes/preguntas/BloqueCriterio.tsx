@@ -10,8 +10,9 @@
  * archivo»— y, si le falta algo, el borde y un punto se ponen en ámbar con la
  * falta escrita al lado. En el teléfono los puntos y la cuenta bajan bajo el
  * nombre, en ese orden y antes que los botones. Mover, editar y quitar el
- * criterio siguen a la mano plegado. Desplegado: lo que evalúa, en la prueba su parte calificada y lo que
- * mira, y sus preguntas.
+ * criterio siguen a la mano plegado. Desplegado: sus propias faltas en ámbar
+ * (las de sus preguntas van en cada tarjeta), lo que evalúa y sus preguntas.
+ * Lo que vale y quién lo califica ya lo dice su línea: no se repite.
  *
  * Cada criterio y cada pregunta se editan en su sitio, se mueven arriba o abajo
  * y se quitan. Una pregunta cambia de criterio desde su selector, no arrastrando.
@@ -32,7 +33,7 @@ import {
   type PreguntaDeLaVersion,
   type VersionDePreguntas,
 } from '../../api/preguntasPropias'
-import { FormularioCriterioDePrueba, LineaDeLaParteCalificada } from './CriterioDePrueba'
+import { FormularioCriterioDePrueba } from './CriterioDePrueba'
 import { ArchivoDeLaPregunta } from './Entregables'
 import { esPrueba, useModoDelEditor } from './modo'
 import { IconoAbajo, IconoArriba, IconoCruz, IconoDesplegar, IconoLapiz, IconoMas } from '@/ui/Iconos'
@@ -46,8 +47,15 @@ import {
   preguntaNueva,
   puntosConDesglose,
 } from './formulario'
-import { faltasPorCriterio, numerosDePreguntas, type useCriteriosAbiertos } from './navegacion'
-import { BotonIcono, MostrarFallo } from './piezas'
+import {
+  faltasPorCriterio,
+  faltasPorEntregable,
+  faltasPorPregunta,
+  faltasPropiasPorCriterio,
+  numerosDePreguntas,
+  type useCriteriosAbiertos,
+} from './navegacion'
+import { BotonIcono, ListaDeFaltas, MostrarFallo } from './piezas'
 import estilos from './EditorDePreguntas.module.css'
 
 interface PropsBloque {
@@ -65,8 +73,14 @@ interface PropsBloque {
   /** Desplegado o plegado (V68). Sin `alAlternar`, siempre desplegado. */
   abierto?: boolean
   alAlternar?: () => void
-  /** Lo que le falta, tal como lo dice el servidor. */
+  /** Lo que le falta, también a sus preguntas, tal como lo dice el servidor: su punto y su línea plegada. */
   faltas?: string[]
+  /** Solo las suyas, sin las de sus preguntas: se escriben desplegado. */
+  faltasPropias?: string[]
+  /** Lo que le falta a cada una de sus preguntas, sin «La pregunta N (…): », por su id. */
+  faltasDePreguntas?: Map<number, string[]>
+  /** En la prueba, lo que le falta a cada archivo, por el id de su entregable. */
+  faltasDeArchivos?: Map<number, string[]>
   /** El número de cada pregunta en la versión: «Pregunta 4». */
   numeros?: Map<number, number>
   /** Una falta pidió abrir su lápiz (QA-10); `alAbrirLapiz` avisa de que ya se abrió. */
@@ -87,6 +101,9 @@ export function BloqueCriterio({
   abierto = true,
   alAlternar,
   faltas = [],
+  faltasPropias = [],
+  faltasDePreguntas = new Map(),
+  faltasDeArchivos = new Map(),
   numeros = new Map(),
   pedirLapiz = false,
   alAbrirLapiz,
@@ -157,7 +174,8 @@ export function BloqueCriterio({
       id={criterio ? `criterio-${criterio.id}` : 'sin-criterio'}
       tabIndex={-1}
     >
-      <header className={estilos.cabeceraCriterio}>
+      {/* Sin `editar_vacante` no hay botones: los puntos van al borde derecho (AC-12). */}
+      <header className={criterio && !editable ? estilos.cabeceraSinBotones : estilos.cabeceraCriterio}>
         {plegable ? (
           <NombrePlegable titulo={titulo} abierto={abierto} alAlternar={alAlternar} />
         ) : (
@@ -214,6 +232,7 @@ export function BloqueCriterio({
           </span>
         )}
       </header>
+      {desplegado && <ListaDeFaltas faltas={faltasPropias} nombre="Lo que le falta al criterio" />}
 
       {criterio && editando && deLaPrueba ? (
         <FormularioCriterioDePrueba
@@ -266,17 +285,11 @@ export function BloqueCriterio({
           </div>
         </form>
       ) : (
-        desplegado && (
-          <>
-            {criterio?.queEvalua && (
-              <p className={estilos.queEvalua}>
-                <b>Qué evalúa:</b> {criterio.queEvalua}
-              </p>
-            )}
-            {criterio && deLaPrueba && (
-              <LineaDeLaParteCalificada criterio={criterio} entregables={entregables} numeros={numeros} />
-            )}
-          </>
+        desplegado &&
+        criterio?.queEvalua && (
+          <p className={estilos.queEvalua}>
+            <b>Qué evalúa:</b> {criterio.queEvalua}
+          </p>
         )
       )}
 
@@ -301,12 +314,6 @@ export function BloqueCriterio({
 
       {desplegado && (
         <>
-          {criterio && preguntas.length === 0 && !deLaPrueba && (
-            <p className={estilos.aviso}>Sin preguntas: así no se publica.</p>
-          )}
-          {criterio && preguntas.length === 0 && deLaPrueba && (criterio.puntosCalificados ?? 0) === 0 && (
-            <p className={estilos.aviso}>Sin cerradas ni parte calificada: así no se publica.</p>
-          )}
           {!criterio && (
             <p className={estilos.aviso}>
               Estas preguntas no están en ningún criterio. Muévelas con su selector «Criterio»: sin
@@ -316,22 +323,27 @@ export function BloqueCriterio({
 
           {preguntas.length > 0 && (
             <ol className={estilos.preguntas}>
-              {preguntas.map((p, i) => (
-                <li key={p.id}>
-                  <TarjetaPregunta
-                    vacanteId={vacanteId}
-                    pregunta={p}
-                    numero={numeros.get(p.id)}
-                    criterio={criterio}
-                    todos={todos}
-                    editable={editable}
-                    primera={i === 0}
-                    ultima={i === preguntas.length - 1}
-                    alCambiar={alTerminar}
-                    archivo={deLaPrueba ? archivoDe(p.id) : undefined}
-                  />
-                </li>
-              ))}
+              {preguntas.map((p, i) => {
+                const archivo = deLaPrueba ? archivoDe(p.id) : undefined
+                return (
+                  <li key={p.id}>
+                    <TarjetaPregunta
+                      vacanteId={vacanteId}
+                      pregunta={p}
+                      numero={numeros.get(p.id)}
+                      criterio={criterio}
+                      todos={todos}
+                      editable={editable}
+                      primera={i === 0}
+                      ultima={i === preguntas.length - 1}
+                      alCambiar={alTerminar}
+                      archivo={archivo}
+                      faltas={faltasDePreguntas.get(p.id)}
+                      faltasDelArchivo={archivo ? faltasDeArchivos.get(archivo.id) : undefined}
+                    />
+                  </li>
+                )
+              })}
             </ol>
           )}
 
@@ -375,8 +387,17 @@ interface PropsTarjeta {
   alCambiar: (editor: EditorDePreguntas) => void
   /** Solo en la prueba: el archivo que pide (nulo si no pide); sin la prop, no se ofrece. */
   archivo?: EntregableDeLaVersion | null
+  /** Lo que le falta para publicar, sin «La pregunta N (…): », en el orden del servidor. */
+  faltas?: string[]
+  /** Lo que le falta a su archivo («Flujo.xlsx»: nadie lo califica…): se escribe bajo el archivo. */
+  faltasDelArchivo?: string[]
 }
 
+/**
+ * Una pregunta del borrador. Con falta, el borde y el punto ámbar de los criterios
+ * con falta y cada falta escrita debajo, en los dos editores; también sin
+ * `editar_vacante`, que la ve sin poder corregirla.
+ */
 function TarjetaPregunta({
   vacanteId,
   pregunta,
@@ -388,6 +409,8 @@ function TarjetaPregunta({
   ultima,
   alCambiar,
   archivo,
+  faltas = [],
+  faltasDelArchivo = [],
 }: PropsTarjeta) {
   const modo = useModoDelEditor()
   const [editando, setEditando] = useState(false)
@@ -427,14 +450,17 @@ function TarjetaPregunta({
   }
 
   const ocupado = mover.isPending || quitar.isPending
+  // La falta de su archivo también lleva a esta tarjeta: se pone en ámbar igual.
+  const conFalta = faltas.length > 0 || faltasDelArchivo.length > 0
   return (
     <article
-      className={`${estilos.pregunta} ${estilos.destino}`}
+      className={`${estilos.pregunta} ${estilos.destino}${conFalta ? ` ${estilos.preguntaConFalta}` : ''}`}
       aria-label={`Pregunta: ${pregunta.enunciado}`}
       id={`pregunta-${pregunta.id}`}
       tabIndex={-1}
     >
       <div className={estilos.cabeceraPregunta}>
+        {conFalta && <span className={estilos.puntoFalta} aria-hidden="true" />}
         {numero !== undefined && <span className={estilos.numeroPregunta}>Pregunta {numero}</span>}
         <span className={estilos.chip}>{nombreDelTipo(pregunta.tipo)}</span>
         {/* En la prueba la abierta no lleva puntos: la califica su criterio entero. */}
@@ -459,6 +485,7 @@ function TarjetaPregunta({
         )}
       </div>
       <ContenidoDePregunta pregunta={pregunta} />
+      <ListaDeFaltas faltas={faltas} nombre="Lo que le falta para publicar" />
       {archivo !== undefined && (
         <ArchivoDeLaPregunta
           vacanteId={vacanteId}
@@ -468,6 +495,7 @@ function TarjetaPregunta({
           criterio={criterio}
           editable={editable}
           alCambiar={alTerminar}
+          faltas={faltasDelArchivo}
         />
       )}
       <MostrarFallo fallo={fallo} />
@@ -600,6 +628,9 @@ export function ListaDeCriterios({
 }) {
   const numeros = numerosDePreguntas(version)
   const faltas = faltasPorCriterio(version)
+  const propias = faltasPropiasPorCriterio(version)
+  const faltasDePreguntas = faltasPorPregunta(version)
+  const faltasDeArchivos = faltasPorEntregable(version)
   return (
     <>
       {version.criterios.length > 0 && (
@@ -620,6 +651,9 @@ export function ListaDeCriterios({
           abierto={plegado.abierto(c.id)}
           alAlternar={() => plegado.alternar(c.id)}
           faltas={faltas.get(c.id) ?? []}
+          faltasPropias={propias.get(c.id)}
+          faltasDePreguntas={faltasDePreguntas}
+          faltasDeArchivos={faltasDeArchivos}
           numeros={numeros}
           pedirLapiz={plegado.aEditar === c.id}
           alAbrirLapiz={plegado.lapizAbierto}
@@ -636,6 +670,8 @@ export function ListaDeCriterios({
           ultimo
           alCambiar={alCambiar}
           entregables={entregables}
+          faltasDePreguntas={faltasDePreguntas}
+          faltasDeArchivos={faltasDeArchivos}
           numeros={numeros}
         />
       )}

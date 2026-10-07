@@ -752,8 +752,9 @@ propias, la vacante no se publica hasta tenerlas publicadas**, y el cartel «Tod
 de publicar miran esa misma regla.
 
 **El editor** (`/admin/vacantes/:id/preguntas`). Arriba, **la cabecera fija**: el estado, cuántos
-puntos van de 100, cuántos criterios y preguntas, una barra hasta 100 con un tramo por criterio y
-lo que frena la publicación, en botones que llevan a donde se arregla. Queda pegada justo debajo de
+puntos van de 100, cuántos criterios y preguntas, una barra hasta 100 con un tramo por criterio y,
+si algo frena la publicación, la pastilla «⚠ N por arreglar →», que lleva de falta en falta (desde
+el 07/10/2026; ver «Los puntos explicados donde se escriben», más abajo). Queda pegada justo debajo de
 la cabecera del panel al bajar (ver `--alto-cabecera-panel`, más abajo). Es la misma del editor de
 la prueba desde el 05/10/2026, y sus criterios también se pliegan: ver «Un editor de la prueba más
 simple», más abajo. Debajo, un bloque por criterio —nombre, «qué evalúa» y sus puntos, que se suman
@@ -767,9 +768,9 @@ solos— con sus preguntas, cada una con su tipo y sus puntos:
 Quien no quiere pensar en criterios no está obligado: la primera pregunta sin criterio crea
 «General». Se escriben además **la guía de calificación** para la IA y los **minutos estimados**, y
 criterios y preguntas se ordenan con flechas. **El balance lo cuadra el servidor**: cada cambio
-devuelve el editor entero y se pinta tal cual. **«Publicar las preguntas» con algo pendiente
-enseña la lista entera de lo que falta** —la suma no da 100, una pregunta sin criterio…— para
-arreglarlo de una pasada.
+devuelve el editor entero y se pinta tal cual, con los avisos que frenan la publicación —la suma
+no da 100, una pregunta sin criterio…— escritos cada uno en su sitio. **«Publicar las preguntas»
+con algo pendiente no llama al servidor**: baja a la primera falta (desde el 07/10/2026).
 
 - **«Copiar de otra vacante»** abre las vacantes de la misma empresa con preguntas publicadas,
   con búsqueda por nombre y filtro por nivel, deja ver sus preguntas antes y, si ya hay un
@@ -853,11 +854,13 @@ y `loQueFaltaParaPublicar.ts` miran la misma regla (`usePruebaLista`).
 publicadas, recomendaciones y copia— elegido con un modo (`preguntas/modo.tsx`: `MODO_PRUEBA`
 cambia la ruta de la API, la clave de la consulta y los textos), más un caso opcional, los
 archivos que se piden, la configuración con el tiempo y la fecha límite, y **la parte calificada de
-cada criterio**: lo que no suman sus cerradas, que califica la IA o una persona. **Las abiertas no
+cada criterio**: lo que no suman sus cerradas, que califica la IA o una persona (en pantalla,
+«Abiertas y archivos» desde el 07/10/2026). **Las abiertas no
 llevan puntos**, solo su «Qué debe tener una buena respuesta». Cómo es desde el 05/10/2026, en «Un
 editor de la prueba más simple», más abajo.
 
-«Publicar la prueba» con algo pendiente enseña **la lista entera** del servidor. Hasta que alguien
+«Publicar la prueba» con algo pendiente no llama al servidor: baja a la primera falta, que está
+escrita en su sitio (desde el 07/10/2026). Hasta que alguien
 empiece a rendirla se puede abrir un borrador desde la publicada; desde entonces solo se cambian
 los puntos, las instrucciones de la IA y la fecha límite. Sin `editar_vacante`, todo en lectura.
 
@@ -921,34 +924,38 @@ trae la `V68` y la `V69` (`docs/` del backend, `PRUEBA-DEL-PUESTO.md`, «El edit
 
 **La cabecera fija** (`CabeceraFija.tsx`) se queda arriba al bajar con el estado, el balance «80 de
 100 pts», el resumen, el chip del tiempo —«90 min · hasta vie 10/10, 23:59» o «Sin cronómetro ·
-hasta …», en ámbar si faltan los minutos o la fecha—, «Configuración» y «Publicar».
+hasta …», en ámbar si faltan los minutos o la fecha, o si la fecha ya pasó—, «Configuración» y
+«Publicar».
 
 - **Desde 56rem de ancho de la cabecera** (no de la ventana: el menú lateral se pliega) todo va en
   una fila, con la barra por criterio debajo: un tramo por criterio en índigos que se aclaran y lo
-  que falta en gris; al pasar el cursor, cada tramo dice su criterio y sus puntos. Más estrecha, el
-  chip y «Configuración» bajan a su propia línea. Sin «Publicar» —publicada o en lectura— no queda
+  que falta en gris; al pasar el cursor, cada tramo dice su criterio y sus puntos. Más estrecha, la
+  pastilla de las faltas baja a su propia línea, y el chip y «Configuración» a la siguiente. Sin
+  «Publicar» —publicada o en lectura— no queda
   una columna vacía.
-- **Las faltas son botones compactos** que llevan a donde se arregla: los puntos, a los criterios;
-  un criterio, a ese criterio abierto (si falta quién califica, a su lápiz); una pregunta, a ella;
-  los minutos o la fecha, a la configuración con el cursor en el campo. Se ven cuatro y el resto tras
-  «Ver N más». Los textos son los del servidor (`navegacion.ts` los reconoce).
-- **En el teléfono**: estado, balance y «Publicar» en una línea; el chip y las faltas debajo, en
-  una fila que se desplaza. Su alto se mide en `--alto-cabecera-fija`, para que lo que se baja a ver
-  desde una falta quede debajo de ella.
+- **Las faltas no se listan en la cabecera** (desde el 07/10/2026): cada una está escrita en su
+  sitio y la pastilla «⚠ N por arreglar →» lleva de una en una. Los textos son los del servidor
+  (`navegacion.ts` los reconoce). El detalle, en «Los puntos explicados donde se escriben», más
+  abajo.
+- **En el teléfono**: estado, balance y «Publicar» en una línea; debajo, la pastilla, el chip con
+  «Configuración» y la barra. Su alto se mide en `--alto-cabecera-fija`, para que lo que se baja a
+  ver desde una falta quede debajo de ella.
 
 **Los criterios se pliegan.** Plegado, cada uno es una línea con puntos, desglose, preguntas y
 archivos —«Análisis financiero · 30 pts (sistema 5 + IA 25) · 2 preguntas · 1 archivo»—, con borde
 y punto ámbar si le falta algo. Al entrar están plegados salvo el recién creado y los que tienen
-una falta; encima, «Desplegar todo» y «Plegar todo». Desplegado: «Qué evalúa», «Parte calificada»,
-«Mira» con el chip «automático» y sus preguntas. Plegar funciona también en lectura.
+una falta; encima, «Desplegar todo» y «Plegar todo». Desplegado: «Qué evalúa», sus faltas y sus
+preguntas. Desde el 07/10/2026 ya no repite «Parte calificada» ni «Mira»: el reparto lo dice su
+línea. Plegar funciona también en lectura.
 
 **Los puntos del criterio** (`V69`). El lápiz pide nombre, «Qué evalúa», **«Puntos del criterio»**
-—lo que vale entero, cerradas incluidas— y quién califica. Debajo dice en vivo cuánto suman sus
-cerradas y quién califica el resto: la parte calificada es el total menos las cerradas, y el total
-se mantiene si luego cambian. Si las cerradas lo suman todo, «Todo lo puntúa el sistema»; si lo
-pasan, la falta «Las cerradas de «X» suman N y el criterio vale T». Sin calificador, la línea del
-criterio dice «N sin asignar», el selector «Elige quién» —nunca se da por hecha la IA— y su falta
-lleva al lápiz. **Ya no tiene «Mira».**
+—lo que vale entero, cerradas incluidas— y quién califica. Debajo dice en vivo el reparto (desde
+el 07/10/2026): «Cerradas: 20 pts · Abiertas y archivos: 20 pts, los califica [La IA ▾]», o
+«Cerradas: 40 pts · Todo lo puntúa el sistema» si las cerradas lo suman todo, y «Si luego cambian
+sus cerradas, el criterio sigue valiendo lo mismo: lo que se ajusta son los puntos de abiertas y
+archivos». Si lo pasan, la falta «Las cerradas de «X» suman N y el criterio vale T». Sin
+calificador, la línea del criterio dice «N sin asignar», el selector «Elige quién» —nunca se da
+por hecha la IA— y su falta lleva al lápiz. **Ya no tiene «Mira».**
 
 **Los archivos se piden donde se usan** (`Entregables.tsx`):
 
@@ -958,7 +965,7 @@ lleva al lápiz. **Ya no tiene «Mira».**
 - **Generales**, al final, con lo mismo más **«Cubre»**: «Toda la prueba» o «Estas preguntas», con
   una casilla por número. Sin ninguno: «Ninguno. Úsalo solo si un archivo reúne varias respuestas».
 - **«Mira» lo deduce el servidor**: el archivo de cada pregunta del criterio y los generales que
-  cubren toda la prueba o alguna de sus preguntas.
+  cubren toda la prueba o alguna de sus preguntas. Desde el 07/10/2026 el editor no lo enseña.
 
 **El caso** (`CasoYGuia.tsx`) sale plegado, con «Agregar un caso»: enunciado y PDF o Word. «Quitar el
 caso» con algo escrito pide confirmación y solo borra eso; uno abierto sin nada no se guarda. Bajo
@@ -998,14 +1005,17 @@ cronometrada, que todo entregable lo califique alguien («nadie lo califica») y
 algo.
 
 **«Cambiar los puntos»** de una publicada pide el total de cada criterio, que se ve en su línea
-plegada. Un total que no es un entero de 0 a 100 no se envía: despliega su criterio y lleva al campo,
-debajo de la cabecera fija. Si el servidor responde 400, la falta de la suma dice lo que suma lo
-escrito, o ninguna suma si algo lleva decimales. En el banco «Cambiar los puntos» abre con los
-criterios desplegados —sus únicos campos son los puntos de sus preguntas— y un 400 lleva a esa
-pregunta con el aviso bajo su campo.
+plegada, y bajo él dice el reparto como el lápiz pero sin selector: «Cerradas: 60 pts · Abiertas y
+archivos: 40 pts, los califica la IA» (07/10/2026). Un total que no es un entero de 0 a 100 no se
+envía: despliega su criterio y lleva al campo, debajo de la cabecera fija. Si el servidor responde
+400, la falta de la suma dice lo que suma lo escrito, o ninguna suma si algo lleva decimales. En el
+banco «Cambiar los puntos» abre con los criterios desplegados —sus únicos campos son los puntos de
+sus preguntas— y un 400 lleva a esa pregunta con el aviso bajo su campo; desde el 07/10/2026 su 400
+también da la suma de lo escrito, o ninguna si algo no es entero, y el formulario no envía puntos
+fuera de 0..100 en una pregunta ni de −100..100 en una opción.
 
 **El editor del banco** (`/admin/vacantes/:id/preguntas`) gana la misma cabecera fija —estado,
-balance, barra por criterio, «Publicar las preguntas» y sus avisos como botones— y los criterios
+balance, barra por criterio, «Publicar las preguntas» y la pastilla de las faltas— y los criterios
 plegables, con la misma línea sin archivos. **Solo cambia la interfaz**: sus reglas, sus datos, su
 cálculo y su API son los de siempre, y su guía para la IA y sus minutos siguen donde estaban.
 
@@ -1013,7 +1023,12 @@ cálculo y su API son los de siempre, y su guía para la IA y sus minutos siguen
 (120rem), centrado, como la tabla y la ficha de la vacante. Lo que es una fila —la cabecera, la
 línea de cada criterio, las tarjetas de pregunta y los entregables— usa el carril entero; lo que se
 lee o se escribe conserva su medida: `--ancho-bloque` (60rem) para formularios y carteles,
-`--medida-bloque` (72ch) para enunciados y opciones (`EditorDePreguntas.module.css`).
+`--medida-bloque` para lo que se lee —enunciados, opciones o niveles, «Qué evalúa» y «Qué debe
+tener»—, token local del editor (`EditorDePreguntas.module.css`) que pasó de 72ch a 100ch el
+07/10/2026 sin pasar del ancho de su tarjeta; formularios, prosa (`--medida`) y móvil no cambiaron.
+**Una línea de criterio sin botones** —publicada, vista previa, sin `editar_vacante` o en
+«Cambiar los puntos» del banco— lleva sus puntos y su resumen al borde derecho
+(`.cabeceraSinBotones`); con botones siguen tras el nombre.
 
 **Una vacante con plantilla no cambia**: sigue con «Plazos de la prueba» en su configuración, que
 funciona igual.
@@ -1033,6 +1048,52 @@ herramientas/e2e/53-editor-de-la-prueba-mas-simple-qa.spec.ts`, junto con
 (marca `QA-PE-0067`); la IA va apagada. Las unitarias, en `src/panel/vacantes/preguntas/*.test.*`,
 `src/panel/vacantes/Vacante.test.tsx` y `src/paginas/prueba/PruebaDelEditor.test.tsx`; en el
 backend, `FlujoPruebaPropiaIT`.
+
+### Los puntos explicados donde se escriben (07/10)
+
+La cabecera listaba las faltas en botones con un «Ver N más», el lápiz decía «Sus cerradas suman…»
+y una pregunta con los puntos mal no se distinguía de las demás. Desde el 07/10/2026, en los dos
+editores, **cada falta se escribe en su sitio**. **No cambian** lo que exige publicar, la
+calificación ni la API, y no hay migración: solo los textos y dónde se ven.
+
+- **La cabecera fija** ya no tiene fila de faltas ni «Ver N más»: el total en ámbar si no suma 100
+  y la pastilla **«⚠ N por arreglar →»**, que cuenta las faltas. Cada clic lleva al siguiente sitio
+  con falta en el orden de la página —el total, el tiempo, la fecha, cada criterio con sus
+  preguntas, las preguntas sin criterio y los entregables generales—, abre el criterio plegado, la
+  resalta y, tras la última, vuelve a la primera; dos faltas en el mismo sitio son una parada.
+  **«Publicar» con faltas no llama al servidor**: baja a la primera, la resalta y le da el foco
+  (`useIrALasFaltas`, en `navegacion.ts`).
+- **Dónde se ve cada falta**: bajo el criterio desplegado; en la tarjeta de su pregunta; bajo el
+  archivo de una pregunta; en la línea de un entregable general; las que no tienen sitio, encima de
+  «Criterios y preguntas»; el tiempo y la fecha, en su chip —en ámbar también si la fecha ya
+  pasó— y bajo su campo en «Configuración». Se quitaron los avisos fijos «Sin preguntas: así no se
+  publica.» y «Sin cerradas ni parte calificada…»: los dice el servidor bajo el criterio.
+- **La tarjeta de una pregunta con falta** toma el borde y el punto ámbar y escribe debajo sus
+  faltas sin el prefijo «La pregunta N («…»): » —de puntos, de forma o «No está en ningún
+  criterio.»—, en el orden del servidor; su criterio plegado también sale en ámbar. Sin
+  `editar_vacante` se ve igual, sin formulario. Una publicada no tiene faltas de publicar.
+- **El formulario de la pregunta avisa en vivo** con los textos del servidor —«Ninguna opción
+  puede pasar de los 5 puntos de la pregunta.», «Marcando todas las opciones buenas no se llega a
+  sus 10 puntos.»…— en cuanto están escritos los puntos de la pregunta y de sus opciones
+  (`avisosDeLosPuntos`, en `formulario.ts`). **Deja guardar**: es un borrador y la tarjeta queda en
+  ámbar.
+- **El aviso nuevo del servidor** para un criterio con puntos que nadie puede calificar: «El
+  criterio «Excel» vale 20 y sus cerradas suman 5: nadie puede calificar los otros 15. Baja el total
+  a 5, sube sus cerradas o agrégale una abierta o un archivo.», o, sin cerradas, «El criterio
+  «Excel» vale 20 y no tiene nada que calificar: agrégale una abierta, un archivo o cerradas que
+  sumen 20.». Empieza por «El criterio «X»» para que la navegación lleve al criterio y nunca a un
+  entregable que se llame igual.
+- **El reparto**, el lápiz y «Cambiar los puntos», y **el ancho**, en «Un editor de la prueba más
+  simple», más arriba.
+
+⚠️ **Quedan con el texto de antes, a sabiendas** (fuera de esta spec): la propuesta de
+`Recomendaciones.tsx` («Sus cerradas suman N. Los otros M los califica…») y el error de «Cambiar
+los puntos» de la prueba publicada «Sus cerradas suman N: no le queda nada que calificar…»
+(`PreguntasPublicadas.tsx`).
+
+Comprobarlo: `npx playwright test herramientas/e2e/54-reparto-y-avisos-de-los-puntos.spec.ts
+herramientas/e2e/55-reparto-y-avisos-de-los-puntos-qa.spec.ts`. ⚠️ **Escriben** en el clon y lo
+retiran al terminar (marca `QA-PE-0067`); la IA va apagada. Lo visual lo comprueba el usuario.
 
 ### La sección «Pruebas» se retiró (05/10)
 

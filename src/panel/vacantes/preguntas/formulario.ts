@@ -15,6 +15,7 @@ import type {
   ResumenDePreguntas,
   TipoDePreguntaPropia,
 } from '../../api/preguntasPropias'
+import type { Calificador } from '../../api/pruebaPropia'
 
 export const TIPOS: { valor: TipoDePreguntaPropia; nombre: string }[] = [
   { valor: 'ABIERTA', nombre: 'Abierta' },
@@ -197,6 +198,78 @@ export function repartoDelCriterio(total: number, cerradas: number): Reparto {
 /** La falta de un criterio cuyas cerradas pasan de lo que vale: la misma que dice el servidor. */
 export function cerradasPorEncima(nombre: string, cerradas: number, total: number): string {
   return `Las cerradas de «${nombre}» suman ${cerradas} y el criterio vale ${total}.`
+}
+
+// ---------- El reparto, escrito como reparto ----------
+// Las mismas piezas en el lápiz del criterio y en «Cambiar los puntos» de la prueba:
+// cerradas + abiertas y archivos = lo que vale el criterio. El criterio desplegado no
+// lo repite: su línea ya dice «40 pts (sistema 25 + IA 15)».
+
+/** «Cerradas: 20 pts»: lo que puntúa el sistema. */
+export const cerradasDelReparto = (cerradas: number) => `Cerradas: ${cerradas} pts`
+
+/** «Abiertas y archivos»: lo que califican la IA o una persona. */
+const ABIERTAS_Y_ARCHIVOS = 'Abiertas y archivos'
+
+/** «Abiertas y archivos: 20 pts». */
+export const abiertasYArchivos = (puntos: number) => `${ABIERTAS_Y_ARCHIVOS}: ${puntos} pts`
+
+/** Cuando las cerradas suman lo que vale el criterio. */
+export const TODO_DEL_SISTEMA = 'Todo lo puntúa el sistema'
+
+/**
+ * «los califica la IA», «los califica una persona» o, si nadie lo ha dicho, la
+ * falta: nunca se da por hecha la IA (QA-10).
+ */
+export function quienLosCalifica(calificador: Calificador | null | undefined): string {
+  if (calificador === 'PERSONA') return 'los califica una persona'
+  if (calificador === 'IA') return 'los califica la IA'
+  return 'falta decir quién los califica'
+}
+
+/** El reparto entero, sin selector: «Cerradas: 60 pts · Abiertas y archivos: 40 pts, los califica la IA». */
+export function textoDelReparto(cerradas: number, otros: number, calificador: Calificador | null | undefined): string {
+  return `${cerradasDelReparto(cerradas)} · ${abiertasYArchivos(otros)}, ${quienLosCalifica(calificador)}`
+}
+
+// ---------- Los puntos de una cerrada, en vivo ----------
+
+/** Lo escrito como número; vacío o no numérico, nulo. */
+function numeroEscrito(texto: string): number | null {
+  if (texto.trim() === '') return null
+  const numero = Number(texto)
+  return Number.isFinite(numero) ? numero : null
+}
+
+/**
+ * Lo que el servidor dirá de los puntos de una cerrada al publicar
+ * (`ReglasDePuntos.puntuacionDeLaPregunta`), con sus palabras y sin «La pregunta
+ * N («…»): ». El formulario lo avisa mientras se escribe y deja guardar: es un
+ * borrador, y lo que frena es publicar. Con los puntos de la pregunta o de alguna
+ * opción sin escribir no dice nada.
+ */
+export function avisosDeLosPuntos(p: PreguntaEnEdicion): string[] {
+  if (!esCerrada(p.tipo) || p.opciones.length === 0) return []
+  const maximo = numeroEscrito(p.puntos)
+  const puntos = p.opciones.map((o) => numeroEscrito(o.puntos))
+  if (maximo === null || puntos.some((x) => x === null)) return []
+  const escritos = puntos as number[]
+  const deLaPregunta = String(maximo)
+  const avisos: string[] = []
+  if (p.tipo === 'OPCION_MULTIPLE') {
+    if (escritos.some((x) => Math.abs(x) > maximo)) {
+      avisos.push(`Cada opción tiene que valer entre −${deLaPregunta} y ${deLaPregunta}.`)
+    }
+    const buenas = escritos.filter((x) => x > 0).reduce((suma, x) => suma + x, 0)
+    if (buenas < maximo) avisos.push(`Marcando todas las opciones buenas no se llega a sus ${deLaPregunta} puntos.`)
+    return avisos
+  }
+  // Opción única y escala: se lleva los puntos de lo que elija.
+  const [ninguna, alguna] = p.tipo === 'ESCALA' ? ['Ningún nivel', 'Algún nivel'] : ['Ninguna opción', 'Alguna opción']
+  if (escritos.some((x) => x < 0)) avisos.push(`${ninguna} puede tener puntos negativos.`)
+  if (escritos.some((x) => x > maximo)) avisos.push(`${ninguna} puede pasar de los ${deLaPregunta} puntos de la pregunta.`)
+  if (!escritos.includes(maximo)) avisos.push(`${alguna} tiene que dar los ${deLaPregunta} puntos de la pregunta.`)
+  return avisos
 }
 
 /**

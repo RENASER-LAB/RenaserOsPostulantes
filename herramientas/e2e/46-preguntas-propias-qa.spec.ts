@@ -511,7 +511,7 @@ test.describe('El editor, agrupado por criterios', () => {
     expect(servidor.criterios.find((c: any) => c.nombre === 'General').puntos).toBe(25)
   })
 
-  test('AC-05 · con 95, un criterio vacío y una clave sin máximo, publicar lista las tres faltas y no publica', async ({ page }) => {
+  test('AC-05 · con 95, un criterio vacío y una clave sin máximo, cada falta se ve en su sitio y publicar no publica', async ({ page }) => {
     // Hasta 95: una cerrada de 40 cuya mejor opción da 30 (no llega al máximo).
     const editor = await exigir(`${RUTA(id)}/criterios`, equipo, 'POST', { nombre: 'Tributación' })
     const tributacion = editor.borrador.criterios.find((c: any) => c.nombre === 'Tributación').id
@@ -527,16 +527,20 @@ test.describe('El editor, agrupado por criterios', () => {
     await page.getByRole('button', { name: 'Agregar criterio' }).click()
     await page.getByLabel('Nombre del criterio').fill('Manejo de Excel')
     await page.getByRole('button', { name: 'Agregar el criterio' }).click()
-    await expect(criterio(page, 'Manejo de Excel').getByText('Sin preguntas: así no se publica.')).toBeVisible({ timeout: 20_000 })
+    await expect(criterio(page, 'Manejo de Excel').getByText('El criterio «Manejo de Excel» no tiene preguntas.')).toBeVisible({ timeout: 20_000 })
     await expect(balance(page)).toContainText('95 de 100 puntos')
+    // Las tres, cada una en su sitio: el total, el criterio vacío y la tarjeta de la clave.
+    await expect(balance(page)).toContainText('Los puntos suman 95 de 100: faltan 5.')
+    await expect(
+      page.getByRole('article', { name: 'Pregunta: ¿Cuál es la tasa general del IGV en el Perú?' })
+        .getByRole('list', { name: 'Lo que le falta para publicar' }),
+    ).toContainText('Alguna opción tiene que dar los 40 puntos de la pregunta.')
+    await expect(balance(page).getByRole('button', { name: '3 por arreglar' })).toBeVisible()
 
+    // «Publicar» no publica: lleva a la primera, la de los puntos.
     await page.getByRole('button', { name: 'Publicar las preguntas' }).click()
-    const faltas = page.getByRole('alert').filter({ hasText: 'Faltan 3 cosas' })
-    await expect(faltas).toBeVisible({ timeout: 20_000 })
-    await expect(faltas.getByRole('listitem')).toHaveCount(3)
-    await expect(faltas).toContainText('faltan 5')
-    await expect(faltas).toContainText('«Manejo de Excel» no tiene preguntas')
-    await expect(faltas).toContainText('tiene que dar los 40 puntos')
+    await expect(page.locator('#criterios-y-preguntas')).toBeFocused()
+    await expect(page.getByText(/^Publicadas./)).toHaveCount(0)
 
     const directo = await pedir(`${RUTA(id)}/publicacion`, equipo, 'POST')
     expect(directo.estado).toBe(400)
@@ -706,7 +710,7 @@ test.describe('Permisos del editor', () => {
       await expect(page.getByText('Las ves en lectura: cambiarlas pide el permiso de editar esta vacante.')).toBeVisible({
         timeout: 20_000,
       })
-      // Ningún botón que actúe: solo plegar, desplegar y las faltas, que llevan a donde se arreglan (V68).
+      // Ningún botón que actúe: solo plegar, desplegar y la pastilla de las faltas, que lleva a donde se arreglan (V68).
       await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
       const queActuan = await page.locator('main button').evaluateAll(
         (botones) =>
@@ -714,7 +718,7 @@ test.describe('Permisos del editor', () => {
             (b) =>
               !b.hasAttribute('aria-expanded') &&
               !['Desplegar todo', 'Plegar todo'].includes((b.textContent ?? '').trim()) &&
-              !b.closest('[aria-label="Lo que frena la publicación"]'),
+              !/^\d+ por arreglar/.test((b.textContent ?? '').trim()),
           ).length,
       )
       expect(queActuan).toBe(0)
@@ -772,13 +776,16 @@ test.describe('Regresiones del balance', () => {
     expect(enOrden).toBe(true)
   })
 
-  test('QA-PP-03 · la lista de faltas del último intento no se queda vieja tras corregir', async ({ page }) => {
+  test('QA-PP-03 · con faltas, «Publicar» no deja una lista que se quede vieja: lleva a la primera, y al corregir la pastilla se va', async ({ page }) => {
     const id = await borradorA95()
     await entrarAlPanel(page)
     await page.goto(`/admin/vacantes/${id}/preguntas`)
+    const pastilla = balance(page).getByRole('button', { name: '1 por arreglar' })
+    await expect(pastilla).toBeVisible({ timeout: 20_000 })
     await page.getByRole('button', { name: 'Publicar las preguntas' }).click()
+    await expect(page.locator('#criterios-y-preguntas')).toBeFocused()
     const faltas = page.getByRole('alert').filter({ hasText: 'Los puntos suman 95 de 100' })
-    await expect(faltas).toBeVisible({ timeout: 20_000 })
+    await expect(faltas).toHaveCount(0)
 
     // Se corrige: la primera abierta pasa de 20 a 25 y el borrador suma 100, sin avisos.
     // Los criterios salen plegados al entrar (V68): se despliegan para llegar a ella.
@@ -789,6 +796,7 @@ test.describe('Regresiones del balance', () => {
     await page.getByRole('button', { name: 'Guardar la pregunta' }).click()
     await expect(balance(page)).toContainText('100 de 100 puntos', { timeout: 20_000 })
     await expect(balance(page)).toContainText('0 avisos')
+    await expect(balance(page).getByRole('button', { name: /por arreglar/ })).toHaveCount(0)
     await expect(faltas).toHaveCount(0)
   })
 })

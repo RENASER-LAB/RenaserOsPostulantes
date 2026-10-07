@@ -6,6 +6,7 @@ import {
   entrarAlPortalCon,
   escribirBorrador,
   exigir,
+  irConLaPastilla,
   pedir,
   publicarPreguntas,
   RUTA as RUTA_DEL_BANCO,
@@ -258,8 +259,12 @@ test.describe('QA del editor de la prueba más simple', () => {
     expect(restantes).toEqual(['Informe final'])
 
     const informe = ((await editorDe(equipo, v)).borrador.prueba.entregables as any[])[0].id
-    await cabecera(page).getByRole('button', { name: /^«Informe final» no cubre ninguna pregunta/ }).click()
-    await expect.poll(() => page.evaluate(() => document.activeElement?.id ?? null)).toBe(`entregable-${informe}`)
+    // Su falta se escribe bajo él, y la pastilla lleva hasta él.
+    const elInforme = page.locator(`#entregable-${informe}`)
+    await expect(elInforme.getByRole('list', { name: 'Lo que le falta al entregable' })).toContainText(
+      '«Informe final» no cubre ninguna pregunta',
+    )
+    await irConLaPastilla(page, elInforme)
   })
 
   test('QA-03: con varias faltas, la de un criterio deja su línea a la vista y no debajo de la cabecera fija', async ({ page }) => {
@@ -283,11 +288,10 @@ test.describe('QA del editor de la prueba más simple', () => {
     await entrarAlPanel(page)
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto(`/admin/vacantes/${v}/prueba`)
-    const faltas = cabecera(page).getByRole('list', { name: 'Lo que frena la publicación' }).getByRole('button')
-    await expect(faltas).toHaveCount(4, { timeout: 20_000 })
+    await expect(cabecera(page).getByRole('button', { name: '4 por arreglar' })).toBeVisible({ timeout: 20_000 })
     await page.getByRole('button', { name: 'Plegar todo', exact: true }).click()
 
-    await cabecera(page).getByRole('button', { name: /^El criterio «Tributación»/ }).click()
+    await irConLaPastilla(page, page.getByRole('region', { name: 'Criterio Tributación' }))
     const plegador = page.getByRole('region', { name: 'Criterio Tributación' }).getByRole('button', { name: 'Tributación', exact: true })
     await expect(plegador).toHaveAttribute('aria-expanded', 'true')
     // Al terminar de bajar, el nombre del criterio no queda tapado por la cabecera.
@@ -341,7 +345,7 @@ test.describe('QA del editor de la prueba más simple', () => {
       await expect(chip).toContainText('Faltan los minutos')
     } else {
       await expect(chip).toContainText(`${minutos} min`)
-      await expect(cabecera(page).getByRole('button', { name: /^Faltan los minutos/ })).toHaveCount(0)
+      await expect(cabecera(page)).not.toContainText('Faltan los minutos')
     }
   })
 
@@ -511,8 +515,9 @@ test.describe('QA del editor de la prueba más simple', () => {
     await entrarAlPanel(page)
     await page.goto(`/admin/vacantes/${v}/prueba`)
     await page.getByRole('button', { name: 'Plegar todo', exact: true }).click()
-    await cabecera(page).getByRole('button', { name: new RegExp(`^${falta.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`) }).click()
     const bloque = page.getByRole('region', { name: 'Criterio Excel' })
+    await expect(bloque.locator('header').first()).toContainText(falta)
+    await irConLaPastilla(page, bloque)
     await expect(bloque.getByRole('button', { name: 'Excel', exact: true })).toHaveAttribute('aria-expanded', 'true')
     await expect(bloque).toContainText('40 pts (sistema 50)')
 
@@ -522,11 +527,11 @@ test.describe('QA del editor de la prueba más simple', () => {
     await expect(form.getByRole('spinbutton', { name: 'Puntos del criterio' })).toHaveValue('40')
     await expect(form).toContainText(falta)
     await form.getByRole('spinbutton', { name: 'Puntos del criterio' }).fill('60')
-    await expect(form).toContainText('Sus cerradas suman 50. Los otros 10 los califica')
-    await form.getByRole('combobox', { name: 'Quién califica los otros 10 puntos' }).selectOption('PERSONA')
+    await expect(form).toContainText('Cerradas: 50 pts · Abiertas y archivos: 10 pts, los califica')
+    await form.getByRole('combobox', { name: 'Quién califica los 10 puntos de abiertas y archivos' }).selectOption('PERSONA')
     await form.getByRole('button', { name: 'Guardar el criterio' }).click()
     await expect(bloque).toContainText('60 pts (sistema 50 + persona 10)', { timeout: 20_000 })
-    await expect(cabecera(page)).not.toContainText('Las cerradas de «Excel»')
+    await expect(bloque.getByRole('list', { name: 'Lo que le falta al criterio' })).toHaveCount(0)
     expect(await excel()).toMatchObject({ puntos: 60, puntosCalificados: 10, calificador: 'PERSONA' })
   })
 
@@ -552,13 +557,13 @@ test.describe('QA del editor de la prueba más simple', () => {
     // El panel dice la falta y no puede decir a la vez que esa parte la califica la IA.
     await entrarAlPanel(page)
     await page.goto(`/admin/vacantes/${v}/prueba`)
-    await expect(cabecera(page)).toContainText(falta, { timeout: 20_000 })
     const bloque = page.getByRole('region', { name: 'Criterio Cálculo' })
-    await page.getByRole('button', { name: 'Desplegar todo', exact: true }).click()
+    await page.getByRole('button', { name: 'Desplegar todo', exact: true }).click({ timeout: 20_000 })
+    await expect(bloque.getByRole('list', { name: 'Lo que le falta al criterio' })).toContainText(falta)
     await expect(bloque.locator('header').first()).toContainText('30 pts')
     await expect(bloque.locator('header').first()).not.toContainText('IA')
-    await expect(bloque).toContainText('Parte calificada:')
-    await expect(bloque).not.toContainText('la califica la IA')
+    await expect(bloque).not.toContainText('Abiertas y archivos')
+    await expect(bloque).not.toContainText('los califica la IA')
   })
 
   test('QA-11: en «Cambiar los puntos», un total mal escrito no trae al guardar una suma que contradice la escrita', async ({ page }) => {

@@ -2,8 +2,8 @@
  * Las preguntas propias de una vacante, agrupadas por criterios (V66, fase 1).
  *
  * Arriba, la cabecera fija (V68): cuántos puntos van de 100, cuántos criterios y
- * preguntas, una barra por criterio y lo que frena la publicación, cada aviso como
- * un botón que lleva a donde se arregla. Debajo, un bloque plegable por criterio
+ * preguntas, una barra por criterio y «⚠ N por arreglar →», que lleva de falta en
+ * falta; cada una está escrita donde se arregla. Debajo, un bloque plegable por criterio
  * con sus preguntas: al entrar, plegados salvo los que tienen una falta. Solo
  * cambia la interfaz: lo que exige publicar, los datos y la API son los de siempre. Quien no quiere pensar en criterios no está
  * obligado: la primera pregunta sin criterio crea «General».
@@ -36,8 +36,8 @@ import { CopiarDeOtraVacante } from './CopiarDeOtraVacante'
 import { falloDe, useEditorDePreguntas, usePonerEditor, type Fallo } from './consultas'
 import { FormularioPregunta } from './FormularioPregunta'
 import { preguntaNueva } from './formulario'
-import { irAlDestino, useCriteriosAbiertos, type Destino } from './navegacion'
-import { MostrarFallo } from './piezas'
+import { faltasSinSitio, irAlDestino, useCriteriosAbiertos, type Destino } from './navegacion'
+import { ListaDeFaltas, MostrarFallo } from './piezas'
 import { PreguntasPublicadas } from './PreguntasPublicadas'
 import { Recomendaciones } from './Recomendaciones'
 import estilos from './EditorDePreguntas.module.css'
@@ -133,25 +133,11 @@ function Contenido({ editor, poner }: { editor: Editor; poner: (e: Editor) => vo
             </>
           }
           version={base}
-          acciones={
-            editable &&
-            borrador && (
-              <button
-                className={estilos.publicar}
-                type="button"
-                aria-label={publicacion.isPending ? undefined : 'Publicar las preguntas'}
-                onClick={() => publicacion.mutate()}
-                disabled={publicacion.isPending}
-              >
-                {publicacion.isPending ? (
-                  'Publicando…'
-                ) : (
-                  <span>
-                    Publicar<span className={estilos.restoDelRotulo}> las preguntas</span>
-                  </span>
-                )}
-              </button>
-            )
+          faltas={borrador ? borrador.avisos : []}
+          publicar={
+            editable && borrador
+              ? { complemento: ' las preguntas', publicando: publicacion.isPending, alPublicar: () => publicacion.mutate() }
+              : null
           }
           alIr={irA}
         />
@@ -228,6 +214,7 @@ function Contenido({ editor, poner }: { editor: Editor; poner: (e: Editor) => vo
         <>
           <GuiaYMinutos version={borrador} vacanteId={editor.vacanteId} editable={editable} alGuardar={poner} />
           <div className={`${estilos.criterios} ${estilos.destino}`} id="criterios-y-preguntas" tabIndex={-1}>
+            <ListaDeFaltas faltas={faltasSinSitio(borrador.avisos, borrador)} nombre="Lo que falta para publicar" />
             <ListaDeCriterios vacanteId={editor.vacanteId} version={borrador} editable={editable} alCambiar={poner} plegado={plegado} />
           </div>
         </>
