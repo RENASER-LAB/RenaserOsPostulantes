@@ -307,6 +307,13 @@
    * una lista mas ancha que la pildora de arriba se lee como un descuadre.
    */
   --ancho: 80rem;
+  /*
+   * El ancho de `/vacantes`, y solo de esa pantalla (06/10/2026): tres columnas
+   * —filtros, lista y la vacante elegida— no caben holgadas en 80rem. La
+   * cabecera y el pie se ensanchan con ella (`.armazonAncho`), así que dentro
+   * de la pantalla nada se descuadra; al entrar, la píldora se estira.
+   */
+  --ancho-vacantes: 96rem;
 
   /*
    * El ancho del PANEL, que no es el del portal y por eso es otro token.

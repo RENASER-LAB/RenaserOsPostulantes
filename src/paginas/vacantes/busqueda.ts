@@ -644,6 +644,15 @@ export function publicadaHace(publicadaEn: number | null, ahora: number): string
   return entonces.a === hoy.a ? `Publicada ${fecha}` : `Publicada ${fecha} de ${entonces.a}`
 }
 
+/**
+ * Si la tarjeta lleva «Nueva» (06/10/2026): publicada hoy o en los tres días
+ * anteriores, contados en días de Lima como «Publicada hace…». Sin fecha, no.
+ */
+export function esNueva(publicadaEn: number | null, ahora: number): boolean {
+  if (publicadaEn === null) return false
+  return diaEnLima(ahora).dia - diaEnLima(publicadaEn).dia <= 3
+}
+
 // ---------- la ficha ----------
 
 /**

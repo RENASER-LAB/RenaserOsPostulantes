@@ -45,6 +45,9 @@ const titulos = (page: Page) => tarjetas(page).getByRole('heading', { level: 3 }
 const orden = (page: Page) => page.getByRole('radiogroup', { name: 'Ordenar por' })
 const enCabecera = (page: Page, nombre: string) =>
   page.locator('header nav').getByRole('link', { name: nombre, exact: true })
+/** «Quitar filtros» de la fila de etiquetas, encima de la lista; el del pie de «Filtros» es otro. */
+const quitarFiltros = (page: Page) =>
+  page.getByRole('group', { name: 'Filtros activos' }).getByRole('button', { name: 'Quitar filtros', exact: true })
 const etiqueta = (page: Page, nombre: string) =>
   page.getByRole('button', { name: `Quitar filtro ${nombre}`, exact: true })
 /**
@@ -65,24 +68,28 @@ async function marcar(casilla: Locator) {
   await expect(casilla).toBeChecked()
 }
 
-/** El botón de un grupo de la barra: «Ciudad», o «Ciudad, 1 marcada» con algo marcado. */
-const botonDeGrupo = (page: Page, nombre: string) =>
-  page.getByRole('button', { name: new RegExp(`^${nombre}(,|$)`) })
+/** El botón «Filtros» de la barra: «Filtros», o «Filtros, 1 aplicado» con algo aplicado (05/10/2026). */
+const botonDeFiltros = (page: Page) => page.getByRole('button', { name: /^Filtros(,|$)/ })
+
+/** La columna de filtros de la izquierda, desde 1024 px (06/10/2026). */
+const columnaDeFiltros = (page: Page) => page.getByRole('complementary', { name: 'Filtros' })
 
 /**
- * Abre el desplegable de un grupo de filtros —desde el 01/10/2026 van cerrados
- * en la barra— y devuelve el grupo de sus opciones. Si ya estaba abierto no lo
- * toca: pulsarlo otra vez lo cerraría.
+ * Devuelve el grupo de opciones pedido. Desde 1024 px los grupos están abiertos
+ * en la columna de filtros (06/10/2026); de 641 a 1023 van tras «Filtros», en
+ * la barra, y aquí se abre si hace falta —si ya estaba abierto no se toca:
+ * pulsarlo otra vez lo cerraría—.
  */
 async function grupo(page: Page, nombre: 'Publicada' | 'Ciudad' | 'Modalidad') {
-  const boton = botonDeGrupo(page, nombre)
-  if ((await boton.getAttribute('aria-expanded')) !== 'true') await boton.click()
-  const opciones = page.getByRole(nombre === 'Publicada' ? 'radiogroup' : 'group', { name: new RegExp(`^${nombre}`) })
+  const opciones = page.getByRole(nombre === 'Publicada' ? 'radiogroup' : 'group', { name: nombre, exact: true })
+  const boton = botonDeFiltros(page)
+  await expect(opciones.or(boton).first()).toBeVisible()
+  if (!(await opciones.isVisible()) && (await boton.getAttribute('aria-expanded')) !== 'true') await boton.click()
   await expect(opciones).toBeVisible()
   return opciones
 }
 
-/** Por debajo de 1024 px no hay panel: la fila abre la ficha, como antes. */
+/** Por debajo de 1280 px no hay panel: la fila abre la ficha, como antes. A 900, además, los filtros van tras «Filtros». */
 const SIN_PANEL = { width: 900, height: 900 }
 
 async function abrirLaLista(page: Page, direccion = '/vacantes') {
@@ -188,9 +195,9 @@ test.describe('Buscar vacantes · las nueve como producción', () => {
     const soloPresencial = await grupo(page, 'Modalidad')
     await expect(soloPresencial.getByRole('checkbox', { name: 'Presencial (4)' })).toBeVisible()
     await expect(soloPresencial.getByRole('checkbox', { name: 'Sin indicar (5)' })).toBeVisible()
-    await expect(botonDeGrupo(page, 'Ciudad')).toBeVisible()
+    await expect(page.getByRole('group', { name: 'Ciudad', exact: true })).toBeVisible()
     // Empresa no: hay una sola.
-    await expect(botonDeGrupo(page, 'Empresa')).toHaveCount(0)
+    await expect(page.getByRole('group', { name: 'Empresa', exact: true })).toHaveCount(0)
 
     // Al publicar otra con «Remoto» aparece con Presencial y Remoto, en el orden fijo.
     sembrar([{ clave: 'remota', titulo: 'Soporte técnico remoto', modalidad: 'Remoto', hace: 4 }])
@@ -237,7 +244,7 @@ test.describe('Buscar vacantes · las nueve como producción', () => {
 
     // «Quitar filtros» los limpia todos y conserva la búsqueda.
     await buscador(page).fill('a')
-    await page.getByRole('button', { name: 'Quitar filtros' }).click()
+    await quitarFiltros(page).click()
     await expect(etiqueta(page, 'Lima')).toHaveCount(0)
     await expect(buscador(page)).toHaveValue('a')
   })
@@ -334,9 +341,9 @@ test.describe('Buscar vacantes · las nueve como producción', () => {
     const comprobar = async () => {
       await expect(page).toHaveURL(direccion)
       await expect(buscador(page)).toHaveValue('o')
-      // El filtro sigue puesto: su etiqueta y el número en el botón de «Ciudad» (el desplegable vuelve cerrado).
+      // El filtro sigue puesto: su etiqueta y el número en «Filtros» (el desplegable vuelve cerrado).
       await expect(etiqueta(page, 'Sin indicar')).toBeVisible()
-      await expect(botonDeGrupo(page, 'Ciudad')).toHaveAccessibleName('Ciudad, 1 marcada')
+      await expect(botonDeFiltros(page)).toHaveAccessibleName('Filtros, 1 aplicado')
       await expect(orden(page).getByRole('radio', { name: 'Recientes' })).toBeChecked()
       await expect(tarjetas(page)).toHaveCount(5)
       const tarjeta = page.getByRole('link', { name: 'Líder de operaciones', exact: true })
@@ -523,7 +530,7 @@ test.describe('Buscar vacantes · las nueve como producción', () => {
     const marketing = page.getByRole('link', { name: 'Especialista en Marketing Digital' })
     await expect(marketing).toContainText('Presencial')
     await expect(marketing).toContainText('Arequipa')
-    await expect(marketing).toContainText('9am-6pm')
+    // El horario ya no va en la tarjeta (06/10/2026): está en la ficha, aquí abajo.
     await expect(marketing).toContainText('Sueldo sin publicar')
     await expect(marketing).not.toContainText('Selva Alegre')
     await marketing.click()
@@ -549,16 +556,19 @@ test.describe('Buscar vacantes · las nueve como producción', () => {
   })
 
   // ---------- las correcciones del ciclo 1 de QA (F-02 a F-05) ----------
-  test('F-02 · en escritorio no hay botón «Filtrar»: los filtros están en la barra, uno por grupo, también con uno marcado', async ({
+  test('F-02 · en escritorio no hay «Filtrar» ni «Filtros»: los grupos están abiertos en su columna, también con uno marcado', async ({
     page,
   }) => {
     await abrirLaLista(page)
-    for (const nombre of ['Publicada', 'Ciudad', 'Modalidad']) await expect(botonDeGrupo(page, nombre)).toBeVisible()
+    // Desde el 06/10/2026, desde 1024 px: la columna de la izquierda, con todos los grupos a la vista.
+    await expect(columnaDeFiltros(page)).toBeVisible()
+    await expect(botonDeFiltros(page)).toHaveCount(0)
     await expect(page.getByRole('button', { name: /^Filtrar/ })).toBeHidden()
-    await marcar((await grupo(page, 'Ciudad')).getByRole('checkbox', { name: 'Lima (2)' }))
+    const ciudad = await grupo(page, 'Ciudad')
+    await marcar(ciudad.getByRole('checkbox', { name: 'Lima (2)' }))
     await expect(etiqueta(page, 'Lima')).toBeVisible()
-    // El botón del grupo dice que lleva una marcada, aunque se cierre.
-    await expect(botonDeGrupo(page, 'Ciudad')).toHaveAccessibleName('Ciudad, 1 marcada')
+    // Marcar no cierra nada: el grupo sigue abierto con la casilla marcada.
+    await expect(ciudad.getByRole('checkbox', { name: 'Lima (2)' })).toBeChecked()
     await expect(page.getByRole('button', { name: /^Filtrar/ })).toBeHidden()
   })
 
@@ -604,7 +614,7 @@ test.describe('Buscar vacantes · las nueve como producción', () => {
     await expect(tarjetas(page)).toHaveCount(2)
     expect(await alFiltrar, 'los títulos volaron por la rejilla al filtrar').toEqual([])
 
-    await page.getByRole('button', { name: 'Quitar filtros' }).click()
+    await quitarFiltros(page).click()
     await expect(tarjetas(page)).toHaveCount(9)
     await buscador(page).fill('e')
     await expect(orden(page)).toBeVisible()
@@ -674,35 +684,30 @@ test.describe('Buscar vacantes · las nueve como producción', () => {
     await expect(contador(page, '9 vacantes abiertas')).toBeVisible()
   })
 
-  // ---------- la disposición del 01/10/2026: la barra, la lista y el panel ----------
-  test('Desde 1024 px · los desplegables arriba con el orden a su derecha, la lista a la izquierda y la elegida en el panel', async ({
+  // ---------- la disposición del 06/10/2026: la columna de filtros, la lista y el panel ----------
+  test('Desde 1280 px · los filtros en su columna a la izquierda, el orden encima de la lista y la elegida en el panel, a la altura de la primera tarjeta', async ({
     page,
   }) => {
     await abrirLaLista(page)
     await expect(tarjetas(page)).toHaveCount(9)
     const caja = async (l: Locator) => (await l.boundingBox())!
+    const laColumna = await caja(columnaDeFiltros(page))
     const laLista = await caja(lista(page))
     const elOrden = await caja(orden(page))
-    const botones = [
-      await caja(botonDeGrupo(page, 'Publicada')),
-      await caja(botonDeGrupo(page, 'Ciudad')),
-      await caja(botonDeGrupo(page, 'Modalidad')),
-    ]
-    // Los tres desplegables en una fila, en ese orden, encima de la lista.
-    for (let i = 1; i < botones.length; i++) {
-      expect(Math.abs(botones[i]!.y - botones[0]!.y), 'los desplegables no van en una fila').toBeLessThanOrEqual(1)
-      expect(botones[i]!.x, 'los desplegables no van en orden').toBeGreaterThan(botones[i - 1]!.x)
-    }
-    expect(botones[0]!.y + botones[0]!.height, 'la barra no va encima de la lista').toBeLessThanOrEqual(laLista.y)
-    // El orden en la misma fila, a la derecha del último desplegable.
-    expect(Math.abs(elOrden.y + elOrden.height / 2 - (botones[0]!.y + botones[0]!.height / 2)), 'el orden no está en la fila de la barra').toBeLessThanOrEqual(8)
-    expect(elOrden.x, 'el orden no está a la derecha de los filtros').toBeGreaterThan(botones[2]!.x + botones[2]!.width)
+    expect(laColumna.x + laColumna.width, 'la columna de filtros no va a la izquierda de la lista').toBeLessThanOrEqual(laLista.x)
+    // El orden, encima de la lista y a la derecha: con el panel, su fila cruza también la columna del panel.
+    expect(elOrden.y + elOrden.height, 'el orden no va encima de la lista').toBeLessThanOrEqual(laLista.y)
+    expect(elOrden.x, 'el orden no va a la derecha').toBeGreaterThan(laLista.x)
 
-    // Sin elegir nada, el panel enseña la primera de la lista, a la derecha de ella.
+    // Sin elegir nada, el panel enseña la primera de la lista, a la derecha de ella y a la altura de su tarjeta.
     const primera = ORDEN_POR_COMPLETITUD[0]!
     const panel = page.getByRole('region', { name: primera })
     await expect(panel).toBeVisible()
-    expect((await caja(panel)).x, 'el panel no está a la derecha de la lista').toBeGreaterThanOrEqual(laLista.x + laLista.width)
+    // La lista entra en cascada al cargar: se mide cuando ha terminado.
+    await tarjetas(page).first().evaluate((e) => Promise.all(e.getAnimations({ subtree: true }).map((a) => a.finished)))
+    const elPanel = await caja(panel)
+    expect(elPanel.x, 'el panel no está a la derecha de la lista').toBeGreaterThanOrEqual(laLista.x + laLista.width)
+    expect(Math.abs(elPanel.y - (await caja(tarjetas(page).first())).y), 'el panel y la primera tarjeta no empiezan a la misma altura').toBeLessThanOrEqual(1)
     await expect(page.getByRole('link', { name: primera, exact: true })).toHaveAttribute('aria-current', 'true')
 
     // Pulsar otra fila la elige sin salir de /vacantes, y la dirección la recuerda.
@@ -713,26 +718,24 @@ test.describe('Buscar vacantes · las nueve como producción', () => {
     await expect(administrador).toHaveAttribute('aria-current', 'true')
     await expect(page).toHaveURL(/\/vacantes\?vacante=\d+$/)
 
-    // Marcar un filtro mueve la lista, no la barra: la etiqueta sale entre la barra y las filas.
+    // Marcar un filtro mueve la lista, no la columna de filtros: la etiqueta sale encima de las filas.
     // Caja y desplazamiento en una sola lectura: marcar cambia la dirección y la página puede moverse.
     const enLaPagina = (l: Locator) =>
       l.evaluate((e) => {
         const r = e.getBoundingClientRect()
         return { x: r.x + window.scrollX, y: r.y + window.scrollY, width: r.width, height: r.height }
       })
-    const ciudadAntes = await enLaPagina(botonDeGrupo(page, 'Ciudad'))
+    const columnaAntes = await enLaPagina(columnaDeFiltros(page))
     await marcar((await grupo(page, 'Ciudad')).getByRole('checkbox', { name: 'Lima (2)' }))
     await expect(contador(page, '2 de 9 vacantes')).toHaveText('2 de 9 vacantes en Lima')
-    await page.keyboard.press('Escape')
-    const ciudadAhora = await enLaPagina(botonDeGrupo(page, 'Ciudad'))
-    expect(Math.abs(ciudadAhora.y - ciudadAntes.y), 'marcar una casilla movió la barra').toBeLessThanOrEqual(1)
+    const columnaAhora = await enLaPagina(columnaDeFiltros(page))
+    expect(Math.abs(columnaAhora.y - columnaAntes.y), 'marcar una casilla movió la columna de filtros').toBeLessThanOrEqual(1)
     const laListaAhora = await enLaPagina(lista(page))
     for (const [nombre, pieza] of [
       ['la etiqueta', await enLaPagina(etiqueta(page, 'Lima'))],
-      ['«Quitar filtros»', await enLaPagina(page.getByRole('button', { name: 'Quitar filtros', exact: true }))],
+      ['«Quitar filtros»', await enLaPagina(quitarFiltros(page))],
     ] as const) {
       expect(pieza.x, `${nombre} no está en la columna de la lista`).toBeGreaterThanOrEqual(laListaAhora.x - 1)
-      expect(pieza.y, `${nombre} no está bajo la barra`).toBeGreaterThanOrEqual(ciudadAhora.y + ciudadAhora.height)
       expect(pieza.y + pieza.height, `${nombre} no está encima de las filas`).toBeLessThanOrEqual(laListaAhora.y)
     }
     // Administrador es de Lima: sigue elegida, y la dirección la conserva junto al filtro.
@@ -841,7 +844,7 @@ test.describe('Buscar vacantes · las fechas', () => {
     await expect(page.getByText('Ahora mismo no hay vacantes abiertas.')).toBeVisible()
     await expect(buscador(page)).toHaveCount(0)
     await expect(orden(page)).toHaveCount(0)
-    await expect(botonDeGrupo(page, 'Ciudad')).toHaveCount(0)
+    await expect(botonDeFiltros(page)).toHaveCount(0)
     await expect(page.getByText(/Ninguna vacante coincide/)).toHaveCount(0)
   })
 })
@@ -870,7 +873,7 @@ test.describe('Buscar vacantes · el rediseño del ciclo 2 (QA)', () => {
     })
 
   // ---------- puntos 38 y 40: una parada por tarjeta ----------
-  test('Tab recorre buscador → borrar → «Buscar» → desplegables → orden → etiquetas → resultados, y cada tarjeta es UNA parada: su enlace', async ({
+  test('Tab recorre buscador → borrar → «Buscar» → columna de filtros → orden → etiquetas → resultados, y cada tarjeta es UNA parada: su enlace', async ({
     page,
   }) => {
     const ids = sembrar(COMO_PRODUCCION)
@@ -889,13 +892,16 @@ test.describe('Buscar vacantes · el rediseño del ciclo 2 (QA)', () => {
     expect(posicion('Buscar vacantes')).toBe(0)
     expect(posicion('Borrar búsqueda')).toBe(1)
     expect(nombres[2]).toBe('Buscar')
-    // Desde el 01/10/2026: los desplegables de la barra y, a su derecha, el orden —una sola parada, la elegida—.
-    expect(posicion('Publicada')).toBe(3)
-    expect(posicion('Ciudad')).toBe(4)
-    expect(posicion('Modalidad')).toBe(5)
-    expect(posicion('Relevantes')).toBe(6)
-    expect(posicion('Quitar filtro Lima')).toBe(7)
-    expect(posicion('Quitar filtros')).toBe(8)
+    // Desde el 06/10/2026: la columna de filtros —«Limpiar» y cada grupo con su cabecera y sus opciones—,
+    // después el orden —una sola parada, la elegida— y las etiquetas.
+    expect(posicion('Limpiar')).toBe(3)
+    expect(posicion('Publicada')).toBe(4)
+    expect(posicion('Ciudad')).toBeGreaterThan(posicion('Publicada'))
+    expect(posicion('Modalidad')).toBeGreaterThan(posicion('Ciudad'))
+    expect(posicion('Relevantes')).toBeGreaterThan(posicion('Modalidad'))
+    expect(nombres.filter((n) => n === 'Relevantes' || n === 'Recientes'), 'el orden no es una sola parada').toHaveLength(1)
+    expect(posicion('Quitar filtro Lima')).toBe(posicion('Relevantes') + 1)
+    expect(posicion('Quitar filtros')).toBe(posicion('Quitar filtro Lima') + 1)
     // Lo siguiente a «Quitar filtros» es ya el enlace de la primera tarjeta: nada sin nombre en medio.
     const primera = recorrido[recorrido.length - 1]!
     expect(recorrido.length - 1, `entre «Quitar filtros» y la primera tarjeta hubo otra parada: ${JSON.stringify(recorrido.slice(-3))}`).toBe(
@@ -914,34 +920,37 @@ test.describe('Buscar vacantes · el rediseño del ciclo 2 (QA)', () => {
     expect(recorrido.filter((p) => p.tag === 'ARTICLE')).toEqual([])
   })
 
-  // ---------- los desplegables con el teclado (01/10/2026) ----------
-  test('un desplegable se abre con Intro y con Espacio, lleva el foco a su primera opción, Escape lo cierra y lo devuelve al botón, y Espacio marca sin cerrarlo', async ({
+  // ---------- «Filtros» con el teclado (05/10/2026): de 641 a 1023 px, que es donde está ----------
+  test('«Filtros» se abre con Intro y con Espacio, lleva el foco a su primera opción, Escape lo cierra y lo devuelve al botón, y Espacio marca sin cerrarlo', async ({
     page,
   }) => {
     sembrar(COMO_PRODUCCION)
+    await page.setViewportSize(SIN_PANEL)
     await abrirLaLista(page)
-    for (const nombre of ['Publicada', 'Ciudad', 'Modalidad']) {
-      await expect(botonDeGrupo(page, nombre)).toHaveAttribute('aria-expanded', 'false')
-    }
-    const boton = botonDeGrupo(page, 'Ciudad')
-    const arequipa = page.getByRole('group', { name: /^Ciudad/ }).getByRole('checkbox', { name: 'Arequipa (2)' })
+    const boton = botonDeFiltros(page)
+    await expect(boton).toHaveAttribute('aria-expanded', 'false')
+    const cualquierFecha = page.getByRole('radiogroup', { name: 'Publicada', exact: true }).getByRole('radio', { name: /^Cualquier fecha/ })
+    const arequipa = page.getByRole('group', { name: 'Ciudad', exact: true }).getByRole('checkbox', { name: 'Arequipa (2)' })
 
     await boton.focus()
     await page.keyboard.press('Enter')
     await expect(boton).toHaveAttribute('aria-expanded', 'true')
-    await expect(arequipa).toBeFocused()
+    await expect(cualquierFecha).toBeFocused()
     await page.keyboard.press('Escape')
     await expect(boton).toHaveAttribute('aria-expanded', 'false')
-    await expect(page.getByRole('group', { name: /^Ciudad/ })).toHaveCount(0)
+    await expect(page.getByRole('group', { name: 'Ciudad', exact: true })).toHaveCount(0)
     await expect(boton).toBeFocused()
+    // Lo siguiente es el orden, a la derecha de la barra.
     await page.keyboard.press('Tab')
-    await expect(botonDeGrupo(page, 'Modalidad')).toBeFocused()
+    await expect(orden(page).getByRole('radio', { name: 'Relevantes' })).toBeFocused()
 
     await boton.focus()
     await page.keyboard.press('Space')
     await expect(boton).toHaveAttribute('aria-expanded', 'true')
+    await expect(cualquierFecha).toBeFocused()
+    // De la fecha, Tab pasa a la primera casilla de Ciudad; Espacio la marca y el desplegable sigue abierto.
+    await page.keyboard.press('Tab')
     await expect(arequipa).toBeFocused()
-    // Espacio sobre la casilla la marca, y el desplegable sigue abierto para marcar otra.
     await page.keyboard.press('Space')
     await expect(arequipa).toBeChecked()
     await expect(boton).toHaveAttribute('aria-expanded', 'true')
@@ -1000,7 +1009,7 @@ test.describe('Buscar vacantes · el rediseño del ciclo 2 (QA)', () => {
     await expect(page.getByRole('button', { name: /^Filtrar/ })).toBeHidden()
     await expect(lista(page).locator('[aria-current="true"]')).toHaveCount(0)
     const caja = async (l: Locator) => (await l.boundingBox())!
-    const ciudad = await caja(botonDeGrupo(page, 'Ciudad'))
+    const ciudad = await caja(botonDeFiltros(page))
     const cuenta = await caja(contador(page, '9 vacantes abiertas'))
     expect(ciudad.y + ciudad.height, 'la barra no va encima del contador').toBeLessThanOrEqual(cuenta.y)
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)

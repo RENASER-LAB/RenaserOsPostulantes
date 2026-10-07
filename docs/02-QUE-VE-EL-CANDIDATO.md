@@ -107,17 +107,26 @@ navegador**, sobre la lista entera: el backend no tiene parámetros de búsqueda
 - **La dirección guarda la búsqueda** (`?q=…&ciudad=1501&publicada=7d`) sin llenar el
   historial; el orden solo viaja si es `orden=recientes`. Un enlace con un filtro que hoy no
   tiene vacantes lo enseña igual como etiqueta, para poder quitarlo.
-- **En escritorio (desde 1024 px), como en LinkedIn** (01/10/2026): arriba, una barra con el
-  orden y un desplegable por grupo de filtros; debajo, la lista a la izquierda y, a la derecha,
-  la vacante elegida entera —con su «Postular»—, sin salir de la página. Pulsar otra tarjeta
-  la cambia; la elegida viaja en la dirección (`?vacante=27`). Sin elegir, se ve la primera.
-  **De 641 a 1023 px**, la misma barra con la lista a todo el ancho, y la tarjeta abre la
-  ficha. Las etiquetas de los filtros activos y «Quitar filtros» van **encima de las
-  tarjetas**. **En el teléfono** los filtros se pliegan tras «Filtrar (n)» y los datos de la
-  tarjeta van debajo.
-- **Teclado**: buscador, borrar, «Buscar», filtros, orden, etiquetas, tarjetas y, en
-  escritorio, el panel. **Cada tarjeta es una sola parada de Tab**: su enlace, con el título por
-  nombre; con Intro sobre una tarjeta, en escritorio, el foco pasa al título del panel.
+- **La pantalla es más ancha que el resto del portal** (06/10/2026): la cabecera se estira al
+  entrar.
+- **Desde 1024 px, los filtros en una columna a la izquierda**, todos abiertos y con su número,
+  como en Computrabajo o Indeed: cada grupo se pliega desde su título y, con más de cinco
+  opciones, enseña cinco y «Ver N más». A su lado, la lista. **Desde 1280 px**, a la derecha, la
+  vacante elegida entera —con su «Postular», que se queda arriba al bajar por una vacante
+  larga—, sin salir de la página. Pulsar otra tarjeta la cambia; la elegida viaja en la
+  dirección (`?vacante=27`). Sin elegir, se ve la primera. **De 1024 a 1279** no hay panel: la
+  tarjeta abre la ficha.
+- **De 641 a 1023 px**, una barra con el botón negro «Filtros», que abre todos los grupos
+  juntos, y el orden; la lista a todo el ancho, y la tarjeta abre la ficha. **En el teléfono**
+  los filtros se pliegan tras «Filtrar (n)».
+- **La tarjeta** dice la empresa con su avatar de color, el puesto —con «Nueva» si es de los
+  últimos tres días—, cuándo se publicó, la modalidad en una pastilla de color, la ciudad y el
+  sueldo —en verde si está publicado; si no, «Sueldo sin publicar»—. El horario está en el
+  panel y en la ficha. Las etiquetas de los filtros activos y «Quitar filtros» van **encima de
+  las tarjetas**.
+- **Teclado**: buscador, borrar, «Buscar», filtros, orden, etiquetas, tarjetas y, desde 1280
+  px, el panel. **Cada tarjeta es una sola parada de Tab**: su enlace, con el título por
+  nombre; con Intro sobre una tarjeta, con el panel, el foco pasa al título del panel.
 - **Al volver desde la ficha** la lista queda a la misma altura. Hay estados propios para
   cargando, sin conexión, ninguna publicada y ninguna que coincida.
 - La pestaña se titula «Vacantes abiertas», y «Vacantes» de la cabecera se enciende aquí y en

@@ -42,6 +42,7 @@ import {
   modalidadCanonica,
   opcionesDeFecha,
   publicadaHace,
+  esNueva,
   resultados,
   resumenDe,
   SIN_FILTROS,
@@ -481,6 +482,13 @@ describe('«Publicada hace…»', () => {
   it('algo publicado anoche en Lima es de «ayer» aunque hayan pasado pocas horas', () => {
     // Las 23:30 de Lima del 24 son las 04:30 UTC del 25; ahora son las 10:00 de Lima del 25.
     expect(publicadaHace(Date.parse('2026-09-25T04:30:00Z'), AHORA)).toBe('Publicada ayer')
+  })
+
+  it('«Nueva» es de hoy a hace tres días, en días de Lima; sin fecha, no', () => {
+    expect(esNueva(AHORA - 2 * 60 * 60 * 1000, AHORA)).toBe(true)
+    expect(esNueva(AHORA - 3 * DIA, AHORA)).toBe(true)
+    expect(esNueva(AHORA - 4 * DIA, AHORA)).toBe(false)
+    expect(esNueva(null, AHORA)).toBe(false)
   })
 })
 

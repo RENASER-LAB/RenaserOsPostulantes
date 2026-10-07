@@ -14,7 +14,7 @@ en los temáticos, y lo que se hizo un día concreto, en las dos bitácoras.
 | Levantarlo, apuntarlo a un backend, saber a qué base escribes y correr los e2e sobre el snapshot de QA | [TRABAJAR-EN-LOCAL.md](TRABAJAR-EN-LOCAL.md) |
 | Tocar diseño: el mundo visual, sus cuatro reglas de forma y dónde está cada carpeta de `src/` | [EL-MUNDO-VISUAL.md](EL-MUNDO-VISUAL.md) |
 | Saber qué falta y qué está a medias | [PENDIENTES.md](PENDIENTES.md), [03-ESTADO-DEL-REDISENO.md](03-ESTADO-DEL-REDISENO.md) |
-| Saber por qué algo quedó así, o qué se probó al construirlo | [BITACORA-2026-09.md](BITACORA-2026-09.md), [BITACORA-2026-08.md](BITACORA-2026-08.md) |
+| Saber por qué algo quedó así, o qué se probó al construirlo | [BITACORA-2026-10.md](BITACORA-2026-10.md), [BITACORA-2026-09.md](BITACORA-2026-09.md), [BITACORA-2026-08.md](BITACORA-2026-08.md) |
 
 ## Fotos de una fecha
 
@@ -35,6 +35,7 @@ Las secciones llevan título y fecha; busca por el título.
 
 | Tema | Bitácora | Secciones |
 |---|---|---|
+| `/vacantes`: la tarjeta «Expresiva», la columna de filtros, el ancho propio y el pulido del movimiento | [10](BITACORA-2026-10.md) | 06/10 y 05/10 |
 | «Mi perfil», la cronología, el medidor, la foto y la portada | [09](BITACORA-2026-09.md) | 06/09 y 05/09 |
 | La ficha del candidato: qué marcó la IA, y lo que entregó en la prueba | [09](BITACORA-2026-09.md) | 04/09, 02/09 |
 | El ranking: ordenar, filtrar, descargar el Excel, los cortes, qué dice una nota que falta | [09](BITACORA-2026-09.md) · [08](BITACORA-2026-08.md) | 26/09, 18/09 y 01/09 · 28/08 y 27/08 |

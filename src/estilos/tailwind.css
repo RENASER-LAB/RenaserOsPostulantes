@@ -49,6 +49,9 @@
   --color-primary: var(--activo);
   --color-primary-foreground: var(--tinta-invertida);
   --color-primary-hover: var(--activo-pulsado);
+  /* El casi negro de «Iniciar sesión», y desde el 05/10/2026 también de «Filtros» en `/vacantes`. */
+  --color-accion-fuerte: var(--accion-fuerte);
+  --color-accion-fuerte-pulsado: var(--accion-fuerte-pulsado);
   --color-secondary: var(--nube-hundida);
   --color-secondary-foreground: var(--tinta);
   --color-muted: var(--nube-hundida);
@@ -65,6 +68,19 @@
   --color-duda: var(--duda);
   --color-duda-bruma: var(--duda-bruma);
   --color-duda-tinta: var(--duda-tinta);
+  /* El verde de lo confirmado: en `/vacantes`, el sueldo publicado y «Remoto» (06/10/2026). */
+  --color-bien: var(--bien);
+  --color-bien-bruma: var(--bien-bruma);
+  --color-nube-honda: var(--nube-honda);
+
+  /*
+   * Las curvas de las piezas (05/10/2026), las de Emil Kowalski: las de serie
+   * de CSS arrancan blandas y el control parece llegar tarde. `ease-out` para
+   * lo que entra o responde al dedo —arranca rápido—; `ease-in-out` para lo
+   * que se mueve dentro de la pantalla, como la pastilla del orden.
+   */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
 
   /* Los radios del mundo: 8 en los controles, 12 en las superficies. */
   --radius-sm: var(--radio-marca);

@@ -15,6 +15,14 @@
 
 /* El cielo de entrada y cierre vive en `Vacantes.module.css`.
    Los fondos del resto del portal se definen en `mundo.css`. */
+/*
+ * `/vacantes`, más ancha (06/10/2026): el token se cambia aquí y lo heredan la
+ * cabecera, la hoja de la pantalla y el pie a la vez. Ver `--ancho-vacantes`.
+ */
+.armazonAncho {
+  --ancho: var(--ancho-vacantes);
+}
+
 .armazonConCielo {
   position: relative;
   /* Recorta las bandas sin crear un scroll que rompa la cabecera sticky. */
@@ -139,6 +147,18 @@
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
   gap: var(--e4);
+  /*
+   * Al entrar en `/vacantes`, o al salir, la píldora se estira o se encoge en
+   * 250 ms en vez de saltar de 80 a 96 rem (06/10/2026). Solo pasa al cambiar
+   * de pantalla, así que puede ser una transición de tamaño.
+   */
+  transition: max-width 250ms var(--salida);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cabeceraDentro {
+    transition: none;
+  }
 }
 
 .acciones {

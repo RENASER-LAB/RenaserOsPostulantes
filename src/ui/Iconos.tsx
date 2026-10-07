@@ -211,6 +211,17 @@ export function IconoLupa(props: PropsIcono) {
   )
 }
 
+/** Dos reguladores: «Filtros». Siempre al lado de esa palabra. */
+export function IconoFiltros(props: PropsIcono) {
+  return (
+    <Icono {...props}>
+      <path d="M4 8h9M17 8h3M4 16h3M11 16h9" />
+      <circle cx="15" cy="8" r="2" />
+      <circle cx="9" cy="16" r="2" />
+    </Icono>
+  )
+}
+
 /** El pico hacia la derecha: «esto sigue ahí al lado». En la fila elegida de `/vacantes`, apunta al panel. */
 export function IconoSiguiente(props: PropsIcono) {
   return (

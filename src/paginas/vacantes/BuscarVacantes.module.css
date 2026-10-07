@@ -166,15 +166,30 @@
   white-space: nowrap;
 }
 
-/* Las dos caras pegadas: un solo control de dos posiciones, no dos botones sueltos. */
+/*
+ * Un solo control de dos posiciones, como el de escritorio (05/10/2026): un
+ * carril gris y la elegida en blanco con el borde de los controles. Aquí la
+ * pastilla no se desliza —haría falta `:has()`, y un WebView viejo sin él
+ * pintaría marcada la que no es—: se marca en la cara misma.
+ *
+ * 44 px de alto entre los dos: 4 de carril arriba y abajo y 36 de cara. El
+ * radio de dentro es el de fuera menos el carril, para que las curvas vayan
+ * paralelas.
+ */
 .opcionesDeOrden {
-  display: inline-flex;
+  display: inline-grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 4px;
+  border-radius: var(--radio-control);
+  /* `--regla` y no `--nube-hundida`: sobre el `--cielo` de la página, esa casi no se ve. */
+  background-color: var(--regla);
 }
 
 .opcionDeOrden {
   position: relative;
-  display: inline-flex;
+  display: flex;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /*
@@ -184,38 +199,29 @@
  */
 .caraDelOrden {
   display: inline-flex;
+  flex: 1;
   align-items: center;
-  min-height: 44px;
+  justify-content: center;
+  min-height: 36px;
   padding: 0 var(--e4);
-  border: 1px solid var(--borde-control);
-  background-color: var(--nube);
-  color: var(--tinta);
+  border: 1px solid transparent;
+  border-radius: calc(var(--radio-control) - 4px);
+  color: var(--tinta2);
   font-size: var(--t-apoyo);
   font-weight: 500;
   line-height: 20px;
   white-space: nowrap;
+  transition:
+    background-color 150ms ease-out,
+    border-color 150ms ease-out,
+    color 150ms ease-out;
 }
 
-.opcionDeOrden:first-child .caraDelOrden {
-  border-radius: var(--radio-control) 0 0 var(--radio-control);
-}
-
-.opcionDeOrden:last-child .caraDelOrden {
-  margin-left: -1px;
-  border-radius: 0 var(--radio-control) var(--radio-control) 0;
-}
-
-.opcionDeOrden:hover input:not(:checked) + .caraDelOrden {
-  background-color: var(--nube-hundida);
-}
-
-/* Encima de su vecina: las dos comparten el borde del medio y el negro no puede quedar debajo. */
 .opcionDeOrden input:checked + .caraDelOrden {
-  position: relative;
-  z-index: 1;
-  background-color: var(--activo);
-  border-color: var(--activo);
-  color: var(--tinta-invertida);
+  border-color: var(--borde-control);
+  background-color: var(--nube);
+  color: var(--tinta);
+  box-shadow: 0 1px 2px rgb(10 10 10 / 0.06);
 }
 
 .opcionDeOrden input:focus-visible + .caraDelOrden {
