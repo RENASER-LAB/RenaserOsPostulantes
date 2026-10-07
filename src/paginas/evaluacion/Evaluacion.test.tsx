@@ -116,6 +116,10 @@ function montar() {
         <MemoryRouter initialEntries={['/procesos/x1/evaluacion']}>
           <Routes>
             <Route path="/procesos/:uuid/evaluacion" element={<Evaluacion />} />
+            {/* A donde lleva entregar (V70): su proceso, o la portada de su prueba. */}
+            <Route path="/procesos/:uuid" element={<p>Su proceso</p>} />
+            <Route path="/procesos/:uuid/prueba" element={<p>Portada de la prueba</p>} />
+            <Route path="/procesos/:uuid/prueba-tecnica" element={<p>Portada del cuestionario</p>} />
           </Routes>
         </MemoryRouter>
       </ProveedorAvisos>
@@ -711,5 +715,89 @@ describe('cuando la empresa retiró la vacante', () => {
     expect((await screen.findByRole('alert')).textContent).toMatch(/El sistema tuvo un problema/)
     // Un 500 no es una puerta cerrada: ni se vuelve a leer la evaluación.
     expect(verEvaluacion).toHaveBeenCalledTimes(1)
+  })
+})
+
+// ---------- La prueba al instante (V70) ----------
+
+describe('al entregar, la prueba al instante', () => {
+  /** Todas respondidas en el servidor; se abre la última y se entrega. */
+  async function entregarTodo(clics = 1) {
+    for (let n = 1; n <= TOTAL; n++) guardadas.set(n, `Respuesta ${n}.`)
+    opcionesGuardadas.set(CON_OPCIONES, 21)
+    iniciada = true
+    montar()
+    await screen.findByLabelText('Tu respuesta')
+    siguiente()
+    siguiente()
+    siguiente()
+    fireEvent.click(screen.getByRole('button', { name: /Entregar evaluación/ }))
+    const entregar = await screen.findByRole('button', { name: 'Entregar' })
+    await waitFor(() => expect((entregar as HTMLButtonElement).disabled).toBe(false))
+    for (let i = 0; i < clics; i++) fireEvent.click(entregar)
+  }
+
+  /** Lo que dice su postulación ya guardada, después de entregar. */
+  function quedoEn(estado: string, instrumentoEtapaTecnica: string | null = 'PRUEBA_PROPIA') {
+    vi.mocked(verPostulacion).mockResolvedValueOnce({
+      resumen: { uuid: 'x1', estado, instrumentoEtapaTecnica, pruebaSinCompletar: false },
+      historial: [],
+    } as unknown as Awaited<ReturnType<typeof verPostulacion>>)
+  }
+
+  it('con pase automático lleva a la portada de su prueba y lo dice', async () => {
+    quedoEn('PRUEBA_TURNO_CANDIDATO')
+    await entregarTodo()
+
+    expect(await screen.findByText('Portada de la prueba')).toBeTruthy()
+    expect(screen.getByText('Tu prueba del puesto ya está disponible')).toBeTruthy()
+    expect(verPostulacion).toHaveBeenCalledWith('x1')
+  })
+
+  it('si la vacante rinde el cuestionario técnico, lleva a la portada del cuestionario', async () => {
+    quedoEn('PRUEBA_TURNO_CANDIDATO', 'CUESTIONARIO_TECNICO')
+    await entregarTodo()
+
+    expect(await screen.findByText('Portada del cuestionario')).toBeTruthy()
+  })
+
+  it('sin pase automático vuelve a su proceso y dice que se le avisará', async () => {
+    quedoEn('PERFIL_CALIFICANDO')
+    await entregarTodo()
+
+    expect(await screen.findByText('Su proceso')).toBeTruthy()
+    expect(
+      screen.getByText(
+        'Evaluación entregada. Te avisaremos por correo y en la campana cuando te toque la prueba.',
+      ),
+    ).toBeTruthy()
+  })
+
+  it('si no se puede saber dónde quedó, el camino de siempre: su proceso', async () => {
+    vi.mocked(verPostulacion).mockRejectedValueOnce(new Error('sin red'))
+    await entregarTodo()
+
+    expect(await screen.findByText('Su proceso')).toBeTruthy()
+  })
+
+  it('AC-10: la campana de la cabecera vuelve a pedir sus avisos, sin recargar', async () => {
+    const invalidar = vi.spyOn(QueryClient.prototype, 'invalidateQueries')
+    try {
+      quedoEn('PRUEBA_TURNO_CANDIDATO')
+      await entregarTodo()
+
+      expect(await screen.findByText('Portada de la prueba')).toBeTruthy()
+      expect(invalidar).toHaveBeenCalledWith({ queryKey: ['avisos'] })
+    } finally {
+      invalidar.mockRestore()
+    }
+  })
+
+  it('QA-V70-01: un doble clic en «Entregar» manda una sola entrega', async () => {
+    quedoEn('PERFIL_CALIFICANDO')
+    await entregarTodo(2)
+
+    expect(await screen.findByText('Su proceso')).toBeTruthy()
+    expect(entregarEvaluacion).toHaveBeenCalledTimes(1)
   })
 })

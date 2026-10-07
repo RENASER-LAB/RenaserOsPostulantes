@@ -45,7 +45,9 @@ import {
   verEvaluacion,
 } from '@/api/evaluacion'
 import type { DetalleRespuesta, EvaluacionCandidato, PreguntaEvaluacion } from '@/api/tipos'
+import { EVALUACION_ENTREGADA_A_LA_ESPERA, PRUEBA_YA_DISPONIBLE } from '@/dominio/estados'
 import { diasHasta, formatearTiempo, segundosHasta } from '@/dominio/reloj'
+import { portadaSiYaTieneLaPrueba } from '@/paginas/procesos/laPruebaAlInstante'
 import { usePantallaAbierta } from '@/paginas/procesos/useVacanteRetirada'
 import { rutas } from '@/rutas'
 import { useAviso } from '@/ui/Avisos'
@@ -143,6 +145,10 @@ export function Evaluacion() {
   // repinta solo y esto solo guarda lo que se toca en esta sesion.
   const [detalles, setDetalles] = useState<Record<number, DetalleRespuesta>>({})
   const [confirmarEntrega, setConfirmarEntrega] = useState(false)
+  // Una entrega en vuelo, sabido en el mismo clic. `entrega.isPending` deshabilita el botón,
+  // pero llega en el siguiente pintado y un doble clic cabe antes: dos entregas a la vez
+  // (QA-V70-01). El servidor ya rechaza la segunda; esto evita mandarla.
+  const entregando = useRef(false)
   const [guardandoAntesDeEntregar, setGuardandoAntesDeEntregar] = useState(false)
   const [mapaAbierto, setMapaAbierto] = useState(false)
   // De donde se venia al dar un salto, para poder deshacerlo. Es la queja que
@@ -351,7 +357,19 @@ export function Evaluacion() {
       setConfirmarEntrega(false)
       await cache.invalidateQueries({ queryKey: ['postulaciones'] })
       await cache.invalidateQueries({ queryKey: ['postulacion', uuid] })
-      avisar('Evaluación entregada. Te avisaremos cuando avance.')
+      // La campana de la cabecera no se entera sola: si hubo pase, el aviso de la prueba ya
+      // existe y el contador tiene que sumarlo sin recargar (AC-10). Sin esperar: no frena
+      // el paso a la portada.
+      void cache.invalidateQueries({ queryKey: ['avisos'] })
+      // V70: si la vacante pasa sola, la prueba ya está abierta en esta misma respuesta y se
+      // le lleva a su portada —el reloj arranca al confirmar, no al llegar—. Si no, espera.
+      const portada = await portadaSiYaTieneLaPrueba(cache, uuid)
+      if (portada) {
+        avisar(PRUEBA_YA_DISPONIBLE)
+        navegar(portada, { replace: true })
+        return
+      }
+      avisar(EVALUACION_ENTREGADA_A_LA_ESPERA)
       navegar(rutas.proceso(uuid), { replace: true })
     },
     onError: siSeCerroLaPuerta,
@@ -1014,7 +1032,15 @@ export function Evaluacion() {
             <button
               type="button"
               className={estilos.confirmarEntrega}
-              onClick={() => entrega.mutate()}
+              onClick={() => {
+                if (entregando.current) return
+                entregando.current = true
+                entrega.mutate(undefined, {
+                  onSettled: () => {
+                    entregando.current = false
+                  },
+                })
+              }}
               // Solo por preguntas sin responder. Lo que aun no ha llegado al servidor ya no
               // bloquea nada: la propia entrega vacia la cola antes de mandar nada.
               disabled={entrega.isPending || faltan > 0}

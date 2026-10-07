@@ -60,6 +60,8 @@ export function Privacidad() {
     onSuccess: async () => {
       setPorRetirar(null)
       await cache.invalidateQueries({ queryKey: ['postulaciones'] })
+      // El retiro deja su aviso en la campana (AC-10): que el contador lo sume sin recargar.
+      await cache.invalidateQueries({ queryKey: ['avisos'] })
       avisar('Postulación retirada.')
     },
   })

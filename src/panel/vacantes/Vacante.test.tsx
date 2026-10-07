@@ -2127,6 +2127,23 @@ describe('lo que marcó la IA se lee en la ficha', () => {
     vacío debajo. En la base de hoy no hay ni un perfil así, así que esto no lo
     encuentra mirando datos: lo encuentra este caso.
   */
+  /*
+    V70: con el pase al instante la persona ya rinde su prueba mientras la IA
+    calcula la nota de su perfil. La celda y la ficha lo dicen; ni un guion mudo
+    ni «en otra etapa» a secas (AC-5).
+  */
+  it('con la nota del perfil en camino, la celda y la ficha lo dicen', async () => {
+    await pintar([
+      fila(197, 'Elena Ruiz', 'PRUEBA_TURNO_CANDIDATO', null, { estadoCalificacion: 'EN_CURSO' }),
+    ])
+    verCorte('Toda la tanda')
+    expect(await screen.findByText('en camino')).toBeTruthy()
+
+    fireEvent.click(screen.getByText('Elena Ruiz'))
+    expect(await screen.findByText(/^Nota en camino: la IA la está calculando/)).toBeTruthy()
+    expect(screen.queryByText(/Sin retrato todavía/)).toBeNull()
+  })
+
   it('sin ningún hallazgo de los que se enseñan, el titular tampoco sale', async () => {
     PERFIL = {
       ...PERFIL_PELADO,

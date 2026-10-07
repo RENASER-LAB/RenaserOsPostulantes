@@ -74,6 +74,8 @@ export function Proceso() {
     onSuccess: async () => {
       await cache.invalidateQueries({ queryKey: ['postulacion', uuid] })
       await cache.invalidateQueries({ queryKey: ['postulaciones'] })
+      // El retiro deja su aviso en la campana (AC-10): que el contador lo sume sin recargar.
+      await cache.invalidateQueries({ queryKey: ['avisos'] })
     },
   })
 

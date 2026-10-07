@@ -7,7 +7,13 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { leTocaAlCandidato, leTocaAlCandidatoEn, momentoDeLaEtapa, quedoSinCompletar } from './estados'
+import {
+  leTocaAlCandidato,
+  leTocaAlCandidatoEn,
+  momentoDeLaEtapa,
+  portadaDeLaPrueba,
+  quedoSinCompletar,
+} from './estados'
 
 describe('la prueba que quedó sin completar', () => {
   it('ya no le toca: sin botón, esperando al equipo, y con la frase de la prueba', () => {
@@ -41,5 +47,31 @@ describe('la prueba que quedó sin completar', () => {
       leTocaAlCandidato('PERFIL_TURNO_CANDIDATO'),
     )
     expect(momentoDeLaEtapa('NO_CONTINUA', 'PRUEBA_PROPIA', true).titulo).not.toContain('sin completar')
+  })
+})
+
+describe('la portada de la prueba, justo después de entregar o postular (V70)', () => {
+  const base = { uuid: 'u1', instrumentoEtapaTecnica: 'PRUEBA_PROPIA', pruebaSinCompletar: false }
+
+  it('en la prueba, la portada de la prueba del puesto', () => {
+    expect(portadaDeLaPrueba({ ...base, estado: 'PRUEBA_TURNO_CANDIDATO' })).toBe('/procesos/u1/prueba')
+  })
+
+  it('con el cuestionario técnico, la del cuestionario', () => {
+    expect(
+      portadaDeLaPrueba({
+        ...base,
+        estado: 'PRUEBA_TURNO_CANDIDATO',
+        instrumentoEtapaTecnica: 'CUESTIONARIO_TECNICO',
+      }),
+    ).toBe('/procesos/u1/prueba-tecnica')
+  })
+
+  it('esperando, o con la prueba ya cerrada sin completar, ninguna', () => {
+    expect(portadaDeLaPrueba({ ...base, estado: 'PERFIL_CALIFICANDO' })).toBeNull()
+    expect(portadaDeLaPrueba({ ...base, estado: 'PERFIL_POR_CONFIRMAR' })).toBeNull()
+    expect(
+      portadaDeLaPrueba({ ...base, estado: 'PRUEBA_TURNO_CANDIDATO', pruebaSinCompletar: true }),
+    ).toBeNull()
   })
 })

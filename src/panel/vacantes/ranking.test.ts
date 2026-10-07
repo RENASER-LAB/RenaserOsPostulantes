@@ -49,6 +49,7 @@ import {
   ordenar,
   porQueNoHayNota,
   porQueNoHayNotaCorto,
+  notaEnCamino,
   loDeLaPrueba,
   rotuloDeVista,
   rotuloCortoDelGrupo,
@@ -2845,5 +2846,40 @@ describe('la columna «Reseñas»', () => {
       expect(tercero).toBeNull()
       expect(ordenar(tanda, tercero)).toBe(tanda)
     })
+  })
+})
+
+describe('la nota del perfil en camino (V70)', () => {
+  /*
+    Con el pase al instante, la persona ya rinde su prueba mientras la IA
+    calcula la nota de su perfil. La celda tiene que decirlo: ni un guion sin
+    explicar ni «en otra etapa», que es verdad pero no responde.
+  */
+  const enLaPrueba = (estadoCalificacion: string) =>
+    fila('PRUEBA_TURNO_CANDIDATO', null, { estadoCalificacion })
+
+  it('con la IA trabajando, dice «en camino» en el perfil integral', () => {
+    expect(notaEnCamino(enLaPrueba('EN_CURSO'), 'PERFIL_INTEGRAL')).toBe(true)
+    expect(porQueNoHayNotaCorto(enLaPrueba('EN_CURSO'), 'PERFIL_INTEGRAL')).toBe('en camino')
+    expect(porQueNoHayNota(enLaPrueba('EN_CURSO'), 'PERFIL_INTEGRAL')).toMatch(
+      /^Nota en camino: la IA la está calculando/,
+    )
+  })
+
+  it('también a quien sigue en «calificando»: es la misma nota por llegar', () => {
+    const calificando = fila('PERFIL_CALIFICANDO', null, { estadoCalificacion: 'EN_CURSO' })
+    expect(porQueNoHayNotaCorto(calificando, 'PERFIL_INTEGRAL')).toBe('en camino')
+  })
+
+  it('si la IA falló, o no hay trabajo, lo de siempre: no se promete lo que no viene', () => {
+    expect(porQueNoHayNotaCorto(enLaPrueba('FALLIDA'), 'PERFIL_INTEGRAL')).toBe('en otra etapa')
+    expect(porQueNoHayNotaCorto(enLaPrueba('SIN_EMPEZAR'), 'PERFIL_INTEGRAL')).toBe('en otra etapa')
+  })
+
+  it('con la nota puesta, o fuera del perfil integral, nada de «en camino»', () => {
+    const conNota = fila('PRUEBA_TURNO_CANDIDATO', 70, { estadoCalificacion: 'EN_CURSO' })
+    expect(notaEnCamino(conNota, 'PERFIL_INTEGRAL')).toBe(false)
+    expect(notaEnCamino(enLaPrueba('EN_CURSO'), 'PRUEBA_PUESTO')).toBe(false)
+    expect(porQueNoHayNotaCorto(enLaPrueba('EN_CURSO'), 'PRUEBA_PUESTO')).not.toBe('en camino')
   })
 })
