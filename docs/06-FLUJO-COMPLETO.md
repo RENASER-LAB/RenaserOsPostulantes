@@ -144,18 +144,22 @@ vacante.
 
 **Panel · la vacante → «Armar la prueba →»** (`/admin/vacantes/:id/prueba`)
 
-En el mismo editor, el equipo escribe el caso, el tiempo (en minutos o en días,
-sin cambio inesperado), los entregables y los criterios: cada uno con sus
-preguntas cerradas y una parte que califica la IA o una persona mirando sus
-abiertas y los entregables que se le asignen, hasta sumar 100. Sin entregables
-es un cuestionario. Puede copiarla de otra vacante suya o pedir a la IA que la
-complete; **hasta que esté publicada, la vacante no se publica**. Quien postula
-la rinde en la pantalla de la prueba con los cuatro tipos de pregunta, y **solo
-puede entregar con todo respondido**: si el tiempo vence con algo pendiente,
+En el mismo editor, el equipo escribe los criterios y sus preguntas: cada
+criterio vale unos puntos, que reparten sus cerradas y una parte que califica la
+IA o una persona, hasta sumar 100. Los archivos se piden dentro de una pregunta
+o como entregables generales, y el sistema deduce qué mira cada criterio. El
+caso es opcional. En «Configuración» van el tiempo (cronometrada o sin
+cronómetro, sin cambio inesperado), los materiales, las herramientas y **la
+fecha límite, sin la que la prueba no se publica**; se puede poner antes de
+publicar y no se copia. Puede copiarla de otra vacante suya o pedir a la IA que
+la complete; **hasta que esté publicada, la vacante no se publica**. Quien
+postula ve antes de empezar la fecha límite, el tiempo y cuántas preguntas y
+archivos hay; la rinde con los cuatro tipos de pregunta, sube cada archivo en su
+pregunta, y **solo puede entregar con todo respondido**: si el tiempo vence con algo pendiente,
 queda sin completar, no se califica y el equipo la ve en «No completaron la
 prueba», desde donde cierra su proceso. El detalle, en [PANEL.md](PANEL.md) ›
-La prueba técnica de cada vacante nueva, y en
-[02-QUE-VE-EL-CANDIDATO.md](02-QUE-VE-EL-CANDIDATO.md) › 2.9.
+La prueba técnica de cada vacante nueva y Un editor de la prueba más simple, y
+en [02-QUE-VE-EL-CANDIDATO.md](02-QUE-VE-EL-CANDIDATO.md) › 2.9.
 
 ### 3b · La prueba técnica del puesto
 
@@ -758,7 +762,7 @@ blanco ahí puede ser un permiso y no un candidato que no pidió sueldo.
 | Áreas | La estructura de la empresa: crear, renombrar, retirar, reactivar y borrar (paso 0) |
 | Equipo | Quién tiene acceso, y en qué área está cada quien |
 | Permisos | El reparto de permisos por rol |
-| Reseñas reportadas | **Solo la plataforma**: mantener u ocultar, con una nota, lo que se reportó de una reseña o de una respuesta. A cualquier otra empresa no le aparece |
+| Reseñas reportadas | **Solo la plataforma**: mantener u ocultar, con una nota, lo que se reportó de una reseña o de una respuesta. Ninguna decisión sale con un clic: antes, una ventana dice lo que va a pasar y que no se puede deshacer. A cualquier otra empresa no le aparece |
 | Solo lectura | Las plantillas **de evaluación** y las versiones de pesos que existen |
 
 Las áreas van justo antes del equipo, y no es cosmética: un área es dónde

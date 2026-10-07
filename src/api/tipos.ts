@@ -512,6 +512,11 @@ export interface EntregableRequerido {
   formato: string | null
   esObligatorio: boolean
   entregado: boolean
+  /**
+   * V68, solo la prueba del editor: la pregunta en la que se sube este archivo.
+   * Nulo en los generales, que van al final.
+   */
+  preguntaId?: number | null
 }
 
 /**
@@ -537,7 +542,7 @@ export interface MiPrueba {
   entregables: EntregableRequerido[]
   /** V67: los días de una prueba de plazo abierto, desde que se empieza. */
   plazoDias?: number | null
-  /** V67: sin entregables, la prueba es un cuestionario y así se llama. */
+  /** Ya no se usa (V68): una sola prueba, sin «cuestionario». */
   cuestionario?: boolean
   /** V67: el enunciado adjunto en PDF o Word. `url` puede faltar en local. */
   consigna?: { nombre: string | null; url: string | null } | null
@@ -546,6 +551,11 @@ export interface MiPrueba {
    * entregar exige responderlas todas.
    */
   delEditor?: boolean
+  /**
+   * V68: la fecha límite para dar la prueba (la de la vacante, o la suya si se
+   * la dieron a mano). Nula si no hay.
+   */
+  fechaLimite?: FechaIso | null
 }
 
 export interface EntregaPrueba {

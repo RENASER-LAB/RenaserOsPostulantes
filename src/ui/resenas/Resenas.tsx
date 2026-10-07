@@ -2,7 +2,8 @@
  * Las piezas de las reseñas de empresas (V63) que comparten el perfil del
  * portal y la ficha del panel: las estrellas, el selector, el resumen con su
  * reparto, la reseña con su respuesta, el campo con su cuenta, el paso de
- * reportar y la ventana «Ver todas» con sus filtros.
+ * reportar, la pregunta de descartar un borrador y la ventana «Ver todas» con
+ * sus filtros.
  *
  * ⚠️ **Las estrellas van en tinta, nunca en el índigo de acción.** El índigo es
  * lo que se pulsa y lo que te toca (DESIGN.md, «La regla de la voz única»), y
@@ -23,7 +24,7 @@ import {
   type ReactNode,
 } from 'react'
 import { formatearFechaCorta } from '@/dominio/reloj'
-import { Modal } from '@/ui/Modal'
+import { Modal, type ComoSeCierra } from '@/ui/Modal'
 import { IconoEstrella, IconoEstrellaMedia, IconoEstrellaVacia } from '@/ui/Iconos'
 import {
   caracteresDe,
@@ -47,6 +48,7 @@ import {
   type ResenaParaPintar,
   type ResumenParaPintar,
 } from './modelo'
+import { useAvisoDeBorrador } from './ganchos'
 import estilos from './Resenas.module.css'
 
 // ---------- Las estrellas ----------
@@ -421,6 +423,9 @@ export function CampoContado({
  *
  * Es un `<form>` con id: sus botones van en el pie de la ventana, fuera de él, y
  * se atan con `form=`.
+ *
+ * Hay borrador cuando «Cuéntanos más» tiene algo más que espacios. Elegir solo
+ * un motivo no cuenta: rehacerlo es un clic.
  */
 export function FormularioDeReporte({
   id,
@@ -430,6 +435,7 @@ export function FormularioDeReporte({
   enviando,
   fallo,
   alEnviar,
+  alCambiarBorrador,
 }: {
   id: string
   quien: 'persona' | 'empresa'
@@ -438,12 +444,15 @@ export function FormularioDeReporte({
   enviando: boolean
   fallo?: string | null
   alEnviar: (motivo: MotivoDeReporte, comentario: string | null) => void
+  /** Si hay texto sin enviar: la ventana pregunta antes de cerrar (`useBorradorDeLaVentana`). */
+  alCambiarBorrador?: (hay: boolean) => void
 }) {
   const [motivo, setMotivo] = useState<MotivoDeReporte | null>(null)
   const [comentario, setComentario] = useState('')
   const [error, setError] = useState<string | null>(null)
   const primero = useRef<HTMLInputElement>(null)
   const nombre = useId()
+  const notarBorrador = useAvisoDeBorrador(alCambiarBorrador)
 
   // Al entrar en el paso, el foco va al primer motivo: sin esto se quedaría en
   // el botón que abrió el paso, que ya no está en la pantalla.
@@ -481,7 +490,10 @@ export function FormularioDeReporte({
       <CampoContado
         etiqueta={motivo === 'OTRO' ? 'Cuéntanos más (obligatorio)' : 'Cuéntanos más · opcional'}
         valor={comentario}
-        alCambiar={setComentario}
+        alCambiar={(nuevo) => {
+          setComentario(nuevo)
+          notarBorrador(nuevo.trim() !== '')
+        }}
         maximo={MAX_COMENTARIO}
         filas={3}
         deshabilitado={enviando}
@@ -498,6 +510,47 @@ export function FormularioDeReporte({
         </p>
       )}
     </form>
+  )
+}
+
+// ---------- Descartar un borrador ----------
+
+/**
+ * «¿Descartar lo que escribiste?»: el pie de la ventana mientras se pregunta.
+ *
+ * Sustituye a los botones del paso y no abre otra ventana —el `Modal` no admite
+ * dos—, como las confirmaciones en línea de «Borrar». Al salir, el foco va a
+ * «Seguir escribiendo»: la salida que no pierde nada. El grupo se nombra con la
+ * pregunta, y es lo que anuncia el lector de pantalla al entrar el foco.
+ */
+export function PreguntaDeDescartar({
+  alSeguir,
+  alDescartar,
+}: {
+  alSeguir: () => void
+  alDescartar: () => void
+}) {
+  const id = useId()
+  const seguir = useRef<HTMLButtonElement>(null)
+
+  useLayoutEffect(() => {
+    seguir.current?.focus()
+  }, [])
+
+  return (
+    <div className={estilos.preguntaDescartar} role="group" aria-labelledby={id}>
+      <p id={id} className={estilos.textoDescartar}>
+        ¿Descartar lo que escribiste? No se guardará.
+      </p>
+      <div className={estilos.botonesDescartar}>
+        <button ref={seguir} type="button" className={estilos.botonSecundario} onClick={alSeguir}>
+          Seguir escribiendo
+        </button>
+        <button type="button" className={estilos.descartar} onClick={alDescartar}>
+          Descartar
+        </button>
+      </div>
+    </div>
   )
 }
 
@@ -532,7 +585,8 @@ export function VentanaDeResenas<T extends ResenaParaPintar>({
   paso,
 }: {
   abierto: boolean
-  onCerrar: () => void
+  /** Por dónde se pidió: quien abre los pasos lo necesita para preguntar si hay borrador. */
+  onCerrar: (como: ComoSeCierra) => void
   resumen: ResumenParaPintar
   resenas: T[]
   /** La tarjeta entera, con lo que cada cara le cuelgue. */

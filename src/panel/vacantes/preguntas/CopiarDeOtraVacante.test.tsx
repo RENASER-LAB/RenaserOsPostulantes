@@ -59,6 +59,8 @@ describe('copiar de otra vacante', () => {
     copiar.mockResolvedValue({ vacanteId: 40 })
     pintar(true)
     fireEvent.click(await screen.findByText('Asistente contable · 03/2026'))
+    // La vista previa sale plegada, con la línea de cada criterio: se despliega para leer sus preguntas.
+    fireEvent.click((await screen.findAllByRole('button', { name: 'Desplegar todo' }))[0]!)
     expect((await screen.findAllByText('¿Qué libro registra primero una venta al crédito?')).length).toBeGreaterThan(0)
     expect(copiar).not.toHaveBeenCalled()
 

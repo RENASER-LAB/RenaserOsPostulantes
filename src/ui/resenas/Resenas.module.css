@@ -5,7 +5,8 @@
  * ⚠️ **Ningún índigo aquí.** Las estrellas y las barras van en tinta: el índigo
  * es lo que se pulsa y lo que te toca, y en el panel `--activo` es «te toca a
  * ti». Los únicos controles de acción con color propio son los que componen
- * `acentoMenor` de la hoja compartida, y los pone quien usa estas piezas.
+ * `acentoMenor` de la hoja compartida, y los pone quien usa estas piezas; y el
+ * «Descartar» de la pregunta de borrador, en el rojo del «Borrar» en línea.
  */
 
 /* ---------- Las estrellas ---------- */
@@ -672,4 +673,32 @@ button.barra:disabled {
 
 .botonSecundario {
   composes: secundario from '../../estilos/piezas.module.css';
+}
+
+/* ---------- La pregunta de descartar un borrador ---------- */
+
+/* Ocupa el pie entero: la pregunta arriba y los botones debajo, a la derecha. */
+.preguntaDescartar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+  width: 100%;
+}
+
+.textoDescartar {
+  margin: 0;
+  font-size: var(--t-apoyo);
+  color: var(--tinta);
+}
+
+.botonesDescartar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--e3);
+}
+
+/* El mismo rojo que el «Borrar» de las confirmaciones en línea. */
+.descartar {
+  composes: peligrosoMenor from '../../estilos/piezas.module.css';
 }

@@ -3,6 +3,10 @@
  *
  * Se cierra con Escape, tocando el fondo o con la aspa. Mientras esta abierto
  * el fondo no hace scroll y el foco no se escapa fuera.
+ *
+ * `onCerrar` recibe por donde se cerro. Casi nadie lo mira; lo necesita quien
+ * pregunta antes de descartar un borrador, porque con la pregunta a la vista
+ * Escape la quita y el aspa y el fondo no hacen nada.
  */
 
 import { useEffect, useRef, useState, type ReactNode } from 'react'
@@ -14,10 +18,13 @@ const conElFoco = (): HTMLElement | null =>
     ? document.activeElement
     : null
 
+/** Por donde se pidio cerrar: la tecla, el aspa, el fondo o el «Cerrar» del pie por defecto. */
+export type ComoSeCierra = 'escape' | 'aspa' | 'fondo' | 'pie'
+
 interface Props {
   abierto: boolean
   titulo: string
-  onCerrar: () => void
+  onCerrar: (como: ComoSeCierra) => void
   children: ReactNode
   /** Los botones del pie. Sin esto se pone uno de «Cerrar». */
   pie?: ReactNode
@@ -26,12 +33,20 @@ interface Props {
    * —las reseñas, con sus filtros— y no para un aviso de dos líneas.
    */
   pantallaCompleta?: boolean
+  /**
+   * Un panel lateral a la derecha, de arriba abajo, en vez de una ventana en el
+   * centro: para lo que se ajusta al lado de lo que se está mirando (la
+   * configuración de la prueba). En el teléfono ocupa la pantalla entera.
+   */
+  lateral?: boolean
+  /** Sin pie: el contenido trae sus propios botones (un formulario con su «Listo»). */
+  sinPie?: boolean
 }
 
 const ENFOCABLES =
   'a[href], button:not([disabled]), input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])'
 
-export function Modal({ abierto, titulo, onCerrar, children, pie, pantallaCompleta }: Props) {
+export function Modal({ abierto, titulo, onCerrar, children, pie, pantallaCompleta, lateral, sinPie }: Props) {
   const caja = useRef<HTMLElement>(null)
 
   /*
@@ -91,7 +106,7 @@ export function Modal({ abierto, titulo, onCerrar, children, pie, pantallaComple
 
     function alPulsar(e: KeyboardEvent) {
       if (e.key === 'Escape') {
-        alCerrar.current()
+        alCerrar.current('escape')
         return
       }
       if (e.key !== 'Tab' || !caja.current) return
@@ -123,9 +138,11 @@ export function Modal({ abierto, titulo, onCerrar, children, pie, pantallaComple
 
   return (
     <>
-      <div className={estilos.fondo} onClick={onCerrar} />
+      <div className={estilos.fondo} onClick={() => onCerrar('fondo')} />
       <section
-        className={pantallaCompleta ? `${estilos.caja} ${estilos.cajaCompleta}` : estilos.caja}
+        className={[estilos.caja, pantallaCompleta && estilos.cajaCompleta, lateral && estilos.cajaLateral]
+          .filter(Boolean)
+          .join(' ')}
         role="dialog"
         aria-modal="true"
         aria-labelledby="titulo-modal"
@@ -133,23 +150,25 @@ export function Modal({ abierto, titulo, onCerrar, children, pie, pantallaComple
       >
         <div className={estilos.cabecera}>
           <h2 className={estilos.titulo} id="titulo-modal">{titulo}</h2>
-          <button className={estilos.cerrar} type="button" onClick={onCerrar} aria-label="Cerrar">
+          <button className={estilos.cerrar} type="button" onClick={() => onCerrar('aspa')} aria-label="Cerrar">
             ×
           </button>
         </div>
         <div className={estilos.cuerpo}>{children}</div>
-        <div className={estilos.pie}>
-          {pie ?? (
-            <button
-              className={estilos.cerrarPie}
-              type="button"
-              onClick={onCerrar}
-              data-rotulo="Cerrar"
-            >
-              Cerrar
-            </button>
-          )}
-        </div>
+        {!sinPie && (
+          <div className={estilos.pie}>
+            {pie ?? (
+              <button
+                className={estilos.cerrarPie}
+                type="button"
+                onClick={() => onCerrar('pie')}
+                data-rotulo="Cerrar"
+              >
+                Cerrar
+              </button>
+            )}
+          </div>
+        )}
       </section>
     </>
   )

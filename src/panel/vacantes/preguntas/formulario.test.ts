@@ -3,12 +3,15 @@ import {
   avisoAlQuitarCriterio,
   avisoAntesDeRecalcular,
   avisoAntesDeRecalificar,
+  cerradasPorEncima,
   conOtroTipo,
   desdePregunta,
+  faltaEnLosPuntosDelCriterio,
   nombreDelNivel,
   paraGuardar,
   preguntaNueva,
   puntosDelCriterio,
+  repartoDelCriterio,
   resultadoDelReintento,
   textoDelResumen,
 } from './formulario'
@@ -96,5 +99,55 @@ describe('lo que dice «Reintentar» (QA-PP-05)', () => {
 
   it('solo sin nadie y sin motivo: no quedaba nadie', () => {
     expect(resultadoDelReintento({ personas: 0, motivo: null })).toBe('No quedó nadie por volver a encolar.')
+  })
+})
+
+describe('lo que vale un criterio de la prueba (V69)', () => {
+  it('se escribe el total: sus cerradas las puntúa el sistema y el resto lo califica alguien', () => {
+    expect(repartoDelCriterio(30, 10)).toEqual({ tipo: 'CALIFICADA', cerradas: 10, otros: 20 })
+    expect(repartoDelCriterio(25, 0)).toEqual({ tipo: 'CALIFICADA', cerradas: 0, otros: 25 })
+  })
+
+  it('si las cerradas lo suman todo no queda nada que calificar; si lo pasan, la falta del servidor', () => {
+    expect(repartoDelCriterio(10, 10)).toEqual({ tipo: 'SISTEMA', cerradas: 10 })
+    expect(repartoDelCriterio(0, 0)).toEqual({ tipo: 'SISTEMA', cerradas: 0 })
+    expect(repartoDelCriterio(5, 10)).toEqual({ tipo: 'POR_ENCIMA', cerradas: 10, total: 5 })
+    expect(cerradasPorEncima('Excel', 10, 5)).toBe('Las cerradas de «Excel» suman 10 y el criterio vale 5.')
+  })
+
+  it('QA-10: una parte calificada sin quién la califique no se atribuye a la IA ni a una persona', () => {
+    // El total se mantiene: si bajan las cerradas de un criterio «todo del sistema», le
+    // aparece parte calificada con el calificador vacío, y el servidor lo da como falta.
+    const sinCalificador = {
+      id: 1, nombre: 'Cálculo', queEvalua: null, orden: 1, puntos: 30, puntosSistema: 25, puntosIa: 0,
+      preguntas: [], puntosCalificados: 5, calificador: null, entregables: [],
+    }
+    const dicho = puntosDelCriterio(sinCalificador)
+    expect(dicho).toMatch(/^30 pts/)
+    expect(dicho).not.toMatch(/\bIA\b/)
+    expect(dicho).not.toMatch(/persona/)
+  })
+
+  it('QA-10: lo que no tiene quién la califique se dice «sin asignar»; con quién, como siempre', () => {
+    const base = {
+      id: 1, nombre: 'Cálculo', queEvalua: null, orden: 1, puntos: 30, puntosSistema: 25, puntosIa: 0,
+      preguntas: [], puntosCalificados: 5, entregables: [],
+    }
+    expect(puntosDelCriterio({ ...base, calificador: null })).toBe('30 pts · sistema 25 + 5 sin asignar')
+    expect(puntosDelCriterio({ ...base, calificador: undefined })).toBe('30 pts · sistema 25 + 5 sin asignar')
+    expect(puntosDelCriterio({ ...base, calificador: 'IA' })).toBe('30 pts · sistema 25 + IA 5')
+    expect(puntosDelCriterio({ ...base, calificador: 'PERSONA' })).toBe('30 pts · sistema 25 + persona 5')
+    // Sin parte calificada no hay nada que asignar.
+    expect(puntosDelCriterio({ ...base, puntos: 25, puntosCalificados: 0, calificador: null })).toBe('25 pts · sistema 25')
+  })
+
+  it('los puntos del criterio: un entero de 0 a 100, o se dice qué está mal con las palabras del servidor', () => {
+    expect(faltaEnLosPuntosDelCriterio('30')).toBeNull()
+    expect(faltaEnLosPuntosDelCriterio('0')).toBeNull()
+    expect(faltaEnLosPuntosDelCriterio('100')).toBeNull()
+    expect(faltaEnLosPuntosDelCriterio('25.5')).toBe('Los puntos del criterio tienen que ser un número entero, sin decimales.')
+    expect(faltaEnLosPuntosDelCriterio('-5')).toBe('Los puntos del criterio van de 0 a 100.')
+    expect(faltaEnLosPuntosDelCriterio('150')).toBe('Los puntos del criterio van de 0 a 100.')
+    expect(faltaEnLosPuntosDelCriterio(' ')).toBe('Faltan los puntos del criterio: lo que vale entero, cerradas incluidas.')
   })
 })

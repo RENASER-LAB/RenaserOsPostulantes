@@ -3,7 +3,8 @@
  *
  * Una vacante nueva rinde la prueba que se escribe en su editor, así que aquí
  * no quedan los dos desplegables, ni los minutos, ni la tarjeta de la ficha y
- * el cuestionario: solo el estado —«Sin prueba», «Borrador · 70 de 100 puntos ·
+ * el cuestionario técnico, ni (V68) «Plazos de la prueba»: su fecha límite va en
+ * la configuración del editor. Solo el estado —«Sin prueba», «Borrador · 70 de 100 puntos ·
  * 2 entregables», «Publicada · 5 criterios · 2 entregables · 90 min»— y «Armar
  * la prueba».
  *

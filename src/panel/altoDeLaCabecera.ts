@@ -21,22 +21,31 @@ import { useCallback, useRef } from 'react'
 export const VARIABLE_ALTO_CABECERA = '--alto-cabecera-panel'
 
 export function useAltoDeLaCabecera(): (cabecera: HTMLElement | null) => void {
+  return useAltoEnUnaVariable(VARIABLE_ALTO_CABECERA)
+}
+
+/**
+ * Lo mismo para cualquier pieza pegada arriba: mide su alto y lo deja en
+ * `variable`, en su padre. La usa también la cabecera fija de los editores
+ * (`--alto-cabecera-fija`), que crece con las faltas.
+ */
+export function useAltoEnUnaVariable(variable: string): (pieza: HTMLElement | null) => void {
   const observador = useRef<ResizeObserver | null>(null)
 
-  return useCallback((cabecera: HTMLElement | null) => {
-    observador.current?.disconnect()
-    observador.current = null
-    const raiz = cabecera?.parentElement
-    if (!cabecera || !raiz) return
+  return useCallback(
+    (pieza: HTMLElement | null) => {
+      observador.current?.disconnect()
+      observador.current = null
+      const raiz = pieza?.parentElement
+      if (!pieza || !raiz) return
 
-    const medir = () =>
-      raiz.style.setProperty(
-        VARIABLE_ALTO_CABECERA,
-        `${Math.ceil(cabecera.getBoundingClientRect().height)}px`,
-      )
-    medir()
-    if (typeof ResizeObserver === 'undefined') return
-    observador.current = new ResizeObserver(medir)
-    observador.current.observe(cabecera)
-  }, [])
+      const medir = () =>
+        raiz.style.setProperty(variable, `${Math.ceil(pieza.getBoundingClientRect().height)}px`)
+      medir()
+      if (typeof ResizeObserver === 'undefined') return
+      observador.current = new ResizeObserver(medir)
+      observador.current.observe(pieza)
+    },
+    [variable],
+  )
 }

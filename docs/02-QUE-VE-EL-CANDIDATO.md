@@ -480,17 +480,28 @@ Reglas:
 - La consigna llega como texto libre con párrafos y direcciones dentro.
 
 **La prueba escrita en el editor de la vacante (01/10/2026).** Es la de toda vacante nueva y va
-por la misma pantalla (`src/paginas/prueba/Prueba.tsx`), con `delEditor: true`; sin entregables
-llega `cuestionario: true` y la pantalla la llama cuestionario. Diferencias con la de plantilla:
+por la misma pantalla (`src/paginas/prueba/Prueba.tsx`), con `delEditor: true`. **Desde el
+05/10/2026 es una sola prueba**, haya o no entregables: `cuestionario` sigue llegando, pero la
+pantalla ya no lo usa y la palabra no sale. Diferencias con la de plantilla:
 
+- **La pantalla previa** (antes de «Empezar») dice la fecha límite (`fechaLimite`: la de la
+  vacante, o la suya si se la dieron a mano), el tiempo —«Tendrás 90 minutos desde que pulses
+  Empezar» o «Puedes trabajar en ella hasta la fecha límite»—, cuántas preguntas y cuántos archivos
+  hay que subir —«4 preguntas · 2 archivos que subir»— y los materiales y las herramientas si los
+  hay, aunque no haya caso.
+- **El caso sale solo si existe**, como «El caso», con su PDF.
+- **El archivo de una pregunta se sube dentro de ella** —«Archivo de esta pregunta: Flujo de
+  caja.xlsx · obligatorio»—: lo dice su `preguntaId`. Los generales (`preguntaId` nulo) van al
+  final, en «Entregables», antes de «Entregar».
 - **Las preguntas vienen en los cuatro tipos** —abierta, opción única, opción múltiple y escala—,
   con los mismos componentes que la evaluación. Cada una trae sus opciones (id, texto y orden) y
-  su número; **nunca puntos, claves, criterios ni calificadores**. Se responde con `texto`,
-  `opcionId` o `marcadas`.
+  su número; **nunca puntos, claves, criterios, calificadores ni qué mira cada criterio**. Se
+  responde con `texto`, `opcionId` o `marcadas`.
 - **No hay cambio inesperado.**
 - **Solo se entrega con todas las preguntas respondidas y los entregables obligatorios
   subidos.** Hasta entonces, «Entregar» no entrega: dice qué falta —«Para entregar te falta
-  responder 2 preguntas (la 3 y la 7)»— y lleva a la primera sin responder. Un texto en blanco
+  responder 2 preguntas (la 3 y la 7)»— y lleva a lo primero que falta, en el orden de la prueba:
+  una pregunta, el archivo de una pregunta o los entregables del final. Un texto en blanco
   no cuenta, y una múltiple necesita al menos una marcada. El servidor lo exige también.
 - **Antes de empezar se avisa** de que, si el tiempo termina con algo pendiente, queda sin
   completar y no se califica.
@@ -619,6 +630,15 @@ cabecera viaja con `GET /portal/perfil`.
 **Una sola ventana, siempre.** «Reportar» y «Responder» son pasos de la misma ventana: desde
 «Ver todas» se pasa al paso y se vuelve, y desde la sección la ventana se abre directamente en él.
 Al cerrar, el foco vuelve al botón que la abrió.
+
+**Cerrar no tira lo escrito** (05/10/2026). Si el paso tiene texto sin guardar —una respuesta
+nueva, una edición distinta de lo publicado o algo en «Cuéntanos más» al reportar; elegir solo el
+motivo y los espacios de los extremos no cuentan—, «Volver», Escape, el aspa o tocar fuera no
+cierran: el pie de la misma ventana pregunta «¿Descartar lo que escribiste? No se guardará.»,
+con el foco en «Seguir escribiendo». Ese botón, o Escape, devuelve al campo con el texto intacto;
+«Descartar» hace lo que iba a hacer el cierre —«Volver» desde «Ver todas» vuelve a la lista—.
+Sin texto nuevo, tras enviar o en «Esta reseña ya no está disponible», cierra sin preguntar.
+Recargar la página o el «atrás» de Android sí lo pierden: quedó fuera.
 
 - **Reportar** pide el motivo —insultos, datos personales o de salud, discriminación, que es falsa
   u otro, que exige contarlo, hasta 500 caracteres— y avisa de que la reseña sigue visible mientras

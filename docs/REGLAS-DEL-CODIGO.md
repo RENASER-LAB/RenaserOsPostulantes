@@ -141,7 +141,16 @@ escribir una sola letra (11/09/2026).
 
 **Un solo `Modal` abierto a la vez.** Su título lleva un `id` fijo (`titulo-modal`) y no admite
 dos. Lo que en otra interfaz sería una segunda ventana encima —reportar o responder desde «Ver
-todas las reseñas»— es un paso dentro de la misma ventana.
+todas las reseñas»— es un paso dentro de la misma ventana. Por lo mismo, la pregunta de descartar
+un borrador va en el pie de la ventana abierta, no en otra.
+
+**El borrador se avisa en el `onChange` y el cierre lo lee de un ref** (05/10/2026). `onCerrar`
+del `Modal` recibe por dónde se cerró (`escape`, `aspa`, `fondo`, `pie`): con la pregunta a la
+vista, Escape la quita y el aspa y el fondo no hacen nada. Los pasos de las reseñas lo resuelven
+con `useBorradorDeLaVentana` y `useAvisoDeBorrador` (`src/ui/resenas/ganchos.ts`). Con el aviso
+en un efecto y el cierre leyendo el estado, escribir y pulsar Escape en seguida encontraba la
+ventana «sin borrador» y cerraba sin preguntar, porque el `Modal` llama al `onCerrar` del último
+pintado. Otra ventana que pregunte antes de descartar necesita lo mismo.
 
 ---
 

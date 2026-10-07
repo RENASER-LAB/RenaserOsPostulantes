@@ -4057,39 +4057,32 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
         una pieza del panel. Y el desplegable se abre igual, porque es donde
         quien busca la fecha va a mirar.
       */}
-      <details className={estilos.plazosPlegables}>
-        <summary>Plazos de la prueba</summary>
-        {vacante.estado === 'CERRADA' ? (
-          <p className={estilos.ayudaAjuste}>
-            La vacante está cerrada, así que su prueba ya no admite una fecha nueva.
-          </p>
-        ) : vacante.instrumentoEtapaTecnica === 'CUESTIONARIO_TECNICO' ? (
-          <p className={estilos.ayudaAjuste}>
-            {typeof vacante.minutosPruebaVigentes === 'number'
-              ? `Esta vacante rinde el cuestionario técnico: cada persona tiene ${vacante.minutosPruebaVigentes} minutos desde que lo abre, así que no se cierra con una fecha.`
-              : 'Esta vacante rinde el cuestionario técnico: cada persona tiene los minutos que rijan desde que lo abre, así que no se cierra con una fecha.'}{' '}
-            <a href="#tiempo-de-la-etapa-tecnica">Ajustar los minutos →</a>
-          </p>
-        ) : laSuya ? (
-          pruebaLista === true ? (
-            <CierreDeLaVacante vacante={vacante} alGuardar={refrescar} />
-          ) : (
+      {/* La prueba del editor (V68) lleva su fecha límite en su configuración: aquí no sale. */}
+      {!laSuya && (
+        <details className={estilos.plazosPlegables}>
+          <summary>Plazos de la prueba</summary>
+          {vacante.estado === 'CERRADA' ? (
             <p className={estilos.ayudaAjuste}>
-              Para fijar cuándo cierra la prueba hay que publicarla antes, desde{' '}
-              <Link to={rutas.adminPruebaPropia(vacante.id)}>Armar la prueba</Link>: el plazo se
-              cuenta sobre la prueba publicada.
+              La vacante está cerrada, así que su prueba ya no admite una fecha nueva.
             </p>
-          )
-        ) : vacante.versionPlantillaPruebaId === null ? (
-          <p className={estilos.ayudaAjuste}>
-            Para fijar cuándo cierra la prueba hay que elegir antes cuál rendirá, aquí
-            arriba en «Qué prueba del puesto rendirá»: el plazo se cuenta sobre la versión
-            de la plantilla.
-          </p>
-        ) : (
-          <CierreDeLaVacante vacante={vacante} alGuardar={refrescar} />
-        )}
-      </details>
+          ) : vacante.instrumentoEtapaTecnica === 'CUESTIONARIO_TECNICO' ? (
+            <p className={estilos.ayudaAjuste}>
+              {typeof vacante.minutosPruebaVigentes === 'number'
+                ? `Esta vacante rinde el cuestionario técnico: cada persona tiene ${vacante.minutosPruebaVigentes} minutos desde que lo abre, así que no se cierra con una fecha.`
+                : 'Esta vacante rinde el cuestionario técnico: cada persona tiene los minutos que rijan desde que lo abre, así que no se cierra con una fecha.'}{' '}
+              <a href="#tiempo-de-la-etapa-tecnica">Ajustar los minutos →</a>
+            </p>
+          ) : vacante.versionPlantillaPruebaId === null ? (
+            <p className={estilos.ayudaAjuste}>
+              Para fijar cuándo cierra la prueba hay que elegir antes cuál rendirá, aquí
+              arriba en «Qué prueba del puesto rendirá»: el plazo se cuenta sobre la versión
+              de la plantilla.
+            </p>
+          ) : (
+            <CierreDeLaVacante vacante={vacante} alGuardar={refrescar} />
+          )}
+        </details>
+      )}
 
       {fallo && (
         <p className={estilos.avisoMalo} role="alert">

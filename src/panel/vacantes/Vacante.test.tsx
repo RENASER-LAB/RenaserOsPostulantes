@@ -4239,6 +4239,14 @@ describe('una vacante nueva rinde la prueba de su editor (V67)', () => {
     expect(screen.queryByRole('button', { name: /Ver qué le falta/ })).toBeNull()
   })
 
+  it('la vacante con la prueba del editor no tiene el bloque «Plazos de la prueba»: su fecha va en la configuración de la prueba (AC-13)', async () => {
+    conLaPrueba('PUBLICADA', { estado: 'BORRADOR' })
+    await pintar()
+
+    await screen.findByText('Publicada · 5 criterios · 2 entregables · 90 min')
+    expect(screen.queryByText('Plazos de la prueba')).toBeNull()
+  })
+
   it('con la prueba publicada, el botón y el cartel dicen lo mismo', async () => {
     conLaPrueba('PUBLICADA', { estado: 'BORRADOR' })
     await pintar()
