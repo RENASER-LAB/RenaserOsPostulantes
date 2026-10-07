@@ -188,6 +188,17 @@ test.describe('Un editor de la prueba técnica más simple', () => {
     const form = page.getByRole('form', { name: 'Editar el criterio Análisis' })
     await expect(form).toBeVisible()
     await expect(form).not.toContainText('Mira')
+    // V69: se escribe lo que vale el criterio entero; debajo, en vivo, cuánto suman sus
+    // cerradas y quién califica el resto. Si lo suman todo no se pregunta; si lo pasan, la falta.
+    const puntos = form.getByRole('spinbutton', { name: 'Puntos del criterio' })
+    await expect(puntos).toHaveValue('30')
+    await expect(form).toContainText('Sus cerradas suman 10. Los otros 20 los califica')
+    await expect(form.getByRole('combobox', { name: 'Quién califica los otros 20 puntos' })).toHaveValue('IA')
+    await puntos.fill('10')
+    await expect(form).toContainText('Sus cerradas suman 10. Todo lo puntúa el sistema.')
+    await expect(form.getByRole('combobox')).toHaveCount(0)
+    await puntos.fill('5')
+    await expect(form).toContainText('Las cerradas de «Análisis» suman 10 y el criterio vale 5.')
     await form.getByRole('button', { name: 'Cancelar' }).click()
 
     // AC-08/AC-16: sin fecha no se publica; la falta abre la configuración con el cursor en la fecha
@@ -202,7 +213,7 @@ test.describe('Un editor de la prueba técnica más simple', () => {
     // AC-12: ningún campo de días; AC-18: la guía con el teclado
     await expect(configuracion.getByLabel(/Días/)).toHaveCount(0)
     await configuracion.getByRole('button', { name: 'Guía: Fecha límite' }).focus()
-    await expect(configuracion.getByRole('tooltip')).toContainText('no se copia con la prueba')
+    await expect(configuracion.getByRole('tooltip')).toContainText('No se copia con la prueba')
     // AC-09: sin publicar, la fecha se guarda en la vacante sin pedir motivo
     await fecha.fill(enLima(20))
     await expect(configuracion).not.toContainText('Motivo del cambio')
@@ -385,5 +396,46 @@ test.describe('Un editor de la prueba técnica más simple', () => {
     await expect(balance).toContainText('0 avisos', { timeout: 20_000 })
     await page.getByRole('button', { name: 'Publicar las preguntas' }).click()
     await expect(page.getByText(/^Publicadas\./)).toBeVisible({ timeout: 20_000 })
+  })
+
+  test('QA-10: la falta de quién califica lleva al lápiz con «Quién califica» enfocado y sin elegir por nadie', async ({ page }) => {
+    const OTRA = '¿Qué cuenta registra la caja?'
+    const cerrada = (enunciado: string, puntos: number) => ({
+      tipo: 'OPCION_UNICA' as const, enunciado, puntos,
+      opciones: [{ texto: 'Caja', puntos }, { texto: 'Ventas', puntos: 0 }],
+    })
+    const v = await crearVacante(equipo, 'Editor simple sin quién califica', await lugarDe(equipo))
+    await exigir(`/panel/vacantes/${v}/aplicacion-evaluacion`, equipo, 'POST', { aplica: false })
+    await escribirPrueba(equipo, v, {
+      criterios: [{ nombre: 'Cálculo', puntos: 30, calificador: null, preguntas: [cerrada(C1, 15), cerrada(OTRA, 15)] }],
+      datos: { modalidad: 'CRONOMETRADA', duracionMinutos: 60 },
+      fechaLimite: null,
+    })
+    const calculo = () => editorDe(equipo, v).then((e) => (e.borrador.criterios as any[]).find((c) => c.nombre === 'Cálculo'))
+    // «Todo lo puntúa el sistema»; luego una cerrada baja y el criterio sigue valiendo 30 (V69).
+    await exigir(`${RUTA(v)}/criterios/${(await calculo()).id}`, equipo, 'PUT', { nombre: 'Cálculo', queEvalua: null, puntos: 30, calificador: null })
+    const laOtra = ((await calculo()).preguntas as any[]).find((p) => p.enunciado === OTRA).id
+    await exigir(`${RUTA(v)}/preguntas/${laOtra}`, equipo, 'PUT', { ...cerrada(OTRA, 10), criterioId: (await calculo()).id })
+    expect(await calculo()).toMatchObject({ puntos: 30, puntosSistema: 25, puntosCalificados: 5, calificador: null })
+
+    await entrarAlPanel(page)
+    await page.goto(`/admin/vacantes/${v}/prueba`)
+    const bloque = criterio(page, 'Cálculo')
+    // Sale desplegado por su falta, y nada dice que esa parte la califique la IA o una persona.
+    await expect(bloque.locator('header').first()).toContainText('30 pts (sistema 25 + 5 sin asignar)', { timeout: 20_000 })
+    await expect(bloque).toContainText('Parte calificada: 5 pts · falta decir quién la califica')
+
+    await page.getByRole('button', { name: 'Plegar todo', exact: true }).click()
+    await cabecera(page).getByRole('button', { name: /^El criterio «Cálculo»: falta decir quién califica/ }).click()
+    await expect(plegador(page, 'Cálculo')).toHaveAttribute('aria-expanded', 'true')
+    const form = page.getByRole('form', { name: 'Editar el criterio Cálculo' })
+    const quien = form.getByRole('combobox', { name: 'Quién califica los otros 5 puntos' })
+    await expect(quien).toBeFocused()
+    await expect(quien).toHaveValue('')
+    await quien.selectOption('PERSONA')
+    await form.getByRole('button', { name: 'Guardar el criterio' }).click()
+    await expect(bloque.locator('header').first()).toContainText('30 pts (sistema 25 + persona 5)', { timeout: 20_000 })
+    await expect(cabecera(page)).not.toContainText('falta decir quién califica')
+    expect(await calculo()).toMatchObject({ puntos: 30, puntosCalificados: 5, calificador: 'PERSONA' })
   })
 })

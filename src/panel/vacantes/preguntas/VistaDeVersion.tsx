@@ -6,6 +6,12 @@
  * sus puntos y lo que evalúan, las preguntas con sus opciones y puntos, lo que
  * debe tener cada abierta y la guía de calificación.
  *
+ * Los criterios se pliegan como en el editor, con su misma línea —«▸ Análisis
+ * financiero · 30 pts (sistema 5 + IA 25) · 2 preguntas · 1 archivo»— y
+ * «Desplegar todo» / «Plegar todo», y al entrar **están todos plegados**: así se
+ * lee la prueba de un vistazo. El caso, los materiales, los entregables y la
+ * guía no se pliegan.
+ *
  * Si la versión es de una prueba técnica (V67) enseña además el caso, el tiempo,
  * los entregables y la parte calificada de cada criterio. Lo decide lo que llega
  * del servidor, no quien la pinta: la misma vista sirve en la copia y en la
@@ -13,14 +19,21 @@
  */
 
 import type { VersionDePreguntas } from '../../api/preguntasPropias'
-import { ContenidoDePregunta } from './BloqueCriterio'
+import {
+  archivosDeLasPreguntas,
+  ContenidoDePregunta,
+  NombrePlegable,
+  PlegarTodo,
+  ResumenDelCriterio,
+} from './BloqueCriterio'
 import { LineaDeLaParteCalificada } from './CriterioDePrueba'
 import { textoDeLoQueCubre } from './Entregables'
-import { nombreDelFormato, nombreDelTipo, puntosDelCriterio } from './formulario'
-import { numerosDePreguntas } from './navegacion'
+import { cuentaDelCriterio, nombreDelFormato, nombreDelTipo } from './formulario'
+import { numerosDePreguntas, useCriteriosPlegados } from './navegacion'
 import estilos from './EditorDePreguntas.module.css'
 
 export function VistaDeVersion({ version }: { version: VersionDePreguntas }) {
+  const plegado = useCriteriosPlegados(version)
   const prueba = version.prueba ?? null
   const entregables = prueba?.entregables ?? []
   const numeros = numerosDePreguntas(version)
@@ -106,37 +119,50 @@ export function VistaDeVersion({ version }: { version: VersionDePreguntas }) {
           <b>Guía de calificación:</b> {version.guiaCalificacion}
         </p>
       )}
-      {version.criterios.map((c) => (
-        <section className={estilos.criterio} key={c.id} aria-label={`Criterio ${c.nombre}`}>
-          <header className={estilos.cabeceraCriterio}>
-            <h3 className={estilos.nombreCriterio}>{c.nombre}</h3>
-            <span className={estilos.puntosCriterio}>{puntosDelCriterio(c)}</span>
-          </header>
-          {c.queEvalua && (
-            <p className={estilos.queEvalua}>
-              <b>Qué evalúa:</b> {c.queEvalua}
-            </p>
-          )}
-          {prueba && <LineaDeLaParteCalificada criterio={c} entregables={entregables} numeros={numeros} />}
-          {(c.preguntas.length > 0 || !prueba) && (
-            <ol className={estilos.preguntas}>
-              {c.preguntas.map((p) => (
-                <li key={p.id}>
-                  <article className={estilos.pregunta}>
-                    <div className={estilos.cabeceraPregunta}>
-                      <span className={estilos.chip}>{nombreDelTipo(p.tipo)}</span>
-                      {!(prueba && p.tipo === 'ABIERTA') && (
-                        <span className={estilos.chip}>{p.puntos} pts</span>
-                      )}
-                    </div>
-                    <ContenidoDePregunta pregunta={p} />
-                  </article>
-                </li>
-              ))}
-            </ol>
-          )}
-        </section>
-      ))}
+      {version.criterios.length > 0 && (
+        <PlegarTodo alDesplegar={plegado.desplegarTodo} alPlegar={plegado.plegarTodo} />
+      )}
+      {version.criterios.map((c) => {
+        const abierto = plegado.abierto(c.id)
+        return (
+          <section className={estilos.criterio} key={c.id} aria-label={`Criterio ${c.nombre}`}>
+            <header className={estilos.cabeceraCriterio}>
+              <NombrePlegable titulo={c.nombre} abierto={abierto} alAlternar={() => plegado.alternar(c.id)} />
+              <ResumenDelCriterio
+                criterio={c}
+                cuenta={cuentaDelCriterio(c.preguntas.length, prueba ? archivosDeLasPreguntas(c.preguntas, entregables) : 0)}
+              />
+            </header>
+            {abierto && (
+              <>
+                {c.queEvalua && (
+                  <p className={estilos.queEvalua}>
+                    <b>Qué evalúa:</b> {c.queEvalua}
+                  </p>
+                )}
+                {prueba && <LineaDeLaParteCalificada criterio={c} entregables={entregables} numeros={numeros} />}
+                {(c.preguntas.length > 0 || !prueba) && (
+                  <ol className={estilos.preguntas}>
+                    {c.preguntas.map((p) => (
+                      <li key={p.id}>
+                        <article className={estilos.pregunta}>
+                          <div className={estilos.cabeceraPregunta}>
+                            <span className={estilos.chip}>{nombreDelTipo(p.tipo)}</span>
+                            {!(prueba && p.tipo === 'ABIERTA') && (
+                              <span className={estilos.chip}>{p.puntos} pts</span>
+                            )}
+                          </div>
+                          <ContenidoDePregunta pregunta={p} />
+                        </article>
+                      </li>
+                    ))}
+                  </ol>
+                )}
+              </>
+            )}
+          </section>
+        )
+      })}
     </div>
   )
 }

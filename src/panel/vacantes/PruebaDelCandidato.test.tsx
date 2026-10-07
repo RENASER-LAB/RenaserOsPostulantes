@@ -158,6 +158,10 @@ describe('de dónde sale la nota de un criterio', () => {
     expect(deDondeSale(conocimiento({ calificadaMaximo: 0, calificador: null, calificada: null }))).toBe(
       'Sistema 8/10',
     )
+    // QA-10: sin quién califique, no se da por hecha la IA.
+    expect(deDondeSale(conocimiento({ calificadaMaximo: 5, calificador: null, calificada: null }))).toBe(
+      'Sistema 8/10 + Sin asignar pendiente/5',
+    )
   })
 })
 

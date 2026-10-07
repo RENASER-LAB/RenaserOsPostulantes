@@ -24,8 +24,13 @@ export type Calificador = 'IA' | 'PERSONA'
 export interface GuardarCriterioDePrueba {
   nombre: string
   queEvalua: string | null
-  /** Los puntos de su parte calificada; 0 o nulo = solo cerradas. */
-  puntosCalificados: number | null
+  /**
+   * Lo que vale el criterio entero (V69), cerradas incluidas. Su parte
+   * calificada es esto menos sus cerradas, y se ajusta sola si cambian: el
+   * total se mantiene.
+   */
+  puntos: number | null
+  /** Quién califica lo que no suman sus cerradas; nulo si no queda nada. */
   calificador: Calificador | null
   // Lo que mira no se escribe (V68): lo deduce el servidor del alcance de los entregables.
 }

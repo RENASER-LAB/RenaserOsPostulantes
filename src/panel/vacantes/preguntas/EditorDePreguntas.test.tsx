@@ -384,8 +384,8 @@ describe('plegables y avisos que llevan a donde se arreglan (V68, AC-25)', () =>
     pintar()
     const conocimiento = await screen.findByRole('region', { name: 'Criterio Conocimiento contable' })
     expect(within(conocimiento).getByRole('button', { name: 'Conocimiento contable' }).getAttribute('aria-expanded')).toBe('false')
-    expect(within(conocimiento).getByText('85 pts (IA 85)')).toBeTruthy()
-    expect(within(conocimiento).getByText('· 1 pregunta')).toBeTruthy()
+    // La cuenta sigue a los puntos, con su «·» en una caja aparte (QA-05).
+    expect(within(conocimiento).getByText('85 pts (IA 85)').nextElementSibling?.textContent).toBe('· 1 pregunta')
     expect(within(conocimiento).queryByText('Cuéntanos un cierre con un descuadre')).toBeNull()
     // «Manejo de Excel» tiene una falta: sale desplegado, con su aviso.
     const excel = screen.getByRole('region', { name: 'Criterio Manejo de Excel' })

@@ -13,6 +13,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { EstadoDeLaRecomendacion } from '../../api/preguntasPropias'
 import { Recomendaciones } from './Recomendaciones'
+import { ConModoDelEditor, MODO_PRUEBA } from './modo'
 
 const ver = vi.fn()
 const pedir = vi.fn()
@@ -150,5 +151,61 @@ describe('cuando no hay propuesta', () => {
     expect(estado.textContent).toContain('La IA está apagada')
     expect(screen.queryByRole('alert')).toBeNull()
     expect(pedir).toHaveBeenCalledWith(40, null)
+  })
+})
+
+describe('la propuesta de la prueba (V69)', () => {
+  const cerrada = (puntos: number) => ({
+    tipo: 'OPCION_UNICA' as const,
+    enunciado: `¿Una cerrada de ${puntos}?`,
+    puntos,
+    queDebeTener: null,
+    opciones: [{ texto: 'Sí', puntos }, { texto: 'No', puntos: 0 }],
+  })
+  const abierta = { tipo: 'ABIERTA' as const, enunciado: '¿Cómo cierras el mes?', puntos: 0, queDebeTener: 'Los pasos', opciones: [] }
+
+  it('un criterio nuevo dice lo que vale y quién califica el resto; uno del borrador sigue valiendo lo mismo', async () => {
+    ver.mockResolvedValue({
+      ...lista,
+      propuesta: [
+        { criterioExistenteId: 8, nombre: null, queEvalua: null, preguntas: [cerrada(10)] },
+        { criterioExistenteId: null, nombre: 'Cierre', queEvalua: null, puntos: 30, parteCalificada: 20, calificador: 'PERSONA', preguntas: [cerrada(10), abierta] },
+        // Una propuesta de antes de la V69: solo la parte calificada; vale su cerrada más ella.
+        { criterioExistenteId: null, nombre: 'Caja', queEvalua: null, parteCalificada: 15, calificador: 'IA', preguntas: [cerrada(5), abierta] },
+        { criterioExistenteId: null, nombre: 'Solo cerradas', queEvalua: null, puntos: 20, preguntas: [cerrada(20)] },
+        // QA-10: con parte calificada y sin quién la califique no se da por hecha la IA.
+        { criterioExistenteId: null, nombre: 'Sin quién', queEvalua: null, puntos: 25, calificador: null, preguntas: [cerrada(5), abierta] },
+      ],
+    } satisfies EstadoDeLaRecomendacion)
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })}>
+        <ConModoDelEditor modo={MODO_PRUEBA}>
+          <Recomendaciones
+            vacanteId={40}
+            total={50}
+            criterios={[
+              { id: 8, nombre: 'Manejo de Excel', queEvalua: null, orden: 2, puntos: 25, puntosSistema: 0, puntosIa: 25, puntosCalificados: 25, calificador: 'IA', preguntas: [] },
+            ]}
+            alAgregar={alAgregar}
+            alCerrar={vi.fn()}
+          />
+        </ConModoDelEditor>
+      </QueryClientProvider>,
+    )
+    const excel = (await screen.findByText('Para «Manejo de Excel»')).closest('article')!
+    expect(excel.textContent).toContain('sigue valiendo 25 pts')
+    expect(excel.textContent).toContain('Sus cerradas nuevas suman 10 y salen de lo que ya califican la IA o una persona.')
+    const cierre = screen.getByText('Cierre').closest('article')!
+    expect(cierre.textContent).toContain('30 pts')
+    expect(cierre.textContent).toContain('Sus cerradas suman 10. Los otros 20 los califica una persona mirando sus abiertas y archivos.')
+    const caja = screen.getByText('Caja').closest('article')!
+    expect(caja.textContent).toContain('20 pts')
+    expect(caja.textContent).toContain('Los otros 15 los califica la IA')
+    expect(screen.getByText('Solo cerradas').closest('article')!.textContent).toContain(
+      'Sus cerradas suman 20. Todo lo puntúa el sistema.',
+    )
+    const sinQuien = screen.getByText('Sin quién').closest('article')!.textContent
+    expect(sinQuien).toContain('Sus cerradas suman 5. Los otros 20 no tienen quién los califique: falta decirlo.')
+    expect(sinQuien).not.toMatch(/los califica (la IA|una persona)/)
   })
 })

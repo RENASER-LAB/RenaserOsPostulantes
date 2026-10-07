@@ -8,11 +8,24 @@
  *     sus puntos.
  *   - Las faltas como botones ámbar con flecha: cada una lleva a donde se
  *     arregla (ver `navegacion.ts`).
- *   - Las acciones: «Publicar» siempre; en la prueba, también el chip del
- *     tiempo y «Configuración», que van juntos.
+ *   - Las acciones: «Publicar» en el borrador de quien puede editar; en la
+ *     prueba, también el chip del tiempo y «Configuración», que van juntos.
+ *     Sin «Publicar» (publicada o en lectura) su columna no existe: lo último
+ *     de la fila llega al borde derecho, como el resumen (QA-08).
+ *
+ * En el escritorio va en una fila y la barra debajo, con el resumen al final de
+ * la barra; en el banco, que no tiene chip, el resumen cabe en la fila y la
+ * barra va sola. Con la cabecera estrecha (1024 px con el menú abierto), el chip
+ * y «Configuración» bajan a su propia línea. Lo decide el ancho de la cabecera y
+ * no el de la ventana, porque el menú lateral se pliega.
  *
  * En el teléfono se compacta: estado, balance y «Publicar» en una línea; el
  * chip con «Configuración» y las faltas, debajo (QA-01).
+ *
+ * Las faltas son botones bajos, en línea y varios por fila. En el escritorio se
+ * enseñan las cuatro primeras y «Ver N más» despliega las demás, para que la
+ * cabecera no crezca sin límite; en el teléfono van todas en una fila que se
+ * desplaza.
  *
  * Su alto se mide y se deja en `--alto-cabecera-fija`: crece con las faltas, y
  * lo que se baja a ver desde una falta tiene que quedar DEBAJO de ella (QA-03).
@@ -21,13 +34,16 @@
  * por su cuenta.
  */
 
-import type { ReactNode } from 'react'
+import { useId, useState, type ReactNode } from 'react'
 import type { CriterioDeLaVersion, VersionDePreguntas } from '../../api/preguntasPropias'
 import { useAltoEnUnaVariable } from '../../altoDeLaCabecera'
 import { destinoDelAviso, type Destino } from './navegacion'
 import estilos from './EditorDePreguntas.module.css'
 
 export const VARIABLE_ALTO_CABECERA_FIJA = '--alto-cabecera-fija'
+
+/** Las faltas que se ven en el escritorio antes de «Ver N más»: dos filas. */
+export const FALTAS_A_LA_VISTA = 4
 
 interface Props {
   /** El nombre de la región: «Balance de la prueba» o «Balance de las preguntas». */
@@ -51,44 +67,88 @@ interface Props {
 export function CabeceraFija({ nombre, estado, balance, cifras, version, chip, ajustes, acciones, alIr }: Props) {
   const medir = useAltoEnUnaVariable(VARIABLE_ALTO_CABECERA_FIJA)
   const conChip = Boolean(chip || ajustes)
+  const conAcciones = Boolean(acciones)
+  const clases = [estilos.cabeceraFija, conChip && estilos.cabeceraConChip, !conAcciones && estilos.sinAcciones]
+    .filter(Boolean)
+    .join(' ')
   return (
-    <section
-      ref={medir}
-      className={conChip ? `${estilos.cabeceraFija} ${estilos.cabeceraConChip}` : estilos.cabeceraFija}
-      aria-label={nombre}
-    >
-      <div className={estilos.lineaCabecera}>
-        <span className={estilos.estadoVersion}>{estado}</span>
-        <p className={estilos.balanceCabecera}>{balance}</p>
-        <p className={estilos.cifras}>{cifras}</p>
-      </div>
-      {conChip && (
-        <div className={estilos.herramientasCabecera}>
-          {chip}
-          {ajustes}
+    <section ref={medir} className={clases} aria-label={nombre}>
+      <div className={estilos.rejillaCabecera}>
+        <div className={estilos.lineaCabecera}>
+          <span className={estilos.estadoVersion}>{estado}</span>
+          <p className={estilos.balanceCabecera}>{balance}</p>
         </div>
-      )}
-      <div className={estilos.accionesCabecera}>{acciones}</div>
-      <BarraDePuntos criterios={version.criterios} total={version.total} />
-      {version.avisos.length > 0 && (
-        <ul className={estilos.faltasCabecera} aria-label="Lo que frena la publicación">
-          {version.avisos.map((aviso) => (
-            <li key={aviso}>
-              <button
-                className={estilos.botonFalta}
-                type="button"
-                onClick={() => alIr(destinoDelAviso(aviso, version))}
-              >
-                <span>{aviso}</span>
-                <span className={estilos.flechaFalta} aria-hidden="true">
-                  →
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+        {conChip && (
+          <div className={estilos.herramientasCabecera}>
+            {chip}
+            {ajustes}
+          </div>
+        )}
+        {conAcciones && <div className={estilos.accionesCabecera}>{acciones}</div>}
+        <div className={estilos.pieDeLaBarra}>
+          <BarraDePuntos criterios={version.criterios} total={version.total} />
+          <p className={estilos.cifras}>{cifras}</p>
+        </div>
+        {version.avisos.length > 0 && <Faltas avisos={version.avisos} version={version} alIr={alIr} />}
+      </div>
     </section>
+  )
+}
+
+/**
+ * Las faltas, bajas y en línea. Cada una lleva a donde se arregla; el texto
+ * largo se corta con «…» a la vista, pero el botón lo dice entero (y al pasar
+ * el cursor también). Las que pasan de `FALTAS_A_LA_VISTA` se esconden en el
+ * escritorio hasta «Ver N más»; «Ver N más» queda fuera de la lista, que solo
+ * tiene faltas.
+ */
+function Faltas({
+  avisos,
+  version,
+  alIr,
+}: {
+  avisos: string[]
+  version: VersionDePreguntas
+  alIr: (destino: Destino) => void
+}) {
+  const id = useId()
+  const [todas, setTodas] = useState(false)
+  const escondidas = avisos.length - FALTAS_A_LA_VISTA
+  return (
+    <div className={estilos.faltasCabecera}>
+      <ul
+        id={id}
+        className={escondidas > 0 ? `${estilos.listaFaltas} ${estilos.listaConVerMas}` : estilos.listaFaltas}
+        aria-label="Lo que frena la publicación"
+      >
+        {avisos.map((aviso, i) => (
+          <li key={aviso} className={!todas && i >= FALTAS_A_LA_VISTA ? estilos.faltaEscondida : undefined}>
+            <button
+              className={estilos.botonFalta}
+              type="button"
+              title={aviso}
+              onClick={() => alIr(destinoDelAviso(aviso, version))}
+            >
+              <span className={estilos.textoFalta}>{aviso}</span>
+              <span className={estilos.flechaFalta} aria-hidden="true">
+                →
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
+      {escondidas > 0 && (
+        <button
+          className={estilos.verMasFaltas}
+          type="button"
+          aria-expanded={todas}
+          aria-controls={id}
+          onClick={() => setTodas((t) => !t)}
+        >
+          {todas ? 'Ver menos' : `Ver ${escondidas} más`}
+        </button>
+      )}
+    </div>
   )
 }
 

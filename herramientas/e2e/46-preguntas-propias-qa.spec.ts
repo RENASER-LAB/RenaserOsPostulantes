@@ -608,6 +608,8 @@ test.describe('Copiar de otra vacante', () => {
     // La vista previa, en solo lectura: el borrador no cambia hasta copiar.
     await opcion('Copiable archivada').click()
     await expect(dialogo.getByText('Guía de la archivada').last()).toBeVisible({ timeout: 20_000 })
+    // Sus criterios salen plegados: se despliegan para leer sus preguntas.
+    await dialogo.getByRole('button', { name: 'Desplegar todo' }).last().click()
     await expect(dialogo.getByText('Copiable archivada: cuéntanos un cierre con un descuadre.').last()).toBeVisible()
     expect((await editorDe(equipo, destino)).borrador.criterios.map((c: any) => c.nombre)).toEqual(['Criterio que se reemplaza'])
 
@@ -753,6 +755,21 @@ test.describe('Regresiones del balance', () => {
       return !(enElCentro !== null && (enElCentro === el || el.contains(enElCentro)))
     })
     expect(tapado).toBe(false)
+  })
+
+  test('QA-05 · en el teléfono, la línea del criterio se lee en orden: sus puntos y después sus preguntas', async ({ page }) => {
+    const id = await borradorA95()
+    await entrarAlPanel(page)
+    await page.setViewportSize({ width: 375, height: 812 })
+    await page.goto(`/admin/vacantes/${id}/preguntas`)
+    await expect(balance(page)).toContainText('95 de 100 puntos', { timeout: 20_000 })
+    // «Casos · 95 pts (IA 95) · 6 preguntas»: los puntos, en la misma fila y a la izquierda, o en una fila de más arriba.
+    const linea = page.getByRole('region', { name: 'Criterio Casos' }).locator('header').first()
+    const puntos = await linea.getByText(/^\d+ pts\b/).first().boundingBox()
+    const cuenta = await linea.getByText(/^· \d+ preguntas?/).first().boundingBox()
+    expect(puntos && cuenta).toBeTruthy()
+    const enOrden = Math.abs(puntos!.y - cuenta!.y) < 6 ? puntos!.x < cuenta!.x : puntos!.y < cuenta!.y
+    expect(enOrden).toBe(true)
   })
 
   test('QA-PP-03 · la lista de faltas del último intento no se queda vieja tras corregir', async ({ page }) => {

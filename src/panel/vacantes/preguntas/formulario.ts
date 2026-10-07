@@ -140,7 +140,9 @@ export function faltaEvidente(p: PreguntaEnEdicion, abiertasSinPuntos = false): 
 /**
  * «30 pts · sistema 10 + IA 20», o solo lo que haya. En la prueba (V67) la
  * segunda parte es la parte calificada del criterio, y dice quién la califica:
- * «sistema 10 + persona 20».
+ * «sistema 10 + persona 20». Sin quién la califique —un criterio «todo del
+ * sistema» cuyas cerradas bajaron (V69)— no se da por hecha la IA: «sistema 25
+ * + 5 sin asignar» (QA-10).
  */
 export function puntosDelCriterio(c: CriterioDeLaVersion): string {
   if (c.puntos === 0) return '0 pts'
@@ -148,12 +150,53 @@ export function puntosDelCriterio(c: CriterioDeLaVersion): string {
   if (c.puntosSistema > 0) partes.push(`sistema ${c.puntosSistema}`)
   if (c.puntosCalificados != null) {
     if (c.puntosCalificados > 0) {
-      partes.push(`${c.calificador === 'PERSONA' ? 'persona' : 'IA'} ${c.puntosCalificados}`)
+      partes.push(
+        c.calificador === 'PERSONA'
+          ? `persona ${c.puntosCalificados}`
+          : c.calificador === 'IA'
+            ? `IA ${c.puntosCalificados}`
+            : `${c.puntosCalificados} sin asignar`,
+      )
     }
   } else if (c.puntosIa > 0) {
     partes.push(`IA ${c.puntosIa}`)
   }
   return `${c.puntos} pts · ${partes.join(' + ')}`
+}
+
+/**
+ * Cómo se reparte lo que vale un criterio de la prueba (V69). Se escribe el
+ * total; sus cerradas lo puntúa el sistema y el resto —la parte calificada— lo
+ * califica la IA o una persona mirando sus abiertas y archivos. Si las cerradas
+ * suman el total no queda nada que calificar; si lo pasan, es una falta.
+ */
+export type Reparto =
+  | { tipo: 'SISTEMA'; cerradas: number }
+  | { tipo: 'CALIFICADA'; cerradas: number; otros: number }
+  | { tipo: 'POR_ENCIMA'; cerradas: number; total: number }
+
+/**
+ * Lo que está mal en los puntos escritos de un criterio, con las palabras del
+ * servidor, o nulo si son un entero de 0 a 100. Sin esto, el reparto en vivo
+ * daba por buenos 25.5, -5 o 150 hasta que el navegador frenaba el envío.
+ */
+export function faltaEnLosPuntosDelCriterio(puntos: string): string | null {
+  if (puntos.trim() === '') return 'Faltan los puntos del criterio: lo que vale entero, cerradas incluidas.'
+  const numero = Number(puntos)
+  if (!Number.isInteger(numero)) return 'Los puntos del criterio tienen que ser un número entero, sin decimales.'
+  if (numero < 0 || numero > 100) return 'Los puntos del criterio van de 0 a 100.'
+  return null
+}
+
+export function repartoDelCriterio(total: number, cerradas: number): Reparto {
+  if (cerradas > total) return { tipo: 'POR_ENCIMA', cerradas, total }
+  if (cerradas === total) return { tipo: 'SISTEMA', cerradas }
+  return { tipo: 'CALIFICADA', cerradas, otros: total - cerradas }
+}
+
+/** La falta de un criterio cuyas cerradas pasan de lo que vale: la misma que dice el servidor. */
+export function cerradasPorEncima(nombre: string, cerradas: number, total: number): string {
+  return `Las cerradas de «${nombre}» suman ${cerradas} y el criterio vale ${total}.`
 }
 
 /**
@@ -166,11 +209,15 @@ export function puntosConDesglose(c: CriterioDeLaVersion): string {
   return desglose ? `${puntos} (${desglose})` : (puntos ?? conDesglose)
 }
 
-/** «· 2 preguntas · 1 archivo», lo que sigue a los puntos en la línea de un criterio. */
+/**
+ * «2 preguntas · 1 archivo», lo que sigue a los puntos en la línea de un
+ * criterio. El «·» que la separa de los puntos lo pone la línea, en su propia
+ * caja: así se recorta cuando la cuenta baja de fila en el teléfono (QA-05).
+ */
 export function cuentaDelCriterio(preguntas: number, archivos: number): string {
   const partes = [`${preguntas} ${preguntas === 1 ? 'pregunta' : 'preguntas'}`]
   if (archivos > 0) partes.push(`${archivos} ${archivos === 1 ? 'archivo' : 'archivos'}`)
-  return `· ${partes.join(' · ')}`
+  return partes.join(' · ')
 }
 
 /**

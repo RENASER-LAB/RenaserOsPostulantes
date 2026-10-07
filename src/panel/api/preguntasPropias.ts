@@ -50,7 +50,11 @@ export interface CriterioDeLaVersion {
   nombre: string
   queEvalua: string | null
   orden: number
-  /** La suma de sus preguntas: no se escribe. */
+  /**
+   * La suma de sus preguntas: no se escribe. En la prueba (V69) es lo que vale
+   * el criterio, que sí se escribe: su parte calificada es esto menos
+   * `puntosSistema`, sus cerradas.
+   */
   puntos: number
   puntosSistema: number
   puntosIa: number
@@ -220,8 +224,14 @@ export interface CriterioPropuesto {
   nombre: string | null
   queEvalua: string | null
   preguntas: PreguntaPropuesta[]
-  /** Solo en la prueba (V67). */
+  /** Solo en la prueba (V67): lo que no suman sus cerradas, ya deducido. */
   parteCalificada?: number | null
+  /**
+   * Solo en la prueba (V69): lo que vale un criterio nuevo entero. Nulo en uno
+   * que ya está en el borrador —sigue valiendo lo mismo— y en las propuestas
+   * de antes, que solo traían la parte calificada.
+   */
+  puntos?: number | null
   calificador?: 'IA' | 'PERSONA' | null
   /** Ya no se usan (V68): «Mira» no lo propone la IA, se deduce. */
   entregables?: number[] | null
@@ -286,8 +296,12 @@ export interface CorregirInstrucciones {
 
 export interface CambiarPuntos {
   preguntas: { id: number; puntos: number; opciones: { id: number; puntos: number }[] }[]
-  /** Solo en la prueba (V67): la parte calificada de cada criterio. */
-  criterios?: { id: number; puntosCalificados: number }[]
+  /**
+   * Solo en la prueba: lo que vale cada criterio con parte calificada (V69).
+   * Su parte es eso menos sus cerradas nuevas; uno solo de cerradas vale lo que
+   * sumen.
+   */
+  criterios?: { id: number; puntos: number }[]
 }
 
 const base = (vacanteId: number, ruta: RutaDelEditor = 'preguntas-propias') =>

@@ -75,6 +75,11 @@ describe('adónde lleva cada falta', () => {
       tipo: 'CRITERIO',
       criterioId: 6,
     })
+    // V69: las cerradas que pasan de lo que vale el criterio también son de él
+    expect(destinoDelAviso('Las cerradas de «Excel» suman 40 y el criterio vale 30.', version)).toEqual({
+      tipo: 'CRITERIO',
+      criterioId: 5,
+    })
     expect(destinoDelAviso('La pregunta 2 («P11»): falta el enunciado.', version)).toEqual({
       tipo: 'PREGUNTA',
       preguntaId: 11,
@@ -86,6 +91,19 @@ describe('adónde lleva cada falta', () => {
       criterioId: null,
     })
     expect([...numerosDePreguntas(version).entries()]).toEqual([[10, 1], [11, 2], [12, 3]])
+  })
+
+  it('QA-10: la falta de quién califica lleva al lápiz de su criterio, con el cursor en «Quién califica»', () => {
+    const falta = 'El criterio «Excel»: falta decir quién califica su parte calificada, la IA o una persona.'
+    const destino = destinoDelAviso(falta, version)
+    expect(destino).toEqual({ tipo: 'CRITERIO', criterioId: 5, campo: 'calificador' })
+    // Sigue siendo una falta de ese criterio: su punto ámbar.
+    expect([...faltasPorCriterio({ ...version, avisos: [falta] }).entries()]).toEqual([[5, [falta]]])
+    // Las demás del criterio no abren el lápiz.
+    expect(destinoDelAviso('El criterio «Excel»: su parte calificada no mira nada. Agrégale una abierta o pide un archivo en una de sus preguntas.', version)).toEqual({
+      tipo: 'CRITERIO',
+      criterioId: 5,
+    })
   })
 
   it('el archivo de una pregunta, a su pregunta; un general, a los entregables', () => {

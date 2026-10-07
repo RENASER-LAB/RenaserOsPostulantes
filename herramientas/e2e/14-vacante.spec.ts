@@ -261,11 +261,13 @@ test.describe.serial('El recorrido entero de una vacante', () => {
         expect(r.ok, `${metodo} ${ruta}: ${r.status} ${await r.clone().text()}`).toBe(true)
         return r.json()
       }
+      // Lo que vale el criterio entero (V69): su cerrada de 100 lo llenará, y entonces nadie
+      // califica nada; recién creado no tiene cerradas, así que se dice quién.
       const conCriterio = await enviar('/criterios', {
         nombre: 'Atención al cliente',
         queEvalua: null,
-        puntosCalificados: 0,
-        calificador: null,
+        puntos: 100,
+        calificador: 'IA',
         entregables: [],
       })
       const criterioId = conCriterio.borrador.criterios[0].id as number

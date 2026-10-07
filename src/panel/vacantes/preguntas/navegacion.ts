@@ -4,7 +4,8 @@
  * Los dos editores —la prueba técnica y las preguntas propias— pintan sus
  * avisos como botones que llevan a donde se arreglan. **Los avisos los escribe
  * el servidor** y aquí solo se leen: «Los puntos suman…» lleva a los criterios,
- * «El criterio «X»…» a ese criterio abierto, «La pregunta 3…» a su criterio y a
+ * «El criterio «X»…» y «Las cerradas de «X»…» a ese criterio abierto (si falta
+ * quién califica, a su lápiz con el cursor en «Quién califica»), «La pregunta 3…» a su criterio y a
  * esa pregunta, un entregable a su pregunta o a los generales, y el tiempo y la
  * fecha a la configuración con el cursor en el campo. Lo que no se reconoce
  * lleva a los criterios: nunca a ninguna parte.
@@ -20,7 +21,8 @@ export type CampoDeLaConfiguracion = 'tiempo' | 'fecha'
 
 export type Destino =
   | { tipo: 'CRITERIOS' }
-  | { tipo: 'CRITERIO'; criterioId: number }
+  /** Con `campo`, abre su lápiz con el cursor en «Quién califica» (QA-10). */
+  | { tipo: 'CRITERIO'; criterioId: number; campo?: 'calificador' }
   | { tipo: 'PREGUNTA'; preguntaId: number; criterioId: number | null }
   | { tipo: 'ENTREGABLE'; entregableId: number }
   | { tipo: 'CONFIGURACION'; campo: CampoDeLaConfiguracion }
@@ -36,8 +38,11 @@ export function numerosDePreguntas(v: Pick<VersionDePreguntas, 'criterios' | 'si
 }
 
 const LA_PREGUNTA = /^La pregunta (\d+)\b/
-const EL_CRITERIO = /^El criterio «(.+?)»/
+// «Las cerradas de «X» suman 40 y el criterio vale 30» (V69) también es de un criterio.
+const EL_CRITERIO = /^(?:El criterio|Las cerradas de) «(.+?)»/
 const UN_ENTREGABLE = /^«(.+?)»/
+// «El criterio «X»: falta decir quién califica su parte calificada…» se arregla en su lápiz.
+const SIN_CALIFICADOR = /^El criterio «.+?»: falta decir quién califica/
 
 /** Adónde lleva un aviso del servidor. */
 export function destinoDelAviso(aviso: string, v: VersionDePreguntas): Destino {
@@ -51,7 +56,11 @@ export function destinoDelAviso(aviso: string, v: VersionDePreguntas): Destino {
   const criterio = EL_CRITERIO.exec(aviso)
   if (criterio) {
     const encontrado = v.criterios.find((c) => c.nombre === criterio[1])
-    if (encontrado) return { tipo: 'CRITERIO', criterioId: encontrado.id }
+    if (encontrado) {
+      return SIN_CALIFICADOR.test(aviso)
+        ? { tipo: 'CRITERIO', criterioId: encontrado.id, campo: 'calificador' }
+        : { tipo: 'CRITERIO', criterioId: encontrado.id }
+    }
   }
   const entregable = UN_ENTREGABLE.exec(aviso)
   if (entregable) {
@@ -86,6 +95,9 @@ export function faltasPorCriterio(v: VersionDePreguntas | null): Map<number, str
   return salida
 }
 
+/** El id del selector «Quién califica…» del lápiz de un criterio, adonde lleva su falta. */
+export const idDelCalificador = (criterioId: number) => `calificador-${criterioId}`
+
 /** El id del elemento al que se baja para cada destino. */
 export function idDelDestino(d: Destino): string {
   switch (d.tipo) {
@@ -103,7 +115,8 @@ export function idDelDestino(d: Destino): string {
 /**
  * Baja hasta el destino y le pone el foco, cuando ya está pintado. Dos
  * `requestAnimationFrame`: el primero deja que React despliegue el criterio, el
- * segundo que el navegador lo coloque.
+ * segundo que el navegador lo coloque. Con `campo`, el foco va al selector de
+ * su lápiz abierto; si no está (en lectura), al criterio.
  */
 export function bajarHasta(d: Destino): void {
   requestAnimationFrame(() =>
@@ -111,7 +124,9 @@ export function bajarHasta(d: Destino): void {
       const destino = document.getElementById(idDelDestino(d))
       if (!destino) return
       destino.scrollIntoView?.({ behavior: 'smooth', block: 'start' })
-      destino.focus({ preventScroll: true })
+      const campo = d.tipo === 'CRITERIO' && d.campo ? document.getElementById(idDelCalificador(d.criterioId)) : null
+      const foco = campo ?? destino
+      foco.focus({ preventScroll: true })
     }),
   )
 }
@@ -142,8 +157,19 @@ export function useCriteriosAbiertos(version: VersionDePreguntas | null) {
     setEstado({ versionId, conocidos: ids, abiertos: new Set([...estado.abiertos, ...nuevos]) })
   }
 
+  // El criterio cuyo lápiz pidió abrir una falta, hasta que el bloque lo abre.
+  const [aEditar, setAEditar] = useState<number | null>(null)
+
   const cambiar = (abiertos: Set<number>) => setEstado((e) => ({ ...e, abiertos }))
   return {
+    aEditar,
+    /** Despliega el criterio y pide abrir su lápiz. */
+    editar: (id: number) => {
+      if (!estado.abiertos.has(id)) cambiar(new Set([...estado.abiertos, id]))
+      setAEditar(id)
+    },
+    /** El bloque ya abrió el lápiz pedido. */
+    lapizAbierto: () => setAEditar(null),
     abierto: (id: number) => estado.abiertos.has(id),
     alternar: (id: number) => {
       const abiertos = new Set(estado.abiertos)
@@ -160,19 +186,56 @@ export function useCriteriosAbiertos(version: VersionDePreguntas | null) {
 }
 
 /**
+ * Qué criterios están desplegados en una versión que se lee: la publicada, la vista
+ * previa de «Copiar de otra vacante» y «Cambiar los puntos». Al entrar, **todos
+ * plegados** —ya está publicada: no hay faltas ni criterios recién creados que
+ * enseñar—; si llega otra versión, es como volver a entrar. Plegar es solo leer:
+ * vale también sin `editar_vacante` (AC-23).
+ *
+ * Con `desplegadosAlEntrar` salen todos desplegados: «Cambiar los puntos» del
+ * banco, cuyos únicos campos son los puntos de sus preguntas (QA-13).
+ */
+export function useCriteriosPlegados(
+  version: Pick<VersionDePreguntas, 'id' | 'criterios'>,
+  desplegadosAlEntrar = false,
+) {
+  const alEntrar = () => new Set<number>(desplegadosAlEntrar ? version.criterios.map((c) => c.id) : [])
+  const [estado, setEstado] = useState(() => ({ versionId: version.id, abiertos: alEntrar() }))
+  if (estado.versionId !== version.id) setEstado({ versionId: version.id, abiertos: alEntrar() })
+
+  const cambiar = (abiertos: Set<number>) => setEstado((e) => ({ ...e, abiertos }))
+  return {
+    abierto: (id: number) => estado.abiertos.has(id),
+    alternar: (id: number) =>
+      setEstado((e) => {
+        const abiertos = new Set(e.abiertos)
+        if (abiertos.has(id)) abiertos.delete(id)
+        else abiertos.add(id)
+        return { ...e, abiertos }
+      }),
+    /** Despliega estos, sin plegar ninguno. */
+    abrir: (ids: number[]) => setEstado((e) => ({ ...e, abiertos: new Set([...e.abiertos, ...ids]) })),
+    desplegarTodo: () => cambiar(new Set(version.criterios.map((c) => c.id))),
+    plegarTodo: () => cambiar(new Set()),
+  }
+}
+
+/**
  * Ir a donde se arregla una falta: despliega su criterio y baja hasta él; el tiempo y
- * la fecha abren la configuración (solo la prueba la tiene).
+ * la fecha abren la configuración (solo la prueba la tiene). La de quién califica abre
+ * además el lápiz del criterio.
  */
 export function irAlDestino(
   d: Destino,
-  plegado: { abrir: (criterioId: number) => void },
+  plegado: { abrir: (criterioId: number) => void; editar?: (criterioId: number) => void },
   alConfigurar?: (campo: CampoDeLaConfiguracion) => void,
 ): void {
   if (d.tipo === 'CONFIGURACION') {
     alConfigurar?.(d.campo)
     return
   }
-  if (d.tipo === 'CRITERIO') plegado.abrir(d.criterioId)
+  if (d.tipo === 'CRITERIO' && d.campo && plegado.editar) plegado.editar(d.criterioId)
+  else if (d.tipo === 'CRITERIO') plegado.abrir(d.criterioId)
   if (d.tipo === 'PREGUNTA' && d.criterioId !== null) plegado.abrir(d.criterioId)
   bajarHasta(d)
 }

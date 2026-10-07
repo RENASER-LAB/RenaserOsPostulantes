@@ -26,10 +26,17 @@ import type { CampoDeLaConfiguracion } from './navegacion'
 import { MostrarFallo } from './piezas'
 import estilos from './EditorDePreguntas.module.css'
 
-export const GUIA_DEL_TIEMPO =
-  'Cronometrada: tiene esos minutos desde que abre la prueba. Si la abre tarde, el reloj se corta en la fecha límite. Sin cronómetro: puede trabajar en ella hasta la fecha límite.'
+/**
+ * La guía del tiempo, corta: dice los minutos que hay escritos y, si aún no hay
+ * unos válidos, lo dice en general.
+ */
+export function guiaDelTiempo(minutos: string): string {
+  const n = Number(minutos)
+  const cuantos = Number.isInteger(n) && n >= 5 ? `${n} minutos` : 'los minutos que indiques,'
+  return `Cronometrada: ${cuantos} desde que la abre, nunca después de la fecha límite. Sin cronómetro: hasta la fecha límite.`
+}
 export const GUIA_DE_LA_FECHA =
-  'El día y la hora en que la prueba se cierra para todos: después nadie puede entregar. Es de esta convocatoria y no se copia con la prueba. Para dar más tiempo a una persona, se hace desde su ficha.'
+  'Después de esta fecha nadie puede entregar. No se copia con la prueba. Para dar más plazo a una persona, hazlo desde su ficha.'
 
 /** Todo lo que guarda `PUT /borrador`, a partir de lo guardado y lo que cambia. */
 export function datosDeLaPrueba(
@@ -205,7 +212,7 @@ function Contenido({
       <fieldset className={estilos.grupoOpciones}>
         <legend className={estilos.etiquetaConGuia}>
           <span className={estilos.etiqueta}>Tiempo</span>
-          <Guia de="Tiempo" texto={GUIA_DEL_TIEMPO} />
+          <Guia de="Tiempo" texto={guiaDelTiempo(datos.minutos)} />
         </legend>
         <div className={estilos.casilla}>
           <label className={estilos.casilla}>

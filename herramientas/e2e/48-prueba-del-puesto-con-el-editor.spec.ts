@@ -462,7 +462,8 @@ test.describe('La prueba del puesto escrita en el editor', () => {
     const ou2 = criterioDe(pub, 'Manejo de Excel').preguntas.find((q: any) => q.enunciado === OU2)
     const cambio = await pedir(`${RUTA(vacanteA)}/publicada/puntos`, equipo, 'PUT', {
       preguntas: [{ id: ou2.id, puntos: 20, opciones: ou2.opciones.map((o: any) => ({ id: o.id, puntos: o.texto === 'BUSCARV' ? 20 : 0 })) }],
-      criterios: [{ id: c3, puntosCalificados: 40 }],
+      // «Comunicación» no tiene cerradas: vale lo que su parte calificada (V69)
+      criterios: [{ id: c3, puntos: 40 }],
     })
     expect(cambio.estado).toBe(200)
     const ana = await pruebaDe(quien.ana.postulacion)
@@ -559,7 +560,7 @@ test.describe('La prueba del puesto escrita en el editor', () => {
     const configuracion = page.getByRole('dialog', { name: 'Configuración de la prueba' })
     await expect(configuracion.getByLabel('Fecha límite para dar la prueba')).not.toBeEditable()
     await configuracion.getByRole('button', { name: 'Guía: Tiempo' }).hover()
-    await expect(configuracion.getByRole('tooltip')).toContainText('Cronometrada: tiene esos minutos')
+    await expect(configuracion.getByRole('tooltip')).toContainText(/^Cronometrada: .*desde que la abre, nunca después de la fecha límite\. Sin cronómetro: hasta la fecha límite\.$/)
 
     // AC-26: encender o apagar, desde la empresa o desde la plataforma: 400 y nada cambia
     const b = await empresaB(correos)

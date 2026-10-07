@@ -29,6 +29,7 @@ import type {
 } from '../../api/preguntasPropias'
 import { EditorDeLaPrueba, chipDelTiempo } from './EditorDeLaPrueba'
 import { VistaDeVersion } from './VistaDeVersion'
+import { guiaDelTiempo } from './ConfiguracionDeLaPrueba'
 
 const ver = vi.fn()
 const publicar = vi.fn()
@@ -40,6 +41,8 @@ const agregarEntregable = vi.fn()
 const guardarDatos = vi.fn()
 const fijarFecha = vi.fn()
 const quitarConsigna = vi.fn()
+const editarCriterio = vi.fn()
+const agregarCriterio = vi.fn()
 
 vi.mock('../../api/preguntasPropias', async (original) => ({
   ...(await original<typeof import('../../api/preguntasPropias')>()),
@@ -57,6 +60,8 @@ vi.mock('../../api/pruebaPropia', async (original) => ({
   guardarDatosDeLaPrueba: (id: number, datos: unknown) => guardarDatos(id, datos),
   fijarFechaLimite: (id: number, datos: unknown) => fijarFecha(id, datos),
   quitarConsigna: (id: number) => quitarConsigna(id),
+  editarCriterioDePrueba: (id: number, criterioId: number, datos: unknown) => editarCriterio(id, criterioId, datos),
+  agregarCriterioDePrueba: (id: number, datos: unknown) => agregarCriterio(id, datos),
 }))
 
 const tablero: EntregableDeLaVersion = {
@@ -257,6 +262,48 @@ describe('el editor de la prueba', () => {
     expect(cabecera.parentElement!.style.getPropertyValue('--alto-cabecera-fija')).toMatch(/^\d+px$/)
   })
 
+  it('con más de cuatro faltas, «Ver N más» fuera de la lista las despliega; todas siguen llevando a su sitio', async () => {
+    const avisos = [
+      'Los puntos suman 30 de 100: faltan 70.',
+      'Falta la fecha límite para dar la prueba.',
+      'El criterio «Conocimiento contable»: su parte calificada no mira nada.',
+      'Falta el tiempo de la prueba.',
+      'El entregable «Informe» no cubre ninguna pregunta.',
+      'La pregunta 2 no tiene enunciado.',
+    ]
+    ver.mockResolvedValue(editor({ borrador: version({ avisos }) }))
+    pintar()
+    const cabecera = await screen.findByRole('region', { name: 'Balance de la prueba' })
+    const faltas = within(cabecera).getByRole('list', { name: 'Lo que frena la publicación' })
+    expect(within(faltas).getAllByRole('button')).toHaveLength(6)
+    // Cada falta se lee entera aunque a la vista se corte con «…».
+    expect(within(faltas).getByRole('button', { name: /su parte calificada no mira nada/ }).getAttribute('title')).toBe(avisos[2])
+    const mas = within(cabecera).getByRole('button', { name: 'Ver 2 más' })
+    expect(faltas.contains(mas)).toBe(false)
+    expect(mas.getAttribute('aria-expanded')).toBe('false')
+    expect(mas.getAttribute('aria-controls')).toBe(faltas.id)
+    fireEvent.click(mas)
+    expect(within(cabecera).getByRole('button', { name: 'Ver menos' }).getAttribute('aria-expanded')).toBe('true')
+    fireEvent.click(within(faltas).getByRole('button', { name: /Falta la fecha límite/ }))
+    expect(await screen.findByRole('dialog', { name: 'Configuración de la prueba' })).toBeTruthy()
+  })
+
+  it('con cuatro faltas o menos no hay «Ver N más»', async () => {
+    ver.mockResolvedValue(editor())
+    pintar()
+    const cabecera = await screen.findByRole('region', { name: 'Balance de la prueba' })
+    expect(within(cabecera).queryByRole('button', { name: /^Ver \d+ más$/ })).toBeNull()
+  })
+
+  it('la guía del tiempo dice los minutos escritos y, sin unos válidos, lo dice en general', () => {
+    expect(guiaDelTiempo('45')).toBe(
+      'Cronometrada: 45 minutos desde que la abre, nunca después de la fecha límite. Sin cronómetro: hasta la fecha límite.',
+    )
+    for (const minutos of ['', '3', '7.5']) {
+      expect(guiaDelTiempo(minutos)).toMatch(/^Cronometrada: los minutos que indiques, desde que la abre, nunca después/)
+    }
+  })
+
   it('el chip dice la fecha en hora de Lima: «90 min · hasta vie 09/10, 23:59», o «Sin cronómetro»', () => {
     const prueba = version().prueba!
     expect(chipDelTiempo(prueba, '2026-10-10T04:59:00Z')).toEqual({
@@ -274,8 +321,9 @@ describe('el editor de la prueba', () => {
     ver.mockResolvedValue(editor())
     pintar()
     await screen.findByRole('region', { name: 'Balance de la prueba' })
-    expect(within(bloque()).getByText('30 pts (sistema 10 + IA 20)')).toBeTruthy()
-    expect(within(bloque()).getByText('· 2 preguntas · 1 archivo')).toBeTruthy()
+    // La cuenta sigue a los puntos, con su «·» en una caja aparte (QA-05).
+    const puntos = within(bloque()).getByText('30 pts (sistema 10 + IA 20)')
+    expect(puntos.nextElementSibling?.textContent).toBe('· 2 preguntas · 1 archivo')
     expect(within(bloque()).queryByText('¿Cómo hallaste el descuadre?')).toBeNull()
     desplegar()
     expect(within(bloque()).getByText(/20 pts · la califica la IA/)).toBeTruthy()
@@ -305,7 +353,134 @@ describe('el editor de la prueba', () => {
     const form = screen.getByRole('form', { name: 'Editar el criterio Conocimiento contable' })
     expect(within(form).queryByRole('group', { name: 'Qué entregables mira' })).toBeNull()
     expect(within(form).queryByText('Mira')).toBeNull()
-    expect(within(form).getByText('Parte calificada')).toBeTruthy()
+    expect(within(form).getByRole('spinbutton', { name: 'Puntos del criterio' })).toBeTruthy()
+  })
+
+  it('pide los puntos del criterio entero y dice en vivo cuánto suman sus cerradas y quién califica el resto (V69)', async () => {
+    ver.mockResolvedValue(editor())
+    editarCriterio.mockResolvedValue(editor())
+    pintar()
+    fireEvent.click(await screen.findByRole('button', { name: 'Editar el criterio Conocimiento contable' }))
+    const form = screen.getByRole('form', { name: 'Editar el criterio Conocimiento contable' })
+    const puntos = within(form).getByRole('spinbutton', { name: 'Puntos del criterio' }) as HTMLInputElement
+    // Lo que vale hoy: 30, con 10 de cerradas y 20 de la IA.
+    expect(puntos.value).toBe('30')
+    expect(form.textContent).toContain('Sus cerradas suman 10. Los otros 20 los califica')
+    expect(form.textContent).toContain('mirando sus abiertas y archivos.')
+    expect(within(form).queryByText('Parte calificada')).toBeNull()
+
+    // Que las cerradas lo sumen todo: no se pregunta quién califica.
+    fireEvent.change(puntos, { target: { value: '10' } })
+    expect(form.textContent).toContain('Sus cerradas suman 10. Todo lo puntúa el sistema.')
+    expect(within(form).queryByRole('combobox')).toBeNull()
+
+    // Que lo pasen: la falta en ámbar, la misma del servidor.
+    fireEvent.change(puntos, { target: { value: '5' } })
+    expect(within(form).getByText('Las cerradas de «Conocimiento contable» suman 10 y el criterio vale 5.')).toBeTruthy()
+    expect(within(form).queryByRole('combobox')).toBeNull()
+
+    fireEvent.change(puntos, { target: { value: '40' } })
+    expect(form.textContent).toContain('Los otros 30 los califica')
+    fireEvent.change(within(form).getByRole('combobox', { name: 'Quién califica los otros 30 puntos' }), {
+      target: { value: 'PERSONA' },
+    })
+    fireEvent.click(within(form).getByRole('button', { name: 'Guardar el criterio' }))
+    await waitFor(() =>
+      expect(editarCriterio).toHaveBeenCalledWith(40, 5, {
+        nombre: 'Conocimiento contable',
+        queEvalua: 'El cierre mensual',
+        puntos: 40,
+        calificador: 'PERSONA',
+      }),
+    )
+  })
+
+  it('con las cerradas por encima, o sumándolo todo, se guarda sin quién califica (V69)', async () => {
+    ver.mockResolvedValue(editor())
+    editarCriterio.mockResolvedValue(editor())
+    pintar()
+    fireEvent.click(await screen.findByRole('button', { name: 'Editar el criterio Conocimiento contable' }))
+    const form = screen.getByRole('form', { name: 'Editar el criterio Conocimiento contable' })
+    fireEvent.change(within(form).getByRole('spinbutton', { name: 'Puntos del criterio' }), { target: { value: '5' } })
+    fireEvent.click(within(form).getByRole('button', { name: 'Guardar el criterio' }))
+    await waitFor(() =>
+      expect(editarCriterio).toHaveBeenCalledWith(40, 5, expect.objectContaining({ puntos: 5, calificador: null })),
+    )
+  })
+
+  it('un criterio nuevo empieza sin puntos: sin cerradas, todo lo que valga lo califica alguien (V69)', async () => {
+    ver.mockResolvedValue(editor())
+    agregarCriterio.mockResolvedValue(editor())
+    pintar()
+    fireEvent.click(await screen.findByRole('button', { name: 'Agregar criterio' }))
+    const form = screen.getByRole('form', { name: 'Criterio nuevo' })
+    const puntos = within(form).getByRole('spinbutton', { name: 'Puntos del criterio' }) as HTMLInputElement
+    expect(puntos.value).toBe('')
+    expect(form.textContent).toContain('Lo que vale el criterio entero, cerradas incluidas.')
+    fireEvent.change(within(form).getByRole('textbox', { name: 'Nombre del criterio' }), { target: { value: 'Excel' } })
+    fireEvent.change(puntos, { target: { value: '25' } })
+    expect(form.textContent).toContain('Sus cerradas suman 0. Los otros 25 los califica')
+    fireEvent.click(within(form).getByRole('button', { name: 'Agregar el criterio' }))
+    await waitFor(() =>
+      expect(agregarCriterio).toHaveBeenCalledWith(40, { nombre: 'Excel', queEvalua: null, puntos: 25, calificador: 'IA' }),
+    )
+  })
+
+  it('QA-10: una parte calificada sin quién la califique no se atribuye a nadie, y su falta lleva al lápiz con «Quién califica» enfocado', async () => {
+    // Era «todo del sistema» y bajó una cerrada: el total se mantiene y quedan 20 sin dueño.
+    const falta = 'El criterio «Conocimiento contable»: falta decir quién califica su parte calificada, la IA o una persona.'
+    const sinQuien = version({ criterios: [{ ...version().criterios[0]!, puntosIa: 0, calificador: null }], avisos: [falta] })
+    ver.mockResolvedValue(editor({ borrador: sinQuien }))
+    editarCriterio.mockResolvedValue(editor())
+    pintar()
+    const cabecera = await screen.findByRole('region', { name: 'Balance de la prueba' })
+    // Con su falta sale desplegado: la línea y «Parte calificada» no dicen la IA ni una persona.
+    expect(within(bloque()).getByText('30 pts (sistema 10 + 20 sin asignar)')).toBeTruthy()
+    const parte = within(bloque()).getByText('Parte calificada:').closest('p')!
+    expect(parte.textContent).toBe('Parte calificada: 20 pts · falta decir quién la califica')
+    expect(bloque().textContent).not.toMatch(/la califica (la IA|una persona)/)
+
+    // Plegado, la falta lo despliega y abre su lápiz con el cursor en «Quién califica».
+    fireEvent.click(screen.getByRole('button', { name: 'Plegar todo' }))
+    fireEvent.click(within(cabecera).getByRole('button', { name: /falta decir quién califica su parte calificada/ }))
+    const form = await screen.findByRole('form', { name: 'Editar el criterio Conocimiento contable' })
+    const quien = within(form).getByRole('combobox', { name: 'Quién califica los otros 20 puntos' }) as HTMLSelectElement
+    await waitFor(() => expect(document.activeElement).toBe(quien))
+    // No elige por nadie: hay que decirlo.
+    expect(quien.value).toBe('')
+    expect(within(quien).getByRole('option', { name: 'Elige quién' })).toBeTruthy()
+    fireEvent.change(quien, { target: { value: 'PERSONA' } })
+    expect(within(quien).queryByRole('option', { name: 'Elige quién' })).toBeNull()
+    fireEvent.click(within(form).getByRole('button', { name: 'Guardar el criterio' }))
+    await waitFor(() =>
+      expect(editarCriterio).toHaveBeenCalledWith(40, 5, {
+        nombre: 'Conocimiento contable',
+        queEvalua: 'El cierre mensual',
+        puntos: 30,
+        calificador: 'PERSONA',
+      }),
+    )
+  })
+
+  it('el reparto en vivo no reparte un total que no es un entero de 0 a 100: dice qué está mal', async () => {
+    ver.mockResolvedValue(editor())
+    pintar()
+    fireEvent.click(await screen.findByRole('button', { name: 'Editar el criterio Conocimiento contable' }))
+    const form = screen.getByRole('form', { name: 'Editar el criterio Conocimiento contable' })
+    const puntos = within(form).getByRole('spinbutton', { name: 'Puntos del criterio' })
+    for (const [escrito, falta] of [
+      ['25.5', 'Los puntos del criterio tienen que ser un número entero, sin decimales.'],
+      ['-5', 'Los puntos del criterio van de 0 a 100.'],
+      ['150', 'Los puntos del criterio van de 0 a 100.'],
+    ]) {
+      fireEvent.change(puntos, { target: { value: escrito } })
+      expect(within(form).getByRole('status').textContent).toBe(falta)
+      expect(form.textContent).not.toContain('Los otros')
+      expect(form.textContent).not.toContain('el criterio vale')
+      expect(within(form).queryByRole('combobox')).toBeNull()
+    }
+    fireEvent.change(puntos, { target: { value: '30' } })
+    expect(form.textContent).toContain('Sus cerradas suman 10. Los otros 20 los califica')
   })
 
   it('pedir un archivo para una pregunta: con «Enlace» en un criterio de IA avisa en el momento (AC-07)', async () => {
@@ -394,11 +569,20 @@ describe('el editor de la prueba', () => {
     // La guía del tiempo: al pasar el cursor, al enfocar o al tocar.
     const guia = within(panel).getByRole('button', { name: 'Guía: Tiempo' })
     fireEvent.mouseEnter(guia)
-    expect(within(panel).getByRole('tooltip').textContent).toMatch(/^Cronometrada: tiene esos minutos/)
+    expect(within(panel).getByRole('tooltip').textContent).toBe(
+      'Cronometrada: 90 minutos desde que la abre, nunca después de la fecha límite. Sin cronómetro: hasta la fecha límite.',
+    )
+    // Del «!» al texto no se cierra: se puede bajar a leerla.
     fireEvent.mouseLeave(guia)
-    expect(within(panel).queryByRole('tooltip')).toBeNull()
+    fireEvent.mouseEnter(within(panel).getByRole('tooltip'))
+    await new Promise((r) => setTimeout(r, 200))
+    expect(within(panel).getByRole('tooltip')).toBeTruthy()
+    fireEvent.mouseLeave(within(panel).getByRole('tooltip'))
+    await waitFor(() => expect(within(panel).queryByRole('tooltip')).toBeNull())
     fireEvent.focus(within(panel).getByRole('button', { name: 'Guía: Fecha límite' }))
-    expect(within(panel).getByRole('tooltip').textContent).toMatch(/no se copia con la prueba/)
+    expect(within(panel).getByRole('tooltip').textContent).toBe(
+      'Después de esta fecha nadie puede entregar. No se copia con la prueba. Para dar más plazo a una persona, hazlo desde su ficha.',
+    )
 
     fireEvent.change(within(panel).getByLabelText('Fecha límite para dar la prueba'), {
       target: { value: '2026-10-09T23:59' },
@@ -407,6 +591,111 @@ describe('el editor de la prueba', () => {
     fireEvent.click(within(panel).getByRole('button', { name: 'Listo' }))
     await waitFor(() => expect(fijarFecha).toHaveBeenCalledWith(40, { cierraEn: '2026-10-10T04:59:00.000Z', motivo: null }))
     expect(guardarDatos).not.toHaveBeenCalled()
+  })
+
+  it('la guía «!» se cierra al volver a pulsar el «!», al pulsar fuera o sobre ella y con Escape, sin cerrar el panel; una a la vez (QA-07)', async () => {
+    ver.mockResolvedValue(editor())
+    pintar()
+    fireEvent.click(await screen.findByRole('button', { name: 'Configuración' }))
+    const panel = await screen.findByRole('dialog', { name: 'Configuración de la prueba' })
+    const tiempo = within(panel).getByRole('button', { name: 'Guía: Tiempo' })
+    const fecha = within(panel).getByRole('button', { name: 'Guía: Fecha límite' })
+    const guia = () => within(panel).queryByRole('tooltip')
+
+    // Pulsar el «!» la deja fija; volver a pulsarlo la cierra.
+    fireEvent.click(tiempo)
+    expect(guia()).toBeTruthy()
+    fireEvent.click(tiempo)
+    expect(guia()).toBeNull()
+    // Pulsar fuera, en el campo que tapaba antes, la cierra y el campo recibe la pulsación.
+    fireEvent.click(tiempo)
+    fireEvent.click(within(panel).getByLabelText('Sin cronómetro'))
+    expect(guia()).toBeNull()
+    expect((within(panel).getByLabelText('Sin cronómetro') as HTMLInputElement).checked).toBe(true)
+    // Pulsar sobre ella la cierra.
+    fireEvent.click(tiempo)
+    fireEvent.click(guia()!)
+    expect(guia()).toBeNull()
+    // Abrir una cierra la otra: nunca hay dos.
+    fireEvent.mouseEnter(tiempo)
+    fireEvent.focus(fecha)
+    expect(within(panel).getAllByRole('tooltip')).toHaveLength(1)
+    expect(guia()!.textContent).toContain('No se copia con la prueba')
+    // Escape cierra la guía, venga de donde venga el foco, y el panel sigue abierto.
+    fireEvent.keyDown(within(panel).getByLabelText('Fecha límite para dar la prueba'), { key: 'Escape' })
+    expect(guia()).toBeNull()
+    expect(screen.getByRole('dialog', { name: 'Configuración de la prueba' })).toBeTruthy()
+    // Sin guía abierta, Escape sí cierra el panel.
+    fireEvent.keyDown(document.body, { key: 'Escape' })
+    expect(screen.queryByRole('dialog', { name: 'Configuración de la prueba' })).toBeNull()
+  })
+
+  it('con sitio a la izquierda del panel lateral, la guía sale fuera de él, a la altura de su etiqueta (QA-07)', async () => {
+    const caja = (left: number, top: number, width: number, height: number) =>
+      ({ left, top, width, height, right: left + width, bottom: top + height, x: left, y: top, toJSON: () => ({}) }) as DOMRect
+    const medir = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+      // jsdom no mide: un panel de 480 px pegado a la derecha de 1024 y el «!» a 110 px de arriba.
+      if (this.getAttribute('role') === 'dialog') return caja(544, 0, 480, 768)
+      if (this.getAttribute('aria-label') === 'Guía: Tiempo') return caja(600, 88, 44, 44)
+      return caja(0, 0, 0, 0)
+    })
+    try {
+      ver.mockResolvedValue(editor())
+      pintar()
+      fireEvent.click(await screen.findByRole('button', { name: 'Configuración' }))
+      const panel = await screen.findByRole('dialog', { name: 'Configuración de la prueba' })
+      fireEvent.mouseEnter(within(panel).getByRole('button', { name: 'Guía: Tiempo' }))
+      const guia = within(panel).getByRole('tooltip')
+      // 26rem de ancho, 16 px antes del panel; su primera línea, a la altura del «!».
+      expect(guia.style.left).toBe(`${544 - 16 - 416}px`)
+      expect(guia.style.top).toBe(`${110 - 24}px`)
+      expect(guia.style.getPropertyValue('--punta')).toBe('24px')
+    } finally {
+      medir.mockRestore()
+    }
+  })
+
+  it('fijada fuera del panel, la guía se esconde mientras su etiqueta no se ve al bajar el panel y vuelve con ella (QA-09)', async () => {
+    const caja = (left: number, top: number, width: number, height: number) =>
+      ({ left, top, width, height, right: left + width, bottom: top + height, x: left, y: top, toJSON: () => ({}) }) as DOMRect
+    // jsdom no mide: el cuerpo del panel se ve de 64 a 704; el «!» sube con él al bajarlo.
+    let arribaDelSigno = 88
+    let cuerpo: HTMLElement | null = null
+    const medir = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+      if (this.getAttribute('role') === 'dialog') return caja(544, 0, 480, 768)
+      if (this === cuerpo) return caja(544, 64, 480, 640)
+      if (this.getAttribute('aria-label') === 'Guía: Tiempo') return caja(600, arribaDelSigno, 44, 44)
+      return caja(0, 0, 0, 0)
+    })
+    try {
+      ver.mockResolvedValue(editor())
+      pintar()
+      fireEvent.click(await screen.findByRole('button', { name: 'Configuración' }))
+      const panel = await screen.findByRole('dialog', { name: 'Configuración de la prueba' })
+      const signo = within(panel).getByRole('button', { name: 'Guía: Tiempo' })
+      // El cuerpo del panel es lo que se desplaza (jsdom no aplica las hojas de estilo).
+      cuerpo = signo.closest<HTMLElement>('[role="dialog"] > div')!
+      cuerpo.style.overflowY = 'auto'
+      // Pulsarla la fija y el foco se queda en el «!».
+      signo.focus()
+      fireEvent.click(signo)
+      const guia = within(panel).getByRole('tooltip')
+      expect(guia.style.visibility).toBe('')
+      // La etiqueta sube por encima del cuerpo: la guía se esconde, pero no se cierra.
+      arribaDelSigno = 20
+      fireEvent.scroll(cuerpo)
+      expect(guia.style.visibility).toBe('hidden')
+      expect(signo.getAttribute('aria-expanded')).toBe('true')
+      expect(document.activeElement).toBe(signo)
+      // La etiqueta vuelve a verse: la guía vuelve, a su altura.
+      arribaDelSigno = 88
+      fireEvent.scroll(cuerpo)
+      expect(guia.style.visibility).toBe('')
+      expect(guia.style.top).toBe(`${110 - 24}px`)
+      expect(document.activeElement).toBe(signo)
+    } finally {
+      medir.mockRestore()
+    }
   })
 
   describe('«Listo» no guarda a medias (QA-02)', () => {

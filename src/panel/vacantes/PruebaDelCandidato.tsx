@@ -35,12 +35,15 @@ import estilos from './Vacante.module.css'
 
 const claveDe = (postulacionId: number) => ['panel-prueba-propia-candidato', postulacionId]
 
-/** «Sistema 8/10 + IA 16/20», «Persona pendiente/20», o solo lo del sistema. */
+/**
+ * «Sistema 8/10 + IA 16/20», «Persona pendiente/20», o solo lo del sistema. Sin
+ * quién califique no se da por hecha la IA: «Sin asignar pendiente/5» (QA-10).
+ */
 export function deDondeSale(c: CriterioDelCandidato): string {
   const partes: string[] = []
   if (c.sistemaMaximo > 0) partes.push(`Sistema ${num(c.sistema)}/${num(c.sistemaMaximo)}`)
   if (c.calificadaMaximo > 0) {
-    const quien = c.calificador === 'PERSONA' ? 'Persona' : 'IA'
+    const quien = c.calificador === 'PERSONA' ? 'Persona' : c.calificador === 'IA' ? 'IA' : 'Sin asignar'
     partes.push(
       `${quien} ${c.calificada === null ? 'pendiente' : num(c.calificada)}/${num(c.calificadaMaximo)}`,
     )
@@ -185,7 +188,9 @@ function Criterio({
           <span className={estilos.explicacion}>
             {c.calificador === 'PERSONA'
               ? 'La parte calificada la pone una persona: todavía nadie la calificó.'
-              : 'Falta la nota de la IA en su parte calificada.'}
+              : c.calificador === 'IA'
+                ? 'Falta la nota de la IA en su parte calificada.'
+                : 'Su parte calificada no tiene quién la califique: falta la nota.'}
           </span>
         )}
         {c.explicacion && <span className={estilos.explicacion}>{c.explicacion}</span>}
@@ -359,7 +364,7 @@ function AjustarLaParteCalificada({
     },
   })
 
-  const quien = c.calificador === 'PERSONA' ? 'persona' : 'IA'
+  const quien = c.calificador === 'PERSONA' ? 'persona' : c.calificador === 'IA' ? 'IA' : null
   if (!abierto) {
     return (
       <>
@@ -405,7 +410,7 @@ function AjustarLaParteCalificada({
     >
       <label className={estilos.campoCriterio}>
         <span className={estilos.etiquetaCriterio}>
-          Parte calificada ({quien}) · de 0 a {num(c.calificadaMaximo)}
+          Parte calificada{quien ? ` (${quien})` : ''} · de 0 a {num(c.calificadaMaximo)}
         </span>
         <input
           className={estilos.puntajeCriterio}

@@ -8,8 +8,9 @@
  * **Es plegable (V68)**, en los dos editores. Plegado ocupa una línea —«▸
  * Análisis financiero · 30 pts (sistema 5 + IA 25) · 2 preguntas · 1
  * archivo»— y, si le falta algo, el borde y un punto se ponen en ámbar con la
- * falta escrita al lado. Mover, editar y quitar el criterio siguen a la mano
- * plegado. Desplegado: lo que evalúa, en la prueba su parte calificada y lo que
+ * falta escrita al lado. En el teléfono los puntos y la cuenta bajan bajo el
+ * nombre, en ese orden y antes que los botones. Mover, editar y quitar el
+ * criterio siguen a la mano plegado. Desplegado: lo que evalúa, en la prueba su parte calificada y lo que
  * mira, y sus preguntas.
  *
  * Cada criterio y cada pregunta se editan en su sitio, se mueven arriba o abajo
@@ -17,7 +18,7 @@
  * En la prueba, cada pregunta puede pedir un archivo dentro de su tarjeta.
  */
 
-import { useState } from 'react'
+import { useLayoutEffect, useState, type ReactNode } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import {
   editarCriterio,
@@ -68,6 +69,9 @@ interface PropsBloque {
   faltas?: string[]
   /** El número de cada pregunta en la versión: «Pregunta 4». */
   numeros?: Map<number, number>
+  /** Una falta pidió abrir su lápiz (QA-10); `alAbrirLapiz` avisa de que ya se abrió. */
+  pedirLapiz?: boolean
+  alAbrirLapiz?: () => void
 }
 
 export function BloqueCriterio({
@@ -84,6 +88,8 @@ export function BloqueCriterio({
   alAlternar,
   faltas = [],
   numeros = new Map(),
+  pedirLapiz = false,
+  alAbrirLapiz,
 }: PropsBloque) {
   const modo = useModoDelEditor()
   const deLaPrueba = esPrueba(modo)
@@ -93,6 +99,17 @@ export function BloqueCriterio({
   const [quitando, setQuitando] = useState(false)
   const [agregando, setAgregando] = useState(false)
   const [fallo, setFallo] = useState<Fallo | null>(null)
+
+  // Antes de pintar, para que la falta que lo pidió encuentre su selector y le dé el foco.
+  useLayoutEffect(() => {
+    if (!pedirLapiz) return
+    if (criterio && editable) {
+      setNombre(criterio.nombre)
+      setQueEvalua(criterio.queEvalua ?? '')
+      setEditando(true)
+    }
+    alAbrirLapiz?.()
+  }, [pedirLapiz, criterio, editable, alAbrirLapiz])
 
   const alFallar = (causa: unknown) => setFallo(falloDe(causa, 'No se pudo guardar.'))
   const alTerminar = (editor: EditorDePreguntas) => {
@@ -130,7 +147,8 @@ export function BloqueCriterio({
   const desplegado = !plegable || abierto
   const archivoDe = (preguntaId: number) =>
     entregables.find((e) => e.alcance === 'PREGUNTA' && e.preguntaId === preguntaId) ?? null
-  const archivos = preguntas.filter((p) => archivoDe(p.id) !== null).length
+  const archivos = archivosDeLasPreguntas(preguntas, entregables)
+  const punto = faltas.length > 0 ? <span className={estilos.puntoFalta} aria-hidden="true" /> : null
 
   return (
     <section
@@ -140,24 +158,19 @@ export function BloqueCriterio({
       tabIndex={-1}
     >
       <header className={estilos.cabeceraCriterio}>
-        <h3 className={estilos.nombreCriterio}>
-          {plegable ? (
-            <button className={estilos.plegador} type="button" aria-expanded={abierto} onClick={alAlternar}>
-              <IconoDesplegar
-                tamano={18}
-                className={abierto ? estilos.flecha : `${estilos.flecha} ${estilos.flechaPlegada}`}
-              />
-              {titulo}
-            </button>
-          ) : (
-            titulo
-          )}
-        </h3>
-        {criterio && <span className={estilos.puntosCriterio}>{puntosConDesglose(criterio)}</span>}
-        {criterio && plegable && (
-          <span className={estilos.cuentaCriterio}>{cuentaDelCriterio(preguntas.length, deLaPrueba ? archivos : 0)}</span>
+        {plegable ? (
+          <NombrePlegable titulo={titulo} abierto={abierto} alAlternar={alAlternar} />
+        ) : (
+          <h3 className={estilos.nombreCriterio}>{titulo}</h3>
         )}
-        {faltas.length > 0 && <span className={estilos.puntoFalta} aria-hidden="true" />}
+        {criterio && (
+          <ResumenDelCriterio
+            criterio={criterio}
+            cuenta={plegable ? cuentaDelCriterio(preguntas.length, deLaPrueba ? archivos : 0) : undefined}
+            punto={punto}
+          />
+        )}
+        {!(criterio && plegable) && punto}
         {criterio && editable && !editando && (
           <div className={estilos.botones}>
             <BotonIcono
@@ -462,6 +475,79 @@ function TarjetaPregunta({
   )
 }
 
+// ---------- La línea del criterio plegable (V68) ----------
+// Las mismas piezas en el editor, en la versión publicada, en la vista previa de
+// «Copiar de otra vacante» y en «Cambiar los puntos».
+
+/** El nombre del criterio, que lo pliega y lo despliega: «▸ Análisis financiero». */
+export function NombrePlegable({
+  titulo,
+  abierto,
+  alAlternar,
+}: {
+  titulo: string
+  abierto: boolean
+  alAlternar: () => void
+}) {
+  return (
+    <h3 className={estilos.nombreCriterio}>
+      <button className={estilos.plegador} type="button" aria-expanded={abierto} onClick={alAlternar}>
+        <IconoDesplegar tamano={18} className={abierto ? estilos.flecha : `${estilos.flecha} ${estilos.flechaPlegada}`} />
+        {titulo}
+      </button>
+    </h3>
+  )
+}
+
+/**
+ * «30 pts (sistema 5 + IA 25) · 2 preguntas · 1 archivo». Puntos y cuenta van
+ * juntos y en ese orden también en el teléfono (QA-05); el «·» va en su caja,
+ * que se recorta cuando la cuenta empieza fila. Sin `cuenta`, solo los puntos.
+ */
+export function ResumenDelCriterio({
+  criterio,
+  cuenta,
+  punto = null,
+}: {
+  criterio: CriterioDeLaVersion
+  cuenta?: string
+  /** El punto ámbar de un criterio con falta. */
+  punto?: ReactNode
+}) {
+  return (
+    <span className={estilos.resumenCriterio}>
+      <span className={estilos.filasDelResumen}>
+        <span className={estilos.puntosCriterio}>{puntosConDesglose(criterio)}</span>
+        {cuenta !== undefined && (
+          <span className={estilos.cuentaCriterio}>
+            <span className={estilos.separadorCuenta}>·</span> {cuenta}
+            {punto}
+          </span>
+        )}
+      </span>
+    </span>
+  )
+}
+
+/** «Desplegar todo» y «Plegar todo», sobre la lista de criterios. */
+export function PlegarTodo({ alDesplegar, alPlegar }: { alDesplegar: () => void; alPlegar: () => void }) {
+  return (
+    <div className={estilos.plegarTodo}>
+      <button className={estilos.enlacePlegar} type="button" onClick={alDesplegar}>
+        Desplegar todo
+      </button>
+      <button className={estilos.enlacePlegar} type="button" onClick={alPlegar}>
+        Plegar todo
+      </button>
+    </div>
+  )
+}
+
+/** Cuántas de estas preguntas piden un archivo: el «1 archivo» de la línea del criterio. */
+export function archivosDeLasPreguntas(preguntas: PreguntaDeLaVersion[], entregables: EntregableDeLaVersion[]): number {
+  return preguntas.filter((p) => entregables.some((e) => e.alcance === 'PREGUNTA' && e.preguntaId === p.id)).length
+}
+
 /** El enunciado, las opciones con sus puntos y el «qué debe tener». Lo usan también las vistas en lectura. */
 export function ContenidoDePregunta({ pregunta }: { pregunta: PreguntaDeLaVersion }) {
   const opciones = [...pregunta.opciones].sort((a, b) => a.orden - b.orden)
@@ -517,14 +603,7 @@ export function ListaDeCriterios({
   return (
     <>
       {version.criterios.length > 0 && (
-        <div className={estilos.plegarTodo}>
-          <button className={estilos.enlacePlegar} type="button" onClick={plegado.desplegarTodo}>
-            Desplegar todo
-          </button>
-          <button className={estilos.enlacePlegar} type="button" onClick={plegado.plegarTodo}>
-            Plegar todo
-          </button>
-        </div>
+        <PlegarTodo alDesplegar={plegado.desplegarTodo} alPlegar={plegado.plegarTodo} />
       )}
       {version.criterios.map((c, i) => (
         <BloqueCriterio
@@ -542,6 +621,8 @@ export function ListaDeCriterios({
           alAlternar={() => plegado.alternar(c.id)}
           faltas={faltas.get(c.id) ?? []}
           numeros={numeros}
+          pedirLapiz={plegado.aEditar === c.id}
+          alAbrirLapiz={plegado.lapizAbierto}
         />
       ))}
       {version.sinCriterio.length > 0 && (

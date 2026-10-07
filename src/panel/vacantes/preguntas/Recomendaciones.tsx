@@ -27,7 +27,7 @@ import {
 } from '../../api/preguntasPropias'
 import { useSondeoAcotado } from '../useSondeoAcotado'
 import { falloDe, type Fallo } from './consultas'
-import { nombreDelFormato, nombreDelTipo, puntosQueFaltan } from './formulario'
+import { nombreDelFormato, nombreDelTipo, puntosQueFaltan, repartoDelCriterio } from './formulario'
 import { esPrueba, useModoDelEditor } from './modo'
 import { MostrarFallo } from './piezas'
 import estilos from './EditorDePreguntas.module.css'
@@ -114,6 +114,20 @@ export function Recomendaciones({ vacanteId, total, criterios, alAgregar, alCerr
   const propuesta: EstadoDeLaRecomendacion | undefined = estado.data
   const nombreExistente = (id: number | null) =>
     criterios.find((c) => c.id === id)?.nombre ?? 'un criterio del borrador'
+  /**
+   * Lo que pone la propuesta en la cabecera de un criterio. En la prueba (V69),
+   * uno nuevo vale lo propuesto —sus cerradas más lo que se califica—, y uno
+   * del borrador sigue valiendo lo mismo: sus cerradas nuevas salen de ahí.
+   */
+  const puntosDeLaPropuesta = (c: CriterioPropuesto): string => {
+    const cerradas = cerradasPropuestas(c, deLaPrueba)
+    if (!deLaPrueba) return `${cerradas} pts`
+    if (c.criterioExistenteId !== null) {
+      const suyo = criterios.find((x) => x.id === c.criterioExistenteId)
+      return suyo ? `sigue valiendo ${suyo.puntos} pts` : 'sigue valiendo lo mismo'
+    }
+    return `${totalPropuesto(c, cerradas)} pts`
+  }
 
   return (
     <section className={estilos.panelIa} aria-label="Recomendaciones por IA">
@@ -129,7 +143,7 @@ export function Recomendaciones({ vacanteId, total, criterios, alAgregar, alCerr
           <>
             <p className={estilos.explica}>
               {deLaPrueba
-                ? `La IA completará los ${faltan} puntos que faltan, a partir de lo que describe la vacante, su puesto y la solicitud de talento: propone criterios con su parte calificada y quién la califica, sus preguntas, un caso si le sirve y los archivos donde se usan. Nada se agrega hasta que tú lo elijas.`
+                ? `La IA completará los ${faltan} puntos que faltan, a partir de lo que describe la vacante, su puesto y la solicitud de talento: propone criterios con lo que vale cada uno y quién califica lo que no son cerradas, sus preguntas, un caso si le sirve y los archivos donde se usan. Nada se agrega hasta que tú lo elijas.`
                 : `La IA completará los ${faltan} puntos que faltan, a partir de lo que describe la vacante, su puesto y la solicitud de talento. Puede llenar tus criterios o proponer otros. Nada se agrega hasta que tú lo elijas.`}
             </p>
             <label className={estilos.campo}>
@@ -278,9 +292,7 @@ export function Recomendaciones({ vacanteId, total, criterios, alAgregar, alCerr
                       ? `Para «${nombreExistente(c.criterioExistenteId)}»`
                       : c.nombre}
                   </h3>
-                  <span className={estilos.puntosCriterio}>
-                    {c.preguntas.reduce((s, p) => s + p.puntos, 0) + (c.parteCalificada ?? 0)} pts
-                  </span>
+                  <span className={estilos.puntosCriterio}>{puntosDeLaPropuesta(c)}</span>
                   <button
                     className={estilos.secundarioPequeno}
                     type="button"
@@ -302,12 +314,7 @@ export function Recomendaciones({ vacanteId, total, criterios, alAgregar, alCerr
                     <b>Qué evalúa:</b> {c.queEvalua}
                   </p>
                 )}
-                {deLaPrueba && (c.parteCalificada ?? 0) > 0 && (
-                  <p className={estilos.queEvalua}>
-                    <b>Parte calificada:</b> {c.parteCalificada} pts ·{' '}
-                    {c.calificador === 'PERSONA' ? 'una persona' : 'la IA'}
-                  </p>
-                )}
+                {deLaPrueba && <RepartoPropuesto criterio={c} />}
                 <ol className={estilos.preguntas}>
                   {c.preguntas.map((p, j) => {
                     const hecha = todoAgregado || agregado.has(`${i}-${j}`)
@@ -381,4 +388,49 @@ function loQueCubreLaPropuesta(e: EntregablePropuesto, criterios: CriterioPropue
     .map((p) => criterios[p.criterio]?.preguntas[p.pregunta]?.enunciado)
     .filter((t): t is string => Boolean(t))
   return enunciados.length === 1 ? 'Cubre: 1 pregunta propuesta' : `Cubre: ${enunciados.length} preguntas propuestas`
+}
+
+/** Lo que suman las cerradas de un criterio propuesto (en la prueba, las abiertas no llevan puntos). */
+function cerradasPropuestas(c: CriterioPropuesto, deLaPrueba: boolean): number {
+  return c.preguntas.filter((p) => !(deLaPrueba && p.tipo === 'ABIERTA')).reduce((s, p) => s + p.puntos, 0)
+}
+
+/**
+ * Lo que vale un criterio nuevo de la propuesta de la prueba (V69): lo propuesto
+ * o, en una propuesta de antes, sus cerradas más su parte calificada.
+ */
+function totalPropuesto(c: CriterioPropuesto, cerradas: number): number {
+  return c.puntos ?? cerradas + (c.parteCalificada ?? 0)
+}
+
+/**
+ * El reparto de un criterio de la propuesta, como lo dice el formulario del
+ * criterio: «Sus cerradas suman 10. Los otros 20 los califica la IA…». Uno del
+ * borrador sigue valiendo lo mismo, y sus cerradas nuevas salen de ahí.
+ */
+function RepartoPropuesto({ criterio }: { criterio: CriterioPropuesto }) {
+  const cerradas = cerradasPropuestas(criterio, true)
+  if (criterio.criterioExistenteId !== null) {
+    return (
+      <p className={estilos.queEvalua}>
+        {cerradas > 0
+          ? `Sus cerradas nuevas suman ${cerradas} y salen de lo que ya califican la IA o una persona.`
+          : 'Lo que vale no cambia: sus preguntas nuevas las califica quien ya lo hace.'}
+      </p>
+    )
+  }
+  const reparto = repartoDelCriterio(totalPropuesto(criterio, cerradas), cerradas)
+  if (reparto.tipo !== 'CALIFICADA') {
+    return <p className={estilos.queEvalua}>Sus cerradas suman {cerradas}. Todo lo puntúa el sistema.</p>
+  }
+  // Sin quién la califique no se da por hecha la IA (QA-10).
+  const quien = criterio.calificador === 'PERSONA' ? 'una persona' : criterio.calificador === 'IA' ? 'la IA' : null
+  return (
+    <p className={estilos.queEvalua}>
+      Sus cerradas suman {cerradas}. Los otros {reparto.otros}{' '}
+      {quien
+        ? `los califica ${quien} mirando sus abiertas y archivos.`
+        : 'no tienen quién los califique: falta decirlo.'}
+    </p>
+  )
 }

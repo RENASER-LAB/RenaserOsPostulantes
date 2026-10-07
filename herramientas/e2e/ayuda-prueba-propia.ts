@@ -109,13 +109,27 @@ export interface EntregableNuevo {
   todaLaPrueba?: boolean
   cubre?: string[]
 }
+/**
+ * Un criterio que se siembra. Desde la V69 la API pide lo que vale entero
+ * (`puntos`); la siembra puede darlo así o, como antes, por su parte calificada
+ * (`puntosCalificados`), y entonces vale sus cerradas más esa parte.
+ */
 export interface CriterioNuevo {
   nombre: string
   queEvalua?: string
+  puntos?: number | null
   puntosCalificados?: number | null
   calificador?: 'IA' | 'PERSONA' | null
   preguntas: PreguntaNueva[]
 }
+
+/** Lo que suman las cerradas de unas preguntas (las abiertas no llevan puntos). */
+const cerradasDe = (preguntas: { tipo: string; puntos?: number | null }[]) =>
+  preguntas.filter((p) => p.tipo !== 'ABIERTA').reduce((s, p) => s + (p.puntos ?? 0), 0)
+
+/** Lo que vale un criterio sembrado: lo dicho, o sus cerradas más su parte calificada. */
+export const puntosDelCriterio = (c: CriterioNuevo): number =>
+  c.puntos ?? cerradasDe(c.preguntas) + (c.puntosCalificados ?? 0)
 export interface PruebaNueva {
   datos?: {
     enunciado?: string | null
@@ -175,11 +189,13 @@ export const fijarFechaLimite = (token: string, vacante: number, cierraEn: strin
 export async function escribirPrueba(token: string, vacante: number, prueba: PruebaNueva): Promise<any> {
   let editor: any = null
   for (const c of prueba.criterios) {
+    // Nace sin cerradas: quién califica se dice si al final le queda parte calificada.
+    const puntos = puntosDelCriterio(c)
     editor = await exigir(`${RUTA(vacante)}/criterios`, token, 'POST', {
       nombre: c.nombre,
       queEvalua: c.queEvalua,
-      puntosCalificados: c.puntosCalificados ?? null,
-      calificador: c.calificador ?? null,
+      puntos,
+      calificador: puntos > 0 ? (c.calificador ?? 'IA') : null,
     })
     const id = criterioDe(editor.borrador, c.nombre).id as number
     for (const p of c.preguntas) {
@@ -200,7 +216,10 @@ export async function escribirPrueba(token: string, vacante: number, prueba: Pru
   return editor
 }
 
-/** Cambia la parte calificada de un criterio del borrador. Lo que mira no se escribe (V68). */
+/**
+ * Cambia la parte calificada de un criterio del borrador: pasa a valer sus
+ * cerradas de hoy más esa parte (V69). Lo que mira no se escribe (V68).
+ */
 export async function cambiarCriterio(
   token: string,
   vacante: number,
@@ -212,7 +231,7 @@ export async function cambiarCriterio(
   return exigir(`${RUTA(vacante)}/criterios/${c.id}`, token, 'PUT', {
     nombre,
     queEvalua: cambio.queEvalua ?? c.queEvalua,
-    puntosCalificados: cambio.puntosCalificados,
+    puntos: c.puntosSistema + cambio.puntosCalificados,
     calificador: cambio.calificador,
   })
 }
