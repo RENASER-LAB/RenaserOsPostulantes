@@ -26,7 +26,7 @@
 /*
  * Donde vive una pantalla del portal. **Cuatro anchos y ninguno mas.**
  *
- *   .hoja              68rem  lo que se compone en columnas
+ *   .hoja              80rem  lo que se compone en columnas (--ancho)
  *   .hojaProsa         48rem  un documento para leer
  *   .hojaFormulario    44rem  un formulario largo
  *   .hojaCorta         34rem  un formulario de tres campos
@@ -46,7 +46,7 @@
 }
 
 /* La prosa la corta `--medida` de todas formas; el carril solo evita que un
-   titular de dos palabras quede perdido en 68rem de blanco. */
+   titular de dos palabras quede perdido en 80rem de blanco. */
 .hojaProsa {
   composes: hoja;
   max-width: 48rem;

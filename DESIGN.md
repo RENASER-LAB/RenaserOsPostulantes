@@ -43,6 +43,12 @@ typography:
     fontWeight: 600
     lineHeight: 1.1
     letterSpacing: "-0.02em"
+  encabezado:
+    fontFamily: "Geist, system-ui, sans-serif"
+    fontSize: "clamp(30px, 3vw, 40px)"
+    fontWeight: 600
+    lineHeight: 1
+    letterSpacing: "normal"
   headline:
     fontFamily: "Geist, system-ui, sans-serif"
     fontSize: "clamp(24px, 2.4vw, 30px)"
@@ -221,7 +227,7 @@ que estar despejado. Fondo gris muy claro y frío, superficies blancas que se ap
 tono, tinta casi negra con un matiz azul, y **un solo color con intención —el índigo— que
 aparece donde hay que pulsar, donde estás o donde te toca**. Nada más compite.
 
-La densidad es de producto, no de revista: carriles de 68rem, prosa cortada a unos 65
+La densidad es de producto, no de revista: carriles de 80rem, prosa cortada a unos 65
 caracteres, controles de 44 px como mínimo. La calma no viene de quitar información —el
 producto se debe a decir con honestidad en qué punto está cada candidatura— sino de que cada
 cosa tenga un solo sitio y un solo peso. La portada es la única pantalla que se permite
@@ -291,9 +297,10 @@ como única voz; verde, ámbar y rojo existen, pero significan estados del proce
 - **Borde de control** (`borde-control`): el límite de un campo de texto. Es el gris de la
   tinta apagada, 4,83:1, porque WCAG pide 3:1 al límite visible de un control y el gris de
   reglas no llega.
-- **Casi negro de cabecera** (`accion-fuerte`): **solo** el botón «Iniciar sesión» de la
-  barra. Existe para que ese botón y el destino actual en índigo, que están a un palmo, no
-  compitan con el mismo color. 18,9:1 con texto blanco.
+- **Casi negro de cabecera** (`accion-fuerte`): el botón «Iniciar sesión» de la barra y,
+  desde el 06/10/2026 y a petición, **el botón «Filtros» de `/vacantes` entre 641 y 1023 px**.
+  Existe para que ese botón y el destino actual en índigo, que están a un palmo, no compitan
+  con el mismo color. 18,9:1 con texto blanco. Ningún otro botón lo lleva.
 
 ### Estado
 
@@ -342,6 +349,11 @@ y el navegador la fabricaría inclinando la recta.
   1440 de ancho y 3 a 390.
 - **Cifra** (600, `clamp(28px, 5vw, 34px)`, 1,1, -0,02em): el cronómetro y las cifras que se
   leen de un vistazo.
+- **Encabezado** (`--t-encabezado`, 600, `clamp(30px, 3vw, 40px)`, 1): el titular de una
+  pantalla de trabajo dentro de su banda —hoy solo `/vacantes`, desde el 01/10/2026—. Sigue
+  siendo el único titular de la pantalla; baja de escala porque a 60 px la banda se comía la
+  primera pantalla. **Desde 1024 px baja otra vez, a 24 px** (06/10/2026): la banda va en una
+  fila, con el buscador al lado, y a 40 px se llevaba media fila.
 - **Headline** (600, `clamp(24px, 2.4vw, 30px)`, 1,2, -0,02em): lo mayor por debajo del
   titular — los títulos de sección de la portada, el nombre de la vacante en «Mis procesos»,
   el enunciado de una pregunta de la evaluación, la fecha de la simulación, el sueldo.
@@ -372,8 +384,14 @@ compra cada una, con prosa real.
 
 ## Layout
 
-Un carril centrado de **68rem** (`--ancho`) para el portal y **120rem** (`--ancho-panel`)
-para las tablas del panel del equipo. Dentro, la prosa se corta a `--medida` (50ch) o
+Un carril centrado de **80rem** (`--ancho`, 1280 px; era 68rem hasta el 01/10/2026, y en un
+monitor de 1920 dejaba 410 px vacíos a cada lado) para el portal y **120rem** (`--ancho-panel`)
+para las tablas del panel del equipo. **`/vacantes` va a 96rem** (`--ancho-vacantes`, desde el
+06/10/2026): filtros, lista y panel no caben holgados en 80. Lo decide el armazón
+(`.armazonAncho`), que cambia `--ancho` para la cabecera, la pantalla y el pie a la vez —una
+lista más ancha que la píldora de arriba se lee como un descuadre—, y la píldora **se estira en
+250 ms** al entrar (`transition: max-width`, sin ella con movimiento reducido). Es una transición
+de tamaño a sabiendas: solo pasa al cambiar de pantalla. Solo la lista: la ficha sigue a 80. Dentro, la prosa se corta a `--medida` (50ch) o
 `--medida-corta` (44ch). El espaciado va en una escala de ocho pasos —4, 8, 12, 16, 24, 32,
 48 y 72 px (`--e1` a `--e8`)— y las pantallas respiran en los dos escalones de arriba entre
 secciones.
@@ -409,21 +427,23 @@ distinto» van **a sangre**, a `100vw`. Eso solo es seguro porque su armazón re
 
 El corte principal es **640 px**, el del teléfono. Además hay cortes propios de una pieza
 —900, 860, 760, 700, 620, 480, 470 y 368 px— donde esa pieza lo necesita. A 900 la banda de
-tres tarjetas pasa a una columna, la lista de vacantes a dos, los filtros de `/vacantes` se
-apilan encima de la lista, y la ventana de la portada deja de cortarse; por debajo de 620 la
+tres tarjetas pasa a una columna, la lista de vacantes a dos, y la ventana de la portada deja
+de cortarse; por debajo de 620 la
 cabecera pierde su columna central; por debajo de 470 se aprieta; por debajo de 368 se cae el
 destino «Vacantes».
 
-**Y un umbral que no es de la ventana:** la tarjeta a lo ancho de `/vacantes` se apila cuando
-**ella** mide menos de **36rem** (`@container`, en `Tarjeta.module.css`). La columna de
-resultados mide 704 px a 1280, 517 a 901 —la de filtros se lleva 19rem— y 343 en un teléfono de
-375: ningún corte de ventana acierta los tres.
+**`/vacantes` tiene sus propios cortes, en el componente** (`useCorte`), porque cambian qué se
+pinta y no solo dónde: 641, 1024 y 1280 px. Ver «La búsqueda de vacantes».
+
+⚠️ **La tarjeta a lo ancho (`forma="aLoAncho"` de `Tarjeta`) ya no la usa nadie** desde el
+01/10/2026, cuando `/vacantes` pasó a `FilaDeVacante`; su umbral de 36rem por `@container`
+sigue en `Tarjeta.module.css`. Está en [PENDIENTES](docs/PENDIENTES.md).
 
 **El esqueleto de una pantalla** vive en `src/estilos/pagina.module.css` —el carril, el
 encabezado, el bloque, el hueco declarado y los repartos en columnas—. `.reparto` pone una
 columna que manda y una de 19rem que acompaña a la derecha; **`.repartoConFiltros`** la pone a
-la **izquierda**, porque acota lo de al lado: son los filtros de `/vacantes`. Las dos se apilan
-a 900 px. Son variantes con nombre y no un `grid-template-columns` que la pantalla se escribe
+la **izquierda**, porque acota lo de al lado: son los filtros de `/vacantes` **en el teléfono**
+(desde 641 px, `/vacantes` se reparte con Tailwind). Las dos se apilan a 900 px. Son variantes con nombre y no un `grid-template-columns` que la pantalla se escribe
 encima: entre archivos gana el orden en que se juntan las hojas, no el que se escribe.
 
 ### Named Rules
@@ -456,7 +476,8 @@ apilan sombras.
 ## Shapes
 
 Esquina corta y constante. Los controles —botones y campos— llevan **8 px**; las superficies,
-**12 px**; lo más pequeño que se redondea —una casilla, un avatar cuadrado— lleva 4. La única
+**12 px**; lo más pequeño que se redondea —una casilla, un avatar cuadrado— lleva 4, y también
+el buscador de `/vacantes`, la única excepción entre los campos. La única
 forma completamente redonda son las barras del recorrido y los indicadores (999 px): **ningún
 botón es una píldora**.
 
@@ -521,8 +542,10 @@ Precisos y serenos: esquina de 8 px, 44 px de alto como mínimo, un solo color c
 
 `src/paginas/vacantes/Tarjeta.tsx` tiene **dos formas y un solo enlace**: en las dos, la
 tarjeta entera es un enlace cuyo nombre es el título, y el título es el mismo `TituloQueViaja`
-que cruza hasta el titular de la ficha. Nube sobre el cielo, filete de `regla`, esquina de
-12 px y, al pasar por encima, la sombra de nube y la pieza D.
+que cruza hasta el titular de la ficha. Nube sobre el cielo, filete de **`regla2`** —con
+`regla` las tarjetas casi no se despegaban del cielo; cambiado el 01/10/2026—, esquina de
+12 px y, al pasar por encima, la sombra de nube, el filete en `borde-control`, el título en
+`activo-pulsado` y la pieza D.
 
 - **De pie** (`forma="dePie"`): la portada, tres en fila. Modalidad · ciudad arriba, título,
   empresa, resumen de tres líneas y un pie con horario, sueldo y fecha.
@@ -540,20 +563,114 @@ vacante trae resumen, para que la tarjeta y el orden no discrepen.
 
 ### La búsqueda de vacantes
 
-`/vacantes` pone **los filtros en una columna de 19rem a la izquierda** (`.repartoConFiltros`),
-sobre nube y con los grupos plegables. Encima de las dos columnas, a todo el ancho, el contador
-y «Ordenar por». **Las etiquetas activas y «Quitar filtros» van siempre justo encima de la
-lista**, en la columna de resultados: marcar una casilla mueve la lista, nunca los grupos bajo
-el puntero, y lo que se ve sigue el orden de Tab. De 641 a 900 px los filtros se apilan
-abiertos, y hasta 640 se pliegan tras «Filtrar (n)» —`.secundarioDelTelefono` de
-`piezas.module.css`, que existe porque un `display: none` en la hoja de la pantalla perdía
-contra el `inline-flex` del secundario—.
+⚠️ **`/vacantes` es la prueba piloto de shadcn/ui** desde el 01/10/2026 (ver «shadcn/ui y
+Tailwind», más abajo): la banda, los filtros, las etiquetas, la lista y el panel están hechos
+con sus piezas y clases de Tailwind sobre los tokens del mundo. Lo del teléfono —la columna de
+filtros que se pliega y el orden de dos caras— sigue en CSS Modules.
 
-- **«Ordenar por»** son dos caras pegadas con la esquina de 8 px por fuera: la marcada, rellena
-  en índigo con texto blanco (4,57:1); la otra, con el contorno de control.
-- **El índigo es solo lo marcado** —el orden elegido, las casillas y los radios—, que es
-  «dónde estás». Nadie tiene turno en una lista de vacantes, así que aquí no hay borde de 2 px
-  en ninguna parte.
+**La forma de hoy salió de dos prototipos del 06/10/2026**: la tarjeta, elegida entre cuatro
+(«Expresiva»), y la pantalla, entre cuatro disposiciones («Lateral»). Ver la
+[bitácora de octubre](docs/BITACORA-2026-10.md).
+
+**Cuatro disposiciones.** Cuál toca lo decide `useCorte` en el componente —no solo el CSS—,
+porque cambia dónde se pintan los filtros y qué hace el clic en una tarjeta:
+
+- **Desde 1280 px, tres columnas**: filtros (17rem), lista (28rem) y **el panel con la vacante
+  elegida** (`PanelDeVacante`), pegado bajo la cabecera y con su propio desplazamiento. Pulsar
+  una tarjeta la elige sin salir de `/vacantes` —`?vacante=27` en la dirección, sin ensuciar el
+  historial—; con Ctrl, Cmd o Mayús abre la ficha como cualquier enlace, y con Intro lleva el
+  foco al título del panel. Sin elegir nada, se lee la primera.
+- **De 1024 a 1279 px**, la columna de filtros y la lista; sin panel: la tarjeta abre la ficha.
+- **De 641 a 1023 px**, una barra con el botón negro **«Filtros»** —abre todos los grupos
+  juntos en un `Popover`, con «Quitar filtros» y «Ver N vacantes» abajo— y el orden a la
+  derecha; debajo, la lista. Se oye «Filtros, 2 aplicados».
+- **Hasta 640 px**, los filtros se pliegan tras «Filtrar (n)» —`.secundarioDelTelefono` de
+  `piezas.module.css`, que existe porque un `display: none` en la hoja de la pantalla perdía
+  contra el `inline-flex` del secundario—.
+
+**Las superficies de `/vacantes` no llevan borde**: la banda, la columna de filtros, las
+tarjetas y el panel van en nube con **la misma sombra corta y un filo de 1 px casi transparente**
+(`SOMBRA_DE_SUPERFICIE`, en `FilaDeVacante.tsx`) y **16 px de radio** (`rounded-2xl`). Las demás
+pantallas siguen con filete y 12 px.
+
+- **La banda de búsqueda**: hasta 1023 px, el titular a escala **Encabezado**, la línea «Hay N
+  vacantes abiertas. Encuentra la tuya por puesto, empresa o ciudad.» y el buscador debajo;
+  **desde 1024 px, en una fila**: el titular a 24 px y la línea a la izquierda, y el buscador
+  ocupando el resto. `Input` de 48 px con la lupa dentro y «Buscar» al lado, que no trae nada
+  nuevo —la lista ya se acota al escribir— pero es el gesto que se espera, y cierra el
+  teclado; hasta 640 px se va. **La etiqueta «Buscar vacantes» está oculta** (`sr-only`).
+- **La columna de filtros** (desde 1024 px), como en Computrabajo o Indeed: **sin barra de
+  desplazamiento propia** —baja con la página—. Cada grupo (Publicada, Ciudad, Modalidad,
+  Empresa) se pliega desde su título, que es el botón; empieza abierto. Con más de cinco
+  opciones enseña cinco y **«Ver N más»**, y las marcadas se ven siempre, aunque estén más
+  abajo. El número va en una pastilla gris **pintada por el CSS** (`content: attr()`), para que
+  el nombre de la casilla siga siendo «Lima (2)». «Limpiar», arriba, quita todos.
+- **«Ordenar por»** es un conmutador de dos posiciones: un carril gris (`regla`) y una pastilla
+  blanca con el borde de los controles que **se desliza** a la elegida en 200 ms. Hasta el
+  05/10/2026 la elegida se rellenaba de índigo, que ya es de «Buscar» y «Postular». Desde 1024
+  px va encima de la lista y su rótulo solo se oye; con el panel, esa fila cruza también la
+  columna del panel, porque el contador con texto y el orden no cabían en 28rem y la lista
+  saltaba al partirse. En el teléfono, dos radios del sistema con la misma forma.
+- **Las etiquetas activas y «Quitar filtros» van siempre justo encima de la lista.** Lo que se
+  ve sigue el orden de Tab: desde 1024 px, buscador, filtros, orden, etiquetas, tarjetas y
+  panel; de 641 a 1023, «Filtros», orden, etiquetas y tarjetas; en el teléfono, orden,
+  filtros, etiquetas y tarjetas.
+- **La tarjeta** (`FilaDeVacante`, «Expresiva»): sin borde, con la sombra de las superficies.
+  El **avatar redondo** con las iniciales (`inicialesDe`, sin la forma societaria) en un tono
+  que sale del nombre de la empresa —índigo, verde, ámbar o gris: la misma empresa, el mismo
+  color, en la lista y en el panel—; el título —el `TituloQueViaja`— con **«Nueva»** si se
+  publicó hace tres días o menos (`esNueva`, en días de Lima); la empresa; «Publicada hace…» en
+  su línea, porque detrás de un nombre largo se partía; el resumen solo sin panel; y una fila
+  con **la modalidad en pastilla de color** —Remoto verde, Híbrido índigo, Presencial gris—, la
+  ciudad con su icono y **el sueldo, que se dice siempre**: en verde si está publicado, en gris
+  «Sueldo sin publicar». El horario ya no va en la tarjeta: está en el panel y en la ficha.
+- **La elegida**: una sombra más honda y el título en índigo. **Sin contorno, sin brillo de
+  color y sin levantarse**: el contorno índigo con halo se leyó como neón (06/10/2026), y
+  levantarla 2 px la descuadraba del panel.
+- ⚠️ **El verde aquí no es «confirmado».** En el resto del portal `--bien` es lo que salió bien;
+  en `/vacantes` también pinta el sueldo publicado y «Remoto». Se aceptó con el prototipo
+  delante.
+- **El panel** (`PanelDeVacante`): arriba quién, dónde y «Postular»; debajo, lo que se lee, y
+  los requisitos indispensables en ámbar como en la ficha. **Al bajar por una vacante larga,
+  el título y «Postular» se quedan pegados arriba** en una barra que entra deslizándose y se va
+  cuando el botón de la cabecera vuelve a verse. Al cambiar de vacante entra con un fundido de
+  150 ms. **No usa `TituloQueViaja`**: la tarjeta de al lado ya lleva ese `layoutId`, y dos a la
+  vez hacen que motion anime uno sobre el otro.
+- **Al cargar, la lista entra en cascada** (45 ms entre tarjetas), pero solo si se vio el
+  esqueleto: al volver de una ficha o con la lista ya en memoria, no —el título que viaja
+  entraría en una tarjeta a medio fundir—. Filtrar y ordenar nunca animan la lista.
+
+### shadcn/ui y Tailwind
+
+Entraron el 01/10/2026, a petición, como **prueba piloto en `/vacantes`**: si convence, se
+extiende pantalla a pantalla; si no, se quita sin haber tocado las demás. Tres decisiones en
+`src/estilos/tailwind.css` lo hacen convivir con este sistema:
+
+- **Sin preflight.** El reseteo de Tailwind cambiaría todas las pantallas a la vez —quita el
+  subrayado de los enlaces, pone los SVG en bloque—. En su lugar hay un reseteo mínimo que solo
+  toca lo que lleva `data-slot`, que son las piezas de shadcn.
+- **Las utilidades con `!important`.** `mundo.css` no va en capa, y una regla sin capa gana a
+  cualquier capa: `button { color: inherit }` le ganaba al color de un botón de shadcn. Con
+  `important`, una clase de Tailwind gana siempre en el elemento que la lleva. Lo que
+  `mundo.css` pone a un elemento y el reseteo no puede quitar —el subrayado de `a`— se quita con
+  una clase (`no-underline`).
+- **`dark:` solo con la clase `.dark`, que nunca se pone.** De serie Tailwind lo activa con el
+  modo oscuro del sistema, y las piezas de shadcn traen `dark:bg-input/30`: con el sistema en
+  oscuro, el buscador y los filtros salían en gris sobre un portal que es solo claro.
+- **El tema son los tokens.** `bg-primary` es `--activo`, `border-input` es `--borde-control`,
+  `bg-accion-fuerte` es el casi negro, `text-bien` el verde; `rounded-md` son los 8 px de
+  control y `rounded-xl` los 12 de superficie (las de `/vacantes` van a `rounded-2xl`, 16). Un
+  color nuevo se nombra en `mundo.css`, no en el tema.
+- **Las curvas y la respuesta al pulsar** (05/10/2026, a la manera de Emil Kowalski): el tema
+  redefine `ease-out` —`cubic-bezier(0.23, 1, 0.32, 1)`, para lo que entra o responde al dedo—
+  y `ease-in-out` —`cubic-bezier(0.77, 0, 0.175, 1)`, para lo que se mueve en la pantalla—,
+  porque las de serie arrancan blandas. El `Button` de shadcn se hunde un 3 % al pulsar y la
+  tarjeta un 2 %, solo sin movimiento reducido; los desplegables abren en 150 ms y cierran en
+  100; la equis del buscador y las etiquetas entran desde el 90–95 % de su tamaño, nunca desde
+  cero.
+
+Los componentes viven en `src/ui/shadcn/` y se añaden con `npx shadcn add`. **Sin lucide**: la
+casilla y el radio se pasaron a los iconos de la casa (`ui/Iconos`).
 
 ### Las reseñas de empresas
 

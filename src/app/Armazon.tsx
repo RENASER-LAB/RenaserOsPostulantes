@@ -261,6 +261,13 @@ export function Armazon() {
   const conCielo = matchPath({ path: patrones.inicio, end: true }, pathname) !== null
 
   /*
+   * `/vacantes` es más ancha que el resto (06/10/2026): filtros, lista y panel en
+   * tres columnas. Lo decide el armazón porque la cabecera y el pie tienen que
+   * ensancharse con ella. Ver `.armazonAncho`. Solo la lista, no la ficha.
+   */
+  const ancha = matchPath({ path: patrones.vacantes, end: true }, pathname) !== null
+
+  /*
    * El pie corto: una sola linea, para las pantallas que son una tarjeta.
    *
    * ⚠️ **El pie en columnas mide 290 px, y en estas pantallas sacaba scroll.**
@@ -289,7 +296,7 @@ export function Armazon() {
       id="inicio-pagina"
       className={`${estilos.armazon} ${justo ? estilos.armazonJusto : ''} ${
         conCielo ? estilos.armazonConCielo : ''
-      }`}
+      } ${ancha ? estilos.armazonAncho : ''}`}
     >
       <ArribaAlCambiarDePagina />
       <LlevarAlAncla />

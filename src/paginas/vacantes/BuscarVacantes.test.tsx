@@ -27,6 +27,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import type { VacantePublica } from '@/api/tipos'
@@ -34,6 +35,9 @@ import { BuscarVacantes } from './BuscarVacantes'
 
 const listarVacantes = vi.fn()
 const catalogoUbigeo = vi.fn()
+
+// El panel de la pantalla partida lleva «Postular», que pregunta si hay cuenta.
+vi.mock('@/app/Sesion', () => ({ useSesion: () => ({ hayCuenta: false }) }))
 
 vi.mock('@/api/portal', () => ({
   listarVacantes: () => listarVacantes(),
@@ -508,7 +512,8 @@ describe('Lo que se anuncia', () => {
 describe('El teclado (punto 38)', () => {
   /** Lo que Tab recorre en la pantalla, en orden de documento, con el nombre que se oye. */
   function recorridoDeTab() {
-    const pagina = screen.getByRole('heading', { level: 1, name: 'Vacantes abiertas' }).parentElement!.parentElement!
+    // Desde el 06/10/2026 el titular va en su propio bloque dentro de la banda: la pantalla está un nivel más arriba.
+    const pagina = screen.getByRole('heading', { level: 1, name: 'Vacantes abiertas' }).parentElement!.parentElement!.parentElement!
     return Array.from(pagina.querySelectorAll<HTMLElement>('*'))
       .filter((e) => e.tabIndex >= 0 && !e.hasAttribute('disabled'))
       .map((e) => {
@@ -518,7 +523,7 @@ describe('El teclado (punto 38)', () => {
       })
   }
 
-  it('buscador → borrar → orden → filtros → etiquetas → resultados, y cada tarjeta es una sola parada', async () => {
+  it('buscador → borrar → «Buscar» → orden → filtros → etiquetas → resultados, y cada tarjeta es una sola parada', async () => {
     pintar('/vacantes?q=a&ciudad=1501')
     await screen.findByRole('button', { name: 'Quitar filtro Lima' })
     const recorrido = recorridoDeTab()
@@ -527,7 +532,8 @@ describe('El teclado (punto 38)', () => {
 
     expect(posicion('Buscar vacantes')).toBe(0)
     expect(posicion('Borrar búsqueda')).toBe(1)
-    expect(posicion('Relevantes')).toBe(2)
+    expect(nombres[2]).toBe('Buscar')
+    expect(posicion('Relevantes')).toBe(3)
     expect(posicion('Publicada')).toBeGreaterThan(posicion('Relevantes'))
     expect(posicion('Ciudad')).toBeGreaterThan(posicion('Publicada'))
     expect(posicion('Modalidad')).toBeGreaterThan(posicion('Ciudad'))
@@ -540,5 +546,145 @@ describe('El teclado (punto 38)', () => {
     expect(resto.map((p) => p.tag)).toEqual(tarjetas().map(() => 'A'))
     expect(resto.every((p) => p.href?.startsWith('/vacantes/'))).toBe(true)
     expect(recorrido.filter((p) => p.tag === 'ARTICLE')).toEqual([])
+  })
+})
+
+/**
+ * La ventana ancha: `matchMedia` responde a los `min-width` como lo haría una
+ * ventana de `ancho` px. Sin esto jsdom no tiene `matchMedia` y la pantalla se
+ * queda en la disposición de una columna, que es la que prueba todo lo de arriba.
+ */
+function ventanaDe(ancho: number) {
+  vi.stubGlobal('matchMedia', (consulta: string) => ({
+    matches: ancho >= Number(/min-width:\s*(\d+)px/.exec(consulta)?.[1] ?? Infinity),
+    media: consulta,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+  }))
+}
+
+describe('Desde 641 px, los filtros tras un botón «Filtros» (05/10/2026)', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('empieza cerrado; abrirlo enseña los grupos, marcar no lo cierra y Escape lo cierra y devuelve el foco', async () => {
+    ventanaDe(800)
+    pintar()
+    const filtros = await screen.findByRole('button', { name: 'Filtros' })
+    expect(filtros.getAttribute('aria-expanded')).toBe('false')
+    expect(screen.queryByRole('checkbox', { name: /^Lima/ })).toBeNull()
+
+    fireEvent.click(filtros)
+    // Los grupos, cada uno con su nombre.
+    expect(await screen.findByRole('group', { name: 'Ciudad' })).toBeTruthy()
+    expect(screen.getByRole('radiogroup', { name: 'Publicada' })).toBeTruthy()
+    fireEvent.click(within(screen.getByRole('group', { name: 'Ciudad' })).getByRole('checkbox', { name: /^Lima/ }))
+    await waitFor(() => expect(direccion()).toBe('/vacantes?ciudad=1501'))
+    const marcado = screen.getByRole('button', { name: 'Filtros, 1 aplicado' })
+    expect(marcado.getAttribute('aria-expanded')).toBe('true')
+
+    // Radix devuelve el foco al botón al cerrar, un instante después.
+    fireEvent.keyDown(screen.getByRole('checkbox', { name: /^Lima/ }), { key: 'Escape' })
+    await waitFor(() => expect(document.activeElement).toBe(marcado))
+    expect(marcado.getAttribute('aria-expanded')).toBe('false')
+  })
+
+  it('pulsar fuera lo cierra, y «Ver N vacantes» también', async () => {
+    ventanaDe(800)
+    pintar()
+    // Con `user-event` y no `fireEvent`: Radix decide «fuera» con la secuencia entera de puntero.
+    const usuario = userEvent.setup()
+    const filtros = await screen.findByRole('button', { name: 'Filtros' })
+    await usuario.click(filtros)
+    await screen.findByRole('checkbox', { name: /^Lima/ })
+    await usuario.click(screen.getByRole('heading', { level: 1 }))
+    await waitFor(() => expect(filtros.getAttribute('aria-expanded')).toBe('false'))
+
+    await usuario.click(filtros)
+    await usuario.click(await screen.findByRole('button', { name: 'Ver 9 vacantes' }))
+    await waitFor(() => expect(filtros.getAttribute('aria-expanded')).toBe('false'))
+  })
+
+  it('por debajo de 1024 px no hay panel: la tarjeta sigue llevando a la ficha', async () => {
+    ventanaDe(800)
+    pintar()
+    await screen.findByRole('button', { name: 'Filtros' })
+    expect(screen.queryByRole('region')).toBeNull()
+    fireEvent.click(screen.getByRole('link', { name: 'Líder de operaciones' }))
+    await waitFor(() => expect(direccion()).toBe('/vacantes/6'))
+  })
+})
+
+describe('Desde 1280 px, la pantalla partida: los filtros en su columna, la lista y la vacante elegida (06/10/2026)', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('la primera de la lista se lee en el panel sin pulsar nada', async () => {
+    ventanaDe(1280)
+    pintar()
+    const panel = await screen.findByRole('region')
+    const primera = tarjetas()[0]!
+    expect(within(panel).getByRole('heading', { level: 2 }).textContent).toBe(primera)
+    expect(screen.getByRole('link', { name: primera }).getAttribute('aria-current')).toBe('true')
+  })
+
+  it('pulsar otra la elige sin salir de /vacantes, y la dirección la recuerda', async () => {
+    ventanaDe(1280)
+    pintar()
+    await screen.findByRole('region')
+    const lider = screen.getByRole('link', { name: 'Líder de operaciones' })
+    fireEvent.click(lider, { detail: 1 })
+    await waitFor(() => expect(direccion()).toBe('/vacantes?vacante=6'))
+    expect(screen.getByRole('region', { name: 'Líder de operaciones' })).toBeTruthy()
+    expect(lider.getAttribute('aria-current')).toBe('true')
+    // Con el ratón el foco no se mueve: se sigue mirando la lista.
+    expect(document.activeElement).not.toBe(
+      screen.getByRole('heading', { level: 2, name: 'Líder de operaciones' }),
+    )
+  })
+
+  it('con Intro el foco salta al título del panel', async () => {
+    ventanaDe(1280)
+    pintar()
+    await screen.findByRole('region')
+    fireEvent.click(screen.getByRole('link', { name: 'Líder de operaciones' }), { detail: 0 })
+    await waitFor(() =>
+      expect(document.activeElement).toBe(
+        screen.getByRole('heading', { level: 2, name: 'Líder de operaciones' }),
+      ),
+    )
+  })
+
+  it('filtrar conserva la elegida en la dirección; si el filtro la deja fuera, el panel pasa a la primera que queda', async () => {
+    ventanaDe(1280)
+    pintar('/vacantes?vacante=6')
+    expect(await screen.findByRole('region', { name: 'Líder de operaciones' })).toBeTruthy()
+    // Sin botón «Filtros»: desde 1024 px los grupos están abiertos en la columna de la izquierda.
+    expect(screen.queryByRole('button', { name: 'Filtros' })).toBeNull()
+    fireEvent.click(screen.getByRole('checkbox', { name: /^Lima/ }))
+    await waitFor(() => expect(direccion()).toBe('/vacantes?ciudad=1501&vacante=6'))
+    const panel = screen.getByRole('region')
+    expect(within(panel).getByRole('heading', { level: 2 }).textContent).toBe(tarjetas()[0])
+  })
+})
+
+describe('De 1024 a 1279 px, la columna de filtros sin panel (06/10/2026)', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('los grupos están abiertos sin botón «Filtros», se pliegan con su nombre, y la tarjeta lleva a la ficha', async () => {
+    ventanaDe(1100)
+    pintar()
+    const ciudad = await screen.findByRole('group', { name: 'Ciudad' })
+    expect(screen.queryByRole('button', { name: 'Filtros' })).toBeNull()
+    expect(screen.queryByRole('region')).toBeNull()
+    // El recuento se ve en su pastilla y se oye entre paréntesis.
+    fireEvent.click(within(ciudad).getByRole('checkbox', { name: 'Lima (2)' }))
+    await waitFor(() => expect(direccion()).toBe('/vacantes?ciudad=1501'))
+    // Plegar «Ciudad» esconde sus casillas y no quita lo marcado.
+    const cabeza = screen.getByRole('button', { name: 'Ciudad' })
+    fireEvent.click(cabeza)
+    expect(cabeza.getAttribute('aria-expanded')).toBe('false')
+    expect(screen.queryByRole('group', { name: 'Ciudad' })).toBeNull()
+    expect(direccion()).toBe('/vacantes?ciudad=1501')
+    fireEvent.click(screen.getByRole('link', { name: tarjetas()[0]! }))
+    await waitFor(() => expect(direccion()).toMatch(/^\/vacantes\/\d+$/))
   })
 })

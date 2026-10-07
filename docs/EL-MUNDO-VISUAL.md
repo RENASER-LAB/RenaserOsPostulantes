@@ -113,11 +113,12 @@ cómo se ve: eso es DESIGN.md.
 
 | Pieza | Qué es |
 |---|---|
-| `src/estilos/mundo.css` | **La única hoja global.** Los tokens, las fuentes y los estilos base. Todo lo demás son CSS Modules |
+| `src/estilos/mundo.css` | **La hoja global del mundo.** Los tokens, las fuentes y los estilos base. Todo lo demás son CSS Modules, salvo la prueba de shadcn de la fila siguiente |
+| `src/estilos/tailwind.css` y `src/ui/shadcn/` | **La prueba piloto de shadcn/ui, solo en `/vacantes` (01/10/2026).** Tailwind v4 **sin preflight** y con las utilidades en `!important`, para no tocar las otras pantallas; su tema son los tokens de `mundo.css`. Los componentes de shadcn viven en `src/ui/shadcn/` (se añaden con `npx shadcn add`, y la CLI mete por error un paquete `cn`: quitarlo). Sin lucide: la casilla y el radio usan los iconos de la casa |
 | `src/estilos/piezas.module.css` | **La única especificación de botón del portal**, más los tres paneles (`.turno`, `.panelDeEspera`, `.indispensable`), la cabecera de sección y el plegable. Se trae con `composes` desde la hoja de cada pantalla. Si hace falta una forma que no está ahí, se añade ahí — ninguna pantalla se dibuja la suya |
 | `src/estilos/pagina.module.css` | **El esqueleto de una pantalla**: el carril, el encabezado, el reparto en columnas, el bloque y el hueco declarado |
 | `src/app/Armazon.tsx` | La cabecera en píldora, los dos pies —en columnas y corto—, y **el cielo de la portada**, que vive aquí porque tiene que pasar por detrás de la cabecera. También decide qué pantallas son una tarjeta centrada en la ventana (`CENTRADAS`: `/ingresar`, `/clave`, `/restablecer` y sus tres del panel), cuáles llevan el pie corto y cómo sube «Inicio» |
-| `src/paginas/vacantes/` | La portada —cielo, ventana de cristal, cinta, las tres vacantes más recientes, «Por qué este proceso es distinto», preguntas—, **`/vacantes`**, la búsqueda con sus filtros (`BuscarVacantes`, llegó de main el 25/09/2026 y se pasó a este mundo al juntarla), la tarjeta de vacante que comparten las dos (`Tarjeta`, de pie y a lo ancho) y la ficha. **Públicas** |
+| `src/paginas/vacantes/` | La portada —cielo, ventana de cristal, cinta, las tres vacantes más recientes, «Por qué este proceso es distinto», preguntas—, **`/vacantes`**, la búsqueda con sus filtros (`BuscarVacantes`, llegó de main el 25/09/2026 y se pasó a este mundo al juntarla), la tarjeta de pie de la portada (`Tarjeta`), la tarjeta «Expresiva» y el panel de `/vacantes` con shadcn (`FilaDeVacante`, `PanelDeVacante`; la columna de filtros vive en `BuscarVacantes`) y la ficha. **Públicas** |
 | `src/paginas/cuenta/` | Entrar, crear cuenta, canjear el enlace del correo y la contraseña olvidada. Comparten `Cuenta.module.css` |
 | `src/paginas/postular/` | Postular. **Aquí vive el único descarte automático del sistema** |
 | `src/paginas/procesos/` | «Mis procesos», el detalle de una postulación y la línea de hitos |
@@ -239,8 +240,10 @@ Lo que se corrió sobre el portal y cuándo:
 ## Dependencias
 
 Instaladas y en uso: `motion` (**solo fuera del examen**) y `zod`. Estilos con **CSS
-Modules**, no Tailwind — aunque la paleta salga de la escala de Tailwind, aquí son tokens
-propios.
+Modules** — aunque la paleta salga de la escala de Tailwind, aquí son tokens propios —, salvo
+**`/vacantes`, que desde el 01/10/2026 es la prueba piloto de shadcn/ui**: Tailwind v4,
+`radix-ui`, `class-variance-authority`, `clsx` y `tailwind-merge`. Si la prueba convence, se
+extiende pantalla a pantalla; si no, se quita sin haber tocado las demás.
 
 ⚠️ **`react-hook-form` y `@hookform/resolvers` están instalados y NO los usa nadie.** Los
 formularios son `useState` + `zod.safeParse` a mano, y el bloque que se copia está en
@@ -248,12 +251,12 @@ formularios son `useState` + `zod.safeParse` a mano, y el bloque que se copia es
 `requestAnimationFrame` que enfoca el primer `[aria-invalid="true"]`. Ese
 `requestAnimationFrame` no sobra: sin él el atributo todavía no está en el DOM cuando se busca.
 
-**`@dnd-kit` está instalado y no se usa**: el `SEC` se resolvió con flechas. **Radix no se
-instaló y no hace falta**: el aviso de postular usa `dialog` nativo, el recorrido plegable
-`details`, y apagar el formulario de la decisión es un `fieldset disabled`. Antes de traer una
-librería, mira si el HTML ya lo resuelve.
+**`@dnd-kit` está instalado y no se usa**: el `SEC` se resolvió con flechas. **Radix entró con
+shadcn y solo lo usa `/vacantes`**: fuera de ella, el aviso de postular usa `dialog` nativo, el
+recorrido plegable `details`, y apagar el formulario de la decisión es un `fieldset disabled`.
+Antes de traer una librería, mira si el HTML ya lo resuelve.
 
-Nada de librería de fechas —`reloj.ts` es crítico—, nada de gestor de estado —TanStack Query
-ya cubre lo que hay— y ningún kit de componentes encima de los primitivos.
+Nada de librería de fechas —`reloj.ts` es crítico— ni de gestor de estado —TanStack Query ya
+cubre lo que hay—.
 
 ⚠️ **Instálalas dentro del worktree.** `node_modules` no se comparte entre worktrees.

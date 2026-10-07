@@ -2,10 +2,12 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { sembrarAlmacenNativo } from '@/api/almacenNativo'
 import { App } from '@/app/App'
-// La unica hoja global que queda. Todo lo demas son CSS Modules, uno por
-// pantalla. La del portal anterior —`base.css` y sus `variables.css`— se borro
-// cuando la ultima pantalla dejo de necesitarla.
+// La hoja global del mundo. Lo demas son CSS Modules, uno por pantalla, y las
+// utilidades de Tailwind de las piezas de shadcn. La del portal anterior —`base.css`
+// y sus `variables.css`— se borro cuando la ultima pantalla dejo de necesitarla.
 import '@/estilos/mundo.css'
+// Las piezas de shadcn/ui, desde el 01/10/2026. Sin preflight: no cambia nada que no las use.
+import '@/estilos/tailwind.css'
 
 const raiz = document.getElementById('raiz')
 if (!raiz) throw new Error('Falta el <div id="raiz"> en index.html')

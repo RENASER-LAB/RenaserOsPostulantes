@@ -201,6 +201,36 @@ export function IconoCruz(props: PropsIcono) {
   )
 }
 
+/** Una lupa: el campo de búsqueda. Siempre dentro de un campo con su etiqueta. */
+export function IconoLupa(props: PropsIcono) {
+  return (
+    <Icono {...props}>
+      <circle cx="11" cy="11" r="6.5" />
+      <path d="m20 20-4.4-4.4" />
+    </Icono>
+  )
+}
+
+/** Dos reguladores: «Filtros». Siempre al lado de esa palabra. */
+export function IconoFiltros(props: PropsIcono) {
+  return (
+    <Icono {...props}>
+      <path d="M4 8h9M17 8h3M4 16h3M11 16h9" />
+      <circle cx="15" cy="8" r="2" />
+      <circle cx="9" cy="16" r="2" />
+    </Icono>
+  )
+}
+
+/** El pico hacia la derecha: «esto sigue ahí al lado». En la fila elegida de `/vacantes`, apunta al panel. */
+export function IconoSiguiente(props: PropsIcono) {
+  return (
+    <Icono {...props}>
+      <path d="m9.5 6 6 6-6 6" />
+    </Icono>
+  )
+}
+
 /** El pico que se abre hacia abajo: un grupo desplegado. Girado, uno plegado. */
 export function IconoDesplegar(props: PropsIcono) {
   return (

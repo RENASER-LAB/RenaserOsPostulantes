@@ -38,7 +38,8 @@ Tres avisos que no se ponen detrás de un enlace, porque llegan tarde:
 escaparate». Sale de una referencia que trajo el cliente (saasly.demos.tailgrids.com): la
 escala gris fría de Tailwind v4 —página `#F9FAFB`, superficies en nube blanca encima, que es lo
 que las separa—, **acción en índigo `#615FFF`** con radio **8 px**, `--accion-fuerte` casi negro
-`#030712` solo para el botón de la cabecera, y **Geist** servida por el sitio. **El coral y el
+`#030712` solo para el botón de la cabecera y el «Filtros» de `/vacantes` (641–1023 px), y
+**Geist** servida por el sitio. **El coral y el
 crema ya no existen**, y con el coral se perdió el color propio de «te toca a ti»: es el mismo
 índigo de la acción, y lo distingue la forma. **La fuente de verdad son los tokens de
 [`mundo.css`](src/estilos/mundo.css)**, y [DESIGN.md](DESIGN.md) los describe con su porqué.
@@ -65,6 +66,13 @@ Lo que se toca al componer una pantalla nueva vive en tres sitios y **ninguno se
 mano en la hoja de la pantalla**: los tokens en [`mundo.css`](src/estilos/mundo.css), los
 botones y paneles en [`piezas.module.css`](src/estilos/piezas.module.css), y el carril, el
 encabezado y los bloques en [`pagina.module.css`](src/estilos/pagina.module.css).
+
+⚠️ **`/vacantes` es la excepción desde el 01/10/2026: la prueba piloto de shadcn/ui.** Lleva
+clases de Tailwind en el componente y piezas de [`src/ui/shadcn/`](src/ui/shadcn); Tailwind va
+**sin preflight** y con `!important` ([`tailwind.css`](src/estilos/tailwind.css)) para no tocar
+las demás pantallas. Si se reinicia Vite y la página sale sin estilos, el plugin no cargó:
+pararlo del todo y volver a lanzarlo. **Y es más ancha que el resto: 96rem** (`--ancho-vacantes`,
+06/10/2026), con la cabecera y el pie ensanchándose con ella; el detalle, en DESIGN.md.
 
 ⚠️ **`composes` solo admite una clase simple** —ni `.a.b`, ni listas—: PostCSS devuelve un 500
 y la aplicación entera deja de montar. Y **un `composes` entre archivos no gana por escribirlo
@@ -95,7 +103,7 @@ El detalle, en [docs/TRABAJAR-EN-LOCAL.md](docs/TRABAJAR-EN-LOCAL.md).
 | Seguir el proceso entero, los dos lados, con lo que desbloquea cada paso | [06-FLUJO-COMPLETO](docs/06-FLUJO-COMPLETO.md) |
 | Tocar el panel: entrar y recuperar la contraseña, las tres pestañas, el ranking por etapas, qué exige publicar una vacante, corregirla en su modal, archivarla y dónde queda, eliminarla por borrado lógico, el plazo de su prueba, los huecos del backend | [PANEL](docs/PANEL.md) |
 | Saber qué falta, qué está a medias y qué promesa hoy no se cumple | [PENDIENTES](docs/PENDIENTES.md), [03-ESTADO-DEL-REDISENO](docs/03-ESTADO-DEL-REDISENO.md) |
-| Saber por qué algo quedó así, qué se probó al construirlo o qué se hizo un día concreto | [BITACORA-2026-09](docs/BITACORA-2026-09.md), [BITACORA-2026-08](docs/BITACORA-2026-08.md) |
+| Saber por qué algo quedó así, qué se probó al construirlo o qué se hizo un día concreto | [BITACORA-2026-10](docs/BITACORA-2026-10.md), [BITACORA-2026-09](docs/BITACORA-2026-09.md), [BITACORA-2026-08](docs/BITACORA-2026-08.md) |
 | Las 17 pantallas del maquetado, que es lo que se lee para construir | [maquetado/LEEME.md](maquetado/LEEME.md) |
 | El backend: sus endpoints, sus reglas y sus documentos | `~/Documentos/RENASER-RECLUTAMIENTO` — su `CLAUDE.MD` y su `docs/` |
 

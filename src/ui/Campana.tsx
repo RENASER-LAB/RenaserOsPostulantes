@@ -19,8 +19,9 @@
  * estaba, asi que el movimiento es lo que dice cual es la parte nueva.
  *
  * ⚠️ **Lo que se copio es el diseño, no el stack.** El original viene en
- * shadcn + Tailwind + lucide, y este portal no tiene ninguno de los tres: tiene
- * modulos CSS y los tokens de «El escaparate». Lo que si se usa tal cual es `motion`,
+ * shadcn + Tailwind + lucide, y cuando se hizo el portal no tenia ninguno de los
+ * tres —desde el 01/10/2026 tiene los dos primeros, solo en `/vacantes`—: esto
+ * son modulos CSS y los tokens de «El escaparate». Lo que si se usa tal cual es `motion`,
  * que ya estaba en el proyecto — esta es la primera pantalla que la estrena.
  *
  * ⚠️ **Y la superficie se queda clara.** El original va en negro translucido con

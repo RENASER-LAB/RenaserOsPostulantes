@@ -1,0 +1,123 @@
+/*
+ * Tailwind, para las piezas de shadcn/ui y nada más (desde el 01/10/2026).
+ *
+ * Se trajo para rediseñar `/vacantes` con los componentes de shadcn/ui
+ * —Radix por dentro: desplegables, casillas, botones— y ver si se extiende al
+ * resto. Convive con los CSS Modules y con `mundo.css`, que siguen mandando en
+ * las otras pantallas. Tres decisiones lo hacen posible:
+ *
+ *   1. **Sin preflight.** El reseteo global de Tailwind cambiaría las dieciocho
+ *      pantallas a la vez —quita el subrayado de los enlaces, pone los SVG en
+ *      bloque, iguala los titulares—. En su lugar va el reseteo de abajo, que
+ *      solo toca lo que lleva `data-slot`: las piezas de shadcn.
+ *   2. **Las utilidades con `!important`.** `mundo.css` no va en capa, y una
+ *      regla sin capa gana a cualquier capa: `button { color: inherit }` le
+ *      ganaba al `text-primary-foreground` de un botón. Con `important`, una
+ *      clase de Tailwind gana siempre en el elemento que la lleva, y los
+ *      elementos que no llevan ninguna no se enteran.
+ *   3. **El tema son los tokens de `mundo.css`.** `bg-primary` es `--activo`,
+ *      `border-input` es `--borde-control`: el índigo, Geist, los radios y las
+ *      sombras siguen siendo los del mundo. Un color nuevo se nombra allí, no
+ *      aquí.
+ */
+
+@layer theme, base, components, utilities;
+@import 'tailwindcss/theme.css' layer(theme);
+/* Las clases se buscan solo en `src/`: así no se cuelan de los documentos ni del maquetado. */
+@import 'tailwindcss/utilities.css' layer(utilities) important source(none);
+@import 'tw-animate-css';
+@source '../';
+
+/*
+ * ⚠️ **`dark:` solo con una clase `.dark`, que el portal nunca pone.** De
+ * serie, Tailwind v4 lo activa con `prefers-color-scheme: dark`, y las piezas de
+ * shadcn traen `dark:bg-input/30`: con el sistema en modo oscuro, el buscador y
+ * los botones de filtro salían en un gris translúcido sobre un portal que es
+ * solo claro (`color-scheme: light` en `index.html`). Pasó el 01/10/2026.
+ */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme inline {
+  --font-sans: Geist, system-ui, sans-serif;
+
+  --color-background: var(--cielo);
+  --color-foreground: var(--tinta);
+  --color-card: var(--nube);
+  --color-card-foreground: var(--tinta);
+  --color-popover: var(--nube);
+  --color-popover-foreground: var(--tinta);
+  --color-primary: var(--activo);
+  --color-primary-foreground: var(--tinta-invertida);
+  --color-primary-hover: var(--activo-pulsado);
+  /* El casi negro de «Iniciar sesión», y desde el 05/10/2026 también de «Filtros» en `/vacantes`. */
+  --color-accion-fuerte: var(--accion-fuerte);
+  --color-accion-fuerte-pulsado: var(--accion-fuerte-pulsado);
+  --color-secondary: var(--nube-hundida);
+  --color-secondary-foreground: var(--tinta);
+  --color-muted: var(--nube-hundida);
+  --color-muted-foreground: var(--tinta3);
+  --color-accent: var(--nube-hundida);
+  --color-accent-foreground: var(--tinta);
+  --color-destructive: var(--mal);
+  --color-border: var(--regla);
+  --color-border-strong: var(--regla2);
+  --color-input: var(--borde-control);
+  --color-ring: var(--activo);
+  --color-tinta2: var(--tinta2);
+  /* El ámbar de «esto te cambia la decisión»: los requisitos indispensables. */
+  --color-duda: var(--duda);
+  --color-duda-bruma: var(--duda-bruma);
+  --color-duda-tinta: var(--duda-tinta);
+  /* El verde de lo confirmado: en `/vacantes`, el sueldo publicado y «Remoto» (06/10/2026). */
+  --color-bien: var(--bien);
+  --color-bien-bruma: var(--bien-bruma);
+  --color-nube-honda: var(--nube-honda);
+
+  /*
+   * Las curvas de las piezas (05/10/2026), las de Emil Kowalski: las de serie
+   * de CSS arrancan blandas y el control parece llegar tarde. `ease-out` para
+   * lo que entra o responde al dedo —arranca rápido—; `ease-in-out` para lo
+   * que se mueve dentro de la pantalla, como la pastilla del orden.
+   */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+
+  /* Los radios del mundo: 8 en los controles, 12 en las superficies. */
+  --radius-sm: var(--radio-marca);
+  --radius-md: var(--radio-control);
+  --radius-lg: var(--radio-control);
+  --radius-xl: var(--radio);
+}
+
+/*
+ * El reseteo que preflight haría, solo en las piezas de shadcn. Va en `base`,
+ * así que cualquier utilidad le gana; y no sale de ellas.
+ */
+@layer base {
+  [data-slot],
+  [data-slot]::before,
+  [data-slot]::after {
+    border-width: 0;
+    border-style: solid;
+    border-color: var(--color-border);
+  }
+
+  button[data-slot],
+  input[data-slot] {
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    font: inherit;
+    color: inherit;
+  }
+
+  button[data-slot] {
+    cursor: pointer;
+  }
+}
+
+/*
+ * ⚠️ **Lo que `mundo.css` pone a un elemento, este reseteo no lo quita**: va en
+ * capa y `mundo.css` no. El subrayado de `a` es el caso: un enlace con forma de
+ * botón lleva `no-underline` en su clase, que sí gana por el `important`.
+ */
