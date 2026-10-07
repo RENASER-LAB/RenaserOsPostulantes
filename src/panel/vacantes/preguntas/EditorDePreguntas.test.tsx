@@ -138,14 +138,36 @@ beforeEach(() => {
 afterEach(cleanup)
 
 describe('el balance', () => {
-  it('dice cuántos puntos van de 100 y los avisos que frenan la publicación, tal como llegan', async () => {
+  it('dice cuántos puntos van de 100, en ámbar con su falta, y cuántas cosas hay por arreglar', async () => {
     ver.mockResolvedValue(editor())
     pintar()
     const balance = await screen.findByRole('region', { name: 'Balance de las preguntas' })
-    expect(within(balance).getAllByText(/de 100 puntos/).length).toBeGreaterThan(0)
-    expect(within(balance).getAllByText('Los puntos suman 85 de 100: faltan 15.').length).toBeGreaterThan(0)
-    // El criterio vacío lo dice en su propio bloque, en ámbar
-    expect(screen.getByText('Sin preguntas: así no se publica.')).toBeTruthy()
+    const total = within(balance).getByText('85 de 100 puntos').closest('p')!
+    expect(total.className).toContain('balanceConFalta')
+    expect(total.textContent).toBe('85 de 100 puntos. Los puntos suman 85 de 100: faltan 15.')
+    expect(total.getAttribute('title')).toBe('Los puntos suman 85 de 100: faltan 15.')
+    expect(within(balance).getByRole('button', { name: '2 por arreglar' })).toBeTruthy()
+    // El criterio vacío lo dice en su propio bloque, en ámbar, con las palabras del servidor
+    const excel = screen.getByRole('region', { name: 'Criterio Manejo de Excel' })
+    expect(within(excel).getByRole('list', { name: 'Lo que le falta al criterio' }).textContent).toBe(
+      'El criterio «Manejo de Excel» no tiene preguntas.',
+    )
+  })
+
+  it('«Publicar» con faltas no publica: lleva a la primera; publicadas, sin pastilla', async () => {
+    ver.mockResolvedValue(editor())
+    pintar()
+    const [boton] = await screen.findAllByRole('button', { name: 'Publicar las preguntas' })
+    fireEvent.click(boton!)
+    await waitFor(() => expect(document.activeElement?.id).toBe('criterios-y-preguntas'))
+    expect(publicarPreguntas).not.toHaveBeenCalled()
+    cleanup()
+
+    ver.mockResolvedValue(editor({ borrador: null, publicada: version({ estado: 'PUBLICADA', total: 100, avisos: [] }) }))
+    pintar()
+    const balance = await screen.findByRole('region', { name: 'Balance de las preguntas' })
+    expect(within(balance).queryByRole('button', { name: /por arreglar/ })).toBeNull()
+    expect(within(balance).queryByRole('button', { name: /^Publicar/ })).toBeNull()
   })
 })
 
@@ -195,7 +217,8 @@ describe('sin nada escrito', () => {
 
 describe('publicar', () => {
   it('el 400 se pinta como la lista entera de lo que falta (AC-05)', async () => {
-    ver.mockResolvedValue(editor())
+    // Sin faltas a la vista publica; si el servidor ve otra cosa, su lista se pinta.
+    ver.mockResolvedValue(editor({ borrador: version({ avisos: [] }) }))
     publicarPreguntas.mockRejectedValue(
       new ErrorApi(400, 'Las preguntas no se pueden publicar todavía: faltan 3 cosas', {
         faltas: [
@@ -278,7 +301,7 @@ describe('lo que se ve es lo guardado', () => {
   })
 
   it('QA-PP-03 · tras corregir, la lista del último intento de publicar se va y no contradice al balance', async () => {
-    ver.mockResolvedValue(editor())
+    ver.mockResolvedValue(editor({ borrador: version({ avisos: [] }) }))
     publicarPreguntas.mockRejectedValue(faltas)
     guardarDatos.mockResolvedValue(
       editor({ borrador: version({ total: 100, minutosObjetivo: 30, avisos: [] }) }),
@@ -294,13 +317,13 @@ describe('lo que se ve es lo guardado', () => {
     fireEvent.change(screen.getByLabelText('Minutos estimados'), { target: { value: '30' } })
     fireEvent.click(screen.getByRole('button', { name: 'Guardar la guía y los minutos' }))
     await waitFor(() =>
-      expect(screen.getAllByText(/0 avisos/).length).toBeGreaterThan(0),
+      expect(screen.getAllByText('100 de 100 puntos').length).toBeGreaterThan(0),
     )
     expect(screen.queryAllByRole('alert').filter((a) => a.textContent?.includes('Faltan 2 cosas'))).toHaveLength(0)
   })
 
   it('QA-PP-03 · si nada cambió, la lista sigue a la vista', async () => {
-    ver.mockResolvedValue(editor())
+    ver.mockResolvedValue(editor({ borrador: version({ avisos: [] }) }))
     publicarPreguntas.mockRejectedValue(faltas)
     pintar()
     const [boton] = await screen.findAllByRole('button', { name: 'Publicar las preguntas' })
@@ -390,7 +413,7 @@ describe('plegables y avisos que llevan a donde se arreglan (V68, AC-25)', () =>
     // «Manejo de Excel» tiene una falta: sale desplegado, con su aviso.
     const excel = screen.getByRole('region', { name: 'Criterio Manejo de Excel' })
     expect(within(excel).getByRole('button', { name: 'Manejo de Excel' }).getAttribute('aria-expanded')).toBe('true')
-    expect(within(excel).getByText('Sin preguntas: así no se publica.')).toBeTruthy()
+    expect(within(excel).getByText('El criterio «Manejo de Excel» no tiene preguntas.')).toBeTruthy()
   })
 
   it('desplegar todo, plegar todo y plegar uno a mano', async () => {
@@ -400,15 +423,15 @@ describe('plegables y avisos que llevan a donde se arreglan (V68, AC-25)', () =>
     expect(screen.getByText('Cuéntanos un cierre con un descuadre')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Plegar todo' }))
     expect(screen.queryByText('Cuéntanos un cierre con un descuadre')).toBeNull()
-    expect(screen.queryByText('Sin preguntas: así no se publica.')).toBeNull()
-    // Plegado, el criterio con falta la dice al lado de su línea.
+    // Plegado, el criterio con falta la dice al lado de su línea, no debajo.
     const excel = screen.getByRole('region', { name: 'Criterio Manejo de Excel' })
+    expect(within(excel).queryByRole('list', { name: 'Lo que le falta al criterio' })).toBeNull()
     expect(within(excel).getByText('El criterio «Manejo de Excel» no tiene preguntas.')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Conocimiento contable' }))
     expect(screen.getByText('Cuéntanos un cierre con un descuadre')).toBeTruthy()
   })
 
-  it('la cabecera tiene la barra por criterio y cada aviso es un botón que despliega su criterio', async () => {
+  it('la cabecera tiene la barra por criterio y la pastilla lleva a cada falta, desplegando su criterio', async () => {
     ver.mockResolvedValue(
       editor({
         borrador: version({
@@ -424,12 +447,93 @@ describe('plegables y avisos que llevan a donde se arreglan (V68, AC-25)', () =>
     expect(within(cabecera).getByRole('img').getAttribute('aria-label')).toBe(
       '85 de 100 puntos · Conocimiento contable: 85',
     )
-    const faltas = within(cabecera).getByRole('list', { name: 'Lo que frena la publicación' })
-    expect(within(faltas).getAllByRole('button')).toHaveLength(2)
+    const pastilla = within(cabecera).getByRole('button', { name: '2 por arreglar' })
     // «Conocimiento contable» sale desplegado porque una de sus preguntas tiene una falta.
     fireEvent.click(screen.getByRole('button', { name: 'Plegar todo' }))
     expect(screen.queryByText('Cuéntanos un cierre con un descuadre', { selector: 'p' })).toBeNull()
-    fireEvent.click(within(faltas).getByRole('button', { name: /La pregunta 1/ }))
+    // Primero los puntos, a los criterios; luego la pregunta, con su criterio desplegado.
+    fireEvent.click(pastilla)
+    await waitFor(() => expect(document.activeElement?.id).toBe('criterios-y-preguntas'))
+    fireEvent.click(pastilla)
     expect(await screen.findByText('Cuéntanos un cierre con un descuadre', { selector: 'p' })).toBeTruthy()
+  })
+})
+
+describe('una pregunta con falta, en el banco (AC-05, AC-06)', () => {
+  // «Manejo de Excel» tiene una opción única de 5 con una opción de 10; otra se quedó sin criterio.
+  const unica = abierta({
+    id: 20,
+    tipo: 'OPCION_UNICA',
+    enunciado: '¿Cómo repartes los turnos?',
+    puntos: 5,
+    criterioId: 6,
+    queDebeTener: null,
+    opciones: [
+      { id: 21, texto: 'Por antigüedad', puntos: 10, orden: 1 },
+      { id: 22, texto: 'Al azar', puntos: 0, orden: 2 },
+    ],
+  })
+  const suelta = abierta({ id: 30, enunciado: 'Una suelta', puntos: 10, criterioId: null })
+  const conFaltas = version({
+    criterios: [version().criterios[0]!, { ...version().criterios[1]!, puntos: 5, preguntas: [unica] }],
+    sinCriterio: [suelta],
+    avisos: [
+      'Los puntos suman 100 de 100: faltan 0.',
+      'La pregunta 2 («¿Cómo repartes los turnos?»): ninguna opción puede pasar de los 5 puntos de la pregunta.',
+      'La pregunta 2 («¿Cómo repartes los turnos?»): alguna opción tiene que dar los 5 puntos de la pregunta.',
+      'La pregunta 3 («Una suelta»): no está en ningún criterio.',
+    ],
+  })
+
+  it('su tarjeta en ámbar con sus faltas, su criterio plegado en ámbar, y la de sin criterio dice «No está en ningún criterio.»', async () => {
+    ver.mockResolvedValue(editor({ borrador: conFaltas }))
+    pintar()
+    const personal = await screen.findByRole('region', { name: 'Criterio Manejo de Excel' })
+    const tarjeta = within(personal).getByRole('article', { name: 'Pregunta: ¿Cómo repartes los turnos?' })
+    expect(tarjeta.className).toContain('preguntaConFalta')
+    const susFaltas = within(tarjeta).getByRole('list', { name: 'Lo que le falta para publicar' })
+    expect(within(susFaltas).getAllByRole('listitem').map((li) => li.textContent)).toEqual([
+      'Ninguna opción puede pasar de los 5 puntos de la pregunta.',
+      'Alguna opción tiene que dar los 5 puntos de la pregunta.',
+    ])
+    const sinCriterio = screen.getByRole('region', { name: 'Criterio Sin criterio' })
+    const laSuelta = within(sinCriterio).getByRole('article', { name: 'Pregunta: Una suelta' })
+    expect(laSuelta.className).toContain('preguntaConFalta')
+    expect(within(laSuelta).getByRole('list', { name: 'Lo que le falta para publicar' }).textContent).toBe(
+      'No está en ningún criterio.',
+    )
+    // La del criterio sin falta, ni ámbar ni lista.
+    fireEvent.click(screen.getByRole('button', { name: 'Desplegar todo' }))
+    const sinFalta = screen.getByRole('article', { name: 'Pregunta: Cuéntanos un cierre con un descuadre' })
+    expect(sinFalta.className).not.toContain('preguntaConFalta')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Plegar todo' }))
+    expect(personal.className).toContain('criterioConFalta')
+    expect(screen.getByRole('region', { name: 'Criterio Conocimiento contable' }).className).not.toContain('criterioConFalta')
+    // La pastilla: los puntos primero, luego la tarjeta (sus dos faltas, un solo sitio).
+    const pastilla = within(screen.getByRole('region', { name: 'Balance de las preguntas' })).getByRole('button', { name: '4 por arreglar' })
+    fireEvent.click(pastilla)
+    fireEvent.click(pastilla)
+    await waitFor(() =>
+      expect(document.activeElement).toBe(within(personal).getByRole('article', { name: 'Pregunta: ¿Cómo repartes los turnos?' })),
+    )
+  })
+
+  it('el formulario de una pregunta nueva avisa en vivo y guarda igual', async () => {
+    ver.mockResolvedValue(editor())
+    agregarPregunta.mockResolvedValue(editor({ borrador: conFaltas }))
+    pintar()
+    const conocimiento = await screen.findByRole('region', { name: 'Criterio Conocimiento contable' })
+    fireEvent.click(within(conocimiento).getByRole('button', { name: 'Conocimiento contable' }))
+    fireEvent.click(within(conocimiento).getByRole('button', { name: 'Agregar pregunta' }))
+    const form = screen.getByRole('form', { name: 'Pregunta nueva' })
+    fireEvent.change(within(form).getByLabelText('Tipo'), { target: { value: 'OPCION_MULTIPLE' } })
+    fireEvent.change(within(form).getByLabelText('Puntos'), { target: { value: '10' } })
+    fireEvent.change(within(form).getByRole('spinbutton', { name: 'Puntos de la opción 1' }), { target: { value: '6' } })
+    expect(within(form).getByRole('status').textContent).toBe('Marcando todas las opciones buenas no se llega a sus 10 puntos.')
+    fireEvent.change(within(form).getByLabelText('Enunciado'), { target: { value: '¿Qué marcas?' } })
+    fireEvent.click(within(form).getByRole('button', { name: 'Agregar la pregunta' }))
+    await waitFor(() => expect(agregarPregunta).toHaveBeenCalled())
+    expect(agregarPregunta.mock.calls[0]![1]).toMatchObject({ tipo: 'OPCION_MULTIPLE', puntos: 10 })
   })
 })

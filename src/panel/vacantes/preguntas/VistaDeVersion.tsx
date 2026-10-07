@@ -12,8 +12,8 @@
  * lee la prueba de un vistazo. El caso, los materiales, los entregables y la
  * guía no se pliegan.
  *
- * Si la versión es de una prueba técnica (V67) enseña además el caso, el tiempo,
- * los entregables y la parte calificada de cada criterio. Lo decide lo que llega
+ * Si la versión es de una prueba técnica (V67) enseña además el caso, el tiempo
+ * y los entregables; la parte calificada de cada criterio la dice su línea. Lo decide lo que llega
  * del servidor, no quien la pinta: la misma vista sirve en la copia y en la
  * publicada.
  */
@@ -26,7 +26,6 @@ import {
   PlegarTodo,
   ResumenDelCriterio,
 } from './BloqueCriterio'
-import { LineaDeLaParteCalificada } from './CriterioDePrueba'
 import { textoDeLoQueCubre } from './Entregables'
 import { cuentaDelCriterio, nombreDelFormato, nombreDelTipo } from './formulario'
 import { numerosDePreguntas, useCriteriosPlegados } from './navegacion'
@@ -126,7 +125,8 @@ export function VistaDeVersion({ version }: { version: VersionDePreguntas }) {
         const abierto = plegado.abierto(c.id)
         return (
           <section className={estilos.criterio} key={c.id} aria-label={`Criterio ${c.nombre}`}>
-            <header className={estilos.cabeceraCriterio}>
+            {/* Sin botones: los puntos y la cuenta, al borde derecho de la línea (AC-12). */}
+            <header className={estilos.cabeceraSinBotones}>
               <NombrePlegable titulo={c.nombre} abierto={abierto} alAlternar={() => plegado.alternar(c.id)} />
               <ResumenDelCriterio
                 criterio={c}
@@ -140,7 +140,6 @@ export function VistaDeVersion({ version }: { version: VersionDePreguntas }) {
                     <b>Qué evalúa:</b> {c.queEvalua}
                   </p>
                 )}
-                {prueba && <LineaDeLaParteCalificada criterio={c} entregables={entregables} numeros={numeros} />}
                 {(c.preguntas.length > 0 || !prueba) && (
                   <ol className={estilos.preguntas}>
                     {c.preguntas.map((p) => (

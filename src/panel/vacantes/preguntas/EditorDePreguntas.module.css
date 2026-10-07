@@ -24,13 +24,16 @@
  * tiene su propia medida, para que en 1920 px no salgan líneas de 1800:
  *   - `--ancho-bloque` (960 px, el carril de antes): los formularios, los
  *     campos de texto largo y los carteles y avisos;
- *   - `--medida-bloque` (72ch): un enunciado, sus opciones, «qué evalúa» y «qué
- *     debe tener»;
+ *   - `--medida-bloque` (100ch): un enunciado, sus opciones, «qué evalúa» y «qué
+ *     debe tener». Era 72ch y, en las tarjetas a todo el carril, dejaba media
+ *     tarjeta vacía en 1920 px; con 100 caracteres la línea se sigue leyendo de
+ *     un vistazo. Es un tope: en 1280 px la tarjeta es más estrecha y el texto
+ *     la llena sin pasarse, y en el teléfono sigue como antes;
  *   - `--medida` (la de `mundo.css`): la prosa que explica.
  */
 .pagina {
   --ancho-bloque: 60rem;
-  --medida-bloque: 72ch;
+  --medida-bloque: 100ch;
   display: flex;
   flex-direction: column;
   gap: var(--e5);
@@ -309,6 +312,23 @@
   max-width: 40rem;
 }
 
+/*
+ * La línea de un criterio SIN botones: la versión publicada (prueba o banco), su
+ * vista previa y el editor para quien no tiene `editar_vacante`. Sin botones que
+ * ocupen la derecha, los puntos a 40rem dejaban media línea vacía en 1920 px: el
+ * nombre queda a la izquierda y los puntos, la cuenta y el punto ámbar se van al
+ * borde derecho. Con botones, como siempre. En el teléfono no cambia nada.
+ */
+.cabeceraSinBotones {
+  composes: cabeceraCriterio;
+}
+
+@media (min-width: 721px) {
+  .cabeceraSinBotones > .resumenCriterio {
+    margin-inline-start: auto;
+  }
+}
+
 .puntosCriterio {
   font-size: var(--t-apoyo);
   color: var(--tinta2);
@@ -418,6 +438,38 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--e2);
+}
+
+/*
+ * Una pregunta con falta: el ámbar de los criterios con falta —el borde y el
+ * punto— y cada falta escrita debajo de sus opciones, sin «La pregunta N (…): ».
+ * Solo para lo que frena la publicación.
+ *
+ * `.faltasEnSuSitio` es esa lista, la misma en cada sitio donde se arregla una
+ * falta: la tarjeta, el criterio desplegado, el archivo, el entregable general
+ * y, arriba de los criterios, las que no tienen otro sitio.
+ */
+.preguntaConFalta {
+  box-shadow: inset 0 0 0 1px var(--duda);
+}
+
+.faltasEnSuSitio {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--t-apoyo);
+  line-height: 1.5;
+  color: var(--duda-tinta);
+  overflow-wrap: anywhere;
+  max-width: var(--medida-bloque);
+}
+
+/* Una línea del aviso en vivo del formulario, dentro de su caja ámbar. */
+.lineaDeAviso {
+  margin: 0;
 }
 
 .chip {
@@ -949,21 +1001,21 @@
  *
  * La comparten la prueba técnica y las preguntas propias. Se pega debajo de la
  * cabecera del panel (ver `.balance`). Una sola acción principal: «Publicar». El
- * ámbar solo en lo que frena la publicación: las faltas y el chip del tiempo
- * cuando le falta algo.
+ * ámbar solo en lo que frena la publicación: el total que no suma 100, la
+ * pastilla «⚠ N por arreglar →» y el chip del tiempo cuando le falta algo. La
+ * lista de faltas no está aquí: cada una se escribe en su sitio.
  *
  * Se reparte según el ancho de la PROPIA cabecera (`@container`) y no el de la
  * ventana: con el menú lateral plegado o abierto, la misma ventana le deja más o
- * menos sitio, y en el carril del panel llega a pasar de 1600 px. Las faltas no
- * se estiran con él: cada una mide como mucho 20rem. Dos repartos:
- *   - estrecha (hasta 56rem; 1024 px con el menú): estado y balance con
- *     «Publicar»; debajo, el chip y «Configuración»; la barra con el resumen;
+ * menos sitio, y en el carril del panel llega a pasar de 1600 px. Dos repartos:
+ *   - estrecha (hasta 56rem; 1024 px con el menú, y el teléfono): estado y
+ *     balance con «Publicar»; debajo, la pastilla; debajo, el chip y
+ *     «Configuración»; la barra con el resumen;
  *   - ancha (desde 56rem; 1280 px con el menú): una fila —estado, balance,
- *     chip, «Configuración» y «Publicar»— y la barra con el resumen al final.
+ *     pastilla, chip, «Configuración» y «Publicar»— y la barra con el resumen
+ *     al final.
  * El banco, que no tiene chip, sube además el resumen a la fila y deja la
- * barra sola.
- * En el teléfono manda la regla de más abajo: estado, balance y «Publicar» en
- * una línea; el chip y las faltas debajo, desplazables.
+ * barra sola. Sin faltas, la celda de la pastilla queda vacía.
  */
 
 .cabeceraFija {
@@ -976,8 +1028,8 @@
   grid-template-columns: minmax(0, 1fr) auto;
   grid-template-areas:
     'linea acciones'
-    'pie pie'
-    'faltas faltas';
+    'faltas faltas'
+    'pie pie';
   gap: var(--e3) var(--e4);
   align-items: center;
 }
@@ -985,9 +1037,9 @@
 .cabeceraConChip .rejillaCabecera {
   grid-template-areas:
     'linea acciones'
+    'faltas faltas'
     'herramientas herramientas'
-    'pie pie'
-    'faltas faltas';
+    'pie pie';
 }
 
 /*
@@ -999,16 +1051,16 @@
   grid-template-columns: minmax(0, 1fr);
   grid-template-areas:
     'linea'
-    'pie'
-    'faltas';
+    'faltas'
+    'pie';
 }
 
 .cabeceraConChip.sinAcciones .rejillaCabecera {
   grid-template-areas:
     'linea'
+    'faltas'
     'herramientas'
-    'pie'
-    'faltas';
+    'pie';
 }
 
 .lineaCabecera {
@@ -1065,13 +1117,12 @@
 }
 
 @container cabecera-fija (min-width: 56rem) {
-  /* El banco: estado, balance, resumen y «Publicar» en una fila; la barra sola. */
+  /* El banco: estado, balance, pastilla, resumen y «Publicar» en una fila; la barra sola. */
   .rejillaCabecera {
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
     grid-template-areas:
-      'linea cifras acciones'
-      'barra barra barra'
-      'faltas faltas faltas';
+      'linea faltas cifras acciones'
+      'barra barra barra barra';
   }
 
   .rejillaCabecera .pieDeLaBarra {
@@ -1082,14 +1133,13 @@
     white-space: normal;
   }
 
-  /* La prueba: estado, balance, chip, «Configuración» y «Publicar» en una fila;
-     debajo, la barra con el resumen al final. */
+  /* La prueba: estado, balance, pastilla, chip, «Configuración» y «Publicar» en
+     una fila; debajo, la barra con el resumen al final. */
   .cabeceraConChip .rejillaCabecera {
-    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    grid-template-columns: auto auto minmax(0, 1fr) auto auto;
     grid-template-areas:
-      'linea . herramientas acciones'
-      'pie pie pie pie'
-      'faltas faltas faltas faltas';
+      'linea faltas . herramientas acciones'
+      'pie pie pie pie pie';
   }
 
   .cabeceraConChip .pieDeLaBarra {
@@ -1105,19 +1155,17 @@
   }
 
   .sinAcciones .rejillaCabecera {
-    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-columns: auto auto minmax(0, 1fr);
     grid-template-areas:
-      'linea cifras'
-      'barra barra'
-      'faltas faltas';
+      'linea faltas cifras'
+      'barra barra barra';
   }
 
   .cabeceraConChip.sinAcciones .rejillaCabecera {
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
     grid-template-areas:
-      'linea . herramientas'
-      'pie pie pie'
-      'faltas faltas faltas';
+      'linea faltas . herramientas'
+      'pie pie pie pie';
   }
 }
 
@@ -1128,6 +1176,11 @@
   color: var(--tinta);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+
+/* «185 de 100 pts»: no suma 100 y eso frena publicar. */
+.balanceConFalta {
+  color: var(--duda-tinta);
 }
 
 .configurar {
@@ -1157,8 +1210,7 @@
 }
 
 .chipTiempo:focus-visible,
-.botonFalta:focus-visible,
-.verMasFaltas:focus-visible,
+.porArreglar:focus-visible,
 .plegador:focus-visible,
 .botonGuia:focus-visible,
 .enlacePlegar:focus-visible {
@@ -1192,46 +1244,21 @@
 }
 
 /*
- * Las faltas: bajas, en línea y varias por fila. Cada una mide lo que su texto,
- * hasta 20rem —dos por fila aun con la cabecera estrecha—; lo que pase se corta
- * con «…» a la vista (el botón lo dice entero, y al pasar el cursor también).
- *
- * «Ver N más» queda fuera de la lista, abajo a la derecha. No se le reserva una
- * columna, que estrecharía todas las filas: un hueco invisible al final de la
- * lista (`::after`) le guarda sitio solo en la última, y si ahí no cabe, baja.
+ * «⚠ 3 por arreglar →»: una sola pastilla en lugar de la lista. Mide lo que su
+ * texto, que nunca se corta. 34 px a la vista y 44 al pulsar: el `::before`
+ * estira el toque 5 px arriba y abajo, dentro del hueco entre filas.
  */
 .faltasCabecera {
   grid-area: faltas;
-  position: relative;
-  min-width: 0;
-}
-
-.listaFaltas {
-  min-width: 0;
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--e3) var(--e2);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.listaFaltas > li {
-  display: flex;
-  flex: 0 1 auto;
   min-width: 0;
-  max-inline-size: min(100%, 20rem);
 }
 
-/* 34 px a la vista y 44 al pulsar: el `::before` estira el toque 5 px arriba y
-   abajo, dentro del hueco entre filas. */
-.botonFalta {
+.porArreglar {
   position: relative;
   display: inline-flex;
   align-items: center;
   gap: var(--e2);
-  inline-size: 100%;
-  min-width: 0;
   min-height: 34px;
   padding: 6px var(--e3);
   border: 1px solid color-mix(in oklab, var(--duda) 40%, var(--nube));
@@ -1240,55 +1267,26 @@
   color: var(--duda-tinta);
   font: inherit;
   font-size: var(--t-apoyo);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
   line-height: 1.35;
-  text-align: left;
+  white-space: nowrap;
   cursor: pointer;
 }
 
-.botonFalta::before,
-.verMasFaltas::before {
+.porArreglar::before {
   content: '';
   position: absolute;
   inset: -5px 0;
 }
 
-.botonFalta:hover {
+.porArreglar:hover {
   border-color: var(--duda);
-}
-
-.textoFalta {
-  flex: 0 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .flechaFalta {
   flex: none;
   font-weight: 600;
-}
-
-.verMasFaltas {
-  position: absolute;
-  inset-inline-end: 0;
-  inset-block-end: 0;
-  min-height: 34px;
-  padding: 0 var(--e2);
-  border: 0;
-  border-radius: var(--radio-control);
-  background: none;
-  font: inherit;
-  font-size: var(--t-apoyo);
-  font-weight: 500;
-  color: var(--activo);
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.verMasFaltas:hover {
-  text-decoration: underline;
-  text-underline-offset: 3px;
 }
 
 /* ---------- Las secciones del editor de la prueba ---------- */
@@ -1306,9 +1304,9 @@
 
 /*
  * Lo que se baja a ver desde una falta se para DEBAJO de la cabecera fija: la
- * del panel, el hueco con que se pega, su alto medido (crece con las faltas,
- * ver `CabeceraFija.tsx`) y un respiro. Un margen fijo dejaba el criterio
- * tapado en cuanto había tres o cuatro faltas (QA-03).
+ * del panel, el hueco con que se pega, su alto medido (ver `CabeceraFija.tsx`)
+ * y un respiro. Un margen fijo dejaba el criterio tapado en cuanto la cabecera
+ * crecía (QA-03).
  *
  * `.campoQueFrena` es lo mismo para un campo de «Cambiar los puntos» al que el
  * navegador lleva cuando frena el guardado (`min`, `max`, `step`): sin él lo
@@ -1327,6 +1325,13 @@
 
 .destino:focus-visible {
   outline: 2px solid var(--activo);
+  outline-offset: 4px;
+}
+
+/* Adonde lleva «N por arreglar» o «Publicar» con faltas, un momento en ámbar:
+   con el ratón el foco no se ve (`bajarHasta`). */
+.destino[data-resaltado] {
+  outline: 2px solid var(--duda);
   outline-offset: 4px;
 }
 
@@ -1442,11 +1447,6 @@
   color: var(--duda-tinta);
   overflow-wrap: anywhere;
   flex-basis: 100%;
-}
-
-.chipAutomatico {
-  composes: chip;
-  margin: 0 var(--e1);
 }
 
 .numeroPregunta {
@@ -1595,35 +1595,9 @@
 }
 
 @media (max-width: 720px) {
+  /* Las filas son las de la cabecera estrecha: la pastilla, sola bajo el balance. */
   .rejillaCabecera {
     gap: var(--e2) var(--e3);
-    grid-template-areas:
-      'linea acciones'
-      'faltas faltas'
-      'pie pie';
-  }
-
-  .cabeceraConChip .rejillaCabecera {
-    grid-template-areas:
-      'linea acciones'
-      'herramientas herramientas'
-      'faltas faltas'
-      'pie pie';
-  }
-
-  .sinAcciones .rejillaCabecera {
-    grid-template-areas:
-      'linea'
-      'faltas'
-      'pie';
-  }
-
-  .cabeceraConChip.sinAcciones .rejillaCabecera {
-    grid-template-areas:
-      'linea'
-      'herramientas'
-      'faltas'
-      'pie';
   }
 
   /*
@@ -1665,27 +1639,6 @@
     display: none;
   }
 
-  /*
-   * Todas las faltas, enteras y en una fila que se desplaza. El relleno de
-   * arriba y abajo es el sitio de su toque de 44 px: un `overflow` recorta lo
-   * que se sale de él.
-   */
-  .listaFaltas {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    scrollbar-width: thin;
-    padding-block: 5px;
-  }
-
-  .listaFaltas > li {
-    flex: none;
-    max-inline-size: none;
-  }
-
-  .verMasFaltas {
-    display: none;
-  }
-
   /* El chip comparte su línea con «Configuración»: si no cabe, se parte. */
   .chipTiempo {
     flex: 0 1 auto;
@@ -1695,21 +1648,6 @@
 
   .herramientasCabecera .configurar {
     flex: none;
-  }
-}
-
-/* En el escritorio, las que pasan de las cuatro primeras esperan a «Ver N más»,
-   que tiene guardado su sitio al final de la última fila. */
-@media (min-width: 721px) {
-  .listaFaltas > .faltaEscondida {
-    display: none;
-  }
-
-  .listaConVerMas::after {
-    content: "";
-    flex: none;
-    inline-size: 7rem;
-    block-size: 34px;
   }
 }
 

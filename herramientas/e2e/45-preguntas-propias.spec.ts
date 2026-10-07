@@ -59,7 +59,7 @@ test.describe('Las preguntas propias de una vacante', () => {
     await expect(page.getByRole('link', { name: 'Escribir las preguntas →' })).toBeVisible()
   })
 
-  test('2 · la primera pregunta crea «General», y publicar con 95 lista todo lo que falta', async ({ page }) => {
+  test('2 · la primera pregunta crea «General», y con 95 no se publica: cada falta en su sitio', async ({ page }) => {
     await page.goto(`/admin/vacantes/${recorrido.vacanteId}/preguntas`)
     await expect(page.getByRole('heading', { level: 1, name: `${recorrido.titulo} · Preguntas` })).toBeVisible({
       timeout: 20_000,
@@ -75,16 +75,17 @@ test.describe('Las preguntas propias de una vacante', () => {
     await page.getByRole('button', { name: 'Agregar criterio' }).click()
     await page.getByLabel('Nombre del criterio').fill('Manejo de Excel')
     await page.getByRole('button', { name: 'Agregar el criterio' }).click()
-    await expect(criterio(page, 'Manejo de Excel').getByText('Sin preguntas: así no se publica.')).toBeVisible({
+    await expect(criterio(page, 'Manejo de Excel').getByText('El criterio «Manejo de Excel» no tiene preguntas.')).toBeVisible({
       timeout: 20_000,
     })
 
+    // El total dice lo que falta y una pastilla cuenta las dos faltas; «Publicar» lleva a la primera.
+    const balance = page.getByRole('region', { name: 'Balance de las preguntas' })
+    await expect(balance).toContainText('Los puntos suman 95 de 100: faltan 5.')
+    await expect(balance.getByRole('button', { name: '2 por arreglar' })).toBeVisible()
     await page.getByRole('button', { name: 'Publicar las preguntas' }).click()
-    const faltas = page.getByRole('alert').filter({ hasText: 'Faltan 2 cosas' })
-    await expect(faltas).toBeVisible({ timeout: 20_000 })
-    await expect(faltas.getByRole('listitem')).toHaveCount(2)
-    await expect(faltas).toContainText('faltan 5')
-    await expect(faltas).toContainText('Manejo de Excel')
+    await expect(page.locator('#criterios-y-preguntas')).toBeFocused()
+    await expect(page.getByText(/^Publicadas./)).toHaveCount(0)
   })
 
   test('3 · con 100 puntos se publican, y la vacante lo dice', async ({ page }) => {

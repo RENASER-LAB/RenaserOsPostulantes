@@ -12,6 +12,9 @@
  * Con la prueba ya publicada (sin borrador) solo se cambia la fecha: el tiempo
  * y lo demás es contenido, y eso se cambia abriendo un borrador. Sin
  * `editar_vacante`, todo en lectura; las guías «!» se leen igual.
+ *
+ * Lo que frena publicar del tiempo o de la fecha («Faltan los minutos…», «La
+ * fecha límite… ya pasó») se escribe en ámbar bajo su campo mientras no se toca.
  */
 
 import { useEffect, useState } from 'react'
@@ -22,7 +25,7 @@ import { deInstanteALima, deLimaAInstante } from '@/dominio/horaDeLima'
 import { Modal } from '@/ui/Modal'
 import { falloDe, type Fallo } from './consultas'
 import { Guia } from './Guia'
-import type { CampoDeLaConfiguracion } from './navegacion'
+import { campoDeLaFalta, type CampoDeLaConfiguracion } from './navegacion'
 import { MostrarFallo } from './piezas'
 import estilos from './EditorDePreguntas.module.css'
 
@@ -81,11 +84,13 @@ interface Props {
   abierta: boolean
   /** El campo que se enfoca al abrir: el que lleva la falta pulsada. */
   campo: CampoDeLaConfiguracion | null
+  /** Las faltas del tiempo y de la fecha, tal como las dice el servidor. */
+  faltas: string[]
   alCerrar: () => void
   alGuardar: (editor: Editor) => void
 }
 
-export function ConfiguracionDeLaPrueba({ editor, abierta, campo, alCerrar, alGuardar }: Props) {
+export function ConfiguracionDeLaPrueba({ editor, abierta, campo, faltas, alCerrar, alGuardar }: Props) {
   return (
     <Modal
       abierto={abierta}
@@ -94,7 +99,7 @@ export function ConfiguracionDeLaPrueba({ editor, abierta, campo, alCerrar, alGu
       lateral
       sinPie
     >
-      {abierta && <Contenido editor={editor} campo={campo} alCerrar={alCerrar} alGuardar={alGuardar} />}
+      {abierta && <Contenido editor={editor} campo={campo} faltas={faltas} alCerrar={alCerrar} alGuardar={alGuardar} />}
     </Modal>
   )
 }
@@ -102,11 +107,13 @@ export function ConfiguracionDeLaPrueba({ editor, abierta, campo, alCerrar, alGu
 function Contenido({
   editor,
   campo,
+  faltas,
   alCerrar,
   alGuardar,
 }: {
   editor: Editor
   campo: CampoDeLaConfiguracion | null
+  faltas: string[]
   alCerrar: () => void
   alGuardar: (editor: Editor) => void
 }) {
@@ -145,6 +152,11 @@ function Contenido({
 
   const cambioElContenido = JSON.stringify(datos) !== JSON.stringify(guardados)
   const cambioLaFecha = fecha !== fechaGuardada
+  // Las del servidor valen para lo guardado: en cuanto se toca el campo, dejan de decirse.
+  const cambioElTiempo = datos.modalidad !== guardados.modalidad || datos.minutos !== guardados.minutos
+  const delTiempo = cambioElTiempo ? [] : faltas.filter((f) => campoDeLaFalta(f) === 'tiempo')
+  // Sin fecha ya lo dice «Obligatoria para publicar la prueba».
+  const deLaFecha = cambioLaFecha || fecha.trim() === '' ? [] : faltas.filter((f) => campoDeLaFalta(f) === 'fecha')
 
   const guardado = useMutation({
     mutationFn: async () => {
@@ -254,6 +266,11 @@ function Contenido({
           />
           <span>Sin cronómetro</span>
         </label>
+        {delTiempo.map((f) => (
+          <p key={f} className={estilos.obligatoriaParaPublicar}>
+            {f}
+          </p>
+        ))}
       </fieldset>
 
       <div className={estilos.campo}>
@@ -272,6 +289,11 @@ function Contenido({
           readOnly={!fechaEditable}
         />
         {fecha.trim() === '' && <p className={estilos.obligatoriaParaPublicar}>Obligatoria para publicar la prueba</p>}
+        {deLaFecha.map((f) => (
+          <p key={f} className={estilos.obligatoriaParaPublicar}>
+            {f}
+          </p>
+        ))}
       </div>
       {fechaEditable && pideMotivo && cambioLaFecha && (
         <label className={estilos.campo}>
