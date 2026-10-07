@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
+import type { TipoDePreguntaPropia } from '../../api/preguntasPropias'
 import {
+  abiertasYArchivos,
+  avisosDeLosPuntos,
+  cerradasDelReparto,
+  quienLosCalifica,
+  textoDelReparto,
+  type PreguntaEnEdicion,
   avisoAlQuitarCriterio,
   avisoAntesDeRecalcular,
   avisoAntesDeRecalificar,
@@ -149,5 +156,59 @@ describe('lo que vale un criterio de la prueba (V69)', () => {
     expect(faltaEnLosPuntosDelCriterio('-5')).toBe('Los puntos del criterio van de 0 a 100.')
     expect(faltaEnLosPuntosDelCriterio('150')).toBe('Los puntos del criterio van de 0 a 100.')
     expect(faltaEnLosPuntosDelCriterio(' ')).toBe('Faltan los puntos del criterio: lo que vale entero, cerradas incluidas.')
+  })
+
+  it('el reparto se escribe como reparto, sin dar por hecha la IA (AC-01, AC-03, AC-04)', () => {
+    expect(cerradasDelReparto(20)).toBe('Cerradas: 20 pts')
+    expect(abiertasYArchivos(20)).toBe('Abiertas y archivos: 20 pts')
+    expect(textoDelReparto(60, 40, 'IA')).toBe('Cerradas: 60 pts · Abiertas y archivos: 40 pts, los califica la IA')
+    expect(textoDelReparto(60, 40, 'PERSONA')).toBe('Cerradas: 60 pts · Abiertas y archivos: 40 pts, los califica una persona')
+    expect(textoDelReparto(0, 20, null)).toBe('Cerradas: 0 pts · Abiertas y archivos: 20 pts, falta decir quién los califica')
+    expect(quienLosCalifica(undefined)).toBe('falta decir quién los califica')
+  })
+})
+
+describe('los puntos de una cerrada, en vivo (AC-06, AC-07)', () => {
+  const cerrada = (tipo: TipoDePreguntaPropia, puntos: string, opciones: string[]): PreguntaEnEdicion => ({
+    ...preguntaNueva(5),
+    tipo,
+    enunciado: '¿Cuál?',
+    puntos,
+    opciones: opciones.map((p, i) => ({ texto: `Opción ${i + 1}`, puntos: p })),
+  })
+
+  it('opción única: negativos, por encima de la pregunta y ninguna que la dé entera, con las palabras del servidor', () => {
+    expect(avisosDeLosPuntos(cerrada('OPCION_UNICA', '5', ['5', '0']))).toEqual([])
+    expect(avisosDeLosPuntos(cerrada('OPCION_UNICA', '5', ['10', '0']))).toEqual([
+      'Ninguna opción puede pasar de los 5 puntos de la pregunta.',
+      'Alguna opción tiene que dar los 5 puntos de la pregunta.',
+    ])
+    expect(avisosDeLosPuntos(cerrada('OPCION_UNICA', '5', ['5', '-1']))).toEqual(['Ninguna opción puede tener puntos negativos.'])
+  })
+
+  it('escala: «ningún nivel» y «algún nivel»', () => {
+    expect(avisosDeLosPuntos(cerrada('ESCALA', '4', ['-1', '2', '6']))).toEqual([
+      'Ningún nivel puede tener puntos negativos.',
+      'Ningún nivel puede pasar de los 4 puntos de la pregunta.',
+      'Algún nivel tiene que dar los 4 puntos de la pregunta.',
+    ])
+  })
+
+  it('opción múltiple: cada opción entre −N y N, y las buenas tienen que llegar a sus puntos', () => {
+    expect(avisosDeLosPuntos(cerrada('OPCION_MULTIPLE', '10', ['6', '0']))).toEqual([
+      'Marcando todas las opciones buenas no se llega a sus 10 puntos.',
+    ])
+    expect(avisosDeLosPuntos(cerrada('OPCION_MULTIPLE', '10', ['12', '-11']))).toEqual([
+      'Cada opción tiene que valer entre −10 y 10.',
+    ])
+    expect(avisosDeLosPuntos(cerrada('OPCION_MULTIPLE', '10', ['6', '4', '-3']))).toEqual([])
+  })
+
+  it('con los puntos de la pregunta o de alguna opción sin escribir no avisa, como el servidor; ni en una abierta', () => {
+    expect(avisosDeLosPuntos(cerrada('OPCION_UNICA', '', ['10', '0']))).toEqual([])
+    expect(avisosDeLosPuntos(cerrada('OPCION_UNICA', '5', ['10', ' ']))).toEqual([])
+    expect(avisosDeLosPuntos(cerrada('OPCION_UNICA', '5', ['10', 'x']))).toEqual([])
+    expect(avisosDeLosPuntos(cerrada('OPCION_UNICA', '5', []))).toEqual([])
+    expect(avisosDeLosPuntos({ ...preguntaNueva(5), puntos: '5' })).toEqual([])
   })
 })

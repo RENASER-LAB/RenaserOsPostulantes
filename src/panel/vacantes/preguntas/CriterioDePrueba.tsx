@@ -9,75 +9,29 @@
  * llevan puntos: la parte calificada califica el criterio entero mirando sus
  * abiertas y sus archivos.
  *
- * **«Mira» no se marca** (V68): lo deduce el servidor. Un criterio mira el
- * archivo de cada una de sus preguntas y los entregables generales que cubren
- * toda la prueba o alguna de sus preguntas. Aquí solo se enseña, con el chip
- * «automático».
+ * **«Mira» no se marca ni se enseña** (V68): lo deduce el servidor. Un
+ * criterio mira el archivo de cada una de sus preguntas y los entregables
+ * generales que cubren toda la prueba o alguna de sus preguntas. Desplegado, el
+ * criterio tampoco repite su reparto: su línea ya dice «40 pts (sistema 25 + IA
+ * 15)».
  */
 
 import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
-import type {
-  CriterioDeLaVersion,
-  EditorDePreguntas,
-  EntregableDeLaVersion,
-} from '../../api/preguntasPropias'
+import type { CriterioDeLaVersion, EditorDePreguntas } from '../../api/preguntasPropias'
 import { agregarCriterioDePrueba, editarCriterioDePrueba, type Calificador } from '../../api/pruebaPropia'
 import { falloDe, type Fallo } from './consultas'
-import { cerradasPorEncima, faltaEnLosPuntosDelCriterio, repartoDelCriterio } from './formulario'
+import {
+  TODO_DEL_SISTEMA,
+  abiertasYArchivos,
+  cerradasDelReparto,
+  cerradasPorEncima,
+  faltaEnLosPuntosDelCriterio,
+  repartoDelCriterio,
+} from './formulario'
 import { idDelCalificador } from './navegacion'
 import { MostrarFallo } from './piezas'
 import estilos from './EditorDePreguntas.module.css'
-
-/** «Flujo de caja.xlsx (pregunta 4)», «Informe final (general)». */
-export function nombreEnMira(e: EntregableDeLaVersion, numeros: Map<number, number>): string {
-  if (e.alcance === 'PREGUNTA' && e.preguntaId != null) {
-    const n = numeros.get(e.preguntaId)
-    return n ? `${e.nombre} (pregunta ${n})` : e.nombre
-  }
-  return e.alcance ? `${e.nombre} (general)` : e.nombre
-}
-
-/**
- * «la califica la IA», «la califica una persona» o, si nadie lo ha dicho, la
- * falta: nunca se da por hecha la IA (QA-10).
- */
-function quienLaCalifica(calificador: Calificador | null | undefined): string {
-  if (calificador === 'PERSONA') return 'la califica una persona'
-  if (calificador === 'IA') return 'la califica la IA'
-  return 'falta decir quién la califica'
-}
-
-/** La parte calificada y lo que mira, deducido. */
-export function LineaDeLaParteCalificada({
-  criterio,
-  entregables,
-  numeros = new Map(),
-}: {
-  criterio: CriterioDeLaVersion
-  entregables: EntregableDeLaVersion[]
-  numeros?: Map<number, number>
-}) {
-  const puntos = criterio.puntosCalificados ?? 0
-  const mira = entregables.filter((e) => (criterio.entregables ?? []).includes(e.id))
-  return (
-    <>
-      <p className={estilos.queEvalua}>
-        <b>Parte calificada:</b>{' '}
-        {puntos <= 0 ? 'no tiene. Todo lo puntúa el sistema.' : `${puntos} pts · ${quienLaCalifica(criterio.calificador)}`}
-      </p>
-      {(puntos > 0 || mira.length > 0) && (
-        <p className={estilos.queEvalua}>
-          <b>Mira</b>
-          <span className={estilos.chipAutomatico}>automático</span>
-          {mira.length === 0
-            ? 'ningún archivo'
-            : mira.map((e) => nombreEnMira(e, numeros)).join(' · ')}
-        </p>
-      )}
-    </>
-  )
-}
 
 interface PropsReparto {
   /** El nombre del criterio, para decir la falta como la dice el servidor. */
@@ -101,10 +55,11 @@ function puntosEscritos(puntos: string): number | null {
 }
 
 /**
- * Debajo de «Puntos del criterio», en vivo (V69): cuánto suman sus cerradas y
- * quién califica el resto. Si las cerradas lo suman todo no se pregunta quién
- * califica; si lo pasan, la falta en ámbar, la misma que frena publicar. Con un
- * total que no es un entero de 0 a 100 no se reparte nada: se dice qué está mal.
+ * Debajo de «Puntos del criterio», en vivo (V69), escrito como reparto:
+ * «Cerradas: 20 pts · Abiertas y archivos: 20 pts, los califica [La IA ▾]». Si
+ * las cerradas lo suman todo no se pregunta quién califica; si lo pasan, la falta
+ * en ámbar, la misma que frena publicar. Con un total que no es un entero de 0 a
+ * 100 no se reparte nada: se dice qué está mal.
  */
 export function RepartoDelCriterio({ nombre, puntos, cerradas, calificador, alElegir, idDeQuien }: PropsReparto) {
   if (puntos.trim() === '') {
@@ -130,19 +85,19 @@ export function RepartoDelCriterio({ nombre, puntos, cerradas, calificador, alEl
   if (reparto.tipo === 'SISTEMA') {
     return (
       <p className={estilos.reparto} role="status">
-        Sus cerradas suman {cerradas}. Todo lo puntúa el sistema.
+        {cerradasDelReparto(cerradas)} · {TODO_DEL_SISTEMA}
       </p>
     )
   }
   return (
     <p className={estilos.reparto}>
       <span role="status">
-        Sus cerradas suman {cerradas}. Los otros {reparto.otros} los califica
+        {cerradasDelReparto(cerradas)} · {abiertasYArchivos(reparto.otros)}, los califica
       </span>{' '}
       <select
         id={idDeQuien}
         className={estilos.eleccionEnLinea}
-        aria-label={`Quién califica los otros ${reparto.otros} puntos`}
+        aria-label={`Quién califica los ${reparto.otros} puntos de abiertas y archivos`}
         value={calificador ?? ''}
         onChange={(e) => alElegir(e.target.value as Calificador)}
       >
@@ -154,8 +109,7 @@ export function RepartoDelCriterio({ nombre, puntos, cerradas, calificador, alEl
         )}
         <option value="IA">La IA</option>
         <option value="PERSONA">Una persona</option>
-      </select>{' '}
-      mirando sus abiertas y archivos.
+      </select>
     </p>
   )
 }
@@ -266,8 +220,8 @@ export function FormularioCriterioDePrueba({ vacanteId, criterio, alGuardar, alC
           idDeQuien={criterio ? idDelCalificador(criterio.id) : undefined}
         />
         <p className={estilos.ayuda}>
-          Si luego cambian sus cerradas, el criterio sigue valiendo lo mismo: lo que se ajusta es la
-          parte que califican la IA o una persona.
+          Si luego cambian sus cerradas, el criterio sigue valiendo lo mismo: lo que se ajusta son
+          los puntos de abiertas y archivos.
         </p>
       </div>
 

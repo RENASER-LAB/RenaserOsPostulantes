@@ -41,7 +41,9 @@ import {
   nombreDelTipo,
   repartoDelCriterio,
   resultadoDelReintento,
+  textoDelReparto,
 } from './formulario'
+import type { Calificador } from '../../api/pruebaPropia'
 import {
   archivosDeLasPreguntas,
   ContenidoDePregunta,
@@ -224,25 +226,26 @@ export function PreguntasPublicadas({ editor, publicada, alCambiar }: Props) {
 // ---------- Los puntos ----------
 
 /**
- * Cómo queda repartido un criterio publicado con los puntos nuevos (V69). Quién
- * califica no se cambia aquí, y su parte calificada no puede quedar en 0: tiene
- * abiertas o archivos que alguien califica. `total` va tal cual se escribió: si
- * no es un entero de 0 a 100 no se reparte, se dice qué está mal. Sin `quien`
- * no se da por hecha la IA (QA-10).
+ * Cómo queda repartido un criterio publicado con los puntos nuevos (V69), como en
+ * el lápiz pero sin selector: «Cerradas: 60 pts · Abiertas y archivos: 40 pts, los
+ * califica la IA». Quién califica no se cambia aquí, y los puntos de abiertas y
+ * archivos no pueden quedar en 0: tiene abiertas o archivos que alguien califica.
+ * `total` va tal cual se escribió: si no es un entero de 0 a 100 no se reparte, se
+ * dice qué está mal. Sin calificador no se da por hecha la IA (QA-10).
  */
 function RepartoPublicado({
   id,
   nombre,
   total: escrito,
   cerradas,
-  quien,
+  calificador,
 }: {
   /** El campo del total lo usa para describirse con esta línea. */
   id: string
   nombre: string
   total: string
   cerradas: number
-  quien: string | null
+  calificador: Calificador | null | undefined
 }) {
   const malEscrito = faltaEnLosPuntosDelCriterio(escrito)
   if (malEscrito !== null) {
@@ -271,10 +274,24 @@ function RepartoPublicado({
   }
   return (
     <p id={id} className={estilos.reparto}>
-      Sus cerradas suman {cerradas}. Los otros {reparto.otros}{' '}
-      {quien ? `los califica ${quien}.` : 'no tienen quién los califique.'}
+      {textoDelReparto(cerradas, reparto.otros, calificador)}
     </p>
   )
+}
+
+/** Los puntos de una pregunta van de 0 a 100, y los de una opción de −100 a 100. */
+const PUNTOS_MAXIMOS = 100
+
+/**
+ * Lo que el navegador frena por `step`, `min` o `max` en una pregunta desplegada
+ * —los límites de la forma del servidor—; plegada no hay campo que frenar, y se
+ * mira aquí. Vacío no frena: es lo de siempre (AC-10).
+ */
+function fueraDeLaForma(valor: string | undefined, minimo: number): boolean {
+  const texto = (valor ?? '').trim()
+  if (texto === '') return false
+  const numero = Number(texto)
+  return !Number.isInteger(numero) || numero < minimo || numero > PUNTOS_MAXIMOS
 }
 
 function CambiarLosPuntos({
@@ -333,17 +350,14 @@ function CambiarLosPuntos({
   // Un total que no es un entero de 0 a 100 no se envía: su falta ya está bajo el campo,
   // y el servidor daría otra suma que la escrita (QA-11).
   const malEscrito = (criterio: number) => faltaEnLosPuntosDelCriterio(totales[criterio] ?? '') !== null
-  // Lo que el navegador frena por `step` en una pregunta desplegada; plegada no hay campo
-  // que frenar, y se mira aquí.
-  const conDecimales = (valor: string | undefined) => (valor ?? '').trim() !== '' && !Number.isInteger(Number(valor))
 
   /** El primer campo que frena el guardado, criterio a criterio: su total, o una pregunta o una opción. */
   const primerCampoMal = (): { criterio: number; campo: string } | null => {
     for (const c of publicada.criterios) {
       if (conParte.includes(c) && malEscrito(c.id)) return { criterio: c.id, campo: idDelTotal(c.id) }
       for (const p of c.preguntas.filter((q) => !(deLaPrueba && q.tipo === 'ABIERTA'))) {
-        if (conDecimales(puntos[p.id])) return { criterio: c.id, campo: idDeLaPregunta(p.id) }
-        const opcion = p.opciones.find((o) => conDecimales(opciones[o.id]))
+        if (fueraDeLaForma(puntos[p.id], 0)) return { criterio: c.id, campo: idDeLaPregunta(p.id) }
+        const opcion = p.opciones.find((o) => fueraDeLaForma(opciones[o.id], -PUNTOS_MAXIMOS))
         if (opcion) return { criterio: c.id, campo: idDeLaOpcion(opcion.id) }
       }
     }
@@ -472,7 +486,8 @@ function CambiarLosPuntos({
             aria-label={`Criterio ${c.nombre}`}
             data-ancla
           >
-            <header className={estilos.cabeceraCriterio}>
+            {/* En el banco la línea no lleva campo: sus puntos van al borde derecho (AC-12). */}
+            <header className={deLaPrueba ? estilos.cabeceraCriterio : estilos.cabeceraSinBotones}>
               <NombrePlegable titulo={c.nombre} abierto={abierto} alAlternar={() => plegado.alternar(c.id)} />
               <ResumenDelCriterio
                 criterio={c}
@@ -508,7 +523,7 @@ function CambiarLosPuntos({
                 nombre={c.nombre}
                 total={totales[c.id] ?? ''}
                 cerradas={deLasPreguntas(c.preguntas)}
-                quien={c.calificador === 'PERSONA' ? 'una persona' : c.calificador === 'IA' ? 'la IA' : null}
+                calificador={c.calificador}
               />
             )}
             {abierto &&
@@ -525,6 +540,8 @@ function CambiarLosPuntos({
                           className={`${estilos.entradaPuntos} ${estilos.campoQueFrena}`}
                           type="number"
                           step={1}
+                          min={0}
+                          max={PUNTOS_MAXIMOS}
                           aria-label={`Puntos de «${p.enunciado.slice(0, 40)}»`}
                           aria-invalid={susFaltas ? true : undefined}
                           aria-describedby={susFaltas ? idDeSusFaltas(p.id) : undefined}
@@ -556,6 +573,8 @@ function CambiarLosPuntos({
                           className={`${estilos.entradaPuntos} ${estilos.campoQueFrena}`}
                           type="number"
                           step={1}
+                          min={-PUNTOS_MAXIMOS}
+                          max={PUNTOS_MAXIMOS}
                           aria-label={`Puntos de la opción «${o.texto}»`}
                           value={opciones[o.id]}
                           onChange={(e) => {

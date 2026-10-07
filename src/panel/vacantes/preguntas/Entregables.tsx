@@ -9,6 +9,9 @@
  * Nadie marca qué mira cada criterio: lo deduce el servidor del alcance (un
  * criterio mira el archivo de sus preguntas y los generales que cubren toda la
  * prueba o alguna de sus preguntas).
+ *
+ * Lo que le falta a un archivo para publicar («Informe final» no cubre ninguna
+ * pregunta, «Flujo.xlsx»: nadie lo califica…) se escribe bajo su línea, en ámbar.
  */
 
 import { useId, useState } from 'react'
@@ -24,7 +27,7 @@ import { agregarEntregable, editarEntregable, quitarEntregable, type GuardarEntr
 import { IconoCruz, IconoDocumento, IconoLapiz, IconoMas } from '@/ui/Iconos'
 import { falloDe, type Fallo } from './consultas'
 import { FORMATOS, nombreDelFormato } from './formulario'
-import { BotonIcono, MostrarFallo } from './piezas'
+import { BotonIcono, ListaDeFaltas, MostrarFallo } from './piezas'
 import estilos from './EditorDePreguntas.module.css'
 
 /** El aviso del enlace en un criterio de IA: lo que la IA no puede leer. */
@@ -94,6 +97,7 @@ export function ArchivoDeLaPregunta({
   criterio,
   editable,
   alCambiar,
+  faltas,
 }: {
   vacanteId: number
   pregunta: PreguntaDeLaVersion
@@ -102,6 +106,8 @@ export function ArchivoDeLaPregunta({
   criterio: CriterioDeLaVersion | null
   editable: boolean
   alCambiar: (e: Editor) => void
+  /** Lo que le falta al archivo para publicar, tal como lo dice el servidor. */
+  faltas?: string[]
 }) {
   const [editando, setEditando] = useState(false)
   const [fallo, setFallo] = useState<Fallo | null>(null)
@@ -148,6 +154,7 @@ export function ArchivoDeLaPregunta({
           </button>
         )
       )}
+      <ListaDeFaltas faltas={faltas} nombre="Lo que le falta al archivo" />
       <MostrarFallo fallo={fallo} />
     </>
   )
@@ -168,6 +175,7 @@ export function EntregablesGenerales({
   numeros,
   editable,
   alCambiar,
+  faltas,
 }: {
   vacanteId: number
   generales: EntregableDeLaVersion[]
@@ -175,6 +183,8 @@ export function EntregablesGenerales({
   numeros: Map<number, number>
   editable: boolean
   alCambiar: (e: Editor) => void
+  /** Lo que le falta a cada entregable para publicar, por su id. */
+  faltas: Map<number, string[]>
 }) {
   const [nuevo, setNuevo] = useState(false)
   return (
@@ -203,6 +213,7 @@ export function EntregablesGenerales({
                 editable={editable}
                 alCambiar={alCambiar}
               />
+              <ListaDeFaltas faltas={faltas.get(e.id)} nombre="Lo que le falta al entregable" />
             </li>
           ))}
         </ul>

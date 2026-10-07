@@ -16,7 +16,7 @@
  * cuentas —`borrarCuentasDePrueba`— y marca eliminadas las vacantes.
  */
 
-import { expect, type Page } from '@playwright/test'
+import { expect, type Locator, type Page } from '@playwright/test'
 import { API, EQUIPO } from './ayuda'
 import { borrarCuentasDePrueba, CLAVE_DE_CANDIDATO, crearCuentaDeCandidato } from './ayuda-candidato'
 import { correoDePrueba, literal, sql } from './base-de-datos'
@@ -540,4 +540,24 @@ export async function nadaLoTapa(page: Page, selectorAccesible: { role: 'button'
     const enElCentro = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2)
     return enElCentro !== null && (enElCentro === el || el.contains(enElCentro))
   })
+}
+
+/**
+ * Pulsa «⚠ N por arreglar →» (los dos editores) hasta que `destino` tiene el foco: la
+ * pastilla lleva de falta en falta en el orden de la página. Si pasa por la configuración
+ * de la prueba, la cierra con Escape y sigue. Falla si en `vueltas` clics no llega.
+ */
+export async function irConLaPastilla(page: Page, destino: Locator, vueltas = 6): Promise<void> {
+  const pastilla = page.getByRole('button', { name: /^\d+ por arreglar$/ })
+  const configuracion = page.getByRole('dialog', { name: 'Configuración de la prueba' })
+  for (let i = 0; i < vueltas; i++) {
+    await pastilla.click()
+    const llego = await expect(destino).toBeFocused({ timeout: 2_000 }).then(() => true, () => false)
+    if (llego) return
+    if (await configuracion.isVisible()) {
+      await page.keyboard.press('Escape')
+      await expect(configuracion).toHaveCount(0)
+    }
+  }
+  throw new Error(`«por arreglar» no llevó al destino en ${vueltas} clics`)
 }

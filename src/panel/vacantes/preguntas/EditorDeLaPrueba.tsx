@@ -2,9 +2,9 @@
  * La prueba técnica de una vacante, escrita en el editor (V67), en
  * `/admin/vacantes/:id/prueba`. Desde la V68, más simple:
  *
- *   1. **La cabecera fija**: el estado, el balance, el chip del tiempo,
- *      «Configuración» y «Publicar», la barra por criterio y las faltas, que
- *      llevan a donde se arreglan.
+ *   1. **La cabecera fija**: el estado, el balance, «⚠ N por arreglar →», el
+ *      chip del tiempo, «Configuración» y «Publicar», y la barra por criterio.
+ *      Cada falta se escribe en su sitio; la pastilla lleva de una en una.
  *   2. **El escenario o caso práctico**, opcional y plegado.
  *   3. **Los criterios y sus preguntas**, plegables. Cada pregunta puede pedir
  *      su archivo; lo que mira cada criterio lo deduce el servidor.
@@ -42,6 +42,9 @@ import { EntregablesGenerales } from './Entregables'
 import { falloDe, useEditorDePreguntas, usePonerEditor, type Fallo } from './consultas'
 import { ConModoDelEditor, MODO_PRUEBA } from './modo'
 import {
+  campoDeLaFalta,
+  faltasPorEntregable,
+  faltasSinSitio,
   irAlDestino,
   numerosDePreguntas,
   preguntasEnOrden,
@@ -49,7 +52,7 @@ import {
   type CampoDeLaConfiguracion,
   type Destino,
 } from './navegacion'
-import { MostrarFallo } from './piezas'
+import { ListaDeFaltas, MostrarFallo } from './piezas'
 import { PreguntasPublicadas } from './PreguntasPublicadas'
 import { Recomendaciones } from './Recomendaciones'
 import estilos from './EditorDePreguntas.module.css'
@@ -176,7 +179,16 @@ function Contenido({ editor, poner }: { editor: Editor; poner: (e: Editor) => vo
   const irA = (d: Destino) => irAlDestino(d, plegado, (campo) => setConfiguracion({ abierta: true, campo }))
 
   const deLaCabecera = base ?? versionVacia(editor)
+  // Lo que frena publicar es del taller: la publicada no tiene nada que arreglar.
+  const faltas = enElTaller ? deLaCabecera.avisos : []
   const chip = chipDelTiempo(base?.prueba, editor.fechaLimite?.cierraEn)
+  // El chip dice si faltan el tiempo o la fecha; una fecha que ya pasó solo la sabe el servidor.
+  const deLaConfiguracion = faltas.filter((a) => campoDeLaFalta(a) !== null)
+  const chipEnFalta = chip.falta || deLaConfiguracion.length > 0
+  const queArreglar = chip.falta ? '' : deLaConfiguracion.map((a) => ` ${a}`).join('')
+  let campoDelChip: CampoDeLaConfiguracion | null = null
+  if (chip.falta) campoDelChip = editor.fechaLimite?.cierraEn ? 'tiempo' : 'fecha'
+  else if (deLaConfiguracion.length > 0) campoDelChip = campoDeLaFalta(deLaConfiguracion[0]!)
   const cuantosEntregables = base?.prueba?.entregables.length ?? 0
 
   return (
@@ -213,12 +225,14 @@ function Contenido({ editor, poner }: { editor: Editor; poner: (e: Editor) => vo
           </>
         }
         version={deLaCabecera}
+        faltas={faltas}
         chip={
           <button
-            className={chip.falta ? `${estilos.chipTiempo} ${estilos.chipTiempoFalta}` : estilos.chipTiempo}
+            className={chipEnFalta ? `${estilos.chipTiempo} ${estilos.chipTiempoFalta}` : estilos.chipTiempo}
             type="button"
-            aria-label={`Tiempo: ${chip.texto}. Abrir la configuración`}
-            onClick={() => setConfiguracion({ abierta: true, campo: chip.falta ? (editor.fechaLimite?.cierraEn ? 'tiempo' : 'fecha') : null })}
+            aria-label={`Tiempo: ${chip.texto}.${queArreglar} Abrir la configuración`}
+            title={queArreglar.trim() || undefined}
+            onClick={() => setConfiguracion({ abierta: true, campo: campoDelChip })}
           >
             <IconoReloj tamano={18} />
             {chip.texto}
@@ -235,25 +249,10 @@ function Contenido({ editor, poner }: { editor: Editor; poner: (e: Editor) => vo
             <span className={estilos.textoConfigurar}>Configuración</span>
           </button>
         }
-        acciones={
-          editable &&
-          borrador && (
-            <button
-              className={estilos.publicar}
-              type="button"
-              aria-label={publicacion.isPending ? undefined : 'Publicar la prueba'}
-              onClick={() => publicacion.mutate()}
-              disabled={publicacion.isPending}
-            >
-              {publicacion.isPending ? (
-                'Publicando…'
-              ) : (
-                <span>
-                  Publicar<span className={estilos.restoDelRotulo}> la prueba</span>
-                </span>
-              )}
-            </button>
-          )
+        publicar={
+          editable && borrador
+            ? { complemento: ' la prueba', publicando: publicacion.isPending, alPublicar: () => publicacion.mutate() }
+            : null
         }
         alIr={irA}
       />
@@ -289,6 +288,8 @@ function Contenido({ editor, poner }: { editor: Editor; poner: (e: Editor) => vo
                 </div>
               )}
             </div>
+
+            <ListaDeFaltas faltas={faltasSinSitio(faltas, deLaCabecera)} nombre="Lo que falta para publicar" />
 
             {panelIa && puedeEscribir && (
               <Recomendaciones
@@ -350,6 +351,7 @@ function Contenido({ editor, poner }: { editor: Editor; poner: (e: Editor) => vo
             numeros={numeros}
             editable={puedeEscribir}
             alCambiar={poner}
+            faltas={faltasPorEntregable(borrador)}
           />
         </>
       )}
@@ -362,6 +364,7 @@ function Contenido({ editor, poner }: { editor: Editor; poner: (e: Editor) => vo
         editor={editor}
         abierta={configuracion.abierta}
         campo={configuracion.campo}
+        faltas={deLaConfiguracion}
         alCerrar={() => setConfiguracion({ abierta: false, campo: null })}
         alGuardar={poner}
       />

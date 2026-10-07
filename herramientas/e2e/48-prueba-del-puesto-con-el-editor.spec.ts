@@ -204,18 +204,30 @@ test.describe('La prueba del puesto escrita en el editor', () => {
     expect(faltas.some((f) => f.includes('Falta la fecha límite'))).toBe(true)
     expect((await editorDe(equipo, vacanteA)).publicada).toBeNull()
 
-    // El panel lee la misma lista como botones, y la línea del criterio mixto (AC-05)
+    // El panel cuenta las cuatro en una pastilla y escribe cada una en su sitio; la línea del
+    // criterio mixto (AC-05). Con faltas, «Publicar» no publica: lleva a la primera.
     await page.reload()
     const cabecera = page.getByRole('region', { name: 'Balance de la prueba' })
-    await expect(cabecera.getByRole('list', { name: 'Lo que frena la publicación' }).getByRole('button')).toHaveCount(4, { timeout: 20_000 })
+    await expect(cabecera.getByRole('button', { name: '4 por arreglar' })).toBeVisible({ timeout: 20_000 })
+    await expect(cabecera).toContainText('Los puntos suman 90 de 100: faltan 10.')
+    await expect(cabecera.getByRole('button', { name: /^Tiempo: 90 min · falta la fecha límite/ })).toBeVisible()
+    await expect(page.getByRole('list', { name: 'Lo que le falta al entregable' })).toContainText('«Informe.pdf»: nadie lo califica')
+    await expect(
+      page.getByRole('region', { name: 'Criterio Comunicación' }).getByRole('list', { name: 'Lo que le falta al criterio' }),
+    ).toContainText('lo califica la IA y solo mira enlaces')
     await cabecera.getByRole('button', { name: 'Publicar la prueba' }).click()
-    await expect(page.getByRole('alert').getByText('Faltan 4 cosas:')).toBeVisible()
+    await expect(page.locator('#criterios-y-preguntas')).toBeFocused()
+    await expect(page.getByRole('alert').getByText('Faltan 4 cosas:')).toHaveCount(0)
     await expect(page.getByText('30 pts (sistema 10 + IA 20)')).toBeVisible()
     await expect(page.getByText('20 pts (sistema 20)')).toBeVisible()
-    // «Mira» lo deduce el sistema: el archivo de su pregunta y el general de toda la prueba
+    // «Mira» lo deduce el sistema y no se enseña: el archivo de su pregunta y el general de toda la prueba
     const conocimiento = page.getByRole('region', { name: 'Criterio Conocimiento contable' })
     await conocimiento.getByRole('button', { name: 'Conocimiento contable', exact: true }).click()
-    await expect(conocimiento).toContainText('Tablero.xlsx (pregunta 3) · Video de 2 min (general)')
+    const deducido = await editorDe(equipo, vacanteA)
+    expect([...criterioDe(deducido.borrador, 'Conocimiento contable').entregables].sort((a, b) => a - b)).toEqual(
+      [entregableDe(deducido, 'Tablero.xlsx'), entregableDe(deducido, 'Video de 2 min')].sort((a, b) => a - b),
+    )
+    await expect(conocimiento).not.toContainText('Mira')
     // Una abierta no tiene campo de puntos
     await conocimiento.getByRole('button', { name: 'Agregar pregunta', exact: true }).click()
     const pregunta = page.getByRole('form', { name: 'Pregunta nueva' })
@@ -233,7 +245,8 @@ test.describe('La prueba del puesto escrita en el editor', () => {
       enunciado: ENUNCIADO, herramientasPermitidas: 'Excel', modalidad: 'CRONOMETRADA', duracionMinutos: 90,
     })
     await page.reload()
-    await page.getByRole('button', { name: /Falta la fecha límite para dar la prueba/ }).click()
+    // Solo queda la fecha: la pastilla abre la configuración con el cursor en ella.
+    await cabecera.getByRole('button', { name: '1 por arreglar' }).click({ timeout: 20_000 })
     const configuracion = page.getByRole('dialog', { name: 'Configuración de la prueba' })
     const fecha = configuracion.getByLabel('Fecha límite para dar la prueba')
     await expect(fecha).toBeFocused()

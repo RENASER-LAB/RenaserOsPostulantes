@@ -109,7 +109,7 @@ test.describe('Un editor de la prueba técnica más simple', () => {
     await limpiarSiempre([() => retirarLoSembrado(correos)])
   })
 
-  test('recorridos 1 a 4: sin caso, un archivo desde su pregunta, un general de dos, «Mira» solo y la fecha desde su falta', async ({ page }) => {
+  test('recorridos 1 a 4: sin caso, un archivo desde su pregunta, un general de dos, «Mira» solo y la fecha desde «Publicar»', async ({ page }) => {
     await entrarAlPanel(page)
     await page.goto(`/admin/vacantes/${vacanteA}/prueba`)
     await expect(cabecera(page)).toContainText('100 de 100 pts', { timeout: 20_000 })
@@ -158,7 +158,11 @@ test.describe('Un editor de la prueba técnica más simple', () => {
     await archivo.getByRole('button', { name: 'Pedir el archivo' }).click()
     await expect(pregunta3).toContainText('Flujo de caja.xlsx', { timeout: 20_000 })
     await expect(pregunta3.getByRole('button', { name: 'Pedir un archivo para esta pregunta' })).toHaveCount(0)
-    await expect(criterio(page, 'Excel')).toContainText('Flujo de caja.xlsx (pregunta 3)')
+    // «Mira» lo deduce el servidor y no se enseña: Excel mira el archivo de su pregunta.
+    const conArchivo = await editorDe(equipo, vacanteA)
+    const flujo = (conArchivo.borrador.prueba.entregables as any[]).find((e) => e.nombre === 'Flujo de caja.xlsx').id
+    expect(criterioDe(conArchivo.borrador, 'Excel').entregables).toEqual([flujo])
+    await expect(criterio(page, 'Excel')).not.toContainText('Mira')
     // Pedirlo dos veces en la misma pregunta no crea dos
     const deLaPregunta = (await editorDe(equipo, vacanteA)).borrador.prueba.entregables[0].preguntaId
     const otro = await pedir(`${RUTA(vacanteA)}/entregables`, equipo, 'POST', {
@@ -179,9 +183,12 @@ test.describe('Un editor de la prueba técnica más simple', () => {
     await general.getByRole('button', { name: 'Pedir el archivo' }).click()
     await expect(generales).toContainText('Cubre: las preguntas 1 y 4', { timeout: 20_000 })
     await page.getByRole('button', { name: 'Desplegar todo' }).click()
-    await expect(criterio(page, 'Análisis')).toContainText('Informe final (general)')
-    await expect(criterio(page, 'Comunicación')).toContainText('Informe final (general)')
-    await expect(criterio(page, 'Excel')).not.toContainText('Informe final')
+    const conGeneral = await editorDe(equipo, vacanteA)
+    const elGeneral = (conGeneral.borrador.prueba.entregables as any[]).find((e) => e.nombre === 'Informe final').id
+    expect(criterioDe(conGeneral.borrador, 'Análisis').entregables).toContain(elGeneral)
+    expect(criterioDe(conGeneral.borrador, 'Comunicación').entregables).toContain(elGeneral)
+    expect(criterioDe(conGeneral.borrador, 'Excel').entregables).not.toContain(elGeneral)
+    await expect(page.locator('main')).not.toContainText('Informe final (general)')
 
     // AC-04: el formulario del criterio no tiene «Mira»
     await page.getByRole('button', { name: 'Editar el criterio Análisis' }).click()
@@ -192,20 +199,19 @@ test.describe('Un editor de la prueba técnica más simple', () => {
     // cerradas y quién califica el resto. Si lo suman todo no se pregunta; si lo pasan, la falta.
     const puntos = form.getByRole('spinbutton', { name: 'Puntos del criterio' })
     await expect(puntos).toHaveValue('30')
-    await expect(form).toContainText('Sus cerradas suman 10. Los otros 20 los califica')
-    await expect(form.getByRole('combobox', { name: 'Quién califica los otros 20 puntos' })).toHaveValue('IA')
+    await expect(form).toContainText('Cerradas: 10 pts · Abiertas y archivos: 20 pts, los califica')
+    await expect(form.getByRole('combobox', { name: 'Quién califica los 20 puntos de abiertas y archivos' })).toHaveValue('IA')
     await puntos.fill('10')
-    await expect(form).toContainText('Sus cerradas suman 10. Todo lo puntúa el sistema.')
+    await expect(form).toContainText('Cerradas: 10 pts · Todo lo puntúa el sistema')
     await expect(form.getByRole('combobox')).toHaveCount(0)
     await puntos.fill('5')
     await expect(form).toContainText('Las cerradas de «Análisis» suman 10 y el criterio vale 5.')
     await form.getByRole('button', { name: 'Cancelar' }).click()
 
-    // AC-08/AC-16: sin fecha no se publica; la falta abre la configuración con el cursor en la fecha
+    // AC-08/AC-16: sin fecha no se publica; «Publicar» lleva a esa falta, la configuración con el cursor en la fecha
     expect((await publicarPrueba(equipo, vacanteA)).estado).toBe(400)
+    await expect(cabecera(page).getByRole('button', { name: '1 por arreglar' })).toBeVisible()
     await cabecera(page).getByRole('button', { name: 'Publicar la prueba' }).click()
-    await expect(page.getByRole('alert').filter({ hasText: 'Falta la fecha límite' })).toBeVisible({ timeout: 20_000 })
-    await cabecera(page).getByRole('button', { name: /Falta la fecha límite para dar la prueba/ }).click()
     const configuracion = page.getByRole('dialog', { name: 'Configuración de la prueba' })
     const fecha = configuracion.getByLabel('Fecha límite para dar la prueba')
     await expect(fecha).toBeFocused()
@@ -380,8 +386,8 @@ test.describe('Un editor de la prueba técnica más simple', () => {
     await expect(plegador(page, 'Tributación')).toHaveAttribute('aria-expanded', 'true')
     await page.getByRole('button', { name: 'Plegar todo', exact: true }).click()
     await expect(pregunta(page, '¿Cuál es la tasa general del IGV?')).toHaveCount(0)
-    // El aviso lleva a su criterio abierto y a esa pregunta
-    await balance.getByRole('button', { name: /^La pregunta 2/ }).click()
+    // La pastilla lleva a su criterio abierto y a esa pregunta
+    await balance.getByRole('button', { name: '1 por arreglar' }).click()
     await expect(pregunta(page, '¿Cuál es la tasa general del IGV?')).toBeVisible()
     await expect(plegador(page, 'Tributación')).toHaveAttribute('aria-expanded', 'true')
 
@@ -421,21 +427,34 @@ test.describe('Un editor de la prueba técnica más simple', () => {
     await entrarAlPanel(page)
     await page.goto(`/admin/vacantes/${v}/prueba`)
     const bloque = criterio(page, 'Cálculo')
-    // Sale desplegado por su falta, y nada dice que esa parte la califique la IA o una persona.
+    // Sale desplegado por su falta, que dice bajo su línea, y nada dice que esa parte la califique la IA o una persona.
     await expect(bloque.locator('header').first()).toContainText('30 pts (sistema 25 + 5 sin asignar)', { timeout: 20_000 })
-    await expect(bloque).toContainText('Parte calificada: 5 pts · falta decir quién la califica')
+    await expect(bloque.getByRole('list', { name: 'Lo que le falta al criterio' })).toContainText(
+      'El criterio «Cálculo»: falta decir quién califica su parte calificada',
+    )
+    await expect(bloque).not.toContainText(/los califica (la IA|una persona)/)
 
+    // La pastilla va en el orden de la página: los puntos, la fecha (en la configuración) y el
+    // criterio, que tiene dos (quién califica y que nada mira) y es una sola parada: su lápiz.
     await page.getByRole('button', { name: 'Plegar todo', exact: true }).click()
-    await cabecera(page).getByRole('button', { name: /^El criterio «Cálculo»: falta decir quién califica/ }).click()
+    const pastilla = cabecera(page).getByRole('button', { name: '4 por arreglar' })
+    await pastilla.click()
+    await expect(page.locator('#criterios-y-preguntas')).toBeFocused()
+    await pastilla.click()
+    await expect(page.getByRole('dialog', { name: 'Configuración de la prueba' }).getByLabel('Fecha límite para dar la prueba')).toBeFocused()
+    await page.keyboard.press('Escape')
+    await expect(page.getByRole('dialog', { name: 'Configuración de la prueba' })).toHaveCount(0)
+    await pastilla.click()
     await expect(plegador(page, 'Cálculo')).toHaveAttribute('aria-expanded', 'true')
     const form = page.getByRole('form', { name: 'Editar el criterio Cálculo' })
-    const quien = form.getByRole('combobox', { name: 'Quién califica los otros 5 puntos' })
+    const quien = form.getByRole('combobox', { name: 'Quién califica los 5 puntos de abiertas y archivos' })
     await expect(quien).toBeFocused()
     await expect(quien).toHaveValue('')
     await quien.selectOption('PERSONA')
     await form.getByRole('button', { name: 'Guardar el criterio' }).click()
     await expect(bloque.locator('header').first()).toContainText('30 pts (sistema 25 + persona 5)', { timeout: 20_000 })
-    await expect(cabecera(page)).not.toContainText('falta decir quién califica')
+    await expect(bloque.getByRole('list', { name: 'Lo que le falta al criterio' })).not.toContainText('falta decir quién califica')
+    await expect(cabecera(page).getByRole('button', { name: '3 por arreglar' })).toBeVisible()
     expect(await calculo()).toMatchObject({ puntos: 30, puntosCalificados: 5, calificador: 'PERSONA' })
   })
 })

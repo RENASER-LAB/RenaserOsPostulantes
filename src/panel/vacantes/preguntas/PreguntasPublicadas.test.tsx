@@ -269,13 +269,14 @@ describe('cambiar los puntos de la prueba publicada (V69)', () => {
     const form = screen.getByRole('form', { name: 'Cambiar los puntos' })
     const total = within(form).getByRole('spinbutton', { name: 'Puntos del criterio «Contable»' }) as HTMLInputElement
     expect(total.value).toBe('100')
-    expect(form.textContent).toContain('Sus cerradas suman 60. Los otros 40 los califica la IA.')
+    // El reparto, con el formato del lápiz y sin selector (AC-03).
+    expect(form.textContent).toContain('Cerradas: 60 pts · Abiertas y archivos: 40 pts, los califica la IA')
 
     // Sus preguntas salen plegadas: se despliega el criterio para cambiarlas.
     fireEvent.click(within(form).getByRole('button', { name: 'Contable' }))
     fireEvent.change(within(form).getByRole('spinbutton', { name: 'Puntos de «¿Qué libro?»' }), { target: { value: '50' } })
     fireEvent.change(within(form).getByRole('spinbutton', { name: 'Puntos de la opción «Diario»' }), { target: { value: '50' } })
-    expect(form.textContent).toContain('Sus cerradas suman 50. Los otros 50 los califica la IA.')
+    expect(form.textContent).toContain('Cerradas: 50 pts · Abiertas y archivos: 50 pts, los califica la IA')
     expect(form.textContent).toContain('Suma de lo escrito: 100 de 100.')
 
     fireEvent.change(total, { target: { value: '40' } })
@@ -286,7 +287,7 @@ describe('cambiar los puntos de la prueba publicada (V69)', () => {
     // Un total que no es un entero de 0 a 100 no se reparte: se dice qué está mal.
     fireEvent.change(total, { target: { value: '150' } })
     expect(within(form).getByText('Los puntos del criterio van de 0 a 100.')).toBeTruthy()
-    expect(form.textContent).not.toContain('Los otros')
+    expect(form.textContent).not.toContain('Abiertas y archivos')
     fireEvent.change(total, { target: { value: '25.5' } })
     expect(within(form).getByText('Los puntos del criterio tienen que ser un número entero, sin decimales.')).toBeTruthy()
 
@@ -486,9 +487,11 @@ describe('la prueba publicada se lee plegada', () => {
       const form = abrirElFormulario()
       for (const nombre of ['Contable', 'Excel']) {
         expect(criterio(nombre).querySelector('header')!.contains(totalDe(form, nombre))).toBe(true)
+        // Con su total al final de la línea, los puntos siguen tras el nombre (AC-12).
+        expect(criterio(nombre).querySelector('header')!.className).not.toContain('cabeceraSinBotones')
         expect(desplegado(nombre)).toBe(false)
       }
-      expect(form.textContent).toContain('Sus cerradas suman 20. Los otros 40 los califica la IA.')
+      expect(form.textContent).toContain('Cerradas: 20 pts · Abiertas y archivos: 40 pts, los califica la IA')
       expect(within(form).queryByRole('spinbutton', { name: 'Puntos de «¿Qué libro?»' })).toBeNull()
       fireEvent.click(within(form).getByRole('button', { name: 'Desplegar todo' }))
       expect(within(form).getByRole('spinbutton', { name: 'Puntos de «¿Qué libro?»' })).toBeTruthy()
@@ -685,5 +688,46 @@ describe('«Cambiar los puntos» del banco (QA-13)', () => {
     expect(await within(form).findByRole('alert')).toBeTruthy()
     expect(desplegado('Contabilidad') || desplegado('Personal')).toBe(false)
     expect(bajar).not.toHaveBeenCalled()
+  })
+
+  it('no envía una pregunta en 25.5 ni en 150, ni una opción fuera de −100 a 100: lleva a su campo (AC-10)', () => {
+    const form = abrirElDelBanco()
+    const abierta = within(form).getByRole('spinbutton', {
+      name: 'Puntos de «Cuéntanos un cierre con un descuadre»',
+    }) as HTMLInputElement
+    // Desplegada, el navegador la frena por sus límites, que son los del servidor.
+    expect([abierta.min, abierta.max, abierta.step]).toEqual(['0', '100', '1'])
+    const opcion = within(form).getByRole('spinbutton', { name: 'Puntos de la opción «Por antigüedad»' }) as HTMLInputElement
+    expect([opcion.min, opcion.max]).toEqual(['-100', '100'])
+
+    // Plegada no hay campo que frenar: se despliega su criterio y se lleva a él.
+    const plegarContabilidad = () => fireEvent.click(within(criterio('Contabilidad')).getByRole('button', { name: 'Contabilidad' }))
+    for (const escrito of ['25.5', '150', '-1']) {
+      fireEvent.change(within(form).getByRole('spinbutton', { name: 'Puntos de «Cuéntanos un cierre con un descuadre»' }), {
+        target: { value: escrito },
+      })
+      plegarContabilidad()
+      expect(desplegado('Contabilidad')).toBe(false)
+      fireEvent.submit(form)
+      expect(desplegado('Contabilidad')).toBe(true)
+      expect(document.activeElement).toBe(
+        within(form).getByRole('spinbutton', { name: 'Puntos de «Cuéntanos un cierre con un descuadre»' }),
+      )
+    }
+    fireEvent.change(within(form).getByRole('spinbutton', { name: 'Puntos de «Cuéntanos un cierre con un descuadre»' }), {
+      target: { value: '60' },
+    })
+    fireEvent.change(within(form).getByRole('spinbutton', { name: 'Puntos de la opción «Al azar»' }), {
+      target: { value: '-150' },
+    })
+    fireEvent.click(within(criterio('Personal')).getByRole('button', { name: 'Personal' }))
+    fireEvent.submit(form)
+    expect(document.activeElement).toBe(within(form).getByRole('spinbutton', { name: 'Puntos de la opción «Al azar»' }))
+    expect(cambiar).not.toHaveBeenCalled()
+  })
+
+  it('su línea no lleva campo: los puntos del criterio van al borde derecho; en la prueba, con su total, no (AC-12)', () => {
+    abrirElDelBanco()
+    expect(criterio('Contabilidad').querySelector('header')!.className).toContain('cabeceraSinBotones')
   })
 })

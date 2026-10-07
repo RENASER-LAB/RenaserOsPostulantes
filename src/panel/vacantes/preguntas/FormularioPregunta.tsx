@@ -8,6 +8,11 @@
  * Los puntos se escriben en enteros. Si alguien pone decimales no se redondea
  * aqui: el servidor lo rechaza con la lista de lo que falta, que es la misma que
  * se pinta al publicar.
+ *
+ * Bajo las opciones o niveles avisa en vivo, con las palabras del servidor, de lo
+ * que frenará publicar por sus puntos (una opción que pasa de la pregunta, ninguna
+ * que la dé entera…). No frena el guardado: es un borrador, y guardada así la
+ * tarjeta queda en ámbar con esas mismas faltas.
  */
 
 import { useId, useState } from 'react'
@@ -23,6 +28,7 @@ import { IconoCruz, IconoMas } from '@/ui/Iconos'
 import { falloDe, type Fallo } from './consultas'
 import {
   TIPOS,
+  avisosDeLosPuntos,
   conOtroTipo,
   esCerrada,
   faltaEvidente,
@@ -75,6 +81,8 @@ export function FormularioPregunta({
   const minimo = escala ? 3 : 2
   const evidente = faltaEvidente(p, sinPuntosEnAbiertas)
   const conPuntos = !(sinPuntosEnAbiertas && p.tipo === 'ABIERTA')
+  // Lo que frenará publicar, mientras se escribe: no frena guardar ni mueve el foco.
+  const avisos = avisosDeLosPuntos(p)
 
   const opcion = (i: number, campo: 'texto' | 'puntos', valor: string) =>
     setP((v) => ({
@@ -217,6 +225,15 @@ export function FormularioPregunta({
               </BotonIcono>
             </div>
           ))}
+          {avisos.length > 0 && (
+            <div className={estilos.aviso} role="status">
+              {avisos.map((a) => (
+                <p className={estilos.lineaDeAviso} key={a}>
+                  {a}
+                </p>
+              ))}
+            </div>
+          )}
           {p.opciones.length < 10 && (
             <button
               className={estilos.secundarioPequeno}

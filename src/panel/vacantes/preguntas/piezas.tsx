@@ -1,6 +1,6 @@
 /**
  * Piezas pequeñas que comparten los bloques del editor: el fallo (con su lista
- * cuando la hay) y el boton de icono de 44 px.
+ * cuando la hay), el boton de icono de 44 px y las faltas escritas en su sitio.
  */
 
 import type { ReactNode } from 'react'
@@ -56,5 +56,20 @@ export function BotonIcono({
     >
       {children}
     </button>
+  )
+}
+
+/**
+ * Lo que frena publicar, escrito en su sitio —la tarjeta, el criterio, el
+ * archivo, arriba de los criterios—, en el ámbar de las faltas. Sin faltas, nada.
+ */
+export function ListaDeFaltas({ faltas, nombre }: { faltas: string[] | undefined; nombre: string }) {
+  if (!faltas || faltas.length === 0) return null
+  return (
+    <ul className={estilos.faltasEnSuSitio} aria-label={nombre}>
+      {faltas.map((f) => (
+        <li key={f}>{f}</li>
+      ))}
+    </ul>
   )
 }

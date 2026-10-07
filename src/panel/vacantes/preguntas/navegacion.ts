@@ -1,9 +1,9 @@
 /**
  * Adónde lleva cada falta y qué criterios salen desplegados (V68).
  *
- * Los dos editores —la prueba técnica y las preguntas propias— pintan sus
- * avisos como botones que llevan a donde se arreglan. **Los avisos los escribe
- * el servidor** y aquí solo se leen: «Los puntos suman…» lleva a los criterios,
+ * Los dos editores —la prueba técnica y las preguntas propias— llevan desde
+ * cada falta a donde se arregla. **Los avisos los escribe el servidor** y aquí
+ * solo se leen: «Los puntos suman…» lleva a los criterios,
  * «El criterio «X»…» y «Las cerradas de «X»…» a ese criterio abierto (si falta
  * quién califica, a su lápiz con el cursor en «Quién califica»), «La pregunta 3…» a su criterio y a
  * esa pregunta, un entregable a su pregunta o a los generales, y el tiempo y la
@@ -12,6 +12,11 @@
  *
  * La numeración de «La pregunta 3» es la del servidor: los criterios en su
  * orden, cada uno con sus preguntas, y al final las que no tienen criterio.
+ *
+ * La cabecera no enseña la lista: cada falta se escribe en su sitio (la
+ * tarjeta, la línea del criterio, el entregable, la configuración o el total) y
+ * la pastilla «⚠ N por arreglar →» lleva de una en una, en el orden de la
+ * página (`useIrALasFaltas`). «Publicar» con faltas lleva a la primera.
  */
 
 import { useState } from 'react'
@@ -38,16 +43,34 @@ export function numerosDePreguntas(v: Pick<VersionDePreguntas, 'criterios' | 'si
 }
 
 const LA_PREGUNTA = /^La pregunta (\d+)\b/
-// «Las cerradas de «X» suman 40 y el criterio vale 30» (V69) también es de un criterio.
+// «Las cerradas de «X» suman 40 y el criterio vale 30» (V69) también es de un criterio, y
+// «El criterio «X» vale 20 y sus cerradas suman 5: nadie puede calificar…» lleva a ese
+// criterio: empieza por «El criterio», así que nunca se toma por un entregable «X».
 const EL_CRITERIO = /^(?:El criterio|Las cerradas de) «(.+?)»/
 const UN_ENTREGABLE = /^«(.+?)»/
 // «El criterio «X»: falta decir quién califica su parte calificada…» se arregla en su lápiz.
 const SIN_CALIFICADOR = /^El criterio «.+?»: falta decir quién califica/
+// «Los puntos suman 85 de 100: faltan 15.»: la del total, que se dice con el balance.
+const LOS_PUNTOS = /^Los puntos suman /
+
+/** El campo de la configuración que arregla una falta: el tiempo, la fecha o ninguno. */
+export function campoDeLaFalta(aviso: string): CampoDeLaConfiguracion | null {
+  if (/^(Falta la fecha límite|La fecha límite)/.test(aviso)) return 'fecha'
+  if (/^(Falta el tiempo|Faltan los minutos)/.test(aviso)) return 'tiempo'
+  return null
+}
+
+/** El entregable que nombra una falta que empieza por «Su nombre». */
+function entregableDelAviso(aviso: string, v: VersionDePreguntas): EntregableDeLaVersion | null {
+  const nombre = UN_ENTREGABLE.exec(aviso)?.[1]
+  if (nombre === undefined) return null
+  return (v.prueba?.entregables ?? []).find((e) => e.nombre === nombre) ?? null
+}
 
 /** Adónde lleva un aviso del servidor. */
 export function destinoDelAviso(aviso: string, v: VersionDePreguntas): Destino {
-  if (/^(Falta la fecha límite|La fecha límite)/.test(aviso)) return { tipo: 'CONFIGURACION', campo: 'fecha' }
-  if (/^(Falta el tiempo|Faltan los minutos)/.test(aviso)) return { tipo: 'CONFIGURACION', campo: 'tiempo' }
+  const campo = campoDeLaFalta(aviso)
+  if (campo) return { tipo: 'CONFIGURACION', campo }
   const pregunta = LA_PREGUNTA.exec(aviso)
   if (pregunta) {
     const encontrada = preguntasEnOrden(v)[Number(pregunta[1]) - 1]
@@ -62,11 +85,8 @@ export function destinoDelAviso(aviso: string, v: VersionDePreguntas): Destino {
         : { tipo: 'CRITERIO', criterioId: encontrado.id }
     }
   }
-  const entregable = UN_ENTREGABLE.exec(aviso)
-  if (entregable) {
-    const encontrado = (v.prueba?.entregables ?? []).find((e) => e.nombre === entregable[1])
-    if (encontrado) return destinoDelEntregable(encontrado, v)
-  }
+  const entregable = entregableDelAviso(aviso, v)
+  if (entregable) return destinoDelEntregable(entregable, v)
   return { tipo: 'CRITERIOS' }
 }
 
@@ -85,12 +105,99 @@ export function criterioDeLaFalta(d: Destino): number | null {
   return null
 }
 
-/** Las faltas de cada criterio, en el orden en que llegan. */
-export function faltasPorCriterio(v: VersionDePreguntas | null): Map<number, string[]> {
+/** Los avisos de la versión agrupados por el id que diga `clave`, en el orden en que llegan. */
+function agrupar(v: VersionDePreguntas | null, clave: (aviso: string, v: VersionDePreguntas) => number | null) {
   const salida = new Map<number, string[]>()
   for (const aviso of v?.avisos ?? []) {
-    const id = criterioDeLaFalta(destinoDelAviso(aviso, v!))
+    const id = clave(aviso, v!)
     if (id !== null) salida.set(id, [...(salida.get(id) ?? []), aviso])
+  }
+  return salida
+}
+
+/** Las faltas de cada criterio, también las de sus preguntas: para su punto ámbar y su línea plegada. */
+export function faltasPorCriterio(v: VersionDePreguntas | null): Map<number, string[]> {
+  return agrupar(v, (aviso, version) => criterioDeLaFalta(destinoDelAviso(aviso, version)))
+}
+
+/**
+ * Las faltas del propio criterio —sus puntos, quién califica, que tenga algo que
+ * calificar—, sin las de sus preguntas: se escriben bajo su línea desplegada.
+ */
+export function faltasPropiasPorCriterio(v: VersionDePreguntas | null): Map<number, string[]> {
+  return agrupar(v, (aviso, version) => {
+    const d = destinoDelAviso(aviso, version)
+    return d.tipo === 'CRITERIO' ? d.criterioId : null
+  })
+}
+
+/** Las faltas de cada entregable, por su id: «Informe final» no cubre…, «Flujo.xlsx»: nadie lo califica… */
+export function faltasPorEntregable(v: VersionDePreguntas | null): Map<number, string[]> {
+  return agrupar(v, (aviso, version) => entregableDelAviso(aviso, version)?.id ?? null)
+}
+
+/**
+ * Las faltas sin un sitio propio —ni criterio, ni pregunta, ni archivo, ni
+ * configuración—: «Todavía no hay ningún criterio…». Se escriben arriba de
+ * «Criterios y preguntas», adonde llevan. La del total no: va con el balance.
+ */
+export function faltasSinSitio(avisos: string[], v: VersionDePreguntas): string[] {
+  return avisos.filter((a) => !LOS_PUNTOS.test(a) && destinoDelAviso(a, v).tipo === 'CRITERIOS')
+}
+
+/**
+ * La falta del total, para decirla con el balance en ámbar: la del servidor o,
+ * si no la da (nada escrito todavía), la misma cuenta. Sin faltas, o en 100, ninguna.
+ */
+export function faltaDelTotal(avisos: string[], total: number): string | null {
+  if (avisos.length === 0 || total === 100) return null
+  const delServidor = avisos.find((a) => LOS_PUNTOS.test(a))
+  if (delServidor) return delServidor
+  return total < 100
+    ? `Los puntos suman ${total} de 100: faltan ${100 - total}.`
+    : `Los puntos suman ${total} de 100: sobran ${total - 100}.`
+}
+
+/**
+ * Cómo nombra el servidor a una pregunta en sus faltas (`ReglasDePuntos.nombreDe`):
+ * «La pregunta 3», o con el principio del enunciado, «La pregunta 3 («¿Qué libro…»)».
+ */
+function nombreDeLaPregunta(numero: number, enunciado: string): string {
+  const texto = enunciado.trim()
+  if (texto === '') return `La pregunta ${numero}`
+  const corto = texto.length <= 40 ? texto : `${texto.slice(0, 39)}…`
+  return `La pregunta ${numero} («${corto}»)`
+}
+
+// Por si el enunciado cambió desde que el servidor escribió la falta.
+const NOMBRE_DE_LA_PREGUNTA = /^La pregunta \d+(?: \(«[^»]*»\))?: /
+
+/**
+ * Una falta del servidor sin «La pregunta N («…»): » y con mayúscula, como se
+ * escribe bajo la tarjeta de su pregunta: «Ninguna opción puede pasar de los 5
+ * puntos de la pregunta.».
+ */
+export function sinElNombreDeLaPregunta(falta: string, numero: number, enunciado: string): string {
+  const nombre = `${nombreDeLaPregunta(numero, enunciado)}: `
+  const resto = falta.startsWith(nombre) ? falta.slice(nombre.length) : falta.replace(NOMBRE_DE_LA_PREGUNTA, '')
+  return resto.charAt(0).toUpperCase() + resto.slice(1)
+}
+
+/**
+ * Las faltas de cada pregunta, por su id y en el orden del servidor: las que
+ * empiezan por «La pregunta N» (sus puntos, su forma, «no está en ningún
+ * criterio»), sin ese nombre. Las de un entregable no: van en el entregable.
+ */
+export function faltasPorPregunta(v: VersionDePreguntas | null): Map<number, string[]> {
+  const salida = new Map<number, string[]>()
+  if (!v) return salida
+  const enOrden = preguntasEnOrden(v)
+  for (const aviso of v.avisos ?? []) {
+    const numero = Number(LA_PREGUNTA.exec(aviso)?.[1])
+    const pregunta = enOrden[numero - 1]
+    if (!pregunta) continue
+    const falta = sinElNombreDeLaPregunta(aviso, numero, pregunta.enunciado)
+    salida.set(pregunta.id, [...(salida.get(pregunta.id) ?? []), falta])
   }
   return salida
 }
@@ -112,11 +219,15 @@ export function idDelDestino(d: Destino): string {
   }
 }
 
+/** Lo que dura en ámbar el sitio al que se llega desde una falta. */
+export const RESALTE_MS = 1600
+
 /**
- * Baja hasta el destino y le pone el foco, cuando ya está pintado. Dos
- * `requestAnimationFrame`: el primero deja que React despliegue el criterio, el
- * segundo que el navegador lo coloque. Con `campo`, el foco va al selector de
- * su lápiz abierto; si no está (en lectura), al criterio.
+ * Baja hasta el destino, le pone el foco y lo resalta un momento, cuando ya
+ * está pintado: con el ratón el foco no se ve, y hay que saber adónde se llegó.
+ * Dos `requestAnimationFrame`: el primero deja que React despliegue el
+ * criterio, el segundo que el navegador lo coloque. Con `campo`, el foco va al
+ * selector de su lápiz abierto; si no está (en lectura), al criterio.
  */
 export function bajarHasta(d: Destino): void {
   requestAnimationFrame(() =>
@@ -127,8 +238,84 @@ export function bajarHasta(d: Destino): void {
       const campo = d.tipo === 'CRITERIO' && d.campo ? document.getElementById(idDelCalificador(d.criterioId)) : null
       const foco = campo ?? destino
       foco.focus({ preventScroll: true })
+      destino.setAttribute('data-resaltado', '')
+      window.setTimeout(() => destino.removeAttribute('data-resaltado'), RESALTE_MS)
     }),
   )
+}
+
+// ---------- «⚠ N por arreglar →» ----------
+
+/** Un sitio con faltas: adónde lleva, cómo se reconoce y su lugar en la página. */
+export interface Parada {
+  destino: Destino
+  clave: string
+  posicion: number
+}
+
+/** Dos faltas con la misma clave se arreglan en el mismo sitio: una sola parada. */
+function claveDelDestino(d: Destino): string {
+  return d.tipo === 'CONFIGURACION' ? `configuracion-${d.campo}` : idDelDestino(d)
+}
+
+/**
+ * Los sitios de la página de arriba abajo: la cabecera —el total, que lleva a los
+ * criterios, y la configuración, el tiempo antes que la fecha como en su panel—,
+ * cada criterio seguido de sus preguntas, las que no tienen criterio y los
+ * entregables generales.
+ */
+function sitiosEnOrden(v: VersionDePreguntas): string[] {
+  return [
+    idDelDestino({ tipo: 'CRITERIOS' }),
+    'configuracion-tiempo',
+    'configuracion-fecha',
+    ...v.criterios.flatMap((c) => [`criterio-${c.id}`, ...c.preguntas.map((p) => `pregunta-${p.id}`)]),
+    ...v.sinCriterio.map((p) => `pregunta-${p.id}`),
+    ...(v.prueba?.entregables ?? []).map((e) => `entregable-${e.id}`),
+  ]
+}
+
+/** Los sitios con faltas, sin repetir y en el orden de la página; uno que no está en ella, al final. */
+export function paradasDeLasFaltas(avisos: string[], v: VersionDePreguntas): Parada[] {
+  const orden = sitiosEnOrden(v)
+  const paradas = new Map<string, Parada>()
+  for (const aviso of avisos) {
+    const destino = destinoDelAviso(aviso, v)
+    const clave = claveDelDestino(destino)
+    const posicion = orden.indexOf(clave)
+    if (!paradas.has(clave)) paradas.set(clave, { destino, clave, posicion: posicion === -1 ? orden.length : posicion })
+  }
+  return [...paradas.values()].sort((a, b) => a.posicion - b.posicion)
+}
+
+/**
+ * La parada que sigue a la última visitada, en el orden de la página; tras la
+ * última, la primera. Si la visitada ya no está (se arregló), sigue por la que
+ * venía después de su sitio; si su sitio desapareció, vuelve a empezar.
+ */
+export function siguienteParada(paradas: Parada[], ultima: string | null, v: VersionDePreguntas): Parada | undefined {
+  const desde = ultima === null ? -1 : sitiosEnOrden(v).indexOf(ultima)
+  return paradas.find((p) => p.posicion > desde) ?? paradas[0]
+}
+
+/**
+ * La pastilla «⚠ N por arreglar →» y «Publicar» con faltas, los mismos en los dos
+ * editores: `siguiente` lleva, en cada clic, a la siguiente falta en el orden de la
+ * página (cicla al final); `primera`, a la primera.
+ */
+export function useIrALasFaltas(avisos: string[], v: VersionDePreguntas, alIr: (d: Destino) => void) {
+  const [ultima, setUltima] = useState<string | null>(null)
+  const paradas = paradasDeLasFaltas(avisos, v)
+  const ir = (p: Parada | undefined) => {
+    if (!p) return
+    setUltima(p.clave)
+    alIr(p.destino)
+  }
+  return {
+    cuantas: avisos.length,
+    siguiente: () => ir(siguienteParada(paradas, ultima, v)),
+    primera: () => ir(paradas[0]),
+  }
 }
 
 /**
