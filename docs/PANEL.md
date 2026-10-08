@@ -1095,6 +1095,39 @@ Comprobarlo: `npx playwright test herramientas/e2e/54-reparto-y-avisos-de-los-pu
 herramientas/e2e/55-reparto-y-avisos-de-los-puntos-qa.spec.ts`. ⚠️ **Escriben** en el clon y lo
 retiran al terminar (marca `QA-PE-0067`); la IA va apagada. Lo visual lo comprueba el usuario.
 
+### La nota del perfil «en camino» (07/10)
+
+Desde el 07/10/2026, en una vacante con «calificar y avanzar sola» y prueba montada, el candidato
+pasa a la prueba **al entregar el banco** (o al postular, sin banco), sin esperar a la IA. Así
+puede estar ya rindiendo su prueba con la nota del Perfil Integral por llegar, y la celda decía
+«en otra etapa»: verdad, pero parecía que nadie lo iba a calificar.
+
+- **En la pestaña «Perfil integral»**, una fila sin nota con la calificación en curso
+  (`estadoCalificacion = EN_CURSO`) dice **«en camino»** en la celda, y la ficha escribe «Nota en
+  camino: la IA la está calculando y aparecerá aquí cuando termine.» (`notaEnCamino` y
+  `NOTA_EN_CAMINO`, en `ranking.ts`).
+- **Solo con un trabajo vivo**: sin trabajo no hay nada en camino —la IA puede estar apagada— y
+  con uno fallido se enseña el fallo de siempre. En las demás pestañas no sale, porque
+  `estadoCalificacion` habla del retrato y no de las otras etapas.
+- **El historial de la ficha** dice el motivo del paso: «Pase automático al entregar: la nota se
+  calcula después» (o «al postular»).
+- Cuando la IA termina, la nota y el veredicto aparecen como en cualquier otra fila; el candidato
+  no se mueve de la prueba.
+
+El resto de la entrega —la campana en cada etapa, los recordatorios y el correo de la prueba— no
+tiene pantalla en el panel: ver «Cómo se entera el candidato de cada paso» en `docs/` del
+backend, `03-ESTADOS-POSTULACION.md`. Los recordatorios se apagan o se ajustan por empresa en
+Configuración, en la lista de parámetros, donde los tres nuevos (`recordatorios_activos`,
+`recordatorio_horas_tras_el_turno` y `recordatorio_horas_antes_del_plazo`) salen sin cambiar la
+pantalla. Sus dos textos de correo, `RECORDATORIO_EVALUACION` y `RECORDATORIO_PRUEBA`, son
+editables como los demás textos de correo, que el panel no enseña: se leen con
+`scripts/textos-de-correo.py` del backend.
+
+Comprobarlo: `npx playwright test herramientas/e2e/54-la-prueba-al-instante.spec.ts
+herramientas/e2e/55-la-prueba-al-instante-qa.spec.ts`. ⚠️ **Escriben** en el clon y lo retiran
+al terminar (marca `QA-PE-0067`); la IA va apagada. Las unitarias, en `ranking.test.ts` («la nota
+del perfil en camino (V70)») y `Vacante.test.tsx`.
+
 ### La sección «Pruebas» se retiró (05/10)
 
 Al abrir una versión, esa sección pedía el catálogo de preguntas de toda la plataforma, así que

@@ -14,6 +14,37 @@ Desde el 05/10 el diseño se trabaja con las skills de Emil Kowalski (`emil-desi
 
 ---
 
+## La prueba al instante, la campana en cada etapa y los recordatorios (07/10/2026)
+
+Muchos candidatos se perdían entre una etapa y la siguiente: entregaban el banco, leían «Te
+avisaremos cuando avance», cerraban la página y no volvían. Y el pase automático nunca miró la
+nota, así que esa espera no filtraba a nadie.
+
+- **Portal.** Al entregar la evaluación o al postular, el portal vuelve a pedir la postulación y,
+  si una vacante con pase automático ya le abrió la prueba, lo lleva a su portada con «Tu prueba
+  del puesto ya está disponible»; si no, «Evaluación entregada. Te avisaremos por correo y en la
+  campana cuando te toque la prueba.». Se pregunta en vez de suponer porque la respuesta de
+  entregar no dice si hubo pase (`laPruebaAlInstante.ts`). La campana se vuelve a pedir al
+  abrirla y tras entregar, postular o retirarse. Ver
+  [02-QUE-VE-EL-CANDIDATO](02-QUE-VE-EL-CANDIDATO.md), 2.5, 2.6 y 2.8.
+- **Panel.** La nota del Perfil Integral que la IA sigue calculando se lee «en camino», en la
+  celda y en la ficha. Ver [PANEL](PANEL.md) › La nota del perfil «en camino».
+- **Backend, sin pantalla aquí**: cada cambio de etapa que manda correo deja aviso en la campana;
+  recordatorios del banco sin entregar y de la prueba sin empezar; y el plazo del correo de la
+  prueba dice el tiempo y la fecha límite. Cómo funciona, en `03-ESTADOS-POSTULACION.md` del
+  backend.
+
+**Quedaron fuera**, anotados en [PENDIENTES](PENDIENTES.md): comprobar en producción que el correo
+llega y qué dice el texto activo, «Prueba incompleta» a quien sigue en plazo (#49), el
+desplegable de la campana a 375 px, «Respondiste las 1 preguntas» y el bot de WhatsApp.
+
+**Cómo se comprueba:** `54-la-prueba-al-instante` y `55-la-prueba-al-instante-qa` sobre el clon
+(escriben y lo retiran, marca `QA-PE-0067`; la IA apagada), y las unitarias de
+`PostularAlInstante.test.tsx`, `Evaluacion.test.tsx`, `ranking.test.ts` y `Vacante.test.tsx`.
+La llegada del correo la comprueba el usuario en producción.
+
+---
+
 ## `/vacantes`: la columna de filtros y un ancho propio (06/10/2026)
 
 Con la skill `prototype` se montó la **pantalla entera** en cuatro disposiciones, en una página
