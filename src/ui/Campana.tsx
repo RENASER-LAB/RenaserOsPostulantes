@@ -151,7 +151,12 @@ export function Campana() {
         ref={boton}
         type="button"
         className={estilos.boton}
-        onClick={() => setAbierta((estaba) => !estaba)}
+        onClick={() => {
+          // Al abrirla, lo de ahora y no lo de hace un rato: un aviso que llegó por una
+          // acción de otra pantalla o del equipo no puede esperar a que se recargue (AC-10).
+          if (!abierta) void consulta.refetch()
+          setAbierta(!abierta)
+        }}
         aria-expanded={abierta}
         aria-haspopup="dialog"
         // El nombre lleva la cuenta: quien usa lector de pantalla no ve el

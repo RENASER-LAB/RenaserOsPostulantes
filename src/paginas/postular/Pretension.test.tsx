@@ -18,6 +18,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { ProveedorAvisos } from '@/ui/Avisos'
 import { Postular } from './Postular'
 
 const BASE = {
@@ -100,11 +101,13 @@ function montar() {
   })
   return render(
     <QueryClientProvider client={datos}>
-      <MemoryRouter initialEntries={['/vacantes/7/postular']}>
-        <Routes>
-          <Route path="/vacantes/:vacanteId/postular" element={<Postular />} />
-        </Routes>
-      </MemoryRouter>
+      <ProveedorAvisos>
+        <MemoryRouter initialEntries={['/vacantes/7/postular']}>
+          <Routes>
+            <Route path="/vacantes/:vacanteId/postular" element={<Postular />} />
+          </Routes>
+        </MemoryRouter>
+      </ProveedorAvisos>
     </QueryClientProvider>,
   )
 }

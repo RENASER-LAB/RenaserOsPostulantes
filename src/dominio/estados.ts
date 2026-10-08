@@ -338,6 +338,34 @@ export function quedoSinCompletar(postulacion: ConSuPrueba): boolean {
  * Le toca al candidato, mirando la postulación entera y no solo su estado: una prueba que
  * quedó sin completar ya no es algo que él pueda hacer.
  */
+/** Lo que dice el portal cuando la prueba se le abre en el mismo momento (V70). */
+export const PRUEBA_YA_DISPONIBLE = 'Tu prueba del puesto ya está disponible'
+
+/** Lo que dice cuando, al entregar el banco, todavía le toca esperar (V70). */
+export const EVALUACION_ENTREGADA_A_LA_ESPERA =
+  'Evaluación entregada. Te avisaremos por correo y en la campana cuando te toque la prueba.'
+
+/**
+ * La portada de su prueba, si ya puede rendirla; `null` si le toca esperar.
+ *
+ * Es la pregunta que se hace justo después de entregar el banco o de postular: en una
+ * vacante con pase automático la prueba se abre en la misma respuesta (V70) y el portal lo
+ * lleva directo a ella —la portada, con el reloj sin arrancar—. Depende de lo que rinda la
+ * vacante: la prueba del puesto o el cuestionario técnico.
+ *
+ * ⚠️ Una prueba que ya quedó sin completar no es una portada a la que llevar a nadie.
+ */
+export function portadaDeLaPrueba(
+  postulacion: ConSuPrueba & { uuid: string; instrumentoEtapaTecnica: string | null },
+): string | null {
+  if (postulacion.estado !== 'PRUEBA_TURNO_CANDIDATO' || quedoSinCompletar(postulacion)) {
+    return null
+  }
+  return postulacion.instrumentoEtapaTecnica === 'CUESTIONARIO_TECNICO'
+    ? rutas.cuestionarioTecnico(postulacion.uuid)
+    : rutas.prueba(postulacion.uuid)
+}
+
 export function leTocaAlCandidatoEn(postulacion: ConSuPrueba): boolean {
   return leTocaAlCandidato(postulacion.estado) && !quedoSinCompletar(postulacion)
 }

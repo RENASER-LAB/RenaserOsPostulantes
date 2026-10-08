@@ -243,6 +243,38 @@ describe('la campana', () => {
     ])
   })
 
+  it('AC-10: al abrirla vuelve a pedir los avisos, y trae el que llegó mientras tanto', async () => {
+    // El aviso de la prueba llega por una acción de otra pantalla (entregar, postular) o del
+    // equipo: lo cargado al entrar ya no lo tiene, y antes no aparecía hasta recargar.
+    montar()
+    await waitFor(() => expect(vecesQueSePidio).toBe(1))
+    expect(screen.getByRole('button', { name: 'Avisos' })).toBeTruthy()
+
+    avisos = {
+      sinLeer: 1,
+      avisos: [{ ...UN_AVISO, titulo: 'Tu prueba del puesto está disponible · Analista' }],
+    }
+    fireEvent.click(screen.getByRole('button', { name: 'Avisos' }))
+
+    expect(await screen.findByText('Tu prueba del puesto está disponible · Analista')).toBeTruthy()
+    expect(vecesQueSePidio).toBe(2)
+    await screen.findByRole('button', { name: 'Avisos, 1 sin leer' })
+  })
+
+  it('al cerrarla no la vuelve a pedir: solo al abrir', async () => {
+    avisos = { sinLeer: 1, avisos: [UN_AVISO] }
+    montar()
+    await screen.findByRole('button', { name: /1 sin leer/i })
+    fireEvent.click(screen.getByRole('button'))
+    await screen.findByRole('dialog')
+    await waitFor(() => expect(vecesQueSePidio).toBe(2))
+
+    fireEvent.click(screen.getByRole('button', { name: /1 sin leer/i }))
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect(vecesQueSePidio).toBe(2)
+  })
+
   it('se cierra con Escape', async () => {
     avisos = { sinLeer: 1, avisos: [UN_AVISO] }
     montar()

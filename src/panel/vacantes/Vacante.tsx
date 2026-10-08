@@ -113,6 +113,8 @@ import {
   ordenar,
   porQueNoHayNota,
   porQueNoHayNotaCorto,
+  NOTA_EN_CAMINO,
+  notaEnCamino,
   desgloseDelPonderado,
   pretensionDicha,
   queTraeLaTanda,
@@ -2582,7 +2584,7 @@ function DetalleDelPostulante({
           <Validacion postulacionId={fila.postulacionId} />
         ) : (
           <>
-            <LoQueCalificoLaIA fila={fila} />
+            <LoQueCalificoLaIA fila={fila} etapa={etapa} />
             {/*
               Solo en Perfil integral y no en Decision, aunque las dos ensenen
               el mismo retrato: recalificar es rehacer la preseleccion, y
@@ -2629,7 +2631,7 @@ function DetalleDelPostulante({
  *
  * En Decision se ensena esto mismo: decidir es mirar el retrato completo.
  */
-function LoQueCalificoLaIA({ fila }: { fila: FilaRanking }) {
+function LoQueCalificoLaIA({ fila, etapa }: { fila: FilaRanking; etapa: EtapaPanel }) {
   const perfil = useQuery({
     queryKey: ['panel-perfil', fila.postulacionId],
     queryFn: () => verPerfilIntegral(fila.postulacionId),
@@ -2654,6 +2656,13 @@ function LoQueCalificoLaIA({ fila }: { fila: FilaRanking }) {
   return (
     <>
       <h3 className={estilos.tituloDetalle}>Lo que calificó la IA</h3>
+
+      {/*
+        V70: con el pase al instante la persona puede estar ya en su prueba con la
+        nota del perfil por llegar. Se dice, en vez de dejar un hueco que se lee
+        como «nadie la va a calificar».
+      */}
+      {notaEnCamino(fila, etapa) && <p className={estilos.dato}>{NOTA_EN_CAMINO}.</p>}
 
       {/*
         ⚠️ **Con su procedencia dicha.** Las cuatro salen del `PerfilTalento`,
@@ -2689,7 +2698,7 @@ function LoQueCalificoLaIA({ fila }: { fila: FilaRanking }) {
       {perfil.isPending && <p className={estilos.dato}>Cargando el retrato…</p>}
       {perfil.data && (
         <>
-          {!perfil.data.resumen && !fila.resumen && (
+          {!perfil.data.resumen && !fila.resumen && !notaEnCamino(fila, etapa) && (
             <p className={estilos.dato}>
               Sin retrato todavía: la calificación está{' '}
               {perfil.data.estadoCalificacion.toLowerCase().replaceAll('_', ' ')}.

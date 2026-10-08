@@ -404,9 +404,22 @@ del examen. Por debajo de la hora ese dato desaparece y lo sustituye la cuenta
 atrás de «Queda poco plazo»: dos relojes a la vez, uno diciendo «hoy» y el otro
 `00:42:17`, se leen peor que el segundo solo.
 
+**Si no la entrega, se le recuerda** (07/10/2026): por correo y en la campana, a
+las 24 horas de que le tocara y 24 horas antes de que venza; nunca de noche (solo
+de 8:00 a 21:00, hora de Lima), una vez cada uno, y la empresa los puede apagar
+en sus parámetros.
+
+**Al entregar** (07/10/2026), si la vacante avanza sola y ya tiene su prueba
+montada, el candidato pasa en ese momento a la prueba y el portal lo lleva a su
+portada: «Tu prueba del puesto ya está disponible». La IA califica la evaluación
+por detrás, y mientras tanto el panel enseña su nota «en camino». Si no, vuelve a
+su proceso con «Evaluación entregada. Te avisaremos por correo y en la campana
+cuando te toque la prueba.». Lo mismo al postular a una vacante sin evaluación.
+
 ### 8 · La prueba del puesto
 
-**Portal · Mis procesos → la postulación → «Hacer la prueba»**
+**Portal · Mis procesos → la postulación → «Hacer la prueba»** —o directamente,
+al entregar la evaluación, en las vacantes que avanzan solas—
 
 **La hora la manda el servidor**: el cronómetro recalcula cuánto falta hasta la
 hora de vencimiento del backend descontando el desfase entre relojes, así que
@@ -418,6 +431,13 @@ cierre la pone la convocatoria y es la misma para todos. Manda **el que caiga
 antes**. Antes de empezar, la pantalla dice los dos y cuál acorta a cuál: decir
 solo los minutos dejaba a quien abriera a las 17:40 con un cierre a las 18:00
 leyendo noventa minutos cuando tenía veinte.
+
+**El correo «tu prueba está disponible» dice lo mismo** (07/10/2026): el tiempo
+y la fecha límite de esa persona, en hora de Lima —«90 minutos desde que la
+empieces, hasta el vie 10/10 a las 23:59»—, y ya no «desde este correo». El
+aviso llega también a la campana. **Si no la empieza, se le recuerda** como la
+evaluación: a las 24 horas y 24 horas antes de su plazo. Quien ya la empezó no
+recibe nada.
 
 ### 9 · La simulación
 

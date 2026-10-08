@@ -67,6 +67,13 @@ primer minuto es que haya evaluación o no:
 pantalla que ve no tiene nada que hacer. Si el diseño no cuida ese momento, la primera impresión
 es un callejón sin salida.
 
+**Con pase automático, la espera desaparece en los dos caminos** (07/10/2026). Si la vacante
+avanza sola y ya tiene su prueba montada, al entregar la evaluación (camino A) o al postular
+(camino B, si cumple los requisitos) el candidato pasa en ese momento a
+`PRUEBA_TURNO_CANDIDATO` y el portal lo lleva a la portada de su prueba —o del cuestionario
+técnico— con el aviso «Tu prueba del puesto ya está disponible». La IA califica por detrás.
+Sin pase o sin prueba, todo como antes. Ver 2.5 y 2.8.
+
 ---
 
 ## 2. Pantalla por pantalla: qué datos existen de verdad
@@ -327,6 +334,14 @@ Lo que la pantalla sí necesita es el nombre de la empresa, y **ese ya viene con
 llamada a `GET /portal/vacantes/{id}/consentimiento` se fue de aquí y vive ahora en la política
 de privacidad, que es donde se lee el texto.
 
+**Después de enviar** (07/10/2026), el portal vuelve a pedir la postulación recién creada y mira
+dónde quedó: si una vacante sin banco con pase automático ya le abrió la prueba, lo lleva a su
+portada con «Tu prueba del puesto ya está disponible»; si no, a «Mis procesos», como siempre. La
+respuesta de postular no dice si hubo pase —corre después de guardar y puede no darse—, así que
+se pregunta en vez de suponerlo, y si esa consulta falla se va a «Mis procesos»
+(`portadaSiYaTieneLaPrueba`, en `src/paginas/procesos/laPruebaAlInstante.ts`). La campana se
+refresca en el mismo momento, porque postular puede dejar ya un aviso.
+
 ### 2.6 Mis procesos — el centro del portal
 `GET /portal/postulaciones` → por postulación: `uuid`, `vacante`, `estado`, `estadoNombre`,
 `grupoPrioridad`, `diasSinCambio`, `creadoEn`, `instrumentoEtapaTecnica` y, desde el 01/10/2026,
@@ -352,6 +367,14 @@ lo que no puede pasar es que el dato cruce de una a la otra.
 
 Lo que hay que resolver aquí: separar visualmente **lo que le toca** de las esperas, y que el
 candidato entienda `diasSinCambio` sin que parezca abandono.
+
+**La campana avisa de cada cambio de etapa** (07/10/2026). Cada paso que le manda correo —le toca
+algo, la prueba está disponible, no continúa, se cerró, confirmamos tu retiro— le deja también un
+aviso en la campana ligado a su proceso, que suma en `avisosSinLeer` de esa fila y al pulsarlo
+abre ese proceso. Lo mismo los recordatorios de la evaluación sin entregar y de la prueba sin
+empezar. Si el equipo lo movió sin avisarle, no aparece nada. La campana se vuelve a pedir al
+abrirla y después de entregar la evaluación, postular o retirarse, sin esperar a recargar la
+página.
 
 ### 2.7 Detalle de una postulación
 `GET /portal/postulaciones/{uuid}` → el resumen anterior más `historial`: una lista de
@@ -444,6 +467,17 @@ mismo corte deja fuera los textos de plazo que ahí no encajan: «vencida» y «
 **De aquí salen las quejas reales.** Una pregunta por pantalla dejó a un candidato saltando de la
 50 a la 10 sin forma de volver, y por eso hoy existen el mapa de preguntas, "siguiente sin
 responder" y "volver a la 50". Es el punto donde el candidato se pierde.
+
+**Al entregar** (07/10/2026) el portal vuelve a pedir su postulación y mira dónde quedó:
+
+| Quedó en | Qué ve |
+|---|---|
+| `PRUEBA_TURNO_CANDIDATO` (vacante con pase automático y prueba montada) | La portada de su prueba —o del cuestionario técnico—, con «Tu prueba del puesto ya está disponible». El reloj **no** arranca al llegar: arranca al confirmar en la portada |
+| Cualquier otro sitio | El detalle de su proceso, con «Evaluación entregada. Te avisaremos por correo y en la campana cuando te toque la prueba.» |
+
+Antes salía siempre «Te avisaremos cuando avance», y muchos cerraban la página y no volvían. Si
+dos pestañas entregan a la vez, la segunda recibe un 409 («Esta evaluación ya fue entregada») y
+no se crean dos pruebas.
 
 ### 2.9 Prueba del puesto — **dos formas incompatibles en una sola pantalla**
 `GET /portal/prueba/{uuid}` → `estadoIntento` (`PENDIENTE`|`EN_CURSO`|`ENTREGADA`), `modalidad`,
@@ -541,7 +575,8 @@ Reglas:
   la evaluación del banco. Una pregunta en blanco está *sin responder*, no «guardada».
 - **No se entrega a medias**, y entregar pregunta antes: después ya no se toca.
 - **Al entregar se sale de la pantalla** al detalle del proceso, que pasa a decir «Estamos
-  calificando tu prueba».
+  calificando tu prueba». Si dos pestañas entregan a la vez, la segunda recibe un 409 («Esta
+  evaluación ya fue entregada», 07/10/2026).
 
 ### 2.10 Simulación
 `GET /portal/simulacion/{uuid}/sesiones` → fechas con `fechaHora`, `duracionMinutos`, `modalidad`,
@@ -694,7 +729,7 @@ falla, pero el 403 es posible y las pantallas de simulación deberían saber pin
 | 3 | La prueba tiene dos formas y un solo layout | En el cuestionario sobran secciones vacías |
 | 4 | Validación y Decisión con botones que no llevan a nada | Prometen una acción que no existe |
 | 5 | Tres acciones de privacidad que suenan iguales | Riesgo de borrar datos por error |
-| 6 | "Te avisaremos por correo" | ⚠️ El correo sale con `transporte: log` **por defecto**: hoy no sale. Es una promesa que el sistema puede no cumplir |
+| 6 | "Te avisaremos por correo" | ⚠️ El correo sale con `transporte: log` **por defecto**: hoy no sale. Es una promesa que el sistema puede no cumplir. Desde el 07/10/2026 el texto dice «por correo y en la campana», y la campana sí recibe cada cambio de etapa; que el correo llegue en producción **falta comprobarlo** |
 | 7 | El saludo depende de un nombre que puede no existir | Se degrada en silencio en otro navegador |
 | 8 | Consentimientos con poco sitio | **Resuelto de otra manera** (15/09/2026): el texto ya no se pinta dentro del formulario. Las casillas llevan un título corto y un enlace a la política, que los enseña enteros. Lo que hay que vigilar ahora es el enlace: si se rompe, el consentimiento deja de estar informado |
 

@@ -359,6 +359,30 @@ export function loDeLaPrueba(
   return LO_DE_LA_PRUEBA[suyo]
 }
 
+/** La frase entera de la nota del Perfil Integral que todavía no llega (V70). */
+export const NOTA_EN_CAMINO =
+  'Nota en camino: la IA la está calculando y aparecerá aquí cuando termine'
+
+/**
+ * La nota del Perfil Integral está en camino: la IA trabaja en ella y todavía
+ * no la ha escrito (V70).
+ *
+ * Desde que las vacantes con pase automático abren la prueba al instante, la
+ * persona puede estar ya rindiendo su prueba con la nota del perfil por
+ * llegar. Sin esto la celda decía «en otra etapa» —verdad, pero no la
+ * respuesta— y parecía que nadie la iba a calificar.
+ *
+ * ⚠️ **Solo con un trabajo vivo** (`EN_CURSO`): sin trabajo no hay nada en
+ * camino —la IA puede estar apagada— y con uno fallido manda lo de siempre. Y
+ * solo en la pestaña del Perfil Integral: `estadoCalificacion` habla del
+ * retrato, no de las demás etapas (ver `porQueNoHayNota`).
+ */
+export function notaEnCamino(fila: FilaRanking, etapa: EtapaPanel): boolean {
+  return (
+    etapa === 'PERFIL_INTEGRAL' && fila.notaEtapa == null && fila.estadoCalificacion === 'EN_CURSO'
+  )
+}
+
 /**
  * Un guion no significa una sola cosa, y esa era la queja: «están calificados y
  * no se ve su nota».
@@ -381,6 +405,7 @@ export function porQueNoHayNota(fila: FilaRanking, etapa: EtapaPanel): string {
   // estado de la postulacion no sabe si hubo entrega ni quien la hizo.
   const deLaPrueba = loDeLaPrueba(fila, etapa)
   if (deLaPrueba !== null) return deLaPrueba.entero
+  if (notaEnCamino(fila, etapa)) return NOTA_EN_CAMINO
 
   const suya = indiceDeLaEtapaDe(fila.estado)
   const esta = ETAPAS_PANEL.findIndex((e) => e.codigo === etapa)
@@ -449,6 +474,7 @@ export function porQueNoHayNotaCorto(fila: FilaRanking, etapa: EtapaPanel): stri
   // La misma regla que el titulo, o la celda diria una cosa y su titulo otra.
   const deLaPrueba = loDeLaPrueba(fila, etapa)
   if (deLaPrueba !== null) return deLaPrueba.corto
+  if (notaEnCamino(fila, etapa)) return 'en camino'
 
   const suya = indiceDeLaEtapaDe(fila.estado)
   const esta = ETAPAS_PANEL.findIndex((e) => e.codigo === etapa)
