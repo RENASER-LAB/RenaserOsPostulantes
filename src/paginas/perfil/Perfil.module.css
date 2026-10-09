@@ -822,6 +822,31 @@
   gap: var(--e2);
 }
 
+/*
+ * Las tres cajas de los logros clave, con su número delante. El número va en
+ * tinta neutra —nada aquí es índigo— y a la altura del texto del campo (48 px).
+ */
+.cajasDeLogros {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+  margin-top: var(--e2);
+}
+
+.cajaDeLogro {
+  display: grid;
+  grid-template-columns: 1.25em minmax(0, 1fr);
+  column-gap: var(--e2);
+  align-items: start;
+}
+
+.numeroDeLogro {
+  line-height: 48px;
+  font-weight: 600;
+  color: var(--tinta3);
+  font-variant-numeric: tabular-nums;
+}
+
 /* Un `fieldset` sin la caja que el navegador le pone por defecto. */
 .grupo {
   display: flex;

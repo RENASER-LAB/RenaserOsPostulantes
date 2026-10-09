@@ -86,3 +86,37 @@ describe('el ojo de una contraseña', () => {
     expect(campo.getAttribute('aria-invalid')).toBe('true')
   })
 })
+
+/**
+ * El tope de un campo de una línea, como el de `AreaTexto`: llega al elemento
+ * —no solo al contador— y la cuenta sale solo al acercarse, pasado el 80 %.
+ */
+describe('el tope de un campo de una línea', () => {
+  it('lleva el máximo al elemento y no enseña la cuenta lejos de él', () => {
+    render(<Campo etiqueta="Logro 1" maximo={100} value={'a'.repeat(80)} onChange={() => {}} />)
+
+    expect((screen.getByLabelText('Logro 1') as HTMLInputElement).maxLength).toBe(100)
+    expect(screen.queryByText(/de 100 caracteres/)).toBeNull()
+  })
+
+  it('pasado el 80 % enseña cuánto lleva', () => {
+    render(<Campo etiqueta="Logro 1" maximo={100} value={'a'.repeat(81)} onChange={() => {}} />)
+
+    expect(screen.getByText('81 de 100 caracteres')).toBeTruthy()
+  })
+
+  it('un maxLength explícito manda sobre el máximo', () => {
+    render(<Campo etiqueta="Titular" maximo={100} maxLength={50} defaultValue="" />)
+
+    expect((screen.getByLabelText('Titular') as HTMLInputElement).maxLength).toBe(50)
+  })
+
+  it('la etiqueta oculta sigue dando nombre al campo', () => {
+    render(<Campo etiqueta="Logro 2" etiquetaOculta defaultValue="" />)
+
+    const etiqueta = screen.getByText('Logro 2')
+    expect(screen.getByRole('textbox', { name: 'Logro 2' })).toBeTruthy()
+    expect(etiqueta.tagName).toBe('LABEL')
+    expect(etiqueta.className).toMatch(/soloLectores/)
+  })
+})

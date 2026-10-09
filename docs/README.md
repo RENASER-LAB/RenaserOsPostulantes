@@ -36,7 +36,7 @@ Las secciones llevan título y fecha; busca por el título.
 | Tema | Bitácora | Secciones |
 |---|---|---|
 | `/vacantes`: la tarjeta «Expresiva», la columna de filtros, el ancho propio y el pulido del movimiento | [10](BITACORA-2026-10.md) | 06/10 y 05/10 |
-| «Mi perfil», la cronología, el medidor, la foto y la portada | [09](BITACORA-2026-09.md) | 06/09 y 05/09 |
+| «Mi perfil», la cronología, el medidor, la foto, la portada y los logros clave | [10](BITACORA-2026-10.md) · [09](BITACORA-2026-09.md) | 09/10 · 06/09 y 05/09 |
 | La ficha del candidato: qué marcó la IA, y lo que entregó en la prueba | [09](BITACORA-2026-09.md) | 04/09, 02/09 |
 | El ranking: ordenar, filtrar, descargar el Excel, los cortes, qué dice una nota que falta | [09](BITACORA-2026-09.md) · [08](BITACORA-2026-08.md) | 26/09, 18/09 y 01/09 · 28/08 y 27/08 |
 | Las pruebas del puesto: componer, versionar, calificar y ponderar en lote | [08](BITACORA-2026-08.md) | 31/08, 30/08, 28/08 |

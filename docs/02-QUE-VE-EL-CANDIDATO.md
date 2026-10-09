@@ -696,6 +696,37 @@ su respuesta; se revisó su reporte —se ocultó o se mantuvo—; y la platafor
 
 La **descarga de mis datos** lleva sus reseñas, sus respuestas y sus reportes con el resultado.
 
+### 2.16 Mi perfil · los logros clave (09/10/2026)
+
+Hasta tres frases cortas con lo que la persona ha conseguido —«Reduje de 10 a 4 días el cierre
+contable»—, para que quien decide vea de un vistazo por qué contratarla. **Las escribe solo ella**:
+la lectura del currículum no las propone ni las toca, y ninguna IA las lee. Viajan en `logros` con
+`GET /portal/perfil` y se guardan con el resto de «Acerca de ti».
+
+| Dónde | Qué se ve |
+|---|---|
+| Cabecera | El rótulo «Logros clave» y la lista numerada, debajo de las señas y de la línea de reseñas y antes de los enlaces. Cada logro ocupa **como mucho dos líneas** y, si no cabe, termina en «…»; el lector de pantalla lo lee entero. En el teléfono va debajo de la foto, a todo el ancho de la tarjeta |
+| «Acerca de ti» | Los mismos, con el mismo rótulo, número y orden, entre el texto de «En pocas palabras» y «Lo que sabes hacer». Aquí van **enteros** |
+| «Acerca de ti» → «Editar lo tuyo» | Debajo de «En pocas palabras», el bloque «Tus logros clave» con la ayuda «Hasta tres resultados por los que deberían contratarte…» y tres cajas de una línea, numeradas y opcionales. Cada caja corta en 100 caracteres lo que se teclea o se pega y, pasado el 80 %, enseña «81 de 100 caracteres», como «En pocas palabras». Al volver a editar vienen con lo guardado |
+
+**Sin logros no sale nada** en ninguno de los dos sitios: ni rótulo ni hueco. Con alguno, «Acerca
+de ti» ya no cuenta como vacía y deja de enseñar el aviso «Cuéntale al equipo…».
+
+Al guardar solo cuentan las cajas con algo, **en su orden**: llenar la 1 y la 3 las deja como 1 y
+2. Los saltos de línea pegados pasan a ser espacios. Vaciar las tres y guardar los borra.
+
+**El mismo rótulo, la misma numeración y el mismo orden en los dos sitios, a propósito**: «Acerca
+de ti» dejó de repetir el titular y las señas porque la segunda aparición parecía otro dato, y los
+logros tienen que leerse como uno solo. Nada en índigo, ni el número.
+
+⚠️ **El guardado de «Acerca de ti» manda siempre `logros`, también vacío.** Para el backend, la
+lista vacía es «bórralos» y el campo ausente, «no los toques». La app de Android compilada antes
+de este cambio no lo manda, y por eso sus guardados no los borran.
+
+La **descarga de mis datos** los lleva. El panel los recibe con el perfil del candidato, pero
+ninguna pantalla del panel los pinta todavía. **El medidor «Tu perfil N %» no los cuenta**: ver
+[PENDIENTES](PENDIENTES.md).
+
 ---
 
 ## 3. Qué es público y qué no (frontera del backend)

@@ -42,6 +42,7 @@ import { Trayectoria } from './Trayectoria'
 import { Aptitudes, leerTodas } from './Aptitudes'
 import { CabeceraDelPerfil } from './Cabecera'
 import { Lateral } from './Lateral'
+import { ListaDeLogros } from './Logros'
 import { ResenasDelPerfil } from './Resenas'
 import estilos from './Perfil.module.css'
 
@@ -55,6 +56,10 @@ const CADA_5_SEGUNDOS = 5_000
  * y Postgres corta con un 500 que la pantalla no puede explicar. Se para antes.
  */
 const TOPE_PRETENSION = 9_999_999_999
+
+/** Cuántos logros clave caben y cuánto mide cada uno: los topes del backend (V71). */
+const CAJAS_DE_LOGROS = 3
+const LARGO_DE_UN_LOGRO = 100
 
 /**
  * Cuántos datos dedujo la IA y nadie ha mirado todavía.
@@ -418,6 +423,15 @@ function sembrar(perfil: PerfilCompleto): CamposCabecera {
   }
 }
 
+/**
+ * Las tres cajas de los logros, sembradas con lo guardado y con las que falten
+ * en blanco: el formulario siempre enseña las tres.
+ */
+function sembrarLogros(perfil: PerfilCompleto): string[] {
+  const guardados = (perfil.logros ?? []).slice(0, CAJAS_DE_LOGROS)
+  return [...guardados, ...Array<string>(CAJAS_DE_LOGROS - guardados.length).fill('')]
+}
+
 function Cabecera({
   perfil,
   editando,
@@ -436,6 +450,8 @@ function Cabecera({
   // que quedó escrito sin pulsar Enter.
   const [aptitudes, setAptitudes] = useState<string[]>(() => perfil.habilidades ?? [])
   const [aptitudPendiente, setAptitudPendiente] = useState('')
+  // Los logros van aparte de `valores` porque son una lista, como las aptitudes.
+  const [logros, setLogros] = useState<string[]>(() => sembrarLogros(perfil))
   const [fallo, setFallo] = useState<string | null>(null)
   const [errores, setErrores] = useState<Partial<Record<keyof CamposCabecera, string>>>({})
 
@@ -447,6 +463,7 @@ function Cabecera({
       setValores(sembrar(perfil))
       setAptitudes(perfil.habilidades ?? [])
       setAptitudPendiente('')
+      setLogros(sembrarLogros(perfil))
     }
   }, [perfil, editando])
 
@@ -537,7 +554,18 @@ function Cabecera({
         hayAlguno && min !== '' && max !== ''
           ? { min: Number(min), max: Number(max), moneda: valores.moneda }
           : null,
+      // Solo las cajas con algo, en su orden: si se llenan la 1 y la 3, viajan
+      // como primero y segundo. Va SIEMPRE, también vacía: para el backend la
+      // lista vacía es «bórralos» y el campo ausente es «no los toques».
+      logros: logros.map((l) => l.trim()).filter((l) => l !== ''),
     })
+  }
+
+  function cambiarLogro(caja: number, valor: string) {
+    // El `maxLength` del campo ya corta lo tecleado y lo pegado; esto es la red
+    // para el teclado de Android, que durante la composición se lo salta.
+    const recortado = valor.slice(0, LARGO_DE_UN_LOGRO)
+    setLogros((antes) => antes.map((l, i) => (i === caja ? recortado : l)))
   }
 
   function cambiar<C extends keyof CamposCabecera>(campo: C, valor: string) {
@@ -548,6 +576,7 @@ function Cabecera({
   const vacia =
     !perfil.titular &&
     !perfil.resumen &&
+    (perfil.logros ?? []).length === 0 &&
     (perfil.habilidades ?? []).length === 0 &&
     perfil.experienciaMeses === null &&
     !perfil.ubicacion &&
@@ -582,6 +611,9 @@ function Cabecera({
         ) : (
           <div className={estilos.acercaDe}>
             {perfil.resumen && <p className={estilos.resumen}>{perfil.resumen}</p>}
+
+            {/* Enteros, sin cortar: aquí está el texto completo de la cabecera. */}
+            <ListaDeLogros logros={perfil.logros ?? []} />
 
             {(perfil.habilidades ?? []).length > 0 && (
               <>
@@ -656,6 +688,36 @@ function Cabecera({
           value={valores.resumen}
           onChange={(e) => cambiar('resumen', e.target.value)}
         />
+
+        {/*
+          Como «Lo que esperas ganar»: un `fieldset` con su `legend`, para que un
+          lector de pantalla anuncie el grupo al entrar y cada caja diga qué
+          logro es. El número de delante es para quien mira; la etiqueta oculta
+          «Logro N», para quien escucha.
+        */}
+        <fieldset className={estilos.grupo}>
+          <legend className={estilos.etiqueta}>Tus logros clave</legend>
+          <p className={estilos.ayuda}>
+            Hasta tres resultados por los que deberían contratarte. Mejor si llevan una cifra:
+            «Reduje de 10 a 4 días el cierre contable»
+          </p>
+          <div className={estilos.cajasDeLogros}>
+            {logros.map((logro, i) => (
+              <div className={estilos.cajaDeLogro} key={i}>
+                <span className={estilos.numeroDeLogro} aria-hidden="true">
+                  {i + 1}
+                </span>
+                <Campo
+                  etiqueta={`Logro ${i + 1}`}
+                  etiquetaOculta
+                  maximo={LARGO_DE_UN_LOGRO}
+                  value={logro}
+                  onChange={(e) => cambiarLogro(i, e.target.value)}
+                />
+              </div>
+            ))}
+          </div>
+        </fieldset>
 
         <Aptitudes
           etiquetas={aptitudes}

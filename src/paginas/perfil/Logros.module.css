@@ -1,0 +1,95 @@
+/*
+ * Los logros clave: la misma lista en la cabecera y en «Acerca de ti».
+ *
+ * Todo en tinta, nada en índigo (la regla de la voz única). El rótulo copia el
+ * subtítulo de «Lo que sabes hacer» —`.subtitulo` de Perfil.module.css— porque
+ * la spec pide que se lea como los demás rótulos de la página; no se compone
+ * desde allí porque un `composes` entre hojas no gana por escribirse después y
+ * aquí cambian los márgenes.
+ */
+
+.rotulo {
+  font-size: var(--t-micro);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tinta3);
+}
+
+/* Debajo de las señas y de las reseñas, antes de los enlaces. */
+.enLaCabecera .rotulo {
+  margin: var(--e4) 0 var(--e2);
+}
+
+/* Entre «En pocas palabras» y «Lo que sabes hacer», con su mismo aire. */
+.enAcercaDe .rotulo {
+  margin: var(--e5) 0 var(--e3);
+}
+
+/*
+ * En el teléfono `.datos` es una columna con `align-items: flex-start`: sin esto
+ * el bloque encogería al ancho de su texto en vez de ocupar el de la tarjeta.
+ * En escritorio `.datos` es un bloque y esto no hace nada.
+ */
+.enLaCabecera {
+  align-self: stretch;
+}
+
+.lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  /* El ancho de lectura del titular: un logro de 100 caracteres da dos líneas
+     también en escritorio, que es el corte que cabe en la cabecera. */
+  max-width: var(--medida);
+}
+
+.logro {
+  display: grid;
+  grid-template-columns: 1.25em minmax(0, 1fr);
+  column-gap: var(--e2);
+  align-items: baseline;
+}
+
+.enLaCabecera .logro {
+  font-size: var(--t-apoyo);
+  line-height: 1.45;
+  color: var(--tinta2);
+}
+
+.enAcercaDe .logro {
+  font-size: var(--t-prosa);
+  line-height: 1.55;
+  color: var(--tinta2);
+}
+
+/* El número en un tono neutro, con cifras del mismo ancho para que alineen. */
+.numero {
+  font-weight: 600;
+  color: var(--tinta3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* «Acerca de ti»: siempre entero; una palabra larguísima parte antes de salirse. */
+.texto {
+  overflow-wrap: anywhere;
+}
+
+/*
+ * La cabecera: como mucho dos líneas y «…». Es solo visual: el texto entero
+ * sigue en el DOM y un lector de pantalla lo lee completo.
+ *
+ * `overflow: hidden` aquí no rompe nada pegajoso —la prohibición de DESIGN.md es
+ * para recortar fondos a sangre—: es la caja de un texto suelto.
+ */
+.textoCortado {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}

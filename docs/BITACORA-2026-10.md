@@ -14,6 +14,38 @@ Desde el 05/10 el diseño se trabaja con las skills de Emil Kowalski (`emil-desi
 
 ---
 
+## Los logros clave en la cabecera del perfil (09/10/2026)
+
+La clienta quería que el perfil enseñara tres resultados concretos por los que contratar a la
+persona. La cabecera decía quién es, pero nada de lo que ha conseguido, y «En pocas palabras» casi
+nunca trae cifras. Nace un dato nuevo, **«Logros clave»**: hasta tres frases de hasta 100
+caracteres que escribe el propio candidato.
+
+- **Dónde se escriben**: «Acerca de ti» → «Editar lo tuyo», en el bloque «Tus logros clave»,
+  debajo de «En pocas palabras»: tres cajas numeradas y opcionales.
+- **Dónde se ven**: en la cabecera, entre las reseñas y los enlaces, cortados a dos líneas; y en
+  «Acerca de ti», entre «En pocas palabras» y «Lo que sabes hacer», enteros. Es la misma pieza en
+  los dos sitios (`paginas/perfil/Logros.tsx`), para que se lean como un solo dato. Sin logros no
+  sale nada. Ver [02-QUE-VE-EL-CANDIDATO](02-QUE-VE-EL-CANDIDATO.md), 2.16.
+- **`Campo` gana `maximo` y `etiquetaOculta`.** El tope y el contador que solo tenía `AreaTexto`
+  —ahora los dos avisan con la misma cuenta—, y una etiqueta que existe para el lector de pantalla
+  sin dibujarse, para las cajas en las que el número de delante ya dice qué son.
+- **Backend** (`V71`): el guardado de «Acerca de ti» trata los logros distinto al resto —sin el
+  campo no los toca, con la lista vacía los borra— para que la app de Android ya instalada no los
+  borre en cada guardado. La lectura del CV no los toca. El detalle, en
+  `APIS-PERFIL-DEL-CANDIDATO.md` del backend.
+
+**Quedaron fuera**, anotados en [PENDIENTES](PENDIENTES.md): el lateral que tapa «Acerca de ti» a
+900 px o menos, la vista que queda lejos de la sección tras guardar y el medidor «Tu perfil N %»,
+que no cuenta los logros. Y en los defectos conocidos del backend, el 5: un tipo equivocado en el
+cuerpo del guardado responde 500 en vez de 400.
+
+**Cómo se comprueba:** `56-logros-clave` y `56-logros-clave-qa` en escritorio, y sus `-movil` a
+375 px, sobre el clon de QA (crean sus cuentas y las borran al terminar); y las unitarias de
+`Cabecera.test.tsx`, `Perfil.test.tsx` y `Campo.test.tsx`.
+
+---
+
 ## La prueba al instante, la campana en cada etapa y los recordatorios (07/10/2026)
 
 Muchos candidatos se perdían entre una etapa y la siguiente: entregaban el banco, leían «Te

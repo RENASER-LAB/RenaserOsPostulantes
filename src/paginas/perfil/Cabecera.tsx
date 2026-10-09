@@ -52,6 +52,7 @@ import {
 import { cuantasResenas, estrellasDichas, promedioEscrito } from '@/ui/resenas/modelo'
 import { ANCLA_RESENAS } from './Resenas'
 import { FORMATOS_IMAGEN, revisarImagen } from './archivos'
+import { ListaDeLogros } from './Logros'
 import { aniosYMeses } from './textos'
 import estilos from './Cabecera.module.css'
 
@@ -407,6 +408,13 @@ export function CabeceraDelPerfil({
               </a>
             </p>
           )}
+
+          {/*
+            Los logros clave (V71), en su versión compacta: cada uno en dos líneas
+            como mucho. Debajo de las señas y las reseñas, antes de los enlaces, y
+            nunca sobre la portada. Enteros, en «Acerca de ti».
+          */}
+          <ListaDeLogros logros={perfil.logros ?? []} compacta />
 
           {perfil.enlaces.length > 0 && (
             <ul className={estilos.enlaces}>

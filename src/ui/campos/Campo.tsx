@@ -40,11 +40,39 @@ function Asterisco() {
   )
 }
 
+/**
+ * Cuánto se lleva escrito de un campo con tope, solo al acercarse a él.
+ *
+ * Se enseña pasado el 80 %: un contador desde el primer carácter convierte
+ * escribir en una carrera contra un número. La comparten `Campo` y `AreaTexto`
+ * para que los dos avisen igual.
+ */
+function Cuenta({ escrito, maximo }: { escrito: number; maximo: number | undefined }) {
+  if (maximo === undefined || escrito <= maximo * 0.8) return null
+  return (
+    <span className={`${estilos.cuenta}${escrito > maximo ? ` ${estilos.pasado}` : ''}`}>
+      {escrito.toLocaleString('es-PE')} de {maximo.toLocaleString('es-PE')} caracteres
+    </span>
+  )
+}
+
 interface PropsCampo extends InputHTMLAttributes<HTMLInputElement> {
   etiqueta: string
+  /**
+   * La etiqueta existe para el lector de pantalla pero no se dibuja. Solo para
+   * cuando otra cosa ya dice qué es el campo a quien mira —el número delante de
+   * cada logro clave, dentro de su `fieldset`—: un campo sin nombre accesible no
+   * se acepta nunca.
+   */
+  etiquetaOculta?: boolean
   /** Lo que conviene saber antes de escribir. No es el error. */
   ayuda?: string
   error?: string
+  /**
+   * El límite del backend, cuando lo hay: corta lo que se teclea o se pega y
+   * enseña la cuenta al acercarse, igual que en `AreaTexto`.
+   */
+  maximo?: number
   /**
    * Que hay que rellenarlo, dicho con un asterisco. Ver {@link Asterisco}.
    *
@@ -92,13 +120,14 @@ function Ojo({ tachado }: { tachado: boolean }) {
 }
 
 export const Campo = forwardRef<HTMLInputElement, PropsCampo>(function Campo(
-  { etiqueta, ayuda, error, obligatorio, id, type, ...resto },
+  { etiqueta, etiquetaOculta, ayuda, error, obligatorio, maximo, id, type, maxLength, ...resto },
   ref,
 ) {
   const propio = useId()
   const idCampo = id ?? propio
   const idAyuda = `${idCampo}-ayuda`
   const idError = `${idCampo}-error`
+  const escrito = typeof resto.value === 'string' ? resto.value.length : 0
 
   const [visible, setVisible] = useState(false)
   // ⚠️ `type` se saca de `resto` a propósito. Si se quedara dentro del spread,
@@ -112,6 +141,8 @@ export const Campo = forwardRef<HTMLInputElement, PropsCampo>(function Campo(
       type={esContrasena && visible ? 'text' : type}
       id={idCampo}
       ref={ref}
+      // Como en `AreaTexto`: el tope llega al elemento, no solo al contador.
+      maxLength={maxLength ?? maximo}
       className={`${estilos.entrada}${esContrasena ? ` ${estilos.conOjo}` : ''}`}
       // El asterisco lo ve quien mira; esto es lo que hace que el lector de
       // pantalla lo diga al llegar al campo, sin depender de la marca dibujada.
@@ -125,7 +156,10 @@ export const Campo = forwardRef<HTMLInputElement, PropsCampo>(function Campo(
 
   return (
     <div className={estilos.campo}>
-      <label className={estilos.etiqueta} htmlFor={idCampo}>
+      <label
+        className={etiquetaOculta ? estilos.soloLectores : estilos.etiqueta}
+        htmlFor={idCampo}
+      >
         {etiqueta}
         {obligatorio && <Asterisco />}
       </label>
@@ -159,6 +193,7 @@ export const Campo = forwardRef<HTMLInputElement, PropsCampo>(function Campo(
       ) : (
         entrada
       )}
+      <Cuenta escrito={escrito} maximo={maximo} />
       {error && (
         <p className={estilos.error} id={idError}>
           {error}
@@ -349,10 +384,8 @@ interface PropsArea extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   ayuda?: string
   error?: string
   /**
-   * El limite del backend, cuando lo hay.
-   *
-   * Se enseña la cuenta solo al acercarse: un contador desde el primer caracter
-   * convierte escribir en una carrera contra un numero.
+   * El limite del backend, cuando lo hay. La cuenta se enseña solo al acercarse:
+   * ver {@link Cuenta}.
    */
   maximo?: number
 }
@@ -366,7 +399,6 @@ export const AreaTexto = forwardRef<HTMLTextAreaElement, PropsArea>(function Are
   const idAyuda = `${idCampo}-ayuda`
   const idError = `${idCampo}-error`
   const escrito = typeof value === 'string' ? value.length : 0
-  const avisar = maximo !== undefined && escrito > maximo * 0.8
   // ⚠️ **`maximo` tiene que llegar tambien al elemento, no solo al contador.**
   // Antes solo pintaba la cuenta: se podia escribir de mas, el guardado rebotaba
   // con un 400 del `@Size` del backend y la pantalla no lo habia evitado.
@@ -393,11 +425,7 @@ export const AreaTexto = forwardRef<HTMLTextAreaElement, PropsArea>(function Are
         aria-invalid={error ? true : undefined}
         aria-describedby={[ayuda && idAyuda, error && idError].filter(Boolean).join(' ') || undefined}
       />
-      {avisar && (
-        <span className={`${estilos.cuenta}${escrito > maximo ? ` ${estilos.pasado}` : ''}`}>
-          {escrito.toLocaleString('es-PE')} de {maximo.toLocaleString('es-PE')} caracteres
-        </span>
-      )}
+      <Cuenta escrito={escrito} maximo={maximo} />
       {error && (
         <p className={estilos.error} id={idError}>
           {error}
