@@ -1,8 +1,9 @@
 /**
  * Lo escrito no sale de la cola hasta que el servidor lo confirma.
  *
- * Es la unica cola de guardado del portal: la usan la evaluacion del Perfil Integral y el
- * cuestionario tecnico. **Dos copias de esto se arreglan en una y no en la otra**, y esa ya
+ * Es la unica cola de guardado del portal: la usan la evaluacion del Perfil Integral, el
+ * cuestionario tecnico y, desde que va de una pregunta por pantalla (09/10/2026), la prueba
+ * tecnica del editor. **Dos copias de esto se arreglan en una y no en la otra**, y esa ya
  * fue la causa de respuestas de candidatos perdidas.
  *
  * ## Por que se reescribio
@@ -135,6 +136,13 @@ export interface ColaDeRespuestas<T> {
    * en la misma linea del pie donde ya se dice todo lo demas, que no mueve nada de sitio.
    */
   atascadas: number[]
+  /**
+   * Las que siguen en la cola despues de que su ultimo envio fallara: la cola las reintenta
+   * sola. Con una pregunta por pantalla hace falta saberlo de las que **no** se ven, para que
+   * el mapa las marque a medias y la tarjeta diga «No se pudo guardar; se reintenta» en vez de
+   * un «Guardando…» que no dice nada.
+   */
+  reintentando: number[]
 }
 
 /**
@@ -158,6 +166,8 @@ export function useColaDeRespuestas<T>(
   // llego.
   const cola = useRef<Map<number, Entrada<T>>>(new Map())
   const [sinConfirmar, setSinConfirmar] = useState<{ id: number; valor: T }[]>([])
+  /** Las que fallaron y esperan su reintento. */
+  const [reintentando, setReintentando] = useState<number[]>([])
   /** Las que el servidor no va a aceptar por mucho que se insista. */
   const [atascadas, setAtascadas] = useState<number[]>([])
   /** Un temporizador por pregunta: el de la 11 no puede aplazar el de la 10. */
@@ -200,6 +210,11 @@ export function useColaDeRespuestas<T>(
     apuntar()
     if (!desmontado.current) {
       setSinConfirmar([...cola.current].map(([id, e]) => ({ id, valor: e.valor })))
+      const conFallos = [...cola.current].filter(([, e]) => e.fallos > 0).map(([id]) => id)
+      // La misma lista no se vuelve a escribir: cada repintado de la pantalla entera cuesta.
+      setReintentando((antes) =>
+        antes.length === conFallos.length && antes.every((id, i) => id === conFallos[i]) ? antes : conFallos,
+      )
     }
   }, [apuntar])
 
@@ -437,5 +452,6 @@ export function useColaDeRespuestas<T>(
     // para parpadear.
     guardando: sinConfirmar.length > 0,
     atascadas,
+    reintentando,
   }
 }

@@ -16,7 +16,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, renderHook } from '@testing-library/react'
 import { ErrorApi } from '@/api/cliente'
-import { useColaDeRespuestas } from './useColaDeRespuestas'
+import { ESPERA_TRAS_EL_PRIMER_FALLO, useColaDeRespuestas } from './useColaDeRespuestas'
 
 const loMismo = (a: { texto: string }, b: { texto: string }) => a.texto === b.texto
 
@@ -135,6 +135,32 @@ describe('la cola de respuestas', () => {
     expect(mandar).toHaveBeenCalledTimes(2)
     await pasan(1000)
     expect(mandar).toHaveBeenCalledTimes(3)
+  })
+
+  it('dice cuáles se están reintentando, aunque no se vean, hasta que llegan', async () => {
+    // Con una pregunta por pantalla, el mapa tiene que saber que una que ya no está a la vista
+    // no llegó: sale «a medias» con «No se pudo guardar; se reintenta» (AC-08).
+    let falla = true
+    const mandar = vi.fn(async () => {
+      if (falla) throw new Error('se cayó la red')
+    })
+    const { result } = renderHook(() => useColaDeRespuestas(mandar, loMismo))
+
+    act(() => result.current.encolar(1, { texto: 'uno' }, { yaMismo: true }))
+    act(() => result.current.encolar(2, { texto: 'dos' }, { yaMismo: true }))
+    await pasan(0)
+    expect(result.current.reintentando).toEqual([1, 2])
+
+    // Corregir la 2 la saca de la lista hasta que vuelva a fallar: lo nuevo aún no ha salido.
+    act(() => result.current.encolar(2, { texto: 'dos corregida' }))
+    expect(result.current.reintentando).toEqual([1])
+
+    falla = false
+    await pasan(ESPERA_TRAS_EL_PRIMER_FALLO)
+    expect(result.current.reintentando).toEqual([])
+    await pasan(800)
+    expect(result.current.sinConfirmar).toHaveLength(0)
+    expect(result.current.reintentando).toEqual([])
   })
 
   it('corregir tras un fallo no arrastra el castigo del anterior', async () => {

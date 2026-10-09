@@ -596,47 +596,199 @@
   }
 }
 
-/* ---------- La prueba del editor (V67) ----------
+/* ---------- La prueba del editor, una pregunta por pantalla ----------
  *
- * Una cerrada es un `fieldset`: sin el marco del navegador y con la misma caja
- * que una abierta. El número de la pregunta va en la misma línea que el
- * enunciado, en voz baja: es lo que se nombra en «te falta la 3 y la 7».
+ * El marco —barra, mapa, tarjeta— vive en `../unaPorPantalla/Marco.module.css` y lo comparte
+ * con la evaluación. Aquí solo lo propio de la prueba: el reloj de la barra, la forma de
+ * responder dentro de la tarjeta, el archivo de una pregunta y el lateral del caso.
  */
 
-fieldset.pregunta {
+/* El reloj, dentro de la barra fija. */
+.numeroReloj {
+  font-size: var(--t-entradilla);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--tinta);
+}
+
+/* Menos de diez minutos: el número en rojo, como el reloj de siempre. */
+.numeroReloj.numeroPoco {
+  color: var(--mal);
+}
+
+/* Una cerrada es un `fieldset` sin el marco del navegador: su nombre es el enunciado. */
+.grupoCerrada {
   margin: 0;
+  padding: 0;
+  border: 0;
   min-width: 0;
 }
 
-fieldset.pregunta > legend {
-  padding: 0;
-  float: left;
+/* El archivo obligatorio que falta en una pregunta ya respondida: ámbar, lo que frena la entrega. */
+.entregable.falta {
+  border-color: var(--duda);
+  background: var(--duda-bruma);
+}
+
+.faltaElArchivo {
+  margin-top: var(--e2);
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  color: var(--duda-tinta);
+}
+
+/* «Entregar la prueba» debajo de la pregunta, en el teléfono. */
+.entregarAbajo {
   width: 100%;
 }
 
-fieldset.pregunta > legend + * {
-  clear: both;
-}
+/* ---------- El lateral: «El caso» o «Para esta prueba» ---------- */
 
-.numeroPregunta {
-  font-weight: 500;
-  color: var(--tinta2);
-}
-
-.aviso.malo .reintentar {
-  margin-top: var(--e3);
-}
-
-/* V68: el archivo de una pregunta va pegado a ella, dentro de su bloque. */
-.conSuArchivo {
+.lateralDelCaso {
+  position: sticky;
+  top: calc(var(--alto-cabecera) + var(--alto-barra) + var(--e4));
+  max-height: calc(100vh - var(--alto-cabecera) - var(--alto-barra) - var(--e6));
+  overflow-y: auto;
+  background: var(--nube);
+  border: 1px solid var(--regla);
+  border-radius: var(--radio);
+  padding: var(--e5);
   display: flex;
   flex-direction: column;
+  gap: var(--e4);
+}
+
+.cabezaLateral {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: var(--e3);
 }
 
-/* Sin caso, materiales ni herramientas no queda nada que leer: una sola columna. */
-@media (min-width: 900px) {
-  .trabajandoSinLectura {
-    grid-template-columns: minmax(0, 1fr);
-  }
+.tituloLateral {
+  margin: 0;
+  font-size: var(--t-entradilla);
+}
+
+.ocultarLateral {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--e3);
+  background: none;
+  border: 0;
+  border-radius: var(--radio-control);
+  font: inherit;
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+  text-decoration: underline;
+  text-underline-offset: 0.22em;
+  cursor: pointer;
+}
+
+.parteLateral {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+  overflow-wrap: anywhere;
+}
+
+.tituloParte {
+  margin: 0;
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  color: var(--tinta);
+}
+
+/* «Por entregar»: solo de consulta. */
+.porEntregar {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+}
+
+.filaPorEntregar {
+  display: flex;
+  align-items: center;
+  gap: var(--e3);
+}
+
+.marcaPorEntregar {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid var(--borde-control);
+  border-radius: var(--radio-marca);
+  background: var(--nube);
+}
+
+.marcaSubida {
+  border-color: var(--activo);
+  background: var(--activo);
+}
+
+.queEntregar {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.nombrePorEntregar {
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.estadoPorEntregar {
+  font-size: var(--t-menor);
+  color: var(--tinta2);
+}
+
+.irAEntregar {
+  flex: none;
+  min-height: 44px;
+  padding: 0 var(--e2);
+  background: none;
+  border: 0;
+  border-radius: var(--radio-control);
+  font: inherit;
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  color: var(--activo);
+  cursor: pointer;
+}
+
+/* Por debajo de 1100 px: una barra plegable encima de la pregunta, con el mismo título. */
+.lateralPlegable {
+  background: var(--nube);
+  border: 1px solid var(--regla);
+  border-radius: var(--radio);
+}
+
+.abrirLateral {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 48px;
+  padding: 0 var(--e4);
+  background: none;
+  border: 0;
+  border-radius: var(--radio);
+  font: inherit;
+  font-size: var(--t-base);
+  font-weight: 600;
+  color: var(--tinta);
+  cursor: pointer;
+}
+
+.cuerpoPlegable {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e4);
+  padding: 0 var(--e4) var(--e4);
 }

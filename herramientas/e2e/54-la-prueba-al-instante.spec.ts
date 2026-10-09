@@ -82,7 +82,7 @@ async function entregarElBanco(page: Page, uuid: string) {
   await page.goto(`/procesos/${uuid}/evaluacion`)
   await page.getByRole('button', { name: /Empezar evaluación/ }).click()
   await page.getByLabel('Tu respuesta').fill(RESPUESTA)
-  await page.getByRole('button', { name: /Entregar evaluación/ }).click()
+  await page.getByRole('button', { name: 'Entregar la evaluación' }).click()
   await page.getByRole('button', { name: 'Entregar', exact: true }).click()
 }
 

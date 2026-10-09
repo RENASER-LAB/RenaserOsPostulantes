@@ -12,7 +12,7 @@
 import { describe, expect, it } from 'vitest'
 import type { FilaRanking, NotaCriterio } from '../../api/tipos'
 import type { CriterioDeLaVersion } from '../../api/preguntasPropias'
-import { cualesFaltan } from '../../../paginas/prueba/Prueba'
+import { cualesFaltan } from '../../../paginas/unaPorPantalla/Marco'
 import { loQueFaltaParaPublicar } from '../loQueFaltaParaPublicar'
 import { columnasDelRanking, criteriosDeLaTanda, notaDelCriterio, notaEscrita } from '../ranking'
 import { faltaEvidente, paraGuardar, puntosDelCriterio, textoDeLaPrueba, type PreguntaEnEdicion } from './formulario'

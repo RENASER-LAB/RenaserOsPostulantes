@@ -14,7 +14,7 @@
  */
 
 import { afterEach, describe, expect, it, vi, beforeEach } from 'vitest'
-import { cleanup, render, screen, waitFor, fireEvent } from '@testing-library/react'
+import { cleanup, render, screen, waitFor, fireEvent, within } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import type { EvaluacionCandidato, PreguntaEvaluacion } from '@/api/tipos'
@@ -139,14 +139,21 @@ function responder(texto: string) {
 
 const siguiente = () => fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }))
 
-/** Abre el mapa de preguntas desde la barra de arriba. */
-const abrirMapa = () => fireEvent.click(screen.getByRole('button', { name: `Ver las ${TOTAL}` }))
-
 /** El numero del mapa, buscado por lo que dice de el un lector de pantalla. */
 const numeroDelMapa = (n: number) => screen.getByRole('button', { name: new RegExp(`^Pregunta ${n},`) })
 
 /** El boton de volver, si es que hay algun salto que deshacer. */
 const botonVolver = () => screen.queryByRole('button', { name: /^Volver a la/ })
+
+/**
+ * Lo que dice la tarjeta de la pregunta. Se busca dentro de ella: la leyenda del mapa también
+ * dice «Sin responder».
+ */
+const enLaTarjeta = () => within(screen.getByRole('article'))
+
+/** «Entregar la evaluación»: en la barra, o relleno en la última pregunta (nunca los dos). */
+const entregarLaEvaluacion = () =>
+  fireEvent.click(screen.getByRole('button', { name: 'Entregar la evaluación' }))
 
 // Sin `globals`, la libreria no limpia sola entre pruebas y los arboles se
 // van apilando: la segunda prueba encontraria dos de cada cosa.
@@ -163,6 +170,9 @@ beforeEach(() => {
   // respuesta, y la clave sale del uuid —que aqui es el mismo en todas las pruebas—. Sin
   // limpiarlo, lo que una prueba deja a medias lo reenvia la siguiente al montar.
   window.localStorage.clear()
+  // La pregunta en la que se estaba se apunta en la pestaña (una pregunta por pantalla): sin
+  // limpiarla, cada prueba empezaría donde dejó la anterior.
+  window.sessionStorage.clear()
   guardadas = new Map()
   totalDeclarado = TOTAL
   opcionesGuardadas = new Map()
@@ -232,10 +242,12 @@ describe('la evaluacion no pierde respuestas', () => {
     // temporizador, que es justo cuando se perdia.
     responder('Primera respuesta.')
     siguiente()
+    fireEvent.click(await screen.findByRole('radio', { name: /Preguntar antes de empezar/ }))
     siguiente()
+    responder('Tercera respuesta.')
     siguiente()
     responder('Cuarta respuesta.')
-    fireEvent.click(screen.getByRole('button', { name: /Entregar evaluación/ }))
+    entregarLaEvaluacion()
 
     // El modal no abre hasta que lo pendiente ha llegado, asi que lo que cuenta ya es lo
     // que el servidor tiene de verdad.
@@ -262,7 +274,11 @@ describe('la evaluacion no pierde respuestas', () => {
 
   it('borrar lo escrito deja la pregunta sin responder, y no da error', async () => {
     guardadas.set(1, 'Algo que ya estaba guardado.')
-    await empezar()
+    montar()
+    fireEvent.click(await screen.findByRole('button', { name: /Empezar evaluación/ }))
+    // Entra en la primera sin responder (la 2); la 1 está detrás.
+    await screen.findByText(/Pregunta 2 de 4/)
+    fireEvent.click(screen.getByRole('button', { name: 'Anterior' }))
 
     await screen.findByDisplayValue('Algo que ya estaba guardado.')
     responder('')
@@ -272,7 +288,7 @@ describe('la evaluacion no pierde respuestas', () => {
     // servidor: el recuadro vacio y el contador diciendo «respondida».
     await waitFor(() => expect(guardadas.get(1)).toBe(''))
     expect(screen.queryByText(/Hay que escribir una respuesta/)).toBeNull()
-    await waitFor(() => expect(screen.getByText('Sin responder')).toBeTruthy())
+    await waitFor(() => expect(enLaTarjeta().getByText('Sin responder')).toBeTruthy())
   })
 
   it('⚠️ una recarga que arrancó antes del guardado no pisa lo confirmado', async () => {
@@ -371,7 +387,7 @@ describe('la evaluacion no pierde respuestas', () => {
     expect(screen.queryByText(/sin guardar/i)).toBeNull()
   })
 
-  it('no deja entregar con preguntas en blanco, porque el servidor la rechaza', async () => {
+  it('no deja entregar con preguntas en blanco: el aviso dice cuáles y lleva a la primera (AC-10)', async () => {
     await empezar()
 
     // Solo se responde la primera; quedan tres en blanco.
@@ -379,15 +395,19 @@ describe('la evaluacion no pierde respuestas', () => {
     siguiente()
     siguiente()
     siguiente()
-    fireEvent.click(screen.getByRole('button', { name: /Entregar evaluación/ }))
+    entregarLaEvaluacion()
 
-    const entregar = await screen.findByRole('button', { name: 'Entregar' })
-    expect((entregar as HTMLButtonElement).disabled).toBe(true)
-    expect(screen.getByText(/Faltan 3 preguntas por responder/)).toBeTruthy()
+    // El mismo aviso que la prueba, y sin la ventana de recuento de antes.
+    const aviso = await screen.findByRole('alert')
+    expect(aviso.textContent).toContain('Para entregar te falta responder 3 preguntas (la 2, la 3 y la 4).')
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(entregarEvaluacion).not.toHaveBeenCalled()
 
-    // Y desde ahi se puede saltar a la que falta, en vez de buscarla a mano.
-    fireEvent.click(screen.getByRole('button', { name: /Ir a la primera sin responder/ }))
+    // Y desde ahi se va a la que falta, moviendo el navegador de preguntas.
+    fireEvent.click(within(aviso).getByRole('button', { name: 'Ir a la pregunta 2' }))
     await waitFor(() => expect(screen.getByText(/Pregunta 2 de 4/)).toBeTruthy())
+    // Es un salto: se puede volver a donde se pulsó «Entregar».
+    expect(screen.getByRole('button', { name: 'Volver a la 4' })).toBeTruthy()
   })
 
   it('avisa cuando el servidor manda menos preguntas de las que dice tener', async () => {
@@ -399,12 +419,43 @@ describe('la evaluacion no pierde respuestas', () => {
     expect(screen.getByText(/llegaron 4 de las 50/)).toBeTruthy()
   })
 
-  it('el indicador no dice «guardada» en una pregunta en blanco', async () => {
+  it('el indicador no dice «guardado» en una pregunta en blanco', async () => {
     await empezar()
-    expect(screen.getByText('Sin responder')).toBeTruthy()
+    expect(enLaTarjeta().getByText('Sin responder')).toBeTruthy()
 
     responder('Algo escrito.')
-    await waitFor(() => expect(screen.getByText('Respuesta guardada')).toBeTruthy())
+    await waitFor(() => expect(enLaTarjeta().getByText('Guardado')).toBeTruthy())
+  })
+
+  it('AC-08: si el guardado falla, la casilla sale a medias y la tarjeta lo dice hasta que llega', async () => {
+    fallanUnaVez.add(1)
+    await empezar()
+
+    responder('Primera respuesta.')
+    siguiente()
+
+    // Ya no está en pantalla, y el mapa dice que no llegó.
+    await waitFor(() =>
+      expect(numeroDelMapa(1).getAttribute('aria-label')).toBe(
+        'Pregunta 1, a medias, no se pudo guardar; se reintenta',
+      ),
+    )
+    // La cola la reintenta sola, sin que nadie vuelva a ella.
+    await waitFor(() => expect(guardadas.get(1)).toBe('Primera respuesta.'), { timeout: 4000 })
+    await waitFor(() => expect(numeroDelMapa(1).getAttribute('aria-label')).toBe('Pregunta 1, lista'))
+  })
+
+  it('AC-08: en la pregunta que falló, «No se pudo guardar; se reintenta»', async () => {
+    fallanSiempre.add(1)
+    await empezar()
+
+    responder('Primera respuesta.')
+    await waitFor(() =>
+      expect(enLaTarjeta().getByText('No se pudo guardar; se reintenta')).toBeTruthy(),
+      { timeout: 3000 },
+    )
+    // Lo escrito sigue ahí: nada se pierde.
+    expect((screen.getByLabelText('Tu respuesta') as HTMLTextAreaElement).value).toBe('Primera respuesta.')
   })
 })
 
@@ -417,30 +468,33 @@ describe('la evaluacion no pierde respuestas', () => {
  * pantalla y sin vista de conjunto, un hueco es un hueco a ciegas.
  */
 describe('moverse por el examen sin perderse', () => {
-  it('el mapa dice como está cada pregunta, y sin depender del color', async () => {
+  it('el mapa dice como está cada pregunta, y sin depender del color (AC-03)', async () => {
     await empezar()
     responder('Uno.')
 
-    abrirMapa()
+    // En escritorio el mapa está a la vista al entrar, con su leyenda.
+    const mapa = screen.getByRole('navigation', { name: `Las ${TOTAL} preguntas` })
+    expect(within(mapa).getByText('Lista')).toBeTruthy()
+    expect(within(mapa).getByText('A medias')).toBeTruthy()
+    expect(within(mapa).getByText('Sin responder')).toBeTruthy()
 
-    // El nombre accesible lleva el estado escrito; en pantalla, ademas del
-    // color, cada uno tiene su forma y su simbolo.
-    expect(
-      screen.getByRole('button', { name: 'Pregunta 1, respondida, es la que estás viendo' }),
-    ).toBeTruthy()
+    // El nombre accesible lleva el número y el estado escritos; la actual lo dice.
+    expect(screen.getByRole('button', { name: 'Pregunta 1, lista (estás aquí)' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Pregunta 2, sin responder' })).toBeTruthy()
+
+    // Y pulsar una casilla lleva a esa pregunta.
+    fireEvent.click(numeroDelMapa(3))
+    await waitFor(() => expect(screen.getByText(/Pregunta 3 de 4/)).toBeTruthy())
+    expect(screen.getByRole('button', { name: 'Pregunta 3, sin responder (estás aquí)' })).toBeTruthy()
   })
 
-  it('el mapa se cierra con Escape', async () => {
+  it('en escritorio el mapa se oculta y vuelve desde la barra', async () => {
     await empezar()
-    abrirMapa()
-    expect(numeroDelMapa(1)).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Ocultar el mapa' }))
+    expect(screen.queryByRole('navigation', { name: `Las ${TOTAL} preguntas` })).toBeNull()
 
-    fireEvent.keyDown(document, { key: 'Escape' })
-
-    await waitFor(() =>
-      expect(screen.queryByRole('button', { name: /^Pregunta 1,/ })).toBeNull(),
-    )
+    fireEvent.click(screen.getByRole('button', { name: `Ver las ${TOTAL}` }))
+    expect(screen.getByRole('navigation', { name: `Las ${TOTAL} preguntas` })).toBeTruthy()
   })
 
   it('«siguiente sin responder» da la vuelta al llegar al final', async () => {
@@ -453,36 +507,55 @@ describe('moverse por el examen sin perderse', () => {
 
     responder('Cuatro.')
     // El unico hueco que queda esta detras: en la 2.
-    await screen.findByText('Te falta 1 por terminar.')
+    await screen.findByText('Te falta 1 por terminar')
 
     fireEvent.click(screen.getByRole('button', { name: 'Siguiente sin responder' }))
 
     await waitFor(() => expect(screen.getByText(/Pregunta 2 de 4/)).toBeTruthy())
   })
 
-  it('el «volver» aparece solo tras un salto, y se olvida al navegar a mano', async () => {
-    await empezar()
+  it('AC-05: «Volver a la N» recuerda el primer salto y se olvida al navegar a mano', async () => {
+    // Respondidas la 1 y la 3; sin responder la 2 y la 4.
+    guardadas.set(1, 'Uno.')
+    guardadas.set(3, 'Tres.')
+    iniciada = true
+    montar()
+    // Sin nada apuntado en la pestaña, entra en la primera sin responder: la 2.
+    await waitFor(() => expect(screen.getByText(/Pregunta 2 de 4/)).toBeTruthy())
     siguiente()
-    siguiente()
+    await waitFor(() => expect(screen.getByText(/Pregunta 3 de 4/)).toBeTruthy())
 
     // Moverse de una en una no deja nada que deshacer.
     expect(botonVolver()).toBeNull()
 
-    abrirMapa()
-    fireEvent.click(numeroDelMapa(1))
-    await waitFor(() => expect(screen.getByText(/Pregunta 1 de 4/)).toBeTruthy())
-
-    // Esto es lo que faltaba: el camino de vuelta a donde se estaba.
+    fireEvent.click(screen.getByRole('button', { name: 'Siguiente sin responder' }))
+    await waitFor(() => expect(screen.getByText(/Pregunta 4 de 4/)).toBeTruthy())
     expect(screen.getByRole('button', { name: 'Volver a la 3' })).toBeTruthy()
 
-    siguiente()
+    // Otra vez: da la vuelta a la 2 y sigue recordando la 3, el primer salto.
+    fireEvent.click(screen.getByRole('button', { name: 'Siguiente sin responder' }))
+    await waitFor(() => expect(screen.getByText(/Pregunta 2 de 4/)).toBeTruthy())
+    expect(screen.getByRole('button', { name: 'Volver a la 3' })).toBeTruthy()
 
-    // Al seguir a mano, la 3 ya no es «de donde venia»: el boton seria un
-    // fantasma que lleva a un sitio cualquiera.
+    // Al seguir a mano, la 3 ya no es «de donde venia».
+    fireEvent.click(screen.getByRole('button', { name: 'Anterior' }))
     await waitFor(() => expect(botonVolver()).toBeNull())
   })
 
-  it('«ir al final» no aparece mientras falte alguna', async () => {
+  it('el «volver» lleva al sitio del salto y desaparece', async () => {
+    await empezar()
+    siguiente()
+    siguiente()
+
+    fireEvent.click(numeroDelMapa(1))
+    await waitFor(() => expect(screen.getByText(/Pregunta 1 de 4/)).toBeTruthy())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Volver a la 3' }))
+    await waitFor(() => expect(screen.getByText(/Pregunta 3 de 4/)).toBeTruthy())
+    expect(botonVolver()).toBeNull()
+  })
+
+  it('«Ir al final» ya no existe; con todas, la barra dice «Todo listo para entregar»', async () => {
     await empezar()
     expect(screen.queryByRole('button', { name: 'Ir al final' })).toBeNull()
 
@@ -494,15 +567,201 @@ describe('moverse por el examen sin perderse', () => {
     responder('Tres.')
     siguiente()
     responder('Cuatro.')
-    await screen.findByText('Ya están las 4.')
+    await screen.findByText('Todo listo para entregar')
+    expect(screen.getByText('4 de 4 respondidas')).toBeTruthy()
 
-    // Desde la ultima no hace falta; desde cualquier otra, si.
-    abrirMapa()
     fireEvent.click(numeroDelMapa(1))
     await waitFor(() => expect(screen.getByText(/Pregunta 1 de 4/)).toBeTruthy())
+    expect(screen.queryByRole('button', { name: 'Ir al final' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Siguiente sin responder' })).toBeNull()
+  })
 
-    fireEvent.click(screen.getByRole('button', { name: 'Ir al final' }))
+  it('AC-09: al recargar vuelve a la pregunta en la que estaba', async () => {
+    await empezar()
+    siguiente()
+    siguiente()
+    await waitFor(() => expect(screen.getByText(/Pregunta 3 de 4/)).toBeTruthy())
+    cleanup()
+
+    // Otro montaje en la misma pestaña: lo apuntado en `sessionStorage` manda.
+    montar()
+    await waitFor(() => expect(screen.getByText(/Pregunta 3 de 4/)).toBeTruthy())
+  })
+
+  it('sin nada apuntado (o sin almacenamiento), entra en la primera sin responder', async () => {
+    guardadas.set(1, 'Uno.')
+    opcionesGuardadas.set(CON_OPCIONES, 21)
+    iniciada = true
+    const leer = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new Error('Almacenamiento bloqueado')
+    })
+    try {
+      montar()
+      await waitFor(() => expect(screen.getByText(/Pregunta 3 de 4/)).toBeTruthy())
+    } finally {
+      leer.mockRestore()
+    }
+  })
+
+  it('un doble clic en «Siguiente» avanza una sola pregunta', async () => {
+    await empezar()
+    const boton = screen.getByRole('button', { name: 'Siguiente' })
+    fireEvent.click(boton, { detail: 1 })
+    fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }), { detail: 2 })
+    await waitFor(() => expect(screen.getByText(/Pregunta 2 de 4/)).toBeTruthy())
+  })
+
+  it('QA-UPP-01: el segundo clic de un doble clic en «Siguiente» no marca la opción que queda debajo', async () => {
+    await empezar()
+    const boton = screen.getByRole('button', { name: 'Siguiente' })
+    fireEvent.mouseDown(boton, { detail: 1 })
+    fireEvent.click(boton, { detail: 1 })
+    await waitFor(() => expect(screen.getByText(/Pregunta 2 de 4/)).toBeTruthy())
+
+    // La 2 es más alta: la segunda pulsación cae sobre una de sus opciones, y no cuenta.
+    const radio = screen.getByRole('radio', { name: /Preguntar antes de empezar/ })
+    const opcion = radio.closest('label')!
+    expect(fireEvent.mouseDown(opcion, { detail: 2 })).toBe(false)
+    expect(fireEvent.click(opcion, { detail: 2 })).toBe(false)
+    expect(fireEvent.click(radio, { detail: 2 })).toBe(false)
+    fireEvent.dblClick(opcion, { detail: 2 })
+    await new Promise((seguir) => setTimeout(seguir, 0))
+    expect((radio as HTMLInputElement).checked).toBe(false)
+    expect(responderEvaluacion).not.toHaveBeenCalled()
+    expect(numeroDelMapa(2).getAttribute('aria-label')).toBe('Pregunta 2, sin responder (estás aquí)')
+    expect(screen.getByText(/Pregunta 2 de 4/)).toBeTruthy()
+
+    // Un clic suelto después sí la marca.
+    fireEvent.mouseDown(opcion, { detail: 1 })
+    fireEvent.click(opcion, { detail: 1 })
+    await waitFor(() =>
+      expect(responderEvaluacion).toHaveBeenCalledWith('x1', 2, expect.objectContaining({ opcionId: 21 })),
+    )
+  })
+
+  it('QA-UPP-01: un doble clic que empieza y acaba en el mismo sitio sigue siendo suyo', async () => {
+    await empezar()
+    const campo = screen.getByLabelText('Tu respuesta')
+    fireEvent.mouseDown(campo, { detail: 1 })
+    fireEvent.click(campo, { detail: 1 })
+    // Seleccionar una palabra con doble clic dentro del texto no se toca.
+    expect(fireEvent.mouseDown(campo, { detail: 2 })).toBe(true)
+    expect(fireEvent.click(campo, { detail: 2 })).toBe(true)
+  })
+
+  it('QA-UPP-01: con huecos, el doble clic en «Entregar» de la última no responde lo que el aviso empuja', async () => {
+    await empezar()
+    siguiente()
+    siguiente()
+    siguiente()
     await waitFor(() => expect(screen.getByText(/Pregunta 4 de 4/)).toBeTruthy())
+    const entregar = within(screen.getByRole('article')).getByRole('button', { name: 'Entregar la evaluación' })
+    fireEvent.mouseDown(entregar, { detail: 1 })
+    fireEvent.click(entregar, { detail: 1 })
+    await screen.findByText(/Para entregar te falta responder/)
+    // El aviso aparece encima y la tarjeta baja: la segunda pulsación cae en su campo.
+    const campo = screen.getByLabelText('Tu respuesta')
+    expect(fireEvent.mouseDown(campo, { detail: 2 })).toBe(false)
+    expect(fireEvent.click(campo, { detail: 2 })).toBe(false)
+  })
+
+  it('en la última, «Entregar la evaluación» sustituye a «Siguiente» y no se repite en la barra', async () => {
+    await empezar()
+    // En las demás, la barra lo lleva con contorno.
+    expect(screen.getAllByRole('button', { name: 'Entregar la evaluación' })).toHaveLength(1)
+    siguiente()
+    siguiente()
+    siguiente()
+    await waitFor(() => expect(screen.getByText(/Pregunta 4 de 4/)).toBeTruthy())
+    expect(screen.queryByRole('button', { name: 'Siguiente' })).toBeNull()
+    expect(screen.getAllByRole('button', { name: 'Entregar la evaluación' })).toHaveLength(1)
+    expect(within(screen.getByRole('article')).getByRole('button', { name: 'Entregar la evaluación' })).toBeTruthy()
+  })
+})
+
+/**
+ * El mapa en el teléfono: una hoja desde abajo, sin animación, que se cierra al elegir.
+ * `matchMedia` responde como una ventana de 375 px.
+ */
+describe('en el teléfono (AC-12)', () => {
+  beforeEach(() => {
+    vi.stubGlobal('matchMedia', (consulta: string) => ({
+      matches: /max-width/.test(consulta),
+      media: consulta,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    }))
+  })
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('«Ver las N» abre la hoja; elegir una casilla la cierra y lleva a ella', async () => {
+    await empezar()
+    // No hay columna de mapa: se abre desde la barra.
+    expect(screen.queryByRole('navigation', { name: `Las ${TOTAL} preguntas` })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: `Ver las ${TOTAL}` }))
+
+    const hoja = screen.getByRole('dialog', { name: `Las ${TOTAL} preguntas` })
+    expect(within(hoja).getByText('Te faltan 4 por terminar.')).toBeTruthy()
+    fireEvent.click(within(hoja).getByRole('button', { name: /^Pregunta 3,/ }))
+
+    expect(screen.queryByRole('dialog', { name: `Las ${TOTAL} preguntas` })).toBeNull()
+    await waitFor(() => expect(screen.getByText(/Pregunta 3 de 4/)).toBeTruthy())
+  })
+
+  it('la hoja se cierra con Escape y el foco vuelve al botón', async () => {
+    await empezar()
+    const boton = screen.getByRole('button', { name: `Ver las ${TOTAL}` })
+    fireEvent.click(boton)
+    expect(screen.getByRole('dialog')).toBeTruthy()
+
+    fireEvent.keyDown(document, { key: 'Escape' })
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect(document.activeElement).toBe(boton)
+  })
+
+  it('QA-UPP-02 y 03: la hoja empieza donde acaba la barra ya con «Ocultar el mapa», la sigue, y ese botón la cierra', async () => {
+    await empezar()
+    const boton = screen.getByRole('button', { name: `Ver las ${TOTAL}` })
+    const barra = boton.parentElement!.parentElement!
+    let crece = 0
+    // Con «Ocultar el mapa», más ancho, la barra se parte en una fila más: 314 → 366 px.
+    const medida = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: HTMLElement,
+    ) {
+      const bajo = this === barra ? (boton.textContent === 'Ocultar el mapa' ? 366 : 314) + crece : 0
+      return { top: 0, left: 0, right: 0, x: 0, y: 0, width: 0, bottom: bajo, height: bajo, toJSON: () => ({}) }
+    })
+    try {
+      fireEvent.click(boton)
+      const hoja = screen.getByRole('dialog', { name: `Las ${TOTAL} preguntas` })
+      expect(boton.textContent).toBe('Ocultar el mapa')
+      expect(boton.getAttribute('aria-expanded')).toBe('true')
+      expect(hoja.parentElement!.style.top).toBe('366px')
+
+      // Si la barra cambia —el aviso del plazo, otra fila—, la hoja la sigue.
+      crece = 40
+      fireEvent(window, new Event('resize'))
+      expect(hoja.parentElement!.style.top).toBe('406px')
+
+      fireEvent.click(boton)
+      expect(screen.queryByRole('dialog', { name: `Las ${TOTAL} preguntas` })).toBeNull()
+      expect(boton.textContent).toBe(`Ver las ${TOTAL}`)
+      expect(boton.getAttribute('aria-expanded')).toBe('false')
+      expect(document.activeElement).toBe(boton)
+
+      // Y vuelve a abrirse.
+      fireEvent.click(boton)
+      expect(screen.getByRole('dialog', { name: `Las ${TOTAL} preguntas` })).toBeTruthy()
+    } finally {
+      medida.mockRestore()
+    }
+  })
+
+  it('«Entregar la evaluación» va debajo de la pregunta, una sola vez', async () => {
+    await empezar()
+    expect(screen.getAllByRole('button', { name: 'Entregar la evaluación' })).toHaveLength(1)
   })
 })
 
@@ -559,6 +818,23 @@ describe('el plazo mientras se responde', () => {
     expect(screen.queryByText(/para entregarla/)).toBeNull()
     expect(screen.queryByText('Se entrega hoy')).toBeNull()
     expect(screen.getByText(/Queda poco plazo/)).toBeTruthy()
+    // La cuenta atrás, en la barra y en rojo (AC-11).
+    const cuenta = screen.getByText(/^Quedan [0-9]{2}:[0-9]{2}:[0-9]{2}$/)
+    expect(cuenta.closest('div')?.className).toMatch(/poco/)
+  })
+
+  it('con más de una hora, el plazo de la barra no va en rojo', async () => {
+    venceEn = dentroDe(5)
+    await empezar()
+    expect(screen.getByText('Se entrega hoy').closest('div')?.className).not.toMatch(/poco/)
+  })
+
+  it('AC-11: el aviso de plazo ya no promete entregar lo respondido', async () => {
+    venceEn = dentroDe(0.5)
+    await empezar()
+
+    expect(screen.queryByText(/se entregará lo que tengas respondido/)).toBeNull()
+    expect(document.body.textContent).toContain('Cuando se acabe, la evaluación se cierra sin entregarse. Entrégala antes.')
   })
 
   it('sin plazo no se inventa ninguno', async () => {
@@ -656,8 +932,8 @@ describe('cuando la empresa retiró la vacante', () => {
     guardadas.set(4, 'Cuatro.')
     iniciada = true
     montar()
-    fireEvent.click(await screen.findByRole('button', { name: 'Ir al final' }))
-    fireEvent.click(await screen.findByRole('button', { name: /Entregar evaluación/ }))
+    // Con todo respondido, la barra lleva «Entregar la evaluación» desde cualquier pregunta.
+    fireEvent.click(await screen.findByRole('button', { name: 'Entregar la evaluación' }))
     const entregarla = await screen.findByRole('button', { name: 'Entregar' })
 
     vi.mocked(entregarEvaluacion).mockRejectedValueOnce(yaNoExiste())
@@ -731,7 +1007,7 @@ describe('al entregar, la prueba al instante', () => {
     siguiente()
     siguiente()
     siguiente()
-    fireEvent.click(screen.getByRole('button', { name: /Entregar evaluación/ }))
+    entregarLaEvaluacion()
     const entregar = await screen.findByRole('button', { name: 'Entregar' })
     await waitFor(() => expect((entregar as HTMLButtonElement).disabled).toBe(false))
     for (let i = 0; i < clics; i++) fireEvent.click(entregar)

@@ -267,7 +267,9 @@ test.describe('Un editor de la prueba técnica más simple', () => {
     await page.reload()
     await expect(page.getByText('Tiempo restante')).toBeVisible({ timeout: 20_000 })
 
-    // El archivo de la pregunta, dentro de ella
+    // El archivo de la pregunta, dentro de ella. Una pregunta por pantalla (09/10/2026): se
+    // entra en la primera que no está lista, la 3, respondida pero sin su archivo.
+    await expect(page.getByText('Pregunta 3 de 5')).toBeVisible()
     const enLaPregunta = page.locator(`#entregable-${flujo.id}`)
     await expect(enLaPregunta).toContainText('Archivo de esta pregunta: Flujo de caja.xlsx')
     await enLaPregunta.locator('input[type="file"]').setInputFiles({
@@ -276,11 +278,14 @@ test.describe('Un editor de la prueba técnica más simple', () => {
     await expect(enLaPregunta).toContainText('Recibimos flujo.pdf', { timeout: 20_000 })
 
     // Sin el general obligatorio no entrega: lo dice y lleva a los entregables; el servidor tampoco
-    await page.getByRole('button', { name: 'Entregar prueba' }).click()
+    await page.getByRole('button', { name: 'Entregar la prueba' }).click()
     const falta = page.getByRole('alert').filter({ hasText: 'Te falta subir' })
     await expect(falta).toContainText('Te falta subir «Informe final».')
     await expect(page.getByRole('dialog')).toHaveCount(0)
     await falta.getByRole('button', { name: 'Ir a los entregables' }).click()
+    // El paso final, con el general dentro: lleva el navegador de preguntas, no la página
+    await expect(page.getByRole('heading', { level: 1, name: 'Entregables' })).toBeVisible()
+    await expect(page.locator(`#entregable-${informe.id}`)).toContainText('Informe final')
     const directa = await entregarLaPrueba(lia)
     expect(directa.estado).toBe(400)
 

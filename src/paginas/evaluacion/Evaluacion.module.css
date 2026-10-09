@@ -2,19 +2,22 @@
  * La evaluación.
  *
  * Entre 50 y 85 preguntas segun el nivel, en orden fijo, que nadie responde de
- * una sentada. Todo aqui existe por un fallo real que ya ocurrio:
+ * una sentada.
  *
- *   - **El mapa** existe porque alguien se salto una pregunta, el aviso lo mando
- *     de la 50 a la 10, y para volver no habia mas remedio que pulsar
- *     «Siguiente» cuarenta veces.
- *   - **El estado de cada pregunta se lee en la FORMA** —relleno, contorno,
- *     borde grueso— antes que en el color, y ademas se dice con palabras.
- *   - **Lo que no ha llegado al servidor se dice**, y no se deja entregar
- *     mientras quede algo sin guardar. Un indicador que dice «guardada» sin
- *     comprobarlo es peor que ninguno.
+ * **El marco —la barra fija, el mapa, la tarjeta de la pregunta y el aviso de lo
+ * que falta— vive en `../unaPorPantalla/Marco.module.css`** desde el 09/10/2026, y lo
+ * comparte con la prueba técnica del editor. Ahí cambió a propósito lo que esta hoja
+ * decía antes:
  *
- * El acento indigo NO se usa para «respondida»: aqui significaria dos cosas a
- * la vez. Marca solo donde estas.
+ *   - **«Siguiente» va relleno de índigo**, no en tinta. Aquí se justificaba que
+ *     dentro del examen el acento sería ruido; la maqueta aprobada el 06/10/2026 lo
+ *     pinta de índigo en las dos pantallas y es lo que manda.
+ *   - **El mapa marca «lista» rellena de índigo y la actual con un anillo oscuro**, al
+ *     revés que antes (lista en tinta, actual en índigo): decisión del usuario del
+ *     07/10/2026, aunque se aparte de la regla de la voz única.
+ *
+ * Aquí queda lo que es solo de la evaluación: la portada, los avisos y la situación de
+ * un ítem del banco.
  */
 
 .pagina {
@@ -25,266 +28,17 @@
   composes: volver from '../../estilos/piezas.module.css';
 }
 
-/* ---------- La barra de avance, siempre a la vista ---------- */
-
 /*
- * Lo que mide esta barra, para que el mapa pueda pegarse justo debajo sin
- * adivinarlo. Medido en el navegador a 1100, 1280, 1400 y 1920: 116 px en los
- * cuatro. Si cambia lo que va dentro, se vuelve a medir.
- */
-.pagina {
-  --alto-avance: 116px;
-}
-
-.avance {
-  position: sticky;
-  top: var(--alto-cabecera);
-  z-index: 5;
-  background: var(--nube);
-  border-bottom: 1px solid var(--regla);
-  padding: var(--e3) 0;
-  margin-bottom: var(--e5);
-}
-
-.cifras {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--e2) var(--e4);
-  font-size: var(--t-apoyo);
-  color: var(--tinta2);
-}
-
-/* Donde estas manda sobre cuantas llevas: es lo que se mira de reojo. */
-.donde {
-  color: var(--tinta);
-  font-weight: 600;
-}
-
-/*
-  El plazo que queda, al final de la linea de servicio.
-
-  Solo color: el `space-between` de `.cifras` ya lo coloca en los dos casos —al
-  canto derecho cuando los tres datos caben en una linea, y al margen izquierdo
-  cuando se parte y cae solo—, que es justo lo que se quiere en cada uno. Un
-  `margin-left: auto` acertaria en el primero y lo dejaria arrinconado contra
-  un borde que ya no existe en el segundo.
-
-  En --tinta3, el color de los plazos y las unidades: se lee de reojo sin
-  disputarle el sitio a «Pregunta 2 de 55», que es lo que manda en esta linea.
+  El plazo que queda, en la barra fija, mientras sobra: en --tinta3, el color de los
+  plazos y las unidades. Se lee de reojo sin disputarle el sitio a «Pregunta 2 de 55».
 */
 .plazo {
+  font-size: var(--t-apoyo);
+  font-weight: 400;
   color: var(--tinta3);
 }
 
-.riel {
-  display: flex;
-  height: 6px;
-  margin-top: var(--e2);
-  background: var(--nube-honda);
-}
-
-.recorrido {
-  background: var(--tinta);
-}
-
-/* ---------- Los mandos: mapa, saltos ---------- */
-
-.mandos {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--e3);
-  margin-top: var(--e3);
-}
-
-.mando {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  padding: 0 var(--e4);
-  background: var(--nube);
-  border: 1px solid var(--borde-control);
-  font-size: var(--t-apoyo);
-  font-weight: 600;
-  cursor: pointer;
-  border-radius: var(--radio-menor);
-}
-
-.mando:hover {
-  border-color: var(--tinta);
-}
-
-.mando[aria-expanded='true'] {
-  background: var(--tinta);
-  border-color: var(--tinta);
-  color: var(--nube);
-}
-
-.faltan {
-  font-size: var(--t-apoyo);
-  color: var(--tinta2);
-  margin-left: auto;
-}
-
-/* ---------- El mapa de preguntas ---------- */
-
-/*
- * El mapa al lado, no encima.
- *
- * `CLAUDE.md` decia «mapa lateral» y la implementacion lo abria por arriba,
- * empujando la pregunta fuera de la pantalla. Aqui se cumple lo que estaba
- * escrito: en escritorio la columna de la derecha —la que sobraba— lo aloja, y
- * la pregunta se queda donde estaba.
- */
-.conMapa {
-  display: contents;
-}
-
-@media (min-width: 900px) {
-  .conMapa {
-    display: grid;
-    /* `auto` para que, con el mapa cerrado, la columna se encoja a cero. */
-    grid-template-columns: minmax(0, 1fr) auto;
-    column-gap: var(--e6);
-    align-items: start;
-  }
-
-  .conMapa > .mapa {
-    order: 2;
-    /* Estrecho en la banda de 900 a 1099, donde la pregunta necesita el resto. */
-    width: 13rem;
-    margin-top: 0;
-    position: sticky;
-    /* Debajo de la barra de avance, que tambien es pegajosa. */
-    top: calc(var(--alto-cabecera) + var(--alto-avance));
-  }
-
-  .conMapa > .pregunta {
-    order: 1;
-  }
-}
-
-@media (min-width: 1100px) {
-  .conMapa > .mapa {
-    width: 17rem;
-  }
-}
-
-.mapa {
-  margin-top: var(--e4);
-  border: 1px solid var(--regla2);
-  background: var(--nube-hundida);
-  padding: var(--e4);
-  border-radius: var(--radio);
-}
-
-.rejilla {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
-  gap: var(--e2);
-}
-
-.casilla {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 44px;
-  min-height: 44px;
-  background: var(--nube);
-  border: 1px solid var(--regla2);
-  font-size: var(--t-apoyo);
-  font-variant-numeric: tabular-nums;
-  cursor: pointer;
-  border-radius: var(--radio-menor);
-}
-
-.casilla:hover {
-  border-color: var(--tinta);
-}
-
-/* Respondida: relleno macizo. La forma lo dice antes que el color. */
-.casilla.lista {
-  background: var(--tinta);
-  border-color: var(--tinta);
-  color: var(--nube);
-}
-
-/* A medias: media caja rellena, para distinguirla de la vacía sin usar color. */
-.casilla.aMedias {
-  background: linear-gradient(to top, var(--tinta) 50%, var(--nube) 50%);
-  border-color: var(--tinta);
-  color: var(--tinta);
-  font-weight: 600;
-}
-
-/* Sin guardar: borde grueso de aviso. */
-.casilla.sinGuardar {
-  border: 2px solid var(--mal);
-  color: var(--mal);
-  font-weight: 700;
-}
-
-/* Donde estás: el único acento del examen. */
-.casilla.aqui {
-  outline: 2px solid var(--activo);
-  outline-offset: -2px;
-  border-color: var(--activo);
-}
-
-.leyenda {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--e3) var(--e5);
-  margin-top: var(--e4);
-  padding-top: var(--e3);
-  border-top: 1px solid var(--regla2);
-  font-size: var(--t-menor);
-  color: var(--tinta2);
-}
-
-.entradaLeyenda {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--e2);
-}
-
-.muestra {
-  width: 15px;
-  height: 15px;
-  flex: none;
-  background: var(--nube);
-  border: 1px solid var(--regla2);
-}
-
-.muestra.lista {
-  background: var(--tinta);
-  border-color: var(--tinta);
-}
-
-.muestra.aMedias {
-  background: linear-gradient(to top, var(--tinta) 50%, var(--nube) 50%);
-  border-color: var(--tinta);
-}
-
-.muestra.sinGuardar {
-  border: 2px solid var(--mal);
-}
-
 /* ---------- La pregunta ---------- */
-
-.pregunta {
-  border: 1px solid var(--regla);
-  padding: var(--e6);
-  border-radius: var(--radio);
-}
-
-.cual {
-  font-size: var(--t-apoyo);
-  color: var(--tinta2);
-  font-variant-numeric: tabular-nums;
-}
 
 .situacion {
   margin-top: var(--e4);
@@ -297,69 +51,9 @@
   white-space: pre-line;
 }
 
-.enunciado {
-  font-size: var(--t-destacado);
-  line-height: 1.35;
-  letter-spacing: -0.018em;
-  font-weight: 600;
-  margin-top: var(--e4);
-  max-width: var(--medida);
-  text-wrap: pretty;
-}
-
-.respuesta {
-  margin-top: var(--e5);
-}
-
-/* ---------- El pie de la pregunta ---------- */
-
-.pie {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--e4);
-  margin-top: var(--e6);
-  padding-top: var(--e4);
-  border-top: 1px solid var(--regla);
-}
-
-.estadoRespuesta {
-  font-size: var(--t-apoyo);
-  color: var(--tinta2);
-}
-
-/*
- * El rojo solo para el fallo real. «Guardando…» se queda en la tinta de siempre:
- * es un estado que se resuelve solo y no pide nada a quien responde.
- */
-.estadoRespuesta.fallo {
-  color: var(--mal);
-  font-weight: 600;
-}
-
-/* Lo que le falta al candidato, no una averia nuestra. */
-.estadoRespuesta.duda {
-  color: var(--duda-tinta);
-  font-weight: 600;
-}
-
-.pasos {
-  display: flex;
-  gap: var(--e3);
-}
-
-/*
- * Los dos no son la misma pieza aunque vayan juntos: «Siguiente» es el camino
- * y va relleno, «Anterior» es la vuelta y va con contorno. Ninguno lleva el
- * acento — dentro del examen, el acento seria ruido: aqui TODO es su turno.
- */
-.anterior {
-  composes: secundario from '../../estilos/piezas.module.css';
-}
-
-.siguiente {
-  composes: solido from '../../estilos/piezas.module.css';
+/* «Entregar la evaluación» debajo de la pregunta, en el teléfono. */
+.entregarAbajo {
+  width: 100%;
 }
 
 /* ---------- Avisos ---------- */
@@ -367,7 +61,6 @@
 .aviso {
   display: flex;
   gap: var(--e3);
-  margin-top: var(--e4);
   border: 1px solid var(--regla2);
   background: var(--nube-hundida);
   padding: var(--e4);
@@ -377,13 +70,11 @@
   border-radius: var(--radio);
 }
 
-
 .aviso.malo {
   border-color: var(--mal-regla);
   background: var(--mal-bruma);
   color: var(--mal);
 }
-
 
 .enlaceAviso {
   background: none;
@@ -396,33 +87,14 @@
   text-underline-offset: 0.22em;
 }
 
-/* ---------- Entregar ---------- */
-
-.entrega {
-  margin-top: var(--e6);
-  padding-top: var(--e5);
-  border-top: 1px solid var(--regla);
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--e4);
-}
-
-.entregaTexto {
-  font-size: var(--t-apoyo);
-  color: var(--tinta2);
-  max-width: var(--medida-corta);
-}
-
-.entregar {
-  composes: acentoGrande from '../../estilos/piezas.module.css';
-}
-
 /* ---------- La portada del examen ---------- */
 
 .portada {
   max-width: 40rem;
+}
+
+.portada .aviso {
+  margin-top: var(--e4);
 }
 
 .presentacion {
@@ -510,51 +182,7 @@
   width: 68%;
 }
 
-.soloLectores {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-  border: 0;
-}
-
-/* ---------- El aviso de entrega ---------- */
-
-.confirmacion {
-  width: min(32rem, calc(100vw - 2rem));
-  padding: var(--e6);
-  border: 1px solid var(--regla);
-  background: var(--nube);
-  color: var(--tinta);
-  border-radius: var(--radio);
-  box-shadow: var(--sombra-aviso);
-}
-
-.confirmacion::backdrop {
-  background: var(--velo);
-}
-
-.confirmacionTitulo {
-  margin: 0;
-}
-
-.confirmacionTexto {
-  font-size: var(--t-prosa);
-  line-height: 1.55;
-  color: var(--tinta2);
-  margin-top: var(--e3);
-}
-
-.confirmacionBotones {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--e3);
-  margin-top: var(--e6);
-}
+/* ---------- La confirmación de entrega ---------- */
 
 .seguir {
   composes: secundario from '../../estilos/piezas.module.css';
@@ -567,24 +195,5 @@
 @media (max-width: 760px) {
   .pagina {
     padding: var(--e3) var(--e4) var(--e7);
-  }
-
-  .pregunta {
-    padding: var(--e5) var(--e4);
-  }
-
-
-  .pasos {
-    width: 100%;
-  }
-
-  .anterior,
-  .siguiente {
-    flex: 1;
-  }
-
-  .faltan {
-    margin-left: 0;
-    width: 100%;
   }
 }

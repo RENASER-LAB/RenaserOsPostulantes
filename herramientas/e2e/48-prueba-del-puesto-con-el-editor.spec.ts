@@ -307,27 +307,47 @@ test.describe('La prueba del puesto escrita en el editor', () => {
     await page.getByRole('dialog').getByRole('button', { name: 'Sí, empezar' }).click()
     await expect(page.getByText('Tiempo restante')).toBeVisible({ timeout: 20_000 })
 
-    // Los cuatro tipos, con los mismos componentes que la evaluación
-    await expect(page.getByRole('group', { name: `Pregunta 1 · ${OU}` }).getByRole('radio')).toHaveCount(3)
-    await expect(page.getByRole('group', { name: `Pregunta 2 · ${MULTI}` }).getByRole('checkbox')).toHaveCount(3)
-    await expect(page.getByRole('textbox', { name: `Pregunta 3 · ${ABIERTA}` })).toBeVisible()
-    await expect(page.getByRole('radiogroup', { name: 'Niveles, del menor al mayor' }).getByRole('radio')).toHaveCount(3)
+    // Una pregunta por pantalla (09/10/2026): se empieza en la 1, con la barra y el mapa
+    const main = page.locator('main')
+    await expect(main.getByText('Pregunta 1 de 5')).toBeVisible()
+    await expect(main.getByRole('article')).toHaveCount(1)
+    await expect(main.getByRole('navigation', { name: 'Las 5 preguntas' })).toBeVisible()
     await expect(page.getByText(/cambio inesperado/i)).toHaveCount(0)
+    const siguiente = () => main.getByRole('button', { name: 'Siguiente', exact: true }).click()
+    /** Las respuestas que el servidor ya tiene: las que no se ven también cuentan. */
+    const respondidasEnElServidor = async () =>
+      ((await verLaPrueba(quien.ana)).cuerpo.preguntas as any[]).filter(
+        (p) => p.respuestaOpcionId != null || (p.respuestaMarcadas?.length ?? 0) > 0 || (p.respuestaTexto ?? '').trim() !== '',
+      ).length
 
+    // Los cuatro tipos, con los mismos componentes que la evaluación y el nombre del tipo.
     // Dos sin responder (una abierta con solo espacios) y sin el obligatorio: no se entrega
+    await expect(main.getByText('Pregunta 1 · Opción única')).toBeVisible()
+    await expect(main.getByRole('group', { name: OU }).getByRole('radio')).toHaveCount(3)
     await page.getByText('a. Libro diario', { exact: true }).click()
+    await siguiente()
+    await expect(main.getByText('Pregunta 2 · Opción múltiple')).toBeVisible()
+    await expect(main.getByRole('group', { name: MULTI }).getByRole('checkbox')).toHaveCount(3)
     await page.getByText('Factura', { exact: true }).click()
     await page.getByText('Guía de remisión', { exact: true }).click()
-    await page.getByRole('textbox', { name: `Pregunta 3 · ${ABIERTA}` }).fill('     ')
-    await page.getByRole('radiogroup', { name: 'Niveles, del menor al mayor' }).getByText('3', { exact: true }).click()
-    await expect(page.getByText('Guardado.')).toHaveCount(3, { timeout: 15_000 })
-    await page.getByRole('button', { name: 'Entregar prueba' }).click()
+    await siguiente()
+    await expect(main.getByText('Pregunta 3 · Abierta')).toBeVisible()
+    await main.getByRole('textbox', { name: ABIERTA }).fill('     ')
+    await siguiente()
+    await expect(main.getByRole('radiogroup', { name: 'Niveles, del menor al mayor' }).getByRole('radio')).toHaveCount(3)
+    await main.getByRole('radiogroup', { name: 'Niveles, del menor al mayor' }).getByText('3', { exact: true }).click()
+    await expect.poll(respondidasEnElServidor, { timeout: 15_000 }).toBe(3)
+    await expect(main.getByRole('button', { name: 'Pregunta 1, lista' })).toBeVisible()
+    await expect(main.getByRole('button', { name: 'Pregunta 3, sin responder' })).toBeVisible()
+    await main.getByRole('button', { name: 'Entregar la prueba' }).click()
     const falta = page.getByRole('alert').filter({ hasText: 'Para entregar te falta' })
     await expect(falta).toContainText('responder 2 preguntas (la 3 y la 5)')
     await expect(falta).toContainText('Te falta subir «Tablero.xlsx»')
     await expect(page.getByRole('dialog')).toHaveCount(0)
     await falta.getByRole('button', { name: 'Ir a la pregunta 3' }).click()
-    await expect(page.getByRole('textbox', { name: `Pregunta 3 · ${ABIERTA}` })).toBeFocused()
+    await expect(main.getByText('Pregunta 3 de 5')).toBeVisible()
+    await expect(main.getByRole('textbox', { name: ABIERTA })).toBeFocused()
+    await expect(main.getByRole('button', { name: 'Volver a la 4' })).toBeVisible()
 
     // Y el servidor tampoco, llamado directamente
     const directa = await entregarLaPrueba(quien.ana)
@@ -336,15 +356,18 @@ test.describe('La prueba del puesto escrita en el editor', () => {
       'Falta responder la pregunta 3.', 'Falta responder la pregunta 5.', 'Falta subir «Tablero.xlsx».',
     ])
 
-    // Se completa y se entrega
-    await page.getByRole('textbox', { name: `Pregunta 3 · ${ABIERTA}` }).fill('En la cuenta 1041 había un depósito duplicado de S/ 1 250.')
-    await page.getByText('a. BUSCARV', { exact: true }).click()
+    // Se completa y se entrega: la 3 con su archivo, dentro de su tarjeta, y la 5
+    await main.getByRole('textbox', { name: ABIERTA }).fill('En la cuenta 1041 había un depósito duplicado de S/ 1 250.')
     await page.locator('input[type="file"]').first().setInputFiles({
       name: 'tablero.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4 la conciliación'),
     })
     await expect(page.getByText('Recibimos tablero.pdf')).toBeVisible({ timeout: 20_000 })
-    await expect(page.getByText('Guardado.')).toHaveCount(5, { timeout: 15_000 })
-    await page.getByRole('button', { name: 'Entregar prueba' }).click()
+    await main.getByRole('button', { name: 'Siguiente sin responder' }).click()
+    await expect(main.getByText('Pregunta 5 de 5')).toBeVisible()
+    await page.getByText('a. BUSCARV', { exact: true }).click()
+    await expect.poll(respondidasEnElServidor, { timeout: 15_000 }).toBe(5)
+    await expect(main.getByText('Todo listo para entregar')).toBeVisible()
+    await main.getByRole('button', { name: 'Entregar la prueba' }).click()
     await page.getByRole('dialog').getByRole('button', { name: 'Entregar', exact: true }).click()
     await expect(page).toHaveURL(new RegExp(`/procesos/${quien.ana.uuid}$`), { timeout: 20_000 })
     expect(estadoDe(quien.ana.postulacion)).toBe('PRUEBA_CALIFICANDO')

@@ -1,0 +1,516 @@
+/*
+ * El marco de una pregunta por pantalla: la prueba técnica del editor y la evaluación del
+ * Perfil Integral, con el diseño de la maqueta aprobada el 06/10/2026.
+ *
+ * Tres reglas de la maqueta y de DESIGN.md que mandan aquí:
+ *
+ *   - **Nada se mueve** (la regla del reloj): ningún `transition`, ningún rótulo que gira.
+ *     Los botones se escriben aquí y no componen `piezas.module.css` porque aquellos animan.
+ *   - **El estado se lee en la forma**: lista rellena de índigo, a medias con media casilla en
+ *     diagonal, sin responder con borde punteado. Se aparta a propósito de «la regla de la voz
+ *     única» (decisión del usuario del 07/10/2026).
+ *   - **Rojo solo para el tiempo que se acaba; ámbar solo para lo que frena la entrega.**
+ */
+
+/* `--alto-barra` lo escribe la barra al medirse (ResizeObserver). */
+.marco {
+  --alto-barra: 120px;
+  /* Más que todo lo que hay debajo del marco: el pie del sitio y el aire de la página suman
+     ~580 px en el teléfono. Ver «La barra no se va con el final del marco». */
+  --alcance-barra: 100rem;
+}
+
+/* ---------- La barra fija ---------- */
+
+/*
+ * ⚠️ **La barra no se va con el final del marco** (QA-UPP-04). Una caja `sticky` no sale de su
+ * bloque contenedor —el marco— con su caja de margen. Al final de la página lo que queda debajo
+ * del marco (el pie del sitio, ~580 px en el teléfono) subía el borde del marco por encima de la
+ * barra, y la barra subía con él hasta pasar bajo la cabecera: el reloj o el plazo, «Pregunta N
+ * de M» y lo que falta quedaban tapados, y del todo al abrir la hoja, que le añade una fila.
+ *
+ * El margen negativo de abajo alarga su caja de margen `--alcance-barra` más allá del borde del
+ * marco, así que ese borde ya no la empuja y queda pegada bajo la cabecera hasta el final de la
+ * página, por encima del pie. Lo que sigue a la barra recupera ese margen: sumado o colapsado con
+ * el de la barra, el hueco entre ambos sigue siendo `--e5`. Sin JavaScript ni nada que se mueva
+ * al desplazarse (la regla del reloj).
+ */
+.barra {
+  position: sticky;
+  top: var(--alto-cabecera);
+  z-index: 5;
+  background: var(--nube);
+  border-bottom: 1px solid var(--regla);
+  padding: var(--e3) 0;
+  margin-bottom: calc(-1 * var(--alcance-barra));
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+}
+
+.barra + * {
+  margin-top: calc(var(--alcance-barra) + var(--e5));
+}
+
+.datos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--e2) var(--e5);
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+}
+
+.tiempo {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--e1) var(--e2);
+  font-size: var(--t-entradilla);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--tinta);
+}
+
+/* Queda poco: el rojo es la única voz roja de la pantalla, y va con la frase del umbral. */
+.tiempo.poco,
+.tiempo.poco * {
+  color: var(--mal);
+}
+
+.donde {
+  color: var(--tinta);
+  font-weight: 600;
+}
+
+.faltan {
+  color: var(--tinta2);
+}
+
+.faltan.listo {
+  color: var(--tinta);
+  font-weight: 600;
+}
+
+.progreso {
+  display: flex;
+  align-items: center;
+  gap: var(--e3);
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+}
+
+.riel {
+  flex: 1;
+  display: flex;
+  height: 6px;
+  background: var(--nube-honda);
+  border-radius: var(--radio-barra);
+  overflow: hidden;
+}
+
+.recorrido {
+  background: var(--activo);
+}
+
+.mandos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--e2) var(--e3);
+}
+
+/* Los botones de la barra, con contorno. 44 px de alto, sin transición. */
+.mando,
+.anterior,
+.irA {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 var(--e4);
+  background: var(--nube);
+  color: var(--tinta);
+  border: 1px solid var(--borde-control);
+  border-radius: var(--radio-control);
+  font: inherit;
+  font-size: var(--t-apoyo);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.mando:hover:not(:disabled),
+.anterior:hover:not(:disabled),
+.irA:hover:not(:disabled) {
+  border-color: var(--tinta);
+}
+
+.mando[aria-expanded='true'] {
+  border-color: var(--tinta);
+}
+
+/* «Entregar…» en la barra: borde oscuro. Relleno solo en el último paso. */
+.mandoEntregar {
+  border: 2px solid var(--tinta);
+  font-weight: 600;
+}
+
+.mando:disabled,
+.anterior:disabled {
+  background: var(--nube-honda);
+  border-color: var(--nube-honda);
+  color: var(--tinta3);
+  cursor: default;
+}
+
+/* ---------- El cuerpo: mapa, pregunta y, en la prueba, el caso ---------- */
+
+.cuerpo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--e5);
+  align-items: start;
+}
+
+.centro {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e4);
+}
+
+/* Sin caso al lado: un ancho cómodo de lectura, centrado junto al mapa. */
+.centro.leer {
+  width: 100%;
+  max-width: 760px;
+  justify-self: center;
+}
+
+@media (min-width: 761px) {
+  .cuerpo.conMapa {
+    grid-template-columns: 13.5rem minmax(0, 1fr);
+  }
+}
+
+@media (min-width: 1100px) {
+  .cuerpo.conLateral {
+    grid-template-columns: minmax(0, 1fr) 20rem;
+  }
+
+  .cuerpo.conMapa.conLateral {
+    grid-template-columns: 13.5rem minmax(0, 1fr) 20rem;
+  }
+}
+
+/* ---------- El mapa ---------- */
+
+.mapa {
+  position: sticky;
+  top: calc(var(--alto-cabecera) + var(--alto-barra) + var(--e4));
+  max-height: calc(100vh - var(--alto-cabecera) - var(--alto-barra) - var(--e6));
+  overflow-y: auto;
+  background: var(--nube);
+  border: 1px solid var(--regla);
+  border-radius: var(--radio);
+  padding: var(--e4);
+}
+
+.tituloMapa {
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--tinta);
+  margin: 0 0 var(--e3);
+}
+
+.rejilla {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+  gap: var(--e2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.rejillaGrande {
+  grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
+}
+
+.todoElAncho {
+  grid-column: 1 / -1;
+}
+
+.casilla {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 var(--e2);
+  border-radius: var(--radio-menor);
+  font: inherit;
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.rejillaGrande .casilla {
+  min-height: 52px;
+  font-size: var(--t-base);
+}
+
+/* Sin responder: borde punteado. */
+.casilla.vacia,
+.muestra.vacia {
+  background: var(--nube);
+  border: 1.5px dashed var(--borde-control);
+  color: var(--tinta2);
+}
+
+/* Lista: rellena de índigo. */
+.casilla.lista,
+.muestra.lista {
+  background: var(--activo);
+  border: 1.5px solid var(--activo);
+  color: var(--tinta-invertida);
+}
+
+/* A medias: media casilla en diagonal. La mitad va en bruma para que el número se lea entero. */
+.casilla.aMedias,
+.muestra.aMedias {
+  background: linear-gradient(135deg, var(--nube) 50%, var(--activo-bruma) 50%);
+  border: 1.5px solid var(--activo);
+  color: var(--tinta);
+}
+
+/* La actual: un anillo oscuro alrededor, aparte del anillo índigo del foco. */
+.casilla.aqui {
+  box-shadow: 0 0 0 2px var(--nube), 0 0 0 4px var(--tinta);
+}
+
+.casilla.vacia:hover {
+  border-color: var(--tinta);
+}
+
+.casillaAncha {
+  justify-content: flex-start;
+  padding: 0 var(--e3);
+}
+
+.leyenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e2) var(--e4);
+  list-style: none;
+  margin: var(--e4) 0 0;
+  padding: var(--e3) 0 0;
+  border-top: 1px solid var(--regla);
+  font-size: var(--t-menor);
+  color: var(--tinta2);
+}
+
+.entradaLeyenda {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+}
+
+.muestra {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  flex: none;
+  border-radius: var(--radio-marca);
+}
+
+/* ---------- La hoja del mapa, en el teléfono ---------- */
+
+.velo {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  display: flex;
+  align-items: flex-end;
+  background: var(--velo);
+}
+
+.hoja {
+  width: 100%;
+  max-height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--nube);
+  border-radius: var(--radio) var(--radio) 0 0;
+  padding: var(--e4) var(--e4) calc(var(--e5) + env(safe-area-inset-bottom, 0px));
+}
+
+.cabezaHoja {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e3);
+}
+
+.cabezaHoja .tituloMapa {
+  margin: 0;
+  font-size: var(--t-entradilla);
+}
+
+.cerrarHoja {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: none;
+  border: 0;
+  border-radius: var(--radio-control);
+  color: var(--tinta);
+  cursor: pointer;
+}
+
+.faltanHoja {
+  margin: var(--e2) 0 var(--e4);
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+}
+
+/* ---------- La tarjeta de la pregunta ---------- */
+
+.tarjeta {
+  background: var(--nube);
+  border: 1px solid var(--regla);
+  border-radius: var(--radio);
+  padding: var(--e6);
+}
+
+.cabeza {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--e2) var(--e4);
+  font-size: var(--t-apoyo);
+}
+
+.etiqueta {
+  color: var(--tinta2);
+  font-weight: 600;
+}
+
+.guardado {
+  color: var(--tinta3);
+}
+
+/* Le falta algo al candidato: ámbar, lo que frena la entrega. */
+.guardado.duda {
+  color: var(--duda-tinta);
+  font-weight: 600;
+}
+
+/* No llegó al servidor. Sin rojo: el rojo es del tiempo. Lo dice la frase. */
+.guardado.fallo {
+  color: var(--tinta);
+  font-weight: 600;
+}
+
+.enunciado {
+  margin-top: var(--e4);
+  font-size: var(--t-destacado);
+  line-height: 1.35;
+  letter-spacing: -0.018em;
+  font-weight: 600;
+  max-width: var(--medida);
+  text-wrap: pretty;
+  overflow-wrap: anywhere;
+}
+
+.respuesta {
+  margin-top: var(--e5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--e4);
+}
+
+.pie {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e3);
+  margin-top: var(--e6);
+  padding-top: var(--e4);
+  border-top: 1px solid var(--regla);
+}
+
+/* «Siguiente» y el «Entregar…» del último paso: rellenos de índigo. */
+.siguiente {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 var(--e5);
+  background: var(--activo);
+  color: var(--tinta-invertida);
+  border: 1px solid var(--activo);
+  border-radius: var(--radio-control);
+  font: inherit;
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.siguiente:hover:not(:disabled) {
+  background: var(--activo-pulsado);
+  border-color: var(--activo-pulsado);
+}
+
+.siguiente:disabled {
+  background: var(--nube-honda);
+  border-color: var(--nube-honda);
+  color: var(--tinta3);
+  cursor: default;
+}
+
+/* ---------- Lo que falta para entregar ---------- */
+
+.loQueFalta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e3) var(--e4);
+  border: 1px solid var(--regla2);
+  background: var(--nube);
+  border-radius: var(--radio);
+  padding: var(--e4);
+  font-size: var(--t-prosa);
+  line-height: 1.55;
+  color: var(--tinta2);
+}
+
+.loQueFalta b {
+  color: var(--tinta);
+}
+
+/* ---------- El teléfono ---------- */
+
+@media (max-width: 760px) {
+  .mandos {
+    justify-content: flex-start;
+  }
+
+  .tarjeta {
+    padding: var(--e5) var(--e4);
+  }
+
+  .pie .anterior,
+  .pie .siguiente {
+    flex: 1;
+  }
+}

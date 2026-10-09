@@ -13,7 +13,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import type {
@@ -136,6 +136,20 @@ describe('EF-4', () => {
     fireEvent.click(screen.getByRole('radio', { name: 'La que menos: Aviso antes de mover nada' }))
     expect(enviado).toHaveLength(1)
     expect(screen.getByText(/Te falta marcar la que más/)).toBeTruthy()
+  })
+
+  it('a medias, la casilla del mapa lo dice por su forma y su nombre; la tarjeta, «Sin terminar»', async () => {
+    // Una de las varias partes del formato: «a medias» es el «sin terminar» de siempre (AC-03).
+    await montar(pregunta('EF-4', { opciones: CUATRO }))
+    expect(screen.getByRole('button', { name: 'Pregunta 1, sin responder (estás aquí)' })).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('radio', { name: 'La que más: Aviso antes de mover nada' }))
+    const casilla = screen.getByRole('button', { name: 'Pregunta 1, a medias (estás aquí)' })
+    expect(casilla.className).toMatch(/aMedias/)
+    expect(casilla.getAttribute('aria-current')).toBe('step')
+    expect(within(screen.getByRole('article')).getByText('Sin terminar')).toBeTruthy()
+    // Los formatos del banco del modelo llevan solo «Pregunta N», sin el nombre del tipo.
+    expect(within(screen.getByRole('article')).getByText('Pregunta 1')).toBeTruthy()
   })
 })
 
@@ -341,7 +355,7 @@ describe('V · el enunciado se parte en los datos que pide', () => {
     expect((screen.getByLabelText('En cuántas empresas') as HTMLInputElement).value).toBe('2')
     expect((screen.getByLabelText('Nombre exacto de tu último puesto') as HTMLInputElement).value)
       .toBe('Operario de planta')
-    expect(screen.getByText('Respuesta guardada')).toBeTruthy()
+    expect(within(screen.getByRole('article')).getByText('Guardado')).toBeTruthy()
     // Repintar no es responder otra vez.
     expect(enviado).toHaveLength(0)
   })
@@ -384,7 +398,7 @@ describe('al volver a entrar', () => {
 
     expect(mas.checked).toBe(true)
     expect(menos.checked).toBe(true)
-    expect(screen.getByText('Respuesta guardada')).toBeTruthy()
+    expect(within(screen.getByRole('article')).getByText('Guardado')).toBeTruthy()
     // Repintar no es responder otra vez: nada tuvo que salir hacia el servidor.
     expect(enviado).toHaveLength(0)
   })
@@ -394,7 +408,7 @@ describe('al volver a entrar', () => {
     // recuerda, pero tiene que seguir dejando responder.
     await montar(pregunta('SEC', { opciones: CUATRO }))
 
-    expect(screen.getByText('Sin responder')).toBeTruthy()
+    expect(within(screen.getByRole('article')).getByText('Sin responder')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Bajar: Aviso antes de mover nada' }))
     await waitFor(() => expect(ultimoDetalle()).toEqual({ orden: [12, 11, 13, 14] }))
   })

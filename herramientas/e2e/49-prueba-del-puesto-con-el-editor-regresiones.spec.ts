@@ -81,6 +81,9 @@ test.describe('Regresiones de la prueba del editor', () => {
     await expect(dialogo).not.toContainText('se entrega lo que hayas guardado')
     await dialogo.getByRole('button', { name: 'Sí, empezar' }).click()
     await expect(page.getByText('Tiempo restante')).toBeVisible({ timeout: 20_000 })
+    // Ya empezada, una pregunta por pantalla (09/10/2026): la primera, con su barra.
+    await expect(page.getByText('Pregunta 1 de 2')).toBeVisible()
+    await expect(page.getByRole('article')).toHaveCount(1)
   })
 
   test('H-02: tras quedar «sin completar», su proceso no le dice que le toca abrir la prueba', async ({ page }) => {
