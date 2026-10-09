@@ -682,6 +682,12 @@ export interface LecturaCv {
 export interface PerfilCompleto {
   titular: string | null
   resumen: string | null
+  /**
+   * Sus logros clave (V71): de 0 a 3 frases, en su orden. El backend nunca los
+   * manda en null; se leen igual con `?? []`, porque un backend anterior al
+   * despliegue no trae el campo.
+   */
+  logros: string[]
   habilidades: string[]
   experienciaMeses: number | null
   ubicacion: string | null
@@ -817,6 +823,13 @@ export interface EditarCabeceraPerfil {
   ubicacion: string | null
   disponibilidad: string | null
   pretension: Pretension | null
+  /**
+   * Los logros clave, ya sin las cajas vacías: como mucho 3, de hasta 100
+   * caracteres. ⚠️ La única excepción al PUT que reemplaza: si el campo NO viaja,
+   * el backend conserva los guardados —así un cliente anterior no los borra—, y
+   * una lista vacía es lo que los quita. Este cliente lo manda siempre.
+   */
+  logros: string[]
 }
 
 export interface EditarExperiencia {
