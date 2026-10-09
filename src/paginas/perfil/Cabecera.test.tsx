@@ -61,6 +61,7 @@ const revocadas: string[] = []
 const PERFIL: PerfilCompleto = {
   titular: 'Analista de procesos',
   resumen: null,
+  logros: [],
   habilidades: [],
   experienciaMeses: null,
   ubicacion: null,
@@ -221,5 +222,39 @@ describe('quitar la foto', () => {
     // Y el blob no se queda colgado: lo suelta la caché al soltar el dato.
     datos.clear()
     expect(revocadas).toEqual(creadas)
+  })
+})
+
+describe('los logros clave en la cabecera', () => {
+  it('van debajo de las señas y antes de los enlaces, numerados y en su orden', async () => {
+    espia.tieneFoto = false
+    montar(unaCache(), {
+      ...PERFIL,
+      tieneFoto: false,
+      ubicacion: 'Arequipa',
+      logros: ['Reduje de 3 s a 400 ms la API', 'Migré 40 servicios a AWS'],
+      enlaces: [{ id: 1, tipo: 'GITHUB', url: 'https://github.com/alguien' }],
+    })
+
+    const lista = await screen.findByRole('list', { name: 'Logros clave' })
+    expect(
+      Array.from(lista.querySelectorAll('li')).map((li) => li.textContent),
+    ).toEqual(['1Reduje de 3 s a 400 ms la API', '2Migré 40 servicios a AWS'])
+
+    // El orden en la página: las señas, luego los logros, luego los enlaces.
+    const senas = screen.getByText('Arequipa')
+    const enlace = screen.getByRole('link', { name: /GitHub/ })
+    const sigue = Node.DOCUMENT_POSITION_FOLLOWING
+    expect(senas.compareDocumentPosition(lista) & sigue).toBeTruthy()
+    expect(lista.compareDocumentPosition(enlace) & sigue).toBeTruthy()
+    // En la cabecera el rótulo no es un encabezado: no entra en el índice de títulos.
+    expect(screen.queryByRole('heading', { name: 'Logros clave' })).toBeNull()
+  })
+
+  it('sin logros no deja ni el rótulo', async () => {
+    montar(unaCache(), PERFIL)
+    await screen.findByText('Analista de procesos')
+
+    expect(screen.queryByText('Logros clave')).toBeNull()
   })
 })
