@@ -462,3 +462,53 @@ describe('ESCALA de las preguntas propias', () => {
     expect(screen.getAllByText('Mucho').length).toBeGreaterThan(0)
   })
 })
+
+// ---------- Sin avisos de guardado (revisión humana del 09/10/2026) ----------
+
+/**
+ * El guardado lo cuenta la cabecera de la tarjeta («Guardado», «No se pudo guardar; se
+ * reintenta»). Debajo del formato solo queda lo que le falta, y debajo de un texto largo solo el
+ * aviso de cerca del límite.
+ */
+describe('sin «Se guarda sola…» debajo de la respuesta', () => {
+  it('un formato completo no dice nada debajo; a medias sigue diciendo lo que le falta', async () => {
+    await montar(pregunta('EF-4', { opciones: CUATRO }))
+    expect(screen.queryByText(/Se guarda sola/)).toBeNull()
+
+    fireEvent.click(screen.getByRole('radio', { name: 'La que más: Aviso antes de mover nada' }))
+    expect(screen.getByText(/Te falta marcar la que menos/)).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('radio', { name: 'La que menos: Espero instrucciones' }))
+    await waitFor(() => expect(ultimoDetalle()).toEqual({ mas: 11, menos: 13 }))
+    expect(within(screen.getByRole('article')).queryByText(/Te falta/)).toBeNull()
+    expect(screen.queryByText(/Se guarda sola/)).toBeNull()
+    expect(within(screen.getByRole('article')).getByText('Guardado')).toBeTruthy()
+  })
+
+  it('un V completo tampoco: lo que falta desaparece y no lo sustituye nada', async () => {
+    await montar(pregunta('V', { enunciado: 'Años haciendo este trabajo: ___' }))
+    const tarjeta = within(screen.getByRole('article'))
+    expect(tarjeta.getByText(/Te falta/)).toBeTruthy()
+    fireEvent.change(screen.getByLabelText('Años haciendo este trabajo'), { target: { value: '4' } })
+    await waitFor(() => expect(tarjeta.queryByText(/Te falta/)).toBeNull())
+    expect(screen.queryByText(/Se guarda sola/)).toBeNull()
+  })
+
+  it('un texto abierto no dice nada debajo hasta acercarse al límite, y entonces solo el límite', async () => {
+    await montar(pregunta('R'))
+    const campo = screen.getByLabelText('Tu respuesta')
+    expect(screen.queryByText(/Se guarda sola/)).toBeNull()
+
+    fireEvent.change(campo, { target: { value: 'Una respuesta corta.' } })
+    expect(screen.queryByText(/Se guarda sola/)).toBeNull()
+    expect(screen.queryByText(/Llevas/)).toBeNull()
+
+    // Pasado el 90 % de los 20 000 caracteres, el aviso del límite, sin la frase del guardado.
+    fireEvent.change(campo, { target: { value: 'a'.repeat(18_001) } })
+    const aviso = screen.getByText(/^Llevas /)
+    expect(aviso.textContent).toBe(
+      `Llevas ${(18_001).toLocaleString('es-PE')} caracteres de ${(20_000).toLocaleString('es-PE')}: pasado ese punto el servidor no la acepta.`,
+    )
+    expect(screen.queryByText(/Se guarda sola/)).toBeNull()
+  })
+})

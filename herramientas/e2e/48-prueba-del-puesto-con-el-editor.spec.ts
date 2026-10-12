@@ -300,9 +300,15 @@ test.describe('La prueba del puesto escrita en el editor', () => {
     await entrarAlPortalCon(page, quien.ana.token)
     await page.goto(`/procesos/${quien.ana.uuid}/prueba`)
     await expect(page.getByRole('heading', { name: 'Demuestra cómo trabajas.' })).toBeVisible({ timeout: 20_000 })
-    await expect(page.getByText(ENUNCIADO)).toBeVisible()
-    await expect(page.getByText('Tendrás 90 minutos desde que pulses Empezar')).toBeVisible()
-    await expect(page.getByText('Fecha límite', { exact: true })).toBeVisible()
+    // El caso se lee dentro del reloj (revisión humana del 10/10/2026): la pantalla previa no lo
+    // enseña, y las herramientas sí
+    await expect(page.locator('main')).not.toContainText(ENUNCIADO)
+    await expect(page.getByRole('heading', { name: 'Herramientas permitidas' })).toBeVisible()
+    // La franja de datos de la pantalla previa (09/10/2026): el tiempo y la fecha límite
+    const tiempo = page.locator('main dl > div').filter({ has: page.locator('dt', { hasText: /^Tiempo$/ }) })
+    await expect(tiempo.locator('dd').first()).toHaveText('90 min')
+    await expect(tiempo).toContainText('desde que pulses Empezar')
+    await expect(page.locator('main dl dt', { hasText: /^Fecha límite$/ })).toBeVisible()
     await page.getByRole('button', { name: 'Empezar prueba' }).click()
     await page.getByRole('dialog').getByRole('button', { name: 'Sí, empezar' }).click()
     await expect(page.getByText('Tiempo restante')).toBeVisible({ timeout: 20_000 })
@@ -313,6 +319,8 @@ test.describe('La prueba del puesto escrita en el editor', () => {
     await expect(main.getByRole('article')).toHaveCount(1)
     await expect(main.getByRole('navigation', { name: 'Las 5 preguntas' })).toBeVisible()
     await expect(page.getByText(/cambio inesperado/i)).toHaveCount(0)
+    // Y el caso, que se abre al empezar, en su lateral
+    await expect(page.getByRole('complementary', { name: 'El caso' })).toContainText(ENUNCIADO)
     const siguiente = () => main.getByRole('button', { name: 'Siguiente', exact: true }).click()
     /** Las respuestas que el servidor ya tiene: las que no se ven también cuentan. */
     const respondidasEnElServidor = async () =>

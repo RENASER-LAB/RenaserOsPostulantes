@@ -13,9 +13,11 @@
  * sabían solo las preguntas pintadas. Ahora el mapa y lo que falta salen de las respuestas de
  * **todas** las preguntas —lo que trae el servidor, más lo puesto en esta sesión—.
  *
- * Lo que no cambia: la pantalla previa, lo que hace falta para entregar (todas respondidas y los
- * obligatorios subidos) y lo que pasa al vencer (se entrega sola si está completa; si no, queda
- * «sin completar»). Ver `specs/Done/editor-de-la-prueba-mas-simple.md`.
+ * Lo que no cambia: lo que hace falta para entregar (todas respondidas y los obligatorios
+ * subidos) y lo que pasa al vencer (se entrega sola si está completa; si no, queda «sin
+ * completar»). Ver `specs/Done/editor-de-la-prueba-mas-simple.md`. La pantalla previa es
+ * `FichaPrevia.tsx`, y desde el 10/10/2026 el caso, los materiales y las preguntas solo llegan
+ * del servidor al empezar: aquí ya están siempre.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -46,7 +48,8 @@ import {
 } from '../unaPorPantalla/Marco'
 import { asomar, useCorte, useRecorrido, type Paso } from '../unaPorPantalla/useRecorrido'
 import marco from '../unaPorPantalla/Marco.module.css'
-import { Consigna, Entregable, controlDelEntregable } from './Entregable'
+import { CasoEnElLateral } from './ElCaso'
+import { Entregable, controlDelEntregable } from './Entregable'
 import { RespuestaCerrada, type RespuestaCerradaValor } from './PreguntaCerrada'
 import estilos from './Prueba.module.css'
 
@@ -110,6 +113,7 @@ export function PruebaDelEditor({
   /** Lo subido desde esta pantalla, para decir «Recibimos «X»» aunque se vuelva a la pregunta. */
   const [recibidos, setRecibidos] = useState<Record<number, string>>({})
   const [loQueFalta, setLoQueFalta] = useState(false)
+  /** Cuántas veces se pulsó «Entregar la prueba» con huecos. */
   const [vecesQueFalta, setVecesQueFalta] = useState(0)
   const [confirmarEntrega, setConfirmarEntrega] = useState(false)
   const [mapaVisible, setMapaVisible] = useState(true)
@@ -117,6 +121,10 @@ export function PruebaDelEditor({
   const [lateralVisible, setLateralVisible] = useState(true)
   const [lateralDesplegado, setLateralDesplegado] = useState(false)
   const botonMapa = useRef<HTMLButtonElement>(null)
+  const botonVerLateral = useRef<HTMLButtonElement>(null)
+  const botonOcultarLateral = useRef<HTMLButtonElement>(null)
+  /** Solo tras pulsar «Ocultar» o «Ver el caso»: al montar o recargar no se toca el foco. */
+  const focoDelLateral = useRef(false)
   const avisoDeFaltas = useRef<HTMLDivElement>(null)
   // Una entrega en vuelo, sabido en el mismo clic: el botón se apaga en el pintado siguiente.
   const entregando = useRef(false)
@@ -246,6 +254,15 @@ export function PruebaDelEditor({
     onError: siSeCerroLaPuerta,
   })
 
+  /*
+    El ámbar de un archivo obligatorio que falta —y su «Sin este archivo no se puede entregar la
+    prueba.»— sale desde que se intenta entregar con huecos, el mismo momento que el aviso de lo
+    que falta, y se queda en cada archivo hasta que se sube. Antes lo hacía en cuanto se respondía
+    la pregunta, y avisaba de un problema que el candidato aún no tenía (revisión humana del
+    09/10/2026). El mapa sigue marcando la pregunta a medias desde el principio.
+  */
+  const yaIntentoEntregar = vecesQueFalta > 0
+
   const pulsarEntregar = () => {
     if (tiempoAgotado) return
     if (sinResponder.length > 0 || archivosQueFaltan.length > 0 || generalesQueFaltan.length > 0) {
@@ -336,26 +353,36 @@ export function PruebaDelEditor({
   const tituloLateral = hayCaso ? 'El caso' : 'Para esta prueba'
   const botonDelLateral = hayCaso ? 'Ver el caso' : 'Para esta prueba'
 
+  /*
+    El botón pulsado desaparece al ocultar o mostrar el lateral (QA-UPP-12): el foco pasa al que
+    lo devuelve, como la hoja del mapa al cerrarse, o entra en el lateral por su «Ocultar», como la
+    hoja al abrirse. Tras el pintado, cuando el botón de destino ya existe.
+  */
+  const mostrarLateral = (visible: boolean) => {
+    focoDelLateral.current = true
+    setLateralVisible(visible)
+  }
+  useEffect(() => {
+    if (!focoDelLateral.current) return
+    focoDelLateral.current = false
+    const destino = lateralVisible ? botonOcultarLateral : botonVerLateral
+    destino.current?.focus()
+  }, [lateralVisible])
+
   const contenidoLateral = (
     <>
-      {hayCaso && (
-        <div className={estilos.parteLateral}>
-          {prueba.enunciado?.trim() && (
-            <TextoPlano texto={prueba.enunciado} queEs="el enunciado de la prueba" />
-          )}
-          {prueba.consigna && <Consigna consigna={prueba.consigna} />}
-        </div>
-      )}
+      {/* Un caso largo sale recortado, con «Leer el caso completo» (`ElCaso`). */}
+      {hayCaso && <CasoEnElLateral enunciado={prueba.enunciado} consigna={prueba.consigna} />}
       {prueba.materiales && (
         <section className={estilos.parteLateral}>
           <h3 className={estilos.tituloParte}>Materiales</h3>
-          <TextoPlano texto={prueba.materiales} queEs="el material de apoyo" />
+          <TextoPlano texto={prueba.materiales} queEs="el material de apoyo" className={estilos.parrafoLateral} listas />
         </section>
       )}
       {prueba.herramientasPermitidas && (
         <section className={estilos.parteLateral}>
           <h3 className={estilos.tituloParte}>Herramientas permitidas</h3>
-          <TextoPlano texto={prueba.herramientasPermitidas} queEs="el documento" />
+          <TextoPlano texto={prueba.herramientasPermitidas} queEs="el documento" className={estilos.parrafoLateral} listas />
         </section>
       )}
       {generales.length > 0 && (
@@ -474,7 +501,7 @@ export function PruebaDelEditor({
         entregar={escritorio && entregarSuelto ? { texto: 'Entregar la prueba', alPulsar: pulsarEntregar } : null}
         extra={
           hayLateral && lateralAlLado && !lateralVisible ? (
-            <button type="button" className={marco.mando} onClick={() => setLateralVisible(true)}>
+            <button type="button" className={marco.mando} ref={botonVerLateral} onClick={() => mostrarLateral(true)}>
               {botonDelLateral}
             </button>
           ) : null
@@ -598,7 +625,7 @@ export function PruebaDelEditor({
                   seEnsena={seEnsena}
                   deLaPregunta
                   quieto
-                  falta={respondida(valorDe(pregunta)) && Boolean(archivoDe.get(pregunta.id)!.esObligatorio)}
+                  falta={yaIntentoEntregar && Boolean(archivoDe.get(pregunta.id)!.esObligatorio)}
                   recibido={recibidos[archivoDe.get(pregunta.id)!.id] ?? null}
                   alRecibir={(nombre) => setRecibidos((r) => ({ ...r, [archivoDe.get(pregunta.id)!.id]: nombre }))}
                 />
@@ -629,6 +656,7 @@ export function PruebaDelEditor({
                     alSubir={refrescar}
                     siSeCerroLaPuerta={siSeCerroLaPuerta}
                     seEnsena={seEnsena}
+                    falta={yaIntentoEntregar && e.esObligatorio}
                     recibido={recibidos[e.id] ?? null}
                     quieto
                     alRecibir={(nombre) => setRecibidos((r) => ({ ...r, [e.id]: nombre }))}
@@ -658,8 +686,9 @@ export function PruebaDelEditor({
               <button
                 type="button"
                 className={estilos.ocultarLateral}
+                ref={botonOcultarLateral}
                 aria-label={hayCaso ? 'Ocultar el caso' : 'Ocultar «Para esta prueba»'}
-                onClick={() => setLateralVisible(false)}
+                onClick={() => mostrarLateral(false)}
               >
                 Ocultar
               </button>
@@ -689,6 +718,7 @@ export function PruebaDelEditor({
         abierto={confirmarEntrega}
         titulo="Entregar la prueba"
         onCerrar={() => setConfirmarEntrega(false)}
+        aPruebaDeDobleClic
         pie={
           <>
             <button

@@ -53,8 +53,9 @@ export function Entregable({
   /** V68: el archivo de una pregunta, que se sube dentro de ella. */
   deLaPregunta?: boolean
   /**
-   * La pregunta está respondida y falta este archivo obligatorio: el recuadro va en ámbar, que
-   * es lo que frena la entrega.
+   * Este archivo obligatorio frena la entrega y ya se intentó entregar: el recuadro va en ámbar,
+   * con «Sin este archivo no se puede entregar la prueba.», hasta que se sube. Antes de intentar
+   * entregar va neutro, solo con su «· obligatorio» (`PruebaDelEditor`).
    */
   falta?: boolean
   /** Con el tiempo agotado ya no se admite nada: el servidor lo rechaza. */

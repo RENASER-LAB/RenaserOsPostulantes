@@ -14,11 +14,12 @@
  */
 
 import { afterEach, describe, expect, it, vi, beforeEach } from 'vitest'
-import { cleanup, render, screen, waitFor, fireEvent, within } from '@testing-library/react'
+import { act, cleanup, render, screen, waitFor, fireEvent, within } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import type { EvaluacionCandidato, PreguntaEvaluacion } from '@/api/tipos'
 import { ProveedorAvisos } from '@/ui/Avisos'
+import { GRACIA_TRAS_ABRIR_MS } from '@/ui/Modal'
 import {
   entregarEvaluacion,
   iniciarEvaluacion,
@@ -425,6 +426,19 @@ describe('la evaluacion no pierde respuestas', () => {
 
     responder('Algo escrito.')
     await waitFor(() => expect(enLaTarjeta().getByText('Guardado')).toBeTruthy())
+  })
+
+  it('el guardado lo dice solo la cabecera de la tarjeta: ni la portada ni la pregunta dicen «se guarda sola»', async () => {
+    montar()
+    await screen.findByRole('button', { name: /Empezar evaluación/ })
+    expect(screen.getByText(/Puedes salir y volver las veces que quieras/)).toBeTruthy()
+    expect(document.body.textContent).not.toMatch(/se guarda sola/i)
+
+    fireEvent.click(screen.getByRole('button', { name: /Empezar evaluación/ }))
+    await screen.findByLabelText('Tu respuesta')
+    responder('Algo escrito.')
+    await waitFor(() => expect(enLaTarjeta().getByText('Guardado')).toBeTruthy())
+    expect(document.body.textContent).not.toMatch(/se guarda sola/i)
   })
 
   it('AC-08: si el guardado falla, la casilla sale a medias y la tarjeta lo dice hasta que llega', async () => {
@@ -1020,6 +1034,48 @@ describe('al entregar, la prueba al instante', () => {
       historial: [],
     } as unknown as Awaited<ReturnType<typeof verPostulacion>>)
   }
+
+  it('QA-UPP-14: un doble clic en «Entregar la evaluación» no entrega aunque el segundo caiga en «Entregar»; leído el diálogo, sí', async () => {
+    // El reloj con el que el diálogo cuenta su primer medio segundo, adelantable sin pararlo.
+    const real = performance.now.bind(performance)
+    let adelanto = 0
+    vi.spyOn(performance, 'now').mockImplementation(() => real() + adelanto)
+    /** Un toque o un clic entero, como lo da el navegador: apretar, soltar y el `click`. */
+    const pulsar = (el: Element, detail: number) => {
+      fireEvent.pointerDown(el)
+      fireEvent.mouseDown(el, { detail })
+      fireEvent.pointerUp(el)
+      fireEvent.mouseUp(el, { detail })
+      fireEvent.click(el, { detail })
+    }
+    for (let n = 1; n <= TOTAL; n++) guardadas.set(n, `Respuesta ${n}.`)
+    opcionesGuardadas.set(CON_OPCIONES, 21)
+    iniciada = true
+    quedoEn('PERFIL_CALIFICANDO')
+    montar()
+    await screen.findByLabelText('Tu respuesta')
+    siguiente()
+    siguiente()
+    siguiente()
+
+    pulsar(screen.getByRole('button', { name: 'Entregar la evaluación' }), 1)
+    const dialogo = await screen.findByRole('dialog', { name: 'Entregar la evaluación' })
+    const entregar = within(dialogo).getByRole('button', { name: 'Entregar' })
+    await waitFor(() => expect((entregar as HTMLButtonElement).disabled).toBe(false))
+    // El segundo de la serie, pase el tiempo que pase
+    pulsar(entregar, 2)
+    adelanto += 2 * GRACIA_TRAS_ABRIR_MS
+    pulsar(entregar, 2)
+    // La entrega llama al servidor unas microtareas después del clic: se espera antes de mirarlo.
+    await act(() => new Promise((seguir) => setTimeout(seguir, 20)))
+    expect(entregarEvaluacion).not.toHaveBeenCalled()
+    expect(screen.getByRole('dialog', { name: 'Entregar la evaluación' })).toBe(dialogo)
+
+    // Leído, un clic normal entrega
+    pulsar(entregar, 1)
+    expect(await screen.findByText('Su proceso')).toBeTruthy()
+    expect(entregarEvaluacion).toHaveBeenCalledTimes(1)
+  })
 
   it('con pase automático lleva a la portada de su prueba y lo dice', async () => {
     quedoEn('PRUEBA_TURNO_CANDIDATO')

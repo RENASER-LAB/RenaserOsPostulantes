@@ -60,7 +60,15 @@ function partirPorDirecciones(texto: string): Trozo[] {
  * nombra con palabras; cuando no, se enseña tal cual, pero con la forma de un
  * enlace del portal para que se vea que se puede pinchar.
  */
-function Enlace({ direccion, queEs }: { direccion: string; queEs: string }) {
+function Enlace({
+  direccion,
+  queEs,
+  tabulable,
+}: {
+  direccion: string
+  queEs: string
+  tabulable: boolean
+}) {
   const esPdf = /\.pdf(\?|#|$)/i.test(direccion)
   return (
     <a
@@ -68,6 +76,7 @@ function Enlace({ direccion, queEs }: { direccion: string; queEs: string }) {
       href={direccion}
       target="_blank"
       rel="noopener noreferrer"
+      tabIndex={tabulable ? undefined : -1}
     >
       {esPdf ? `Abrir ${queEs} (PDF)` : direccion}
     </a>
@@ -84,9 +93,81 @@ interface Props {
   queEs?: string
   /** La clase de cada parrafo, por si la pantalla los quiere de otro tamaño. */
   className?: string
+  /**
+   * Si los enlaces entran en el orden de Tab. Por defecto sí. Lo apaga quien
+   * enseña el texto recortado: un enlace que cae bajo el recorte recibiría el
+   * foco sin verse (el caso del lateral de la prueba). Siguen siendo enlaces
+   * para el raton y el lector de pantalla.
+   */
+  enlacesTabulables?: boolean
+  /**
+   * Si las líneas que empiezan por «- », «• » o «* » se pintan como una lista
+   * `ul` de verdad, y las que empiezan por «1. », «2. »… como una `ol`. Apagado
+   * por defecto: solo lo encienden los textos de la prueba del editor (el caso,
+   * los materiales y las herramientas), que es donde la empresa escribe listas.
+   * Encendido, la lista lleva la clase del párrafo y además la suya, así que se
+   * lee con la misma letra.
+   */
+  listas?: boolean
 }
 
-export function TextoPlano({ texto, queEs = 'el documento', className }: Props) {
+/** «- », «• » o «* » al principio de la línea, con su sangría si la tiene. */
+const VINETA = /^[ \t]*[-•*][ \t]+(\S.*)$/
+/** «1. », «2. »…: hasta dos cifras, para que «2026. El año…» no sea una lista. */
+const NUMERO = /^[ \t]*(\d{1,2})\.[ \t]+(\S.*)$/
+
+type Pieza =
+  | { tipo: 'parrafo'; texto: string }
+  | { tipo: 'lista'; numerada: boolean; inicio: number; elementos: string[] }
+
+/**
+ * Un párrafo partido en lo que es prosa y lo que es lista. Las líneas seguidas
+ * con la misma marca forman una lista; una línea sangrada justo después de un
+ * elemento lo continúa; cualquier otra línea la cierra y vuelve a ser prosa.
+ */
+function partirPorListas(parrafo: string): Pieza[] {
+  const piezas: Pieza[] = []
+  let prosa: string[] = []
+  const cerrarProsa = () => {
+    const junta = prosa.join('\n').trim()
+    if (junta) piezas.push({ tipo: 'parrafo', texto: junta })
+    prosa = []
+  }
+
+  for (const linea of parrafo.split('\n')) {
+    const vineta = VINETA.exec(linea)
+    const numero = vineta ? null : NUMERO.exec(linea)
+    if (vineta || numero) {
+      cerrarProsa()
+      const numerada = numero !== null
+      const elemento = (vineta ? vineta[1]! : numero![2]!).trim()
+      const ultima = piezas.at(-1)
+      if (ultima?.tipo === 'lista' && ultima.numerada === numerada) {
+        ultima.elementos.push(elemento)
+      } else {
+        piezas.push({ tipo: 'lista', numerada, inicio: numero ? Number(numero[1]) : 1, elementos: [elemento] })
+      }
+      continue
+    }
+    const ultima = piezas.at(-1)
+    if (prosa.length === 0 && ultima?.tipo === 'lista' && /^[ \t]+\S/.test(linea)) {
+      // La continuación sangrada de un elemento largo, escrita en dos líneas.
+      ultima.elementos[ultima.elementos.length - 1] += `\n${linea.trim()}`
+    } else {
+      prosa.push(linea)
+    }
+  }
+  cerrarProsa()
+  return piezas
+}
+
+export function TextoPlano({
+  texto,
+  queEs = 'el documento',
+  className,
+  enlacesTabulables = true,
+  listas = false,
+}: Props) {
   /*
    * Dos formas de respetar los saltos de linea, y aqui se usan las dos:
    *
@@ -105,19 +186,45 @@ export function TextoPlano({ texto, queEs = 'el documento', className }: Props) 
 
   if (parrafos.length === 0) return null
 
+  const clase = className ?? estilos.parrafo
+  const conEnlaces = (valor: string) =>
+    partirPorDirecciones(valor).map((trozo, j) =>
+      trozo.enlace ? (
+        <Enlace key={j} direccion={trozo.valor} queEs={queEs} tabulable={enlacesTabulables} />
+      ) : (
+        trozo.valor
+      ),
+    )
+
+  const piezas: Pieza[] = listas
+    ? parrafos.flatMap(partirPorListas)
+    : parrafos.map((p) => ({ tipo: 'parrafo', texto: p }))
+
   return (
     <>
-      {parrafos.map((parrafo, i) => (
-        <p className={className ?? estilos.parrafo} key={i}>
-          {partirPorDirecciones(parrafo).map((trozo, j) =>
-            trozo.enlace ? (
-              <Enlace key={j} direccion={trozo.valor} queEs={queEs} />
-            ) : (
-              trozo.valor
-            ),
-          )}
-        </p>
-      ))}
+      {piezas.map((pieza, i) => {
+        if (pieza.tipo === 'parrafo') {
+          return (
+            <p className={clase} key={i}>
+              {conEnlaces(pieza.texto)}
+            </p>
+          )
+        }
+        const elementos = pieza.elementos.map((elemento, j) => <li key={j}>{conEnlaces(elemento)}</li>)
+        return pieza.numerada ? (
+          <ol
+            className={`${clase} ${estilos.lista} ${estilos.listaNumerada}`}
+            start={pieza.inicio === 1 ? undefined : pieza.inicio}
+            key={i}
+          >
+            {elementos}
+          </ol>
+        ) : (
+          <ul className={`${clase} ${estilos.lista}`} key={i}>
+            {elementos}
+          </ul>
+        )
+      })}
     </>
   )
 }

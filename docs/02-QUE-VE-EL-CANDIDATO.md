@@ -457,16 +457,42 @@ Reglas duras que el maquetado no puede romper:
 ⚠️ **Los días que quedan tienen que verse mientras se responde, no solo antes de empezar**
 (31/08/2026). El plazo son 14 días y esta pantalla se retoma muchas veces: si `venceEn` solo
 se pinta en la portada, hay dos semanas en las que el candidato tiene que **salir del examen**
-para saber cuánto le queda. Va en la línea de servicio, junto a «Pregunta 2 de 55», donde se
-mira de reojo sin interrumpir.
+para saber cuánto le queda. Desde el 09/10/2026 va en la barra fija del marco común (abajo), junto
+a «Pregunta 2 de 55», donde se mira de reojo sin interrumpir.
 
 ⚠️ **Y se apaga en la última hora**, que es cuando entra el aviso de «Queda poco plazo» con su
 cuenta atrás. Dos relojes a la vez —«hoy» y `00:42:17`— se leen peor que el segundo solo, y ese
-mismo corte deja fuera los textos de plazo que ahí no encajan: «vencida» y «sin plazo».
+mismo corte deja fuera los textos de plazo que ahí no encajan: «vencida» y «sin plazo». Por
+debajo de una hora el plazo sale **en rojo** (09/10/2026), y el aviso ya no promete lo que no
+pasa: al vencer, la evaluación **se cierra sin entregarse**.
 
 **De aquí salen las quejas reales.** Una pregunta por pantalla dejó a un candidato saltando de la
 50 a la 10 sin forma de volver, y por eso hoy existen el mapa de preguntas, "siguiente sin
 responder" y "volver a la 50". Es el punto donde el candidato se pierde.
+
+**Desde el 09/10/2026 la evaluación y la prueba del editor comparten el marco**
+(`src/paginas/unaPorPantalla/`: `useRecorrido` y `Marco`), así que el candidato se mueve igual en
+las dos:
+
+- **Barra fija** con el tiempo, «Pregunta 3 de 8», lo que falta («Te faltan N por terminar» o
+  «Todo listo para entregar»), «Ver las N» u «Ocultar el mapa», «Siguiente sin responder»,
+  «Volver a la N» —solo después de un salto— y el botón de entregar de cada pantalla. La
+  evaluación conserva su barra «N de M respondidas».
+- **El mapa**, a la izquierda en escritorio y como hoja desde abajo en el teléfono, ajustada a la
+  barra: una casilla por pregunta con tres estados que se distinguen por la forma —**lista**
+  rellena, **a medias** con media casilla en diagonal y **sin responder** con borde punteado— y la
+  actual con un anillo oscuro. Debajo, la leyenda «Lista · A medias · Sin responder». Cada casilla
+  dice su número y su estado al lector de pantalla.
+- **«Siguiente sin responder»** da la vuelta al llegar al final; **«Volver a la N»** recuerda el
+  primer salto y se olvida al navegar a mano. **«Ir al final» ya no existe.**
+- **La posición se apunta por pestaña** (`sessionStorage`): al recargar se vuelve a la misma
+  pregunta, y sin dato, a la primera sin responder.
+- **El foco va al enunciado** al cambiar de pregunta.
+- **Entregar con huecos no entrega**: un aviso en la página dice qué falta y lleva un botón a lo
+  primero que falta («Ir a la pregunta N»). La ventana que contaba «Faltan N preguntas» se fue.
+- **La doble pulsación no cuenta dos veces**: `useUnaSolaPulsacion` descarta la segunda pulsación
+  de una serie que cae sobre otra cosa que la primera —una opción de la pregunta nueva, que es
+  más alta—, y el diálogo «Entregar» lleva `aPruebaDeDobleClic` (ver la 2.9).
 
 **Al entregar** (07/10/2026) el portal vuelve a pedir su postulación y mira dónde quedó:
 
@@ -482,7 +508,15 @@ no se crean dos pruebas.
 ### 2.9 Prueba del puesto — **dos formas incompatibles en una sola pantalla**
 `GET /portal/prueba/{uuid}` → `estadoIntento` (`PENDIENTE`|`EN_CURSO`|`ENTREGADA`), `modalidad`,
 `iniciadoEn`, `venceEn`, `duracionMinutos`, `enunciado`, `materiales`, `herramientasPermitidas`,
-`cambioTexto`, `preguntas[]`, `entregables[]`.
+`cambioTexto`, `preguntas[]`, `entregables[]`, y desde el 10/10/2026 `totalPreguntas`.
+
+⚠️ **Antes de «Empezar» no llega el contenido** (decisión del 10/10/2026, «nada antes del
+reloj»), en las dos pruebas: `preguntas` llega vacía, y `enunciado`, `materiales`, `consigna` y el
+`detalle` de cada entregable, nulos. Sí llegan el tiempo y la modalidad, la fecha límite o los
+días, `totalPreguntas`, las herramientas y los entregables con nombre, si son obligatorios,
+formato y `posicionDeLaPregunta`. Lo demás llega en la respuesta de `POST …/inicio`. Por eso
+**la pantalla previa no puede contar las preguntas con `preguntas.length`** ni saber si hay caso:
+lo resuelve `loQueDiceLaPrevia.ts`.
 
 | Forma | Cómo se reconoce | Qué se ve |
 |---|---|---|
@@ -505,40 +539,66 @@ Reglas:
   18:00 leyendo noventa minutos cuando tiene veinte. Sin `venceEn` no se inventa ninguna fecha.
 - **El cambio inesperado no lo dispara el navegador**: `cambioTexto` llega en nulo hasta que el
   backend decide mostrarlo. La pantalla consulta cada pocos segundos.
-- **Los entregables son una lista**, cada uno con `nombre`, `detalle`, `formato`, `esObligatorio`,
-  `entregado`. Se sube archivo **o** enlace, por rutas distintas.
+- **Los entregables son una lista**, cada uno con `nombre`, `detalle` (solo después de empezar),
+  `formato`, `esObligatorio`, `entregado`. Se sube archivo **o** enlace, por rutas distintas.
 - Entregar exige todos los obligatorios; la respuesta dice cuántos `faltantes`.
 - Misma cola de guardado que la evaluación.
 - Hay un minuto de gracia: el backend sigue diciendo `EN_CURSO` aunque `venceEn` ya pasó, porque
   quien cierra el intento es un barrido que corre cada minuto. La pantalla tiene que detectarlo.
 - La consigna llega como texto libre con párrafos y direcciones dentro.
 
-**La prueba escrita en el editor de la vacante (01/10/2026).** Es la de toda vacante nueva y va
-por la misma pantalla (`src/paginas/prueba/Prueba.tsx`), con `delEditor: true`. **Desde el
-05/10/2026 es una sola prueba**, haya o no entregables: `cuestionario` sigue llegando, pero la
-pantalla ya no lo usa y la palabra no sale. Diferencias con la de plantilla:
+**La pantalla previa, en las dos pruebas (10/10/2026).** Es una ficha corta, la misma para la de
+plantilla y la del editor (`src/paginas/prueba/FichaPrevia.tsx`), en una sola superficie y sin
+tarjetas dentro:
 
-- **La pantalla previa** (antes de «Empezar») dice la fecha límite (`fechaLimite`: la de la
-  vacante, o la suya si se la dieron a mano), el tiempo —«Tendrás 90 minutos desde que pulses
-  Empezar» o «Puedes trabajar en ella hasta la fecha límite»—, cuántas preguntas y cuántos archivos
-  hay que subir —«4 preguntas · 2 archivos que subir»— y los materiales y las herramientas si los
-  hay, aunque no haya caso.
-- **El caso sale solo si existe**, como «El caso», con su PDF.
+1. **Los datos** —Tiempo, Fecha límite, Preguntas y Archivos (con cuántos son obligatorios)— en
+   una fila, y en 2×2 en el teléfono. Lo que no hay no sale.
+2. **La condición junto a «Empezar prueba»**, en una fila; en el teléfono, la condición encima y
+   el botón a todo el ancho.
+3. **«Lo que entregarás»**, sin detalle —el nombre, si es obligatorio, «en la pregunta N» y cómo
+   se entrega—, y **las herramientas permitidas**, de consulta.
+
+Los textos de la entradilla, la condición y el diálogo «¿Empezar ahora?» se arman con lo que la
+prueba tiene (`loQueDiceLaPrevia.ts`), sin prometer un caso que quizá no hay. La entradilla dice
+«El contenido y las preguntas se abren al empezar, y desde ahí corre el tiempo». La condición de
+la del editor dice qué hay que completar para entregar; la de plantilla, «Si el tiempo termina, se
+entrega lo que hayas guardado.». El diálogo lleva `aPruebaDeDobleClic` y su foco inicial va a
+«Aún no»: un doble clic en «Empezar prueba» no arranca el reloj, y uno en «Sí, empezar» manda un
+solo `POST /inicio`. **La de plantilla, en curso, sigue toda en vertical.**
+
+**La prueba escrita en el editor de la vacante (01/10/2026).** Es la de toda vacante nueva y entra
+por la misma pantalla (`src/paginas/prueba/Prueba.tsx`), con `delEditor: true`; en curso la pinta
+`PruebaDelEditor.tsx`. **Desde el 05/10/2026 es una sola prueba**, haya o no entregables:
+`cuestionario` sigue llegando, pero la pantalla ya no lo usa y la palabra no sale. **Desde el
+09/10/2026 va de una pregunta por pantalla**, con el marco común de la evaluación (ver la 2.8).
+Diferencias con la de plantilla:
+
+- **La fecha límite** es `fechaLimite`: la de la vacante, o la suya si se la dieron a mano.
+- **Guarda con la cola de la evaluación** (`useColaDeRespuestas`, que expone `reintentando`): lo
+  pendiente se reintenta aunque su pregunta no esté en pantalla, y el mapa y lo que falta salen de
+  todas las preguntas. Si un guardado falla, la pregunta sale «a medias» con «No se pudo guardar;
+  se reintenta». No hay mensajes «Se guarda sola…»; sí el aviso de caracteres cerca del límite.
+- **El caso, si existe, va en un lateral a la derecha** con su comienzo recortado y «Leer el caso
+  completo», que abre una **vista de lectura**: una ventana ancha, de unos 70 caracteres por línea,
+  con el PDF (`ElCaso.tsx`). Un caso corto que cabe entero va entero y sin botón, y los enlaces del
+  extracto recortado no reciben Tab. El lateral se oculta con «Ocultar» y vuelve con «Ver el caso»,
+  y el foco pasa de uno a otro. Por debajo de 1100 px va plegado encima de la pregunta.
 - **El archivo de una pregunta se sube dentro de ella** —«Archivo de esta pregunta: Flujo de
-  caja.xlsx · obligatorio»—: lo dice su `preguntaId`. Los generales (`preguntaId` nulo) van al
-  final, en «Entregables», antes de «Entregar».
+  caja.xlsx · obligatorio»—: lo dice su `preguntaId`. Su recuadro se pone en ámbar **solo después
+  de intentar entregar**. Los generales (`preguntaId` nulo) son un paso **«Entregables»** al final
+  del mapa, después de la última pregunta.
 - **Las preguntas vienen en los cuatro tipos** —abierta, opción única, opción múltiple y escala—,
   con los mismos componentes que la evaluación. Cada una trae sus opciones (id, texto y orden) y
   su número; **nunca puntos, claves, criterios, calificadores ni qué mira cada criterio**. Se
   responde con `texto`, `opcionId` o `marcadas`.
 - **No hay cambio inesperado.**
 - **Solo se entrega con todas las preguntas respondidas y los entregables obligatorios
-  subidos.** Hasta entonces, «Entregar» no entrega: dice qué falta —«Para entregar te falta
-  responder 2 preguntas (la 3 y la 7)»— y lleva a lo primero que falta, en el orden de la prueba:
-  una pregunta, el archivo de una pregunta o los entregables del final. Un texto en blanco
-  no cuenta, y una múltiple necesita al menos una marcada. El servidor lo exige también.
-- **Antes de empezar se avisa** de que, si el tiempo termina con algo pendiente, queda sin
-  completar y no se califica.
+  subidos.** Hasta entonces, «Entregar» no entrega: un aviso en la página dice qué falta —«Para
+  entregar te falta responder 2 preguntas (la 3 y la 7)»— con un botón a lo primero que falta, en
+  el orden de la prueba: una pregunta, el archivo de una pregunta o el paso «Entregables». Un texto
+  en blanco no cuenta, y una múltiple necesita al menos una marcada. El servidor lo exige también.
+- **Antes de empezar se avisa**, en la condición de la ficha y en el diálogo, de que si el tiempo
+  termina con algo pendiente queda sin completar y no se califica.
 - **Al vencer**, con todo completo se entrega sola; si falta algo, `estadoIntento` llega
   `NO_COMPLETADA` y la pantalla dice **«Tu tiempo terminó y la prueba quedó sin completar»**, sin
   nada que hacer. Su proceso no cambia de etapa: el equipo lo ve y lo cierra.

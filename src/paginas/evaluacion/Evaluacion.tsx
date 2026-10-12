@@ -610,8 +610,8 @@ export function Evaluacion() {
 
           <div className={estilos.saber}>
             <p className={estilos.presentacion}>
-              <b>Puedes salir y volver las veces que quieras</b>. Cada respuesta se guarda
-              sola, y puedes corregir cualquiera antes de entregar.
+              <b>Puedes salir y volver las veces que quieras</b>, y corregir cualquier
+              respuesta antes de entregar.
             </p>
             <p className={estilos.presentacion}>
               Si se corta tu conexión, continúas desde la última respuesta guardada.
@@ -922,6 +922,7 @@ export function Evaluacion() {
         abierto={confirmarEntrega}
         titulo="Entregar la evaluación"
         onCerrar={() => setConfirmarEntrega(false)}
+        aPruebaDeDobleClic
         pie={
           <>
             <button

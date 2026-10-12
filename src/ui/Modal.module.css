@@ -30,6 +30,21 @@
   border-radius: var(--radio);
 }
 
+/*
+ * El escudo de `aPruebaDeDobleClic`: transparente, encima del fondo y del panel, durante el
+ * primer medio segundo tras abrir. Recoge el segundo toque de un doble toque para que no caiga en
+ * un botón del pie (QA-UPP-14). No se ve ni se lee: el modal se ve igual con él y sin él.
+ */
+.escudo {
+  position: fixed;
+  inset: 0;
+  z-index: 91;
+}
+
+.escudo[hidden] {
+  display: none;
+}
+
 .cabecera {
   display: flex;
   align-items: center;

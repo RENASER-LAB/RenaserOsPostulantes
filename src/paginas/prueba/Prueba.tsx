@@ -22,11 +22,15 @@
  * huecos: «Entregar» dice cuáles faltan y lleva a la primera, y el servidor lo
  * rechaza igual si alguien llama a la API. Si el tiempo vence con algo sin
  * responder, queda «sin completar». Desde la V68 es una sola prueba (sin
- * «cuestionario»): la pantalla previa dice la fecha límite y el tiempo y el caso
- * sale solo si existe. **En curso va de una pregunta por pantalla** desde el
+ * «cuestionario»). **En curso va de una pregunta por pantalla** desde el
  * 09/10/2026, con el mismo marco que la evaluación: eso vive en
- * `PruebaDelEditor.tsx`. Aquí quedan la pantalla previa, las cerradas y la prueba
- * de plantilla, que sigue toda en vertical como siempre.
+ * `PruebaDelEditor.tsx`. Aquí quedan el diálogo de empezar, las cerradas y la prueba
+ * de plantilla en curso, que sigue toda en vertical como siempre.
+ *
+ * **Antes de empezar, las dos van en la misma ficha corta** (`FichaPrevia.tsx`, 10/10/2026):
+ * el tiempo, la fecha límite, cuántas preguntas son, qué archivos habrá que entregar y las
+ * herramientas. El caso, los materiales y las preguntas no llegan del servidor hasta que se
+ * empieza: se leen dentro del reloj.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -34,7 +38,6 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { entregarPrueba, iniciarPrueba, responderPrueba, verPrueba } from '@/api/prueba'
 import type { FechaIso, MiPrueba } from '@/api/tipos'
-import { fechaLargaDeLima } from '@/dominio/horaDeLima'
 import { formatearFechaLarga, segundosHasta } from '@/dominio/reloj'
 import { usePantallaAbierta } from '@/paginas/procesos/useVacanteRetirada'
 import { rutas } from '@/rutas'
@@ -43,7 +46,9 @@ import { Cronometro } from '@/ui/Cronometro'
 import { VacanteRetirada } from '@/ui/Mensajes'
 import { Modal } from '@/ui/Modal'
 import { TextoPlano } from '@/ui/TextoPlano'
-import { Consigna, Entregable, comoSeEntrega } from './Entregable'
+import { Consigna, Entregable } from './Entregable'
+import { FichaPrevia } from './FichaPrevia'
+import { avisoDeEmpezar, entradillaDe } from './loQueDiceLaPrevia'
 import { PruebaDelEditor } from './PruebaDelEditor'
 import estilos from './Prueba.module.css'
 
@@ -397,12 +402,31 @@ export function Prueba() {
 
   const inicio = useMutation({
     mutationFn: () => iniciarPrueba(uuid),
-    onSuccess: () => {
+    // La respuesta de empezar ya trae la prueba entera —el caso, los materiales y las preguntas,
+    // que antes de empezar no viajan—: se pinta con ella, sin esperar a la recarga.
+    onSuccess: (empezada) => {
+      cache.setQueryData(['prueba', uuid], empezada)
       setConfirmarInicio(false)
       refrescar()
     },
     onError: siSeCerroLaPuerta,
   })
+
+  /*
+    Un doble clic en «Sí, empezar» mandaba dos inicios: el botón se desactiva al pintarse
+    «Abriendo…», y el segundo clic llega antes. El servidor deja un solo intento igualmente, pero se
+    pide una vez.
+  */
+  const pidiendoInicio = useRef(false)
+  const empezar = () => {
+    if (pidiendoInicio.current) return
+    pidiendoInicio.current = true
+    inicio.mutate(undefined, {
+      onSettled: () => {
+        pidiendoInicio.current = false
+      },
+    })
+  }
 
   const entrega = useMutation({
     // ⚠️ **Primero se manda lo que quede sin confirmar.** Antes esto era un cartel rojo que
@@ -482,16 +506,12 @@ export function Prueba() {
   // saliera de ahí, una respuesta recién borrada seguiría contando como respondida.
   const preguntasSinResponder = prueba.preguntas.filter((p) => conTexto[p.id] === false).length
   // La prueba del editor (V67) no se entrega con huecos y, en curso, va de una pregunta por
-  // pantalla (`PruebaDelEditor`). Aquí solo queda su pantalla previa. Las plantillas siguen
-  // como siempre.
+  // pantalla (`PruebaDelEditor`). Las plantillas, en curso, siguen como siempre.
   const delEditor = prueba.delEditor === true
   const laPrueba = 'la prueba'
-  const numeroDeLaPregunta = new Map(prueba.preguntas.map((p, i) => [p.id, p.posicion ?? i + 1]))
-  // V68: las preguntas que llevan su propio archivo, para decirlo en la pantalla previa.
-  const conArchivo = new Set(
-    delEditor ? prueba.entregables.filter((e) => e.preguntaId != null).map((e) => e.preguntaId!) : [],
-  )
-  const hayCaso = Boolean(prueba.enunciado?.trim()) || Boolean(prueba.consigna)
+  // Antes de empezar se dice lo que la prueba tiene, y nada que no se sepa (`loQueDiceLaPrevia`).
+  const entradilla = entradillaDe(prueba)
+  const avisoAlEmpezar = avisoDeEmpezar(prueba)
 
   return (
     <div className={estilos.pagina}>
@@ -539,182 +559,23 @@ export function Prueba() {
       )}
 
       {/* ---------- Antes de empezar ---------- */}
+      {/* Las dos pruebas, en la misma ficha corta (10/10/2026): sin el caso ni las preguntas, que se
+          abren al empezar. */}
       {prueba.estadoIntento === 'PENDIENTE' && (
         <>
           <h1>{hayEntregables ? 'Demuestra cómo trabajas.' : 'Tu prueba del puesto.'}</h1>
-          <p className={estilos.texto} style={{ marginTop: 'var(--e3)' }}>
-            Lee todo antes de empezar. <b>El tiempo empieza a contar cuando confirmes</b>, no
-            antes.
+          {/* Sin nombrar el caso ni los materiales: antes de empezar no se sabe si los hay. */}
+          <p className={estilos.entradillaDeLaPrevia}>
+            {entradilla.abre}
+            {entradilla.tiempo ? (
+              <>
+                , y <b>{entradilla.tiempo}</b>.
+              </>
+            ) : (
+              '.'
+            )}
           </p>
-
-          <div className={estilos.columnas} style={{ marginTop: 'var(--e6)' }}>
-            <div>
-              {/* V68: en la prueba del editor el caso sale solo si existe. */}
-              {(!delEditor || hayCaso) && (
-                <section className={estilos.bloque}>
-                  <h2 className={estilos.tituloBloque}>
-                    {delEditor ? 'El caso' : hayEntregables ? 'El encargo' : 'De qué va'}
-                  </h2>
-                  {prueba.enunciado ? (
-                    <TextoPlano texto={prueba.enunciado} queEs="el enunciado de la prueba" />
-                  ) : (
-                    !delEditor && <p className={estilos.texto}>Recibirás el enunciado al empezar.</p>
-                  )}
-                  {prueba.consigna && <Consigna consigna={prueba.consigna} />}
-                </section>
-              )}
-
-              {prueba.materiales && (
-                <section className={estilos.bloque}>
-                  <h2 className={estilos.tituloBloque}>Materiales</h2>
-                  <TextoPlano texto={prueba.materiales} queEs="el material de apoyo" />
-                </section>
-              )}
-
-              {prueba.herramientasPermitidas && (
-                <section className={estilos.bloque}>
-                  <h2 className={estilos.tituloBloque}>Herramientas permitidas</h2>
-                  <TextoPlano texto={prueba.herramientasPermitidas} queEs="el documento" />
-                </section>
-              )}
-
-              {hayEntregables && (
-                <section className={estilos.bloque}>
-                  <h2 className={estilos.tituloBloque}>Lo que tendrás que entregar</h2>
-                  {/* Saberlo antes de empezar evita descubrirlo con el reloj
-                      corriendo. */}
-                  <div className={estilos.entregables}>
-                    {prueba.entregables.map((e) => (
-                      <div className={estilos.entregable} key={e.id}>
-                        <p className={estilos.nombreEntregable}>
-                          {e.nombre}{' '}
-                          <span className={estilos.obligatorio}>
-                            {e.esObligatorio ? '· obligatorio' : '· opcional'}
-                            {conArchivo.has(e.preguntaId ?? -1) &&
-                              ` · en la pregunta ${numeroDeLaPregunta.get(e.preguntaId!) ?? ''}`}
-                          </span>
-                        </p>
-                        {e.detalle && (
-                          <p className={estilos.detalleEntregable}>{e.detalle}</p>
-                        )}
-                        <span className={estilos.comoSeEntrega}>
-                          {comoSeEntrega(e.formato)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              )}
-            </div>
-
-            <aside className={estilos.lateral}>
-              {delEditor && prueba.fechaLimite ? (
-                /* V68: la fecha límite y el tiempo, dichos como los vive quien rinde. */
-                <>
-                  <div className={estilos.datoLateral}>
-                    <span className={estilos.etiquetaLateral}>Fecha límite</span>
-                    <span className={estilos.valorLateral}>{fechaLargaDeLima(prueba.fechaLimite)}</span>
-                  </div>
-                  <div className={estilos.datoLateral}>
-                    <span className={estilos.etiquetaLateral}>Tiempo</span>
-                    <span className={estilos.valorLateral}>
-                      {prueba.duracionMinutos
-                        ? `Tendrás ${prueba.duracionMinutos} minutos desde que pulses Empezar`
-                        : 'Puedes trabajar en ella hasta la fecha límite'}
-                    </span>
-                    {prueba.duracionMinutos && (
-                      <span className={estilos.matizLateral}>
-                        Si empiezas más tarde, tendrás el tiempo que quede hasta la fecha límite.
-                      </span>
-                    )}
-                  </div>
-                </>
-              ) : (
-                /* ⚠️ Los dos plazos pueden existir A LA VEZ, y antes solo se decia uno.
-                   Una prueba da minutos desde que empiezas; la convocatoria puede ademas
-                   cerrar un dia y una hora para todos. Cuando habia las dos cosas esta
-                   rama escribia «90 minutos» y escondia la fecha, asi que quien abriera a
-                   las 17:40 con cierre a las 18:00 leia noventa minutos y tenia veinte.
-                   Manda el que caiga antes —lo decide el servidor al empezar— y por eso
-                   aqui se dicen los dos y cual acorta a cual. */
-                <div className={estilos.datoLateral}>
-                  {prueba.duracionMinutos ? (
-                    <>
-                      <span className={estilos.etiquetaLateral}>Duración</span>
-                      <span className={estilos.valorLateral}>
-                        {prueba.duracionMinutos} minutos desde que empieces
-                      </span>
-                      {prueba.venceEn && (
-                        <span className={estilos.matizLateral}>
-                          Y la convocatoria cierra el {formatearFechaLarga(prueba.venceEn)}: si
-                          empiezas más tarde de eso, tendrás el tiempo que quede hasta esa hora.
-                        </span>
-                      )}
-                    </>
-                  ) : prueba.plazoDias && !prueba.venceEn ? (
-                    <>
-                      <span className={estilos.etiquetaLateral}>Plazo</span>
-                      <span className={estilos.valorLateral}>
-                        {prueba.plazoDias} {prueba.plazoDias === 1 ? 'día' : 'días'} desde que empieces
-                      </span>
-                    </>
-                  ) : prueba.venceEn ? (
-                    <>
-                      <span className={estilos.etiquetaLateral}>Tienes hasta</span>
-                      <span className={estilos.valorLateral}>
-                        {formatearFechaLarga(prueba.venceEn)}
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <span className={estilos.etiquetaLateral}>Plazo</span>
-                      <span className={estilos.valorLateral}>
-                        Empieza a contar cuando la abras
-                      </span>
-                    </>
-                  )}
-                </div>
-              )}
-
-              {prueba.modalidad && !delEditor && (
-                <div className={estilos.datoLateral}>
-                  <span className={estilos.etiquetaLateral}>Modalidad</span>
-                  <span className={estilos.valorLateral}>{prueba.modalidad}</span>
-                </div>
-              )}
-
-              <div className={estilos.datoLateral}>
-                <span className={estilos.etiquetaLateral}>Qué hay que hacer</span>
-                <span className={estilos.valorLateral}>
-                  {prueba.preguntas.length > 0 &&
-                    `${prueba.preguntas.length} ${prueba.preguntas.length === 1 ? 'pregunta' : 'preguntas'}`}
-                  {prueba.preguntas.length > 0 && hayEntregables && ' · '}
-                  {hayEntregables &&
-                    (delEditor
-                      ? `${prueba.entregables.length} ${prueba.entregables.length === 1 ? 'archivo que subir' : 'archivos que subir'}`
-                      : `${prueba.entregables.length} ${prueba.entregables.length === 1 ? 'entregable' : 'entregables'}`)}
-                </span>
-              </div>
-
-              <p className={estilos.aviso} style={{ marginBottom: 0 }}>
-                <span>
-                  {delEditor
-                    ? `Una vez empezada no se puede pausar. Para entregar hay que responder todas las preguntas y subir los entregables obligatorios: si el tiempo termina con algo pendiente, queda sin completar.`
-                    : 'Una vez empezada no se puede pausar. Si el tiempo termina, se entrega lo que hayas guardado.'}
-                </span>
-              </p>
-
-              <button
-                type="button"
-                className={estilos.empezar}
-                style={{ width: '100%', marginTop: 'var(--e4)' }}
-                onClick={() => setConfirmarInicio(true)}
-                data-rotulo="Empezar prueba"
-              >
-                Empezar prueba
-              </button>
-            </aside>
-          </div>
+          <FichaPrevia prueba={prueba} alEmpezar={() => setConfirmarInicio(true)} />
         </>
       )}
 
@@ -903,24 +764,31 @@ export function Prueba() {
         </>
       )}
 
+      {/* El segundo clic de un doble clic en «Empezar prueba» caía en el fondo y lo cerraba
+          (QA-UPP-13) y, en el teléfono, en «Aún no» o en «Sí, empezar» (QA-UPP-14): el modal entero
+          ignora ese clic. */}
       <Modal
         abierto={confirmarInicio}
         titulo="¿Empezar ahora?"
         onCerrar={() => setConfirmarInicio(false)}
+        aPruebaDeDobleClic
         pie={
           <>
+            {/* El foco entra por la opción segura: arrancar el reloj no tiene vuelta atrás y
+                exige ir a «Sí, empezar» a propósito, también con el teclado. */}
             <button
               type="button"
               className={estilos.cancelar}
               onClick={() => setConfirmarInicio(false)}
               data-rotulo="Aún no"
+              autoFocus
             >
               Aún no
             </button>
             <button
               type="button"
               className={estilos.confirmar}
-              onClick={() => inicio.mutate()}
+              onClick={empezar}
               disabled={inicio.isPending}
               data-rotulo={inicio.isPending ? 'Abriendo…' : 'Sí, empezar'}
             >
@@ -931,13 +799,13 @@ export function Prueba() {
       >
         <p className={`${estilos.aviso} ${estilos.serio}`}>
           <span>
-            <b>El tiempo no se detendrá</b>. Si cierras el navegador, el cronómetro sigue
-            corriendo.{' '}
+            {/* El contenido se lee dentro del reloj (10/10/2026): hasta aquí no se ha visto, y no
+                se sabe si hay caso o materiales. */}
+            <b>{avisoAlEmpezar.aviso.resaltado}</b>
+            {avisoAlEmpezar.aviso.resto}
             {/* La prueba del editor no se entrega con huecos (decisión 11): decirle aquí que
                 se entrega «lo guardado» sería prometerle algo que no pasa. */}
-            {delEditor
-              ? `Al terminar, ${laPrueba} se entrega sola si está completa: si falta responder alguna pregunta o subir un entregable obligatorio, queda sin completar y no se califica.`
-              : 'Al terminar se entrega lo que hayas guardado.'}
+            {avisoAlEmpezar.alTerminar && ` ${avisoAlEmpezar.alTerminar}`}
           </span>
         </p>
         {/* Un 404 no se enseña mientras se comprueba: si es la vacante retirada, la pantalla
@@ -955,6 +823,7 @@ export function Prueba() {
         abierto={confirmarEntrega}
         titulo="Entregar prueba"
         onCerrar={() => setConfirmarEntrega(false)}
+        aPruebaDeDobleClic
         pie={
           <>
             <button

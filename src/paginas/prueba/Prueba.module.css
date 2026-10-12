@@ -136,13 +136,6 @@
 
 /* ---------- El encargo ---------- */
 
-.columnas {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 19rem;
-  gap: var(--e6);
-  align-items: start;
-}
-
 .bloque {
   margin-bottom: var(--e6);
 }
@@ -156,50 +149,6 @@
   line-height: 1.65;
   color: var(--tinta2);
   max-width: var(--medida);
-}
-
-.lateral {
-  position: sticky;
-  /* Solo la cabecera: en la portada de la prueba no hay barra encima. */
-  top: calc(var(--alto-cabecera) + var(--e5));
-  border: 1px solid var(--regla);
-  padding: var(--e5);
-  border-radius: var(--radio);
-}
-
-.datoLateral {
-  padding-bottom: var(--e4);
-  margin-bottom: var(--e4);
-  border-bottom: 1px solid var(--regla);
-}
-
-.datoLateral:last-child {
-  padding-bottom: 0;
-  margin-bottom: 0;
-  border-bottom: none;
-}
-
-.etiquetaLateral {
-  font-size: var(--t-menor);
-  font-weight: 600;
-  color: var(--tinta2);
-}
-
-.valorLateral {
-  display: block;
-  margin-top: var(--e1);
-  font-size: var(--t-prosa);
-}
-
-/* La segunda mitad del plazo: la fecha que puede acortar los minutos. Va debajo y en
-   tinta3 porque es la condicion del dato de arriba, no un dato hermano — subirla al
-   mismo peso haria leer dos plazos en competencia en vez de uno con su limite. */
-.matizLateral {
-  display: block;
-  margin-top: var(--e2);
-  font-size: var(--t-menor);
-  line-height: 1.5;
-  color: var(--tinta3);
 }
 
 /* ---------- Antes de empezar ---------- */
@@ -233,10 +182,6 @@
   border-color: var(--mal-regla);
   background: var(--mal-bruma);
   color: var(--mal);
-}
-
-.empezar {
-  composes: acentoGrande from '../../estilos/piezas.module.css';
 }
 
 /* ---------- Preguntas ---------- */
@@ -533,23 +478,11 @@
   composes: acentoMenor from '../../estilos/piezas.module.css';
 }
 
-@media (max-width: 860px) {
-  .columnas {
-    grid-template-columns: 1fr;
-  }
-
-  .lateral {
-    position: static;
-  }
-}
-
 @media (max-width: 640px) {
   .pagina {
     padding: var(--e3) var(--e4) var(--e7);
   }
 
-
-  .empezar,
   .entregar {
     width: 100%;
   }
@@ -624,7 +557,10 @@
   min-width: 0;
 }
 
-/* El archivo obligatorio que falta en una pregunta ya respondida: ámbar, lo que frena la entrega. */
+/*
+ * El archivo obligatorio que falta, en ámbar —lo que frena la entrega—, desde que se intenta
+ * entregar con huecos y hasta que se sube. Antes de intentarlo va neutro (revisión del 09/10/2026).
+ */
 .entregable.falta {
   border-color: var(--duda);
   background: var(--duda-bruma);
@@ -698,6 +634,351 @@
   font-size: var(--t-apoyo);
   font-weight: 600;
   color: var(--tinta);
+}
+
+/*
+ * El texto del lateral —el caso, los materiales, las herramientas— en la letra del cuerpo
+ * (16 px y 1,5), sin el 1,65 de la prosa: en 20rem, la prosa se leía como letra grande.
+ * `TextoPlano` cambia su clase por esta entera, así que lleva también lo que respeta los saltos.
+ */
+.parrafoLateral {
+  margin: 0 0 var(--e2);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: var(--t-base);
+  line-height: 1.5;
+  color: var(--tinta2);
+}
+
+.parrafoLateral:last-child {
+  margin-bottom: 0;
+}
+
+/*
+ * Un caso largo, recortado a sus primeras líneas (`LINEAS_DEL_LATERAL` en `ElCaso.tsx`). La
+ * cuenta de líneas atraviesa los párrafos, y el resto sigue en el árbol para el lector de
+ * pantalla; «Leer el caso completo» lo abre entero.
+ *
+ * `clip` y no `hidden`: con `hidden` la caja se puede desplazar —el foco o la búsqueda de la
+ * página la movían a lo que queda bajo el recorte, y las siete líneas se pintaban unas encima de
+ * otras hasta recargar (QA-UPP-07)—; con `clip` no, y el lateral siempre enseña el comienzo.
+ * `hidden` queda para el navegador que no conozca `clip`. Sus enlaces no se tabulan (`ElCaso.tsx`).
+ */
+.casoRecortado {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 7;
+  line-clamp: 7;
+  overflow: hidden;
+  overflow: clip;
+}
+
+/* «Leer el caso completo»: el botón con contorno de la barra, a su ancho. */
+.leerElCaso {
+  align-self: flex-start;
+}
+
+/*
+ * La tipografía de lectura del caso: la letra del cuerpo, con más aire entre líneas y entre
+ * párrafos que la prosa corta, y cortada a `--medida` —unos 70 caracteres por línea con Geist—.
+ * La usa la ventana de «Leer el caso completo», que con el ancho del `Modal` (38rem) deja el
+ * texto a ese ancho.
+ */
+.parrafoDeLectura {
+  margin: 0 0 var(--e4);
+  max-width: var(--medida);
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  font-size: var(--t-base);
+  line-height: 1.75;
+  color: var(--tinta2);
+}
+
+.parrafoDeLectura:last-child {
+  margin-bottom: 0;
+}
+
+/* ---------- Antes de empezar: la ficha corta (10/10/2026) ---------- */
+
+/*
+ * Lo que dice arriba de la ficha, en una frase: que el contenido y las preguntas se abren al empezar
+ * y que desde ahí corre el tiempo (`loQueDiceLaPrevia`). Más ancha que la prosa corriente (72ch): en
+ * escritorio cabe en una o dos líneas, y es lo que deja ver «Empezar prueba» al abrir con 520 px de alto.
+ */
+.entradillaDeLaPrevia {
+  margin-top: var(--e3);
+  max-width: 72ch;
+  font-size: var(--t-base);
+  line-height: 1.6;
+  color: var(--tinta2);
+}
+
+/*
+ * La pantalla previa de las dos pruebas, la del editor y la de plantilla (`FichaPrevia.tsx`). Desde
+ * el 10/10/2026 el caso, los materiales y las preguntas no llegan hasta que se empieza —se leen
+ * dentro del reloj—, y lo que queda cabe en una sola superficie a todo el ancho del carril: nube
+ * sobre el cielo, filete de `regla` y sin sombra (la regla del plano en reposo). Sus partes se
+ * separan con un filete y no con tarjetas dentro: los datos, la condición con «Empezar prueba» y,
+ * si hay, lo que entregarás y las herramientas.
+ *
+ * Nada va pegado ni se mueve. El botón se ve al abrir la pantalla desde 520 px de alto porque va
+ * justo después de los datos, tenga la prueba los archivos que tenga.
+ */
+.ficha {
+  margin-top: var(--e4);
+  background: var(--nube);
+  border: 1px solid var(--regla);
+  border-radius: var(--radio);
+  overflow: hidden;
+  overflow: clip;
+}
+
+/* Entre parte y parte, un filete. */
+.ficha > * + * {
+  border-top: 1px solid var(--regla);
+}
+
+/*
+ * Los datos: tiempo, fecha límite, preguntas y archivos, en una fila que se reparte el ancho (en el
+ * teléfono, en 2×2; ver abajo). Los filetes entre celdas son el `gap` de 1 px sobre el fondo de
+ * regla, así que una celda que falta no deja un filete suelto. `minmax(min-content, 1fr)`: todas
+ * iguales, salvo la que necesite más.
+ */
+.franja {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(min-content, 1fr);
+  gap: 1px;
+  margin: 0;
+  background: var(--regla);
+}
+
+.celda {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: var(--e3) var(--e5);
+  background: var(--nube);
+}
+
+.etiquetaDeCelda {
+  font-size: var(--t-micro);
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--tinta2);
+}
+
+/*
+ * El valor, a la escala de un título de bloque: se lee de un vistazo sin ocupar lo que ocupaba la
+ * cifra de 34 px. Ningún dato en índigo: ni se pulsa ni te toca.
+ */
+.valorDeCelda {
+  margin: var(--e1) 0 0;
+  font-size: var(--t-titulo);
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  color: var(--tinta);
+  font-variant-numeric: tabular-nums;
+}
+
+/* La fecha en dos líneas: el día y la hora. */
+.lineaDeFecha,
+.lineaDeHora {
+  display: block;
+  white-space: nowrap;
+}
+
+.matizDeCelda {
+  margin: var(--e1) 0 0;
+  text-wrap: pretty;
+  font-size: var(--t-menor);
+  line-height: 1.5;
+  color: var(--tinta3);
+}
+
+/*
+ * Lo que se acepta al empezar y, a su derecha, «Empezar prueba». En el teléfono, uno debajo del
+ * otro y el botón a todo el ancho.
+ */
+.empezarDesdeLaFicha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e4) var(--e6);
+  padding: var(--e5);
+}
+
+.condicion {
+  flex: 1 1 auto;
+  /* Dos líneas en escritorio, junto al botón: con tres, el botón bajaba de la ventana a 1024×520. */
+  max-width: 92ch;
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+}
+
+.empezarLaPrueba {
+  composes: acentoGrande from '../../estilos/piezas.module.css';
+  flex: none;
+  min-width: 11rem;
+  /* A la derecha también cuando no hay condición que decir (una prueba sin tiempo ni exigencias). */
+  margin-left: auto;
+}
+
+/*
+ * Lo que entregarás y las herramientas permitidas: de consulta. Con las dos, lado a lado desde
+ * 768 px —la lista se lleva más ancho—, con el mismo filete de 1 px entre ellas; con una sola, a
+ * todo el ancho.
+ */
+.consulta {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1px;
+  background: var(--regla);
+}
+
+.consultaEnDos {
+  composes: consulta;
+}
+
+.parteDeLaFicha {
+  min-width: 0;
+  padding: var(--e5);
+  background: var(--nube);
+}
+
+.tituloDeParte {
+  margin-bottom: var(--e3);
+  font-size: var(--t-base);
+  line-height: 1.4;
+}
+
+/* Los archivos, en columnas de unas 16rem cuando hay ancho: con ocho, la lista no se alarga. */
+.archivosPorEntregar {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+  gap: var(--e4) var(--e6);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.archivoPorEntregar {
+  min-width: 0;
+}
+
+.nombreDelArchivo {
+  font-size: var(--t-base);
+  font-weight: 600;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.alcanceDelArchivo {
+  margin-top: var(--e1);
+  font-size: var(--t-menor);
+  line-height: 1.5;
+  color: var(--tinta2);
+}
+
+/* Las herramientas: la prosa corta de la interfaz, con sus listas si las escribió la empresa. */
+.textoDeLaFicha {
+  margin: 0 0 var(--e3);
+  max-width: var(--medida);
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  font-size: var(--t-prosa);
+  line-height: 1.6;
+  color: var(--tinta2);
+}
+
+.textoDeLaFicha:last-child {
+  margin-bottom: 0;
+}
+
+@media (min-width: 768px) {
+  .consultaEnDos {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  }
+}
+
+/* Por debajo de 900 px, la fecha se parte por el día antes que salirse. */
+@media (max-width: 900px) {
+  .lineaDeFecha {
+    white-space: normal;
+  }
+}
+
+/*
+ * En el teléfono, los datos en 2×2 —una celda que queda sola ocupa su fila— y todo aprieta su
+ * relleno; la condición encima del botón, que va a todo el ancho. Cada columna de la franja toma al
+ * menos lo que necesita su texto más largo: la hora de la fecha («a las 19:19», que no se parte) se
+ * comía el relleno de su celda a 360 px, y así es la otra columna la que cede.
+ *
+ * Lo justo para que «Empezar prueba» se vea al abrir, con reloj, fecha y archivos obligatorios, desde
+ * 360×640 (QA del ciclo 11: a 360×740 quedaba 54 px por debajo): la entradilla y la ficha se acercan,
+ * las celdas aprietan su relleno y su interlínea, y la condición se pega a los datos. Lo ancho no
+ * cambia: el botón sigue a todo el ancho con su relleno de 16 px.
+ */
+@media (max-width: 640px) {
+  .entradillaDeLaPrevia {
+    margin-top: var(--e2);
+    line-height: 1.5;
+  }
+
+  .ficha {
+    margin-top: var(--e3);
+  }
+
+  /* La primera columna, la del tiempo y las preguntas, algo más ancha: sus matices son los largos
+     («desde que pulses Empezar» cabe en una línea) y la fecha se parte por el día igual. */
+  .franja {
+    grid-auto-flow: row;
+    grid-template-columns: minmax(min-content, 3fr) minmax(min-content, 2fr);
+  }
+
+  .celda {
+    padding: var(--e2) var(--e3);
+  }
+
+  .etiquetaDeCelda {
+    line-height: 1.35;
+  }
+
+  .valorDeCelda {
+    margin-top: 2px;
+    line-height: 1.25;
+  }
+
+  .matizDeCelda {
+    margin-top: 2px;
+    line-height: 1.35;
+  }
+
+  .celda:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+
+  .empezarDesdeLaFicha {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--e3);
+    padding: var(--e3) var(--e4) var(--e4);
+  }
+
+  .condicion {
+    line-height: 1.45;
+  }
+
+  .empezarLaPrueba {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .parteDeLaFicha {
+    padding: var(--e4);
+  }
 }
 
 /* «Por entregar»: solo de consulta. */

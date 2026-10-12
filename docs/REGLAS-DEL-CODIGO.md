@@ -54,6 +54,15 @@ prueba, la evaluación, el cuestionario técnico y la simulación; la evaluació
 el cuestionario enseñaba el texto crudo del servidor, porque cada una lo resolvía a su manera.
 Una pantalla nueva de ese tipo entra por aquí.
 
+**Nada antes del reloj** (10/10/2026). Antes de «Empezar», la prueba del puesto llega del backend
+sin preguntas, sin caso, sin materiales, sin consigna y sin el detalle de los entregables: el
+caso se lee dentro del reloj, en la prueba del editor y en la de plantilla. La pantalla previa
+**no cuenta las preguntas con `preguntas.length`** —usa `totalPreguntas`, en
+`cuantasPreguntas`— ni da por hecho que haya caso o materiales: sus textos los arma
+`src/paginas/prueba/loQueDiceLaPrevia.ts` con lo que sí se sabe. Y aunque un backend anterior
+todavía mande las preguntas, la ficha previa no las enseña: es una decisión de producto, no un
+hueco de la API.
+
 **Las ocho formas de respuesta del banco v3.** `PC`, abierta/`V`, `EF-4`, `SJT-R`, `SEC`,
 `INV`, `DE` y `CD`. La forma exacta de lo que se envía la valida el backend y responde 400 si
 no cuadra.
@@ -151,6 +160,23 @@ con `useBorradorDeLaVentana` y `useAvisoDeBorrador` (`src/ui/resenas/ganchos.ts`
 en un efecto y el cierre leyendo el estado, escribir y pulsar Escape en seguida encontraba la
 ventana «sin borrador» y cerraba sin preguntar, porque el `Modal` llama al `onCerrar` del último
 pintado. Otra ventana que pregunte antes de descartar necesita lo mismo.
+
+**Un doble clic que cae en lo que acaba de aparecer** (QA, 09-10/10/2026). La primera pulsación
+cambia la pantalla y la segunda cae en lo que haya quedado debajo del puntero. En el examen,
+«Siguiente» cambiaba de pregunta y la segunda pulsación marcaba una opción de la pregunta nueva
+sin haberla visto. En «Empezar prueba» abría «¿Empezar ahora?» y la segunda caía en el fondo, que
+lo cerraba, o en el teléfono en «Sí, empezar», que arrancaba el reloj. Dos salidas, y ninguna se
+quita:
+
+- **Un `Modal` que se abre desde un botón y puede decidir algo lleva `aPruebaDeDobleClic`.** Ignora
+  la continuación de la serie que lo abrió (`detail > 1`) y toda pulsación que empiece en los
+  primeros 500 ms, con un escudo transparente de 550 ms; el teclado y Escape van al instante. Hoy
+  lo llevan «¿Empezar ahora?», los «Entregar» de la prueba de plantilla, la del editor y la
+  evaluación, y la vista de lectura del caso. Si además arranca algo que no se deshace, su foco
+  inicial va a la opción que no hace nada: el de «¿Empezar ahora?» va a «Aún no».
+- **Una pantalla que cambia de contenido bajo el puntero** usa `useUnaSolaPulsacion`
+  (`src/paginas/unaPorPantalla/useRecorrido.ts`): la segunda pulsación de una serie que cae sobre
+  otra cosa que la primera se descarta entera.
 
 ---
 

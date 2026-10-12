@@ -249,9 +249,14 @@ test.describe('Un editor de la prueba técnica más simple', () => {
     // AC-19: la pantalla previa, sin ningún bloque de caso
     await entrarAlPortalCon(page, lia.token)
     await page.goto(`/procesos/${lia.uuid}/prueba`)
-    await expect(page.getByText('Fecha límite', { exact: true }).first()).toBeVisible({ timeout: 20_000 })
-    await expect(page.getByText('Tendrás 90 minutos desde que pulses Empezar')).toBeVisible()
-    await expect(page.getByText('5 preguntas · 2 archivos que subir')).toBeVisible()
+    // La franja de datos (09/10/2026): cada celda con su etiqueta y su valor
+    await expect(page.locator('main dl dt', { hasText: /^Fecha límite$/ })).toBeVisible({ timeout: 20_000 })
+    const valorDe = (etiqueta: string) =>
+      page.locator('main dl > div').filter({ has: page.locator('dt', { hasText: new RegExp(`^${etiqueta}$`) }) }).locator('dd').first()
+    await expect(valorDe('Tiempo')).toHaveText('90 min')
+    await expect(valorDe('Preguntas')).toHaveText('5')
+    await expect(valorDe('Archivos')).toHaveText('2')
+    await expect(page.getByRole('heading', { name: 'Lo que entregarás' })).toBeVisible()
     await expect(page.getByRole('heading', { name: /El caso|El encargo|De qué va/ })).toHaveCount(0)
     await expect(page.locator('main')).not.toContainText(/cuestionario/i)
 

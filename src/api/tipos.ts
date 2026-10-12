@@ -508,6 +508,7 @@ export interface OpcionDePrueba {
 export interface EntregableRequerido {
   id: number
   nombre: string
+  /** Nulo antes de empezar (10/10/2026): el detalle se lee dentro del reloj. */
   detalle: string | null
   formato: string | null
   esObligatorio: boolean
@@ -517,6 +518,11 @@ export interface EntregableRequerido {
    * Nulo en los generales, que van al final.
    */
   preguntaId?: number | null
+  /**
+   * El número de esa pregunta, el de «en la pregunta 4» (10/10/2026). Viaja aparte porque antes
+   * de empezar las preguntas no llegan. Nulo en los generales.
+   */
+  posicionDeLaPregunta?: number | null
 }
 
 /**
@@ -525,6 +531,15 @@ export interface EntregableRequerido {
  */
 export type EstadoIntento = 'PENDIENTE' | 'EN_CURSO' | 'ENTREGADA' | 'NO_COMPLETADA'
 
+/**
+ * La prueba del candidato.
+ *
+ * ⚠️ **Antes de empezar (`iniciadoEn` nulo) llega sin nada que dé ventaja** (10/10/2026): sin
+ * preguntas —solo cuántas son, en `totalPreguntas`—, y con `enunciado`, `materiales`, `consigna`
+ * y el `detalle` de cada entregable en nulo. Viajan el tiempo, las fechas, las herramientas y qué
+ * archivos habrá que entregar. Todo lo demás llega en la respuesta de `iniciarPrueba` y en las
+ * lecturas posteriores.
+ */
 export interface MiPrueba {
   id: number
   estadoIntento: EstadoIntento
@@ -533,18 +548,27 @@ export interface MiPrueba {
   /** La hora en que se acaba, segun el servidor. El cronometro sale de aqui. */
   venceEn: FechaIso | null
   duracionMinutos: number | null
+  /** El caso. Nulo antes de empezar. */
   enunciado: string | null
+  /** Nulo antes de empezar. */
   materiales: string | null
+  /** Viaja también antes de empezar: decide con qué sentarse. */
   herramientasPermitidas: string | null
   /** El cambio inesperado. Llega en `null` hasta que toca enseñarlo. */
   cambioTexto: string | null
+  /** Vacía antes de empezar: cuántas son lo dice `totalPreguntas`. */
   preguntas: PreguntaPrueba[]
   entregables: EntregableRequerido[]
-  /** V67: los días de una prueba de plazo abierto, desde que se empieza. */
+  /**
+   * Cuántas preguntas tiene (10/10/2026). Viaja siempre, también antes de empezar. Opcional solo
+   * para no romper con un backend anterior, que no lo manda: entonces se cuentan `preguntas`.
+   */
+  totalPreguntas?: number | null
+  /** Los días de una prueba que se mide en días, desde que se empieza (V67; la plantilla, desde el 10/10/2026). */
   plazoDias?: number | null
   /** Ya no se usa (V68): una sola prueba, sin «cuestionario». */
   cuestionario?: boolean
-  /** V67: el enunciado adjunto en PDF o Word. `url` puede faltar en local. */
+  /** V67: el enunciado adjunto en PDF o Word. `url` puede faltar en local. Nulo antes de empezar. */
   consigna?: { nombre: string | null; url: string | null } | null
   /**
    * V67: escrita en el editor de la vacante. Sus preguntas pueden ser cerradas y

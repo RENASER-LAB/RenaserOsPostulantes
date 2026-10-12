@@ -97,7 +97,7 @@ La historia de cada cambio está en las bitácoras de [agosto](BITACORA-2026-08.
 | Pantalla | Cómo queda |
 |---|---|
 | Mis procesos | Cada postulación con su camino de cinco etapas dibujado y un punto donde estás. La acción vive dentro de la etapa |
-| Evaluación | Una pregunta por pantalla, con **mapa lateral** de todas y su estado. Resuelve el problema conocido: saltarse una y no poder volver sin pulsar cuarenta veces |
+| Evaluación | Una pregunta por pantalla, con **mapa lateral** de todas y su estado. Resuelve el problema conocido: saltarse una y no poder volver sin pulsar cuarenta veces. Desde el 09/10/2026 la prueba del editor va igual, con el mismo marco (`src/paginas/unaPorPantalla/`) |
 | Cuando no hay nada que hacer | Se dice claro que no hay nada pendiente y se ofrece algo útil mientras tanto. **Trece de los dieciocho estados son esto** |
 
 **Solo tema claro.** Es petición del cliente: no hay bloque `html[data-theme="dark"]` ni
@@ -122,8 +122,9 @@ cómo se ve: eso es DESIGN.md.
 | `src/paginas/cuenta/` | Entrar, crear cuenta, canjear el enlace del correo y la contraseña olvidada. Comparten `Cuenta.module.css` |
 | `src/paginas/postular/` | Postular. **Aquí vive el único descarte automático del sistema** |
 | `src/paginas/procesos/` | «Mis procesos», el detalle de una postulación y la línea de hitos |
-| `src/paginas/evaluacion/` | La evaluación y los ocho formatos del banco v3 |
-| `src/paginas/prueba/` | La prueba del puesto, en sus dos formas |
+| `src/paginas/evaluacion/` | La evaluación y los ocho formatos del banco v3, y `useColaDeRespuestas`, la cola de guardado que comparte con la prueba del editor |
+| `src/paginas/unaPorPantalla/` | **El marco de una pregunta por pantalla** (09/10/2026), el mismo para la evaluación y la prueba del editor. `useRecorrido` lleva el paso, los saltos con «Volver a la N», la posición en `sessionStorage` y `useUnaSolaPulsacion`; `Marco` pinta la barra fija, el mapa con su leyenda (y su hoja en el teléfono), la tarjeta de la pregunta y el aviso de lo que falta para entregar. **Nada se mueve dentro** (la regla del reloj), y el mapa se aparta a propósito de la regla de la voz única |
+| `src/paginas/prueba/` | La prueba del puesto, en sus dos formas. `Prueba.tsx` decide y pinta la de plantilla en curso; `PruebaDelEditor.tsx`, la del editor en curso, sobre el marco; `FichaPrevia.tsx` es la pantalla previa de las dos, con sus textos en `loQueDiceLaPrevia.ts`; `ElCaso.tsx`, el lateral del caso y su vista de lectura; `Entregable.tsx`, subir un archivo o un enlace |
 | `src/paginas/simulacion/` | Elegir fecha, y la sesión ya reservada con su agenda |
 | `src/paginas/validacion/` | El periodo trabajando. Ver más abajo por qué no se enlaza |
 | `src/paginas/decision/` | El caso ámbar. El formulario va entero y **apagado** |
@@ -133,7 +134,8 @@ cómo se ve: eso es DESIGN.md.
 | `src/ui/Marca.tsx` y `logotipo.png` | El logotipo, el único sitio que conoce el archivo. Sus derivados —favicon, iconos y arranque de Android— los rehace `python3 herramientas/derivados-del-logotipo.py`. Ver DESIGN.md › El logotipo |
 | `src/ui/Estados.module.css` | Cargando, fallo, acceso necesario, vacío y el salvavidas, sobre nube. Comparten hoja porque comparten forma |
 | `src/ui/movimiento.tsx` | Las piezas de movimiento, documentadas en DESIGN.md |
-| `src/ui/Modal.tsx` | El aviso compartido: entregas y confirmaciones |
+| `src/ui/Modal.tsx` | El aviso compartido: entregas y confirmaciones. Con `aPruebaDeDobleClic` (10/10/2026) ignora el puntero que sigue a la pulsación que lo abrió; ver [REGLAS-DEL-CODIGO.md](REGLAS-DEL-CODIGO.md) |
+| `src/ui/TextoPlano.tsx` | Texto libre con sus párrafos y sus direcciones convertidas en enlaces. `enlacesTabulables={false}` saca los enlaces del Tab (el extracto recortado del caso) y `listas` (09/10/2026, en el caso, los materiales y las herramientas de la prueba) pinta como `ul` las líneas que empiezan por «- », «• » o «* », y como `ol` las que empiezan por «1. », «2. »… |
 | `src/ui/campos/` | Campo, Seleccion, AreaTexto y Consentimiento: etiqueta y error atados al campo. La marca de obligatorio está en [REGLAS-DEL-CODIGO.md](REGLAS-DEL-CODIGO.md) |
 | `public/tipografia/` | Geist (y Figtree, por si se vuelve) |
 

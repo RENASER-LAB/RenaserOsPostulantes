@@ -82,6 +82,11 @@ export function RespuestaDeLaPregunta(props: Props) {
  *
  * Lo que falta se dice siempre, no solo al intentar entregar: si el candidato
  * se entera al final, ya no se acuerda de esta pregunta.
+ *
+ * Completo no dice nada: el guardado ya lo cuenta la cabecera de la tarjeta
+ * («Guardado», o «No se pudo guardar; se reintenta»). Hasta el 09/10/2026 decía
+ * aquí «Se guarda sola en cuanto la completas.» en cada pregunta, y se quitó por
+ * ruido (revisión humana).
  */
 function ConAviso({
   falta,
@@ -90,11 +95,7 @@ function ConAviso({
   return (
     <>
       {children}
-      {falta ? (
-        <div className={estilos.pendiente}>{falta}</div>
-      ) : (
-        <div className={estilos.pendiente}>Se guarda sola en cuanto la completas.</div>
-      )}
+      {falta && <div className={estilos.pendiente}>{falta}</div>}
     </>
   )
 }
@@ -166,11 +167,12 @@ function Escrito({ texto, onTexto }: Props) {
         onChange={(e) => onTexto(e.target.value)}
         placeholder="Describe el contexto, qué hiciste, qué resultado obtuviste y qué aprendiste."
       />
-      <div className={estilos.cuenta}>
-        {texto.length > MAXIMO_DEL_TEXTO * 0.9
-          ? `Se guarda sola cuando dejas de escribir. Llevas ${texto.length.toLocaleString('es-PE')} caracteres de ${MAXIMO_DEL_TEXTO.toLocaleString('es-PE')}: pasado ese punto el servidor no la acepta.`
-          : 'Se guarda sola cuando dejas de escribir.'}
-      </div>
+      {/* Solo el aviso de cerca del límite: el guardado lo cuenta la cabecera de la tarjeta. */}
+      {texto.length > MAXIMO_DEL_TEXTO * 0.9 && (
+        <div className={estilos.cuenta}>
+          {`Llevas ${texto.length.toLocaleString('es-PE')} caracteres de ${MAXIMO_DEL_TEXTO.toLocaleString('es-PE')}: pasado ese punto el servidor no la acepta.`}
+        </div>
+      )}
     </div>
   )
 }
