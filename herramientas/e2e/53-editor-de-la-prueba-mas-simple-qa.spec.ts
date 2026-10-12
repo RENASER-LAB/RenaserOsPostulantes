@@ -219,7 +219,7 @@ test.describe('QA del editor de la prueba más simple', () => {
     await entrarAlPortalCon(page, dana.token)
     await page.goto(`/procesos/${dana.uuid}/prueba`)
     await expect(page.getByText('Tiempo restante')).toBeVisible({ timeout: 20_000 })
-    await page.getByRole('button', { name: 'Entregar prueba' }).click()
+    await page.getByRole('button', { name: 'Entregar la prueba' }).click()
     const falta = page.getByRole('alert').filter({ hasText: 'Te falta subir' })
     await expect(falta).toContainText(`«Flujo de caja.xlsx» (pregunta ${abierta.posicion ?? 1})`)
     await expect(page.getByRole('dialog')).toHaveCount(0)

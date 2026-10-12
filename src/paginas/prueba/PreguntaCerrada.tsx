@@ -3,24 +3,22 @@
  * múltiple o escala.
  *
  * Se pinta con los mismos formatos que la evaluación (`Formatos.tsx`), así que
- * se ven y se responden igual en las dos pantallas. Lo único propio es el
- * guardado: cada clic se manda en el momento, y si falla se reintenta solo con
- * lo último marcado, como las abiertas.
+ * se ven y se responden igual en las dos pantallas. Desde que la prueba va de
+ * una pregunta por pantalla (09/10/2026) esto solo pinta: el guardado es de la
+ * cola compartida (`useColaDeRespuestas`), que reintenta aunque la pregunta ya
+ * no esté en pantalla.
  *
  * ⚠️ **Sin puntos ni cuál es la buena**: no llegan al portal (RF-53).
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { responderPruebaCerrada } from '@/api/prueba'
 import type { DetalleRespuesta, PreguntaEvaluacion, PreguntaPrueba } from '@/api/tipos'
 import { RespuestaDeLaPregunta } from '../evaluacion/Formatos'
 import estilos from './Prueba.module.css'
 
-const ESPERA_ANTES_DE_REINTENTAR = 5000
 const LETRAS = 'abcdefghijklmnopqrstuvwxyz'
 
-type Respuesta = { opcionId: number | null } | { marcadas: number[] }
+/** Lo que se manda de una cerrada: la opción elegida, o las marcadas. */
+export type RespuestaCerradaValor = { opcionId: number | null } | { marcadas: number[] }
 
 /** La pregunta de la prueba con la forma que leen los formatos de la evaluación. */
 export function comoDeLaEvaluacion(p: PreguntaPrueba, numero: number): PreguntaEvaluacion {
@@ -44,129 +42,38 @@ export function comoDeLaEvaluacion(p: PreguntaPrueba, numero: number): PreguntaE
   }
 }
 
-const respondida = (r: Respuesta) =>
-  'marcadas' in r ? r.marcadas.length > 0 : r.opcionId !== null
-
-export function PreguntaCerrada({
-  uuid,
+/**
+ * La forma de responder una cerrada, dentro de su tarjeta. El grupo se nombra con el
+ * enunciado de la tarjeta, y con el tiempo agotado se queda a la vista pero no se toca.
+ */
+export function RespuestaCerrada({
   pregunta,
   numero,
+  valor,
   bloqueado,
-  registrarEnvio,
-  registrarSiTieneTexto,
-  siSeCerroLaPuerta,
+  idEnunciado,
+  alCambiar,
 }: {
-  uuid: string
   pregunta: PreguntaPrueba
-  /** Su número en la prueba: «Pregunta 3». */
   numero: number
+  valor: RespuestaCerradaValor
   bloqueado: boolean
-  registrarEnvio: (preguntaId: number, mandar: (() => Promise<unknown>) | null) => void
-  /** Si está respondida ahora mismo: es lo que cuenta «Entregar». */
-  registrarSiTieneTexto: (preguntaId: number, tiene: boolean | null) => void
-  siSeCerroLaPuerta: (causa: unknown) => boolean
+  idEnunciado: string
+  alCambiar: (valor: RespuestaCerradaValor) => void
 }) {
-  const cache = useQueryClient()
-  const multiple = pregunta.tipo === 'OPCION_MULTIPLE'
-  const [opcion, setOpcion] = useState<number | null>(pregunta.respuestaOpcionId ?? null)
-  const [marcadas, setMarcadas] = useState<number[]>(pregunta.respuestaMarcadas ?? [])
-  const [estado, setEstado] = useState<'limpio' | 'guardando' | 'pendiente'>('limpio')
-  const pendiente = useRef<Respuesta | null>(null)
-  const enVuelo = useRef<Promise<unknown> | null>(null)
-  const yaNoSeAdmite = useRef(bloqueado)
-  useEffect(() => {
-    yaNoSeAdmite.current = bloqueado
-  }, [bloqueado])
-
-  const guardar = useMutation({
-    mutationFn: (r: Respuesta) => responderPruebaCerrada(uuid, pregunta.id, r),
-    onMutate: () => setEstado('guardando'),
-    onSuccess: async (_x, r) => {
-      await cache.cancelQueries({ queryKey: ['prueba', uuid] })
-      if (pendiente.current === r) {
-        pendiente.current = null
-        setEstado('limpio')
-      }
-    },
-    onError: (causa) => {
-      setEstado('pendiente')
-      siSeCerroLaPuerta(causa)
-    },
-  })
-  const guardarAsync = guardar.mutateAsync
-
-  const mandarPendiente = useCallback(async () => {
-    if (pendiente.current === null || yaNoSeAdmite.current) return
-    if (enVuelo.current) return enVuelo.current
-    const viaje = guardarAsync(pendiente.current)
-      .catch(() => {})
-      .finally(() => {
-        enVuelo.current = null
-      })
-    enVuelo.current = viaje
-    return viaje
-  }, [guardarAsync])
-
-  const elegir = (r: Respuesta) => {
-    if (bloqueado) return
-    if ('marcadas' in r) setMarcadas(r.marcadas)
-    else setOpcion(r.opcionId)
-    pendiente.current = r
-    setEstado('pendiente')
-    // Si hay uno en vuelo, el reintento manda lo último en cuanto termine.
-    void mandarPendiente().then(() => {
-      if (pendiente.current !== null) void mandarPendiente()
-    })
-  }
-
-  useEffect(() => {
-    if (estado !== 'pendiente' || bloqueado) return
-    const reloj = window.setInterval(() => void mandarPendiente(), ESPERA_ANTES_DE_REINTENTAR)
-    return () => window.clearInterval(reloj)
-  }, [estado, bloqueado, mandarPendiente])
-
-  useEffect(() => {
-    registrarEnvio(pregunta.id, mandarPendiente)
-    return () => registrarEnvio(pregunta.id, null)
-  }, [registrarEnvio, pregunta.id, mandarPendiente])
-
-  const ahora: Respuesta = multiple ? { marcadas } : { opcionId: opcion }
-  const tiene = respondida(ahora)
-  useEffect(() => {
-    registrarSiTieneTexto(pregunta.id, tiene)
-    return () => registrarSiTieneTexto(pregunta.id, null)
-  }, [registrarSiTieneTexto, pregunta.id, tiene])
-
-  const comoEvaluacion = comoDeLaEvaluacion(pregunta, numero)
-  const pista = bloqueado
-    ? estado !== 'limpio'
-      ? 'No llegó a guardarse antes de que terminara el tiempo.'
-      : tiene
-        ? 'Guardado antes de que terminara el tiempo.'
-        : 'Se quedó sin responder.'
-    : estado !== 'limpio'
-      ? 'Guardando…'
-      : tiene
-        ? 'Guardado.'
-        : 'Sin responder.'
-
+  const marcadas = 'marcadas' in valor ? valor.marcadas : []
+  const opcion = 'opcionId' in valor ? valor.opcionId : null
   return (
-    <fieldset className={estilos.pregunta} id={`pregunta-${pregunta.id}`} disabled={bloqueado}>
-      <legend className={estilos.enunciado}>
-        <span className={estilos.numeroPregunta}>Pregunta {numero}</span>
-        {' · '}
-        {pregunta.enunciado}
-      </legend>
+    <fieldset className={estilos.grupoCerrada} aria-labelledby={idEnunciado} disabled={bloqueado}>
       <RespuestaDeLaPregunta
-        pregunta={comoEvaluacion}
-        detalle={multiple ? ({ marcadas } satisfies DetalleRespuesta) : undefined}
+        pregunta={comoDeLaEvaluacion(pregunta, numero)}
+        detalle={'marcadas' in valor ? ({ marcadas } satisfies DetalleRespuesta) : undefined}
         opcionElegida={opcion}
         texto=""
-        onOpcion={(id) => elegir({ opcionId: id })}
-        onDetalle={(d) => elegir({ marcadas: d.marcadas ?? [] })}
+        onOpcion={(id) => alCambiar({ opcionId: id })}
+        onDetalle={(d) => alCambiar({ marcadas: d.marcadas ?? [] })}
         onTexto={() => {}}
       />
-      <span className={estilos.estadoRespuesta}>{pista}</span>
     </fieldset>
   )
 }

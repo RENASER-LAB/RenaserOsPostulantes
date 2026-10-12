@@ -22,24 +22,22 @@
  * huecos: «Entregar» dice cuáles faltan y lleva a la primera, y el servidor lo
  * rechaza igual si alguien llama a la API. Si el tiempo vence con algo sin
  * responder, queda «sin completar». Desde la V68 es una sola prueba (sin
- * «cuestionario»): la pantalla previa dice la fecha límite y el tiempo, el caso
- * sale solo si existe y el archivo de una pregunta se sube dentro de ella; los
- * entregables generales van al final, antes de «Entregar».
+ * «cuestionario»). **En curso va de una pregunta por pantalla** desde el
+ * 09/10/2026, con el mismo marco que la evaluación: eso vive en
+ * `PruebaDelEditor.tsx`. Aquí quedan el diálogo de empezar, las cerradas y la prueba
+ * de plantilla en curso, que sigue toda en vertical como siempre.
+ *
+ * **Antes de empezar, las dos van en la misma ficha corta** (`FichaPrevia.tsx`, 10/10/2026):
+ * el tiempo, la fecha límite, cuántas preguntas son, qué archivos habrá que entregar y las
+ * herramientas. El caso, los materiales y las preguntas no llegan del servidor hasta que se
+ * empieza: se leen dentro del reloj.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import {
-  entregarPrueba,
-  iniciarPrueba,
-  responderPrueba,
-  subirArchivo,
-  subirEnlace,
-  verPrueba,
-} from '@/api/prueba'
-import type { EntregableRequerido, FechaIso, MiPrueba, PreguntaPrueba as LaPregunta } from '@/api/tipos'
-import { fechaLargaDeLima } from '@/dominio/horaDeLima'
+import { entregarPrueba, iniciarPrueba, responderPrueba, verPrueba } from '@/api/prueba'
+import type { FechaIso, MiPrueba } from '@/api/tipos'
 import { formatearFechaLarga, segundosHasta } from '@/dominio/reloj'
 import { usePantallaAbierta } from '@/paginas/procesos/useVacanteRetirada'
 import { rutas } from '@/rutas'
@@ -48,7 +46,10 @@ import { Cronometro } from '@/ui/Cronometro'
 import { VacanteRetirada } from '@/ui/Mensajes'
 import { Modal } from '@/ui/Modal'
 import { TextoPlano } from '@/ui/TextoPlano'
-import { PreguntaCerrada } from './PreguntaCerrada'
+import { Consigna, Entregable } from './Entregable'
+import { FichaPrevia } from './FichaPrevia'
+import { avisoDeEmpezar, entradillaDe } from './loQueDiceLaPrevia'
+import { PruebaDelEditor } from './PruebaDelEditor'
 import estilos from './Prueba.module.css'
 
 const ESPERA_ANTES_DE_GUARDAR = 1000
@@ -92,189 +93,6 @@ function useTiempoAgotado(venceEn: FechaIso | null, enCurso: boolean): boolean {
   return agotado
 }
 
-// ---------- Un entregable ----------
-
-/**
- * Que acepta este entregable, en palabras.
- *
- * `formato` llega como `ARCHIVO`, `ENLACE` o `CUALQUIERA`, y hasta ahora se
- * imprimia tal cual —«Formato: ARCHIVO»— mientras la pantalla enseñaba los dos
- * campos igualmente. El resultado real: alguien pega un enlace donde solo se
- * admite archivo, el servidor responde con un 400 y el reloj no se para.
- */
-function comoSeEntrega(formato: string | null): string {
-  if (formato === 'ARCHIVO') return 'Se entrega como archivo'
-  if (formato === 'ENLACE') return 'Se entrega como enlace'
-  return 'Archivo o enlace, lo que prefieras'
-}
-
-function Entregable({
-  uuid,
-  entregable,
-  bloqueado,
-  alSubir,
-  siSeCerroLaPuerta,
-  seEnsena,
-  deLaPregunta = false,
-}: {
-  uuid: string
-  entregable: EntregableRequerido
-  /** V68: el archivo de una pregunta, que se sube dentro de ella. */
-  deLaPregunta?: boolean
-  /** Con el tiempo agotado ya no se admite nada: el servidor lo rechaza. */
-  bloqueado: boolean
-  alSubir: () => void
-  /** Un 404 al subir: la vacante pudo retirarse con la prueba abierta. Ver `usePantallaAbierta`. */
-  siSeCerroLaPuerta: (causa: unknown) => boolean
-  seEnsena: (causa: unknown) => boolean
-}) {
-  const campoArchivo = useRef<HTMLInputElement>(null)
-  const [enlace, setEnlace] = useState('')
-  // Se guarda la causa y no solo el texto: un 404 no se enseña mientras se comprueba si es
-  // la vacante retirada.
-  const [fallo, setFallo] = useState<{ causa: unknown; texto: string } | null>(null)
-  const error = fallo !== null && seEnsena(fallo.causa) ? fallo.texto : null
-  const alFallar = (causa: unknown, siNoHayTexto: string) => {
-    siSeCerroLaPuerta(causa)
-    setFallo({ causa, texto: causa instanceof Error ? causa.message : siNoHayTexto })
-  }
-
-  /*
-   * El backend solo dice `entregado: true`. No devuelve el nombre del archivo
-   * ni la direccion que se guardo —su contrato de candidato no los lleva—, asi
-   * que lo unico que se puede enseñar sin inventar nada es lo que se acaba de
-   * mandar desde esta pantalla, y solo mientras siga abierta.
-   */
-  const [ultimoEnvio, setUltimoEnvio] = useState<string | null>(null)
-
-  // Un formato que no conocemos (o nulo) se trata como «los dos». Enseñar de
-  // mas se corrige con un aviso del servidor; esconder el campo bueno deja al
-  // candidato sin ninguna forma de entregar.
-  const aceptaArchivo = entregable.formato !== 'ENLACE'
-  const aceptaEnlace = entregable.formato !== 'ARCHIVO'
-
-  const archivo = useMutation({
-    mutationFn: (f: File) => subirArchivo(uuid, entregable.id, f),
-    onSuccess: (_resultado, f) => {
-      setFallo(null)
-      setUltimoEnvio(f.name)
-      alSubir()
-    },
-    onError: (c) => alFallar(c, 'No se pudo subir.'),
-  })
-
-  const url = useMutation({
-    mutationFn: (valor: string) => subirEnlace(uuid, entregable.id, valor),
-    onSuccess: (_resultado, valor) => {
-      setFallo(null)
-      setUltimoEnvio(valor)
-      setEnlace('')
-      alSubir()
-    },
-    onError: (c) => alFallar(c, 'No se pudo guardar el enlace.'),
-  })
-
-  return (
-    <div
-      id={`entregable-${entregable.id}`}
-      className={`${estilos.entregable}${
-        entregable.entregado || ultimoEnvio !== null ? ` ${estilos.recibido}` : ''
-      }`}
-    >
-      <div className={estilos.cabeceraEntregable}>
-        <div>
-          <p className={estilos.nombreEntregable}>
-            {deLaPregunta && 'Archivo de esta pregunta: '}
-            {entregable.nombre}{' '}
-            <span className={estilos.obligatorio}>
-              {entregable.esObligatorio ? '· obligatorio' : '· opcional'}
-            </span>
-          </p>
-          {entregable.detalle && (
-            <p className={estilos.detalleEntregable}>{entregable.detalle}</p>
-          )}
-        </div>
-        {(entregable.entregado || ultimoEnvio !== null) && (
-          <span className={estilos.marcaRecibido}>Entregado</span>
-        )}
-      </div>
-
-      {(ultimoEnvio !== null || entregable.entregado) && (
-        <p className={estilos.detalleEntregable}>
-          {ultimoEnvio ? (
-            <>
-              Recibimos <b>{ultimoEnvio}</b>.
-            </>
-          ) : (
-            'Ya recibimos tu entrega.'
-          )}
-          {!bloqueado && ' Si envías otra cosa, reemplaza a esta.'}
-        </p>
-      )}
-
-      <span className={estilos.comoSeEntrega}>{comoSeEntrega(entregable.formato)}</span>
-
-      <div className={estilos.formasDeEntregar}>
-        {aceptaEnlace && (
-          <>
-            <label className={estilos.oculto} htmlFor={`enlace-${entregable.id}`}>
-              Enlace
-            </label>
-            <input
-              id={`enlace-${entregable.id}`}
-              className={estilos.campoEnlace}
-              type="url"
-              inputMode="url"
-              placeholder="https://"
-              value={enlace}
-              disabled={bloqueado}
-              onChange={(e) => setEnlace(e.target.value)}
-            />
-            <button
-              className={estilos.subir}
-              type="button"
-              onClick={() => url.mutate(enlace.trim())}
-              disabled={bloqueado || !enlace.trim() || url.isPending}
-              data-rotulo={url.isPending ? 'Guardando…' : 'Guardar enlace'}
-            >
-              {url.isPending ? 'Guardando…' : 'Guardar enlace'}
-            </button>
-          </>
-        )}
-        {aceptaArchivo && (
-          <>
-            <input
-              ref={campoArchivo}
-              type="file"
-              className={estilos.oculto}
-              tabIndex={-1}
-              onChange={(e) => {
-                const f = e.target.files?.[0]
-                if (f) archivo.mutate(f)
-              }}
-            />
-            <button
-              className={estilos.subir}
-              type="button"
-              onClick={() => campoArchivo.current?.click()}
-              disabled={bloqueado || archivo.isPending}
-              data-rotulo={archivo.isPending ? 'Subiendo…' : 'Seleccionar archivo'}
-            >
-              {archivo.isPending ? 'Subiendo…' : 'Seleccionar archivo'}
-            </button>
-          </>
-        )}
-      </div>
-
-      {error && (
-        <p className={`${estilos.aviso} ${estilos.malo}`} role="alert">
-          <span>{error}</span>
-        </p>
-      )}
-    </div>
-  )
-}
-
 // ---------- Una pregunta de la prueba ----------
 
 /**
@@ -288,7 +106,6 @@ function Entregable({
 function PreguntaPrueba({
   uuid,
   pregunta,
-  numero,
   bloqueado,
   registrarEnvio,
   registrarSiTieneTexto,
@@ -296,8 +113,6 @@ function PreguntaPrueba({
 }: {
   uuid: string
   pregunta: { id: number; enunciado: string; respuestaTexto: string | null }
-  /** Su número en la prueba del editor (V67): «Pregunta 3». Sin él, como siempre. */
-  numero?: number
   /** Con el tiempo agotado ya no se escribe ni se reintenta nada. */
   bloqueado: boolean
   /**
@@ -479,12 +294,6 @@ function PreguntaPrueba({
   return (
     <div className={estilos.pregunta}>
       <label className={estilos.enunciado} htmlFor={`pregunta-${pregunta.id}`}>
-        {numero !== undefined && (
-          <>
-            <span className={estilos.numeroPregunta}>Pregunta {numero}</span>
-            {' · '}
-          </>
-        )}
         {pregunta.enunciado}
       </label>
       {/* `readOnly` y no `disabled`: un campo deshabilitado se pinta en gris y
@@ -513,116 +322,6 @@ function PreguntaPrueba({
   )
 }
 
-// ---------- La prueba del editor (V67) ----------
-
-/** El enunciado adjunto en PDF o Word. Sin dirección (en local), solo su nombre. */
-function Consigna({ consigna }: { consigna: { nombre: string | null; url: string | null } }) {
-  const nombre = consigna.nombre ?? 'El enunciado adjunto'
-  return (
-    <p className={estilos.texto} style={{ marginTop: 'var(--e3)' }}>
-      {consigna.url ? (
-        <a href={consigna.url} target="_blank" rel="noopener noreferrer">
-          Abrir el enunciado adjunto: {nombre}
-        </a>
-      ) : (
-        <>Enunciado adjunto: {nombre}.</>
-      )}
-    </p>
-  )
-}
-
-/** «la 3», «la 3 y la 7», «la 3, la 5 y la 7». */
-export function cualesFaltan(numeros: number[]): string {
-  const con = numeros.map((n) => `la ${n}`)
-  if (con.length <= 1) return con.join('')
-  return `${con.slice(0, -1).join(', ')} y ${con[con.length - 1]}`
-}
-
-/**
- * Lo que falta para poder entregar, en vez del diálogo de confirmación: cuántas
- * preguntas y cuáles, los archivos obligatorios, y un botón que lleva a lo
- * primero que falta —una pregunta, el archivo de una pregunta o los
- * entregables—. Es lo mismo que rechaza el servidor.
- */
-export function LoQueFaltaParaEntregar({
-  preguntas,
-  archivos = [],
-  entregables,
-  hayEntregables,
-  alIr,
-  alIrAlEntregable = () => undefined,
-}: {
-  preguntas: { id: number; numero: number }[]
-  /** V68: los archivos obligatorios de una pregunta que faltan, con el número de su pregunta. */
-  archivos?: { id: number; nombre: string; numero: number }[]
-  /** Los entregables generales obligatorios que faltan, por su nombre. */
-  entregables: string[]
-  hayEntregables: boolean
-  alIr: (preguntaId: number) => void
-  alIrAlEntregable?: (entregableId: number | null) => void
-}) {
-  if (preguntas.length === 0 && entregables.length === 0 && archivos.length === 0) return null
-  const subir = [
-    ...archivos.map((a) => `«${a.nombre}» (pregunta ${a.numero})`),
-    ...entregables.map((e) => `«${e}»`),
-  ]
-  // Lo primero que falta, en el orden de la prueba: las preguntas y sus archivos, y luego
-  // los entregables del final.
-  const primeraPregunta = preguntas[0]
-  const primerArchivo = [...archivos].sort((x, y) => x.numero - y.numero)[0]
-  const irAlArchivo = primerArchivo !== undefined && (!primeraPregunta || primerArchivo.numero < primeraPregunta.numero)
-  return (
-    <div className={`${estilos.aviso} ${estilos.malo}`} role="alert">
-      <span>
-        {preguntas.length > 0 && (
-          <>
-            <b>
-              Para entregar te falta responder{' '}
-              {preguntas.length === 1 ? '1 pregunta' : `${preguntas.length} preguntas`} (
-              {cualesFaltan(preguntas.map((p) => p.numero))}).
-            </b>{' '}
-          </>
-        )}
-        {subir.length > 0
-          ? `Te falta subir ${subir.join(', ')}.`
-          : hayEntregables
-            ? 'Los entregables obligatorios están completos.'
-            : ''}
-      </span>
-      {irAlArchivo ? (
-        <button
-          type="button"
-          className={estilos.reintentar}
-          onClick={() => alIrAlEntregable(primerArchivo.id)}
-          data-rotulo={`Ir a la pregunta ${primerArchivo.numero}`}
-        >
-          Ir a la pregunta {primerArchivo.numero}
-        </button>
-      ) : primeraPregunta ? (
-        <button
-          type="button"
-          className={estilos.reintentar}
-          onClick={() => alIr(primeraPregunta.id)}
-          data-rotulo={`Ir a la pregunta ${primeraPregunta.numero}`}
-        >
-          Ir a la pregunta {primeraPregunta.numero}
-        </button>
-      ) : (
-        entregables.length > 0 && (
-          <button
-            type="button"
-            className={estilos.reintentar}
-            onClick={() => alIrAlEntregable(null)}
-            data-rotulo="Ir a los entregables"
-          >
-            Ir a los entregables
-          </button>
-        )
-      )}
-    </div>
-  )
-}
-
 // ---------- La pantalla ----------
 
 export function Prueba() {
@@ -633,8 +332,6 @@ export function Prueba() {
 
   const [confirmarInicio, setConfirmarInicio] = useState(false)
   const [confirmarEntrega, setConfirmarEntrega] = useState(false)
-  /** V67: al pulsar «Entregar» con huecos, lo que falta en vez del diálogo. */
-  const [loQueFalta, setLoQueFalta] = useState(false)
   // Como forzar el envio de cada pregunta. Se llena solo, segun se montan.
   const envios = useRef<Map<number, () => Promise<unknown>>>(new Map())
   const registrarEnvio = useCallback(
@@ -705,12 +402,31 @@ export function Prueba() {
 
   const inicio = useMutation({
     mutationFn: () => iniciarPrueba(uuid),
-    onSuccess: () => {
+    // La respuesta de empezar ya trae la prueba entera —el caso, los materiales y las preguntas,
+    // que antes de empezar no viajan—: se pinta con ella, sin esperar a la recarga.
+    onSuccess: (empezada) => {
+      cache.setQueryData(['prueba', uuid], empezada)
       setConfirmarInicio(false)
       refrescar()
     },
     onError: siSeCerroLaPuerta,
   })
+
+  /*
+    Un doble clic en «Sí, empezar» mandaba dos inicios: el botón se desactiva al pintarse
+    «Abriendo…», y el segundo clic llega antes. El servidor deja un solo intento igualmente, pero se
+    pide una vez.
+  */
+  const pidiendoInicio = useRef(false)
+  const empezar = () => {
+    if (pidiendoInicio.current) return
+    pidiendoInicio.current = true
+    inicio.mutate(undefined, {
+      onSettled: () => {
+        pidiendoInicio.current = false
+      },
+    })
+  }
 
   const entrega = useMutation({
     // ⚠️ **Primero se manda lo que quede sin confirmar.** Antes esto era un cartel rojo que
@@ -789,52 +505,13 @@ export function Prueba() {
   // Lo que cada recuadro tiene puesto **ahora**, no lo que el servidor mandó al cargar: si
   // saliera de ahí, una respuesta recién borrada seguiría contando como respondida.
   const preguntasSinResponder = prueba.preguntas.filter((p) => conTexto[p.id] === false).length
-  // La prueba del editor (V67) no se entrega con huecos. Desde la V68 es una sola prueba
-  // —ya no «cuestionario»—, el caso sale solo si existe y el archivo de una pregunta se
-  // sube dentro de ella. Las plantillas siguen como siempre.
+  // La prueba del editor (V67) no se entrega con huecos y, en curso, va de una pregunta por
+  // pantalla (`PruebaDelEditor`). Las plantillas, en curso, siguen como siempre.
   const delEditor = prueba.delEditor === true
   const laPrueba = 'la prueba'
-  const numeroDe = (p: LaPregunta, i: number) => p.posicion ?? i + 1
-  const archivoDe = new Map(
-    delEditor
-      ? prueba.entregables.filter((e) => e.preguntaId != null).map((e) => [e.preguntaId!, e] as const)
-      : [],
-  )
-  // Los generales van al final, en «Entregables»; en una plantilla, todos.
-  const generales = prueba.entregables.filter((e) => !archivoDe.has(e.preguntaId ?? -1))
-  const hayCaso = Boolean(prueba.enunciado?.trim()) || Boolean(prueba.consigna)
-  const hayQueLeer = !delEditor || hayCaso || Boolean(prueba.materiales) || Boolean(prueba.herramientasPermitidas)
-  const sinResponder = prueba.preguntas
-    .map((p, i) => ({ p, numero: numeroDe(p, i) }))
-    .filter(({ p }) => conTexto[p.id] !== true)
-  const obligatoriosQueFaltan = prueba.entregables.filter((e) => e.esObligatorio && !e.entregado)
-  const numeroDeLaPregunta = new Map(prueba.preguntas.map((p, i) => [p.id, numeroDe(p, i)]))
-  const archivosQueFaltan = obligatoriosQueFaltan
-    .filter((e) => archivoDe.has(e.preguntaId ?? -1))
-    .map((e) => ({ id: e.id, nombre: e.nombre, numero: numeroDeLaPregunta.get(e.preguntaId!) ?? 0 }))
-  const generalesQueFaltan = obligatoriosQueFaltan.filter((e) => !archivoDe.has(e.preguntaId ?? -1))
-  const irAlaPregunta = (id: number) => {
-    const destino = document.getElementById(`pregunta-${id}`)
-    destino?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    const foco = destino?.matches('input, textarea')
-      ? destino
-      : destino?.querySelector<HTMLElement>('input, textarea')
-    foco?.focus({ preventScroll: true })
-  }
-  /** Al archivo que falta, o a los entregables del final si es nulo. */
-  const irAlEntregable = (id: number | null) => {
-    const destino = document.getElementById(id === null ? 'entregables-de-la-prueba' : `entregable-${id}`)
-    destino?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    destino?.querySelector<HTMLElement>('input:not([tabindex="-1"]), button')?.focus({ preventScroll: true })
-  }
-  const pulsarEntregar = () => {
-    if (delEditor && (sinResponder.length > 0 || obligatoriosQueFaltan.length > 0)) {
-      setLoQueFalta(true)
-      return
-    }
-    setLoQueFalta(false)
-    setConfirmarEntrega(true)
-  }
+  // Antes de empezar se dice lo que la prueba tiene, y nada que no se sepa (`loQueDiceLaPrevia`).
+  const entradilla = entradillaDe(prueba)
+  const avisoAlEmpezar = avisoDeEmpezar(prueba)
 
   return (
     <div className={estilos.pagina}>
@@ -882,187 +559,40 @@ export function Prueba() {
       )}
 
       {/* ---------- Antes de empezar ---------- */}
+      {/* Las dos pruebas, en la misma ficha corta (10/10/2026): sin el caso ni las preguntas, que se
+          abren al empezar. */}
       {prueba.estadoIntento === 'PENDIENTE' && (
         <>
           <h1>{hayEntregables ? 'Demuestra cómo trabajas.' : 'Tu prueba del puesto.'}</h1>
-          <p className={estilos.texto} style={{ marginTop: 'var(--e3)' }}>
-            Lee todo antes de empezar. <b>El tiempo empieza a contar cuando confirmes</b>, no
-            antes.
+          {/* Sin nombrar el caso ni los materiales: antes de empezar no se sabe si los hay. */}
+          <p className={estilos.entradillaDeLaPrevia}>
+            {entradilla.abre}
+            {entradilla.tiempo ? (
+              <>
+                , y <b>{entradilla.tiempo}</b>.
+              </>
+            ) : (
+              '.'
+            )}
           </p>
-
-          <div className={estilos.columnas} style={{ marginTop: 'var(--e6)' }}>
-            <div>
-              {/* V68: en la prueba del editor el caso sale solo si existe. */}
-              {(!delEditor || hayCaso) && (
-                <section className={estilos.bloque}>
-                  <h2 className={estilos.tituloBloque}>
-                    {delEditor ? 'El caso' : hayEntregables ? 'El encargo' : 'De qué va'}
-                  </h2>
-                  {prueba.enunciado ? (
-                    <TextoPlano texto={prueba.enunciado} queEs="el enunciado de la prueba" />
-                  ) : (
-                    !delEditor && <p className={estilos.texto}>Recibirás el enunciado al empezar.</p>
-                  )}
-                  {prueba.consigna && <Consigna consigna={prueba.consigna} />}
-                </section>
-              )}
-
-              {prueba.materiales && (
-                <section className={estilos.bloque}>
-                  <h2 className={estilos.tituloBloque}>Materiales</h2>
-                  <TextoPlano texto={prueba.materiales} queEs="el material de apoyo" />
-                </section>
-              )}
-
-              {prueba.herramientasPermitidas && (
-                <section className={estilos.bloque}>
-                  <h2 className={estilos.tituloBloque}>Herramientas permitidas</h2>
-                  <TextoPlano texto={prueba.herramientasPermitidas} queEs="el documento" />
-                </section>
-              )}
-
-              {hayEntregables && (
-                <section className={estilos.bloque}>
-                  <h2 className={estilos.tituloBloque}>Lo que tendrás que entregar</h2>
-                  {/* Saberlo antes de empezar evita descubrirlo con el reloj
-                      corriendo. */}
-                  <div className={estilos.entregables}>
-                    {prueba.entregables.map((e) => (
-                      <div className={estilos.entregable} key={e.id}>
-                        <p className={estilos.nombreEntregable}>
-                          {e.nombre}{' '}
-                          <span className={estilos.obligatorio}>
-                            {e.esObligatorio ? '· obligatorio' : '· opcional'}
-                            {archivoDe.has(e.preguntaId ?? -1) &&
-                              ` · en la pregunta ${numeroDeLaPregunta.get(e.preguntaId!) ?? ''}`}
-                          </span>
-                        </p>
-                        {e.detalle && (
-                          <p className={estilos.detalleEntregable}>{e.detalle}</p>
-                        )}
-                        <span className={estilos.comoSeEntrega}>
-                          {comoSeEntrega(e.formato)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              )}
-            </div>
-
-            <aside className={estilos.lateral}>
-              {delEditor && prueba.fechaLimite ? (
-                /* V68: la fecha límite y el tiempo, dichos como los vive quien rinde. */
-                <>
-                  <div className={estilos.datoLateral}>
-                    <span className={estilos.etiquetaLateral}>Fecha límite</span>
-                    <span className={estilos.valorLateral}>{fechaLargaDeLima(prueba.fechaLimite)}</span>
-                  </div>
-                  <div className={estilos.datoLateral}>
-                    <span className={estilos.etiquetaLateral}>Tiempo</span>
-                    <span className={estilos.valorLateral}>
-                      {prueba.duracionMinutos
-                        ? `Tendrás ${prueba.duracionMinutos} minutos desde que pulses Empezar`
-                        : 'Puedes trabajar en ella hasta la fecha límite'}
-                    </span>
-                    {prueba.duracionMinutos && (
-                      <span className={estilos.matizLateral}>
-                        Si empiezas más tarde, tendrás el tiempo que quede hasta la fecha límite.
-                      </span>
-                    )}
-                  </div>
-                </>
-              ) : (
-                /* ⚠️ Los dos plazos pueden existir A LA VEZ, y antes solo se decia uno.
-                   Una prueba da minutos desde que empiezas; la convocatoria puede ademas
-                   cerrar un dia y una hora para todos. Cuando habia las dos cosas esta
-                   rama escribia «90 minutos» y escondia la fecha, asi que quien abriera a
-                   las 17:40 con cierre a las 18:00 leia noventa minutos y tenia veinte.
-                   Manda el que caiga antes —lo decide el servidor al empezar— y por eso
-                   aqui se dicen los dos y cual acorta a cual. */
-                <div className={estilos.datoLateral}>
-                  {prueba.duracionMinutos ? (
-                    <>
-                      <span className={estilos.etiquetaLateral}>Duración</span>
-                      <span className={estilos.valorLateral}>
-                        {prueba.duracionMinutos} minutos desde que empieces
-                      </span>
-                      {prueba.venceEn && (
-                        <span className={estilos.matizLateral}>
-                          Y la convocatoria cierra el {formatearFechaLarga(prueba.venceEn)}: si
-                          empiezas más tarde de eso, tendrás el tiempo que quede hasta esa hora.
-                        </span>
-                      )}
-                    </>
-                  ) : prueba.plazoDias && !prueba.venceEn ? (
-                    <>
-                      <span className={estilos.etiquetaLateral}>Plazo</span>
-                      <span className={estilos.valorLateral}>
-                        {prueba.plazoDias} {prueba.plazoDias === 1 ? 'día' : 'días'} desde que empieces
-                      </span>
-                    </>
-                  ) : prueba.venceEn ? (
-                    <>
-                      <span className={estilos.etiquetaLateral}>Tienes hasta</span>
-                      <span className={estilos.valorLateral}>
-                        {formatearFechaLarga(prueba.venceEn)}
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <span className={estilos.etiquetaLateral}>Plazo</span>
-                      <span className={estilos.valorLateral}>
-                        Empieza a contar cuando la abras
-                      </span>
-                    </>
-                  )}
-                </div>
-              )}
-
-              {prueba.modalidad && !delEditor && (
-                <div className={estilos.datoLateral}>
-                  <span className={estilos.etiquetaLateral}>Modalidad</span>
-                  <span className={estilos.valorLateral}>{prueba.modalidad}</span>
-                </div>
-              )}
-
-              <div className={estilos.datoLateral}>
-                <span className={estilos.etiquetaLateral}>Qué hay que hacer</span>
-                <span className={estilos.valorLateral}>
-                  {prueba.preguntas.length > 0 &&
-                    `${prueba.preguntas.length} ${prueba.preguntas.length === 1 ? 'pregunta' : 'preguntas'}`}
-                  {prueba.preguntas.length > 0 && hayEntregables && ' · '}
-                  {hayEntregables &&
-                    (delEditor
-                      ? `${prueba.entregables.length} ${prueba.entregables.length === 1 ? 'archivo que subir' : 'archivos que subir'}`
-                      : `${prueba.entregables.length} ${prueba.entregables.length === 1 ? 'entregable' : 'entregables'}`)}
-                </span>
-              </div>
-
-              <p className={estilos.aviso} style={{ marginBottom: 0 }}>
-                <span>
-                  {delEditor
-                    ? `Una vez empezada no se puede pausar. Para entregar hay que responder todas las preguntas y subir los entregables obligatorios: si el tiempo termina con algo pendiente, queda sin completar.`
-                    : 'Una vez empezada no se puede pausar. Si el tiempo termina, se entrega lo que hayas guardado.'}
-                </span>
-              </p>
-
-              <button
-                type="button"
-                className={estilos.empezar}
-                style={{ width: '100%', marginTop: 'var(--e4)' }}
-                onClick={() => setConfirmarInicio(true)}
-                data-rotulo="Empezar prueba"
-              >
-                Empezar prueba
-              </button>
-            </aside>
-          </div>
+          <FichaPrevia prueba={prueba} alEmpezar={() => setConfirmarInicio(true)} />
         </>
       )}
 
-      {/* ---------- En curso ---------- */}
-      {prueba.estadoIntento === 'EN_CURSO' && (
+      {/* ---------- En curso: la del editor, una pregunta por pantalla ---------- */}
+      {prueba.estadoIntento === 'EN_CURSO' && delEditor && (
+        <PruebaDelEditor
+          uuid={uuid}
+          prueba={prueba}
+          tiempoAgotado={tiempoAgotado}
+          refrescar={refrescar}
+          siSeCerroLaPuerta={siSeCerroLaPuerta}
+          seEnsena={seEnsena}
+        />
+      )}
+
+      {/* ---------- En curso: la de plantilla, toda en vertical como siempre ---------- */}
+      {prueba.estadoIntento === 'EN_CURSO' && !delEditor && (
         <>
           <div className={estilos.reloj}>
             <span className={estilos.queEs}>
@@ -1095,11 +625,7 @@ export function Prueba() {
               <span>
                 <b>Terminó el plazo de esta prueba</b>. Ya no se
                 puede escribir ni subir nada: el servidor no lo admitiría. Quedó guardado todo lo que
-                llegó a tiempo,{' '}
-                {delEditor
-                  ? 'y en unos segundos se entregará sola si está completa; si falta algo, quedará sin completar'
-                  : 'y en unos segundos se entregará sola con eso'}
-                . No cierres la página.
+                llegó a tiempo, y en unos segundos se entregará sola con eso. No cierres la página.
               </span>
             </p>
           )}
@@ -1132,41 +658,32 @@ export function Prueba() {
             visual y el del foco siguen coincidiendo, y el encargo deja de
             perderse al hacer scroll hacia las respuestas.
           */}
-          <div
-            className={hayQueLeer ? estilos.trabajando : `${estilos.trabajando} ${estilos.trabajandoSinLectura}`}
-          >
-            {hayQueLeer && (
-              <aside className={estilos.loQueSeLee}>
-                {(!delEditor || hayCaso) && (
-                  <section className={estilos.bloque}>
-                    <h2 className={estilos.tituloBloque}>
-                      {delEditor ? 'El caso' : hayEntregables ? 'El encargo' : 'De qué va'}
-                    </h2>
-                    <TextoPlano texto={prueba.enunciado ?? ''} queEs="el enunciado de la prueba" />
-                    {prueba.consigna && <Consigna consigna={prueba.consigna} />}
-                  </section>
-                )}
+          <div className={estilos.trabajando}>
+            <aside className={estilos.loQueSeLee}>
+              <section className={estilos.bloque}>
+                <h2 className={estilos.tituloBloque}>{hayEntregables ? 'El encargo' : 'De qué va'}</h2>
+                <TextoPlano texto={prueba.enunciado ?? ''} queEs="el enunciado de la prueba" />
+                {prueba.consigna && <Consigna consigna={prueba.consigna} />}
+              </section>
 
-                {/* Durante la prueba tambien hacen falta: el enlace al PDF puede estar
-                    en cualquiera de los tres campos, no solo en el reto. */}
-                {prueba.materiales && (
-                  <section className={estilos.bloque}>
-                    <h2 className={estilos.tituloBloque}>Materiales</h2>
-                    <TextoPlano texto={prueba.materiales} queEs="el material de apoyo" />
-                  </section>
-                )}
+              {/* Durante la prueba tambien hacen falta: el enlace al PDF puede estar
+                  en cualquiera de los tres campos, no solo en el reto. */}
+              {prueba.materiales && (
+                <section className={estilos.bloque}>
+                  <h2 className={estilos.tituloBloque}>Materiales</h2>
+                  <TextoPlano texto={prueba.materiales} queEs="el material de apoyo" />
+                </section>
+              )}
 
-                {prueba.herramientasPermitidas && (
-                  <section className={estilos.bloque}>
-                    <h2 className={estilos.tituloBloque}>Herramientas permitidas</h2>
-                    <TextoPlano texto={prueba.herramientasPermitidas} queEs="el documento" />
-                  </section>
-                )}
-              </aside>
-            )}
+              {prueba.herramientasPermitidas && (
+                <section className={estilos.bloque}>
+                  <h2 className={estilos.tituloBloque}>Herramientas permitidas</h2>
+                  <TextoPlano texto={prueba.herramientasPermitidas} queEs="el documento" />
+                </section>
+              )}
+            </aside>
 
             <div className={estilos.loQueSeHace}>
-
               {prueba.preguntas.length > 0 && (
                 <section className={estilos.bloque}>
                   <h2 className={estilos.tituloBloque}>
@@ -1175,56 +692,25 @@ export function Prueba() {
                   <p className={estilos.texto} style={{ marginBottom: 'var(--e4)' }}>
                     {tiempoAgotado
                       ? 'Así quedaron. Ya no se pueden cambiar.'
-                      : delEditor
-                        ? 'Se guardan solas mientras respondes.'
-                        : 'Se guardan solas mientras escribes.'}
+                      : 'Se guardan solas mientras escribes.'}
                   </p>
                   <div className={estilos.preguntas}>
-                    {prueba.preguntas.map((p, i) => {
-                      const suArchivo = archivoDe.get(p.id)
-                      return (
-                        <div className={estilos.conSuArchivo} key={p.id}>
-                          {delEditor && p.tipo !== 'ABIERTA' ? (
-                            <PreguntaCerrada
-                              uuid={uuid}
-                              pregunta={p}
-                              numero={numeroDe(p, i)}
-                              bloqueado={tiempoAgotado}
-                              registrarEnvio={registrarEnvio}
-                              registrarSiTieneTexto={registrarSiTieneTexto}
-                              siSeCerroLaPuerta={siSeCerroLaPuerta}
-                            />
-                          ) : (
-                            <PreguntaPrueba
-                              uuid={uuid}
-                              pregunta={p}
-                              numero={delEditor ? numeroDe(p, i) : undefined}
-                              bloqueado={tiempoAgotado}
-                              registrarEnvio={registrarEnvio}
-                              registrarSiTieneTexto={registrarSiTieneTexto}
-                              siSeCerroLaPuerta={siSeCerroLaPuerta}
-                            />
-                          )}
-                          {/* V68: el archivo de esta pregunta se sube aquí mismo. */}
-                          {suArchivo && (
-                            <Entregable
-                              uuid={uuid}
-                              entregable={suArchivo}
-                              bloqueado={tiempoAgotado}
-                              alSubir={refrescar}
-                              siSeCerroLaPuerta={siSeCerroLaPuerta}
-                              seEnsena={seEnsena}
-                              deLaPregunta
-                            />
-                          )}
-                        </div>
-                      )
-                    })}
+                    {prueba.preguntas.map((p) => (
+                      <PreguntaPrueba
+                        key={p.id}
+                        uuid={uuid}
+                        pregunta={p}
+                        bloqueado={tiempoAgotado}
+                        registrarEnvio={registrarEnvio}
+                        registrarSiTieneTexto={registrarSiTieneTexto}
+                        siSeCerroLaPuerta={siSeCerroLaPuerta}
+                      />
+                    ))}
                   </div>
                 </section>
               )}
 
-              {generales.length > 0 && (
+              {hayEntregables && (
                 <section className={estilos.bloque} id="entregables-de-la-prueba">
                   <h2 className={estilos.tituloBloque}>Entregables</h2>
                   <p className={estilos.texto} style={{ marginBottom: 'var(--e4)' }}>
@@ -1233,7 +719,7 @@ export function Prueba() {
                       : 'Cada uno indica si se entrega como archivo o como enlace.'}
                   </p>
                   <div className={estilos.entregables}>
-                    {generales.map((e) => (
+                    {prueba.entregables.map((e) => (
                       <Entregable
                         key={e.id}
                         uuid={uuid}
@@ -1267,7 +753,7 @@ export function Prueba() {
                 <button
                   type="button"
                   className={estilos.entregar}
-                  onClick={pulsarEntregar}
+                  onClick={() => setConfirmarEntrega(true)}
                   data-rotulo="Entregar prueba"
                 >
                   Entregar prueba
@@ -1275,37 +761,34 @@ export function Prueba() {
               </>
             )}
           </div>
-          {delEditor && loQueFalta && !tiempoAgotado && (
-            <LoQueFaltaParaEntregar
-              preguntas={sinResponder.map(({ p, numero }) => ({ id: p.id, numero }))}
-              archivos={archivosQueFaltan}
-              entregables={generalesQueFaltan.map((e) => e.nombre)}
-              hayEntregables={hayEntregables}
-              alIr={irAlaPregunta}
-              alIrAlEntregable={irAlEntregable}
-            />
-          )}
         </>
       )}
 
+      {/* El segundo clic de un doble clic en «Empezar prueba» caía en el fondo y lo cerraba
+          (QA-UPP-13) y, en el teléfono, en «Aún no» o en «Sí, empezar» (QA-UPP-14): el modal entero
+          ignora ese clic. */}
       <Modal
         abierto={confirmarInicio}
         titulo="¿Empezar ahora?"
         onCerrar={() => setConfirmarInicio(false)}
+        aPruebaDeDobleClic
         pie={
           <>
+            {/* El foco entra por la opción segura: arrancar el reloj no tiene vuelta atrás y
+                exige ir a «Sí, empezar» a propósito, también con el teclado. */}
             <button
               type="button"
               className={estilos.cancelar}
               onClick={() => setConfirmarInicio(false)}
               data-rotulo="Aún no"
+              autoFocus
             >
               Aún no
             </button>
             <button
               type="button"
               className={estilos.confirmar}
-              onClick={() => inicio.mutate()}
+              onClick={empezar}
               disabled={inicio.isPending}
               data-rotulo={inicio.isPending ? 'Abriendo…' : 'Sí, empezar'}
             >
@@ -1316,13 +799,13 @@ export function Prueba() {
       >
         <p className={`${estilos.aviso} ${estilos.serio}`}>
           <span>
-            <b>El tiempo no se detendrá</b>. Si cierras el navegador, el cronómetro sigue
-            corriendo.{' '}
+            {/* El contenido se lee dentro del reloj (10/10/2026): hasta aquí no se ha visto, y no
+                se sabe si hay caso o materiales. */}
+            <b>{avisoAlEmpezar.aviso.resaltado}</b>
+            {avisoAlEmpezar.aviso.resto}
             {/* La prueba del editor no se entrega con huecos (decisión 11): decirle aquí que
                 se entrega «lo guardado» sería prometerle algo que no pasa. */}
-            {delEditor
-              ? `Al terminar, ${laPrueba} se entrega sola si está completa: si falta responder alguna pregunta o subir un entregable obligatorio, queda sin completar y no se califica.`
-              : 'Al terminar se entrega lo que hayas guardado.'}
+            {avisoAlEmpezar.alTerminar && ` ${avisoAlEmpezar.alTerminar}`}
           </span>
         </p>
         {/* Un 404 no se enseña mientras se comprueba: si es la vacante retirada, la pantalla
@@ -1340,6 +823,7 @@ export function Prueba() {
         abierto={confirmarEntrega}
         titulo="Entregar prueba"
         onCerrar={() => setConfirmarEntrega(false)}
+        aPruebaDeDobleClic
         pie={
           <>
             <button

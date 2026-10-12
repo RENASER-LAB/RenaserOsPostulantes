@@ -14,6 +14,76 @@ Desde el 05/10 el diseño se trabaja con las skills de Emil Kowalski (`emil-desi
 
 ---
 
+## La prueba y la evaluación, una pregunta por pantalla (09-12/10/2026)
+
+En el mismo proceso el candidato vivía dos pantallas distintas: la evaluación del Perfil Integral
+iba de una pregunta en una, con mapa, y la prueba técnica del editor iba toda en vertical, con el
+caso a un lado y los entregables debajo. Ahora las dos usan el mismo marco, el de la maqueta
+aprobada el 06/10/2026.
+
+- **El marco común** (`src/paginas/unaPorPantalla/`: `useRecorrido` y `Marco`). Lleva una barra
+  fija y el mapa con tres estados: lista, a medias y sin responder. Tiene «Siguiente sin
+  responder» y «Volver a la N», que recuerda el primer salto, y el aviso de lo que falta para
+  entregar, con un botón a lo primero que falta. La posición se guarda en `sessionStorage` y el
+  foco va al enunciado al cambiar. En el teléfono, el mapa es una hoja ajustada a la barra.
+- **La prueba del editor** (`PruebaDelEditor.tsx`) guarda con la cola de la evaluación
+  (`useColaDeRespuestas`, que ahora expone `reintentando`) y tiene un paso final «Entregables».
+- **La evaluación** pierde «Ir al final» y la ventana que contaba lo que faltaba. Su plazo sale en
+  rojo por debajo de una hora, y el aviso dice que al vencer «se cierra sin entregarse».
+- Ver [02-QUE-VE-EL-CANDIDATO](02-QUE-VE-EL-CANDIDATO.md), 2.8 y 2.9.
+
+**Revisión del usuario del 09/10.**
+
+- Fuera los mensajes «Se guarda sola…»; se queda el aviso de caracteres cerca del límite.
+- El ámbar del archivo obligatorio solo sale después de intentar entregar.
+- El caso se lee en una vista de lectura (`ElCaso.tsx`): el lateral lo enseña recortado, y «Leer
+  el caso completo» abre una ventana de unos 70 caracteres por línea con el PDF.
+- `TextoPlano` gana `enlacesTabulables`, para que los enlaces del extracto recortado no reciban
+  Tab, y `listas`, que pinta como listas las líneas con «- » o «1. ».
+
+**Revisión del 10/10: «nada antes del reloj».** Es una decisión de producto y vale para la prueba
+del editor y para la de plantilla.
+
+- **Backend.** Antes de «Empezar» ya no manda las preguntas, el caso, los materiales, la consigna
+  ni el detalle de los entregables. Sí manda `totalPreguntas` y `posicionDeLaPregunta`.
+- **El correo de la prueba** deja `{{enlacePrueba}}` siempre vacía. El detalle está en
+  `PRUEBA-DEL-PUESTO.md` del backend, en «Nada antes del reloj».
+- **La pantalla previa** pasa a ser una ficha corta compartida (`FichaPrevia.tsx`). Sus textos se
+  arman con lo que la prueba tiene (`loQueDiceLaPrevia.ts`).
+
+**La doble pulsación** (los hallazgos de QA UPP-01, 13 y 14).
+
+- `Modal` gana `aPruebaDeDobleClic`: ignora la continuación de la serie que lo abrió y lo que
+  empiece en sus primeros 500 ms.
+- El foco de «¿Empezar ahora?» va a «Aún no».
+- Un doble clic en «Sí, empezar» manda un solo `POST /inicio`.
+- Ver [REGLAS-DEL-CODIGO](REGLAS-DEL-CODIGO.md), «Un doble clic que cae en lo que acaba de
+  aparecer».
+
+**Quedaron fuera**, anotados en [PENDIENTES](PENDIENTES.md):
+
+- a 360×640, a «Empezar prueba» le faltan 18 px;
+- al cerrar «Entregar la evaluación», el foco cae en `<body>`;
+- en el teléfono, la vista de lectura tapa el reloj;
+- el ámbar del archivo vuelve a neutro al recargar;
+- todos los enlaces a PDF del caso tienen el mismo nombre;
+- los correos anteriores al 03/10 siguen abriendo el PDF sin empezar;
+- el texto de la `V29` en una base recién migrada;
+- lo que falta pasar a `DESIGN.md`.
+
+**Cómo se comprueba:**
+
+- E2E: `57-prueba-una-pregunta-por-pantalla` y su `-qa`, de QA-01 a QA-16. QA-13 y QA-14
+  interceptan la API.
+- Se ajustaron los E2E 47, 48, 49, 52, 53, 54 y 55.
+- Unitarias: `Evaluacion.test.tsx`, `PruebaDelEditor.test.tsx`, `Prueba.test.tsx`,
+  `loQueDiceLaPrevia.test.ts`, `useColaDeRespuestas.test.ts`, `Modal.test.tsx` y
+  `TextoPlano.test.tsx`.
+- En el backend: `LoQueViajaAntesDeEmpezarTest`, `FlujoPruebaPropiaIT` y
+  `MaquinaEstadosAvisoTest`.
+
+---
+
 ## Los logros clave en la cabecera del perfil (09/10/2026)
 
 La clienta quería que el perfil enseñara tres resultados concretos por los que contratar a la

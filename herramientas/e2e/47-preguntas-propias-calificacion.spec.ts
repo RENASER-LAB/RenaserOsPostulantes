@@ -196,7 +196,8 @@ test.describe('Las preguntas propias, respondidas y calificadas', () => {
       expect.soft(cuerpo, prohibida).not.toContain(prohibida)
     }
 
-    const guardada = () => expect(main.getByText(/Respuesta guardada/)).toBeVisible({ timeout: 15_000 })
+    // El estado de la tarjeta, arriba a la derecha (una pregunta por pantalla, 09/10/2026).
+    const guardada = () => expect(main.getByRole('article').getByText('Guardado', { exact: true })).toBeVisible({ timeout: 15_000 })
     for (let i = 0; i < 6; i++) {
       const enunciado = (await main.getByRole('heading', { level: 1 }).innerText()).trim()
       if (enunciado === OU) await main.getByText('A. Libro mayor').click()
@@ -224,7 +225,7 @@ test.describe('Las preguntas propias, respondidas y calificadas', () => {
       if (i < 5) await main.getByRole('button', { name: 'Siguiente', exact: true }).click()
     }
     await expect(main.getByText('6 de 6 respondidas')).toBeVisible()
-    await main.getByRole('button', { name: 'Entregar evaluación' }).click()
+    await main.getByRole('button', { name: 'Entregar la evaluación' }).click()
     await page.getByRole('dialog').getByRole('button', { name: 'Entregar', exact: true }).click()
     await expect(page).toHaveURL(new RegExp(`/procesos/${c.uno.uuid}$`), { timeout: 20_000 })
   })

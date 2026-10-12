@@ -15,11 +15,18 @@
  * **Pero una por pantalla deja al candidato sin vista de conjunto**, y eso costo
  * una queja de alguien que ya habia hecho el examen entero: se salto una, el
  * aviso lo mando de la 50 a la 10, y para volver no habia mas remedio que pulsar
- * «Siguiente» cuarenta veces. De ahi salen las cuatro cosas de esta pantalla que
- * no responden preguntas: el mapa con todas las preguntas y su estado, la linea
+ * «Siguiente» cuarenta veces. De ahi salen las cosas de esta pantalla que no
+ * responden preguntas: el mapa con todas las preguntas y su estado, la linea
  * que dice cuantas faltan, «Siguiente sin responder» —que va tapando huecos y da
  * la vuelta al llegar al final— y el «Volver a la 50», que aparece solo despues
  * de un salto y se olvida en cuanto se navega a mano.
+ *
+ * **Desde el 09/10/2026 todo eso es el marco comun** (`../unaPorPantalla`), el mismo
+ * que la prueba tecnica del editor: barra fija, mapa a la izquierda con su leyenda,
+ * tarjeta de la pregunta y el aviso de lo que falta para entregar. El candidato se
+ * mueve igual en las dos. «Ir al final» se fue: lo cubren el mapa y «Siguiente sin
+ * responder». La ventana que contaba «Faltan N preguntas» tambien: entregar con huecos
+ * dice que falta y lleva a la primera, como la prueba.
  *
  * **Cada formato se responde a su manera.** El banco v3 trae ocho, y solo dos
  * caben en «marca una opción» o «escribe un texto»: los otros seis mandan
@@ -46,13 +53,28 @@ import {
 } from '@/api/evaluacion'
 import type { DetalleRespuesta, EvaluacionCandidato, PreguntaEvaluacion } from '@/api/tipos'
 import { EVALUACION_ENTREGADA_A_LA_ESPERA, PRUEBA_YA_DISPONIBLE } from '@/dominio/estados'
-import { diasHasta, formatearTiempo, segundosHasta } from '@/dominio/reloj'
+import { diasHasta } from '@/dominio/reloj'
 import { portadaSiYaTieneLaPrueba } from '@/paginas/procesos/laPruebaAlInstante'
 import { usePantallaAbierta } from '@/paginas/procesos/useVacanteRetirada'
 import { rutas } from '@/rutas'
 import { useAviso } from '@/ui/Avisos'
 import { VacanteRetirada } from '@/ui/Mensajes'
 import { Modal } from '@/ui/Modal'
+import {
+  BarraDelMarco,
+  CuentaAtras,
+  HojaDelMapa,
+  LoQueFaltaParaEntregar,
+  MapaDePreguntas,
+  TarjetaDePregunta,
+  etiquetaDePregunta,
+  primerCampo,
+  rotuloDeVolver,
+  useQuedaMenosDe,
+  type Guardado,
+} from '../unaPorPantalla/Marco'
+import { asomar, useCorte, useRecorrido, type Paso } from '../unaPorPantalla/useRecorrido'
+import marco from '../unaPorPantalla/Marco.module.css'
 import { RespuestaDeLaPregunta } from './Formatos'
 import { useColaDeRespuestas } from './useColaDeRespuestas'
 import estilos from './Evaluacion.module.css'
@@ -62,17 +84,15 @@ import {
   estadoDePregunta,
   normalizarDetalle,
   queFalta,
-  siguienteIncompleta,
-  type EstadoDePregunta,
 } from './bancoV3'
 
 /**
  * La frontera entre «te queda plazo» y «se te acaba», en segundos.
  *
  * La cruza el candidato una sola vez y cambia las dos cosas a la vez: por encima se le
- * enseñan los dias que le quedan en la linea de servicio; por debajo, esos dias sobran y lo
- * que aparece es la cuenta atras del aviso. Es un solo numero porque es una sola decision:
- * dos constantes que se desincronicen dejarian un hueco sin reloj o los dos a la vez.
+ * enseñan los dias que le quedan en la barra; por debajo, esos dias sobran y lo que aparece
+ * es la cuenta atras, en rojo, y el aviso de que al vencer no se entrega nada. Es un solo
+ * numero porque es una sola decision.
  */
 const UNA_HORA = 3600
 /**
@@ -100,34 +120,14 @@ interface Pendiente {
   segundos?: number
 }
 
-/** Como se dice cada estado en el mapa, para quien lo oye en vez de verlo. */
-const COMO_SE_DICE: Record<EstadoDePregunta, string> = {
-  lista: 'respondida',
-  'a-medias': 'sin terminar',
-  vacia: 'sin responder',
-}
-
-/**
- * La marca de cada estado en el numero del mapa.
- *
- * Existe porque el color no basta: hay gente que no distingue el ambar del
- * gris. La forma del recuadro ya cambia (relleno, borde grueso, borde de
- * puntos) y encima va este simbolo, asi que se puede leer de tres maneras.
- */
-/** La clase de la casilla en el mapa. La forma dice el estado, no un glifo. */
-const CLASE_ESTADO: Record<EstadoDePregunta, 'lista' | 'aMedias' | 'casilla'> = {
-  lista: 'lista',
-  'a-medias': 'aMedias',
-  vacia: 'casilla',
-}
-
 export function Evaluacion() {
   const { uuid = '' } = useParams()
   const navegar = useNavigate()
   const avisar = useAviso()
   const cache = useQueryClient()
+  // En el teléfono el mapa es una hoja desde abajo. Sin `matchMedia` (jsdom), escritorio.
+  const escritorio = useCorte('(min-width: 761px)', true)
 
-  const [indice, setIndice] = useState(0)
   // El borrador va atado a su pregunta. Al pasar de una a otra hay un instante
   // en que React ya pinta la pregunta nueva pero el borrador sigue siendo el de
   // la anterior; sin el id, ese texto entraba en la cola a nombre de la
@@ -150,13 +150,14 @@ export function Evaluacion() {
   // (QA-V70-01). El servidor ya rechaza la segunda; esto evita mandarla.
   const entregando = useRef(false)
   const [guardandoAntesDeEntregar, setGuardandoAntesDeEntregar] = useState(false)
-  const [mapaAbierto, setMapaAbierto] = useState(false)
-  // De donde se venia al dar un salto, para poder deshacerlo. Es la queja que
-  // arranco todo esto: saltar de la 50 a la 10 y no tener forma de volver, mas
-  // que pulsar «Siguiente» cuarenta veces.
-  const [volverA, setVolverA] = useState<number | null>(null)
+  /** Al pulsar «Entregar…» con huecos: lo que falta, en vez de la ventana de recuento. */
+  const [loQueFalta, setLoQueFalta] = useState(false)
+  const [vecesQueFalta, setVecesQueFalta] = useState(0)
+  const [mapaVisible, setMapaVisible] = useState(true)
+  const [hojaAbierta, setHojaAbierta] = useState(false)
   const abiertaEn = useRef<number>(Date.now())
   const botonMapa = useRef<HTMLButtonElement>(null)
+  const avisoDeFaltas = useRef<HTMLDivElement>(null)
 
   const consulta = useQuery({
     queryKey: ['evaluacion', uuid],
@@ -165,8 +166,8 @@ export function Evaluacion() {
     /*
       **Si se recarga al volver a la pestaña.** Hace falta: sin ella, dos pestañas del mismo
       examen —o el telefono y el portatil— dejan de enterarse la una de la otra, la vieja
-      sigue enseñando su version con el pie diciendo «Respuesta guardada», y en cuanto alguien
-      toca ahi **pisa en silencio lo que se escribio en la otra**.
+      sigue enseñando su version con «Guardado», y en cuanto alguien toca ahi **pisa en
+      silencio lo que se escribio en la otra**.
 
       ⚠️ Lo que hace que se pueda tener encendida sin romper nada esta en `mandarAlServidor`:
       antes de escribir lo confirmado se **cancela** cualquier recarga en vuelo. Sin eso, una
@@ -190,25 +191,6 @@ export function Evaluacion() {
   )
 
   const preguntas = useMemo(() => consulta.data?.preguntas ?? [], [consulta.data])
-  const pregunta = preguntas[indice]
-
-  // Al cambiar de pregunta se recarga el borrador y se reinicia el cronometro
-  // que mide cuanto se tarda en responderla.
-  //
-  // Depende solo del id, no del texto guardado: si dependiera de las dos cosas,
-  // una recarga en segundo plano pisaria lo que el candidato esta escribiendo.
-  useEffect(() => {
-    if (!pregunta) return
-    // Si esa pregunta tiene algo sin confirmar, manda lo del candidato, no lo
-    // que el servidor cree: lo suyo es mas reciente.
-    setBorrador({
-      preguntaId: pregunta.id,
-      texto: cola.pendienteDe(pregunta.id)?.texto ?? pregunta.respuestaTexto ?? '',
-    })
-    abiertaEn.current = Date.now()
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- solo el id: si dependiera del
-    // texto guardado, una recarga en segundo plano pisaria lo que se esta escribiendo.
-  }, [pregunta?.id])
 
   /**
    * Manda una respuesta y **resuelve solo cuando el servidor la acepta**.
@@ -312,6 +294,61 @@ export function Evaluacion() {
     uuid === '' ? undefined : `renaser_evaluacion_pendiente_${uuid}`,
   )
   const sinConfirmar = cola.sinConfirmar
+
+  // El estado de las preguntas, todas de una vez. De aqui salen el mapa, el contador y lo
+  // que falta para entregar: al venir del mismo sitio no pueden contradecirse, que era la
+  // otra mitad de la queja —el contador decia que faltaba una y no habia forma de saber
+  // cual—. De la pregunta del borrador manda lo que se esta escribiendo ahora mismo; de las
+  // demas, lo ultimo que se intento guardar.
+  const estados = preguntas.map((p) => {
+    const pendiente = sinConfirmar.find((s) => s.id === p.id)?.valor
+    return estadoDePregunta(p, {
+      detalle: detalles[p.id],
+      texto: p.id === borrador.preguntaId ? borrador.texto : (pendiente?.texto ?? p.respuestaTexto),
+      opcionId: pendiente?.opcionId ?? p.respuestaOpcionId,
+    })
+  })
+
+  // En el mapa, una respuesta que no llegó al servidor sale a medias hasta que llegue: lo
+  // dice la casilla aunque la pregunta ya no esté en pantalla (AC-08).
+  const pasos: Paso[] = preguntas.map((p, i) => {
+    const atascada = cola.atascadas.includes(p.id)
+    const reintenta = cola.reintentando.includes(p.id)
+    return {
+      clave: `p:${p.id}`,
+      rotulo: String(i + 1),
+      nombre: `Pregunta ${i + 1}`,
+      estado: atascada || reintenta ? 'a-medias' : estados[i]!,
+      matiz: atascada ? 'no se pudo guardar' : reintenta ? 'no se pudo guardar; se reintenta' : null,
+    }
+  })
+
+  const recorrido = useRecorrido(
+    pasos,
+    consulta.data ? `renaser_posicion_evaluacion_${uuid}_${consulta.data.id}` : null,
+    // Al cambiar de pregunta se manda ya lo pendiente, sin esperar al temporizador.
+    cola.mandarYa,
+  )
+  const { indice, refBarra, refTarjeta, refEnunciado } = recorrido
+  const pregunta = preguntas[indice]
+
+  // Al cambiar de pregunta se recarga el borrador y se reinicia el cronometro
+  // que mide cuanto se tarda en responderla.
+  //
+  // Depende solo del id, no del texto guardado: si dependiera de las dos cosas,
+  // una recarga en segundo plano pisaria lo que el candidato esta escribiendo.
+  useEffect(() => {
+    if (!pregunta) return
+    // Si esa pregunta tiene algo sin confirmar, manda lo del candidato, no lo
+    // que el servidor cree: lo suyo es mas reciente.
+    setBorrador({
+      preguntaId: pregunta.id,
+      texto: cola.pendienteDe(pregunta.id)?.texto ?? pregunta.respuestaTexto ?? '',
+    })
+    abiertaEn.current = Date.now()
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- solo el id: si dependiera del
+    // texto guardado, una recarga en segundo plano pisaria lo que se esta escribiendo.
+  }, [pregunta?.id])
 
   /** Cuanto lleva abierta la pregunta, para mandarlo junto a la respuesta. */
   const segundosAqui = useCallback(
@@ -422,9 +459,6 @@ export function Evaluacion() {
     [cola.encolar, cola.olvidar, segundosAqui],
   )
 
-  /** Manda ya todo lo que no ha confirmado el servidor, sin esperar. */
-  const mandarPendientes = cola.mandarYa
-
   /**
    * Las opciones no esperan al temporizador: se manda al momento. Pero pasan por
    * la cola igual que el texto, para que un rechazo no se pierda y se reintente.
@@ -465,65 +499,14 @@ export function Evaluacion() {
     [cola.encolar, segundosAqui],
   )
 
-  const irA = useCallback(
-    (siguiente: number) => {
-      mandarPendientes()
-      setIndice(Math.max(0, Math.min(preguntas.length - 1, siguiente)))
-    },
-    [preguntas.length, mandarPendientes],
-  )
+  // El plazo, en la barra: los días mientras sobra; por debajo de la hora, la cuenta atrás en
+  // rojo y el aviso de que al vencer no se entrega nada.
+  const pocoPlazo = useQuedaMenosDe(consulta.data?.venceEn ?? null, UNA_HORA)
 
-  /**
-   * Anterior y Siguiente: moverse de una en una.
-   *
-   * Borra la vuelta a proposito. Si alguien salto a la 10 y desde ahi siguio
-   * avanzando a mano, el «Volver a la 50» ya no dice nada cierto: dejo de ser
-   * el sitio del que venia y se vuelve un boton fantasma.
-   */
-  const navegarA = useCallback(
-    (siguiente: number) => {
-      irA(siguiente)
-      setVolverA(null)
-    },
-    [irA],
-  )
-
-  /**
-   * Un salto: ir a una pregunta lejos y poder deshacerlo.
-   *
-   * Se recuerda **el primer** salto, no el ultimo. Asi se pueden ir tapando
-   * huecos uno tras otro —de la 10 a la 12, de la 12 a la 27— sin perder el
-   * camino de vuelta a la 50, que es de donde se salio de verdad.
-   */
-  const saltarA = useCallback(
-    (destino: number) => {
-      if (destino === indice) return
-      // Volver al sitio del que se venia cierra el viaje: el boton ya sobra.
-      setVolverA((deDonde) => (destino === deDonde ? null : (deDonde ?? indice)))
-      irA(destino)
-    },
-    [irA, indice],
-  )
-
-  const volver = useCallback(() => {
-    if (volverA === null) return
-    irA(volverA)
-    setVolverA(null)
-  }, [irA, volverA])
-
-  // El mapa se cierra con Escape, y el foco vuelve al boton que lo abrio: si se
-  // quedara suelto, quien navega con el teclado tendria que recorrer la pagina
-  // entera para volver a donde estaba.
+  // El aviso de lo que falta, a la vista cada vez que se pulsa «Entregar…» con huecos.
   useEffect(() => {
-    if (!mapaAbierto) return
-    function alPulsar(e: KeyboardEvent) {
-      if (e.key !== 'Escape') return
-      setMapaAbierto(false)
-      botonMapa.current?.focus()
-    }
-    document.addEventListener('keydown', alPulsar)
-    return () => document.removeEventListener('keydown', alPulsar)
-  }, [mapaAbierto])
+    if (vecesQueFalta > 0) asomar(avisoDeFaltas.current, refBarra.current)
+  }, [vecesQueFalta, refBarra])
 
   if (consulta.isPending || (consulta.isError && retirada === 'comprobando')) {
     return (
@@ -627,8 +610,8 @@ export function Evaluacion() {
 
           <div className={estilos.saber}>
             <p className={estilos.presentacion}>
-              <b>Puedes salir y volver las veces que quieras</b>. Cada respuesta se guarda
-              sola, y puedes corregir cualquiera antes de entregar.
+              <b>Puedes salir y volver las veces que quieras</b>, y corregir cualquier
+              respuesta antes de entregar.
             </p>
             <p className={estilos.presentacion}>
               Si se corta tu conexión, continúas desde la última respuesta guardada.
@@ -688,27 +671,17 @@ export function Evaluacion() {
   // elegir nada.
   const opcionElegida = pendienteDeEsta?.opcionId ?? pregunta.respuestaOpcionId
 
-  // El estado de las preguntas, todas de una vez. De aqui salen el mapa, el
-  // contador y el indicador de arriba: al venir del mismo sitio no pueden
-  // contradecirse, que era la otra mitad de la queja —el contador decia que
-  // faltaba una y no habia forma de saber cual—.
-  const estados = preguntas.map((p) =>
-    estadoDePregunta(p, {
-      detalle: detalles[p.id],
-      // De la pregunta abierta manda lo que se esta escribiendo ahora mismo;
-      // de las demas, lo ultimo que se intento guardar.
-      texto: p.id === pregunta.id ? texto : (sinConfirmar.find((s) => s.id === p.id)?.valor.texto ?? p.respuestaTexto),
-      opcionId: sinConfirmar.find((s) => s.id === p.id)?.valor.opcionId ?? p.respuestaOpcionId,
-    }),
-  )
-
-  const respondidas = estados.filter((e) => e === 'lista').length
-  const primeraSinResponder = estados.findIndex((e) => e !== 'lista')
-  const proximaIncompleta = siguienteIncompleta(estados, indice)
-  const porcentaje = evaluacion.total === 0 ? 0 : (respondidas / evaluacion.total) * 100
+  const respondidas = pasos.filter((p) => p.estado === 'lista').length
   const faltan = evaluacion.total - respondidas
+  // Lo que pide el servidor para entregar: todas respondidas. Una respuesta que no llegó
+  // no cuenta como hueco aquí —el candidato sí la respondió—: la entrega vacía la cola
+  // antes de nada y, si no lo consigue, lo dice.
+  const sinResponder = preguntas
+    .map((p, i) => ({ id: p.id, numero: i + 1, estado: estados[i] }))
+    .filter((p) => p.estado !== 'lista')
+  const sinCargar = Math.max(0, evaluacion.total - preguntas.length)
+  const faltanParaEntregar = sinResponder.length + sinCargar
   const esUltima = indice === preguntas.length - 1
-  const restante = segundosHasta(evaluacion.venceEn)
   // Manda lo que lleva puesto el candidato; si no ha tocado nada, lo que el
   // servidor tenga guardado. Esto es lo que hace que al recargar la pagina la
   // pregunta vuelva a salir respondida.
@@ -719,30 +692,72 @@ export function Evaluacion() {
 
   const estaVacia = estados[indice] === 'vacia'
 
-  // El indicador dice lo que hay, no lo que gustaria. «Respuesta guardada» solo
-  // cuando lo escrito coincide con lo que el servidor confirmo, y «sin
-  // terminar» cuando hay algo puesto pero al formato le falta una parte: eso no
-  // se manda, asi que decir «guardada» seria mentira.
+  // El indicador dice lo que hay, no lo que gustaria. «Guardado» solo cuando lo escrito
+  // coincide con lo que el servidor confirmo, y «Sin terminar» cuando hay algo puesto pero
+  // al formato le falta una parte: eso no se manda, asi que decir «guardado» seria mentira.
   //
-  // Es lo unico que dice como va el guardado, ahora que no hay cartel: por eso «Guardando…»
-  // cubre tanto lo que esta viajando como lo que espera turno o se esta reintentando. Para
-  // quien responde es el mismo estado —todavia no esta— y partirlo en dos solo serviria para
-  // parpadear.
-  //
-  // El tono NO es «pendiente si o no». El rojo esta reservado al error real, y
-  // «Guardando…» dejo de ser uno: la cola manda sola y reintenta sola, asi que
-  // pintarlo de rojo alarma sin dar nada que hacer —que es justo el cartel que
-  // se quito—. Solo «No se pudo guardar» es nuestro fallo; «Sin terminar» es
-  // algo que le toca al candidato y va en ambar.
-  const indicador = cola.atascadas.includes(pregunta.id)
-    ? { texto: 'No se pudo guardar', tono: 'fallo' as const }
-    : esteSinConfirmar
-    ? { texto: 'Guardando…', tono: 'neutro' as const }
-    : estaVacia
-      ? { texto: 'Sin responder', tono: 'neutro' as const }
-      : falta !== null
-        ? { texto: 'Sin terminar', tono: 'duda' as const }
-        : { texto: 'Respuesta guardada', tono: 'neutro' as const }
+  // «Guardando…» cubre tanto lo que esta viajando como lo que espera turno: para quien
+  // responde es el mismo estado —todavia no esta— y partirlo en dos solo serviria para
+  // parpadear. Lo que si se separa es el fallo: si el ultimo envio no llego, se dice, y la
+  // cola lo reintenta sola. Sin rojo: el rojo es del tiempo que se acaba.
+  const indicador: Guardado = cola.atascadas.includes(pregunta.id)
+    ? { texto: 'No se pudo guardar', tono: 'fallo' }
+    : cola.reintentando.includes(pregunta.id)
+      ? { texto: 'No se pudo guardar; se reintenta', tono: 'fallo' }
+      : esteSinConfirmar
+        ? { texto: 'Guardando…', tono: 'neutro' }
+        : estaVacia
+          ? { texto: 'Sin responder', tono: 'neutro' }
+          : falta !== null
+            ? { texto: 'Sin terminar', tono: 'duda' }
+            : { texto: 'Guardado', tono: 'neutro' }
+
+  /**
+   * «Entregar la evaluación»: con huecos, el aviso de lo que falta y su botón —la ventana
+   * de recuento se fue—; con todo, se manda lo pendiente **y se espera** antes de pedir
+   * confirmación. Si no, la respuesta de la ultima pregunta se quedaba fuera.
+   */
+  const pulsarEntregar = () => {
+    if (faltanParaEntregar > 0) {
+      setLoQueFalta(true)
+      setVecesQueFalta((n) => n + 1)
+      return
+    }
+    setLoQueFalta(false)
+    setGuardandoAntesDeEntregar(true)
+    void cola.vaciar().finally(() => {
+      setGuardandoAntesDeEntregar(false)
+      setConfirmarEntrega(true)
+    })
+  }
+
+  const cerrarHoja = () => {
+    setHojaAbierta(false)
+    botonMapa.current?.focus()
+  }
+
+  /** «Ver las N» u «Ocultar el mapa»: en el teléfono abre la hoja o la cierra (QA-UPP-03). */
+  const alternarMapa = () => {
+    if (escritorio) {
+      setMapaVisible((v) => !v)
+      return
+    }
+    if (hojaAbierta) cerrarHoja()
+    else setHojaAbierta(true)
+  }
+
+  const plazo =
+    evaluacion.venceEn === null ? null : pocoPlazo ? (
+      <span>
+        Quedan <CuentaAtras venceEn={evaluacion.venceEn} />
+      </span>
+    ) : (
+      <time className={estilos.plazo} dateTime={evaluacion.venceEn}>
+        {diasHasta(evaluacion.venceEn) === 'hoy'
+          ? 'Se entrega hoy'
+          : `${diasHasta(evaluacion.venceEn)} para entregarla`}
+      </time>
+    )
 
   return (
     <div className={estilos.pagina}>
@@ -750,282 +765,170 @@ export function Evaluacion() {
         ← Volver a mi proceso
       </Link>
 
-      <div className={estilos.avance}>
-        <div className={estilos.cifras}>
-          <span className={estilos.donde}>
-            Pregunta {indice + 1} de {preguntas.length}
-          </span>
-          <span>
-            {respondidas} de {evaluacion.total} respondidas
-          </span>
+      <div className={marco.marco}>
+        <BarraDelMarco
+          refBarra={refBarra}
+          tiempo={plazo}
+          tiempoPoco={evaluacion.venceEn !== null && pocoPlazo}
+          donde={`Pregunta ${indice + 1} de ${preguntas.length}`}
+          faltan={faltan}
+          progreso={{ respondidas, total: evaluacion.total }}
+          mapa={{
+            abierto: escritorio ? mapaVisible : hojaAbierta,
+            preguntas: preguntas.length,
+            alPulsar: alternarMapa,
+            refBoton: botonMapa,
+            controla: 'mapa-preguntas',
+          }}
+          siguienteSinResponder={
+            recorrido.proximaSinTerminar >= 0 ? () => recorrido.saltarA(recorrido.proximaSinTerminar) : null
+          }
+          volverA={
+            recorrido.volverA ? { rotulo: rotuloDeVolver(recorrido.volverA), alPulsar: recorrido.volver } : null
+          }
+          // «Entregar la evaluación» nunca dos veces a la vez: en la última solo va el relleno.
+          entregar={
+            escritorio && !esUltima
+              ? { texto: 'Entregar la evaluación', alPulsar: pulsarEntregar, ocupado: guardandoAntesDeEntregar }
+              : null
+          }
+        />
 
-          {/*
-            El plazo, mientras se responde.
-
-            Estaba solo en la portada. Entre esa pantalla y el aviso de la ultima hora hay
-            **dos semanas** de plazo por defecto, y en todo ese tramo el candidato no volvia
-            a ver cuanto le quedaba: para saberlo tenia que salir de la evaluacion. Va en la
-            linea de servicio y no en un aviso, por lo mismo que dice el comentario de abajo
-            —esto se mira de reojo, no interrumpe—.
-
-            ⚠️ **Desaparece por debajo de la hora**, que es justo cuando aparece el aviso de
-            «Queda poco plazo» con su cuenta atras. Dos relojes a la vez, uno diciendo «hoy»
-            y el otro `00:42:17`, se leen peor que el segundo solo. Y de paso, ese corte deja
-            fuera los dos textos de `diasHasta` que aqui no encajan: «vencida» y «sin plazo».
-          */}
-          {restante !== null && restante >= UNA_HORA && (
-            <time className={estilos.plazo} dateTime={evaluacion.venceEn ?? undefined}>
-              {diasHasta(evaluacion.venceEn) === 'hoy'
-                ? 'Se entrega hoy'
-                : `${diasHasta(evaluacion.venceEn)} para entregarla`}
-            </time>
-          )}
-        </div>
-        <div className={estilos.riel}>
-          <div className={estilos.recorrido} style={{ width: `${porcentaje}%` }} />
-        </div>
-
-        {/* La linea de servicio: cuantas faltan y como llegar a ellas.
-            Es una linea y no un aviso a proposito. Esto se mira de reojo cada
-            pocos minutos durante una hora larga; un cartel que empuje el
-            enunciado hacia abajo cada vez acaba estorbando mas que ayudando. */}
-        <div className={estilos.mandos}>
-          <button
-            className={estilos.mando}
-            type="button"
-            ref={botonMapa}
-            aria-expanded={mapaAbierto}
-            aria-controls="mapa-preguntas"
-            onClick={() => setMapaAbierto((abierto) => !abierto)}
-          >
-            {mapaAbierto ? 'Cerrar el mapa' : `Ver las ${preguntas.length}`}
-          </button>
-
-          {proximaIncompleta >= 0 && (
-            <button
-              className={estilos.mando}
-              type="button"
-              onClick={() => saltarA(proximaIncompleta)}
-            >
-              Siguiente sin responder
-            </button>
-          )}
-
-          {/* Solo cuando de verdad no falta ninguna: el boton lleva a la
-              pantalla desde la que se entrega, y mandar ahi a alguien que aun
-              tiene huecos es mandarlo a un boton que no le va a funcionar. */}
-          {faltan <= 0 && !esUltima && (
-            <button
-              className={estilos.mando}
-              type="button"
-              onClick={() => saltarA(preguntas.length - 1)}
-            >
-              Ir al final
-            </button>
-          )}
-
-          {volverA !== null && (
-            <button className={estilos.mando} type="button" onClick={volver}>
-              Volver a la {volverA + 1}
-            </button>
-          )}
-
-          <span className={estilos.faltan}>
-            {faltan <= 0
-              ? `Ya están las ${evaluacion.total}.`
-              : faltan === 1
-                ? 'Te falta 1 por terminar.'
-                : `Te faltan ${faltan} por terminar.`}
-          </span>
-        </div>
-      </div>
-
-      {/* El mapa. Todo el examen de un vistazo: que falta, que quedo a medias
-          y un toque para ir a cualquiera de ellas. */}
-      {/*
-        El mapa y la pregunta, uno al lado del otro en escritorio.
-
-        Abierto empujaba la pregunta fuera de la vista, que es justo lo
-        contrario de para que sirve: ver donde estas sin perder donde estabas.
-        Con la columna, se abre en el hueco que sobraba a la derecha y la
-        pregunta no se mueve. Por debajo de 1100 px vuelve a ir encima, que en
-        un telefono es lo unico que cabe.
-
-        La columna es `auto`: con el mapa cerrado se encoge a cero y la
-        pregunta ocupa el ancho entero.
-      */}
-      <div className={estilos.conMapa}>
-        {mapaAbierto && (
-          <div className={estilos.mapa} id="mapa-preguntas">
-            <ol className={estilos.rejilla} role="list">
-              {estados.map((estado, i) => (
-                <li key={preguntas[i]?.id ?? i}>
-                  <button
-                    type="button"
-                    className={`${estilos.casilla} ${estilos[CLASE_ESTADO[estado]]}${
-                      i === indice ? ` ${estilos.aqui}` : ''
-                    }`}
-                    aria-current={i === indice ? 'true' : undefined}
-                    aria-label={
-                      `Pregunta ${i + 1}, ${COMO_SE_DICE[estado]}` +
-                      (i === indice ? ', es la que estás viendo' : '')
-                    }
-                    onClick={() => {
-                      setMapaAbierto(false)
-                      saltarA(i)
-                    }}
-                  >
-                    {i + 1}
-                  </button>
-                </li>
-              ))}
-            </ol>
-
-            <ul className={estilos.leyenda} role="list">
-              <li className={estilos.entradaLeyenda}>
-                <i className={`${estilos.muestra} ${estilos.lista}`} aria-hidden="true" />
-                Respondida
-              </li>
-              <li className={estilos.entradaLeyenda}>
-                <i className={`${estilos.muestra} ${estilos.aMedias}`} aria-hidden="true" />
-                Sin terminar
-              </li>
-              <li className={estilos.entradaLeyenda}>
-                <i className={estilos.muestra} aria-hidden="true" />
-                Sin responder
-              </li>
-            </ul>
-          </div>
-        )}
-
-        {/*
-          ⚠️ **Aqui no va ningun aviso de «respuestas sin guardar», y es a proposito.**
-
-          Hubo uno, rojo, y hacia dos daños. El de forma: estos hijos de `.conMapa` son
-          casillas de una rejilla de dos columnas donde solo el mapa y la pregunta tienen
-          `order`, asi que el cartel se colaba en la columna del mapa y descuadraba la
-          pantalla entera al aparecer. Y el de fondo: le contaba al candidato una averia
-          nuestra, en mitad de su examen, sin darle nada que hacer con ella salvo asustarse.
-
-          Lo que el candidato necesita saber cabe en la linea del pie de la pregunta
-          —«Guardando…», «Respuesta guardada»—, que no empuja nada. Lo demas es trabajo de la
-          cola: reintentar sola con espera creciente, apuntar lo pendiente en el navegador por
-          si se cierra la pestaña, y vaciarse antes de entregar.
-        */}
-        {faltanPreguntas && (
-          <p className={`${estilos.aviso} ${estilos.malo}`} role="status">
-            <span>
-              <b>
-                Faltan preguntas por cargar: llegaron {preguntas.length} de las{' '}
-                {evaluacion.total}.
-              </b>{' '}
-              No es cosa tuya. Vuelve a cargar la evaluación; si sigue igual, avísanos antes de
-              entregar: lo que no llega no se puede responder.{' '}
-              <button
-                className={estilos.enlaceAviso}
-                type="button"
-                onClick={() => void consulta.refetch()}
-              >
-                Volver a cargar
-              </button>
-            </span>
-          </p>
-        )}
-
-        {restante !== null && restante < UNA_HORA && (
-          <p className={estilos.aviso}>
-            <span>
-              <b>Queda poco plazo: {formatearTiempo(restante)}</b>. Cuando se acabe, se
-              entregará lo que tengas respondido.
-            </span>
-          </p>
-        )}
-
-        <article className={estilos.pregunta}>
-          {pregunta.situacion && <p className={estilos.situacion}>{pregunta.situacion}</p>}
-
-          <h1 className={estilos.enunciado}>{pregunta.enunciado}</h1>
-
-          {/* Cada formato del banco v3 se responde de una manera distinta, y la
-              suya vive en `Formatos.tsx`. Aqui solo se le dice que hay puesto y
-              a donde avisar cuando cambie. */}
-          <div className={estilos.respuesta}>
-            <RespuestaDeLaPregunta
-              pregunta={pregunta}
-              detalle={detalleDeEsta}
-              opcionElegida={opcionElegida ?? null}
-              texto={texto}
-              onDetalle={(valor) => cambiarDetalle(pregunta, valor)}
-              onOpcion={(opcionId) => elegirOpcion(pregunta.id, opcionId)}
-              onTexto={(nuevo) => escribir(pregunta, nuevo)}
+        <div className={`${marco.cuerpo}${escritorio && mapaVisible ? ` ${marco.conMapa}` : ''}`}>
+          {escritorio && mapaVisible && (
+            <MapaDePreguntas
+              id="mapa-preguntas"
+              titulo={`Las ${preguntas.length} preguntas`}
+              pasos={pasos}
+              indice={indice}
+              alElegir={(i) => recorrido.saltarA(i)}
             />
-          </div>
+          )}
 
-          <div className={estilos.pie}>
-            <span
-              className={`${estilos.estadoRespuesta}${
-                indicador.tono === 'fallo'
-                  ? ` ${estilos.fallo}`
-                  : indicador.tono === 'duda'
-                    ? ` ${estilos.duda}`
-                    : ''
-              }`}
+          <div className={`${marco.centro} ${marco.leer}`}>
+            {/*
+              ⚠️ **Aqui no va ningun aviso de «respuestas sin guardar», y es a proposito.**
+              Le contaba al candidato una averia nuestra, en mitad de su examen, sin darle nada
+              que hacer con ella salvo asustarse. Lo que necesita saber cabe en la linea de
+              arriba de la tarjeta —«Guardando…», «Guardado», «No se pudo guardar; se
+              reintenta»—, que no empuja nada. Lo demas es trabajo de la cola.
+            */}
+            {faltanPreguntas && (
+              <p className={`${estilos.aviso} ${estilos.malo}`} role="status">
+                <span>
+                  <b>
+                    Faltan preguntas por cargar: llegaron {preguntas.length} de las{' '}
+                    {evaluacion.total}.
+                  </b>{' '}
+                  No es cosa tuya. Vuelve a cargar la evaluación; si sigue igual, avísanos antes de
+                  entregar: lo que no llega no se puede responder.{' '}
+                  <button
+                    className={estilos.enlaceAviso}
+                    type="button"
+                    onClick={() => void consulta.refetch()}
+                  >
+                    Volver a cargar
+                  </button>
+                </span>
+              </p>
+            )}
+
+            {/* Al vencer, la evaluación se cierra sin entregarse y la postulación termina por
+                plazo vencido: el aviso no puede prometer que se entrega lo respondido. */}
+            {evaluacion.venceEn !== null && pocoPlazo && (
+              <p className={estilos.aviso}>
+                <span>
+                  <b>Queda poco plazo.</b> Cuando se acabe, la evaluación se cierra sin
+                  entregarse. Entrégala antes.
+                </span>
+              </p>
+            )}
+
+            {loQueFalta && (
+              <div ref={avisoDeFaltas}>
+                <LoQueFaltaParaEntregar
+                  preguntas={sinResponder.map(({ id, numero }) => ({ id, numero }))}
+                  sinNombrar={sinCargar}
+                  alIr={(id) =>
+                    recorrido.saltarA(
+                      preguntas.findIndex((p) => p.id === id),
+                      primerCampo(refTarjeta),
+                    )
+                  }
+                />
+              </div>
+            )}
+
+            <TarjetaDePregunta
+              refTarjeta={refTarjeta}
+              refEnunciado={refEnunciado}
+              idEnunciado={`enunciado-${pregunta.id}`}
+              etiqueta={etiquetaDePregunta(indice + 1, pregunta.tipo)}
+              guardado={indicador}
+              antes={pregunta.situacion ? <p className={estilos.situacion}>{pregunta.situacion}</p> : null}
+              enunciado={pregunta.enunciado}
+              anterior={{ alPulsar: () => recorrido.navegarA(indice - 1), desactivado: indice === 0 }}
+              siguiente={
+                esUltima
+                  ? { texto: 'Entregar la evaluación', alPulsar: pulsarEntregar, ocupado: guardandoAntesDeEntregar }
+                  : { texto: 'Siguiente', alPulsar: () => recorrido.navegarA(indice + 1) }
+              }
             >
-              {indicador.texto}
-            </span>
-            <div className={estilos.pasos}>
+              {/* Cada formato del banco v3 se responde de una manera distinta, y la
+                  suya vive en `Formatos.tsx`. Aqui solo se le dice que hay puesto y
+                  a donde avisar cuando cambie. */}
+              <RespuestaDeLaPregunta
+                pregunta={pregunta}
+                detalle={detalleDeEsta}
+                opcionElegida={opcionElegida ?? null}
+                texto={texto}
+                onDetalle={(valor) => cambiarDetalle(pregunta, valor)}
+                onOpcion={(opcionId) => elegirOpcion(pregunta.id, opcionId)}
+                onTexto={(nuevo) => escribir(pregunta, nuevo)}
+              />
+            </TarjetaDePregunta>
+
+            {!escritorio && !esUltima && (
               <button
                 type="button"
-                className={estilos.anterior}
-                onClick={() => navegarA(indice - 1)}
-                disabled={indice === 0}
-                data-rotulo="Anterior"
+                className={`${marco.mando} ${marco.mandoEntregar} ${estilos.entregarAbajo}`}
+                onClick={pulsarEntregar}
+                disabled={guardandoAntesDeEntregar}
               >
-                Anterior
+                {guardandoAntesDeEntregar ? 'Guardando…' : 'Entregar la evaluación'}
               </button>
-              {esUltima ? (
-                <button
-                  type="button"
-                  className={estilos.siguiente}
-                  disabled={guardandoAntesDeEntregar}
-                  onClick={() => {
-                    // Lo pendiente se manda **y se espera** antes de abrir el modal. Si no,
-                    // la respuesta de la ultima pregunta se quedaba fuera y el modal abria
-                    // contando mal lo que faltaba.
-                    setGuardandoAntesDeEntregar(true)
-                    void cola.vaciar().finally(() => {
-                      setGuardandoAntesDeEntregar(false)
-                      setConfirmarEntrega(true)
-                    })
-                  }}
-                >
-                  {guardandoAntesDeEntregar ? 'Guardando…' : 'Entregar evaluación'}
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  className={estilos.siguiente}
-                  onClick={() => navegarA(indice + 1)}
-                >
-                  Siguiente
-                </button>
-              )}
-            </div>
+            )}
           </div>
-        </article>
+        </div>
+
+        {!escritorio && hojaAbierta && (
+          <HojaDelMapa
+            id="mapa-preguntas"
+            titulo={`Las ${preguntas.length} preguntas`}
+            pasos={pasos}
+            indice={indice}
+            faltan={faltan}
+            refBarra={refBarra}
+            alElegir={(i) => {
+              setHojaAbierta(false)
+              recorrido.saltarA(i)
+            }}
+            alCerrar={cerrarHoja}
+          />
+        )}
       </div>
 
       <Modal
         abierto={confirmarEntrega}
-        titulo="Entregar evaluación"
+        titulo="Entregar la evaluación"
         onCerrar={() => setConfirmarEntrega(false)}
+        aPruebaDeDobleClic
         pie={
           <>
             <button
               type="button"
               className={estilos.seguir}
               onClick={() => setConfirmarEntrega(false)}
-              data-rotulo="Seguir revisando"
             >
               Seguir revisando
             </button>
@@ -1043,48 +946,19 @@ export function Evaluacion() {
               }}
               // Solo por preguntas sin responder. Lo que aun no ha llegado al servidor ya no
               // bloquea nada: la propia entrega vacia la cola antes de mandar nada.
-              disabled={entrega.isPending || faltan > 0}
-              data-rotulo={entrega.isPending ? 'Entregando…' : 'Entregar'}
+              disabled={entrega.isPending || faltanParaEntregar > 0}
             >
               {entrega.isPending ? 'Entregando…' : 'Entregar'}
             </button>
           </>
         }
       >
-        {faltan > 0 ? (
-          <p className={`${estilos.aviso} ${estilos.malo}`}>
-            <span>
-              <b>
-                {faltan === 1
-                  ? 'Falta 1 pregunta por responder.'
-                  : `Faltan ${faltan} preguntas por responder.`}
-              </b>{' '}
-              No se puede entregar una evaluación incompleta: el servidor la rechaza hasta
-              que estén todas. Si alguna no se deja guardar, escríbenos antes de que venza el
-              plazo.{' '}
-              {primeraSinResponder >= 0 && (
-                <button
-                  className={estilos.enlaceAviso}
-                  type="button"
-                  onClick={() => {
-                    setConfirmarEntrega(false)
-                    // Un salto, no una navegacion: desde ahi se puede volver.
-                    saltarA(primeraSinResponder)
-                  }}
-                >
-                  Ir a la primera sin responder
-                </button>
-              )}
-            </span>
-          </p>
-        ) : (
-          <p className={estilos.aviso}>
-            <span>
-              <b>Respondiste las {evaluacion.total} preguntas</b>. Después de entregar ya no
-              podrás modificar tus respuestas.
-            </span>
-          </p>
-        )}
+        <p className={estilos.aviso}>
+          <span>
+            <b>Respondiste las {evaluacion.total} preguntas</b>. Después de entregar ya no
+            podrás modificar tus respuestas.
+          </span>
+        </p>
         {/* Un 404 no se enseña mientras se comprueba: si es la vacante retirada, la pantalla
             entera lo dice en vez de dejar el texto del servidor dentro del modal. */}
         {entrega.isError && seEnsena(entrega.error) && (

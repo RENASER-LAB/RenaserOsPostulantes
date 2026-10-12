@@ -14,7 +14,7 @@
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { ErrorApi } from '@/api/cliente'
@@ -22,6 +22,7 @@ import { verPostulacion } from '@/api/portal'
 import { entregarPrueba, iniciarPrueba, responderPrueba, subirEnlace, verPrueba } from '@/api/prueba'
 import type { MiPostulacionDetalle, MiPrueba } from '@/api/tipos'
 import { ProveedorAvisos } from '@/ui/Avisos'
+import { GRACIA_TRAS_ABRIR_MS } from '@/ui/Modal'
 import { Prueba } from './Prueba'
 
 // ---------- El servidor de mentira ----------
@@ -158,6 +159,51 @@ describe('la consigna', () => {
     expect(enlace.getAttribute('target')).toBe('_blank')
   })
 
+  it('la plantilla en curso enseña su encargo entero, como siempre: sin recorte ni ventana de lectura', async () => {
+    // La vista de lectura del caso (09/10/2026) es solo de la prueba del editor.
+    respuesta = { ...pruebaEnCurso(enUnaHora(), 'CUALQUIERA'), enunciado: 'Un encargo largo. '.repeat(60).trim() }
+    montar()
+    const encargo = await screen.findByText(/^Un encargo largo\./)
+    expect(encargo.closest('[class*="casoRecortado"]')).toBeNull()
+    expect(encargo.className).not.toMatch(/parrafoLateral|parrafoDeLectura/)
+    expect(screen.queryByRole('button', { name: 'Leer el caso completo' })).toBeNull()
+  })
+
+  it('la pantalla previa de la plantilla va en la ficha corta: ni el encargo, ni los materiales, ni la consigna, ni el detalle', async () => {
+    // Antes de empezar no viaja nada que dé ventaja (10/10/2026). Aunque un backend anterior los
+    // mandara, la ficha no los pinta: el encargo se lee dentro del reloj.
+    respuesta = {
+      ...pruebaEnCurso(enUnaHora(), 'ARCHIVO'),
+      estadoIntento: 'PENDIENTE',
+      iniciadoEn: null,
+      materiales: 'En la carpeta:\n- el mayor\n- el extracto',
+      herramientasPermitidas: 'Excel',
+      entregables: [
+        { id: 3, nombre: 'El informe', detalle: 'Dos páginas como mucho.', formato: 'ARCHIVO', esObligatorio: true, entregado: false },
+      ],
+    }
+    montar()
+    expect(await screen.findByRole('button', { name: 'Empezar prueba' })).toBeTruthy()
+    expect(screen.queryByRole('heading', { name: /El encargo|De qué va|Materiales/ })).toBeNull()
+    // Ningún enlace en la ficha: ni el del PDF ni uno escrito en el encargo.
+    expect(document.querySelector('dl')!.parentElement!.querySelector('a')).toBeNull()
+    const texto = document.body.textContent ?? ''
+    for (const visto of ['Primer parrafo.', 'https://sb.co/prueba.pdf', 'el mayor', 'Dos páginas como mucho.', 'Por qué lo hiciste así']) {
+      expect(texto).not.toContain(visto)
+    }
+    expect(screen.getByRole('heading', { name: 'Lo que entregarás' })).toBeTruthy()
+    expect(screen.getByText('obligatorio · se entrega como archivo')).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Herramientas permitidas' })).toBeTruthy()
+    // Los datos, en la franja de la ficha: con una pregunta y un archivo
+    const valorDe = (etiqueta: string) =>
+      [...document.querySelectorAll('dl > div')].find((c) => c.querySelector('dt')?.textContent === etiqueta)
+        ?.querySelector('dd')?.textContent
+    expect(valorDe('Preguntas')).toBe('1')
+    expect(valorDe('Archivos')).toBe('1')
+    // Su condición es la de siempre: se entrega lo guardado
+    expect(texto).toContain('Si el tiempo termina, se entrega lo que hayas guardado.')
+  })
+
   it('con reloj y fecha de cierre, dice los dos y cuál acorta a cuál', async () => {
     /*
      * El defecto que esto fija: el lateral era un if/else y con las dos cosas escribía
@@ -165,24 +211,43 @@ describe('la consigna', () => {
      * cierre a las 18:00 leía noventa minutos y tenía veinte. Manda el más cercano, que
      * lo decide el servidor, así que la pantalla tiene que decir los dos.
      */
-    respuesta = { ...pruebaEnCurso('2026-08-20T18:00:00Z', 'ARCHIVO'), estadoIntento: 'PENDIENTE' }
+    respuesta = { ...pruebaEnCurso('2026-08-20T18:00:00Z', 'ARCHIVO'), estadoIntento: 'PENDIENTE', iniciadoEn: null }
     montar()
 
-    expect(await screen.findByText(/90 minutos desde que empieces/)).toBeTruthy()
-    expect(screen.getByText(/la convocatoria cierra el/i)).toBeTruthy()
-    expect(screen.getByText(/tendrás el tiempo que quede/i)).toBeTruthy()
+    const tiempo = (await screen.findByText('90 min')).closest('div')!
+    expect(tiempo.textContent).toContain('desde que pulses Empezar')
+    expect(tiempo.textContent).toContain('o hasta la fecha límite, si llega antes')
+    expect(screen.getByText('Fecha límite')).toBeTruthy()
   })
 
   it('sin fecha de cierre no inventa ninguna', async () => {
     respuesta = {
       ...pruebaEnCurso('2026-08-20T18:00:00Z', 'ARCHIVO'),
       estadoIntento: 'PENDIENTE',
+      iniciadoEn: null,
       venceEn: null,
     }
     montar()
 
-    expect(await screen.findByText(/90 minutos desde que empieces/)).toBeTruthy()
-    expect(screen.queryByText(/la convocatoria cierra el/i)).toBeNull()
+    expect(await screen.findByText('90 min')).toBeTruthy()
+    expect(screen.queryByText('Fecha límite')).toBeNull()
+    expect(screen.queryByText(/si llega antes/i)).toBeNull()
+  })
+
+  it('de plazo abierto y sin fecha de cierre, dice sus días desde que empiece', async () => {
+    respuesta = {
+      ...pruebaEnCurso(enUnaHora(), 'ARCHIVO'),
+      estadoIntento: 'PENDIENTE',
+      iniciadoEn: null,
+      venceEn: null,
+      modalidad: 'PLAZO_ABIERTO',
+      duracionMinutos: null,
+      plazoDias: 7,
+    }
+    montar()
+
+    const tiempo = (await screen.findByText('7 días')).closest('div')!
+    expect(tiempo.textContent).toContain('desde que pulses Empezar')
   })
 })
 
@@ -341,5 +406,46 @@ describe('cuando la empresa retiró la vacante', () => {
     )
     expect(screen.queryByRole('heading', { name: /Esta vacante ya no está disponible/ })).toBeNull()
     expect(verPostulacion).not.toHaveBeenCalled()
+  })
+})
+
+/**
+ * QA-UPP-14 en la de plantilla: el segundo clic de un doble clic en «Entregar prueba» cae en lo que
+ * haya quedado debajo, que puede ser el «Entregar» del diálogo. Entregar no tiene vuelta atrás: ese
+ * clic no cuenta, y con el diálogo ya leído un clic normal sí entrega.
+ */
+describe('QA-UPP-14: un doble clic en «Entregar prueba» no entrega', () => {
+  /** Un toque o un clic entero, como lo da el navegador: apretar, soltar y el `click`. */
+  const pulsar = (el: Element, detail: number) => {
+    fireEvent.pointerDown(el)
+    fireEvent.mouseDown(el, { detail })
+    fireEvent.pointerUp(el)
+    fireEvent.mouseUp(el, { detail })
+    fireEvent.click(el, { detail })
+  }
+
+  it('el segundo clic, o uno suelto a los 150 ms, cae en «Entregar» y no entrega; leído el diálogo, sí', async () => {
+    const real = performance.now.bind(performance)
+    let adelanto = 0
+    vi.spyOn(performance, 'now').mockImplementation(() => real() + adelanto)
+    vi.mocked(entregarPrueba).mockClear()
+    respuesta = pruebaEnCurso(enUnaHora(), 'CUALQUIERA')
+    montar()
+
+    pulsar(await screen.findByRole('button', { name: 'Entregar prueba' }), 1)
+    const dialogo = await screen.findByRole('dialog', { name: 'Entregar prueba' })
+    const entregar = within(dialogo).getByRole('button', { name: 'Entregar' })
+    pulsar(entregar, 2)
+    adelanto += 150
+    pulsar(entregar, 1)
+    pulsar(within(dialogo).getByRole('button', { name: 'Seguir revisando' }), 1)
+    // La entrega llama al servidor unas microtareas después del clic: se espera antes de mirarlo.
+    await act(() => new Promise((seguir) => setTimeout(seguir, 20)))
+    expect(entregarPrueba).not.toHaveBeenCalled()
+    expect(screen.getByRole('dialog', { name: 'Entregar prueba' })).toBe(dialogo)
+
+    adelanto += GRACIA_TRAS_ABRIR_MS
+    pulsar(entregar, 1)
+    await waitFor(() => expect(entregarPrueba).toHaveBeenCalledTimes(1))
   })
 })

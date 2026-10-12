@@ -31,9 +31,9 @@
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { Modal } from './Modal'
+import { GRACIA_TRAS_ABRIR_MS, MARGEN_DEL_ESCUDO_MS, Modal } from './Modal'
 
 afterEach(cleanup)
 
@@ -196,5 +196,263 @@ describe('adónde vuelve el foco al cerrar (RES-QA-05)', () => {
       act(() => CIERRES.fondo())
       expect(document.activeElement).toBe(abrir)
     }
+  })
+})
+
+/**
+ * 3. **El doble clic que abre y cierra (QA-UPP-13) o que empieza sin confirmar (QA-UPP-14).** El
+ *    segundo clic de un doble clic en el botón que abre el modal cae en lo que haya quedado debajo:
+ *    el fondo lo cerraba; en el teléfono, un botón del pie —«Aún no» lo cerraba y «Sí, empezar»
+ *    arrancaba el reloj sin leer nada—. Con `aPruebaDeDobleClic` **todo el modal** ignora, por
+ *    puntero, la continuación de una serie (`detail` > 1) y toda pulsación que empiece en sus
+ *    primeros `GRACIA_TRAS_ABRIR_MS`; el teclado (`detail` 0) y Escape van al instante. Sin la marca,
+ *    nada cambia: hay modales del panel que se cierran por el fondo nada más abrirse.
+ */
+describe('aPruebaDeDobleClic: nada del modal responde al puntero que sigue al clic que lo abrió (QA-UPP-13 y 14)', () => {
+  let ahora = 10_000
+  afterEach(() => {
+    vi.restoreAllMocks()
+    vi.useRealTimers()
+  })
+
+  function ConBoton({ aPrueba, alEmpezar = () => {} }: { aPrueba: boolean; alEmpezar?: () => void }) {
+    const [abierto, setAbierto] = useState(false)
+    return (
+      <>
+        <button type="button" onClick={() => setAbierto(true)}>
+          Abrir
+        </button>
+        <Modal
+          abierto={abierto}
+          titulo="¿Empezar ahora?"
+          onCerrar={() => setAbierto(false)}
+          aPruebaDeDobleClic={aPrueba}
+          pie={
+            <>
+              <button type="button" onClick={() => setAbierto(false)}>
+                Aún no
+              </button>
+              <button type="button" onClick={alEmpezar}>
+                Sí, empezar
+              </button>
+            </>
+          }
+        >
+          <p>Desde ese momento corre el tiempo.</p>
+        </Modal>
+      </>
+    )
+  }
+
+  const reloj = () => vi.spyOn(performance, 'now').mockImplementation(() => ahora)
+  const abrir = () => fireEvent.click(screen.getByRole('button', { name: 'Abrir' }), { detail: 1 })
+  const fondo = (detail: number) => fireEvent.click(screen.getByRole('dialog').previousElementSibling!, { detail })
+  const boton = (nombre: string) => screen.getByRole('button', { name: nombre })
+  const aspa = () => within(screen.getByRole('dialog')).getAllByRole('button', { name: 'Cerrar' })[0]!
+  const abierto = () => screen.queryByRole('dialog') !== null
+  /** Un toque o un clic entero, como lo da el navegador: apretar, soltar y el `click`. */
+  const pulsar = (el: Element, detail: number) => {
+    fireEvent.pointerDown(el)
+    fireEvent.mouseDown(el, { detail })
+    fireEvent.pointerUp(el)
+    fireEvent.mouseUp(el, { detail })
+    fireEvent.click(el, { detail })
+  }
+
+  it('el segundo clic de un doble clic cae en el fondo y el modal sigue abierto, pase el tiempo que pase', () => {
+    reloj()
+    render(<ConBoton aPrueba />)
+    abrir()
+    ahora += 5 * GRACIA_TRAS_ABRIR_MS
+    fondo(2)
+    expect(abierto()).toBe(true)
+  })
+
+  it('QA-UPP-14: el segundo clic de la serie cae en «Sí, empezar», «Aún no» o el aspa y no hace nada, pase el tiempo que pase', () => {
+    reloj()
+    const alEmpezar = vi.fn()
+    render(<ConBoton aPrueba alEmpezar={alEmpezar} />)
+    abrir()
+    for (const espera of [20, 200, 5 * GRACIA_TRAS_ABRIR_MS]) {
+      ahora += espera
+      pulsar(boton('Sí, empezar'), 2)
+      pulsar(boton('Aún no'), 2)
+      pulsar(aspa(), 2)
+      expect(alEmpezar).not.toHaveBeenCalled()
+      expect(abierto()).toBe(true)
+    }
+  })
+
+  it('QA-UPP-14: dos toques sueltos —el segundo a los 150 ms, `detail` 1— tampoco pulsan nada del pie', () => {
+    reloj()
+    const alEmpezar = vi.fn()
+    render(<ConBoton aPrueba alEmpezar={alEmpezar} />)
+    abrir()
+    ahora += 150
+    pulsar(boton('Sí, empezar'), 1)
+    ahora += 100
+    pulsar(boton('Aún no'), 1)
+    ahora += 100
+    pulsar(aspa(), 1)
+    expect(alEmpezar).not.toHaveBeenCalled()
+    expect(abierto()).toBe(true)
+  })
+
+  it('dentro de la ventana, apretar no se lleva el foco ni llega a nadie: el `mousedown` se cancela', () => {
+    reloj()
+    const alApretar = vi.fn()
+    render(<ConBoton aPrueba />)
+    abrir()
+    const si = boton('Sí, empezar')
+    si.addEventListener('pointerdown', alApretar)
+    ahora += 100
+    expect(fireEvent.pointerDown(si)).toBe(true)
+    expect(fireEvent.mouseDown(si, { detail: 1 })).toBe(false)
+    expect(alApretar).not.toHaveBeenCalled()
+  })
+
+  it('un toque que empieza dentro de la ventana y se suelta ya fuera no pulsa: en el teléfono el `click` llega al levantar el dedo', () => {
+    reloj()
+    const alEmpezar = vi.fn()
+    render(<ConBoton aPrueba alEmpezar={alEmpezar} />)
+    abrir()
+    const si = boton('Sí, empezar')
+    ahora += GRACIA_TRAS_ABRIR_MS - 20
+    fireEvent.pointerDown(si)
+    ahora += 120
+    fireEvent.pointerUp(si)
+    // El `mousedown` de un toque es de compatibilidad y llega ahora, ya fuera: no borra la marca
+    fireEvent.mouseDown(si, { detail: 1 })
+    fireEvent.mouseUp(si, { detail: 1 })
+    fireEvent.click(si, { detail: 1 })
+    expect(alEmpezar).not.toHaveBeenCalled()
+    expect(abierto()).toBe(true)
+
+    // Y el siguiente toque, ya con el diálogo leído, sí pulsa
+    ahora += 1_000
+    pulsar(si, 1)
+    expect(alEmpezar).toHaveBeenCalledTimes(1)
+  })
+
+  it('pasada la ventana, un toque normal pulsa: «Sí, empezar» actúa y «Aún no» cierra', () => {
+    reloj()
+    const alEmpezar = vi.fn()
+    render(<ConBoton aPrueba alEmpezar={alEmpezar} />)
+    abrir()
+    ahora += GRACIA_TRAS_ABRIR_MS
+    pulsar(boton('Sí, empezar'), 1)
+    expect(alEmpezar).toHaveBeenCalledTimes(1)
+    pulsar(boton('Aún no'), 1)
+    expect(abierto()).toBe(false)
+  })
+
+  it('dos clics sueltos en el fondo: el que llega a los 150 ms no lo cierra; uno deliberado, pasado el primer instante, sí', () => {
+    reloj()
+    render(<ConBoton aPrueba />)
+    abrir()
+    ahora += 150
+    fondo(1)
+    expect(abierto()).toBe(true)
+
+    ahora += GRACIA_TRAS_ABRIR_MS
+    fondo(1)
+    expect(abierto()).toBe(false)
+  })
+
+  it('el teclado no espera: Enter o Espacio en el pie (`detail` 0), el aspa con el teclado y Escape actúan desde el primer instante', () => {
+    reloj()
+    const alEmpezar = vi.fn()
+    render(<ConBoton aPrueba alEmpezar={alEmpezar} />)
+    abrir()
+    // Sin mover el reloj: el `click` del teclado llega con `detail` 0
+    fireEvent.click(boton('Sí, empezar'), { detail: 0 })
+    expect(alEmpezar).toHaveBeenCalledTimes(1)
+    fireEvent.click(boton('Aún no'), { detail: 0 })
+    expect(abierto()).toBe(false)
+
+    abrir()
+    fireEvent.click(aspa(), { detail: 0 })
+    expect(abierto()).toBe(false)
+
+    abrir()
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(abierto()).toBe(false)
+  })
+
+  it('el teclado pasa aunque quede marcada una pulsación descartada que no llegó a soltarse encima', () => {
+    reloj()
+    const alEmpezar = vi.fn()
+    render(<ConBoton aPrueba alEmpezar={alEmpezar} />)
+    abrir()
+    ahora += 100
+    // Apretó dentro de la ventana y se fue arrastrando: no hubo `click`
+    fireEvent.pointerDown(boton('Sí, empezar'))
+    ahora += 1_000
+    fireEvent.click(boton('Sí, empezar'), { detail: 0 })
+    expect(alEmpezar).toHaveBeenCalledTimes(1)
+  })
+
+  it('cada apertura cuenta su propio instante: al volver a abrir, el primer clic vuelve a no contar', () => {
+    reloj()
+    const alEmpezar = vi.fn()
+    render(<ConBoton aPrueba alEmpezar={alEmpezar} />)
+    abrir()
+    ahora += GRACIA_TRAS_ABRIR_MS + 1
+    fondo(1)
+    expect(abierto()).toBe(false)
+
+    ahora += 1_000
+    abrir()
+    ahora += 100
+    fondo(1)
+    pulsar(boton('Sí, empezar'), 1)
+    expect(abierto()).toBe(true)
+    expect(alEmpezar).not.toHaveBeenCalled()
+  })
+
+  it('el escudo: tapa la pantalla al abrir, sin leerse; lo que cae en él no sube a la página; se va pasada la ventana y vuelve en la siguiente apertura', () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    const enLaPagina = vi.fn()
+    render(
+      <div onClick={enLaPagina}>
+        <ConBoton aPrueba />
+      </div>,
+    )
+    abrir()
+    enLaPagina.mockClear()
+    const escudo = document.querySelector<HTMLElement>('[data-escudo-del-modal]')!
+    expect(escudo).not.toBeNull()
+    expect(escudo.getAttribute('aria-hidden')).toBe('true')
+    expect(escudo.hidden).toBe(false)
+    // Después del panel: el fondo sigue siendo el hermano anterior del diálogo
+    expect(screen.getByRole('dialog').nextElementSibling).toBe(escudo)
+
+    expect(fireEvent.mouseDown(escudo, { detail: 2 })).toBe(false)
+    fireEvent.click(escudo, { detail: 2 })
+    expect(enLaPagina).not.toHaveBeenCalled()
+    expect(abierto()).toBe(true)
+
+    act(() => vi.advanceTimersByTime(GRACIA_TRAS_ABRIR_MS + MARGEN_DEL_ESCUDO_MS - 1))
+    expect(escudo.hidden).toBe(false)
+    act(() => vi.advanceTimersByTime(1))
+    expect(escudo.hidden).toBe(true)
+
+    act(() => {
+      fireEvent.keyDown(document, { key: 'Escape' })
+    })
+    abrir()
+    expect(document.querySelector<HTMLElement>('[data-escudo-del-modal]')!.hidden).toBe(false)
+  })
+
+  it('sin la marca, el fondo cierra al instante, también con la segunda pulsación; el pie pulsa al instante; y no hay escudo: lo de siempre', () => {
+    reloj()
+    const alEmpezar = vi.fn()
+    render(<ConBoton aPrueba={false} alEmpezar={alEmpezar} />)
+    abrir()
+    expect(document.querySelector('[data-escudo-del-modal]')).toBeNull()
+    pulsar(boton('Sí, empezar'), 2)
+    expect(alEmpezar).toHaveBeenCalledTimes(1)
+    fondo(2)
+    expect(abierto()).toBe(false)
   })
 })

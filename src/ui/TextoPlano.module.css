@@ -39,3 +39,26 @@
   color: var(--tinta);
   text-decoration-color: currentColor;
 }
+
+/*
+ * Una lista escrita con guiones o números (`listas`). Lleva además la clase del párrafo, así que
+ * se lee con la misma letra y el mismo aire; aquí solo va lo que la hace lista: la sangría y la
+ * marca, que es la del navegador y no un glifo puesto a mano, en el gris de lo secundario.
+ */
+.lista {
+  padding-left: 1.25em;
+  list-style: disc;
+}
+
+.listaNumerada {
+  list-style: decimal;
+}
+
+.lista > li::marker {
+  color: var(--tinta3);
+  font-variant-numeric: tabular-nums;
+}
+
+.lista > li + li {
+  margin-top: var(--e1);
+}
