@@ -1,0 +1,100 @@
+/*
+ * «Tu cuenta» en el perfil (V73): el celular, con «Cambiar».
+ *
+ * La misma caja que los bloques de la columna lateral —nube con filete— pero a lo
+ * ancho, encima del pie: es un dato de la cuenta, no del perfil que se enseña a las
+ * empresas. Sin violeta: aquí no le toca nada al candidato.
+ */
+
+.bloque {
+  margin-top: var(--e7);
+  /* Se llega por `/perfil#celular`: que la cabecera flotante no le tape el título. */
+  scroll-margin-top: calc(var(--alto-cabecera) + var(--e5));
+  padding: var(--e5);
+  border: 1px solid var(--regla);
+  border-radius: var(--radio);
+  background: var(--nube);
+  max-width: 44rem;
+}
+
+.titulo {
+  margin: 0;
+  font-size: var(--t-micro);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tinta3);
+}
+
+.fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e2) var(--e4);
+  margin-top: var(--e3);
+}
+
+.dato {
+  margin: 0;
+  font-size: var(--t-base);
+  color: var(--tinta2);
+}
+
+.dato b {
+  font-weight: 600;
+  color: var(--tinta);
+  font-variant-numeric: tabular-nums;
+}
+
+/* «+51 987 654 321» no se parte: en un teléfono estrecho baja entero. */
+.numero {
+  white-space: nowrap;
+}
+
+.sinDato,
+.cargando {
+  color: var(--tinta3);
+}
+
+.cambiar {
+  composes: secundario from '../../estilos/piezas.module.css';
+}
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+  margin-top: var(--e3);
+}
+
+.campo {
+  max-width: 22rem;
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e3);
+}
+
+.guardar {
+  composes: acentoMenor from '../../estilos/piezas.module.css';
+}
+
+.cancelar {
+  composes: secundario from '../../estilos/piezas.module.css';
+}
+
+.ayuda {
+  margin-top: var(--e3);
+  font-size: var(--t-menor);
+  line-height: 1.5;
+  color: var(--tinta3);
+  max-width: var(--medida);
+}
+
+@media (max-width: 640px) {
+  .campo {
+    max-width: none;
+  }
+}

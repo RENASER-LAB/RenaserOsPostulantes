@@ -97,6 +97,35 @@
   width: 100%;
 }
 
+/*
+ * El prefijo que no se escribe: el «+51» del celular (V73). Va dentro de la caja,
+ * a la izquierda y en el gris de la ayuda, para que se lea como parte del número
+ * sin parecer texto que se pueda borrar. La caja es la misma `.entrada`: el borde,
+ * el error y el foco no cambian.
+ */
+.conPrefijo {
+  position: relative;
+  display: flex;
+}
+
+.conPrefijo .entrada {
+  width: 100%;
+  padding-left: 52px;
+}
+
+.prefijo {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 46px;
+  display: grid;
+  place-items: center end;
+  padding-right: var(--e1);
+  font-size: var(--t-base);
+  font-variant-numeric: tabular-nums;
+  color: var(--tinta2);
+  pointer-events: none;
+}
+
 /* Una contraseña larga acabaria escribiendose por debajo del icono. */
 .entrada.conOjo {
   padding-right: 46px;

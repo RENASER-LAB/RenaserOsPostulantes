@@ -228,6 +228,7 @@ test.describe('El ciclo 2 · la vacante elige el cuestionario y la candidata lo 
     await page.getByLabel(/^Nombre/).fill('Camila')
     await page.getByLabel(/^Apellidos/).fill('Reyes Quispe')
     await page.getByLabel(/^Correo/).fill(recorrido.correo)
+    await page.getByLabel(/^Celular \(WhatsApp\)/).fill('987 654 321')
     await page.getByLabel(/^Contraseña/).fill(CLAVE)
     await page.getByLabel('Repite la contraseña').fill(CLAVE)
     // El alta exige ciudad desde que existe el filtro por ciudad del ranking.

@@ -388,3 +388,19 @@ export function IconoPlegar(props: PropsIcono) {
     </Icono>
   )
 }
+
+/**
+ * WhatsApp (V73): el globo de conversación con el auricular dentro.
+ *
+ * Solo va en el botón «Escribir por WhatsApp», delante de la palabra y en su mismo
+ * color de tinta. Dibujado en la rejilla de la casa y no el logotipo de relleno: el
+ * verde del botón ya dice «WhatsApp», y el icono acompaña sin ser una mancha.
+ */
+export function IconoWhatsapp(props: PropsIcono) {
+  return (
+    <Icono {...props}>
+      <path d="M3.6 20.4 4.9 16.5A8.6 8.6 0 1 1 7.9 19.3Z" />
+      <path d="M9.1 8.3c.3-.6.9-.6 1.2 0l.6 1.3c.1.3.1.6-.2.8l-.5.5c.5 1.1 1.4 2 2.5 2.5l.5-.5c.2-.3.5-.3.8-.2l1.3.6c.6.3.6.9 0 1.2-.9.6-2 .7-3 .2a8 8 0 0 1-3.4-3.4c-.5-1-.4-2.1.2-3Z" />
+    </Icono>
+  )
+}

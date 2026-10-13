@@ -244,12 +244,12 @@ export function PoliticaPublica() {
         <p>Solo lo que hace falta para evaluar tu candidatura, y cuando hace falta:</p>
         <ul className={estilos.lista}>
           <li>
-            <strong>Al crear tu cuenta:</strong> tu nombre, tus apellidos, tu correo, una
-            contraseña y la provincia donde vives.
+            <strong>Al crear tu cuenta:</strong> tu nombre, tus apellidos, tu correo, tu
+            celular, una contraseña y la provincia donde vives.
           </li>
           <li>
-            <strong>Si los das o salen de tu currículum:</strong> tu teléfono, tu documento de
-            identidad y tu fecha de nacimiento. Los que lee la inteligencia artificial de tu
+            <strong>Si los das o salen de tu currículum:</strong> tu documento de identidad y
+            tu fecha de nacimiento. Los que lee la inteligencia artificial de tu
             currículum aparecen marcados como tales en tu perfil, para que puedas corregirlos.
           </li>
           <li>
@@ -278,8 +278,9 @@ export function PoliticaPublica() {
         <p>
           Para crear y mantener tu cuenta, armar tu perfil a partir de tu currículum,
           presentar tu candidatura a las vacantes a las que postules y escribirte sobre el
-          estado de tus procesos. Si además diste el permiso de futuras vacantes, para
-          avisarte cuando se abra una que encaje contigo.
+          estado de tus procesos por correo, en el portal y, si tú nos escribes primero, por
+          WhatsApp desde el número de Renaser. Si además diste el permiso de futuras vacantes,
+          para avisarte cuando se abra una que encaje contigo.
         </p>
         <p>
           <strong>La base legal es tu consentimiento</strong>, expreso y previo, conforme a
@@ -361,9 +362,10 @@ export function PoliticaPublica() {
         </div>
         <p>
           <strong>Todos están fuera del Perú</strong>, y también el proveedor de correo con el
-          que te escribimos, así que tus datos salen del país. Eso es lo que la Ley 29733
-          llama flujo transfronterizo y por eso te lo decimos antes de que aceptes, no
-          después. Renaser sigue respondiendo por ellos ante ti.
+          que te escribimos, así que tus datos salen del país. Si nos escribes por WhatsApp,
+          los mensajes pasan por Meta Platforms, que puede tratarlos fuera del Perú. Eso es lo
+          que la Ley 29733 llama flujo transfronterizo y por eso te lo decimos antes de que
+          aceptes, no después. Renaser sigue respondiendo por ellos ante ti.
         </p>
       </section>
 

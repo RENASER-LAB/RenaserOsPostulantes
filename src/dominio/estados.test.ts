@@ -8,12 +8,15 @@
 
 import { describe, expect, it } from 'vitest'
 import {
+  ESTADOS,
   leTocaAlCandidato,
   leTocaAlCandidatoEn,
+  momentoDe,
   momentoDeLaEtapa,
   portadaDeLaPrueba,
   quedoSinCompletar,
 } from './estados'
+import contrato from './textosDelMomento.json'
 
 describe('la prueba que quedó sin completar', () => {
   it('ya no le toca: sin botón, esperando al equipo, y con la frase de la prueba', () => {
@@ -73,5 +76,43 @@ describe('la portada de la prueba, justo después de entregar o postular (V70)',
     expect(
       portadaDeLaPrueba({ ...base, estado: 'PRUEBA_TURNO_CANDIDATO', pruebaSinCompletar: true }),
     ).toBeNull()
+  })
+})
+
+/**
+ * El portal y el bot de WhatsApp dicen lo mismo (V73, punto 26 de la spec).
+ *
+ * Los textos de cada momento viven también en el backend (`TextosDelMomento`), que es de
+ * donde el bot saca lo que le cuenta al candidato. Los dos lados se comparan con el mismo
+ * contrato: `textosDelMomento.json` aquí y `docs/contratos/textos-del-momento.json` allí, que
+ * son el mismo archivo. Cambiar una frase es cambiarla en los tres sitios.
+ */
+describe('los textos de cada momento, iguales al contrato que comparte con el backend', () => {
+  it('los dieciocho estados, con el mismo título y el mismo texto', () => {
+    for (const [estado, texto] of Object.entries(contrato.estados)) {
+      const momento = momentoDe(estado)
+      expect(momento.titulo, `título de ${estado}`).toBe(texto.titulo)
+      expect(momento.ayuda, `texto de ${estado}`).toBe(texto.texto)
+    }
+    expect(Object.keys(contrato.estados)).toEqual([...ESTADOS])
+  })
+
+  it('las variantes: el cuestionario técnico, la prueba sin completar y un estado desconocido', () => {
+    const listo = momentoDeLaEtapa('PRUEBA_TURNO_CANDIDATO', 'CUESTIONARIO_TECNICO')
+    expect(listo.titulo).toBe(contrato.cuestionarioTecnico.PRUEBA_TURNO_CANDIDATO.titulo)
+    expect(listo.ayuda).toBe(contrato.cuestionarioTecnico.PRUEBA_TURNO_CANDIDATO.texto)
+    const calificando = momentoDeLaEtapa('PRUEBA_CALIFICANDO', 'CUESTIONARIO_TECNICO')
+    expect(calificando.titulo).toBe(contrato.cuestionarioTecnico.PRUEBA_CALIFICANDO.titulo)
+    expect(calificando.ayuda).toBe(contrato.cuestionarioTecnico.PRUEBA_CALIFICANDO.texto)
+    const sinCompletar = momentoDeLaEtapa('PRUEBA_TURNO_CANDIDATO', 'PRUEBA_PROPIA', true)
+    expect(sinCompletar.titulo).toBe(contrato.pruebaSinCompletar.titulo)
+    expect(sinCompletar.ayuda).toBe(contrato.pruebaSinCompletar.texto)
+    const desconocido = momentoDe('NO_EXISTE')
+    expect(desconocido.titulo).toBe(contrato.desconocido.titulo)
+    expect(desconocido.ayuda).toBe(contrato.desconocido.texto)
+  })
+
+  it('AC-17 · «Estamos revisando tu postulación» no lleva la frase que el recuadro ya añade', () => {
+    expect(momentoDe('POSTULADA').ayuda).not.toContain('No tienes que hacer nada')
   })
 })

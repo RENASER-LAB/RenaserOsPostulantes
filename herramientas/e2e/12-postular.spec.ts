@@ -107,6 +107,7 @@ test.describe('Regresión · postular de punta a punta', () => {
     await page.getByLabel(/^Nombre/).fill('Prueba')
     await page.getByLabel('Apellidos').fill('De Punta a Punta')
     await page.getByLabel('Correo').fill(CORREO)
+    await page.getByLabel(/^Celular \(WhatsApp\)/).fill('987 654 321')
     await page.getByLabel(/^Contraseña/).fill(CLAVE_DE_CANDIDATO)
     await page.getByLabel('Repite la contraseña').fill(CLAVE_DE_CANDIDATO)
     // El registro exige ciudad desde que la pide el alta (ver `02-regresion-portal`).

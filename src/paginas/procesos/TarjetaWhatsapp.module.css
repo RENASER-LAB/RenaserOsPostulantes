@@ -1,0 +1,151 @@
+/*
+ * La tarjeta de WhatsApp dentro del recuadro de espera (V73).
+ *
+ * Blanca con filete gris sobre el gris hundido del panel: se ofrece, no reclama.
+ * El único color es el verde del botón —ver `.whatsapp` en `piezas.module.css`—, y
+ * por eso nada más de la tarjeta lleva tono: ni el título, ni los enlaces, ni el
+ * estado conectado.
+ */
+
+.tarjeta {
+  composes: ofrecimiento from '../../estilos/piezas.module.css';
+  margin-top: var(--e4);
+  padding: var(--e4) var(--e5);
+}
+
+.titulo {
+  margin: 0;
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  letter-spacing: -0.006em;
+  color: var(--tinta);
+}
+
+.texto {
+  margin-top: var(--e1);
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+  max-width: var(--medida);
+}
+
+.texto b,
+.conectado b {
+  font-weight: 600;
+  color: var(--tinta);
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * El número no se parte: «+51» en una línea y el resto en la otra no se lee como un
+ * celular. En un teléfono estrecho baja entero a la línea siguiente.
+ */
+.numero {
+  white-space: nowrap;
+}
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+  margin-top: var(--e3);
+}
+
+.campo {
+  max-width: 22rem;
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e2) var(--e4);
+}
+
+.escribir {
+  composes: whatsapp from '../../estilos/piezas.module.css';
+}
+
+.otroNumero {
+  font-size: var(--t-apoyo);
+  line-height: 1.45;
+  color: var(--tinta2);
+}
+
+.consentimiento {
+  margin-top: var(--e3);
+  font-size: var(--t-menor);
+  line-height: 1.5;
+  color: var(--tinta3);
+  max-width: var(--medida);
+}
+
+.fallo {
+  margin-top: var(--e3);
+  font-size: var(--t-apoyo);
+  color: var(--mal);
+}
+
+/* Conectado: una línea con el icono en la tinta del texto, sin verde. */
+.conectado {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--e2);
+  margin: 0;
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+  max-width: var(--medida);
+}
+
+.iconoConectado {
+  flex: none;
+  margin-top: 2px;
+  color: var(--tinta);
+}
+
+/*
+ * «Dejar de recibir»: una acción menor, en tinta y subrayada. No es un botón con
+ * relleno porque no es lo que se espera que haga nadie; tampoco va en rojo: dejar
+ * de recibir se deshace pulsando otra vez el botón verde.
+ */
+.dejar {
+  margin-top: var(--e2);
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: var(--t-apoyo);
+  font-weight: 500;
+  color: var(--tinta2);
+  text-decoration: underline;
+  text-decoration-color: var(--regla2);
+  text-underline-offset: 0.22em;
+  cursor: pointer;
+}
+
+.dejar:hover:not(:disabled) {
+  color: var(--tinta);
+  text-decoration-color: currentColor;
+}
+
+.dejar:disabled {
+  color: var(--tinta3);
+  cursor: default;
+}
+
+/* En el teléfono el botón ocupa todo el ancho y el «¿No es tu número?» baja. */
+@media (max-width: 640px) {
+  .tarjeta {
+    padding: var(--e4);
+  }
+
+  .escribir {
+    width: 100%;
+  }
+
+  .campo {
+    max-width: none;
+  }
+}

@@ -135,6 +135,11 @@ export const rutas = {
   perfil: () => '/perfil',
   /** La sección «Reseñas de empresas» del perfil: a donde llevan sus avisos (V63). */
   resenasDelPerfil: () => '/perfil#resenas',
+  /**
+   * El celular de la cuenta, con el campo ya abierto: a donde lleva «Cámbialo en Mi
+   * cuenta» de la tarjeta de WhatsApp (V73). Ver `ANCLA_CELULAR` en `MiCelular`.
+   */
+  celularDeLaCuenta: () => '/perfil#celular',
   procesos: () => '/procesos',
   proceso: (uuid: string) => `/procesos/${uuid}`,
   evaluacion: (uuid: string) => `/procesos/${uuid}/evaluacion`,

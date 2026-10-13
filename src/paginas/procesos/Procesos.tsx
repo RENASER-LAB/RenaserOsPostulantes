@@ -20,6 +20,7 @@ import { esFinal, estaCalificando, leTocaAlCandidatoEn, momentoDeLaEtapa } from 
 import { formatearFechaCorta } from '@/dominio/reloj'
 import { rutas } from '@/rutas'
 import { Seguimiento } from './Seguimiento'
+import { hayTarjetaDeWhatsapp, TarjetaWhatsapp } from './TarjetaWhatsapp'
 import estilos from './Procesos.module.css'
 
 const CADA_15_SEGUNDOS = 15_000
@@ -283,11 +284,16 @@ function Proceso({ postulacion }: { postulacion: MiPostulacion }) {
         <p className={estilos.esperaTexto}>
           {momento.ayuda} <b>No tienes que hacer nada.</b>
         </p>
+        {/* Mientras espera, recibir las novedades por WhatsApp (V73). */}
+        {hayTarjetaDeWhatsapp(postulacion) && (
+          <TarjetaWhatsapp postulacion={postulacion} nivelDelTitulo={3} />
+        )}
       </div>
       <details className={estilos.plegable}>
         <summary className={estilos.resumen}>Ver el recorrido completo</summary>
         <div className={estilos.desplegado}>
-          <Seguimiento postulacion={postulacion} />
+          {/* Sin la tarjeta: ya está en el recuadro de arriba, y dos serían dos botones iguales. */}
+          <Seguimiento postulacion={postulacion} sinWhatsapp />
         </div>
       </details>
       {enlaceDetalle}

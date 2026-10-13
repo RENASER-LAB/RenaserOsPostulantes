@@ -101,7 +101,9 @@ const MOMENTOS: Record<EstadoPostulacion, Momento> = {
     etapa: 'PERFIL',
     esperaA: 'SISTEMA',
     titulo: 'Estamos revisando tu postulación',
-    ayuda: 'Comprobamos los requisitos indispensables del puesto. No tienes que hacer nada.',
+    // Sin «No tienes que hacer nada.»: lo añade el recuadro de espera, y con la frase también
+    // aquí salía dos veces (V73, AC-17).
+    ayuda: 'Comprobamos los requisitos indispensables del puesto.',
     accion: null,
   },
 
