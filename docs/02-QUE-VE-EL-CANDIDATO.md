@@ -149,9 +149,19 @@ sin repetir la zona si dice lo mismo que la ciudad; sin ciudad, solo la zona.
 **Acción única:** postular. Si no hay cuenta, lleva a crearla recordando a qué vacante.
 
 ### 2.3 Crear cuenta — pública
-`POST /portal/cuentas` — `nombre`, `apellidos`, `correo`, `contrasena` (mín. 8),
-`ciudadUbigeo` (obligatorio desde el 01/09/2026), `aceptaPlataforma` (obligatorio),
-`aceptaFuturosContactos` (opcional).
+`POST /portal/cuentas` — `nombre`, `apellidos`, `correo`, `telefono` (obligatorio desde el
+13/10/2026), `contrasena` (mín. 8), `ciudadUbigeo` (obligatorio desde el 01/09/2026),
+`aceptaPlataforma` (obligatorio), `aceptaFuturosContactos` (opcional).
+
+**El celular (13/10/2026).** «Celular (WhatsApp)» va justo después del correo, con el **+51
+dibujado dentro de la caja** (`prefijo` de `Campo`): nueve cifras que empiezan por 9, o el número
+entero con su prefijo si es de otro país («+34 612 345 678» o «0034…»). Espacios, guiones y
+paréntesis no cuentan. Si falta, «Escribe tu celular.»; si no vale, «Escribe un celular de 9
+cifras que empiece por 9, o el número completo con su prefijo», la misma frase que devuelve el
+backend con su 400. La regla vive en `src/dominio/celular.ts` y es copia de la del backend: si
+se separan, el formulario dejaría pasar un número que la API rechaza. El portal manda lo escrito
+y el backend lo guarda en E.164. Es el número desde el que escribirá al bot de WhatsApp (2.6b),
+y por eso lo dice la etiqueta.
 
 `aceptaPlataforma` se llamaba `aceptaProceso` hasta la V54 del backend. Cambió con el nombre
 lo que se firma: antes era el texto de una vacante —que habla de «esta vacante» cuando en el
@@ -201,9 +211,9 @@ ciudad»** —la frase exacta que pidió el cliente, sin punto final— sin perd
 escrito. Al elegir una ciudad el aviso se retira, y «Fuera del Perú» es una elección válida como
 cualquier provincia.
 
-**La marca es de todo el formulario, no solo de Ciudad (17/09/2026).** Llevan asterisco los siete
-controles que el esquema exige —nombre, apellidos, correo, contraseña, repetir contraseña, ciudad
-y el permiso de tratamiento de datos—; el permiso de avisos de futuras vacantes se queda sin él y
+**La marca es de todo el formulario, no solo de Ciudad (17/09/2026).** Llevan asterisco los ocho
+controles que el esquema exige —nombre, apellidos, correo, celular (desde el 13/10/2026),
+contraseña, repetir contraseña, ciudad y el permiso de tratamiento de datos—; el permiso de avisos de futuras vacantes se queda sin él y
 sigue diciendo «· opcional» con todas sus letras, porque «no tiene asterisco» no es algo que
 nadie note. Entre el resumen de errores y el primer campo va una línea que lo explica: «Los
 campos con \* son obligatorios.» Ahí y no más arriba: cuando hay algo que corregir, lo primero
@@ -343,8 +353,8 @@ refresca en el mismo momento, porque postular puede dejar ya un aviso.
 
 ### 2.6 Mis procesos — el centro del portal
 `GET /portal/postulaciones` → por postulación: `uuid`, `vacante`, `estado`, `estadoNombre`,
-`grupoPrioridad`, `diasSinCambio`, `creadoEn`, `instrumentoEtapaTecnica` y, desde el 01/10/2026,
-`pruebaSinCompletar`.
+`grupoPrioridad`, `diasSinCambio`, `creadoEn`, `instrumentoEtapaTecnica`, desde el 01/10/2026
+`pruebaSinCompletar` y, desde el 13/10/2026, `whatsapp` (ver 2.6b).
 
 ⚠️ **`pruebaSinCompletar` cambia lo que dice una fila en `PRUEBA_TURNO_CANDIDATO`.** Su prueba del
 editor venció con algo pendiente, el intento se cerró y la postulación sigue en ese estado hasta
@@ -374,6 +384,54 @@ abre ese proceso. Lo mismo los recordatorios de la evaluación sin entregar y de
 empezar. Si el equipo lo movió sin avisarle, no aparece nada. La campana se vuelve a pedir al
 abrirla y después de entregar la evaluación, postular o retirarse, sin esperar a recargar la
 página.
+
+**El recuadro de espera dice «No tienes que hacer nada.» una sola vez** (13/10/2026). En «Estamos
+revisando tu postulación» salía dos veces, porque el texto del momento ya la traía y el recuadro
+la añade: ahora la pone solo el recuadro.
+
+### 2.6b Recibe tus novedades por WhatsApp (13/10/2026, beta)
+
+Mientras espera, el recuadro de espera ofrece una tarjeta para que el bot de RENASER le cuente
+cómo va su proceso por WhatsApp. **El candidato escribe primero**: el botón abre el chat con un
+mensaje ya escrito, y el bot lo reconoce **solo por el número** —puede cambiar o borrar el
+mensaje—. Desde entonces, cuando le toque algo (la prueba disponible, elegir fecha, empezar su
+validación), también se lo dice el bot. El contrato con el bot es del backend: su
+`CONTRATO-NOVEDADES-POR-WHATSAPP.md`.
+
+**Dónde sale.** En los once momentos de espera, debajo de «No tienes que hacer nada.», en la
+tarjeta de «Mis procesos» y en el detalle —los dos usan el mismo recuadro—. **Cuando le toca algo
+no sale**: manda la acción. En «Mis procesos» va en el resumen de la espera y no se repite en «Ver
+el recorrido completo» (`sinWhatsapp` de `Seguimiento`). Solo si `whatsapp.disponible` llega
+verdadero: vacante de RENASER, beta encendida (`whatsapp_novedades_activo`, **apagada de
+salida**) y proceso sin terminar. Con la beta apagada no se ve en ningún sitio.
+
+| `whatsapp.estado` | Qué dice | Qué se puede hacer |
+|---|---|---|
+| `SIN_VINCULAR` y `REVOCADO` | «Recibe tus novedades por WhatsApp» · «Escríbenos desde tu celular **+51 987 654 321** y te contaremos cómo va tu proceso.» y, debajo, el consentimiento: «Al escribirnos aceptas recibir por WhatsApp las novedades de este proceso. Puedes dejarlo cuando quieras.» | «Escribir por WhatsApp» y «¿No es tu número? Cámbialo en Mi cuenta.» |
+| `SIN_CELULAR` (cuenta anterior al 13/10/2026) | «Déjanos tu celular y escríbenos desde él: te contaremos cómo va tu proceso.», el campo «Tu celular (WhatsApp)» con el +51 y el consentimiento | «Guardar y escribir por WhatsApp»: guarda el número en la cuenta y sigue igual. Un número que no vale se dice junto al campo |
+| `PENDIENTE` | «Aún no recibimos tu mensaje. Escríbenos desde el **+51 987 654 321**, el celular de tu cuenta.» | «Escribir por WhatsApp» y «¿Usas otro número? Cámbialo en Mi cuenta.» |
+| `ACTIVO` | El logotipo y «**Conectado por WhatsApp (+51 9•• ••• 321).** Escríbenos cuando quieras para saber cómo va tu proceso.» | «Dejar de recibir», un enlace subrayado en tinta, no un botón |
+| `SUPRIMIDO` | «Este número se dio de baja de nuestros mensajes» | Nada: escribió BAJA al bot y no se le vuelve a ofrecer con ese número |
+
+**Al pulsar** el botón se desactiva con «Preparando el enlace…», y `POST
+/portal/postulaciones/{uuid}/whatsapp` guarda su consentimiento, anuncia el número al bot y
+devuelve el enlace `wa.me/51928439930` con «Hola, soy Ana Pérez. Quiero saber cómo va mi
+postulación a Asistente Contable.». Se abre en una pestaña nueva —la app de WhatsApp en el
+teléfono, WhatsApp Web en el escritorio— y la tarjeta pasa a `PENDIENTE`. Si falla, «No pudimos
+preparar el enlace. Inténtalo de nuevo.».
+
+⚠️ **La pestaña se pide antes de esperar al servidor.** Pedida después, el navegador ya no la
+cuenta como parte del clic y la bloquea —Safari siempre— sin dar error. Se abre en blanco y se
+lleva al chat cuando llega el enlace; si el navegador no la dio, la tarjeta enseña «Tu navegador
+no abrió WhatsApp. Ábrelo desde aquí.». En la aplicación de Android no hay pestañas: se navega y
+el sistema se lo da a WhatsApp.
+
+**Al volver a la pestaña** con la tarjeta en `PENDIENTE`, se vuelve a pedir la lista: así sale
+«Conectado» sin recargar. «Dejar de recibir» (`DELETE` en la misma ruta) cierra ese vínculo y la
+tarjeta vuelve a ofrecer el botón. «Cámbialo en Mi cuenta» lleva a `/perfil#celular` (2.17).
+
+En el teléfono el botón ocupa todo el ancho. El verde del botón es la única excepción a la voz
+única del portal: ver [EL-MUNDO-VISUAL](EL-MUNDO-VISUAL.md).
 
 ### 2.7 Detalle de una postulación
 `GET /portal/postulaciones/{uuid}` → el resumen anterior más `historial`: una lista de
@@ -710,8 +768,12 @@ cada uno. Y enumera **las tres cosas que pasan sin que intervenga una persona**,
 versión anterior prometía lo contrario y era falso. **Desde la V72 (12/10/2026) dice que solo la
 tercera depende de una nota, y nunca para descartar**: el pase a la etapa siguiente se da si la
 nota del Perfil Integral llega a la mínima que fijó la empresa, y si no llega una persona revisa
-el caso. Es lo mismo que el texto `PLATAFORMA` 1.1 que firman las cuentas nuevas
-(`PoliticaPublica.tsx`).
+el caso. **Desde la V73 (13/10/2026) dice además** que el celular se pide al crear la cuenta, que
+se le escribe sobre sus procesos «por correo, en el portal y, si tú nos escribes primero, por
+WhatsApp desde el número de Renaser», y que quien escribe por WhatsApp pasa sus mensajes por **Meta
+Platforms**, que puede tratarlos fuera del Perú —una frase junto a la tabla de encargados, no una
+fila más—. Es lo mismo que el texto `PLATAFORMA` 1.2 que firman las cuentas nuevas, que conserva
+lo de la 1.1 (`PoliticaPublica.tsx`).
 
 ### 2.15 Mi perfil · las reseñas de empresas (28/09/2026)
 
@@ -792,6 +854,28 @@ de este cambio no lo manda, y por eso sus guardados no los borran.
 La **descarga de mis datos** los lleva. El panel los recibe con el perfil del candidato, pero
 ninguna pantalla del panel los pinta todavía. **El medidor «Tu perfil N %» no los cuenta**: ver
 [PENDIENTES](PENDIENTES.md).
+
+### 2.17 Mi cuenta · el celular (13/10/2026)
+
+«Mi cuenta» lleva a `/perfil`, y el celular va en un bloque propio, **«Tu cuenta»**, justo encima
+del pie de la página: es un dato de la cuenta y no del perfil que ven las empresas
+(`src/paginas/perfil/MiCelular.tsx`). Lo lee de `GET /portal/auth/sesion`, que trae `telefono`.
+
+| Caso | Qué se ve |
+|---|---|
+| Con celular | «Celular: **+51 987 654 321**» y «Cambiar» |
+| Sin celular (cuenta anterior al 13/10/2026) | «Celular: todavía no lo has dado» y «Añadir». No se le obliga a darlo |
+| Editando | El campo «Celular (WhatsApp)» con el +51 dibujado y el número de ahora sin él, con la misma regla y los mismos mensajes que el registro, «Guardar» y «Cancelar» |
+
+Debajo, siempre: «Es el número desde el que nos escribes por WhatsApp. Si lo cambias, dejas de
+recibir las novedades en el anterior.». **Es literal**: `PUT /portal/cuenta/telefono` cierra los
+vínculos de WhatsApp del número anterior y se lo cuenta al bot; las tarjetas de sus procesos
+se vuelven a pedir y ofrecen otra vez el botón con el número nuevo.
+
+**`/perfil#celular` llega con el campo ya abierto** y el foco dentro. Es a donde lleva «Cámbialo
+en Mi cuenta» de la tarjeta de WhatsApp (`rutas.celularDeLaCuenta`). El ancla no la puede
+resolver el armazón, porque al navegar el perfil todavía se está cargando: la resuelve el bloque
+en cuanto sabe el número, y «Cancelar» no lo vuelve a abrir.
 
 ---
 

@@ -1168,6 +1168,12 @@ pantalla. Sus dos textos de correo, `RECORDATORIO_EVALUACION` y `RECORDATORIO_PR
 editables como los demás textos de correo, que el panel no enseña: se leen con
 `scripts/textos-de-correo.py` del backend.
 
+**El interruptor de la beta de WhatsApp vive en la misma lista** (13/10/2026): en RENASER,
+`whatsapp_novedades_activo`, que nace apagado. Encendido, las vacantes de RENASER enseñan al
+candidato en espera la tarjeta «Recibe tus novedades por WhatsApp» ([02-QUE-VE-EL-CANDIDATO](02-QUE-VE-EL-CANDIDATO.md),
+2.6b). **No se enciende hasta que el número del bot pase a NUEVO en el CRM** (ver
+[PENDIENTES](PENDIENTES.md)). El panel no tiene otra pantalla de WhatsApp.
+
 Comprobarlo: `npx playwright test herramientas/e2e/54-la-prueba-al-instante.spec.ts
 herramientas/e2e/55-la-prueba-al-instante-qa.spec.ts`. ⚠️ **Escriben** en el clon y lo retiran
 al terminar (marca `QA-PE-0067`); la IA va apagada. Desde el 12/10/2026 comprueban que al

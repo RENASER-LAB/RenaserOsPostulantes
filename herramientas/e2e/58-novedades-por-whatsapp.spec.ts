@@ -18,6 +18,7 @@ import {
   celularUnico,
   comoElBot,
   loQueRecibioElBot,
+  novedadesDe,
   NUMERO_DEL_BOT,
   ponerLaBeta,
 } from './ayuda-whatsapp'
@@ -226,9 +227,17 @@ test.describe('Las novedades de la postulación por WhatsApp', () => {
     await expect(suya.getByText(/¿Usas otro número\?/)).toBeVisible()
     const anuncios = await loQueRecibioElBot(ana.celular.e164)
     expect(anuncios.map((l) => l.tipo)).toEqual(['ESPERA'])
-    const referencia = anuncios[0]!.cuerpo.postulacionRef!
+    const referencia = anuncios[0]!.cuerpo.postulacionRef
     expect(referencia).toMatch(/^pw_/)
     expect(referencia).not.toContain(uuid)
+    // El anuncio lleva el consentimiento que acaba de aceptar: tipo, versión, texto exacto y fecha.
+    expect(anuncios[0]!.cuerpo.consentimiento).toMatchObject({
+      tipo: 'WHATSAPP',
+      version: '1.0',
+      texto: 'Al escribirnos aceptas recibir por WhatsApp las novedades de este proceso. Puedes dejarlo cuando quieras.',
+    })
+    expect(Date.parse(anuncios[0]!.cuerpo.consentimiento!.aceptadoEn)).not.toBeNaN()
+    expect(Date.parse(anuncios[0]!.cuerpo.caducaEn!)).toBeGreaterThan(Date.now())
     const postulacion = postulacionPorUuid(uuid)
     expect(
       Number(uno(`select count(*) as n from consentimiento c join texto_consentimiento t on t.id = c.texto_consentimiento_id
@@ -249,14 +258,18 @@ test.describe('Las novedades de la postulación por WhatsApp', () => {
     })
     expect(vinculo.estado).toBe(200)
     expect(vinculo.cuerpo.nombre).toBe('Ana')
+    expect(vinculo.cuerpo.postulaciones).toEqual([{ postulacionRef: referencia }])
     expect(vinculo.cuerpo.novedades).toEqual([
       {
-        postulacionRef: referencia,
         vacante: `${MARCA} ${TITULO}`,
         titulo: 'Estamos calificando tus respuestas',
         texto: 'Se juntan tu currículum y tu evaluación en un solo perfil. Suele tardar poco.',
       },
     ])
+    // Las novedades, por POST y con las mismas palabras.
+    const novedades = await novedadesDe(ana.celular.e164)
+    expect(novedades.estado).toBe(200)
+    expect(novedades.cuerpo).toEqual({ novedades: vinculo.cuerpo.novedades })
     await page.reload()
     await expect(page.getByText('Estamos calificando tus respuestas').first()).toBeVisible()
     await expect(tarjeta(page).getByText(/Conectado por WhatsApp \(\+51 9•• ••• \d{3}\)\./)).toBeVisible()
@@ -335,7 +348,7 @@ test.describe('Las novedades de la postulación por WhatsApp', () => {
 
     await hastaQueLlegue(carla.celular.e164, 'REVOCACION')
     const revocacion = (await loQueRecibioElBot(carla.celular.e164)).find((l) => l.tipo === 'REVOCACION')
-    expect(revocacion?.cuerpo.motivo).toBe('CAMBIO_DE_CELULAR')
+    expect(revocacion?.cuerpo.motivo).toBe('CAMBIO_CELULAR')
 
     // En su proceso en espera, la tarjeta vuelve a ofrecer el botón con el número nuevo
     await page.goto('/procesos')

@@ -1,4 +1,3 @@
-import { createHmac } from 'node:crypto'
 import { expect, type Page } from '@playwright/test'
 import { API } from './ayuda'
 import { crearCuentaDeCandidato, test, tokenDelCandidato } from './ayuda-candidato'
@@ -19,9 +18,11 @@ import {
   borrarLoDeWhatsapp,
   celularUnico,
   comoElBot,
+  direccionDelBot,
+  firmaDelBot,
   loQueRecibioElBot,
+  novedadesDe,
   ponerLaBeta,
-  SECRETO_DEL_BOT,
 } from './ayuda-whatsapp'
 
 /**
@@ -29,17 +30,21 @@ import {
  * (`58-novedades-por-whatsapp.spec.ts`) no pisa.
  *
  *   - AC-04 · con la beta apagada no hay tarjeta, ni anuncio, ni vínculo.
- *   - AC-07 / AC-14 · un número no anunciado da 404 SIN_ANUNCIO; firma mala, marca vieja o
- *     cuerpo cambiado dan 401 y no vinculan.
- *   - AC-13 · la baja del bot deja «Este número se dio de baja de nuestros mensajes», sin
- *     botón, y el botón ya no anuncia ese número.
+ *   - AC-07 / AC-14 · un número no anunciado da 404 SIN_ANUNCIO; firma mala, marca vieja, de
+ *     otra ruta o con el cuerpo cambiado dan 401 {codigo: FIRMA_INVALIDA} y no vinculan.
+ *   - Contrato · sin teléfono o con uno que no vale, /vinculos, /novedades y /bajas dan
+ *     400 {codigo: VALIDACION}, nunca 500.
+ *   - AC-13 · la baja del bot (204, también repetida) deja «Este número se dio de baja de
+ *     nuestros mensajes», sin botón, y el botón ya no anuncia ese número.
  *   - AC-17 · «Estamos revisando tu postulación» dice «No tienes que hacer nada.» una vez.
  *   - Doble clic: un solo anuncio vivo y un solo consentimiento.
  *   - Dueño: la postulación de otra persona es 404.
  *   - Proceso terminado entre el botón y el mensaje: 409 PROCESO_TERMINADO y revocación.
- *   - Dos cuentas con el mismo celular: un mensaje vincula las dos; cambiar el celular de una
- *     no toca la otra.
- *   - Móvil: el botón ocupa el ancho de la tarjeta y no hay desplazamiento lateral.
+ *   - Dos cuentas con el mismo celular: /vinculos devuelve todas las activas del número,
+ *     también las ya vinculadas, y repetido da lo mismo; cambiar el celular de una no toca la
+ *     otra.
+ *   - Móvil: el botón ocupa el ancho de la tarjeta, el número no se parte (375 y 320 px) y no
+ *     hay desplazamiento lateral.
  *
  * El backend del clon corre con el bot falso (perfil local). ⚠️ **ESCRIBE** en el clon del
  * trabajo; `afterAll` lo retira (marca QA-WAQ-0073) y deja la beta como estaba.
@@ -78,17 +83,15 @@ async function postuladaYEsperando(cuenta: Cuenta, estado = 'PERFIL_CALIFICANDO'
 
 const tarjeta = (page: Page) => page.getByRole('region', { name: /novedades por WhatsApp/i }).first()
 
-/** La firma del bot con la marca que se quiera (para probar la ventana de cinco minutos). */
-function firmaCon(marca: number, cuerpo: string, secreto = SECRETO_DEL_BOT): Record<string, string> {
-  const m = String(marca)
-  return {
-    'X-Renaser-Marca': m,
-    'X-Renaser-Firma': createHmac('sha256', secreto).update(`${m}.${cuerpo}`).digest('hex'),
-  }
+const VINCULOS = direccionDelBot('/vinculos')
+
+/** La firma del bot para /vinculos con la marca que se quiera (para probar la ventana de cinco minutos). */
+function firmaCon(marca: number, cuerpo: string, secreto?: string): Record<string, string> {
+  return firmaDelBot(VINCULOS, cuerpo, { marca, secreto })
 }
 
 async function vinculosCon(cabeceras: Record<string, string>, cuerpo: string): Promise<number> {
-  const r = await fetch(`${API}/integraciones/whatsapp/vinculos`, {
+  const r = await fetch(VINCULOS, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...cabeceras },
     body: cuerpo,
@@ -185,7 +188,7 @@ test.describe('Novedades por WhatsApp · bordes de QA', () => {
     await expect(tarjeta(page).getByRole('button', { name: 'Escribir por WhatsApp' })).toBeVisible()
   })
 
-  test('AC-07 / AC-14 · sin anuncio es 404; firma mala, marca vieja o cuerpo cambiado son 401 y no vinculan', async () => {
+  test('AC-07 / AC-14 · sin anuncio es 404; firma mala, marca vieja, de otra ruta o cuerpo cambiado son 401 y no vinculan', async () => {
     const gabi = await cuentaCon('Gabriela')
     const uuid = await postuladaYEsperando(gabi)
     const sinAnuncio = await comoElBot('/vinculos', 'POST', { telefono: gabi.celular.e164, wamid: 'w-gabi-0', texto: 'hola' })
@@ -202,12 +205,32 @@ test.describe('Novedades por WhatsApp · bordes de QA', () => {
     expect(await vinculosCon({ ...firmaCon(ahora, cuerpo), 'X-Renaser-Firma': '0'.repeat(64) }, cuerpo), 'firma mala').toBe(401)
     const otro = JSON.stringify({ telefono: gabi.celular.e164, wamid: 'w-gabi-2', texto: 'cambiado' })
     expect(await vinculosCon(firmaCon(ahora, cuerpo), otro), 'cuerpo cambiado tras firmar').toBe(401)
+    expect(
+      await vinculosCon(firmaDelBot(direccionDelBot('/bajas'), cuerpo, { marca: ahora }), cuerpo),
+      'firma de otra ruta',
+    ).toBe(401)
     expect(await vinculosCon({ Authorization: `Bearer ${gabi.token}` }, cuerpo), 'token de candidato').toBe(401)
+    // El 401 lleva el formato de los errores de EX hacia el bot: {codigo, texto}.
+    const sinFirma = await comoElBot('/vinculos', 'POST', JSON.parse(cuerpo), { sinFirma: true })
+    expect(sinFirma.estado).toBe(401)
+    expect(sinFirma.cuerpo).toMatchObject({ codigo: 'FIRMA_INVALIDA', texto: expect.any(String) })
     // Nada de eso vinculó: sigue pendiente.
     const lista = await exigir<any[]>('/portal/postulaciones', gabi.token)
     expect(lista.find((p) => p.uuid === uuid)?.whatsapp?.estado).toBe('PENDIENTE')
     // La buena sí.
     expect(await vinculosCon(firmaCon(ahora, cuerpo), cuerpo)).toBe(200)
+  })
+
+  test('contrato · sin teléfono o con uno que no vale es 400 VALIDACION en /vinculos, /novedades y /bajas', async () => {
+    // Es definitivo para el bot (un 4xx que no es 401): tiene que ser un 400 con {codigo, texto},
+    // nunca un 500, que el bot reintentaría.
+    for (const ruta of ['/vinculos', '/novedades', '/bajas']) {
+      for (const cuerpo of [{}, { telefono: '' }, { telefono: 'no-es-un-numero' }]) {
+        const r = await comoElBot(ruta, 'POST', cuerpo)
+        expect(r.estado, `${ruta} ${JSON.stringify(cuerpo)}`).toBe(400)
+        expect(r.cuerpo, `${ruta} ${JSON.stringify(cuerpo)}`).toMatchObject({ codigo: 'VALIDACION', texto: expect.any(String) })
+      }
+    }
   })
 
   test('AC-13 · la baja del bot deja el número suprimido en el portal, sin botón', async ({ page }) => {
@@ -216,12 +239,12 @@ test.describe('Novedades por WhatsApp · bordes de QA', () => {
     await exigir(`/portal/postulaciones/${uuid}/whatsapp`, hugo.token, 'POST')
     expect((await comoElBot('/vinculos', 'POST', { telefono: hugo.celular.e164, wamid: 'w-hugo', texto: 'hola' })).estado).toBe(200)
 
+    // 204, también la segunda vez, cuando ya no queda nada que desvincular.
     const baja = await comoElBot('/bajas', 'POST', { telefono: hugo.celular.e164.replace('+', '') })
-    expect(baja.estado).toBe(200)
-    expect(baja.cuerpo.desvinculadas).toBe(1)
+    expect(baja.estado).toBe(204)
+    expect(vivos(postulacionPorUuid(uuid))).toBe(0)
     const otraVez = await comoElBot('/bajas', 'POST', { telefono: hugo.celular.e164 })
-    expect(otraVez.estado).toBe(200)
-    expect(otraVez.cuerpo.desvinculadas).toBe(0)
+    expect(otraVez.estado).toBe(204)
 
     await entrarAlPortalCon(page, hugo.token)
     for (const ruta of ['/procesos', `/procesos/${uuid}`]) {
@@ -232,7 +255,7 @@ test.describe('Novedades por WhatsApp · bordes de QA', () => {
     const boton = await pedir(`/portal/postulaciones/${uuid}/whatsapp`, hugo.token, 'POST')
     expect(boton.estado).toBe(409)
     expect(boton.cuerpo.codigo).toBe('SUPRIMIDO')
-    expect((await comoElBot(`/novedades?telefono=${encodeURIComponent(hugo.celular.e164)}`, 'GET')).cuerpo.novedades).toEqual([])
+    expect((await novedadesDe(hugo.celular.e164)).cuerpo.novedades).toEqual([])
     expect((await loQueRecibioElBot(hugo.celular.e164)).filter((l) => l.tipo === 'ESPERA')).toHaveLength(1)
   })
 
@@ -308,19 +331,33 @@ test.describe('Novedades por WhatsApp · bordes de QA', () => {
     expect((await loQueRecibioElBot(mia.celular.e164)).filter((l) => l.tipo === 'AVISO')).toEqual([])
   })
 
-  test('dos cuentas con el mismo celular: un mensaje vincula las dos; cambiar el de una no toca la otra', async () => {
+  test('dos cuentas con el mismo celular: /vinculos devuelve también lo ya vinculado; cambiar el de una no toca la otra', async () => {
     const compartido = celularUnico()
     const nora = await cuentaCon('Nora', compartido)
     const omar = await cuentaCon('Omar', compartido)
     const deNora = await postuladaYEsperando(nora)
     const deOmar = await postuladaYEsperando(omar)
-    await exigir(`/portal/postulaciones/${deNora}/whatsapp`, nora.token, 'POST')
-    await exigir(`/portal/postulaciones/${deOmar}/whatsapp`, omar.token, 'POST')
 
-    const v = await comoElBot('/vinculos', 'POST', { telefono: compartido.e164, wamid: 'w-familia', texto: 'hola' })
+    // Omar pulsa y el número escribe primero, con el texto vacío (un adjunto o un Flow).
+    await exigir(`/portal/postulaciones/${deOmar}/whatsapp`, omar.token, 'POST')
+    const primero = await comoElBot('/vinculos', 'POST', { telefono: compartido.e164, wamid: 'w-familia-1', texto: '' })
+    expect(primero.estado).toBe(200)
+    expect(primero.cuerpo.postulaciones).toHaveLength(1)
+    const refDeOmar: string = primero.cuerpo.postulaciones[0].postulacionRef
+
+    // Después pulsa Nora y el número vuelve a escribir: vincula lo de Nora y devuelve todas las
+    // activas de ese número, también la de Omar, que ya lo estaba (contrato idempotente).
+    await exigir(`/portal/postulaciones/${deNora}/whatsapp`, nora.token, 'POST')
+    const v = await comoElBot('/vinculos', 'POST', { telefono: compartido.e164, wamid: 'w-familia-2', texto: 'hola' })
     expect(v.estado).toBe(200)
     expect(v.cuerpo.postulaciones).toHaveLength(2)
+    expect(v.cuerpo.postulaciones.map((p: { postulacionRef: string }) => p.postulacionRef)).toContain(refDeOmar)
     expect(v.cuerpo.novedades).toHaveLength(2)
+    // Repetida, devuelve lo mismo; y /novedades cuenta esos mismos procesos.
+    const repetida = await comoElBot('/vinculos', 'POST', { telefono: compartido.e164, wamid: 'w-familia-2', texto: 'hola' })
+    expect(repetida.estado).toBe(200)
+    expect(repetida.cuerpo).toEqual(v.cuerpo)
+    expect((await novedadesDe(compartido.e164)).cuerpo).toEqual({ novedades: v.cuerpo.novedades })
 
     const nuevo = celularUnico()
     celulares.push(nuevo.e164)
@@ -329,12 +366,16 @@ test.describe('Novedades por WhatsApp · bordes de QA', () => {
       (await exigir<any[]>('/portal/postulaciones', c.token)).find((p) => p.uuid === uuid)?.whatsapp?.estado
     expect(await estadoDe(nora, deNora)).toBe('SIN_VINCULAR')
     expect(await estadoDe(omar, deOmar)).toBe('ACTIVO')
-    const novedades = await comoElBot(`/novedades?telefono=${encodeURIComponent(compartido.e164)}`, 'GET')
+    const novedades = await novedadesDe(compartido.e164)
     expect(novedades.cuerpo.novedades).toHaveLength(1)
-    expect(novedades.cuerpo.nombre).toBe('Omar')
+    // /vinculos es idempotente: repetido, devuelve lo que queda vinculado a ese número (lo de Omar).
+    const queda = await comoElBot('/vinculos', 'POST', { telefono: compartido.e164, wamid: 'w-familia', texto: 'hola' })
+    expect(queda.estado).toBe(200)
+    expect(queda.cuerpo.postulaciones).toHaveLength(1)
+    expect(queda.cuerpo.nombre).toBe('Omar')
   })
 
-  test('móvil · el botón ocupa el ancho de la tarjeta y la página no se desplaza a lo ancho', async ({ page }) => {
+  test('móvil · el botón ocupa el ancho de la tarjeta, el número no se parte y la página no se desplaza a lo ancho', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 })
     const pia = await cuentaCon('Pía')
     await postuladaYEsperando(pia)
@@ -348,7 +389,14 @@ test.describe('Novedades por WhatsApp · bordes de QA', () => {
     // La tarjeta tiene su relleno a cada lado: el botón llena todo lo que queda.
     expect(ancho.width).toBeGreaterThan(caja.width * 0.8)
     expect(ancho.height).toBeGreaterThanOrEqual(44)
-    const [desplazable, ventana] = await page.evaluate(() => [document.documentElement.scrollWidth, window.innerWidth])
-    expect(desplazable).toBeLessThanOrEqual(ventana)
+    // El número va entero en una línea («+51 900…» no se separa del resto), también a 320 px.
+    const numero = suya.getByText(pia.celular.mostrado, { exact: true })
+    for (const anchoDeLaVentana of [375, 320]) {
+      await page.setViewportSize({ width: anchoDeLaVentana, height: 812 })
+      await expect(numero).toBeVisible()
+      expect(await numero.evaluate((e) => e.getClientRects().length), `líneas del número a ${anchoDeLaVentana} px`).toBe(1)
+      const [desplazable, ventana] = await page.evaluate(() => [document.documentElement.scrollWidth, window.innerWidth])
+      expect(desplazable, `desplazamiento lateral a ${anchoDeLaVentana} px`).toBeLessThanOrEqual(ventana)
+    }
   })
 })

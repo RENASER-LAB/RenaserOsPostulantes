@@ -32,7 +32,7 @@ const TEXTO_POR_VACANTE =
   'Acepto que la empresa que publica la vacante trate mis datos. Ella decide.'
 
 const VIGENTES = [
-  { tipo: 'PLATAFORMA', version: '1.1', texto: TEXTO_PUBLICADO },
+  { tipo: 'PLATAFORMA', version: '1.2', texto: TEXTO_PUBLICADO },
   { tipo: 'PROCESO', version: '1.1', texto: TEXTO_POR_VACANTE },
   { tipo: 'FUTUROS_CONTACTOS', version: '1.1', texto: 'El opcional, tal cual.' },
 ]
@@ -135,9 +135,10 @@ describe('la política de privacidad pública', () => {
   })
 
   it('dice que el pase a la etapa siguiente depende de la nota mínima, y que nunca descarta (V72, AC-12)', () => {
-    // Lo mismo que el texto PLATAFORMA 1.1 que firman las cuentas nuevas. La versión
-    // anterior decía que ninguna de las tres dependía de una nota, y desde la V72 la
-    // tercera sí: el pase solo se da si la nota del Perfil Integral llega a la mínima.
+    // Lo mismo que el texto PLATAFORMA 1.2 que firman las cuentas nuevas (lo trajo la 1.1
+    // y la 1.2 lo conserva). La 1.0 decía que ninguna de las tres dependía de una nota, y
+    // desde la V72 la tercera sí: el pase solo se da si la nota del Perfil Integral llega a
+    // la mínima.
     montar()
 
     expect(screen.queryByText(/ninguna depende de una nota/i)).toBeNull()

@@ -44,7 +44,7 @@ gris de Tailwind v4 con índigo, Geist, el radio de 8 px y la cabecera en píldo
 - **Plano por tono.** Una superficie se separa de la página porque es más clara que ella, no
   porque flote. En reposo casi nada lleva sombra, ni siquiera la cabecera.
 - **Una sola voz.** Si algo es índigo, se pulsa, es donde estás, o te toca. Nada decorativo va
-  en índigo.
+  en índigo. **Con una excepción, el verde de WhatsApp** (13/10/2026, ver abajo).
 - **El estado se lee en la forma antes que en el color** —franja maciza, borde de 2 px,
   filete—, porque quien no distingue colores lee el mismo recorrido. **Es la regla que sostiene
   el sistema** desde que el turno perdió su color propio (ver abajo).
@@ -63,6 +63,21 @@ un segundo acento, así que el turno se pinta del mismo índigo que la acción, 
 forma —el borde de 2 px del panel que reclama—. **Se decidió dejarlo así** el 25/09/2026. El
 token `--activo-regla` conserva su nombre para que, si algún día vuelve un color propio, se
 separe en un solo sitio.
+
+### La excepción verde: «Escribir por WhatsApp» (13/10/2026)
+
+**El único botón del portal que no es índigo ni tinta**, decidido por el usuario el 12/10/2026.
+Va relleno del verde de WhatsApp, `--whatsapp` `#25D366` (`--whatsapp-pulsado` `#1FBF5A` al pasar
+por encima), con **la tinta oscura encima y no blanca** —el blanco sobre ese verde da 1,98:1 y no
+llega al mínimo; `--tinta` da 8,3:1— y el logotipo de WhatsApp delante, en el mismo color del
+texto (`IconoWhatsapp`). El verde dice «WhatsApp» y nada más: no es el verde de «hecho» (`--bien`)
+y no le compite al índigo de lo que te toca, porque **la tarjeta solo sale cuando al candidato no
+le toca nada**. Ningún otro elemento lo usa, tampoco el estado «Conectado», que va en tinta.
+
+La tarjeta que lo lleva es **`.ofrecimiento`**: nube blanca con filete gris y sin sombra, sobre el
+gris hundido del panel de espera. Se separa por superficie, no por relieve, y no reclama —ofrecer
+no es pedir—. La forma de los dos vive en `piezas.module.css`; el porqué del token, en
+`mundo.css`. ⚠️ **`DESIGN.md` todavía no la describe**: ver [PENDIENTES](PENDIENTES.md).
 
 ### La tipografía
 
@@ -115,13 +130,14 @@ cómo se ve: eso es DESIGN.md.
 |---|---|
 | `src/estilos/mundo.css` | **La hoja global del mundo.** Los tokens, las fuentes y los estilos base. Todo lo demás son CSS Modules, salvo la prueba de shadcn de la fila siguiente |
 | `src/estilos/tailwind.css` y `src/ui/shadcn/` | **La prueba piloto de shadcn/ui, solo en `/vacantes` (01/10/2026).** Tailwind v4 **sin preflight** y con las utilidades en `!important`, para no tocar las otras pantallas; su tema son los tokens de `mundo.css`. Los componentes de shadcn viven en `src/ui/shadcn/` (se añaden con `npx shadcn add`, y la CLI mete por error un paquete `cn`: quitarlo). Sin lucide: la casilla y el radio usan los iconos de la casa |
-| `src/estilos/piezas.module.css` | **La única especificación de botón del portal**, más los tres paneles (`.turno`, `.panelDeEspera`, `.indispensable`), la cabecera de sección y el plegable. Se trae con `composes` desde la hoja de cada pantalla. Si hace falta una forma que no está ahí, se añade ahí — ninguna pantalla se dibuja la suya |
+| `src/estilos/piezas.module.css` | **La única especificación de botón del portal**, más los tres paneles (`.turno`, `.panelDeEspera`, `.indispensable`), la cabecera de sección y el plegable. Desde el 13/10/2026, también `.ofrecimiento` (lo que se ofrece mientras se espera) y `.whatsapp` (el botón verde, misma silueta y altura que `.acentoMenor`). Se trae con `composes` desde la hoja de cada pantalla. Si hace falta una forma que no está ahí, se añade ahí — ninguna pantalla se dibuja la suya |
 | `src/estilos/pagina.module.css` | **El esqueleto de una pantalla**: el carril, el encabezado, el reparto en columnas, el bloque y el hueco declarado |
 | `src/app/Armazon.tsx` | La cabecera en píldora, los dos pies —en columnas y corto—, y **el cielo de la portada**, que vive aquí porque tiene que pasar por detrás de la cabecera. También decide qué pantallas son una tarjeta centrada en la ventana (`CENTRADAS`: `/ingresar`, `/clave`, `/restablecer` y sus tres del panel), cuáles llevan el pie corto y cómo sube «Inicio» |
 | `src/paginas/vacantes/` | La portada —cielo, ventana de cristal, cinta, las tres vacantes más recientes, «Por qué este proceso es distinto», preguntas—, **`/vacantes`**, la búsqueda con sus filtros (`BuscarVacantes`, llegó de main el 25/09/2026 y se pasó a este mundo al juntarla), la tarjeta de pie de la portada (`Tarjeta`), la tarjeta «Expresiva» y el panel de `/vacantes` con shadcn (`FilaDeVacante`, `PanelDeVacante`; la columna de filtros vive en `BuscarVacantes`) y la ficha. **Públicas** |
 | `src/paginas/cuenta/` | Entrar, crear cuenta, canjear el enlace del correo y la contraseña olvidada. Comparten `Cuenta.module.css` |
 | `src/paginas/postular/` | Postular. **Aquí vive el único descarte automático del sistema** |
-| `src/paginas/procesos/` | «Mis procesos», el detalle de una postulación y la línea de hitos |
+| `src/paginas/procesos/` | «Mis procesos», el detalle de una postulación y la línea de hitos. `TarjetaWhatsapp` (13/10/2026) es la tarjeta de WhatsApp del recuadro de espera, la misma en los dos sitios |
+| `src/paginas/perfil/` | «Mi perfil», con sus secciones. `MiCelular` (13/10/2026) es el bloque «Tu cuenta» con el celular, encima del pie; su ancla `#celular` llega con el campo abierto |
 | `src/paginas/evaluacion/` | La evaluación y los ocho formatos del banco v3, y `useColaDeRespuestas`, la cola de guardado que comparte con la prueba del editor |
 | `src/paginas/unaPorPantalla/` | **El marco de una pregunta por pantalla** (09/10/2026), el mismo para la evaluación y la prueba del editor. `useRecorrido` lleva el paso, los saltos con «Volver a la N», la posición en `sessionStorage` y `useUnaSolaPulsacion`; `Marco` pinta la barra fija, el mapa con su leyenda (y su hoja en el teléfono), la tarjeta de la pregunta y el aviso de lo que falta para entregar. **Nada se mueve dentro** (la regla del reloj), y el mapa se aparta a propósito de la regla de la voz única |
 | `src/paginas/prueba/` | La prueba del puesto, en sus dos formas. `Prueba.tsx` decide y pinta la de plantilla en curso; `PruebaDelEditor.tsx`, la del editor en curso, sobre el marco; `FichaPrevia.tsx` es la pantalla previa de las dos, con sus textos en `loQueDiceLaPrevia.ts`; `ElCaso.tsx`, el lateral del caso y su vista de lectura; `Entregable.tsx`, subir un archivo o un enlace |
@@ -136,7 +152,7 @@ cómo se ve: eso es DESIGN.md.
 | `src/ui/movimiento.tsx` | Las piezas de movimiento, documentadas en DESIGN.md |
 | `src/ui/Modal.tsx` | El aviso compartido: entregas y confirmaciones. Con `aPruebaDeDobleClic` (10/10/2026) ignora el puntero que sigue a la pulsación que lo abrió; ver [REGLAS-DEL-CODIGO.md](REGLAS-DEL-CODIGO.md) |
 | `src/ui/TextoPlano.tsx` | Texto libre con sus párrafos y sus direcciones convertidas en enlaces. `enlacesTabulables={false}` saca los enlaces del Tab (el extracto recortado del caso) y `listas` (09/10/2026, en el caso, los materiales y las herramientas de la prueba) pinta como `ul` las líneas que empiezan por «- », «• » o «* », y como `ol` las que empiezan por «1. », «2. »… |
-| `src/ui/campos/` | Campo, Seleccion, AreaTexto y Consentimiento: etiqueta y error atados al campo. La marca de obligatorio está en [REGLAS-DEL-CODIGO.md](REGLAS-DEL-CODIGO.md) |
+| `src/ui/campos/` | Campo, Seleccion, AreaTexto y Consentimiento: etiqueta y error atados al campo. La marca de obligatorio está en [REGLAS-DEL-CODIGO.md](REGLAS-DEL-CODIGO.md). `Campo` admite **`prefijo`** (13/10/2026): un texto que no se escribe, como el «+51» del celular, dibujado dentro de la caja a la izquierda y en el gris de la ayuda; el lector de pantalla lo oye como parte de la descripción del campo («Con el prefijo +51 delante.») |
 | `public/tipografia/` | Geist (y Figtree, por si se vuelve) |
 
 `src/dominio/estados.ts` lleva cuatro funciones que usa el recorrido:

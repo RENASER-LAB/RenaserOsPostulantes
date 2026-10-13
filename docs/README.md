@@ -12,7 +12,7 @@ en los temáticos, y lo que se hizo un día concreto, en las dos bitácoras.
 | Tocar el panel del equipo: entrar, el menú lateral, el ranking por etapas, qué exige publicar una vacante, corregirla con el lápiz, archivarla o eliminarla, el plazo de su prueba, las reseñas de empresas y su moderación, los colaboradores, las sedes y los cargos, y contratar; de dónde salen las preguntas de una vacante, su editor y su nota en la ficha; la prueba técnica de cada vacante nueva, su editor (cabecera fija, criterios plegables, archivos por pregunta, configuración con la fecha límite y la guía «!»), su ficha, el ranking por id de criterio y «No completaron la prueba» | [PANEL.md](PANEL.md) |
 | Escribir código: los comportamientos que no se reescriben, las trampas que ya costaron un fallo, cómo se nombra aquí | [REGLAS-DEL-CODIGO.md](REGLAS-DEL-CODIGO.md) |
 | Levantarlo, apuntarlo a un backend, saber a qué base escribes y correr los e2e sobre el snapshot de QA | [TRABAJAR-EN-LOCAL.md](TRABAJAR-EN-LOCAL.md) |
-| Tocar diseño: el mundo visual, sus cuatro reglas de forma y dónde está cada carpeta de `src/` | [EL-MUNDO-VISUAL.md](EL-MUNDO-VISUAL.md) |
+| Tocar diseño: el mundo visual, sus reglas de forma —y la excepción verde de WhatsApp— y dónde está cada carpeta de `src/` | [EL-MUNDO-VISUAL.md](EL-MUNDO-VISUAL.md) |
 | Saber qué falta y qué está a medias | [PENDIENTES.md](PENDIENTES.md), [03-ESTADO-DEL-REDISENO.md](03-ESTADO-DEL-REDISENO.md) |
 | Saber por qué algo quedó así, o qué se probó al construirlo | [BITACORA-2026-10.md](BITACORA-2026-10.md), [BITACORA-2026-09.md](BITACORA-2026-09.md), [BITACORA-2026-08.md](BITACORA-2026-08.md) |
 
@@ -48,3 +48,4 @@ Las secciones llevan título y fecha; busca por el título.
 | Corregir una vacante con el lápiz, y el sueldo sin correo | [09](BITACORA-2026-09.md) | 19-20/09 |
 | Las reseñas de empresas: perfil, ficha, columna y moderación | [09](BITACORA-2026-09.md) | 28/09 |
 | La gestión de personas: el menú lateral, los colaboradores y contratar | [09](BITACORA-2026-09.md) | 29/09 |
+| El celular en la cuenta y las novedades por WhatsApp: la tarjeta de la espera, «Mi cuenta» y el verde de WhatsApp | [10](BITACORA-2026-10.md) | 12-13/10 |

@@ -6,7 +6,9 @@
  * verdad. Desde aquí se hace de bot:
  *
  *   - se leen sus apuntes en `GET /integraciones/whatsapp/falso/registro?telefono=…`;
- *   - se le llama a EX como lo haría el bot (`/vinculos`, `/bajas`), con la firma HMAC.
+ *   - se le llama a EX como lo haría el bot (`/vinculos`, `/novedades`, `/bajas`), con la firma
+ *     HMAC de `marca.ruta.cuerpo`, como dice el contrato (docs/CONTRATO-NOVEDADES-POR-WHATSAPP.md
+ *     del backend).
  *
  * El secreto es el de desarrollo del perfil local (se puede pisar con
  * `E2E_WHATSAPP_SECRETO_DEL_BOT` si el backend arrancó con otro). No abre nada fuera de la
@@ -41,11 +43,25 @@ export function celularUnico(): { escrito: string; e164: string; mostrado: strin
   }
 }
 
-/** Las dos cabeceras de la firma: HMAC-SHA256 de «marca.cuerpo». */
-function firmado(cuerpo: string): Record<string, string> {
-  const marca = String(Math.floor(Date.now() / 1000))
-  const firma = createHmac('sha256', SECRETO_DEL_BOT).update(`${marca}.${cuerpo}`).digest('hex')
-  return { 'X-Renaser-Marca': marca, 'X-Renaser-Firma': firma }
+/** La dirección completa de una ruta de la integración: `/vinculos` → `…/api/v1/integraciones/whatsapp/vinculos`. */
+export function direccionDelBot(ruta: string): string {
+  return `${API}/integraciones/whatsapp${ruta}`
+}
+
+/**
+ * Las dos cabeceras de la firma: HMAC-SHA256 de «marca.ruta.cuerpo», donde la ruta es el path
+ * completo de la dirección, sin host ni query. Con la marca y el secreto que se quieran, para
+ * probar la ventana de cinco minutos o un secreto que no es.
+ */
+export function firmaDelBot(
+  direccion: string,
+  cuerpo: string,
+  { marca = Math.floor(Date.now() / 1000), secreto = SECRETO_DEL_BOT }: { marca?: number; secreto?: string } = {},
+): Record<string, string> {
+  const m = String(marca)
+  const ruta = new URL(direccion).pathname
+  const firma = createHmac('sha256', secreto).update(`${m}.${ruta}.${cuerpo}`).digest('hex')
+  return { 'X-Renaser-Marca': m, 'X-Renaser-Firma': firma }
 }
 
 export interface RespuestaDelBot<T = any> {
@@ -61,11 +77,12 @@ export async function comoElBot<T = any>(
   { sinFirma = false }: { sinFirma?: boolean } = {},
 ): Promise<RespuestaDelBot<T>> {
   const texto = cuerpo === undefined ? '' : JSON.stringify(cuerpo)
-  const r = await fetch(`${API}/integraciones/whatsapp${ruta}`, {
+  const direccion = direccionDelBot(ruta)
+  const r = await fetch(direccion, {
     method: metodo,
     headers: {
       'Content-Type': 'application/json',
-      ...(sinFirma ? {} : firmado(texto)),
+      ...(sinFirma ? {} : firmaDelBot(direccion, texto)),
     },
     body: metodo === 'GET' ? undefined : texto,
   })
@@ -79,10 +96,34 @@ export async function comoElBot<T = any>(
   return { estado: r.status, cuerpo: json as T }
 }
 
+/** Lo que EX le manda al bot, tal como lo apunta el bot falso. */
+export interface CuerpoAlBot {
+  telefono: string
+  postulacionRef: string
+  /** Esperas: hasta cuándo vale el anuncio, y el consentimiento que acaba de aceptar. */
+  caducaEn?: string
+  consentimiento?: { tipo: string; version: string; texto: string; aceptadoEn: string }
+  /** Avisos. */
+  avisoId?: string
+  tipo?: string
+  nombre?: string
+  vacante?: string
+  texto?: string
+  /** Revocaciones: DEJAR_DE_RECIBIR, CAMBIO_CELULAR, PROCESO_TERMINADO o BORRADO_DATOS. */
+  motivo?: string
+}
+
 export interface Llamada {
   tipo: 'ESPERA' | 'AVISO' | 'REVOCACION'
   recibidaEn: string
-  cuerpo: Record<string, string>
+  cuerpo: CuerpoAlBot
+}
+
+/** Las novedades de un número, como las pide el bot: POST con el teléfono en el cuerpo. */
+export async function novedadesDe(
+  telefono: string,
+): Promise<RespuestaDelBot<{ novedades: { vacante: string; titulo: string; texto: string }[] }>> {
+  return comoElBot('/novedades', 'POST', { telefono })
 }
 
 /** Lo que EX le mandó al bot falso para ese número, en orden. */
