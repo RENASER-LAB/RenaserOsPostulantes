@@ -80,8 +80,17 @@ export interface VacantePanel {
   instrumentoEtapaTecnica: InstrumentoTecnico
   /** Minutos del candidato en esa etapa. `null` = los que traiga el instrumento elegido. */
   minutosEtapaTecnica: number | null
-  /** Encendido, la postulacion se califica y avanza sola hasta la prueba (V53). */
+  /**
+   * Encendido, la postulacion se califica sola y pasa sola a la prueba si su nota del
+   * Perfil Integral llega a `notaMinima` (V53, V72).
+   */
   calificacionAutomatica: boolean
+  /**
+   * La nota del Perfil Integral que hace falta para pasar sola a la prueba con el
+   * interruptor encendido (V72). Entera, de 0 a 100; 60 por defecto. Quien no llega
+   * espera a que alguien del equipo decida: nunca se descarta por nota.
+   */
+  notaMinima: number
   /** Lo que esta vacante dice que paga (V54). */
   remuneracion: RemuneracionDeLaVacante
   /** Cuando se toco el sueldo por ultima vez. `null` = nunca desde que se creo. */
@@ -132,6 +141,17 @@ export interface VacantePanel {
    * respuesta general no podria contestarlo.
    */
   puedeEditar: boolean
+  /**
+   * Si quien mira puede configurar el pase automatico de ESTA vacante: el
+   * interruptor «Calificar y avanzar sola» y su nota minima (V72).
+   *
+   * ⚠️ **No es `puedeEditar`.** Sale del permiso de esos dos endpoints
+   * (`elegir_plantilla_evaluacion`), no de `editar_vacante`: RESPONSABLE_AREA no
+   * edita la vacante y si fija su minima. Falso tambien con la vacante cerrada o
+   * archivada, que la API rechaza. Con falso, la tuerca enseña la minima
+   * desactivada.
+   */
+  puedeConfigurarElPase: boolean
   /**
    * Si quien mira puede archivar ESTA vacante.
    *
@@ -1102,6 +1122,14 @@ export interface FichaPostulacion {
   puedeDarDeAlta?: boolean
   /** Ya tiene ficha y quien mira puede abrirla. */
   puedeVerColaborador?: boolean
+  /**
+   * Por qué espera en «por confirmar» en vez de haber pasado sola a la prueba, cuando
+   * la razón es su nota (V72): «Nota 58,20: no llega a la mínima de la vacante (60)» o
+   * «Sin nota completa: revisa el Perfil Integral». Lo escribe el servidor con la misma
+   * regla que usa el pase; `null` en cualquier otro caso. Opcional porque una ficha de
+   * antes no lo traía.
+   */
+  porQueEsperaElPase?: string | null
 }
 
 export interface PasoHistorialPanel {

@@ -327,8 +327,8 @@ test.describe.serial('El recorrido entero de una vacante', () => {
   /**
    * El interruptor del recorrido automático.
    *
-   * Encendido, quien postule se califica solo y llega hasta la prueba del puesto
-   * sin que nadie confirme nada. Aquí solo se comprueba que el interruptor existe,
+   * Encendido, quien postule se califica solo y, si llega a la nota mínima,
+   * pasa a la prueba del puesto sin que nadie confirme nada (V72). Aquí solo se comprueba que el interruptor existe,
    * que dice en palabras llanas qué implica y que el backend lo guarda: el
    * recorrido entero lo prueba `FlujoCalificacionIaIT` en el backend, que puede
    * esperar a la IA sin gastar dinero de verdad.
@@ -350,7 +350,9 @@ test.describe.serial('El recorrido entero de una vacante', () => {
     await interruptor.click()
     await expect(interruptor).toBeChecked({ timeout: 15_000 })
     // Y lo que promete se dice sin nombrar modelos ni colas.
-    await expect(page.locator('main')).toContainText(/se califica sola y llega hasta la prueba/i)
+    await expect(page.locator('main')).toContainText(
+      /se califica sola y, si llega a la nota mínima, pasa a la prueba/i,
+    )
 
     // Se deja como estaba: la siguiente prueba cierra esta vacante.
     await interruptor.click()

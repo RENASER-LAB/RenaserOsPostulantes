@@ -27,12 +27,13 @@ import {
 } from './ayuda-prueba-propia'
 
 /**
- * QA de la prueba al instante y de la campana en cada etapa (V70): lo que el 54 no
- * recorre. Postular sin banco desde el formulario del portal y caer en la portada (AC-2),
- * el cuestionario técnico (AC-3), el pase automático sin prueba montada (AC-7), el
- * requisito incumplido (AC-9), el correo con su plazo (AC-20/21), la campana de los
- * cierres, del retiro, del «sin avisar» y de la vacante eliminada (AC-10/11), la nota
- * «en camino» del panel (AC-5) y dos entregas a la vez (casos límite de la spec).
+ * QA de la campana en cada etapa (V70) con la regla de la V72 —**ya no hay prueba al
+ * instante**: el pase espera la nota del Perfil Integral y exige la mínima—. Lo que el 54
+ * no recorre: postular sin banco desde el formulario del portal y quedarse esperando la nota
+ * del CV, el cuestionario técnico que tampoco se abre al postular, el pase automático sin
+ * prueba montada (AC-7), el requisito incumplido (AC-9), el correo con su plazo en el pase
+ * manual (AC-20/21), la campana de los cierres, del retiro, del «sin avisar» y de la vacante
+ * eliminada (AC-10/11), la nota «en camino» del panel (AC-5) y dos entregas a la vez.
  *
  * La IA está apagada en el preview: la nota «en camino» se siembra como la deja la cola.
  * El cuestionario técnico y la vacante a medio montar son de antes del editor nuevo y la
@@ -42,6 +43,7 @@ import {
  */
 
 const PREGUNTA_DEL_BANCO = 'Cuéntanos un cierre de caja difícil y cómo lo resolviste.'
+const ENTREGADA = 'Evaluación entregada. Te avisaremos por correo y en la campana cuando haya novedades.'
 const RESPUESTA = 'En marzo la caja no cuadraba por 1.200 soles; lo hallé en dos días revisando los vales.'
 const DIAS = ['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom']
 
@@ -180,7 +182,7 @@ test.describe('QA · la prueba al instante y la campana en cada etapa', () => {
     await limpiarSiempre([() => retirarLoSembrado(correos)])
   })
 
-  test('AC-2 · sin banco, al postular desde el portal cae en la portada de su prueba con un solo correo bien escrito', async ({ page }) => {
+  test('AC-2 (V72) · sin banco, al postular desde el portal vuelve a sus procesos y espera la nota del CV, sin prueba', async ({ page }) => {
     const ana = await cuentaDeCandidato('Ana', correos)
     await entrarAlPortalCon(page, ana.token)
     await page.goto('/procesos')
@@ -188,31 +190,19 @@ test.describe('QA · la prueba al instante y la campana en cada etapa', () => {
 
     await postularDesdeElPortal(page, sinBanco)
 
-    await expect(page).toHaveURL(/\/procesos\/[0-9a-f-]+\/prueba$/, { timeout: 20_000 })
-    await expect(page.getByText('Tu prueba del puesto ya está disponible')).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Empezar prueba' })).toBeVisible({ timeout: 20_000 })
-    const uuid = page.url().split('/procesos/')[1]!.split('/')[0]!
-    const id = postulacionPorUuid(uuid)
-    expect(estadoDeLaPostulacion(id)).toBe('PRUEBA_TURNO_CANDIDATO')
-    expect(Number(uno(`select count(*) as n from intento_prueba where postulacion_id = ${id} and iniciado_en is null`).n)).toBe(1)
-    expect(String(uno(`select motivo from transicion_estado where postulacion_id = ${id} order by id desc limit 1`).motivo)).toBe(
-      'Pase automático al postular: la nota se calcula después',
+    // Ninguna portada: a sus procesos, como siempre
+    await expect(page).toHaveURL(/\/procesos$/, { timeout: 20_000 })
+    await expect(page.getByText('Tu prueba del puesto ya está disponible')).toHaveCount(0)
+    const id = Number(
+      uno(`select p.id from postulacion p join usuario u on u.id = p.usuario_id
+            where u.correo = ${literal(ana.correo)} and p.vacante_id = ${sinBanco}`).id,
     )
+    expect(estadoDeLaPostulacion(id)).toBe('PERFIL_POR_CONFIRMAR')
+    expect(Number(uno(`select count(*) as n from intento_prueba where postulacion_id = ${id}`).n)).toBe(0)
 
-    // AC-8, AC-20, AC-21 (sin cronómetro, con fecha): un solo PRUEBA_DISPONIBLE, completo y en hora de Lima
-    const suyos = correosDe(ana.correo)
-    expect(suyos.map((c) => c.codigo)).toEqual(['CUENTA_CREADA', 'POSTULACION_RECIBIDA', 'PRUEBA_DISPONIBLE'])
-    const prueba = suyos[2]!
-    const fecha = dichaEnLima(`select prueba_cierra_en from vacante where id = ${sinBanco}`)
-    expect(String(prueba.cuerpo)).toContain('Hola Ana:')
-    expect(String(prueba.cuerpo)).toContain(`«${MARCA} V70 sin banco con pase»`)
-    expect(String(prueba.cuerpo)).toContain(`Tienes hasta el ${fecha}.`)
-    expect(String(prueba.cuerpo)).not.toContain('desde este correo')
-    expect(`${prueba.asunto} ${prueba.cuerpo}`).not.toMatch(/\{\{/)
-
-    // AC-10 · la campana ya lo cuenta en esta misma pantalla, sin recargar
-    expect(avisosDe(ana.correo).map((a) => a.tipo)).toEqual(['PRUEBA_DISPONIBLE'])
-    await expect(page.getByRole('button', { name: 'Avisos, 1 sin leer' })).toBeVisible({ timeout: 10_000 })
+    // Un solo correo, el de recibida; y la campana sin nada de la prueba
+    expect(correosDe(ana.correo).map((c) => c.codigo)).toEqual(['CUENTA_CREADA', 'POSTULACION_RECIBIDA'])
+    expect(avisosDe(ana.correo).map((a) => a.tipo)).not.toContain('PRUEBA_DISPONIBLE')
   })
 
   test('AC-9 · un requisito incumplido sigue llevando a «No continúa», sin prueba, con correo y campana', async () => {
@@ -229,22 +219,20 @@ test.describe('QA · la prueba al instante y la campana en cada etapa', () => {
     expect(String(avisos[0]!.titulo)).toBe(`Tu proceso para ${MARCA} V70 sin banco con pase no continúa`)
   })
 
-  test('AC-3 · con el cuestionario técnico, al postular cae en la portada del cuestionario', async ({ page }) => {
+  test('AC-3 (V72) · con el cuestionario técnico, al postular tampoco se abre: espera la nota del CV', async ({ page }) => {
     const caro = await cuentaDeCandidato('Caro', correos)
     await entrarAlPortalCon(page, caro.token)
 
     await postularDesdeElPortal(page, conCuestionario)
 
-    await expect(page).toHaveURL(/\/procesos\/[0-9a-f-]+\/prueba-tecnica$/, { timeout: 20_000 })
-    await expect(page.getByRole('button', { name: 'Empezar la prueba' })).toBeVisible({ timeout: 20_000 })
-    const id = postulacionPorUuid(page.url().split('/procesos/')[1]!.split('/')[0]!)
-    expect(estadoDeLaPostulacion(id)).toBe('PRUEBA_TURNO_CANDIDATO')
-    expect(String(uno(`select e.estado from evaluacion e join postulacion p on p.evaluacion_tecnica_id = e.id
-                        where p.id = ${id}`).estado)).toBe('PENDIENTE')
-    const prueba = correosDe(caro.correo).filter((c) => c.codigo === 'PRUEBA_DISPONIBLE')
-    expect(prueba).toHaveLength(1)
-    expect(`${prueba[0]!.asunto} ${prueba[0]!.cuerpo}`).not.toMatch(/\{\{/)
-    expect(String(prueba[0]!.cuerpo)).not.toMatch(/Tienes \./)
+    await expect(page).toHaveURL(/\/procesos$/, { timeout: 20_000 })
+    const id = Number(
+      uno(`select p.id from postulacion p join usuario u on u.id = p.usuario_id
+            where u.correo = ${literal(caro.correo)} and p.vacante_id = ${conCuestionario}`).id,
+    )
+    expect(estadoDeLaPostulacion(id)).toBe('PERFIL_POR_CONFIRMAR')
+    expect(uno(`select evaluacion_tecnica_id from postulacion where id = ${id}`).evaluacion_tecnica_id).toBeNull()
+    expect(correosDe(caro.correo).map((c) => c.codigo)).not.toContain('PRUEBA_DISPONIBLE')
   })
 
   test('AC-7 · con pase y sin prueba montada, al entregar espera y se le dice que se le avisará', async ({ page }) => {
@@ -255,16 +243,14 @@ test.describe('QA · la prueba al instante y la campana en cada etapa', () => {
     await entregarElBanco(page, uuid)
 
     await expect(page).toHaveURL(new RegExp(`/procesos/${uuid}$`), { timeout: 20_000 })
-    await expect(
-      page.getByText('Evaluación entregada. Te avisaremos por correo y en la campana cuando te toque la prueba.'),
-    ).toBeVisible()
+    await expect(page.getByText(ENTREGADA)).toBeVisible()
     const id = postulacionPorUuid(uuid)
     expect(['PERFIL_CALIFICANDO', 'PERFIL_POR_CONFIRMAR']).toContain(estadoDeLaPostulacion(id))
     expect(Number(uno(`select count(*) as n from intento_prueba where postulacion_id = ${id}`).n)).toBe(0)
     expect(correosDe(dani.correo).map((c) => c.codigo)).not.toContain('PRUEBA_DISPONIBLE')
   })
 
-  test('Caso límite · dos entregas a la vez: la segunda falla, una sola transición y una sola prueba', async () => {
+  test('Caso límite · dos entregas a la vez: la segunda falla, una sola transición y ninguna prueba hasta la nota', async () => {
     const eva = await cuentaDeCandidato('Eva', correos)
     const uuid = await postular(eva.token, conBanco)
     const id = postulacionPorUuid(uuid)
@@ -286,9 +272,10 @@ test.describe('QA · la prueba al instante y la campana en cada etapa', () => {
       Number(uno(`select count(*) as n from transicion_estado where postulacion_id = ${id}
                    and estado_nuevo_codigo = 'PERFIL_CALIFICANDO'`).n),
     ).toBe(1)
-    expect(estadoDeLaPostulacion(id)).toBe('PRUEBA_TURNO_CANDIDATO')
-    expect(Number(uno(`select count(*) as n from intento_prueba where postulacion_id = ${id}`).n)).toBe(1)
-    expect(correosDe(eva.correo).filter((c) => c.codigo === 'PRUEBA_DISPONIBLE')).toHaveLength(1)
+    // V72: espera la nota; ni prueba ni correo de la prueba
+    expect(estadoDeLaPostulacion(id)).toBe('PERFIL_CALIFICANDO')
+    expect(Number(uno(`select count(*) as n from intento_prueba where postulacion_id = ${id}`).n)).toBe(0)
+    expect(correosDe(eva.correo).filter((c) => c.codigo === 'PRUEBA_DISPONIBLE')).toHaveLength(0)
   })
 
   test('AC-5 · con la nota del perfil por llegar, el ranking y la ficha dicen «en camino»', async ({ page }) => {
@@ -302,7 +289,8 @@ test.describe('QA · la prueba al instante y la campana en cada etapa', () => {
     )
     await exigir(`/portal/evaluacion/${uuid}/respuestas/${preguntaId}`, fer.token, 'PUT', { texto: RESPUESTA })
     await exigir(`/portal/evaluacion/${uuid}/entrega`, fer.token, 'POST')
-    expect(estadoDeLaPostulacion(id)).toBe('PRUEBA_TURNO_CANDIDATO')
+    // V72: espera la nota calificando
+    expect(estadoDeLaPostulacion(id)).toBe('PERFIL_CALIFICANDO')
 
     // La IA está apagada en el preview: el trabajo vivo se siembra como lo deja la cola
     const trabajo = Number(
@@ -322,7 +310,8 @@ test.describe('QA · la prueba al instante y la campana en cada etapa', () => {
       await expect(fila.getByRole('cell', { name: /en camino/ })).toHaveText(/^—\s*en camino$/, { timeout: 20_000 })
       await page.getByRole('button', { name: 'Fer Preguntas QA' }).click()
       await expect(page.getByText('Nota en camino: la IA la está calculando y aparecerá aquí cuando termine.')).toBeVisible()
-      await expect(page.getByText('Pase automático al entregar: la nota se calcula después').first()).toBeVisible()
+      // Y ningún pase al entregar en su historial: ya no existe (V72)
+      await expect(page.getByText(/Pase automático al entregar/)).toHaveCount(0)
     } finally {
       quitarTrabajo(trabajo)
     }
@@ -388,12 +377,13 @@ test.describe('QA · la prueba al instante y la campana en cada etapa', () => {
     // Vacante eliminada: el aviso propio, uno solo, y ningún correo de cierre
     const ines = await cuentaDeCandidato('Ines', correos)
     const idInes = postulacionPorUuid(await postular(ines.token, paraEliminar))
-    expect(estadoDeLaPostulacion(idInes)).toBe('PRUEBA_TURNO_CANDIDATO')
+    // V72: sin banco, espera la nota del CV en «por confirmar»
+    expect(estadoDeLaPostulacion(idInes)).toBe('PERFIL_POR_CONFIRMAR')
     const correosDeInes = correosDe(ines.correo).length
     const eliminada = await pedir(`/panel/vacantes/${paraEliminar}`, equipo, 'DELETE', { motivo: `${MARCA}: se publicó por error` })
     expect(eliminada.estado).toBe(200)
     expect(estadoDeLaPostulacion(idInes)).toBe('CERRADA')
-    expect(avisosDe(ines.correo).map((a) => a.tipo)).toEqual(['PRUEBA_DISPONIBLE', 'VACANTE_ELIMINADA'])
+    expect(avisosDe(ines.correo).map((a) => a.tipo)).toEqual(['VACANTE_ELIMINADA'])
     expect(correosDe(ines.correo)).toHaveLength(correosDeInes)
   })
 })

@@ -32,7 +32,7 @@ const TEXTO_POR_VACANTE =
   'Acepto que la empresa que publica la vacante trate mis datos. Ella decide.'
 
 const VIGENTES = [
-  { tipo: 'PLATAFORMA', version: '1.0', texto: TEXTO_PUBLICADO },
+  { tipo: 'PLATAFORMA', version: '1.1', texto: TEXTO_PUBLICADO },
   { tipo: 'PROCESO', version: '1.1', texto: TEXTO_POR_VACANTE },
   { tipo: 'FUTUROS_CONTACTOS', version: '1.1', texto: 'El opcional, tal cual.' },
 ]
@@ -132,6 +132,23 @@ describe('la política de privacidad pública', () => {
       /Si nos escribes por WhatsApp,\s+los mensajes pasan por Meta Platforms, que puede tratarlos fuera del Perú\./,
     )
     expect(parrafo?.textContent).toMatch(/flujo transfronterizo/)
+  })
+
+  it('dice que el pase a la etapa siguiente depende de la nota mínima, y que nunca descarta (V72, AC-12)', () => {
+    // Lo mismo que el texto PLATAFORMA 1.1 que firman las cuentas nuevas. La versión
+    // anterior decía que ninguna de las tres dependía de una nota, y desde la V72 la
+    // tercera sí: el pase solo se da si la nota del Perfil Integral llega a la mínima.
+    montar()
+
+    expect(screen.queryByText(/ninguna depende de una nota/i)).toBeNull()
+    expect(
+      screen.getByText(/solo la tercera depende de una nota, y nunca para descartarte/i),
+    ).toBeTruthy()
+    expect(
+      screen.getByText(
+        /tu nota del Perfil Integral llega a la mínima que fijó; si no llega, no te descarta: una persona revisa tu caso/i,
+      ),
+    ).toBeTruthy()
   })
 
   it('separa el permiso con Renaser del de cada empresa', () => {

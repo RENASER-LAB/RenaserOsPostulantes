@@ -23,21 +23,23 @@ import {
 } from './ayuda-prueba-propia'
 
 /**
- * La prueba al instante y la campana en cada etapa (V70), los dos recorridos de la
- * Verificación de `specs/la-prueba-al-instante-y-avisos-de-etapa.md`:
+ * Entregar el banco y la campana en cada etapa (V70), con la regla de la V72: **ya no hay
+ * prueba al instante**. Los dos recorridos:
  *
- *   1. Vacante con pase automático: el candidato entrega el banco y cae en la portada de su
- *      prueba —el reloj sin arrancar—, y la campana tiene el aviso.
- *   2. Vacante sin pase automático: entrega el banco y ve que se le avisará; el equipo
- *      confirma y el aviso aparece en la campana.
+ *   1. Vacante con pase automático: el candidato entrega el banco y vuelve a su proceso con
+ *      el aviso de que se le avisará; queda calificando, sin prueba. El pase llega con la
+ *      nota del Perfil Integral si alcanza la mínima: eso lo recorre el 58.
+ *   2. Vacante sin pase automático: entrega el banco y ve el mismo aviso; el equipo
+ *      confirma y el aviso de la prueba aparece en la campana.
  *
  * Las dos vacantes llevan banco (preguntas propias, una abierta) y la prueba del editor,
- * cronometrada y con fecha límite. La IA está apagada: el pase al instante no la necesita.
+ * cronometrada y con fecha límite. La IA está apagada.
  *
  * ⚠️ **ESCRIBE** en el clon del trabajo; `afterAll` lo retira (marca QA-PE-0067).
  */
 
 const PREGUNTA_DEL_BANCO = 'Cuéntanos un cierre de caja difícil y cómo lo resolviste.'
+const ENTREGADA = 'Evaluación entregada. Te avisaremos por correo y en la campana cuando haya novedades.'
 const RESPUESTA = 'En marzo la caja no cuadraba por 1.200 soles; lo hallé en dos días revisando los vales.'
 
 const correos: string[] = []
@@ -107,30 +109,26 @@ test.describe('La prueba al instante y la campana en cada etapa', () => {
     await limpiarSiempre([() => retirarLoSembrado(correos)])
   })
 
-  test('1 · con pase automático, al entregar el banco cae en la portada de su prueba y la campana avisa', async ({ page }) => {
+  test('1 · con pase automático, al entregar el banco vuelve a su proceso y espera la nota, sin prueba (V72)', async ({ page }) => {
     const ana = await cuentaDeCandidato('Ana', correos)
     const uuid = await postular(ana.token, conPase)
     await entrarAlPortalCon(page, ana.token)
 
     await entregarElBanco(page, uuid)
 
-    // En la misma respuesta: la portada de su prueba, con el reloj sin arrancar
-    await expect(page).toHaveURL(new RegExp(`/procesos/${uuid}/prueba$`), { timeout: 20_000 })
-    await expect(page.getByText('Tu prueba del puesto ya está disponible')).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Empezar prueba' })).toBeVisible({ timeout: 20_000 })
+    // V72: ninguna portada de la prueba al entregar. De vuelta a su proceso, con el aviso
+    await expect(page).toHaveURL(new RegExp(`/procesos/${uuid}$`), { timeout: 20_000 })
+    await expect(page.getByText(ENTREGADA)).toBeVisible()
+    await expect(page.getByText('Tu prueba del puesto ya está disponible')).toHaveCount(0)
     const id = postulacionPorUuid(uuid)
-    expect(estadoDeLaPostulacion(id)).toBe('PRUEBA_TURNO_CANDIDATO')
-    expect(Number(uno(`select count(*) as n from intento_prueba
-                        where postulacion_id = ${id} and iniciado_en is null`).n)).toBe(1)
-    expect(String(uno(`select motivo from transicion_estado where postulacion_id = ${id}
-                        order by id desc limit 1`).motivo)).toBe(
-      'Pase automático al entregar: la nota se calcula después',
-    )
+    expect(estadoDeLaPostulacion(id)).toBe('PERFIL_CALIFICANDO')
+    expect(Number(uno(`select count(*) as n from intento_prueba where postulacion_id = ${id}`).n)).toBe(0)
 
-    // Y la campana lo dice, ligado a su proceso
-    const aviso = await avisoDeLaPruebaEnLaCampana(page)
-    await expect(aviso).toBeVisible()
-    await expect(aviso).toContainText(`${MARCA} Al instante con pase`)
+    // Y la campana no tiene ningún aviso de la prueba
+    await page.getByRole('button', { name: /^Avisos/ }).click()
+    await expect(
+      page.getByRole('dialog', { name: 'Tus avisos' }).getByRole('link', { name: /Tu prueba del puesto está disponible/ }),
+    ).toHaveCount(0)
   })
 
   test('2 · sin pase automático espera; cuando el equipo confirma, la campana avisa', async ({ page }) => {
@@ -142,9 +140,7 @@ test.describe('La prueba al instante y la campana en cada etapa', () => {
 
     // Como hoy: de vuelta a su proceso, sabiendo que se le avisará
     await expect(page).toHaveURL(new RegExp(`/procesos/${uuid}$`), { timeout: 20_000 })
-    await expect(
-      page.getByText('Evaluación entregada. Te avisaremos por correo y en la campana cuando te toque la prueba.'),
-    ).toBeVisible()
+    await expect(page.getByText(ENTREGADA)).toBeVisible()
     const id = postulacionPorUuid(uuid)
     expect(['PERFIL_CALIFICANDO', 'PERFIL_POR_CONFIRMAR']).toContain(estadoDeLaPostulacion(id))
     expect(Number(uno(`select count(*) as n from intento_prueba where postulacion_id = ${id}`).n)).toBe(0)

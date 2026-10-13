@@ -42,11 +42,8 @@ import { verPerfil } from '@/api/perfil'
 import { postular, verVacante } from '@/api/portal'
 import type { Pretension, RequisitoPublico } from '@/api/tipos'
 import { COMO_SE_ESCRIBE, aCifra } from '@/dominio/dinero'
-import { PRUEBA_YA_DISPONIBLE } from '@/dominio/estados'
-import { portadaSiYaTieneLaPrueba } from '@/paginas/procesos/laPruebaAlInstante'
 import { rutas } from '@/rutas'
 import { AreaTexto, Campo } from '@/ui/campos/Campo'
-import { useAviso } from '@/ui/Avisos'
 import { Remuneracion } from '@/ui/Remuneracion'
 import estilos from './Postular.module.css'
 
@@ -96,7 +93,6 @@ export function Postular() {
 function FormularioDePostular({ vacanteId }: { vacanteId: string }) {
   const navegar = useNavigate()
   const cache = useQueryClient()
-  const avisar = useAviso()
   const campoArchivo = useRef<HTMLInputElement>(null)
   const dialogo = useRef<HTMLDialogElement>(null)
 
@@ -184,19 +180,13 @@ function FormularioDePostular({ vacanteId }: { vacanteId: string }) {
 
   const envio = useMutation({
     mutationFn: postular,
-    onSuccess: async ({ codigo }) => {
+    onSuccess: async () => {
       await cache.invalidateQueries({ queryKey: ['postulaciones'] })
-      // La campana de la cabecera: postular puede dejar ya un aviso —la prueba abierta o
-      // «no continúa»— y el contador lo suma sin recargar (AC-10).
+      // La campana de la cabecera: postular puede dejar ya un aviso —«no continúa»— y el
+      // contador lo suma sin recargar (AC-10).
       void cache.invalidateQueries({ queryKey: ['avisos'] })
-      // V70: si la vacante no lleva banco y pasa sola, la prueba ya está abierta en esta
-      // misma respuesta y se le lleva a su portada. Si no, a sus procesos, como siempre.
-      const portada = codigo ? await portadaSiYaTieneLaPrueba(cache, codigo) : null
-      if (portada) {
-        avisar(PRUEBA_YA_DISPONIBLE)
-        navegar(portada)
-        return
-      }
+      // V72: tampoco sin banco se abre la prueba al postular. El pase espera la nota del
+      // currículum y exige la mínima de la vacante. A sus procesos, como siempre.
       navegar(rutas.procesos())
     },
     onError: (causa) =>
