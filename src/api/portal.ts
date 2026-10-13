@@ -5,7 +5,9 @@ import type {
   ConsentimientoDeVacante,
   CrearCuenta,
   DatosPostulacion,
+  EnlaceWhatsapp,
   Login,
+  MiCelular,
   MiPostulacion,
   MiPostulacionDetalle,
   MisAvisos,
@@ -17,6 +19,7 @@ import type {
   Sesion,
   TextoConsentimientoPublico,
   VacantePublica,
+  WhatsappDelProceso,
 } from './tipos'
 
 // ---------- Publico ----------
@@ -136,6 +139,29 @@ export const verPostulacion = (uuid: string) =>
 /** Retirarse no borra los datos: eso se pide aparte. */
 export const retirarPostulacion = (uuid: string) =>
   pedir<void>(`/postulaciones/${uuid}/retiro`, { metodo: 'POST' })
+
+// ---------- WhatsApp (V73) ----------
+
+/**
+ * Cambiar el celular de la cuenta. 400 con el mensaje de la regla si no vale; si
+ * cambia, lo vinculado a WhatsApp con el anterior se cierra.
+ */
+export const cambiarCelular = (telefono: string) =>
+  pedir<MiCelular>('/cuenta/telefono', { metodo: 'PUT', cuerpo: { telefono } })
+
+/**
+ * «Escribir por WhatsApp»: guarda el consentimiento, anuncia el celular de la cuenta
+ * al bot para esta postulacion y devuelve el enlace `wa.me` ya escrito.
+ *
+ * 409 con `codigo` si no se puede: `SIN_CELULAR` (pedirlo en la tarjeta),
+ * `SUPRIMIDO`, `PROCESO_TERMINADO` o `NO_DISPONIBLE`.
+ */
+export const escribirPorWhatsapp = (uuid: string) =>
+  pedir<EnlaceWhatsapp>(`/postulaciones/${uuid}/whatsapp`, { metodo: 'POST' })
+
+/** «Dejar de recibir»: cierra el vinculo de esta postulacion. */
+export const dejarDeRecibirPorWhatsapp = (uuid: string) =>
+  pedir<WhatsappDelProceso>(`/postulaciones/${uuid}/whatsapp`, { metodo: 'DELETE' })
 
 // ---------- La campana ----------
 

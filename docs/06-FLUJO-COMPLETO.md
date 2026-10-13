@@ -360,12 +360,19 @@ fingir que la tiene.
 
 ⚠️ **Y desde el 17/09/2026 se dice antes de pulsar, no al rebotar.** El campo se
 llama **«Ciudad»** —se llamó «Dónde vives» y luego «Ubicación»— y lleva un
-asterisco, igual que los otros seis datos que el formulario exige; una línea
+asterisco, igual que los otros siete datos que el formulario exige; una línea
 sobre los campos explica qué significa. Sin elegir ciudad no se crea la cuenta:
 sale «Selecciona tu ciudad» junto al campo y se conserva todo lo demás escrito,
 y el texto de ayuda del desplegable no cuenta como elección. Si la lista de
 ciudades no carga se dice con palabras y un botón la vuelve a pedir, también sin
 perder lo escrito.
+
+⚠️ **Y desde el 13/10/2026 pide el celular.** «Celular (WhatsApp)», obligatorio,
+va justo después del correo con el +51 dibujado delante: nueve cifras que
+empiezan por 9, o el número entero con su prefijo. Es el número desde el que
+podrá escribir al bot de WhatsApp de RENASER, y se cambia en «Mi cuenta». A quien
+ya tenía cuenta no se le exige: se le pide solo si quiere recibir sus novedades
+por WhatsApp.
 
 ⚠️ **Al crear la cuenta se marcan dos casillas, y desde el 15/09/2026 llevan solo
 un título corto y un enlace** a la política de privacidad, que enseña los textos
@@ -456,6 +463,14 @@ empieces, hasta el vie 10/10 a las 23:59»—, y ya no «desde este correo». El
 aviso llega también a la campana. **Si no la empieza, se le recuerda** como la
 evaluación: a las 24 horas y 24 horas antes de su plazo. Quien ya la empezó no
 recibe nada.
+
+**Y por WhatsApp, si escribió antes** (13/10/2026, beta solo de RENASER y
+apagada). Mientras espera, el recuadro de espera le ofrece «Escribir por
+WhatsApp»; si escribe al bot desde el celular de su cuenta, el bot le cuenta en
+qué va con las mismas palabras del portal y, cuando le toca algo —la prueba
+disponible, elegir fecha, empezar la validación—, se lo dice también por ahí,
+además del correo y la campana. Nunca recordatorios ni cierres. Ver
+[02-QUE-VE-EL-CANDIDATO](02-QUE-VE-EL-CANDIDATO.md), 2.6b.
 
 ### 9 · La simulación
 

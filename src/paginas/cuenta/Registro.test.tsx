@@ -110,11 +110,17 @@ function ciudad() {
   return screen.getByLabelText(/^Ciudad/) as HTMLSelectElement
 }
 
+/** El celular (V73), con el +51 dibujado delante. */
+function celular() {
+  return screen.getByLabelText(/^Celular \(WhatsApp\)/) as HTMLInputElement
+}
+
 /** Todo lo escrito a mano: lo que tiene que seguir ahí después de un error. */
 function rellenarLoEscrito() {
   fireEvent.change(screen.getByLabelText(/^Nombre/), { target: { value: 'Camila' } })
   fireEvent.change(screen.getByLabelText(/^Apellidos/), { target: { value: 'Reyes' } })
   fireEvent.change(screen.getByLabelText(/^Correo/), { target: { value: 'camila@correo.pe' } })
+  fireEvent.change(celular(), { target: { value: '987 654 321' } })
   fireEvent.change(screen.getByLabelText(/^Contraseña/), { target: { value: 'unaClaveLarga123' } })
   fireEvent.change(screen.getByLabelText(/^Repite la contraseña/), {
     target: { value: 'unaClaveLarga123' },
@@ -211,6 +217,7 @@ describe('crear cuenta', () => {
       /^Nombre/,
       /^Apellidos/,
       /^Correo/,
+      /^Celular \(WhatsApp\)/,
       /^Contraseña/,
       /^Repite la contraseña/,
       /^Ciudad/,
@@ -390,4 +397,78 @@ describe('la ciudad al crear la cuenta', () => {
     expect(ciudad().disabled).toBe(false)
     expect((screen.getByLabelText(/^Nombre/) as HTMLInputElement).value).toBe('Camila')
   })
+})
+
+/**
+ * El celular (V73): obligatorio, con el +51 delante y la misma regla que el backend.
+ * AC-01: sin él o con uno que no vale no se crea la cuenta y el campo dice el error.
+ */
+describe('el celular (WhatsApp) al crear la cuenta', () => {
+  /** Todo lo obligatorio, permiso incluido, con el celular que se pase. */
+  async function rellenarCon(telefono: string) {
+    rellenarLoEscrito()
+    fireEvent.change(celular(), { target: { value: telefono } })
+    await esperarLasCiudades()
+    fireEvent.change(ciudad(), { target: { value: '0402' } })
+    const obligatorio = screen.getAllByRole('checkbox')[0]
+    if (!obligatorio) throw new Error('la casilla obligatoria no está en la pantalla')
+    fireEvent.click(obligatorio)
+  }
+
+  it('va justo después del correo, con el +51 delante', () => {
+    montar()
+    const correo = screen.getByLabelText(/^Correo/)
+    const suCelular = celular()
+    // DOCUMENT_POSITION_FOLLOWING: el celular viene después del correo en el formulario.
+    expect(correo.compareDocumentPosition(suCelular) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(suCelular.type).toBe('tel')
+    expect(suCelular.parentElement?.textContent).toContain('+51')
+    const descripcion = suCelular.getAttribute('aria-describedby') ?? ''
+    expect(descripcion.split(' ').map((id) => document.getElementById(id)?.textContent).join(' '))
+      .toContain('+51')
+  })
+
+  it('sin celular no se crea la cuenta y el error sale junto al campo', async () => {
+    montar()
+    await rellenarCon('')
+
+    crearCuenta()
+
+    const mensaje = await waitFor(() => screen.getByText('Escribe tu celular.'))
+    expect(enviados).toHaveLength(0)
+    expect(celular().getAttribute('aria-invalid')).toBe('true')
+    expect(celular().getAttribute('aria-describedby')?.split(' ')).toContain(mensaje.id)
+  })
+
+  it.each(['812 345 678', '54 123456', '98765432'])(
+    'con «%s» no se crea la cuenta: el mensaje es el de la regla',
+    async (telefono) => {
+      montar()
+      await rellenarCon(telefono)
+
+      crearCuenta()
+
+      await waitFor(() =>
+        expect(
+          screen.getByText(
+            'Escribe un celular de 9 cifras que empiece por 9, o el número completo con su prefijo',
+          ),
+        ).toBeTruthy(),
+      )
+      expect(enviados).toHaveLength(0)
+    },
+  )
+
+  it.each(['987 654 321', '+34 612 345 678'])(
+    'con «%s» se crea, y se manda tal como se escribió',
+    async (telefono) => {
+      montar()
+      await rellenarCon(telefono)
+
+      crearCuenta()
+
+      await waitFor(() => expect(enviados).toHaveLength(1))
+      expect(enviados[0]).toMatchObject({ telefono, correo: 'camila@correo.pe' })
+    },
+  )
 })

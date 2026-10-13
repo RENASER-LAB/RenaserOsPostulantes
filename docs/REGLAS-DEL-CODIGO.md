@@ -22,6 +22,19 @@ sin nada que hacer. Por eso «le toca» se pregunta con la postulación entera
 —`leTocaAlCandidatoEn`, y `momentoDeLaEtapa` con `pruebaSinCompletar`—, no con
 `leTocaAlCandidato(estado)` suelto.
 
+⚠️ **Los títulos y ayudas de `MOMENTOS` tienen un gemelo en el backend** (13/10/2026):
+`TextosDelMomento`, que es lo que el bot de WhatsApp le dice al candidato. Los dos están amarrados
+a un contrato igual en los dos repositorios —`src/dominio/textosDelMomento.json` aquí,
+`docs/contratos/textos-del-momento.json` allí—, y `estados.test.ts` falla si `MOMENTOS` no
+coincide. **Cambiar un texto es cambiarlo en los dos repositorios**, o la pantalla y el bot dirán
+cosas distintas. La ayuda de un momento de espera **no lleva «No tienes que hacer nada.»**: la
+añade el recuadro de espera.
+
+**Un celular se valida con `src/dominio/celular.ts`** (13/10/2026), en el registro, en «Mi
+cuenta» y en la tarjeta de WhatsApp. Es copia de `Celular` del backend, con el mismo mensaje: si
+las dos reglas se separan, el formulario deja pasar un número que la API rechaza. El portal manda
+lo escrito; quien lo guarda en E.164 es el backend.
+
 **Una columna de criterio se identifica por su `clave`, no por su nombre** (01/10/2026). Con
 criterios escritos por cada vacante hay muchos «Comunicación», y agrupar por nombre —como hacía la
 tabla hasta entonces— juntaría en una columna notas de criterios distintos. El servidor manda `clave` (`prueba:<id>`, `banco:<id>`) y el

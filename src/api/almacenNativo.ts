@@ -31,7 +31,8 @@ interface CapacitorGlobal {
   isNativePlatform?: () => boolean
 }
 
-function esLaAplicacion(): boolean {
+/** Si el portal corre dentro de la aplicación de Android (Capacitor) y no en un navegador. */
+export function esLaAplicacion(): boolean {
   const cap = (globalThis as { Capacitor?: CapacitorGlobal }).Capacitor
   return cap?.isNativePlatform?.() === true
 }

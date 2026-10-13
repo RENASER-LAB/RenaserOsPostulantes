@@ -46,6 +46,7 @@ async function rellenarTodoMenosLaCiudad(page: Page, correo: string) {
   await page.getByLabel(/^Nombre/).fill('Camila')
   await page.getByLabel(/^Apellidos/).fill('Ramos Vega')
   await page.getByLabel(/^Correo/).fill(correo)
+  await page.getByLabel(/^Celular \(WhatsApp\)/).fill('987 654 321')
   await page.getByLabel(/^Contraseña/).fill(CLAVE_DE_CANDIDATO)
   await page.getByLabel('Repite la contraseña').fill(CLAVE_DE_CANDIDATO)
   await page.locator('input[type="checkbox"]').first().check()
@@ -331,9 +332,10 @@ test.describe('Caso límite · el catálogo de ciudades no carga', () => {
       Y se alcanza con el teclado. Importa porque el desplegable está apagado, y
       un control apagado no recibe el tabulador: si el botón tampoco estuviera en
       el recorrido, quien navega sin ratón se quedaría sin salida en esta
-      pantalla. Se comprueba que el tabulador desde «Correo» cae justo en él.
+      pantalla. Se comprueba que el tabulador desde el campo de antes —el celular
+      desde la V73, que va entre el correo y la ciudad— cae justo en él.
     */
-    await page.getByLabel(/^Correo/).focus()
+    await page.getByLabel(/^Celular \(WhatsApp\)/).focus()
     await page.keyboard.press('Tab')
     await expect(reintentar).toBeFocused()
 

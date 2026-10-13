@@ -556,6 +556,60 @@
 }
 
 /*
+ * **Algo que se ofrece mientras se espera** (V73): la tarjeta de WhatsApp dentro
+ * del panel de espera. Nube blanca con un filete gris, sin sombra: se separa del
+ * gris hundido del panel por la superficie, no por el relieve, y no reclama nada
+ * —ofrecer no es pedir—.
+ */
+.ofrecimiento {
+  border: 1px solid var(--regla2);
+  border-radius: var(--radio-menor);
+  background: var(--nube);
+}
+
+/*
+ * **«Escribir por WhatsApp»** (V73): el único verde de la pantalla, y el único
+ * botón del portal que no es índigo ni tinta. Excepción a la voz única decidida
+ * por el usuario el 12/10/2026 —ver `--whatsapp` en `mundo.css`—: el verde dice
+ * «WhatsApp» y no le compite al índigo, porque solo sale cuando al candidato no le
+ * toca nada. Misma silueta y misma altura que `.acentoMenor`, con la tinta oscura
+ * encima y el icono en su mismo color.
+ */
+.whatsapp {
+  --rotulo-tinta: var(--tinta);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--e2);
+  min-height: 44px;
+  border-radius: var(--radio-control);
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  line-height: 20px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 300ms var(--curva-control);
+  padding: 12px var(--e4);
+  background: var(--whatsapp);
+  border: 0;
+  color: var(--tinta);
+}
+
+.whatsapp:hover:not(:disabled) {
+  background: var(--whatsapp-pulsado);
+  box-shadow: var(--sombra-control-alta);
+  color: var(--tinta);
+}
+
+.whatsapp:disabled {
+  --rotulo-tinta: var(--tinta3);
+  background: var(--nube-honda);
+  color: var(--tinta3);
+  box-shadow: none;
+  cursor: default;
+}
+
+/*
  * **Esto te cambia la decision.** El ambar, que es la tercera cosa que puede
  * decir un panel: ni te toca a ti, ni esperas a otro — mirate esto antes de
  * seguir.

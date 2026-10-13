@@ -45,6 +45,7 @@ import { useSesion } from '@/app/Sesion'
 // Las provincias por departamento, con `EXT` suelto al final: la misma regla que
 // el desplegable de ciudad del panel, escrita una vez en `dominio/ubigeo`.
 import { agrupadasPorDepartamento } from '@/dominio/ubigeo'
+import { comoE164, MENSAJE_CELULAR } from '@/dominio/celular'
 import { rutas } from '@/rutas'
 import { Campo, Consentimiento, Seleccion } from '@/ui/campos/Campo'
 import estilos from './Cuenta.module.css'
@@ -57,6 +58,13 @@ const Datos = z
       .string()
       .min(1, 'Escribe tu correo.')
       .email('Esto no parece un correo. Revisa que tenga arroba y dominio.'),
+    // El celular (WhatsApp), obligatorio desde la V73. La misma regla que el backend
+    // —ver `dominio/celular.ts`—: aquí se avisa antes de enviar, allí se guarda en E.164.
+    telefono: z
+      .string()
+      .trim()
+      .min(1, 'Escribe tu celular.')
+      .refine((valor) => comoE164(valor) !== null, MENSAJE_CELULAR),
     // El mismo mínimo que exige el backend: si aquí fuera menor, el envío
     // rebotaría con un error que la pantalla no supo prevenir.
     contrasena: z.string().min(8, 'La contraseña necesita al menos 8 caracteres.'),
@@ -92,6 +100,7 @@ const VACIO = {
   nombre: '',
   apellidos: '',
   correo: '',
+  telefono: '',
   contrasena: '',
   repetir: '',
   ciudadUbigeo: '',
@@ -198,6 +207,7 @@ export function Registro() {
         nombre: revision.data.nombre,
         apellidos: revision.data.apellidos,
         correo: revision.data.correo,
+        telefono: revision.data.telefono,
         contrasena: revision.data.contrasena,
         ciudadUbigeo: revision.data.ciudadUbigeo,
         // Del formulario y no un `true` a pelo: hoy el esquema solo deja pasar `true`
@@ -291,6 +301,25 @@ export function Registro() {
           value={valores.correo}
           onChange={(e) => cambiar('correo', e.target.value)}
           error={errores.correo}
+        />
+
+        {/*
+          El celular (V73), justo después del correo: los dos son por dónde se le
+          escribe. Con el +51 dibujado delante, que es el caso de casi todos; quien
+          vive fuera escribe su número entero con su prefijo. Es el número desde el
+          que escribirá al bot de WhatsApp, y por eso lo dice la etiqueta.
+        */}
+        <Campo
+          etiqueta="Celular (WhatsApp)"
+          obligatorio={exigido('telefono')}
+          type="tel"
+          inputMode="tel"
+          autoComplete="tel-national"
+          prefijo="+51"
+          placeholder="987 654 321"
+          value={valores.telefono}
+          onChange={(e) => cambiar('telefono', e.target.value)}
+          error={errores.telefono}
         />
 
         {/*

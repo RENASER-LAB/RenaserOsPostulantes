@@ -82,6 +82,12 @@ interface PropsCampo extends InputHTMLAttributes<HTMLInputElement> {
    * es obligatorio cuando la validación ya dejó de exigirlo.
    */
   obligatorio?: boolean
+  /**
+   * Lo que va pegado delante y no se escribe: el «+51» del celular (V73). Se
+   * dibuja dentro de la caja, a la izquierda, y el lector de pantalla lo oye como
+   * parte de la descripción del campo.
+   */
+  prefijo?: string
 }
 
 /**
@@ -120,13 +126,14 @@ function Ojo({ tachado }: { tachado: boolean }) {
 }
 
 export const Campo = forwardRef<HTMLInputElement, PropsCampo>(function Campo(
-  { etiqueta, etiquetaOculta, ayuda, error, obligatorio, maximo, id, type, maxLength, ...resto },
+  { etiqueta, etiquetaOculta, ayuda, error, obligatorio, maximo, prefijo, id, type, maxLength, ...resto },
   ref,
 ) {
   const propio = useId()
   const idCampo = id ?? propio
   const idAyuda = `${idCampo}-ayuda`
   const idError = `${idCampo}-error`
+  const idPrefijo = `${idCampo}-prefijo`
   const escrito = typeof resto.value === 'string' ? resto.value.length : 0
 
   const [visible, setVisible] = useState(false)
@@ -150,7 +157,10 @@ export const Campo = forwardRef<HTMLInputElement, PropsCampo>(function Campo(
       aria-invalid={error ? true : undefined}
       // El error y la ayuda se anuncian con el campo, no sueltos: sin esto,
       // quien navega con lector de pantalla oye el campo y nunca su error.
-      aria-describedby={[ayuda && idAyuda, error && idError].filter(Boolean).join(' ') || undefined}
+      aria-describedby={
+        [prefijo && idPrefijo, ayuda && idAyuda, error && idError].filter(Boolean).join(' ') ||
+        undefined
+      }
     />
   )
 
@@ -168,7 +178,17 @@ export const Campo = forwardRef<HTMLInputElement, PropsCampo>(function Campo(
           {ayuda}
         </span>
       )}
-      {esContrasena ? (
+      {prefijo ? (
+        <div className={estilos.conPrefijo}>
+          <span className={estilos.prefijo} aria-hidden="true">
+            {prefijo}
+          </span>
+          <span className={estilos.soloLectores} id={idPrefijo}>
+            Con el prefijo {prefijo} delante.
+          </span>
+          {entrada}
+        </div>
+      ) : esContrasena ? (
         <div className={estilos.conBoton}>
           {entrada}
           {/*

@@ -13,12 +13,19 @@ export const CLAVE_DE_CANDIDATO = 'unaClaveDePrueba123'
  *
  * Lleva ciudad porque el backend la exige desde que el registro la pide: sin
  * `ciudadUbigeo` el alta rebota con 400 aunque la pantalla del perfil no la use.
+ *
+ * Y celular desde la V73, por lo mismo: el alta lo exige. Por defecto uno peruano
+ * cualquiera —dos cuentas pueden compartirlo—; quien prueba WhatsApp pasa el suyo, único,
+ * para mirar solo lo de su número en el registro del bot falso.
  */
+export const CELULAR_DE_PRUEBA = '987 654 321'
+
 export async function crearCuentaDeCandidato(datos: {
   nombre: string
   apellidos: string
   correo: string
   contrasena?: string
+  telefono?: string
 }): Promise<void> {
   const r = await fetch(`${API}/portal/cuentas`, {
     method: 'POST',
@@ -27,6 +34,7 @@ export async function crearCuentaDeCandidato(datos: {
       nombre: datos.nombre,
       apellidos: datos.apellidos,
       correo: datos.correo,
+      telefono: datos.telefono ?? CELULAR_DE_PRUEBA,
       contrasena: datos.contrasena ?? CLAVE_DE_CANDIDATO,
       ciudadUbigeo: '1501', // Lima — Lima
       aceptaPlataforma: true,

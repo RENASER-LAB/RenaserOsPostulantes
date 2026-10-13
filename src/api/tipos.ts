@@ -126,6 +126,12 @@ export interface CrearCuenta {
   nombre: string
   apellidos: string
   correo: string
+  /**
+   * El celular (WhatsApp), obligatorio desde la V73. Se manda tal como lo escribio
+   * la persona —el portal ya comprobo la regla de `dominio/celular.ts`— y el backend
+   * lo guarda en E.164. Uno que no vale sale con 400 y el mismo mensaje.
+   */
+  telefono: string
   contrasena: string
   /**
    * Donde vive: el ubigeo de nivel 2 —la provincia—, o `EXT` si es fuera del
@@ -201,6 +207,18 @@ export interface QuienSoy {
   usuarioId: number
   nombre: string | null
   apellidos: string | null
+  /**
+   * El celular de la cuenta en E.164 («+51987654321»), o `null` en las cuentas
+   * anteriores a la V73. Es lo que «Mi cuenta» enseña y deja cambiar. Puede faltar
+   * contra un backend anterior.
+   */
+  telefono?: string | null
+}
+
+/** Lo que devuelve cambiar el celular: como se guarda y como se enseña. */
+export interface MiCelular {
+  telefono: string
+  paraMostrar: string
 }
 
 export interface Sesion {
@@ -287,6 +305,38 @@ export interface MiPostulacion {
    * permiso `ver_pretension`.
    */
   miPretension: PretensionDeclarada | null
+  /**
+   * La tarjeta de WhatsApp de este proceso (V73). Puede faltar contra un backend
+   * anterior: entonces no hay tarjeta.
+   */
+  whatsapp?: WhatsappDelProceso | null
+}
+
+/**
+ * En que esta la tarjeta «Recibe tus novedades por WhatsApp» de un proceso.
+ *
+ * `disponible` es la vacante de RENASER, la beta encendida y el proceso sin
+ * terminar; sin eso `estado` y `numero` van vacios. El numero va completo
+ * («+51 987 654 321», el de su cuenta) salvo en `ACTIVO`, que va enmascarado.
+ */
+export interface WhatsappDelProceso {
+  disponible: boolean
+  estado: EstadoWhatsapp | null
+  numero: string | null
+}
+
+export type EstadoWhatsapp =
+  | 'SIN_CELULAR'
+  | 'SIN_VINCULAR'
+  | 'PENDIENTE'
+  | 'ACTIVO'
+  | 'REVOCADO'
+  | 'SUPRIMIDO'
+
+/** Lo que devuelve «Escribir por WhatsApp»: el enlace ya escrito y como queda la tarjeta. */
+export interface EnlaceWhatsapp {
+  enlace: string
+  whatsapp: WhatsappDelProceso
 }
 
 /** Un monto con su moneda, y la frase ya escrita para pintarla sin traducir. */

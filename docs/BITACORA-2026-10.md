@@ -14,6 +14,63 @@ Desde el 05/10 el diseño se trabaja con las skills de Emil Kowalski (`emil-desi
 
 ---
 
+## Las novedades por WhatsApp (12-13/10/2026)
+
+Mientras espera, el candidato puede pedir que el bot de RENASER le cuente cómo va su proceso por
+WhatsApp, y que le avise cuando le toque algo. **Escribe él primero**, desde el celular de su
+cuenta, y el bot lo reconoce solo por el número. Es una beta solo de las vacantes de RENASER y
+**sale apagada**: se enciende cuando el número del bot pase a NUEVO en el CRM. Cómo se ve, en
+[02-QUE-VE-EL-CANDIDATO](02-QUE-VE-EL-CANDIDATO.md), 2.3, 2.6b y 2.17; el contrato con el bot, en
+`CONTRATO-NOVEDADES-POR-WHATSAPP.md` del backend.
+
+- **Registro.** «Celular (WhatsApp)», obligatorio, justo después del correo y con el +51 dibujado
+  dentro de la caja: `prefijo` nuevo en `Campo`. La regla vive en `src/dominio/celular.ts`, copia
+  de la del backend, con el mismo mensaje de error.
+- **«Mi cuenta».** El bloque «Tu cuenta» (`MiCelular.tsx`), encima del pie del perfil, con
+  «Celular: +51 987 654 321» y «Cambiar», o «Añadir» en las cuentas anteriores. `/perfil#celular`
+  llega con el campo abierto. Cambiarlo cierra lo vinculado al número anterior.
+- **La tarjeta** (`TarjetaWhatsapp.tsx`), en el recuadro de espera de «Mis procesos» y del
+  detalle, con sus seis estados. Abre `wa.me/51928439930` con el mensaje escrito en una pestaña
+  pedida antes del `await`, para que el navegador no la bloquee. Al volver a la pestaña con la
+  tarjeta pendiente se vuelve a pedir la lista, y sale «Conectado» sin recargar.
+- **El verde.** `--whatsapp` `#25D366` con la tinta oscura encima, solo en ese botón: excepción a
+  la voz única decidida por el usuario el 12/10/2026 (piezas `.ofrecimiento` y `.whatsapp`). Ver
+  [EL-MUNDO-VISUAL](EL-MUNDO-VISUAL.md).
+- **AC-17.** «Estamos revisando tu postulación» ya no dice dos veces «No tienes que hacer nada.».
+- **Los textos de espera, compartidos con el backend.** `src/dominio/textosDelMomento.json` es
+  igual que `docs/contratos/textos-del-momento.json` del backend, que los dice por el bot desde
+  `TextosDelMomento`; `estados.test.ts` comprueba que `MOMENTOS` coincide. Ver
+  [REGLAS-DEL-CODIGO](REGLAS-DEL-CODIGO.md).
+- **La política de privacidad** lleva el texto 1.2: el celular al crear la cuenta, WhatsApp «si tú
+  nos escribes primero» y Meta Platforms fuera del Perú.
+- **Backend** (`V73`): el celular en `persona.telefono` en E.164, con CHECK; `PUT
+  /portal/cuenta/telefono`; `POST`/`DELETE /portal/postulaciones/{uuid}/whatsapp` y `whatsapp` en
+  cada postulación; la puerta firmada `/api/v1/integraciones/whatsapp/…` para el bot; la cola
+  `aviso_whatsapp` con 5 intentos, solo para los «te toca»; el parámetro
+  `whatsapp_novedades_activo`, apagado; el texto `PLATAFORMA` 1.2 y el consentimiento `WHATSAPP`
+  1.0; y el borrado de datos se lleva el celular y los vínculos.
+
+**Quedaron fuera**, anotados en [PENDIENTES](PENDIENTES.md): encender la beta, que depende del CRM;
+la demo externa `RenaserTalentoFrontend`, que crea cuentas sin celular y ahora falla; el número
+`58` repetido en los E2E; y pasar a `DESIGN.md` el verde y las piezas nuevas, porque la entrega
+solo podía tocar `docs/`.
+
+**Cómo se comprueba:**
+
+- E2E: `58-novedades-por-whatsapp` (6 casos) y su `-qa` (10), contra el bot falso del backend
+  (`ayuda-whatsapp.ts`): registro con y sin celular, la tarjeta y su enlace, el bot que vincula,
+  el aviso único al pasar a la prueba, «Dejar de recibir», cambiar el celular, la cuenta sin
+  celular y la vacante de otra empresa sin tarjeta. Los E2E que crean cuentas mandan ya un
+  celular.
+- Unitarias: `Registro.test.tsx`, `MiCelular.test.tsx`, `TarjetaWhatsapp.test.tsx`,
+  `celular.test.ts`, `estados.test.ts` y `PoliticaPublica.test.tsx`.
+- En el backend: `FlujoNovedadesWhatsappIT` y las unitarias del paquete `whatsapp`, la firma, la
+  máquina de estados y `TextosDelMomentoTest`.
+- La comprobación personal la hace el usuario con dos números del equipo cuando la beta se
+  encienda, porque hay inicio de sesión.
+
+---
+
 ## La nota mínima del Perfil Integral (12-13/10/2026)
 
 Con «Calificar y avanzar sola», todo el que entregaba el banco pasaba a la prueba en ese mismo

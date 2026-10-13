@@ -43,6 +43,7 @@ import { Aptitudes, leerTodas } from './Aptitudes'
 import { CabeceraDelPerfil } from './Cabecera'
 import { Lateral } from './Lateral'
 import { ListaDeLogros } from './Logros'
+import { MiCelular } from './MiCelular'
 import { ResenasDelPerfil } from './Resenas'
 import estilos from './Perfil.module.css'
 
@@ -323,6 +324,13 @@ export function Perfil() {
         lleva aquí— y sigue apareciendo también en la pantalla de fallo, que es
         donde de verdad haría falta el día que algo se rompa.
       */}
+      {/*
+        El celular de la cuenta (V73): «Celular: +51 987 654 321» y «Cambiar». Es un
+        dato de la cuenta y no del perfil que ven las empresas, así que va con lo
+        demás de la cuenta, justo encima del pie.
+      */}
+      <MiCelular />
+
       <div className={estilos.pie}>
         <button className={estilos.descargar} type="button" onClick={() => void descargar()}>
           Descargar todos mis datos

@@ -32,7 +32,7 @@ const TEXTO_POR_VACANTE =
   'Acepto que la empresa que publica la vacante trate mis datos. Ella decide.'
 
 const VIGENTES = [
-  { tipo: 'PLATAFORMA', version: '1.1', texto: TEXTO_PUBLICADO },
+  { tipo: 'PLATAFORMA', version: '1.2', texto: TEXTO_PUBLICADO },
   { tipo: 'PROCESO', version: '1.1', texto: TEXTO_POR_VACANTE },
   { tipo: 'FUTUROS_CONTACTOS', version: '1.1', texto: 'El opcional, tal cual.' },
 ]
@@ -107,10 +107,38 @@ describe('la política de privacidad pública', () => {
     expect(screen.getByText(/no cumples un requisito indispensable/i)).toBeTruthy()
   })
 
+  it('AC-16 · dice lo mismo que PLATAFORMA 1.2: el celular al crear la cuenta y WhatsApp si escribe primero', () => {
+    // La V73 pide el celular en el registro: deja de ser un dato «si lo das» y pasa a
+    // los de la cuenta, y escribirle por WhatsApp entra en «para qué», solo si él
+    // escribe primero.
+    montar()
+
+    expect(screen.getByText(/tu correo, tu\s+celular, una contraseña y la provincia/)).toBeTruthy()
+    expect(screen.queryByText(/Si los das o salen de tu currículum:/)?.parentElement?.textContent)
+      .not.toMatch(/teléfono/)
+    expect(
+      screen.getByText(/por correo, en el portal y, si tú nos escribes primero, por\s+WhatsApp desde el número de Renaser/),
+    ).toBeTruthy()
+  })
+
+  it('AC-16 · como PLATAFORMA 1.2, nombra a Meta junto a los proveedores que sacan los datos del Perú', () => {
+    // La 1.2 lo dice en «Quién más ve mis datos», que el permiso del flujo transfronterizo
+    // cubre entero; aquí va en el mismo párrafo que el proveedor de correo, que tampoco
+    // está en la tabla.
+    montar()
+
+    const parrafo = screen.getByText(/están fuera del Perú/).closest('p')
+    expect(parrafo?.textContent).toMatch(
+      /Si nos escribes por WhatsApp,\s+los mensajes pasan por Meta Platforms, que puede tratarlos fuera del Perú\./,
+    )
+    expect(parrafo?.textContent).toMatch(/flujo transfronterizo/)
+  })
+
   it('dice que el pase a la etapa siguiente depende de la nota mínima, y que nunca descarta (V72, AC-12)', () => {
-    // Lo mismo que el texto PLATAFORMA 1.1 que firman las cuentas nuevas. La versión
-    // anterior decía que ninguna de las tres dependía de una nota, y desde la V72 la
-    // tercera sí: el pase solo se da si la nota del Perfil Integral llega a la mínima.
+    // Lo mismo que el texto PLATAFORMA 1.2 que firman las cuentas nuevas (lo trajo la 1.1
+    // y la 1.2 lo conserva). La 1.0 decía que ninguna de las tres dependía de una nota, y
+    // desde la V72 la tercera sí: el pase solo se da si la nota del Perfil Integral llega a
+    // la mínima.
     montar()
 
     expect(screen.queryByText(/ninguna depende de una nota/i)).toBeNull()
