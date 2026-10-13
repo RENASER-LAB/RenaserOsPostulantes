@@ -756,6 +756,18 @@ export const activarCalificacionAutomatica = (vacanteId: number, activa: boolean
   })
 
 /**
+ * La nota mínima del Perfil Integral para pasar sola a la prueba del puesto (V72).
+ *
+ * Un entero de 0 a 100, y solo con «Calificar y avanzar sola» encendido: el backend
+ * rechaza lo demás. Cambiarla no mueve a nadie que ya espera.
+ */
+export const fijarNotaMinima = (vacanteId: number, notaMinima: number) =>
+  pedir<void>(`/vacantes/${vacanteId}/nota-minima`, {
+    metodo: 'PUT',
+    cuerpo: { notaMinima },
+  })
+
+/**
  * Cuando cierra la prueba de esta vacante, para todos.
  *
  * Con `cierraEn` en nulo se quita, y cada intento vuelve a contar los dias de

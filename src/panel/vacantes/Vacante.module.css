@@ -2038,6 +2038,52 @@ th.columnaCifra {
   width: 100%;
   min-width: 0;
 }
+
+/*
+  La nota mínima del pase (V72): debajo del interruptor del que depende, en su propia
+  fila. El campo es corto —tres cifras como mucho— y lleva «/ 100» al lado para que se
+  lea como lo que es, una nota sobre cien. Gana a la regla de arriba, que estira cada
+  control a lo ancho de su columna.
+*/
+.notaMinima {
+  grid-column: 1 / -1;
+}
+.filaNotaMinima {
+  display: flex;
+  align-items: center;
+  gap: var(--e2);
+}
+.grupoConfiguracion .filaNotaMinima .eleccion {
+  flex: 0 0 6rem;
+  width: 6rem;
+}
+.deCien {
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+}
+/*
+  Apagada —interruptor apagado o vacante cerrada— se ve apagada: el campo con el gris de
+  un control deshabilitado (DESIGN.md) y la etiqueta y el «/ 100» atenuados. Un `disabled`
+  que se ve igual que el editable no se distingue hasta que se intenta escribir.
+  ⚠️ No va en `.eleccion:disabled`: los demás `.eleccion` se desactivan mientras guardan y
+  ahí un parpadeo gris no diría nada. Por lo mismo, esta clase no se pone al guardar.
+*/
+.notaMinimaApagada .eleccion {
+  background-color: var(--nube-honda);
+  border-color: var(--regla2);
+  color: var(--tinta3);
+}
+.notaMinimaApagada .etiquetaAjuste,
+.notaMinimaApagada .deCien {
+  color: var(--tinta3);
+}
+/* La misma ayuda, cuando lo escrito no sirve: en el tono de error, sin recuadro. */
+.ayudaAjusteMala {
+  font-size: var(--t-menor);
+  color: var(--mal);
+  line-height: 1.45;
+  max-width: var(--medida-corta);
+}
 .plazosPlegables {
   margin-top: var(--e4);
   padding-block: var(--e2);
@@ -2305,6 +2351,12 @@ th.columnaCifra {
   max-width: var(--medida-corta);
   font-size: var(--t-menor);
   color: var(--tinta2);
+}
+
+/* Por qué espera quien no pasó sola a la prueba (V72): la misma nota de apoyo, junto al estado. */
+.porQueEsperaFicha {
+  composes: porQueSinPretensionFicha;
+  margin: 0 0 var(--e2);
 }
 
 /* ---------- La prueba del editor en la ficha (V67) ----------

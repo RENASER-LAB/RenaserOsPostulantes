@@ -367,10 +367,12 @@ export const NOTA_EN_CAMINO =
  * La nota del Perfil Integral está en camino: la IA trabaja en ella y todavía
  * no la ha escrito (V70).
  *
- * Desde que las vacantes con pase automático abren la prueba al instante, la
- * persona puede estar ya rindiendo su prueba con la nota del perfil por
- * llegar. Sin esto la celda decía «en otra etapa» —verdad, pero no la
- * respuesta— y parecía que nadie la iba a calificar.
+ * La persona puede estar calificando, esperando en «por confirmar» —una
+ * vacante sin banco espera ahí la nota del currículum— o ya en otra etapa si
+ * alguien la movió, con la nota del perfil por llegar. Sin esto la celda decía
+ * «en otra etapa» —verdad, pero no la respuesta— y parecía que nadie la iba a
+ * calificar. (Del 07/10 al 12/10/2026 la prueba se abría al instante; desde la
+ * V72 el pase espera esta nota.)
  *
  * ⚠️ **Solo con un trabajo vivo** (`EN_CURSO`): sin trabajo no hay nada en
  * camino —la IA puede estar apagada— y con uno fallido manda lo de siempre. Y

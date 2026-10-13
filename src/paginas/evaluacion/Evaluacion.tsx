@@ -52,9 +52,8 @@ import {
   verEvaluacion,
 } from '@/api/evaluacion'
 import type { DetalleRespuesta, EvaluacionCandidato, PreguntaEvaluacion } from '@/api/tipos'
-import { EVALUACION_ENTREGADA_A_LA_ESPERA, PRUEBA_YA_DISPONIBLE } from '@/dominio/estados'
+import { EVALUACION_ENTREGADA_A_LA_ESPERA } from '@/dominio/estados'
 import { diasHasta } from '@/dominio/reloj'
-import { portadaSiYaTieneLaPrueba } from '@/paginas/procesos/laPruebaAlInstante'
 import { usePantallaAbierta } from '@/paginas/procesos/useVacanteRetirada'
 import { rutas } from '@/rutas'
 import { useAviso } from '@/ui/Avisos'
@@ -394,18 +393,12 @@ export function Evaluacion() {
       setConfirmarEntrega(false)
       await cache.invalidateQueries({ queryKey: ['postulaciones'] })
       await cache.invalidateQueries({ queryKey: ['postulacion', uuid] })
-      // La campana de la cabecera no se entera sola: si hubo pase, el aviso de la prueba ya
-      // existe y el contador tiene que sumarlo sin recargar (AC-10). Sin esperar: no frena
-      // el paso a la portada.
+      // La campana de la cabecera no se entera sola: lo que dejó la entrega tiene que
+      // sumarse al contador sin recargar (AC-10). Sin esperar: no frena la vuelta al proceso.
       void cache.invalidateQueries({ queryKey: ['avisos'] })
-      // V70: si la vacante pasa sola, la prueba ya está abierta en esta misma respuesta y se
-      // le lleva a su portada —el reloj arranca al confirmar, no al llegar—. Si no, espera.
-      const portada = await portadaSiYaTieneLaPrueba(cache, uuid)
-      if (portada) {
-        avisar(PRUEBA_YA_DISPONIBLE)
-        navegar(portada, { replace: true })
-        return
-      }
+      // V72: nadie pasa a la prueba al entregar. El pase espera a que la IA termine la nota
+      // del Perfil Integral y solo se da si llega a la mínima de la vacante; cuando ocurra,
+      // le llegarán el correo y el aviso de la campana. Aquí, de vuelta a su proceso.
       avisar(EVALUACION_ENTREGADA_A_LA_ESPERA)
       navegar(rutas.proceso(uuid), { replace: true })
     },

@@ -117,7 +117,7 @@ function montar() {
         <MemoryRouter initialEntries={['/procesos/x1/evaluacion']}>
           <Routes>
             <Route path="/procesos/:uuid/evaluacion" element={<Evaluacion />} />
-            {/* A donde lleva entregar (V70): su proceso, o la portada de su prueba. */}
+            {/* A donde lleva entregar: su proceso. Desde la V72 nunca a la portada de la prueba. */}
             <Route path="/procesos/:uuid" element={<p>Su proceso</p>} />
             <Route path="/procesos/:uuid/prueba" element={<p>Portada de la prueba</p>} />
             <Route path="/procesos/:uuid/prueba-tecnica" element={<p>Portada del cuestionario</p>} />
@@ -1008,9 +1008,9 @@ describe('cuando la empresa retiró la vacante', () => {
   })
 })
 
-// ---------- La prueba al instante (V70) ----------
+// ---------- Al entregar, sin prueba al instante (V72) ----------
 
-describe('al entregar, la prueba al instante', () => {
+describe('al entregar, de vuelta a su proceso: el pase espera la nota (V72)', () => {
   /** Todas respondidas en el servidor; se abre la última y se entrega. */
   async function entregarTodo(clics = 1) {
     for (let n = 1; n <= TOTAL; n++) guardadas.set(n, `Respuesta ${n}.`)
@@ -1025,14 +1025,6 @@ describe('al entregar, la prueba al instante', () => {
     const entregar = await screen.findByRole('button', { name: 'Entregar' })
     await waitFor(() => expect((entregar as HTMLButtonElement).disabled).toBe(false))
     for (let i = 0; i < clics; i++) fireEvent.click(entregar)
-  }
-
-  /** Lo que dice su postulación ya guardada, después de entregar. */
-  function quedoEn(estado: string, instrumentoEtapaTecnica: string | null = 'PRUEBA_PROPIA') {
-    vi.mocked(verPostulacion).mockResolvedValueOnce({
-      resumen: { uuid: 'x1', estado, instrumentoEtapaTecnica, pruebaSinCompletar: false },
-      historial: [],
-    } as unknown as Awaited<ReturnType<typeof verPostulacion>>)
   }
 
   it('QA-UPP-14: un doble clic en «Entregar la evaluación» no entrega aunque el segundo caiga en «Entregar»; leído el diálogo, sí', async () => {
@@ -1051,7 +1043,6 @@ describe('al entregar, la prueba al instante', () => {
     for (let n = 1; n <= TOTAL; n++) guardadas.set(n, `Respuesta ${n}.`)
     opcionesGuardadas.set(CON_OPCIONES, 21)
     iniciada = true
-    quedoEn('PERFIL_CALIFICANDO')
     montar()
     await screen.findByLabelText('Tu respuesta')
     siguiente()
@@ -1077,48 +1068,33 @@ describe('al entregar, la prueba al instante', () => {
     expect(entregarEvaluacion).toHaveBeenCalledTimes(1)
   })
 
-  it('con pase automático lleva a la portada de su prueba y lo dice', async () => {
-    quedoEn('PRUEBA_TURNO_CANDIDATO')
-    await entregarTodo()
-
-    expect(await screen.findByText('Portada de la prueba')).toBeTruthy()
-    expect(screen.getByText('Tu prueba del puesto ya está disponible')).toBeTruthy()
-    expect(verPostulacion).toHaveBeenCalledWith('x1')
-  })
-
-  it('si la vacante rinde el cuestionario técnico, lleva a la portada del cuestionario', async () => {
-    quedoEn('PRUEBA_TURNO_CANDIDATO', 'CUESTIONARIO_TECNICO')
-    await entregarTodo()
-
-    expect(await screen.findByText('Portada del cuestionario')).toBeTruthy()
-  })
-
-  it('sin pase automático vuelve a su proceso y dice que se le avisará', async () => {
-    quedoEn('PERFIL_CALIFICANDO')
+  it('vuelve a su proceso y dice que se le avisará cuando haya novedades (AC-01)', async () => {
     await entregarTodo()
 
     expect(await screen.findByText('Su proceso')).toBeTruthy()
     expect(
       screen.getByText(
-        'Evaluación entregada. Te avisaremos por correo y en la campana cuando te toque la prueba.',
+        'Evaluación entregada. Te avisaremos por correo y en la campana cuando haya novedades.',
       ),
     ).toBeTruthy()
   })
 
-  it('si no se puede saber dónde quedó, el camino de siempre: su proceso', async () => {
-    vi.mocked(verPostulacion).mockRejectedValueOnce(new Error('sin red'))
+  it('no pregunta dónde quedó ni lleva a la portada de la prueba: nadie pasa al entregar', async () => {
     await entregarTodo()
 
     expect(await screen.findByText('Su proceso')).toBeTruthy()
+    expect(screen.queryByText('Portada de la prueba')).toBeNull()
+    expect(screen.queryByText('Portada del cuestionario')).toBeNull()
+    expect(screen.queryByText('Tu prueba del puesto ya está disponible')).toBeNull()
+    expect(verPostulacion).not.toHaveBeenCalled()
   })
 
   it('AC-10: la campana de la cabecera vuelve a pedir sus avisos, sin recargar', async () => {
     const invalidar = vi.spyOn(QueryClient.prototype, 'invalidateQueries')
     try {
-      quedoEn('PRUEBA_TURNO_CANDIDATO')
       await entregarTodo()
 
-      expect(await screen.findByText('Portada de la prueba')).toBeTruthy()
+      expect(await screen.findByText('Su proceso')).toBeTruthy()
       expect(invalidar).toHaveBeenCalledWith({ queryKey: ['avisos'] })
     } finally {
       invalidar.mockRestore()
@@ -1126,7 +1102,6 @@ describe('al entregar, la prueba al instante', () => {
   })
 
   it('QA-V70-01: un doble clic en «Entregar» manda una sola entrega', async () => {
-    quedoEn('PERFIL_CALIFICANDO')
     await entregarTodo(2)
 
     expect(await screen.findByText('Su proceso')).toBeTruthy()

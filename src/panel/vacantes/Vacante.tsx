@@ -145,6 +145,8 @@ import { OrigenDeLasPreguntas, usePreguntasListas } from './preguntas/OrigenDeLa
 import { PruebaDeLaVacante, rindeLaPruebaPropia, usePruebaLista } from './preguntas/PruebaDeLaVacante'
 import { PruebaDelCandidato } from './PruebaDelCandidato'
 import { NoCompletaron } from './NoCompletaron'
+import { NotaMinimaDelPase } from './NotaMinimaDelPase'
+import { turnoDeLaVacante } from './turnoDeLaVacante'
 import { loQueFaltaParaPublicar } from './loQueFaltaParaPublicar'
 import estilos from './Vacante.module.css'
 
@@ -2336,6 +2338,17 @@ function DetalleDelPostulante({
               {ficha.data.estadoNombre}
             </p>
             {/*
+              Por qué espera en «por confirmar» en vez de haber pasado sola a la prueba,
+              cuando la razón es su nota (V72). Junto al estado, porque es lo que lo
+              explica. Lo escribe el servidor con la regla del pase, y no sale mientras la
+              IA trabaja: entonces manda la «nota en camino».
+            */}
+            {ficha.data.porQueEsperaElPase && (
+              <p className={estilos.porQueEsperaFicha}>
+                {ficha.data.porQueEsperaElPase}
+              </p>
+            )}
+            {/*
               Lo que pidió, o por qué no hay nada que enseñar.
 
               Aquí y no solo en la tabla: esta es la pantalla donde se decide
@@ -2658,9 +2671,9 @@ function LoQueCalificoLaIA({ fila, etapa }: { fila: FilaRanking; etapa: EtapaPan
       <h3 className={estilos.tituloDetalle}>Lo que calificó la IA</h3>
 
       {/*
-        V70: con el pase al instante la persona puede estar ya en su prueba con la
-        nota del perfil por llegar. Se dice, en vez de dejar un hueco que se lee
-        como «nadie la va a calificar».
+        V70: mientras la IA trabaja, la nota del perfil está por llegar —y desde la
+        V72 el pase a la prueba la espera—. Se dice, en vez de dejar un hueco que se
+        lee como «nadie la va a calificar».
       */}
       {notaEnCamino(fila, etapa) && <p className={estilos.dato}>{NOTA_EN_CAMINO}.</p>}
 
@@ -3697,13 +3710,20 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
   const alFallar = (c: unknown) =>
     setFallo(c instanceof Error ? c.message : 'No se pudo guardar.')
 
+  /*
+    Todos los guardados de la tuerca van en el mismo turno que la mínima y el origen de las
+    preguntas: pulsar cualquiera de ellos es salir del campo de la mínima, y lo que se pulsa
+    después espera a que ella se guarde en vez de adelantársele (QA-F04, QA-F05).
+  */
   const prueba = useMutation({
     mutationFn: (id: number) => asignarPlantillaPrueba(vacante.id, id),
+    scope: turnoDeLaVacante(vacante.id),
     onSuccess: refrescar,
     onError: alFallar,
   })
   const automatica = useMutation({
     mutationFn: (activa: boolean) => activarCalificacionAutomatica(vacante.id, activa),
+    scope: turnoDeLaVacante(vacante.id),
     onSuccess: refrescar,
     onError: alFallar,
   })
@@ -3715,11 +3735,13 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
   */
   const instrumento = useMutation({
     mutationFn: (datos: DatosDelInstrumento) => elegirInstrumentoTecnico(vacante.id, datos),
+    scope: turnoDeLaVacante(vacante.id),
     onSuccess: refrescar,
     onError: alFallar,
   })
   const version = useMutation({
     mutationFn: (id: number) => asignarVersionPesos(vacante.id, id),
+    scope: turnoDeLaVacante(vacante.id),
     onSuccess: refrescar,
     onError: alFallar,
   })
@@ -3817,10 +3839,17 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
                 disabled={automatica.isPending}
               />
               {vacante.calificacionAutomatica
-                ? 'Encendido: cada persona que postule se califica sola y llega hasta la prueba del puesto sin que nadie intervenga. Tú decides al final, cuando ya tienes sus notas'
+                ? 'Encendido: cada persona que postule se califica sola y, si llega a la nota mínima, pasa a la prueba del puesto sin que nadie intervenga. Tú decides el resto, cuando ya tienes sus notas'
                 : 'Apagado: cada paso lo pides tú desde esta pantalla'}
             </span>
           </label>
+          {/*
+            La nota mínima del pase (V72), debajo del interruptor del que depende: apagado,
+            no hace nada y por eso se ve desactivada. Se habilita con el permiso del pase
+            (`puedeConfigurarElPase`, el mismo que exige la API al interruptor), y su error sale
+            en el mismo aviso, al pie de la configuración.
+          */}
+          <NotaMinimaDelPase vacante={vacante} alGuardar={refrescar} alFallar={setFallo} />
         </fieldset>
 
         <fieldset className={estilos.grupoConfiguracion}>

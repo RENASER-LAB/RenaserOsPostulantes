@@ -117,6 +117,15 @@ se retiró (paso 0).
 
 Mientras falte algo, el botón de publicar está apagado y dice qué falta.
 
+En la misma sección, arriba del todo, **«Cómo avanza esta vacante»** (no
+bloquea publicar): el interruptor
+**«Calificar y avanzar sola»**, apagado de fábrica, y debajo la **«Nota mínima
+para pasar el perfil integral»**, 60 por defecto (12/10/2026). Encendido, quien
+llega a esa nota pasa solo a la prueba del puesto y quien no llega espera a que
+alguien del equipo decida. Apagado, la mínima se ve desactivada y no hace nada.
+Cambiarla no mueve a nadie que ya espera. El detalle, en
+[PANEL.md](PANEL.md) › «La nota mínima del pase».
+
 Debajo de los desplegables hay una tarjeta más, **«La prueba técnica del
 puesto»**, con el estado de su ficha y de su cuestionario y el enlace para
 prepararla.
@@ -371,7 +380,8 @@ elegir. La opción por defecto del aviso es volver y revisar.
 Aquí vive **el único descarte automático de todo el sistema**. Pero no es lo
 único que se mueve sin que intervenga una persona: también se cierra el proceso
 de quien deja pasar su plazo, y avanzan solas las vacantes configuradas para
-ello. Las tres están enumeradas en el texto que el candidato acepta.
+ello, si la nota del Perfil Integral llega a su mínima. Las tres están
+enumeradas en el texto que el candidato acepta.
 
 ⚠️ **Y aquí ya no hay casilla de consentimiento** (15/09/2026). Lo último antes
 del botón es una frase que dice **qué empresa va a recibir la candidatura** y
@@ -409,17 +419,25 @@ las 24 horas de que le tocara y 24 horas antes de que venza; nunca de noche (sol
 de 8:00 a 21:00, hora de Lima), una vez cada uno, y la empresa los puede apagar
 en sus parámetros.
 
-**Al entregar** (07/10/2026), si la vacante avanza sola y ya tiene su prueba
-montada, el candidato pasa en ese momento a la prueba y el portal lo lleva a su
-portada: «Tu prueba del puesto ya está disponible». La IA califica la evaluación
-por detrás, y mientras tanto el panel enseña su nota «en camino». Si no, vuelve a
-su proceso con «Evaluación entregada. Te avisaremos por correo y en la campana
-cuando te toque la prueba.». Lo mismo al postular a una vacante sin evaluación.
+**Al entregar** vuelve a su proceso con «Evaluación entregada. Te avisaremos por
+correo y en la campana cuando haya novedades.». La IA califica la evaluación y,
+mientras tanto, el panel enseña su nota «en camino». Si la vacante avanza sola
+(12/10/2026), al terminar la nota del Perfil Integral:
+
+- **Llega a la nota mínima de la vacante** (60 por defecto): pasa sola a la
+  prueba, con el correo y el aviso de la campana.
+- **No llega, o no hay nota completa**: se queda en «Tu perfil está en
+  revisión» y alguien del equipo decide con «Avanzar». Nadie se descarta por
+  nota. Si después una persona ajusta o recalifica y ahora llega, pasa sola.
+
+En una vacante sin evaluación pasa lo mismo con la nota del currículum, después
+de postular. La prueba ya no se abre al entregar: eso duró del 07/10 al
+12/10/2026, cuando el pase no miraba la nota.
 
 ### 8 · La prueba del puesto
 
-**Portal · Mis procesos → la postulación → «Hacer la prueba»** —o directamente,
-al entregar la evaluación, en las vacantes que avanzan solas—
+**Portal · Mis procesos → la postulación → «Hacer la prueba»** —en las vacantes
+que avanzan solas, en cuanto su nota del Perfil Integral llega a la mínima—
 
 **La hora la manda el servidor**: el cronómetro recalcula cuánto falta hasta la
 hora de vencimiento del backend descontando el desfase entre relojes, así que

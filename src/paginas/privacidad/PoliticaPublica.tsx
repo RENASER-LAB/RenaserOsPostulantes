@@ -306,8 +306,16 @@ export function PoliticaPublica() {
           objetivo, y `PaseAutomatico` (V53) avanza etapas en las vacantes marcadas. Un
           documento legal que promete lo que el código no hace es peor que no tenerlo: es
           la prueba en contra.
+
+          ⚠️ **Desde la V72 la tercera sí depende de una nota**: el pase solo se da si la
+          nota del Perfil Integral llega a la mínima de la vacante, y quien no llega no se
+          descarta —espera a una persona—. Es lo mismo que dice el texto PLATAFORMA 1.1 que
+          firman las cuentas nuevas; quien firmó la 1.0 sigue ligado a la suya.
         */}
-        <p>El sistema sí hace tres cosas solo, y ninguna depende de una nota:</p>
+        <p>
+          El sistema sí hace tres cosas solo, y solo la tercera depende de una nota, y nunca
+          para descartarte:
+        </p>
         <ul className={estilos.lista}>
           <li>
             <strong>Te cierra la postulación al postular</strong> si tú mismo declaras que no
@@ -318,8 +326,10 @@ export function PoliticaPublica() {
             responder una evaluación o una prueba. Te avisamos por correo cuando ocurre.
           </li>
           <li>
-            <strong>Te pasa a la etapa siguiente sin esperar a nadie</strong>, cuando la
-            empresa configuró su vacante para avanzar sola.
+            <strong>Te pasa a la etapa siguiente sin esperar a nadie</strong> cuando la
+            empresa configuró su vacante para avanzar sola y tu nota del Perfil Integral
+            llega a la mínima que fijó; si no llega, no te descarta: una persona revisa tu
+            caso.
           </li>
         </ul>
         <p>

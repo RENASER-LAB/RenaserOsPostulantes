@@ -14,6 +14,53 @@ Desde el 05/10 el diseño se trabaja con las skills de Emil Kowalski (`emil-desi
 
 ---
 
+## La nota mínima del Perfil Integral (12-13/10/2026)
+
+Con «Calificar y avanzar sola», todo el que entregaba el banco pasaba a la prueba en ese mismo
+momento, sin mirar la nota. Ahora el pase espera a que la IA termine la nota del Perfil Integral
+y solo se da si llega a la **nota mínima** de la vacante (60 por defecto). Quien no llega se queda
+en revisión y decide una persona: nadie se descarta por nota. Las reglas, en
+`03-ESTADOS-POSTULACION.md` del backend, «La nota mínima».
+
+- **Panel, la tuerca.** Campo «Nota mínima para pasar el perfil integral» debajo del interruptor
+  (`NotaMinimaDelPase.tsx`), que guarda al salir. Se ve en gris si el interruptor está apagado, la
+  vacante cerrada o falta `puedeConfigurarElPase`, y lo escrito sin guardar se descarta. Texto
+  nuevo del interruptor. Ver [PANEL](PANEL.md) › La nota mínima del pase.
+- **Panel, la ficha.** Junto al estado dice por qué espera alguien que no llegó, o que no tiene
+  nota completa.
+- **Un turno para la tuerca** (`turnoDeLaVacante.ts`). Interruptor, mínima, origen de las
+  preguntas, instrumento, pesos y prueba guardan de uno en uno y releen la vacante al terminar. Es
+  la respuesta a QA-F04 y QA-F05: la mínima recién guardada volvía a 60 al pulsar «Sin
+  evaluación» en el mismo gesto. En el backend, la vacante se bloquea al escribir su configuración
+  y guarda solo las columnas que cambian.
+- **Portal.** Al entregar, «Evaluación entregada. Te avisaremos por correo y en la campana cuando
+  haya novedades.», sin saltar a la prueba; al postular sin banco, a «Mis procesos». Se borró
+  `laPruebaAlInstante.ts`. La política de privacidad lleva el texto 1.1: solo la tercera cosa
+  automática depende de una nota, y nunca para descartar. Ver
+  [02-QUE-VE-EL-CANDIDATO](02-QUE-VE-EL-CANDIDATO.md), 2.5, 2.8 y 2.14.
+- **Backend** (`V72`): `vacante.nota_minima` obligatoria, entera, 60 por defecto; el texto
+  `PLATAFORMA` 1.1; `PUT /vacantes/{id}/nota-minima`; `notaMinima` y `puedeConfigurarElPase` en
+  la vacante, y `porQueEsperaElPase` en la ficha. Si una persona sube la nota de quien espera,
+  pasa sola.
+
+**Quedaron fuera**, anotados en [PENDIENTES](PENDIENTES.md): la nota del ranking con punto frente a
+la de la ficha con coma, y que el preview no tiene IA, así que el cierre real del Perfil Integral
+solo lo cubre la prueba de integración del backend. En los defectos conocidos del backend, el 16:
+editar, el sueldo y la fecha límite no bloquean la vacante, y dos cambios del mismo dato a la vez
+pueden dejar una auditoría con el «antes» equivocado.
+
+**Cómo se comprueba:**
+
+- E2E: `58-umbral-del-perfil-integral` (13 casos), que escribe en el clon y lo retira (marca
+  `QA-PE-0067`). Se ajustaron los E2E 14, 54 y 55.
+- Unitarias: `NotaMinimaDelPase.test.tsx`, `Vacante.test.tsx`, `Evaluacion.test.tsx`,
+  `PostularAlInstante.test.tsx`, `estados.test.ts` y `PoliticaPublica.test.tsx`.
+- En el backend: `FlujoNotaMinimaDelPerfilIT` (20 casos).
+- La comprobación personal la hace el usuario, porque hay inicio de sesión: poner la mínima en una
+  vacante, postular con dos cuentas y ver que una pasa y la otra se queda en revisión.
+
+---
+
 ## La prueba y la evaluación, una pregunta por pantalla (09-12/10/2026)
 
 En el mismo proceso el candidato vivía dos pantallas distintas: la evaluación del Perfil Integral
