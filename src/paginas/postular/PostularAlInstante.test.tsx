@@ -1,9 +1,9 @@
 /**
- * Postular a una vacante sin banco que pasa sola: la prueba se abre en la misma respuesta (V70).
+ * Postular a una vacante sin banco que avanza sola: ya no hay prueba al instante (V72).
  *
- * El portal no lo adivina: vuelve a pedir la postulación recién creada y, si quedó en la
- * prueba, lleva a su portada. Si no —sin pase automático, o sin prueba montada—, a sus
- * procesos, como siempre.
+ * Hasta la V72 la prueba se abría en la misma respuesta y el portal llevaba a su portada.
+ * Desde entonces el pase espera la nota del currículum y exige la mínima de la vacante, así
+ * que al postular siempre se vuelve a sus procesos, sin preguntar dónde quedó.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -72,14 +72,6 @@ async function postularYEnviar() {
   fireEvent.click(screen.getByRole('button', { name: /enviar mi postulación/i }))
 }
 
-/** Dónde quedó la postulación recién creada. */
-function quedoEn(estado: string, instrumentoEtapaTecnica: string | null = 'PRUEBA_PROPIA') {
-  vi.mocked(verPostulacion).mockResolvedValueOnce({
-    resumen: { uuid: 'uuid-al-instante', estado, instrumentoEtapaTecnica, pruebaSinCompletar: false },
-    historial: [],
-  } as unknown as Awaited<ReturnType<typeof verPostulacion>>)
-}
-
 beforeEach(() => {
   vi.mocked(verPostulacion).mockReset()
   // jsdom todavía no implementa `showModal` ni `close` de `<dialog>`.
@@ -95,45 +87,23 @@ beforeEach(() => {
 })
 afterEach(cleanup)
 
-describe('al postular, la prueba al instante', () => {
-  it('si quedó en la prueba, lleva a su portada y lo dice (AC-2)', async () => {
-    quedoEn('PRUEBA_TURNO_CANDIDATO')
-    await postularYEnviar()
-
-    expect(await screen.findByText('Portada de la prueba')).toBeTruthy()
-    expect(screen.getByText('Tu prueba del puesto ya está disponible')).toBeTruthy()
-    expect(verPostulacion).toHaveBeenCalledWith('uuid-al-instante')
-  })
-
-  it('con el cuestionario técnico, a la portada del cuestionario (AC-3)', async () => {
-    quedoEn('PRUEBA_TURNO_CANDIDATO', 'CUESTIONARIO_TECNICO')
-    await postularYEnviar()
-
-    expect(await screen.findByText('Portada del cuestionario')).toBeTruthy()
-  })
-
-  it('si espera al equipo, a sus procesos como siempre (AC-7)', async () => {
-    quedoEn('PERFIL_POR_CONFIRMAR')
+describe('al postular, sin prueba al instante (V72)', () => {
+  it('a sus procesos, aunque la vacante avance sola: el pase espera la nota (AC-07)', async () => {
     await postularYEnviar()
 
     expect(await screen.findByText('Mis procesos')).toBeTruthy()
+    expect(screen.queryByText('Portada de la prueba')).toBeNull()
     expect(screen.queryByText('Tu prueba del puesto ya está disponible')).toBeNull()
-  })
-
-  it('si no se puede saber dónde quedó, también a sus procesos', async () => {
-    vi.mocked(verPostulacion).mockRejectedValueOnce(new Error('sin red'))
-    await postularYEnviar()
-
-    expect(await screen.findByText('Mis procesos')).toBeTruthy()
+    // Ya no se pregunta dónde quedó: nadie pasa a la prueba al postular
+    expect(verPostulacion).not.toHaveBeenCalled()
   })
 
   it('la campana de la cabecera vuelve a pedir sus avisos, sin recargar (AC-10)', async () => {
     const invalidar = vi.spyOn(QueryClient.prototype, 'invalidateQueries')
     try {
-      quedoEn('PRUEBA_TURNO_CANDIDATO')
       await postularYEnviar()
 
-      expect(await screen.findByText('Portada de la prueba')).toBeTruthy()
+      expect(await screen.findByText('Mis procesos')).toBeTruthy()
       expect(invalidar).toHaveBeenCalledWith({ queryKey: ['avisos'] })
     } finally {
       invalidar.mockRestore()

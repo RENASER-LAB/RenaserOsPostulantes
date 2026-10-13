@@ -29,6 +29,7 @@ import { useEditorDePreguntas } from './consultas'
 import { textoDelResumen } from './formulario'
 import estilos from '../Vacante.module.css'
 import propio from './OrigenDeLasPreguntas.module.css'
+import { turnoDeLaVacante } from '../turnoDeLaVacante'
 
 type Origen = 'SIN_EVALUACION' | 'NIVEL' | 'VACANTE'
 
@@ -76,6 +77,11 @@ export function OrigenDeLasPreguntas({
   const enVuelo = useRef(false)
   const cambio = useMutation({
     mutationFn: (origen: Origen) => elegirOrigenDePreguntas(vacante.id, origen),
+    /*
+     * En el turno de la tuerca (QA-F05): la mínima está justo encima y se guarda al salir del
+     * campo, y salir es pulsar una de estas opciones. El origen espera a que ella se guarde.
+     */
+    scope: turnoDeLaVacante(vacante.id),
     onSuccess: alCambiar,
     onError: (causa) => {
       setPendiente(null)

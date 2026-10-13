@@ -334,12 +334,11 @@ Lo que la pantalla sí necesita es el nombre de la empresa, y **ese ya viene con
 llamada a `GET /portal/vacantes/{id}/consentimiento` se fue de aquí y vive ahora en la política
 de privacidad, que es donde se lee el texto.
 
-**Después de enviar** (07/10/2026), el portal vuelve a pedir la postulación recién creada y mira
-dónde quedó: si una vacante sin banco con pase automático ya le abrió la prueba, lo lleva a su
-portada con «Tu prueba del puesto ya está disponible»; si no, a «Mis procesos», como siempre. La
-respuesta de postular no dice si hubo pase —corre después de guardar y puede no darse—, así que
-se pregunta en vez de suponerlo, y si esa consulta falla se va a «Mis procesos»
-(`portadaSiYaTieneLaPrueba`, en `src/paginas/procesos/laPruebaAlInstante.ts`). La campana se
+**Después de enviar**, el portal lo lleva a «Mis procesos», siempre. Del 07/10 al 12/10/2026, en
+una vacante sin banco con pase automático, la prueba se abría al postular y el portal saltaba a su
+portada; **desde la V72 (12/10/2026) ya no hay prueba al instante**: el pase espera a que la IA
+termine la nota del currículum y solo se da si llega a la mínima de la vacante, y entonces le
+llegan el correo y el aviso de la campana. `laPruebaAlInstante.ts` se borró. La campana se
 refresca en el mismo momento, porque postular puede dejar ya un aviso.
 
 ### 2.6 Mis procesos — el centro del portal
@@ -494,16 +493,19 @@ las dos:
   de una serie que cae sobre otra cosa que la primera —una opción de la pregunta nueva, que es
   más alta—, y el diálogo «Entregar» lleva `aPruebaDeDobleClic` (ver la 2.9).
 
-**Al entregar** (07/10/2026) el portal vuelve a pedir su postulación y mira dónde quedó:
+**Al entregar** (12/10/2026, V72) vuelve siempre al detalle de su proceso, con «Evaluación
+entregada. Te avisaremos por correo y en la campana cuando haya novedades.»
+(`EVALUACION_ENTREGADA_A_LA_ESPERA`, en `src/dominio/estados.ts`). **Ya no pasa a la prueba en ese
+momento**, ni siquiera en una vacante con pase automático: el pase espera a que la IA termine la
+nota del Perfil Integral y solo se da si llega a la mínima de la vacante. Si llega, le llegan el
+correo y el aviso de la campana, y la prueba aparece en «Mis procesos»; si no, su proceso dice
+«Tu perfil está en revisión» hasta que alguien del equipo decida. Por eso el aviso no promete la
+prueba.
 
-| Quedó en | Qué ve |
-|---|---|
-| `PRUEBA_TURNO_CANDIDATO` (vacante con pase automático y prueba montada) | La portada de su prueba —o del cuestionario técnico—, con «Tu prueba del puesto ya está disponible». El reloj **no** arranca al llegar: arranca al confirmar en la portada |
-| Cualquier otro sitio | El detalle de su proceso, con «Evaluación entregada. Te avisaremos por correo y en la campana cuando te toque la prueba.» |
-
-Antes salía siempre «Te avisaremos cuando avance», y muchos cerraban la página y no volvían. Si
-dos pestañas entregan a la vez, la segunda recibe un 409 («Esta evaluación ya fue entregada») y
-no se crean dos pruebas.
+Del 07/10 al 12/10/2026, con pase automático y prueba montada, el portal saltaba a la portada de
+la prueba al entregar («la prueba al instante»); se retiró porque el pase pasó a mirar la nota.
+Antes del 07/10 salía «Te avisaremos cuando avance», y muchos cerraban la página y no volvían. Si
+dos pestañas entregan a la vez, la segunda recibe un 409 («Esta evaluación ya fue entregada»).
 
 ### 2.9 Prueba del puesto — **dos formas incompatibles en una sola pantalla**
 `GET /portal/prueba/{uuid}` → `estadoIntento` (`PENDIENTE`|`EN_CURSO`|`ENTREGADA`), `modalidad`,
@@ -705,7 +707,11 @@ otras versiones que no puede ver. Lo que le importa es el texto, y el texto est�
 La página también identifica al responsable con **razón social, RUC y domicilio**, y lista a los
 encargados uno a uno —DeepSeek, Google, Supabase, Amazon Web Services y Vercel— con lo que recibe
 cada uno. Y enumera **las tres cosas que pasan sin que intervenga una persona**, porque la
-versión anterior prometía lo contrario y era falso.
+versión anterior prometía lo contrario y era falso. **Desde la V72 (12/10/2026) dice que solo la
+tercera depende de una nota, y nunca para descartar**: el pase a la etapa siguiente se da si la
+nota del Perfil Integral llega a la mínima que fijó la empresa, y si no llega una persona revisa
+el caso. Es lo mismo que el texto `PLATAFORMA` 1.1 que firman las cuentas nuevas
+(`PoliticaPublica.tsx`).
 
 ### 2.15 Mi perfil · las reseñas de empresas (28/09/2026)
 

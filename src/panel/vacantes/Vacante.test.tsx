@@ -286,6 +286,13 @@ const desarchivarVacante = vi.fn((_id: number) => Promise.resolve(undefined))
 const asignarPlantillaPrueba = vi.fn((_vacanteId: number, _versionId: number) =>
   Promise.resolve({}),
 )
+/* El interruptor del pase y su nota mínima: el gesto de la tuerca los manda juntos (QA-F04). */
+const activarCalificacionAutomatica = vi.fn((_vacanteId: number, _activa: boolean) =>
+  Promise.resolve(undefined),
+)
+const fijarNotaMinima = vi.fn((_vacanteId: number, _nota: number) => Promise.resolve(undefined))
+/* De dónde salen las preguntas, justo debajo de la mínima en la misma tuerca (QA-F05). */
+const elegirOrigen = vi.fn((_vacanteId: number, _origen: string) => Promise.resolve(undefined))
 
 const sinRuido = {
   verVacante: () => Promise.resolve(VACANTE),
@@ -415,6 +422,9 @@ vi.mock('../api/panel', () => ({
   crearRequisito: () => Promise.resolve({}),
   publicarVacante: () => Promise.resolve({}),
   quitarRequisito: () => Promise.resolve({}),
+  activarCalificacionAutomatica: (vacanteId: number, activa: boolean) =>
+    activarCalificacionAutomatica(vacanteId, activa),
+  fijarNotaMinima: (vacanteId: number, nota: number) => fijarNotaMinima(vacanteId, nota),
   /*
     ⚠️ **`enlaces` tiene que ser una lista, no faltar.** La ficha hace
     `ficha.data.enlaces.length` sin guarda, así que un `{}` la revienta entera
@@ -581,6 +591,12 @@ beforeEach(() => {
   listarVersionesBanco.mockReset()
   listarVersionesBanco.mockResolvedValue(BANCOS)
   asignarPlantillaPrueba.mockReset()
+  activarCalificacionAutomatica.mockReset()
+  activarCalificacionAutomatica.mockResolvedValue(undefined)
+  fijarNotaMinima.mockReset()
+  fijarNotaMinima.mockResolvedValue(undefined)
+  elegirOrigen.mockReset()
+  elegirOrigen.mockResolvedValue(undefined)
   ponerNotaPrueba.mockReset()
   ponerNotaPrueba.mockResolvedValue(undefined)
   VERSIONES_PRUEBA = VERSIONES_DE_SIEMPRE
@@ -3372,6 +3388,196 @@ describe('descartar desde la ficha', () => {
   })
 })
 
+// ---------- La nota mínima del pase (V72) ----------
+
+describe('la nota mínima del pase: la tuerca y la ficha', () => {
+  it('encendido, el interruptor promete el pase solo si llega a la mínima, y el campo trae la de la vacante', async () => {
+    sinRuido.verVacante = () =>
+      Promise.resolve({
+        ...VACANTE,
+        calificacionAutomatica: true,
+        notaMinima: 70,
+        puedeEditar: true,
+        puedeConfigurarElPase: true,
+      })
+    await pintar()
+
+    expect(
+      await screen.findByText(
+        'Encendido: cada persona que postule se califica sola y, si llega a la nota mínima, pasa a la prueba del puesto sin que nadie intervenga. Tú decides el resto, cuando ya tienes sus notas',
+      ),
+    ).toBeTruthy()
+    const campo = (await screen.findByLabelText(
+      'Nota mínima para pasar el perfil integral',
+    )) as HTMLInputElement
+    await waitFor(() => expect(campo.value).toBe('70'))
+    expect(campo.disabled).toBe(false)
+    expect(screen.queryByText(/llega hasta la prueba del puesto/)).toBeNull()
+  })
+
+  it('apagado, el campo se ve con su valor, desactivado y en gris, y la ayuda dice por qué (QA-F01)', async () => {
+    sinRuido.verVacante = () =>
+      Promise.resolve({
+        ...VACANTE,
+        calificacionAutomatica: false,
+        notaMinima: 60,
+        puedeEditar: true,
+        puedeConfigurarElPase: true,
+      })
+    await pintar()
+
+    const campo = (await screen.findByLabelText(
+      'Nota mínima para pasar el perfil integral',
+    )) as HTMLInputElement
+    expect(campo.value).toBe('60')
+    expect(campo.disabled).toBe(true)
+    expect(campo.closest('div')!.className).toContain('notaMinimaApagada')
+    expect(screen.getByText('Solo se usa con «Calificar y avanzar sola» encendido.')).toBeTruthy()
+  })
+
+  it('sin editar la vacante pero con el permiso del pase —RESPONSABLE_AREA—, encendido, se edita', async () => {
+    sinRuido.verVacante = () =>
+      Promise.resolve({
+        ...VACANTE,
+        calificacionAutomatica: true,
+        notaMinima: 60,
+        puedeEditar: false,
+        puedeConfigurarElPase: true,
+      })
+    await pintar()
+
+    const campo = (await screen.findByLabelText(
+      'Nota mínima para pasar el perfil integral',
+    )) as HTMLInputElement
+    await waitFor(() => expect(campo.disabled).toBe(false))
+    expect((screen.getByRole('checkbox', { name: /Calificar y avanzar sola/ }) as HTMLInputElement).disabled).toBe(
+      false,
+    )
+  })
+
+  it('sin el permiso del pase, el campo se ve desactivado y en gris, y el interruptor sigue como está (QA-F03)', async () => {
+    sinRuido.verVacante = () =>
+      Promise.resolve({
+        ...VACANTE,
+        calificacionAutomatica: true,
+        notaMinima: 60,
+        puedeEditar: false,
+        puedeConfigurarElPase: false,
+      })
+    await pintar()
+
+    const campo = (await screen.findByLabelText(
+      'Nota mínima para pasar el perfil integral',
+    )) as HTMLInputElement
+    await waitFor(() => expect(campo.value).toBe('60'))
+    expect(campo.disabled).toBe(true)
+    expect(campo.closest('div')!.className).toContain('notaMinimaApagada')
+    expect((screen.getByRole('checkbox', { name: /Calificar y avanzar sola/ }) as HTMLInputElement).disabled).toBe(
+      false,
+    )
+  })
+
+  it('escribir la mínima y pulsar el interruptor en el mismo gesto: el apagado espera a que la mínima se guarde (QA-F04)', async () => {
+    sinRuido.verVacante = () =>
+      Promise.resolve({
+        ...VACANTE,
+        calificacionAutomatica: true,
+        notaMinima: 60,
+        puedeEditar: true,
+        puedeConfigurarElPase: true,
+      })
+    let guardarLaMinima: (valor: undefined) => void = () => {}
+    fijarNotaMinima.mockImplementation(
+      () => new Promise<undefined>((listo) => (guardarLaMinima = listo)),
+    )
+    await pintar()
+
+    const campo = (await screen.findByLabelText(
+      'Nota mínima para pasar el perfil integral',
+    )) as HTMLInputElement
+    await waitFor(() => expect(campo.disabled).toBe(false))
+    // Salir del campo es pulsar el interruptor que tiene encima: blur y clic, seguidos
+    fireEvent.change(campo, { target: { value: '70' } })
+    fireEvent.blur(campo)
+    fireEvent.click(screen.getByRole('checkbox', { name: /Calificar y avanzar sola/ }))
+
+    await waitFor(() => expect(fijarNotaMinima).toHaveBeenCalledWith(VACANTE.id, 70))
+    await new Promise((listo) => setTimeout(listo, 30))
+    expect(activarCalificacionAutomatica).not.toHaveBeenCalled()
+
+    guardarLaMinima(undefined)
+    await waitFor(() =>
+      expect(activarCalificacionAutomatica).toHaveBeenCalledWith(VACANTE.id, false),
+    )
+    expect(fijarNotaMinima).toHaveBeenCalledTimes(1)
+  })
+
+  it('escribir la mínima y elegir «Sin evaluación» justo debajo en el mismo gesto: el origen espera a que la mínima se guarde (QA-F05)', async () => {
+    sinRuido.verVacante = () =>
+      Promise.resolve({
+        ...VACANTE,
+        estado: 'BORRADOR',
+        calificacionAutomatica: true,
+        notaMinima: 60,
+        puedeEditar: true,
+        puedeConfigurarElPase: true,
+      })
+    let guardarLaMinima: (valor: undefined) => void = () => {}
+    fijarNotaMinima.mockImplementation(
+      () => new Promise<undefined>((listo) => (guardarLaMinima = listo)),
+    )
+    await pintar()
+
+    const campo = (await screen.findByLabelText(
+      'Nota mínima para pasar el perfil integral',
+    )) as HTMLInputElement
+    await waitFor(() => expect(campo.disabled).toBe(false))
+    // Salir del campo es pulsar la opción de debajo: blur y clic, seguidos
+    fireEvent.change(campo, { target: { value: '70' } })
+    fireEvent.blur(campo)
+    fireEvent.click(screen.getByRole('radio', { name: 'Sin evaluación' }))
+
+    await waitFor(() => expect(fijarNotaMinima).toHaveBeenCalledWith(VACANTE.id, 70))
+    await new Promise((listo) => setTimeout(listo, 30))
+    expect(elegirOrigen).not.toHaveBeenCalled()
+
+    guardarLaMinima(undefined)
+    await waitFor(() => expect(elegirOrigen).toHaveBeenCalledWith(VACANTE.id, 'SIN_EVALUACION'))
+    expect(fijarNotaMinima).toHaveBeenCalledTimes(1)
+  })
+
+  it('la ficha dice por qué espera quien no llegó a la mínima, junto a su estado (AC-03)', async () => {
+    FICHA = {
+      ...FICHA_PELADA,
+      estadoNombre: 'Perfil · por confirmar',
+      porQueEsperaElPase: 'Nota 58,20: no llega a la mínima de la vacante (60)',
+    }
+    await pintar()
+    fireEvent.click(await screen.findByRole('button', { name: EN_PERFIL.candidato }))
+
+    expect(
+      await screen.findByText('Nota 58,20: no llega a la mínima de la vacante (60)'),
+    ).toBeTruthy()
+  })
+
+  it('sin nota completa, la ficha pide revisar el Perfil Integral (AC-04)', async () => {
+    FICHA = { ...FICHA_PELADA, porQueEsperaElPase: 'Sin nota completa: revisa el Perfil Integral' }
+    await pintar()
+    fireEvent.click(await screen.findByRole('button', { name: EN_PERFIL.candidato }))
+
+    expect(await screen.findByText('Sin nota completa: revisa el Perfil Integral')).toBeTruthy()
+  })
+
+  it('sin nada que explicar —o una ficha de antes—, no sale ninguna frase de la mínima', async () => {
+    await pintar()
+    fireEvent.click(await screen.findByRole('button', { name: EN_PERFIL.candidato }))
+
+    await screen.findByText(/Cómo llegó hasta aquí/)
+    expect(screen.queryByText(/no llega a la mínima/)).toBeNull()
+    expect(screen.queryByText(/Sin nota completa/)).toBeNull()
+  })
+})
+
 // ---------- El botón «Filtros», la fecha y la selección en lote ----------
 
 /*
@@ -4167,6 +4373,7 @@ const verLaPruebaPropia = vi.fn()
 vi.mock('../api/preguntasPropias', async (original) => ({
   ...(await original<typeof import('../api/preguntasPropias')>()),
   verPreguntasPropias: (id: number, ruta?: string) => verLaPruebaPropia(id, ruta),
+  elegirOrigenDePreguntas: (id: number, origen: string) => elegirOrigen(id, origen),
 }))
 // «No completaron la prueba»: solo la pide una vacante con la prueba del editor.
 const verNoCompletaron = vi.fn(() => Promise.resolve([] as unknown[]))

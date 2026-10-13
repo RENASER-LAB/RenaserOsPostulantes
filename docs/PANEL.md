@@ -4,8 +4,8 @@ Qué es, cómo se entra, qué enseña cada entrada del menú lateral, qué exige
 publicar una vacante, cómo se eligen su modalidad y su ciudad, cómo se corrige después, las
 reseñas de empresas —escribirlas, leerlas y moderarlas—, la gestión de personas: colaboradores,
 sedes y cargos, y contratar desde la ficha; las preguntas propias de cada vacante: de dónde
-salen, el editor y su nota en la ficha; y la prueba técnica de cada vacante nueva, escrita en ese
-mismo editor. El recorrido de los dos lados —equipo y candidato— está en
+salen, el editor y su nota en la ficha; la prueba técnica de cada vacante nueva, escrita en ese
+mismo editor; y la nota mínima con la que una vacante pasa sola a la prueba. El recorrido de los dos lados —equipo y candidato— está en
 [06-FLUJO-COMPLETO.md](06-FLUJO-COMPLETO.md).
 
 ---
@@ -1095,12 +1095,55 @@ Comprobarlo: `npx playwright test herramientas/e2e/54-reparto-y-avisos-de-los-pu
 herramientas/e2e/55-reparto-y-avisos-de-los-puntos-qa.spec.ts`. ⚠️ **Escriben** en el clon y lo
 retiran al terminar (marca `QA-PE-0067`); la IA va apagada. Lo visual lo comprueba el usuario.
 
+### La nota mínima del pase (12/10)
+
+En la tuerca de la vacante, «Cómo avanza esta vacante» tiene debajo del interruptor «Calificar y
+avanzar sola» un campo **«Nota mínima para pasar el perfil integral»**, de 0 a 100 y 60 por
+defecto (`NotaMinimaDelPase.tsx`). Con el interruptor encendido, quien llega a esa nota en el
+Perfil Integral pasa solo a la prueba del puesto; quien no llega espera en «por confirmar» a que
+alguien del equipo decida, y nadie se descarta por nota. Las reglas del pase están en
+`03-ESTADOS-POSTULACION.md` del backend, «La nota mínima».
+
+- **El texto del interruptor encendido** dice: «Encendido: cada persona que postule se califica
+  sola y, si llega a la nota mínima, pasa a la prueba del puesto sin que nadie intervenga. Tú
+  decides el resto, cuando ya tienes sus notas».
+- **Se guarda al salir del campo**, no al escribir, y solo si cambió y es un entero de 0 a 100.
+  Si no, debajo sale «Escribe un número de 0 a 100» y no se manda nada. Un fallo del servidor
+  sale en el mismo aviso que el interruptor, al pie de la configuración: «No se pudo guardar la
+  nota mínima: …».
+- **Desactivado y en gris** (`.notaMinimaApagada`) con el interruptor apagado, con la vacante
+  cerrada o sin `puedeConfigurarElPase`. Mira ese dato y **no `puedeEditar`**: la mínima se fija
+  con el permiso del interruptor (`elegir_plantilla_evaluacion`), y el responsable del área, que
+  no edita la vacante, sí puede fijarla. Con el interruptor apagado la ayuda dice «Solo se usa con
+  «Calificar y avanzar sola» encendido.». Mientras guarda también se desactiva, pero sin el gris.
+- **Lo escrito sin guardar se descarta** en cuanto el campo deja de poder editarse: desactivado
+  enseña siempre la mínima guardada, no un «101» que nadie llegó a guardar.
+- **Un turno común para la tuerca** (`turnoDeLaVacante.ts`): los guardados del interruptor, la
+  mínima, el origen de las preguntas, el instrumento con sus minutos, los pesos y la prueba salen
+  de uno en uno, en el orden del gesto. Salir del campo es pulsar lo siguiente, así que escribir
+  la mínima y pulsar el interruptor o «Sin evaluación» mandaba dos peticiones a la vez. Cada
+  guardado relee la vacante al terminar, y lo que se ve al final es lo que guardó la base.
+- **Cambiar la mínima no mueve a nadie que ya espera**: vale para las notas que terminen desde
+  entonces y para los recálculos.
+
+**En la ficha del candidato**, junto al estado, una línea explica por qué espera cuando la razón
+es su nota: «Nota 58,20: no llega a la mínima de la vacante (60)» o «Sin nota completa: revisa el
+Perfil Integral». La escribe el backend (`porQueEsperaElPase`) y no sale mientras la IA trabaja:
+entonces manda la nota «en camino».
+
+Comprobarlo: `npx playwright test herramientas/e2e/58-umbral-del-perfil-integral.spec.ts`.
+⚠️ **Escribe** en el clon y lo retira al terminar (marca `QA-PE-0067`). La IA va apagada en el
+preview: el cierre se siembra y la nota la pone una persona desde el panel, que es el camino del
+recálculo. Las notas exactas al cerrar las recorre `FlujoNotaMinimaDelPerfilIT` en el backend.
+Las unitarias, en `NotaMinimaDelPase.test.tsx` y `Vacante.test.tsx`.
+
 ### La nota del perfil «en camino» (07/10)
 
-Desde el 07/10/2026, en una vacante con «calificar y avanzar sola» y prueba montada, el candidato
-pasa a la prueba **al entregar el banco** (o al postular, sin banco), sin esperar a la IA. Así
-puede estar ya rindiendo su prueba con la nota del Perfil Integral por llegar, y la celda decía
-«en otra etapa»: verdad, pero parecía que nadie lo iba a calificar.
+Del 07/10 al 12/10/2026, en una vacante con «calificar y avanzar sola» y prueba montada, el
+candidato pasaba a la prueba **al entregar el banco** (o al postular, sin banco), sin esperar a la
+IA, y la celda decía «en otra etapa»: verdad, pero parecía que nadie lo iba a calificar. Esa
+prueba al instante se retiró el 12/10/2026 (ver «La nota mínima del pase», arriba); la nota «en
+camino» se quedó, porque sirve igual mientras la IA trabaja.
 
 - **En la pestaña «Perfil integral»**, una fila sin nota con la calificación en curso
   (`estadoCalificacion = EN_CURSO`) dice **«en camino»** en la celda, y la ficha escribe «Nota en
@@ -1109,10 +1152,12 @@ puede estar ya rindiendo su prueba con la nota del Perfil Integral por llegar, y
 - **Solo con un trabajo vivo**: sin trabajo no hay nada en camino —la IA puede estar apagada— y
   con uno fallido se enseña el fallo de siempre. En las demás pestañas no sale, porque
   `estadoCalificacion` habla del retrato y no de las otras etapas.
-- **El historial de la ficha** dice el motivo del paso: «Pase automático al entregar: la nota se
-  calcula después» (o «al postular»).
-- Cuando la IA termina, la nota y el veredicto aparecen como en cualquier otra fila; el candidato
-  no se mueve de la prueba.
+- **El historial de la ficha** dice el motivo del pase, con la nota y la mínima: «Pase
+  automático: nota del Perfil Integral 72,40 (mínima 60)», o «Pase automático tras recalcular:
+  nota 63,10 (mínima 60)». Los motivos «al entregar» y «al postular» de la prueba al instante ya
+  no se escriben.
+- Cuando la IA termina, la nota y el veredicto aparecen como en cualquier otra fila, y entonces se
+  decide el pase.
 
 El resto de la entrega —la campana en cada etapa, los recordatorios y el correo de la prueba— no
 tiene pantalla en el panel: ver «Cómo se entera el candidato de cada paso» en `docs/` del
@@ -1125,8 +1170,9 @@ editables como los demás textos de correo, que el panel no enseña: se leen con
 
 Comprobarlo: `npx playwright test herramientas/e2e/54-la-prueba-al-instante.spec.ts
 herramientas/e2e/55-la-prueba-al-instante-qa.spec.ts`. ⚠️ **Escriben** en el clon y lo retiran
-al terminar (marca `QA-PE-0067`); la IA va apagada. Las unitarias, en `ranking.test.ts` («la nota
-del perfil en camino (V70)») y `Vacante.test.tsx`.
+al terminar (marca `QA-PE-0067`); la IA va apagada. Desde el 12/10/2026 comprueban que al
+entregar no hay prueba y sale el aviso nuevo. Las unitarias, en `ranking.test.ts` («la nota del
+perfil en camino (V70)») y `Vacante.test.tsx`.
 
 ### La sección «Pruebas» se retiró (05/10)
 

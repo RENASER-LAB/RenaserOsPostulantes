@@ -8,10 +8,10 @@
 
 import { describe, expect, it } from 'vitest'
 import {
+  EVALUACION_ENTREGADA_A_LA_ESPERA,
   leTocaAlCandidato,
   leTocaAlCandidatoEn,
   momentoDeLaEtapa,
-  portadaDeLaPrueba,
   quedoSinCompletar,
 } from './estados'
 
@@ -50,28 +50,13 @@ describe('la prueba que quedó sin completar', () => {
   })
 })
 
-describe('la portada de la prueba, justo después de entregar o postular (V70)', () => {
-  const base = { uuid: 'u1', instrumentoEtapaTecnica: 'PRUEBA_PROPIA', pruebaSinCompletar: false }
-
-  it('en la prueba, la portada de la prueba del puesto', () => {
-    expect(portadaDeLaPrueba({ ...base, estado: 'PRUEBA_TURNO_CANDIDATO' })).toBe('/procesos/u1/prueba')
-  })
-
-  it('con el cuestionario técnico, la del cuestionario', () => {
-    expect(
-      portadaDeLaPrueba({
-        ...base,
-        estado: 'PRUEBA_TURNO_CANDIDATO',
-        instrumentoEtapaTecnica: 'CUESTIONARIO_TECNICO',
-      }),
-    ).toBe('/procesos/u1/prueba-tecnica')
-  })
-
-  it('esperando, o con la prueba ya cerrada sin completar, ninguna', () => {
-    expect(portadaDeLaPrueba({ ...base, estado: 'PERFIL_CALIFICANDO' })).toBeNull()
-    expect(portadaDeLaPrueba({ ...base, estado: 'PERFIL_POR_CONFIRMAR' })).toBeNull()
-    expect(
-      portadaDeLaPrueba({ ...base, estado: 'PRUEBA_TURNO_CANDIDATO', pruebaSinCompletar: true }),
-    ).toBeNull()
+describe('al entregar el banco, sin prueba al instante (V72)', () => {
+  it('promete avisar, no la prueba: el pase espera la nota y exige la mínima', () => {
+    // La V70 decía «cuando te toque la prueba»; desde la V72 puede no tocarle sola —si no
+    // llega a la mínima, decide una persona—, así que lo honesto es avisar de novedades.
+    expect(EVALUACION_ENTREGADA_A_LA_ESPERA).toBe(
+      'Evaluación entregada. Te avisaremos por correo y en la campana cuando haya novedades.',
+    )
+    expect(EVALUACION_ENTREGADA_A_LA_ESPERA).not.toMatch(/prueba/)
   })
 })
