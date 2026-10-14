@@ -3,7 +3,9 @@
  *
  * Sale dentro del recuadro de espera —en «Mis procesos» y en el detalle— cuando la
  * vacante es de RENASER, la beta está encendida y al candidato no le toca nada.
- * Cuando le toca algo no sale: manda la acción.
+ * Cuando le toca algo no se ofrece: manda la acción. Pero si ya está conectado, sale
+ * en una línea al pie de la acción (`compacta`): «Dejar de recibir» no puede
+ * desaparecer justo cuando el aviso que llegó por WhatsApp fue el de «te toca».
  *
  * El candidato **escribe primero**: el botón guarda su consentimiento, le anuncia al
  * bot que ese número va a escribir y abre el chat con un mensaje ya escrito. El bot
@@ -51,6 +53,12 @@ interface Props {
    * vacante (h2) y en el detalle, del título del momento (h3).
    */
   nivelDelTitulo?: 3 | 4
+  /**
+   * Al pie de la acción, cuando al candidato le toca algo: solo si ya está conectado, y
+   * en una línea. Sin conexión no pinta nada —ni el botón verde, que le competiría a la
+   * acción— y, tras «Dejar de recibir», lo confirma en la misma línea.
+   */
+  compacta?: boolean
 }
 
 /** Si la tarjeta se pinta: solo con la beta, en una vacante de RENASER y con un estado que contar. */
@@ -58,7 +66,7 @@ export function hayTarjetaDeWhatsapp(postulacion: Pick<MiPostulacion, 'whatsapp'
   return Boolean(postulacion.whatsapp?.disponible && postulacion.whatsapp.estado)
 }
 
-export function TarjetaWhatsapp({ postulacion, nivelDelTitulo = 4 }: Props) {
+export function TarjetaWhatsapp({ postulacion, nivelDelTitulo = 4, compacta = false }: Props) {
   const cache = useQueryClient()
   /*
     Lo que contestó el backend al pulsar manda sobre lo que trajo la lista, pero solo
@@ -79,6 +87,9 @@ export function TarjetaWhatsapp({ postulacion, nivelDelTitulo = 4 }: Props) {
   const [celular, setCelular] = useState('')
   const [errorCelular, setErrorCelular] = useState<string | null>(null)
   const [enlaceSinAbrir, setEnlaceSinAbrir] = useState<string | null>(null)
+  // Solo lo lee la línea compacta: tras dejarlo, la lista trae REVOCADO y sin esto la
+  // línea se iría sin decir nada.
+  const [dejado, setDejado] = useState(false)
   const estado = tarjeta?.estado
 
   /*
@@ -176,6 +187,7 @@ export function TarjetaWhatsapp({ postulacion, nivelDelTitulo = 4 }: Props) {
     setPreparando(true)
     try {
       quedarseCon(await dejarDeRecibirPorWhatsapp(postulacion.uuid))
+      setDejado(true)
       void refrescar()
     } catch {
       setFallo('No pudimos dejar de enviarte novedades. Inténtalo de nuevo.')
@@ -202,6 +214,38 @@ export function TarjetaWhatsapp({ postulacion, nivelDelTitulo = 4 }: Props) {
       )}
     </>
   )
+
+  if (compacta) {
+    if (dejado && tarjeta.estado !== 'ACTIVO') {
+      return (
+        <section className={estilos.compacta} aria-label="Novedades por WhatsApp">
+          <p className={estilos.hecho} role="status">
+            Listo: ya no recibirás por WhatsApp las novedades de este proceso.
+          </p>
+        </section>
+      )
+    }
+    if (tarjeta.estado !== 'ACTIVO') return null
+    return (
+      <section className={estilos.compacta} aria-label="Novedades por WhatsApp">
+        <p className={estilos.conectadoCompacto}>
+          <IconoWhatsapp tamano={16} className={estilos.iconoCompacto} />
+          <span>
+            Conectado por WhatsApp (<span className={estilos.numero}>{tarjeta.numero}</span>).
+          </span>
+        </p>
+        <button
+          type="button"
+          className={estilos.dejar}
+          onClick={() => void dejarDeRecibir()}
+          disabled={preparando}
+        >
+          Dejar de recibir
+        </button>
+        {fallos}
+      </section>
+    )
+  }
 
   if (tarjeta.estado === 'SUPRIMIDO') {
     return (

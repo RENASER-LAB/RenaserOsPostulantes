@@ -3,14 +3,15 @@
  *
  * AC-03 (sale con su número, el botón y el consentimiento), AC-04 (no sale fuera de la
  * beta, ni cuando le toca algo), AC-05 (sin celular lo pide), AC-06 (el botón prepara
- * y abre el enlace), AC-12 (dejar de recibir) y AC-13 (dado de baja).
+ * y abre el enlace), AC-12 (dejar de recibir) y AC-13 (dado de baja). Y, conectado,
+ * «Dejar de recibir» también al pie de la acción cuando le toca algo.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
-import type { MiPostulacion, WhatsappDelProceso } from '@/api/tipos'
+import type { EstadoWhatsapp, MiPostulacion, WhatsappDelProceso } from '@/api/tipos'
 import { ErrorApi } from '@/api/cliente'
 import { Seguimiento } from './Seguimiento'
 import { CONSENTIMIENTO_WHATSAPP, TarjetaWhatsapp } from './TarjetaWhatsapp'
@@ -231,9 +232,91 @@ describe('en el recuadro de espera del recorrido', () => {
     expect(screen.queryByRole('button', { name: 'Escribir por WhatsApp' })).toBeNull()
   })
 
+  it('con la tarjeta, el estado y WhatsApp van en el reparto de dos columnas', () => {
+    const { container } = montar(<Seguimiento postulacion={postulacion('PERFIL_CALIFICANDO', SIN_VINCULAR)} />)
+
+    const titulo = screen.getByRole('heading', { name: 'Estamos calificando tus respuestas' })
+    const tarjeta = screen.getByRole('heading', { name: 'Recibe tus novedades por WhatsApp' }).closest('section')
+    const reparto = titulo.parentElement?.parentElement
+    // Hermanos en el mismo reparto: el estado primero, lo que se ofrece después.
+    expect(reparto).toBe(tarjeta?.parentElement)
+    expect(reparto?.firstElementChild?.contains(titulo)).toBe(true)
+    expect(reparto?.lastElementChild).toBe(tarjeta)
+    expect(container.textContent?.match(/No tienes que hacer nada\./g)).toHaveLength(1)
+  })
+
+  it('sin tarjeta la espera no cambia: el estado solo, sin reparto', () => {
+    montar(<Seguimiento postulacion={postulacion('PERFIL_CALIFICANDO', null)} />)
+
+    const titulo = screen.getByRole('heading', { name: 'Estamos calificando tus respuestas' })
+    expect(titulo.parentElement?.childElementCount).toBe(2)
+    expect(screen.queryByRole('region', { name: 'Novedades por WhatsApp' })).toBeNull()
+  })
+
   it('AC-17 · «Estamos revisando tu postulación» dice «No tienes que hacer nada.» una sola vez', () => {
     const { container } = montar(<Seguimiento postulacion={postulacion('POSTULADA', null)} />)
 
     expect(container.textContent?.match(/No tienes que hacer nada\./g)).toHaveLength(1)
   })
+})
+
+describe('al pie de la acción, cuando le toca algo', () => {
+  const ACTIVO: WhatsappDelProceso = { disponible: true, estado: 'ACTIVO', numero: '+51 9•• ••• 321' }
+
+  it('conectado: una línea con el número y «Dejar de recibir», sin el botón verde', () => {
+    montar(<Seguimiento postulacion={postulacion('PRUEBA_TURNO_CANDIDATO', ACTIVO)} />)
+
+    expect(screen.getByRole('link', { name: 'Abrir prueba' })).toBeTruthy()
+    const linea = screen.getByRole('region', { name: 'Novedades por WhatsApp' })
+    expect(linea.textContent).toContain('Conectado por WhatsApp (+51 9•• ••• 321).')
+    expect(screen.getByText('+51 9•• ••• 321').tagName).toBe('SPAN')
+    expect(screen.getByRole('button', { name: 'Dejar de recibir' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Escribir por WhatsApp' })).toBeNull()
+    expect(screen.queryByText(CONSENTIMIENTO_WHATSAPP)).toBeNull()
+  })
+
+  it('«Dejar de recibir» cierra el vínculo y lo confirma en la misma línea, sin ofrecer otra vez', async () => {
+    api.dejarDeRecibirPorWhatsapp.mockResolvedValue({
+      disponible: true,
+      estado: 'REVOCADO',
+      numero: '+51 987 654 321',
+    })
+    montar(<Seguimiento postulacion={postulacion('PRUEBA_TURNO_CANDIDATO', ACTIVO)} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Dejar de recibir' }))
+
+    expect(await screen.findByRole('status')).toBeTruthy()
+    expect(screen.getByRole('status').textContent).toBe(
+      'Listo: ya no recibirás por WhatsApp las novedades de este proceso.',
+    )
+    expect(api.dejarDeRecibirPorWhatsapp).toHaveBeenCalledWith('b6b7d2c4-0000-4000-8000-000000000001')
+    expect(screen.queryByRole('button', { name: 'Escribir por WhatsApp' })).toBeNull()
+  })
+
+  it('si falla, lo dice y deja el botón para reintentar', async () => {
+    api.dejarDeRecibirPorWhatsapp.mockRejectedValue(new ErrorApi(503, 'El servidor no responde'))
+    montar(<Seguimiento postulacion={postulacion('PRUEBA_TURNO_CANDIDATO', ACTIVO)} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Dejar de recibir' }))
+
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'No pudimos dejar de enviarte novedades. Inténtalo de nuevo.',
+    )
+    expect(screen.getByRole('button', { name: 'Dejar de recibir' })).toBeTruthy()
+  })
+
+  it.each<EstadoWhatsapp>(['SIN_VINCULAR', 'PENDIENTE', 'REVOCADO', 'SUPRIMIDO', 'SIN_CELULAR'])(
+    'sin conexión (%s) no pinta nada: manda la acción',
+    (estado) => {
+      montar(
+        <Seguimiento
+          postulacion={postulacion('PRUEBA_TURNO_CANDIDATO', { disponible: true, estado, numero: '+51 987 654 321' })}
+        />,
+      )
+
+      expect(screen.getByRole('link', { name: 'Abrir prueba' })).toBeTruthy()
+      expect(screen.queryByRole('region', { name: 'Novedades por WhatsApp' })).toBeNull()
+      expect(screen.queryByRole('button')).toBeNull()
+    },
+  )
 })

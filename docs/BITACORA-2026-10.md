@@ -14,6 +14,23 @@ Desde el 05/10 el diseño se trabaja con las skills de Emil Kowalski (`emil-desi
 
 ---
 
+## «Dejar de recibir» siempre a mano, y la espera a todo lo ancho (14/10/2026)
+
+Con la beta ya encendida, dos cosas que se vieron en producción:
+
+- **No se podía dejar WhatsApp cuando tocaba algo.** «Dejar de recibir» solo vivía en la
+  tarjeta, y la tarjeta no sale cuando al candidato le toca algo: justo después del aviso de
+  «te toca» —el momento en que más se quiere dejar— no había por dónde, salvo escribir BAJA al
+  bot. Y el consentimiento promete «Puedes dejarlo cuando quieras». Ahora, conectado, sale una
+  línea al pie de la acción (`TarjetaWhatsapp` con `compacta`), sin el botón verde. Sin
+  conexión no sale nada: la invitación sigue siendo solo de la espera.
+- **La tarjeta dejaba medio recuadro vacío.** Iba debajo del estado, en un recuadro de 44rem
+  dentro de un proceso de 80. Ahora el recuadro con tarjeta va a todo lo ancho y las pone lado a
+  lado (piezas `.esperaConOferta` y `.repartoDeEspera`). Decide el ancho del propio recuadro —una
+  consulta de contenedor—, no el de la pantalla: en la media columna del detalle se apilan.
+
+---
+
 ## Las novedades por WhatsApp (12-13/10/2026)
 
 Mientras espera, el candidato puede pedir que el bot de RENASER le cuente cómo va su proceso por
