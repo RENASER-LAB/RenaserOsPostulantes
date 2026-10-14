@@ -136,32 +136,33 @@
 }
 
 /*
- * **Conectado mientras le toca algo** (`compacta`): una línea al pie del panel de
- * la acción, bajo un filete. En tinta, sin verde y sin tarjeta, porque ahí manda la
- * acción; existe para que «Dejar de recibir» siga a mano justo cuando el aviso que
- * llegó por WhatsApp fue el de «te toca».
+ * **Mientras le toca algo** (`compacta`): una línea al pie del panel de la acción,
+ * bajo un filete. En tinta, sin verde y sin tarjeta, porque ahí manda la acción;
+ * existe para que conectarse y «Dejar de recibir» sigan a mano también entonces.
  */
 .compacta {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 0 var(--e3);
+  column-gap: var(--e4);
   margin-top: var(--e5);
-  padding-top: var(--e2);
+  padding-top: var(--e1);
   border-top: 1px solid var(--regla);
   font-size: var(--t-apoyo);
   line-height: 1.55;
   color: var(--tinta2);
 }
 
-.conectadoCompacto {
+/* El icono se queda en la primera línea cuando el texto parte en dos. */
+.lineaCompacta {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--e2);
   margin: 0;
+  padding: var(--e2) 0;
 }
 
-.conectadoCompacto .numero {
+.lineaCompacta .numero {
   color: var(--tinta);
   font-weight: 500;
   font-variant-numeric: tabular-nums;
@@ -169,6 +170,7 @@
 
 .iconoCompacto {
   flex: none;
+  margin-top: 3px;
   color: var(--tinta);
 }
 
@@ -176,8 +178,30 @@
   margin-top: 0;
 }
 
-.compacta .fallo {
-  flex-basis: 100%;
+/* Ofrecer es afirmativo: la misma acción menor que «Dejar de recibir», en tinta plena. */
+.escribirTexto {
+  composes: dejar;
+  margin-top: 0;
+  font-weight: 600;
+  color: var(--tinta);
+  text-decoration-color: var(--tinta3);
+}
+
+/* El consentimiento y el número, debajo y en letra menor, como en la tarjeta. */
+.notaCompacta {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding-bottom: var(--e2);
+  font-size: var(--t-menor);
+  line-height: 1.5;
+  color: var(--tinta3);
+  max-width: var(--medida);
+}
+
+.compacta .fallo,
+.compacta .texto,
+.compacta .hecho {
+  grid-column: 1 / -1;
   margin-top: 0;
   padding-bottom: var(--e2);
 }
@@ -195,6 +219,11 @@
 @media (max-width: 640px) {
   .tarjeta {
     padding: var(--e4);
+  }
+
+  .compacta {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: start;
   }
 
   .escribir {

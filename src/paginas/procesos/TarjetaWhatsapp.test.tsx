@@ -3,8 +3,8 @@
  *
  * AC-03 (sale con su número, el botón y el consentimiento), AC-04 (no sale fuera de la
  * beta, ni cuando le toca algo), AC-05 (sin celular lo pide), AC-06 (el botón prepara
- * y abre el enlace), AC-12 (dejar de recibir) y AC-13 (dado de baja). Y, conectado,
- * «Dejar de recibir» también al pie de la acción cuando le toca algo.
+ * y abre el enlace), AC-12 (dejar de recibir) y AC-13 (dado de baja). Y la línea al
+ * pie de la acción cuando le toca algo: conectarse o dejarlo, sin la tarjeta.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -225,11 +225,13 @@ describe('en el recuadro de espera del recorrido', () => {
     expect(screen.getByRole('button', { name: 'Escribir por WhatsApp' })).toBeTruthy()
   })
 
-  it('AC-04 · cuando le toca algo no sale: manda la acción', () => {
+  it('AC-04 · cuando le toca algo no sale la tarjeta: manda la acción, y WhatsApp va debajo en una línea', () => {
     montar(<Seguimiento postulacion={postulacion('PRUEBA_TURNO_CANDIDATO', SIN_VINCULAR)} />)
 
-    expect(screen.getByRole('link', { name: 'Abrir prueba' })).toBeTruthy()
-    expect(screen.queryByRole('button', { name: 'Escribir por WhatsApp' })).toBeNull()
+    const accion = screen.getByRole('link', { name: 'Abrir prueba' })
+    expect(screen.queryByRole('heading', { name: 'Recibe tus novedades por WhatsApp' })).toBeNull()
+    const linea = screen.getByRole('region', { name: 'Novedades por WhatsApp' })
+    expect(accion.compareDocumentPosition(linea) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
   it('con la tarjeta, el estado y WhatsApp van en el reparto de dos columnas', () => {
@@ -305,8 +307,8 @@ describe('al pie de la acción, cuando le toca algo', () => {
     expect(screen.getByRole('button', { name: 'Dejar de recibir' })).toBeTruthy()
   })
 
-  it.each<EstadoWhatsapp>(['SIN_VINCULAR', 'PENDIENTE', 'REVOCADO', 'SUPRIMIDO', 'SIN_CELULAR'])(
-    'sin conexión (%s) no pinta nada: manda la acción',
+  it.each<EstadoWhatsapp>(['SIN_VINCULAR', 'REVOCADO'])(
+    'sin conectar (%s): la ofrece en una línea, en tinta, con el consentimiento',
     (estado) => {
       montar(
         <Seguimiento
@@ -314,9 +316,56 @@ describe('al pie de la acción, cuando le toca algo', () => {
         />,
       )
 
-      expect(screen.getByRole('link', { name: 'Abrir prueba' })).toBeTruthy()
-      expect(screen.queryByRole('region', { name: 'Novedades por WhatsApp' })).toBeNull()
-      expect(screen.queryByRole('button')).toBeNull()
+      const linea = screen.getByRole('region', { name: 'Novedades por WhatsApp' })
+      expect(linea.textContent).toContain('Recibe las novedades de este proceso por WhatsApp (+51 987 654 321).')
+      expect(screen.getByRole('button', { name: 'Escribir por WhatsApp' })).toBeTruthy()
+      expect(linea.textContent).toContain(CONSENTIMIENTO_WHATSAPP)
+      expect(screen.getByRole('link', { name: 'Cámbialo en Mi cuenta' }).getAttribute('href')).toBe('/perfil#celular')
+      // Ni la tarjeta ni su título: la acción sigue mandando.
+      expect(screen.queryByRole('heading', { name: 'Recibe tus novedades por WhatsApp' })).toBeNull()
     },
   )
+
+  it('al pulsar abre WhatsApp como la tarjeta y la línea pasa a esperar su mensaje', async () => {
+    api.escribirPorWhatsapp.mockResolvedValue({
+      enlace: ENLACE,
+      whatsapp: { disponible: true, estado: 'PENDIENTE', numero: '+51 987 654 321' },
+    })
+    montar(<Seguimiento postulacion={postulacion('PRUEBA_TURNO_CANDIDATO', SIN_VINCULAR)} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Escribir por WhatsApp' }))
+
+    expect(window.open).toHaveBeenCalledWith('', '_blank')
+    await waitFor(() => expect(pestana.location.href).toBe(ENLACE))
+    expect(api.escribirPorWhatsapp).toHaveBeenCalledWith('b6b7d2c4-0000-4000-8000-000000000001')
+    const linea = screen.getByRole('region', { name: 'Novedades por WhatsApp' })
+    await waitFor(() => expect(linea.textContent).toContain('Aún no recibimos tu mensaje.'))
+    expect(linea.textContent).toContain('¿Usas otro número?')
+    expect(linea.textContent).not.toContain(CONSENTIMIENTO_WHATSAPP)
+    expect(screen.getByRole('button', { name: 'Escribir por WhatsApp' })).toBeTruthy()
+  })
+
+  it('sin celular lleva a «Mi cuenta»: el campo no cabe al pie de la acción', () => {
+    montar(
+      <Seguimiento
+        postulacion={postulacion('PRUEBA_TURNO_CANDIDATO', { disponible: true, estado: 'SIN_CELULAR', numero: null })}
+      />,
+    )
+
+    expect(screen.getByRole('link', { name: 'añade tu celular en Mi cuenta' }).getAttribute('href')).toBe(
+      '/perfil#celular',
+    )
+    expect(screen.queryByRole('button')).toBeNull()
+  })
+
+  it('dado de baja no pinta nada: manda la acción', () => {
+    montar(
+      <Seguimiento
+        postulacion={postulacion('PRUEBA_TURNO_CANDIDATO', { disponible: true, estado: 'SUPRIMIDO', numero: null })}
+      />,
+    )
+
+    expect(screen.getByRole('link', { name: 'Abrir prueba' })).toBeTruthy()
+    expect(screen.queryByRole('region', { name: 'Novedades por WhatsApp' })).toBeNull()
+  })
 })

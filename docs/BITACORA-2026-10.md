@@ -22,8 +22,12 @@ Con la beta ya encendida, dos cosas que se vieron en producción:
   tarjeta, y la tarjeta no sale cuando al candidato le toca algo: justo después del aviso de
   «te toca» —el momento en que más se quiere dejar— no había por dónde, salvo escribir BAJA al
   bot. Y el consentimiento promete «Puedes dejarlo cuando quieras». Ahora, conectado, sale una
-  línea al pie de la acción (`TarjetaWhatsapp` con `compacta`), sin el botón verde. Sin
-  conexión no sale nada: la invitación sigue siendo solo de la espera.
+  línea al pie de la acción (`TarjetaWhatsapp` con `compacta`), sin el botón verde.
+- **Y tampoco se podía conectar.** Ese mismo día, en un segundo cambio, la línea también
+  ofrece conectarse cuando no lo está: «Escribir por WhatsApp» en texto y en tinta, con el
+  consentimiento debajo. La conexión es por proceso, y un proceso con la acción pendiente se
+  quedaba sin poder conectarse hasta la espera siguiente. La tarjeta con el verde sigue siendo
+  solo de la espera: junto a «Abrir prueba» le competiría a una acción cronometrada.
 - **La tarjeta dejaba medio recuadro vacío.** Iba debajo del estado, en un recuadro de 44rem
   dentro de un proceso de 80. Ahora el recuadro con tarjeta va a todo lo ancho y las pone lado a
   lado (piezas `.esperaConOferta` y `.repartoDeEspera`). Decide el ancho del propio recuadro —una
