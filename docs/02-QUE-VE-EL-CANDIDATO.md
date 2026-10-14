@@ -398,10 +398,16 @@ mensaje—. Desde entonces, cuando le toque algo (la prueba disponible, elegir f
 validación), también se lo dice el bot. El contrato con el bot es del backend: su
 `CONTRATO-NOVEDADES-POR-WHATSAPP.md`.
 
-**Dónde sale.** En los once momentos de espera, debajo de «No tienes que hacer nada.», en la
-tarjeta de «Mis procesos» y en el detalle —los dos usan el mismo recuadro—. **Cuando le toca algo
-no sale**: manda la acción. En «Mis procesos» va en el resumen de la espera y no se repite en «Ver
-el recorrido completo» (`sinWhatsapp` de `Seguimiento`). Solo si `whatsapp.disponible` llega
+**Dónde sale.** En los once momentos de espera, en el recuadro de espera de «Mis procesos» y del
+detalle. Con la tarjeta, el recuadro deja su tope de 44rem y pasa a todo lo ancho: el estado
+(«…No tienes que hacer nada.») a la izquierda y la tarjeta a la derecha; si el recuadro no mide
+46rem —el teléfono, la media columna del detalle— se apilan, la tarjeta debajo. **Cuando le toca
+algo no se ofrece**: manda la acción. **Pero si ya está conectado (`ACTIVO`)**, al pie del panel
+de la acción sale una línea bajo un filete, «Conectado por WhatsApp (+51 9•• ••• 321).» y
+«Dejar de recibir», sin el botón verde: dejarlo tiene que poder hacerse siempre, también justo
+después del aviso de «te toca». Al pulsarlo, la misma línea dice «Listo: ya no recibirás por
+WhatsApp las novedades de este proceso.». En «Mis procesos» va en el resumen de la espera y no se
+repite en «Ver el recorrido completo» (`sinWhatsapp` de `Seguimiento`). Solo si `whatsapp.disponible` llega
 verdadero: vacante de RENASER, beta encendida (`whatsapp_novedades_activo`, **apagada de
 salida**) y proceso sin terminar. Con la beta apagada no se ve en ningún sitio.
 

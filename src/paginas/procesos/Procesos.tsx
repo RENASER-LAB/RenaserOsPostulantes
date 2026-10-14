@@ -276,19 +276,29 @@ function Proceso({ postulacion }: { postulacion: MiPostulacion }) {
   // No le toca nada: se resume en una linea y el recorrido se despliega a
   // peticion. Trece de los dieciocho estados caen aqui, y dibujarles el camino
   // entero llenaba la pantalla de un recorrido que nadie habia pedido ver.
+  const loQueEspera = (
+    <>
+      <p className={estilos.esperaTitulo}>{momento.titulo}</p>
+      <p className={estilos.esperaTexto}>
+        {momento.ayuda} <b>No tienes que hacer nada.</b>
+      </p>
+    </>
+  )
   return (
     <article className={estilos.proceso} aria-labelledby={idTitulo}>
       {cabecera}
-      <div className={estilos.espera}>
-        <p className={estilos.esperaTitulo}>{momento.titulo}</p>
-        <p className={estilos.esperaTexto}>
-          {momento.ayuda} <b>No tienes que hacer nada.</b>
-        </p>
-        {/* Mientras espera, recibir las novedades por WhatsApp (V73). */}
-        {hayTarjetaDeWhatsapp(postulacion) && (
-          <TarjetaWhatsapp postulacion={postulacion} nivelDelTitulo={3} />
-        )}
-      </div>
+      {/* Mientras espera, recibir las novedades por WhatsApp (V73): al lado del estado,
+          con el panel a todo lo ancho; sin ella, el panel sigue con su tope de línea. */}
+      {hayTarjetaDeWhatsapp(postulacion) ? (
+        <div className={`${estilos.espera} ${estilos.esperaConWhatsapp}`}>
+          <div className={estilos.repartoEspera}>
+            <div>{loQueEspera}</div>
+            <TarjetaWhatsapp postulacion={postulacion} nivelDelTitulo={3} />
+          </div>
+        </div>
+      ) : (
+        <div className={estilos.espera}>{loQueEspera}</div>
+      )}
       <details className={estilos.plegable}>
         <summary className={estilos.resumen}>Ver el recorrido completo</summary>
         <div className={estilos.desplegado}>
