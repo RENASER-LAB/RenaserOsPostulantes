@@ -401,12 +401,23 @@ validación), también se lo dice el bot. El contrato con el bot es del backend:
 **Dónde sale.** En los once momentos de espera, en el recuadro de espera de «Mis procesos» y del
 detalle. Con la tarjeta, el recuadro deja su tope de 44rem y pasa a todo lo ancho: el estado
 («…No tienes que hacer nada.») a la izquierda y la tarjeta a la derecha; si el recuadro no mide
-46rem —el teléfono, la media columna del detalle— se apilan, la tarjeta debajo. **Cuando le toca
-algo no se ofrece**: manda la acción. **Pero si ya está conectado (`ACTIVO`)**, al pie del panel
-de la acción sale una línea bajo un filete, «Conectado por WhatsApp (+51 9•• ••• 321).» y
-«Dejar de recibir», sin el botón verde: dejarlo tiene que poder hacerse siempre, también justo
-después del aviso de «te toca». Al pulsarlo, la misma línea dice «Listo: ya no recibirás por
-WhatsApp las novedades de este proceso.». En «Mis procesos» va en el resumen de la espera y no se
+46rem —el teléfono, la media columna del detalle— se apilan, la tarjeta debajo.
+
+**Cuando le toca algo no sale la tarjeta**: manda la acción. En su lugar, al pie del panel de la
+acción y bajo un filete, sale **una línea en tinta, sin el botón verde** —el texto a la izquierda,
+la acción en texto a la derecha; en el teléfono, una debajo de otra—. Conectarse y dejarlo tienen
+que poder hacerse siempre, y la conexión es **por proceso**: sin esto, un proceso con la acción
+pendiente no se podía conectar hasta la espera siguiente.
+
+| `whatsapp.estado` | La línea al pie de la acción |
+|---|---|
+| `SIN_VINCULAR` y `REVOCADO` | «Recibe las novedades de este proceso por WhatsApp (+51 987 654 321).» · «Escribir por WhatsApp», y debajo, en letra menor, el consentimiento y «¿No es tu número? Cámbialo en Mi cuenta.». Pulsar hace lo mismo que el botón de la tarjeta |
+| `PENDIENTE` | «Aún no recibimos tu mensaje. Escríbenos desde el +51 987 654 321.» · «Escribir por WhatsApp» y «¿Usas otro número? Cámbialo en Mi cuenta.» |
+| `ACTIVO` | «Conectado por WhatsApp (+51 9•• ••• 321).» · «Dejar de recibir». Al pulsarlo: «Listo: ya no recibirás por WhatsApp las novedades de este proceso.» |
+| `SIN_CELULAR` | «Para recibir las novedades de este proceso por WhatsApp, añade tu celular en Mi cuenta.»: el campo no cabe ahí |
+| `SUPRIMIDO` | Nada |
+
+En «Mis procesos» va en el resumen de la espera y no se
 repite en «Ver el recorrido completo» (`sinWhatsapp` de `Seguimiento`). Solo si `whatsapp.disponible` llega
 verdadero: vacante de RENASER, beta encendida (`whatsapp_novedades_activo`, **apagada de
 salida**) y proceso sin terminar. Con la beta apagada no se ve en ningún sitio.

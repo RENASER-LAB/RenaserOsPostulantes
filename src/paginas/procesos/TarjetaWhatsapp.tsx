@@ -1,11 +1,11 @@
 /**
  * «Recibe tus novedades por WhatsApp» (V73).
  *
- * Sale dentro del recuadro de espera —en «Mis procesos» y en el detalle— cuando la
- * vacante es de RENASER, la beta está encendida y al candidato no le toca nada.
- * Cuando le toca algo no se ofrece: manda la acción. Pero si ya está conectado, sale
- * en una línea al pie de la acción (`compacta`): «Dejar de recibir» no puede
- * desaparecer justo cuando el aviso que llegó por WhatsApp fue el de «te toca».
+ * Sale en todos los momentos de un proceso vivo, cuando la vacante es de RENASER y la
+ * beta está encendida. Mientras espera, como tarjeta, dentro del recuadro de espera
+ * —en «Mis procesos» y en el detalle—. Cuando le toca algo, en una línea al pie de la
+ * acción (`compacta`), en tinta y sin el verde: manda la acción, pero conectarse o
+ * dejarlo tiene que poder hacerse siempre, también justo después del aviso de «te toca».
  *
  * El candidato **escribe primero**: el botón guarda su consentimiento, le anuncia al
  * bot que ese número va a escribir y abre el chat con un mensaje ya escrito. El bot
@@ -54,9 +54,10 @@ interface Props {
    */
   nivelDelTitulo?: 3 | 4
   /**
-   * Al pie de la acción, cuando al candidato le toca algo: solo si ya está conectado, y
-   * en una línea. Sin conexión no pinta nada —ni el botón verde, que le competiría a la
-   * acción— y, tras «Dejar de recibir», lo confirma en la misma línea.
+   * Al pie de la acción, cuando al candidato le toca algo: en una línea, en tinta y sin el
+   * botón verde, que le competiría a la acción. Conectado, «Dejar de recibir»; sin
+   * conectar, «Escribir por WhatsApp» con el consentimiento; sin celular, el camino a «Mi
+   * cuenta»; dado de baja, nada. Tras «Dejar de recibir» lo confirma en la misma línea.
    */
   compacta?: boolean
 }
@@ -225,23 +226,81 @@ export function TarjetaWhatsapp({ postulacion, nivelDelTitulo = 4, compacta = fa
         </section>
       )
     }
-    if (tarjeta.estado !== 'ACTIVO') return null
+    if (tarjeta.estado === 'ACTIVO') {
+      return (
+        <section className={estilos.compacta} aria-label="Novedades por WhatsApp">
+          <p className={estilos.lineaCompacta}>
+            <IconoWhatsapp tamano={16} className={estilos.iconoCompacto} />
+            <span>
+              Conectado por WhatsApp (<span className={estilos.numero}>{tarjeta.numero}</span>).
+            </span>
+          </p>
+          <button
+            type="button"
+            className={estilos.dejar}
+            onClick={() => void dejarDeRecibir()}
+            disabled={preparando}
+          >
+            Dejar de recibir
+          </button>
+          {fallos}
+        </section>
+      )
+    }
+
+    // Sin celular en la cuenta: el campo no cabe al pie de la acción; se pide en «Mi cuenta».
+    if (tarjeta.estado === 'SIN_CELULAR') {
+      return (
+        <section className={estilos.compacta} aria-label="Novedades por WhatsApp">
+          <p className={estilos.lineaCompacta}>
+            <IconoWhatsapp tamano={16} className={estilos.iconoCompacto} />
+            <span>
+              Para recibir las novedades de este proceso por WhatsApp,{' '}
+              <Link to={rutas.celularDeLaCuenta()}>añade tu celular en Mi cuenta</Link>.
+            </span>
+          </p>
+        </section>
+      )
+    }
+
+    if (tarjeta.estado !== 'SIN_VINCULAR' && tarjeta.estado !== 'REVOCADO' && tarjeta.estado !== 'PENDIENTE') {
+      return null
+    }
+
+    // Sin conexión: se ofrece en una línea y en tinta, sin el botón verde, que le
+    // competiría a la acción. El consentimiento va igual que en la tarjeta: es lo que se
+    // acepta al pulsar.
+    const esperandoSuMensaje = tarjeta.estado === 'PENDIENTE'
     return (
       <section className={estilos.compacta} aria-label="Novedades por WhatsApp">
-        <p className={estilos.conectadoCompacto}>
+        <p className={estilos.lineaCompacta}>
           <IconoWhatsapp tamano={16} className={estilos.iconoCompacto} />
-          <span>
-            Conectado por WhatsApp (<span className={estilos.numero}>{tarjeta.numero}</span>).
-          </span>
+          {esperandoSuMensaje ? (
+            <span>
+              Aún no recibimos tu mensaje. Escríbenos desde el{' '}
+              <span className={estilos.numero}>{tarjeta.numero}</span>.
+            </span>
+          ) : (
+            <span>
+              Recibe las novedades de este proceso por WhatsApp (
+              <span className={estilos.numero}>{tarjeta.numero}</span>).
+            </span>
+          )}
         </p>
         <button
           type="button"
-          className={estilos.dejar}
-          onClick={() => void dejarDeRecibir()}
+          className={estilos.escribirTexto}
+          onClick={() => void escribir()}
           disabled={preparando}
+          aria-busy={preparando || undefined}
         >
-          Dejar de recibir
+          {preparando ? 'Preparando el enlace…' : 'Escribir por WhatsApp'}
         </button>
+        <p className={estilos.notaCompacta}>
+          {!esperandoSuMensaje && <>{CONSENTIMIENTO_WHATSAPP} </>}
+          {esperandoSuMensaje ? '¿Usas otro número?' : '¿No es tu número?'}{' '}
+          <Link to={rutas.celularDeLaCuenta()}>Cámbialo en Mi cuenta</Link>.
+        </p>
         {fallos}
       </section>
     )
