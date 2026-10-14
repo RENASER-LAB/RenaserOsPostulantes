@@ -558,6 +558,16 @@
   white-space: nowrap;
 }
 
+/* En un teléfono se puede partir: «ene. 2019 – feb. 2022 · 3 años y 2 meses» en
+   una línea se salía 14 px de la tarjeta a 375. La duración sigue sin partirse,
+   así que baja entera al renglón de abajo. Va aquí y no en la de 640 de arriba:
+   allí la pisaba esta regla, que viene después. */
+@media (max-width: 640px) {
+  .cuando {
+    white-space: normal;
+  }
+}
+
 /* Lo que el raíl prometía enseñar y el alto no cumplía. */
 .duracion {
   color: var(--tinta2);

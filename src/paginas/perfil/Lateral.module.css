@@ -350,9 +350,29 @@
 /*
  * En una columna, el índice sobra: la pantalla ya se recorre de arriba abajo y
  * un índice justo encima de lo que indexa es un peldaño de más.
+ *
+ * ⚠️ **Y la columna deja de pegarse (14/10/2026).** Aquí la lateral va ENCIMA
+ * del formulario, y pegada arriba se quedaba fija mientras las secciones
+ * pasaban por debajo: en un teléfono «Tu perfil» y «Tu currículum» tapaban la
+ * pantalla entera y no había forma de leer lo que se escribía. Se lee al
+ * llegar y se queda atrás al bajar, como cualquier otro bloque.
  */
 @media (max-width: 900px) {
+  .lateral {
+    position: static;
+  }
+
   .bloqueIndice {
     display: none;
+  }
+}
+
+/* Entre el teléfono y el portátil caben las dos tarjetas lado a lado: apiladas
+   empujaban el formulario medio alto de pantalla hacia abajo. */
+@media (min-width: 641px) and (max-width: 900px) {
+  .lateral {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
   }
 }

@@ -426,11 +426,10 @@ distinto» van **a sangre**, a `100vw`. Eso solo es seguro porque su armazón re
 `overflow-x: clip` —y no con `hidden`, que rompería el `sticky` de la cabecera—.
 
 El corte principal es **640 px**, el del teléfono. Además hay cortes propios de una pieza
-—900, 860, 760, 700, 620, 480, 470 y 368 px— donde esa pieza lo necesita. A 900 la banda de
-tres tarjetas pasa a una columna, la lista de vacantes a dos, y la ventana de la portada deja
-de cortarse; por debajo de 620 la
-cabecera pierde su columna central; por debajo de 470 se aprieta; por debajo de 368 se cae el
-destino «Vacantes».
+—900, 860, 760, 700, 620 y 480 px— donde esa pieza lo necesita. A 900 la banda de
+tres tarjetas pasa a una columna, la lista de vacantes a dos, la ventana de la portada deja
+de cortarse y la lateral del perfil sube encima del formulario y deja de pegarse; por debajo
+de 620 la cabecera pliega sus destinos en un menú de tres rayas.
 
 **`/vacantes` tiene sus propios cortes, en el componente** (`useCorte`), porque cambian qué se
 pinta y no solo dónde: 641, 1024 y 1280 px. Ver «La búsqueda de vacantes».
@@ -707,14 +706,13 @@ destinos en el centro exacto y la acción a la derecha — las columnas de los l
 - **«Inicio» y «Vacantes» son dos pantallas.** «Inicio» es la portada; «Vacantes» es
   `/vacantes`, la búsqueda, y va sin `end` para encenderse también en la ficha de cualquier
   vacante.
-- **Teléfono:** por debajo de 620 px las tres columnas pasan a un reparto simple. **Por debajo
-  de 470 se aprieta**: los destinos bajan a 13 px y los rellenos al mínimo, sin bajar de los 44
-  px táctiles — con la letra de 15, de 431 a 454 px la barra se salía hasta 24 px. **Por debajo
-  de 368 se cae «Vacantes»**: a 320 no caben los cuatro ni apretados, y es el destino con más
-  caminos alternativos (el botón grande de la portada y «← Volver a las vacantes» de cada
-  ficha). Medido: a 375 sobran 11 px, a 369 sobran 5 y a 320, con tres destinos, 17. El
-  logotipo del 28/09/2026 mide 2,7 px más de ancho que la palabra de antes: salen 8, 2 y 14,
-  por cuenta y sin volver a medir.
+- **Teléfono:** por debajo de 620 px los destinos se pliegan tras un botón de tres rayas
+  (14/10/2026). En la barra quedan la marca, la campana —o «Iniciar sesión» sin cuenta— y las
+  rayas, que al abrir se vuelven una cruz. El menú cuelga de la píldora con su mismo ancho,
+  enlaces de 48 px y «Mi cuenta» aparte tras un filete; un velo apaga la página y recoge el
+  toque de fuera. Se cierra al navegar, con Escape —el foco vuelve al botón— y al pasar de
+  620 px. Hasta ese día los destinos se apretaban a 13 px por debajo de 470 y «Vacantes» se
+  caía por debajo de 368; con «Mi cuenta» y la campana, a 375 se amontonaban.
 
 ⚠️ Sobre el gris claro de más abajo en la página la píldora casi no se distingue, y el
 contenido pasa por detrás sin línea que lo corte. Es lo que hace la referencia, aceptado a
