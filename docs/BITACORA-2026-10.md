@@ -28,6 +28,11 @@ Con la beta ya encendida, dos cosas que se vieron en producción:
   consentimiento debajo. La conexión es por proceso, y un proceso con la acción pendiente se
   quedaba sin poder conectarse hasta la espera siguiente. La tarjeta con el verde sigue siendo
   solo de la espera: junto a «Abrir prueba» le competiría a una acción cronometrada.
+- **Y solo en «Mis procesos».** Un tercer cambio, a petición del usuario: el detalle de una
+  postulación ya no enseña WhatsApp en ninguna forma. Se invirtió el interruptor de
+  `Seguimiento`: era `sinWhatsapp` —había que acordarse de apagarlo— y ahora es `conWhatsapp`,
+  que solo pide la lista. Los E2E de WhatsApp que entraban al detalle pasan por `/procesos`, y
+  el «Dejar de recibir» con la prueba abierta ya se hace desde la línea, no por la API.
 - **La tarjeta dejaba medio recuadro vacío.** Iba debajo del estado, en un recuadro de 44rem
   dentro de un proceso de 80. Ahora el recuadro con tarjeta va a todo lo ancho y las pone lado a
   lado (piezas `.esperaConOferta` y `.repartoDeEspera`). Decide el ancho del propio recuadro —una

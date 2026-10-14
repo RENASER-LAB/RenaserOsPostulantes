@@ -13,6 +13,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
 import type { EstadoWhatsapp, MiPostulacion, WhatsappDelProceso } from '@/api/tipos'
 import { ErrorApi } from '@/api/cliente'
+import { Procesos } from './Procesos'
 import { Seguimiento } from './Seguimiento'
 import { CONSENTIMIENTO_WHATSAPP, TarjetaWhatsapp } from './TarjetaWhatsapp'
 
@@ -20,6 +21,7 @@ const api = vi.hoisted(() => ({
   escribirPorWhatsapp: vi.fn(),
   dejarDeRecibirPorWhatsapp: vi.fn(),
   cambiarCelular: vi.fn(),
+  misPostulaciones: vi.fn(),
 }))
 
 vi.mock('@/api/portal', () => api)
@@ -68,6 +70,7 @@ afterEach(() => {
   api.escribirPorWhatsapp.mockReset()
   api.dejarDeRecibirPorWhatsapp.mockReset()
   api.cambiarCelular.mockReset()
+  api.misPostulaciones.mockReset()
 })
 
 describe('la tarjeta de WhatsApp mientras espera', () => {
@@ -217,42 +220,54 @@ describe('la tarjeta de WhatsApp mientras espera', () => {
   })
 })
 
-describe('en el recuadro de espera del recorrido', () => {
-  it('AC-03 · sale debajo de «No tienes que hacer nada.»', () => {
-    montar(<Seguimiento postulacion={postulacion('PERFIL_CALIFICANDO', SIN_VINCULAR)} />)
+describe('en «Mis procesos»', () => {
+  it('AC-03 · mientras espera, la tarjeta va al lado del estado, una sola vez', async () => {
+    api.misPostulaciones.mockResolvedValue([postulacion('PERFIL_CALIFICANDO', SIN_VINCULAR)])
+    montar(<Procesos />)
 
-    expect(screen.getByText('Estamos calificando tus respuestas')).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Escribir por WhatsApp' })).toBeTruthy()
+    const tarjeta = (await screen.findByRole('heading', { name: 'Recibe tus novedades por WhatsApp' })).closest('section')
+    // Hermanos en el mismo reparto: el estado primero, lo que se ofrece después.
+    const reparto = tarjeta?.parentElement
+    expect(reparto?.firstElementChild?.textContent).toContain('Estamos calificando tus respuestas')
+    expect(reparto?.firstElementChild?.textContent).toContain('No tienes que hacer nada.')
+    expect(reparto?.lastElementChild).toBe(tarjeta)
+    // El recorrido plegado no la repite.
+    expect(screen.getAllByRole('button', { name: 'Escribir por WhatsApp' })).toHaveLength(1)
   })
 
-  it('AC-04 · cuando le toca algo no sale la tarjeta: manda la acción, y WhatsApp va debajo en una línea', () => {
-    montar(<Seguimiento postulacion={postulacion('PRUEBA_TURNO_CANDIDATO', SIN_VINCULAR)} />)
+  it('AC-04 · cuando le toca algo no sale la tarjeta: la línea va debajo de la acción', async () => {
+    api.misPostulaciones.mockResolvedValue([postulacion('PRUEBA_TURNO_CANDIDATO', SIN_VINCULAR)])
+    montar(<Procesos />)
 
-    const accion = screen.getByRole('link', { name: 'Abrir prueba' })
+    const accion = await screen.findByRole('link', { name: 'Abrir prueba' })
     expect(screen.queryByRole('heading', { name: 'Recibe tus novedades por WhatsApp' })).toBeNull()
     const linea = screen.getByRole('region', { name: 'Novedades por WhatsApp' })
     expect(accion.compareDocumentPosition(linea) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
+})
 
-  it('con la tarjeta, el estado y WhatsApp van en el reparto de dos columnas', () => {
-    const { container } = montar(<Seguimiento postulacion={postulacion('PERFIL_CALIFICANDO', SIN_VINCULAR)} />)
-
-    const titulo = screen.getByRole('heading', { name: 'Estamos calificando tus respuestas' })
-    const tarjeta = screen.getByRole('heading', { name: 'Recibe tus novedades por WhatsApp' }).closest('section')
-    const reparto = titulo.parentElement?.parentElement
-    // Hermanos en el mismo reparto: el estado primero, lo que se ofrece después.
-    expect(reparto).toBe(tarjeta?.parentElement)
-    expect(reparto?.firstElementChild?.contains(titulo)).toBe(true)
-    expect(reparto?.lastElementChild).toBe(tarjeta)
-    expect(container.textContent?.match(/No tienes que hacer nada\./g)).toHaveLength(1)
-  })
-
-  it('sin tarjeta la espera no cambia: el estado solo, sin reparto', () => {
-    montar(<Seguimiento postulacion={postulacion('PERFIL_CALIFICANDO', null)} />)
+describe('fuera de «Mis procesos» no sale: el recorrido del detalle', () => {
+  it.each<[string, WhatsappDelProceso]>([
+    ['en espera', SIN_VINCULAR],
+    ['en espera y conectado', { disponible: true, estado: 'ACTIVO', numero: '+51 9•• ••• 321' }],
+  ])('%s, la espera es solo el estado', (_, whatsapp) => {
+    montar(<Seguimiento postulacion={postulacion('PERFIL_CALIFICANDO', whatsapp)} />)
 
     const titulo = screen.getByRole('heading', { name: 'Estamos calificando tus respuestas' })
     expect(titulo.parentElement?.childElementCount).toBe(2)
     expect(screen.queryByRole('region', { name: 'Novedades por WhatsApp' })).toBeNull()
+    expect(screen.queryByRole('button')).toBeNull()
+  })
+
+  it.each<[string, WhatsappDelProceso]>([
+    ['sin conectar', SIN_VINCULAR],
+    ['conectado', { disponible: true, estado: 'ACTIVO', numero: '+51 9•• ••• 321' }],
+  ])('cuando le toca algo y está %s, solo la acción', (_, whatsapp) => {
+    montar(<Seguimiento postulacion={postulacion('PRUEBA_TURNO_CANDIDATO', whatsapp)} />)
+
+    expect(screen.getByRole('link', { name: 'Abrir prueba' })).toBeTruthy()
+    expect(screen.queryByRole('region', { name: 'Novedades por WhatsApp' })).toBeNull()
+    expect(screen.queryByRole('button')).toBeNull()
   })
 
   it('AC-17 · «Estamos revisando tu postulación» dice «No tienes que hacer nada.» una sola vez', () => {
@@ -266,7 +281,7 @@ describe('al pie de la acción, cuando le toca algo', () => {
   const ACTIVO: WhatsappDelProceso = { disponible: true, estado: 'ACTIVO', numero: '+51 9•• ••• 321' }
 
   it('conectado: una línea con el número y «Dejar de recibir», sin el botón verde', () => {
-    montar(<Seguimiento postulacion={postulacion('PRUEBA_TURNO_CANDIDATO', ACTIVO)} />)
+    montar(<Seguimiento conWhatsapp postulacion={postulacion('PRUEBA_TURNO_CANDIDATO', ACTIVO)} />)
 
     expect(screen.getByRole('link', { name: 'Abrir prueba' })).toBeTruthy()
     const linea = screen.getByRole('region', { name: 'Novedades por WhatsApp' })
@@ -283,7 +298,7 @@ describe('al pie de la acción, cuando le toca algo', () => {
       estado: 'REVOCADO',
       numero: '+51 987 654 321',
     })
-    montar(<Seguimiento postulacion={postulacion('PRUEBA_TURNO_CANDIDATO', ACTIVO)} />)
+    montar(<Seguimiento conWhatsapp postulacion={postulacion('PRUEBA_TURNO_CANDIDATO', ACTIVO)} />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Dejar de recibir' }))
 
@@ -297,7 +312,7 @@ describe('al pie de la acción, cuando le toca algo', () => {
 
   it('si falla, lo dice y deja el botón para reintentar', async () => {
     api.dejarDeRecibirPorWhatsapp.mockRejectedValue(new ErrorApi(503, 'El servidor no responde'))
-    montar(<Seguimiento postulacion={postulacion('PRUEBA_TURNO_CANDIDATO', ACTIVO)} />)
+    montar(<Seguimiento conWhatsapp postulacion={postulacion('PRUEBA_TURNO_CANDIDATO', ACTIVO)} />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Dejar de recibir' }))
 
@@ -312,6 +327,7 @@ describe('al pie de la acción, cuando le toca algo', () => {
     (estado) => {
       montar(
         <Seguimiento
+          conWhatsapp
           postulacion={postulacion('PRUEBA_TURNO_CANDIDATO', { disponible: true, estado, numero: '+51 987 654 321' })}
         />,
       )
@@ -331,7 +347,7 @@ describe('al pie de la acción, cuando le toca algo', () => {
       enlace: ENLACE,
       whatsapp: { disponible: true, estado: 'PENDIENTE', numero: '+51 987 654 321' },
     })
-    montar(<Seguimiento postulacion={postulacion('PRUEBA_TURNO_CANDIDATO', SIN_VINCULAR)} />)
+    montar(<Seguimiento conWhatsapp postulacion={postulacion('PRUEBA_TURNO_CANDIDATO', SIN_VINCULAR)} />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Escribir por WhatsApp' }))
 
@@ -348,6 +364,7 @@ describe('al pie de la acción, cuando le toca algo', () => {
   it('sin celular lleva a «Mi cuenta»: el campo no cabe al pie de la acción', () => {
     montar(
       <Seguimiento
+        conWhatsapp
         postulacion={postulacion('PRUEBA_TURNO_CANDIDATO', { disponible: true, estado: 'SIN_CELULAR', numero: null })}
       />,
     )
@@ -361,6 +378,7 @@ describe('al pie de la acción, cuando le toca algo', () => {
   it('dado de baja no pinta nada: manda la acción', () => {
     montar(
       <Seguimiento
+        conWhatsapp
         postulacion={postulacion('PRUEBA_TURNO_CANDIDATO', { disponible: true, estado: 'SUPRIMIDO', numero: null })}
       />,
     )

@@ -288,17 +288,16 @@ test.describe('Las novedades de la postulación por WhatsApp', () => {
     expect(avisos).toHaveLength(1)
     expect(avisos[0]!.cuerpo.tipo).toBe('PRUEBA_DISPONIBLE')
     expect(avisos[0]!.cuerpo.texto).toContain(`¡Felicidades, Ana! Tu prueba del puesto para ${MARCA} ${TITULO} ya está disponible.`)
-    // Le toca algo: la tarjeta no sale, manda la acción
+    // Le toca algo: la tarjeta no sale, manda la acción; conectada, una línea debajo de ella
     await page.goto('/procesos')
     await expect(page.getByRole('link', { name: /Abrir prueba/ }).first()).toBeVisible()
-    await expect(tarjeta(page)).toHaveCount(0)
+    await expect(page.getByText('Recibe tus novedades por WhatsApp')).toHaveCount(0)
+    await expect(tarjeta(page).getByText(/Conectado por WhatsApp \(\+51 9•• ••• \d{3}\)\./)).toBeVisible()
+    await expect(tarjeta(page).getByRole('button', { name: 'Escribir por WhatsApp' })).toHaveCount(0)
 
-    // AC-12 · «Dejar de recibir» (por la API: con la prueba abierta la tarjeta no se ve) y la revocación
-    const r = await fetch(`${API}/portal/postulaciones/${uuid}/whatsapp`, {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${ana.token}` },
-    })
-    expect(r.status).toBe(200)
+    // AC-12 · «Dejar de recibir» desde esa línea, con la prueba abierta, y la revocación
+    await tarjeta(page).getByRole('button', { name: 'Dejar de recibir' }).click()
+    await expect(tarjeta(page).getByText('Listo: ya no recibirás por WhatsApp las novedades de este proceso.')).toBeVisible()
     await hastaQueLlegue(ana.celular.e164, 'REVOCACION')
     const revocacion = (await loQueRecibioElBot(ana.celular.e164)).find((l) => l.tipo === 'REVOCACION')
     expect(revocacion?.cuerpo).toMatchObject({ postulacionRef: referencia, motivo: 'DEJAR_DE_RECIBIR' })

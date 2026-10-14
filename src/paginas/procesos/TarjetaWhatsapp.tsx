@@ -1,11 +1,12 @@
 /**
  * «Recibe tus novedades por WhatsApp» (V73).
  *
- * Sale en todos los momentos de un proceso vivo, cuando la vacante es de RENASER y la
- * beta está encendida. Mientras espera, como tarjeta, dentro del recuadro de espera
- * —en «Mis procesos» y en el detalle—. Cuando le toca algo, en una línea al pie de la
- * acción (`compacta`), en tinta y sin el verde: manda la acción, pero conectarse o
- * dejarlo tiene que poder hacerse siempre, también justo después del aviso de «te toca».
+ * **Solo en «Mis procesos»** (`/procesos`): ni en el detalle ni en ninguna otra
+ * pantalla. Sale en todos los momentos de un proceso vivo, cuando la vacante es de
+ * RENASER y la beta está encendida. Mientras espera, como tarjeta, al lado del estado
+ * en su recuadro. Cuando le toca algo, en una línea al pie de la acción (`compacta`), en
+ * tinta y sin el verde: manda la acción, pero conectarse o dejarlo tiene que poder
+ * hacerse siempre, también justo después del aviso de «te toca».
  *
  * El candidato **escribe primero**: el botón guarda su consentimiento, le anuncia al
  * bot que ese número va a escribir y abre el chat con un mensaje ya escrito. El bot
