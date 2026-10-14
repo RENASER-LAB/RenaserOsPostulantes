@@ -224,16 +224,6 @@
   max-width: 44rem;
 }
 
-/* Con la tarjeta de WhatsApp: todo el ancho y dos columnas si caben (ver `.esperaConOferta`). */
-.esperaConWhatsapp {
-  composes: esperaConOferta from '../../estilos/piezas.module.css';
-  max-width: none;
-}
-
-.repartoEspera {
-  composes: repartoDeEspera from '../../estilos/piezas.module.css';
-}
-
 .esperaTitulo {
   margin: 0;
   font-size: var(--t-base);

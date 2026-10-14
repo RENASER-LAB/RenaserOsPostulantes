@@ -573,10 +573,10 @@
  * el estado a la izquierda —lo primero que se lee— y lo que se ofrece a la derecha.
  * Antes la tarjeta iba debajo y dejaba medio panel vacío a la derecha.
  *
- * Decide el ancho del propio panel y no el de la pantalla: el mismo panel va a
- * todo lo ancho en «Mis procesos» y en media columna en el detalle, y ahí no
- * caben dos y se apila. El tope lo quita cada hoja (`max-width: none`), porque
- * una regla compuesta no gana a la de la propia hoja.
+ * Decide el ancho del propio panel y no el de la pantalla: por debajo de 46rem
+ * —el teléfono, una tableta estrecha— no caben dos y se apila. El tope lo quita
+ * cada hoja (`max-width: none`), porque una regla compuesta no gana a la de la
+ * propia hoja.
  */
 .esperaConOferta {
   container: espera / inline-size;

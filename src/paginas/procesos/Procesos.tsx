@@ -267,7 +267,7 @@ function Proceso({ postulacion }: { postulacion: MiPostulacion }) {
     return (
       <article className={estilos.proceso} aria-labelledby={idTitulo}>
         {cabecera}
-        <Seguimiento postulacion={postulacion} />
+        <Seguimiento postulacion={postulacion} conWhatsapp />
         {enlaceDetalle}
       </article>
     )
@@ -302,8 +302,8 @@ function Proceso({ postulacion }: { postulacion: MiPostulacion }) {
       <details className={estilos.plegable}>
         <summary className={estilos.resumen}>Ver el recorrido completo</summary>
         <div className={estilos.desplegado}>
-          {/* Sin la tarjeta: ya está en el recuadro de arriba, y dos serían dos botones iguales. */}
-          <Seguimiento postulacion={postulacion} sinWhatsapp />
+          {/* Sin WhatsApp: la tarjeta ya está en el recuadro de arriba, y dos serían dos botones iguales. */}
+          <Seguimiento postulacion={postulacion} />
         </div>
       </details>
       {enlaceDetalle}

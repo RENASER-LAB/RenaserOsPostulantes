@@ -183,8 +183,8 @@ test.describe('Novedades por WhatsApp · bordes de QA', () => {
     } finally {
       await ponerLaBeta(equipo, true)
     }
-    // Encendida otra vez, la misma postulación sí la ofrece.
-    await page.reload()
+    // Encendida otra vez, la misma postulación sí la ofrece: en «Mis procesos», que es donde vive.
+    await page.goto('/procesos')
     await expect(tarjeta(page).getByRole('button', { name: 'Escribir por WhatsApp' })).toBeVisible()
   })
 
@@ -247,11 +247,13 @@ test.describe('Novedades por WhatsApp · bordes de QA', () => {
     expect(otraVez.estado).toBe(204)
 
     await entrarAlPortalCon(page, hugo.token)
-    for (const ruta of ['/procesos', `/procesos/${uuid}`]) {
-      await page.goto(ruta)
-      await expect(tarjeta(page).getByText('Este número se dio de baja de nuestros mensajes')).toBeVisible()
-      await expect(tarjeta(page).getByRole('button')).toHaveCount(0)
-    }
+    await page.goto('/procesos')
+    await expect(tarjeta(page).getByText('Este número se dio de baja de nuestros mensajes')).toBeVisible()
+    await expect(tarjeta(page).getByRole('button')).toHaveCount(0)
+    // WhatsApp vive solo en «Mis procesos»: el detalle no lo enseña.
+    await page.goto(`/procesos/${uuid}`)
+    await expect(page.getByText('Estamos calificando tus respuestas').first()).toBeVisible()
+    await expect(page.getByRole('region', { name: /novedades por WhatsApp/i })).toHaveCount(0)
     const boton = await pedir(`/portal/postulaciones/${uuid}/whatsapp`, hugo.token, 'POST')
     expect(boton.estado).toBe(409)
     expect(boton.cuerpo.codigo).toBe('SUPRIMIDO')
@@ -266,7 +268,8 @@ test.describe('Novedades por WhatsApp · bordes de QA', () => {
     for (const ruta of ['/procesos', `/procesos/${uuid}`]) {
       await page.goto(ruta)
       await expect(page.getByText('Estamos revisando tu postulación').first()).toBeVisible()
-      await expect(tarjeta(page)).toBeVisible()
+      // La tarjeta, solo en «Mis procesos».
+      await expect(page.getByRole('region', { name: /novedades por WhatsApp/i })).toHaveCount(ruta === '/procesos' ? 1 : 0)
       const visible = await page.locator('main').innerText()
       expect(visible.match(/No tienes que hacer nada\./g) ?? [], ruta).toHaveLength(1)
       expect(visible).toContain('Comprobamos los requisitos indispensables del puesto. No tienes que hacer nada.')
@@ -282,7 +285,7 @@ test.describe('Novedades por WhatsApp · bordes de QA', () => {
     )
     const pestanas: Page[] = []
     page.context().on('page', (p) => pestanas.push(p))
-    await page.goto(`/procesos/${uuid}`)
+    await page.goto('/procesos')
     await tarjeta(page).getByRole('button', { name: 'Escribir por WhatsApp' }).dblclick()
     await expect(tarjeta(page).getByText(/Aún no recibimos tu mensaje/)).toBeVisible()
     await expect.poll(() => pestanas.length).toBe(1)

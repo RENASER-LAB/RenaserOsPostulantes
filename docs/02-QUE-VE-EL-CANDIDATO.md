@@ -398,10 +398,12 @@ mensaje—. Desde entonces, cuando le toque algo (la prueba disponible, elegir f
 validación), también se lo dice el bot. El contrato con el bot es del backend: su
 `CONTRATO-NOVEDADES-POR-WHATSAPP.md`.
 
-**Dónde sale.** En los once momentos de espera, en el recuadro de espera de «Mis procesos» y del
-detalle. Con la tarjeta, el recuadro deja su tope de 44rem y pasa a todo lo ancho: el estado
+**Dónde sale.** **Solo en «Mis procesos»** (`/procesos`), desde el 14/10/2026: ni en el detalle
+de una postulación ni en ninguna otra pantalla. `Seguimiento` no la pinta si no se le pide
+(`conWhatsapp`), y solo la lista se la pide. En los once momentos de espera va en el recuadro de
+espera: con la tarjeta, el recuadro deja su tope de 44rem y pasa a todo lo ancho, el estado
 («…No tienes que hacer nada.») a la izquierda y la tarjeta a la derecha; si el recuadro no mide
-46rem —el teléfono, la media columna del detalle— se apilan, la tarjeta debajo.
+46rem —el teléfono— se apilan, la tarjeta debajo.
 
 **Cuando le toca algo no sale la tarjeta**: manda la acción. En su lugar, al pie del panel de la
 acción y bajo un filete, sale **una línea en tinta, sin el botón verde** —el texto a la izquierda,
@@ -417,8 +419,7 @@ pendiente no se podía conectar hasta la espera siguiente.
 | `SIN_CELULAR` | «Para recibir las novedades de este proceso por WhatsApp, añade tu celular en Mi cuenta.»: el campo no cabe ahí |
 | `SUPRIMIDO` | Nada |
 
-En «Mis procesos» va en el resumen de la espera y no se
-repite en «Ver el recorrido completo» (`sinWhatsapp` de `Seguimiento`). Solo si `whatsapp.disponible` llega
+En la espera va en el resumen y no se repite en «Ver el recorrido completo». Solo si `whatsapp.disponible` llega
 verdadero: vacante de RENASER, beta encendida (`whatsapp_novedades_activo`, **apagada de
 salida**) y proceso sin terminar. Con la beta apagada no se ve en ningún sitio.
 

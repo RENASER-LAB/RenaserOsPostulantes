@@ -16,7 +16,6 @@
  * peor que ninguna.
  */
 
-import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import type { MiPostulacion } from '@/api/tipos'
 import {
@@ -68,14 +67,14 @@ interface Props {
   /** Donde se detuvo una postulacion terminada, si se sabe. */
   etapaDeCorte?: Etapa
   /**
-   * Sin WhatsApp (V73): ni la tarjeta en el recuadro de espera ni la línea de conectado
-   * al pie de la acción. La pide «Mis procesos» para el recorrido plegado: la tarjeta ya
-   * está en su propio recuadro, encima.
+   * La línea de WhatsApp al pie de la acción (V73). WhatsApp vive solo en «Mis
+   * procesos», y es lo único que la pide: el detalle y el recorrido plegado no la
+   * llevan. La tarjeta de la espera no pasa por aquí: la pinta la lista en su recuadro.
    */
-  sinWhatsapp?: boolean
+  conWhatsapp?: boolean
 }
 
-export function Seguimiento({ postulacion, fechas, etapaDeCorte, sinWhatsapp }: Props) {
+export function Seguimiento({ postulacion, fechas, etapaDeCorte, conWhatsapp }: Props) {
   const hitos = recorridoDe(postulacion.estado, etapaDeCorte)
   const momento = momentoDeLaEtapa(
     postulacion.estado,
@@ -127,57 +126,21 @@ export function Seguimiento({ postulacion, fechas, etapaDeCorte, sinWhatsapp }: 
               {describirAntiguedad(postulacion.diasSinCambio)}
             </span>
           </div>
-          {/* Le toca algo: WhatsApp no se ofrece, pero si ya está conectado sale en una
-              línea, para que pueda dejarlo también ahora (V73). */}
-          {!sinWhatsapp && hayTarjetaDeWhatsapp(postulacion) && (
+          {/* Le toca algo: WhatsApp en una línea, sin la tarjeta (V73). Solo en «Mis procesos». */}
+          {conWhatsapp && hayTarjetaDeWhatsapp(postulacion) && (
             <TarjetaWhatsapp postulacion={postulacion} compacta />
           )}
         </div>
       )}
 
       {enCurso && !final && !leToca && (
-        <EsperaDelTramo
-          titulo={momento.titulo}
-          ayuda={momento.ayuda}
-          whatsapp={
-            !sinWhatsapp && hayTarjetaDeWhatsapp(postulacion) ? (
-              <TarjetaWhatsapp postulacion={postulacion} />
-            ) : null
-          }
-        />
+        <div className={estilos.espera}>
+          <h3 className={estilos.esperaTitulo}>{momento.titulo}</h3>
+          <p className={estilos.esperaAyuda}>
+            {momento.ayuda} <b>No tienes que hacer nada.</b>
+          </p>
+        </div>
       )}
-    </div>
-  )
-}
-
-/**
- * El panel de espera del tramo abierto. Con la tarjeta de WhatsApp pasa a todo lo ancho
- * y la pone al lado del estado si cabe; sin ella conserva su tope de línea.
- */
-function EsperaDelTramo({
-  titulo,
-  ayuda,
-  whatsapp,
-}: {
-  titulo: string
-  ayuda: string
-  whatsapp: ReactNode
-}) {
-  const estado = (
-    <>
-      <h3 className={estilos.esperaTitulo}>{titulo}</h3>
-      <p className={estilos.esperaAyuda}>
-        {ayuda} <b>No tienes que hacer nada.</b>
-      </p>
-    </>
-  )
-  if (!whatsapp) return <div className={estilos.espera}>{estado}</div>
-  return (
-    <div className={`${estilos.espera} ${estilos.esperaConWhatsapp}`}>
-      <div className={estilos.repartoEspera}>
-        <div>{estado}</div>
-        {whatsapp}
-      </div>
     </div>
   )
 }
