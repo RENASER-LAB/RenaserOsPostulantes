@@ -14,6 +14,26 @@ Desde el 05/10 el diseño se trabaja con las skills de Emil Kowalski (`emil-desi
 
 ---
 
+## El teléfono: menú de tres rayas y la lateral del perfil suelta (14/10/2026)
+
+Dos quejas con captura del iPhone del usuario, sin spec:
+
+- **«Mi cuenta» tapaba la pantalla.** Por debajo de 900 px la lateral —«Tu perfil» y «Tu
+  currículum»— sube encima del formulario, pero seguía con `position: sticky`: se quedaba
+  fija arriba y las secciones pasaban por debajo. Ahora es `static` en ese corte, y entre 641
+  y 900 px las dos tarjetas van lado a lado.
+- **La barra se amontonaba.** Con cuenta, a 375 px iban la marca, tres destinos, «Mi cuenta» y
+  la campana a 13 px de letra. Por debajo de 620 px los destinos se pliegan tras un botón de
+  tres rayas; en la barra quedan la marca, la campana (o «Iniciar sesión») y las rayas. Se
+  fueron los escalones de 470 y 368 px y `.enlaceQueCede`.
+- **De paso:** la línea de fechas de la trayectoria («ene. 2019 – feb. 2022 · 3 años y 2
+  meses») no se partía y sacaba 14 px de scroll horizontal en `/perfil` a 375. En teléfono ya
+  se parte, y la duración baja entera.
+
+Comprobado con la API simulada a 320, 375, 768 y 1440 px: la cabecera mide sus 84 px, nada se
+sale por los lados, el menú se cierra al navegar, con Escape y tocando fuera (sin pulsar lo
+de debajo). El AC-19 de `38-buscar-vacantes-movil` mide ahora los destinos dentro del menú.
+
 ## «Dejar de recibir» siempre a mano, y la espera a todo lo ancho (14/10/2026)
 
 Con la beta ya encendida, dos cosas que se vieron en producción:

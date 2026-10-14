@@ -578,23 +578,29 @@
 }
 
 /*
- * En un telefono son cuatro destinos, una marca y un boton relleno: con el
- * relleno de escritorio la barra desborda a lo ancho. Medido a 362 px: con esto
- * cabe justo en una linea y la cabecera se queda en sus 61 px.
+ * El boton de las tres rayas y su menu. Fuera del telefono no existen: la barra
+ * de escritorio enseña los destinos y no tiene nada que plegar.
  */
+.botonMenu,
+.menu,
+.velo {
+  display: none;
+}
+
 /*
  * ⚠️ **Toda la cabecera de telefono cabe AQUI, en una sola media query.** Llego a
  * haber tres —620, 560 y 640— de las tres formas que la barra tuvo el
  * 11/09/2026, y la ultima del archivo pisaba a las otras dos: el relleno que se
  * escribia en la de 620 nunca llegaba a aplicarse. Si hace falta otro escalon,
  * se añade debajo de esta y no en otro sitio del archivo.
+ *
+ * ⚠️ **Desde el 14/10/2026 los destinos se pliegan en un menu.** Hasta ese dia
+ * se apretaban: 13 px de letra y 3 px de aire por debajo de 470, y «Vacantes»
+ * se caia por debajo de 368. Con «Mi cuenta» y la campana, en un telefono de
+ * 375 los cinco se amontonaban. Ahora la barra lleva la marca, la campana —o
+ * «Iniciar sesión» sin cuenta— y las tres rayas, y cabe holgada hasta 320.
  */
 @media (max-width: 620px) {
-  /*
-   * Aqui no cabe una columna central: con la marca a un lado y el boton al otro,
-   * los destinos se quedan sin sitio. Vuelve al reparto simple, que es lo que
-   * hace cualquier barra de telefono.
-   */
   .cabeceraDentro {
     display: flex;
     justify-content: space-between;
@@ -602,102 +608,177 @@
     gap: var(--e2);
   }
 
-  /* Dos puntos menos que en escritorio: 15 px, que era 14 hasta el 25/09/2026
-     y subio con el resto de la barra. */
-  .navegacion {
-    gap: 0;
-    font-size: var(--t-prosa);
+  .navegacion,
+  .miCuentaDeLaBarra {
+    display: none;
   }
 
-  .enlace {
-    padding: 0 var(--e2);
-  }
-
-  /* Solo el de pasar por encima: el activo no lleva filete en ningun ancho. Aqui
-     estaba tambien `.enlaceActivo::after`, y como esta regla va despues en la
-     hoja, en un telefono le devolvia el filete que se le quito en escritorio. */
-  .enlace:hover::after {
-    left: var(--e2);
-    right: var(--e2);
-  }
-
-  .entrar {
-    margin-left: var(--e2);
+  .acciones {
+    gap: var(--e1);
   }
 
   .entrarCara {
     padding-inline: var(--e3);
   }
+
+  /* Del mismo corte que la campana, para que los dos se lean como pareja. */
+  .botonMenu {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radio-control);
+    background: transparent;
+    color: var(--tinta);
+    cursor: pointer;
+  }
+
+  .botonMenu:hover,
+  .botonMenu[aria-expanded='true'] {
+    background: var(--nube-hundida);
+  }
+
+  /*
+   * Las tres rayas se vuelven una cruz: la de arriba y la de abajo giran hacia
+   * el centro y la del medio se apaga. Dice «esto cierra lo que acabas de abrir»
+   * sin cambiar de icono de golpe.
+   */
+  .raya {
+    stroke: currentColor;
+    stroke-width: 1.75;
+    stroke-linecap: round;
+    transform-box: fill-box;
+    transform-origin: center;
+    transition:
+      transform 220ms var(--salida),
+      opacity 160ms var(--salida);
+  }
+
+  .botonMenu[aria-expanded='true'] .raya:nth-child(1) {
+    transform: translateY(5px) rotate(45deg);
+  }
+
+  .botonMenu[aria-expanded='true'] .raya:nth-child(2) {
+    opacity: 0;
+    transform: scaleX(0.3);
+  }
+
+  .botonMenu[aria-expanded='true'] .raya:nth-child(3) {
+    transform: translateY(-5px) rotate(-45deg);
+  }
+
+  /*
+   * El menu cuelga de la pildora y mide lo mismo que ella: se lee como la barra
+   * que se abre, no como una ventana nueva. La sombra es la del panel de la
+   * campana, que es lo otro que flota sobre la pagina desde aqui.
+   */
+  .menu {
+    position: absolute;
+    top: calc(100% + var(--e2));
+    left: 0;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    padding: var(--e2);
+    border: 1px solid var(--regla);
+    border-radius: var(--radio);
+    background: var(--nube);
+    box-shadow: var(--sombra-aviso);
+    transform-origin: top center;
+    animation: menuEntra 200ms var(--salida) both;
+  }
+
+  /* 48 px de alto: aqui se pulsa con el pulgar y sin mirar mucho. */
+  .menuEnlace {
+    display: flex;
+    align-items: center;
+    min-height: 48px;
+    padding: 0 var(--e3);
+    border-radius: var(--radio-menor);
+    color: var(--tinta);
+    font-size: var(--t-base);
+    text-decoration: none;
+  }
+
+  .menuEnlace:hover {
+    background: var(--nube-hundida);
+    color: var(--tinta);
+    text-decoration: none;
+  }
+
+  /* Donde estas: el mismo indigo que en la barra de escritorio, y un fondo que
+     en una lista vertical ayuda a encontrarlo de un vistazo. */
+  .menuEnlaceActivo,
+  .menuEnlaceActivo:hover {
+    background: var(--nube-hundida);
+    color: var(--activo-regla);
+    font-weight: 600;
+  }
+
+  /* «Mi cuenta» no es un destino del recorrido: va aparte, tras un filete. */
+  .menuCuenta {
+    margin-top: var(--e2);
+    position: relative;
+  }
+
+  .menuCuenta::before {
+    content: '';
+    position: absolute;
+    top: calc(var(--e1) * -1 - 1px);
+    left: var(--e3);
+    right: var(--e3);
+    height: 1px;
+    background: var(--regla);
+  }
+
+  /*
+   * El velo apaga la pagina sin tapar la pildora. `z-index: -1` dentro del
+   * contexto de la cabecera lo deja encima de la pagina y debajo de la
+   * superficie de la barra, que tambien es `-1` pero va despues en el arbol.
+   */
+  .velo {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background: rgb(16 24 40 / 0.2);
+    animation: veloEntra 200ms ease-out both;
+  }
 }
 
-/*
- * ⚠️ **Por debajo de 470 px se aprieta todo, y es lo que permite ver los cuatro
- * destinos en un telefono de 375.** Con el relleno de arriba —12 px de caja,
- * 8 por lado en cada destino, 12 en la cara del boton— y la letra de 15 px, la
- * marca, «Inicio», «Vacantes», «Mis procesos» y «Iniciar sesión» piden 439 px de
- * caja: la barra desborda por debajo de 455 px de ventana. Aqui baja la letra de
- * los destinos a 13 px, `--t-menor`, y se aprietan los rellenos sin bajar de los
- * 44 px tactiles: 3 px por lado en cada destino, 4 de hueco entre piezas y 6 en
- * la cara del boton. Con eso piden 348.
- *
- * ⚠️ **Estuvo en 430 y subio a 470 el 25/09/2026**, al juntarse con la barra de
- * «El cielo despejado»: el corte de 430 se midio con Figtree a 14 px, y con
- * Geist a 15 de 431 a 454 px la barra se salia hasta 24 px. Los 15 px de margen
- * son por si la letra del sistema es mas ancha que Geist mientras carga.
- *
- * Medido con esto: a 375 px sobran 11; a 369, 5; a 320 con tres destinos, 17.
- * El logotipo del 28/09/2026 mide a 28 px de alto 31,7 de ancho, 2,7 mas que
- * la palabra de antes: salen 8, 2 y 14 por cuenta, sin volver a medir. La
- * prueba de `07-movil` comprueba que a 360 y 375 la pagina no se desplaza en
- * horizontal. **Si se toca cualquiera de estos rellenos, la letra de la barra
- * o el tamaño de la marca, hay que volver a medir**. No cambia el alto: la
- * cabecera sigue en sus 84 px.
- */
-@media (max-width: 470px) {
-  .cabeceraDentro {
-    padding-inline: var(--e2);
-    gap: var(--e1);
+@keyframes menuEntra {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
   }
 
-  .navegacion {
-    font-size: var(--t-menor);
-  }
-
-  .enlace {
-    padding: 0 3px;
-  }
-
-  /* Solo el de pasar por encima, como en la de 620: el activo no lleva filete. */
-  .enlace:hover::after {
-    left: 3px;
-    right: 3px;
-  }
-
-  .entrar {
-    margin-left: var(--e1);
-  }
-
-  .entrarCara {
-    padding-inline: 6px;
+  to {
+    opacity: 1;
+    transform: none;
   }
 }
 
-/*
- * ⚠️ **Por debajo de 368 px se cae «Vacantes», y es lo unico que se puede
- * caer.** A 320 px los cuatro destinos no caben ni apretados. Desde el
- * 25/09/2026 «Vacantes» SI es una pantalla (`/vacantes`), pero sigue siendo la
- * que mas caminos tiene: se llega tocando el boton grande de la portada, «Ver
- * las N vacantes» y «← Volver a las vacantes» de cualquier ficha. Los otros
- * tres destinos no tienen otro camino y no se tocan.
- *
- * El corte estuvo en 400 y bajo a 368 el 25/09/2026: un telefono de 375 —el
- * ancho con el que se comprueba la pantalla— tiene que ver los cuatro, y con el
- * apretado de arriba caben desde 364 (medido con Geist). Los 4 px de margen son por si la letra
- * del sistema es mas ancha que Geist mientras esta carga.
- */
-@media (max-width: 368px) {
-  .enlaceQueCede {
-    display: none;
+@keyframes veloEntra {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .raya {
+    transition: none;
+  }
+
+  .menu,
+  .velo {
+    animation: none;
   }
 }
 

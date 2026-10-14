@@ -71,16 +71,21 @@ test.describe('Buscar vacantes en el teléfono · el muro de cuarenta', () => {
     await expect(page.getByRole('button', { name: 'Quitar filtro Lima' })).toBeVisible()
     await expect(filtros).toBeVisible()
 
-    // Con el panel abierto tampoco hay scroll horizontal; y la cabecera enseña sus cuatro destinos.
+    // Con el panel abierto tampoco hay scroll horizontal; y la cabecera lleva sus destinos en el menú.
     const conFiltros = await anchoDelDocumento(page)
     expect.soft(conFiltros.documento, 'con los filtros abiertos hay scroll horizontal').toBeLessThanOrEqual(conFiltros.ventana)
     // Lo que desborda es la cabecera: su contenido pide más ancho que la ventana.
     const cabeceraDentro = await page.locator('header > div').evaluate((e) => ({ scroll: e.scrollWidth, ventana: window.innerWidth }))
     expect.soft(cabeceraDentro.scroll, 'la cabecera pide más ancho que la ventana').toBeLessThanOrEqual(cabeceraDentro.ventana)
     await expect.soft(page.locator('header').getByRole('link', { name: 'Iniciar sesión' }), 'el botón «Iniciar sesión» se sale de la pantalla').toBeInViewport({ ratio: 1 })
+    // Desde el 14/10/2026 los destinos van plegados tras las tres rayas.
+    await page.locator('header').getByRole('button', { name: 'Abrir el menú' }).click()
+    const menu = page.getByRole('navigation', { name: 'Menú del portal' })
     for (const destino of ['Inicio', 'Vacantes', 'Mis procesos']) {
-      await expect(page.locator('header nav').getByRole('link', { name: destino, exact: true })).toBeVisible()
+      await expect(menu.getByRole('link', { name: destino, exact: true })).toBeVisible()
     }
+    await page.keyboard.press('Escape')
+    await expect(menu).toHaveCount(0)
     // Contra el token y no contra un número: la cabecera pasó de 70 a 84 px el
     // 25/09/2026 con «El cielo despejado», y un tope escrito aquí ya se quedó viejo una vez.
     const cabecera = await page.locator('header').boundingBox()
@@ -159,13 +164,18 @@ test.describe('Buscar vacantes en el teléfono · el muro de cuarenta', () => {
    * 455, 470 y 471 desde el 25/09/2026: con la barra de «El cielo despejado» —Geist
    * a 15 px— el apretado pasó de 430 a 470, porque de 431 a 454 la barra sin
    * apretar se salía hasta 24 px.
+   *
+   * ⚠️ **Desde el 14/10/2026 los destinos se pliegan tras las tres rayas** por
+   * debajo de 620 px. En la barra quedan la marca, «Iniciar sesión» y el botón
+   * del menú; los destinos se miden abiertos, dentro del menú.
    */
-  test('AC-19 · de 320 a 471 px la cabecera cabe en portada, lista y ficha, mide lo que promete y sus destinos son táctiles', async ({
+  test('AC-19 · de 320 a 471 px la cabecera cabe en portada, lista y ficha, mide lo que promete y su menú es táctil', async ({
     page,
   }) => {
     const anchos = [320, 360, 368, 369, 375, 390, 412, 430, 431, 455, 470, 471]
     const pantallas = ['/', '/vacantes', `/vacantes/${ids['muro-1']}`]
     const DESTINOS = ['Inicio', 'Vacantes', 'Mis procesos', 'Iniciar sesión']
+    const EN_EL_MENU = ['Inicio', 'Vacantes', 'Mis procesos']
     for (const camino of pantallas) {
       await page.goto(camino)
       await expect(page.locator('header').getByRole('link', { name: 'Iniciar sesión' })).toBeVisible()
@@ -175,8 +185,7 @@ test.describe('Buscar vacantes en el teléfono · el muro de cuarenta', () => {
          * Se mide con la barra quieta. Sus destinos entran en cascada con un
          * `translateY` de 420 ms, y a medio camino la caja sale 43,999996 px por
          * redondeo: la corrida del 26/09/2026 falló así en «Inicio» a 368 px, con
-         * la carga de la portada todavía animándose. Y la cascada vuelve a correr
-         * cada vez que «Vacantes» reaparece al cruzar los 368 px.
+         * la carga de la portada todavía animándose.
          */
         await page.waitForFunction(() =>
           document.querySelector('header')!.getAnimations({ subtree: true }).every((a) => a.playState !== 'running'),
@@ -190,7 +199,12 @@ test.describe('Buscar vacantes en el teléfono · el muro de cuarenta', () => {
             dentro: (cabecera.firstElementChild as HTMLElement).scrollWidth,
             alto: caja(cabecera).height,
             prometido: parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--alto-cabecera')),
-            piezas: visibles.map((e) => ({ nombre: (e.textContent ?? '').trim(), alto: caja(e).height, derecha: caja(e).right, izquierda: caja(e).left })),
+            piezas: visibles.map((e) => ({
+              nombre: (e.textContent ?? '').trim() || (e.getAttribute('aria-label') ?? ''),
+              alto: caja(e).height,
+              derecha: caja(e).right,
+              izquierda: caja(e).left,
+            })),
             destinos: visibles.map((e) => (e.textContent ?? '').trim()).filter((n) => nombres.includes(n)),
           }
         }, DESTINOS)
@@ -198,15 +212,26 @@ test.describe('Buscar vacantes en el teléfono · el muro de cuarenta', () => {
         expect.soft(m.documento, `${donde}: la página pide scroll horizontal`).toBeLessThanOrEqual(ancho)
         expect.soft(m.dentro, `${donde}: la cabecera pide más ancho que la ventana`).toBeLessThanOrEqual(ancho)
         expect.soft(Math.abs(m.alto - m.prometido), `${donde}: la cabecera mide ${m.alto} px y promete ${m.prometido}`).toBeLessThanOrEqual(1)
-        const esperados = ancho <= 368 ? DESTINOS.filter((d) => d !== 'Vacantes') : DESTINOS
-        expect.soft(m.destinos, `${donde}: no se ven los destinos que tocan`).toEqual(esperados)
+        expect.soft(m.destinos, `${donde}: en la barra solo va «Iniciar sesión»`).toEqual(['Iniciar sesión'])
         for (const pieza of m.piezas) {
           expect.soft(pieza.derecha, `${donde}: «${pieza.nombre}» se sale por la derecha`).toBeLessThanOrEqual(ancho)
           expect.soft(pieza.izquierda, `${donde}: «${pieza.nombre}» se sale por la izquierda`).toBeGreaterThanOrEqual(0)
-          if (DESTINOS.includes(pieza.nombre)) {
+          if (DESTINOS.includes(pieza.nombre) || pieza.nombre === 'Abrir el menú') {
             expect.soft(pieza.alto, `${donde}: «${pieza.nombre}» mide ${pieza.alto} px de alto, no llega a 44`).toBeGreaterThanOrEqual(44)
           }
         }
+
+        // Abierto, el menú enseña los tres destinos dentro de la ventana y a 44 px o más.
+        await page.locator('header').getByRole('button', { name: 'Abrir el menú' }).click()
+        const menu = page.getByRole('navigation', { name: 'Menú del portal' })
+        for (const destino of EN_EL_MENU) {
+          const enlace = menu.getByRole('link', { name: destino, exact: true })
+          await expect.soft(enlace, `${donde}: «${destino}» no cabe en el menú`).toBeInViewport({ ratio: 1 })
+          const caja = await enlace.boundingBox()
+          expect.soft(caja?.height ?? 0, `${donde}: «${destino}» del menú no llega a 44 px`).toBeGreaterThanOrEqual(44)
+        }
+        await page.keyboard.press('Escape')
+        await expect(menu).toHaveCount(0)
       }
     }
   })

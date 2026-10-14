@@ -6,7 +6,7 @@
  */
 
 import { Link, NavLink, Outlet, matchPath, useLocation, useNavigationType } from 'react-router-dom'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { patrones, rutas } from '@/rutas'
 import { useSesion } from './Sesion'
 import { Campana } from '@/ui/Campana'
@@ -219,9 +219,55 @@ function claseDelEnlace({ isActive }: { isActive: boolean }) {
   return isActive ? `${estilos.enlace} ${estilos.enlaceActivo}` : estilos.enlace
 }
 
-/** El destino que cede sitio en una pantalla muy estrecha. Ver `.enlaceQueCede`. */
-function claseDelEnlaceQueCede(estado: { isActive: boolean }) {
-  return `${claseDelEnlace(estado)} ${estilos.enlaceQueCede}`
+function claseDelEnlaceDelMenu({ isActive }: { isActive: boolean }) {
+  return isActive ? `${estilos.menuEnlace} ${estilos.menuEnlaceActivo}` : estilos.menuEnlace
+}
+
+/**
+ * El menu plegado del telefono (14/10/2026): abierto o cerrado, y cerrado otra
+ * vez al navegar, con Escape o al pulsar fuera.
+ *
+ * Al navegar va contra `key` y no contra `pathname`, por lo mismo que
+ * `ArribaAlCambiarDePagina`: pulsar «Inicio» estando en la portada no cambia la
+ * ruta, y el menu se quedaba abierto encima de la pagina.
+ *
+ * Tambien se cierra al pasar de 620 px —girar el telefono—: alli el menu no se
+ * pinta, y al volver a estrechar reaparecia abierto sin que nadie lo pidiera.
+ */
+function usarMenuPlegado() {
+  const { key } = useLocation()
+  const [abierto, setAbierto] = useState(false)
+  const boton = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    setAbierto(false)
+  }, [key])
+
+  useEffect(() => {
+    if (!abierto) return
+
+    function escape(evento: KeyboardEvent) {
+      if (evento.key === 'Escape') {
+        setAbierto(false)
+        // El foco vuelve al boton, como en la campana: dejarlo en un enlace que
+        // ya no existe manda al tabulador al principio de la pagina.
+        boton.current?.focus()
+      }
+    }
+    const ancho = window.matchMedia('(min-width: 621px)')
+    function alEnsanchar(evento: MediaQueryListEvent) {
+      if (evento.matches) setAbierto(false)
+    }
+
+    document.addEventListener('keydown', escape)
+    ancho.addEventListener('change', alEnsanchar)
+    return () => {
+      document.removeEventListener('keydown', escape)
+      ancho.removeEventListener('change', alEnsanchar)
+    }
+  }, [abierto])
+
+  return { abierto, setAbierto, boton }
 }
 
 /*
@@ -236,6 +282,7 @@ function claseDelEnlaceQueCede(estado: { isActive: boolean }) {
 export function Armazon() {
   const { hayCuenta } = useSesion()
   const { pathname } = useLocation()
+  const menu = usarMenuPlegado()
 
   /*
    * Las pantallas que son UNA tarjeta sola: se centran en lo que se ve en vez de
@@ -303,6 +350,15 @@ export function Armazon() {
       <TituloDeLaPagina />
 
       <header className={estilos.cabecera}>
+        {/*
+          El velo de detras del menu del telefono: apaga la pagina y recoge el
+          toque de fuera. Sin el, tocar fuera para cerrar pulsaba ademas lo que
+          hubiera debajo —una vacante, un boton—. Es `aria-hidden` porque quien
+          navega con teclado cierra con Escape o con el propio boton.
+        */}
+        {menu.abierto && (
+          <div className={estilos.velo} aria-hidden="true" onClick={() => menu.setAbierto(false)} />
+        )}
         <div className={estilos.cabeceraDentro}>
           <Link className={estilos.marca} to={rutas.inicio()} aria-label="EX, inicio">
             <Marca tamano={28} />
@@ -319,7 +375,7 @@ export function Armazon() {
               portada solo se enciende «Inicio». Hasta entonces era un ancla a la
               sección `#vacantes-abiertas` de la portada y no se encendía nunca.
             */}
-            <NavLink className={claseDelEnlaceQueCede} to={rutas.vacantes()}>
+            <NavLink className={claseDelEnlace} to={rutas.vacantes()}>
               Vacantes
             </NavLink>
             <NavLink className={claseDelEnlace} to={rutas.procesos()}>
@@ -352,7 +408,10 @@ export function Armazon() {
           */}
           <div className={estilos.acciones}>
             {hayCuenta ? (
-              <NavLink className={claseDelEnlace} to={rutas.perfil()}>
+              <NavLink
+                className={(estado) => `${claseDelEnlace(estado)} ${estilos.miCuentaDeLaBarra}`}
+                to={rutas.perfil()}
+              >
                 Mi cuenta
               </NavLink>
             ) : (
@@ -363,7 +422,51 @@ export function Armazon() {
               </Link>
             )}
             <Campana />
+            {/*
+              Las tres rayas, solo por debajo de 620 px (14/10/2026). Hasta ese
+              dia la barra del telefono apretaba los cuatro destinos a 13 px y
+              3 px de aire, y con «Mi cuenta» y la campana se amontonaban. Fuera
+              de la barra se quedan lo que se pulsa sin cambiar de pantalla —la
+              campana— y, sin cuenta, «Iniciar sesión», que es la puerta.
+            */}
+            <button
+              ref={menu.boton}
+              type="button"
+              className={estilos.botonMenu}
+              aria-expanded={menu.abierto}
+              aria-controls="menu-del-portal"
+              aria-label={menu.abierto ? 'Cerrar el menú' : 'Abrir el menú'}
+              onClick={() => menu.setAbierto(!menu.abierto)}
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+                <path className={estilos.raya} d="M4 7h16" />
+                <path className={estilos.raya} d="M4 12h16" />
+                <path className={estilos.raya} d="M4 17h16" />
+              </svg>
+            </button>
           </div>
+
+          {menu.abierto && (
+            <nav id="menu-del-portal" className={estilos.menu} aria-label="Menú del portal">
+              <NavLink className={claseDelEnlaceDelMenu} to={rutas.inicio()} end>
+                Inicio
+              </NavLink>
+              <NavLink className={claseDelEnlaceDelMenu} to={rutas.vacantes()}>
+                Vacantes
+              </NavLink>
+              <NavLink className={claseDelEnlaceDelMenu} to={rutas.procesos()}>
+                Mis procesos
+              </NavLink>
+              {hayCuenta && (
+                <NavLink
+                  className={(estado) => `${claseDelEnlaceDelMenu(estado)} ${estilos.menuCuenta}`}
+                  to={rutas.perfil()}
+                >
+                  Mi cuenta
+                </NavLink>
+              )}
+            </nav>
+          )}
         </div>
       </header>
 
