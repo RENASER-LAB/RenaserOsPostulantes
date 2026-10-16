@@ -14,6 +14,57 @@ Desde el 05/10 el diseño se trabaja con las skills de Emil Kowalski (`emil-desi
 
 ---
 
+## Los pesos con candidatos dentro y el fin del préstamo (15-16/10/2026)
+
+Spec del backend `pesos-con-candidatos-y-fin-del-prestamo.md`. De sus tres partes, en el panel se
+notan dos; la tercera —el editor deja de guardar el enlace de 180 días del enunciado— no tiene
+pantalla.
+
+- **«Pesos de la decisión» con candidatos dentro.** El desplegable ya no se apaga con la primera
+  postulación. Antes de guardar pide la vista previa (`preverCambioDePesos`) y, si alguien tiene
+  nota, abre «¿Cambiar a «…»?» con a cuántas personas toca y la tabla **Antes / Después** del peso
+  de cada etapa, con el reparto del Perfil Integral en su fila. «Cambiar y recalcular» aguanta el
+  doble clic con una guarda propia (`yaSeEnvio`), porque el `disabled` llega un render tarde. Al
+  terminar relee la vacante, el ranking y la ficha. El bloque salió de `Vacante.tsx` a
+  `PesosDeLaDecision.tsx`, y la mecánica vive en `useCambioDePesos`, que usa también «Usar estos
+  pesos» de la ficha del puesto. Cómo funciona hoy, en [PANEL](PANEL.md) › Pesos de la decisión,
+  también con candidatos dentro.
+- **Lo que una vacante de antes conserva de RENASER.** Sin préstamo, el banco y las pruebas de
+  RENASER ya no se le listan a una empresa cliente, así que el detalle trae `bancoFijo` y
+  `pruebaPrestada`: «Qué evaluación responderá» nombra el banco fijado sin buscarlo en la lista, y
+  el desplegable de pruebas añade la que ya tenía como una opción más. **Decisión del usuario**: la
+  clienta solo ve la prueba de RENASER que su vacante ya tenía asignada.
+- **Las pruebas unitarias con Node 26.** Fuera del CI, que sigue en Node 22, la suite se rompía:
+  desde Node 25 `localStorage` es de Node y queda vacío, y desde Node 24 el `Request` de Node
+  rechaza la señal de jsdom que react-router le pasa al navegar. Se arregló en `vitest.config.ts`
+  (`--no-experimental-webstorage`) y en `herramientas/arranque-de-pruebas.ts`; pasa de Node 22 a 26.
+  El detalle, en [TRABAJAR-EN-LOCAL](TRABAJAR-EN-LOCAL.md).
+- **Backend** (`V74`, `V75`): `GET /vacantes/{id}/version-pesos/cambio`; el `POST …/version-pesos`
+  devuelve `{versionPesosId, personasRecalculadas}` y recalcula sin IA, sin mover a nadie y sin el
+  pase automático; `vacante.version_banco_fija_id`; los borradores de antes sin prueba pasan a
+  «Armar la prueba»; y `nota_criterio.puntaje_original` y `maximo_original`, para que ir y volver a
+  una versión devuelva la misma nota. QA necesitó cuatro ciclos por la concurrencia con el
+  recálculo: el cerrojo de los pesos, la relectura de la postulación y `@DynamicUpdate` en
+  `Postulacion`, en las `REGLAS-DEL-CODIGO.md` del backend.
+
+**Quedaron fuera**, en los defectos conocidos del backend: el 17 —muchas notas a mano a la vez
+dejan al backend sin conexiones y el pase automático se pierde; viene de main—, el 18 —dos
+escrituras del mismo dato de una postulación a la vez— y el 19 —la nota de la IA de la prueba sin
+prueba de carrera—.
+
+**Cómo se comprueba:**
+
+- E2E: `59-pesos-con-candidatos-y-fin-del-prestamo` (12 casos), que escribe en el clon y retira lo
+  sembrado; `14-vacante` se adaptó al diálogo.
+- Unitarias: `PesosDeLaDecision.test.tsx`, `Vacante.test.tsx` y `FichaDelPuesto.test.tsx`.
+- En el backend: `FlujoPesosConCandidatosIT`, `MientrasCambianLosPesosIT`,
+  `NotasQueSeCierranConCambioDePesosIT`, `MigracionFinDelPrestamoIT`, `RecalculoConOtrosPesosTest`
+  y `ServicioPesosDeLaVacanteImplTest`.
+- QA recorrió el diálogo en Chrome visible con permiso del usuario: seis personas, «Currículum 12 →
+  20 · Preguntas 28 → 20», un solo cambio con doble clic y el ranking reordenado sin recargar.
+
+---
+
 ## El teléfono: menú de tres rayas y la lateral del perfil suelta (14/10/2026)
 
 Dos quejas con captura del iPhone del usuario, sin spec:

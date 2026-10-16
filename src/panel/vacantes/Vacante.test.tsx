@@ -413,7 +413,9 @@ vi.mock('../api/panel', () => ({
   asignarPlantillaEvaluacion: () => Promise.resolve({}),
   asignarPlantillaPrueba: (vacanteId: number, versionId: number) =>
     asignarPlantillaPrueba(vacanteId, versionId),
-  asignarVersionPesos: () => Promise.resolve({}),
+  asignarVersionPesos: () => Promise.resolve({ versionPesosId: 9, personasRecalculadas: 0 }),
+  preverCambioDePesos: () =>
+    Promise.resolve({ personasConNota: 0, cambia: true, versionNuevaId: 9, etapas: [] }),
   elegirInstrumentoTecnico: (vacanteId: number, datos: unknown) =>
     elegirInstrumento(vacanteId, datos),
   cerrarVacante: () => Promise.resolve({}),
@@ -2328,6 +2330,24 @@ describe('el banco que responderá quien postule', () => {
     expect(screen.getByText(/se publica uno en Configuración/i)).toBeTruthy()
   })
 
+  /*
+   * V74: el banco de RENASER ya no sale en la lista de una empresa cliente, pero
+   * una vacante vieja lo tiene fijado. Buscarlo en la lista decia «no hay
+   * ningun banco publicado» sobre una vacante que si tiene examen.
+   */
+  it('una vacante vieja con el banco de RENASER fijado lo nombra aunque no salga en la lista (V74)', async () => {
+    listarVersionesBanco.mockResolvedValue([])
+    sinRuido.verVacante = () =>
+      Promise.resolve({
+        ...VACANTE,
+        bancoFijo: { id: 16, etiqueta: 'Banco RENASER v3 · Ejecución', minutosObjetivo: 35 },
+      })
+    await pintar()
+
+    expect(await screen.findByText('Banco RENASER v3 · Ejecución')).toBeTruthy()
+    expect(screen.queryByText(/No hay ningún banco publicado para este nivel/)).toBeNull()
+  })
+
   it('con la evaluación apagada no habla de ningún banco', async () => {
     sinRuido.verVacante = () =>
       Promise.resolve({ ...VACANTE, aplicaEvaluacion: false })
@@ -2365,6 +2385,30 @@ describe('los desplegables que siguen existiendo', () => {
     */
     await waitFor(() => expect(asignarPlantillaPrueba).toHaveBeenCalledWith(1, 1))
     expect(asignarPlantillaPrueba).toHaveBeenCalledTimes(1)
+  })
+
+  /*
+   * V74: las pruebas de RENASER ya no se listan para una empresa cliente, y pedir
+   * su version por id contesta 404. La que una vacante vieja ya tenia asignada
+   * la nombra el detalle, y el desplegable la enseña elegida.
+   */
+  it('la prueba de RENASER que una vacante vieja ya tenía sale elegida con su nombre (V74)', async () => {
+    sinRuido.verVacante = () =>
+      Promise.resolve({
+        ...VACANTE,
+        versionPlantillaPruebaId: 77,
+        pruebaPrestada: {
+          versionId: 77,
+          plantillaPruebaId: 500,
+          nombre: 'Prueba de Administrador',
+          version: 2,
+        },
+      })
+    await pintar()
+
+    const cual = screen.getByRole('combobox', { name: /prueba del puesto/i }) as HTMLSelectElement
+    await waitFor(() => expect(cual.value).toBe('77'))
+    expect(cual.selectedOptions[0]?.textContent).toBe('Prueba de Administrador · v2')
   })
 
   /*

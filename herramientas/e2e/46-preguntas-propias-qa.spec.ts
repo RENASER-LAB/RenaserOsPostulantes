@@ -322,7 +322,8 @@ test.describe('Una empresa sin banco propio', () => {
       expect((await pedir(`/panel/plataforma/empresas/${b.id}/personalizacion/${instrumento}`, equipo, 'DELETE', motivo)).estado)
         .toBe(400)
     }
-    expect((await exigir('/panel/organizacion/personalizacion', tokenB)).bancoPropio).toBe(false)
+    // Desde la V74 el banco ni siquiera tiene bandera que enseñar: es siempre el suyo
+    expect((await exigir('/panel/organizacion/personalizacion', tokenB)).bancoPropio).toBeUndefined()
     expect(Number(consultar(`select count(*) as n from version_banco where organizacion_id = ${b.id} and vacante_id is null`)[0]!.n)).toBe(0)
 
     await exigir(`/panel/plataforma/empresas/${b.id}/personalizacion/PESOS`, equipo, 'POST', motivo)

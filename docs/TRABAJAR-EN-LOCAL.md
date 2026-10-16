@@ -44,6 +44,18 @@ hace que mirar una pantalla sea gratis y seguro en cualquiera de las dos configu
 
 Hace falta Node **20.19 o superior**. Con 20.17 compila pero Vite avisa en cada arranque.
 
+**Las pruebas unitarias (`npm test`) pasan de Node 22 a 26**; el CI las corre con 22. Dos ajustes
+lo sostienen y no hay que quitarlos (16/10/2026):
+
+- **Desde Node 25, `localStorage` es de Node**, y vitest no lo cambia por el de jsdom: sin más,
+  queda `undefined` y revientan las pruebas que lo usan. `vitest.config.ts` arranca los procesos
+  con `--no-experimental-webstorage`, solo si ese Node conoce la opción (Node 20 se niega a
+  arrancar con ella).
+- **Desde Node 24, el `Request` de Node rechaza la señal de aborto de jsdom**, que react-router le
+  pasa al navegar: cualquier `navigate` de un router de datos fallaba y la pantalla se quedaba en
+  la ruta de antes. `herramientas/arranque-de-pruebas.ts` la puentea con una señal de Node, solo si
+  hace falta.
+
 ```bash
 npm install
 ```

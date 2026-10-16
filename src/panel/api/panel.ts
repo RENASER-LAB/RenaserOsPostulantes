@@ -48,6 +48,8 @@ import type {
   ResultadoDeImportacion,
   PreguntaDelBanco,
   VersionPesos,
+  CambioDePesosHecho,
+  CambioDePesosPrevisto,
   Catalogos,
   SolicitudResumen,
   ValidacionPanel,
@@ -650,11 +652,22 @@ export const elegirInstrumentoTecnico = (
 ) =>
   pedir<void>(`/vacantes/${vacanteId}/instrumento-tecnico`, { metodo: 'POST', cuerpo: datos })
 
+/**
+ * Pone la vacante en esa version de pesos. Con candidatos dentro, recalcula a
+ * todos en la misma operacion, sin IA y sin mover a nadie (V74); si algo falla,
+ * no cambia nada y contesta el motivo.
+ */
 export const asignarVersionPesos = (vacanteId: number, versionPesosId: number) =>
-  pedir<void>(`/vacantes/${vacanteId}/version-pesos`, {
+  pedir<CambioDePesosHecho>(`/vacantes/${vacanteId}/version-pesos`, {
     metodo: 'POST',
     cuerpo: { versionPesosId },
   })
+
+/** Lo que pasaria al cambiar a esa version, para la confirmacion. No escribe nada. */
+export const preverCambioDePesos = (vacanteId: number, versionPesosId: number) =>
+  pedir<CambioDePesosPrevisto>(
+    `/vacantes/${vacanteId}/version-pesos/cambio?versionPesosId=${versionPesosId}`,
+  )
 
 
 // ---------- La prueba por dentro: lo escrito, la IA y el plazo ----------

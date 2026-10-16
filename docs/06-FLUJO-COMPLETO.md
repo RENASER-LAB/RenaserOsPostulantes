@@ -193,7 +193,8 @@ generación ya en curso, o con la IA apagada, el servidor contesta
 La ficha, al guardarse con la cifra de gente, deriva el **tamaño** (MICRO ·
 MEDIA · GRANDE) y sugiere la versión de pesos de la etapa 1 que le corresponde,
 con un botón que la asigna a la vacante: es el mismo endpoint que el
-desplegable de pesos del paso 3.
+desplegable de pesos del paso 3, y con candidatos con nota pide la misma
+confirmación antes de recalcularlos (`V74`).
 
 **Cuándo se hace:** el momento natural es con la vacante en borrador, antes de
 publicarla. El backend no lo ata: se puede preparar con la vacante ya

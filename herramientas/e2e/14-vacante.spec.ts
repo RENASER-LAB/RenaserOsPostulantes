@@ -300,15 +300,20 @@ test.describe.serial('El recorrido entero de una vacante', () => {
         .toBeGreaterThan(0)
       console.log(`[VACANTE] pesos ofrecidos: ${await publicadas.count()}`)
       const elegida = (await publicadas.first().getAttribute('value')) as string
-      // La vacante puede nacer ya con esos pesos: entonces el valor coincide antes de que el
-      // servidor conteste, y la prueba acababa con el guardado en vuelo. Se espera la respuesta.
-      const guardados = page.waitForResponse(
+      // Desde la V74 elegir pregunta antes qué pasaría (a cuántos recalcula). Sin nadie con
+      // nota se guarda sin diálogo; y si la vacante ya nació con esos pesos, no se guarda nada.
+      // Se espera esa respuesta: es la que decide, y con ella el guardado ya salió o no hace falta.
+      const previsto = page.waitForResponse(
         (r) =>
-          r.request().method() === 'POST' &&
-          new URL(r.url()).pathname.endsWith(`/vacantes/${idVacante}/version-pesos`),
+          r.request().method() === 'GET' &&
+          new URL(r.url()).pathname.endsWith(`/vacantes/${idVacante}/version-pesos/cambio`),
       )
       await selPesos.selectOption(elegida)
-      expect((await guardados).ok()).toBe(true)
+      const respuesta = await previsto
+      expect(respuesta.ok()).toBe(true)
+      const lo = (await respuesta.json()) as { cambia: boolean; personasConNota: number }
+      expect(lo.personasConNota).toBe(0)
+      await expect(page.getByRole('dialog')).toHaveCount(0)
       await expect(selPesos).toHaveValue(elegida, { timeout: 15_000 })
     })
   })

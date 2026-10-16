@@ -21,7 +21,6 @@ import {
   activarCalificacionAutomatica,
   elegirInstrumentoTecnico,
   asignarPlantillaPrueba,
-  asignarVersionPesos,
   cerrarVacante,
   desarchivarVacante,
   confirmarAvance,
@@ -31,7 +30,6 @@ import {
   listarPlantillasPrueba,
   listarPuestos,
   listarRequisitos,
-  listarVersionesPesos,
   listarVersionesPrueba,
   verVersionDePrueba,
   publicarVacante,
@@ -52,6 +50,7 @@ import {
 } from '../api/panel'
 import { ErrorApi } from '../api/cliente'
 import type {
+  BancoFijo,
   Catalogos,
   DesgloseEvaluacion,
   ElegirInstrumentoTecnico as DatosDelInstrumento,
@@ -59,8 +58,10 @@ import type {
   InstrumentoTecnico,
   FilaRanking,
   NotaCriterioEtapa,
+  PruebaPrestada,
   RankingVacante,
   VacantePanel,
+  VersionPrueba,
 } from '../api/tipos'
 import { rutas } from '@/rutas'
 import { ahora, formatearFechaCorta, formatearFechaLarga } from '@/dominio/reloj'
@@ -143,6 +144,7 @@ import { IconoEstrella } from '@/ui/Iconos'
 import { DesglosePorPuntos } from './preguntas/DesglosePorPuntos'
 import { OrigenDeLasPreguntas, usePreguntasListas } from './preguntas/OrigenDeLasPreguntas'
 import { PruebaDeLaVacante, rindeLaPruebaPropia, usePruebaLista } from './preguntas/PruebaDeLaVacante'
+import { PesosDeLaDecision } from './PesosDeLaDecision'
 import { PruebaDelCandidato } from './PruebaDelCandidato'
 import { NoCompletaron } from './NoCompletaron'
 import { NotaMinimaDelPase } from './NotaMinimaDelPase'
@@ -3571,7 +3573,7 @@ function useCuestionarioPublicado(vacanteId: number) {
   return cuestionario.data.estado === 'PUBLICADA'
 }
 
-function useBancoDelNivel(puestoId: number | undefined) {
+function useBancoDelNivel(puestoId: number | undefined, bancoFijo?: BancoFijo | null) {
   // Todos, también los desactivados (V64): una vacante conserva su puesto aunque
   // Configuración lo haya retirado de las opciones, y su nivel sigue mandando.
   const puestos = useQuery({ queryKey: ['panel-puestos-todos'], queryFn: () => listarPuestos(true) })
@@ -3617,6 +3619,21 @@ function useBancoDelNivel(puestoId: number | undefined) {
         )
         .sort((a, b) => (b.publicadaEn ?? '').localeCompare(a.publicadaEn ?? ''))[0]
 
+  /*
+    ⚠️ **Una vacante vieja con el banco de RENASER lo tiene fijado (V74)**, y el
+    banco de RENASER ya no sale en la lista de versiones de una empresa cliente:
+    buscarlo ahi diria «no hay ningun banco publicado» sobre una vacante que si
+    tiene examen. La version fija viene en el detalle y manda.
+  */
+  if (bancoFijo) {
+    return {
+      banco: { etiqueta: bancoFijo.etiqueta, minutosObjetivo: bancoFijo.minutosObjetivo },
+      nivel,
+      noSePuedeSaber: false,
+      buscando: false,
+    }
+  }
+
   return {
     banco,
     nivel,
@@ -3638,6 +3655,19 @@ function useBancoDelNivel(puestoId: number | undefined) {
  * respuesta legal y, con las cuotas retiradas, tampoco decide que preguntas
  * caen. En su sitio hay una linea que dice que banco se va a responder.
  */
+/**
+ * La prueba de RENASER que una vacante vieja conserva (V74), como una opcion mas
+ * del desplegable. Solo lleva lo que el desplegable lee: su id, su plantilla, su
+ * numero y que esta publicada.
+ */
+const deLaPrestada = (prestada: PruebaPrestada): VersionPrueba =>
+  ({
+    id: prestada.versionId,
+    plantillaPruebaId: prestada.plantillaPruebaId,
+    version: prestada.version,
+    estado: 'PUBLICADA',
+  }) as VersionPrueba
+
 function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
   const cache = useQueryClient()
   const [fallo, setFallo] = useState<string | null>(null)
@@ -3647,7 +3677,7 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
     nivel,
     noSePuedeSaber,
     buscando: buscandoElBanco,
-  } = useBancoDelNivel(vacante.puestoId)
+  } = useBancoDelNivel(vacante.puestoId, vacante.bancoFijo)
   const plantillasPrueba = useQuery({
     queryKey: ['panel-plantillas-prueba'],
     queryFn: listarPlantillasPrueba,
@@ -3696,13 +3726,19 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
       */
       const puesta = vacante.versionPlantillaPruebaId
       if (puesta === null || todas.some((v) => v.id === puesta)) return todas
+      /*
+        ⚠️ **Una vacante vieja que ya tenia una prueba de RENASER la conserva**
+        (V74), pero las pruebas de RENASER ya no se listan ni se leen por id: esa
+        version contesta 404. El detalle trae su nombre en `pruebaPrestada`, y
+        con el se pinta su opcion; las demas de RENASER no se ofrecen.
+      */
+      const prestada = vacante.pruebaPrestada
+      if (prestada && prestada.versionId === puesta) {
+        return [...todas, deLaPrestada(prestada)]
+      }
       const suelta = await verVersionDePrueba(puesta).catch(() => null)
       return suelta === null ? todas : [...todas, suelta.version]
     },
-  })
-  const pesos = useQuery({
-    queryKey: ['panel-pesos'],
-    queryFn: listarVersionesPesos,
   })
 
   const refrescar = () =>
@@ -3735,12 +3771,6 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
   */
   const instrumento = useMutation({
     mutationFn: (datos: DatosDelInstrumento) => elegirInstrumentoTecnico(vacante.id, datos),
-    scope: turnoDeLaVacante(vacante.id),
-    onSuccess: refrescar,
-    onError: alFallar,
-  })
-  const version = useMutation({
-    mutationFn: (id: number) => asignarVersionPesos(vacante.id, id),
     scope: turnoDeLaVacante(vacante.id),
     onSuccess: refrescar,
     onError: alFallar,
@@ -3797,7 +3827,9 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
 
   const nombreDePlantillaPrueba = (plantillaPruebaId: number) =>
     plantillasPrueba.data?.find((p) => p.id === plantillaPruebaId)?.nombre ??
-    `Plantilla ${plantillaPruebaId}`
+    (vacante.pruebaPrestada?.plantillaPruebaId === plantillaPruebaId
+      ? vacante.pruebaPrestada.nombre
+      : `Plantilla ${plantillaPruebaId}`)
 
   // La misma regla que el boton de publicar, y por eso mira lo mismo: el banco en vez de
   // la plantilla de evaluacion, y el instrumento que la vacante eligio para su etapa
@@ -4018,39 +4050,8 @@ function ConfiguracionDeLaVacante({ vacante }: { vacante: VacantePanel }) {
         </fieldset>
         <fieldset className={estilos.grupoConfiguracion}>
           <legend>Pesos de la decisión</legend>
-        <label className={estilos.ajuste}>
-          <span className={estilos.etiquetaAjuste}>Qué pesos rigen la decisión</span>
-          <select
-            className={estilos.eleccion}
-            value={vacante.versionPesosId ?? ''}
-            onChange={(e) => alElegir(e.target.value, version.mutate)}
-            disabled={version.isPending}
-          >
-            <option value="" disabled={vacante.versionPesosId !== null}>
-              Los pesos generales
-            </option>
-            {(pesos.data ?? [])
-              .filter((p) => p.estado === 'PUBLICADA')
-              .map((p) => (
-                <option value={p.id} key={p.id}>
-                  {p.etiqueta}
-                </option>
-              ))}
-          </select>
-          {/*
-            ⚠️ **No hay forma de volver a los pesos generales.** El backend solo
-            tiene `POST .../version-pesos`, que exige un id: ninguna ruta
-            desasigna. Sin la linea, elegir «Los pesos generales» mandaba un id
-            `0` y contestaba «not found with id: '0'»; con el guardian puesto no
-            haria nada, que engaña igual. Se apaga la opcion y se dice por que.
-          */}
-          {vacante.versionPesosId !== null && (
-            <span className={estilos.ayudaAjuste}>
-              Ya no se puede volver a los pesos generales desde aquí: se cambia por otra versión
-              publicada, no se quita.
-            </span>
-          )}
-        </label>
+          {/* Con candidatos dentro también: recalcula a todos tras confirmar (V74). */}
+          <PesosDeLaDecision vacante={vacante} alFallar={alFallar} />
         </fieldset>
       </div>
 
