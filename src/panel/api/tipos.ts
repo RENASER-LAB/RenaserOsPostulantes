@@ -227,6 +227,67 @@ export interface VacantePanel {
    * detalle lo lee del editor, que trae ademas los puntos.
    */
   estadoPreguntasPropias?: 'SIN_PREGUNTAS' | 'BORRADOR' | 'PUBLICADAS' | null
+  /**
+   * La version del banco de RENASER fijada en esta vacante vieja (V74). El banco de
+   * RENASER ya no sale en la lista de versiones de una empresa cliente, asi que
+   * «Que evaluacion respondera» la lee de aqui. **Solo en el detalle**; `null` si
+   * no tiene version fija, y ausente en un backend anterior.
+   */
+  bancoFijo?: BancoFijo | null
+  /**
+   * La prueba de RENASER que esta vacante vieja ya tenia asignada (V74): la
+   * conserva, pero las pruebas de RENASER ya no se listan, y sin esto el
+   * desplegable no sabria nombrarla. **Solo en el detalle**.
+   */
+  pruebaPrestada?: PruebaPrestada | null
+}
+
+/** La version fija del banco de una vacante vieja (V74). */
+export interface BancoFijo {
+  id: number
+  etiqueta: string
+  minutosObjetivo: number | null
+}
+
+/** La prueba de RENASER que una vacante vieja ya tenia asignada (V74). */
+export interface PruebaPrestada {
+  versionId: number
+  plantillaPruebaId: number
+  nombre: string
+  version: number
+}
+
+/** Un peso, antes y despues de cambiar de version. `null` donde esa version no lo trae. */
+export interface PesoAntesYDespues {
+  codigo: string
+  nombre: string
+  antes: number | null
+  despues: number | null
+}
+
+/**
+ * Lo que pasaria al cambiar la version de pesos de una vacante (V74): a cuantas
+ * personas se les recalcula la nota y que pesos cambian. No escribe nada.
+ */
+export interface CambioDePesosPrevisto {
+  versionAnteriorId: number | null
+  etiquetaAnterior: string | null
+  versionNuevaId: number
+  etiquetaNueva: string
+  /** Cuantas tienen alguna nota. Con cero, se guarda sin preguntar. */
+  personasConNota: number
+  /** Falso si la version pedida es la que ya tiene. */
+  cambia: boolean
+  /** Cuanto pesa cada etapa en la nota final, en el orden del proceso. */
+  etapas: PesoAntesYDespues[]
+  /** Como se reparte el Perfil Integral: curriculum y preguntas. */
+  perfilIntegral: PesoAntesYDespues[]
+}
+
+/** Lo que contesta el cambio: la version que ya rige y a cuantas personas se recalculo. */
+export interface CambioDePesosHecho {
+  versionPesosId: number
+  personasRecalculadas: number
 }
 
 /**

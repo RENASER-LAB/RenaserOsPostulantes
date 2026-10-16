@@ -1,3 +1,5 @@
+import { transferableAbortController } from 'node:util'
+
 /**
  * Lo que jsdom no trae y el navegador sí.
  *
@@ -37,3 +39,42 @@ class ObservadorDeIntersecciónQueNoObserva {
 
 globalThis.IntersectionObserver =
   ObservadorDeIntersecciónQueNoObserva as unknown as typeof IntersectionObserver
+
+/**
+ * `Request` no es de jsdom sino de Node, y `AbortController` sí es de jsdom.
+ * react-router los junta al navegar —`new Request(url, { signal })`— y desde
+ * Node 24 el `Request` de Node rechaza una señal que no sea suya; en Node 22 (el
+ * del CI) la aceptaba y la seguía. Sin esto, cualquier `navigate` de un router
+ * de datos revienta y la pantalla se queda en la ruta de antes.
+ *
+ * El puente hace lo que hacía Node 22: una señal de Node que se aborta cuando
+ * se aborta la de jsdom. Solo se monta si hace falta.
+ */
+const RequestDeNode = globalThis.Request
+const AbortControllerDeNode = transferableAbortController().constructor as typeof AbortController
+const AbortSignalDeNode = new AbortControllerDeNode().signal.constructor
+
+function aceptaLaSeñalDeJsdom(): boolean {
+  try {
+    new RequestDeNode('http://localhost/', { signal: new AbortController().signal })
+    return true
+  } catch {
+    return false
+  }
+}
+
+if (!aceptaLaSeñalDeJsdom()) {
+  globalThis.Request = class Request extends RequestDeNode {
+    constructor(entrada: RequestInfo | URL, opciones?: RequestInit) {
+      const señal = opciones?.signal
+      if (!señal || señal instanceof AbortSignalDeNode) {
+        super(entrada, opciones)
+        return
+      }
+      const puente = new AbortControllerDeNode()
+      if (señal.aborted) puente.abort(señal.reason)
+      else señal.addEventListener('abort', () => puente.abort(señal.reason), { once: true })
+      super(entrada, { ...opciones, signal: puente.signal })
+    }
+  }
+}

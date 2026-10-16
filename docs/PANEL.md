@@ -236,7 +236,10 @@ uno con su indicador.
 ⚠️ **En una vacante de antes, la prueba del puesto sí se elige, y se filtra por el puesto de la
 vacante.** A una nueva no se le ofrece ningún desplegable. La genérica
 —`puestoId: null`— vale para cualquiera y sigue saliendo; la que la vacante ya tiene puesta no
-se filtra nunca, porque el backend admite asignaciones cruzadas.
+se filtra nunca, porque el backend admite asignaciones cruzadas. **Desde el 16/10/2026 (`V74`) una
+empresa cliente solo ve sus propias pruebas**: las de RENASER ya no se le listan ni se leen por id.
+La que su vacante de antes ya tenía asignada sí sale, como una opción más, con el nombre que trae
+`pruebaPrestada` del detalle (decisión del usuario); las demás de RENASER no se ofrecen.
 
 ⚠️ **`listarVersionesPrueba` tantea ids y deja 404 en la consola.** No es un fallo: es el hueco
 del backend. Va por tandas de ocho en paralelo, sembrado con la versión que la vacante ya tiene
@@ -741,7 +744,7 @@ postule», **«De dónde salen sus preguntas»** ofrece tres opciones:
 |---|---|
 | **Preguntas propias de esta vacante** | Siempre, y la primera. **Toda vacante nueva nace con ella marcada**, también en RENASER (decisión del usuario del 30/09/2026). Al lado, «Sus preguntas propias» dice cómo van —«Sin preguntas», «Borrador» o «Publicadas», con sus puntos— y «Escribir las preguntas →» lleva al editor |
 | **El banco de la empresa para su nivel** | Solo si la empresa tiene uno **propio** publicado para ese nivel (`bancoDelNivelPropio`). A las demás no se les habla de un banco que no tienen |
-| **El banco de RENASER para su nivel** | Solo en una vacante de antes que lo rinde prestado (`bancoPrestado`), con su nombre real. Si se elige otra opción, desaparece y no se puede volver a elegir |
+| **El banco de RENASER para su nivel** | Solo en una vacante de antes que lo rinde prestado (`bancoPrestado`), con su nombre real. Si se elige otra opción, desaparece y no se puede volver a elegir. **Desde el 16/10/2026 (`V74`) esa versión está fijada en la vacante** y el nombre y los minutos salen de `bancoFijo`, del detalle: el banco de RENASER ya no sale en la lista de versiones de una empresa cliente, y buscarlo ahí diría «no hay ningún banco publicado» sobre una vacante que sí tiene examen |
 | **Sin evaluación** | Siempre. Quien postule no responde preguntas: lo siguiente que rinde es la etapa técnica |
 
 Cada elección se guarda al marcarla. **Desde la primera postulación no se puede cambiar**: el
@@ -846,7 +849,8 @@ nada que elegir**: ni «Qué rendirá en la etapa técnica», ni «Qué prueba d
 «Cuánto tiempo tendrá», ni la tarjeta de la ficha, ni —desde el 05/10/2026— «Plazos de la prueba».
 Enseña el estado —«Sin prueba», «Borrador · 70 de 100 puntos · 2 entregables», «Publicada · 5
 criterios · 2 entregables · 90 min» o, sin entregables, «Publicada · 3 criterios · 12 preguntas ·
-sin cronómetro»— y «Armar la prueba →». «Pesos de la decisión» sigue igual.
+sin cronómetro»— y «Armar la prueba →». «Pesos de la decisión» va aparte: ver «Pesos de la
+decisión, también con candidatos dentro».
 **Publicar la vacante exige la prueba publicada**, y el cartel «Todo listo», el botón de publicar
 y `loQueFaltaParaPublicar.ts` miran la misma regla (`usePruebaLista`).
 
@@ -1136,6 +1140,37 @@ Comprobarlo: `npx playwright test herramientas/e2e/58-umbral-del-perfil-integral
 preview: el cierre se siembra y la nota la pone una persona desde el panel, que es el camino del
 recálculo. Las notas exactas al cerrar las recorre `FlujoNotaMinimaDelPerfilIT` en el backend.
 Las unitarias, en `NotaMinimaDelPase.test.tsx` y `Vacante.test.tsx`.
+
+### Pesos de la decisión, también con candidatos dentro (16/10)
+
+En la tuerca de la vacante, **«Pesos de la decisión»** (`PesosDeLaDecision.tsx`) elige qué versión
+de pesos rige. Hasta el 16/10/2026 el desplegable dejaba de servir con la primera postulación —el
+backend contestaba 409—; ahora sigue activo mientras la vacante no esté cerrada ni archivada, y
+cambiar la versión **recalcula a todos a la vez, sin IA y sin mover a nadie de etapa**. Las reglas,
+en `docs/DECISION-UNA-VACANTE-UNA-VERSION.md` del backend.
+
+- **Antes de guardar se pregunta qué pasaría** (`GET /vacantes/{id}/version-pesos/cambio`). Si es
+  la misma versión, no se hace nada; si nadie tiene nota, se guarda sin preguntar; si alguien la
+  tiene, sale **«¿Cambiar a «…»?»**: «Se recalcularán las notas de N personas con los pesos nuevos:
+  currículum, Perfil Integral, simulación, validación y nota final. No se llama a la IA y nadie
+  cambia de etapa. Las decisiones ya tomadas se mantienen.», y debajo una tabla con el peso de cada
+  etapa antes y después, con lo que cambia resaltado y, en la fila del Perfil Integral, su reparto
+  («Currículum 12 → 20 · Preguntas 28 → 20»).
+- **«Cambiar y recalcular»** dice «Recalculando N personas…» mientras guarda, y un doble clic manda
+  un solo cambio. Al terminar sale «Pesos cambiados: se recalcularon N personas.» y se releen la
+  vacante, el ranking y la ficha. Si falla, el diálogo dice «No se cambió nada: la vacante sigue con
+  sus pesos y sus notas.» con el motivo del servidor.
+- **En el teléfono** (hasta 640 px) la tabla se apila, una etapa por línea.
+- **Cerrada o archivada**, el desplegable queda en solo lectura con el porqué. A «Los pesos
+  generales» sigue sin poder volverse.
+- **«Usar estos pesos», en la ficha del puesto**, pide el cambio por el mismo camino
+  (`useCambioDePesos`) y saca la misma confirmación.
+
+Comprobarlo: `npx playwright test herramientas/e2e/59-pesos-con-candidatos-y-fin-del-prestamo.spec.ts`
+(12 casos, también los de las vacantes de antes de una empresa cliente: ver «Las preguntas propias
+de cada vacante» y «Publicar una vacante exige tres cosas antes»). ⚠️ **Escribe** en el clon y
+retira lo sembrado al terminar. Las unitarias, en `PesosDeLaDecision.test.tsx`, `Vacante.test.tsx` y
+`prueba-tecnica/FichaDelPuesto.test.tsx`; en el backend, `FlujoPesosConCandidatosIT`.
 
 ### La nota del perfil «en camino» (07/10)
 

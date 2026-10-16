@@ -1,0 +1,100 @@
+/*
+ * La confirmación de cambiar los pesos con candidatos dentro (V74).
+ *
+ * Vive dentro del modal compartido y con sus botones de `Vacantes.module.css`: aquí solo va
+ * la tabla de antes y después, que no tiene pieza propia en el panel. Las cifras van en
+ * columnas tabulares para que «40» y «35» se lean alineados, y en el teléfono la tabla se
+ * apila: una etapa por línea, con «Antes» y «Después» escritos delante de cada cifra.
+ */
+
+.texto {
+  margin: 0;
+  font-size: var(--t-prosa);
+  line-height: 1.55;
+  color: var(--tinta);
+  max-width: var(--medida);
+}
+
+.comparacion {
+  width: 100%;
+  margin-top: var(--e4);
+  border-collapse: collapse;
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+}
+
+.comparacion caption {
+  text-align: left;
+  font-weight: 600;
+  color: var(--tinta);
+  padding-bottom: var(--e2);
+}
+
+.comparacion th,
+.comparacion td {
+  padding: var(--e2) var(--e3);
+  border-bottom: 1px solid var(--regla);
+  text-align: left;
+  vertical-align: top;
+}
+
+.comparacion thead th {
+  font-weight: 600;
+  color: var(--tinta3);
+}
+
+.cifra {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Lo que cambia se lee primero: el «después» distinto va en tinta plena. */
+.cambia {
+  color: var(--tinta);
+  font-weight: 600;
+}
+
+.reparto {
+  display: block;
+  margin-top: var(--e1);
+  color: var(--tinta3);
+}
+
+.hecho {
+  margin: var(--e3) 0 0;
+}
+
+@media (max-width: 640px) {
+  .comparacion thead {
+    display: none;
+  }
+
+  .comparacion tr {
+    display: block;
+    padding: var(--e2) 0;
+    border-bottom: 1px solid var(--regla);
+  }
+
+  .comparacion th,
+  .comparacion td {
+    display: inline;
+    padding: 0;
+    border: 0;
+  }
+
+  .comparacion tbody th {
+    display: block;
+    color: var(--tinta);
+  }
+
+  .comparacion td.cifra::before {
+    content: attr(data-rotulo) ' ';
+    color: var(--tinta3);
+    font-weight: 400;
+  }
+
+  .comparacion td.cifra + td.cifra::before {
+    content: ' · ' attr(data-rotulo) ' ';
+  }
+}

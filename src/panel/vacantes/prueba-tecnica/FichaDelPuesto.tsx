@@ -34,9 +34,10 @@
 import { useEffect, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { ErrorApi } from '../../api/cliente'
-import { asignarVersionPesos, guardarFichaDelPuesto } from '../../api/panel'
+import { guardarFichaDelPuesto } from '../../api/panel'
 import type { FichaDelPuesto as Ficha } from '../../api/tipos'
 import { claveDeLaFicha } from './consultas'
+import { useCambioDePesos } from '../PesosDeLaDecision'
 import {
   CONTROL_DE_ELIMINATORIA,
   ELIMINATORIAS,
@@ -107,14 +108,18 @@ export function FichaDelPuesto({
     },
   })
 
-  const pesos = useMutation({
-    mutationFn: (versionPesosId: number) => asignarVersionPesos(vacanteId, versionPesosId),
-    onSuccess: async () => {
-      // La vacante cambia (su versionPesosId) y la ficha tambien (yaAsignada).
-      await cache.invalidateQueries({ queryKey: ['panel-vacante', vacanteId] })
-      await cache.invalidateQueries({ queryKey: claveDeLaFicha(vacanteId) })
+  /*
+    Los pesos que sugiere el tamaño se piden por el mismo camino que el
+    desplegable de la vacante (V74): con candidatos dentro, cambiarlos recalcula
+    a todos, y antes de hacerlo sale la misma confirmación.
+  */
+  const cambioDePesos = useCambioDePesos({
+    vacanteId,
+    alCambiar: () => {
+      // La ficha también cambia: su sugerencia pasa a «ya rigen».
+      void cache.invalidateQueries({ queryKey: claveDeLaFicha(vacanteId) })
     },
-    onError: (causa) => {
+    alFallar: (causa) => {
       if (causa instanceof ErrorApi && causa.estado === 403) {
         setSinPermiso(true)
         return
@@ -122,6 +127,10 @@ export function FichaDelPuesto({
       setFallo(causa instanceof Error ? causa.message : 'No se pudieron asignar los pesos.')
     },
   })
+  const pesos = {
+    mutate: (versionPesosId: number) => void cambioDePesos.elegir(versionPesosId),
+    isPending: cambioDePesos.ocupado,
+  }
 
   const sucio = huella(borrador) !== huella(deFicha(confirmada))
   const faltan = queLeFalta(borrador)
@@ -204,6 +213,7 @@ export function FichaDelPuesto({
                   />
                 </label>
                 <Tamano ficha={confirmada} pesos={pesos} sinPermiso={sinPermiso} />
+                {cambioDePesos.dialogo}
               </div>
             )}
 

@@ -22,11 +22,29 @@ import { FichaDelPuesto } from './FichaDelPuesto'
 
 const guardar = vi.fn()
 const asignarPesos = vi.fn()
+const preverPesos = vi.fn()
 
 vi.mock('../../api/panel', () => ({
   guardarFichaDelPuesto: (id: number, datos: GuardarFichaDelPuesto) => guardar(id, datos),
   asignarVersionPesos: (id: number, pesos: number) => asignarPesos(id, pesos),
+  preverCambioDePesos: (id: number, pesos: number) => preverPesos(id, pesos),
+  listarVersionesPesos: () => Promise.resolve([]),
 }))
+
+/** Lo que el servidor dice que pasaria al cambiar: con `personas` con nota. */
+const previsto = (personas: number) => ({
+  versionAnteriorId: 9,
+  etiquetaAnterior: 'CAZATALENTOS · MICRO',
+  versionNuevaId: 15,
+  etiquetaNueva: 'CAZATALENTOS · MEDIA/GRANDE',
+  personasConNota: personas,
+  cambia: true,
+  etapas: [
+    { codigo: 'PERFIL_INTEGRAL', nombre: 'Perfil Integral', antes: 40, despues: 40 },
+    { codigo: 'PRUEBA_PUESTO', nombre: 'Prueba del puesto', antes: 30, despues: 35 },
+  ],
+  perfilIntegral: [{ codigo: 'CV', nombre: 'Currículum', antes: 12, despues: 20 }],
+})
 
 const NULOS: GuardarFichaDelPuesto = {
   q1Resultado: null,
@@ -81,6 +99,7 @@ const guardarLaFicha = () => fireEvent.click(screen.getByRole('button', { name: 
 beforeEach(() => {
   guardar.mockReset()
   asignarPesos.mockReset()
+  preverPesos.mockReset()
   guardar.mockImplementation((_id: number, datos: GuardarFichaDelPuesto) =>
     Promise.resolve(ficha({ ...datos, estado: 'BORRADOR' })),
   )
@@ -186,8 +205,31 @@ describe('la ficha del puesto', () => {
           pesosSugeridos: { id: 15, etiqueta: 'CAZATALENTOS · MEDIA/GRANDE', yaAsignada: false },
         }),
       )
+      // Sin nadie con nota no hay a quien recalcular: se guarda sin preguntar
+      preverPesos.mockResolvedValue(previsto(0))
+      asignarPesos.mockResolvedValue({ versionPesosId: 15, personasRecalculadas: 0 })
       expect(screen.getByText(/el puesto es/i).textContent).toMatch(/MEDIA/)
       fireEvent.click(screen.getByRole('button', { name: 'Usar estos pesos' }))
+      await waitFor(() => expect(asignarPesos).toHaveBeenCalledWith(7, 15))
+      expect(preverPesos).toHaveBeenCalledWith(7, 15)
+      expect(screen.queryByRole('dialog')).toBeNull()
+    })
+
+    it('con candidatos con nota, antes de usarlos pregunta, igual que el desplegable de la vacante (V74)', async () => {
+      preverPesos.mockResolvedValue(previsto(23))
+      asignarPesos.mockResolvedValue({ versionPesosId: 15, personasRecalculadas: 23 })
+      pintar(
+        ficha({
+          genteEnEmpresa: 80,
+          tamano: 'MEDIA',
+          pesosSugeridos: { id: 15, etiqueta: 'CAZATALENTOS · MEDIA/GRANDE', yaAsignada: false },
+        }),
+      )
+      fireEvent.click(screen.getByRole('button', { name: 'Usar estos pesos' }))
+      const dialogo = await screen.findByRole('dialog')
+      expect(dialogo.textContent).toMatch(/Se recalcularán las notas de 23 personas/)
+      expect(asignarPesos).not.toHaveBeenCalled()
+      fireEvent.click(screen.getByRole('button', { name: 'Cambiar y recalcular' }))
       await waitFor(() => expect(asignarPesos).toHaveBeenCalledWith(7, 15))
     })
 
