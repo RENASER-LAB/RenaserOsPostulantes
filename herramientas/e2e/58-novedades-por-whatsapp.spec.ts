@@ -361,7 +361,7 @@ test.describe('Las novedades de la postulación por WhatsApp', () => {
 
   test('7 · AC-05 · la cuenta sin celular lo da desde la tarjeta', async ({ page }) => {
     const dora = await cuentaCon('Dora')
-    const uuid = await postuladaYEsperando(dora)
+    await postuladaYEsperando(dora)
     // Una cuenta anterior a la V73: sin celular.
     sql(`update persona set telefono = null
           where id = (select persona_id from usuario where correo = ${literal(dora.correo)});`)
@@ -370,7 +370,8 @@ test.describe('Las novedades de la postulación por WhatsApp', () => {
     )
 
     await entrarAlPortalCon(page, dora.token)
-    await page.goto(`/procesos/${uuid}`)
+    // WhatsApp vive solo en «Mis procesos» (#86): el detalle ya no enseña la tarjeta.
+    await page.goto('/procesos')
     const suya = tarjeta(page)
     const campo = suya.getByLabel(/^Tu celular \(WhatsApp\)/)
     await expect(campo).toBeVisible()
