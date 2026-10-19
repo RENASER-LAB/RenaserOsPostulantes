@@ -86,7 +86,7 @@ import { leerElLibro } from './ayuda-rubrica-vigente'
  *   - QA-03 (AC-01, AC-05): la prueba del editor que se cierra a mitad del cambio (la IA que
  *     termina o la nota a mano) queda con la versión de antes en una vacante ya en la nueva.
  *
- * El ciclo 3 añadió dos regresiones con el cambio de pesos REAL (no imitado por psql), porque
+ * El ciclo 3 añadió dos regresiones con el cambio de pesos REAL (no imitado por SQL directo), porque
  * `Postulacion` se reescribe entera al guardarse:
  *
  *   - QA-04 (AC-01, AC-05): la entrega de la prueba que espera a un cambio de pesos le devuelve
