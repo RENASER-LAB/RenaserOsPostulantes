@@ -154,16 +154,55 @@ export async function ponerLaBeta(token: string, encendida: boolean): Promise<st
 }
 
 /**
- * Lo de WhatsApp de estos números: avisos, vínculos y bajas. Va antes de retirar las
- * cuentas, porque los vínculos cuelgan de la postulación y del consentimiento.
+ * Lo de WhatsApp de estos números: avisos, eventos y resultados v2 (V76), vínculos y bajas.
+ * Va antes de retirar las cuentas, porque los vínculos cuelgan de la postulación y del
+ * consentimiento, y los eventos y resultados v2 cuelgan del vínculo.
  */
 export function borrarLoDeWhatsapp(e164s: readonly string[]): void {
   if (!e164s.length) return
   const lista = e164s.map((t) => literal(t)).join(', ')
   sql(`begin;
+       delete from evento_whatsapp where telefono in (${lista});
+       delete from evento_whatsapp where vinculo_whatsapp_id in (select id from vinculo_whatsapp where telefono in (${lista}));
+       delete from resultado_whatsapp where vinculo_whatsapp_id in (select id from vinculo_whatsapp where telefono in (${lista}));
        delete from aviso_whatsapp where telefono in (${lista});
        delete from aviso_whatsapp where vinculo_whatsapp_id in (select id from vinculo_whatsapp where telefono in (${lista}));
        delete from vinculo_whatsapp where telefono in (${lista});
        delete from whatsapp_baja where telefono in (${lista});
        commit;`)
+}
+
+// ---------------------------------------------------------------- La consulta v2 (V76)
+
+/**
+ * La consulta v2 del bot: `POST /api/v2/integraciones/whatsapp/contexto` (contrato v2, C-3).
+ * Misma firma que v1, sobre la ruta completa de v2.
+ */
+export const DIRECCION_DEL_CONTEXTO = `${API.replace(/\/api\/v1\/?$/, '/api/v2')}/integraciones/whatsapp/contexto`
+
+/**
+ * El bot pregunta por el contexto: sin `postulacionRef`, el listado (con `cursor` para seguir);
+ * con ella, el contexto de esa postulación. `firma: null` la manda sin firmar; `firma` con otras
+ * cabeceras, firmada como se quiera (otra ruta, otra marca, otro secreto). `texto` manda unos
+ * bytes distintos a los firmados.
+ */
+export async function contextoComoElBot<T = any>(
+  cuerpo: unknown,
+  { firma, texto }: { firma?: Record<string, string> | null; texto?: string } = {},
+): Promise<RespuestaDelBot<T> & { crudo: string }> {
+  const firmado = JSON.stringify(cuerpo)
+  const cabeceras = firma === null ? {} : (firma ?? firmaDelBot(DIRECCION_DEL_CONTEXTO, firmado))
+  const r = await fetch(DIRECCION_DEL_CONTEXTO, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...cabeceras },
+    body: texto ?? firmado,
+  })
+  const crudo = await r.text()
+  let json: unknown = null
+  try {
+    json = crudo ? JSON.parse(crudo) : null
+  } catch {
+    json = crudo
+  }
+  return { estado: r.status, cuerpo: json as T, crudo }
 }

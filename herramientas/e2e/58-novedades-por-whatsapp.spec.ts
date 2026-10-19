@@ -287,7 +287,11 @@ test.describe('Las novedades de la postulación por WhatsApp', () => {
     const avisos = (await loQueRecibioElBot(ana.celular.e164)).filter((l) => l.tipo === 'AVISO')
     expect(avisos).toHaveLength(1)
     expect(avisos[0]!.cuerpo.tipo).toBe('PRUEBA_DISPONIBLE')
-    expect(avisos[0]!.cuerpo.texto).toContain(`¡Felicidades, Ana! Tu prueba del puesto para ${MARCA} ${TITULO} ya está disponible.`)
+    // El formato de la regla 19 (contexto y resultados por WhatsApp, V76 del backend): bloques,
+    // negritas y el enlace fijo a «Mis procesos», sin token.
+    expect(avisos[0]!.cuerpo.texto).toContain(`¡Felicidades, Ana! 🎉\n\n📌 *${MARCA} ${TITULO}*\nTu *prueba del puesto* ya está disponible.`)
+    expect(avisos[0]!.cuerpo.texto).toContain('Inicia sesión con tu correo y contraseña y abre «Mis procesos».')
+    expect(avisos[0]!.cuerpo.texto).not.toContain('token')
     // Le toca algo: la tarjeta no sale, manda la acción; conectada, una línea debajo de ella
     await page.goto('/procesos')
     await expect(page.getByRole('link', { name: /Abrir prueba/ }).first()).toBeVisible()
