@@ -41,6 +41,12 @@
 
 .titular {
   composes: titular from '../../estilos/pagina.module.css';
+  /*
+   * Alineacion optica: a este tamaño el margen propio de la primera letra
+   * («C», «A», «D»…) mete el titulo unos pixeles hacia dentro y la empresa,
+   * en letra pequeña, parece salirse por la izquierda.
+   */
+  margin-left: -0.055em;
 }
 
 /*
