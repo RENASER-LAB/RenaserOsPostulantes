@@ -41,6 +41,12 @@
 
 .titular {
   composes: titular from '../../estilos/pagina.module.css';
+  /*
+   * Alineacion optica: a este tamaño el margen propio de la primera letra
+   * («C», «A», «D»…) mete el titulo unos pixeles hacia dentro y la empresa,
+   * en letra pequeña, parece salirse por la izquierda.
+   */
+  margin-left: -0.08em;
 }
 
 /*
@@ -55,32 +61,10 @@
   color: var(--tinta2);
 }
 
-.donde {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--e2) var(--e4);
-  margin-top: var(--e3);
-  font-size: var(--t-apoyo);
-  color: var(--tinta2);
-}
-
-.dato {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--e2);
-  /* La zona larga se parte; no empuja la fila. */
-  overflow-wrap: anywhere;
-}
-
-.dato::before {
-  content: '';
-  width: 5px;
-  height: 5px;
-  background: var(--regla2);
-}
-
-.bloque {
-  margin-top: var(--e7);
+.bloque + .bloque {
+  margin-top: var(--e6);
+  padding-top: var(--e6);
+  border-top: 1px solid var(--regla);
 }
 
 .tituloBloque {
@@ -89,17 +73,22 @@
 
 .texto {
   font-size: var(--t-base);
-  line-height: 1.6;
+  line-height: 1.65;
   color: var(--tinta2);
-  max-width: var(--medida);
+  max-width: 68ch;
   white-space: pre-line;
+  margin: 0;
+}
+
+.texto + .texto {
+  margin-top: var(--e4);
 }
 
 .puntos {
   display: flex;
   flex-direction: column;
   gap: var(--e3);
-  max-width: var(--medida);
+  max-width: 68ch;
 }
 
 .punto {
@@ -124,6 +113,7 @@
 .requisitos {
   composes: indispensable from '../../estilos/piezas.module.css';
   margin-top: var(--e7);
+  border-radius: var(--radio);
   padding: var(--e5);
 }
 
@@ -168,28 +158,6 @@
   background: var(--duda);
 }
 
-/* ---------- Postular ---------- */
-
-.postular {
-  margin-top: var(--e7);
-  border-top: 1px solid var(--regla);
-  padding-top: var(--e5);
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--e4);
-}
-
-.boton {
-  composes: acentoGrande from '../../estilos/piezas.module.css';
-}
-
-.aclaracion {
-  font-size: var(--t-apoyo);
-  color: var(--tinta2);
-  max-width: 40ch;
-}
-
 /* ---------- Estados ---------- */
 
 .marco {
@@ -224,39 +192,151 @@
   width: 68%;
 }
 
-@media (max-width: 640px) {
-  .boton {
-    width: 100%;
+/* ---------- El reparto: se lee a la izquierda, se decide a la derecha ---------- */
+
+/*
+ * La columna de lectura no pasa de ~68 caracteres por linea; lo que sobra del
+ * carril de 80rem lo ocupa la tarjeta, que se queda fija al bajar.
+ */
+.reparto {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 22rem;
+  grid-template-areas: 'contenido lateral';
+  align-items: start;
+  column-gap: var(--e8);
+  margin-top: var(--e6);
+  padding-top: var(--e6);
+  border-top: 1px solid var(--regla);
+}
+
+.contenido {
+  grid-area: contenido;
+  min-width: 0;
+  max-width: 46rem;
+}
+
+.lateral {
+  grid-area: lateral;
+  position: sticky;
+  top: calc(var(--alto-cabecera) + var(--e4));
+}
+
+.tarjeta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e5);
+  padding: var(--e5);
+  background: var(--nube);
+  border: 1px solid var(--regla);
+  border-radius: var(--radio);
+}
+
+.ficha {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  border-top: 1px solid var(--regla);
+}
+
+.fila {
+  display: grid;
+  grid-template-columns: 6.5rem 1fr;
+  column-gap: var(--e3);
+  padding: var(--e3) 0;
+  border-bottom: 1px solid var(--regla);
+}
+
+.fila dt {
+  font-size: var(--t-micro);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tinta3);
+  padding-top: 2px;
+}
+
+.fila dd {
+  margin: 0;
+  font-size: var(--t-apoyo);
+  line-height: 1.5;
+  color: var(--tinta);
+  overflow-wrap: anywhere;
+}
+
+.accion {
+  display: flex;
+}
+
+.linea {
+  display: block;
+}
+
+.boton {
+  composes: acentoGrande from '../../estilos/piezas.module.css';
+  width: 100%;
+}
+
+/* ---------- La descripcion con sus titulos ---------- */
+
+.descripcion {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e5);
+}
+
+.subtitulo {
+  margin: 0 0 var(--e2);
+  font-size: var(--t-base);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--tinta);
+}
+
+/* ---------- Por debajo de 900 px: una columna ---------- */
+
+@media (max-width: 899px) {
+  .reparto {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'lateral'
+      'contenido';
+    row-gap: var(--e6);
+    margin-top: var(--e5);
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  .lateral {
+    position: static;
+  }
+
+  .contenido {
+    max-width: none;
+  }
+
+  /* El boton se pega abajo y siempre esta a mano mientras se lee. */
+  .accion {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    padding: var(--e3) var(--e4) calc(var(--e3) + env(safe-area-inset-bottom));
+    background: var(--nube);
+    border-top: 1px solid var(--regla);
+  }
+
+  /* El aire que deja la barra fija para que no tape el final del texto. */
+  .pagina {
+    padding-bottom: calc(var(--e8) + var(--e7));
   }
 }
 
-/*
- * «Lo que harás» y «Lo que buscamos», una al lado de la otra.
- *
- * Son dos listas del mismo tipo y se comparan mejor en paralelo que apiladas.
- * `auto-fit` hace que, si la vacante solo trae una de las dos, ocupe el ancho
- * entera en vez de dejar media pantalla vacía.
- */
-.dosListas {
-  display: contents;
+/* Las viñetas de la descripción, iguales a las de «Lo que harás». */
+.descripcion ul {
+  list-style: square;
 }
 
-@media (min-width: 900px) {
-  .dosListas {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr));
-    column-gap: var(--e7);
-    align-items: start;
-  }
-}
-
-/*
- * El sueldo, debajo de las pastillas de donde y como.
- *
- * Separado del grupo a proposito: «Hibrido» y «Arequipa» se comparan de un
- * vistazo entre vacantes, pero el dinero no es un metadato mas — es la mitad de
- * lo que la persona ha venido a averiguar.
- */
-.sueldo {
-  margin-top: var(--e4);
+.descripcion li::marker {
+  color: var(--regla2);
 }

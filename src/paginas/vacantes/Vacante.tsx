@@ -25,11 +25,13 @@ import { useQuery } from '@tanstack/react-query'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { ErrorApi } from '@/api/cliente'
 import { verVacante } from '@/api/portal'
+import type { RemuneracionPublica } from '@/api/tipos'
 import { useSesion } from '@/app/Sesion'
 import { rutas } from '@/rutas'
 import { Remuneracion } from '@/ui/Remuneracion'
 import { TituloQueViaja } from '@/ui/movimiento'
-import { lineaDeDonde } from './busqueda'
+import { TextoPlano } from '@/ui/TextoPlano'
+import { modalidadCanonica, normalizar } from './busqueda'
 import estilos from './Vacante.module.css'
 
 /**
@@ -135,13 +137,14 @@ export function Vacante() {
 
   const v = consulta.data
   const requisitos = Array.isArray(v.requisitosObjetivos) ? v.requisitosObjetivos : []
-  // El sueldo sale del grupo de pastillas y se pinta aparte, debajo: es lo
-  // primero que se busca en una convocatoria, y como una pastilla mas junto a
-  // «Hibrido» y «Arequipa» se pierde. Ver `ui/Remuneracion`.
-  //
-  // «Presencial · Arequipa · Selva Alegre · 9am-6pm»: la ciudad del catálogo y,
-  // detrás, la zona; si la zona repite el nombre de la ciudad no se dice dos veces.
-  const datos = lineaDeDonde(v)
+  const modalidad = modalidadCanonica(v.modalidad)
+  const ciudad = v.ciudad?.nombre ?? null
+  const zona = (v.ubicacion ?? '').trim() || null
+  const lugar = [ciudad, zona && (!ciudad || normalizar(zona) !== normalizar(ciudad)) ? zona : null]
+    .filter(Boolean)
+    .join(' · ')
+  const horario = (v.horario ?? '').trim() || null
+  const sobreElPuesto = v.proposito || v.descripcion
 
   return (
     <div className={estilos.pagina}>
@@ -152,95 +155,202 @@ export function Vacante() {
         <TituloQueViaja id={v.id} como="h1" className={estilos.titular}>
           {v.titulo}
         </TituloQueViaja>
-        {/*
-          Quien contrata va aqui y no entre los datos de abajo: «Hibrido» y
-          «Arequipa» se comparan de un vistazo entre vacantes, pero de quien es
-          el puesto no es un metadato mas — es la mitad de la pregunta.
-        */}
         {v.nombreEmpresa && <p className={estilos.empresa}>{v.nombreEmpresa}</p>}
-        {datos.length > 0 && (
-          <div className={estilos.donde}>
-            {/* Por posición y texto: dos datos pueden decir lo mismo («test · test»). */}
-            {datos.map((d, i) => (
-              <span className={estilos.dato} key={`${i}-${d}`}>
-                {d}
-              </span>
-            ))}
+      </div>
+
+      {/*
+        Dos columnas: a la izquierda se lee, a la derecha queda fijo lo que se
+        compara entre vacantes —sueldo, modalidad, ciudad, horario— y el boton.
+        La tarjeta va primero en el arbol para que en movil quede arriba; en
+        escritorio la rejilla la manda a la derecha.
+      */}
+      <div className={estilos.reparto}>
+        <aside className={estilos.lateral} aria-label="Lo esencial del puesto">
+          <div className={estilos.tarjeta}>
+            <Remuneracion remuneracion={v.remuneracion} />
+            {(modalidad || lugar || horario) && (
+              <dl className={estilos.ficha}>
+                {modalidad && (
+                  <div className={estilos.fila}>
+                    <dt>Modalidad</dt>
+                    <dd>{modalidad}</dd>
+                  </div>
+                )}
+                {lugar && (
+                  <div className={estilos.fila}>
+                    <dt>Ciudad</dt>
+                    <dd>{lugar}</dd>
+                  </div>
+                )}
+                {horario && (
+                  <div className={estilos.fila}>
+                    <dt>Horario</dt>
+                    <dd>
+                      {horario.split(/\s+·\s+/).map((parte, i) => (
+                        <span className={estilos.linea} key={`${i}-${parte}`}>
+                          {parte}
+                        </span>
+                      ))}
+                    </dd>
+                  </div>
+                )}
+              </dl>
+            )}
+            {/* Un solo boton: en movil este mismo bloque se pega abajo. */}
+            <div className={estilos.accion}>
+              <Link
+                className={estilos.boton}
+                to={hayCuenta ? rutas.postular(v.id) : rutas.registro(v.id)}
+                data-rotulo="Postular a este puesto"
+              >
+                Postular a este puesto
+              </Link>
+            </div>
           </div>
-        )}
-        {/*
-          Aqui arriba y no en un bloque de mas abajo. Si la empresa lo publica,
-          es la segunda cosa que se mira despues del titulo; y si no lo publica,
-          decirlo pronto ahorra leer la convocatoria entera buscandolo.
-        */}
-        <div className={estilos.sueldo}>
-          <Remuneracion remuneracion={v.remuneracion} />
-        </div>
+        </aside>
+
+        <article className={estilos.contenido}>
+          {sobreElPuesto && (
+            <section className={estilos.bloque}>
+              <h2 className={estilos.tituloBloque}>
+                {v.proposito ? 'El resultado que esperamos' : 'Sobre el puesto'}
+              </h2>
+              <Descripcion texto={sobreElPuesto} yaDichos={{ horario: horario !== null, lugar: lugar !== '', modalidad: modalidad !== null, montos: montosDe(v.remuneracion) }} />
+            </section>
+          )}
+
+          {v.responsabilidades && (
+            <section className={estilos.bloque}>
+              <h2 className={estilos.tituloBloque}>Lo que harás</h2>
+              <Puntos texto={v.responsabilidades} />
+            </section>
+          )}
+
+          {v.requisitos && (
+            <section className={estilos.bloque}>
+              <h2 className={estilos.tituloBloque}>Lo que buscamos</h2>
+              <Puntos texto={v.requisitos} />
+            </section>
+          )}
+
+          {requisitos.length > 0 && (
+            <section className={estilos.requisitos}>
+              <h2>Requisitos indispensables</h2>
+              <p className={estilos.avisoRequisitos}>
+                Estos son condición para el puesto. Al postular te pediremos que confirmes cada
+                uno, y <b>no cumplir alguno cierra la postulación</b>. Léelos antes de empezar.
+              </p>
+              <ul className={estilos.listaRequisitos} role="list">
+                {requisitos.map((r) => (
+                  <li className={estilos.requisito} key={r.id}>
+                    {r.descripcion}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+        </article>
       </div>
+    </div>
+  )
+}
 
-      {v.proposito && (
-        <section className={estilos.bloque}>
-          <h2 className={estilos.tituloBloque}>El resultado que esperamos</h2>
-          <p className={estilos.texto}>{v.proposito}</p>
-        </section>
-      )}
+/**
+ * Una linea que es un titulo dentro del texto libre: «LO QUE OFRECEMOS»,
+ * «HORARIO». Toda en mayusculas, corta y con al menos tres letras; un «S/ 3500»
+ * o una sigla suelta no cuentan.
+ */
+function esTitulo(linea: string): boolean {
+  const t = linea.trim().replace(/:$/, '')
+  if (t.length < 3 || t.length > 60) return false
+  const letras = t.replace(/[^\p{L}]/gu, '')
+  return letras.length >= 3 && letras === letras.toLocaleUpperCase('es') && letras !== letras.toLocaleLowerCase('es')
+}
 
-      {v.descripcion && !v.proposito && (
-        <section className={estilos.bloque}>
-          <h2 className={estilos.tituloBloque}>Sobre el puesto</h2>
-          <p className={estilos.texto}>{v.descripcion}</p>
-        </section>
-      )}
+/** «LO QUE OFRECEMOS» → «Lo que ofrecemos». */
+function enFrase(linea: string): string {
+  const t = linea.trim().replace(/:$/, '').toLocaleLowerCase('es')
+  return t.charAt(0).toLocaleUpperCase('es') + t.slice(1)
+}
 
-      {/* Dos listas paralelas: en escritorio van al lado, no una debajo de otra.
-          Si solo llega una, ocupa el ancho entero ella sola. */}
-      <div className={estilos.dosListas}>
-        {v.responsabilidades && (
-          <section className={estilos.bloque}>
-            <h2 className={estilos.tituloBloque}>Lo que harás</h2>
-            <Puntos texto={v.responsabilidades} />
-          </section>
-        )}
+/** Lo que la tarjeta lateral ya dice, para no repetirlo en la descripcion. */
+interface YaDichos {
+  horario: boolean
+  lugar: boolean
+  modalidad: boolean
+  /** Los montos de la remuneracion publicada, solo con sus cifras: «3500». */
+  montos: string[]
+}
 
-        {v.requisitos && (
-          <section className={estilos.bloque}>
-            <h2 className={estilos.tituloBloque}>Lo que buscamos</h2>
-            <Puntos texto={v.requisitos} />
-          </section>
-        )}
-      </div>
+function montosDe(r: RemuneracionPublica | null | undefined): string[] {
+  if (!r || r.tipo === 'OCULTA') return []
+  return [r.min, r.max].filter((n): n is number => typeof n === 'number').map((n) => String(Math.round(n)))
+}
 
-      {requisitos.length > 0 && (
-        <section className={estilos.requisitos}>
-          <h2>Requisitos indispensables</h2>
-          <p className={estilos.avisoRequisitos}>
-            Estos son condición para el puesto. Al postular te pediremos que confirmes cada
-            uno, y <b>no cumplir alguno cierra la postulación</b>. Léelos antes de empezar.
-          </p>
-          <ul className={estilos.listaRequisitos} role="list">
-            {requisitos.map((r) => (
-              <li className={estilos.requisito} key={r.id}>
-                {r.descripcion}
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+/** Los tramos cuyo titulo es un dato que ya esta en la tarjeta. */
+function tramoRepetido(titulo: string, ya: YaDichos): boolean {
+  const t = normalizar(titulo)
+  if (ya.horario && /^(horario|horarios|jornada)( de trabajo| laboral)?$/.test(t)) return true
+  if (ya.lugar && /^(ubicacion|lugar|lugar de trabajo|sede)$/.test(t)) return true
+  if (ya.modalidad && /^modalidad( de trabajo)?$/.test(t)) return true
+  if (ya.montos.length > 0 && /^(remuneracion|sueldo|salario)$/.test(t)) return true
+  return false
+}
 
-      <div className={estilos.postular}>
-        <Link
-          className={estilos.boton}
-          to={hayCuenta ? rutas.postular(v.id) : rutas.registro(v.id)}
-          data-rotulo="Postular a este puesto"
-        >
-          Postular a este puesto
-        </Link>
-        <p className={estilos.aclaracion}>
-          {hayCuenta
-            ? 'Te pediremos tu currículum y un resultado del que te sientas orgulloso.'
-            : 'Si aún no tienes cuenta, la creas en el siguiente paso y seguimos con tu postulación.'}
-        </p>
-      </div>
+/**
+ * Una viñeta que empieza por el mismo monto de la tarjeta: se le quita el monto
+ * y se queda lo demas («S/ 3,500 fijos + bonos por resultados» → «Bonos por
+ * resultados.»). Si no queda nada, la linea sobra entera.
+ */
+function sinMontoRepetido(linea: string, montos: string[]): string | null {
+  const m = /^([ \t]*[-•*][ \t]+)?S\/\.?\s*([\d.,\s]+)(.*)$/.exec(linea)
+  if (!m) return linea
+  const cifra = (m[2] ?? '').replace(/[^\d]/g, '')
+  if (!montos.includes(cifra)) return linea
+  const resto = (m[3] ?? '')
+    .replace(/^\s*(fijos?|mensuales?|soles|netos?|brutos?)\b/i, '')
+    .replace(/^\s*[+,;:·-]\s*/, '')
+    .trim()
+  if (!resto || /^[.\s]*$/.test(resto)) return null
+  return `${m[1] ?? ''}${resto.charAt(0).toLocaleUpperCase('es')}${resto.slice(1)}`
+}
+
+/**
+ * La descripcion, con sus titulos en mayusculas convertidos en subtitulos y sus
+ * lineas «•» en listas. Si no trae titulos, se ve como parrafos. Lo que ya dice
+ * la tarjeta lateral no se repite.
+ */
+function Descripcion({ texto, yaDichos }: { texto: string; yaDichos: YaDichos }) {
+  const tramos: { titulo: string | null; cuerpo: string[] }[] = [{ titulo: null, cuerpo: [] }]
+  for (const linea of texto.split('\n')) {
+    if (esTitulo(linea)) tramos.push({ titulo: enFrase(linea), cuerpo: [] })
+    else {
+      const limpia = sinMontoRepetido(linea, yaDichos.montos)
+      if (limpia !== null) tramos.at(-1)!.cuerpo.push(limpia)
+    }
+  }
+  return (
+    <div className={estilos.descripcion}>
+      {tramos.map((t, i) => {
+        if (t.titulo && tramoRepetido(t.titulo, yaDichos)) {
+          // El tramo repetido se va, pero no la frase de cierre que venga
+          // despues de su primer parrafo (p. ej. «Postula y construye…»).
+          const resto = t.cuerpo.join('\n').trim().split(/\n[ \t]*\n+/).slice(1).join('\n\n')
+          return resto ? (
+            <div className={estilos.tramo} key={i}>
+              <TextoPlano texto={resto} listas className={estilos.texto} />
+            </div>
+          ) : null
+        }
+        const cuerpo = t.cuerpo.join('\n').trim()
+        if (!t.titulo && !cuerpo) return null
+        return (
+          <div className={estilos.tramo} key={i}>
+            {t.titulo && <h3 className={estilos.subtitulo}>{t.titulo}</h3>}
+            {cuerpo && <TextoPlano texto={cuerpo} listas className={estilos.texto} />}
+          </div>
+        )
+      })}
     </div>
   )
 }
