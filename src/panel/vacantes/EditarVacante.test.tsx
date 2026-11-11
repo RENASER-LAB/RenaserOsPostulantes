@@ -74,7 +74,7 @@ const CATALOGOS: Catalogos = {
   urgencias: [{ codigo: 'NORMAL', nombre: 'Normal' }],
   tiposCierre: [
     { codigo: 'PERMANENTE', nombre: 'Permanente' },
-    { codigo: 'PLAZAS', nombre: 'Por plazas' },
+    { codigo: 'FECHA', nombre: 'Fecha límite' },
   ],
   motivosCierre: [],
   estados: [],
@@ -454,28 +454,37 @@ describe('Al guardar', () => {
     soltar({ huboCambios: true, postulantesAvisados: 0 })
   })
 
-  it('la forma de cierre por plazas no se manda sin un número entero', async () => {
-    // `Number('5,5')` es NaN, y un NaN viaja como `null`: sin esta comprobación la
-    // vacante se guardaría «por plazas» sin ninguna plaza y sin decir nada.
+  it('con «Fecha límite» no se manda sin día ni con un día pasado; con uno válido, a las 23:59:59 de Lima (AC-02, AC-03)', async () => {
     await abrirLaEdicion()
     // El desplegable espera a su catálogo: hasta que llega no tiene esa opción.
-    await screen.findByRole('option', { name: 'Por plazas' })
-    fireEvent.change(screen.getByLabelText('Cómo se cierra'), { target: { value: 'PLAZAS' } })
-    fireEvent.change(await screen.findByLabelText('Cuántas plazas'), {
-      target: { value: '5,5' },
-    })
+    await screen.findByRole('option', { name: 'Fecha límite' })
+    expect(screen.queryByRole('option', { name: 'Por plazas' })).toBeNull()
+    fireEvent.change(screen.getByLabelText('Cómo se cierra'), { target: { value: 'FECHA' } })
     fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }))
 
     expect(await screen.findByRole('alert')).toHaveProperty(
       'textContent',
-      'Escribe cuántas plazas hay, en un número entero.',
+      'Elige el día en que cierra la vacante.',
     )
     expect(editarVacante).not.toHaveBeenCalled()
 
-    fireEvent.change(screen.getByLabelText('Cuántas plazas'), { target: { value: '3' } })
+    fireEvent.change(screen.getByLabelText('Fecha de cierre'), { target: { value: '2020-01-01' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }))
+    await waitFor(() =>
+      expect(screen.getByRole('alert').textContent).toBe(
+        'Esa fecha ya pasó: elige un día a partir de hoy.',
+      ),
+    )
+    expect(editarVacante).not.toHaveBeenCalled()
+
+    fireEvent.change(screen.getByLabelText('Fecha de cierre'), { target: { value: '2099-10-31' } })
     fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }))
     await waitFor(() => expect(editarVacante).toHaveBeenCalled())
-    expect(editarVacante.mock.calls[0]?.[1]).toMatchObject({ tipoCierre: 'PLAZAS', plazas: 3 })
+    expect(editarVacante.mock.calls[0]?.[1]).toMatchObject({
+      tipoCierre: 'FECHA',
+      cierraEn: '2099-11-01T04:59:59.000Z',
+    })
+    expect(editarVacante.mock.calls[0]?.[1]).not.toHaveProperty('plazas')
   })
 
   it('cambiar el sueldo de una publicada no se manda sin decir por qué', async () => {

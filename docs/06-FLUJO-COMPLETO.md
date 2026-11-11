@@ -82,6 +82,10 @@ falta de modalidad, ciudad, horario, resumen y sueldo publicado hace además que
 la vacante baje en el orden de «Relevantes». El detalle está en
 [PANEL.md](PANEL.md).
 
+**«Cómo se cierra»** (10/11/2026): **Permanente**, la de por defecto, la cierra alguien del equipo;
+**Fecha límite** pide el día y la vacante se cierra sola ese día a las 23:59 de Lima. Un día pasado
+no se guarda ni se publica. «Por plazas» ya no existe.
+
 Queda en `BORRADOR`: **todavía no aparece en el portal**.
 
 ### 3 · Qué responderá quien postule
@@ -312,7 +316,7 @@ Si está publicada y cambió algo que ve quien postula —título, textos,
 modalidad, ciudad, zona, horario o sueldo—, **a cada postulante en carrera le
 llega un solo aviso en la campana del portal**, sin correo, con lo que
 cambió. Al pulsarlo va a su proceso y ve la vacante con los datos nuevos. Lo
-interno —responsable, forma de cierre, plazas, fecha de cierre— se guarda sin
+interno —responsable, forma de cierre, fecha de cierre— se guarda sin
 avisar. El detalle está en [PANEL.md](PANEL.md).
 
 ### 5c · Retirarla si no debió existir (21/09/2026)
@@ -331,6 +335,18 @@ guarda. Desde el panel ya no se escribe nada sobre sus postulaciones. La
 solicitud que la respaldaba **vuelve a estar libre**
 para crear la vacante correcta. No se deshace desde el panel. El detalle está
 en [PANEL.md](PANEL.md).
+
+### 5d · Cerrarla (10/11/2026)
+
+**Panel · la vacante → «Cerrar vacante»**, o sola, en su fecha límite
+
+Cerrar no es eliminar: deja de recibir postulaciones y sale del tablón. Quien
+ya entregó el Perfil Integral o está en otra etapa sigue, y el equipo decide.
+**Quien seguía sin entregarlo queda con su postulación cerrada**, con el correo
+y la campana de siempre, y si tenía la evaluación abierta lee «La vacante se
+cerró y esta evaluación ya no se puede responder.». Con «Fecha límite» lo hace
+el sistema ese día a las 23:59 de Lima. El detalle está en
+[PANEL.md](PANEL.md).
 
 ---
 
@@ -387,7 +403,8 @@ elegir. La opción por defecto del aviso es volver y revisar.
 
 Aquí vive **el único descarte automático de todo el sistema**. Pero no es lo
 único que se mueve sin que intervenga una persona: también se cierra el proceso
-de quien deja pasar su plazo, y avanzan solas las vacantes configuradas para
+de quien deja pasar su plazo —en la evaluación, que la vacante se cierre antes
+de terminarla—, y avanzan solas las vacantes configuradas para
 ello, si la nota del Perfil Integral llega a su mínima. Las tres están
 enumeradas en el texto que el candidato acepta.
 
@@ -414,18 +431,16 @@ Lo escrito **no sale de la cola hasta que el servidor lo confirma**, se
 reintenta solo cada cinco segundos, y no se deja entregar mientras quede algo
 sin guardar.
 
-El plazo por defecto son **catorce días**, y desde el 31/08 los que quedan se
-ven **también mientras se responde**, junto a «Pregunta 2 de 55». Antes estaban
-solo en la portada: entre esa pantalla y el aviso de la última hora había dos
-semanas en las que, para saber cuánto le quedaba, el candidato tenía que salir
-del examen. Por debajo de la hora ese dato desaparece y lo sustituye la cuenta
-atrás de «Queda poco plazo»: dos relojes a la vez, uno diciendo «hoy» y el otro
-`00:42:17`, se leen peor que el segundo solo.
+**No tiene plazo** (10/11/2026): se responde mientras la vacante esté abierta,
+y ni la portada ni la barra enseñan días, «Se entrega hoy» ni cuenta atrás.
+Hasta entonces eran catorce días desde que postulaba, a la vista también
+mientras se respondía. Si la vacante se cierra antes de que la entregue, su
+proceso se cierra con ella (paso 5d).
 
 **Si no la entrega, se le recuerda** (07/10/2026): por correo y en la campana, a
-las 24 horas de que le tocara y 24 horas antes de que venza; nunca de noche (solo
-de 8:00 a 21:00, hora de Lima), una vez cada uno, y la empresa los puede apagar
-en sus parámetros.
+las 24 horas de que le tocara; nunca de noche (solo de 8:00 a 21:00, hora de
+Lima), una sola vez, y la empresa lo puede apagar en sus parámetros. El de «24
+horas antes de que venza» ya no sale, porque no hay fecha.
 
 **Al entregar** vuelve a su proceso con «Evaluación entregada. Te avisaremos por
 correo y en la campana cuando haya novedades.». La IA califica la evaluación y,
@@ -461,9 +476,8 @@ leyendo noventa minutos cuando tenía veinte.
 **El correo «tu prueba está disponible» dice lo mismo** (07/10/2026): el tiempo
 y la fecha límite de esa persona, en hora de Lima —«90 minutos desde que la
 empieces, hasta el vie 10/10 a las 23:59»—, y ya no «desde este correo». El
-aviso llega también a la campana. **Si no la empieza, se le recuerda** como la
-evaluación: a las 24 horas y 24 horas antes de su plazo. Quien ya la empezó no
-recibe nada.
+aviso llega también a la campana. **Si no la empieza, se le recuerda**: a las
+24 horas y 24 horas antes de su plazo. Quien ya la empezó no recibe nada.
 
 **Y por WhatsApp, si escribió antes** (13/10/2026, beta solo de RENASER y
 apagada). Mientras espera, el recuadro de espera le ofrece «Escribir por

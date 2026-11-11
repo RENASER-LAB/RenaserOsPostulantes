@@ -108,7 +108,11 @@ function unaVez(hacer: () => void) {
 
 export interface PropsBarra {
   refBarra: React.RefObject<HTMLDivElement | null>
-  /** El reloj, la fecha límite o el plazo: lo pinta cada pantalla. */
+  /**
+   * El reloj, la fecha límite o el plazo: lo pinta cada pantalla. Nulo cuando no hay ninguno
+   * —el Perfil Integral dura hasta el cierre de la vacante (V78)— y entonces no se dibuja su
+   * hueco: vacío, ocupaba un sitio de la fila y desalineaba «Pregunta N de M» (QA-03).
+   */
   tiempo: ReactNode
   /** Se pone en rojo: queda poco. */
   tiempoPoco?: boolean
@@ -160,9 +164,11 @@ export function BarraDelMarco(props: PropsBarra) {
   return (
     <div className={estilos.barra} ref={refBarra}>
       <div className={estilos.datos}>
-        <div className={props.tiempoPoco ? `${estilos.tiempo} ${estilos.poco}` : estilos.tiempo}>
-          {props.tiempo}
-        </div>
+        {props.tiempo !== null && props.tiempo !== undefined && props.tiempo !== false && (
+          <div className={props.tiempoPoco ? `${estilos.tiempo} ${estilos.poco}` : estilos.tiempo}>
+            {props.tiempo}
+          </div>
+        )}
         <span className={estilos.donde}>{props.donde}</span>
         <span className={props.faltan <= 0 ? `${estilos.faltan} ${estilos.listo}` : estilos.faltan}>
           {textoDeFaltan(props.faltan)}

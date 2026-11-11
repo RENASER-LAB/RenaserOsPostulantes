@@ -217,12 +217,18 @@ arrancar.
 sintético a propósito.
 
 ⚠️ **El snapshot caduca: sus evaluaciones vencían el 01/10/2026, y el paso 3b las rejuvenece.**
-Se crearon el 17/09 con 14 días de plazo. En cuanto el backend arranca, su barrido de
-vencidas (`cerrarVencidas`) las marca `VENCIDA` y **cierra sus postulaciones con
-`PLAZO_VENCIDO` aunque ya estén en otra etapa**, y todo lo que mira el ranking se queda vacío:
+Se crearon el 17/09 con 14 días de plazo. Hasta la `V78`, en cuanto el backend arrancaba, su
+barrido de vencidas (`cerrarVencidas`) las marcaba `VENCIDA` y **cerraba sus postulaciones con
+`PLAZO_VENCIDO` aunque ya estuvieran en otra etapa**, y todo lo que mira el ranking se quedaba vacío:
 el 01/10/2026 eso tumbó el Excel, los filtros del ranking en el móvil y la selección en lote
 («Pendiente 0» en «Prueba del puesto»). Por eso el paso 3b va **antes** del 4: si el backend
 ya arrancó, cerró las postulaciones, y hay que volver a restaurar.
+
+**Desde la `V78` (10/11/2026) el Perfil Integral ya no vence por días.** Al arrancar, la
+migración le quita la fecha a las evaluaciones abiertas de las vacantes publicadas, y el barrido
+vence solo las que siguen abiertas en vacantes ya cerradas y cierra con `PLAZO_VENCIDO` a quien
+seguía en `PERFIL_TURNO_CANDIDATO`, no a quien ya está en otra etapa. El paso 3b se queda: el
+cuestionario técnico sigue venciendo por días.
 
 ⚠️ **Y la IA apagada** (`RENASER_AI_CALIFICACION_HABILITADA=false`, paso 4). Con la del perfil
 `local`, encendida, las de las preguntas propias (46 y 47) reciben un 202 «encolado» donde

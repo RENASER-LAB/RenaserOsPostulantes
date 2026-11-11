@@ -51,9 +51,9 @@ import {
   responderEvaluacion,
   verEvaluacion,
 } from '@/api/evaluacion'
+import { ErrorApi } from '@/api/cliente'
 import type { DetalleRespuesta, EvaluacionCandidato, PreguntaEvaluacion } from '@/api/tipos'
 import { EVALUACION_ENTREGADA_A_LA_ESPERA } from '@/dominio/estados'
-import { diasHasta } from '@/dominio/reloj'
 import { usePantallaAbierta } from '@/paginas/procesos/useVacanteRetirada'
 import { rutas } from '@/rutas'
 import { useAviso } from '@/ui/Avisos'
@@ -61,7 +61,6 @@ import { VacanteRetirada } from '@/ui/Mensajes'
 import { Modal } from '@/ui/Modal'
 import {
   BarraDelMarco,
-  CuentaAtras,
   HojaDelMapa,
   LoQueFaltaParaEntregar,
   MapaDePreguntas,
@@ -69,7 +68,6 @@ import {
   etiquetaDePregunta,
   primerCampo,
   rotuloDeVolver,
-  useQuedaMenosDe,
   type Guardado,
 } from '../unaPorPantalla/Marco'
 import { asomar, useCorte, useRecorrido, type Paso } from '../unaPorPantalla/useRecorrido'
@@ -85,15 +83,6 @@ import {
   queFalta,
 } from './bancoV3'
 
-/**
- * La frontera entre «te queda plazo» y «se te acaba», en segundos.
- *
- * La cruza el candidato una sola vez y cambia las dos cosas a la vez: por encima se le
- * enseñan los dias que le quedan en la barra; por debajo, esos dias sobran y lo que aparece
- * es la cuenta atras, en rojo, y el aviso de que al vencer no se entrega nada. Es un solo
- * numero porque es una sola decision.
- */
-const UNA_HORA = 3600
 /**
  * Lo que el backend acepta como maximo en una respuesta escrita: el `@Size` del
  * record `Responder`. Si se pasa, el guardado rebota con un 400 y la respuesta
@@ -149,6 +138,10 @@ export function Evaluacion() {
   // (QA-V70-01). El servidor ya rechaza la segunda; esto evita mandarla.
   const entregando = useRef(false)
   const [guardandoAntesDeEntregar, setGuardandoAntesDeEntregar] = useState(false)
+  // Lo que dijo el servidor al rechazar un guardado que no se arregla esperando (409): por
+  // ejemplo, que la vacante se cerró y la evaluación ya no se puede responder (V78). La cola
+  // deja esa pregunta en «No se pudo guardar»; esto dice por qué, con sus palabras.
+  const [rechazoDelServidor, setRechazoDelServidor] = useState<string | null>(null)
   /** Al pulsar «Entregar…» con huecos: lo que falta, en vez de la ventana de recuento. */
   const [loQueFalta, setLoQueFalta] = useState(false)
   const [vecesQueFalta, setVecesQueFalta] = useState(0)
@@ -206,8 +199,13 @@ export function Evaluacion() {
         segundos: datos.segundos,
       }),
     // La cola ya da por atascada una respuesta con 404; esto es para que la pantalla diga
-    // por qué, si es que la vacante se retiró, en vez de dejarla en «No se pudo guardar».
-    onError: siSeCerroLaPuerta,
+    // por qué, si es que la vacante se retiró, en vez de dejarla en «No se pudo guardar». Y un
+    // 409 se dice con el texto del servidor: «La vacante se cerró y esta evaluación ya no se
+    // puede responder.» (V78, AC-12).
+    onError: (causa) => {
+      siSeCerroLaPuerta(causa)
+      if (causa instanceof ErrorApi && causa.estado === 409) setRechazoDelServidor(causa.message)
+    },
   })
 
   const mandarAlServidor = useCallback(
@@ -492,10 +490,6 @@ export function Evaluacion() {
     [cola.encolar, segundosAqui],
   )
 
-  // El plazo, en la barra: los días mientras sobra; por debajo de la hora, la cuenta atrás en
-  // rojo y el aviso de que al vencer no se entrega nada.
-  const pocoPlazo = useQuedaMenosDe(consulta.data?.venceEn ?? null, UNA_HORA)
-
   // El aviso de lo que falta, a la vista cada vez que se pulsa «Entregar…» con huecos.
   useEffect(() => {
     if (vecesQueFalta > 0) asomar(avisoDeFaltas.current, refBarra.current)
@@ -551,7 +545,13 @@ export function Evaluacion() {
 
   const evaluacion = consulta.data
 
-  // Todavia no ha empezado: se enseña el aviso y el boton que arranca el plazo.
+  // Todavia no ha empezado: se enseña el aviso y el boton para empezar.
+  //
+  // ⚠️ **Sin plazo, y sin nada en su lugar (V78).** El Perfil Integral dura hasta que la
+  // vacante se cierra y el candidato no ve esa fecha, como en los portales de empleo: la
+  // publicación está ahí mientras se pueda responder. Si no queda ningún dato que enseñar,
+  // la banda con sus dos líneas tampoco se dibuja: vacía, parecía que faltaba algo.
+  const conDatos = evaluacion.total > 0 || evaluacion.minutosObjetivo !== null
   if (evaluacion.iniciadaEn === null) {
     return (
       <div className={estilos.pagina}>
@@ -566,40 +566,36 @@ export function Evaluacion() {
             una, no hay respuestas de manual, y nadie las responde de una sentada.
           </p>
 
-          <div className={estilos.datos}>
-            {/*
-              ⚠️ **Antes de empezar, `total` es cero y no significa «cero».**
+          {conDatos && (
+            <div className={estilos.datos}>
+              {/*
+                ⚠️ **Antes de empezar, `total` es cero y no significa «cero».**
 
-              El backend arma el orden de preguntas dentro de `iniciar()`, asi que
-              hasta entonces no hay filas que contar y `pintar()` devuelve 0 con el
-              comentario «Todavia no ha empezado: no hay preguntas que enseñar»
-              (`ServicioEvaluacionImpl.java:377`). Y la portada es, por definicion,
-              el estado de antes de empezar: **todo candidato leia «0 preguntas»**.
+                El backend arma el orden de preguntas dentro de `iniciar()`, asi que
+                hasta entonces no hay filas que contar y `pintar()` devuelve 0 con el
+                comentario «Todavia no ha empezado: no hay preguntas que enseñar»
+                (`ServicioEvaluacionImpl.java:377`). Y la portada es, por definicion,
+                el estado de antes de empezar: **todo candidato leia «0 preguntas»**.
 
-              Un cero que en realidad quiere decir «todavia no lo se» es la regla del
-              indicador honesto rota. Los otros dos datos ya se guardaban de su nulo;
-              este no. Cuando el backend sepa decir cuantas seran sin tener que
-              armarlas, vuelve solo.
-            */}
-            {evaluacion.total > 0 && (
-              <div className={estilos.dato}>
-                <span className={estilos.cifra}>{evaluacion.total}</span>
-                <span className={estilos.queEs}>preguntas, una por pantalla</span>
-              </div>
-            )}
-            {evaluacion.minutosObjetivo !== null && (
-              <div className={estilos.dato}>
-                <span className={estilos.cifra}>{evaluacion.minutosObjetivo} min</span>
-                <span className={estilos.queEs}>de referencia, no es un límite</span>
-              </div>
-            )}
-            {evaluacion.venceEn !== null && (
-              <div className={estilos.dato}>
-                <span className={estilos.cifra}>{diasHasta(evaluacion.venceEn)}</span>
-                <span className={estilos.queEs}>para entregarla</span>
-              </div>
-            )}
-          </div>
+                Un cero que en realidad quiere decir «todavia no lo se» es la regla del
+                indicador honesto rota. Los minutos ya se guardaban de su nulo; este
+                no. Cuando el backend sepa decir cuantas seran sin tener que
+                armarlas, vuelve solo.
+              */}
+              {evaluacion.total > 0 && (
+                <div className={estilos.dato}>
+                  <span className={estilos.cifra}>{evaluacion.total}</span>
+                  <span className={estilos.queEs}>preguntas, una por pantalla</span>
+                </div>
+              )}
+              {evaluacion.minutosObjetivo !== null && (
+                <div className={estilos.dato}>
+                  <span className={estilos.cifra}>{evaluacion.minutosObjetivo} min</span>
+                  <span className={estilos.queEs}>de referencia, no es un límite</span>
+                </div>
+              )}
+            </div>
+          )}
 
           <div className={estilos.saber}>
             <p className={estilos.presentacion}>
@@ -739,19 +735,6 @@ export function Evaluacion() {
     else setHojaAbierta(true)
   }
 
-  const plazo =
-    evaluacion.venceEn === null ? null : pocoPlazo ? (
-      <span>
-        Quedan <CuentaAtras venceEn={evaluacion.venceEn} />
-      </span>
-    ) : (
-      <time className={estilos.plazo} dateTime={evaluacion.venceEn}>
-        {diasHasta(evaluacion.venceEn) === 'hoy'
-          ? 'Se entrega hoy'
-          : `${diasHasta(evaluacion.venceEn)} para entregarla`}
-      </time>
-    )
-
   return (
     <div className={estilos.pagina}>
       <Link className={estilos.volver} to={rutas.proceso(uuid)}>
@@ -759,10 +742,10 @@ export function Evaluacion() {
       </Link>
 
       <div className={marco.marco}>
+        {/* Sin plazo en la barra (V78): ni días, ni «Se entrega hoy», ni cuenta atrás. */}
         <BarraDelMarco
           refBarra={refBarra}
-          tiempo={plazo}
-          tiempoPoco={evaluacion.venceEn !== null && pocoPlazo}
+          tiempo={null}
           donde={`Pregunta ${indice + 1} de ${preguntas.length}`}
           faltan={faltan}
           progreso={{ respondidas, total: evaluacion.total }}
@@ -826,14 +809,9 @@ export function Evaluacion() {
               </p>
             )}
 
-            {/* Al vencer, la evaluación se cierra sin entregarse y la postulación termina por
-                plazo vencido: el aviso no puede prometer que se entrega lo respondido. */}
-            {evaluacion.venceEn !== null && pocoPlazo && (
-              <p className={estilos.aviso}>
-                <span>
-                  <b>Queda poco plazo.</b> Cuando se acabe, la evaluación se cierra sin
-                  entregarse. Entrégala antes.
-                </span>
+            {rechazoDelServidor && (
+              <p className={`${estilos.aviso} ${estilos.malo}`} role="alert">
+                <span>{rechazoDelServidor}</span>
               </p>
             )}
 
