@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { comoE164, MENSAJE_CELULAR, paraEditar, paraMostrar } from './celular'
+import contrato from './celularCasos.json'
 
 /**
  * La misma tabla que `CelularTest` del backend: si una de las dos cambia y la otra
@@ -39,6 +40,18 @@ describe('el celular de la cuenta (V73)', () => {
   ])('«%s» no vale', (escrito) => {
     expect(comoE164(escrito)).toBeNull()
   })
+
+  /*
+    El contrato que comparte con el backend: `celularCasos.json` aquí y
+    `docs/contratos/celular-casos.json` allí, iguales, que `CelularTest` pasa por
+    `Celular.java`. Si una regla cambia y la otra no, falla una de las dos pruebas.
+  */
+  it.each(contrato.casos.map((caso) => [caso.escrito, caso.e164] as const))(
+    'da lo mismo que Celular.java: «%s» → %s',
+    (escrito, e164) => {
+      expect(comoE164(escrito)).toBe(e164)
+    },
+  )
 
   it('el mensaje es el del backend, palabra por palabra', () => {
     expect(MENSAJE_CELULAR).toBe(

@@ -9,13 +9,33 @@
  *   - Otro país: el número completo con su prefijo, empezando por «+» o «00».
  *
  * Los espacios, guiones, puntos y paréntesis no cuentan.
+ *
+ * Que las dos den lo mismo lo comprueba un contrato con los mismos casos en los dos
+ * repositorios: `celularCasos.json` aquí y `docs/contratos/celular-casos.json` allí.
  */
 
 /** El mensaje cuando no vale. Es literalmente el del backend. */
 export const MENSAJE_CELULAR =
   'Escribe un celular de 9 cifras que empiece por 9, o el número completo con su prefijo'
 
-const SEPARADORES = /[\s\-.()]/g
+/**
+ * Los separadores que no cuentan, uno por uno los de `sinSeparadores` del backend:
+ * espacio, tabulador, espacio duro, guion, punto y paréntesis. Un `\s` dejaba pasar
+ * un salto de línea o un espacio largo que la API rechaza.
+ */
+const SEPARADORES = /[ \t\u00a0\-.()]/g
+
+/**
+ * Lo escrito sin lo que sobra en las puntas, como `String.trim()` de Java: todo lo
+ * que va hasta el espacio (U+0020). El `trim()` de JavaScript quita más.
+ */
+function recortar(texto: string): string {
+  let inicio = 0
+  let fin = texto.length
+  while (inicio < fin && texto.charCodeAt(inicio) <= 0x20) inicio++
+  while (fin > inicio && texto.charCodeAt(fin - 1) <= 0x20) fin--
+  return texto.slice(inicio, fin)
+}
 
 /**
  * Lo escrito en formato internacional («+51987654321»), o `null` si no vale.
@@ -24,7 +44,7 @@ const SEPARADORES = /[\s\-.()]/g
  * E.164; esto es para validar antes de enviar y para enseñar el número.
  */
 export function comoE164(escrito: string): string | null {
-  let limpio = escrito.trim().replace(SEPARADORES, '')
+  let limpio = recortar(escrito).replace(SEPARADORES, '')
   if (limpio.startsWith('00')) limpio = `+${limpio.slice(2)}`
   if (limpio.startsWith('+')) {
     const cifras = limpio.slice(1)

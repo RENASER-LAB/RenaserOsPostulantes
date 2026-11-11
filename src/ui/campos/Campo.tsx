@@ -86,6 +86,11 @@ interface PropsCampo extends InputHTMLAttributes<HTMLInputElement> {
    * Lo que va pegado delante y no se escribe: el «+51» del celular (V73). Se
    * dibuja dentro de la caja, a la izquierda, y el lector de pantalla lo oye como
    * parte de la descripción del campo.
+   *
+   * ⚠️ **Vacío (`''`) no es lo mismo que no darlo.** Un campo que a veces lo lleva
+   * —el celular lo esconde mientras el número empieza por «+»— pasa `''` para
+   * esconderlo: la caja sigue siendo la misma y el `<input>` no se vuelve a montar.
+   * Sin eso, el foco y el cursor se perderían a mitad de escribir.
    */
   prefijo?: string
 }
@@ -178,14 +183,18 @@ export const Campo = forwardRef<HTMLInputElement, PropsCampo>(function Campo(
           {ayuda}
         </span>
       )}
-      {prefijo ? (
-        <div className={estilos.conPrefijo}>
-          <span className={estilos.prefijo} aria-hidden="true">
-            {prefijo}
-          </span>
-          <span className={estilos.soloLectores} id={idPrefijo}>
-            Con el prefijo {prefijo} delante.
-          </span>
+      {prefijo !== undefined ? (
+        <div className={prefijo ? estilos.conPrefijo : `${estilos.conPrefijo} ${estilos.prefijoOculto}`}>
+          {prefijo ? (
+            <>
+              <span className={estilos.prefijo} aria-hidden="true">
+                {prefijo}
+              </span>
+              <span className={estilos.soloLectores} id={idPrefijo}>
+                Con el prefijo {prefijo} delante.
+              </span>
+            </>
+          ) : null}
           {entrada}
         </div>
       ) : esContrasena ? (
