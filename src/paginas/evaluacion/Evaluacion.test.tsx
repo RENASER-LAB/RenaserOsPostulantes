@@ -47,8 +47,13 @@ const CON_OPCIONES = 2
 let fallanUnaVez: Set<number>
 /** Preguntas que no hay manera de guardar, como una red que no vuelve. */
 let fallanSiempre: Set<number>
-/** Cuando vence el plazo. `null` = esta evaluacion no tiene ninguno. */
+/**
+ * Cuando vence. `null` = sin fecha, que es como nace desde la V78: el Perfil Integral dura
+ * hasta que la vacante se cierra. Con fecha solo la traería una fila de antes.
+ */
 let venceEn: string | null
+/** Los minutos de referencia. `null` = la evaluación no los dice. */
+let minutosObjetivo: number | null
 
 function evaluacionActual(iniciada: boolean): EvaluacionCandidato {
   return {
@@ -57,7 +62,7 @@ function evaluacionActual(iniciada: boolean): EvaluacionCandidato {
     venceEn,
     iniciadaEn: iniciada ? '2026-08-20T10:00:00Z' : null,
     terminadaEn: null,
-    minutosObjetivo: 45,
+    minutosObjetivo,
     total: totalDeclarado,
     respondidas: guardadas.size,
     preguntas: Array.from({ length: TOTAL }, (_, i) => ({
@@ -180,6 +185,7 @@ beforeEach(() => {
   fallanUnaVez = new Set()
   fallanSiempre = new Set()
   venceEn = null
+  minutosObjetivo = 45
   iniciada = false
   vi.clearAllMocks()
 })
@@ -796,67 +802,71 @@ function preguntaV(respuestaTexto: string | null): PreguntaEvaluacion {
 }
 
 /**
- * El plazo, mientras se responde.
+ * Sin plazo (V78, specs/Ready/perfil-integral-hasta-el-cierre-de-la-vacante).
  *
- * Estaba solo en la portada. Entre esa pantalla y el aviso de la ultima hora hay dos
- * semanas de plazo por defecto, y en todo ese tramo el candidato no volvia a ver cuanto le
- * quedaba: tenia que salirse de la evaluacion para saberlo.
+ * El Perfil Integral dura hasta que la vacante se cierra, y el candidato no ve esa fecha,
+ * como en los portales de empleo. Desaparecen el dato «14 días · para entregarla» de la
+ * portada y, en la barra, «N días para entregarla», «Se entrega hoy» y la cuenta atrás, sin
+ * poner nada en su lugar. Aunque el servidor mandara una fecha —una fila de antes—, no se
+ * pinta: ya no es la que manda.
  */
-describe('el plazo mientras se responde', () => {
+describe('el Perfil Integral no enseña ningún plazo', () => {
   /** Dentro de N horas, en el formato que manda el servidor. */
   const dentroDe = (horas: number) =>
     new Date(Date.now() + horas * 3_600_000).toISOString()
 
-  it('con dias por delante, los dice en la linea de servicio', async () => {
-    venceEn = dentroDe(24 * 3 + 1)
-    await empezar()
-
-    expect(screen.getByText(/3 días para entregarla/)).toBeTruthy()
-  })
-
-  it('el ultimo dia lo dice con palabras, no con un cero', async () => {
-    // `diasHasta` devuelve «hoy» por debajo de las 24 h, y «hoy para entregarla» no se
-    // dice: es la unica salida que no compone con la frase.
-    venceEn = dentroDe(5)
-    await empezar()
-
-    expect(screen.getByText('Se entrega hoy')).toBeTruthy()
-  })
-
-  it('⚠️ por debajo de la hora desaparece: manda la cuenta atras del aviso', async () => {
-    // Dos relojes a la vez, uno diciendo «hoy» y el otro `00:42:17`, se leen peor que el
-    // segundo solo.
-    venceEn = dentroDe(0.5)
-    await empezar()
-
+  const sinNingunPlazo = () => {
     expect(screen.queryByText(/para entregarla/)).toBeNull()
-    expect(screen.queryByText('Se entrega hoy')).toBeNull()
-    expect(screen.getByText(/Queda poco plazo/)).toBeTruthy()
-    // La cuenta atrás, en la barra y en rojo (AC-11).
-    const cuenta = screen.getByText(/^Quedan [0-9]{2}:[0-9]{2}:[0-9]{2}$/)
-    expect(cuenta.closest('div')?.className).toMatch(/poco/)
-  })
-
-  it('con más de una hora, el plazo de la barra no va en rojo', async () => {
-    venceEn = dentroDe(5)
-    await empezar()
-    expect(screen.getByText('Se entrega hoy').closest('div')?.className).not.toMatch(/poco/)
-  })
-
-  it('AC-11: el aviso de plazo ya no promete entregar lo respondido', async () => {
-    venceEn = dentroDe(0.5)
-    await empezar()
-
-    expect(screen.queryByText(/se entregará lo que tengas respondido/)).toBeNull()
-    expect(document.body.textContent).toContain('Cuando se acabe, la evaluación se cierra sin entregarse. Entrégala antes.')
-  })
-
-  it('sin plazo no se inventa ninguno', async () => {
-    venceEn = null
-    await empezar()
-
-    expect(screen.queryByText(/para entregarla/)).toBeNull()
+    expect(screen.queryByText(/Se entrega hoy/)).toBeNull()
+    expect(screen.queryByText(/Queda poco plazo/)).toBeNull()
+    expect(screen.queryByText(/^Quedan /)).toBeNull()
     expect(screen.queryByText(/sin plazo/i)).toBeNull()
+    expect(screen.queryByText(/\bdías?\b/)).toBeNull()
+  }
+
+  it('AC-05: la portada solo dice los minutos de referencia, sin días ni texto en su lugar', async () => {
+    montar()
+    await screen.findByRole('button', { name: /Empezar evaluación/ })
+
+    expect(screen.getByText('45 min')).toBeTruthy()
+    expect(screen.getByText('de referencia, no es un límite')).toBeTruthy()
+    sinNingunPlazo()
+  })
+
+  it('AC-06: sin minutos de referencia no se dibuja la banda de datos vacía', async () => {
+    minutosObjetivo = null
+    // Como lo manda el servidor antes de empezar: aún no hay preguntas armadas que contar.
+    totalDeclarado = 0
+    const { container } = montar()
+    await screen.findByRole('button', { name: /Empezar evaluación/ })
+
+    expect(screen.queryByText(/de referencia/)).toBeNull()
+    expect(container.querySelector('[class*="datos"]')).toBeNull()
+    sinNingunPlazo()
+  })
+
+  it('AC-05: dentro de la evaluación, la barra no dice plazo ni cuenta atrás', async () => {
+    await empezar()
+
+    const donde = screen.getByText(/Pregunta 1 de/)
+    sinNingunPlazo()
+    // Ni su hueco vacío (QA-03): ocupaba un sitio de la fila y corría «Pregunta N de M».
+    expect(document.querySelector('[class*="tiempo"]')).toBeNull()
+    expect(donde.parentElement?.firstElementChild).toBe(donde)
+  })
+
+  it('aunque una fila de antes traiga fecha, ni la portada ni la barra la pintan', async () => {
+    for (const horas of [24 * 3 + 1, 5, 0.5]) {
+      venceEn = dentroDe(horas)
+      iniciada = false
+      montar()
+      await screen.findByRole('button', { name: /Empezar evaluación/ })
+      sinNingunPlazo()
+      fireEvent.click(screen.getByRole('button', { name: /Empezar evaluación/ }))
+      await screen.findByLabelText('Tu respuesta')
+      sinNingunPlazo()
+      cleanup()
+    }
   })
 })
 
@@ -1005,6 +1015,48 @@ describe('cuando la empresa retiró la vacante', () => {
     expect((await screen.findByRole('alert')).textContent).toMatch(/El sistema tuvo un problema/)
     // Un 500 no es una puerta cerrada: ni se vuelve a leer la evaluación.
     expect(verEvaluacion).toHaveBeenCalledTimes(1)
+  })
+})
+
+// ---------- La vacante se cerró con la evaluación abierta (V78, AC-12) ----------
+
+describe('si la vacante se cerró con la evaluación abierta', () => {
+  const CERRADA = 'La vacante se cerró y esta evaluación ya no se puede responder.'
+
+  it('guardar una respuesta dice que la vacante se cerró, con las palabras del servidor', async () => {
+    await empezar()
+
+    vi.mocked(responderEvaluacion).mockRejectedValueOnce(new ErrorApi(409, CERRADA))
+    responder('Una respuesta.')
+    siguiente()
+
+    expect((await screen.findByRole('alert')).textContent).toBe(CERRADA)
+    // Y no se hace pasar por una vacante retirada
+    expect(screen.queryByRole('heading', { name: /Esta vacante ya no está disponible/ })).toBeNull()
+  })
+
+  it('entregar lo dice dentro del modal', async () => {
+    for (let n = 1; n <= TOTAL; n++) guardadas.set(n, `Respuesta ${n}.`)
+    opcionesGuardadas.set(CON_OPCIONES, 21)
+    iniciada = true
+    montar()
+    fireEvent.click(await screen.findByRole('button', { name: 'Entregar la evaluación' }))
+    const entregarla = await screen.findByRole('button', { name: 'Entregar' })
+
+    vi.mocked(entregarEvaluacion).mockRejectedValueOnce(new ErrorApi(409, CERRADA))
+    fireEvent.click(entregarla)
+
+    expect((await screen.findByRole('alert')).textContent).toBe(CERRADA)
+  })
+
+  it('empezar también lo dice', async () => {
+    montar()
+    const empezarla = await screen.findByRole('button', { name: /Empezar evaluación/ })
+
+    vi.mocked(iniciarEvaluacion).mockRejectedValueOnce(new ErrorApi(409, CERRADA))
+    fireEvent.click(empezarla)
+
+    expect((await screen.findByRole('alert')).textContent).toBe(CERRADA)
   })
 })
 

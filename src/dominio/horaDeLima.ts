@@ -1,5 +1,5 @@
 /**
- * La fecha límite de la prueba, en hora de Lima, se lea donde se lea.
+ * La fecha límite de la prueba y la de la vacante, en hora de Lima, se lean donde se lean.
  *
  * La fecha límite es un instante (UTC en el servidor) que la empresa piensa en
  * hora de Lima: «el viernes a las 23:59». Si se convirtiera con la zona del
@@ -63,4 +63,29 @@ export function fechaLargaDeLima(instante: FechaIso): string {
   return `${DIAS[d.getUTCDay()]} ${dos(d.getUTCDate())}/${dos(d.getUTCMonth() + 1)} a las ${dos(
     d.getUTCHours(),
   )}:${dos(d.getUTCMinutes())}`
+}
+
+// ---------- El día en que se cierra la vacante (V78) ----------
+
+const DIA = /^(\d{4})-(\d{2})-(\d{2})$/
+
+/**
+ * Lo elegido en un selector de día («2026-10-31») → el instante en que se cierra la
+ * vacante: las 23:59:59 de ese día en Lima. Nulo si no es un día que exista.
+ *
+ * Es lo que guarda el servidor, que además lo recalcula: aquí se manda ya bien para que lo
+ * que viaja y lo que se guarda sean lo mismo.
+ */
+export function finDelDiaEnLima(dia: string): string | null {
+  const m = DIA.exec(dia.trim())
+  if (!m) return null
+  const [anio, mes, numero] = m.slice(1).map(Number) as [number, number, number]
+  const utc = Date.UTC(anio, mes - 1, numero, 23, 59, 59) + DESFASE_DE_LIMA_MS
+  if (Number.isNaN(utc) || enLima(new Date(utc).toISOString()).getUTCDate() !== numero) return null
+  return new Date(utc).toISOString()
+}
+
+/** El día de Lima de un instante, como lo pinta un selector de día: «2026-10-31». */
+export function diaDeLima(instante: FechaIso): string {
+  return deInstanteALima(instante).slice(0, 10)
 }

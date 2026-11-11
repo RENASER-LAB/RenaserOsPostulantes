@@ -2491,6 +2491,31 @@ describe('los desplegables que siguen existiendo', () => {
  *   3. **Esconder también el proceso.** Archivar conserva el ranking, las fichas
  *      y las descargas: es la mitad de lo que archivar promete.
  */
+describe('la fecha límite en la cabecera (V78)', () => {
+  const conCierre = (extra: Record<string, unknown>) => {
+    sinRuido.verVacante = () => Promise.resolve({ ...VACANTE, publicadaEn: '2026-10-01T15:00:00Z', ...extra })
+  }
+
+  it('AC-03: con fecha límite dice cuándo se cierra, con la hora de Lima: «vie 30/10, 23:59»', async () => {
+    conCierre({ tipoCierre: 'FECHA', cierraEn: '2026-10-31T04:59:59Z' })
+    await pintar()
+
+    expect(screen.getByText(/se cierra el vie 30\/10, 23:59/)).toBeTruthy()
+  })
+
+  it('Permanente no dice ninguna fecha, y una cerrada tampoco', async () => {
+    conCierre({ tipoCierre: 'PERMANENTE', cierraEn: null })
+    await pintar()
+    expect(screen.queryByText(/se cierra el/)).toBeNull()
+    cleanup()
+
+    conCierre({ tipoCierre: 'FECHA', cierraEn: '2026-10-31T04:59:59Z', estado: 'CERRADA',
+      cerradaEn: '2026-10-31T05:00:00Z' })
+    await pintar()
+    expect(screen.queryByText(/se cierra el/)).toBeNull()
+  })
+})
+
 describe('el detalle de una vacante archivada', () => {
   const archivada = (extra: Record<string, unknown> = {}) => {
     sinRuido.verVacante = () =>

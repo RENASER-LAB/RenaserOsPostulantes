@@ -95,14 +95,19 @@ describe('la política de privacidad pública', () => {
 
   it('no promete que ninguna decisión es automática: enumera las tres que sí lo son', () => {
     // La versión anterior decía «ninguna decisión sobre tu candidatura se toma
-    // automáticamente» y era falso — `cerrarVencidas` cierra procesos cada 60 segundos sin
-    // persona. Esta prueba existe para que esa frase no vuelva sola en una edición de
+    // automáticamente» y era falso — el cierre de la vacante cierra procesos sin persona,
+    // también el que corre cada 60 segundos por su fecha límite. Esta prueba existe para que esa frase no vuelva sola en una edición de
     // estilo: una política que promete lo que el código no hace es la prueba en contra.
     montar()
 
     expect(screen.queryByText(/ninguna decisión sobre tu candidatura se toma autom/i)).toBeNull()
     expect(screen.getByText(/Ninguna nota te contrata ni te descarta por sí sola/)).toBeTruthy()
-    expect(screen.getByText(/si se te pasa el plazo/i)).toBeTruthy()
+    // AC-17 (V78): la evaluación ya no tiene plazo; el proceso se cierra si la vacante se
+    // cierra antes de que el candidato la termine. La prueba sí conserva el suyo.
+    expect(screen.getByText(/Cierra tu proceso si la vacante se cierra/)).toBeTruthy()
+    expect(screen.getByText(/antes de que termines\s+tu evaluación/)).toBeTruthy()
+    expect(screen.queryByText(/plazo que tenías para\s+responder una evaluación/)).toBeNull()
+    expect(screen.getByText(/se te pasa el plazo que tenías para dar una prueba/)).toBeTruthy()
     expect(screen.getByText(/configuró su vacante para avanzar sola/i)).toBeTruthy()
     expect(screen.getByText(/no cumples un requisito indispensable/i)).toBeTruthy()
   })

@@ -316,7 +316,8 @@ backend no le llega a nadie** (ver [PENDIENTES.md](PENDIENTES.md)).
 activo sin confirmar cierra la postulación en el acto (`NO_CONTINUA`). Tiene que leerse como una
 decisión seria, no como una casilla más del formulario. Desde el 14/09/2026 es también una de las
 tres cosas que el texto legal enumera como «pasan sin que intervenga una persona», junto al
-cierre por plazo vencido y el pase automático de las vacantes que avanzan solas.
+cierre por plazo vencido —desde la `V78`, en la evaluación, que la vacante se cierre antes de
+terminarla— y el pase automático de las vacantes que avanzan solas.
 
 **El permiso se firma con la empresa, no con Renaser**, y desde el 14/09/2026 su texto **ya no
 repite lo técnico**: la inteligencia artificial y los proveedores se aceptaron al crear la
@@ -380,8 +381,8 @@ candidato entienda `diasSinCambio` sin que parezca abandono.
 **La campana avisa de cada cambio de etapa** (07/10/2026). Cada paso que le manda correo —le toca
 algo, la prueba está disponible, no continúa, se cerró, confirmamos tu retiro— le deja también un
 aviso en la campana ligado a su proceso, que suma en `avisosSinLeer` de esa fila y al pulsarlo
-abre ese proceso. Lo mismo los recordatorios de la evaluación sin entregar y de la prueba sin
-empezar. Si el equipo lo movió sin avisarle, no aparece nada. La campana se vuelve a pedir al
+abre ese proceso. Lo mismo los recordatorios de la evaluación sin entregar —desde la `V78`, solo
+el primero, porque el Perfil Integral no tiene fecha— y de la prueba sin empezar. Si el equipo lo movió sin avisarle, no aparece nada. La campana se vuelve a pedir al
 abrirla y después de entregar la evaluación, postular o retirarse, sin esperar a recargar la
 página.
 
@@ -485,7 +486,9 @@ sin cerrar el diálogo. Lo hacen las cuatro con el mismo hook, `usePantallaAbier
 **Las cifras reales:** el banco v3 tiene 190 ítems en total, pero **cada candidato responde solo
 los de su nivel: entre 50 y 85** (85 directivo, 55 coordinación, 50 operativo). No se muestrea y
 **no se baraja**: se aplica el banco completo del nivel, en el orden del documento (ese orden
-separa los pares de consistencia). El plazo por defecto son **14 días**.
+separa los pares de consistencia). **Desde el 10/11/2026 (`V78`) no tiene plazo**: se responde
+mientras la vacante esté abierta, y `venceEn` llega vacío. Hasta entonces eran 14 días desde que
+postulaba.
 
 ⚠️ **El número lo manda el backend en `EvaluacionCandidato.total`.** Nunca una constante: un
 examen de 50 y uno de 85 se recorren igual, pero el maquetado no puede dar por hecho ninguno.
@@ -529,17 +532,29 @@ Reglas duras que el maquetado no puede romper:
 - El backend **rechaza entregar una evaluación incompleta**.
 - 🚫 Nunca viaja al navegador: puntaje de cada opción, lógica interna, dimensión medida.
 
-⚠️ **Los días que quedan tienen que verse mientras se responde, no solo antes de empezar**
-(31/08/2026). El plazo son 14 días y esta pantalla se retoma muchas veces: si `venceEn` solo
-se pinta en la portada, hay dos semanas en las que el candidato tiene que **salir del examen**
-para saber cuánto le queda. Desde el 09/10/2026 va en la barra fija del marco común (abajo), junto
-a «Pregunta 2 de 55», donde se mira de reojo sin interrumpir.
+⚠️ **El Perfil Integral no enseña ningún plazo, ni pone nada en su lugar** (10/11/2026, `V78`).
+Dura hasta que la vacante se cierra y el candidato no ve esa fecha, como en los portales de
+empleo: la publicación está ahí mientras se pueda responder (`src/paginas/evaluacion/Evaluacion.tsx`).
 
-⚠️ **Y se apaga en la última hora**, que es cuando entra el aviso de «Queda poco plazo» con su
-cuenta atrás. Dos relojes a la vez —«hoy» y `00:42:17`— se leen peor que el segundo solo, y ese
-mismo corte deja fuera los textos de plazo que ahí no encajan: «vencida» y «sin plazo». Por
-debajo de una hora el plazo sale **en rojo** (09/10/2026), y el aviso ya no promete lo que no
-pasa: al vencer, la evaluación **se cierra sin entregarse**.
+- **En la portada** desaparece «14 días · para entregarla» y queda solo el dato de los minutos de
+  referencia, si los hay. **Si no queda ningún dato, la banda con sus dos líneas no se dibuja**:
+  vacía, parecía que faltaba algo.
+- **En la barra fija** desaparecen «N días para entregarla», «Se entrega hoy» y la cuenta atrás de
+  la última hora. La barra recibe `tiempo={null}` y **no reserva el hueco**: vacío, ocupaba un
+  sitio de la fila y desalineaba «Pregunta N de M» (`src/paginas/unaPorPantalla/Marco.tsx`).
+- **Si la vacante se cierra con la evaluación abierta**, guardar o entregar recibe un 409 con «La
+  vacante se cerró y esta evaluación ya no se puede responder.», y la pantalla lo dice con esas
+  palabras: al guardar, la pregunta queda en «No se pudo guardar» y el motivo se enseña aparte;
+  al entregar, el error de la entrega dice ese mismo texto.
+  Su postulación se cierra con el correo y la campana de siempre. Las reglas, en
+  `docs/03-ESTADOS-POSTULACION.md` del backend, «Se cierra la convocatoria».
+- Recibe **solo el primer recordatorio** («Aún no has respondido tu evaluación para X»): el de
+  «vence el…» no sale, porque no hay fecha.
+
+Del 31/08 al 10/11/2026 los días que quedaban se veían también mientras se respondía —desde el
+09/10, en la barra fija—, y en la última hora los sustituía, en rojo, la cuenta atrás de «Queda
+poco plazo»; al vencer, la evaluación se cerraba sin entregarse. Nada de eso aplica ya al Perfil
+Integral.
 
 **De aquí salen las quejas reales.** Una pregunta por pantalla dejó a un candidato saltando de la
 50 a la 10 sin forma de volver, y por eso hoy existen el mapa de preguntas, "siguiente sin
@@ -549,7 +564,7 @@ responder" y "volver a la 50". Es el punto donde el candidato se pierde.
 (`src/paginas/unaPorPantalla/`: `useRecorrido` y `Marco`), así que el candidato se mueve igual en
 las dos:
 
-- **Barra fija** con el tiempo, «Pregunta 3 de 8», lo que falta («Te faltan N por terminar» o
+- **Barra fija** con el tiempo (en la evaluación, ninguno desde la `V78`), «Pregunta 3 de 8», lo que falta («Te faltan N por terminar» o
   «Todo listo para entregar»), «Ver las N» u «Ocultar el mapa», «Siguiente sin responder»,
   «Volver a la N» —solo después de un salto— y el botón de entregar de cada pantalla. La
   evaluación conserva su barra «N de M respondidas».
@@ -792,6 +807,13 @@ WhatsApp desde el número de Renaser», y que quien escribe por WhatsApp pasa su
 Platforms**, que puede tratarlos fuera del Perú —una frase junto a la tabla de encargados, no una
 fila más—. Es lo mismo que el texto `PLATAFORMA` 1.2 que firman las cuentas nuevas, que conserva
 lo de la 1.1 (`PoliticaPublica.tsx`).
+
+⚠️ **Desde la V78 (10/11/2026) la segunda de las tres dice** «Cierra tu proceso si la vacante se
+cierra antes de que termines tu evaluación, o si se te pasa el plazo que tenías para dar una
+prueba», porque el Perfil Integral ya no tiene plazo propio. **El texto `PLATAFORMA` 1.2 firmado,
+que la misma página enseña abajo palabra por palabra, no cambió**: sigue diciendo «si se me pasa el
+plazo que tenía para responder una evaluación o una prueba». Cambiarlo es publicar una versión
+nueva del texto, y quedó fuera de esa entrega.
 
 ### 2.15 Mi perfil · las reseñas de empresas (28/09/2026)
 

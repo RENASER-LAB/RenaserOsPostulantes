@@ -38,8 +38,8 @@ import {
  *     «Ir →» lleva al paso «Entregables».
  *   - AC-08, en las dos pantallas: un guardado que falla deja la pregunta a medias con «No se
  *     pudo guardar; se reintenta» aunque ya no esté en pantalla, y se recupera sola.
- *   - AC-11: el reloj de la prueba en rojo por debajo de 10 minutos; el plazo de la evaluación
- *     en rojo por debajo de una hora con el aviso que ya no promete entregar lo respondido.
+ *   - AC-11: el reloj de la prueba en rojo por debajo de 10 minutos; la barra de la evaluación
+ *     del Perfil Integral ya no lleva plazo, cuenta atrás ni aviso (dura hasta el cierre, V78).
  *   - AC-12 con el banco del modelo (60 o más preguntas) en el teléfono: la hoja del mapa se
  *     desplaza por dentro y elegir la última lleva a ella.
  *   - QA-01 (caso límite «doble pulsación en Siguiente»): el segundo clic no puede responder
@@ -391,7 +391,7 @@ test.describe('QA · una pregunta por pantalla', () => {
     expect(respuestasDeLaEvaluacion(juana.uuid)).toBe(1)
   })
 
-  test('AC-11 · la prueba con 9 minutos pone el reloj en rojo; la evaluación con menos de una hora, su plazo en rojo y el aviso nuevo', async ({ page }) => {
+  test('AC-11 · la prueba con 9 minutos pone el reloj en rojo; la barra del Perfil Integral ya no lleva plazo ni cuenta atrás', async ({ page }) => {
     const karla = await candidataEnLaPrueba(equipo, vacanteA, 'Karla', correos)
     expect((await iniciarLaPrueba(karla)).estado).toBe(200)
     sql(`update intento_prueba set vence_en = now() + interval '9 minutes' where postulacion_id = ${karla.postulacion};`)
@@ -403,6 +403,8 @@ test.describe('QA · una pregunta por pantalla', () => {
     await expect(reloj).toBeVisible()
     await expect(reloj).toHaveCSS('color', rojo)
 
+    // El Perfil Integral dura hasta que la vacante se cierra (V78): aunque la fila arrastre un
+    // vence_en a menos de una hora, la barra no enseña plazo, ni cuenta atrás, ni el aviso.
     const luis = await evaluacionEmpezada('Luis')
     sql(`update evaluacion set vence_en = now() + interval '50 minutes'
           where id = (select evaluacion_id from postulacion where uuid = ${literal(luis.uuid)});`)
@@ -410,10 +412,12 @@ test.describe('QA · una pregunta por pantalla', () => {
     await page.goto(`/procesos/${luis.uuid}/evaluacion`)
     const main = page.locator('main')
     await enLaBarra(page, 'Pregunta 1 de 4')
-    const plazo = main.getByText(/^Quedan \d\d:\d\d:\d\d$/)
-    await expect(plazo).toBeVisible()
-    await expect(plazo).toHaveCSS('color', rojo)
-    await expect(main).toContainText(AVISO_DE_PLAZO)
+    await expect(main.getByText(/^Quedan \d/)).toHaveCount(0)
+    await expect(main.getByText(/^\d\d:\d\d:\d\d$/)).toHaveCount(0)
+    await expect(main.getByText('Tiempo restante')).toHaveCount(0)
+    await expect(main.getByText(/para entregarla|Se entrega hoy|Queda poco plazo/)).toHaveCount(0)
+    await expect(main.getByText(/\b\d+ días?\b/)).toHaveCount(0)
+    await expect(main).not.toContainText(AVISO_DE_PLAZO)
     await expect(main).not.toContainText('se entregará lo que tengas respondido')
   })
 

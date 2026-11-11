@@ -26,11 +26,25 @@
  * Una vacante vieja sin modalidad o sin ciudad muestra «Sin indicar» y se puede
  * guardar así; una modalidad que no se parece a ninguna («test») aparece como
  * «test (valor anterior)», marcada, con la pista de elegir una de las tres.
+ *
+ * ## Cómo se cierra: Permanente o Fecha límite (V78)
+ *
+ * «Por plazas» y «Cuántas plazas» desaparecieron. Con «Fecha límite» se elige un
+ * día, y la vacante se cierra sola ese día a las 23:59:59 de Lima: con ella vence
+ * el Perfil Integral de quien no lo terminó.
+ *
+ * ⚠️ **El día es de Lima, en las dos direcciones.** Se manda como las 23:59:59 de
+ * Lima (`finDelDiaEnLima`), nunca con `new Date('AAAA-MM-DD')`, que es la
+ * medianoche UTC —las 19:00 del día anterior en Lima—; y lo guardado se pinta con
+ * el día de Lima (`diaDeLima`): recortar el instante en UTC enseñaría el día
+ * siguiente, porque las 23:59:59 de Lima ya son las 04:59:59 UTC del otro día.
  */
 
 import { useId, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { catalogoUbigeo } from '@/api/portal'
+import { diaDeLima, finDelDiaEnLima } from '@/dominio/horaDeLima'
+import { ahora } from '@/dominio/reloj'
 import { agrupadasPorDepartamento } from '@/dominio/ubigeo'
 import { listarUsuarios, verCatalogos } from '../api/panel'
 import type { VacantePanel } from '../api/tipos'
@@ -51,8 +65,9 @@ export interface DatosDeVacante {
   ubicacion: string
   /** El código de la ciudad del catálogo, o vacío. */
   ciudadUbigeo: string
+  /** `PERMANENTE` o `FECHA`. */
   tipoCierre: string
-  plazas: string
+  /** El día elegido con «Fecha límite», como lo pinta el selector: «2026-10-31». */
   cierraEn: string
 }
 
@@ -68,9 +83,11 @@ export const VACANTE_VACIA: DatosDeVacante = {
   ubicacion: '',
   ciudadUbigeo: '',
   tipoCierre: 'PERMANENTE',
-  plazas: '',
   cierraEn: '',
 }
+
+/** Las dos formas de cierre que se ofrecen (V78). «Por plazas» ya no. */
+const FORMAS_DE_CIERRE = new Set(['PERMANENTE', 'FECHA'])
 
 /** Las tres del desplegable, con su tilde: se guarda exactamente este texto. */
 export const MODALIDADES = ['Presencial', 'Híbrido', 'Remoto'] as const
@@ -124,9 +141,9 @@ export function vacanteComoFormulario(v: VacantePanel): DatosDeVacante {
     ubicacion: v.ubicacion ?? '',
     ciudadUbigeo: v.ciudad?.codigo ?? '',
     tipoCierre: v.tipoCierre ?? 'PERMANENTE',
-    plazas: v.plazas === null ? '' : String(v.plazas),
-    // El input de fecha quiere «2026-12-01» y el backend habla en instantes.
-    cierraEn: v.cierraEn ? v.cierraEn.slice(0, 10) : '',
+    // El selector de día quiere «2026-12-01» y el backend habla en instantes: el día es el
+    // de Lima, no el que sale de recortar el instante en UTC.
+    cierraEn: v.cierraEn ? diaDeLima(v.cierraEn) : '',
   }
 }
 
@@ -134,8 +151,9 @@ export function vacanteComoFormulario(v: VacantePanel): DatosDeVacante {
  * Lo que el formulario manda, con los textos ya recortados.
  *
  * ⚠️ **Lo que no está aqui, el backend NO lo toca al editar.** `abreEn` no viaja
- * —esta entrega no ofrece la fecha de apertura— y `plazas`/`cierraEn` viajan solo
- * con la forma de cierre que las usa, que es cuando la pantalla las enseña. El
+ * —esta entrega no ofrece la fecha de apertura—, `plazas` tampoco —ninguna forma
+ * de cierre las usa desde la V78— y `cierraEn` viaja solo con «Fecha límite», que
+ * es cuando la pantalla la enseña, como las 23:59:59 de Lima del día elegido. El
  * backend lee esa ausencia como «no me lo has enseñado» y conserva lo guardado;
  * antes la leia como un nulo y abrir el lapiz y pulsar guardar vaciaba en
  * silencio datos que nadie habia visto.
@@ -156,12 +174,8 @@ export function camposParaGuardar(datos: DatosDeVacante) {
     ubicacion: datos.ubicacion.trim() || undefined,
     ciudadUbigeo: datos.ciudadUbigeo.trim() || undefined,
     tipoCierre: datos.tipoCierre,
-    plazas:
-      datos.tipoCierre === 'PLAZAS' && datos.plazas ? Number(datos.plazas) : undefined,
     cierraEn:
-      datos.tipoCierre === 'FECHA' && datos.cierraEn
-        ? new Date(datos.cierraEn).toISOString()
-        : undefined,
+      datos.tipoCierre === 'FECHA' ? (finDelDiaEnLima(datos.cierraEn) ?? undefined) : undefined,
   }
 }
 
@@ -169,10 +183,11 @@ export function camposParaGuardar(datos: DatosDeVacante) {
  * Lo minimo que ve quien postula, y que la forma de cierre cuadre. Se comprueba
  * antes de enviar, no despues.
  *
- * ⚠️ **Las plazas y la fecha se validan aqui porque si no se pierden en
- * silencio.** `Number('5,5')` es `NaN`, y un `NaN` en el cuerpo viaja como
- * `null`: la vacante se guardaria «por plazas» sin ninguna plaza, sin que nadie
- * viera un error. Lo mismo con la forma «por fecha» y el dia vacio.
+ * ⚠️ **La fecha se valida aqui porque si no se pierde en silencio**: con
+ * «Fecha límite» y el dia vacio, el cuerpo viajaria sin fecha. Un dia anterior a
+ * hoy —hoy en Lima, con el reloj del servidor— tampoco: la vacante se cerraria
+ * sola al minuto siguiente. Hoy vale: se cierra esta noche a las 23:59. El
+ * servidor dice lo mismo con las mismas palabras si el pedido no pasa por aqui.
  */
 export function loQueFaltaEnLaVacante(datos: DatosDeVacante): string | null {
   if (!datos.responsableUsuarioId) {
@@ -181,14 +196,13 @@ export function loQueFaltaEnLaVacante(datos: DatosDeVacante): string | null {
   if (datos.titulo.trim() === '' || datos.descripcion.trim() === '') {
     return 'El título y la descripción son lo mínimo que ve quien postula.'
   }
-  if (datos.tipoCierre === 'PLAZAS') {
-    const plazas = Number(datos.plazas.trim())
-    if (datos.plazas.trim() === '' || !Number.isInteger(plazas) || plazas < 1) {
-      return 'Escribe cuántas plazas hay, en un número entero.'
+  if (datos.tipoCierre === 'FECHA') {
+    if (finDelDiaEnLima(datos.cierraEn) === null) {
+      return 'Elige el día en que cierra la vacante.'
     }
-  }
-  if (datos.tipoCierre === 'FECHA' && datos.cierraEn.trim() === '') {
-    return 'Elige el día en que cierra la vacante.'
+    if (datos.cierraEn.trim() < diaDeLima(new Date(ahora()).toISOString())) {
+      return 'Esa fecha ya pasó: elige un día a partir de hoy.'
+    }
   }
   return null
 }
@@ -319,19 +333,14 @@ export function CamposComunes({
         alCambiar={poner('tipoCierre')}
         sinVacio
         cargando={catalogos.isPending}
-        opciones={(catalogos.data?.tiposCierre ?? []).map((t) => ({
-          valor: t.codigo,
-          texto: t.nombre,
-        }))}
+        // Solo las dos de la V78, aunque un catálogo viejo traiga todavía «Por plazas».
+        opciones={(catalogos.data?.tiposCierre ?? [])
+          .filter((t) => FORMAS_DE_CIERRE.has(t.codigo))
+          .map((t) => ({
+            valor: t.codigo,
+            texto: t.nombre,
+          }))}
       />
-      {datos.tipoCierre === 'PLAZAS' && (
-        <Campo
-          etiqueta="Cuántas plazas"
-          valor={datos.plazas}
-          alCambiar={poner('plazas')}
-          numerico
-        />
-      )}
       {datos.tipoCierre === 'FECHA' && (
         <Campo
           etiqueta="Fecha de cierre"
