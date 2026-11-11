@@ -301,9 +301,10 @@ export function PoliticaPublica() {
         {/*
           ⚠️ **Estas tres se enumeran porque existen, no por prudencia.** La versión
           anterior de esta página decía que «ninguna decisión se toma automáticamente», y
-          era falso: `ServicioEvaluacionImpl.cerrarVencidas` cierra la postulación sola
-          —lo dispara `SondeoVencimientos` cada 60 segundos, sin interruptor que lo
-          apague—, `ServicioPostulacionPortalImpl` descarta al postular por requisito
+          era falso: `FinDelPerfilIntegral` cierra la postulación sola cuando la vacante se
+          cierra con la evaluación sin terminar —a mano o por su fecha límite, que la
+          cierra `SondeoVencimientos` cada 60 segundos, sin interruptor que lo apague (V78:
+          la evaluación ya no vence por días)—, `ServicioPostulacionPortalImpl` descarta al postular por requisito
           objetivo, y `PaseAutomatico` (V53) avanza etapas en las vacantes marcadas. Un
           documento legal que promete lo que el código no hace es peor que no tenerlo: es
           la prueba en contra.
@@ -324,8 +325,9 @@ export function PoliticaPublica() {
             cumples un requisito indispensable de la vacante.
           </li>
           <li>
-            <strong>Cierra tu proceso si se te pasa el plazo</strong> que tenías para
-            responder una evaluación o una prueba. Te avisamos por correo cuando ocurre.
+            <strong>Cierra tu proceso si la vacante se cierra</strong> antes de que termines
+            tu evaluación, o si se te pasa el plazo que tenías para dar una prueba. Te
+            avisamos por correo cuando ocurre.
           </li>
           <li>
             <strong>Te pasa a la etapa siguiente sin esperar a nadie</strong> cuando la

@@ -1,7 +1,8 @@
 # El panel del equipo (`/admin`)
 
 Qué es, cómo se entra, qué enseña cada entrada del menú lateral, qué exige el backend antes de
-publicar una vacante, cómo se eligen su modalidad y su ciudad, cómo se corrige después, las
+publicar una vacante, cómo se eligen su modalidad y su ciudad, cómo se corrige después y cómo se
+cierra, las
 reseñas de empresas —escribirlas, leerlas y moderarlas—, la gestión de personas: colaboradores,
 sedes y cargos, y contratar desde la ficha; las preguntas propias de cada vacante: de dónde
 salen, el editor y su nota en la ficha; la prueba técnica de cada vacante nueva, escrita en ese
@@ -289,7 +290,7 @@ reenviar; al terminar o fallar, sí.
 | Algo falla | El error, junto al formulario, y lo escrito se queda. Si la vacante se cerró mientras tanto, no se guarda nada y la lista se recarga |
 
 En carrera es toda postulación que no esté contratada, cerrada ni en «no continúa». Lo interno
-—responsable, forma de cierre, plazas y fecha de cierre— se guarda **sin avisar a nadie**.
+—responsable, forma de cierre y fecha de cierre— se guarda **sin avisar a nadie**.
 
 **El sueldo también se corrige aquí.** En una publicada no se puede pasar de oculto a visible ni
 al revés, y la opción bloqueada dice por qué; el monto sí, y entonces se pide «Por qué cambia el
@@ -306,6 +307,43 @@ Comprobarlo: `npx playwright test herramientas/e2e/25-editar-vacante.spec.ts` **
 `herramientas/e2e/26-editar-vacante-avisos.spec.ts` ⚠️ **sí escribe**: siembra en el clon su
 propia vacante, candidatos y cuentas de panel, y lo retira al terminar salvo la auditoría, que la
 base no deja borrar. Necesita las variables de [TRABAJAR-EN-LOCAL.md](TRABAJAR-EN-LOCAL.md).
+
+### Cómo se cierra: Permanente o Fecha límite (10/11)
+
+**«Cómo se cierra» ofrece dos opciones** en el alta y en el lápiz (`CamposDeLaVacante.tsx`):
+**Permanente**, marcada por defecto, que no pide nada más, y **Fecha límite**, que enseña «Fecha
+de cierre», un selector de día. **«Por plazas» y «Cuántas plazas» desaparecieron**: el desplegable
+se queda con esas dos aunque un catálogo viejo traiga todavía la tercera, y el backend pasó a
+Permanente las vacantes que la tenían (`V78`).
+
+- **Sin día no se guarda**: «Elige el día en que cierra la vacante.». Un día pasado tampoco: «Esa
+  fecha ya pasó: elige un día a partir de hoy.»; hoy vale, porque se cierra esta noche. El
+  servidor dice lo mismo con las mismas palabras si el pedido no pasa por el formulario, y
+  publicar una vacante cuya fecha ya pasó se rechaza igual.
+- **El día es de Lima en las dos direcciones.** Se manda como las 23:59:59 de Lima del día elegido
+  (`finDelDiaEnLima`), nunca con `new Date('AAAA-MM-DD')`, que es la medianoche UTC —las 19:00 del
+  día anterior en Lima—; y lo guardado se vuelve a pintar con `diaDeLima`, porque las 23:59:59 de
+  Lima ya son el día siguiente en UTC. Las dos viven en `src/dominio/horaDeLima.ts`.
+- **La cabecera de la vacante lo dice con la hora**: «Publicada el … · se cierra el vie 31/10,
+  23:59». Cerrada, ya no se enseña.
+- Con la vacante publicada, la fecha se mueve o se pasa a Permanente (y al revés) como cualquier
+  otro dato interno: sin avisar a nadie. Pasar a Permanente borra la fecha.
+
+**Cerrar la vacante, a mano o por su fecha, cierra a quien no terminó el Perfil Integral.** El
+botón «Cerrar vacante» y su motivo no cambiaron; con «Fecha límite» la cierra además el backend
+ese día a las 23:59, como mucho un minuto después, con el sistema como autor. En los dos casos,
+quien seguía con la evaluación sin entregar queda con la postulación cerrada (`PLAZO_VENCIDO`) y
+recibe el correo y la campana de siempre; quien ya entregó o está en otra etapa sigue igual. El
+panel no tiene textos nuevos para esto: las reglas enteras están en `docs/03-ESTADOS-POSTULACION.md`
+del backend, «Se cierra la convocatoria». Lo que ve el candidato, en
+[02-QUE-VE-EL-CANDIDATO](02-QUE-VE-EL-CANDIDATO.md), 2.8.
+
+Comprobarlo: `npx playwright test herramientas/e2e/61-perfil-hasta-el-cierre.spec.ts
+herramientas/e2e/62-perfil-hasta-el-cierre-qa.spec.ts`. ⚠️ **Escriben** en el clon y retiran lo
+sembrado al terminar (marca `QA-PE-0067`); el cierre por fecha espera al sondeo del backend, que
+corre cada minuto. Las unitarias, en `CamposDeLaVacante.test.tsx`, `Vacante.test.tsx` y
+`src/dominio/horaDeLima.test.ts`; en el backend, `FlujoPerfilHastaElCierreIT` y
+`MigracionPerfilHastaElCierreIT`.
 
 ### Archivar una vacante cerrada, y dónde va a parar (21/09)
 

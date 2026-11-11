@@ -190,7 +190,10 @@ Conectarla, el día que haya ruta, es **una línea en `dominio/estados.ts`**.
   días restantes en la portada de la evaluación y nada más; con catorce días de plazo y una
   pantalla que se retoma muchas veces, eso obligaba a salir del examen para saber cuánto
   quedaba. Los días van ahora en la línea de servicio, junto a «Pregunta 2 de 55», y **se
-  apagan en la última hora** para no competir con la cuenta atrás del aviso.
+  apagan en la última hora** para no competir con la cuenta atrás del aviso. **Ya no aplica
+  desde el 10/11/2026 (`V78`)**: la evaluación dura hasta que la vacante se cierra y no enseña
+  ningún plazo, ni en la portada ni en la barra (ver
+  [02-QUE-VE-EL-CANDIDATO](02-QUE-VE-EL-CANDIDATO.md), 2.8).
 - **Un plazo puede tener dos límites, y se dicen los dos** (31/08/2026). El maquetado daba por
   hecho que una prueba era cronometrada **o** de fecha de cierre. Pueden ser las dos cosas, y
   manda la que caiga antes. El segundo límite va **debajo del primero**, en el tamaño menor y

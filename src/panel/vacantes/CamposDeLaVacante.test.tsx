@@ -27,6 +27,7 @@ import {
   CamposComunes,
   VACANTE_VACIA,
   camposParaGuardar,
+  loQueFaltaEnLaVacante,
   loQueFaltaEnLosDesplegables,
   opcionDeModalidad,
   vacanteComoFormulario,
@@ -41,7 +42,12 @@ vi.mock('../api/panel', () => ({
       familias: [],
       etapas: [],
       urgencias: [],
-      tiposCierre: [{ codigo: 'PERMANENTE', nombre: 'Permanente' }],
+      // Un catálogo viejo que todavía trae «Por plazas»: el formulario no la ofrece (V78).
+      tiposCierre: [
+        { codigo: 'PERMANENTE', nombre: 'Permanente' },
+        { codigo: 'PLAZAS', nombre: 'Por plazas' },
+        { codigo: 'FECHA', nombre: 'Fecha límite' },
+      ],
       motivosCierre: [],
       estados: [],
     }),
@@ -257,5 +263,96 @@ describe('El desplegable de ciudad', () => {
     expect(opciones[0]).toBe('Elige la ciudad…')
     expect(opciones.at(-1)).toBe('Fuera del Perú')
     expect(ciudad.querySelector('option[value="EXT"]')?.closest('optgroup')).toBeNull()
+  })
+})
+
+/**
+ * «Cómo se cierra» con dos formas, y el día en hora de Lima (V78).
+ *
+ * ⚠️ El día viaja como las 23:59:59 de Lima, nunca como `new Date('AAAA-MM-DD')`, que es
+ * la medianoche UTC —las 19:00 del día anterior en Lima—. Y lo guardado se pinta con el día
+ * de Lima: las 23:59:59 del 31/10 en Lima ya son el 01/11 en UTC.
+ */
+describe('Cómo se cierra (V78)', () => {
+  const formulario: DatosDeVacante = {
+    ...VACANTE_VACIA,
+    responsableUsuarioId: '3',
+    titulo: 'Administrador',
+    descripcion: 'Lleva la operación',
+  }
+
+  it('AC-01: ofrece solo «Permanente», marcada, y «Fecha límite»; nunca «Por plazas» ni «Cuántas plazas»', async () => {
+    pintar(VACANTE_VACIA)
+    const cierre = screen.getByLabelText('Cómo se cierra') as HTMLSelectElement
+    await waitFor(() => expect(cierre.disabled).toBe(false))
+
+    expect(within(cierre).getAllByRole('option').map((o) => o.textContent)).toEqual([
+      'Permanente',
+      'Fecha límite',
+    ])
+    expect(cierre.value).toBe('PERMANENTE')
+    expect(screen.queryByText(/plazas/i)).toBeNull()
+    expect(screen.queryByLabelText('Fecha de cierre')).toBeNull()
+    expect(cuerpo()).not.toHaveProperty('plazas')
+    expect(cuerpo()).not.toHaveProperty('cierraEn')
+  })
+
+  it('con «Fecha límite» aparece «Fecha de cierre» y el día viaja como sus 23:59:59 de Lima (AC-03)', async () => {
+    pintar(VACANTE_VACIA)
+    const cierre = screen.getByLabelText('Cómo se cierra') as HTMLSelectElement
+    await waitFor(() => expect(cierre.disabled).toBe(false))
+    fireEvent.change(cierre, { target: { value: 'FECHA' } })
+    fireEvent.change(screen.getByLabelText('Fecha de cierre'), { target: { value: '2026-10-31' } })
+
+    expect(cuerpo()).toMatchObject({ tipoCierre: 'FECHA', cierraEn: '2026-11-01T04:59:59.000Z' })
+    expect(cuerpo()).not.toHaveProperty('plazas')
+  })
+
+  it('el día 1 no cae en el mes anterior, ni a la ida ni a la vuelta', () => {
+    expect(camposParaGuardar({ ...formulario, tipoCierre: 'FECHA', cierraEn: '2026-12-01' }).cierraEn)
+      .toBe('2026-12-02T04:59:59.000Z')
+    const guardada = vacante({ tipoCierre: 'FECHA', cierraEn: '2026-12-02T04:59:59Z' })
+    expect(vacanteComoFormulario(guardada).cierraEn).toBe('2026-12-01')
+    // El 31/10 a las 23:59:59 de Lima es el 01/11 en UTC: el selector dice 31/10
+    expect(vacanteComoFormulario(vacante({ tipoCierre: 'FECHA', cierraEn: '2026-11-01T04:59:59Z' })).cierraEn)
+      .toBe('2026-10-31')
+  })
+
+  it('Permanente no manda ninguna fecha aunque el formulario guarde un día', () => {
+    expect(camposParaGuardar({ ...formulario, tipoCierre: 'PERMANENTE', cierraEn: '2026-12-01' }))
+      .not.toHaveProperty('cierraEn', expect.anything())
+  })
+
+  describe('lo que se exige, con el día de hoy en Lima (AC-02)', () => {
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    it('sin día: «Elige el día en que cierra la vacante.»', () => {
+      expect(loQueFaltaEnLaVacante({ ...formulario, tipoCierre: 'FECHA', cierraEn: '' }))
+        .toBe('Elige el día en que cierra la vacante.')
+      expect(loQueFaltaEnLaVacante({ ...formulario, tipoCierre: 'FECHA', cierraEn: '2026-02-31' }))
+        .toBe('Elige el día en que cierra la vacante.')
+    })
+
+    it('un día pasado no; hoy sí, aunque en UTC ya sea mañana', () => {
+      vi.useFakeTimers()
+      // Las 22:00 del 31/10 en Lima: en UTC ya es el 01/11
+      vi.setSystemTime(new Date('2026-11-01T03:00:00Z'))
+      expect(loQueFaltaEnLaVacante({ ...formulario, tipoCierre: 'FECHA', cierraEn: '2026-10-30' }))
+        .toBe('Esa fecha ya pasó: elige un día a partir de hoy.')
+      expect(loQueFaltaEnLaVacante({ ...formulario, tipoCierre: 'FECHA', cierraEn: '2026-10-31' })).toBeNull()
+      expect(loQueFaltaEnLaVacante({ ...formulario, tipoCierre: 'PERMANENTE', cierraEn: '' })).toBeNull()
+    })
+
+    it('cerca de la medianoche del día 1: el 30/11 de Lima sigue siendo hoy a las 23:30', () => {
+      vi.useFakeTimers()
+      vi.setSystemTime(new Date('2026-12-01T04:30:00Z'))
+      expect(loQueFaltaEnLaVacante({ ...formulario, tipoCierre: 'FECHA', cierraEn: '2026-11-30' })).toBeNull()
+      vi.setSystemTime(new Date('2026-12-01T05:30:00Z'))
+      expect(loQueFaltaEnLaVacante({ ...formulario, tipoCierre: 'FECHA', cierraEn: '2026-11-30' }))
+        .toBe('Esa fecha ya pasó: elige un día a partir de hoy.')
+      expect(loQueFaltaEnLaVacante({ ...formulario, tipoCierre: 'FECHA', cierraEn: '2026-12-01' })).toBeNull()
+    })
   })
 })

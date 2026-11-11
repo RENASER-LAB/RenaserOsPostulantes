@@ -28,16 +28,6 @@
   composes: volver from '../../estilos/piezas.module.css';
 }
 
-/*
-  El plazo que queda, en la barra fija, mientras sobra: en --tinta3, el color de los
-  plazos y las unidades. Se lee de reojo sin disputarle el sitio a «Pregunta 2 de 55».
-*/
-.plazo {
-  font-size: var(--t-apoyo);
-  font-weight: 400;
-  color: var(--tinta3);
-}
-
 /* ---------- La pregunta ---------- */
 
 .situacion {

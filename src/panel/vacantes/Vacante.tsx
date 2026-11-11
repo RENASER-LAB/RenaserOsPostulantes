@@ -64,6 +64,7 @@ import type {
   VersionPrueba,
 } from '../api/tipos'
 import { rutas } from '@/rutas'
+import { fechaCortaDeLima } from '@/dominio/horaDeLima'
 import { ahora, formatearFechaCorta, formatearFechaLarga } from '@/dominio/reloj'
 import tabla from '../ui/Tabla.module.css'
 import { DescargarCv } from './DescargarCv'
@@ -477,6 +478,12 @@ export function VacantePanelDetalle() {
               perder el dato en la pantalla donde se va a consultar.
             */}
             {archivada && ` · Archivada el ${formatearFechaCorta(v.archivadaEn!)}`}
+            {/*
+              La fecha límite, con su hora de Lima (V78): ese día a las 23:59 se cierra
+              sola y vence el Perfil Integral de quien no lo terminó. Cerrada, ya no rige.
+            */}
+            {v.estado !== 'CERRADA' && v.tipoCierre === 'FECHA' && v.cierraEn &&
+              ` · se cierra el ${fechaCortaDeLima(v.cierraEn)}`}
             {' · '}
             {!v.aplicaEvaluacion
               ? 'sin evaluación'
