@@ -311,9 +311,10 @@ export function PoliticaPublica() {
 
           ⚠️ **Desde la V72 la tercera sí depende de una nota**: el pase solo se da si la
           nota del Perfil Integral llega a la mínima de la vacante, y quien no llega no se
-          descarta —espera a una persona—. Es lo mismo que dice el texto PLATAFORMA 1.2 que
-          firman las cuentas nuevas (lo trajo la 1.1 y la 1.2 lo conserva); quien firmó una
-          versión anterior sigue ligado a la suya.
+          descarta —espera a una persona—. Es lo mismo que dice el texto PLATAFORMA 1.3 que
+          firman las cuentas nuevas (lo trajo la 1.1 y la 1.2 y la 1.3 lo conservan; la 1.3,
+          V79, dice además la segunda como esta página); quien firmó una versión anterior
+          sigue ligado a la suya.
         */}
         <p>
           El sistema sí hace tres cosas solo, y solo la tercera depende de una nota, y nunca

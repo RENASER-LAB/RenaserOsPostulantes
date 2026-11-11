@@ -805,15 +805,14 @@ el caso. **Desde la V73 (13/10/2026) dice además** que el celular se pide al cr
 se le escribe sobre sus procesos «por correo, en el portal y, si tú nos escribes primero, por
 WhatsApp desde el número de Renaser», y que quien escribe por WhatsApp pasa sus mensajes por **Meta
 Platforms**, que puede tratarlos fuera del Perú —una frase junto a la tabla de encargados, no una
-fila más—. Es lo mismo que el texto `PLATAFORMA` 1.2 que firman las cuentas nuevas, que conserva
-lo de la 1.1 (`PoliticaPublica.tsx`).
+fila más—. Es lo mismo que el texto `PLATAFORMA` 1.3 que firman las cuentas nuevas, que conserva
+lo de la 1.1 y la 1.2 (`PoliticaPublica.tsx`).
 
 ⚠️ **Desde la V78 (10/11/2026) la segunda de las tres dice** «Cierra tu proceso si la vacante se
 cierra antes de que termines tu evaluación, o si se te pasa el plazo que tenías para dar una
-prueba», porque el Perfil Integral ya no tiene plazo propio. **El texto `PLATAFORMA` 1.2 firmado,
-que la misma página enseña abajo palabra por palabra, no cambió**: sigue diciendo «si se me pasa el
-plazo que tenía para responder una evaluación o una prueba». Cambiarlo es publicar una versión
-nueva del texto, y quedó fuera de esa entrega.
+prueba», porque el Perfil Integral ya no tiene plazo propio. Desde la `V79` (11/11/2026) el texto
+firmado dice lo mismo: las cuentas nuevas firman la `PLATAFORMA` 1.3, que la página enseña abajo
+palabra por palabra; quien firmó la 1.2 sigue ligado a ella.
 
 ### 2.15 Mi perfil · las reseñas de empresas (28/09/2026)
 
