@@ -152,7 +152,7 @@ cómo se ve: eso es DESIGN.md.
 | `src/ui/movimiento.tsx` | Las piezas de movimiento, documentadas en DESIGN.md |
 | `src/ui/Modal.tsx` | El aviso compartido: entregas y confirmaciones. Con `aPruebaDeDobleClic` (10/10/2026) ignora el puntero que sigue a la pulsación que lo abrió; ver [REGLAS-DEL-CODIGO.md](REGLAS-DEL-CODIGO.md) |
 | `src/ui/TextoPlano.tsx` | Texto libre con sus párrafos y sus direcciones convertidas en enlaces. `enlacesTabulables={false}` saca los enlaces del Tab (el extracto recortado del caso) y `listas` (09/10/2026, en el caso, los materiales y las herramientas de la prueba) pinta como `ul` las líneas que empiezan por «- », «• » o «* », y como `ol` las que empiezan por «1. », «2. »… |
-| `src/ui/campos/` | Campo, Seleccion, AreaTexto y Consentimiento: etiqueta y error atados al campo. La marca de obligatorio está en [REGLAS-DEL-CODIGO.md](REGLAS-DEL-CODIGO.md). `Campo` admite **`prefijo`** (13/10/2026): un texto que no se escribe, como el «+51» del celular, dibujado dentro de la caja a la izquierda y en el gris de la ayuda; el lector de pantalla lo oye como parte de la descripción del campo («Con el prefijo +51 delante.») |
+| `src/ui/campos/` | Campo, Seleccion, AreaTexto y Consentimiento: etiqueta y error atados al campo. La marca de obligatorio está en [REGLAS-DEL-CODIGO.md](REGLAS-DEL-CODIGO.md). `Campo` admite **`prefijo`** (13/10/2026): un texto que no se escribe, como el «+51» del celular, dibujado dentro de la caja a la izquierda y en el gris de la ayuda; el lector de pantalla lo oye como parte de la descripción del campo («Con el prefijo +51 delante.»). **`prefijo=""` no es lo mismo que no darlo**: esconde el prefijo sin volver a montar el `<input>`, y es lo que usa el celular mientras el número empieza por «+»; quitarlo con `undefined` haría perder el foco y el cursor. `CampoCelular` y `mascaraCelular` (12/11/2026) son el campo del celular con su máscara: ver [REGLAS-DEL-CODIGO.md](REGLAS-DEL-CODIGO.md). `enfocarSinTapar` lleva el foco a un campo con error sin dejarlo bajo la cabecera: ver «Dependencias» |
 | `public/tipografia/` | Geist (y Figtree, por si se vuelve) |
 
 `src/dominio/estados.ts` lleva cuatro funciones que usa el recorrido:
@@ -268,6 +268,11 @@ formularios son `useState` + `zod.safeParse` a mano, y el bloque que se copia es
 `Registro.tsx`: `safeParse` → primer error por campo (`nuevos[campo] ??= mensaje`) →
 `requestAnimationFrame` que enfoca el primer `[aria-invalid="true"]`. Ese
 `requestAnimationFrame` no sobra: sin él el atributo todavía no está en el DOM cuando se busca.
+**El foco se lleva con `enfocarPrimerCampoConError()` o `enfocarSinTapar(campo)`
+(`src/ui/campos/enfocarSinTapar.ts`), nunca con `.focus()` a secas**: el salto del navegador
+dejaba el campo y su etiqueta debajo de la cabecera fija. El ayudante mide lo que lleva
+`data-pegada-arriba` (la cabecera del portal y la barra del panel) y deja etiqueta, campo y error
+debajo; un campo sin etiqueta propia marca su bloque con `data-bloque-del-campo`.
 
 **`@dnd-kit` está instalado y no se usa**: el `SEC` se resolvió con flechas. **Radix entró con
 shadcn y solo lo usa `/vacantes`**: fuera de ella, el aviso de postular usa `dialog` nativo, el

@@ -21,6 +21,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { ErrorApi } from '@/api/puerta'
 import { Campo } from '@/ui/campos/Campo'
+import { enfocarPrimerCampoConError } from '@/ui/campos/enfocarSinTapar'
 import { IconoAviso } from '@/ui/Iconos'
 import {
   COPIALO_ENTERO,
@@ -93,9 +94,7 @@ export function ElegirClave({
 
   function enfocarElPrimerError() {
     // Sin el cuadro, el atributo todavía no está en el DOM cuando se busca.
-    requestAnimationFrame(() => {
-      document.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus()
-    })
+    requestAnimationFrame(() => enfocarPrimerCampoConError())
   }
 
   async function alEnviar(evento: FormEvent) {

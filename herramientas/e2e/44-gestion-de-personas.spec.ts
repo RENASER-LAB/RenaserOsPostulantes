@@ -247,7 +247,8 @@ test('3 · contratar desde la ficha y dar de alta precargado, con la ficha enlaz
   await expect(page.getByLabel('Nombres')).toHaveValue('Carla')
   await expect(page.getByLabel('Apellido paterno')).toHaveValue(`De la Cruz ${SUFIJO}`)
   await expect(page.getByLabel('Correo personal')).toHaveValue(correo)
-  await expect(page.getByLabel('Celular')).toHaveValue('987654321')
+  // El de su cuenta, con la forma del campo (spec celular-con-formato-999-999-999, AC-11).
+  await expect(page.getByLabel('Celular')).toHaveValue('987 654 321')
   await expect(page.getByLabel('Cargo')).toHaveValue(String(e!.cargoAnalista.id))
   await expect(page.getByLabel('Área')).toHaveValue(String(e!.area.id))
   await expect(page.getByLabel('Fecha de ingreso')).toHaveValue('')

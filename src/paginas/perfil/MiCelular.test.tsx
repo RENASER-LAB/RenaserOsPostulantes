@@ -5,6 +5,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
 import { ANCLA_CELULAR, MiCelular } from './MiCelular'
@@ -75,6 +76,29 @@ describe('el celular en «Mi cuenta»', () => {
 
     await waitFor(() => expect(api.cambiarCelular).toHaveBeenCalledWith('912 345 678'))
     expect(await screen.findByText('+51 912 345 678')).toBeTruthy()
+  })
+
+  it('AC-07 · «Cambiar» abre el número con la máscara activa; uno de otro país, entero con su «+»', async () => {
+    const usuario = userEvent.setup()
+    api.quienSoy.mockResolvedValue({ usuarioId: 1, nombre: 'Ana', apellidos: 'Pérez', telefono: '+51987654321' })
+    montar()
+    fireEvent.click(await screen.findByRole('button', { name: 'Cambiar' }))
+    const campo = screen.getByLabelText(/^Celular \(WhatsApp\)/) as HTMLInputElement
+    expect(campo.value).toBe('987 654 321')
+    // Llena: ni una décima cifra ni letras.
+    await usuario.type(campo, '1a')
+    expect(campo.value).toBe('987 654 321')
+    await usuario.clear(campo)
+    await usuario.type(campo, '912345678')
+    expect(campo.value).toBe('912 345 678')
+
+    cleanup()
+    api.quienSoy.mockResolvedValue({ usuarioId: 1, nombre: 'Ana', apellidos: 'Pérez', telefono: '+34612345678' })
+    montar()
+    fireEvent.click(await screen.findByRole('button', { name: 'Cambiar' }))
+    const otro = screen.getByLabelText(/^Celular \(WhatsApp\)/) as HTMLInputElement
+    expect(otro.value).toBe('+34612345678')
+    expect(otro.parentElement?.textContent).not.toContain('+51')
   })
 
   it('el número va en una sola pieza, que no se parte entre «+51» y el resto', async () => {

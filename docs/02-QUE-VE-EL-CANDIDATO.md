@@ -154,14 +154,33 @@ sin repetir la zona si dice lo mismo que la ciudad; sin ciudad, solo la zona.
 `aceptaPlataforma` (obligatorio), `aceptaFuturosContactos` (opcional).
 
 **El celular (13/10/2026).** «Celular (WhatsApp)» va justo después del correo, con el **+51
-dibujado dentro de la caja** (`prefijo` de `Campo`): nueve cifras que empiezan por 9, o el número
-entero con su prefijo si es de otro país («+34 612 345 678» o «0034…»). Espacios, guiones y
-paréntesis no cuentan. Si falta, «Escribe tu celular.»; si no vale, «Escribe un celular de 9
-cifras que empiece por 9, o el número completo con su prefijo», la misma frase que devuelve el
-backend con su 400. La regla vive en `src/dominio/celular.ts` y es copia de la del backend: si
-se separan, el formulario dejaría pasar un número que la API rechaza. El portal manda lo escrito
-y el backend lo guarda en E.164. Es el número desde el que escribirá al bot de WhatsApp (2.6b),
-y por eso lo dice la etiqueta.
+dibujado dentro de la caja**: nueve cifras que empiezan por 9, o el número entero con su prefijo
+si es de otro país («+34 612 345 678» o «0034…»). Es el número desde el que escribirá al bot de
+WhatsApp (2.6b), y por eso lo dice la etiqueta.
+
+**El campo no deja escribirlo mal** (12/11/2026, `src/ui/campos/CampoCelular.tsx`, el mismo en
+«Mi cuenta», en la tarjeta de WhatsApp y en la ficha del colaborador del panel):
+
+- Solo entran cifras, y se agrupan solas de tres en tres —«987 654 321»—; **una décima cifra no
+  se escribe**. Letras, guiones, puntos, paréntesis y espacios tampoco.
+- Lo que se pega, o lo que rellena el navegador, se lee entero: «987-654-321», «(987) 654 321»,
+  «51987654321» y «+51 987 654 321» quedan «987 654 321». Si no es un celular —«hola»,
+  «12345678901234567»—, el campo se queda como estaba y sale el mensaje de la regla. **Un número
+  largo nunca se corta en silencio a sus nueve primeras cifras.**
+- Si empieza por «+», o por «00», que se vuelve «+», es un número de otro país: **el «+51»
+  desaparece** y se admiten el «+» y hasta 15 cifras, con los espacios que ponga la persona. Al
+  borrar el «+», vuelve el «+51».
+- Al corregir en medio del número el cursor se queda donde estaba, y un retroceso justo detrás de
+  un espacio borra la cifra de al lado. En el teléfono se abre el teclado de teléfono, que trae
+  el «+».
+
+Al enviar se aplica la regla de siempre: si falta, «Escribe tu celular.»; si no vale —«987 65», a
+medias, o «812 345 678», que no empieza por 9—, «Escribe un celular de 9 cifras que empiece por 9,
+o el número completo con su prefijo», junto al campo y sin perder lo demás. Es la misma frase que
+devuelve el backend con su 400. La regla vive en `src/dominio/celular.ts` y es copia de la del
+backend: si se separan, el formulario dejaría pasar un número que la API rechaza (ver
+[REGLAS-DEL-CODIGO](REGLAS-DEL-CODIGO.md)). El portal manda lo que deja la máscara y el backend lo
+guarda en E.164.
 
 `aceptaPlataforma` se llamaba `aceptaProceso` hasta la V54 del backend. Cambió con el nombre
 lo que se firma: antes era el texto de una vacante —que habla de «esta vacante» cuando en el
@@ -218,6 +237,13 @@ sigue diciendo «· opcional» con todas sus letras, porque «no tiene asterisco
 nadie note. Entre el resumen de errores y el primer campo va una línea que lo explica: «Los
 campos con \* son obligatorios.» Ahí y no más arriba: cuando hay algo que corregir, lo primero
 que hay que leer es cuántos datos faltan.
+
+**Al enviar con algo que corregir, el campo se ve entero** (12/11/2026). El foco va al primer
+campo con error y la página se mueve lo justo para que su etiqueta, el campo y el mensaje queden
+por debajo de la cabecera, en el escritorio y a 390 × 844; antes la cabecera tapaba la etiqueta.
+Pasa igual al entrar, en «Mi perfil» y sus reseñas, al postular, al elegir contraseña y al pedir
+el enlace, y en los formularios del panel. Con Tab y Shift+Tab todavía no: ver
+[PENDIENTES](PENDIENTES.md).
 
 ⚠️ **La lista de obligatorios se deduce del esquema `Datos` de zod, no se escribe a mano**: un
 campo lleva asterisco si su valor vacío (`''`, o `false` en las casillas) no pasa su validación.
@@ -427,7 +453,7 @@ salida**) y proceso sin terminar. Con la beta apagada no se ve en ningún sitio.
 | `whatsapp.estado` | Qué dice | Qué se puede hacer |
 |---|---|---|
 | `SIN_VINCULAR` y `REVOCADO` | «Recibe tus novedades por WhatsApp» · «Escríbenos desde tu celular **+51 987 654 321** y te contaremos cómo va tu proceso.» y, debajo, el consentimiento: «Al escribirnos aceptas recibir por WhatsApp las novedades de este proceso. Puedes dejarlo cuando quieras.» | «Escribir por WhatsApp» y «¿No es tu número? Cámbialo en Mi cuenta.» |
-| `SIN_CELULAR` (cuenta anterior al 13/10/2026) | «Déjanos tu celular y escríbenos desde él: te contaremos cómo va tu proceso.», el campo «Tu celular (WhatsApp)» con el +51 y el consentimiento | «Guardar y escribir por WhatsApp»: guarda el número en la cuenta y sigue igual. Un número que no vale se dice junto al campo |
+| `SIN_CELULAR` (cuenta anterior al 13/10/2026) | «Déjanos tu celular y escríbenos desde él: te contaremos cómo va tu proceso.», el campo «Tu celular (WhatsApp)» con el +51 y la misma máscara que el registro (2.3), y el consentimiento | «Guardar y escribir por WhatsApp»: guarda el número en la cuenta y sigue igual. Un número que no vale se dice junto al campo |
 | `PENDIENTE` | «Aún no recibimos tu mensaje. Escríbenos desde el **+51 987 654 321**, el celular de tu cuenta.» | «Escribir por WhatsApp» y «¿Usas otro número? Cámbialo en Mi cuenta.» |
 | `ACTIVO` | El logotipo y «**Conectado por WhatsApp (+51 9•• ••• 321).** Escríbenos cuando quieras para saber cómo va tu proceso.» | «Dejar de recibir», un enlace subrayado en tinta, no un botón |
 | `SUPRIMIDO` | «Este número se dio de baja de nuestros mensajes» | Nada: escribió BAJA al bot y no se le vuelve a ofrecer con ese número |
@@ -904,7 +930,7 @@ del pie de la página: es un dato de la cuenta y no del perfil que ven las empre
 |---|---|
 | Con celular | «Celular: **+51 987 654 321**» y «Cambiar» |
 | Sin celular (cuenta anterior al 13/10/2026) | «Celular: todavía no lo has dado» y «Añadir». No se le obliga a darlo |
-| Editando | El campo «Celular (WhatsApp)» con el +51 dibujado y el número de ahora sin él, con la misma regla y los mismos mensajes que el registro, «Guardar» y «Cancelar» |
+| Editando | El campo «Celular (WhatsApp)» con el +51 dibujado y el número de ahora sin él, ya con su forma («987 654 321») y la máscara activa; uno de otro país, entero con su «+» y sin el +51 (12/11/2026). La misma regla y los mismos mensajes que el registro (2.3), «Guardar» y «Cancelar» |
 
 Debajo, siempre: «Es el número desde el que nos escribes por WhatsApp. Si lo cambias, dejas de
 recibir las novedades en el anterior.». **Es literal**: `PUT /portal/cuenta/telefono` cierra los

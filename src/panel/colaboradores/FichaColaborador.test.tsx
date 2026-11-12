@@ -5,10 +5,12 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { ErrorApi } from '../api/cliente'
 import type {
+  DatosPersonales,
   EntradaHistorial,
   FichaColaborador,
   OpcionesColaborador,
@@ -27,6 +29,7 @@ const cambio = vi.fn<(id: number, datos: RegistrarCambio) => Promise<{ id: numbe
 const reingreso = vi.fn<(id: number, datos: Reingreso) => Promise<void>>()
 const anulacionDelCambio = vi.fn<(id: number, situacionId: number, motivo: string) => Promise<void>>()
 const anulacionDelCese = vi.fn<(id: number, motivo: string) => Promise<void>>()
+const edicion = vi.fn<(id: number, datos: DatosPersonales) => Promise<void>>()
 
 vi.mock('../api/colaboradores', () => ({
   verColaborador: (id: number) => ver(id),
@@ -37,7 +40,7 @@ vi.mock('../api/colaboradores', () => ({
   anularCambio: (id: number, situacionId: number, motivo: string) => anulacionDelCambio(id, situacionId, motivo),
   anularCese: (id: number, motivo: string) => anulacionDelCese(id, motivo),
   reingresar: (id: number, datos: Reingreso) => reingreso(id, datos),
-  editarPerfil: vi.fn(),
+  editarPerfil: (id: number, datos: DatosPersonales) => edicion(id, datos),
   listarColaboradores: vi.fn(),
 }))
 
@@ -179,6 +182,68 @@ describe('la cabecera y las pestañas', () => {
     ver.mockRejectedValue(new ErrorApi(404, 'No encontramos eso, o no es tuyo.'))
     montar()
     expect(await screen.findByRole('heading', { name: 'Este colaborador no existe.' })).toBeTruthy()
+  })
+})
+
+describe('el celular (spec «Celular con formato 999 999 999»)', () => {
+  const MENSAJE = 'Escribe un celular de 9 cifras que empiece por 9, o el número completo con su prefijo'
+  const conCelular = (celular: string | null): FichaColaborador => ({ ...FICHA, perfil: { ...FICHA.perfil, celular } })
+
+  async function abrirLaEdicion() {
+    const editar = (await screen.findByRole('button', { name: 'Editar' })) as HTMLButtonElement
+    await waitFor(() => expect(editar.disabled).toBe(false))
+    fireEvent.click(editar)
+    return (await screen.findByLabelText(/^Celular · opcional/)) as HTMLInputElement
+  }
+
+  it('AC-09 · la ficha lo enseña «+51 987 654 321»; uno de antes de la regla, tal cual', async () => {
+    ver.mockResolvedValue(conCelular('+51987654321'))
+    montar()
+    expect(await screen.findByText('+51 987 654 321')).toBeTruthy()
+    cleanup()
+    ver.mockResolvedValue(conCelular('01-4567890'))
+    montar()
+    expect(await screen.findByText('01-4567890')).toBeTruthy()
+  })
+
+  it('el de ahora se edita con la máscara, sin el «+51» que el campo ya dibuja', async () => {
+    ver.mockResolvedValue(conCelular('+51987654321'))
+    montar()
+    const celular = await abrirLaEdicion()
+    expect(celular.value).toBe('987 654 321')
+    expect(celular.parentElement?.textContent).toContain('+51')
+  })
+
+  it('AC-10 · con uno de antes sin tocar, el resto se guarda y el celular viaja igual', async () => {
+    edicion.mockResolvedValue(undefined)
+    ver.mockResolvedValue(conCelular('01-4567890'))
+    montar()
+    const celular = await abrirLaEdicion()
+    expect(celular.value).toBe('01-4567890')
+    expect(celular.parentElement?.textContent).not.toContain('+51')
+    fireEvent.change(screen.getByLabelText(/^Apellido materno/), { target: { value: 'Rojas' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+    await waitFor(() => expect(edicion).toHaveBeenCalledTimes(1))
+    expect(edicion.mock.calls[0]![1]).toMatchObject({ celular: '01-4567890', apellidoMaterno: 'Rojas' })
+  })
+
+  it('AC-10 · tocado, se aplica la máscara y uno que no cumple la regla no se guarda', async () => {
+    const usuario = userEvent.setup()
+    ver.mockResolvedValue(conCelular('01-4567890'))
+    montar()
+    const celular = await abrirLaEdicion()
+    await usuario.click(celular)
+    await usuario.keyboard('{End}{Backspace}')
+    expect(celular.value).toBe('014 567 89')
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+    expect(await screen.findByText(MENSAJE)).toBeTruthy()
+    expect(edicion).not.toHaveBeenCalled()
+
+    // Y también se puede vaciar.
+    await usuario.clear(celular)
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+    await waitFor(() => expect(edicion).toHaveBeenCalledTimes(1))
+    expect(edicion.mock.calls[0]![1].celular).toBeNull()
   })
 })
 

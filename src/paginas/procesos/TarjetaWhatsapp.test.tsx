@@ -9,6 +9,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
 import type { EstadoWhatsapp, MiPostulacion, WhatsappDelProceso } from '@/api/tipos'
@@ -178,6 +179,28 @@ describe('la tarjeta de WhatsApp mientras espera', () => {
     await waitFor(() => expect(pestana.location.href).toBe(ENLACE))
     expect(api.cambiarCelular).toHaveBeenCalledWith('987 654 321')
     expect(api.escribirPorWhatsapp).toHaveBeenCalled()
+  })
+
+  it('AC-08 · sin celular, el campo lleva la máscara del registro', async () => {
+    const usuario = userEvent.setup()
+    montar(
+      <TarjetaWhatsapp
+        postulacion={postulacion('PERFIL_CALIFICANDO', { disponible: true, estado: 'SIN_CELULAR', numero: null })}
+      />,
+    )
+    const campo = screen.getByLabelText(/^Tu celular \(WhatsApp\)/) as HTMLInputElement
+    expect(campo.parentElement?.textContent).toContain('+51')
+    await usuario.type(campo, '98a7-6543210')
+    expect(campo.value).toBe('987 654 321')
+    await usuario.clear(campo)
+    await usuario.paste('hola')
+    expect(campo.value).toBe('')
+    expect(
+      screen.getByText('Escribe un celular de 9 cifras que empiece por 9, o el número completo con su prefijo'),
+    ).toBeTruthy()
+    await usuario.type(campo, '+34 612')
+    expect(campo.value).toBe('+34 612')
+    expect(campo.parentElement?.textContent).not.toContain('+51')
   })
 
   it('conectado: el número enmascarado y «Dejar de recibir», que cierra el vínculo (AC-12)', async () => {

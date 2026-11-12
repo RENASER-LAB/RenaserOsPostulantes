@@ -113,6 +113,11 @@
   padding-left: 52px;
 }
 
+/* Sin el «+51» —un número de otro país, que lleva su «+»—, la caja vuelve a su relleno. */
+.conPrefijo.prefijoOculto .entrada {
+  padding-left: var(--e3);
+}
+
 .prefijo {
   position: absolute;
   inset: 0 auto 0 0;

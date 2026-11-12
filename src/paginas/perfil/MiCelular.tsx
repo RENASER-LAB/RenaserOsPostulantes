@@ -18,7 +18,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { cambiarCelular, quienSoy } from '@/api/portal'
 import type { QuienSoy } from '@/api/tipos'
 import { comoE164, MENSAJE_CELULAR, paraEditar, paraMostrar } from '@/dominio/celular'
-import { Campo } from '@/ui/campos/Campo'
+import { CampoCelular } from '@/ui/campos/CampoCelular'
 import estilos from './MiCelular.module.css'
 
 /** El ancla de este bloque en el perfil. Ver `rutas.celularDeLaCuenta`. */
@@ -142,17 +142,13 @@ export function MiCelular() {
       ) : (
         <form className={estilos.formulario} onSubmit={enviar} noValidate>
           <div className={estilos.campo}>
-            <Campo
+            <CampoCelular
               ref={campo}
               etiqueta="Celular (WhatsApp)"
-              type="tel"
-              inputMode="tel"
               autoComplete="tel-national"
-              prefijo="+51"
-              placeholder="987 654 321"
-              value={escrito}
-              onChange={(e) => {
-                setEscrito(e.target.value)
+              valor={escrito}
+              alCambiar={(celular) => {
+                setEscrito(celular)
                 setError(null)
               }}
               error={error ?? undefined}

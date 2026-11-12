@@ -37,7 +37,7 @@ import { cambiarCelular, dejarDeRecibirPorWhatsapp, escribirPorWhatsapp } from '
 import type { MiPostulacion, WhatsappDelProceso } from '@/api/tipos'
 import { comoE164, MENSAJE_CELULAR } from '@/dominio/celular'
 import { rutas } from '@/rutas'
-import { Campo } from '@/ui/campos/Campo'
+import { CampoCelular } from '@/ui/campos/CampoCelular'
 import { IconoWhatsapp } from '@/ui/Iconos'
 import estilos from './TarjetaWhatsapp.module.css'
 
@@ -370,16 +370,12 @@ export function TarjetaWhatsapp({ postulacion, nivelDelTitulo = 4, compacta = fa
       <form className={estilos.formulario} onSubmit={(e) => void escribir(e)} noValidate>
         {sinCelular && (
           <div className={estilos.campo}>
-            <Campo
+            <CampoCelular
               etiqueta="Tu celular (WhatsApp)"
-              type="tel"
-              inputMode="tel"
               autoComplete="tel-national"
-              prefijo="+51"
-              placeholder="987 654 321"
-              value={celular}
-              onChange={(e) => {
-                setCelular(e.target.value)
+              valor={celular}
+              alCambiar={(escrito) => {
+                setCelular(escrito)
                 setErrorCelular(null)
               }}
               error={errorCelular ?? undefined}

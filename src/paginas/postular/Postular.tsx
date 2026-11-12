@@ -44,6 +44,7 @@ import type { Pretension, RequisitoPublico } from '@/api/tipos'
 import { COMO_SE_ESCRIBE, aCifra } from '@/dominio/dinero'
 import { rutas } from '@/rutas'
 import { AreaTexto, Campo } from '@/ui/campos/Campo'
+import { enfocarPrimerCampoConError } from '@/ui/campos/enfocarSinTapar'
 import { Remuneracion } from '@/ui/Remuneracion'
 import estilos from './Postular.module.css'
 
@@ -336,9 +337,7 @@ function FormularioDePostular({ vacanteId }: { vacanteId: string }) {
     const nuevos = revisar()
     setErrores(nuevos)
     if (Object.keys(nuevos).length > 0) {
-      requestAnimationFrame(() => {
-        document.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus()
-      })
+      requestAnimationFrame(() => enfocarPrimerCampoConError())
       return
     }
 
@@ -402,7 +401,11 @@ function FormularioDePostular({ vacanteId }: { vacanteId: string }) {
       </div>
 
       <form className={estilos.formulario} onSubmit={enviar} noValidate>
-        <section className={estilos.bloque}>
+        {/*
+          `data-bloque-del-campo`: el botón del currículum no tiene etiqueta propia,
+          la dice el título; al llevarle el foco con error se enseña el bloque entero.
+        */}
+        <section className={estilos.bloque} data-bloque-del-campo="">
           <h2 className={estilos.tituloBloque}>Tu currículum</h2>
 
           {/*
@@ -594,7 +597,11 @@ function FormularioDePostular({ vacanteId }: { vacanteId: string }) {
         </section>
 
         {requisitos.length > 0 && (
-          <section className={estilos.requisitos}>
+          /*
+            Con el foco en el primer requisito sin responder, que se vea también el
+            aviso de cuántos faltan, que va al pie: `data-bloque-del-campo`.
+          */
+          <section className={estilos.requisitos} data-bloque-del-campo="">
             <h2>Requisitos indispensables</h2>
             <div className={estilos.listaRequisitos}>
               {requisitos.map((r) => (

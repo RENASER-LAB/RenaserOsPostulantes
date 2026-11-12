@@ -28,6 +28,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
 import { ProveedorSesion } from '@/app/Sesion'
@@ -469,6 +470,101 @@ describe('el celular (WhatsApp) al crear la cuenta', () => {
 
       await waitFor(() => expect(enviados).toHaveLength(1))
       expect(enviados[0]).toMatchObject({ telefono, correo: 'camila@correo.pe' })
+    },
+  )
+})
+
+/**
+ * La máscara del celular en el registro (spec «Celular con formato 999 999 999»):
+ * se escribe solo con la forma «987 654 321», lo pegado se limpia, el de otro país
+ * esconde el «+51», y lo incompleto se sigue avisando al enviar.
+ */
+describe('la máscara del celular al crear la cuenta', () => {
+  const MENSAJE = 'Escribe un celular de 9 cifras que empiece por 9, o el número completo con su prefijo'
+
+  /** Todo lo obligatorio, con el celular vacío para escribirlo o pegarlo. */
+  async function rellenarSinCelular() {
+    rellenarLoEscrito()
+    fireEvent.change(celular(), { target: { value: '' } })
+    await esperarLasCiudades()
+    fireEvent.change(ciudad(), { target: { value: '0402' } })
+    const obligatorio = screen.getAllByRole('checkbox')[0]
+    if (!obligatorio) throw new Error('la casilla obligatoria no está en la pantalla')
+    fireEvent.click(obligatorio)
+  }
+
+  const prefijo = () => celular().parentElement?.querySelector('[aria-hidden="true"]')?.textContent ?? null
+
+  it('AC-01 · tecla a tecla queda «987 654 321», y una décima cifra no se escribe', async () => {
+    const usuario = userEvent.setup()
+    montar()
+    await rellenarSinCelular()
+    await usuario.type(celular(), '9876543210')
+    expect(celular().value).toBe('987 654 321')
+  })
+
+  it.each(['+51 987 654 321', '51987654321', '987-654-321'])(
+    'AC-03 · al pegar «%s» queda «987 654 321» y la cuenta se crea',
+    async (pegado) => {
+      const usuario = userEvent.setup()
+      montar()
+      await rellenarSinCelular()
+      await usuario.click(celular())
+      await usuario.paste(pegado)
+      expect(celular().value).toBe('987 654 321')
+      crearCuenta()
+      await waitFor(() => expect(enviados).toHaveLength(1))
+      expect(enviados[0]).toMatchObject({ telefono: '987 654 321' })
+    },
+  )
+
+  it.each(['hola', '12345678901234567'])('AC-04 · al pegar «%s» el campo no cambia y dice la regla', async (pegado) => {
+    const usuario = userEvent.setup()
+    montar()
+    await rellenarSinCelular()
+    await usuario.click(celular())
+    await usuario.paste(pegado)
+    expect(celular().value).toBe('')
+    expect(screen.getByText(MENSAJE)).toBeTruthy()
+  })
+
+  it('AC-05 · «+34 612 345 678» esconde el «+51» y crea la cuenta; sin el «+», el «+51» vuelve', async () => {
+    const usuario = userEvent.setup()
+    montar()
+    await rellenarSinCelular()
+    expect(prefijo()).toBe('+51')
+    await usuario.type(celular(), '+34 612 345 678')
+    expect(celular().value).toBe('+34 612 345 678')
+    expect(prefijo()).toBeNull()
+    crearCuenta()
+    await waitFor(() => expect(enviados).toHaveLength(1))
+    expect(enviados[0]).toMatchObject({ telefono: '+34 612 345 678' })
+  })
+
+  it('AC-05 · al borrar el «+» vuelve el «+51»', async () => {
+    const usuario = userEvent.setup()
+    montar()
+    await rellenarSinCelular()
+    await usuario.type(celular(), '+34')
+    expect(prefijo()).toBeNull()
+    await usuario.keyboard('{Home}{Delete}')
+    expect(celular().value).toBe('34')
+    expect(prefijo()).toBe('+51')
+  })
+
+  it.each(['98765', '812345678'])(
+    'AC-06 · con «%s» no se crea la cuenta: la regla junto al campo y lo demás sigue escrito',
+    async (escrito) => {
+      const usuario = userEvent.setup()
+      montar()
+      await rellenarSinCelular()
+      await usuario.type(celular(), escrito)
+      crearCuenta()
+      expect(await screen.findByText(MENSAJE)).toBeTruthy()
+      expect(enviados).toHaveLength(0)
+      expect(celular().getAttribute('aria-invalid')).toBe('true')
+      expect((screen.getByLabelText(/^Nombre/) as HTMLInputElement).value).toBe('Camila')
+      expect((screen.getByLabelText(/^Correo/) as HTMLInputElement).value).toBe('camila@correo.pe')
     },
   )
 })

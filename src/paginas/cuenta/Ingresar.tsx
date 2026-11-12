@@ -20,6 +20,7 @@ import { z } from 'zod'
 import { useSesion } from '@/app/Sesion'
 import { rutas } from '@/rutas'
 import { Campo } from '@/ui/campos/Campo'
+import { enfocarPrimerCampoConError } from '@/ui/campos/enfocarSinTapar'
 import { IconoAviso } from '@/ui/Iconos'
 import { AvisoClaveCambiada } from '@/ui/recuperacion/AvisoClaveCambiada'
 import estilos from './Cuenta.module.css'
@@ -54,11 +55,9 @@ export function Ingresar() {
       }
       setErrores(nuevos)
       // El primer campo con problema recibe el foco: si no, en un formulario
-      // largo el error queda fuera de la pantalla y parece que no pasó nada.
-      requestAnimationFrame(() => {
-        const primero = document.querySelector<HTMLElement>('[aria-invalid="true"]')
-        primero?.focus()
-      })
+      // largo el error queda fuera de la pantalla y parece que no pasó nada. Y
+      // entero, con su etiqueta, debajo de la cabecera fija.
+      requestAnimationFrame(() => enfocarPrimerCampoConError())
       return
     }
 
