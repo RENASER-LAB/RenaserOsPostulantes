@@ -263,9 +263,18 @@
   animation-delay: 120ms;
 }
 
-/* El cuarto ya no es hermano de los otros tres: vive en `.acciones`. */
+/*
+ * El cuarto ya no es hermano de los otros tres: vive en `.acciones`.
+ *
+ * ⚠️ **`backwards` y no `both`, y no es detalle.** Una animacion de `transform`
+ * que se queda rellenando al final convierte al elemento en el bloque contenedor
+ * de todo lo `position: fixed` de dentro. La campana vive aqui, y en el telefono
+ * su panel es `fixed` de lado a lado: con `both` se media contra los 44 px del
+ * boton y salia como una tira de 20 px (12/11/2026). `backwards` sigue tapando
+ * el retraso con el estado inicial y, al acabar, suelta el `transform`.
+ */
 .acciones > * {
-  animation: entraEnCascada 420ms var(--salida) both;
+  animation: entraEnCascada 420ms var(--salida) backwards;
   animation-delay: 180ms;
 }
 
