@@ -12,9 +12,11 @@ import { useQuery } from '@tanstack/react-query'
 import { catalogoUbigeo } from '@/api/portal'
 import { agrupadasPorDepartamento } from '@/dominio/ubigeo'
 import { Campo, Seleccion } from '@/ui/campos/Campo'
+import { CampoCelular } from '@/ui/campos/CampoCelular'
 import { listarColaboradores } from '../api/colaboradores'
 import type { OpcionesColaborador, Situacion } from '../api/tiposPersonas'
 import {
+  celularAntiguo,
   OBLIGATORIOS_PERSONA,
   OBLIGATORIOS_SITUACION,
   type Errores,
@@ -30,11 +32,14 @@ export function CamposDeIdentidad({
   alCambiar,
   errores,
   opciones,
+  celularGuardado,
 }: {
   valor: FormPersona
   alCambiar: (parcial: Partial<FormPersona>) => void
   errores: Errores
   opciones: OpcionesColaborador
+  /** Al editar, el celular que ya tiene la ficha: si es de antes de la regla, se enseña tal cual. */
+  celularGuardado?: string | null
 }) {
   const ob = (campo: keyof FormPersona) => OBLIGATORIOS_PERSONA.has(campo)
   return (
@@ -118,11 +123,14 @@ export function CamposDeIdentidad({
         value={valor.nacionalidad}
         onChange={(e) => alCambiar({ nacionalidad: e.target.value })}
       />
-      <Campo
+      {/* La misma máscara que el celular del portal, con su «+51»; vacío también vale. */}
+      <CampoCelular
         etiqueta="Celular · opcional"
-        type="tel"
-        value={valor.celular}
-        onChange={(e) => alCambiar({ celular: e.target.value })}
+        autoComplete="off"
+        valor={valor.celular}
+        antiguo={celularAntiguo(celularGuardado)}
+        alCambiar={(celular) => alCambiar({ celular })}
+        error={errores.celular}
       />
       <Campo
         etiqueta="Correo personal · opcional"

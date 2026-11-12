@@ -48,6 +48,8 @@ import { agrupadasPorDepartamento } from '@/dominio/ubigeo'
 import { comoE164, MENSAJE_CELULAR } from '@/dominio/celular'
 import { rutas } from '@/rutas'
 import { Campo, Consentimiento, Seleccion } from '@/ui/campos/Campo'
+import { CampoCelular } from '@/ui/campos/CampoCelular'
+import { enfocarPrimerCampoConError } from '@/ui/campos/enfocarSinTapar'
 import estilos from './Cuenta.module.css'
 
 const Datos = z
@@ -192,11 +194,9 @@ export function Registro() {
       }
       setErrores(nuevos)
       // El primer campo con problema recibe el foco: si no, en un formulario
-      // largo el error queda fuera de la pantalla y parece que no pasó nada.
-      requestAnimationFrame(() => {
-        const primero = document.querySelector<HTMLElement>('[aria-invalid="true"]')
-        primero?.focus()
-      })
+      // largo el error queda fuera de la pantalla y parece que no pasó nada. Y
+      // entero, con su etiqueta, debajo de la cabecera fija.
+      requestAnimationFrame(() => enfocarPrimerCampoConError())
       return
     }
 
@@ -307,18 +307,15 @@ export function Registro() {
           El celular (V73), justo después del correo: los dos son por dónde se le
           escribe. Con el +51 dibujado delante, que es el caso de casi todos; quien
           vive fuera escribe su número entero con su prefijo. Es el número desde el
-          que escribirá al bot de WhatsApp, y por eso lo dice la etiqueta.
+          que escribirá al bot de WhatsApp, y por eso lo dice la etiqueta. La máscara
+          (solo cifras, «987 654 321») es la de `CampoCelular`.
         */}
-        <Campo
+        <CampoCelular
           etiqueta="Celular (WhatsApp)"
           obligatorio={exigido('telefono')}
-          type="tel"
-          inputMode="tel"
           autoComplete="tel-national"
-          prefijo="+51"
-          placeholder="987 654 321"
-          value={valores.telefono}
-          onChange={(e) => cambiar('telefono', e.target.value)}
+          valor={valores.telefono}
+          alCambiar={(telefono) => cambiar('telefono', telefono)}
           error={errores.telefono}
         />
 

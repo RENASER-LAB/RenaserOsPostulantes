@@ -4,10 +4,15 @@
  */
 
 import { describe, expect, it } from 'vitest'
+import type { Perfil, Precarga } from '../api/tiposPersonas'
 import {
+  celularAntiguo,
   erroresDePersona,
   erroresDeSituacion,
   limpiarDocumento,
+  personaDesdePerfil,
+  personaDesdePrecarga,
+  personaParaLaApi,
   personaVacia,
   situacionParaLaApi,
   situacionVacia,
@@ -44,6 +49,56 @@ describe('lo personal', () => {
     expect(erroresDePersona({ ...valida, fechaNacimiento: '2012-09-30' }, HOY).fechaNacimiento).toContain('14 años')
     expect(erroresDePersona({ ...valida, fechaNacimiento: '2012-09-29' }, HOY).fechaNacimiento).toBeUndefined()
     expect(erroresDePersona({ ...valida, nombres: '   ' }, HOY).nombres).toBeDefined()
+  })
+})
+
+describe('el celular (spec «Celular con formato 999 999 999»)', () => {
+  const MENSAJE = 'Escribe un celular de 9 cifras que empiece por 9, o el número completo con su prefijo'
+  const valida = {
+    ...personaVacia(),
+    numeroDocumento: '45123456',
+    nombres: 'Ana',
+    apellidoPaterno: 'Rivas',
+    fechaNacimiento: '1990-01-01',
+    sexo: 'F',
+  }
+  const perfil = (celular: string | null) => ({ ...valida, celular, tipoDocumentoNombre: 'DNI' }) as unknown as Perfil
+  const precarga = (celular: string | null) =>
+    ({ postulacionId: 1, vacante: 'X', nombres: 'Ana', apellidoPaterno: 'Rivas', correoPersonal: null, celular }) as Precarga
+
+  it('es opcional: vacío vale y viaja como null', () => {
+    expect(erroresDePersona(valida, HOY).celular).toBeUndefined()
+    expect(personaParaLaApi({ ...valida, celular: '  ' }).celular).toBeNull()
+  })
+
+  it('si viene, con la regla del portal y su mensaje', () => {
+    expect(erroresDePersona({ ...valida, celular: '987 654 321' }, HOY).celular).toBeUndefined()
+    expect(erroresDePersona({ ...valida, celular: '+34 612 345 678' }, HOY).celular).toBeUndefined()
+    expect(erroresDePersona({ ...valida, celular: '987 65' }, HOY).celular).toBe(MENSAJE)
+    expect(erroresDePersona({ ...valida, celular: '812 345 678' }, HOY).celular).toBe(MENSAJE)
+  })
+
+  it('uno de antes de la regla que no se tocó no se comprueba; tocado, sí', () => {
+    expect(erroresDePersona({ ...valida, celular: '01-4567890' }, HOY, '01-4567890').celular).toBeUndefined()
+    expect(erroresDePersona({ ...valida, celular: '014 567 89' }, HOY, '01-4567890').celular).toBe(MENSAJE)
+    expect(personaParaLaApi({ ...valida, celular: '01-4567890' }).celular).toBe('01-4567890')
+  })
+
+  it('al editar, el de ahora sale con la forma del campo y el de antes tal cual', () => {
+    expect(personaDesdePerfil(perfil('+51987654321')).celular).toBe('987 654 321')
+    expect(personaDesdePerfil(perfil('+34612345678')).celular).toBe('+34612345678')
+    expect(personaDesdePerfil(perfil('01-4567890')).celular).toBe('01-4567890')
+    expect(personaDesdePerfil(perfil(null)).celular).toBe('')
+    expect(celularAntiguo('+51987654321')).toBeNull()
+    expect(celularAntiguo('987654321')).toBe('987654321')
+    expect(celularAntiguo('01-4567890')).toBe('01-4567890')
+    expect(celularAntiguo(null)).toBeNull()
+  })
+
+  it('AC-11 · el alta de un contratado sale con el de su cuenta, con la forma del campo; uno que no vale, vacío', () => {
+    expect(personaDesdePrecarga(precarga('+51987654321')).celular).toBe('987 654 321')
+    expect(personaDesdePrecarga(precarga('01-4567890')).celular).toBe('')
+    expect(personaDesdePrecarga(precarga(null)).celular).toBe('')
   })
 })
 

@@ -764,6 +764,50 @@ escriben**: siembran estructura, cuentas, vacantes, postulaciones y colaboradore
 o un DNI al azar y fechas relativas a hoy en Lima, y lo retiran al terminar. ⚠️ El 44 repite
 número con `44-veredicto-solo-en-el-perfil`: ver [PENDIENTES.md](PENDIENTES.md).
 
+### El celular del colaborador, con su forma, y el campo con error a la vista (12/11)
+
+**«Celular · opcional» es el mismo campo que el del portal**, en el alta, en el alta desde un
+contratado y al editar el perfil: el «+51» delante, solo cifras agrupadas como «987 654 321», sin
+décima cifra, lo pegado limpiado o rechazado con el mensaje de la regla, y con «+» o «00» delante,
+un número de otro país (el detalle, en [02-QUE-VE-EL-CANDIDATO](02-QUE-VE-EL-CANDIDATO.md), 2.3).
+Puede quedar vacío. Se guarda como el de la cuenta, «+51987654321», y la pestaña Perfil lo enseña
+«+51 987 654 321»; uno de otro país, tal cual se guardó.
+
+- **Alta desde un contratado.** Llega con el celular de su cuenta, aunque el CV diga otro. Si la
+  cuenta no tiene, el que la IA leyó del CV, pero solo si cumple la regla; si no, vacío.
+- **Un celular guardado antes de esta regla** que no la cumple («01-4567890») se ve tal cual en
+  la ficha. Al editar, el campo lo enseña sin máscara ni «+51»; si RR.HH. no lo toca, el resto se
+  guarda sin obligarle a corregirlo. En cuanto lo cambia, se aplica la máscara y ya no se guarda un
+  valor que no cumpla la regla; también puede vaciarlo. Los guardados antes no se convirtieron.
+- **La carga por Excel** comprueba la columna Celular con la misma regla: una celda que no vale es
+  un error más de la tabla —fila, columna Celular, el valor y el mensaje— y el archivo entero se
+  rechaza. Una celda vacía no toca el celular de quien ya tiene ficha; la que trae el mismo valor
+  que ya estaba guardado no es error ni cambio; y un número que Excel guardó como cifra
+  (987654321) vale igual que escrito como texto.
+- Una petición directa con un celular que no vale responde 400 con el mismo mensaje y no guarda
+  nada (`docs/09-APIS.md` del backend, «Gestión de personas»).
+
+**Al guardar con algo que corregir, el campo con error se ve entero**, con su etiqueta y su
+mensaje, por debajo de lo que va fijo arriba —la barra del panel, o la cabecera del portal en sus
+puertas—, en el escritorio y a 390 × 844. Vale para entrar, la invitación, el alta y la edición del
+colaborador, descartar, el plazo de la prueba de una persona y las reseñas de la ficha; en una
+ventana se mueve su cuerpo. Antes lo de arriba tapaba la etiqueta.
+Con Tab y Shift+Tab todavía no: ver [PENDIENTES.md](PENDIENTES.md). Cómo se hace, en
+[EL-MUNDO-VISUAL](EL-MUNDO-VISUAL.md), «Dependencias».
+
+Dónde está: `src/ui/campos/CampoCelular.tsx` y `mascaraCelular.ts`, `src/dominio/celular.ts`,
+`src/panel/colaboradores/Campos.tsx` y `formulario.ts`, y `src/ui/campos/enfocarSinTapar.ts`.
+
+Comprobarlo: `npx playwright test herramientas/e2e/61-celular-con-formato.spec.ts
+herramientas/e2e/63-campo-con-error-a-la-vista.spec.ts`, y el FB-01 de
+`29-plazo-de-la-prueba.spec.ts`. ⚠️ **Escriben**: cuentas con correo único (`qa.cel.999.*`,
+`qa.campo.vista.*`), lo del panel con la marca de `ayuda-personas` y DNI al azar, y el 63 también
+reseñas con la de `ayuda-resenas`; lo retiran al terminar. El 61 deja la beta de WhatsApp como
+estaba. ⚠️ El 61 repite número con `61-perfil-hasta-el-cierre`: ver
+[PENDIENTES.md](PENDIENTES.md). Las unitarias, en
+`mascaraCelular.test.ts`, `CampoCelular.test.tsx`, `celular.test.ts` y `enfocarSinTapar.test.ts`;
+en el backend, `CelularTest`.
+
 ### Las preguntas propias de cada vacante (30/09)
 
 Hasta ahora, para que quien postula respondiera preguntas, alguien tenía que llenar un Excel con

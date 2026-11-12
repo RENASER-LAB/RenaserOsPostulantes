@@ -36,6 +36,7 @@ import { ErrorApi } from '../api/cliente'
 import { transicionar } from '../api/panel'
 import { Modal } from '@/ui/Modal'
 import { AreaTexto } from '@/ui/campos/Campo'
+import { enfocarSinTapar } from '@/ui/campos/enfocarSinTapar'
 import estilos from './DescartarPostulacion.module.css'
 
 /**
@@ -69,7 +70,7 @@ function enfocarElError() {
     // hubiera quedado de antes se lleva el foco FUERA de un modal que ademas
     // atrapa el tabulador. Hoy gana el textarea por orden del DOM, que es
     // casualidad y no diseno.
-    document.querySelector<HTMLElement>('[role="dialog"] [aria-invalid="true"]')?.focus()
+    enfocarSinTapar(document.querySelector<HTMLElement>('[role="dialog"] [aria-invalid="true"]'))
   })
 }
 

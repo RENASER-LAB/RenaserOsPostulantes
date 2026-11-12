@@ -8,6 +8,8 @@
  * (`OBLIGATORIOS_*`), no de una lista escrita aparte en la pantalla.
  */
 
+import { comoE164, MENSAJE_CELULAR, paraEditar } from '@/dominio/celular'
+import { enfocarPrimerCampoConError } from '@/ui/campos/enfocarSinTapar'
 import type {
   DatosPersonales,
   DatosSituacion,
@@ -71,13 +73,27 @@ export function personaVacia(): FormPersona {
 }
 
 export function personaDesdePrecarga(precarga: Precarga): FormPersona {
+  // El de su cuenta o, si no tiene, el del CV que cumpla la regla: lo elige el backend.
+  // Aquí se vuelve a comprobar y se pone con la forma del campo («987 654 321»).
+  const celular = precarga.celular ? comoE164(precarga.celular) : null
   return {
     ...personaVacia(),
     nombres: precarga.nombres ?? '',
     apellidoPaterno: precarga.apellidoPaterno ?? '',
     correoPersonal: precarga.correoPersonal ?? '',
-    celular: precarga.celular ?? '',
+    celular: celular ? paraEditar(celular) : '',
   }
+}
+
+/**
+ * El celular guardado de una ficha, si es de antes de la regla del celular: uno que
+ * no está en formato internacional («01-4567890», «987-654-321»). El campo lo enseña
+ * tal cual y, si nadie lo toca, se guarda igual sin obligar a corregirlo. `null` si
+ * no hay o si ya está como se guarda ahora.
+ */
+export function celularAntiguo(guardado: string | null | undefined): string | null {
+  if (!guardado) return null
+  return comoE164(guardado) === guardado ? null : guardado
 }
 
 export function personaDesdePerfil(p: Perfil): FormPersona {
@@ -91,7 +107,8 @@ export function personaDesdePerfil(p: Perfil): FormPersona {
     sexo: p.sexo,
     estadoCivil: p.estadoCivil ?? '',
     nacionalidad: p.nacionalidad ?? '',
-    celular: p.celular ?? '',
+    // El de ahora, con la forma del campo; uno de antes de la regla, tal cual.
+    celular: celularAntiguo(p.celular) ?? paraEditar(p.celular),
     correoPersonal: p.correoPersonal ?? '',
     correoCorporativo: p.correoCorporativo ?? '',
     direccion: p.direccion ?? '',
@@ -131,7 +148,15 @@ export type Errores = Partial<Record<string, string>>
 
 const CORREO = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
 
-export function erroresDePersona(f: FormPersona, hoy: Dia = hoyEnLima()): Errores {
+/**
+ * @param celularGuardado el de la ficha que se edita: si sigue igual, no se comprueba
+ *   aunque sea de antes de la regla. En un alta no hay.
+ */
+export function erroresDePersona(
+  f: FormPersona,
+  hoy: Dia = hoyEnLima(),
+  celularGuardado: string | null = null,
+): Errores {
   const e: Errores = {}
   const numero = limpiarDocumento(f.numeroDocumento)
   if (numero === '') e.numeroDocumento = 'Escribe el número de documento.'
@@ -145,6 +170,10 @@ export function erroresDePersona(f: FormPersona, hoy: Dia = hoyEnLima()): Errore
   else if (diasEntre(hoy, f.fechaNacimiento) > 0) e.fechaNacimiento = 'La fecha de nacimiento no puede ser futura.'
   else if (!tieneAlMenos(f.fechaNacimiento, 14, hoy)) e.fechaNacimiento = 'Tiene que tener al menos 14 años.'
   if (f.sexo === '') e.sexo = 'Elige una opción.'
+  const celular = f.celular.trim()
+  if (celular !== '' && celular !== celularGuardado && comoE164(celular) === null) {
+    e.celular = MENSAJE_CELULAR
+  }
   if (f.correoPersonal.trim() !== '' && !CORREO.test(f.correoPersonal.trim())) {
     e.correoPersonal = 'Ese correo no parece válido.'
   }
@@ -268,9 +297,12 @@ export function erroresDeSituacion(
   return e
 }
 
-/** Lleva el foco al primer campo marcado con error, que es lo que se lee primero. */
+/**
+ * Lleva el foco al primer campo marcado con error, que es lo que se lee primero,
+ * y lo deja a la vista con su etiqueta, debajo de la barra del panel.
+ */
 export function enfocarElPrimerError(contenedor: HTMLElement | null): void {
   window.setTimeout(() => {
-    contenedor?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus()
+    if (contenedor) enfocarPrimerCampoConError(contenedor)
   }, 0)
 }

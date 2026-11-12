@@ -29,6 +29,7 @@ import { z } from 'zod'
 import { rutas } from '@/rutas'
 import { Marca } from '@/ui/Marca'
 import { Campo } from '@/ui/campos/Campo'
+import { enfocarPrimerCampoConError } from '@/ui/campos/enfocarSinTapar'
 import { useSesionPanel } from '../Sesion'
 import { useTituloDelPanel } from '../titulo'
 import estilos from './Entrar.module.css'
@@ -105,9 +106,7 @@ export function InvitacionPanel() {
         nuevos[campo] ??= problema.message
       }
       setErrores(nuevos)
-      requestAnimationFrame(() => {
-        document.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus()
-      })
+      requestAnimationFrame(() => enfocarPrimerCampoConError())
       return
     }
 

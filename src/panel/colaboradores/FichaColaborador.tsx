@@ -20,6 +20,7 @@ import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent, type R
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { rutas } from '@/rutas'
+import { paraMostrar } from '@/dominio/celular'
 import { formatearFechaCorta } from '@/dominio/reloj'
 import { Campo, Seleccion, AreaTexto } from '@/ui/campos/Campo'
 import { Cargando, Fallo } from '@/ui/Mensajes'
@@ -321,7 +322,8 @@ function PestanaPerfil({ ficha, opciones }: { ficha: FichaColaborador; opciones?
       <section className={propios.bloque}>
         <h2 className={propios.tituloBloque}>Contacto</h2>
         <dl className={propios.datos}>
-          <Dato etiqueta="Celular">{p.celular}</Dato>
+          {/* «+51 987 654 321»; uno de antes de la regla, tal cual se guardó. */}
+          <Dato etiqueta="Celular">{p.celular ? paraMostrar(p.celular) : null}</Dato>
           <Dato etiqueta="Correo personal">{p.correoPersonal}</Dato>
           <Dato etiqueta="Correo corporativo">{p.correoCorporativo}</Dato>
         </dl>
@@ -391,7 +393,7 @@ function EditarPerfil({
       onSubmit={(e) => {
         e.preventDefault()
         if (guardado.isPending) return
-        const nuevos = erroresDePersona(persona)
+        const nuevos = erroresDePersona(persona, undefined, ficha.perfil.celular)
         setErrores(nuevos)
         setFallo(null)
         if (Object.keys(nuevos).length > 0) {
@@ -412,6 +414,7 @@ function EditarPerfil({
           alCambiar={(parcial) => setPersona((p) => ({ ...p, ...parcial }))}
           errores={errores}
           opciones={opciones}
+          celularGuardado={ficha.perfil.celular}
         />
       </section>
       <section className={formularios.bloque}>

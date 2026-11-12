@@ -5,6 +5,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { ErrorApi } from '../api/cliente'
@@ -115,6 +116,42 @@ describe('el alta', () => {
     expect(alta).toHaveBeenCalledTimes(1)
   })
 
+  it('AC-09 · el celular, opcional, lleva la misma máscara y el «+51»; vacío viaja sin celular', async () => {
+    const usuario = userEvent.setup()
+    montar()
+    await rellenar()
+    const celular = screen.getByLabelText(/^Celular · opcional/) as HTMLInputElement
+    expect(celular.parentElement?.textContent).toContain('+51')
+    expect(celular.getAttribute('aria-required')).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Dar de alta' }))
+    await waitFor(() => expect(alta).toHaveBeenCalledTimes(1))
+    expect(alta.mock.calls[0]![0].persona.celular).toBeNull()
+
+    cleanup()
+    sessionStorage.clear()
+    montar()
+    await rellenar()
+    await usuario.type(screen.getByLabelText(/^Celular · opcional/), '98a7-6543210')
+    expect((screen.getByLabelText(/^Celular · opcional/) as HTMLInputElement).value).toBe('987 654 321')
+    fireEvent.click(screen.getByRole('button', { name: 'Dar de alta' }))
+    await waitFor(() => expect(alta).toHaveBeenCalledTimes(2))
+    expect(alta.mock.calls[1]![0].persona.celular).toBe('987 654 321')
+  })
+
+  it('un celular a medias no se envía: el mensaje de la regla, junto al campo', async () => {
+    const usuario = userEvent.setup()
+    montar()
+    await rellenar()
+    await usuario.type(screen.getByLabelText(/^Celular · opcional/), '98765')
+    fireEvent.click(screen.getByRole('button', { name: 'Dar de alta' }))
+    expect(
+      await screen.findByText('Escribe un celular de 9 cifras que empiece por 9, o el número completo con su prefijo'),
+    ).toBeTruthy()
+    expect(screen.getByLabelText(/^Celular · opcional/).getAttribute('aria-invalid')).toBe('true')
+    expect(alta).not.toHaveBeenCalled()
+  })
+
   it('sin los obligatorios no envía y marca los campos', async () => {
     montar()
     fireEvent.click(await screen.findByRole('button', { name: 'Dar de alta' }))
@@ -171,7 +208,8 @@ describe('el alta de un contratado (AC-13)', () => {
       nombres: 'Carla',
       apellidoPaterno: 'De la Cruz Pérez',
       correoPersonal: 'carla@correo.pe',
-      celular: '987654321',
+      // El de su cuenta: el backend lo prefiere al del CV.
+      celular: '+51987654321',
       cargoId: 3,
       areaId: 2,
       colaboradorId: null,
@@ -180,7 +218,8 @@ describe('el alta de un contratado (AC-13)', () => {
     expect(((await screen.findByLabelText(/^Nombres/)) as HTMLInputElement).value).toBe('Carla')
     expect((screen.getByLabelText(/^Apellido paterno/) as HTMLInputElement).value).toBe('De la Cruz Pérez')
     expect((screen.getByLabelText(/^Correo personal/) as HTMLInputElement).value).toBe('carla@correo.pe')
-    expect((screen.getByLabelText(/^Celular/) as HTMLInputElement).value).toBe('987654321')
+    // AC-11: con la forma del campo, el «+51» ya dibujado delante.
+    expect((screen.getByLabelText(/^Celular/) as HTMLInputElement).value).toBe('987 654 321')
     expect((screen.getByLabelText(/^Cargo/) as HTMLSelectElement).value).toBe('3')
     expect((screen.getByLabelText(/^Área/) as HTMLSelectElement).value).toBe('2')
     expect((screen.getByLabelText(/^Fecha de ingreso/) as HTMLInputElement).value).toBe('')

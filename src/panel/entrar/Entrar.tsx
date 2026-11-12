@@ -28,6 +28,7 @@ import { ErrorApi } from '@/panel/api/cliente'
 import { rutas } from '@/rutas'
 import { IconoAviso } from '@/ui/Iconos'
 import { Campo } from '@/ui/campos/Campo'
+import { enfocarPrimerCampoConError } from '@/ui/campos/enfocarSinTapar'
 import { AvisoClaveCambiada } from '@/ui/recuperacion/AvisoClaveCambiada'
 import { useSesionPanel } from '../Sesion'
 import { useTituloDelPanel } from '../titulo'
@@ -97,9 +98,7 @@ export function EntrarPanel() {
       }
       setErrores(nuevos)
       // Sin el cuadro, el atributo todavia no esta en el DOM cuando se busca.
-      requestAnimationFrame(() => {
-        document.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus()
-      })
+      requestAnimationFrame(() => enfocarPrimerCampoConError())
       return
     }
 

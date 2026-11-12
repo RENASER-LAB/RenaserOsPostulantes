@@ -131,7 +131,9 @@ export function ArmazonPanel() {
     <div className={estilos.armazon} data-plegado={plegado ? 'true' : 'false'}>
       <TituloDelPanel />
 
-      <header className={estilos.barra} ref={medirCabecera}>
+      {/* `data-pegada-arriba`: lo que tapa por arriba al llevar el foco a un
+          campo con error (`enfocarSinTapar`), que lo mide y lo deja debajo. */}
+      <header className={estilos.barra} ref={medirCabecera} data-pegada-arriba="">
         <div className={estilos.barraDentro}>
           <button
             ref={botonMenu}
