@@ -538,3 +538,71 @@ test('9 · un Excel con el celular «12345» se rechaza entero; con «987 654 32
       .celular,
   ).toBe('+51987654322')
 })
+
+// ---------- 10 · El campo con error, entero bajo la cabecera fija ----------
+
+const TAMANOS = [
+  { width: 1440, height: 900 },
+  { width: 390, height: 844 },
+] as const
+
+/**
+ * Lo enfocado tras enviar con errores: su etiqueta empieza por debajo de la
+ * cabecera fija —la primera `<header>`, la del armazón— y su error acaba dentro
+ * de la ventana. Antes el salto de `focus()` lo dejaba detrás de la píldora.
+ */
+async function loEnfocadoSeVeEntero(page: Page, donde: string) {
+  const medidas = await page.evaluate(() => {
+    const campo = document.activeElement as HTMLInputElement | HTMLSelectElement
+    const idError = (campo.getAttribute('aria-describedby') ?? '')
+      .split(/\s+/)
+      .find((id) => id.endsWith('-error'))
+    const error = idError ? document.getElementById(idError) : null
+    return {
+      cabecera: document.querySelector('header')!.getBoundingClientRect().bottom,
+      etiqueta: campo.labels?.[0]?.getBoundingClientRect().top ?? null,
+      error: error?.getBoundingClientRect().bottom ?? null,
+      alto: window.innerHeight,
+    }
+  })
+  expect(medidas.etiqueta, `${donde}: la etiqueta`).not.toBeNull()
+  expect(medidas.error, `${donde}: el error`).not.toBeNull()
+  expect(medidas.etiqueta!, `${donde}: la etiqueta bajo la cabecera`).toBeGreaterThanOrEqual(medidas.cabecera)
+  expect(medidas.error!, `${donde}: el error dentro de la ventana`).toBeLessThanOrEqual(medidas.alto)
+}
+
+test('10 · al enviar con errores, el campo enfocado queda con su etiqueta y su error bajo la cabecera fija', async ({ page }) => {
+  // El portal: el registro sin ciudad, que es lo que vio QA tapado.
+  for (const tamano of TAMANOS) {
+    await page.setViewportSize(tamano)
+    await page.goto('/registro')
+    await page.getByLabel(/^Nombre/).fill('Celia')
+    await page.getByLabel(/^Apellidos/).fill(`Formato ${SUFIJO}`)
+    await page.getByLabel(/^Correo/).fill(correoDePrueba(PREFIJO_CORREO))
+    await celularDelRegistro(page).pressSequentially('987654321')
+    await page.getByLabel(/^Contraseña/).fill(CLAVE_DE_CANDIDATO)
+    await page.getByLabel('Repite la contraseña').fill(CLAVE_DE_CANDIDATO)
+    await page.locator('input[type="checkbox"]').first().check()
+    await page.getByRole('button', { name: /Crear cuenta/ }).click()
+    await expect(page.getByLabel(/^Ciudad/)).toBeFocused()
+    await loEnfocadoSeVeEntero(page, `registro a ${tamano.width} px`)
+  }
+
+  // El panel: el alta de un colaborador con el celular a medias.
+  await entrarAlPanel(page)
+  for (const tamano of TAMANOS) {
+    await page.setViewportSize(tamano)
+    await page.goto('/admin/colaboradores/nuevo')
+    await llenarAlta(page, dniAlAzar(), `Foco ${MARCA} ${SUFIJO}`)
+    const celular = page.getByLabel(/^Celular/)
+    // El alta guarda su borrador en `sessionStorage`: en la segunda vuelta vuelve
+    // con el «987 65» de la primera, y teclear encima lo completaba y lo daba de alta.
+    await celular.clear()
+    await celular.pressSequentially('98765')
+    await expect(celular).toHaveValue('987 65')
+    await page.getByRole('button', { name: 'Dar de alta' }).click()
+    await expect(celular).toBeFocused()
+    await loEnfocadoSeVeEntero(page, `alta de colaborador a ${tamano.width} px`)
+    await expect(page).toHaveURL(/\/admin\/colaboradores\/nuevo/)
+  }
+})

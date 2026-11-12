@@ -49,6 +49,7 @@ import type {
 } from '../api/tipos'
 import { ahora, formatearFechaLarga } from '@/dominio/reloj'
 import { Campo, AreaTexto } from '@/ui/campos/Campo'
+import { enfocarPrimerCampoConError } from '@/ui/campos/enfocarSinTapar'
 import estilos from './CierreDePrueba.module.css'
 
 // ---------- Las dos conversiones ----------
@@ -122,9 +123,7 @@ function primerErrorPorCampo(issues: { path: PropertyKey[]; message: string }[])
     const campo = problema.path[0] as keyof Errores
     nuevos[campo] ??= problema.message
   }
-  requestAnimationFrame(() => {
-    document.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus()
-  })
+  requestAnimationFrame(() => enfocarPrimerCampoConError())
   return nuevos
 }
 

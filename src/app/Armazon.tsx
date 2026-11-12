@@ -349,7 +349,9 @@ export function Armazon() {
       <LlevarAlAncla />
       <TituloDeLaPagina />
 
-      <header className={estilos.cabecera}>
+      {/* `data-pegada-arriba`: lo que tapa por arriba al llevar el foco a un campo
+          con error (`enfocarSinTapar`), que mide su alto y deja el campo debajo. */}
+      <header className={estilos.cabecera} data-pegada-arriba="">
         {/*
           El velo de detras del menu del telefono: apaga la pagina y recoge el
           toque de fuera. Sin el, tocar fuera para cerrar pulsaba ademas lo que

@@ -54,6 +54,7 @@ import {
   useUnSoloEnvio,
   type CierreDelPaso,
 } from '@/ui/resenas/ganchos'
+import { enfocarSinTapar } from '@/ui/campos/enfocarSinTapar'
 import { faltaEnElTexto, type MotivoDeReporte } from '@/ui/resenas/modelo'
 import piezasResenas from '@/ui/resenas/Resenas.module.css'
 import estilos from './Perfil.module.css'
@@ -629,7 +630,8 @@ function FormularioDeRespuesta({
         const falta = faltaEnElTexto(texto, MIN_RESPUESTA, MAX_RESPUESTA, 'Tu respuesta')
         setError(falta)
         if (falta) {
-          campo.current?.focus()
+          // Con el error ya pintado, para que se mida con él (`enfocarSinTapar`).
+          requestAnimationFrame(() => enfocarSinTapar(campo.current))
           return
         }
         alEnviar(texto.trim())

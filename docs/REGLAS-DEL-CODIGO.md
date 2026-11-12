@@ -31,9 +31,25 @@ cosas distintas. La ayuda de un momento de espera **no lleva «No tienes que hac
 añade el recuadro de espera.
 
 **Un celular se valida con `src/dominio/celular.ts`** (13/10/2026), en el registro, en «Mi
-cuenta» y en la tarjeta de WhatsApp. Es copia de `Celular` del backend, con el mismo mensaje: si
-las dos reglas se separan, el formulario deja pasar un número que la API rechaza. El portal manda
-lo escrito; quien lo guarda en E.164 es el backend.
+cuenta», en la tarjeta de WhatsApp y, desde el 12/11/2026, en la ficha del colaborador del panel,
+donde vacío vale. Es copia de `Celular` del backend, con el mismo mensaje: si las dos reglas se
+separan, el formulario deja pasar un número que la API rechaza. Están amarradas a un contrato
+igual en los dos repositorios —`src/dominio/celularCasos.json` aquí,
+`docs/contratos/celular-casos.json` allí—, y `celular.test.ts` y `CelularTest` fallan si no dan
+lo mismo para cada caso. **Cambiar la regla es cambiarla en los dos y añadir el caso al
+contrato.** Por eso `celular.ts` quita las puntas como `String.trim()` de Java y solo los
+separadores de Java (espacio, tabulador, espacio duro, guion, punto y paréntesis): un `\s` o el
+`trim()` de JavaScript dejaban pasar lo que la API rechaza. El portal manda lo escrito; quien lo
+guarda en E.164 es el backend.
+
+**Un campo de celular es `CampoCelular`** (`src/ui/campos/CampoCelular.tsx`, 12/11/2026), no
+`Campo` con `prefijo`. Lleva la máscara de `mascaraCelular.ts` —funciones puras: solo impiden
+escribirlo mal— y no sustituye a la regla: el formulario sigue validando al enviar con
+`comoE164`, porque un número a medias o uno que no empieza por 9 se escriben. Con `antiguo`
+enseña tal cual, sin máscara ni «+51», un celular guardado antes de la regla, y lo enmascara en
+cuanto se toca. ⚠️ **El cursor se coloca en el mismo evento**: el componente escribe en el
+`<input>` el valor ya enmascarado antes de que React pinte; si se deja a React, el cursor salta al
+final a mitad de escribir.
 
 **Una columna de criterio se identifica por su `clave`, no por su nombre** (01/10/2026). Con
 criterios escritos por cada vacante hay muchos «Comunicación», y agrupar por nombre —como hacía la
@@ -126,6 +142,11 @@ pintaba `mesYAno` (corregido el 01/10/2026). Una fecha sin hora se lee de la pro
 hace `src/paginas/perfil/textos.ts`.
 
 **`<button>` sin `type`.** Por defecto es de envío. Dentro de un formulario, lo envía.
+
+**Llevar el foco a un campo con error con `.focus()` a secas.** El navegador lo deja contra el
+borde de arriba, debajo de la cabecera fija, y la etiqueta queda tapada (visto en la revisión del
+celular, 12/11/2026). Se usa `enfocarPrimerCampoConError()` o `enfocarSinTapar(campo)`; el
+detalle, en [EL-MUNDO-VISUAL](EL-MUNDO-VISUAL.md), «Dependencias».
 
 **Retocar una pieza compartida desde la misma clase no hace nada.** Si una clase trae un botón
 de `piezas.module.css` con `composes`, una regla sobre esa misma clase que cambie `display`,

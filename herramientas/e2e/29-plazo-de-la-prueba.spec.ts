@@ -2,6 +2,7 @@ import { expect, type Locator, type Page } from '@playwright/test'
 
 import { corte, entrarAlPanel } from './ayuda'
 import { test } from './ayuda-candidato'
+import { loEnfocadoSeVeEntero, TAMANOS } from './ayuda-campo-a-la-vista'
 import {
   auditoriaDe,
   campoLocal,
@@ -587,5 +588,44 @@ test.describe('Nuevo · la hora escrita, la mostrada y la guardada son la misma'
     await expect(laLinea(otraVez)).toHaveText(
       `Cierra el ${fechaLarga(enUtc, MADRID)} (hora de tu equipo, ${MADRID}).`,
     )
+  })
+})
+
+// ---------- FB-01 · el campo con error, entero bajo la barra del panel ----------
+
+test.describe('FB-01 · el campo con error queda entero bajo la barra del panel', () => {
+  test.beforeEach(async ({ page }) => {
+    restaurarElTerreno(terreno.vacantes, terreno.versionPlazoAbierto)
+    await entrarAlPanel(page)
+  })
+
+  test('el cierre de la vacante y el plazo de una persona, sin motivo, en escritorio y a 390 × 844', async ({
+    page,
+  }) => {
+    const cierreAntes = pruebaCierraEnDe(terreno.vacantes.CON_FECHA)
+    const venceAntes = venceEnDe('relleno1')
+    for (const tamano of TAMANOS) {
+      await page.setViewportSize(tamano)
+
+      // El cierre de la vacante: guardar y quitar sin motivo llevan el foco al motivo.
+      const plazos = await abrirPlazos(page, terreno.vacantes.CON_FECHA)
+      const motivo = plazos.getByRole('textbox', { name: 'Por qué se fija esta fecha' })
+      await plazos.getByRole('button', { name: 'Guardar la fecha de cierre' }).click()
+      await expect(motivo).toBeFocused()
+      await loEnfocadoSeVeEntero(page, `guardar el cierre a ${tamano.width} px`)
+      await plazos.getByRole('button', { name: 'Quitar el cierre de la vacante' }).click()
+      await expect(motivo).toBeFocused()
+      await loEnfocadoSeVeEntero(page, `quitar el cierre a ${tamano.width} px`)
+
+      // El plazo de una persona, desde su ficha en el ranking.
+      const ficha = await abrirFicha(page, terreno.vacantes.CON_FECHA, 'Zqa Relleno Uno')
+      await campoDeFecha(ficha).fill('2027-06-20T16:30')
+      await ficha.getByRole('button', { name: 'Guardar el plazo' }).click()
+      await expect(ficha.getByRole('textbox', { name: 'Por qué esta persona tiene otro plazo' })).toBeFocused()
+      await loEnfocadoSeVeEntero(page, `plazo de una persona a ${tamano.width} px`)
+    }
+    // Nada se guardó.
+    expect(pruebaCierraEnDe(terreno.vacantes.CON_FECHA)).toBe(cierreAntes)
+    expect(venceEnDe('relleno1')).toBe(venceAntes)
   })
 })

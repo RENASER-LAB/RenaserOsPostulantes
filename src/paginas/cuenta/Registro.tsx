@@ -49,6 +49,7 @@ import { comoE164, MENSAJE_CELULAR } from '@/dominio/celular'
 import { rutas } from '@/rutas'
 import { Campo, Consentimiento, Seleccion } from '@/ui/campos/Campo'
 import { CampoCelular } from '@/ui/campos/CampoCelular'
+import { enfocarPrimerCampoConError } from '@/ui/campos/enfocarSinTapar'
 import estilos from './Cuenta.module.css'
 
 const Datos = z
@@ -193,11 +194,9 @@ export function Registro() {
       }
       setErrores(nuevos)
       // El primer campo con problema recibe el foco: si no, en un formulario
-      // largo el error queda fuera de la pantalla y parece que no pasó nada.
-      requestAnimationFrame(() => {
-        const primero = document.querySelector<HTMLElement>('[aria-invalid="true"]')
-        primero?.focus()
-      })
+      // largo el error queda fuera de la pantalla y parece que no pasó nada. Y
+      // entero, con su etiqueta, debajo de la cabecera fija.
+      requestAnimationFrame(() => enfocarPrimerCampoConError())
       return
     }
 

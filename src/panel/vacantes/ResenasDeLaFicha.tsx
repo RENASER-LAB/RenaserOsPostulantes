@@ -35,6 +35,7 @@ import type {
 } from '../api/tipos'
 import { formatearFechaCorta } from '@/dominio/reloj'
 import { Modal } from '@/ui/Modal'
+import { enfocarSinTapar } from '@/ui/campos/enfocarSinTapar'
 import {
   BloqueDeRespuesta,
   CampoContado,
@@ -517,12 +518,16 @@ function FormularioDeResena({
           texto: faltaEnElTexto(texto, MIN_OPINION, MAX_OPINION, 'La opinión') ?? undefined,
         }
         setErrores(siguientes)
+        // En el fotograma siguiente, con el error ya pintado: así se mide con él
+        // y queda a la vista con su etiqueta (`enfocarSinTapar`).
         if (siguientes.estrellas) {
-          primeraEstrella.current?.querySelector<HTMLInputElement>('input')?.focus()
+          requestAnimationFrame(() =>
+            enfocarSinTapar(primeraEstrella.current?.querySelector<HTMLInputElement>('input')),
+          )
           return
         }
         if (siguientes.texto) {
-          campo.current?.focus()
+          requestAnimationFrame(() => enfocarSinTapar(campo.current))
           return
         }
         alEnviar({ estrellas: estrellas!, texto: texto.trim() })

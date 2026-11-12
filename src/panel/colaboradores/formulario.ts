@@ -9,6 +9,7 @@
  */
 
 import { comoE164, MENSAJE_CELULAR, paraEditar } from '@/dominio/celular'
+import { enfocarPrimerCampoConError } from '@/ui/campos/enfocarSinTapar'
 import type {
   DatosPersonales,
   DatosSituacion,
@@ -296,9 +297,12 @@ export function erroresDeSituacion(
   return e
 }
 
-/** Lleva el foco al primer campo marcado con error, que es lo que se lee primero. */
+/**
+ * Lleva el foco al primer campo marcado con error, que es lo que se lee primero,
+ * y lo deja a la vista con su etiqueta, debajo de la barra del panel.
+ */
 export function enfocarElPrimerError(contenedor: HTMLElement | null): void {
   window.setTimeout(() => {
-    contenedor?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus()
+    if (contenedor) enfocarPrimerCampoConError(contenedor)
   }, 0)
 }

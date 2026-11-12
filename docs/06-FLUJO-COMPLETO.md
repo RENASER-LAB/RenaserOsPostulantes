@@ -386,7 +386,10 @@ perder lo escrito.
 
 ⚠️ **Y desde el 13/10/2026 pide el celular.** «Celular (WhatsApp)», obligatorio,
 va justo después del correo con el +51 dibujado delante: nueve cifras que
-empiezan por 9, o el número entero con su prefijo. Es el número desde el que
+empiezan por 9, o el número entero con su prefijo. Desde el 12/11/2026 el campo
+no deja escribirlo mal: solo cifras, agrupadas solas como «987 654 321», sin
+una décima; y si empieza por «+» o «00», un número de otro país sin el +51 (el
+detalle, en [02-QUE-VE-EL-CANDIDATO](02-QUE-VE-EL-CANDIDATO.md), 2.3). Es el número desde el que
 podrá escribir al bot de WhatsApp de RENASER, y se cambia en «Mi cuenta». A quien
 ya tenía cuenta no se le exige: se le pide solo si quiere recibir sus novedades
 por WhatsApp.

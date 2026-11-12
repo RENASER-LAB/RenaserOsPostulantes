@@ -15,6 +15,7 @@
 
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { Campo } from '@/ui/campos/Campo'
+import { enfocarSinTapar } from '@/ui/campos/enfocarSinTapar'
 import { IconoAviso } from '@/ui/Iconos'
 import {
   EsquemaCorreo,
@@ -89,9 +90,7 @@ export function PedirEnlace({ pedir, titulo, bajada, alternativa }: Props) {
     if (!revision.success) {
       setError(revision.error.issues[0]?.message)
       // Sin el cuadro, el atributo todavía no está en el DOM cuando se busca.
-      requestAnimationFrame(() => {
-        campo.current?.focus()
-      })
+      requestAnimationFrame(() => enfocarSinTapar(campo.current))
       return
     }
     setError(undefined)

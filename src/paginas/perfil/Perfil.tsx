@@ -37,6 +37,7 @@ import { useSesion } from '@/app/Sesion'
 import { rutas } from '@/rutas'
 import { useAviso } from '@/ui/Avisos'
 import { AreaTexto, Campo } from '@/ui/campos/Campo'
+import { enfocarPrimerCampoConError } from '@/ui/campos/enfocarSinTapar'
 import { anclaDe, Certificaciones, Enlaces, Idiomas } from './Listas'
 import { Trayectoria } from './Trayectoria'
 import { Aptitudes, leerTodas } from './Aptitudes'
@@ -542,7 +543,7 @@ function Cabecera({
         // Dentro de ESTE formulario. Buscando en todo el documento, con otro
         // formulario abierto y con error más arriba, el foco saltaba al campo
         // equivocado de una sección que no se estaba enviando.
-        formulario.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus()
+        enfocarPrimerCampoConError(formulario)
       })
       return
     }
