@@ -49,6 +49,8 @@ import { agrupadasPorDepartamento } from '@/dominio/ubigeo'
 import { listarUsuarios, verCatalogos } from '../api/panel'
 import type { VacantePanel } from '../api/tipos'
 import estilos from './Vacantes.module.css'
+import { CasillaQueBuscar } from './QueBuscarEnElCv'
+import { revisarLineas } from './reglasQueBuscar'
 
 /** Lo que el formulario tiene en la mano: texto, que es lo que hay en un input. */
 export interface DatosDeVacante {
@@ -69,6 +71,8 @@ export interface DatosDeVacante {
   tipoCierre: string
   /** El día elegido con «Fecha límite», como lo pinta el selector: «2026-10-31». */
   cierraEn: string
+  /** «Qué buscar en el CV» (V80), una línea por renglón, tal como se escribe. */
+  queBuscarEnElCv: string
 }
 
 export const VACANTE_VACIA: DatosDeVacante = {
@@ -84,6 +88,7 @@ export const VACANTE_VACIA: DatosDeVacante = {
   ciudadUbigeo: '',
   tipoCierre: 'PERMANENTE',
   cierraEn: '',
+  queBuscarEnElCv: '',
 }
 
 /** Las dos formas de cierre que se ofrecen (V78). «Por plazas» ya no. */
@@ -144,6 +149,7 @@ export function vacanteComoFormulario(v: VacantePanel): DatosDeVacante {
     // El selector de día quiere «2026-12-01» y el backend habla en instantes: el día es el
     // de Lima, no el que sale de recortar el instante en UTC.
     cierraEn: v.cierraEn ? diaDeLima(v.cierraEn) : '',
+    queBuscarEnElCv: (v.queBuscarEnElCv ?? []).join('\n'),
   }
 }
 
@@ -176,6 +182,9 @@ export function camposParaGuardar(datos: DatosDeVacante) {
     tipoCierre: datos.tipoCierre,
     cierraEn:
       datos.tipoCierre === 'FECHA' ? (finDelDiaEnLima(datos.cierraEn) ?? undefined) : undefined,
+    // «Qué buscar en el CV» (V80): las que se buscarán, sin vacías ni repetidas y
+    // como mucho seis. Viajan siempre: el formulario las enseña, y vacía las quita.
+    queBuscarEnElCv: revisarLineas(datos.queBuscarEnElCv).seGuardan,
   }
 }
 
@@ -195,6 +204,10 @@ export function loQueFaltaEnLaVacante(datos: DatosDeVacante): string | null {
   }
   if (datos.titulo.trim() === '' || datos.descripcion.trim() === '') {
     return 'El título y la descripción son lo mínimo que ve quien postula.'
+  }
+  // «Qué buscar en el CV» (V80): una línea prohibida o larguísima apaga el guardado.
+  if (revisarLineas(datos.queBuscarEnElCv).hayErrores) {
+    return 'Corrige lo marcado en «Qué buscar en el CV».'
   }
   if (datos.tipoCierre === 'FECHA') {
     if (finDelDiaEnLima(datos.cierraEn) === null) {
@@ -307,6 +320,8 @@ export function CamposComunes({
         alCambiar={poner('requisitos')}
         ancho
       />
+      {/* Privada (V80): la ve el equipo, nunca el candidato. */}
+      <CasillaQueBuscar valor={datos.queBuscarEnElCv} alCambiar={poner('queBuscarEnElCv')} />
 
       <SelectorDeModalidad
         valor={datos.modalidad}

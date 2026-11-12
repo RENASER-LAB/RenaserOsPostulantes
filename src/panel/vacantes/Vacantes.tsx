@@ -61,6 +61,7 @@ import { ModalDeArchivo } from './ArchivarVacante'
 import { ModalDeEliminacion } from './EliminarVacante'
 import { IconoArchivo, IconoLapiz, IconoPapelera } from './IconosDeLaFila'
 import estilos from './Vacantes.module.css'
+import { revisarLineas } from './reglasQueBuscar'
 
 /** Como se dice cada estado de vacante. Los codigos son del backend. */
 const ESTADO_VACANTE: Record<string, string> = {
@@ -725,7 +726,12 @@ function FormularioDeAlta({ alCrear }: { alCrear: () => Promise<void> }) {
         </p>
       )}
 
-      <button className={estilos.enviar} type="submit" disabled={creacion.isPending}>
+      {/* Una línea que no se puede buscar apaga el botón (V80): la casilla dice cuál. */}
+      <button
+        className={estilos.enviar}
+        type="submit"
+        disabled={creacion.isPending || revisarLineas(datos.queBuscarEnElCv).hayErrores}
+      >
         {creacion.isPending ? 'Creando…' : 'Crear en borrador'}
       </button>
     </form>

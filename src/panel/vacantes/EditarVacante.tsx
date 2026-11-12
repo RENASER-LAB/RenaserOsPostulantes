@@ -48,7 +48,7 @@
 
 import { useState, type FormEvent } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { editarVacante, listarPuestos } from '../api/panel'
+import { editarVacante, listarPuestos, verQueBuscarEnElCv } from '../api/panel'
 import type { VacantePanel } from '../api/tipos'
 import { Modal } from '@/ui/Modal'
 import {
@@ -63,6 +63,8 @@ import {
 } from './CamposDeLaVacante'
 import { CamposDeRemuneracion, comoCuerpo, desdeLaVacante, mismoSueldo } from './Remuneracion'
 import estilos from './Vacantes.module.css'
+import { ConfirmarNuevaBusqueda } from './QueBuscarEnElCv'
+import { mismasLineas, revisarLineas } from './reglasQueBuscar'
 
 /** El id que ata los botones del pie con el formulario del cuerpo del modal. */
 const FORMULARIO = 'formulario-editar-vacante'
@@ -113,9 +115,18 @@ export function FormularioDeEdicion({
     'error' in sueldoNuevo || !mismoSueldo(sueldoNuevo.datos, vacante.remuneracion)
   const enCarrera = vacante.postulantesEnCarrera
   const puesto = (puestos.data ?? []).find((p) => p.id === vacante.puestoId)
+  /*
+    «Qué buscar en el CV» (V80): si las líneas cambian y hay CV ya calificados, se
+    pregunta antes de guardar —«¿Volver a buscar en N CV?»—. El número lo da el
+    servidor justo antes, porque cambia mientras la IA califica.
+  */
+  const revision = revisarLineas(datos.queBuscarEnElCv)
+  const cambianLasLineas = !mismasLineas(revision.seGuardan, vacante.queBuscarEnElCv ?? [])
+  const [confirmando, setConfirmando] = useState<{ cvs: number; quitando: boolean } | null>(null)
+  const [comprobando, setComprobando] = useState(false)
 
   const guardado = useMutation({
-    mutationFn: () => {
+    mutationFn: (confirmado: boolean) => {
       const sueldo = comoCuerpo(remuneracion)
       if ('error' in sueldo) return Promise.reject(new Error(sueldo.error))
       return editarVacante(vacante.id, {
@@ -123,20 +134,28 @@ export function FormularioDeEdicion({
         ...camposParaGuardar(datos),
         remuneracion: sueldo.datos,
         motivoRemuneracion: cambiaElSueldo ? motivo.trim() : undefined,
+        confirmarNuevaBusqueda: confirmado || undefined,
       })
     },
     onSuccess: (respuesta) => {
+      setConfirmando(null)
       if (!respuesta.huboCambios) {
         alTerminar('No había cambios que guardar')
         return
       }
       const avisados = respuesta.postulantesAvisados
+      const aBuscar = respuesta.cvsABuscar ?? 0
       alTerminar(
-        avisados === 0
-          ? 'Cambios guardados'
-          : `Cambios guardados. Avisamos a ${avisados} postulante${
-              avisados === 1 ? '' : 's'
-            } en su portal`,
+        [
+          avisados === 0
+            ? 'Cambios guardados'
+            : `Cambios guardados. Avisamos a ${avisados} postulante${
+                avisados === 1 ? '' : 's'
+              } en su portal`,
+          aBuscar > 0 ? `Volvemos a buscar en ${aBuscar} CV` : null,
+        ]
+          .filter(Boolean)
+          .join('. '),
       )
     },
     /*
@@ -160,6 +179,8 @@ export function FormularioDeEdicion({
      */
     onError: (causa) => {
       const mensaje = causa instanceof Error ? causa.message : 'No se pudo guardar la vacante.'
+      // El fallo se lee en el formulario: la confirmación se cierra para dejarlo a la vista.
+      setConfirmando(null)
       setFallo(mensaje)
       alFallar(mensaje)
       void cache.invalidateQueries({ queryKey: ['panel-vacantes'] })
@@ -223,7 +244,31 @@ export function FormularioDeEdicion({
       setFallo('Escribe por qué cambia el sueldo: queda en la auditoría de la vacante.')
       return
     }
-    guardado.mutate()
+    if (!cambianLasLineas) {
+      guardado.mutate(false)
+      return
+    }
+    void guardarLasLineasPreguntando()
+  }
+
+  /** Con CV calificados, primero la confirmación; sin ninguno, se guarda ya. */
+  async function guardarLasLineasPreguntando() {
+    setComprobando(true)
+    try {
+      const actual = await verQueBuscarEnElCv(vacante.id)
+      if (actual.cvsParaVolverABuscar > 0) {
+        setConfirmando({
+          cvs: actual.cvsParaVolverABuscar,
+          quitando: revision.seGuardan.length === 0,
+        })
+        return
+      }
+      guardado.mutate(false)
+    } catch (causa) {
+      setFallo(causa instanceof Error ? causa.message : 'No se pudo comprobar a quién afecta.')
+    } finally {
+      setComprobando(false)
+    }
   }
 
   return (
@@ -245,7 +290,7 @@ export function FormularioDeEdicion({
             className={estilos.guardar}
             type="submit"
             form={FORMULARIO}
-            disabled={guardado.isPending}
+            disabled={guardado.isPending || comprobando || revision.hayErrores}
           >
             {guardado.isPending ? 'Guardando…' : 'Guardar cambios'}
           </button>
@@ -256,6 +301,17 @@ export function FormularioDeEdicion({
         La pregunta va aquí arriba y el formulario sigue montado debajo: es lo
         que hace que «Seguir editando» devuelva lo escrito tal cual estaba.
       */}
+      {confirmando && (
+        <ConfirmarNuevaBusqueda
+          cvs={confirmando.cvs}
+          quitando={confirmando.quitando}
+          guardando={guardado.isPending}
+          alCancelar={() => {
+            if (!guardado.isPending) setConfirmando(null)
+          }}
+          alConfirmar={() => guardado.mutate(true)}
+        />
+      )}
       {preguntandoSiDescartar && (
         <div className={estilos.descartar} role="alertdialog" aria-label="Cambios sin guardar">
           <p className={estilos.descartarTexto}>

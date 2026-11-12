@@ -240,6 +240,22 @@ export interface VacantePanel {
    * desplegable no sabria nombrarla. **Solo en el detalle**.
    */
   pruebaPrestada?: PruebaPrestada | null
+  /**
+   * Las lineas vigentes de «Que buscar en el CV» (V80), en su orden. Privadas: no
+   * las ve el candidato. Viajan en la lista y en el detalle; ausentes en un
+   * backend anterior.
+   */
+  queBuscarEnElCv?: string[]
+}
+
+/**
+ * Lo que mira el formulario de edicion antes de guardar las lineas de «Que
+ * buscar en el CV» (V80): las vigentes y a cuantas personas habria que volver a
+ * buscar si cambian, sin contar las de «CV sin texto».
+ */
+export interface QueBuscarEnElCvActual {
+  lineas: string[]
+  cvsParaVolverABuscar: number
 }
 
 /** La version fija del banco de una vacante vieja (V74). */
@@ -282,6 +298,11 @@ export interface CambioDePesosPrevisto {
   etapas: PesoAntesYDespues[]
   /** Como se reparte el Perfil Integral: curriculum y preguntas. */
   perfilIntegral: PesoAntesYDespues[]
+  /**
+   * El peso de «Que buscar en el CV» dentro de la nota del CV, en %, antes y
+   * despues (V80). Solo si la vacante tiene lineas; si no, `null` o ausente.
+   */
+  queBuscarEnElCv?: PesoAntesYDespues | null
 }
 
 /** Lo que contesta el cambio: la version que ya rige y a cuantas personas se recalculo. */
@@ -318,6 +339,8 @@ export interface ConteoDeArchivadas {
 export interface VacanteActualizadaResponse {
   huboCambios: boolean
   postulantesAvisados: number
+  /** A cuantas personas se mando volver a buscar por cambiar «Que buscar en el CV» (V80). */
+  cvsABuscar?: number
 }
 
 /**
@@ -407,6 +430,16 @@ export interface GuardarVacante {
    * llegar la noticia. Queda en la auditoria, nunca en el aviso del candidato.
    */
   motivoRemuneracion?: string
+  /**
+   * «Que buscar en el CV» (V80): hasta seis lineas. Ausente = no se tocan; una
+   * lista vacia las quita. Una linea prohibida o de mas de 200 caracteres es un 400.
+   */
+  queBuscarEnElCv?: string[]
+  /**
+   * Si ya se confirmo volver a buscar en los CV calificados. Cambiar las lineas
+   * con CV calificados sin esto es un 409.
+   */
+  confirmarNuevaBusqueda?: boolean
 }
 
 export interface RequisitoPanel {
@@ -815,6 +848,46 @@ export interface FilaRanking {
    * criterios de IA pueden cambiar en un momento. Opcional por un backend anterior.
    */
   recalificando?: boolean
+  /**
+   * «Que buscar en el CV» de esta persona (V80): los puntos, el orden «Por lo
+   * buscado», el bloque de la ficha. `null` o ausente si la vacante no busca nada.
+   * Con la busqueda terminada, `notaCurriculum` ya la lleva dentro.
+   */
+  busqueda?: BusquedaEnElCv | null
+}
+
+/** En que punto esta la busqueda de «Que buscar en el CV» de una persona. */
+export type EstadoDeLaBusqueda = 'PENDIENTE' | 'BUSCANDO' | 'TERMINADA' | 'SIN_TEXTO' | 'FALLIDA'
+
+/** Lo que se encontro de una linea en el CV. */
+export type EstadoDeLaLinea = 'TIENE' | 'MENCIONA' | 'NO_APARECE'
+
+/** «Que buscar en el CV» de una persona (V80). */
+export interface BusquedaEnElCv {
+  estado: EstadoDeLaBusqueda
+  /** Cuantas «lo tiene»; 0 si no termino. */
+  tiene: number
+  menciona: number
+  /** Cuantas lineas tiene la vacante. */
+  total: number
+  /** El promedio de las lineas, sobre 100; `null` si no termino. */
+  notaLoBuscado: number | null
+  /** La nota de los ocho criterios, la de antes de la V80. */
+  notaCriteriosGenerales: number | null
+  lineas: LineaBuscadaEnElCv[]
+}
+
+/**
+ * Una linea y lo que se encontro. `estado` es `null` si la busqueda no termino. La
+ * frase, la nota y la pregunta solo viajan con `abrir_ficha_candidato`.
+ */
+export interface LineaBuscadaEnElCv {
+  orden: number
+  texto: string
+  estado: EstadoDeLaLinea | null
+  frase: string | null
+  nota: string | null
+  pregunta: string | null
 }
 
 /** Lo justo para la columna «Reseñas» y para ordenarla. */
@@ -1121,6 +1194,15 @@ export interface RankingVacante {
    */
   puedeVerResenas?: boolean
   filas: FilaRanking[]
+  /**
+   * Las lineas vigentes de «Que buscar en el CV» (V80). Vacia o ausente: la vacante
+   * no busca nada y no se pinta nada nuevo.
+   */
+  queBuscarEnElCv?: string[]
+  /** Cuanto pesa «Que buscar en el CV» en la nota del CV, en % («pesa 25 %»). */
+  pesoQueBuscarEnElCv?: number | null
+  /** Si quien mira puede pedir «Volver a buscar» (`ajustar_nota`). Una pista, no la defensa. */
+  puedeVolverABuscar?: boolean
 }
 
 export interface FichaPostulacion {
