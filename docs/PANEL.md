@@ -6,7 +6,8 @@ cierra, las
 reseñas de empresas —escribirlas, leerlas y moderarlas—, la gestión de personas: colaboradores,
 sedes y cargos, y contratar desde la ficha; las preguntas propias de cada vacante: de dónde
 salen, el editor y su nota en la ficha; la prueba técnica de cada vacante nueva, escrita en ese
-mismo editor; y la nota mínima con la que una vacante pasa sola a la prueba. El recorrido de los dos lados —equipo y candidato— está en
+mismo editor; la nota mínima con la que una vacante pasa sola a la prueba; y «Qué buscar en el
+CV», lo que cada vacante busca en los currículums. El recorrido de los dos lados —equipo y candidato— está en
 [06-FLUJO-COMPLETO.md](06-FLUJO-COMPLETO.md).
 
 ---
@@ -1243,6 +1244,10 @@ en `docs/DECISION-UNA-VACANTE-UNA-VERSION.md` del backend.
   vacante, el ranking y la ficha. Si falla, el diálogo dice «No se cambió nada: la vacante sigue con
   sus pesos y sus notas.» con el motivo del servidor.
 - **En el teléfono** (hasta 640 px) la tabla se apila, una etapa por línea.
+- **Si la vacante busca algo en el CV** (13/11/2026), la tabla suma una fila «Qué buscar en el CV»
+  con el porcentaje de antes y el de después: «25 % → 30 %». Es un porcentaje de la nota del CV, no
+  de la nota final. Dos versiones que solo difieren en ese número también recalculan a todos. Ver
+  «Qué buscar en el CV», abajo.
 - **Cerrada o archivada**, el desplegable queda en solo lectura con el porqué. A «Los pesos
   generales» sigue sin poder volverse.
 - **«Usar estos pesos», en la ficha del puesto**, pide el cambio por el mismo camino
@@ -1253,6 +1258,65 @@ Comprobarlo: `npx playwright test herramientas/e2e/59-pesos-con-candidatos-y-fin
 de cada vacante» y «Publicar una vacante exige tres cosas antes»). ⚠️ **Escribe** en el clon y
 retira lo sembrado al terminar. Las unitarias, en `PesosDeLaDecision.test.tsx`, `Vacante.test.tsx` y
 `prueba-tecnica/FichaDelPuesto.test.tsx`; en el backend, `FlujoPesosConCandidatosIT`.
+
+### Qué buscar en el CV (13/11)
+
+Cada vacante puede escribir hasta seis cosas concretas que busca en el CV —«Controla costos y
+mermas»—, y la IA dice de cada persona si **lo tiene**, con la frase del CV que lo prueba, si **lo
+menciona** sin detalle o si **no aparece**. Eso entra en la nota del CV con el peso de la versión
+de pesos (25 % por defecto). Cómo busca y cómo se calcula la nota, en `docs/CALIFICACION-CON-IA.md`
+del backend, «Qué buscar en el CV». **El candidato no ve nada de esto**: ni el portal, ni «Mis
+procesos», ni los correos lo enseñan. Todo vive en `QueBuscarEnElCv.tsx`; las reglas y las cuentas,
+en `reglasQueBuscar.ts`.
+
+- **La casilla**, en «Nueva vacante» y «Editar vacante», debajo de «Lo que se busca»: «Qué buscar
+  en el CV, uno por línea», con el chip «Solo lo ve tu equipo» y un candado. Debajo, «La IA buscará
+  esto en cada CV que llegue», con «N de 6 como máximo», enseña lo que se guardará mientras se
+  escribe: las vacías no cuentan, una repetida cuenta una vez, de la séptima en adelante salen
+  tachadas con «No se buscará: el máximo es 6.», y sin líneas dice «Nada todavía. Sin líneas, la
+  ficha no muestra el checklist.». Sin texto de ayuda. Con la vacante cerrada o archivada, en solo
+  lectura.
+- **Lo que no se puede buscar** —edad, sexo, estado civil, hijos, salud, religión u origen— sale
+  en rojo con «No se puede buscar: la edad, el sexo, el estado civil, los hijos, la salud, la
+  religión o el origen no sirven para elegir a nadie.», y el botón de guardar se apaga; una línea
+  de más de 200 caracteres, igual. «Carné de salud vigente» sí se acepta. El backend aplica la
+  misma regla. **Es una lista cerrada**: ver «Reglas que el código nuevo hereda» en
+  [REGLAS-DEL-CODIGO](REGLAS-DEL-CODIGO.md).
+- **Guardar líneas distintas con CV ya calificados pregunta antes**, dentro del mismo modal de
+  edición: «¿Volver a buscar en N CV?», «Las notas del CV se recalculan al terminar. No cambia
+  nadie de etapa.», con «Cancelar» —devuelve lo escrito tal cual— y «Guardar y volver a buscar»,
+  a prueba de doble clic. Quitar todas pregunta «¿Quitar lo que se busca en N CV?». El número lo da
+  `GET /vacantes/{id}/que-buscar-en-el-cv` justo antes; con 0 se guarda sin preguntar. Editar otro
+  campo no toca las líneas ni avisa a nadie.
+- **En el ranking, en las cinco pestañas**, cada persona lleva bajo el nombre y el correo un punto
+  por línea, en su orden: verde lo tiene, ámbar lo menciona, blanco con borde no aparece y punteado
+  pendiente o buscando. En su lugar puede salir «CV sin texto» o «No se pudo buscar». Cada grupo
+  lleva un texto para lectores de pantalla («3 de 4 requisitos»). Sobre la tabla, una línea con los
+  recuentos —«5 de 7 listos · 1 buscando · 1 CV sin texto»— y el control **«Orden: De siempre |
+  Por lo buscado»**, el mismo segmentado del corte. «Por lo buscado» ordena por cuántos «lo tiene»,
+  luego por cuántos «lo menciona» y luego como siempre; quien no tiene resultado va al final. Se
+  aplica después de los filtros, y vuelve a «De siempre» al cambiar de pestaña o al ordenar por
+  una cabecera. Hasta 640 px el control pasa debajo de la línea de estado. Sin líneas en la vacante
+  no sale nada de esto.
+- **En la ficha, en cualquier pestaña**, lo primero es el bloque «Qué buscar en el CV» con el
+  recuento («3 de 4»), la **nota del CV** con sus dos filas —«Criterios generales · pesan 75 %» y
+  «Qué buscar en el CV · pesa 25 %», con los porcentajes de la versión de pesos; mientras busca,
+  «por ahora, todo» y «aún no suma»— y una fila por línea: el icono, el texto, «Lo tiene», «Lo
+  menciona, sin detalle» o «No aparece», la frase del CV entre comillas latinas, la nota breve y,
+  si no lo tiene, «**Para la entrevista:**» con la pregunta. En lugar de la lista, «Buscando en su
+  CV…», «CV sin texto: no se pudo buscar.» o «No se pudo buscar.», este último con **«Volver a
+  buscar»** si quien mira tiene `ajustar_nota` (`puedeVolverABuscar`). Debajo sigue la ficha de
+  siempre.
+- **El Excel** de «Perfil integral» y «Prueba del puesto» lleva la columna «Qué buscar en el CV»
+  tras «Teléfono» y sigue el orden de la pantalla. Con «Por lo buscado», el pie dice «Orden: por lo
+  buscado» en lugar de «Orden del ranking (grupo de prioridad y nota)».
+
+Comprobarlo: `npx playwright test herramientas/e2e/63-que-buscar-en-el-cv.spec.ts
+herramientas/e2e/63-que-buscar-en-el-cv-qa.spec.ts
+herramientas/e2e/63-que-buscar-en-el-cv-qa-regresiones.spec.ts`. ⚠️ **Escriben** en el clon —lo
+que la IA habría encontrado se siembra con SQL, porque en el preview la IA va apagada— y lo retiran
+al terminar. Las unitarias, en `QueBuscarEnElCv.test.tsx`, `reglasQueBuscar.test.ts` y
+`Vacante.test.tsx`; en el backend, `FlujoQueBuscarEnElCvIT`.
 
 ### La nota del perfil «en camino» (07/10)
 

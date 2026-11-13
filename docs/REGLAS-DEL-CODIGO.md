@@ -51,6 +51,17 @@ cuanto se toca. ⚠️ **El cursor se coloca en el mismo evento**: el componente
 `<input>` el valor ya enmascarado antes de que React pinte; si se deja a React, el cursor salta al
 final a mitad de escribir.
 
+**Lo que se puede escribir en «Qué buscar en el CV» lo decide `src/panel/vacantes/reglasQueBuscar.ts`**
+(13/11/2026): vacías, repetidas, el tope de seis líneas y de 200 caracteres, y lo que no se puede
+buscar —edad, sexo, estado civil, hijos, salud, religión u origen—. Es copia de
+`ReglasQueBuscarEnElCv` del backend, con las mismas palabras y el mismo mensaje: si se separan, el
+formulario deja guardar algo que la API rechaza con 400, o al revés. **No hay contrato que las
+amarre**: cada una tiene sus pruebas (`reglasQueBuscar.test.ts` aquí, `ReglasQueBuscarEnElCvTest`
+allí). **Es una lista cerrada** (decisión de alcance del 13/11/2026): cubre las formas acordadas, y
+otras como «Madres de familia», «Entre 18 y 35» o «Testigo de Jehová» pasan; están en
+`DEFECTOS-CONOCIDOS.md` del backend, el 20. Añadir una forma es añadirla en los dos, con su caso en
+las dos pruebas.
+
 **Una columna de criterio se identifica por su `clave`, no por su nombre** (01/10/2026). Con
 criterios escritos por cada vacante hay muchos «Comunicación», y agrupar por nombre —como hacía la
 tabla hasta entonces— juntaría en una columna notas de criterios distintos. El servidor manda `clave` (`prueba:<id>`, `banco:<id>`) y el
