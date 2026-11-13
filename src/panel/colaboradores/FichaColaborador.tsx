@@ -16,7 +16,7 @@
  * tal: «Este colaborador no existe».
  */
 
-import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { rutas } from '@/rutas'
@@ -61,6 +61,7 @@ import {
 import { EtiquetaDeEstado, FinDeContrato } from './piezas'
 import { useRetenerLaSesion } from '../Sesion'
 import { AvisoDeFallo, explicarFallo, useUnaVez } from '../ui/Envio'
+import { Pestanas } from '../ui/Pestanas'
 import estilos from './Colaboradores.module.css'
 import formularios from './Formularios.module.css'
 import propios from './FichaColaborador.module.css'
@@ -176,7 +177,7 @@ export function FichaDelColaborador() {
         </p>
       </header>
 
-      <Pestanas actual={pestana} alCambiar={setPestana} />
+      <Pestanas pestanas={PESTANAS} actual={pestana} alCambiar={setPestana} etiqueta="Secciones de la ficha" />
 
       <div
         className={propios.panel}
@@ -236,45 +237,6 @@ export function FichaDelColaborador() {
 }
 
 // ---------- Las pestañas ----------
-
-function Pestanas({ actual, alCambiar }: { actual: Pestana; alCambiar: (p: Pestana) => void }) {
-  const lista = useRef<HTMLDivElement>(null)
-
-  function alPulsar(e: KeyboardEvent<HTMLButtonElement>) {
-    const i = PESTANAS.findIndex((p) => p.clave === actual)
-    let siguiente = -1
-    if (e.key === 'ArrowRight') siguiente = (i + 1) % PESTANAS.length
-    else if (e.key === 'ArrowLeft') siguiente = (i - 1 + PESTANAS.length) % PESTANAS.length
-    else if (e.key === 'Home') siguiente = 0
-    else if (e.key === 'End') siguiente = PESTANAS.length - 1
-    if (siguiente < 0) return
-    e.preventDefault()
-    const destino = PESTANAS[siguiente]!
-    alCambiar(destino.clave)
-    lista.current?.querySelector<HTMLButtonElement>(`#pestana-${destino.clave}`)?.focus()
-  }
-
-  return (
-    <div className={propios.pestanas} role="tablist" aria-label="Secciones de la ficha" ref={lista}>
-      {PESTANAS.map((p) => (
-        <button
-          key={p.clave}
-          id={`pestana-${p.clave}`}
-          className={p.clave === actual ? `${propios.pestana} ${propios.pestanaActiva}` : propios.pestana}
-          type="button"
-          role="tab"
-          aria-selected={p.clave === actual}
-          aria-controls={`panel-${p.clave}`}
-          tabIndex={p.clave === actual ? 0 : -1}
-          onClick={() => alCambiar(p.clave)}
-          onKeyDown={alPulsar}
-        >
-          {p.nombre}
-        </button>
-      ))}
-    </div>
-  )
-}
 
 // ---------- Perfil ----------
 

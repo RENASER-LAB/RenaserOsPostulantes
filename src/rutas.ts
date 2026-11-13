@@ -91,14 +91,17 @@ export const patrones = {
   adminPruebaPropia: '/admin/vacantes/:id/prueba',
   adminSesiones: '/admin/simulacion',
   /**
-   * La antigua sección «Pruebas» —las plantillas y el compositor de sus
-   * versiones—, retirada: las dos direcciones solo llevan a la lista de
-   * vacantes, para quien las tenga guardadas. Leía el catálogo de preguntas de
-   * toda la plataforma, que ahora es solo de la plataforma (spec
-   * fuga-del-catalogo-de-preguntas). `/admin/pruebas` no queda reservada:
-   * vuelve con el índice de las pruebas de la empresa.
+   * «Pruebas»: el índice de las preguntas y pruebas que la empresa escribió en
+   * sus vacantes (spec pruebas-indice-de-la-empresa). La pestaña, los filtros y
+   * la fila abierta viajan en la query (`?tipo=prueba&nivel=EJECUCION&vacante=12`).
    */
-  adminPruebasRetirada: '/admin/pruebas',
+  adminPruebas: '/admin/pruebas',
+  /**
+   * La versión de una plantilla de la antigua sección «Pruebas», retirada: solo
+   * lleva a la lista de vacantes, para quien la tenga guardada. Leía el
+   * catálogo de preguntas de toda la plataforma (spec
+   * fuga-del-catalogo-de-preguntas).
+   */
   adminVersionDePruebaRetirada: '/admin/pruebas/versiones/:versionId',
   adminConfiguracion: '/admin/configuracion',
   /**
@@ -177,6 +180,11 @@ export const rutas = {
   adminPruebaTecnica: (id: number | string) => `/admin/vacantes/${id}/prueba-tecnica`,
   adminPreguntasPropias: (id: number | string) => `/admin/vacantes/${id}/preguntas`,
   adminPruebaPropia: (id: number | string) => `/admin/vacantes/${id}/prueba`,
+  /** Con `busqueda`, la pestaña y los filtros tal como estaban (`?tipo=prueba&…`). */
+  adminPruebas: (busqueda?: string) =>
+    busqueda === undefined || busqueda === '' || busqueda === '?'
+      ? '/admin/pruebas'
+      : `/admin/pruebas${busqueda.startsWith('?') ? '' : '?'}${busqueda}`,
   adminSesiones: () => '/admin/simulacion',
   adminConfiguracion: () => '/admin/configuracion',
   adminColaboradores: () => '/admin/colaboradores',

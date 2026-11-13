@@ -33,15 +33,23 @@ movimiento no se deshace. Antes de confirmar, la pantalla enseña cuántas
 solicitudes y cuántas personas cuelgan del área —los recuentos de verdad, no un
 «¿seguro?»—, y si no puede traerlos no ofrece el botón.
 
-**Las pruebas del puesto** · *ya no tienen pantalla propia*
+**Las pruebas del puesto** · *se escriben en cada vacante*
 
 Una vacante nueva escribe su prueba técnica en su propio editor (paso 3e), así
 que no hace falta tener ninguna escrita antes de crearla. La sección «Pruebas»
-del panel (`/admin/pruebas`), donde se escribían las plantillas que eligen las
-vacantes de antes, **se retiró el 05/10/2026** para todas las empresas, RENASER
-incluida: al abrir una versión pedía el catálogo de preguntas de toda la
-plataforma, es decir, el examen de las demás empresas. Quien abre esa dirección
-llega a la lista de vacantes.
+del panel donde se escribían las plantillas que eligen las vacantes de antes
+**se retiró el 05/10/2026** para todas las empresas, RENASER incluida: al abrir
+una versión pedía el catálogo de preguntas de toda la plataforma, es decir, el
+examen de las demás empresas. La dirección de una de sus versiones lleva a la
+lista de vacantes.
+
+**Desde el 13/11/2026, «Pruebas» (`/admin/pruebas`) es otra cosa**: el índice,
+en solo lectura, de las preguntas del Perfil Integral y las pruebas del puesto
+que la empresa ya escribió en sus vacantes, publicadas o en borrador. Sirve para
+encontrar una que valga y, con permiso para corregir vacantes, copiarla a otra
+vacante que use el editor, que se abre con el borrador copiado. No se escribe
+nada ahí: para editar se entra en la vacante. Ver ««Pruebas»: el índice de lo
+escrito en el editor» en [PANEL](PANEL.md).
 
 Una vacante de antes sigue eligiendo la versión publicada que rinde (paso 3a).
 Una plantilla nueva solo la escribe RENASER, con sus guiones: el catálogo de

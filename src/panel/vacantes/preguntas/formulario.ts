@@ -319,6 +319,21 @@ export function textoDeLaPrueba(r: ResumenDePreguntas | null | undefined): strin
   return `Publicada · ${criterios} ${criterios === 1 ? 'criterio' : 'criterios'} · ${deQue}${tiempo}`
 }
 
+/**
+ * El tiempo de la prueba como en el chip del editor: «90 min», «Sin cronómetro»
+ * o «N días» (las de plazo abierto de antes de la V68); sin elegir todavía,
+ * «Falta el tiempo». Lo usan el chip del editor y la fila de «Pruebas».
+ */
+export function tiempoDeLaPrueba(
+  modalidad: string | null | undefined,
+  minutos: number | null | undefined,
+  dias: number | null | undefined,
+): string {
+  if (modalidad === 'CRONOMETRADA') return minutos ? `${minutos} min` : 'Faltan los minutos'
+  if (modalidad === 'PLAZO_ABIERTO') return dias ? `${dias} ${dias === 1 ? 'día' : 'días'}` : 'Sin cronómetro'
+  return 'Falta el tiempo'
+}
+
 /** Los formatos de un entregable, con su nombre para leer. */
 export const FORMATOS: { valor: 'ARCHIVO' | 'ENLACE' | 'CUALQUIERA'; nombre: string }[] = [
   { valor: 'ARCHIVO', nombre: 'Archivo' },

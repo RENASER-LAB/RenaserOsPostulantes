@@ -5,9 +5,10 @@
  * pantalla le funciona hoy**. Las tres de siempre siguen los permisos que ya
  * exige su pantalla, y sin sesión salen las tres.
  *
- * «Pruebas» ya no sale para nadie, RENASER incluida (spec
- * fuga-del-catalogo-de-preguntas, AC-01): la sección se retiró y sus
- * direcciones llevan a la lista de vacantes.
+ * «Pruebas» es el índice de las pruebas de la empresa (spec
+ * pruebas-indice-de-la-empresa, AC-01): sale con `ver_vacantes`, detrás de
+ * Vacantes. Los permisos de las plantillas de la sección retirada (spec
+ * fuga-del-catalogo-de-preguntas) no la dan.
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -47,12 +48,12 @@ describe('qué entradas ve cada rol', () => {
     )
     expect(nombres(menu)).toEqual({
       familias: [
-        ['Selección', ['Vacantes', 'Simulación']],
+        ['Selección', ['Vacantes', 'Pruebas', 'Simulación']],
         ['Personas', ['Colaboradores']],
       ],
       pie: ['Configuración'],
     })
-    expect(menu.familias[0]!.entradas.map((e) => e.ruta)).toEqual(['/admin', '/admin/simulacion'])
+    expect(menu.familias[0]!.entradas.map((e) => e.ruta)).toEqual(['/admin', '/admin/pruebas', '/admin/simulacion'])
   })
 
   it('el Responsable del área no ve Personas y conserva las tres de hoy con su alcance (AC-02)', () => {
@@ -64,28 +65,25 @@ describe('qué entradas ve cada rol', () => {
       }),
     )
     expect(nombres(menu)).toEqual({
-      familias: [['Selección', ['Vacantes', 'Simulación']]],
+      familias: [['Selección', ['Vacantes', 'Pruebas', 'Simulación']]],
       pie: ['Configuración'],
     })
   })
 
-  it('«Pruebas» no sale para nadie, de ninguna empresa, ni con los permisos de pruebas', () => {
-    const permisosDePruebas = {
-      ver_vacantes: 'TODO',
-      elegir_plantilla_prueba: 'TODO',
-      editar_plantillas_prueba: 'TODO',
-    } as const
+  it('«Pruebas» sale con ver_vacantes, en cualquier empresa, también con SUS_VACANTES; sin él no (AC-01, AC-05)', () => {
     for (const empresa of [
       { organizacionId: 1, empresa: 'Clínica Renaser S.A.C.' },
       { organizacionId: 2, empresa: 'Acme S.A.C.' },
     ]) {
-      const menu = menuDe(sesion(permisosDePruebas, empresa))
-      const todas = [...menu.familias.flatMap((f) => f.entradas), ...menu.pie]
-      expect(todas.map((e) => e.nombre)).not.toContain('Pruebas')
-      expect(todas.some((e) => e.ruta.startsWith('/admin/pruebas'))).toBe(false)
+      for (const alcance of ['TODO', 'SUS_VACANTES'] as const) {
+        const menu = menuDe(sesion({ ver_vacantes: alcance }, empresa))
+        const pruebas = menu.familias.flatMap((f) => f.entradas).find((e) => e.nombre === 'Pruebas')
+        expect(pruebas?.ruta).toBe('/admin/pruebas')
+      }
     }
-    // Solo con el permiso de elegir prueba, la familia Selección ni siquiera sale.
-    expect(menuDe(sesion({ elegir_plantilla_prueba: 'SUS_VACANTES' })).familias).toEqual([])
+    // Los permisos de las plantillas de la sección retirada no la dan: sin ver_vacantes, no sale.
+    const sinVer = menuDe(sesion({ elegir_plantilla_prueba: 'TODO', editar_plantillas_prueba: 'TODO' }))
+    expect(sinVer.familias).toEqual([])
   })
 
   it('ver_colaboradores con otro alcance que TODO no da la entrada: no alcanzaría a nadie', () => {
@@ -125,12 +123,13 @@ describe('la entrada activa, también en las rutas hijas (AC-04)', () => {
     expect(entradaActiva(ruta)).toBe(clave)
   })
 
-  it.each(['/admin/pruebas', '/admin/pruebas/versiones/4'])(
-    '%s, de la sección retirada, no marca ninguna entrada',
-    (ruta) => {
-      expect(entradaActiva(ruta)).toBeNull()
-    },
-  )
+  it.each(['/admin/pruebas', '/admin/pruebas/'])('%s marca «Pruebas»', (ruta) => {
+    expect(entradaActiva(ruta)).toBe('pruebas')
+  })
+
+  it('la versión de una plantilla de la sección retirada no marca ninguna entrada', () => {
+    expect(entradaActiva('/admin/pruebas/versiones/4')).toBeNull()
+  })
 })
 
 describe('el plegado se recuerda en este navegador (AC-03)', () => {

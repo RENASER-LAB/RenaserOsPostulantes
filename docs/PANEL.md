@@ -6,8 +6,9 @@ cierra, las
 reseñas de empresas —escribirlas, leerlas y moderarlas—, la gestión de personas: colaboradores,
 sedes y cargos, y contratar desde la ficha; las preguntas propias de cada vacante: de dónde
 salen, el editor y su nota en la ficha; la prueba técnica de cada vacante nueva, escrita en ese
-mismo editor; la nota mínima con la que una vacante pasa sola a la prueba; y «Qué buscar en el
-CV», lo que cada vacante busca en los currículums. El recorrido de los dos lados —equipo y candidato— está en
+mismo editor; la nota mínima con la que una vacante pasa sola a la prueba; «Qué buscar en el
+CV», lo que cada vacante busca en los currículums; y «Pruebas», el índice de lo que la empresa
+escribió en esos editores, con su copia a otra vacante. El recorrido de los dos lados —equipo y candidato— está en
 [06-FLUJO-COMPLETO.md](06-FLUJO-COMPLETO.md).
 
 ---
@@ -32,12 +33,14 @@ vacantes (modelo Indeed), el panel se construye en este repositorio, bajo `/admi
   del token del candidato. Un 401 del panel no puede cerrar la sesión del portal ni al revés.
 - **Un menú lateral por familias** desde el 29/09/2026 (antes, pestañas arriba): en
   **Selección**, **Vacantes** (el CRUD, y dentro de cada una el embudo, el ranking con las notas
-  de la IA, la ficha de cada postulante, avanzar de etapa y contratar) y **Simulación** (las
+  de la IA, la ficha de cada postulante, avanzar de etapa y contratar), **Pruebas** (el índice de
+  las preguntas y pruebas escritas en las vacantes, desde el 13/11/2026) y **Simulación** (las
   sesiones presenciales); en **Personas**, **Colaboradores**; y al pie
   **Configuración** (parámetros, banco de preguntas por Excel, usuarios y roles, áreas, sedes,
   cargos y, solo para la plataforma, las reseñas reportadas). Cada uno ve solo lo que puede usar:
-  ver «Gestión de personas: el menú lateral, los colaboradores y contratar». **«Pruebas» ya no
-  existe** desde el 05/10/2026: ver «La sección «Pruebas» se retiró», al final.
+  ver «Gestión de personas: el menú lateral, los colaboradores y contratar». La «Pruebas» de hoy
+  no es la sección de plantillas que se retiró el 05/10/2026: ver ««Pruebas»: el índice de lo
+  escrito en el editor» y «La sección «Pruebas» se retiró», al final.
 - ⚠️ **Huecos del backend, comprobados el 27/08**: `GET /panel/bandeja` devuelve 500; y **no hay
   forma de listar las versiones de una plantilla de prueba**, solo de pedir una suelta por su
   id. Se enseña lo que existe, como hizo el portal con la decisión ámbar.
@@ -694,9 +697,9 @@ empresa y el de la persona con «Salir». A la izquierda, el menú:
 
 | Qué | Cómo es |
 |---|---|
-| Familias | **Selección** (Vacantes, Simulación), **Personas** (Colaboradores) y, al pie y separada, **Configuración**. Una familia sin entradas no sale, y no hay entradas de módulos futuros. «Pruebas» se quitó el 05/10/2026 |
+| Familias | **Selección** (Vacantes, Pruebas, Simulación), **Personas** (Colaboradores) y, al pie y separada, **Configuración**. Una familia sin entradas no sale, y no hay entradas de módulos futuros. La «Pruebas» de plantillas se quitó el 05/10/2026; la de hoy, el índice, entró el 13/11/2026 con `ver_vacantes` y no sale en el menú de respaldo |
 | Quién ve qué | Al entrar, el panel pide `GET /panel/sesion` (nombre, correo, empresa y permisos con su alcance) y pinta solo lo que cada uno puede usar, con los permisos que ya exigía cada pantalla. «Colaboradores» pide `ver_colaboradores` con alcance `TODO`. **El Administrador no ve «Vacantes»**, porque esas pantallas ya le daban 403. Si la sesión no carga, salen las tres entradas de siempre —Vacantes, Simulación y Configuración— y el panel sigue funcionando. Es solo para pintar: quien decide sigue siendo el backend |
-| Entrada activa | También en las rutas hijas: `/admin/vacantes/:id` y `/admin/archivadas` marcan «Vacantes»; `/admin/colaboradores/:id`, «Colaboradores» |
+| Entrada activa | También en las rutas hijas: `/admin/vacantes/:id` y `/admin/archivadas` marcan «Vacantes»; `/admin/colaboradores/:id`, «Colaboradores». `/admin/pruebas` marca «Pruebas», pero `/admin/pruebas/versiones/:id` no: es de la sección retirada y lleva a Vacantes |
 | Plegar | «Plegar menú» deja una columna de iconos; cada uno conserva su nombre accesible y lo enseña como tooltip. Se recuerda en ese navegador (`renaser_panel_menu_plegado`); sin almacenamiento, sale desplegado |
 | Menos de 1024 px | El menú se oculta y «Menú», en la barra, lo abre como un cajón. Se cierra al elegir una entrada, con Escape o al tocar fuera; el foco no sale de él mientras está abierto y vuelve a «Menú» al cerrarlo |
 
@@ -978,7 +981,8 @@ ranking sigue.
 
 **La personalización de las pruebas ya no existe**, y desde el 05/10/2026 tampoco la pantalla de
 pruebas que la ofrecía: las vacantes nuevas escriben la suya en «Armar la prueba». Ver «La sección
-«Pruebas» se retiró», más abajo.
+«Pruebas» se retiró», más abajo. La «Pruebas» que volvió al menú el 13/11/2026 solo lista y copia
+lo escrito en este editor: ver ««Pruebas»: el índice de lo escrito en el editor».
 
 ⚠️ **Lo visual lo comprueba el usuario**: el editor, la ficha y los rankings van detrás del inicio
 de sesión del panel. Y la IA, como en la fase 1, se prueba con el agente simulado y sembrando sus
@@ -1361,6 +1365,115 @@ al terminar (marca `QA-PE-0067`); la IA va apagada. Desde el 12/10/2026 comprueb
 entregar no hay prueba y sale el aviso nuevo. Las unitarias, en `ranking.test.ts` («la nota del
 perfil en camino (V70)») y `Vacante.test.tsx`.
 
+### «Pruebas»: el índice de lo escrito en el editor (13/11)
+
+Un solo sitio para ver las preguntas del Perfil Integral y las pruebas del puesto que la empresa
+escribió en sus vacantes, encontrar la que sirve y copiarla a otra vacante sin entrar en ellas una
+por una. **Es de solo lectura**: para editar se entra en la vacante, con sus reglas de siempre.
+Las rutas —`GET /pruebas`, `/pruebas/{vacanteId}` y `/pruebas/destinos`— y qué cuenta como escrito
+en el editor están en `docs/` del backend, `09-APIS.md`, ««Pruebas»: el índice de lo escrito en el
+editor». Todo vive en `src/panel/pruebas/`; las reglas sin pintar, en `indice.ts`, y la API, en
+`src/panel/api/pruebas.ts`.
+
+- **La entrada y la dirección.** «Pruebas» sale en Selección, detrás de Vacantes, con
+  `ver_vacantes`; sin él, la dirección enseña el aviso de permiso. Dos pestañas, «Preguntas del
+  Perfil Integral» y «Prueba del puesto», y **todo vive en la dirección**:
+  `/admin/pruebas?tipo=prueba&buscar=caj&nivel=EJECUCION&estado=PUBLICADA,EN_USO&situacion=CERRADA&vacante=12`.
+  Recargar o enlazar conserva la pestaña, lo buscado, los filtros y la fila abierta.
+- **Qué sale.** Las vacantes al alcance de quien mira con su versión escrita en el editor,
+  publicada o en borrador; nada del sistema antiguo ni versiones que quedaron en una vacante que
+  ya no las usa. El panel pide la pestaña entera y **filtra en el navegador** con la misma regla
+  que el servidor (`FiltrosDelIndice`), para tener el recuento de cada casilla sin otra petición.
+- **La lista** es la tabla de `panel/ui/Tabla`, agrupada en «Publicadas» y «Borradores sin
+  publicar». Cada fila: el título (dos líneas como mucho, entero en el `title`) con la sede en
+  gris —«zona, ciudad» o «Remoto», que distingue dos títulos iguales y no se busca—; el nivel, o
+  «—»; la situación de la vacante; las marcas de Colaboradores «Publicada», «Borrador» y «La rinde
+  alguien», y «Hay un borrador abierto» en ámbar menor; el resumen, «N criterios · N preguntas» y,
+  en la prueba, «· N entregables · 90 min», «Sin cronómetro» o «N días» (`tiempoDeLaPrueba` de
+  `vacantes/preguntas/formulario.ts`, el mismo del chip del editor); y «Versión del 18 sep 2026» o
+  «Sin publicar». **Sin fecha límite**: es de cada vacante y no se copia. Acciones: «Abrir en la
+  vacante», al editor de esa pestaña, y «Usar en otra vacante», solo con `puedeUsarEnOtra`. Las
+  columnas siguen al ancho de la lista, no al de la pantalla: ancha, media con columnas apiladas,
+  y tarjeta en la estrecha y en el teléfono.
+- **Buscar y filtrar.** Una sola línea a todo el ancho busca por título, sin tildes ni mayúsculas.
+  Si lo escrito casa con un valor de filtro («tác», «publi», «nivel:»), lo ofrece como sugerencia
+  y queda como etiqueta dentro de la línea, que se quita con su aspa o con dos Retroceso en la
+  línea vacía; Enter abre la primera fila. Al lado, «Filtros» («Filtrar (n)» en el teléfono) abre
+  Nivel, Estado de la prueba y Situación de la vacante, y «Quitar filtros» sale cuando hay alguno.
+  Desde 1440 px y sin ninguna prueba abierta, además, la columna de filtros a la izquierda, con
+  recuentos y «Limpiar». Teclado: «/» o Ctrl/⌘+K enfocan la línea, ↓ baja a las filas, ↑/↓ las
+  recorren y Escape cierra lo de arriba.
+- **La vista previa** es `VistaDeVersion`, con `enColumnas`: si la vista mide 52rem o más (≈1920
+  px de pantalla), los criterios van en dos columnas. Desde 1280 px, una columna a la derecha,
+  fija bajo la barra y sin velo, con la lista compacta al lado (25rem; 28rem desde 1700 px), y
+  ↑/↓ cambian la fila abierta. De 641 a 1279 px, una hoja que sube desde abajo, modal. En el
+  teléfono, a pantalla completa; se cierra arrastrando hacia abajo y deslizando de lado se cambia
+  de prueba. Enseña la publicada; si solo hay borrador, «Borrador: todavía puede cambiar», sin
+  avisos ni «N por arreglar». Un 404 dice «Esta vacante ya no existe» y refresca la lista.
+- **«Usar en otra vacante»** despliega un bloque dentro de la vista previa, sin otra ventana;
+  desde la fila, abre la vista previa con el bloque ya desplegado. Los destinos los da el servidor,
+  sin la vacante de origen; los que ya rinde alguien salen deshabilitados con su motivo. Con
+  borrador en la destino pide confirmar: «Ya hay un borrador en esta vacante: la copia lo reemplaza
+  entero.». «Copiar y abrir» se apaga mientras copia y termina en el editor de la destino. Si la
+  destino empezó a rendirse mientras tanto, el bloque dice el rechazo del servidor, la deshabilita y
+  vuelve a pedir la lista. «Cancelar», Escape y el botón que lo despliega lo pliegan igual y
+  devuelven el foco a «Usar en otra vacante». La copia es el `POST …/copia` de siempre.
+- **Estados**: vacío por pestaña, con «Ir a Vacantes» y sin buscador ni filtros; «Ninguna coincide
+  con los filtros» con «Quitar filtros»; esqueleto al cargar; y un fallo con «Reintentar» que
+  conserva lo que ya estaba en pantalla, en la lista, la vista previa y la copia.
+- **Tres trampas que costó la QA.** **Lo buscado vive en el estado de la pantalla y se copia a la
+  dirección**: si el campo leyera la dirección, la navegación —que react-router pinta en una
+  transición— lo repintaría con el valor de antes y se perderían letras al teclear rápido. **El
+  foco se pone después de pintar la dirección nueva**: antes, la hoja sigue `inert` y el foco cae
+  en el `body`. Y **lo que la pantalla escribe en la dirección lleva una marca en su `state`**,
+  para distinguirlo de un enlace del menú, que llega de fuera con su propia búsqueda.
+- **`Pestanas` es común desde esta entrega**: salió de `FichaColaborador.tsx` a
+  `src/panel/ui/Pestanas.tsx`. No guarda cuál está elegida: la ficha del colaborador la lleva en su
+  estado y «Pruebas», en la dirección.
+
+**Limitaciones conocidas**, anotadas por la QA sin contarlas como defecto: abrir o cerrar la vista
+previa **reemplaza** la entrada del historial, así que Atrás vuelve a la página anterior a
+«Pruebas», no a la lista sin vista previa; y si Atrás devuelve una dirección con `?vacante=` entre
+641 y 1279 px, la hoja se abre con el foco en el `body`. «Copiar de otra vacante», dentro del
+editor, no cambia: sigue cortando solo por empresa, sin el alcance (decisión del 12/10/2026).
+
+Comprobarlo: `npx playwright test herramientas/e2e/64-pruebas-de-la-empresa.spec.ts
+herramientas/e2e/65-pruebas-de-la-empresa-qa.spec.ts
+herramientas/e2e/66-pruebas-de-la-empresa-qa-regresiones.spec.ts
+herramientas/e2e/51-sin-la-seccion-pruebas.spec.ts`. ⚠️ **Escriben** en el clon —vacantes con la
+marca `QA-PE-0067`, cuentas y un rol de prueba y una segunda empresa— y lo retiran al terminar. Las
+unitarias, en `Pruebas.test.tsx`, `indice.test.ts`, `menu.test.ts` y `Armazon.test.tsx`; en el
+backend, `FlujoIndiceDePruebasIT`, `FiltrosDelIndiceTest`, `IndiceDePreguntasPropiasTest` e
+`IndiceDeLaPruebaPropiaTest`.
+
+#### Cómo se ve
+
+Sale de la maqueta aprobada el 13/11/2026, la propuesta «Emil». Va en **CSS Modules con los tokens
+de `mundo.css`, sin Tailwind ni shadcn**: el piloto de `/vacantes` no se extendió aquí. Todo está en
+`src/panel/pruebas/Pruebas.module.css`, y reutiliza la `.pagina` del panel (`--ancho-panel`), los
+botones `acentoMenor` y `secundario` de `piezas.module.css`, la tabla de `panel/ui/Tabla`, las
+marcas de estado de Colaboradores, las casillas y etiquetas de `FiltrosDelRanking`, el aviso de
+error de Vacantes, la superficie de `Modal` y `ui/Estados`. Tres piezas son nuevas, con esos mismos
+tokens:
+
+- **La línea de búsqueda con etiquetas**: el campo `.entrada`, de 44 px de alto como mínimo, en
+  `nube` con `borde-control` y radio de control, con dentro las etiquetas de `FiltrosDelRanking` a 34
+  px en `nube-hundida`. Al enfocarse, la línea entera toma el borde `--activo` y su halo. En el
+  teléfono ocupa su propia fila, y la ventanita de filtros sube como hoja desde abajo, con asa y
+  velo.
+- **La vista previa**: al lado, una superficie en `nube` con filete `regla` y `sombra-nube`, pegada
+  bajo la barra; en hoja, radio solo arriba y `sombra-aviso`, alineada con el área de contenido
+  —también con el menú plegado— y sobre el `--velo`. El modo lo decide `useModoDeLectura` en el
+  componente, como `useCorte` en `/vacantes`, porque cambia qué se pinta y no solo dónde.
+- **El bloque de copia**: una caja en `nube-hundida` con radio de control, que entra con un fundido
+  corto. No es una segunda ventana, porque solo hay un `Modal` a la vez. En el teléfono, «Copiar y
+  abrir» queda fijo abajo y la lista de destinos no se desplaza aparte.
+
+**La única curva nueva es la del cajón**, `--curva-cajon` (`cubic-bezier(0.32, 0.72, 0, 1)`), de la
+familia de `--salida` y local a esa hoja de estilos, no a `mundo.css`: la hoja sube en 340 ms y baja
+en 200. Lo que se abre con el teclado no se anima, y con `prefers-reduced-motion` solo quedan
+fundidos.
+
 ### La sección «Pruebas» se retiró (05/10)
 
 Al abrir una versión, esa sección pedía el catálogo de preguntas de toda la plataforma, así que
@@ -1369,20 +1482,24 @@ su propio editor, la sección se fue entera, para todas las empresas y también 
 backend, además, cerró el catálogo: solo la plataforma lo lista, le añade preguntas o las elige, y
 a cualquier otra empresa le responde 404 (`docs/` del backend, `PRUEBA-DEL-PUESTO.md`).
 
-- **El menú no la ofrece a nadie**, aunque tenga los permisos de pruebas.
-- **Una dirección guardada** —`/admin/pruebas` o `/admin/pruebas/versiones/:id`— lleva a la lista
-  de vacantes, sin pantalla de error. `/admin/pruebas` no queda reservada a esto: la ocupará el
-  índice de las pruebas de la empresa (`specs/pruebas-indice-de-la-empresa.md`, en el backend).
+- **El menú no la ofrece a nadie**, aunque tenga los permisos de pruebas. La entrada «Pruebas»
+  de hoy es el índice de la sección de arriba, y la da `ver_vacantes`.
+- **Una dirección guardada de una versión** —`/admin/pruebas/versiones/:id`— lleva a la lista de
+  vacantes, sin pantalla de error. `/admin/pruebas` ya no redirige: desde el 13/11/2026 abre el
+  índice.
 - **Una vacante de antes no cambia**: en su configuración sigue eligiendo la versión publicada
   que rinde. Cuando no hay ninguna que ofrecer, el aviso conserva su explicación —no se pudieron
   cargar, no hay ninguna escrita, ninguna está publicada o ninguna es de este puesto—, pero ya no
   enlaza a «Ir a las pruebas del puesto», porque esa pantalla no existe.
-- Se borraron `src/panel/pruebas/` y las funciones de `src/panel/api/panel.ts` que solo usaba esa
-  carpeta; queda lo que lee la configuración de una vacante antigua para elegir su versión.
+- Se borró la `src/panel/pruebas/` de entonces y las funciones de `src/panel/api/panel.ts` que
+  solo usaba esa carpeta; queda lo que lee la configuración de una vacante antigua para elegir su
+  versión. La carpeta de hoy con ese nombre es la del índice.
 
 Comprobarlo: `npx playwright test herramientas/e2e/51-sin-la-seccion-pruebas.spec.ts`, con una
-sesión de RENASER y otra de una segunda empresa; mira también que el navegador no pida el
-catálogo. ⚠️ **Escribe** en el clon la segunda empresa, y la retira al terminar.
+sesión de RENASER y otra de una segunda empresa. Desde el 13/11/2026 mira que el menú ofrezca el
+índice, que la segunda empresa vea su estado vacío y nada de RENASER, que la dirección de una
+versión siga llevando a Vacantes y que el navegador no pida el catálogo. ⚠️ **Escribe** en el
+clon la segunda empresa, y la retira al terminar.
 `15-componer-prueba` se borró con la pantalla, y `41-logotipo` mira la cabecera en
 `/admin/archivadas`. Las unitarias, en `src/panel/menu.test.ts` y `src/panel/Armazon.test.tsx`; en
 el backend, `CatalogoDePreguntasSoloPlataformaIT`.

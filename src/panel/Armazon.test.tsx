@@ -44,6 +44,7 @@ function montar(ruta = '/admin') {
             <Route element={<ArmazonPanel />}>
               <Route path="/admin" element={<p>La lista de vacantes</p>} />
               <Route path="/admin/vacantes/:id" element={<p>Una vacante</p>} />
+              <Route path="/admin/pruebas" element={<p>Las pruebas de la empresa</p>} />
               <Route path="/admin/colaboradores" element={<p>La lista de colaboradores</p>} />
               <Route path="/admin/colaboradores/:id" element={<p>Una ficha</p>} />
               <Route path="/admin/configuracion" element={<p>Configuración</p>} />
@@ -94,8 +95,8 @@ describe('el menú lateral', () => {
     for (const nombre of ['Vacantes', 'Simulación', 'Configuración']) {
       expect(within(menu).getByRole('link', { name: nombre })).toBeTruthy()
     }
-    // La sección «Pruebas» se retiró: no sale ni con elegir_plantilla_prueba.
-    expect(within(menu).queryByRole('link', { name: 'Pruebas' })).toBeNull()
+    // «Pruebas», el índice de la empresa, sale con ver_vacantes (spec pruebas-indice-de-la-empresa).
+    expect(within(menu).getByRole('link', { name: 'Pruebas' }).getAttribute('href')).toBe('/admin/pruebas')
     expect(within(menu).getByRole('region', { name: 'Selección' })).toBeTruthy()
     expect(within(menu).getByRole('region', { name: 'Personas' })).toBeTruthy()
   })
@@ -115,10 +116,19 @@ describe('el menú lateral', () => {
     const menu = lateral()
     expect(within(menu).queryByRole('link', { name: 'Colaboradores' })).toBeNull()
     expect(within(menu).queryByRole('region', { name: 'Personas' })).toBeNull()
-    for (const nombre of ['Vacantes', 'Simulación', 'Configuración']) {
+    for (const nombre of ['Vacantes', 'Pruebas', 'Simulación', 'Configuración']) {
       expect(within(menu).getByRole('link', { name: nombre })).toBeTruthy()
     }
-    expect(within(menu).queryByRole('link', { name: 'Pruebas' })).toBeNull()
+  })
+
+  it('sin ver_vacantes no sale «Pruebas» (AC-01)', async () => {
+    verSesion.mockResolvedValue({
+      ...TALENTO,
+      permisos: [{ codigo: 'crear_usuarios_y_asignar_roles', alcance: 'TODO' }],
+    })
+    montar('/admin/configuracion')
+    await screen.findByText('Clínica Renaser S.A.C.')
+    expect(within(lateral()).queryByRole('link', { name: 'Pruebas' })).toBeNull()
   })
 
   it('si la sesión no se puede cargar, salen las tres de siempre y el panel sigue', async () => {
@@ -135,6 +145,7 @@ describe('el menú lateral', () => {
 
   it.each([
     ['/admin/vacantes/12', 'Vacantes'],
+    ['/admin/pruebas', 'Pruebas'],
     ['/admin/colaboradores/3', 'Colaboradores'],
   ])('en %s marca «%s» como activa (AC-04)', async (ruta, nombre) => {
     montar(ruta)
