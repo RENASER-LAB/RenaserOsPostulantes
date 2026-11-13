@@ -1,6 +1,13 @@
 /**
  * La portada: qué es este proceso y qué vacantes hay abiertas.
  *
+ * ⚠️ **13/11/2026 · estilo «Northstar».** Se recompuso con el ritmo de
+ * northstar-template-demo.vercel.app: el titular enorme en Onest 400 con la
+ * segunda mitad en azul, el campo de columnas punteadas detrás, y una ventana
+ * del portal que entra subiendo y, al bajar, se asienta (de 1,08 a 1) mientras
+ * el titular se va. Debajo, las secciones van numeradas («01 / VACANTES»), la
+ * de «por qué» es la banda oscura y el pie es la noche.
+ *
  * Es la única pantalla en modo Persuade —quien llega todavía no ha postulado y
  * tiene que decidir si le merece la pena—, y desde el 25/09/2026 la compone
  * «El cielo despejado»: el cielo azul detrás de la cabecera —solo aquí—, el
@@ -20,14 +27,18 @@
  * viejos a `/#vacantes-abiertas` siguen cayendo en esa sección.
  */
 
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
+import { motion, useReducedMotion, useScroll, useTransform } from 'motion/react'
 import { listarVacantes } from '@/api/portal'
 import { ETAPAS } from '@/dominio/estados'
 import { ahora as ahoraDelServidor } from '@/dominio/reloj'
 import { rutas } from '@/rutas'
-import { AlAsomarse, FranjaQueSeLlena } from '@/ui/movimiento'
+import { AlAsomarse } from '@/ui/movimiento'
+import { Marca } from '@/ui/Marca'
+import { IconoLupa, IconoMaletin, IconoDocumento, IconoPersonas, IconoCandado, IconoAviso } from '@/ui/Iconos'
+import { FondoDeLaPortada } from './FondoDeLaPortada'
 import { ciudadesDistintas, indexar, porFecha, publicadaHace } from './busqueda'
 import { Tarjeta } from './Tarjeta'
 import estilos from './Vacantes.module.css'
@@ -97,6 +108,18 @@ const PREGUNTAS = [
   },
 ]
 
+/** La curva de entrada de la referencia, la misma que `--salida`. */
+const SALIDA = [0.16, 1, 0.3, 1] as const
+
+/** «01 / VACANTES»: la etiqueta de sección de la referencia. */
+function Etiqueta({ numero, children }: { numero: string; children: ReactNode }) {
+  return (
+    <p className={estilos.etiqueta}>
+      {numero} / {children}
+    </p>
+  )
+}
+
 export function Vacantes() {
   const consulta = useQuery({ queryKey: ['vacantes'], queryFn: listarVacantes })
   // Lo que llegue por la red no puede dar por hecho que tiene la forma
@@ -106,7 +129,7 @@ export function Vacantes() {
     [consulta.data],
   )
   // Ciudades de verdad, del catálogo: «Selva Alegre» es un barrio y no cuenta, y
-  // las que no dicen ciudad tampoco. Antes se contaban textos de ubicación distintos.
+  // las que no dicen ciudad tampoco.
   const ciudades = ciudadesDistintas(vacantes)
   // Las tres más recientes, con las que no tienen fecha al final; y la hora del
   // servidor tomada al llegar los datos, para el «Publicada hace…» de cada una.
@@ -115,304 +138,570 @@ export function Vacantes() {
 
   return (
     <div className={estilos.pagina}>
-      <section className={estilos.portada}>
-        <AlAsomarse>
-          {/*
-            ⚠️ **Aquí iba incrustada la loseta del maletín y se fue el
-            25/09/2026.** Era un PNG pintado en el coral y el rosa del mundo
-            anterior; con la paleta nueva quedaba como la única mancha cálida de
-            la portada. Se probó a girarle el tono por CSS y se retiró entera por
-            petición. El archivo sigue en `public/pieza-trabajo.png` por si vuelve
-            en la paleta nueva — repintado, no rotado.
-          */}
-          <h1 className={estilos.entrada}>Tu próximo trabajo puede empezar aquí</h1>
-          <div className={estilos.acciones}>
-            <Link
-              className={estilos.accionPrincipal}
-              to={rutas.vacantes()}
-              data-rotulo="Ver las vacantes abiertas"
-            >
-              Ver las vacantes abiertas
-            </Link>
-            <Link
-              className={estilos.accionSecundaria}
-              to={rutas.procesos()}
-              data-rotulo="Ya postulé antes"
-            >
-              Ya postulé antes
-            </Link>
-          </div>
-        </AlAsomarse>
-
-
-        {/*
-          El escaparate: la pieza grande del mundo. Dentro va el recorrido, que
-          es el producto, no un adorno.
-
-          ⚠️ **Desde el 25/09/2026 finge ser una ventana del portal**, como la
-          captura de producto que la referencia del cliente pone en el mismo
-          sitio. Era una tarjeta blanca cerrada con el recorrido dentro; ahora
-          lleva su barra arriba, su título, y por debajo asoma una segunda ficha
-          que se corta contra el borde — que es lo que dice «esto sigue» sin
-          tener que enseñarlo.
-
-          ⚠️ **Lo que se corta es SOLO decoración.** La barra de arriba y la
-          ficha que asoma van con `aria-hidden` y no llevan ningún enlace: son el
-          retrato de una pantalla, no la pantalla. El recorrido —lo único que de
-          verdad promete algo— queda entero y por encima del recorte, porque es
-          la promesa de esta portada: lo que se ve antes de entrar es lo mismo
-          que se verá después.
-        */}
-        <AlAsomarse variante="scaleUp" retraso={0.2}>
-          <div className={estilos.escaparate}>
-            <div className={estilos.marcoVentana}>
-              <div className={estilos.ventana}>
-                <div className={estilos.ventanaBarra} aria-hidden="true">
-                  <span className={estilos.ventanaMarca} />
-                  <span className={estilos.ventanaDestinos}>
-                    <span />
-                    <span />
-                    <span className={estilos.ventanaDestinoVivo} />
-                  </span>
-                  <span className={estilos.ventanaAvatar} />
-                </div>
-
-                <div className={estilos.escaparateDentro}>
-                  <p className={estilos.pieEscaparate}>
-                    Cinco etapas para conocer cómo trabajas
-                  </p>
-              <ol className={estilos.recorrido} role="list">
-                {ETAPAS.map((etapa, indice) => (
-                  <li className={estilos.tramo} key={etapa.clave}>
-                    {/*
-                      E · cada etapa asoma detras de la anterior. El retraso se
-                      calcula aqui y no con `AsomanEnFila` porque el escalonado
-                      del padre reparte sobre HIJOS DIRECTOS, y estos cuelgan de
-                      un `<li>` cada uno: el contenedor escalonado no los ve.
-                    */}
-                    <AlAsomarse retraso={0.2 * indice}>
-                      {/* C · la franja se dibuja, escalonada por etapa. */}
-                      <FranjaQueSeLlena
-                        orden={indice}
-                        className={indice === 0 ? estilos.barraViva : estilos.barraTramo}
-                      />
-                      <p className={estilos.numeroEtapa}>Etapa {indice + 1}</p>
-                      <p className={estilos.nombreEtapa}>{etapa.etiqueta}</p>
-                      <p className={estilos.queEsEtapa}>{QUE_ES[etapa.clave]}</p>
-                    </AlAsomarse>
-                  </li>
-                    ))}
-                  </ol>
-                </div>
-
-                {/*
-                  La ficha que asoma y se corta contra el borde. Es el truco de
-                  la referencia: su captura de producto no termina, se sale del
-                  marco, y eso dice que la pantalla sigue sin tener que
-                  enseñarla entera.
-
-                  Decoración pura —`aria-hidden`, sin enlaces ni texto— porque
-                  la mitad de ella no se ve y lo que promete algo ya está arriba.
-                */}
-                <div className={estilos.fichaQueAsoma} aria-hidden="true">
-                  <span className={estilos.fichaLinea} style={{ width: '38%' }} />
-                  <span className={estilos.fichaLineaMenor} style={{ width: '26%' }} />
-                  <div className={estilos.fichaBarras}>
-                    <span className={estilos.fichaBarraViva} />
-                    <span className={estilos.fichaBarra} />
-                    <span className={estilos.fichaBarra} />
-                    <span className={estilos.fichaBarra} />
-                    <span className={estilos.fichaBarra} />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </AlAsomarse>
-      </section>
+      <Portada />
 
       {/*
         La cinta dice cifras verdaderas y solo verdaderas. No hay testimonios ni
         numero de contratados: el sistema todavia no ha pasado por su primer
         candidato real y inventarlos seria mentir en la portada.
       */}
-      <AlAsomarse>
-        <div className={estilos.cinta}>
-          <span>
-            <b>{vacantes.length}</b> {vacantes.length === 1 ? 'puesto abierto' : 'puestos abiertos'}
-          </span>
-          {ciudades > 0 && (
-            <span>
-              <b>{ciudades}</b> {ciudades === 1 ? 'ciudad' : 'ciudades'}
-            </span>
-          )}
-          <span>
-            <b>0</b> descartes por currículum
-          </span>
-          <span>Mirar no exige cuenta</span>
-        </div>
-      </AlAsomarse>
+      <section className={estilos.seccion} aria-label="El portal en cifras">
+        <AlAsomarse variante="subir">
+          <ul className={estilos.cinta} role="list">
+            <li>
+              <span className={estilos.cintaIndice}>01</span>
+              <b data-cifra="">{vacantes.length}</b>
+              <span>{vacantes.length === 1 ? 'Puesto abierto' : 'Puestos abiertos'}</span>
+            </li>
+            <li>
+              <span className={estilos.cintaIndice}>02</span>
+              <b data-cifra="">{ciudades}</b>
+              <span>{ciudades === 1 ? 'Ciudad' : 'Ciudades'}</span>
+            </li>
+            <li>
+              <span className={estilos.cintaIndice}>03</span>
+              <b data-cifra="">0</b>
+              <span>Descartes por currículum</span>
+            </li>
+            <li>
+              <span className={estilos.cintaIndice}>04</span>
+              <b>Sin cuenta</b>
+              <span>Para mirar</span>
+            </li>
+          </ul>
+        </AlAsomarse>
+      </section>
 
-      <AlAsomarse>
-        <section className={estilos.seccionVacantes} aria-labelledby="vacantes-abiertas">
+      <section className={estilos.seccion} aria-labelledby="vacantes-abiertas">
+        <AlAsomarse variante="subir">
           <div className={estilos.cabeceraSeccion}>
+            <Etiqueta numero="01">Vacantes</Etiqueta>
             <h2 id="vacantes-abiertas">Vacantes abiertas</h2>
           </div>
+        </AlAsomarse>
 
-          {consulta.isPending && (
-            <div className={estilos.marco} aria-busy="true">
-              <h3>Buscando vacantes…</h3>
-              <div className={estilos.barra} />
-              <div className={`${estilos.barra} ${estilos.barraMedia}`} />
-              <div className={`${estilos.barra} ${estilos.barraCorta}`} />
-            </div>
-          )}
+        {consulta.isPending && (
+          <div className={estilos.marco} aria-busy="true">
+            <h3>Buscando vacantes…</h3>
+            <div className={estilos.barra} />
+            <div className={`${estilos.barra} ${estilos.barraMedia}`} />
+            <div className={`${estilos.barra} ${estilos.barraCorta}`} />
+          </div>
+        )}
 
-          {consulta.isError && (
-            <div className={estilos.marco}>
-              <h3>No pudimos cargar las vacantes.</h3>
-              <p className={estilos.marcoTexto}>
-                {consulta.error instanceof Error
-                  ? consulta.error.message
-                  : 'No pudimos conectar con el servidor.'}
-              </p>
-              <button
-                type="button"
-                className={estilos.reintentar}
-                onClick={() => void consulta.refetch()}
-                data-rotulo="Intentar de nuevo"
-              >
-                Intentar de nuevo
-              </button>
-            </div>
-          )}
+        {consulta.isError && (
+          <div className={estilos.marco}>
+            <h3>No pudimos cargar las vacantes.</h3>
+            <p className={estilos.marcoTexto}>
+              {consulta.error instanceof Error
+                ? consulta.error.message
+                : 'No pudimos conectar con el servidor.'}
+            </p>
+            <button
+              type="button"
+              className={estilos.reintentar}
+              onClick={() => void consulta.refetch()}
+            >
+              Intentar de nuevo
+            </button>
+          </div>
+        )}
 
-          {!consulta.isPending && !consulta.isError && vacantes.length === 0 && (
-            <div className={estilos.marco}>
-              <h3>Ahora mismo no hay vacantes abiertas.</h3>
-              <p className={estilos.marcoTexto}>
-                Publicamos convocatorias nuevas con frecuencia. Vuelve por aquí en unos días.
-              </p>
-            </div>
-          )}
+        {!consulta.isPending && !consulta.isError && vacantes.length === 0 && (
+          <div className={estilos.marco}>
+            <h3>Ahora mismo no hay vacantes abiertas.</h3>
+            <p className={estilos.marcoTexto}>
+              Publicamos convocatorias nuevas con frecuencia. Vuelve por aquí en unos días.
+            </p>
+          </div>
+        )}
 
-          {vacantes.length > 0 && (
-            <>
-              <ul className={estilos.lista} role="list" aria-label="Vacantes más recientes">
-                {recientes.map((v) => (
-                  <li key={v.vacante.id}>
-                    <Tarjeta vacante={v.vacante} publicada={publicadaHace(v.publicadaEn, ahora)} />
-                  </li>
-                ))}
-              </ul>
-              {/*
-                Todas viven en `/vacantes`, donde se busca y se filtra. Aquí van las
-                tres más recientes: la portada es para decidir si merece la pena, no
-                para leer cuarenta tarjetas.
-              */}
-              <div className={estilos.verTodasLasVacantes}>
-                <Link
-                  className={estilos.verTodas}
-                  to={rutas.vacantes()}
-                  data-rotulo={`Ver las ${vacantes.length} vacantes`}
-                >
-                  Ver las {vacantes.length} vacantes
-                </Link>
-              </div>
-            </>
-          )}
-        </section>
-      </AlAsomarse>
-
-      {/*
-        La banda de «Por qué aquí». Va DESPUÉS de las vacantes y no antes: quien
-        llega a un portal de empleo viene a ver puestos, y tres tarjetas
-        explicando el método entre la portada y la lista retrasan justo eso.
-        Aquí ya vio lo que hay y la pregunta que le queda es si merece la pena.
-
-        Las secciones intermedias alternan el blanco y el gris claro. El cielo
-        se reserva para la entrada y el cierre, por petición del cliente.
-      */}
-      <AlAsomarse>
-        <section className={estilos.banda} aria-labelledby="por-que-aqui">
-          <div className={estilos.bandaDentro}>
-            <div className={estilos.cabeceraSeccion}>
-              <h2 id="por-que-aqui">Por qué este proceso es distinto</h2>
-              <p>Tres reglas que puedes comprobar hoy mismo, sin cuenta.</p>
-            </div>
-
-            <ul className={estilos.rejillaTres} role="list">
-              {LO_NUESTRO.map((cosa) => (
-                <li className={estilos.tarjetaNuestra} key={cosa.clave}>
-                  <Maqueta que={cosa.clave} />
-                  <h3 className={estilos.tituloNuestra}>{cosa.titulo}</h3>
-                  <p className={estilos.textoNuestra}>{cosa.texto}</p>
+        {vacantes.length > 0 && (
+          <AlAsomarse variante="subir">
+            <ul className={estilos.lista} role="list" aria-label="Vacantes más recientes">
+              {recientes.map((v) => (
+                <li key={v.vacante.id}>
+                  <Tarjeta vacante={v.vacante} publicada={publicadaHace(v.publicadaEn, ahora)} />
                 </li>
               ))}
             </ul>
-          </div>
-        </section>
-      </AlAsomarse>
+            {/*
+              Todas viven en `/vacantes`, donde se busca y se filtra. Aquí van las
+              tres más recientes: la portada es para decidir si merece la pena.
+            */}
+            <div className={estilos.verTodasLasVacantes}>
+              <Link className={estilos.verTodas} to={rutas.vacantes()}>
+                Ver las {vacantes.length} vacantes
+              </Link>
+            </div>
+          </AlAsomarse>
+        )}
+      </section>
 
-      <AlAsomarse>
-        <section className={estilos.seccion} aria-labelledby="preguntas-frecuentes">
+      {/*
+        La banda de «Por qué aquí», en la noche de la referencia. Va DESPUÉS de
+        las vacantes: quien llega a un portal de empleo viene a ver puestos.
+      */}
+      <section className={estilos.banda} aria-labelledby="por-que-aqui">
+        <div className={estilos.bandaDentro}>
+          <AlAsomarse variante="subir">
+            <div className={estilos.cabeceraSeccion}>
+              <Etiqueta numero="02">Por qué aquí</Etiqueta>
+              <h2 id="por-que-aqui">Por qué este proceso es distinto</h2>
+              <p>Tres reglas que puedes comprobar hoy mismo, sin cuenta.</p>
+            </div>
+          </AlAsomarse>
+
+          <ul className={estilos.rejillaTres} role="list">
+            {LO_NUESTRO.map((cosa, i) => (
+              <li key={cosa.clave}>
+                <AlAsomarse variante="subir" retraso={0.08 * i} className={estilos.tarjetaNuestra}>
+                  <Maqueta que={cosa.clave} />
+                  <div className={estilos.textosNuestra}>
+                    <h3 className={estilos.tituloNuestra}>{cosa.titulo}</h3>
+                    <p className={estilos.textoNuestra}>{cosa.texto}</p>
+                  </div>
+                </AlAsomarse>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      <section className={`${estilos.seccion} ${estilos.seccionPreguntas}`} aria-labelledby="preguntas-frecuentes">
+        <AlAsomarse variante="subir">
           <div className={estilos.cabeceraSeccion}>
+            <Etiqueta numero="03">Preguntas</Etiqueta>
             <h2 id="preguntas-frecuentes">Preguntas frecuentes</h2>
             <p>Lo que casi todo el mundo pregunta antes de postular.</p>
           </div>
+        </AlAsomarse>
 
-          {/*
-            `<details>` nativo: el plegable, el teclado y el lector de pantalla
-            vienen gratis, y la regla de la plataforma primero dice que se mire el
-            HTML antes de traer una libreria.
-          */}
-          <div className={estilos.preguntas}>
-            {/*
-              Todas cerradas de entrada. La primera venia abierta para enseñar de
-              que va el plegable, y a cambio dejaba la seccion empezando por una
-              respuesta: lo que se ve primero tiene que ser la lista de preguntas,
-              que es lo que permite buscar la propia de un vistazo.
-            */}
-            {PREGUNTAS.map((p) => (
-              <details className={estilos.pregunta} key={p.q}>
-                <summary>
-                  {p.q}
-                  <span className={estilos.mas} aria-hidden="true" />
-                </summary>
-                <p>{p.a}</p>
-              </details>
-            ))}
+        {/*
+          `<details>` nativo: el plegable, el teclado y el lector de pantalla
+          vienen gratis. Todas cerradas de entrada: lo que se ve primero tiene que
+          ser la lista de preguntas.
+        */}
+        <AlAsomarse variante="subir" className={estilos.preguntas}>
+          {PREGUNTAS.map((p, i) => (
+            <details className={estilos.pregunta} key={p.q}>
+              <summary>
+                <span className={estilos.indicePregunta} aria-hidden="true">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <span className={estilos.textoPregunta}>{p.q}</span>
+                <span className={estilos.mas} aria-hidden="true" />
+              </summary>
+              <p>{p.a}</p>
+            </details>
+          ))}
+        </AlAsomarse>
+      </section>
+
+      <section id="empezamos" className={estilos.cierre} aria-labelledby="titulo-cierre">
+        <FondoDeLaPortada className={estilos.campoCierre} />
+        <div className={estilos.veloCierre} aria-hidden="true" />
+        <AlAsomarse variante="subir" className={estilos.cajaCierre}>
+          <h2 id="titulo-cierre">
+            ¿<span className={estilos.resalte}>Empezamos</span>?
+          </h2>
+          <p>
+            Elige un puesto, lee sus requisitos y postula. Lo demás te lo vamos contando en
+            pantalla, paso a paso.
+          </p>
+          <div className={estilos.acciones}>
+            <Link className={estilos.accionPrincipal} to={rutas.vacantes()}>
+              Ver las vacantes abiertas
+            </Link>
+            <Link className={estilos.accionSecundaria} to={rutas.procesos()}>
+              Entrar a mis procesos
+            </Link>
           </div>
-        </section>
-      </AlAsomarse>
+        </AlAsomarse>
+      </section>
+    </div>
+  )
+}
 
-      <AlAsomarse>
-        <section id="empezamos" className={estilos.cierre} aria-labelledby="titulo-cierre">
-          <div className={estilos.cajaCierre}>
-            <h2 id="titulo-cierre">¿Empezamos?</h2>
-            <p>
-              Elige un puesto, lee sus requisitos y postula. Lo demás te lo vamos contando en
-              pantalla, paso a paso.
-            </p>
-            <div className={estilos.acciones}>
-              <Link
-                className={estilos.accionPrincipal}
-                to={rutas.vacantes()}
-                data-rotulo="Ver las vacantes abiertas"
+/**
+ * La primera pantalla: el titular, el campo punteado detrás y la ventana del
+ * portal.
+ *
+ * El movimiento es el «container scroll» de la referencia:
+ *
+ *   - Al cargar, el titular sube 10 px y aparece, y la ventana entra desde 64 px
+ *     más abajo y al 94 % (1,2 s con la curva de salida: es lo primero que se
+ *     ve y solo una vez por visita, así que puede ser larga).
+ *   - Al bajar, la sección mide 170 vh (160 en el teléfono) y su interior va
+ *     pegado: el titular sube 48 px fundiéndose y la ventana pasa de 1,08 a 1
+ *     y de 96 px a -180, así que sube a ocupar el sitio del titular. Son los
+ *     valores medidos en la referencia. Todo `transform` y `opacity`.
+ *   - Con menos movimiento no hay nada de eso: la sección mide lo que su
+ *     contenido y todo está quieto en su sitio final.
+ */
+function Portada() {
+  const quieto = useReducedMotion() ?? false
+  const seccion = useRef<HTMLElement>(null)
+  const movil = usarTelefono()
+  // Medido en la referencia: sobre el alto de la sección, la ventana termina de
+  // asentarse al 41 % y el titular se ha ido al 32 %. En el teléfono la
+  // ventana empieza menos crecida (1,06 y 72 px) y sube menos (-130).
+  const { scrollYProgress } = useScroll({ target: seccion, offset: ['start start', 'end start'] })
+  const escala = useTransform(scrollYProgress, [0, 0.41], movil ? [1.06, 1] : [1.08, 1])
+  const bajada = useTransform(scrollYProgress, [0, 0.41], movil ? [72, -130] : [96, -180])
+  const subida = useTransform(scrollYProgress, [0, 0.33], [0, -48])
+  // ⚠️ Con función y no con rangos: con rangos, motion le pasa la opacidad a un
+  // ScrollTimeline del navegador que en Chromium sin cabeza se quedaba en 1.
+  const desvanecido = useTransform(scrollYProgress, (p) => Math.min(1, Math.max(0, 1 - (p - 0.02) / 0.29)))
+
+  return (
+    <section
+      ref={seccion}
+      className={`${estilos.portada} ${quieto ? estilos.portadaQuieta : ''}`}
+      aria-labelledby="titulo-portada"
+    >
+      <div className={estilos.portadaPegada}>
+        <div className={estilos.campo} aria-hidden="true">
+          <FondoDeLaPortada className={estilos.lienzo} />
+          <div className={estilos.luz} />
+          <div className={estilos.grano} />
+        </div>
+
+        <div className={estilos.portadaDentro}>
+          <motion.div
+            className={estilos.capaTitular}
+            style={quieto ? undefined : { y: subida, opacity: desvanecido }}
+          >
+            <motion.div
+              className={estilos.titularYAcciones}
+              initial={quieto ? false : { opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, ease: SALIDA }}
+            >
+              <h1 id="titulo-portada" className={estilos.entrada}>
+                <span>Tu próximo trabajo</span>{' '}
+                <span className={estilos.resalte}>puede empezar aquí.</span>
+              </h1>
+              <p className={estilos.bajada}>
+                Cinco etapas para conocer cómo trabajas. Tu currículum no te descarta, y mirar
+                no exige cuenta.
+              </p>
+              <div className={estilos.acciones}>
+                <Link className={estilos.accionPrincipal} to={rutas.vacantes()}>
+                  Ver las vacantes abiertas
+                </Link>
+                {/* En el teléfono se esconde, como el segundo botón de la referencia:
+                    «Mis procesos» está a un toque en el menú y en el cierre. */}
+                <Link className={estilos.accionSoloAncha} to={rutas.procesos()}>
+                  Ya postulé antes
+                </Link>
+              </div>
+            </motion.div>
+          </motion.div>
+
+          <motion.div
+            className={estilos.capaVentana}
+            style={quieto ? undefined : { scale: escala, y: bajada }}
+          >
+            <div className={estilos.entradaVentana}>
+              <Ventana />
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+/** Si la pantalla es de teléfono (hasta 767 px, el corte `md` de la referencia). */
+function usarTelefono() {
+  const consulta = '(max-width: 767px)'
+  const [es, setEs] = useState(() => window.matchMedia(consulta).matches)
+  useEffect(() => {
+    const lista = window.matchMedia(consulta)
+    const alCambiar = () => setEs(lista.matches)
+    lista.addEventListener('change', alCambiar)
+    return () => lista.removeEventListener('change', alCambiar)
+  }, [])
+  return es
+}
+
+/**
+ * La ventana del portal: la captura de producto de la referencia —su vista
+ * «Agents», con métricas arriba, un grafo de nodos unidos por líneas y la
+ * actividad en vivo a la derecha—, traducida a lo que vive quien postula: una
+ * postulación avanzando por sus cinco etapas.
+ *
+ * ⚠️ **Lo que la rodea es decoración** —la barra con los tres puntos, la
+ * columna lateral, las métricas, la actividad— y va `aria-hidden`, sin enlaces.
+ * **El recorrido no**: las cinco etapas son la promesa de esta portada —lo que
+ * se ve antes de entrar es lo que se verá después— y se leen como lista.
+ *
+ * Los datos son de ejemplo y genéricos (un puesto de «Analista de Datos», sin
+ * personas): ilustran el producto, no cuentan nada de nadie.
+ *
+ * El movimiento, una vez por visita y después de que la ventana termina de
+ * entrar: los nodos aparecen en cascada (8 px y 94 %, 500 ms, la curva de
+ * salida), las líneas se funden detrás, y la actividad llega de una en una.
+ * Lo único que sigue moviéndose es el trazo de la línea viva —movimiento
+ * constante, lineal— y el pulso del punto de la etapa en curso. Nada de eso
+ * existe con `prefers-reduced-motion`.
+ */
+
+/** El estado de cada etapa en la postulación de ejemplo. */
+const ESTADO_DE_EJEMPLO: Record<string, 'hecho' | 'curso' | 'pendiente'> = {
+  PERFIL: 'hecho',
+  PRUEBA: 'curso',
+  SIMULACION: 'pendiente',
+  VALIDACION: 'pendiente',
+  DECISION: 'pendiente',
+}
+
+const ROTULO_DE_ESTADO = { hecho: 'Hecho', curso: 'En curso', pendiente: 'Pendiente' } as const
+
+/** Lo que cuenta la columna de actividad, de lo más nuevo a lo más viejo. */
+const ACTIVIDAD = [
+  { cuando: 'ahora', quien: 'Prueba', que: 'habilitada · 48 h' },
+  { cuando: '2 min', quien: 'Perfil', que: 'completado' },
+  { cuando: '18 min', quien: 'Preguntas', que: 'respondidas · 5 de 5' },
+  { cuando: '1 h', quien: 'CV', que: 'leído por una persona' },
+  { cuando: 'ayer', quien: 'Requisitos', que: 'confirmados' },
+  { cuando: 'ayer', quien: 'Postulación', que: 'recibida' },
+] as const
+
+/** Las líneas del grafo: de qué nodo a qué nodo, y si es la que está viva. */
+const LINEAS: Array<[string, string, boolean]> = [
+  ['POSTULACION', 'PERFIL', false],
+  ['PERFIL', 'PRUEBA', true],
+  ['PRUEBA', 'SIMULACION', false],
+  ['SIMULACION', 'VALIDACION', false],
+  ['VALIDACION', 'DECISION', false],
+]
+
+/**
+ * Dibuja las líneas midiendo los nodos de verdad (`offset*`, que no se
+ * entera de la escala de la ventana al hacer scroll). En codo, como las de la
+ * referencia: si están en la misma fila, de lado a lado; si no, baja, cruza y
+ * vuelve a bajar.
+ */
+function usarLineas(lienzo: React.RefObject<HTMLDivElement | null>) {
+  const [trazos, setTrazos] = useState<Array<{ d: string; viva: boolean }>>([])
+  const [caja, setCaja] = useState({ ancho: 0, alto: 0 })
+  useEffect(() => {
+    const el = lienzo.current
+    if (!el) return
+    function medir() {
+      if (!el) return
+      const nodo = (clave: string) => el.querySelector<HTMLElement>(`[data-nodo="${clave}"]`)
+      const nuevos: Array<{ d: string; viva: boolean }> = []
+      for (const [de, a, viva] of LINEAS) {
+        const n1 = nodo(de)
+        const n2 = nodo(a)
+        if (!n1 || !n2 || n1.offsetParent === null) continue
+        // Los nodos se centran con `translateX(-50%)`, que `offsetLeft` no ve:
+        // su borde izquierdo de verdad está medio ancho antes.
+        const izq1 = n1.offsetLeft - n1.offsetWidth / 2
+        const izq2 = n2.offsetLeft - n2.offsetWidth / 2
+        const x1 = izq1 + n1.offsetWidth / 2
+        const x2 = izq2 + n2.offsetWidth / 2
+        const misma = Math.abs(n1.offsetTop - n2.offsetTop) < 8
+        if (misma) {
+          const izq = x1 < x2
+          const y = n1.offsetTop + n1.offsetHeight / 2
+          const sx = izq ? izq1 + n1.offsetWidth : izq1
+          const ex = izq ? izq2 : izq2 + n2.offsetWidth
+          nuevos.push({ d: `M${sx} ${y} H${ex}`, viva })
+        } else {
+          const y1 = n1.offsetTop + n1.offsetHeight
+          const y2 = n2.offsetTop
+          const medio = Math.round((y1 + y2) / 2)
+          nuevos.push({ d: `M${x1} ${y1} V${medio} H${x2} V${y2}`, viva })
+        }
+      }
+      setTrazos(nuevos)
+      setCaja({ ancho: el.offsetWidth, alto: el.offsetHeight })
+    }
+    medir()
+    const observador = new ResizeObserver(medir)
+    observador.observe(el)
+    return () => observador.disconnect()
+  }, [lienzo])
+  return { trazos, caja }
+}
+
+function Ventana() {
+  const lienzo = useRef<HTMLDivElement>(null)
+  const { trazos, caja } = usarLineas(lienzo)
+
+  return (
+    <div className={estilos.ventana}>
+      <div className={estilos.ventanaBarra} aria-hidden="true">
+        <span className={estilos.semaforo}>
+          <i />
+          <i />
+          <i />
+        </span>
+        <span className={estilos.ventanaTitulo}>
+          <Marca tamano={10} /> Portal del candidato · Mis procesos
+        </span>
+        <span />
+      </div>
+
+      <div className={estilos.ventanaApp}>
+        <aside className={estilos.lateral} aria-hidden="true">
+          <div className={estilos.lateralMarca}>
+            <Marca tamano={16} />
+            <span>Portal EX</span>
+            <span className={estilos.lateralFlecha}>▾</span>
+          </div>
+          <div className={estilos.lateralBuscar}>
+            <IconoLupa tamano={12} />
+            <span>Buscar vacantes</span>
+            <kbd>⌘K</kbd>
+          </div>
+          <ul className={estilos.lateralLista}>
+            <li>
+              <IconoMaletin tamano={12} /> Vacantes <b className={estilos.cuenta}>12</b>
+            </li>
+            <li className={estilos.lateralVivo}>
+              <IconoDocumento tamano={12} /> Mis procesos <i className={estilos.puntoVerde} />
+            </li>
+            <li>
+              <IconoAviso tamano={12} /> Avisos <b className={estilos.cuenta}>2</b>
+            </li>
+            <li>
+              <IconoPersonas tamano={12} /> Perfil
+            </li>
+          </ul>
+          <p className={estilos.lateralGrupo}>Mis postulaciones</p>
+          <ul className={estilos.lateralLista}>
+            <li>
+              <i className={estilos.puntoAzul} /> Analista de Datos <i className={estilos.puntoVerde} />
+            </li>
+            <li>
+              <i className={estilos.puntoGris} /> Asistente Contable
+            </li>
+          </ul>
+          <p className={estilos.lateralGrupo}>Tus datos</p>
+          <ul className={estilos.lateralLista}>
+            <li>
+              <IconoCandado tamano={12} /> Privacidad
+            </li>
+            <li>
+              <IconoDocumento tamano={12} /> Mi currículum
+            </li>
+          </ul>
+        </aside>
+
+        <div className={estilos.ventanaCuerpo}>
+          <div className={estilos.ventanaCabecera} aria-hidden="true">
+            <b>Analista de Datos</b>
+            <span>★</span>
+            <em>Clínica · Lima · Híbrido</em>
+          </div>
+
+          <div className={estilos.metricas} aria-hidden="true">
+            <span className={estilos.metricaViva}>
+              <b>2</b> Postulaciones
+            </span>
+            <span>
+              <b>1</b> Te toca
+            </span>
+            <span>
+              <b>2/5</b> Etapa actual
+            </span>
+            <span>
+              <b>0</b> Descartes por CV
+            </span>
+          </div>
+
+          <div className={estilos.ventanaTurno} aria-hidden="true">
+            <span className={estilos.punto} />
+            <b>Perfil</b> → Prueba del puesto
+          </div>
+
+          <div className={estilos.ventanaZona}>
+            <div ref={lienzo} className={estilos.grafo}>
+              <svg
+                className={estilos.lineas}
+                width={caja.ancho}
+                height={caja.alto}
+                viewBox={`0 0 ${caja.ancho || 1} ${caja.alto || 1}`}
+                aria-hidden="true"
               >
-                Ver las vacantes abiertas
-              </Link>
-              <Link
-                className={estilos.accionSecundaria}
-                to={rutas.procesos()}
-                data-rotulo="Entrar a mis procesos"
-              >
-                Entrar a mis procesos
-              </Link>
+                {trazos.map((t, i) => (
+                  <path key={i} d={t.d} className={t.viva ? estilos.lineaViva : estilos.linea} />
+                ))}
+              </svg>
+
+              <div className={`${estilos.nodo} ${estilos.nodoRaiz}`} data-nodo="POSTULACION" aria-hidden="true">
+                <span className={estilos.nodoCabeza}>
+                  <span className={estilos.nodoIcono}>
+                    <IconoDocumento tamano={10} />
+                  </span>
+                  <b>Tu postulación</b>
+                </span>
+                <span className={estilos.nodoQue}>Recibida · CV leído</span>
+                <span className={`${estilos.estado} ${estilos.estadoHecho}`}>Hecho</span>
+              </div>
+
+              <p className={estilos.pieEscaparate}>Cinco etapas para conocer cómo trabajas</p>
+              <ol className={estilos.recorrido} role="list">
+                {ETAPAS.map((etapa, indice) => {
+                  const estado = ESTADO_DE_EJEMPLO[etapa.clave] ?? 'pendiente'
+                  return (
+                    <li
+                      key={etapa.clave}
+                      data-nodo={etapa.clave}
+                      className={`${estilos.nodo} ${estilos[`nodo${etapa.clave}`] ?? ''} ${
+                        estado === 'curso' ? estilos.nodoVivo : ''
+                      }`}
+                      style={{ animationDelay: `${1000 + indice * 70}ms` }}
+                    >
+                      <span className={estilos.nodoCabeza}>
+                        <span className={estilos.nodoIcono} aria-hidden="true">
+                          {indice + 1}
+                        </span>
+                        <b className={estilos.nombreEtapa}>{etapa.etiqueta}</b>
+                      </span>
+                      <span className={estilos.queEsEtapa}>{QUE_ES[etapa.clave]}</span>
+                      <span
+                        className={`${estilos.estado} ${
+                          estado === 'hecho'
+                            ? estilos.estadoHecho
+                            : estado === 'curso'
+                              ? estilos.estadoCurso
+                              : ''
+                        }`}
+                        aria-hidden="true"
+                      >
+                        {ROTULO_DE_ESTADO[estado]}
+                      </span>
+                    </li>
+                  )
+                })}
+              </ol>
+            </div>
+
+            <div className={estilos.actividad} aria-hidden="true">
+              <p>Actividad</p>
+              {ACTIVIDAD.map((a, i) => (
+                <span
+                  key={a.quien}
+                  className={i === 0 ? estilos.actividadViva : undefined}
+                  style={{ animationDelay: `${1500 + (ACTIVIDAD.length - 1 - i) * 450}ms` }}
+                >
+                  <em>{a.cuando}</em> <b>{a.quien}</b> {a.que}
+                </span>
+              ))}
+              <p className={estilos.actividadSiguiente}>Lo siguiente</p>
+              <span className={estilos.siguiente}>
+                <b>Simulación</b> dos horas con el equipo · eliges la fecha
+              </span>
             </div>
           </div>
-        </section>
-      </AlAsomarse>
+        </div>
+      </div>
     </div>
   )
 }

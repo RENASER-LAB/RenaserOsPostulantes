@@ -38,7 +38,7 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme inline {
-  --font-sans: Geist, system-ui, sans-serif;
+  --font-sans: var(--fuente);
 
   --color-background: var(--cielo);
   --color-foreground: var(--tinta);

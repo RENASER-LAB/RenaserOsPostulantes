@@ -62,17 +62,21 @@
   min-height: 44px;
   border-radius: var(--radio-control);
   font-size: var(--t-apoyo);
-  font-weight: 500;
+  font-weight: 400;
   /* Fija, y de ahi salen los 44 px: 20 de linea + 12 y 12 de relleno. */
   line-height: 20px;
   text-decoration: none;
   cursor: pointer;
-  /* `all` y no una lista: es lo que hace la referencia, y con el rotulo girando
-     hay fondo, sombra y transformacion moviendose a la vez. */
-  transition: all 300ms var(--curva-control);
+  transition:
+    color 150ms var(--curva-control),
+    background-color 150ms var(--curva-control),
+    border-color 150ms var(--curva-control),
+    transform 160ms var(--salida);
+  text-transform: uppercase;
+  font-family: var(--fuente);
   padding: 12px 20px;
   background: var(--activo);
-  border: 0;
+  border: 1px solid rgb(0 0 0 / 0.1);
   color: var(--tinta-invertida);
 }
 
@@ -84,17 +88,21 @@
   min-height: 44px;
   border-radius: var(--radio-control);
   font-size: var(--t-apoyo);
-  font-weight: 500;
+  font-weight: 400;
   /* Fija, y de ahi salen los 44 px: 20 de linea + 12 y 12 de relleno. */
   line-height: 20px;
   text-decoration: none;
   cursor: pointer;
-  /* `all` y no una lista: es lo que hace la referencia, y con el rotulo girando
-     hay fondo, sombra y transformacion moviendose a la vez. */
-  transition: all 300ms var(--curva-control);
+  transition:
+    color 150ms var(--curva-control),
+    background-color 150ms var(--curva-control),
+    border-color 150ms var(--curva-control),
+    transform 160ms var(--salida);
+  text-transform: uppercase;
+  font-family: var(--fuente);
   padding: 12px var(--e4);
   background: var(--activo);
-  border: 0;
+  border: 1px solid rgb(0 0 0 / 0.1);
   color: var(--tinta-invertida);
 }
 
@@ -152,18 +160,21 @@
   min-height: 44px;
   border-radius: var(--radio-control);
   font-size: var(--t-apoyo);
-  font-weight: 500;
+  font-weight: 400;
   /* Fija, y de ahi salen los 44 px: 20 de linea + 12 y 12 de relleno. */
   line-height: 20px;
   text-decoration: none;
   cursor: pointer;
-  /* `all` y no una lista: es lo que hace la referencia, y con el rotulo girando
-     hay fondo, sombra y transformacion moviendose a la vez. */
-  transition: all 300ms var(--curva-control);
+  transition:
+    color 150ms var(--curva-control),
+    background-color 150ms var(--curva-control),
+    border-color 150ms var(--curva-control),
+    transform 160ms var(--salida);
+  text-transform: uppercase;
+  font-family: var(--fuente);
   padding: 12px 20px;
-  background: var(--nube);
-  border: 0;
-  box-shadow: var(--sombra-control);
+  background: var(--cielo);
+  border: 1px solid #e5e7eb;
   color: var(--tinta);
 }
 
@@ -175,18 +186,21 @@
   min-height: 44px;
   border-radius: var(--radio-control);
   font-size: var(--t-apoyo);
-  font-weight: 500;
+  font-weight: 400;
   /* Fija, y de ahi salen los 44 px: 20 de linea + 12 y 12 de relleno. */
   line-height: 20px;
   text-decoration: none;
   cursor: pointer;
-  /* `all` y no una lista: es lo que hace la referencia, y con el rotulo girando
-     hay fondo, sombra y transformacion moviendose a la vez. */
-  transition: all 300ms var(--curva-control);
+  transition:
+    color 150ms var(--curva-control),
+    background-color 150ms var(--curva-control),
+    border-color 150ms var(--curva-control),
+    transform 160ms var(--salida);
+  text-transform: uppercase;
+  font-family: var(--fuente);
   padding: 12px var(--e4);
-  background: var(--nube);
-  border: 0;
-  box-shadow: var(--sombra-control);
+  background: var(--cielo);
+  border: 1px solid #e5e7eb;
   color: var(--tinta);
 }
 
@@ -242,8 +256,9 @@
   color: var(--nube);
   border: 1px solid var(--tinta);
   font-size: var(--t-prosa);
-  font-weight: 600;
-  letter-spacing: -0.004em;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: uppercase;
   text-decoration: none;
   cursor: pointer;
   transition: background 160ms var(--salida);
@@ -294,8 +309,9 @@
   color: var(--tinta-invertida);
   border: 1px solid var(--mal);
   font-size: var(--t-base);
-  font-weight: 600;
-  letter-spacing: -0.004em;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: uppercase;
   text-decoration: none;
   cursor: pointer;
   transition: background 160ms var(--salida);
@@ -312,8 +328,9 @@
   color: var(--tinta-invertida);
   border: 1px solid var(--mal);
   font-size: var(--t-prosa);
-  font-weight: 600;
-  letter-spacing: -0.004em;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: uppercase;
   text-decoration: none;
   cursor: pointer;
   transition: background 160ms var(--salida);
@@ -337,8 +354,9 @@
   color: var(--mal);
   border: 1px solid var(--mal);
   font-size: var(--t-prosa);
-  font-weight: 600;
-  letter-spacing: -0.004em;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: uppercase;
   text-decoration: none;
   cursor: pointer;
   transition:
@@ -389,117 +407,8 @@
  * No lo llevan los botones de peligro. Un rotulo que juega no es el gesto de
  * algo que no se puede deshacer.
  */
-@supports (content: 'a' / '') {
-  .acentoGrande[data-rotulo],
-  .acentoMenor[data-rotulo],
-  .secundarioGrande[data-rotulo],
-  .secundario[data-rotulo] {
-    position: relative;
-    overflow: hidden;
-    /*
-     * ⚠️ **`-webkit-text-fill-color` y NO solo `color`, y esto costo un fallo.**
-     * Con `color: transparent` a secas el texto real reaparecia al pasar por
-     * encima y se veian TRES rotulos a la vez: el fijo mas los dos que giran.
-     * El motivo es especificidad —`.acentoGrande:hover:not(:disabled)` es
-     * (0,3,0) y declara `color`, por encima del (0,2,0) de
-     * `.acentoGrande[data-rotulo]`—, y lo mismo haria cualquier pantalla que le
-     * ponga color a su boton desde su propia hoja, donde ademas el orden entre
-     * archivos no es fiable.
-     *
-     * Con que se pinta el glifo lo decide `-webkit-text-fill-color`, que nadie
-     * mas declara en todo el proyecto: no hay pelea de cascada posible. `color`
-     * se queda tambien, porque es lo unico que entiende un navegador que no
-     * llegue hasta aqui.
-     */
-    color: transparent;
-    -webkit-text-fill-color: transparent;
-  }
-
-  .acentoGrande[data-rotulo]::before,
-  .acentoMenor[data-rotulo]::before,
-  .secundarioGrande[data-rotulo]::before,
-  .secundario[data-rotulo]::before,
-  .acentoGrande[data-rotulo]::after,
-  .acentoMenor[data-rotulo]::after,
-  .secundarioGrande[data-rotulo]::after,
-  .secundario[data-rotulo]::after {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--rotulo-tinta);
-    /* Heredarian el transparente de la pieza, asi que se les devuelve el color
-       por la misma via. */
-    -webkit-text-fill-color: var(--rotulo-tinta);
-    transition: transform 300ms var(--curva-control);
-  }
-
-  .acentoGrande[data-rotulo]::before,
-  .acentoMenor[data-rotulo]::before,
-  .secundarioGrande[data-rotulo]::before,
-  .secundario[data-rotulo]::before {
-    content: attr(data-rotulo) / '';
-  }
-
-  /* La copia que espera fuera, justo debajo del suelo de la pieza. */
-  .acentoGrande[data-rotulo]::after,
-  .acentoMenor[data-rotulo]::after,
-  .secundarioGrande[data-rotulo]::after,
-  .secundario[data-rotulo]::after {
-    content: attr(data-rotulo) / '';
-    transform: translateY(100%);
-  }
-
-  .acentoGrande[data-rotulo]:hover:not(:disabled)::before,
-  .acentoMenor[data-rotulo]:hover:not(:disabled)::before,
-  .secundarioGrande[data-rotulo]:hover:not(:disabled)::before,
-  .secundario[data-rotulo]:hover:not(:disabled)::before {
-    transform: translateY(-100%);
-  }
-
-  .acentoGrande[data-rotulo]:hover:not(:disabled)::after,
-  .acentoMenor[data-rotulo]:hover:not(:disabled)::after,
-  .secundarioGrande[data-rotulo]:hover:not(:disabled)::after,
-  .secundario[data-rotulo]:hover:not(:disabled)::after {
-    transform: translateY(0);
-  }
-
-  /*
-   * Menos movimiento, no menos informacion: las dos copias se quedan donde
-   * estan y el rotulo sigue leyendose.
-   */
-  @media (prefers-reduced-motion: reduce) {
-    .acentoGrande[data-rotulo]::before,
-  .acentoMenor[data-rotulo]::before,
-  .secundarioGrande[data-rotulo]::before,
-  .secundario[data-rotulo]::before,
-    .acentoGrande[data-rotulo]::after,
-  .acentoMenor[data-rotulo]::after,
-  .secundarioGrande[data-rotulo]::after,
-  .secundario[data-rotulo]::after {
-      transition: none;
-    }
-
-    .acentoGrande[data-rotulo]:hover:not(:disabled)::before,
-  .acentoMenor[data-rotulo]:hover:not(:disabled)::before,
-  .secundarioGrande[data-rotulo]:hover:not(:disabled)::before,
-  .secundario[data-rotulo]:hover:not(:disabled)::before,
-    .acentoGrande[data-rotulo]:hover:not(:disabled)::after,
-  .acentoMenor[data-rotulo]:hover:not(:disabled)::after,
-  .secundarioGrande[data-rotulo]:hover:not(:disabled)::after,
-  .secundario[data-rotulo]:hover:not(:disabled)::after {
-      transform: none;
-    }
-
-    .acentoGrande[data-rotulo]:hover:not(:disabled)::after,
-  .acentoMenor[data-rotulo]:hover:not(:disabled)::after,
-  .secundarioGrande[data-rotulo]:hover:not(:disabled)::after,
-  .secundario[data-rotulo]:hover:not(:disabled)::after {
-      opacity: 0;
-    }
-  }
-}
+/* Northstar (13/11/2026): sin el rotulo que rueda al pasar —la referencia solo
+   cambia el color—. `data-rotulo` sigue en el marcado y no hace nada. */
 
 /* ---------- Volver ---------- */
 
@@ -622,7 +531,13 @@
   line-height: 20px;
   text-decoration: none;
   cursor: pointer;
-  transition: all 300ms var(--curva-control);
+  transition:
+    color 150ms var(--curva-control),
+    background-color 150ms var(--curva-control),
+    border-color 150ms var(--curva-control),
+    transform 160ms var(--salida);
+  text-transform: uppercase;
+  font-family: var(--fuente);
   padding: 12px var(--e4);
   background: var(--whatsapp);
   border: 0;
@@ -694,7 +609,7 @@
 .cabeceraDeSeccion h2 {
   margin: 0;
   font-size: var(--t-destacado);
-  font-weight: 700;
+  font-weight: 550;
   letter-spacing: -0.03em;
   line-height: 1.2;
   color: var(--tinta);
@@ -727,8 +642,8 @@
   /* No necesita 44 px: el `summary` entero ya mide mas. */
   padding-block: var(--e5);
   font-size: var(--t-entradilla);
-  font-weight: 600;
-  letter-spacing: -0.015em;
+  font-weight: 400;
+  letter-spacing: -0.01em;
   color: var(--tinta);
   cursor: pointer;
   list-style: none;

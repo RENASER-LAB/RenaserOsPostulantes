@@ -454,7 +454,7 @@
  */
 .nombre {
   margin: 0;
-  font-size: var(--t-portada);
+  font-size: var(--t-pagina);
   font-weight: 600;
   letter-spacing: -0.03em;
   line-height: 1.06;

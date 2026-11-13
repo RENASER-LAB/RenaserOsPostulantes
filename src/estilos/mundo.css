@@ -1,4 +1,11 @@
 /*
+ * ⚠️ **13/11/2026 · estilo «Northstar»** (rama feat/estilo-northstar): los
+ * VALORES de los tokens de abajo se cambiaron para replicar el estilo de
+ * northstar-template-demo.vercel.app —papel #FCFCFA, tinta #111312, azul
+ * #1E3A8A, Onest + Syne, filetes negros al 10 %, esquinas rectas en la
+ * cabecera—. Los comentarios historicos siguen describiendo mundos anteriores:
+ * manda el valor, no la prosa.
+ *
  * El mundo visual del portal: «El escaparate».
  *
  * Un cuarto de luz calida con una sola pieza iluminada. El fondo es un pastel
@@ -47,52 +54,53 @@
  */
 
 /*
- * Geist, servida por el propio sitio.
- *
- * ⚠️ **Era Figtree hasta el 25/09/2026.** Se cambio por peticion, para igualar
- * la tipografia de la referencia que trajo el cliente, que usa Geist en todo.
- * Geist es de Vercel con licencia OFL: se puede empaquetar y redistribuir.
- *
- * Se sirve desde el sitio y no desde Google Fonts, igual que se hacia con
- * Figtree: un telefono sin cobertura abriria la aplicacion instalada con los
- * titulares en otra letra. Empaquetada, carga siempre. De paso se van las dos
- * conexiones previas del arranque.
- *
- * ⚠️ **Es la fuente variable, un solo archivo por subconjunto**, y declara el
- * rango 400-700 entero: un peso nuevo dentro de el no obliga a volver aqui.
- *
- * ⚠️ **No hay cursiva a proposito**: no se usa en ninguna hoja, y la cursiva es
- * otro archivo. Si algun dia se usa, hay que traerla — el navegador la
- * fabricaria inclinando la recta, que se ve mal.
- *
- * ⚠️ **Geist es mas ancha que Figtree**, y `--medida` esta en `ch`, que depende
- * de la fuente: las lineas de prosa cambian de largo con el cambio. Ver la nota
- * de `--medida` mas abajo.
- *
- * Los archivos y los `unicode-range` son los que sirve Google Fonts para
- * `Geist:wght@400..700`, copiados tal cual: son los que hacen que un navegador
- * que solo pinta español no descargue el subconjunto extendido. Los de Figtree
- * siguen en `public/tipografia/` por si hay que volver.
+ * Desde el 13/11/2026 el estilo es el de northstar-template-demo.vercel.app:
+ * Onest para todo (cuerpo y titulares, peso 400 y tracking muy cerrado en el
+ * titular) y Syne para la voz de interfaz —el boton de la cabecera, el pie,
+ * los titulos de tarjeta oscura—. Las dos son libres (Google Fonts, OFL) y se
+ * sirven desde el propio sitio, variables, latin y latin-ext.
  */
 @font-face {
-  font-family: Geist;
+  font-family: Onest;
   font-style: normal;
-  font-weight: 400 700;
+  font-weight: 100 900;
   font-display: swap;
-  src: url('/tipografia/geist-latin.woff2') format('woff2');
+  src: url('/tipografia/onest-latin.woff2') format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
     U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
     U+FEFF, U+FFFD;
 }
 
 @font-face {
-  font-family: Geist;
+  font-family: Onest;
   font-style: normal;
-  font-weight: 400 700;
+  font-weight: 100 900;
   font-display: swap;
-  src: url('/tipografia/geist-latin-ext.woff2') format('woff2');
+  src: url('/tipografia/onest-latin-ext.woff2') format('woff2');
   unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
-    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0,
+    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4,
+    U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: Syne;
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url('/tipografia/syne-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
+    U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: Syne;
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url('/tipografia/syne-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4,
     U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 
@@ -132,7 +140,22 @@
    * blancas con una linea de 1,28:1 — que es justo el fallo que se corrigio en
    * las pantallas de relleno hace dos dias.
    */
-  --cielo: #f9fafb;
+  /* Las voces de la letra (13/11/2026). */
+  --fuente: Onest, system-ui, sans-serif;
+  --fuente-ui: Syne, Onest, system-ui, sans-serif;
+  /* La etiqueta de seccion de la referencia: «01 / VACANTES», 11 px, 0,16em. */
+  --t-etiqueta: 11px;
+  --tracking-etiqueta: 0.16em;
+  --tinta-etiqueta: rgb(17 19 18 / 0.42);
+  /* El tracking del titular: -0,055em, que con Onest 400 es lo que la define. */
+  --tracking-titular: -0.055em;
+  /* La banda oscura y el pie. */
+  --noche: #111312;
+  --noche-tarjeta: #141416;
+  --noche-regla: rgb(255 255 255 / 0.07);
+  --noche-tinta: #f0f0f2;
+  --noche-tinta2: rgb(240 240 242 / 0.56);
+  --cielo: #fcfcfa;
   /*
    * Lo hundido que se apoya en el CIELO, no dentro de una superficie.
    *
@@ -147,13 +170,13 @@
    * pagina, no dentro de una superficie— y el dia que la pagina vuelva a tener
    * tono propio recupera su trabajo.
    */
-  --cielo-hundido: #f3f4f6;
+  --cielo-hundido: #f5f7fb;
   --nube: #ffffff;
-  --nube-hundida: #f3f4f6;
+  --nube-hundida: #f5f7fb;
   /* Barras de esqueleto y fondo de lo apagado: tiene que separarse de
      `--nube-hundida` o un control deshabitado dentro de un bloque de apoyo
      desaparece. */
-  --nube-honda: #e5e7eb;
+  --nube-honda: #e5e5e7;
 
   /*
    * Tinta. La escala gris de la referencia, que es fria y tira a azul.
@@ -163,8 +186,8 @@
    * la accion ahora es indigo, asi que la tinta puede ser tan oscura como haga
    * falta sin quitarle el sitio a ningun boton.
    */
-  --tinta: #101828;  /* 18,2:1 sobre nube */
-  --tinta2: #364153; /* 10,3:1 — la prosa que explica */
+  --tinta: #111312;  /* 18,2:1 sobre nube */
+  --tinta2: #4a5251; /* 10,3:1 — la prosa que explica */
   /*
    * El gris mas claro que se puede usar para texto, y no se baja de aqui.
    *
@@ -173,10 +196,10 @@
    * los tres**. El siguiente de la escala de la referencia, `#99a1af`, da 2,60
    * sobre nube: no vale ni para texto ni para el limite de un control.
    */
-  --tinta3: #6a7282;
+  --tinta3: #687170;
 
-  --regla: #e5e7eb;
-  --regla2: #d1d5dc;
+  --regla: #e6e7e4;
+  --regla2: #d4d6d3;
   /*
    * Un control pide 3:1 contra el fondo; una caja no. Este da 4,83:1.
    *
@@ -185,13 +208,13 @@
    * el limite visible de un control, asi que ese borde no se ve para quien no
    * distingue matices claros. Se usa el gris de texto, que si llega.
    */
-  --borde-control: #6a7282;
+  --borde-control: #7b8382;
 
   /* La tinta que va ENCIMA de un relleno, no la de la nube. Se parecen —la
      nube tambien es blanca— pero no son lo mismo: si un dia la superficie deja
      de ser blanca pura, el texto de los botones no tiene por que moverse. */
   --tinta-invertida: #ffffff;
-  --tinta-pulsado: #0a0a0a;
+  --tinta-pulsado: #000000;
 
   /*
    * La accion y el turno.
@@ -212,10 +235,10 @@
    * Blanco sobre `--activo` da **4,57:1**: pasa el 4,5 que pide WCAG 1.4.3 para
    * texto normal, pero por poco. No aclarar este indigo.
    */
-  --activo: #615fff;         /* 4,57:1 con texto blanco encima */
-  --activo-pulsado: #4f46e5;
-  --activo-bruma: rgb(97 95 255 / 0.2);
-  --activo-regla: #615fff;
+  --activo: #1e3a8a;         /* 4,57:1 con texto blanco encima */
+  --activo-pulsado: #172a66;
+  --activo-bruma: #e9edff;
+  --activo-regla: #1e3a8a;
   /*
    * La accion mas fuerte de todas: la de la cabecera.
    *
@@ -226,8 +249,8 @@
    *
    * 18,9:1 con texto blanco encima.
    */
-  --accion-fuerte: #030712;
-  --accion-fuerte-pulsado: #1e2939;
+  --accion-fuerte: #111312;
+  --accion-fuerte-pulsado: #2b2f2d;
 
   /*
    * El semaforo del sistema. Cada uno significaba algo fijo en el producto antes
@@ -288,7 +311,7 @@
    */
   /* ⚠️ Repintado en indigo el 25/09/2026 con el resto de la paleta: era coral,
      y sobre el mundo frio se quedaba como la unica mancha calida del portal. */
-  --canto: linear-gradient(90deg, #a5b4fc 0%, #818cf8 34%, #615fff 68%, #4f46e5 100%);
+  --canto: linear-gradient(90deg, #93a5d8 0%, #5b73b8 40%, #1e3a8a 100%);
 
   /*
    * La escala tipografica. Diez escalones y cada uno tiene un trabajo.
@@ -312,8 +335,10 @@
   --t-cifra: clamp(28px, 5vw, 34px);       /* el cronometro y las cifras */
   /* El titular de una pantalla de trabajo dentro de su banda —`/vacantes`, desde
      el 01/10/2026—: a escala de portada, la banda se comia la primera pantalla. */
-  --t-encabezado: clamp(30px, 3vw, 40px);
-  --t-portada: clamp(36px, 5.2vw, 60px);   /* el titular */
+  --t-encabezado: clamp(2rem, 3.2vw, 3rem);
+  --t-portada: clamp(36px, 6.1vw, 88px);
+  /* El titulo de una pantalla, el `--type-page-title` de la referencia. */
+  --t-pagina: clamp(2.25rem, 4vw, 3.5rem);
 
   /*
    * El ancho del portal en escritorio. No es medida de lectura: es el hueco
@@ -385,8 +410,8 @@
    * septiembre valia `999px`, y cualquier hoja que de eso por hecho esta vieja.
    * La unica forma redondeada que queda es `--radio-marca` en avatares y puntos.
    */
-  --radio: 12px;
-  --radio-menor: 8px;
+  --radio: 8px;
+  --radio-menor: 4px;
   --radio-control: 8px;
   /* Lo mas pequeño que se redondea: una casilla de 20 px. Con 10 px se
      convierte en una pastilla y deja de leerse como casilla. */
@@ -397,13 +422,13 @@
    * reescribir DESIGN.md: el detector de `impeccable` los marcaba fuera de la
    * escala, y lo honesto era darles nombre y no silenciarlo.
    */
-  --radio-pildora: 18px;   /* la cabecera */
-  --radio-cristal: 26px;   /* el marco de cristal de la portada */
-  --radio-ventana: 14px;   /* la ventana dentro de ese marco */
+  --radio-pildora: 0px;   /* la cabecera */
+  --radio-cristal: 28px;   /* el marco de cristal de la portada */
+  --radio-ventana: 0px;   /* la ventana dentro de ese marco */
 
   /* La unica pieza que se permite una curva mayor que las superficies: la
      vitrina de la portada y la caja de cierre que la cierra abajo. */
-  --radio-escaparate: 20px;
+  --radio-escaparate: 16px;
 
   /* El marco translucido de la vitrina. Es un token porque el radio del interior
      se calcula restandolo: si los dos no se mueven juntos, el blanco asoma por
@@ -432,7 +457,7 @@
      cambia el relleno de `.cabecera`, el de `.cabeceraDentro` o el ALTO DEL
      BOTON, se vuelve a medir — seis reglas de cuatro hojas se pinchan debajo de
      este numero y ninguna lo puede adivinar. */
-  --alto-cabecera: 84px;
+  --alto-cabecera: 69px;
 
   /* El movimiento: salida exponencial desde algo que ya se ve */
   --salida: cubic-bezier(0.16, 1, 0.3, 1);
@@ -453,8 +478,8 @@
    * levantado: desplazamiento corto, desenfoque largo, y el color de la tinta
    * con muy poca opacidad.
    */
-  --sombra-nube: 0 1px 2px rgb(10 10 10 / 0.05), 0 8px 24px rgb(10 10 10 / 0.06);
-  --sombra-aviso: 0 12px 24px rgb(10 10 10 / 0.10), 0 32px 64px rgb(10 10 10 / 0.14);
+  --sombra-nube: 0 8px 24px rgb(15 23 42 / 0.08), 0 2px 8px rgb(15 23 42 / 0.04);
+  --sombra-aviso: 0 24px 80px rgb(15 23 42 / 0.12), 0 2px 8px rgb(15 23 42 / 0.06);
   --bruma-viva: 0 0 0 4px var(--activo-bruma);
 
   /*
@@ -470,14 +495,8 @@
    * contorno que habia si los daba (3,45:1). Ver `.secundario` en
    * `piezas.module.css`, donde esta la decision y su numero.
    */
-  --sombra-control:
-    0 3px 7px rgb(130 130 130 / 0.15),
-    0 12px 12px rgb(130 130 130 / 0.13),
-    0 27px 16px rgb(130 130 130 / 0.08),
-    0 48px 19px rgb(130 130 130 / 0.02);
-  --sombra-control-alta:
-    0 10px 15px -3px rgb(10 10 10 / 0.1),
-    0 4px 6px -4px rgb(10 10 10 / 0.1);
+  --sombra-control: 0 0 0 1px rgb(17 19 18 / 0.12);
+  --sombra-control-alta: none;
 
   /*
    * Lo que se apaga detras de un modal.
@@ -488,7 +507,7 @@
    * cada uno lo escribia a mano con la pizarra del mundo anterior, y la
    * evaluacion llegaba a ensenar dos velos distintos en la misma pantalla.
    */
-  --velo: rgb(10 10 10 / 0.4);
+  --velo: rgb(0 0 0 / 0.4);
 }
 
 *,
@@ -506,7 +525,7 @@ body {
   margin: 0;
   background: var(--cielo);
   color: var(--tinta);
-  font-family: Geist, system-ui, sans-serif;
+  font-family: var(--fuente);
   font-size: 16px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -553,27 +572,29 @@ ol {
  * entre «j», «p», «í» y «ó»: quedan 6 px a 1440 de ancho, 3,9 a 768 y 3 a 390.
  * Si se baja de 1, o se cambia la fuente, hay que volver a medirlo.
  */
+/* Northstar (13/11/2026): el titular en Onest 400, interlinea 0,98 y -0,055em;
+   los titulos de bloque en 550 con -0,03em, que es su `panelHeadline`. */
 h1 {
-  font-size: var(--t-portada);
-  line-height: 1;
-  letter-spacing: normal;
-  font-weight: 600;
+  font-size: var(--t-pagina);
+  line-height: 0.98;
+  letter-spacing: var(--tracking-titular);
+  font-weight: 400;
   text-wrap: balance;
 }
 
 h2 {
   font-size: var(--t-titulo);
-  line-height: 1.25;
-  letter-spacing: -0.015em;
-  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+  font-weight: 550;
   text-wrap: balance;
 }
 
 h3 {
   font-size: var(--t-base);
-  line-height: 1.3;
-  letter-spacing: -0.008em;
-  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  font-weight: 550;
 }
 
 /*
@@ -589,7 +610,7 @@ a {
   text-decoration-thickness: 1px;
   text-underline-offset: 0.22em;
   text-decoration-color: var(--regla2);
-  transition: text-decoration-color 140ms var(--salida);
+  transition: text-decoration-color 150ms var(--curva-control);
 }
 
 a:hover {

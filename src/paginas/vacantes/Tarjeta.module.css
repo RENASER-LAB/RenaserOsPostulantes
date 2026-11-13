@@ -16,25 +16,44 @@
  * se añade sombra en reposo, por la regla del plano en reposo de DESIGN.md: la
  * sombra de nube llega solo con el puntero encima.
  */
+/*
+ * Northstar (13/11/2026): la celda de «Projects» de la referencia. Esquinas
+ * rectas, filete negro al 10 %, el papel de la pagina y una flecha ↗ arriba a
+ * la derecha que se escapa en diagonal al pasar. Ninguna sombra.
+ */
 .vacante {
   position: relative;
   height: 100%;
-  border: 1px solid var(--regla2);
-  border-radius: var(--radio);
-  background-color: var(--nube);
-  transition:
-    box-shadow 300ms var(--salida),
-    border-color 300ms var(--salida);
+  border: 1px solid rgb(0 0 0 / 0.1);
+  border-radius: 0;
+  background-color: var(--cielo);
+  transition: background-color 200ms var(--curva-control);
+}
+
+.vacante::after {
+  content: '↗';
+  content: '↗' / '';
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--tinta);
+  pointer-events: none;
+  transition: transform 250ms var(--salida);
+}
+
+.vacante:hover::after {
+  transform: translate(2px, -2px);
 }
 
 .vacante:hover {
-  border-color: var(--borde-control);
-  box-shadow: var(--sombra-nube);
+  background-color: var(--nube);
 }
 
 /* El titulo dice que la tarjeta entera es un enlace: al pasar, toma el color de la accion. */
 .vacante:hover .tituloVacante {
-  color: var(--activo-pulsado);
+  color: var(--activo);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -66,12 +85,13 @@
 .etiqueta {
   align-self: flex-start;
   margin-bottom: var(--e4);
-  padding: 4px 10px;
-  border-radius: var(--radio-marca);
-  background-color: var(--nube-hundida);
-  font-size: var(--t-micro);
-  font-weight: 600;
-  color: var(--tinta2);
+  padding: 0;
+  padding-right: 24px;
+  font-size: var(--t-etiqueta);
+  font-weight: 400;
+  letter-spacing: var(--tracking-etiqueta);
+  text-transform: uppercase;
+  color: var(--tinta-etiqueta);
   /* Una ciudad larga se parte dentro de su etiqueta; no empuja la tarjeta. */
   overflow-wrap: anywhere;
 }
@@ -80,8 +100,8 @@
 .tituloVacante {
   margin: 0 0 var(--e1);
   font-size: var(--t-titulo);
-  font-weight: 600;
-  letter-spacing: -0.02em;
+  font-weight: 550;
+  letter-spacing: -0.03em;
   line-height: 1.2;
   color: var(--tinta);
   overflow-wrap: anywhere;
@@ -120,7 +140,7 @@
 }
 
 .paga {
-  font-weight: 600;
+  font-weight: 500;
   color: var(--tinta);
 }
 
