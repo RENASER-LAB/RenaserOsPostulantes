@@ -2373,6 +2373,8 @@ export function describirFiltro(
   ciudades: CiudadDelRanking[],
   /** Para decir el año de una fecha solo cuando no es el de hoy. */
   anioActual: number = new Date().getFullYear(),
+  /** Si se ordenó «Por lo buscado» (V80): manda sobre el orden por columna. */
+  porLoBuscado = false,
 ): string {
   const nombreDeCiudad = (codigo: string) =>
     ciudades.find((c) => c.codigo === codigo)?.nombre ?? codigo
@@ -2393,9 +2395,11 @@ export function describirFiltro(
     filtros.pretensionMin != null || filtros.pretensionMax != null
       ? `Pretensión ${RANGO_DICHO(filtros.pretensionMin, filtros.pretensionMax)}`
       : null,
-    orden === null
-      ? 'Orden del ranking (grupo de prioridad y nota)'
-      : `Orden: ${ROTULO_DE_COLUMNA[orden.columna]}, ${orden.sentido === 'asc' ? 'de menor a mayor' : 'de mayor a menor'}`,
+    porLoBuscado
+      ? 'Orden: por lo buscado'
+      : orden === null
+        ? 'Orden del ranking (grupo de prioridad y nota)'
+        : `Orden: ${ROTULO_DE_COLUMNA[orden.columna]}, ${orden.sentido === 'asc' ? 'de menor a mayor' : 'de mayor a menor'}`,
   ]
 
   return partes.filter(Boolean).join(' · ')

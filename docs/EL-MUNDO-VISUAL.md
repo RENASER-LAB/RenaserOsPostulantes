@@ -79,6 +79,18 @@ gris hundido del panel de espera. Se separa por superficie, no por relieve, y no
 no es pedir—. La forma de los dos vive en `piezas.module.css`; el porqué del token, en
 `mundo.css`. ⚠️ **`DESIGN.md` todavía no la describe**: ver [PENDIENTES](PENDIENTES.md).
 
+### El punto ámbar de «Qué buscar en el CV» (13/11/2026)
+
+`--duda-punto` (`#d4972a`) es **solo el relleno del punto de 10 px que dice «lo menciona, sin
+detalle»** en el ranking del panel, junto al verde de «lo tiene» (`--bien`), el blanco con borde de
+«no aparece» y el punteado de «pendiente». A ese tamaño, el `--duda` de la prosa se leía casi
+marrón al lado del verde. Sigue siendo el ámbar de la duda, no una categoría, y **nunca va solo**:
+el blanco con borde y el punteado se distinguen por la forma, el verde y el ámbar por el color y la
+luz, cada grupo lleva su texto para lectores de pantalla y la ficha dice la etiqueta. No se usa
+para texto. El porqué, en `mundo.css`; dónde sale,
+en [PANEL](PANEL.md) › «Qué buscar en el CV». ⚠️ **`DESIGN.md` todavía no lo describe**: ver
+[PENDIENTES](PENDIENTES.md).
+
 ### La tipografía
 
 **Geist**, fuente variable 400–700, **servida por el propio sitio** desde

@@ -1,0 +1,381 @@
+/*
+ * «Qué buscar en el CV» (V80): la casilla privada del formulario, los puntos del
+ * ranking, su línea de estado y el bloque de la ficha.
+ *
+ * Los colores son los del semáforo del sistema —bien, duda— y los grises de
+ * siempre: lo que se encontró no es una acción, así que no lleva violeta. Los
+ * cuatro estados de un punto se distinguen también por la forma (relleno, borde
+ * liso, borde punteado), no solo por el color.
+ */
+
+/* ---------- La casilla del formulario ---------- */
+
+.casilla {
+  display: grid;
+  gap: var(--e3);
+}
+
+.recuadroPrivado {
+  display: grid;
+  gap: var(--e2);
+  padding: var(--e4);
+  border: 1px solid var(--regla);
+  border-radius: var(--radio);
+  background: var(--cielo);
+}
+
+.cabeceraCasilla {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e2);
+}
+
+.chipPrivado {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e1);
+  padding: 2px var(--e2);
+  border-radius: var(--radio-barra);
+  background: var(--activo-bruma);
+  color: var(--activo-pulsado);
+  font-size: var(--t-micro);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.vistaPrevia {
+  display: grid;
+  gap: var(--e2);
+  padding: var(--e4);
+  border-radius: var(--radio);
+  background: var(--nube-hundida);
+}
+
+.cabeceraPrevia {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--e2);
+  font-size: var(--t-apoyo);
+}
+
+.cuantasCaben {
+  color: var(--tinta3);
+  font-size: var(--t-menor);
+  font-variant-numeric: tabular-nums;
+}
+
+.nadaTodavia {
+  margin: 0;
+  color: var(--tinta3);
+  font-size: var(--t-apoyo);
+}
+
+.lineasPrevias {
+  display: grid;
+  gap: var(--e2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lineaPrevia {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: var(--e2);
+  align-items: start;
+  font-size: var(--t-apoyo);
+  color: var(--tinta);
+  overflow-wrap: anywhere;
+}
+
+.lineaPrevia > svg {
+  margin-top: 2px;
+}
+
+.lineaSobra {
+  color: var(--tinta3);
+}
+
+.lineaSobra .textoPrevio {
+  text-decoration: line-through;
+}
+
+.lineaMala {
+  color: var(--mal);
+}
+
+.motivoPrevio {
+  grid-column: 2;
+  font-size: var(--t-menor);
+}
+
+/* ---------- Los puntos del ranking ---------- */
+
+.puntos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: var(--e1);
+}
+
+.punto {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  border: 1px solid transparent;
+  box-sizing: border-box;
+}
+
+.puntoTiene {
+  background: var(--bien);
+}
+
+.puntoMenciona {
+  background: var(--duda-punto);
+}
+
+.puntoNoAparece {
+  background: var(--nube);
+  border-color: var(--borde-control);
+}
+
+.puntoPendiente {
+  background: transparent;
+  border: 1px dashed var(--borde-control);
+}
+
+.etiquetaPunto {
+  display: inline-block;
+  margin-top: var(--e1);
+  color: var(--duda);
+  font-size: var(--t-micro);
+  font-weight: 600;
+}
+
+/* ---------- La línea de estado y el orden ---------- */
+
+.estadoYOrden {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e3);
+  margin-bottom: var(--e3);
+}
+
+.lineaDeEstado {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  margin: 0;
+  color: var(--tinta2);
+  font-size: var(--t-apoyo);
+}
+
+.lineaDeEstado > svg {
+  color: var(--bien);
+}
+
+.orden {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  color: var(--tinta3);
+  font-size: var(--t-menor);
+}
+
+/* A 390 px el control de orden pasa debajo de la línea de estado. */
+@media (max-width: 640px) {
+  .estadoYOrden {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* ---------- El bloque de la ficha ---------- */
+
+.bloqueFicha {
+  display: grid;
+  gap: var(--e3);
+  margin-bottom: var(--e4);
+  padding: var(--e4);
+  border: 1px solid var(--regla);
+  border-radius: var(--radio);
+  background: var(--nube);
+}
+
+.tituloBloque {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--e2);
+  margin: 0;
+  font-size: var(--t-entradilla);
+}
+
+.recuentoBloque {
+  color: var(--tinta3);
+  font-size: var(--t-menor);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+.notaDelCv {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  column-gap: var(--e4);
+  row-gap: var(--e1);
+  align-items: baseline;
+  padding: var(--e3) var(--e4);
+  border: 1px solid var(--regla);
+  border-radius: var(--radio-menor);
+  background: var(--cielo);
+  font-size: var(--t-apoyo);
+}
+
+.notaDelCvTitulo {
+  font-weight: 700;
+}
+
+.notaDelCvCifra {
+  grid-column: 2 / 4;
+  justify-self: end;
+  font-size: var(--t-destacado);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.pesa {
+  color: var(--tinta3);
+  font-size: var(--t-menor);
+  justify-self: end;
+}
+
+.cifraParte {
+  justify-self: end;
+  min-width: 3ch;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.listaBuscada {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lineaBuscada {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  column-gap: var(--e3);
+  row-gap: var(--e1);
+  padding: var(--e3) 0;
+  border-top: 1px solid var(--regla);
+  font-size: var(--t-apoyo);
+}
+
+.lineaBuscada:first-child {
+  border-top: none;
+}
+
+.iconoLinea {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+}
+
+.iconoTiene {
+  color: var(--bien);
+  background: var(--bien-bruma);
+}
+
+.iconoMenciona {
+  color: var(--duda);
+  background: var(--duda-bruma);
+}
+
+.iconoNoAparece {
+  color: var(--tinta3);
+  background: var(--nube-hundida);
+}
+
+.textoLinea {
+  font-weight: 600;
+  color: var(--tinta);
+  overflow-wrap: anywhere;
+}
+
+.etiquetaLinea {
+  font-size: var(--t-menor);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.etiquetaTiene {
+  color: var(--bien);
+}
+
+.etiquetaMenciona {
+  color: var(--duda);
+}
+
+.etiquetaNoAparece {
+  color: var(--tinta3);
+}
+
+.detalleLinea {
+  grid-column: 2 / 4;
+  margin: 0;
+  color: var(--tinta2);
+}
+
+.frase {
+  font-style: italic;
+  color: var(--tinta);
+}
+
+.estadoEnLugar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e3);
+  margin: 0;
+  padding: var(--e3) var(--e4);
+  border-radius: var(--radio-menor);
+  background: var(--nube-hundida);
+  color: var(--tinta2);
+  font-size: var(--t-apoyo);
+}
+
+/* En el teléfono el bloque se apila: la etiqueta del estado baja bajo el texto. */
+@media (max-width: 640px) {
+  .lineaBuscada {
+    grid-template-columns: auto 1fr;
+  }
+
+  .etiquetaLinea {
+    grid-column: 2;
+  }
+
+  .detalleLinea {
+    grid-column: 2;
+  }
+}
+
+.paraLectores {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}

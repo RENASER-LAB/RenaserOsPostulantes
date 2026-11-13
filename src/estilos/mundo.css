@@ -245,6 +245,11 @@
      de ese mismo tono; un gris encima del ámbar no llega al contraste y además
      se lee como suciedad. 4,91:1 sobre `--duda-bruma`. */
   --duda-tinta2: #87632e;
+  /* El punto ámbar de «Qué buscar en el CV» (V80): «lo menciona, sin detalle». Un
+     relleno de 10 px, no un texto: el `--duda` de la prosa se leía casi marrón a
+     ese tamaño junto al verde de «lo tiene». Nunca va solo: el punto lleva su
+     texto para lectores y la ficha dice la etiqueta. */
+  --duda-punto: #d4972a;
   --mal: #c22a3f;         /* 5,4:1 — el error real y lo que borra */
   --mal-pulsado: #9e2134;
   --mal-bruma: #fdedf0;

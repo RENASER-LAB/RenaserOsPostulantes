@@ -46,6 +46,7 @@ import {
 } from './ranking'
 
 const verRanking = vi.fn()
+const volverABuscar = vi.fn()
 const elegirInstrumento = vi.fn()
 const pedirExcel = vi.fn()
 const ponerNotaPrueba = vi.fn()
@@ -437,6 +438,7 @@ vi.mock('../api/panel', () => ({
   transicionar: (postulacionId: number, estadoDestino: string, motivo: string) =>
     mover(postulacionId, estadoDestino, motivo),
   verHistorial: () => Promise.resolve([]),
+  volverABuscarEnElCv: (id: number) => volverABuscar(id),
   verPerfilIntegral: () => sinRuido.verPerfilIntegral(),
   verDesgloseEvaluacion: () => sinRuido.verDesgloseEvaluacion(),
   verMetricasValidacion: () => Promise.resolve([]),
@@ -4548,5 +4550,148 @@ describe('una vacante nueva rinde la prueba de su editor (V67)', () => {
     await waitFor(() => expect(screen.getByText('Todo listo: ya se puede publicar.')).toBeTruthy())
     const boton = screen.getByRole('button', { name: 'Publicar en el portal' })
     expect((boton as HTMLButtonElement).disabled).toBe(false)
+  })
+})
+
+/*
+ * «Qué buscar en el CV» (V80): los puntos bajo el correo, la línea de estado, el
+ * orden «Por lo buscado», el Excel con ese orden y el bloque de la ficha.
+ */
+describe('«Qué buscar en el CV» en el ranking (V80)', () => {
+  const LINEAS = ['Cocina saludable', 'Dirige equipos', 'Controla mermas', 'Certificado BPM']
+  const buscada = (estado: string, tiene = 0, menciona = 0) => ({
+    estado,
+    tiene,
+    menciona,
+    total: 4,
+    notaLoBuscado: estado === 'TERMINADA' ? ((tiene * 100 + menciona * 50) / 4) : null,
+    notaCriteriosGenerales: 80,
+    lineas: LINEAS.map((texto, i) => ({
+      orden: i + 1,
+      texto,
+      estado:
+        estado !== 'TERMINADA' ? null : i < tiene ? 'TIENE' : i < tiene + menciona ? 'MENCIONA' : 'NO_APARECE',
+      frase: estado === 'TERMINADA' && i < tiene ? `Frase del CV ${i + 1}` : null,
+      nota: estado === 'TERMINADA' ? `Nota ${i + 1}` : null,
+      pregunta: estado === 'TERMINADA' && i >= tiene ? `¿Pregunta ${i + 1}?` : null,
+    })),
+  })
+  // Rodrigo 1+1, Camila buscando, Fátima 4 de 4, Lucía con el CV sin texto.
+  const CON_BUSQUEDA = [
+    { ...EN_PERFIL, notaCurriculum: 72.5, busqueda: buscada('TERMINADA', 1, 1) },
+    { ...LE_TOCA, busqueda: buscada('TERMINADA', 4) },
+    { ...EN_PRUEBA, busqueda: buscada('BUSCANDO') },
+    { ...TERMINADA, busqueda: buscada('SIN_TEXTO') },
+  ] as FilaRanking[]
+  const CON_LINEAS = { queBuscarEnElCv: LINEAS, pesoQueBuscarEnElCv: 25, puedeVolverABuscar: true }
+  const elOrden = () => screen.getByRole('group', { name: 'Orden' })
+
+  it('AC-16: un punto por línea, la etiqueta del CV sin texto y la línea de estado', async () => {
+    await pintar(CON_BUSQUEDA, true, CON_LINEAS)
+    verCorte('Toda la tanda')
+
+    expect(screen.getByText('2 de 4 listos · 1 buscando · 1 CV sin texto')).toBeTruthy()
+    expect(screen.getByText('4 de 4 requisitos')).toBeTruthy()
+    expect(screen.getByText('1 de 4 requisitos')).toBeTruthy()
+    expect(screen.getByText('Buscando requisitos')).toBeTruthy()
+    expect(within(laTabla()).getByText('CV sin texto')).toBeTruthy()
+  })
+
+  it('AC-17: «Por lo buscado» ordena por lo que tienen; una cabecera vuelve a «De siempre»', async () => {
+    await pintar(CON_BUSQUEDA, true, CON_LINEAS)
+    verCorte('Toda la tanda')
+    const deSiempre = elOrdenDeLaTabla()
+
+    fireEvent.click(within(elOrden()).getByRole('button', { name: 'Por lo buscado' }))
+    expect(elOrdenDeLaTabla()).toEqual(['Fátima Quispe', 'Rodrigo Ayala', 'Camila Reyes', 'Lucía Ferrer'])
+
+    ordenarPor('Candidato')
+    expect(
+      within(elOrden()).getByRole('button', { name: 'De siempre' }).getAttribute('aria-pressed'),
+    ).toBe('true')
+
+    fireEvent.click(within(elOrden()).getByRole('button', { name: 'Por lo buscado' }))
+    fireEvent.click(within(elOrden()).getByRole('button', { name: 'De siempre' }))
+    expect(elOrdenDeLaTabla()).toEqual(deSiempre)
+  })
+
+  it('AC-20: el Excel sale en el orden de la pantalla y dice «Orden: por lo buscado»', async () => {
+    await pintar(CON_BUSQUEDA, true, CON_LINEAS)
+    verCorte('Toda la tanda')
+    fireEvent.click(within(elOrden()).getByRole('button', { name: 'Por lo buscado' }))
+    fireEvent.click(screen.getByRole('button', { name: /Descargar Excel/ }))
+
+    await waitFor(() => expect(pedirExcel).toHaveBeenCalledOnce())
+    const pedido = pedirExcel.mock.calls[0]?.[1] as { postulacionIds: number[]; filtroDescrito: string }
+    expect(pedido.postulacionIds).toEqual([92, 91, 93, 94])
+    expect(pedido.filtroDescrito).toContain('Orden: por lo buscado')
+    expect(pedido.filtroDescrito).not.toContain('Orden del ranking')
+  })
+
+  it('AC-18: la ficha empieza por el recuento, la nota del CV con sus pesos y una fila por línea', async () => {
+    await pintar(CON_BUSQUEDA, true, CON_LINEAS)
+    verCorte('Toda la tanda')
+    fireEvent.click(within(laTabla()).getByRole('button', { name: 'Rodrigo Ayala' }))
+
+    const bloque = await screen.findByRole('region', { name: 'Qué buscar en el CV' })
+    expect(within(bloque).getByText('1 de 4')).toBeTruthy()
+    expect(within(bloque).getByText('pesan 75 %')).toBeTruthy()
+    expect(within(bloque).getByText('pesa 25 %')).toBeTruthy()
+    expect(within(bloque).getByText('72.5')).toBeTruthy()
+    expect(within(bloque).getByText('«Frase del CV 1»')).toBeTruthy()
+    expect(within(bloque).getByText('Lo tiene')).toBeTruthy()
+    expect(within(bloque).getByText('Lo menciona, sin detalle')).toBeTruthy()
+    expect(within(bloque).getAllByText('No aparece')).toHaveLength(2)
+    expect(within(bloque).getAllByText('Para la entrevista:')).toHaveLength(3)
+  })
+
+  it('AC-19: con la búsqueda fallida, «Volver a buscar» solo con el permiso, y encola esa', async () => {
+    volverABuscar.mockResolvedValue({ estado: 'ENCOLADA', mensaje: 'La búsqueda quedó en cola.' })
+    const fallida = [{ ...EN_PERFIL, notaCurriculum: 80, busqueda: buscada('FALLIDA') }] as FilaRanking[]
+    await pintar(fallida, true, CON_LINEAS)
+    verCorte('Toda la tanda')
+    fireEvent.click(within(laTabla()).getByRole('button', { name: 'Rodrigo Ayala' }))
+
+    const bloque = await screen.findByRole('region', { name: 'Qué buscar en el CV' })
+    expect(within(bloque).getByText(/No se pudo buscar\./)).toBeTruthy()
+    // QA-02: la fila de la nota dice lo mismo que el estado, no que está buscando
+    expect(within(bloque).getByText('Qué buscar en el CV · no se pudo buscar')).toBeTruthy()
+    expect(within(bloque).getByText('aún no suma')).toBeTruthy()
+    expect(within(bloque).getByText('por ahora, todo')).toBeTruthy()
+    expect(within(bloque).queryByText(/buscando/i)).toBeNull()
+    fireEvent.click(within(bloque).getByRole('button', { name: 'Volver a buscar' }))
+    await waitFor(() => expect(volverABuscar).toHaveBeenCalledWith(91))
+    expect(await within(bloque).findByText('La búsqueda quedó en cola.')).toBeTruthy()
+  })
+
+  it('buscando, la fila de la nota dice «buscando…» y aún no suma', async () => {
+    const enCurso = [{ ...EN_PERFIL, notaCurriculum: 80, busqueda: buscada('BUSCANDO') }] as FilaRanking[]
+    await pintar(enCurso, true, CON_LINEAS)
+    verCorte('Toda la tanda')
+    fireEvent.click(within(laTabla()).getByRole('button', { name: 'Rodrigo Ayala' }))
+
+    const bloque = await screen.findByRole('region', { name: 'Qué buscar en el CV' })
+    expect(within(bloque).getByText('Qué buscar en el CV · buscando…')).toBeTruthy()
+    expect(within(bloque).getByText('aún no suma')).toBeTruthy()
+    expect(within(bloque).getByText('Buscando en su CV…')).toBeTruthy()
+    expect(within(bloque).queryByText(/No se pudo buscar/)).toBeNull()
+  })
+
+  it('sin el permiso no sale el botón', async () => {
+    const fallida = [{ ...EN_PERFIL, busqueda: buscada('FALLIDA') }] as FilaRanking[]
+    await pintar(fallida, true, { ...CON_LINEAS, puedeVolverABuscar: false })
+    verCorte('Toda la tanda')
+    fireEvent.click(within(laTabla()).getByRole('button', { name: 'Rodrigo Ayala' }))
+
+    const bloque = await screen.findByRole('region', { name: 'Qué buscar en el CV' })
+    expect(within(bloque).queryByRole('button', { name: 'Volver a buscar' })).toBeNull()
+  })
+
+  it('sin líneas en la vacante no sale nada nuevo', async () => {
+    await pintar(TANDA, true)
+    verCorte('Toda la tanda')
+
+    expect(screen.queryByRole('group', { name: 'Orden' })).toBeNull()
+    expect(screen.queryByText(/listos/)).toBeNull()
   })
 })

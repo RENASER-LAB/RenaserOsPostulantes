@@ -152,6 +152,13 @@ import { NotaMinimaDelPase } from './NotaMinimaDelPase'
 import { turnoDeLaVacante } from './turnoDeLaVacante'
 import { loQueFaltaParaPublicar } from './loQueFaltaParaPublicar'
 import estilos from './Vacante.module.css'
+import {
+  CasillaQueBuscar,
+  EstadoDeLoBuscado,
+  LoBuscadoEnLaFicha,
+  PuntosDeLoBuscado,
+} from './QueBuscarEnElCv'
+import { ordenarPorLoBuscado } from './reglasQueBuscar'
 
 /**
  * El semaforo del sistema, aplicado a lo que la IA marca.
@@ -677,6 +684,16 @@ export function VacantePanelDetalle() {
         )}
       </section>
 
+      {/*
+        «Qué buscar en el CV» (V80) de una vacante cerrada o archivada: se ve en solo
+        lectura, porque ya no se edita.
+      */}
+      {(archivada || v.estado === 'CERRADA') && (v.queBuscarEnElCv?.length ?? 0) > 0 && (
+        <section className={estilos.seccion} aria-label="Qué buscar en el CV">
+          <CasillaQueBuscar valor={(v.queBuscarEnElCv ?? []).join('\n')} soloLectura />
+        </section>
+      )}
+
       {/* ---------- El ranking ---------- */}
       <section className={estilos.seccion}>
         <h2 className={estilos.tituloSeccion}>Ranking</h2>
@@ -772,6 +789,7 @@ export function VacantePanelDetalle() {
             cabeceraDelCv={ranking.data}
             vista={vista}
             archivada={archivada}
+            cerrada={v.estado === 'CERRADA'}
             alCambiarVista={setVista}
             filtros={filtros}
             alCambiarFiltros={cambiarFiltros}
@@ -881,9 +899,12 @@ function Ranking({
   filtros,
   alCambiarFiltros,
   pruebaPropia = false,
+  cerrada = false,
 }: {
   vacanteId: number
   etapa: EtapaPanel
+  /** Cerrada (no archivada): lo buscado se sigue viendo, pero no se vuelve a buscar (V80). */
+  cerrada?: boolean
   /** La vacante rinde la prueba escrita en su editor (V67). */
   pruebaPropia?: boolean
   filas: FilaRanking[]
@@ -931,6 +952,13 @@ function Ranking({
   */
   const [orden, setOrden] = useState<Orden | null>(null)
   /*
+    «Por lo buscado» (V80): solo si la vacante busca algo. Vive aquí, como el orden
+    por columna, y por eso vuelve a «De siempre» al cambiar de pestaña —el
+    `<Ranking>` se monta otra vez con `key={etapa}`—. Pulsar una cabecera lo apaga.
+  */
+  const buscaAlgo = (cabeceraDelCv.queBuscarEnElCv?.length ?? 0) > 0
+  const [porLoBuscado, setPorLoBuscado] = useState(false)
+  /*
     Las columnas de criterio arrancan apagadas. La tabla ya se sale de su
     envoltura con once columnas —ver el comentario de la celda del candidato— y
     los ocho criterios del currículum la llevarían a veinte. Quien viene a
@@ -964,7 +992,8 @@ function Ranking({
   */
   const delCorte = filtrar(filas, etapa, vista)
   const filtradas = filtrarFino(delCorte, filtros)
-  const visibles = ordenar(filtradas, orden)
+  const visibles =
+    buscaAlgo && porLoBuscado ? ordenarPorLoBuscado(filtradas) : ordenar(filtradas, orden)
 
   const cuantas = recuentos(filas, etapa)
   const cifras = cifrasDeLaEtapa(filas, etapa)
@@ -1096,6 +1125,7 @@ function Ranking({
           orden,
           ciudades,
           new Date(ahora()).getFullYear(),
+          buscaAlgo && porLoBuscado,
         ),
       })
       const url = URL.createObjectURL(archivo.contenido)
@@ -1326,6 +1356,21 @@ function Ranking({
         columnas— y dice cuántas columnas va a añadir, para que encenderlo no
         sorprenda.
       */}
+
+      {/*
+        «Qué buscar en el CV» (V80): los recuentos de la tanda y el orden. Sin líneas
+        en la vacante no sale.
+      */}
+      {buscaAlgo && (
+        <EstadoDeLoBuscado
+          filas={filas}
+          porLoBuscado={porLoBuscado}
+          alCambiarOrden={(cual) => {
+            setPorLoBuscado(cual)
+            setOrden(null)
+          }}
+        />
+      )}
 
       <BarraDeFiltros
         columnas={
@@ -1584,7 +1629,11 @@ function Ranking({
                     <button
                       type="button"
                       className={estilos.ordenarPor}
-                      onClick={() => setOrden((antes) => alternarOrden(antes, cual))}
+                      onClick={() => {
+                        // Una cabecera manda sobre «Por lo buscado» (V80): el control vuelve a «De siempre».
+                        setPorLoBuscado(false)
+                        setOrden((antes) => alternarOrden(antes, cual))
+                      }}
                       title={`Ordenar por ${columna.completo ?? columna.titulo}`}
                     >
                       {/*
@@ -1642,6 +1691,8 @@ function Ranking({
                       {fila.candidato}
                     </button>
                     <span className={estilos.correo}>{fila.correo}</span>
+                    {/* «Qué buscar en el CV» (V80): un punto por línea, bajo el correo. */}
+                    {buscaAlgo && <PuntosDeLoBuscado busqueda={fila.busqueda} />}
                   </td>
                   {/*
                     ⚠️ **Cada celda va con la MISMA condición que su cabecera**,
@@ -1898,7 +1949,15 @@ function Ranking({
                 {abierta === fila.postulacionId && (
                   <tr>
                     <td id={`ficha-${fila.postulacionId}`} colSpan={columnas} className={estilos.celdaDetalle}>
-                      <DetalleDelPostulante fila={fila} etapa={etapa} pruebaPropia={pruebaPropia} />
+                      <DetalleDelPostulante
+                        fila={fila}
+                        etapa={etapa}
+                        pruebaPropia={pruebaPropia}
+                        pesoDeLoBuscado={cabeceraDelCv.pesoQueBuscarEnElCv}
+                        puedeVolverABuscar={
+                          cabeceraDelCv.puedeVolverABuscar === true && !archivada && !cerrada
+                        }
+                      />
                     </td>
                   </tr>
                 )}
@@ -2299,11 +2358,17 @@ function DetalleDelPostulante({
   fila,
   etapa,
   pruebaPropia = false,
+  pesoDeLoBuscado,
+  puedeVolverABuscar = false,
 }: {
   fila: FilaRanking
   etapa: EtapaPanel
   /** La vacante rinde la prueba escrita en su editor (V67): otra pestaña «Prueba». */
   pruebaPropia?: boolean
+  /** Cuánto pesa «Qué buscar en el CV» en la nota del CV, en % (V80). */
+  pesoDeLoBuscado?: number | null
+  /** `ajustar_nota` y la vacante ni cerrada ni archivada: ofrece «Volver a buscar». */
+  puedeVolverABuscar?: boolean
 }) {
   const catalogos = useQuery({
     queryKey: ['panel-catalogos'],
@@ -2334,6 +2399,12 @@ function DetalleDelPostulante({
 
   return (
     <div className={estilos.detalle}>
+      {/* Lo primero de la ficha, en cualquier pestaña (V80). Sin líneas no sale nada. */}
+      <LoBuscadoEnLaFicha
+        fila={fila}
+        peso={pesoDeLoBuscado}
+        puedeVolverABuscar={puedeVolverABuscar}
+      />
       <div className={estilos.cabeceraPostulante}>
         <section className={estilos.columnaDetalle}>
         <h3 className={estilos.tituloDetalle}>La ficha</h3>

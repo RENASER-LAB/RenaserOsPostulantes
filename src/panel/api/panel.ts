@@ -58,6 +58,7 @@ import type {
   VersionCompletaPrueba,
   RespuestaDePrueba,
   CalificacionEncolada,
+  QueBuscarEnElCvActual,
   PasadaEncolada,
   CierrePruebaAplicado,
   ElegirInstrumentoTecnico,
@@ -187,6 +188,20 @@ export const actualizarRemuneracion = (id: number, datos: ActualizarRemuneracion
     metodo: 'POST',
     cuerpo: datos,
   })
+
+/**
+ * «Que buscar en el CV» de una vacante y a cuantas personas habria que volver a
+ * buscar si cambia (V80): lo que mira la edicion antes de guardar. Pide `editar_vacante`.
+ */
+export const verQueBuscarEnElCv = (vacanteId: number) =>
+  pedir<QueBuscarEnElCvActual>(`/vacantes/${vacanteId}/que-buscar-en-el-cv`)
+
+/**
+ * «Volver a buscar» (V80): encola otra vez solo la busqueda de «Que buscar en el
+ * CV» de esa persona. Pide `ajustar_nota`.
+ */
+export const volverABuscarEnElCv = (postulacionId: number) =>
+  pedir<CalificacionEncolada>(`/postulaciones/${postulacionId}/busqueda-cv`, { metodo: 'POST' })
 
 export const publicarVacante = (id: number) =>
   pedir<void>(`/vacantes/${id}/publicacion`, { metodo: 'POST' })

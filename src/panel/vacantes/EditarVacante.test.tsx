@@ -28,11 +28,13 @@ import type { Catalogos, VacantePanel as Vacante } from '../api/tipos'
 
 const listarVacantes = vi.fn()
 const editarVacante = vi.fn()
+const verQueBuscarEnElCv = vi.fn()
 
 vi.mock('../api/panel', () => ({
   listarVacantes: () => listarVacantes(),
   contarVacantesArchivadas: () => Promise.resolve({ archivadas: 0 }),
   editarVacante: (id: number, datos: unknown) => editarVacante(id, datos),
+  verQueBuscarEnElCv: (id: number) => verQueBuscarEnElCv(id),
   listarSolicitudes: () => Promise.resolve([]),
   listarPuestos: () =>
     Promise.resolve([
@@ -529,5 +531,89 @@ describe('Al guardar', () => {
     expect((screen.getByLabelText('Horario') as HTMLInputElement).value).toBe('Híbrido, 3 días')
     expect((screen.getByLabelText(/Monto mensual/) as HTMLInputElement).value).toBe('3600')
     expect(screen.getByRole('dialog')).toBeTruthy()
+  })
+})
+
+describe('«Qué buscar en el CV» al editar (V80)', () => {
+  const casilla = () => screen.getByLabelText(/Qué buscar en el CV, uno por línea/) as HTMLTextAreaElement
+
+  beforeEach(() => {
+    listarVacantes.mockResolvedValue([
+      vacante({ queBuscarEnElCv: ['Controla costos y mermas', 'Certificado BPM'] }),
+    ])
+  })
+
+  it('trae las líneas guardadas con su chip privado, sin texto de ayuda', async () => {
+    await abrirLaEdicion()
+
+    expect(casilla().value).toBe('Controla costos y mermas\nCertificado BPM')
+    expect(screen.getByText('Solo lo ve tu equipo')).toBeTruthy()
+    expect(screen.getByText('2 de 6 como máximo')).toBeTruthy()
+  })
+
+  it('AC-02: una línea prohibida sale en rojo con el motivo y apaga el guardado', async () => {
+    await abrirLaEdicion()
+    fireEvent.change(casilla(), { target: { value: 'Controla costos y mermas\nQue sea casado' } })
+
+    expect(screen.getByText(/no sirven para elegir a nadie/)).toBeTruthy()
+    expect((screen.getByRole('button', { name: 'Guardar cambios' }) as HTMLButtonElement).disabled)
+      .toBe(true)
+  })
+
+  it('con CV calificados pregunta; AC-15: cancelar no guarda nada', async () => {
+    verQueBuscarEnElCv.mockResolvedValue({ lineas: [], cvsParaVolverABuscar: 23 })
+    await abrirLaEdicion()
+    fireEvent.change(casilla(), { target: { value: 'Experiencia en cocina saludable' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }))
+
+    expect(await screen.findByRole('alertdialog', { name: '¿Volver a buscar en 23 CV?' })).toBeTruthy()
+    expect(screen.getByText(/No cambia nadie de etapa/)).toBeTruthy()
+    fireEvent.click(screen.getAllByRole('button', { name: 'Cancelar' })[0]!)
+
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull())
+    expect(editarVacante).not.toHaveBeenCalled()
+    expect(casilla().value).toBe('Experiencia en cocina saludable')
+  })
+
+  it('al confirmar guarda con la confirmación y las líneas, una sola vez', async () => {
+    verQueBuscarEnElCv.mockResolvedValue({ lineas: [], cvsParaVolverABuscar: 23 })
+    editarVacante.mockResolvedValue({ huboCambios: true, postulantesAvisados: 0, cvsABuscar: 23 })
+    await abrirLaEdicion()
+    fireEvent.change(casilla(), { target: { value: 'Experiencia en cocina saludable\n\nDirige equipos' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }))
+
+    const confirmar = await screen.findByRole('button', { name: 'Guardar y volver a buscar' })
+    fireEvent.click(confirmar)
+    fireEvent.click(confirmar)
+
+    await waitFor(() => expect(editarVacante).toHaveBeenCalledTimes(1))
+    expect(editarVacante.mock.calls[0]![1]).toMatchObject({
+      queBuscarEnElCv: ['Experiencia en cocina saludable', 'Dirige equipos'],
+      confirmarNuevaBusqueda: true,
+    })
+  })
+
+  it('sin CV calificados guarda sin preguntar', async () => {
+    verQueBuscarEnElCv.mockResolvedValue({ lineas: [], cvsParaVolverABuscar: 0 })
+    await abrirLaEdicion()
+    fireEvent.change(casilla(), { target: { value: 'Otra cosa' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }))
+
+    await waitFor(() => expect(editarVacante).toHaveBeenCalledTimes(1))
+    expect(screen.queryByRole('alertdialog')).toBeNull()
+    expect((editarVacante.mock.calls[0]![1] as { confirmarNuevaBusqueda?: boolean }).confirmarNuevaBusqueda)
+      .toBeUndefined()
+  })
+
+  it('AC-04: cambiar otro campo no pregunta ni toca las líneas', async () => {
+    await abrirLaEdicion()
+    fireEvent.change(screen.getByLabelText('Horario'), { target: { value: 'Turnos' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }))
+
+    await waitFor(() => expect(editarVacante).toHaveBeenCalledTimes(1))
+    expect(verQueBuscarEnElCv).not.toHaveBeenCalled()
+    expect(editarVacante.mock.calls[0]![1]).toMatchObject({
+      queBuscarEnElCv: ['Controla costos y mermas', 'Certificado BPM'],
+    })
   })
 })

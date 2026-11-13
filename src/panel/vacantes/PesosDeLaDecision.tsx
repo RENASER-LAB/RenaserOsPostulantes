@@ -33,6 +33,10 @@ const cifra = (valor: number | null | undefined) =>
     ? '—'
     : Number(valor).toLocaleString('es-PE', { maximumFractionDigits: 2 })
 
+/** «25 %»: el peso de «Qué buscar en el CV» es un porcentaje de la nota del CV. */
+const porcentaje = (valor: number | null | undefined) =>
+  valor === null || valor === undefined ? '—' : `${cifra(valor)} %`
+
 const iguales = (a: number | null | undefined, b: number | null | undefined) =>
   (a ?? null) === null ? (b ?? null) === null : (b ?? null) !== null && Number(a) === Number(b)
 
@@ -223,6 +227,29 @@ export function ConfirmacionDePesos({
               </td>
             </tr>
           ))}
+          {/*
+            «Qué buscar en el CV» (V80): solo si la vacante tiene líneas. Es un % de la
+            nota del CV, no de la nota final; dos versiones que solo difieren aquí son un
+            cambio como cualquier otro y recalculan a todos.
+          */}
+          {previsto.queBuscarEnElCv && (
+            <tr>
+              <th scope="row">{previsto.queBuscarEnElCv.nombre}</th>
+              <td className={propios.cifra} data-rotulo="Antes">
+                {porcentaje(previsto.queBuscarEnElCv.antes)}
+              </td>
+              <td
+                className={`${propios.cifra} ${
+                  iguales(previsto.queBuscarEnElCv.antes, previsto.queBuscarEnElCv.despues)
+                    ? ''
+                    : propios.cambia
+                }`}
+                data-rotulo="Después"
+              >
+                {porcentaje(previsto.queBuscarEnElCv.despues)}
+              </td>
+            </tr>
+          )}
         </tbody>
       </table>
       {fallo !== null && fallo !== undefined && (
