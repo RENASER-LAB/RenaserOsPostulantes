@@ -38,42 +38,6 @@
 
 /* ---------- Las pestañas ---------- */
 
-.pestanas {
-  display: flex;
-  gap: var(--e1);
-  border-bottom: 1px solid var(--regla2);
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.pestanas::-webkit-scrollbar {
-  display: none;
-}
-
-.pestana {
-  flex: none;
-  min-height: 44px;
-  padding: 0 var(--e4);
-  border: 0;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
-  background: none;
-  color: var(--tinta2);
-  font-size: var(--t-apoyo);
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.pestana:hover {
-  color: var(--tinta);
-}
-
-.pestanaActiva {
-  color: var(--tinta);
-  border-bottom-color: var(--tinta);
-}
-
 .panel {
   padding-top: var(--e5);
 }

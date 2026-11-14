@@ -1,0 +1,75 @@
+/*
+ * Las pestañas del panel: las de la ficha del colaborador, sacadas a una pieza
+ * común para «Pruebas» (spec pruebas-indice-de-la-empresa).
+ *
+ * Una raya de 2 px bajo la elegida y nada más: sin fondo ni índigo, porque la
+ * pestaña dice dónde estás y no es una acción. Ruedan en horizontal si no caben.
+ */
+
+.pestanas {
+  display: flex;
+  gap: var(--e1);
+  border-bottom: 1px solid var(--regla2);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.pestanas::-webkit-scrollbar {
+  display: none;
+}
+
+.pestana {
+  flex: none;
+  min-height: 44px;
+  padding: 0 var(--e4);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  background: none;
+  color: var(--tinta2);
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.pestana:hover {
+  color: var(--tinta);
+}
+
+.pestanaActiva {
+  color: var(--tinta);
+  border-bottom-color: var(--tinta);
+}
+
+/* El recuento de la pestaña, en gris y con cifras de igual ancho. */
+.cuenta {
+  font-weight: 400;
+  color: var(--tinta3);
+  margin-left: var(--e2);
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * En el teléfono, si se pide, las pestañas se reparten el ancho a partes
+ * iguales y el nombre puede partirse en dos líneas.
+ */
+@media (max-width: 640px) {
+  .iguales {
+    display: grid;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
+    gap: 0;
+  }
+
+  .iguales .pestana {
+    white-space: normal;
+    text-align: center;
+    line-height: 1.25;
+    padding: var(--e2);
+  }
+
+  .iguales .cuenta {
+    margin-left: var(--e1);
+  }
+}

@@ -3,20 +3,23 @@ import { entrarAlPanel } from './ayuda'
 import { empresaB, retirarLoSembrado } from './ayuda-prueba-propia'
 
 /**
- * La sección «Pruebas» del panel se retiró (spec `fuga-del-catalogo-de-preguntas`).
+ * La sección «Pruebas» de las plantillas se retiró (spec `fuga-del-catalogo-de-preguntas`).
  *
  * Leía el catálogo de preguntas de toda la plataforma —el examen de cualquier
- * empresa— nada más abrir una versión. Las vacantes nuevas arman su prueba en su
- * propio editor, así que la sección se fue entera. Lo que se protege aquí, con una
- * sesión de RENASER y otra de una segunda empresa:
+ * empresa— nada más abrir una versión. Desde la spec `pruebas-indice-de-la-empresa`,
+ * `/admin/pruebas` es otra cosa: el índice de lo que cada empresa escribió en
+ * sus propias vacantes. Lo que se protege aquí, con una sesión de RENASER y otra
+ * de una segunda empresa:
  *
- *   - AC-01: el menú ya no ofrece «Pruebas», ni a quien tiene los permisos de pruebas;
- *   - AC-02: las direcciones guardadas, `/admin/pruebas` y
- *     `/admin/pruebas/versiones/5`, llevan a la lista de vacantes sin error;
+ *   - el menú ofrece «Pruebas» —el índice— a quien tiene `ver_vacantes`;
+ *   - `/admin/pruebas` abre el índice, y la empresa B, sin nada escrito, ve su
+ *     estado vacío y nada de RENASER;
+ *   - la dirección de una versión de la sección retirada,
+ *     `/admin/pruebas/versiones/5`, sigue llevando a la lista de vacantes;
  *   - y por el camino, el navegador no pide el catálogo de preguntas.
  *
- * El cierre del catálogo en la API (AC-03 a AC-06) lo prueba el backend con dos
- * empresas (`CatalogoDePreguntasSoloPlataformaIT`), no este archivo.
+ * El cierre del catálogo en la API lo prueba el backend con dos empresas
+ * (`CatalogoDePreguntasSoloPlataformaIT`), no este archivo.
  *
  * ⚠️ **ESCRIBE** en el clon del trabajo: la empresa B de `ayuda-prueba-propia`, que
  * `afterAll` retira.
@@ -59,37 +62,47 @@ const SESIONES = [
 ] as const
 
 for (const { quien, entrar } of SESIONES) {
-  test(`AC-01 · ${quien}: el menú no muestra «Pruebas», aunque tenga los permisos de pruebas`, async ({ page }) => {
+  test(`${quien}: el menú ofrece «Pruebas», el índice de la empresa`, async ({ page }) => {
     await entrar(page)
     await page.goto('/admin')
     // «Colaboradores» depende de la sesión: cuando sale, el menú ya es el de los
     // permisos de esta persona y no el de reserva mientras carga.
     await expect(menu(page).getByRole('link', { name: 'Colaboradores', exact: true })).toBeVisible()
-    for (const nombre of ['Vacantes', 'Simulación', 'Configuración']) {
+    for (const nombre of ['Vacantes', 'Pruebas', 'Simulación', 'Configuración']) {
       await expect(menu(page).getByRole('link', { name: nombre, exact: true })).toBeVisible()
     }
-    await expect(menu(page).getByRole('link', { name: 'Pruebas', exact: true })).toHaveCount(0)
-    await expect(page.locator('a[href^="/admin/pruebas"]')).toHaveCount(0)
+    await expect(menu(page).getByRole('link', { name: 'Pruebas', exact: true })).toHaveAttribute('href', '/admin/pruebas')
   })
 
-  for (const vieja of ['/admin/pruebas', '/admin/pruebas/versiones/5']) {
-    test(`AC-02 · ${quien}: ${vieja} lleva a la lista de vacantes sin error`, async ({ page }) => {
-      const catalogo = vigilarElCatalogo(page)
-      await entrar(page)
-      await page.goto(vieja)
+  test(`${quien}: /admin/pruebas abre el índice y no pide el catálogo de preguntas`, async ({ page }) => {
+    const catalogo = vigilarElCatalogo(page)
+    await entrar(page)
+    await page.goto('/admin/pruebas')
+    await expect(page.getByRole('heading', { level: 1, name: 'Pruebas.' })).toBeVisible()
+    await expect(menu(page).getByRole('link', { name: 'Pruebas', exact: true })).toHaveAttribute('aria-current', 'page')
+    await expect(page.getByRole('tab', { name: /Preguntas del Perfil Integral/ })).toHaveAttribute('aria-selected', 'true')
+    if (quien === 'otra empresa') {
+      // Sin nada escrito en sus vacantes: el estado vacío, y nada de RENASER (AC-04, AC-14)
+      await expect(page.getByText('Ninguna vacante tiene preguntas propias todavía').first()).toBeVisible()
+      await expect(page.getByRole('link', { name: 'Ir a Vacantes' })).toHaveAttribute('href', '/admin')
+    }
+    expect(catalogo, 'el panel no debe pedir el catálogo de preguntas').toEqual([])
+  })
 
-      await expect(page).toHaveURL(/\/admin\/?$/)
-      await expect(page.getByRole('heading', { level: 1, name: 'Vacantes.' })).toBeVisible()
-      await expect(menu(page).getByRole('link', { name: 'Vacantes', exact: true }))
-        .toHaveAttribute('aria-current', 'page')
-      await expect(menu(page).getByRole('link', { name: 'Pruebas', exact: true })).toHaveCount(0)
+  test(`${quien}: /admin/pruebas/versiones/5, de la sección retirada, lleva a la lista de vacantes`, async ({ page }) => {
+    const catalogo = vigilarElCatalogo(page)
+    await entrar(page)
+    await page.goto('/admin/pruebas/versiones/5')
 
-      // Recargar —la pestaña que quedó abierta con la pantalla vieja— da lo mismo.
-      await page.reload()
-      await expect(page).toHaveURL(/\/admin\/?$/)
-      await expect(page.getByRole('heading', { level: 1, name: 'Vacantes.' })).toBeVisible()
+    await expect(page).toHaveURL(/\/admin\/?$/)
+    await expect(page.getByRole('heading', { level: 1, name: 'Vacantes.' })).toBeVisible()
+    await expect(menu(page).getByRole('link', { name: 'Vacantes', exact: true })).toHaveAttribute('aria-current', 'page')
 
-      expect(catalogo, 'el panel no debe pedir el catálogo de preguntas').toEqual([])
-    })
-  }
+    // Recargar —la pestaña que quedó abierta con la pantalla vieja— da lo mismo.
+    await page.reload()
+    await expect(page).toHaveURL(/\/admin\/?$/)
+    await expect(page.getByRole('heading', { level: 1, name: 'Vacantes.' })).toBeVisible()
+
+    expect(catalogo, 'el panel no debe pedir el catálogo de preguntas').toEqual([])
+  })
 }

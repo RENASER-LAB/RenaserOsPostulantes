@@ -275,6 +275,29 @@
   gap: var(--e4);
 }
 
+/*
+ * La vista previa de «Pruebas» (`VistaDeVersion` con `enColumnas`): medida por
+ * su propio ancho, y desde 52rem (≈1920 px de pantalla) los criterios van en dos
+ * columnas. En el resto de las vistas no hay envoltura y nada cambia.
+ */
+.vistaEnColumnas {
+  container: vista / inline-size;
+}
+
+.criteriosEnColumnas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e4);
+}
+
+@container vista (min-width: 52rem) {
+  .criteriosEnColumnas {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+}
+
 .criterio {
   background: var(--nube);
   border-radius: var(--radio-control);

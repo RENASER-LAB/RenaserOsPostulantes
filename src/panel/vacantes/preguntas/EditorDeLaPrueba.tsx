@@ -40,6 +40,7 @@ import { CopiarDeOtraVacante } from './CopiarDeOtraVacante'
 import { FormularioCriterioDePrueba } from './CriterioDePrueba'
 import { EntregablesGenerales } from './Entregables'
 import { falloDe, useEditorDePreguntas, usePonerEditor, type Fallo } from './consultas'
+import { tiempoDeLaPrueba } from './formulario'
 import { ConModoDelEditor, MODO_PRUEBA } from './modo'
 import {
   campoDeLaFalta,
@@ -126,17 +127,8 @@ export function chipDelTiempo(
 ): { texto: string; falta: boolean } {
   const modalidad = prueba?.modalidad ?? null
   const minutos = prueba?.duracionMinutos ?? null
-  let tiempo: string
-  let falta = false
-  if (modalidad === 'CRONOMETRADA') {
-    tiempo = minutos ? `${minutos} min` : 'Faltan los minutos'
-    falta = !minutos
-  } else if (modalidad === 'PLAZO_ABIERTO') {
-    tiempo = prueba?.plazoDias ? `${prueba.plazoDias} ${prueba.plazoDias === 1 ? 'día' : 'días'}` : 'Sin cronómetro'
-  } else {
-    tiempo = 'Falta el tiempo'
-    falta = true
-  }
+  const tiempo = tiempoDeLaPrueba(modalidad, minutos, prueba?.plazoDias)
+  const falta = modalidad === 'CRONOMETRADA' ? !minutos : modalidad !== 'PLAZO_ABIERTO'
   const hasta = cierraEn ? `hasta ${fechaCortaDeLima(cierraEn)}` : 'falta la fecha límite'
   return { texto: `${tiempo} · ${hasta}`, falta: falta || !cierraEn }
 }

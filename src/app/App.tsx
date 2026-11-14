@@ -43,6 +43,7 @@ import { VacantePanelDetalle } from '@/panel/vacantes/Vacante'
 import { PruebaTecnica } from '@/panel/vacantes/prueba-tecnica/PruebaTecnica'
 import { EditorDePreguntas } from '@/panel/vacantes/preguntas/EditorDePreguntas'
 import { EditorDeLaPrueba } from '@/panel/vacantes/preguntas/EditorDeLaPrueba'
+import { PruebasPanel } from '@/panel/pruebas/Pruebas'
 import { SesionesPanel } from '@/panel/simulacion/Sesiones'
 import { ConfiguracionPanel } from '@/panel/configuracion/Configuracion'
 import { ColaboradoresPanel } from '@/panel/colaboradores/Colaboradores'
@@ -117,17 +118,13 @@ export function App() {
                     <Route path={patrones.adminPruebaPropia} element={<EditorDeLaPrueba />} />
                     <Route path={patrones.adminSesiones} element={<SesionesPanel />} />
                     {/*
-                      La sección «Pruebas» se retiró (spec
-                      fuga-del-catalogo-de-preguntas): las vacantes nuevas arman
-                      su prueba en su propio editor. Una dirección guardada o una
-                      pestaña que quedó abierta lleva a la lista de vacantes, sin
-                      pantalla de error. `/admin/pruebas` vuelve con el índice de
-                      las pruebas de la empresa (specs/pruebas-indice-de-la-empresa.md).
+                      «Pruebas»: el índice de lo escrito en el editor de cada
+                      vacante (spec pruebas-indice-de-la-empresa). La versión de
+                      una plantilla de la sección retirada (spec
+                      fuga-del-catalogo-de-preguntas) sigue llevando a la lista
+                      de vacantes, sin pantalla de error.
                     */}
-                    <Route
-                      path={patrones.adminPruebasRetirada}
-                      element={<Navigate to={patrones.adminVacantes} replace />}
-                    />
+                    <Route path={patrones.adminPruebas} element={<PruebasPanel />} />
                     <Route
                       path={patrones.adminVersionDePruebaRetirada}
                       element={<Navigate to={patrones.adminVacantes} replace />}

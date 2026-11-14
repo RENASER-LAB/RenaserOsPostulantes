@@ -231,6 +231,35 @@ export function IconoSiguiente(props: PropsIcono) {
   )
 }
 
+/** El pico hacia la izquierda: «la anterior». Siempre con su nombre accesible. */
+export function IconoAnterior(props: PropsIcono) {
+  return (
+    <Icono {...props}>
+      <path d="m14.5 6-6 6 6 6" />
+    </Icono>
+  )
+}
+
+/** Dos hojas superpuestas: «Usar en otra vacante», una copia. */
+export function IconoCopiar(props: PropsIcono) {
+  return (
+    <Icono {...props}>
+      <rect x="8" y="8" width="12" height="12" rx="2" />
+      <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" />
+    </Icono>
+  )
+}
+
+/** Una caja con la flecha saliendo: «Abrir en la vacante», que lleva a otra pantalla. */
+export function IconoAbrirFuera(props: PropsIcono) {
+  return (
+    <Icono {...props}>
+      <path d="M14 4.5h5.5V10M19.5 4.5 11 13" />
+      <path d="M17 13.5v4a2 2 0 0 1-2 2H6.5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h4" />
+    </Icono>
+  )
+}
+
 /** El pico que se abre hacia abajo: un grupo desplegado. Girado, uno plegado. */
 export function IconoDesplegar(props: PropsIcono) {
   return (

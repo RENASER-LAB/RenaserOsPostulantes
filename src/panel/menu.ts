@@ -11,15 +11,17 @@
  * pantalla le funcionaba. Y si la sesión no se puede cargar, salen las tres de
  * siempre: el panel sigue funcionando.
  *
- * «Pruebas» ya no sale para nadie, RENASER incluida: la sección se retiró
- * (spec fuga-del-catalogo-de-preguntas) y sus direcciones llevan a Vacantes.
- * Vuelve con el índice de las pruebas de la empresa.
+ * «Pruebas» es el índice de las preguntas y pruebas que la empresa escribió en
+ * sus vacantes (spec pruebas-indice-de-la-empresa): pide `ver_vacantes`, como
+ * Vacantes, y va detrás de ella. No es la sección de plantillas que se retiró
+ * (spec fuga-del-catalogo-de-preguntas): los permisos de pruebas no la dan, y
+ * `/admin/pruebas/versiones/:id` sigue llevando a Vacantes.
  */
 
 import { rutas } from '@/rutas'
 import type { SesionDelPanel } from './api/tiposPersonas'
 
-export type ClaveDeEntrada = 'vacantes' | 'simulacion' | 'colaboradores' | 'configuracion'
+export type ClaveDeEntrada = 'vacantes' | 'pruebas' | 'simulacion' | 'colaboradores' | 'configuracion'
 
 export interface Entrada {
   clave: ClaveDeEntrada
@@ -39,6 +41,7 @@ export interface Menu {
 }
 
 const VACANTES: Entrada = { clave: 'vacantes', nombre: 'Vacantes', ruta: rutas.adminVacantes() }
+const PRUEBAS: Entrada = { clave: 'pruebas', nombre: 'Pruebas', ruta: rutas.adminPruebas() }
 const SIMULACION: Entrada = { clave: 'simulacion', nombre: 'Simulación', ruta: rutas.adminSesiones() }
 const COLABORADORES: Entrada = {
   clave: 'colaboradores',
@@ -66,7 +69,7 @@ export function menuDe(sesion: SesionDelPanel | null | undefined): Menu {
   const tiene = (codigo: string) => alcance.has(codigo)
 
   const seleccion: Entrada[] = []
-  if (tiene('ver_vacantes')) seleccion.push(VACANTES)
+  if (tiene('ver_vacantes')) seleccion.push(VACANTES, PRUEBAS)
   if (tiene('crear_sesiones_simulacion') || tiene('ver_inscritos_simulacion')) {
     seleccion.push(SIMULACION)
   }
@@ -90,6 +93,8 @@ export function entradaActiva(ruta: string): ClaveDeEntrada | null {
   if (limpia === '/admin' || limpia.startsWith('/admin/vacantes') || limpia.startsWith('/admin/archivadas')) {
     return 'vacantes'
   }
+  // `/admin/pruebas/versiones/:id` es de la sección retirada y lleva a Vacantes.
+  if (limpia === '/admin/pruebas') return 'pruebas'
   if (limpia.startsWith('/admin/simulacion')) return 'simulacion'
   if (limpia.startsWith('/admin/colaboradores')) return 'colaboradores'
   if (limpia.startsWith('/admin/configuracion')) return 'configuracion'
