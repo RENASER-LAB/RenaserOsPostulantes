@@ -765,7 +765,7 @@
     "rules": [
       {
         "name": "La regla de la voz única",
-        "body": "El azul es el único color con intención. Si algo es azul, se pulsa, es donde estás, o te toca.",
+        "body": "El azul es el único color con intención. Si algo es azul, se pulsa, es donde estás, o te toca. Con una excepción: el verde de WhatsApp (ver Components).",
         "section": "colors"
       },
       {
@@ -824,7 +824,6 @@
       "**Don't** poner sombra a una celda en reposo ni levantar un botón al pasar.",
       "**Don't** usar el filete al 18 % de la referencia en un campo.",
       "**Don't** mover nada dentro de la prueba del puesto.",
-      "**Don't** editar la base de una pieza compartida para cambiar lo que se ve: manda el bloque Northstar del final.",
       "**Don't** pintar el logotipo de un color con intención, animarlo, ni importar su PNG fuera de `Marca`."
     ]
   }

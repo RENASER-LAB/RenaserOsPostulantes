@@ -6,7 +6,7 @@
 actual.** Aquél se llamaba «El seguimiento»; después vinieron «El canto», «El escaparate» (del
 10 al 25/09/2026), «El cielo despejado» (25/09–13/11) y desde el 13/11/2026 rige **«Northstar»**. Lo que sigue vigente de aquí son las
 decisiones de producto y las reglas del código, no el color. Para el diseño de hoy:
-[EL-MUNDO-VISUAL.md](EL-MUNDO-VISUAL.md) y [DESIGN.md](../DESIGN.md).
+[DESIGN.md](../DESIGN.md).
 
 Este documento es el punto de arranque para retomar el rediseño. Cuenta qué se decidió,
 qué queda por hacer y en qué orden.
@@ -48,7 +48,7 @@ y las doce del recorrido.
 
 **Color.** ⚠️ Esta decisión es del 23/08/2026 y quedó sustituida tres veces: el 10/09 por negro
 y coral, el 25/09 por gris frío con índigo `#615FFF`, y el 13/11/2026 por lo vigente, **papel `#FCFCFA` con un solo azul `#1E3A8A`** («Northstar»). Ver
-[EL-MUNDO-VISUAL.md](EL-MUNDO-VISUAL.md) y [DESIGN.md](../DESIGN.md).
+[DESIGN.md](../DESIGN.md).
 Lo que sigue vigente **no son los colores de aquel día** —el índigo `#4338CA` que sustituía al
 champagne `#816220` se fue con ellos—, sino el razonamiento: verde, ámbar y rojo ya tienen significado fijo en el
 sistema —aprobado, en duda, error— así que el acento no podía ser ninguno de esos ni un

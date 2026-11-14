@@ -157,7 +157,7 @@ hace `src/paginas/perfil/textos.ts`.
 **Llevar el foco a un campo con error con `.focus()` a secas.** El navegador lo deja contra el
 borde de arriba, debajo de la cabecera fija, y la etiqueta queda tapada (visto en la revisión del
 celular, 12/11/2026). Se usa `enfocarPrimerCampoConError()` o `enfocarSinTapar(campo)`; el
-detalle, en [EL-MUNDO-VISUAL](EL-MUNDO-VISUAL.md), «Dependencias».
+detalle, en [MAPA-DEL-CODIGO](MAPA-DEL-CODIGO.md), «Dependencias».
 
 **Retocar una pieza compartida desde la misma clase no hace nada.** Si una clase trae un botón
 de `piezas.module.css` con `composes`, una regla sobre esa misma clase que cambie `display`,

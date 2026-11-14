@@ -251,6 +251,17 @@ reposo. La portada se permite atmósfera —un campo de columnas punteadas que o
 ventana del producto que se asienta al bajar, una banda oscura y un pie en noche— y dentro del
 portal el trabajo vuelve a ser de la tipografía.
 
+**Lo que no se copió, y por qué:**
+
+| De la referencia | Aquí | Motivo |
+|---|---|---|
+| El borde de sus campos, negro al 18 % (1,5:1) | El gris de control, 3,9:1 | WCAG 1.4.11 pide 3:1 al límite visible de un control |
+| Su etiqueta de sección al 42 % en todas partes | Al 42 % solo en la portada; en el resto, `tinta3` (4,9:1) | En la portada repite el titular; en una pantalla puede ser lo único que nombra el bloque |
+| La librería Paper Shaders | El mismo sombreador portado a WebGL2, con respaldo en 2D | Una dependencia entera para un efecto; y aquí se para fuera de pantalla, baja a 30 cuadros en teléfonos y respeta el movimiento reducido |
+| Su contenido: proyectos, blog, agentes, testimonios | No existe | Se copió el estilo, no la marca; la ventana de la portada enseña una postulación de ejemplo genérica |
+| El selector de idioma | No existe | El portal es solo en español |
+| El rótulo que rodaba en los botones del mundo anterior | Quitado | La referencia solo cambia el color al pasar |
+
 **Key Characteristics:**
 
 - Papel `#FCFCFA`, tinta `#111312` y un único azul, `#1E3A8A`, para acción, ubicación y turno.
@@ -270,8 +281,9 @@ portal el trabajo vuelve a ser de la tipografía.
 - **Azul de acción** (`activo`, `#1E3A8A`): lo que se pulsa, el destino actual de la barra, la
   franja viva del recorrido y el borde de lo que te toca. Blanco encima da **10,4:1**.
 - **Azul pulsado** (`activo-pulsado`, `#172A66`): el mismo botón bajo el ratón; se oscurece.
-- **Halo azul** (`activo-bruma`, `#E9EDFF`): el anillo de 3–4 px de lo vivo —el campo enfocado,
-  la métrica y el nodo en curso de la ventana, el panel que te toca—. Nunca un fondo grande.
+- **Halo azul** (`activo-bruma`, `#E9EDFF`): el anillo de 3–4 px de lo vivo —la métrica y el
+  nodo en curso de la ventana, el panel que te toca— y el fondo de la entrada y la pestaña
+  activas del panel. El foco de un campo lleva su propio halo, más oscuro (ver Inputs).
 - **Frente del campo** (`#527ADA`): el color de los puntos del fondo de la portada. Solo ahí,
   al 64 % y tras la máscara de rayas; no es un color de interfaz.
 
@@ -303,10 +315,15 @@ desde el 13/11/2026**: `--duda` pasó a la familia azul (`#1E3A8A`, bruma `#E9ED
 forma (bruma, punto, etiqueta). Desde el 14/11/2026 el panel también es Northstar y usa la misma
 familia azul.
 
+**El punto de «Qué buscar en el CV»** (`--duda-punto`, `#527ADA`) es solo el relleno del punto
+de 10 px que dice «lo menciona, sin detalle» en el ranking del panel: más claro que el verde de
+«lo tiene» para que se distingan también por luminosidad. Nunca va solo: lleva su texto para
+lectores y la ficha dice la etiqueta. Era ámbar hasta el 14/11/2026.
+
 ### Named Rules
 
 **La regla de la voz única.** El azul es el único color con intención. Si algo es azul, se
-pulsa, es donde estás, o te toca.
+pulsa, es donde estás, o te toca. Con una excepción: el verde de WhatsApp (ver Components).
 
 **La regla del semáforo.** Verde, azul en bruma y rojo significan hecho, duda y error. Nada de ámbar, ni en el portal ni en el panel.
 
@@ -372,7 +389,8 @@ la validación, privacidad y la política.
   avisos.
 - `--sombra-control` es ahora un filete (`0 0 0 1px rgb(17 19 18 / .12)`) y
   `--sombra-control-alta` no pinta nada: ningún botón se levanta.
-- **El halo** (`0 0 0 3–4px var(--activo-bruma)`) marca lo vivo, y es lo único que «brilla».
+- **El halo** (`0 0 0 3–4px var(--activo-bruma)`) marca lo vivo, y es lo único que «brilla»; el
+  campo enfocado usa un halo azul al 22 %.
 
 ## Shapes
 
@@ -510,12 +528,50 @@ funden, actividad que llega de una en una; siguen en marcha solo el trazo de la 
 
 ### La búsqueda de vacantes (`/vacantes`, shadcn/ui + Tailwind)
 
-La estructura no cambió (filtros, lista, panel desde 1280 px; ver
-[EL-MUNDO-VISUAL](docs/EL-MUNDO-VISUAL.md) y la bitácora de octubre). Lo que cambió es la piel:
+La estructura no cambió (filtros, lista, panel desde 1280 px; ver la
+[bitácora de octubre](docs/BITACORA-2026-10.md)). Lo que cambió es la piel:
 las superficies llevan el filete como anillo (`SOMBRA_DE_SUPERFICIE` =
 `shadow-[0_0_0_1px_rgb(0_0_0/0.1)]`), el anillo se oscurece al pasar, **la elegida lleva el
 filete azul con el halo**, y `rounded-xl` es ya `--radio-menor` (4 px). Tailwind sigue **sin
 preflight**, con `!important` y con `--font-sans` en `var(--fuente)`.
+
+### El logotipo (`ui/Marca.tsx`)
+
+Una «E» maciza y una «X» de trazos huecos, cruzada por una hormiga de perfil (28/09/2026). Es
+el PNG que entregó el usuario (`src/ui/logotipo.png`, 808 × 714, negro sobre transparente y sin
+margen), **usado tal cual**: no se vectorizó ni se redibujó.
+
+- **Se pinta como máscara.** `Marca` pone el PNG en `mask-image` —y en `-webkit-mask-image`,
+  que es lo que entiende una WebView de Android sin actualizar— sobre un fondo
+  `currentColor`. Sale en `tinta` y no en el negro del archivo, y donde hace de marca de agua
+  (vacíos y «Acceso necesario») sale en `regla2`.
+- **`Marca` es el único sitio que conoce el archivo.** Lo importa, así Vite le pone huella al
+  nombre y un logotipo nuevo no deja a nadie con el viejo en caché. Ninguna pantalla importa
+  el PNG.
+- **`tamano` es el alto total del dibujo.** El ancho sale de la proporción del archivo
+  (≈ 1,13) y la caja se reserva aunque la imagen tarde: nada salta.
+- **Tamaños:** 28 px en las cabeceras del portal y del panel —el valor por defecto—, 24 en el
+  pie en columnas, 56 en el pie de la portada, 48 en el enlace del correo y 36 como marca de
+  agua. Ninguno baja de 24: la «E» ocupa unos 3/5 del alto y a 16 px no se lee.
+- **Accesibilidad:** se anuncia como imagen llamada «EX». Donde el enlace lleva su etiqueta
+  («EX, inicio», «Panel del equipo, inicio») manda la del enlace.
+- **Colores forzados:** `forced-color-adjust: none` y `CanvasText`, o el sistema anularía el
+  fondo y el logotipo desaparecería.
+- **Fuera de la página:** el favicon (`public/favicon.png`, 64 × 64), el icono de Android y la
+  pantalla de arranque salen de `python3 herramientas/derivados-del-logotipo.py`, que parte
+  siempre del PNG original: si el logotipo cambia, se sustituye el archivo y se corre otra vez.
+
+### La excepción verde: «Escribir por WhatsApp» (`.whatsapp`, 13/10/2026)
+
+**El único botón del portal que no es azul ni tinta**, decidido por el usuario el 12/10/2026.
+Va relleno del verde de WhatsApp, `--whatsapp` `#25D366` (`--whatsapp-pulsado` `#1FBF5A` al pasar
+por encima), con **la tinta oscura encima y no blanca** —el blanco sobre ese verde da 1,98:1;
+`--tinta` da 8,3:1— y el logotipo de WhatsApp delante. El verde dice «WhatsApp» y nada más, y
+**la tarjeta solo sale cuando al candidato no le toca nada**. Desde el 13/11 lleva el filete negro
+al 10 % y sus mayúsculas, como el resto de botones.
+
+La tarjeta que lo lleva es **`.ofrecimiento`**: nube con filete y sin sombra, sobre el papel
+hundido del panel de espera. No reclama —ofrecer no es pedir—.
 
 ### Movimiento
 
@@ -588,6 +644,5 @@ Lo propio del panel:
 - **Don't** poner sombra a una celda en reposo ni levantar un botón al pasar.
 - **Don't** usar el filete al 18 % de la referencia en un campo.
 - **Don't** mover nada dentro de la prueba del puesto.
-- **Don't** editar la base de una pieza compartida para cambiar lo que se ve: manda el bloque Northstar del final.
 - **Don't** pintar el logotipo de un color con intención, animarlo, ni importar su PNG fuera
   de `Marca`.
