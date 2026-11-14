@@ -150,7 +150,7 @@ cómo se ve: eso es DESIGN.md.
 | `src/paginas/prueba/` | La prueba del puesto, en sus dos formas. `Prueba.tsx` decide y pinta la de plantilla en curso; `PruebaDelEditor.tsx`, la del editor en curso, sobre el marco; `FichaPrevia.tsx` es la pantalla previa de las dos, con sus textos en `loQueDiceLaPrevia.ts`; `ElCaso.tsx`, el lateral del caso y su vista de lectura; `Entregable.tsx`, subir un archivo o un enlace |
 | `src/paginas/simulacion/` | Elegir fecha, y la sesión ya reservada con su agenda |
 | `src/paginas/validacion/` | El periodo trabajando. Ver más abajo por qué no se enlaza |
-| `src/paginas/decision/` | El caso ámbar. El formulario va entero y **apagado** |
+| `src/paginas/decision/` | El caso en duda (antes «ámbar»). El formulario va entero y **apagado** |
 | `src/paginas/privacidad/` | La política pública y las tres acciones sobre los datos |
 | `src/panel/entrar/` | Las tres puertas del panel —entrar, pedir el enlace y elegir contraseña—, **dentro del armazón del portal** y con su aspecto. El resto de `/admin` va con su propia disposición |
 | `src/ui/recuperacion/` | La contraseña olvidada —pedir el enlace y elegir la nueva—, **la misma pieza en el portal y en el panel**. Se pinta para ir dentro de una tarjeta, que pone cada pantalla |
@@ -209,7 +209,7 @@ Tres avisos por si se retoca:
 
 Ninguna finge tener datos que no tiene.
 
-**Decisión ámbar** (`/procesos/:uuid/decision`). El formulario está entero y
+**Decisión en duda** (`/procesos/:uuid/decision`, antes «decisión ámbar»). El formulario está entero y
 **deshabilitado**, con un `fieldset disabled`, y se dice por qué antes de que nadie escriba. La
 acción que sí funciona —escribirle al equipo— es la que lleva el índigo. Los endpoints que
 hacen falta están en la cabecera de `Decision.tsx`.

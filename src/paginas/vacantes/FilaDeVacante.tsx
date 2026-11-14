@@ -85,7 +85,7 @@ export function FilaDeVacante({
       state={alElegir ? undefined : { desdeLaLista: true }}
       onClick={alPulsar}
       className={cn(
-        'relative block rounded-2xl bg-card p-4 text-card-foreground no-underline [-webkit-tap-highlight-color:transparent]',
+        'relative block rounded bg-card p-4 text-card-foreground no-underline [-webkit-tap-highlight-color:transparent]',
         SOMBRA_DE_SUPERFICIE,
         'transition-[box-shadow,scale] duration-200 ease-out motion-safe:active:scale-[0.98]',
         'hover:shadow-[0_0_0_1px_rgb(0_0_0/0.24)]',

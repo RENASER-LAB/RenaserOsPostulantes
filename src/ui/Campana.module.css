@@ -320,6 +320,15 @@
 .boton:hover {
   background: transparent;
   color: var(--tinta);
+}
+
+/* Se apaga el icono, no el botón entero: con `opacity` en el botón el contador
+   bajaba a 3,6:1 (QA del 14/11/2026). */
+.boton svg {
+  transition: opacity 150ms var(--curva-control);
+}
+
+.boton:hover svg {
   opacity: 0.6;
 }
 

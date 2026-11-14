@@ -67,6 +67,13 @@
   margin-top: calc(var(--e5) * -1);
 }
 
+/* Un titular con su etiqueta de sección encima no come aire: se pegaba a la
+   cabecera cuando no había enlace de vuelta (QA del 14/11/2026). */
+.hoja > [data-seccion]:first-child,
+.hoja > :first-child:has([data-seccion]:first-child) {
+  margin-top: 0;
+}
+
 @media (max-width: 640px) {
   .hoja {
     padding: var(--e6) var(--e4) var(--e7);

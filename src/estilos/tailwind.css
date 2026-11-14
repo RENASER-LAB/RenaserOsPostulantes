@@ -64,7 +64,7 @@
   --color-input: var(--borde-control);
   --color-ring: var(--activo);
   --color-tinta2: var(--tinta2);
-  /* El ámbar de «esto te cambia la decisión»: los requisitos indispensables. */
+  /* «Esto te cambia la decisión» (los requisitos indispensables), en la familia azul de `--duda`. */
   --color-duda: var(--duda);
   --color-duda-bruma: var(--duda-bruma);
   --color-duda-tinta: var(--duda-tinta);

@@ -746,7 +746,7 @@ export function BuscarVacantes() {
     muchas opciones enseñan cinco y «Ver N más». Ver `GrupoDelLateral`.
   */
   const laColumnaDeFiltros = (
-    <aside aria-label="Filtros" className={cn('row-span-2 rounded-2xl bg-card p-3', SOMBRA_DE_SUPERFICIE)}>
+    <aside aria-label="Filtros" className={cn('row-span-2 rounded bg-card p-3', SOMBRA_DE_SUPERFICIE)}>
       <div className="flex items-center justify-between px-3 pt-2 pb-2">
         <h2 className="m-0 text-lg font-semibold tracking-tight text-foreground">Filtros</h2>
         <Button
@@ -840,7 +840,7 @@ export function BuscarVacantes() {
   const laLista = cargando ? (
     <div className="flex flex-col gap-3" aria-busy="true" aria-label="Buscando vacantes">
       {[0, 1, 2].map((n) => (
-        <div key={n} className={cn('flex gap-3 rounded-2xl bg-card p-4', SOMBRA_DE_SUPERFICIE)}>
+        <div key={n} className={cn('flex gap-3 rounded bg-card p-4', SOMBRA_DE_SUPERFICIE)}>
           <div className="size-11 shrink-0 animate-pulse rounded-full bg-muted motion-reduce:animate-none" />
           <div className="flex flex-1 flex-col gap-2.5 pt-1">
             <div className="h-3.5 w-3/5 animate-pulse rounded bg-muted motion-reduce:animate-none" />
@@ -893,7 +893,7 @@ export function BuscarVacantes() {
       */}
       <div
         className={cn(
-          'mt-2 rounded-2xl bg-card px-5 py-6 sm:px-8 sm:py-7 lg:flex lg:items-center lg:gap-10 lg:py-5',
+          'mt-2 rounded bg-card px-5 py-6 sm:px-8 sm:py-7 lg:flex lg:items-center lg:gap-10 lg:py-5',
           SOMBRA_DE_SUPERFICIE,
         )}
       >
@@ -1033,7 +1033,7 @@ export function BuscarVacantes() {
                 <section
                   ref={panel}
                   aria-labelledby="vacante-elegida-titulo"
-                  className="sticky top-[calc(var(--alto-cabecera)+12px)] col-start-3 row-start-2 max-h-[calc(100vh-var(--alto-cabecera)-24px)] overflow-y-auto overscroll-contain rounded-2xl"
+                  className="sticky top-[calc(var(--alto-cabecera)+12px)] col-start-3 row-start-2 max-h-[calc(100vh-var(--alto-cabecera)-24px)] overflow-y-auto overscroll-contain rounded"
                 >
                   <PanelDeVacante
                     key={laElegida.vacante.id}

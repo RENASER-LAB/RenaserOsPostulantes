@@ -840,7 +840,9 @@ time,
   --fuente-ui: Syne, Onest, system-ui, sans-serif;
   --t-etiqueta: 11px;
   --tracking-etiqueta: 0.16em;
-  --tinta-etiqueta: rgb(17 19 18 / 0.42);
+  /* 4,9:1 sobre #FCFCFA. Era el negro al 42 % de la referencia, 2,7:1: no llegaba
+     al mínimo para un texto de 11 px (QA del 14/11/2026). */
+  --tinta-etiqueta: #656d6c;
   --tracking-titular: -0.055em;
   --noche: #111312;
   --noche-tarjeta: #141416;

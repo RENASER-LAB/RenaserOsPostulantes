@@ -28,7 +28,7 @@
  * Es decoración pura: `aria-hidden`, sin eventos propios.
  */
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import estilos from './FondoDeLaPortada.module.css'
 
 /** Los parámetros de la referencia. */
@@ -167,6 +167,9 @@ function pintarEn2D(canvas: HTMLCanvasElement) {
 export function FondoDeLaPortada({ className }: { className?: string }) {
   const caja = useRef<HTMLDivElement>(null)
   const lienzo = useRef<HTMLCanvasElement>(null)
+  // Sube cuando el navegador devuelve un contexto WebGL perdido: el efecto se
+  // vuelve a montar entero y recompila el sombreador.
+  const [intento, setIntento] = useState(0)
 
   useEffect(() => {
     const canvas = lienzo.current
@@ -231,12 +234,19 @@ export function FondoDeLaPortada({ className }: { className?: string }) {
       gl!.drawArrays(gl!.TRIANGLES, 0, 3)
     }
 
+    // El bucle se para del todo fuera de pantalla o en otra pestaña, en vez de
+    // seguir pidiendo cuadros sin pintar; `reanudar` lo vuelve a poner en marcha.
+    let perdido = false
     function bucle(ahora: number) {
+      if (!visible || document.hidden || perdido) {
+        cuadro = 0
+        ultimo = 0
+        return
+      }
       cuadro = requestAnimationFrame(bucle)
       const delta = ultimo ? ahora - ultimo : 0
       if (delta < intervalo) return
       ultimo = ahora
-      if (!visible || document.hidden) return
       // Como Paper: el tiempo avanza con la velocidad y solo mientras se ve. Un
       // salto largo (la pestaña volvió) no se cobra entero.
       tiempo += (Math.min(delta, 100) / 1000) * VELOCIDAD
@@ -251,10 +261,29 @@ export function FondoDeLaPortada({ className }: { className?: string }) {
       pintar()
     })
     alCambiar.observe(canvas)
+    function reanudar() {
+      if (!quieto && !cuadro && visible && !document.hidden && !perdido) cuadro = requestAnimationFrame(bucle)
+    }
     const alAsomar = new IntersectionObserver(([e]) => {
       visible = e?.isIntersecting ?? true
+      reanudar()
     })
     alAsomar.observe(canvas)
+    document.addEventListener('visibilitychange', reanudar)
+
+    // Si el sistema retira el contexto (memoria de la GPU, suspensión), se espera
+    // a que lo devuelva y se monta de nuevo; sin esto el fondo quedaba en blanco.
+    function alPerder(evento: Event) {
+      evento.preventDefault()
+      perdido = true
+      cancelAnimationFrame(cuadro)
+      cuadro = 0
+    }
+    function alRecuperar() {
+      setIntento((n) => n + 1)
+    }
+    canvas.addEventListener('webglcontextlost', alPerder)
+    canvas.addEventListener('webglcontextrestored', alRecuperar)
 
     // El paralaje de la referencia: ±8 px contra el ratón, solo con ratón fino.
     let destinoX = 0
@@ -276,6 +305,9 @@ export function FondoDeLaPortada({ className }: { className?: string }) {
       cancelAnimationFrame(cuadro)
       cancelAnimationFrame(pendiente)
       window.removeEventListener('pointermove', alMover)
+      document.removeEventListener('visibilitychange', reanudar)
+      canvas.removeEventListener('webglcontextlost', alPerder)
+      canvas.removeEventListener('webglcontextrestored', alRecuperar)
       alCambiar.disconnect()
       alAsomar.disconnect()
       // ⚠️ Sin `loseContext()`: el mismo lienzo vuelve a pedir su contexto al
@@ -283,7 +315,7 @@ export function FondoDeLaPortada({ className }: { className?: string }) {
       gl.deleteBuffer(bufer)
       gl.deleteProgram(programa)
     }
-  }, [])
+  }, [intento])
 
   return (
     <div className={`${estilos.campo} ${className ?? ''}`} aria-hidden="true">

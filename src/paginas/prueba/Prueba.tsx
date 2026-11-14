@@ -36,6 +36,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { ErrorApi } from '@/api/cliente'
 import { entregarPrueba, iniciarPrueba, responderPrueba, verPrueba } from '@/api/prueba'
 import type { FechaIso, MiPrueba } from '@/api/tipos'
 import { formatearFechaLarga, segundosHasta } from '@/dominio/reloj'
@@ -324,6 +325,21 @@ function PreguntaPrueba({
 
 // ---------- La pantalla ----------
 
+/**
+ * Por qué no se abrió la prueba, en palabras de quien postula.
+ *
+ * Un 404 con el proceso todavía vivo quiere decir que esta postulación no tiene
+ * prueba abierta. El backend lo cuenta en inglés de servidor («Prueba del puesto
+ * not found with postulación: '…'») y eso llegaba tal cual a la pantalla
+ * (QA del 14/11/2026).
+ */
+function porQueNoAbre(error: unknown): string {
+  if (error instanceof ErrorApi && error.estado === 404) {
+    return 'Todavía no hay una prueba abierta para esta postulación.'
+  }
+  return error instanceof Error ? error.message : 'No pudimos conectar con el servidor.'
+}
+
 export function Prueba() {
   const { uuid = '' } = useParams()
   const navegar = useNavigate()
@@ -477,9 +493,7 @@ export function Prueba() {
         <div className={estilos.marco}>
           <h1>No pudimos abrir la prueba.</h1>
           <p className={estilos.marcoTexto}>
-            {consulta.error instanceof Error
-              ? consulta.error.message
-              : 'No pudimos conectar con el servidor.'}{' '}
+            {porQueNoAbre(consulta.error)}{' '}
             Lo que ya hayas guardado sigue ahí.
           </p>
           <button
