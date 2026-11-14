@@ -237,7 +237,7 @@ export function Registro() {
         </Link>
       )}
 
-      <h1 className={estilos.titular}>Crea tu cuenta.</h1>
+      <h1 className={estilos.titular} data-seccion="Cuenta / Registro">Crea tu cuenta.</h1>
       {/*
         Solo cuando se viene de una vacante: ahi la frase hace un trabajo —dice
         que la postulacion no se pierde por crear la cuenta en medio—. Llegando

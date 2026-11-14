@@ -147,3 +147,49 @@
     border: 0;
   }
 }
+
+/* ==================================================================
+ * EL MUNDO NORTHSTAR (13/11/2026) — el modal, para el portal. Lo de arriba es
+ * lo del panel.
+ *
+ * Filete negro al 10 %, la sombra difusa de la ventana de la portada, y una
+ * entrada corta: 220 ms desde el 96 % con la curva de salida —un modal se
+ * queda centrado, no crece desde su botón—. El velo se funde en 200 ms.
+ * ================================================================== */
+
+:global(html:not(.mundo-panel)) .caja {
+  border-color: rgb(0 0 0 / 0.1);
+  animation: cajaEntra 220ms var(--salida) both;
+}
+
+:global(html:not(.mundo-panel)) .fondo {
+  animation: fondoEntra 200ms var(--curva-control) both;
+}
+
+:global(html:not(.mundo-panel)) .cerrar {
+  transition: color 150ms var(--curva-control), transform 160ms var(--salida);
+}
+
+:global(html:not(.mundo-panel)) .cerrar:active {
+  transform: scale(0.9);
+}
+
+@keyframes cajaEntra {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.96);
+  }
+}
+
+@keyframes fondoEntra {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :global(html:not(.mundo-panel)) .caja,
+  :global(html:not(.mundo-panel)) .fondo {
+    animation: none;
+  }
+}

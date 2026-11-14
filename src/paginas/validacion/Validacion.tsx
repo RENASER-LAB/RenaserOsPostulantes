@@ -90,7 +90,7 @@ export function Validacion() {
         ← Volver a mi proceso
       </Link>
 
-      <div className={estilos.encabezado}>
+      <div className={estilos.encabezado} data-seccion="Etapa 4 / Validación">
         <h1 className={estilos.titular}>Estás trabajando con nosotros.</h1>
         <p className={estilos.bajada}>Validación práctica · {resumen.vacante}</p>
       </div>

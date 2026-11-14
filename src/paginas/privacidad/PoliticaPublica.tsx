@@ -160,7 +160,7 @@ export function PoliticaPublica() {
 
   return (
     <div className={estilos.pagina}>
-      <header className={estilos.encabezado}>
+      <header className={estilos.encabezado} data-seccion="Legal / Política de privacidad">
         {/*
           Se llama distinto que `/privacidad` a proposito. Aquella se anuncia en
           el pie como «Privacidad y tratamiento de datos» y es el panel de

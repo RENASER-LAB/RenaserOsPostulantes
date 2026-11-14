@@ -67,7 +67,7 @@
   align-items: baseline;
   gap: var(--e1) var(--e2);
   font-size: var(--t-entradilla);
-  font-weight: 600;
+  font-weight: 550;
   font-variant-numeric: tabular-nums;
   color: var(--tinta);
 }
@@ -80,7 +80,7 @@
 
 .donde {
   color: var(--tinta);
-  font-weight: 600;
+  font-weight: 550;
 }
 
 .faltan {
@@ -89,7 +89,7 @@
 
 .faltan.listo {
   color: var(--tinta);
-  font-weight: 600;
+  font-weight: 550;
 }
 
 .progreso {
@@ -130,20 +130,22 @@
   justify-content: center;
   min-height: 44px;
   padding: 0 var(--e4);
-  background: var(--nube);
+  background: var(--cielo);
   color: var(--tinta);
-  border: 1px solid var(--borde-control);
+  border: 1px solid #e5e7eb;
   border-radius: var(--radio-control);
   font: inherit;
   font-size: var(--t-apoyo);
-  font-weight: 500;
+  font-weight: 400;
+  text-transform: uppercase;
   cursor: pointer;
 }
 
 .mando:hover:not(:disabled),
 .anterior:hover:not(:disabled),
 .irA:hover:not(:disabled) {
-  border-color: var(--tinta);
+  border-color: rgb(17 19 18 / 0.4);
+  background: color-mix(in srgb, var(--tinta) 3%, var(--cielo));
 }
 
 .mando[aria-expanded='true'] {
@@ -152,8 +154,8 @@
 
 /* «Entregar…» en la barra: borde oscuro. Relleno solo en el último paso. */
 .mandoEntregar {
-  border: 2px solid var(--tinta);
-  font-weight: 600;
+  border: 1px solid var(--tinta);
+  font-weight: 500;
 }
 
 .mando:disabled,
@@ -218,7 +220,7 @@
 
 .tituloMapa {
   font-size: var(--t-apoyo);
-  font-weight: 600;
+  font-weight: 550;
   letter-spacing: 0;
   color: var(--tinta);
   margin: 0 0 var(--e3);
@@ -252,7 +254,7 @@
   border-radius: var(--radio-menor);
   font: inherit;
   font-size: var(--t-apoyo);
-  font-weight: 600;
+  font-weight: 550;
   font-variant-numeric: tabular-nums;
   cursor: pointer;
 }
@@ -400,7 +402,7 @@
 
 .etiqueta {
   color: var(--tinta2);
-  font-weight: 600;
+  font-weight: 550;
 }
 
 .guardado {
@@ -410,13 +412,13 @@
 /* Le falta algo al candidato: ámbar, lo que frena la entrega. */
 .guardado.duda {
   color: var(--duda-tinta);
-  font-weight: 600;
+  font-weight: 550;
 }
 
 /* No llegó al servidor. Sin rojo: el rojo es del tiempo. Lo dice la frase. */
 .guardado.fallo {
   color: var(--tinta);
-  font-weight: 600;
+  font-weight: 550;
 }
 
 .enunciado {
@@ -424,7 +426,7 @@
   font-size: var(--t-destacado);
   line-height: 1.35;
   letter-spacing: -0.018em;
-  font-weight: 600;
+  font-weight: 550;
   max-width: var(--medida);
   text-wrap: pretty;
   overflow-wrap: anywhere;
@@ -457,11 +459,12 @@
   padding: 0 var(--e5);
   background: var(--activo);
   color: var(--tinta-invertida);
-  border: 1px solid var(--activo);
+  border: 1px solid rgb(0 0 0 / 0.1);
   border-radius: var(--radio-control);
   font: inherit;
   font-size: var(--t-apoyo);
-  font-weight: 600;
+  font-weight: 400;
+  text-transform: uppercase;
   cursor: pointer;
 }
 

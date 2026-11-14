@@ -156,7 +156,7 @@ export function ElegirClave({
 
   return (
     <>
-      <h1 className={estilos.titular}>Elige una contraseña nueva.</h1>
+      <h1 className={estilos.titular} data-seccion="Cuenta / Contraseña nueva">Elige una contraseña nueva.</h1>
       <p className={estilos.bajada}>
         Es la que vas a usar para entrar a partir de ahora. Cuando la guardes, te llevamos a
         la pantalla de entrar.

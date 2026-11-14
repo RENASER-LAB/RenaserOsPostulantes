@@ -86,7 +86,8 @@
   --radius-sm: var(--radio-marca);
   --radius-md: var(--radio-control);
   --radius-lg: var(--radio-control);
-  --radius-xl: var(--radio);
+  /* Northstar: las tarjetas de /vacantes van casi rectas, como las celdas. */
+  --radius-xl: var(--radio-menor);
 }
 
 /*

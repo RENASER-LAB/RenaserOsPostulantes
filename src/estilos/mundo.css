@@ -1,11 +1,4 @@
 /*
- * ⚠️ **13/11/2026 · estilo «Northstar»** (rama feat/estilo-northstar): los
- * VALORES de los tokens de abajo se cambiaron para replicar el estilo de
- * northstar-template-demo.vercel.app —papel #FCFCFA, tinta #111312, azul
- * #1E3A8A, Onest + Syne, filetes negros al 10 %, esquinas rectas en la
- * cabecera—. Los comentarios historicos siguen describiendo mundos anteriores:
- * manda el valor, no la prosa.
- *
  * El mundo visual del portal: «El escaparate».
  *
  * Un cuarto de luz calida con una sola pieza iluminada. El fondo es un pastel
@@ -54,57 +47,60 @@
  */
 
 /*
- * Desde el 13/11/2026 el estilo es el de northstar-template-demo.vercel.app:
- * Onest para todo (cuerpo y titulares, peso 400 y tracking muy cerrado en el
- * titular) y Syne para la voz de interfaz —el boton de la cabecera, el pie,
- * los titulos de tarjeta oscura—. Las dos son libres (Google Fonts, OFL) y se
- * sirven desde el propio sitio, variables, latin y latin-ext.
+ * Geist, servida por el propio sitio.
+ *
+ * ⚠️ **Era Figtree hasta el 25/09/2026.** Se cambio por peticion, para igualar
+ * la tipografia de la referencia que trajo el cliente, que usa Geist en todo.
+ * Geist es de Vercel con licencia OFL: se puede empaquetar y redistribuir.
+ *
+ * Se sirve desde el sitio y no desde Google Fonts, igual que se hacia con
+ * Figtree: un telefono sin cobertura abriria la aplicacion instalada con los
+ * titulares en otra letra. Empaquetada, carga siempre. De paso se van las dos
+ * conexiones previas del arranque.
+ *
+ * ⚠️ **Es la fuente variable, un solo archivo por subconjunto**, y declara el
+ * rango 400-700 entero: un peso nuevo dentro de el no obliga a volver aqui.
+ *
+ * ⚠️ **No hay cursiva a proposito**: no se usa en ninguna hoja, y la cursiva es
+ * otro archivo. Si algun dia se usa, hay que traerla — el navegador la
+ * fabricaria inclinando la recta, que se ve mal.
+ *
+ * ⚠️ **Geist es mas ancha que Figtree**, y `--medida` esta en `ch`, que depende
+ * de la fuente: las lineas de prosa cambian de largo con el cambio. Ver la nota
+ * de `--medida` mas abajo.
+ *
+ * Los archivos y los `unicode-range` son los que sirve Google Fonts para
+ * `Geist:wght@400..700`, copiados tal cual: son los que hacen que un navegador
+ * que solo pinta español no descargue el subconjunto extendido. Los de Figtree
+ * siguen en `public/tipografia/` por si hay que volver.
  */
 @font-face {
-  font-family: Onest;
+  font-family: Geist;
   font-style: normal;
-  font-weight: 100 900;
+  font-weight: 400 700;
   font-display: swap;
-  src: url('/tipografia/onest-latin.woff2') format('woff2');
+  src: url('/tipografia/geist-latin.woff2') format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
     U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
     U+FEFF, U+FFFD;
 }
 
 @font-face {
-  font-family: Onest;
+  font-family: Geist;
   font-style: normal;
-  font-weight: 100 900;
+  font-weight: 400 700;
   font-display: swap;
-  src: url('/tipografia/onest-latin-ext.woff2') format('woff2');
+  src: url('/tipografia/geist-latin-ext.woff2') format('woff2');
   unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
-    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4,
-    U+2113, U+2C60-2C7F, U+A720-A7FF;
-}
-
-@font-face {
-  font-family: Syne;
-  font-style: normal;
-  font-weight: 400 800;
-  font-display: swap;
-  src: url('/tipografia/syne-latin.woff2') format('woff2');
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
-    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
-    U+FEFF, U+FFFD;
-}
-
-@font-face {
-  font-family: Syne;
-  font-style: normal;
-  font-weight: 400 800;
-  font-display: swap;
-  src: url('/tipografia/syne-latin-ext.woff2') format('woff2');
-  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
-    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4,
+    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0,
     U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 
 :root {
+  /* Las voces de la letra. En el panel, Geist para todo; el portal las cambia
+     abajo, en «El mundo Northstar». */
+  --fuente: Geist, system-ui, sans-serif;
+  --fuente-ui: Geist, system-ui, sans-serif;
   /*
    * Superficies. El fondo es un pastel calido y las superficies son nube blanca:
    * asi lo que se pone encima —la cabecera, las tarjetas, el escaparate— se lee
@@ -140,22 +136,7 @@
    * blancas con una linea de 1,28:1 — que es justo el fallo que se corrigio en
    * las pantallas de relleno hace dos dias.
    */
-  /* Las voces de la letra (13/11/2026). */
-  --fuente: Onest, system-ui, sans-serif;
-  --fuente-ui: Syne, Onest, system-ui, sans-serif;
-  /* La etiqueta de seccion de la referencia: «01 / VACANTES», 11 px, 0,16em. */
-  --t-etiqueta: 11px;
-  --tracking-etiqueta: 0.16em;
-  --tinta-etiqueta: rgb(17 19 18 / 0.42);
-  /* El tracking del titular: -0,055em, que con Onest 400 es lo que la define. */
-  --tracking-titular: -0.055em;
-  /* La banda oscura y el pie. */
-  --noche: #111312;
-  --noche-tarjeta: #141416;
-  --noche-regla: rgb(255 255 255 / 0.07);
-  --noche-tinta: #f0f0f2;
-  --noche-tinta2: rgb(240 240 242 / 0.56);
-  --cielo: #fcfcfa;
+  --cielo: #f9fafb;
   /*
    * Lo hundido que se apoya en el CIELO, no dentro de una superficie.
    *
@@ -170,13 +151,13 @@
    * pagina, no dentro de una superficie— y el dia que la pagina vuelva a tener
    * tono propio recupera su trabajo.
    */
-  --cielo-hundido: #f5f7fb;
+  --cielo-hundido: #f3f4f6;
   --nube: #ffffff;
-  --nube-hundida: #f5f7fb;
+  --nube-hundida: #f3f4f6;
   /* Barras de esqueleto y fondo de lo apagado: tiene que separarse de
      `--nube-hundida` o un control deshabitado dentro de un bloque de apoyo
      desaparece. */
-  --nube-honda: #e5e5e7;
+  --nube-honda: #e5e7eb;
 
   /*
    * Tinta. La escala gris de la referencia, que es fria y tira a azul.
@@ -186,8 +167,8 @@
    * la accion ahora es indigo, asi que la tinta puede ser tan oscura como haga
    * falta sin quitarle el sitio a ningun boton.
    */
-  --tinta: #111312;  /* 18,2:1 sobre nube */
-  --tinta2: #4a5251; /* 10,3:1 — la prosa que explica */
+  --tinta: #101828;  /* 18,2:1 sobre nube */
+  --tinta2: #364153; /* 10,3:1 — la prosa que explica */
   /*
    * El gris mas claro que se puede usar para texto, y no se baja de aqui.
    *
@@ -196,10 +177,10 @@
    * los tres**. El siguiente de la escala de la referencia, `#99a1af`, da 2,60
    * sobre nube: no vale ni para texto ni para el limite de un control.
    */
-  --tinta3: #687170;
+  --tinta3: #6a7282;
 
-  --regla: #e6e7e4;
-  --regla2: #d4d6d3;
+  --regla: #e5e7eb;
+  --regla2: #d1d5dc;
   /*
    * Un control pide 3:1 contra el fondo; una caja no. Este da 4,83:1.
    *
@@ -208,13 +189,13 @@
    * el limite visible de un control, asi que ese borde no se ve para quien no
    * distingue matices claros. Se usa el gris de texto, que si llega.
    */
-  --borde-control: #7b8382;
+  --borde-control: #6a7282;
 
   /* La tinta que va ENCIMA de un relleno, no la de la nube. Se parecen —la
      nube tambien es blanca— pero no son lo mismo: si un dia la superficie deja
      de ser blanca pura, el texto de los botones no tiene por que moverse. */
   --tinta-invertida: #ffffff;
-  --tinta-pulsado: #000000;
+  --tinta-pulsado: #0a0a0a;
 
   /*
    * La accion y el turno.
@@ -235,10 +216,10 @@
    * Blanco sobre `--activo` da **4,57:1**: pasa el 4,5 que pide WCAG 1.4.3 para
    * texto normal, pero por poco. No aclarar este indigo.
    */
-  --activo: #1e3a8a;         /* 4,57:1 con texto blanco encima */
-  --activo-pulsado: #172a66;
-  --activo-bruma: #e9edff;
-  --activo-regla: #1e3a8a;
+  --activo: #615fff;         /* 4,57:1 con texto blanco encima */
+  --activo-pulsado: #4f46e5;
+  --activo-bruma: rgb(97 95 255 / 0.2);
+  --activo-regla: #615fff;
   /*
    * La accion mas fuerte de todas: la de la cabecera.
    *
@@ -249,8 +230,8 @@
    *
    * 18,9:1 con texto blanco encima.
    */
-  --accion-fuerte: #111312;
-  --accion-fuerte-pulsado: #2b2f2d;
+  --accion-fuerte: #030712;
+  --accion-fuerte-pulsado: #1e2939;
 
   /*
    * El semaforo del sistema. Cada uno significaba algo fijo en el producto antes
@@ -259,20 +240,22 @@
    */
   --bien: #0b7a63;        /* 5,3:1 — lo confirmado */
   --bien-bruma: #e6f5f0;
-  --duda: #8f5a0a;        /* 5,8:1 — lo que cambia tu decision */
-  --duda-bruma: #fbf2e4;
-  /* Sobre `--duda-bruma` el propio `--duda` se queda corto; este llega a 7,9:1
-     y se sigue leyendo como el mismo ambar. */
-  --duda-tinta: #6d4406;
-  /* El secundario del ámbar. Sobre un fondo con color, el texto de apoyo se tiñe
-     de ese mismo tono; un gris encima del ámbar no llega al contraste y además
-     se lee como suciedad. 4,91:1 sobre `--duda-bruma`. */
-  --duda-tinta2: #87632e;
-  /* El punto ámbar de «Qué buscar en el CV» (V80): «lo menciona, sin detalle». Un
-     relleno de 10 px, no un texto: el `--duda` de la prosa se leía casi marrón a
-     ese tamaño junto al verde de «lo tiene». Nunca va solo: el punto lleva su
-     texto para lectores y la ficha dice la etiqueta. */
-  --duda-punto: #d4972a;
+  /* Sin ámbar en ninguna parte desde el 14/11/2026: `--duda` pasó a la familia
+     índigo del panel. El portal la redefine en azul marino bajo
+     `:root:not(.mundo-panel)`. El estado se distingue por la forma (bruma,
+     punto, etiqueta), no por un color cálido que se leía como advertencia. */
+  --duda: #4338ca;        /* 7,9:1 — lo que cambia tu decision */
+  --duda-bruma: #eef0ff;
+  /* Sobre `--duda-bruma`, el texto fuerte. 11,8:1. */
+  --duda-tinta: #312e81;
+  /* El secundario sobre la bruma: un gris encima de un fondo con color se lee
+     como suciedad, así que se tiñe del mismo tono. 5,6:1 sobre `--duda-bruma`. */
+  --duda-tinta2: #4f46e5;
+  /* El punto de «Qué buscar en el CV» (V80): «lo menciona, sin detalle». Un
+     relleno de 10 px, no un texto; más claro que el verde de «lo tiene» para
+     que se distingan también por luminosidad. Nunca va solo: lleva su texto
+     para lectores y la ficha dice la etiqueta. */
+  --duda-punto: #818cf8;
   --mal: #c22a3f;         /* 5,4:1 — el error real y lo que borra */
   --mal-pulsado: #9e2134;
   --mal-bruma: #fdedf0;
@@ -311,7 +294,7 @@
    */
   /* ⚠️ Repintado en indigo el 25/09/2026 con el resto de la paleta: era coral,
      y sobre el mundo frio se quedaba como la unica mancha calida del portal. */
-  --canto: linear-gradient(90deg, #93a5d8 0%, #5b73b8 40%, #1e3a8a 100%);
+  --canto: linear-gradient(90deg, #a5b4fc 0%, #818cf8 34%, #615fff 68%, #4f46e5 100%);
 
   /*
    * La escala tipografica. Diez escalones y cada uno tiene un trabajo.
@@ -335,10 +318,8 @@
   --t-cifra: clamp(28px, 5vw, 34px);       /* el cronometro y las cifras */
   /* El titular de una pantalla de trabajo dentro de su banda —`/vacantes`, desde
      el 01/10/2026—: a escala de portada, la banda se comia la primera pantalla. */
-  --t-encabezado: clamp(2rem, 3.2vw, 3rem);
-  --t-portada: clamp(36px, 6.1vw, 88px);
-  /* El titulo de una pantalla, el `--type-page-title` de la referencia. */
-  --t-pagina: clamp(2.25rem, 4vw, 3.5rem);
+  --t-encabezado: clamp(30px, 3vw, 40px);
+  --t-portada: clamp(36px, 5.2vw, 60px);   /* el titular */
 
   /*
    * El ancho del portal en escritorio. No es medida de lectura: es el hueco
@@ -410,8 +391,8 @@
    * septiembre valia `999px`, y cualquier hoja que de eso por hecho esta vieja.
    * La unica forma redondeada que queda es `--radio-marca` en avatares y puntos.
    */
-  --radio: 8px;
-  --radio-menor: 4px;
+  --radio: 12px;
+  --radio-menor: 8px;
   --radio-control: 8px;
   /* Lo mas pequeño que se redondea: una casilla de 20 px. Con 10 px se
      convierte en una pastilla y deja de leerse como casilla. */
@@ -422,13 +403,13 @@
    * reescribir DESIGN.md: el detector de `impeccable` los marcaba fuera de la
    * escala, y lo honesto era darles nombre y no silenciarlo.
    */
-  --radio-pildora: 0px;   /* la cabecera */
-  --radio-cristal: 28px;   /* el marco de cristal de la portada */
-  --radio-ventana: 0px;   /* la ventana dentro de ese marco */
+  --radio-pildora: 18px;   /* la cabecera */
+  --radio-cristal: 26px;   /* el marco de cristal de la portada */
+  --radio-ventana: 14px;   /* la ventana dentro de ese marco */
 
   /* La unica pieza que se permite una curva mayor que las superficies: la
      vitrina de la portada y la caja de cierre que la cierra abajo. */
-  --radio-escaparate: 16px;
+  --radio-escaparate: 20px;
 
   /* El marco translucido de la vitrina. Es un token porque el radio del interior
      se calcula restandolo: si los dos no se mueven juntos, el blanco asoma por
@@ -457,7 +438,7 @@
      cambia el relleno de `.cabecera`, el de `.cabeceraDentro` o el ALTO DEL
      BOTON, se vuelve a medir — seis reglas de cuatro hojas se pinchan debajo de
      este numero y ninguna lo puede adivinar. */
-  --alto-cabecera: 69px;
+  --alto-cabecera: 84px;
 
   /* El movimiento: salida exponencial desde algo que ya se ve */
   --salida: cubic-bezier(0.16, 1, 0.3, 1);
@@ -478,8 +459,8 @@
    * levantado: desplazamiento corto, desenfoque largo, y el color de la tinta
    * con muy poca opacidad.
    */
-  --sombra-nube: 0 8px 24px rgb(15 23 42 / 0.08), 0 2px 8px rgb(15 23 42 / 0.04);
-  --sombra-aviso: 0 24px 80px rgb(15 23 42 / 0.12), 0 2px 8px rgb(15 23 42 / 0.06);
+  --sombra-nube: 0 1px 2px rgb(10 10 10 / 0.05), 0 8px 24px rgb(10 10 10 / 0.06);
+  --sombra-aviso: 0 12px 24px rgb(10 10 10 / 0.10), 0 32px 64px rgb(10 10 10 / 0.14);
   --bruma-viva: 0 0 0 4px var(--activo-bruma);
 
   /*
@@ -495,8 +476,14 @@
    * contorno que habia si los daba (3,45:1). Ver `.secundario` en
    * `piezas.module.css`, donde esta la decision y su numero.
    */
-  --sombra-control: 0 0 0 1px rgb(17 19 18 / 0.12);
-  --sombra-control-alta: none;
+  --sombra-control:
+    0 3px 7px rgb(130 130 130 / 0.15),
+    0 12px 12px rgb(130 130 130 / 0.13),
+    0 27px 16px rgb(130 130 130 / 0.08),
+    0 48px 19px rgb(130 130 130 / 0.02);
+  --sombra-control-alta:
+    0 10px 15px -3px rgb(10 10 10 / 0.1),
+    0 4px 6px -4px rgb(10 10 10 / 0.1);
 
   /*
    * Lo que se apaga detras de un modal.
@@ -507,7 +494,7 @@
    * cada uno lo escribia a mano con la pizarra del mundo anterior, y la
    * evaluacion llegaba a ensenar dos velos distintos en la misma pantalla.
    */
-  --velo: rgb(0 0 0 / 0.4);
+  --velo: rgb(10 10 10 / 0.4);
 }
 
 *,
@@ -572,29 +559,27 @@ ol {
  * entre «j», «p», «í» y «ó»: quedan 6 px a 1440 de ancho, 3,9 a 768 y 3 a 390.
  * Si se baja de 1, o se cambia la fuente, hay que volver a medirlo.
  */
-/* Northstar (13/11/2026): el titular en Onest 400, interlinea 0,98 y -0,055em;
-   los titulos de bloque en 550 con -0,03em, que es su `panelHeadline`. */
 h1 {
-  font-size: var(--t-pagina);
-  line-height: 0.98;
-  letter-spacing: var(--tracking-titular);
-  font-weight: 400;
+  font-size: var(--t-portada);
+  line-height: 1;
+  letter-spacing: normal;
+  font-weight: 600;
   text-wrap: balance;
 }
 
 h2 {
   font-size: var(--t-titulo);
-  line-height: 1.2;
-  letter-spacing: -0.03em;
-  font-weight: 550;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+  font-weight: 600;
   text-wrap: balance;
 }
 
 h3 {
   font-size: var(--t-base);
-  line-height: 1.25;
-  letter-spacing: -0.02em;
-  font-weight: 550;
+  line-height: 1.3;
+  letter-spacing: -0.008em;
+  font-weight: 600;
 }
 
 /*
@@ -610,7 +595,7 @@ a {
   text-decoration-thickness: 1px;
   text-underline-offset: 0.22em;
   text-decoration-color: var(--regla2);
-  transition: text-decoration-color 150ms var(--curva-control);
+  transition: text-decoration-color 140ms var(--salida);
 }
 
 a:hover {
@@ -779,3 +764,204 @@ time,
     background-color: CanvasText;
   }
 }
+
+
+/* ==================================================================
+ * EL MUNDO NORTHSTAR (13/11/2026) — todo lo que ve quien postula.
+ *
+ * El portal replica el estilo de northstar-template-demo.vercel.app: papel
+ * #FCFCFA, tinta #111312, azul #1E3A8A, Onest + Syne, filetes negros al 10 %,
+ * esquinas rectas en las celdas. El detalle y el porqué, en DESIGN.md.
+ *
+ * ⚠️ **El panel del equipo NO entra.** Todo lo de arriba de esta línea es «El
+ * cielo despejado» y es lo que ve el panel; lo de abajo se aplica solo cuando
+ * `<html>` NO lleva la clase `mundo-panel`, que pone y quita el armazón del
+ * panel (`usarMundoDelPanel`, en `src/panel/mundoDelPanel.ts`). Así el panel se
+ * ve exactamente como antes sin tocar ninguna de sus hojas, y lo que se cambie
+ * aquí no le llega. Las piezas compartidas (`piezas.module.css`, `ui/`) siguen
+ * la misma regla: su base es la del panel y la versión del portal va bajo
+ * `:global(html:not(.mundo-panel))`.
+ * ================================================================== */
+
+/*
+ * Desde el 13/11/2026 el estilo es el de northstar-template-demo.vercel.app:
+ * Onest para todo (cuerpo y titulares, peso 400 y tracking muy cerrado en el
+ * titular) y Syne para la voz de interfaz —el boton de la cabecera, el pie,
+ * los titulos de tarjeta oscura—. Las dos son libres (Google Fonts, OFL) y se
+ * sirven desde el propio sitio, variables, latin y latin-ext.
+ */
+@font-face {
+  font-family: Onest;
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/tipografia/onest-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
+    U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: Onest;
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/tipografia/onest-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4,
+    U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: Syne;
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url('/tipografia/syne-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
+    U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: Syne;
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url('/tipografia/syne-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4,
+    U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+
+:root:not(.mundo-panel) {
+  --fuente: Onest, system-ui, sans-serif;
+  --fuente-ui: Syne, Onest, system-ui, sans-serif;
+  --t-etiqueta: 11px;
+  --tracking-etiqueta: 0.16em;
+  --tinta-etiqueta: rgb(17 19 18 / 0.42);
+  --tracking-titular: -0.055em;
+  --noche: #111312;
+  --noche-tarjeta: #141416;
+  --noche-regla: rgb(255 255 255 / 0.07);
+  --noche-tinta: #f0f0f2;
+  --noche-tinta2: rgb(240 240 242 / 0.56);
+  --cielo: #fcfcfa;
+  --cielo-hundido: #f5f7fb;
+  --nube-hundida: #f5f7fb;
+  --nube-honda: #e5e5e7;
+  --tinta: #111312;
+  --tinta2: #4a5251;
+  --tinta3: #687170;
+  --regla: #e6e7e4;
+  --regla2: #d4d6d3;
+  --borde-control: #7b8382;
+  --tinta-pulsado: #000000;
+  --activo: #1e3a8a;
+  --activo-pulsado: #172a66;
+  --activo-bruma: #e9edff;
+  --activo-regla: #1e3a8a;
+  /*
+   * Sin ámbar en el portal (13/11/2026). `--duda` —«lo que cambia tu
+   * decisión»— era la única familia cálida, y en un mundo de azul marino y
+   * neutros se leía como advertencia. Pasa a la familia azul: el estado sigue
+   * distinguiéndose por la forma (bruma, punto, etiqueta), no por el color.
+   * El panel tampoco lleva ámbar: su `--duda` base es índigo (14/11/2026).
+   */
+  --duda: #1e3a8a;        /* 10,4:1 sobre blanco */
+  --duda-bruma: #e9edff;
+  --duda-tinta: #172a66;  /* 11,5:1 sobre la bruma */
+  --duda-tinta2: #3b4f8f; /* 6,7:1 sobre la bruma */
+  --duda-punto: #527ada;
+  --accion-fuerte: #111312;
+  --accion-fuerte-pulsado: #2b2f2d;
+  --canto: linear-gradient(90deg, #93a5d8 0%, #5b73b8 40%, #1e3a8a 100%);
+  --t-encabezado: clamp(2rem, 3.2vw, 3rem);
+  --t-portada: clamp(36px, 6.1vw, 88px);
+  --t-pagina: clamp(2.25rem, 4vw, 3.5rem);
+  --radio: 8px;
+  --radio-menor: 4px;
+  --radio-pildora: 0px;
+  --radio-cristal: 28px;
+  --radio-ventana: 0px;
+  --radio-escaparate: 16px;
+  --alto-cabecera: 69px;
+  --sombra-nube: 0 8px 24px rgb(15 23 42 / 0.08), 0 2px 8px rgb(15 23 42 / 0.04);
+  --sombra-aviso: 0 24px 80px rgb(15 23 42 / 0.12), 0 2px 8px rgb(15 23 42 / 0.06);
+  --sombra-control: 0 0 0 1px rgb(17 19 18 / 0.12);
+  --sombra-control-alta: none;
+  --velo: rgb(0 0 0 / 0.4);
+}
+
+:root:not(.mundo-panel),
+:root:not(.mundo-panel) body {
+  background: var(--cielo);
+}
+
+/* El titular en Onest 400, interlínea 0,98 y -0,055em; los títulos de bloque
+   en 550 con -0,03em, que es el `panelHeadline` de la referencia. */
+:root:not(.mundo-panel) h1 {
+  font-size: var(--t-pagina);
+  line-height: 0.98;
+  letter-spacing: var(--tracking-titular);
+  font-weight: 400;
+}
+
+:root:not(.mundo-panel) h2 {
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+  font-weight: 550;
+}
+
+:root:not(.mundo-panel) h3 {
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  font-weight: 550;
+}
+
+:root:not(.mundo-panel) a {
+  transition: text-decoration-color 150ms var(--curva-control);
+}
+
+/* La etiqueta de sección de la referencia, «01 / SECCIÓN», como clase global
+   para las pantallas que la usan sin importar una hoja. */
+:root:not(.mundo-panel) .etiqueta-seccion {
+  margin: 0 0 var(--e3);
+  font-size: var(--t-etiqueta);
+  line-height: 1.2;
+  font-weight: 400;
+  letter-spacing: var(--tracking-etiqueta);
+  text-transform: uppercase;
+  color: var(--tinta-etiqueta);
+}
+
+/*
+ * La misma etiqueta encima de un titular o de un encabezado que la pide con
+ * `data-seccion="Mis procesos / Detalle"`. Es un pseudoelemento con texto
+ * alternativo vacío: decora, y así ni el lector de pantalla ni las pruebas la
+ * leen dos veces junto al titular.
+ */
+:root:not(.mundo-panel) [data-seccion]::before {
+  content: attr(data-seccion);
+  content: attr(data-seccion) / '';
+  display: block;
+  margin-bottom: var(--e4);
+  font-family: var(--fuente);
+  font-size: var(--t-etiqueta);
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: var(--tracking-etiqueta);
+  text-transform: uppercase;
+  color: var(--tinta3);
+}
+
+/* El anillo de foco de los campos sueltos de las pantallas: el halo azul claro
+   de los campos compartidos, en vez del contorno. */
+:root:not(.mundo-panel) textarea:focus-visible,
+:root:not(.mundo-panel) input:not([type='checkbox'], [type='radio'], [type='file'], [type='range']):focus-visible {
+  outline: none;
+  border-color: var(--activo);
+  box-shadow: 0 0 0 3px var(--activo-bruma);
+}
+

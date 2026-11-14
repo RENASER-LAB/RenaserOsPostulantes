@@ -76,7 +76,7 @@
   padding: 0 var(--e2);
   border: 1px solid var(--regla2);
   font-size: var(--t-micro);
-  font-weight: 600;
+  font-weight: 550;
   letter-spacing: 0.03em;
   color: var(--tinta2);
 }
@@ -134,7 +134,7 @@
 .nombreVacante {
   display: block;
   font-size: var(--t-prosa);
-  font-weight: 600;
+  font-weight: 550;
 }
 
 .enQueVa {
@@ -207,7 +207,7 @@
 
 .etiquetaMotivo {
   font-size: var(--t-apoyo);
-  font-weight: 600;
+  font-weight: 550;
 }
 
 .escrito {

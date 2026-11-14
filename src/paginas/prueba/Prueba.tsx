@@ -563,7 +563,7 @@ export function Prueba() {
           abren al empezar. */}
       {prueba.estadoIntento === 'PENDIENTE' && (
         <>
-          <h1>{hayEntregables ? 'Demuestra cómo trabajas.' : 'Tu prueba del puesto.'}</h1>
+          <h1 data-seccion="Etapa 2 / Prueba del puesto">{hayEntregables ? 'Demuestra cómo trabajas.' : 'Tu prueba del puesto.'}</h1>
           {/* Sin nombrar el caso ni los materiales: antes de empezar no se sabe si los hay. */}
           <p className={estilos.entradillaDeLaPrevia}>
             {entradilla.abre}

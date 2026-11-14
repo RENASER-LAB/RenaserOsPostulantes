@@ -75,11 +75,11 @@
   /* `--radio-marca`, que es el unico redondeo que le queda al mundo, en
      avatares y marcas. Llego con 999 px, que era la pastilla de «El canto». */
   border-radius: var(--radio-marca);
-  box-shadow: 0 0 0 2px var(--nube);
-  background: var(--duda);
+  box-shadow: 0 0 0 2px var(--cielo);
+  background: var(--activo);
   color: var(--tinta-invertida);
   font-size: var(--t-micro);
-  font-weight: 700;
+  font-weight: 550;
   line-height: 20px;
   text-align: center;
   font-variant-numeric: tabular-nums;
@@ -120,9 +120,11 @@
 
 .tituloPanel {
   margin: 0;
-  font-size: var(--t-apoyo);
-  font-weight: 700;
-  color: var(--tinta);
+  font-size: var(--t-etiqueta);
+  font-weight: 400;
+  letter-spacing: var(--tracking-etiqueta);
+  text-transform: uppercase;
+  color: var(--tinta3);
 }
 
 /*
@@ -138,7 +140,7 @@
   background: none;
   font: inherit;
   font-size: var(--t-menor);
-  font-weight: 600;
+  font-weight: 550;
   color: var(--tinta2);
   cursor: pointer;
   white-space: nowrap;
@@ -243,13 +245,13 @@
   height: 5px;
   /* A la altura de la x de la primera linea, no de su borde superior. */
   margin-top: 0.45em;
-  border-radius: var(--radio-marca);
-  background: var(--duda);
+  border-radius: 50%;
+  background: var(--activo);
 }
 
 .tituloAviso {
   font-size: var(--t-apoyo);
-  font-weight: 600;
+  font-weight: 550;
   color: var(--tinta);
   min-width: 0;
 }
@@ -304,4 +306,47 @@
   .aviso {
     transition: none;
   }
+}
+
+/* Northstar (13/11/2026): la campana como el resto de la barra —sin fondo al
+   pasar, baja a 0,6 como los destinos— y el panel de avisos como una celda de
+   filete con la sombra difusa de la portada. */
+.boton {
+  border-radius: 0;
+  color: var(--tinta);
+  transition: opacity 150ms var(--curva-control), transform 160ms var(--salida);
+}
+
+.boton:hover {
+  background: transparent;
+  color: var(--tinta);
+  opacity: 0.6;
+}
+
+.boton:active {
+  transform: scale(0.92);
+}
+
+.panel {
+  border-color: rgb(0 0 0 / 0.1);
+  border-radius: var(--radio-menor);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boton {
+    transition: none;
+  }
+}
+
+
+/* El número, más pequeño y apartado: a 20 px tapaba media campana. */
+.contador {
+  top: 5px;
+  right: 3px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 16px;
 }

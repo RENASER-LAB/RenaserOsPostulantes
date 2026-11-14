@@ -113,7 +113,7 @@
 
 .cifra {
   font-size: var(--t-cifra);
-  font-weight: 600;
+  font-weight: 550;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
 }

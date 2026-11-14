@@ -10,8 +10,8 @@
 
 .rotulo {
   font-size: var(--t-micro);
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  font-weight: 500;
+  letter-spacing: var(--tracking-etiqueta);
   text-transform: uppercase;
   color: var(--tinta3);
 }
@@ -68,7 +68,7 @@
 
 /* El número en un tono neutro, con cifras del mismo ancho para que alineen. */
 .numero {
-  font-weight: 600;
+  font-weight: 550;
   color: var(--tinta3);
   font-variant-numeric: tabular-nums;
 }

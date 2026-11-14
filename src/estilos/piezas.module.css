@@ -62,21 +62,17 @@
   min-height: 44px;
   border-radius: var(--radio-control);
   font-size: var(--t-apoyo);
-  font-weight: 400;
+  font-weight: 500;
   /* Fija, y de ahi salen los 44 px: 20 de linea + 12 y 12 de relleno. */
   line-height: 20px;
   text-decoration: none;
   cursor: pointer;
-  transition:
-    color 150ms var(--curva-control),
-    background-color 150ms var(--curva-control),
-    border-color 150ms var(--curva-control),
-    transform 160ms var(--salida);
-  text-transform: uppercase;
-  font-family: var(--fuente);
+  /* `all` y no una lista: es lo que hace la referencia, y con el rotulo girando
+     hay fondo, sombra y transformacion moviendose a la vez. */
+  transition: all 300ms var(--curva-control);
   padding: 12px 20px;
   background: var(--activo);
-  border: 1px solid rgb(0 0 0 / 0.1);
+  border: 0;
   color: var(--tinta-invertida);
 }
 
@@ -88,21 +84,17 @@
   min-height: 44px;
   border-radius: var(--radio-control);
   font-size: var(--t-apoyo);
-  font-weight: 400;
+  font-weight: 500;
   /* Fija, y de ahi salen los 44 px: 20 de linea + 12 y 12 de relleno. */
   line-height: 20px;
   text-decoration: none;
   cursor: pointer;
-  transition:
-    color 150ms var(--curva-control),
-    background-color 150ms var(--curva-control),
-    border-color 150ms var(--curva-control),
-    transform 160ms var(--salida);
-  text-transform: uppercase;
-  font-family: var(--fuente);
+  /* `all` y no una lista: es lo que hace la referencia, y con el rotulo girando
+     hay fondo, sombra y transformacion moviendose a la vez. */
+  transition: all 300ms var(--curva-control);
   padding: 12px var(--e4);
   background: var(--activo);
-  border: 1px solid rgb(0 0 0 / 0.1);
+  border: 0;
   color: var(--tinta-invertida);
 }
 
@@ -160,21 +152,18 @@
   min-height: 44px;
   border-radius: var(--radio-control);
   font-size: var(--t-apoyo);
-  font-weight: 400;
+  font-weight: 500;
   /* Fija, y de ahi salen los 44 px: 20 de linea + 12 y 12 de relleno. */
   line-height: 20px;
   text-decoration: none;
   cursor: pointer;
-  transition:
-    color 150ms var(--curva-control),
-    background-color 150ms var(--curva-control),
-    border-color 150ms var(--curva-control),
-    transform 160ms var(--salida);
-  text-transform: uppercase;
-  font-family: var(--fuente);
+  /* `all` y no una lista: es lo que hace la referencia, y con el rotulo girando
+     hay fondo, sombra y transformacion moviendose a la vez. */
+  transition: all 300ms var(--curva-control);
   padding: 12px 20px;
-  background: var(--cielo);
-  border: 1px solid #e5e7eb;
+  background: var(--nube);
+  border: 0;
+  box-shadow: var(--sombra-control);
   color: var(--tinta);
 }
 
@@ -186,21 +175,18 @@
   min-height: 44px;
   border-radius: var(--radio-control);
   font-size: var(--t-apoyo);
-  font-weight: 400;
+  font-weight: 500;
   /* Fija, y de ahi salen los 44 px: 20 de linea + 12 y 12 de relleno. */
   line-height: 20px;
   text-decoration: none;
   cursor: pointer;
-  transition:
-    color 150ms var(--curva-control),
-    background-color 150ms var(--curva-control),
-    border-color 150ms var(--curva-control),
-    transform 160ms var(--salida);
-  text-transform: uppercase;
-  font-family: var(--fuente);
+  /* `all` y no una lista: es lo que hace la referencia, y con el rotulo girando
+     hay fondo, sombra y transformacion moviendose a la vez. */
+  transition: all 300ms var(--curva-control);
   padding: 12px var(--e4);
-  background: var(--cielo);
-  border: 1px solid #e5e7eb;
+  background: var(--nube);
+  border: 0;
+  box-shadow: var(--sombra-control);
   color: var(--tinta);
 }
 
@@ -256,9 +242,8 @@
   color: var(--nube);
   border: 1px solid var(--tinta);
   font-size: var(--t-prosa);
-  font-weight: 400;
-  letter-spacing: 0;
-  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: -0.004em;
   text-decoration: none;
   cursor: pointer;
   transition: background 160ms var(--salida);
@@ -309,9 +294,8 @@
   color: var(--tinta-invertida);
   border: 1px solid var(--mal);
   font-size: var(--t-base);
-  font-weight: 400;
-  letter-spacing: 0;
-  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: -0.004em;
   text-decoration: none;
   cursor: pointer;
   transition: background 160ms var(--salida);
@@ -328,9 +312,8 @@
   color: var(--tinta-invertida);
   border: 1px solid var(--mal);
   font-size: var(--t-prosa);
-  font-weight: 400;
-  letter-spacing: 0;
-  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: -0.004em;
   text-decoration: none;
   cursor: pointer;
   transition: background 160ms var(--salida);
@@ -354,9 +337,8 @@
   color: var(--mal);
   border: 1px solid var(--mal);
   font-size: var(--t-prosa);
-  font-weight: 400;
-  letter-spacing: 0;
-  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: -0.004em;
   text-decoration: none;
   cursor: pointer;
   transition:
@@ -407,8 +389,117 @@
  * No lo llevan los botones de peligro. Un rotulo que juega no es el gesto de
  * algo que no se puede deshacer.
  */
-/* Northstar (13/11/2026): sin el rotulo que rueda al pasar —la referencia solo
-   cambia el color—. `data-rotulo` sigue en el marcado y no hace nada. */
+@supports (content: 'a' / '') {
+  .acentoGrande[data-rotulo],
+  .acentoMenor[data-rotulo],
+  .secundarioGrande[data-rotulo],
+  .secundario[data-rotulo] {
+    position: relative;
+    overflow: hidden;
+    /*
+     * ⚠️ **`-webkit-text-fill-color` y NO solo `color`, y esto costo un fallo.**
+     * Con `color: transparent` a secas el texto real reaparecia al pasar por
+     * encima y se veian TRES rotulos a la vez: el fijo mas los dos que giran.
+     * El motivo es especificidad —`.acentoGrande:hover:not(:disabled)` es
+     * (0,3,0) y declara `color`, por encima del (0,2,0) de
+     * `.acentoGrande[data-rotulo]`—, y lo mismo haria cualquier pantalla que le
+     * ponga color a su boton desde su propia hoja, donde ademas el orden entre
+     * archivos no es fiable.
+     *
+     * Con que se pinta el glifo lo decide `-webkit-text-fill-color`, que nadie
+     * mas declara en todo el proyecto: no hay pelea de cascada posible. `color`
+     * se queda tambien, porque es lo unico que entiende un navegador que no
+     * llegue hasta aqui.
+     */
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .acentoGrande[data-rotulo]::before,
+  .acentoMenor[data-rotulo]::before,
+  .secundarioGrande[data-rotulo]::before,
+  .secundario[data-rotulo]::before,
+  .acentoGrande[data-rotulo]::after,
+  .acentoMenor[data-rotulo]::after,
+  .secundarioGrande[data-rotulo]::after,
+  .secundario[data-rotulo]::after {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--rotulo-tinta);
+    /* Heredarian el transparente de la pieza, asi que se les devuelve el color
+       por la misma via. */
+    -webkit-text-fill-color: var(--rotulo-tinta);
+    transition: transform 300ms var(--curva-control);
+  }
+
+  .acentoGrande[data-rotulo]::before,
+  .acentoMenor[data-rotulo]::before,
+  .secundarioGrande[data-rotulo]::before,
+  .secundario[data-rotulo]::before {
+    content: attr(data-rotulo) / '';
+  }
+
+  /* La copia que espera fuera, justo debajo del suelo de la pieza. */
+  .acentoGrande[data-rotulo]::after,
+  .acentoMenor[data-rotulo]::after,
+  .secundarioGrande[data-rotulo]::after,
+  .secundario[data-rotulo]::after {
+    content: attr(data-rotulo) / '';
+    transform: translateY(100%);
+  }
+
+  .acentoGrande[data-rotulo]:hover:not(:disabled)::before,
+  .acentoMenor[data-rotulo]:hover:not(:disabled)::before,
+  .secundarioGrande[data-rotulo]:hover:not(:disabled)::before,
+  .secundario[data-rotulo]:hover:not(:disabled)::before {
+    transform: translateY(-100%);
+  }
+
+  .acentoGrande[data-rotulo]:hover:not(:disabled)::after,
+  .acentoMenor[data-rotulo]:hover:not(:disabled)::after,
+  .secundarioGrande[data-rotulo]:hover:not(:disabled)::after,
+  .secundario[data-rotulo]:hover:not(:disabled)::after {
+    transform: translateY(0);
+  }
+
+  /*
+   * Menos movimiento, no menos informacion: las dos copias se quedan donde
+   * estan y el rotulo sigue leyendose.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    .acentoGrande[data-rotulo]::before,
+  .acentoMenor[data-rotulo]::before,
+  .secundarioGrande[data-rotulo]::before,
+  .secundario[data-rotulo]::before,
+    .acentoGrande[data-rotulo]::after,
+  .acentoMenor[data-rotulo]::after,
+  .secundarioGrande[data-rotulo]::after,
+  .secundario[data-rotulo]::after {
+      transition: none;
+    }
+
+    .acentoGrande[data-rotulo]:hover:not(:disabled)::before,
+  .acentoMenor[data-rotulo]:hover:not(:disabled)::before,
+  .secundarioGrande[data-rotulo]:hover:not(:disabled)::before,
+  .secundario[data-rotulo]:hover:not(:disabled)::before,
+    .acentoGrande[data-rotulo]:hover:not(:disabled)::after,
+  .acentoMenor[data-rotulo]:hover:not(:disabled)::after,
+  .secundarioGrande[data-rotulo]:hover:not(:disabled)::after,
+  .secundario[data-rotulo]:hover:not(:disabled)::after {
+      transform: none;
+    }
+
+    .acentoGrande[data-rotulo]:hover:not(:disabled)::after,
+  .acentoMenor[data-rotulo]:hover:not(:disabled)::after,
+  .secundarioGrande[data-rotulo]:hover:not(:disabled)::after,
+  .secundario[data-rotulo]:hover:not(:disabled)::after {
+      opacity: 0;
+    }
+  }
+}
 
 /* ---------- Volver ---------- */
 
@@ -531,13 +622,7 @@
   line-height: 20px;
   text-decoration: none;
   cursor: pointer;
-  transition:
-    color 150ms var(--curva-control),
-    background-color 150ms var(--curva-control),
-    border-color 150ms var(--curva-control),
-    transform 160ms var(--salida);
-  text-transform: uppercase;
-  font-family: var(--fuente);
+  transition: all 300ms var(--curva-control);
   padding: 12px var(--e4);
   background: var(--whatsapp);
   border: 0;
@@ -609,7 +694,7 @@
 .cabeceraDeSeccion h2 {
   margin: 0;
   font-size: var(--t-destacado);
-  font-weight: 550;
+  font-weight: 700;
   letter-spacing: -0.03em;
   line-height: 1.2;
   color: var(--tinta);
@@ -642,8 +727,8 @@
   /* No necesita 44 px: el `summary` entero ya mide mas. */
   padding-block: var(--e5);
   font-size: var(--t-entradilla);
-  font-weight: 400;
-  letter-spacing: -0.01em;
+  font-weight: 600;
+  letter-spacing: -0.015em;
   color: var(--tinta);
   cursor: pointer;
   list-style: none;
@@ -680,4 +765,184 @@
 
 .plegable[open] .signoMas {
   transform: rotate(45deg);
+}
+
+/* ==================================================================
+ * EL MUNDO NORTHSTAR (13/11/2026) — las mismas piezas, para el portal.
+ *
+ * ⚠️ **Todo lo de arriba es lo que ve el panel** y no se toca. Lo de aquí
+ * abajo solo se aplica cuando `<html>` no lleva `mundo-panel` (la pone el
+ * armazón del panel): es el estilo de northstar-template-demo para quien
+ * postula. Mismo nombre de pieza, así que ninguna pantalla cambia su `composes`.
+ *
+ * Los valores, medidos en la referencia:
+ *   - Botones: 14 px en MAYÚSCULAS, peso 400, relleno 12 × 20 (o 12 × 16),
+ *     radio 8, filete negro al 10 %. Al pasar solo cambia el color (150 ms);
+ *     al pulsar cede a 0,97. Sin el rótulo que rueda.
+ *   - Paneles y celdas: esquinas casi rectas (4 px), filete negro al 10 %,
+ *     ninguna sombra en reposo. El turno se marca con el borde azul y un halo
+ *     claro, no con sombra.
+ * ================================================================== */
+
+:global(html:not(.mundo-panel)) .acentoGrande,
+:global(html:not(.mundo-panel)) .acentoMenor,
+:global(html:not(.mundo-panel)) .secundarioGrande,
+:global(html:not(.mundo-panel)) .secundario {
+  font-family: var(--fuente);
+  font-weight: 400;
+  line-height: 21px;
+  text-transform: uppercase;
+  transition:
+    color 150ms var(--curva-control),
+    background-color 150ms var(--curva-control),
+    border-color 150ms var(--curva-control),
+    transform 160ms var(--salida);
+}
+
+:global(html:not(.mundo-panel)) .acentoGrande,
+:global(html:not(.mundo-panel)) .acentoMenor {
+  border: 1px solid rgb(0 0 0 / 0.1);
+}
+
+:global(html:not(.mundo-panel)) .secundarioGrande,
+:global(html:not(.mundo-panel)) .secundario {
+  background: var(--cielo);
+  border: 1px solid #e5e7eb;
+  box-shadow: none;
+}
+
+:global(html:not(.mundo-panel)) .acentoGrande:hover:not(:disabled),
+:global(html:not(.mundo-panel)) .acentoMenor:hover:not(:disabled) {
+  box-shadow: none;
+}
+
+:global(html:not(.mundo-panel)) .secundarioGrande:hover:not(:disabled),
+:global(html:not(.mundo-panel)) .secundario:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--tinta) 3%, var(--cielo));
+  box-shadow: none;
+}
+
+:global(html:not(.mundo-panel)) .secundarioGrande:disabled,
+:global(html:not(.mundo-panel)) .secundario:disabled,
+:global(html:not(.mundo-panel)) .acentoGrande:disabled,
+:global(html:not(.mundo-panel)) .acentoMenor:disabled {
+  border-color: transparent;
+}
+
+:global(html:not(.mundo-panel)) .acentoGrande:active:not(:disabled),
+:global(html:not(.mundo-panel)) .acentoMenor:active:not(:disabled),
+:global(html:not(.mundo-panel)) .secundarioGrande:active:not(:disabled),
+:global(html:not(.mundo-panel)) .secundario:active:not(:disabled),
+:global(html:not(.mundo-panel)) .solido:active:not(:disabled),
+:global(html:not(.mundo-panel)) .peligroso:active:not(:disabled),
+:global(html:not(.mundo-panel)) .peligrosoMenor:active:not(:disabled),
+:global(html:not(.mundo-panel)) .peligrosoContorno:active:not(:disabled),
+:global(html:not(.mundo-panel)) .whatsapp:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* Sin el rótulo que rueda: la referencia solo cambia el color. */
+:global(html:not(.mundo-panel)) .acentoGrande[data-rotulo],
+:global(html:not(.mundo-panel)) .acentoMenor[data-rotulo],
+:global(html:not(.mundo-panel)) .secundarioGrande[data-rotulo],
+:global(html:not(.mundo-panel)) .secundario[data-rotulo] {
+  color: var(--rotulo-tinta);
+  -webkit-text-fill-color: currentColor;
+}
+
+:global(html:not(.mundo-panel)) .acentoGrande[data-rotulo]::before,
+:global(html:not(.mundo-panel)) .acentoMenor[data-rotulo]::before,
+:global(html:not(.mundo-panel)) .secundarioGrande[data-rotulo]::before,
+:global(html:not(.mundo-panel)) .secundario[data-rotulo]::before,
+:global(html:not(.mundo-panel)) .acentoGrande[data-rotulo]::after,
+:global(html:not(.mundo-panel)) .acentoMenor[data-rotulo]::after,
+:global(html:not(.mundo-panel)) .secundarioGrande[data-rotulo]::after,
+:global(html:not(.mundo-panel)) .secundario[data-rotulo]::after {
+  content: none;
+}
+
+:global(html:not(.mundo-panel)) .solido,
+:global(html:not(.mundo-panel)) .peligroso,
+:global(html:not(.mundo-panel)) .peligrosoMenor,
+:global(html:not(.mundo-panel)) .peligrosoContorno,
+:global(html:not(.mundo-panel)) .whatsapp {
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  transition:
+    background-color 150ms var(--curva-control),
+    border-color 150ms var(--curva-control),
+    transform 160ms var(--salida);
+}
+
+:global(html:not(.mundo-panel)) .whatsapp {
+  border: 1px solid rgb(0 0 0 / 0.1);
+}
+
+:global(html:not(.mundo-panel)) .volver {
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--tinta2);
+  transition: opacity 150ms var(--curva-control);
+}
+
+:global(html:not(.mundo-panel)) .volver:hover {
+  opacity: 0.6;
+}
+
+/* Los paneles: celdas de filete, sin sombra. */
+:global(html:not(.mundo-panel)) .turno {
+  border: 1px solid rgb(30 58 138 / 0.5);
+  border-radius: var(--radio-menor);
+  box-shadow: 0 0 0 4px var(--activo-bruma);
+}
+
+:global(html:not(.mundo-panel)) .panelDeEspera {
+  border: 1px solid rgb(0 0 0 / 0.1);
+  border-radius: var(--radio-menor);
+  background: var(--cielo-hundido);
+}
+
+:global(html:not(.mundo-panel)) .ofrecimiento,
+:global(html:not(.mundo-panel)) .enDuda {
+  border-radius: var(--radio-menor);
+}
+
+:global(html:not(.mundo-panel)) .cabeceraDeSeccion h2 {
+  font-size: var(--t-encabezado);
+  font-weight: 400;
+  line-height: 1.05;
+  letter-spacing: var(--tracking-titular);
+}
+
+:global(html:not(.mundo-panel)) .plegable summary {
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  transition: opacity 150ms var(--curva-control);
+}
+
+:global(html:not(.mundo-panel)) .plegable summary:hover {
+  opacity: 0.7;
+}
+
+:global(html:not(.mundo-panel)) .signoMas::before,
+:global(html:not(.mundo-panel)) .signoMas::after {
+  height: 1.5px;
+  background-color: var(--tinta);
+}
+
+:global(html:not(.mundo-panel)) .signoMas::after {
+  width: 1.5px;
+  height: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :global(html:not(.mundo-panel)) .acentoGrande:active:not(:disabled),
+  :global(html:not(.mundo-panel)) .acentoMenor:active:not(:disabled),
+  :global(html:not(.mundo-panel)) .secundarioGrande:active:not(:disabled),
+  :global(html:not(.mundo-panel)) .secundario:active:not(:disabled) {
+    transform: none;
+  }
 }

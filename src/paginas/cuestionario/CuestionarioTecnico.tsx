@@ -284,7 +284,7 @@ export function CuestionarioTecnico() {
   if (sinEmpezar) {
     return (
       <div className={estilos.pagina}>
-        <h1 className={estilos.titulo}>Tu prueba técnica</h1>
+        <h1 className={estilos.titulo} data-seccion="Etapa 2 / Prueba técnica">Tu prueba técnica</h1>
         <p className={estilos.texto}>
           Son {cuestionario.total} preguntas sobre este puesto y esta empresa. Se responden
           escribiendo: no hay que subir ningún archivo. Cuéntalo con casos que hayas vivido,
@@ -320,7 +320,7 @@ export function CuestionarioTecnico() {
     <div className={estilos.pagina}>
       <header className={estilos.cabecera}>
         <div>
-          <h1 className={estilos.titulo}>Tu prueba técnica</h1>
+          <h1 className={estilos.titulo} data-seccion="Etapa 2 / Prueba técnica">Tu prueba técnica</h1>
           <p className={estilos.avance} role="status">
             Pregunta {indice + 1} de {cuestionario.total} · {respondidas} respondidas
           </p>

@@ -193,7 +193,7 @@ export function Proceso() {
         ← Volver a mis procesos
       </Link>
 
-      <div className={estilos.encabezado}>
+      <div className={estilos.encabezado} data-seccion="Mis procesos / Detalle">
         <h1 className={estilos.titular}>{resumen.vacante}</h1>
         <span className={estilos.desde}>
           Postulaste el{' '}

@@ -27,7 +27,8 @@ import { cn } from '@/ui/shadcn/utils'
 import { datosDeLaTarjeta, inicialesDe, recortado, resumenDe } from './busqueda'
 
 /** La sombra de las superficies de `/vacantes`: corta, con un filo de 1 px casi transparente en lugar de borde. */
-export const SOMBRA_DE_SUPERFICIE = 'shadow-[0_1px_2px_rgb(10_10_10/0.06),0_0_0_1px_rgb(10_10_10/0.04)]'
+/** Northstar (13/11/2026): el filete negro al 10 % como anillo, sin sombra. */
+export const SOMBRA_DE_SUPERFICIE = 'shadow-[0_0_0_1px_rgb(0_0_0/0.1)]'
 
 /** Remoto verde, Híbrido índigo, Presencial gris. Lo que no sea una de las tres, gris. */
 const TONO_DE_MODALIDAD: Record<string, string> = {
@@ -87,11 +88,11 @@ export function FilaDeVacante({
         'relative block rounded-2xl bg-card p-4 text-card-foreground no-underline [-webkit-tap-highlight-color:transparent]',
         SOMBRA_DE_SUPERFICIE,
         'transition-[box-shadow,scale] duration-200 ease-out motion-safe:active:scale-[0.98]',
-        'hover:shadow-[0_4px_12px_rgb(10_10_10/0.08),0_0_0_1px_rgb(10_10_10/0.06)]',
+        'hover:shadow-[0_0_0_1px_rgb(0_0_0/0.24)]',
         'focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50',
         // Sin levantarse: la primera, elegida, sigue a la altura del panel.
         elegida &&
-          'shadow-[0_10px_24px_rgb(10_10_10/0.10),0_0_0_1px_rgb(10_10_10/0.06)] hover:shadow-[0_10px_24px_rgb(10_10_10/0.10),0_0_0_1px_rgb(10_10_10/0.06)]',
+          'shadow-[0_0_0_1px_rgb(30_58_138/0.5),0_0_0_4px_var(--activo-bruma)] hover:shadow-[0_0_0_1px_rgb(30_58_138/0.5),0_0_0_4px_var(--activo-bruma)]',
       )}
     >
       <div className="flex items-start gap-3">

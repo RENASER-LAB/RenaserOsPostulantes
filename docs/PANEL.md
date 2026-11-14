@@ -1015,7 +1015,7 @@ trae la `V68` y la `V69` (`docs/` del backend, `PRUEBA-DEL-PUESTO.md`, «El edit
 
 **La cabecera fija** (`CabeceraFija.tsx`) se queda arriba al bajar con el estado, el balance «80 de
 100 pts», el resumen, el chip del tiempo —«90 min · hasta vie 10/10, 23:59» o «Sin cronómetro ·
-hasta …», en ámbar si faltan los minutos o la fecha, o si la fecha ya pasó—, «Configuración» y
+hasta …», en el color de duda si faltan los minutos o la fecha, o si la fecha ya pasó—, «Configuración» y
 «Publicar».
 
 - **Desde 56rem de ancho de la cabecera** (no de la ventana: el menú lateral se pliega) todo va en
@@ -1034,7 +1034,7 @@ hasta …», en ámbar si faltan los minutos o la fecha, o si la fecha ya pasó�
 
 **Los criterios se pliegan.** Plegado, cada uno es una línea con puntos, desglose, preguntas y
 archivos —«Análisis financiero · 30 pts (sistema 5 + IA 25) · 2 preguntas · 1 archivo»—, con borde
-y punto ámbar si le falta algo. Al entrar están plegados salvo el recién creado y los que tienen
+y punto de duda si le falta algo. Al entrar están plegados salvo el recién creado y los que tienen
 una falta; encima, «Desplegar todo» y «Plegar todo». Desplegado: «Qué evalúa», sus faltas y sus
 preguntas. Desde el 07/10/2026 ya no repite «Parte calificada» ni «Mira»: el reparto lo dice su
 línea. Plegar funciona también en lectura.
@@ -1147,7 +1147,7 @@ y una pregunta con los puntos mal no se distinguía de las demás. Desde el 07/1
 editores, **cada falta se escribe en su sitio**. **No cambian** lo que exige publicar, la
 calificación ni la API, y no hay migración: solo los textos y dónde se ven.
 
-- **La cabecera fija** ya no tiene fila de faltas ni «Ver N más»: el total en ámbar si no suma 100
+- **La cabecera fija** ya no tiene fila de faltas ni «Ver N más»: el total en el color de duda si no suma 100
   y la pastilla **«⚠ N por arreglar →»**, que cuenta las faltas. Cada clic lleva al siguiente sitio
   con falta en el orden de la página —el total, el tiempo, la fecha, cada criterio con sus
   preguntas, las preguntas sin criterio y los entregables generales—, abre el criterio plegado, la
@@ -1156,18 +1156,18 @@ calificación ni la API, y no hay migración: solo los textos y dónde se ven.
   (`useIrALasFaltas`, en `navegacion.ts`).
 - **Dónde se ve cada falta**: bajo el criterio desplegado; en la tarjeta de su pregunta; bajo el
   archivo de una pregunta; en la línea de un entregable general; las que no tienen sitio, encima de
-  «Criterios y preguntas»; el tiempo y la fecha, en su chip —en ámbar también si la fecha ya
+  «Criterios y preguntas»; el tiempo y la fecha, en su chip —en el color de duda también si la fecha ya
   pasó— y bajo su campo en «Configuración». Se quitaron los avisos fijos «Sin preguntas: así no se
   publica.» y «Sin cerradas ni parte calificada…»: los dice el servidor bajo el criterio.
-- **La tarjeta de una pregunta con falta** toma el borde y el punto ámbar y escribe debajo sus
+- **La tarjeta de una pregunta con falta** toma el borde y el punto de duda y escribe debajo sus
   faltas sin el prefijo «La pregunta N («…»): » —de puntos, de forma o «No está en ningún
-  criterio.»—, en el orden del servidor; su criterio plegado también sale en ámbar. Sin
+  criterio.»—, en el orden del servidor; su criterio plegado también sale en el color de duda. Sin
   `editar_vacante` se ve igual, sin formulario. Una publicada no tiene faltas de publicar.
 - **El formulario de la pregunta avisa en vivo** con los textos del servidor —«Ninguna opción
   puede pasar de los 5 puntos de la pregunta.», «Marcando todas las opciones buenas no se llega a
   sus 10 puntos.»…— en cuanto están escritos los puntos de la pregunta y de sus opciones
   (`avisosDeLosPuntos`, en `formulario.ts`). **Deja guardar**: es un borrador y la tarjeta queda en
-  ámbar.
+  color de duda.
 - **El aviso nuevo del servidor** para un criterio con puntos que nadie puede calificar: «El
   criterio «Excel» vale 20 y sus cerradas suman 5: nadie puede calificar los otros 15. Baja el total
   a 5, sube sus cerradas o agrégale una abierta o un archivo.», o, sin cerradas, «El criterio
@@ -1293,7 +1293,7 @@ en `reglasQueBuscar.ts`.
   `GET /vacantes/{id}/que-buscar-en-el-cv` justo antes; con 0 se guarda sin preguntar. Editar otro
   campo no toca las líneas ni avisa a nadie.
 - **En el ranking, en las cinco pestañas**, cada persona lleva bajo el nombre y el correo un punto
-  por línea, en su orden: verde lo tiene, ámbar lo menciona, blanco con borde no aparece y punteado
+  por línea, en su orden: verde lo tiene, índigo claro lo menciona, blanco con borde no aparece y punteado
   pendiente o buscando. En su lugar puede salir «CV sin texto» o «No se pudo buscar». Cada grupo
   lleva un texto para lectores de pantalla («3 de 4 requisitos»). Sobre la tabla, una línea con los
   recuentos —«5 de 7 listos · 1 buscando · 1 CV sin texto»— y el control **«Orden: De siempre |

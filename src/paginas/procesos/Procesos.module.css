@@ -69,7 +69,7 @@
 
 .vacante {
   font-size: var(--t-destacado);
-  font-weight: 700;
+  font-weight: 550;
   letter-spacing: -0.022em;
 }
 
@@ -79,7 +79,7 @@
  */
 .empresa {
   font-size: var(--t-prosa);
-  font-weight: 600;
+  font-weight: 550;
   color: var(--tinta2);
 }
 
@@ -148,7 +148,7 @@
 
 .cierreTitulo {
   font-size: var(--t-base);
-  font-weight: 600;
+  font-weight: 550;
   letter-spacing: -0.008em;
 }
 
@@ -317,7 +317,7 @@
 
 .esperaTitulo {
   font-size: var(--t-base);
-  font-weight: 600;
+  font-weight: 550;
   letter-spacing: -0.008em;
 }
 

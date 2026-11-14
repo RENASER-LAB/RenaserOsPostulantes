@@ -154,7 +154,7 @@ export function PedirEnlace({ pedir, titulo, bajada, alternativa }: Props) {
 
   return (
     <>
-      <h1 className={estilos.titular}>{titulo}</h1>
+      <h1 className={estilos.titular} data-seccion="Cuenta / Contraseña">{titulo}</h1>
       <p className={estilos.bajada}>{bajada}</p>
 
       <form

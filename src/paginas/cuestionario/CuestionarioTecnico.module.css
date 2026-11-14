@@ -45,7 +45,7 @@
    poco no es un error de nadie. */
 .reloj {
   font-size: var(--t-base);
-  font-weight: 700;
+  font-weight: 550;
   font-variant-numeric: tabular-nums;
   color: var(--tinta2);
   padding: var(--e2) var(--e3);
@@ -71,7 +71,7 @@
 .avisoDelReloj {
   margin: var(--e1) 0 0;
   font-size: var(--t-menor);
-  font-weight: 600;
+  font-weight: 550;
   color: var(--mal);
 }
 
@@ -101,7 +101,7 @@
 
 .etiqueta {
   font-size: var(--t-apoyo);
-  font-weight: 600;
+  font-weight: 550;
 }
 
 .area {
