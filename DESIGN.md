@@ -1,5 +1,5 @@
 ---
-name: EX · Portal del candidato
+name: EX · Portal del candidato y panel del equipo
 description: Papel casi blanco, tinta casi negra y un azul profundo; letra Onest muy cerrada, celdas de filete y una portada con un campo de puntos que ondula — el estilo de Northstar llevado a un proceso de selección.
 colors:
   cielo: "#fcfcfa"
@@ -199,9 +199,24 @@ components:
     typography: "{typography.navegacion}"
   nav-enlace-activo:
     textColor: "{colors.activo}"
+  nav-panel-activo:
+    backgroundColor: "{colors.activo-bruma}"
+    textColor: "{colors.activo}"
+    rounded: "{rounded.menor}"
+    padding: "0 12px"
+    height: "44px"
+  pestana:
+    backgroundColor: "{colors.cielo}"
+    textColor: "{colors.tinta2}"
+    rounded: "{rounded.menor}"
+    padding: "0 16px"
+    height: "44px"
+  pestana-activa:
+    backgroundColor: "{colors.activo-bruma}"
+    textColor: "{colors.activo}"
 ---
 
-# Design System: EX · Portal del candidato
+# Design System: EX · Portal del candidato y panel del equipo
 
 > **Este documento describe el mundo que hay en el código desde el 13/11/2026: «Northstar».**
 > Sustituye a «El cielo despejado» (índigo `#615FFF`, Geist, cabecera en píldora, cielo con
@@ -285,8 +300,8 @@ Verde hecho (`bien`), azul en duda (`duda`, con `duda-tinta`) y rojo error (`mal
 Significan hecho, duda y error, y nunca jerarquía ni categoría. **En el portal no hay ámbar
 desde el 13/11/2026**: `--duda` pasó a la familia azul (`#1E3A8A`, bruma `#E9EDFF`, punto
 `#527ADA`) porque era la única mancha cálida y se leía como advertencia. Lo distingue la
-forma (bruma, punto, etiqueta). Desde el 14/11/2026 el panel tampoco: su `--duda` es índigo
-(`#4338CA`, bruma `#EEF0FF`, punto `#818CF8`).
+forma (bruma, punto, etiqueta). Desde el 14/11/2026 el panel también es Northstar y usa la misma
+familia azul.
 
 ### Named Rules
 
@@ -402,7 +417,8 @@ la validación, privacidad y la política.
 ### Inputs / Fields (`ui/campos/Campo.module.css`)
 
 Blancos, 48 px, radio 4, borde `borde-control` (3,9:1) que pasa a tinta al pasar; **al
-enfocar, borde azul y halo de 3 px** en vez del contorno. La etiqueta en 500. La casilla de un
+enfocar, filete azul de 2 px y halo azul al 22 % de 3 px** en vez del contorno (el halo en
+bruma solo daba 1,1:1 sobre el papel y no se veía). La etiqueta en 500. La casilla de un
 consentimiento marcado lleva el filete azul. El mismo halo se aplica a los `input` y
 `textarea` sueltos de las pantallas (regla global en `mundo.css`).
 
@@ -546,8 +562,9 @@ Lo propio del panel:
   MAYÚSCULAS; los neutros, con fondo de papel y filete `#E5E7EB` como `.secundario`.
 - La tuerca de ajustes de una vacante es el icono de reguladores (`IconoFiltros`), no el glifo ⚙.
 
-**Regla:** una pantalla del panel nueva compone de `piezas.module.css` como cualquier otra; un
-botón hecho a mano en una hoja del panel sigue el patrón de arriba.
+**La regla del final del archivo.** En una pieza compartida manda el bloque Northstar del final, bajo `html:not(.mundo-panel)`; la base de arriba es del mundo anterior y no se edita para cambiar lo que se ve.
+
+**La regla del botón a mano.** Una pantalla del panel compone de `piezas.module.css`; si una hoja del panel hace su propio botón, va en Onest 400 y MAYÚSCULAS, y sus pestañas son filete al 10 % con la elegida en azul bruma.
 
 ## Do's and Don'ts
 
@@ -571,6 +588,6 @@ botón hecho a mano en una hoja del panel sigue el patrón de arriba.
 - **Don't** poner sombra a una celda en reposo ni levantar un botón al pasar.
 - **Don't** usar el filete al 18 % de la referencia en un campo.
 - **Don't** mover nada dentro de la prueba del puesto.
-- **Don't** tocar la base de una pieza compartida para el portal: repintaría el panel.
+- **Don't** editar la base de una pieza compartida para cambiar lo que se ve: manda el bloque Northstar del final.
 - **Don't** pintar el logotipo de un color con intención, animarlo, ni importar su PNG fuera
   de `Marca`.

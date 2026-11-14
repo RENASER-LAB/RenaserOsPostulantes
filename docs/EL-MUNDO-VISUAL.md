@@ -93,8 +93,8 @@ quedarse sin letra por falta de cobertura. Geist sigue en la misma carpeta y en 
 `mundo.css` (la del mundo anterior), pero desde el 14/11/2026 ninguna pantalla la pinta; Figtree y
 Mulish, por si hay que volver.
 
-⚠️ La excepción de Geist en `.impeccable/config.json` («fuente sobreexpuesta») ya no hace falta:
-se puede quitar al regenerar con `/impeccable document`.
+La excepción de Geist que había en `.impeccable/config.json` («fuente sobreexpuesta») se quitó el
+14/11/2026: ninguna pantalla la usa.
 
 ### Los mundos anteriores
 
@@ -231,7 +231,7 @@ La skill de diseño lee cuatro cosas de aquí, y las cuatro tienen que decir la 
 | [PRODUCT.md](../PRODUCT.md) | Quién usa el portal y para qué. No es visual |
 | [DESIGN.md](../DESIGN.md) | El sistema visual, con su cabecera de tokens |
 | `.impeccable/design.json` | Lo que el formato de DESIGN.md no admite: rampas tonales, sombras, movimiento, cortes y diez piezas en HTML y CSS que su panel puede pintar |
-| `.impeccable/config.json` | La configuración del detector, con la excepción de Geist |
+| `.impeccable/config.json` | La configuración del detector (sin excepciones desde el 14/11/2026) |
 
 **DESIGN.md y `design.json` se regeneran juntos, nunca uno solo.** La última vez fue el
 13/11/2026, al pasar a «Northstar»: `DESIGN.md` se reescribió de cero y `design.json` se rehízo
@@ -245,7 +245,7 @@ el 25/09 el detector marcó los radios de la cabecera y del marco de cristal, y 
 `--radio-pildora`, `--radio-cristal` y `--radio-ventana`.
 
 **El hook del detector está activo**: corre tras cada edición de UI y avisa. Las excepciones que
-hay son tres, todas con su motivo escrito: Geist en `config.json`, y dos marcas en línea en
+hay son dos, con su motivo escrito: dos marcas en línea en
 `Vacantes.module.css` —la máscara del fundido, que solo lee el alfa, y el rótulo en miniatura de
 una maqueta decorativa—.
 
@@ -260,6 +260,7 @@ Lo que se corrió sobre el portal y cuándo:
 | `extract`, `document`, `audit` (17/20), `critique` (27/40), `polish` | 24/08, sobre el mundo de entonces. El registro, en la [bitácora de agosto](BITACORA-2026-08.md) |
 | `document` | 25/09, al pasar a «El cielo despejado» |
 | (a mano, sin el comando) | 13/11, al pasar a «Northstar» |
+| `document` (siguiendo su guía a mano; la skill no cargaba en la sesión) | 14/11, al pasar el panel a Northstar: DESIGN.md refrescado, `design.json` con las reglas y los do/don't de DESIGN.md, el menú y las pestañas del panel, y el foco nuevo de los campos |
 
 **No usar `craft`**: está deprecado.
 

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-13T22:54:43Z",
-  "title": "Design System: EX · Portal del candidato",
+  "generatedAt": "2026-11-14T18:19:59Z",
+  "title": "Design System: EX · Portal del candidato y panel del equipo",
   "extensions": {
     "colorMeta": {
       "cielo": {
@@ -682,9 +682,9 @@
       "name": "Campo de texto",
       "kind": "input",
       "refersTo": "input",
-      "description": "48 px, borde de control 3,9:1 y halo azul al enfocar.",
+      "description": "48 px, borde de control 3,9:1; al enfocar, filete azul de 2 px y halo azul al 22 %.",
       "html": "<input class=\"ds-campo\" placeholder=\"tu@correo.com\">",
-      "css": ".ds-campo { font-family: Onest, system-ui, sans-serif; min-height: 48px; padding: 0 12px; border: 1px solid #7b8382; border-radius: 4px; background: #fff; color: #111312; font-size: 16px; transition: border-color 150ms, box-shadow 150ms; } .ds-campo:hover { border-color: #111312; } .ds-campo:focus-visible { outline: none; border-color: #1e3a8a; box-shadow: 0 0 0 3px #e9edff; }"
+      "css": ".ds-campo { font-family: Onest, system-ui, sans-serif; min-height: 48px; padding: 0 12px; border: 1px solid #7b8382; border-radius: 4px; background: #fff; color: #111312; font-size: 16px; transition: border-color 150ms, box-shadow 150ms; } .ds-campo:hover { border-color: #111312; } .ds-campo:focus-visible { outline: none; border-color: #1e3a8a; box-shadow: 0 0 0 1px #1e3a8a, 0 0 0 4px rgb(30 58 138 / 0.22); }"
     },
     {
       "name": "Celda",
@@ -733,11 +733,27 @@
       "description": "«01 / VACANTES», encima de un titular.",
       "html": "<p class=\"ds-etiqueta\">01 / Vacantes</p>",
       "css": ".ds-etiqueta { font-size: 11px; line-height: 1.2; letter-spacing: 0.16em; text-transform: uppercase; color: #687170; }"
+    },
+    {
+      "name": "Menú del panel",
+      "kind": "nav",
+      "refersTo": "nav-panel-activo",
+      "description": "El lateral del panel: etiqueta «/ SECCIÓN» y la entrada activa en azul bruma con filete azul a la izquierda.",
+      "html": "<nav class=\"ds-menu\"><p class=\"ds-menu-titulo\">Selección</p><a class=\"ds-menu-enlace ds-menu-activo\" href=\"#\">Vacantes</a><a class=\"ds-menu-enlace\" href=\"#\">Pruebas</a><a class=\"ds-menu-enlace\" href=\"#\">Simulación</a></nav>",
+      "css": ".ds-menu { display: flex; flex-direction: column; gap: 2px; width: 220px; padding: 16px 12px; background: #fcfcfa; border-right: 1px solid rgb(17 19 18 / 0.1); font-family: Onest, system-ui, sans-serif; } .ds-menu-titulo { margin: 0 0 4px; padding: 0 12px; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: #656d6c; } .ds-menu-titulo::before { content: '/ '; } .ds-menu-enlace { display: flex; align-items: center; min-height: 44px; padding: 0 12px; border-radius: 4px; color: #4a5251; font-size: 15px; text-decoration: none; transition: background 160ms cubic-bezier(0.16,1,0.3,1), color 160ms; } .ds-menu-enlace:hover { color: #111312; background: rgb(17 19 18 / 0.04); } .ds-menu-enlace:focus-visible { outline: 2px solid #1e3a8a; outline-offset: 2px; } .ds-menu-activo, .ds-menu-activo:hover { color: #1e3a8a; font-weight: 550; background: #e9edff; box-shadow: inset 2px 0 0 #1e3a8a; }"
+    },
+    {
+      "name": "Pestañas",
+      "kind": "custom",
+      "refersTo": "pestana-activa",
+      "description": "Vistas de una misma tabla (etapas del ranking, cortes): grupo con filete al 10 % y la elegida en azul bruma.",
+      "html": "<div class=\"ds-pestanas\" role=\"tablist\"><button class=\"ds-pestana ds-pestana-activa\" role=\"tab\" aria-selected=\"true\">Perfil integral</button><button class=\"ds-pestana\" role=\"tab\">Prueba del puesto</button><button class=\"ds-pestana\" role=\"tab\">Simulación</button></div>",
+      "css": ".ds-pestanas { display: inline-flex; gap: 4px; padding: 4px; border: 1px solid rgb(17 19 18 / 0.1); border-radius: 4px; background: #fcfcfa; font-family: Onest, system-ui, sans-serif; } .ds-pestana { min-height: 44px; padding: 0 16px; border: 1px solid transparent; border-radius: 4px; background: none; color: #4a5251; font: inherit; font-size: 15px; font-weight: 400; cursor: pointer; transition: background 160ms cubic-bezier(0.16,1,0.3,1), color 160ms; } .ds-pestana:hover { color: #111312; background: rgb(17 19 18 / 0.04); } .ds-pestana:focus-visible { outline: 2px solid #1e3a8a; outline-offset: 2px; } .ds-pestana-activa, .ds-pestana-activa:hover { color: #1e3a8a; background: #e9edff; }"
     }
   ],
   "narrative": {
     "northStar": "Northstar",
-    "overview": "El estilo es una réplica, medida con Playwright, de northstar-template-demo.vercel.app: papel casi blanco, tinta casi negra, un solo azul profundo y letra que hace el trabajo. El titular es enorme y ligero —Onest 400 con -0,055em—, las etiquetas van en mayúsculas pequeñas y espaciadas, y las superficies son celdas de filete de esquinas casi rectas, sin sombra en reposo. La portada se permite atmósfera —el campo de puntos del sombreador de la referencia, una ventana del producto que se asienta al bajar, una banda oscura y un pie en noche—; dentro del portal el trabajo vuelve a ser de la tipografía. Se copió el estilo, no el contenido ni la marca. El panel del equipo conserva «El cielo despejado».",
+    "overview": "El estilo es una réplica, medida con Playwright, de northstar-template-demo.vercel.app: papel casi blanco, tinta casi negra, un solo azul profundo y letra que hace el trabajo. El titular es enorme y ligero —Onest 400 con -0,055em—, las etiquetas van en mayúsculas pequeñas y espaciadas, y las superficies son celdas de filete de esquinas casi rectas, sin sombra en reposo. La portada se permite atmósfera —el campo de puntos del sombreador de la referencia, una ventana del producto que se asienta al bajar, una banda oscura y un pie en noche—; dentro del portal el trabajo vuelve a ser de la tipografía. Se copió el estilo, no el contenido ni la marca. El panel del equipo conserva «El cielo despejado». Desde el 14/11/2026 el panel del equipo lleva el mismo estilo: el armazón en papel con filete, la entrada activa en azul bruma y los botones propios en mayúsculas.",
     "keyCharacteristics": [
       "Papel #FCFCFA, tinta #111312 y un único azul #1E3A8A para acción, ubicación y turno.",
       "Onest para todo y Syne para la voz de interfaz.",
@@ -749,52 +765,67 @@
     "rules": [
       {
         "name": "La regla de la voz única",
-        "body": "El azul es el único color con intención: si algo es azul, se pulsa, es donde estás, o te toca."
+        "body": "El azul es el único color con intención. Si algo es azul, se pulsa, es donde estás, o te toca.",
+        "section": "colors"
       },
       {
         "name": "La regla del semáforo",
-        "body": "Verde, azul en bruma y rojo significan hecho, duda y error, y nunca jerarquía. No hay ámbar ni en el portal ni en el panel."
-      },
-      {
-        "name": "La regla del peso ligero",
-        "body": "Onest es densa: nada pasa de 600. La jerarquía la hacen el tamaño y el tracking."
-      },
-      {
-        "name": "La regla de la etiqueta de sección",
-        "body": "«Sección / Lo que es» encima del titular, con data-seccion y como pseudoelemento: decora, no se lee dos veces."
+        "body": "Verde, azul en bruma y rojo significan hecho, duda y error. Nada de ámbar, ni en el portal ni en el panel.",
+        "section": "colors"
       },
       {
         "name": "La regla de la etiqueta tenue",
-        "body": "Solo en la portada la etiqueta va al 42 % (2,75:1), porque repite el titular; en el resto, en tinta3 (4,9:1)."
+        "body": "La etiqueta de sección de la portada («01 / VACANTES») va en tinta al 42 %, como en la referencia: **2,75:1, y es a sabiendas** —repite lo que dice el titular de debajo y no es la única forma de saberlo—. **En las demás pantallas la etiqueta va en `tinta3` (4,9:1)**, porque allí sí puede ser lo único que nombra el bloque.",
+        "section": "colors"
       },
       {
-        "name": "La regla del panel aparte",
-        "body": "Todo lo Northstar va bajo html:not(.mundo-panel); la base de las piezas compartidas es la del panel."
+        "name": "La regla del peso ligero",
+        "body": "Onest es densa: nada pasa de 600. Titulares en 400; títulos de bloque y énfasis en 550; las etiquetas en mayúsculas en 400–500. La jerarquía la hacen el tamaño y el tracking, no el negro.",
+        "section": "typography"
+      },
+      {
+        "name": "La regla de la etiqueta de sección",
+        "body": "Una pantalla puede llevar encima de su titular la etiqueta «Sección / Lo que es» con `data-seccion=\"…\"` en el titular o el encabezado. La pinta `[data-seccion]::before` en `mundo.css`, **como pseudoelemento con texto alternativo vacío**: decora, y así ni el lector de pantalla ni las pruebas la leen junto al titular. Hoy la llevan Mis procesos, el detalle de un proceso, la ficha de una vacante, postular, registro, entrar, la contraseña (pedir y elegir), la evaluación, la prueba, la prueba técnica, la simulación, la validación, privacidad y la política.",
+        "section": "typography"
       },
       {
         "name": "La regla del reloj",
-        "body": "Dentro de la prueba del puesto no se mueve nada."
+        "body": "Dentro de la prueba del puesto no se mueve nada.",
+        "section": "components"
       },
       {
         "name": "La regla de la barrera",
-        "body": "Todo respeta prefers-reduced-motion y se monta en su estado final."
+        "body": "Todo respeta `prefers-reduced-motion`: el fondo se queda en un cuadro, el saludo en «Hola», la ventana entra ya asentada y la portada deja de ir pegada.",
+        "section": "components"
+      },
+      {
+        "name": "La regla del final del archivo",
+        "body": "En una pieza compartida manda el bloque Northstar del final, bajo `html:not(.mundo-panel)`; la base de arriba es del mundo anterior y no se edita para cambiar lo que se ve.",
+        "section": "components"
+      },
+      {
+        "name": "La regla del botón a mano",
+        "body": "Una pantalla del panel compone de `piezas.module.css`; si una hoja del panel hace su propio botón, va en Onest 400 y MAYÚSCULAS, y sus pestañas son filete al 10 % con la elegida en azul bruma.",
+        "section": "components"
       }
     ],
     "dos": [
-      "**Do** usar los tokens de `mundo.css` y las piezas de `piezas.module.css`.",
-      "**Do** escribir lo del portal en una pieza compartida bajo `html:not(.mundo-panel)`.",
+      "**Do** usar los tokens de `mundo.css` y las piezas de `piezas.module.css`; una variante nueva se declara con nombre en la hoja compartida.",
+      "**Do** escribir lo Northstar de una pieza compartida al final del archivo, bajo `html:not(.mundo-panel)` como el resto (casa siempre; conserva la especificidad).",
       "**Do** separar por filete negro al 10 %, no por sombra.",
-      "**Do** poner la etiqueta de sección con `data-seccion`, no como texto.",
+      "**Do** poner la etiqueta «Sección / Lo que es» con `data-seccion`, no como texto.",
       "**Do** mantener 44 px de área táctil y 3:1 en el límite de los campos.",
-      "**Do** medir en el navegador: la barra mide 69 px."
+      "**Do** medir en el navegador: el alto de la barra (69 px), los contrastes, dónde corta la ventana.",
+      "**Do** reiniciar Vite si un cambio en `piezas.module.css` no se ve: las clases compuestas desde otra hoja se quedan en caché y siguen con la versión vieja."
     ],
     "donts": [
       "**Don't** pasar de 600 de peso ni escribir un titular en negrita.",
-      "**Don't** usar el azul para decorar.",
+      "**Don't** usar el azul para decorar, ni verde, azul de duda o rojo para jerarquía; ni reintroducir ámbar en ninguna parte.",
       "**Don't** poner sombra a una celda en reposo ni levantar un botón al pasar.",
       "**Don't** usar el filete al 18 % de la referencia en un campo.",
       "**Don't** mover nada dentro de la prueba del puesto.",
-      "**Don't** tocar la base de una pieza compartida para el portal: repintaría el panel."
+      "**Don't** editar la base de una pieza compartida para cambiar lo que se ve: manda el bloque Northstar del final.",
+      "**Don't** pintar el logotipo de un color con intención, animarlo, ni importar su PNG fuera de `Marca`."
     ]
   }
 }
