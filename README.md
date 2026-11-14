@@ -97,28 +97,16 @@ demás son CSS Modules, uno por pantalla; lo que se repite se trae con `composes
 
 ## De dónde sale el diseño
 
-El mundo visual se llama **«Northstar»**, desde el 13/11/2026 en el portal y el 14/11/2026 en
-el panel: una réplica medida del estilo de
-[northstar-template-demo.vercel.app](https://northstar-template-demo.vercel.app/) —su estilo, no
-su contenido—.
-
-- **Papel `#FCFCFA` y tinta `#111312`**, con **un solo azul `#1E3A8A`** para la acción, para
-  «estás aquí» y para «te toca a ti».
-- **Onest** para todo y **Syne** para la voz de interfaz, servidas por el propio sitio.
-  Titulares en peso 400 con -0,055em; botones en MAYÚSCULAS con radio 8.
-- **Celdas de filete negro al 10 %** con esquinas de 0–4 px, sin sombra en reposo.
-- **El estado se lee en la forma antes que en el color**, para que quien no distingue colores
-  lea el mismo recorrido.
-- **La portada lleva un campo de puntos animado** (WebGL2) y una ventana del producto; el resto,
-  no.
-- **Solo tema claro**, por petición del cliente.
+El mundo visual se llama **«Northstar»** (portal desde el 13/11/2026, panel desde el 14/11): una
+réplica medida del estilo de northstar-template-demo.vercel.app. Todo lo visual está en
+[DESIGN.md](DESIGN.md); los tokens, en [`src/estilos/mundo.css`](src/estilos/mundo.css).
 
 ⚠️ **Hubo cuatro mundos antes y sus nombres siguen apareciendo en documentos viejos.** «El
 seguimiento» —hitos impresos, cero radios—, «El canto» —espectro irisado, violeta `#5638d6`,
 Mulish—, «El escaparate» —pastel cálido `#FBF1E9`, acción negra, coral `#FF7C61`, Figtree— y
 «El cielo despejado» —gris frío, índigo `#615FFF`, Geist—. Si
-encuentras alguno nombrado como si fuera el actual, está desactualizado. El detalle, en
-[docs/EL-MUNDO-VISUAL.md](docs/EL-MUNDO-VISUAL.md).
+encuentras alguno nombrado como si fuera el actual, está desactualizado. La historia de cada
+cambio, en las bitácoras de [docs/](docs/README.md).
 
 - Los tokens con su razón de ser están en [`src/estilos/mundo.css`](src/estilos/mundo.css);
   el sistema entero, con sus reglas nombradas, en [DESIGN.md](DESIGN.md).

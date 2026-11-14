@@ -132,7 +132,7 @@ cuenta, y el bot lo reconoce solo por el número. Es una beta solo de las vacant
   tarjeta pendiente se vuelve a pedir la lista, y sale «Conectado» sin recargar.
 - **El verde.** `--whatsapp` `#25D366` con la tinta oscura encima, solo en ese botón: excepción a
   la voz única decidida por el usuario el 12/10/2026 (piezas `.ofrecimiento` y `.whatsapp`). Ver
-  [EL-MUNDO-VISUAL](EL-MUNDO-VISUAL.md).
+  [EL-MUNDO-VISUAL](MAPA-DEL-CODIGO.md).
 - **AC-17.** «Estamos revisando tu postulación» ya no dice dos veces «No tienes que hacer nada.».
 - **Los textos de espera, compartidos con el backend.** `src/dominio/textosDelMomento.json` es
   igual que `docs/contratos/textos-del-momento.json` del backend, que los dice por el bot desde

@@ -1,4 +1,10 @@
 /*
+ * ⚠️ **El mundo vigente es «Northstar» (portal 13/11/2026, panel 14/11/2026)**,
+ * y vive en el bloque «EL MUNDO NORTHSTAR» del final de este archivo, que pisa
+ * los tokens de aquí arriba. Este encabezado, la Geist de abajo y la base de
+ * tokens son de mundos anteriores y se conservan como historia. DESIGN.md
+ * describe lo vigente.
+ *
  * El mundo visual del portal: «El escaparate».
  *
  * Un cuarto de luz calida con una sola pieza iluminada. El fondo es un pastel
@@ -240,9 +246,9 @@
    */
   --bien: #0b7a63;        /* 5,3:1 — lo confirmado */
   --bien-bruma: #e6f5f0;
-  /* Sin ámbar en ninguna parte desde el 14/11/2026: `--duda` pasó a la familia
-     índigo del panel. El portal la redefine en azul marino bajo
-     `:root:not(.mundo-panel)`. El estado se distingue por la forma (bruma,
+  /* Sin ámbar en ninguna parte desde el 14/11/2026. Esta base índigo no se ve:
+     el bloque Northstar del final la redefine en azul marino para todo el
+     sitio. El estado se distingue por la forma (bruma,
      punto, etiqueta), no por un color cálido que se leía como advertencia. */
   --duda: #4338ca;        /* 7,9:1 — lo que cambia tu decision */
   --duda-bruma: #eef0ff;
@@ -278,10 +284,9 @@
   /*
    * El canto: lo ultimo que queda del mundo visual anterior.
    *
-   * ⚠️ **Ningun sitio del portal del candidato lo usa desde el 10/09/2026.**
-   * Sobrevive por un solo consumidor, `src/panel/Armazon.module.css`, que es
-   * del panel del equipo y todavia no se ha migrado. El dia que se migre, esta
-   * declaracion se va con el.
+   * ⚠️ **Ya no lo usa nadie**: su último consumidor, el filete de color de la
+   * barra del panel (`src/panel/Armazon.module.css`), se quitó el 14/11/2026 al
+   * pasar el panel a Northstar. Se puede borrar.
    *
    * Se le retargeteo el degradado a la familia coral para que no desentonara
    * mientras seguia en pantalla; **no se usa en composiciones nuevas**.
@@ -867,7 +872,7 @@ time,
    * decisión»— era la única familia cálida, y en un mundo de azul marino y
    * neutros se leía como advertencia. Pasa a la familia azul: el estado sigue
    * distinguiéndose por la forma (bruma, punto, etiqueta), no por el color.
-   * El panel tampoco lleva ámbar: su `--duda` base es índigo (14/11/2026).
+   * Desde el 14/11/2026 vale también para el panel.
    */
   --duda: #1e3a8a;        /* 10,4:1 sobre blanco */
   --duda-bruma: #e9edff;

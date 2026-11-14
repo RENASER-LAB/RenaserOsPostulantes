@@ -1087,7 +1087,7 @@ retargeteado a coral para que no desentone mientras siga en pantalla.
 **La documentación se actualizó a la vez, no al final**, a petición del usuario y con razón:
 con el `design.json` viejo el detector de impeccable daba doce falsos positivos justo cuando
 hay dieciséis pantallas por migrar. Ahora da cero. Se tocaron `DESIGN.md`,
-`.impeccable/design.json`, `PRODUCT.md`, [EL-MUNDO-VISUAL.md](EL-MUNDO-VISUAL.md) —que estaba
+`.impeccable/design.json`, `PRODUCT.md`, [EL-MUNDO-VISUAL.md](MAPA-DEL-CODIGO.md) —que estaba
 **dos mundos atrás**, todavía en «El seguimiento»— y `CLAUDE.md`.
 ---
 

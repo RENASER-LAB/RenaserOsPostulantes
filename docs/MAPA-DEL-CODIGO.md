@@ -1,116 +1,11 @@
-# El mundo visual y dónde está el código
+# El mapa del código
 
-Las decisiones de diseño que gobiernan el portal entero, y el mapa de carpetas de `src/`. **El
-sistema completo —paleta, escala tipográfica, reglas con nombre, componentes— está en
-[DESIGN.md](../DESIGN.md)**; los tokens con su porqué, en
-[`src/estilos/mundo.css`](../src/estilos/mundo.css), que es la verdad cuando algo no cuadre.
-Este documento no repite ninguno de los dos: cuenta de dónde sale el mundo y dónde vive el
-código.
-
----
-
-## El mundo visual: «Northstar» (desde el 13/11/2026)
-
-Papel casi blanco `#FCFCFA`, tinta casi negra `#111312` y **un solo color con intención**: el
-azul `#1E3A8A`, que marca lo que se pulsa, dónde estás y lo que te toca. **Onest** para todo y
-**Syne** para la voz de interfaz. Titulares enormes y ligeros (peso 400, -0,055em), etiquetas
-en mayúsculas pequeñas y espaciadas («01 / VACANTES»), y superficies que son **celdas de filete
-negro al 10 %** de esquinas casi rectas, sin sombra en reposo. La portada es la única pantalla
-con atmósfera: el campo de puntos que ondula, la ventana del producto que se asienta al bajar,
-la banda oscura y el pie en noche.
-
-**El panel del equipo entró el 14/11/2026** (ver más abajo y [DESIGN.md](../DESIGN.md) ›
-«El panel»).
-
-### De dónde sale
-
-De la plantilla [northstar-template-demo.vercel.app](https://northstar-template-demo.vercel.app/),
-elegida por el usuario el 13/11/2026 para que el portal adoptara **su estilo y no su
-contenido**. Se replicó **midiendo su página con Playwright**: estilos computados (familias,
-tamaños, interlineados, tracking, colores, radios, sombras, rellenos, anchos de carril), sus
-`@font-face`, sus `@keyframes` y transiciones, las transformaciones de su portada al bajar
-—muestreadas cada 100 px de scroll— y, del fondo, **el código del sombreador sacado de su
-bundle** y los uniformes con los que lo llama.
-
-**Lo que no se copió, y por qué:**
-
-| De la referencia | Aquí | Motivo |
-|---|---|---|
-| El borde de sus campos, negro al 18 % (1,5:1) | El gris de control, 3,9:1 | WCAG 1.4.11 pide 3:1 al límite visible de un control |
-| Su etiqueta de sección al 42 % en todas partes | Al 42 % solo en la portada; en el resto, `tinta3` (4,9:1) | En la portada repite el titular; en una pantalla puede ser lo único que nombra el bloque |
-| La librería Paper Shaders | El mismo sombreador portado a WebGL2, con respaldo en 2D | Una dependencia entera para un efecto; y aquí se para fuera de pantalla, baja a 30 cuadros en teléfonos y respeta el movimiento reducido |
-| Su contenido: proyectos, blog, agentes, testimonios | No existe | Se copió el estilo, no la marca; la ventana de la portada enseña una postulación de ejemplo genérica |
-| El selector de idioma | No existe | El portal es solo en español |
-| El rótulo que rodaba en los botones del mundo anterior | Quitado | La referencia solo cambia el color al pasar |
-
-### Las reglas de forma
-
-- **Plano por filete.** Una superficie se separa por su filete negro al 10 %, no por sombra.
-  Lo único que flota en reposo es la ventana de la portada.
-- **Una sola voz.** Si algo es azul, se pulsa, es donde estás, o te toca. **Con una excepción,
-  el verde de WhatsApp** (13/10/2026, ver abajo).
-- **El estado se lee en la forma antes que en el color** —franja maciza, filete azul con halo—.
-- **Verde, azul en bruma y rojo significan hecho, duda y error** (no hay ámbar en ninguna parte: el portal lo quitó el 13/11/2026 —`--duda` en azul marino— y el panel el 14/11/2026 —`--duda` en índigo—), y nunca jerarquía ni categoría. Viene
-  del 23/08 y es lo único de la paleta que ha sobrevivido a todos los mundos.
-- **La tipografía hace la jerarquía**, con el tamaño y el tracking y no con el peso: nada pasa
-  de 600.
-- **El movimiento** sigue a Emil Kowalski —solo `transform` y `opacity`, curvas fuertes de
-  salida, corto en la interfaz—, respeta `prefers-reduced-motion`, y **con el reloj corriendo
-  —evaluación, prueba, cuestionario— no se mueve nada**.
-
-### El panel, también Northstar (14/11/2026)
-
-Del 13 al 14/11 el panel conservó «El cielo despejado»: todo lo Northstar se escribió bajo
-`html:not(.mundo-panel)` y el armazón del panel ponía esa clase en `<html>`. El 14/11 se quitó
-el gancho que la ponía y el panel tomó los tokens y las piezas del portal; los selectores
-quedaron (casan siempre) para no mover la especificidad. El armazón y los botones propios del
-panel se retocaron aparte; el detalle, en [DESIGN.md](../DESIGN.md) › «El panel».
-
-### La excepción verde: «Escribir por WhatsApp» (13/10/2026)
-
-**El único botón del portal que no es azul ni tinta**, decidido por el usuario el 12/10/2026.
-Va relleno del verde de WhatsApp, `--whatsapp` `#25D366` (`--whatsapp-pulsado` `#1FBF5A` al pasar
-por encima), con **la tinta oscura encima y no blanca** —el blanco sobre ese verde da 1,98:1;
-`--tinta` da 8,3:1— y el logotipo de WhatsApp delante. El verde dice «WhatsApp» y nada más, y
-**la tarjeta solo sale cuando al candidato no le toca nada**. Desde el 13/11 lleva el filete negro
-al 10 % y sus mayúsculas, como el resto de botones.
-
-La tarjeta que lo lleva es **`.ofrecimiento`**: nube con filete y sin sombra, sobre el papel
-hundido del panel de espera. No reclama —ofrecer no es pedir—.
-
-### El punto de «Qué buscar en el CV» (14/11/2026)
-
-`--duda-punto` es **solo el relleno del punto de 10 px que dice «lo menciona, sin detalle»** en
-el ranking del panel. Era ámbar (`#d4972a`); desde el 14/11/2026 es índigo claro (`#818CF8`),
-más claro que el verde de «lo tiene» para que se distingan también por luminosidad. El porqué,
-en `mundo.css`; dónde sale, en [PANEL](PANEL.md) › «Qué buscar en el CV».
-
-### La tipografía
-
-**Onest** (variable 100–900) y **Syne** (variable 400–800), de Google Fonts con licencia OFL,
-**servidas por el propio sitio** desde `public/tipografia/`: una aplicación instalada no puede
-quedarse sin letra por falta de cobertura. Geist sigue en la misma carpeta y en la base de
-`mundo.css` (la del mundo anterior), pero desde el 14/11/2026 ninguna pantalla la pinta; Figtree y
-Mulish, por si hay que volver.
-
-⚠️ La excepción de Geist en `.impeccable/config.json` («fuente sobreexpuesta») ya no hace falta:
-se puede quitar al regenerar con `/impeccable document`.
-
-### Los mundos anteriores
-
-Este portal ha tenido cinco mundos visuales. Si encuentras alguno de estos nombrado como vigente
-en el portal, está viejo:
-
-| Mundo | Cuándo | Qué era |
-|---|---|---|
-| «El seguimiento» | agosto | Hitos impresos, cero radios, Libre Franklin |
-| «El canto» | hasta el 10/09 | Nube difractando luz, espectro irisado, violeta `#5638d6`, Mulish |
-| «El escaparate» | 10/09 – 25/09 | Pastel cálido `#FBF1E9`, acción negra `#0A0A0A` con radio 4, coral `#FF7C61` para el turno, Figtree |
-| «El cielo despejado» | 25/09 – 13/11 (en el panel, hasta el 14/11) | Gris frío de Tailwind v4, índigo `#615FFF`, Geist, cabecera en píldora, cielo con nubes en la portada |
-| **«Northstar»** | **desde el 13/11** | El de este documento |
-
-La historia de cada cambio está en las bitácoras de [agosto](BITACORA-2026-08.md),
-[septiembre](BITACORA-2026-09.md) y [noviembre](BITACORA-2026-11.md).
+Dónde vive cada cosa en `src/`, cómo se usa `impeccable` aquí y qué dependencias hay. **Todo lo
+visual —el mundo «Northstar», la paleta, la letra, las formas, los componentes, el movimiento,
+el logotipo y la excepción verde de WhatsApp— está en [DESIGN.md](../DESIGN.md)**, y los tokens
+con su porqué en [`src/estilos/mundo.css`](../src/estilos/mundo.css). Este documento no repite
+nada de eso. Hasta el 14/11/2026 se llamaba `EL-MUNDO-VISUAL.md` y también contaba el mundo
+visual; esa parte pasó a DESIGN.md.
 
 ---
 
@@ -137,7 +32,7 @@ cómo se ve: eso es DESIGN.md.
 |---|---|
 | `src/estilos/mundo.css` | **La hoja global del mundo.** Los tokens, las fuentes y los estilos base: arriba la base del mundo anterior («El cielo despejado»), abajo el bloque «EL MUNDO NORTHSTAR» bajo `:root:not(.mundo-panel)` —casa siempre—, que es lo que manda en portal y panel. Todo lo demás son CSS Modules, salvo la prueba de shadcn de la fila siguiente |
 | `src/estilos/tailwind.css` y `src/ui/shadcn/` | **La prueba piloto de shadcn/ui, solo en `/vacantes` (01/10/2026).** Tailwind v4 **sin preflight** y con las utilidades en `!important`, para no tocar las otras pantallas; su tema son los tokens de `mundo.css`. Los componentes de shadcn viven en `src/ui/shadcn/` (se añaden con `npx shadcn add`, y la CLI mete por error un paquete `cn`: quitarlo). Sin lucide: la casilla y el radio usan los iconos de la casa |
-| `src/estilos/piezas.module.css` | **La única especificación de botón del portal**, más los tres paneles (`.turno`, `.panelDeEspera`, `.indispensable`), la cabecera de sección y el plegable. Desde el 13/10/2026, también `.ofrecimiento` (lo que se ofrece mientras se espera) y `.whatsapp` (el botón verde, misma silueta y altura que `.acentoMenor`). Se trae con `composes` desde la hoja de cada pantalla. Si hace falta una forma que no está ahí, se añade ahí — ninguna pantalla se dibuja la suya. **Su base es la del panel; la versión del portal va al final bajo `:global(html:not(.mundo-panel))`** |
+| `src/estilos/piezas.module.css` | **La única especificación de botón del portal**, más los tres paneles (`.turno`, `.panelDeEspera`, `.indispensable`), la cabecera de sección y el plegable. Desde el 13/10/2026, también `.ofrecimiento` (lo que se ofrece mientras se espera) y `.whatsapp` (el botón verde, misma silueta y altura que `.acentoMenor`). Se trae con `composes` desde la hoja de cada pantalla. Si hace falta una forma que no está ahí, se añade ahí — ninguna pantalla se dibuja la suya. **Lo que manda es el bloque Northstar del final, bajo `:global(html:not(.mundo-panel))`, que casa siempre**; la base de arriba es del mundo anterior |
 | `src/estilos/pagina.module.css` | **El esqueleto de una pantalla**: el carril, el encabezado, el reparto en columnas, el bloque y el hueco declarado |
 | `src/app/Armazon.tsx` | La barra pegada de 69 px, los dos pies en noche —en columnas, con el saludo que cambia de idioma, y corto—. También decide qué pantallas son una tarjeta centrada en la ventana (`CENTRADAS`: `/ingresar`, `/clave`, `/restablecer` y sus tres del panel), cuáles llevan el pie corto y cómo sube «Inicio» |
 | `src/paginas/vacantes/` | La portada —el campo de puntos (`FondoDeLaPortada`, WebGL2), la ventana del producto, cinta, las tres vacantes más recientes, «Por qué este proceso es distinto», preguntas—, **`/vacantes`**, la búsqueda con sus filtros (`BuscarVacantes`, llegó de main el 25/09/2026 y se pasó a este mundo al juntarla), la tarjeta de pie de la portada (`Tarjeta`), la tarjeta «Expresiva» y el panel de `/vacantes` con shadcn (`FilaDeVacante`, `PanelDeVacante`; la columna de filtros vive en `BuscarVacantes`) y la ficha. **Públicas** |
@@ -211,7 +106,7 @@ Ninguna finge tener datos que no tiene.
 
 **Decisión en duda** (`/procesos/:uuid/decision`, antes «decisión ámbar»). El formulario está entero y
 **deshabilitado**, con un `fieldset disabled`, y se dice por qué antes de que nadie escriba. La
-acción que sí funciona —escribirle al equipo— es la que lleva el índigo. Los endpoints que
+acción que sí funciona —escribirle al equipo— es la que lleva el azul. Los endpoints que
 hacen falta están en la cabecera de `Decision.tsx`.
 
 **Validación** (`/procesos/:uuid/validacion`). La ruta existe pero **no se enlaza desde ningún
@@ -230,14 +125,12 @@ La skill de diseño lee cuatro cosas de aquí, y las cuatro tienen que decir la 
 |---|---|
 | [PRODUCT.md](../PRODUCT.md) | Quién usa el portal y para qué. No es visual |
 | [DESIGN.md](../DESIGN.md) | El sistema visual, con su cabecera de tokens |
-| `.impeccable/design.json` | Lo que el formato de DESIGN.md no admite: rampas tonales, sombras, movimiento, cortes y diez piezas en HTML y CSS que su panel puede pintar |
-| `.impeccable/config.json` | La configuración del detector, con la excepción de Geist |
+| `.impeccable/design.json` | Lo que el formato de DESIGN.md no admite: rampas tonales, sombras, movimiento, cortes y doce piezas en HTML y CSS que su panel puede pintar |
+| `.impeccable/config.json` | La configuración del detector (sin excepciones desde el 14/11/2026) |
 
 **DESIGN.md y `design.json` se regeneran juntos, nunca uno solo.** La última vez fue el
-13/11/2026, al pasar a «Northstar»: `DESIGN.md` se reescribió de cero y `design.json` se rehízo
-**a mano** a juego —colores, tipografía, sombras, movimiento, cortes, diez piezas y la
-narrativa—, porque `/impeccable document` no se pudo correr desde la sesión. La próxima vez que
-se corra, que compare contra estos dos.
+14/11/2026, al pasar el panel a «Northstar» (ver la tabla de abajo). La próxima vez que se corra
+`/impeccable document`, que compare contra estos dos.
 
 ⚠️ **Si cambias los tokens de `mundo.css`, DESIGN.md miente hasta que lo regeneres.** Y si un
 valor nuevo —un radio, un tamaño— no está en la escala, **se nombra como token**, no se silencia:
@@ -245,7 +138,7 @@ el 25/09 el detector marcó los radios de la cabecera y del marco de cristal, y 
 `--radio-pildora`, `--radio-cristal` y `--radio-ventana`.
 
 **El hook del detector está activo**: corre tras cada edición de UI y avisa. Las excepciones que
-hay son tres, todas con su motivo escrito: Geist en `config.json`, y dos marcas en línea en
+hay son dos, con su motivo escrito: dos marcas en línea en
 `Vacantes.module.css` —la máscara del fundido, que solo lee el alfa, y el rótulo en miniatura de
 una maqueta decorativa—.
 
@@ -260,6 +153,7 @@ Lo que se corrió sobre el portal y cuándo:
 | `extract`, `document`, `audit` (17/20), `critique` (27/40), `polish` | 24/08, sobre el mundo de entonces. El registro, en la [bitácora de agosto](BITACORA-2026-08.md) |
 | `document` | 25/09, al pasar a «El cielo despejado» |
 | (a mano, sin el comando) | 13/11, al pasar a «Northstar» |
+| `document` (siguiendo su guía a mano; la skill no cargaba en la sesión) | 14/11, al pasar el panel a Northstar: DESIGN.md refrescado, `design.json` con las reglas y los do/don't de DESIGN.md, el menú y las pestañas del panel, y el foco nuevo de los campos |
 
 **No usar `craft`**: está deprecado.
 

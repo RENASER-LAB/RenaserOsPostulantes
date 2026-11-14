@@ -1627,7 +1627,7 @@ publicada— y en color se distinguen solas.
 ## Las corridas de `impeccable` (24/08/2026)
 
 Lo que dejó cada comando el día que se aplicó el mundo visual al portal entero. Las reglas
-de diseño que salieron de aquí viven en [EL-MUNDO-VISUAL.md](EL-MUNDO-VISUAL.md).
+de diseño que salieron de aquí viven en [EL-MUNDO-VISUAL.md](MAPA-DEL-CODIGO.md).
 
 ### Lo que dejó `extract` (24/08/2026)
 

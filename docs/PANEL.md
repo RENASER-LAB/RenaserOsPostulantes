@@ -797,7 +797,7 @@ puertas—, en el escritorio y a 390 × 844. Vale para entrar, la invitación, e
 colaborador, descartar, el plazo de la prueba de una persona y las reseñas de la ficha; en una
 ventana se mueve su cuerpo. Antes lo de arriba tapaba la etiqueta.
 Con Tab y Shift+Tab todavía no: ver [PENDIENTES.md](PENDIENTES.md). Cómo se hace, en
-[EL-MUNDO-VISUAL](EL-MUNDO-VISUAL.md), «Dependencias».
+[MAPA-DEL-CODIGO](MAPA-DEL-CODIGO.md), «Dependencias».
 
 Dónde está: `src/ui/campos/CampoCelular.tsx` y `mascaraCelular.ts`, `src/dominio/celular.ts`,
 `src/panel/colaboradores/Campos.tsx` y `formulario.ts`, y `src/ui/campos/enfocarSinTapar.ts`.
@@ -1019,7 +1019,7 @@ hasta …», en el color de duda si faltan los minutos o la fecha, o si la fecha
 «Publicar».
 
 - **Desde 56rem de ancho de la cabecera** (no de la ventana: el menú lateral se pliega) todo va en
-  una fila, con la barra por criterio debajo: un tramo por criterio en índigos que se aclaran y lo
+  una fila, con la barra por criterio debajo: un tramo por criterio en azules que se aclaran y lo
   que falta en gris; al pasar el cursor, cada tramo dice su criterio y sus puntos. Más estrecha, la
   pastilla de las faltas baja a su propia línea, y el chip y «Configuración» a la siguiente. Sin
   «Publicar» —publicada o en lectura— no queda
@@ -1293,7 +1293,7 @@ en `reglasQueBuscar.ts`.
   `GET /vacantes/{id}/que-buscar-en-el-cv` justo antes; con 0 se guarda sin preguntar. Editar otro
   campo no toca las líneas ni avisa a nadie.
 - **En el ranking, en las cinco pestañas**, cada persona lleva bajo el nombre y el correo un punto
-  por línea, en su orden: verde lo tiene, índigo claro lo menciona, blanco con borde no aparece y punteado
+  por línea, en su orden: verde lo tiene, azul claro lo menciona, blanco con borde no aparece y punteado
   pendiente o buscando. En su lugar puede salir «CV sin texto» o «No se pudo buscar». Cada grupo
   lleva un texto para lectores de pantalla («3 de 4 requisitos»). Sobre la tabla, una línea con los
   recuentos —«5 de 7 listos · 1 buscando · 1 CV sin texto»— y el control **«Orden: De siempre |

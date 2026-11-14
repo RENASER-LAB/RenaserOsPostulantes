@@ -476,7 +476,7 @@ el sistema se lo da a WhatsApp.
 tarjeta vuelve a ofrecer el botón. «Cámbialo en Mi cuenta» lleva a `/perfil#celular` (2.17).
 
 En el teléfono el botón ocupa todo el ancho. El verde del botón es la única excepción a la voz
-única del portal: ver [EL-MUNDO-VISUAL](EL-MUNDO-VISUAL.md).
+única del portal: ver [DESIGN.md](../DESIGN.md).
 
 ### 2.7 Detalle de una postulación
 `GET /portal/postulaciones/{uuid}` → el resumen anterior más `historial`: una lista de
@@ -1008,7 +1008,7 @@ respuesta antes que el cuerpo.
 bloque `html[data-theme="dark"]` y ~~`variables.css`~~ **se borraron**; `index.html` abre en
 claro. El champagne `#816220` que aquí se citaba tampoco existe: el mundo visual se sustituyó
 cuatro veces desde entonces y hoy es «Northstar» —papel casi blanco, tinta casi negra y un solo
-azul `#1E3A8A` para la acción y para «te toca a ti»—. Ver [EL-MUNDO-VISUAL.md](EL-MUNDO-VISUAL.md).
+azul `#1E3A8A` para la acción y para «te toca a ti»—. Ver [DESIGN.md](../DESIGN.md).
 
 ⚠️ **Lo que sigue vigente de este documento es el contrato de datos**: los dieciocho estados,
 qué ve el candidato en cada uno y de quién se espera algo. Eso sale del backend y no ha

@@ -8,7 +8,7 @@ Sigue en [BITACORA-2026-10.md](BITACORA-2026-10.md).
 
 **Al 13/11/2026, el titular del mes:** el portal del candidato cambió de mundo visual —de «El
 cielo despejado» a «Northstar»— y el panel del equipo se quedó en el anterior. Cómo es hoy, en
-[DESIGN.md](../DESIGN.md) y [EL-MUNDO-VISUAL](EL-MUNDO-VISUAL.md).
+[DESIGN.md](../DESIGN.md).
 
 ---
 
@@ -82,7 +82,7 @@ de estilo del mundo anterior. Se hizo en tres tandas.
   Typecheck limpio y 2185 pruebas en verde.
 - **Documentación.** DESIGN.md reescrito para Northstar; `.impeccable/design.json` rehecho a
   mano a juego (no se pudo correr `/impeccable document` desde la sesión);
-  [EL-MUNDO-VISUAL](EL-MUNDO-VISUAL.md) y los avisos de `CLAUDE.md` puestos al día.
+  [EL-MUNDO-VISUAL](MAPA-DEL-CODIGO.md) y los avisos de `CLAUDE.md` puestos al día.
 
 ## 13–14/11/2026 · Fuera el ámbar
 
@@ -124,3 +124,20 @@ de estilo del mundo anterior. Se hizo en tres tandas.
   carga, y una prueba del puesto en borrador se abre y se lee entera. Ojo: el índice solo enseña
   vacantes que usan el editor (`PRUEBA_PROPIA` en la etapa técnica, o preguntas propias en el
   Perfil Integral); con las vacantes de antes, lo correcto es la lista vacía.
+
+## 14/11/2026 · La documentación de diseño, en un solo sitio
+
+- **`EL-MUNDO-VISUAL.md` repetía DESIGN.md** —reglas de forma, tipografía, el panel, el color de
+  duda— y por eso se contradecían: se cambiaba uno y el otro se quedaba viejo. Lo visual que solo
+  estaba allí pasó a DESIGN.md (lo que no se copió de la referencia, la excepción verde de
+  WhatsApp, el punto de «Qué buscar en el CV») y se recuperó la sección del logotipo, que se perdió
+  al reescribir DESIGN.md el 13/11 y a la que el mapa seguía enlazando.
+- **Lo que no es diseño** —el mapa de `src/`, `impeccable` en este proyecto, las dependencias—
+  queda en [MAPA-DEL-CODIGO.md](MAPA-DEL-CODIGO.md), el mismo archivo con otro nombre. Los enlaces
+  de los demás documentos se movieron a DESIGN.md o al mapa según de qué hablaban.
+- `README.md` deja una línea y el enlace en vez de describir el estilo, y en `PENDIENTES.md`
+  salen las dos filas de «DESIGN.md no describe todavía…» (`--duda-punto` y el verde de
+  WhatsApp), que ya están.
+- De paso, incoherencias que quedaron al pasar el panel: el `--duda` del panel dicho índigo, el
+  punto de CV en `#818CF8`, la base de las piezas dicha «del panel», el halo del foco, `--canto`
+  sin consumidor y el encabezado de `mundo.css`, que aún presentaba «El escaparate».
