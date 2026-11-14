@@ -351,7 +351,11 @@
 :global(html:not(.mundo-panel)) .seleccion:focus-visible {
   outline: none;
   border-color: var(--activo);
-  box-shadow: 0 0 0 3px var(--activo-bruma);
+  /* El filete azul se engrosa a 2 px y el halo es azul al 22 %: el bruma solo
+     (1,1:1 sobre el papel) no se veía (QA del 14/11/2026). */
+  box-shadow:
+    0 0 0 1px var(--activo),
+    0 0 0 4px rgb(30 58 138 / 0.22);
 }
 
 :global(html:not(.mundo-panel)) .entrada[aria-invalid='true'],

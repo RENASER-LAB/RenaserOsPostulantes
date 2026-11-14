@@ -324,3 +324,31 @@
     justify-content: space-between;
   }
 }
+
+
+/* Northstar (14/11/2026): los botones propios del panel hablan como los de
+   `piezas`: Onest 400 en MAYÚSCULAS, sin negrita. */
+.chico {
+  font-family: var(--fuente);
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.chico {
+  background: var(--cielo);
+  border-color: #e5e7eb;
+}
+
+/* Northstar: los grupos de pestañas, una sola silueta en todo el panel —filete
+   negro al 10 % sobre papel; la elegida en azul bruma, sin sombra ni negrita—. */
+.pestanaRol {
+  font-weight: 400;
+  border-radius: var(--radio-menor);
+}
+
+.pestanaViva {
+  color: var(--activo);
+  background: var(--activo-bruma);
+  box-shadow: none;
+}

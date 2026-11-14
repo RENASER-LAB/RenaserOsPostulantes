@@ -767,20 +767,18 @@ time,
 
 
 /* ==================================================================
- * EL MUNDO NORTHSTAR (13/11/2026) — todo lo que ve quien postula.
+ * EL MUNDO NORTHSTAR (13/11/2026) — el portal y, desde el 14/11, el panel.
  *
  * El portal replica el estilo de northstar-template-demo.vercel.app: papel
  * #FCFCFA, tinta #111312, azul #1E3A8A, Onest + Syne, filetes negros al 10 %,
  * esquinas rectas en las celdas. El detalle y el porqué, en DESIGN.md.
  *
- * ⚠️ **El panel del equipo NO entra.** Todo lo de arriba de esta línea es «El
- * cielo despejado» y es lo que ve el panel; lo de abajo se aplica solo cuando
- * `<html>` NO lleva la clase `mundo-panel`, que pone y quita el armazón del
- * panel (`usarMundoDelPanel`, en `src/panel/mundoDelPanel.ts`). Así el panel se
- * ve exactamente como antes sin tocar ninguna de sus hojas, y lo que se cambie
- * aquí no le llega. Las piezas compartidas (`piezas.module.css`, `ui/`) siguen
- * la misma regla: su base es la del panel y la versión del portal va bajo
- * `:global(html:not(.mundo-panel))`.
+ * ⚠️ **Desde el 14/11/2026 vale también para el panel.** Lo de arriba de esta
+ * línea es «El cielo despejado» y solo sobrevive donde esto no lo pisa. El
+ * `:not(.mundo-panel)` casa siempre —ya nadie pone esa clase en `<html>`— y se
+ * dejó para no bajar la especificidad. Las piezas compartidas
+ * (`piezas.module.css`, `ui/`) siguen la misma regla: lo que manda es el bloque
+ * del final, bajo `:global(html:not(.mundo-panel))`.
  * ================================================================== */
 
 /*
@@ -964,6 +962,10 @@ time,
 :root:not(.mundo-panel) input:not([type='checkbox'], [type='radio'], [type='file'], [type='range']):focus-visible {
   outline: none;
   border-color: var(--activo);
-  box-shadow: 0 0 0 3px var(--activo-bruma);
+  /* El filete azul se engrosa a 2 px y el halo es azul al 22 %: el bruma solo
+     (1,1:1 sobre el papel) no se veía (QA del 14/11/2026). */
+  box-shadow:
+    0 0 0 1px var(--activo),
+    0 0 0 4px rgb(30 58 138 / 0.22);
 }
 

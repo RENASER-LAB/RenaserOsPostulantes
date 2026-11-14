@@ -12,23 +12,6 @@
 
 import { Component, type ErrorInfo, type ReactNode } from 'react'
 import estilos from '@/ui/Estados.module.css'
-import { usarMundoDelPanel } from '@/panel/mundoDelPanel'
-
-/** Las tres puertas del panel viven en el armazón del portal y van con él. */
-const PUERTAS_DEL_PANEL = ['/admin/entrar', '/admin/clave', '/admin/restablecer']
-
-/**
- * Si lo que se rompió es una pantalla del panel, el aviso se pinta con el mundo
- * del panel: al romperse se desmonta su armazón, que es quien ponía la clase.
- */
-function MundoDelPanel() {
-  usarMundoDelPanel()
-  return null
-}
-
-function esDelPanel(camino: string) {
-  return camino.startsWith('/admin') && !PUERTAS_DEL_PANEL.some((p) => camino.startsWith(p))
-}
 
 interface Props {
   children: ReactNode
@@ -57,7 +40,6 @@ export class Salvavidas extends Component<Props, Estado> {
 
     return (
       <div className={estilos.marco}>
-        {esDelPanel(window.location.pathname) && <MundoDelPanel />}
         <span className={estilos.eti}>Error inesperado</span>
         <h1 className={estilos.titulo}>Algo se rompió en esta pantalla.</h1>
         <p className={estilos.texto}>

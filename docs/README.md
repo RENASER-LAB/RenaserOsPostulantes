@@ -35,7 +35,7 @@ Las secciones llevan título y fecha; busca por el título.
 
 | Tema | Bitácora | Secciones |
 |---|---|---|
-| El estilo Northstar: cómo se midió la referencia, el sombreador del fondo, la ventana, las dieciocho pantallas y por qué el panel se quedó en «El cielo despejado» | [11](BITACORA-2026-11.md) | 13/11 |
+| El estilo Northstar: cómo se midió la referencia, el sombreador del fondo, la ventana, las dieciocho pantallas y cómo el panel entró después (14/11) | [11](BITACORA-2026-11.md) | 13/11 |
 | `/vacantes`: la tarjeta «Expresiva», la columna de filtros, el ancho propio y el pulido del movimiento | [10](BITACORA-2026-10.md) | 06/10 y 05/10 |
 | «Mi perfil», la cronología, el medidor, la foto, la portada y los logros clave | [10](BITACORA-2026-10.md) · [09](BITACORA-2026-09.md) | 09/10 · 06/09 y 05/09 |
 | La ficha del candidato: qué marcó la IA, y lo que entregó en la prueba | [09](BITACORA-2026-09.md) | 04/09, 02/09 |

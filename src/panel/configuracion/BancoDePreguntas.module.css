@@ -61,9 +61,29 @@
 }
 
 /* La etiqueta del archivo elegido. El boton lo viste `mundo.css`. */
+.elegirArchivo {
+  composes: secundario from '../../estilos/piezas.module.css';
+  position: relative;
+  cursor: pointer;
+}
+
+/* El input sigue ahí —se enfoca y se lee— pero invisible, encima del botón. */
 .archivo {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.elegirArchivo:has(.archivo:focus-visible) {
+  outline: 2px solid var(--activo);
+  outline-offset: 2px;
+}
+
+.nombreArchivo {
   font-size: var(--t-apoyo);
   color: var(--tinta2);
+  overflow-wrap: anywhere;
 }
 
 .subir {
@@ -545,4 +565,27 @@
     flex: 1;
     justify-content: center;
   }
+}
+
+
+/* Northstar (14/11/2026): los botones propios del panel hablan como los de
+   `piezas`: Onest 400 en MAYÚSCULAS, sin negrita. */
+.chico {
+  font-family: var(--fuente);
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.chico {
+  background: var(--cielo);
+  border-color: #e5e7eb;
+}
+
+/* Northstar: el mismo campo que `ui/campos` (radio 4, 16 px, 44 de alto). */
+.entrada {
+  min-height: 44px;
+  border-radius: var(--radio-menor);
+  font-size: 16px;
+  background: #fff;
 }

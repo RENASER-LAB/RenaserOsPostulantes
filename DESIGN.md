@@ -204,9 +204,9 @@ components:
 # Design System: EX · Portal del candidato
 
 > **Este documento describe el mundo que hay en el código desde el 13/11/2026: «Northstar».**
-> Sustituye en el portal a «El cielo despejado» (índigo `#615FFF`, Geist, cabecera en
-> píldora, cielo con nubes), que vivió del 25/09 al 13/11 y **sigue vivo en el panel del
-> equipo** (ver «Lo que queda fuera»). La historia de los mundos anteriores está en las
+> Sustituye a «El cielo despejado» (índigo `#615FFF`, Geist, cabecera en píldora, cielo con
+> nubes), que vivió del 25/09 al 13/11 en el portal y hasta el 14/11 en el panel del equipo,
+> que desde entonces también es Northstar (ver «El panel»). La historia de los mundos anteriores está en las
 > bitácoras, no aquí.
 >
 > **Los valores normativos son los de la cabecera de este archivo y los de
@@ -523,29 +523,31 @@ que se ven una vez por visita.
 **La regla de la barrera.** Todo respeta `prefers-reduced-motion`: el fondo se queda en un
 cuadro, el saludo en «Hola», la ventana entra ya asentada y la portada deja de ir pegada.
 
-## Lo que queda fuera: el panel conserva «El cielo despejado»
+## El panel (desde el 14/11/2026)
 
-`mundo.css` y `piezas.module.css` son globales, así que **todo lo Northstar está escrito bajo
-`html:not(.mundo-panel)`** (`:root:not(.mundo-panel)` en `mundo.css`,
-`:global(html:not(.mundo-panel)) .pieza` en las hojas de módulo). La base de cada archivo
-compartido —tokens, `h1`–`h3`, piezas, campos, modal, estados— es la del panel, sin tocar.
+El panel del equipo (`/admin/**`) también lleva Northstar. Hasta el 14/11 conservaba «El cielo
+despejado» gracias a la clase `mundo-panel` que su armazón ponía en `<html>`; esa clase ya no la
+pone nadie (se borró `src/panel/mundoDelPanel.ts`).
 
-`usarMundoDelPanel()` ([`src/panel/mundoDelPanel.ts`](src/panel/mundoDelPanel.ts)) pone la
-clase `mundo-panel` en `<html>` mientras el panel está montado (con `useLayoutEffect`, sin un
-cuadro equivocado). La llaman `ArmazonPanel`, `InvitacionPanel` y el aviso de error
-(`Salvavidas`) cuando lo que se rompió es una pantalla del panel. **Las tres puertas del
-panel** (`/admin/entrar`, `/admin/clave`, `/admin/restablecer`) viven en el armazón del portal y
-llevan Northstar.
+**Los selectores `html:not(.mundo-panel)` siguen en el código y casan siempre.** Se dejaron a
+propósito: quitarlos baja la especificidad de cada regla Northstar y alguna perdería contra la
+base. En una pieza compartida —tokens, `h1`–`h3`, piezas, campos, modal, estados— **la versión
+que manda es la del final del archivo**; la base de arriba es la del mundo anterior y solo se ve
+donde Northstar no la pisa.
 
-Verificado el 13/11/2026 con capturas del panel servidas con datos interceptados
-(`herramientas/capturar-panel.mjs`), comparadas con `main` píxel a píxel a 1280 y a 390: **0,000 %
-de diferencia** en la lista de vacantes, una vacante con su ranking y simulación. Configuración
-y la ficha de un postulante caen en el aviso de error con los datos de prueba de hoy —también
-en `main`— y ese aviso coincide igual.
+Lo propio del panel:
 
-**Regla:** una pieza compartida nueva o cambiada para el portal se escribe bajo
-`html:not(.mundo-panel)`; la base se queda como la ve el panel. Una hoja que solo usa el
-portal (`src/paginas/**`, `app/Armazon`, `ui/Campana`) se cambia sin más.
+- **El armazón** (`src/panel/Armazon.module.css`): barra y lateral del papel de la página con
+  filete negro al 10 %, sin el filete de color de arriba; «PANEL DEL EQUIPO» en Syne; los títulos
+  del menú como etiqueta de sección («/ SELECCIÓN», 11 px, 0,16em); la entrada activa en azul
+  bruma con un filete azul de 2 px a la izquierda, sin sombra de tarjeta.
+- **Los botones propios** (`.chico`, `.fantasma`, `.confirmar`, `.descartar`, `.peligro`,
+  `.borrar`…) llevan al final de su hoja un bloque «Northstar» que los pasa a Onest 400 en
+  MAYÚSCULAS; los neutros, con fondo de papel y filete `#E5E7EB` como `.secundario`.
+- La tuerca de ajustes de una vacante es el icono de reguladores (`IconoFiltros`), no el glifo ⚙.
+
+**Regla:** una pantalla del panel nueva compone de `piezas.module.css` como cualquier otra; un
+botón hecho a mano en una hoja del panel sigue el patrón de arriba.
 
 ## Do's and Don'ts
 
@@ -553,7 +555,7 @@ portal (`src/paginas/**`, `app/Armazon`, `ui/Campana`) se cambia sin más.
 
 - **Do** usar los tokens de `mundo.css` y las piezas de `piezas.module.css`; una variante
   nueva se declara con nombre en la hoja compartida.
-- **Do** escribir lo del portal en una pieza compartida bajo `html:not(.mundo-panel)`.
+- **Do** escribir lo Northstar de una pieza compartida al final del archivo, bajo `html:not(.mundo-panel)` como el resto (casa siempre; conserva la especificidad).
 - **Do** separar por filete negro al 10 %, no por sombra.
 - **Do** poner la etiqueta «Sección / Lo que es» con `data-seccion`, no como texto.
 - **Do** mantener 44 px de área táctil y 3:1 en el límite de los campos.

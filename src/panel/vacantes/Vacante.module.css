@@ -1489,9 +1489,11 @@ thead .celdaCandidato {
   gap: var(--e2);
   min-height: 44px;
   padding: 0 var(--e3);
-  border: 1px solid var(--borde-control);
+  border: 1px solid #e5e7eb;
   border-radius: var(--radio-control);
+  background: var(--cielo);
   color: var(--tinta);
+  text-transform: uppercase;
   cursor: pointer;
   user-select: none;
 }
@@ -2307,7 +2309,9 @@ th.columnaCifra {
  */
 .tuerca {
   composes: secundario from '../../estilos/piezas.module.css';
-  font-size: 1.1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   line-height: 1;
   padding: var(--e2) var(--e3);
 }
@@ -2402,4 +2406,30 @@ th.columnaCifra {
 /* «pendiente» y «entregó» no caben en los 3,5 rem de una cifra. */
 .notaAncha {
   width: 5rem;
+}
+
+/* Northstar: los grupos de pestañas, una sola silueta en todo el panel —filete
+   negro al 10 % sobre papel; la elegida en azul bruma, sin sombra ni negrita—. */
+.pestanas,
+.vistas {
+  border: 1px solid rgb(17 19 18 / 0.1);
+  border-radius: var(--radio-menor);
+  background: var(--cielo);
+}
+
+.pestana,
+.pestanaActiva,
+.vista,
+.vistaActiva {
+  border-radius: var(--radio-menor);
+  font-weight: 400;
+}
+
+.pestanaActiva,
+.vistaActiva {
+  color: var(--activo);
+  font-weight: 400;
+  background: var(--activo-bruma);
+  border-color: transparent;
+  box-shadow: none;
 }

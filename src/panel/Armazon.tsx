@@ -34,7 +34,6 @@ import { verSesionDelPanel } from './api/sesion'
 import { entradaActiva, guardarPlegado, leerPlegado, menuDe, type ClaveDeEntrada, type Entrada } from './menu'
 import { useSesionPanel } from './Sesion'
 import { useAltoDeLaCabecera } from './altoDeLaCabecera'
-import { usarMundoDelPanel } from './mundoDelPanel'
 import estilos from './Armazon.module.css'
 
 const TITULOS: Array<[string, string]> = [
@@ -73,8 +72,6 @@ const ICONOS: Record<ClaveDeEntrada, ReactNode> = {
 const ANCHO_DEL_CAJON = '(max-width: 1023.98px)'
 
 export function ArmazonPanel() {
-  // El panel no entra en el mundo Northstar del portal: ver `mundoDelPanel.ts`.
-  usarMundoDelPanel()
   const { hayEquipo, nombre, salir } = useSesionPanel()
   const cache = useQueryClient()
   const { pathname } = useLocation()

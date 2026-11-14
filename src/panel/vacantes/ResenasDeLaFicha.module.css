@@ -147,3 +147,13 @@
 .peligroso {
   composes: peligrosoMenor from '../../estilos/piezas.module.css';
 }
+
+
+/* Northstar (14/11/2026): los botones propios del panel hablan como los de
+   `piezas`: Onest 400 en MAYÚSCULAS, sin negrita. */
+.confirmar {
+  font-family: var(--fuente);
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
