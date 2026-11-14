@@ -97,24 +97,26 @@ demás son CSS Modules, uno por pantalla; lo que se repite se trae con `composes
 
 ## De dónde sale el diseño
 
-El mundo visual se llama **«El cielo despejado»**, desde el 25/09/2026: gris muy claro y frío
-de fondo, superficies blancas que se apoyan en él por tono, y un solo color con intención. Sale
-de una plantilla de referencia que trajo el cliente
-([saasly.demos.tailgrids.com](https://saasly.demos.tailgrids.com/)), medida en su página.
+El mundo visual se llama **«Northstar»**, desde el 13/11/2026 en el portal y el 14/11/2026 en
+el panel: una réplica medida del estilo de
+[northstar-template-demo.vercel.app](https://northstar-template-demo.vercel.app/) —su estilo, no
+su contenido—.
 
-- **La acción es índigo** (`#615FFF`), con esquina de 8 px. Es también el color de «estás aquí»
-  y de «te toca a ti»: un solo acento para las tres cosas.
-- **El estado se lee en la forma antes que en el color** —franja maciza, borde de 2 px—, para
-  que quien no distingue colores lea el mismo recorrido. Es lo que distingue tu turno ahora que
-  no tiene color propio.
-- **Geist**, servida por el propio sitio.
-- **La portada lleva un cielo azul con nubes** y el recorrido dentro de una ventana de cristal;
-  el resto del portal, no.
+- **Papel `#FCFCFA` y tinta `#111312`**, con **un solo azul `#1E3A8A`** para la acción, para
+  «estás aquí» y para «te toca a ti».
+- **Onest** para todo y **Syne** para la voz de interfaz, servidas por el propio sitio.
+  Titulares en peso 400 con -0,055em; botones en MAYÚSCULAS con radio 8.
+- **Celdas de filete negro al 10 %** con esquinas de 0–4 px, sin sombra en reposo.
+- **El estado se lee en la forma antes que en el color**, para que quien no distingue colores
+  lea el mismo recorrido.
+- **La portada lleva un campo de puntos animado** (WebGL2) y una ventana del producto; el resto,
+  no.
 - **Solo tema claro**, por petición del cliente.
 
-⚠️ **Hubo tres mundos antes y sus nombres siguen apareciendo en documentos viejos.** «El
+⚠️ **Hubo cuatro mundos antes y sus nombres siguen apareciendo en documentos viejos.** «El
 seguimiento» —hitos impresos, cero radios—, «El canto» —espectro irisado, violeta `#5638d6`,
-Mulish— y «El escaparate» —pastel cálido `#FBF1E9`, acción negra, coral `#FF7C61`, Figtree—. Si
+Mulish—, «El escaparate» —pastel cálido `#FBF1E9`, acción negra, coral `#FF7C61`, Figtree— y
+«El cielo despejado» —gris frío, índigo `#615FFF`, Geist—. Si
 encuentras alguno nombrado como si fuera el actual, está desactualizado. El detalle, en
 [docs/EL-MUNDO-VISUAL.md](docs/EL-MUNDO-VISUAL.md).
 

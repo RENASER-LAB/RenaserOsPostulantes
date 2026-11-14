@@ -4,7 +4,7 @@
 
 ⚠️ **Este documento cuenta el rediseño de agosto de 2026, y su mundo visual ya no es el
 actual.** Aquél se llamaba «El seguimiento»; después vinieron «El canto», «El escaparate» (del
-10 al 25/09/2026) y desde el 25/09/2026 rige **«El cielo despejado»**. Lo que sigue vigente de aquí son las
+10 al 25/09/2026), «El cielo despejado» (25/09–13/11) y desde el 13/11/2026 rige **«Northstar»**. Lo que sigue vigente de aquí son las
 decisiones de producto y las reglas del código, no el color. Para el diseño de hoy:
 [EL-MUNDO-VISUAL.md](EL-MUNDO-VISUAL.md) y [DESIGN.md](../DESIGN.md).
 
@@ -46,8 +46,8 @@ y las doce del recorrido.
 | Evaluación | **A · Una pregunta por pantalla, con mapa** | Mapa lateral con todas las preguntas y su estado. Resuelve el problema conocido: saltarse una y no poder volver |
 | Sin nada que hacer | **A · La espera no ocupa sitio** | Se dice claro que no hay nada pendiente y se ofrece algo útil mientras tanto |
 
-**Color.** ⚠️ Esta decisión es del 23/08/2026 y quedó sustituida dos veces: el 10/09 por negro
-y coral, y el 25/09/2026 por lo vigente, **gris frío con un solo acento índigo `#615FFF`**. Ver
+**Color.** ⚠️ Esta decisión es del 23/08/2026 y quedó sustituida tres veces: el 10/09 por negro
+y coral, el 25/09 por gris frío con índigo `#615FFF`, y el 13/11/2026 por lo vigente, **papel `#FCFCFA` con un solo azul `#1E3A8A`** («Northstar»). Ver
 [EL-MUNDO-VISUAL.md](EL-MUNDO-VISUAL.md) y [DESIGN.md](../DESIGN.md).
 Lo que sigue vigente **no son los colores de aquel día** —el índigo `#4338CA` que sustituía al
 champagne `#816220` se fue con ellos—, sino el razonamiento: verde, ámbar y rojo ya tienen significado fijo en el

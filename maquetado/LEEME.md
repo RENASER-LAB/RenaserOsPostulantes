@@ -2,10 +2,9 @@
 
 > ⚠️ **Esto NO es el diseño del portal.**
 >
-> El mundo visual es **«El cielo despejado»**, desde el 25/09/2026: gris frío de fondo, acción
-> en **índigo** `#615FFF` —que es también el color de «te toca a ti»—, Geist. El índigo
-> `#4338CA` que se ve en estos archivos no es ese: se sustituyó el 10/09 por negro y coral, y el
-> 25/09 el portal volvió a un índigo distinto. Los colores de aquí son de agosto.
+> El mundo visual es **«Northstar»**, desde el 13/11/2026: papel `#FCFCFA`, tinta `#111312`,
+> un solo azul `#1E3A8A` para la acción y para «te toca a ti», Onest y Syne. El índigo
+> `#4338CA` que se ve en estos archivos es de agosto y se sustituyó cuatro veces desde entonces.
 >
 > Lo que sigue valiendo de aquí, y por eso no se borra, es **qué información va en cada
 > pantalla y con qué palabras**. Para el color, la forma y el movimiento la verdad es
@@ -58,8 +57,8 @@ Cada pantalla es un `<div class="marco">` con la cabecera y el cuerpo. Las conve
 
 - **Los bloques grises con líneas** (`.linea`) son contenido real que existe en el backend,
   dibujado como barra para no distraer con texto de relleno. No son huecos.
-- **`.caja.toca`** y todo lo índigo es «te toca a ti». En el portal hoy también es índigo, pero
-  otro —`#615FFF`— y compartido con la acción: lo que distingue el turno es la forma, un borde
+- **`.caja.toca`** y todo lo índigo es «te toca a ti». En el portal hoy es el azul de Northstar
+  —`#1E3A8A`—, compartido con la acción: lo que distingue el turno es la forma, un borde
   de 2 px. Lo que no cambió es la regla: el color con intención marca solo lo que se pulsa,
   dónde estás y lo que te toca.
 - **`.caja.gris`** es una espera o un contenido secundario.
@@ -77,8 +76,8 @@ contratos del backend.
 
 - **Solo tema claro.** Petición del cliente.
 - ~~**Fondo blanco puro, acento índigo `#4338CA`.**~~ Sustituido el 10/09/2026 por negro y
-  coral, y otra vez el 25/09 por **gris frío con acento índigo `#615FFF`**, que es lo vigente.
-  Lo que ha sobrevivido a los tres cambios es el porqué: verde, ámbar y rojo ya tienen
+  coral, el 25/09 por gris frío con índigo `#615FFF`, y el 13/11 por **papel `#FCFCFA` con un
+  solo azul `#1E3A8A`** («Northstar»), que es lo vigente. Lo que ha sobrevivido a los cambios es el porqué: verde, ámbar y rojo ya tienen
   significado fijo en el sistema —hecho, duda, error—, así que ni el acento ni la acción
   pueden ser ninguno de esos.
 - **Del portal viejo solo sobrevive** el nombre EX y su logotipo, la palabra con la hormiga
