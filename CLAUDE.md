@@ -43,20 +43,19 @@ esquinas de 0–4 px y, en la portada, el campo de puntos del sombreador de la r
 WebGL2. **La fuente de verdad son los tokens de [`mundo.css`](src/estilos/mundo.css)**, bloque
 «EL MUNDO NORTHSTAR», y [DESIGN.md](DESIGN.md) los describe con su porqué.
 
-Las **dieciocho** pantallas del candidato llevan Northstar, y también las tres puertas del panel
-que viven en el armazón del portal (`/admin/entrar`, `/admin/clave`, `/admin/restablecer`).
+Las **dieciocho** pantallas del candidato y **todo el panel** (`/admin/**`) llevan Northstar.
 
-⚠️ **El panel conserva «El cielo despejado»** (índigo `#615FFF`, Geist, página `#F9FAFB`, radio
-8). `mundo.css` y `piezas.module.css` son globales, así que **todo lo Northstar está escrito bajo
-`html:not(.mundo-panel)`**, y `usarMundoDelPanel()` ([`src/panel/mundoDelPanel.ts`](src/panel/mundoDelPanel.ts))
-pone esa clase en `<html>` mientras el panel está montado. **En una pieza compartida
-(`piezas.module.css`, `ui/campos`, `ui/Modal`, `ui/Estados`…), la base es la del panel y lo del
-portal va al final bajo `:global(html:not(.mundo-panel))`**: tocar la base repinta el panel.
-`/admin/invitacion` va suelta y también conserva el mundo del panel.
+⚠️ **Desde el 14/11/2026 el panel también es Northstar.** Ya nadie pone la clase `mundo-panel`
+en `<html>`, así que **los selectores `html:not(.mundo-panel)` / `:root:not(.mundo-panel)` que
+siguen en `mundo.css`, `piezas.module.css`, `ui/campos`, `ui/Modal` y `ui/Estados` casan
+siempre**: se dejaron para no mover la especificidad. En una pieza compartida, la versión
+Northstar es la del final del archivo; la base de arriba es la de «El cielo despejado» y solo
+sobrevive donde Northstar no la pisa. Los botones propios del panel (`.chico`, `.confirmar`…)
+llevan al final de su hoja un bloque que los pasa a MAYÚSCULAS.
 
 ⚠️ **La cabecera es una banda pegada arriba**, del papel de la página, con un filete negro al
 10 % debajo y la marca centrada. `--alto-cabecera` son **69 px medidos** en el portal (12 + 44 de
-la campana + 12, y el filete; en el panel siguen siendo 84): si tocas su relleno **o el alto de
+la campana + 12, y el filete; el panel mide la suya en `--alto-cabecera-panel`): si tocas su relleno **o el alto de
 la campana**, vuelve a medirlo en el navegador.
 
 ⚠️ **Si un cambio en `piezas.module.css` no se ve en una pantalla, reinicia Vite**: las clases

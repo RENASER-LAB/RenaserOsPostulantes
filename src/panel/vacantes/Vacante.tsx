@@ -141,7 +141,7 @@ import {
 } from './ranking'
 import { RemuneracionDeLaVacante } from './Remuneracion'
 import { ResenasDeLaFicha } from './ResenasDeLaFicha'
-import { IconoEstrella } from '@/ui/Iconos'
+import { IconoEstrella, IconoFiltros } from '@/ui/Iconos'
 import { DesglosePorPuntos } from './preguntas/DesglosePorPuntos'
 import { OrigenDeLasPreguntas, usePreguntasListas } from './preguntas/OrigenDeLasPreguntas'
 import { PruebaDeLaVacante, rindeLaPruebaPropia, usePruebaLista } from './preguntas/PruebaDeLaVacante'
@@ -581,7 +581,7 @@ export function VacantePanelDetalle() {
             title="Configuración de la vacante"
             onClick={() => setMostrarAjustes(!mostrarAjustes)}
           >
-            <span aria-hidden="true">⚙</span>
+            <IconoFiltros tamano={18} />
             <span className={estilos.soloLectores}>Configuración de la vacante</span>
           </button>
         )}

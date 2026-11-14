@@ -19,8 +19,8 @@ negro al 10 %** de esquinas casi rectas, sin sombra en reposo. La portada es la 
 con atmósfera: el campo de puntos que ondula, la ventana del producto que se asienta al bajar,
 la banda oscura y el pie en noche.
 
-**El panel del equipo no entró**: conserva «El cielo despejado» (ver más abajo y
-[DESIGN.md](../DESIGN.md) › «Lo que queda fuera»).
+**El panel del equipo entró el 14/11/2026** (ver más abajo y [DESIGN.md](../DESIGN.md) ›
+«El panel»).
 
 ### De dónde sale
 
@@ -58,14 +58,13 @@ bundle** y los uniformes con los que lo llama.
   salida, corto en la interfaz—, respeta `prefers-reduced-motion`, y **con el reloj corriendo
   —evaluación, prueba, cuestionario— no se mueve nada**.
 
-### El panel conserva «El cielo despejado»
+### El panel, también Northstar (14/11/2026)
 
-`mundo.css` y `piezas.module.css` son globales. Para que el panel no se repintara, **todo lo
-Northstar está escrito bajo `html:not(.mundo-panel)`** y la base de cada archivo compartido es la
-del panel. `usarMundoDelPanel()` (`src/panel/mundoDelPanel.ts`) pone `mundo-panel` en `<html>`
-mientras el panel está montado. Las tres puertas del panel que viven en el armazón del portal
-(`/admin/entrar`, `/admin/clave`, `/admin/restablecer`) llevan Northstar; `/admin/invitacion`, no.
-Se comprobó contra `main` píxel a píxel (ver la [bitácora de noviembre](BITACORA-2026-11.md)).
+Del 13 al 14/11 el panel conservó «El cielo despejado»: todo lo Northstar se escribió bajo
+`html:not(.mundo-panel)` y el armazón del panel ponía esa clase en `<html>`. El 14/11 se quitó
+el gancho que la ponía y el panel tomó los tokens y las piezas del portal; los selectores
+quedaron (casan siempre) para no mover la especificidad. El armazón y los botones propios del
+panel se retocaron aparte; el detalle, en [DESIGN.md](../DESIGN.md) › «El panel».
 
 ### La excepción verde: «Escribir por WhatsApp» (13/10/2026)
 
@@ -106,7 +105,7 @@ en el portal, está viejo:
 | «El seguimiento» | agosto | Hitos impresos, cero radios, Libre Franklin |
 | «El canto» | hasta el 10/09 | Nube difractando luz, espectro irisado, violeta `#5638d6`, Mulish |
 | «El escaparate» | 10/09 – 25/09 | Pastel cálido `#FBF1E9`, acción negra `#0A0A0A` con radio 4, coral `#FF7C61` para el turno, Figtree |
-| «El cielo despejado» | 25/09 – 13/11 (**y sigue en el panel**) | Gris frío de Tailwind v4, índigo `#615FFF`, Geist, cabecera en píldora, cielo con nubes en la portada |
+| «El cielo despejado» | 25/09 – 13/11 (en el panel, hasta el 14/11) | Gris frío de Tailwind v4, índigo `#615FFF`, Geist, cabecera en píldora, cielo con nubes en la portada |
 | **«Northstar»** | **desde el 13/11** | El de este documento |
 
 La historia de cada cambio está en las bitácoras de [agosto](BITACORA-2026-08.md),

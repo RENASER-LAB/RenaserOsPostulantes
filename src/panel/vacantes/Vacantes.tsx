@@ -402,7 +402,7 @@ export function VacantesPanel() {
                   <td>{ESTADO_VACANTE[v.estado] ?? v.estado}</td>
                   <td>{evaluacionDeLaFila(v)}</td>
                   <td>{v.publicadaEn ? formatearFechaCorta(v.publicadaEn) : '—'}</td>
-                  <td className={estilos.acciones}>
+                  <td className={estilos.accionesFila}>
                     <Link to={rutas.adminVacante(v.id)}>Ver postulantes y gestionar</Link>
                     {/*
                       El lapiz solo donde de verdad se puede editar: el backend lo

@@ -630,3 +630,29 @@
   composes: area;
   width: 100%;
 }
+
+
+/* Northstar (14/11/2026): los botones propios del panel hablan como los de
+   `piezas`: Onest 400 en MAYÚSCULAS, sin negrita. */
+.descartar {
+  font-family: var(--fuente);
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+/* Las acciones de cada fila. Era `.acciones` con `display: flex` sobre el
+   `<td>`: dejaba de ser celda, su filete se descolgaba un píxel y en el
+   teléfono cada fila abría un hueco. Ahora es celda y lo de dentro va en
+   línea. */
+.accionesFila {
+  white-space: nowrap;
+}
+
+.accionesFila > * {
+  vertical-align: middle;
+}
+
+.accionesFila > * + * {
+  margin-left: var(--e3);
+}

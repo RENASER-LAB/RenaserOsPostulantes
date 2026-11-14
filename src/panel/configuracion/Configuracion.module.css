@@ -67,7 +67,9 @@
   gap: var(--e2);
 }
 
-.entrada {
+/* La flecha es de la lista desplegable: en un campo de texto tapaba el final
+   del valor (`datos_ocultos_cv`, QA del 14/11/2026). */
+select.entrada {
   appearance: none;
   padding-right: var(--e7);
   background-image:
@@ -214,4 +216,19 @@
   .subir {
     width: 100%;
   }
+}
+
+
+/* Northstar (14/11/2026): los botones propios del panel hablan como los de
+   `piezas`: Onest 400 en MAYÚSCULAS, sin negrita. */
+.chico {
+  font-family: var(--fuente);
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.chico {
+  background: var(--cielo);
+  border-color: #e5e7eb;
 }

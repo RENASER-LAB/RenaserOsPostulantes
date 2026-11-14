@@ -244,3 +244,18 @@
   font-weight: 600;
   color: var(--tinta);
 }
+
+/* Northstar: los grupos de pestañas, una sola silueta en todo el panel —filete
+   negro al 10 % sobre papel; la elegida en azul bruma, sin sombra ni negrita—. */
+.pestana {
+  border-color: rgb(17 19 18 / 0.1);
+  border-radius: var(--radio-menor);
+  background: var(--cielo);
+  font-weight: 400;
+}
+
+.pestana[aria-pressed='true'] {
+  color: var(--activo);
+  background: var(--activo-bruma);
+  border-color: var(--activo);
+}

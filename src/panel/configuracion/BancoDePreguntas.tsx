@@ -675,13 +675,19 @@ function Importar({
       </p>
 
       <div className={estilos.importar}>
-        <input
-          className={estilos.archivo}
-          type="file"
-          accept=".xlsx,.xls"
-          aria-label="La plantilla Excel del banco"
-          onChange={(e) => setArchivo(e.target.files?.[0] ?? null)}
-        />
+        {/* El selector nativo dice «Choose File» en inglés y no se puede
+            traducir: va escondido dentro de una etiqueta con forma de botón. */}
+        <label className={estilos.elegirArchivo}>
+          <input
+            className={estilos.archivo}
+            type="file"
+            accept=".xlsx,.xls"
+            aria-label="La plantilla Excel del banco"
+            onChange={(e) => setArchivo(e.target.files?.[0] ?? null)}
+          />
+          <span aria-hidden="true">Elegir Excel</span>
+        </label>
+        <span className={estilos.nombreArchivo}>{archivo ? archivo.name : 'Ningún archivo elegido'}</span>
         <select
           className={estilos.entrada}
           value={nivel}

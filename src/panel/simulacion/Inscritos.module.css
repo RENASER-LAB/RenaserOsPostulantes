@@ -307,3 +307,19 @@
     justify-content: center;
   }
 }
+
+
+/* Northstar (14/11/2026): los botones propios del panel hablan como los de
+   `piezas`: Onest 400 en MAYÚSCULAS, sin negrita. */
+.chico,
+.confirmar {
+  font-family: var(--fuente);
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.chico {
+  background: var(--cielo);
+  border-color: #e5e7eb;
+}

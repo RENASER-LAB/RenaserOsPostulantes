@@ -302,3 +302,15 @@
   max-width: var(--medida);
   margin: 0 0 var(--e4);
 }
+
+
+/* Northstar (14/11/2026): los botones propios del panel hablan como los de
+   `piezas`: Onest 400 en MAYÚSCULAS, sin negrita. */
+.confirmar,
+.descartar,
+.descartarLote {
+  font-family: var(--fuente);
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}

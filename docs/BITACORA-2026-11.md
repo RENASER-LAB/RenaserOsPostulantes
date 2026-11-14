@@ -92,3 +92,35 @@ de estilo del mundo anterior. Se hizo en tres tandas.
 - **Panel (14/11).** La base de `--duda` en `mundo.css` pasa al índigo del panel (`#4338CA`,
   bruma `#EEF0FF`, tinta `#312E81`, punto `#818CF8`). Ya no queda ámbar en ninguna parte; el
   estado «en duda» se distingue por la forma (bruma, punto, etiqueta).
+
+## 14/11/2026 · El panel, también Northstar
+
+- **Cómo.** Se borró `src/panel/mundoDelPanel.ts` y sus tres llamadas (`ArmazonPanel`,
+  `InvitacionPanel`, `Salvavidas`): sin la clase `mundo-panel` en `<html>`, todo lo escrito bajo
+  `html:not(.mundo-panel)` llega al panel. Los selectores se dejaron —casan siempre— para no mover
+  la especificidad.
+- **El armazón.** Barra y lateral en papel con filete negro al 10 %, fuera el filete de color de
+  arriba, «/ SELECCIÓN» como etiqueta de sección y la entrada activa en azul bruma con filete azul.
+- **Los botones propios del panel** (`.chico`, `.confirmar`, `.descartar`, `.peligro`, `.borrar`,
+  `.fantasma`) pasan a MAYÚSCULAS con un bloque al final de cada hoja; «Columnas» igual, y la tuerca
+  de ajustes de la vacante deja el glifo ⚙ por `IconoFiltros`.
+- **Para probarlo** se dio correo y contraseña de prueba al usuario de Talento de la base clonada
+  de QA (no a producción).
+- **QA visual (14/11).** Sin índigo, ámbar ni Geist computados en ninguna pantalla del panel, sin
+  scroll horizontal a 375 y el portal intacto. Se corrigió lo que trajo el cambio: el botón «Menú»
+  del teléfono, los campos propios de Colaboradores y del banco de preguntas (radio 4, 16 px, 44
+  de alto) y los grupos de pestañas —ranking, cortes, reseñas reportadas, roles—, que ahora son
+  una sola silueta: filete al 10 % y la elegida en azul bruma. De paso, la celda de acciones de
+  `/admin` dejó de ser `flex` (su filete se descolgaba y en el teléfono abría un hueco por fila).
+- **Arreglados también, ya existían:** el foco de los campos (portal y panel) pasa a filete azul
+  de 2 px con halo azul al 22 % —el bruma solo daba 1,1:1 sobre el papel—; el selector de archivo
+  del banco de preguntas va dentro de un botón «Elegir Excel» con el nombre al lado, en vez del
+  «Choose File» nativo; y la flecha de lista que tapaba el final de `datos_ocultos_cv` era el
+  fondo de `.entrada` de Configuración, pensado para `<select>` y puesto también en los campos de
+  texto: ahora solo va en `select.entrada`.
+- **«No se puede abrir una prueba» no era del portal.** `/admin/pruebas` llama a
+  `GET /api/v1/panel/pruebas`, que llegó al backend en su #136; el backend local iba un commit
+  atrás y respondía 500 (`NoResourceFoundException`). Con el backend en `origin/main` la lista
+  carga, y una prueba del puesto en borrador se abre y se lee entera. Ojo: el índice solo enseña
+  vacantes que usan el editor (`PRUEBA_PROPIA` en la etapa técnica, o preguntas propias en el
+  Perfil Integral); con las vacantes de antes, lo correcto es la lista vacía.

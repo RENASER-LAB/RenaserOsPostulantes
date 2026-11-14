@@ -770,10 +770,9 @@
 /* ==================================================================
  * EL MUNDO NORTHSTAR (13/11/2026) — las mismas piezas, para el portal.
  *
- * ⚠️ **Todo lo de arriba es lo que ve el panel** y no se toca. Lo de aquí
- * abajo solo se aplica cuando `<html>` no lleva `mundo-panel` (la pone el
- * armazón del panel): es el estilo de northstar-template-demo para quien
- * postula. Mismo nombre de pieza, así que ninguna pantalla cambia su `composes`.
+ * ⚠️ **Desde el 14/11/2026 esto manda en todo el sitio, panel incluido.** El
+ * `:not(.mundo-panel)` casa siempre —ya nadie pone esa clase— y se dejó para
+ * no bajar la especificidad; lo de arriba solo se ve donde esto no lo pisa. Mismo nombre de pieza, así que ninguna pantalla cambia su `composes`.
  *
  * Los valores, medidos en la referencia:
  *   - Botones: 14 px en MAYÚSCULAS, peso 400, relleno 12 × 20 (o 12 × 16),

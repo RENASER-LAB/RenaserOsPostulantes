@@ -29,23 +29,15 @@
   position: sticky;
   top: 0;
   z-index: 20;
-  background: var(--nube);
-  border-bottom: 1px solid var(--regla);
-}
-
-/* El filete del espectro: la firma de la casa, a dos pixeles. */
-.barra::before {
-  content: '';
-  display: block;
-  height: 2px;
-  background: var(--canto);
+  background: var(--cielo);
+  border-bottom: 1px solid rgb(17 19 18 / 0.1);
 }
 
 .barraDentro {
   display: flex;
   align-items: center;
   gap: var(--e3) var(--e4);
-  min-height: calc(var(--alto-barra) - 3px);
+  min-height: calc(var(--alto-barra) - 1px);
   padding: 0 var(--e5);
   min-width: 0;
 }
@@ -71,12 +63,13 @@
  * pestaña.
  */
 .quienEs {
-  font-size: var(--t-micro);
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  font-family: var(--fuente-ui);
+  font-size: var(--t-etiqueta);
+  font-weight: 600;
+  letter-spacing: var(--tracking-etiqueta);
   text-transform: uppercase;
-  color: var(--tinta2);
-  border-left: 1px solid var(--regla2);
+  color: var(--tinta);
+  border-left: 1px solid rgb(17 19 18 / 0.1);
   padding-left: var(--e3);
   white-space: nowrap;
 }
@@ -86,13 +79,13 @@
   min-width: 0;
   flex: 0 1 auto;
   font-size: var(--t-apoyo);
-  font-weight: 600;
-  color: var(--tinta);
+  font-weight: 400;
+  color: var(--tinta3);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   padding-left: var(--e4);
-  border-left: 1px solid var(--regla);
+  border-left: 1px solid rgb(17 19 18 / 0.1);
 }
 
 /* Encoge antes que la marca: un nombre largo se corta y «Salir» no se mueve. */
@@ -178,8 +171,8 @@
   flex-direction: column;
   gap: var(--e3);
   padding: var(--e4) var(--e3);
-  background: var(--nube-hundida);
-  border-right: 1px solid var(--regla);
+  background: var(--cielo);
+  border-right: 1px solid rgb(17 19 18 / 0.1);
   /* Sin overflow propio: el tooltip de un icono plegado sale por la derecha. */
   z-index: 10;
 }
@@ -211,13 +204,18 @@
 }
 
 .tituloFamilia {
-  margin: 0;
+  margin: 0 0 var(--e1);
   padding: 0 var(--e3);
-  font-size: var(--t-micro);
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  font-size: var(--t-etiqueta);
+  font-weight: 400;
+  letter-spacing: var(--tracking-etiqueta);
   text-transform: uppercase;
-  color: var(--tinta3);
+  color: var(--tinta-etiqueta);
+}
+
+/* La etiqueta de sección de Northstar: «/ SELECCIÓN». */
+.tituloFamilia::before {
+  content: '/ ';
 }
 
 /* Plegado, la familia se separa con una regla y no con su nombre. */
@@ -242,7 +240,7 @@
 .pie {
   margin-top: auto;
   padding-top: var(--e3);
-  border-top: 1px solid var(--regla);
+  border-top: 1px solid rgb(17 19 18 / 0.1);
 }
 
 .enlace {
@@ -252,7 +250,7 @@
   gap: var(--e3);
   min-height: 44px;
   padding: 0 var(--e3);
-  border-radius: var(--radio-control);
+  border-radius: var(--radio-menor);
   color: var(--tinta2);
   font-size: var(--t-apoyo);
   text-decoration: none;
@@ -264,23 +262,22 @@
 .enlace:hover {
   color: var(--tinta);
   text-decoration: none;
-  background: var(--nube-honda);
+  background: rgb(17 19 18 / 0.04);
 }
 
 /*
- * La activa se marca con el peso y la nube, no con el indigo: el indigo ya lo
- * llevan los botones de accion, y darselo a la navegacion lo dejaria sin decir
- * nada.
+ * La activa, como la página en que estás en Northstar: el azul suave de
+ * ubicación con un filete azul a la izquierda. Sin sombra de tarjeta.
  */
 .enlaceActivo {
-  color: var(--tinta);
-  font-weight: 700;
-  background: var(--nube);
-  box-shadow: var(--sombra-control);
+  color: var(--activo);
+  font-weight: 550;
+  background: var(--activo-bruma);
+  box-shadow: inset 2px 0 0 var(--activo);
 }
 
 .enlaceActivo:hover {
-  background: var(--nube);
+  background: var(--activo-bruma);
 }
 
 .icono {
@@ -378,7 +375,7 @@
   flex-direction: column;
   gap: var(--e4);
   padding: var(--e4);
-  background: var(--nube-hundida);
+  background: var(--cielo);
   box-shadow: var(--sombra-nube);
   overflow-y: auto;
   animation: entraElCajon 200ms var(--salida);
@@ -469,4 +466,17 @@
   .nombre {
     display: none;
   }
+}
+
+/* Northstar: el botón del menú en el teléfono habla como los demás. */
+.botonMenu {
+  border-color: #e5e7eb;
+  background: var(--cielo);
+  font-family: var(--fuente);
+  font-weight: 400;
+  text-transform: uppercase;
+}
+
+.botonMenu:hover {
+  background: color-mix(in srgb, var(--tinta) 3%, var(--cielo));
 }
