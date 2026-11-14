@@ -89,11 +89,12 @@ en `mundo.css`; dónde sale, en [PANEL](PANEL.md) › «Qué buscar en el CV».
 
 **Onest** (variable 100–900) y **Syne** (variable 400–800), de Google Fonts con licencia OFL,
 **servidas por el propio sitio** desde `public/tipografia/`: una aplicación instalada no puede
-quedarse sin letra por falta de cobertura. **Geist sigue en la misma carpeta y en `mundo.css`
-porque es la del panel**; Figtree y Mulish, por si hay que volver.
+quedarse sin letra por falta de cobertura. Geist sigue en la misma carpeta y en la base de
+`mundo.css` (la del mundo anterior), pero desde el 14/11/2026 ninguna pantalla la pinta; Figtree y
+Mulish, por si hay que volver.
 
-⚠️ La excepción de Geist en `.impeccable/config.json` («fuente sobreexpuesta») se queda: el panel
-la sigue usando.
+⚠️ La excepción de Geist en `.impeccable/config.json` («fuente sobreexpuesta») ya no hace falta:
+se puede quitar al regenerar con `/impeccable document`.
 
 ### Los mundos anteriores
 
@@ -134,7 +135,7 @@ cómo se ve: eso es DESIGN.md.
 
 | Pieza | Qué es |
 |---|---|
-| `src/estilos/mundo.css` | **La hoja global del mundo.** Los tokens, las fuentes y los estilos base: arriba los del panel («El cielo despejado»), abajo el bloque «EL MUNDO NORTHSTAR» bajo `:root:not(.mundo-panel)`, que es lo del portal. Todo lo demás son CSS Modules, salvo la prueba de shadcn de la fila siguiente |
+| `src/estilos/mundo.css` | **La hoja global del mundo.** Los tokens, las fuentes y los estilos base: arriba la base del mundo anterior («El cielo despejado»), abajo el bloque «EL MUNDO NORTHSTAR» bajo `:root:not(.mundo-panel)` —casa siempre—, que es lo que manda en portal y panel. Todo lo demás son CSS Modules, salvo la prueba de shadcn de la fila siguiente |
 | `src/estilos/tailwind.css` y `src/ui/shadcn/` | **La prueba piloto de shadcn/ui, solo en `/vacantes` (01/10/2026).** Tailwind v4 **sin preflight** y con las utilidades en `!important`, para no tocar las otras pantallas; su tema son los tokens de `mundo.css`. Los componentes de shadcn viven en `src/ui/shadcn/` (se añaden con `npx shadcn add`, y la CLI mete por error un paquete `cn`: quitarlo). Sin lucide: la casilla y el radio usan los iconos de la casa |
 | `src/estilos/piezas.module.css` | **La única especificación de botón del portal**, más los tres paneles (`.turno`, `.panelDeEspera`, `.indispensable`), la cabecera de sección y el plegable. Desde el 13/10/2026, también `.ofrecimiento` (lo que se ofrece mientras se espera) y `.whatsapp` (el botón verde, misma silueta y altura que `.acentoMenor`). Se trae con `composes` desde la hoja de cada pantalla. Si hace falta una forma que no está ahí, se añade ahí — ninguna pantalla se dibuja la suya. **Su base es la del panel; la versión del portal va al final bajo `:global(html:not(.mundo-panel))`** |
 | `src/estilos/pagina.module.css` | **El esqueleto de una pantalla**: el carril, el encabezado, el reparto en columnas, el bloque y el hueco declarado |
@@ -159,7 +160,7 @@ cómo se ve: eso es DESIGN.md.
 | `src/ui/Modal.tsx` | El aviso compartido: entregas y confirmaciones. Con `aPruebaDeDobleClic` (10/10/2026) ignora el puntero que sigue a la pulsación que lo abrió; ver [REGLAS-DEL-CODIGO.md](REGLAS-DEL-CODIGO.md) |
 | `src/ui/TextoPlano.tsx` | Texto libre con sus párrafos y sus direcciones convertidas en enlaces. `enlacesTabulables={false}` saca los enlaces del Tab (el extracto recortado del caso) y `listas` (09/10/2026, en el caso, los materiales y las herramientas de la prueba) pinta como `ul` las líneas que empiezan por «- », «• » o «* », y como `ol` las que empiezan por «1. », «2. »… |
 | `src/ui/campos/` | Campo, Seleccion, AreaTexto y Consentimiento: etiqueta y error atados al campo. La marca de obligatorio está en [REGLAS-DEL-CODIGO.md](REGLAS-DEL-CODIGO.md). `Campo` admite **`prefijo`** (13/10/2026): un texto que no se escribe, como el «+51» del celular, dibujado dentro de la caja a la izquierda y en el gris de la ayuda; el lector de pantalla lo oye como parte de la descripción del campo («Con el prefijo +51 delante.»). **`prefijo=""` no es lo mismo que no darlo**: esconde el prefijo sin volver a montar el `<input>`, y es lo que usa el celular mientras el número empieza por «+»; quitarlo con `undefined` haría perder el foco y el cursor. `CampoCelular` y `mascaraCelular` (12/11/2026) son el campo del celular con su máscara: ver [REGLAS-DEL-CODIGO.md](REGLAS-DEL-CODIGO.md). `enfocarSinTapar` lleva el foco a un campo con error sin dejarlo bajo la cabecera: ver «Dependencias» |
-| `public/tipografia/` | Onest y Syne (el portal), Geist (el panel), y Figtree y Mulish por si se vuelve |
+| `public/tipografia/` | Onest y Syne (todo el sitio); Geist, Figtree y Mulish, de mundos anteriores, por si se vuelve |
 
 `src/dominio/estados.ts` lleva cuatro funciones que usa el recorrido:
 
