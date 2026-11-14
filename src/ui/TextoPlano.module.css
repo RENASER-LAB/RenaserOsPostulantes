@@ -28,7 +28,7 @@
  */
 .enlace {
   color: var(--tinta);
-  font-weight: 600;
+  font-weight: 550;
   text-decoration: underline;
   text-decoration-color: var(--regla2);
   text-underline-offset: 0.2em;

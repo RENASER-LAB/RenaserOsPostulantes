@@ -156,7 +156,7 @@
 .porRevisarTitulo {
   margin: 0;
   font-size: var(--t-entradilla);
-  font-weight: 700;
+  font-weight: 550;
   letter-spacing: -0.014em;
   color: var(--tinta);
 }
@@ -192,7 +192,7 @@
   background: none;
   padding: 0;
   font: inherit;
-  font-weight: 600;
+  font-weight: 550;
   color: var(--tinta);
   cursor: pointer;
   text-decoration: underline;
@@ -221,7 +221,7 @@
   align-items: center;
   gap: var(--e3);
   font-size: var(--t-base);
-  font-weight: 600;
+  font-weight: 550;
   letter-spacing: -0.008em;
   margin: 0;
 }
@@ -541,7 +541,7 @@
 
 .queEs {
   font-size: var(--t-base);
-  font-weight: 700;
+  font-weight: 550;
   letter-spacing: -0.01em;
 }
 
@@ -571,7 +571,7 @@
 /* Lo que el raíl prometía enseñar y el alto no cumplía. */
 .duracion {
   color: var(--tinta2);
-  font-weight: 600;
+  font-weight: 550;
   white-space: nowrap;
 }
 
@@ -608,7 +608,7 @@
   border-radius: var(--radio-control);
   border: 1px solid transparent;
   font-size: var(--t-micro);
-  font-weight: 700;
+  font-weight: 550;
   letter-spacing: 0.02em;
   white-space: nowrap;
 }
@@ -728,7 +728,7 @@
 .fila:focus-within .acciones button,
 .fila.sinConfirmar .acciones button {
   color: var(--tinta2);
-  font-weight: 600;
+  font-weight: 550;
 }
 
 /* ---------- Los botones de una fila ---------- */
@@ -748,7 +748,7 @@
   border: none;
   background: none;
   font-size: var(--t-apoyo);
-  font-weight: 600;
+  font-weight: 550;
   color: var(--tinta2);
   cursor: pointer;
   border-radius: var(--radio-control);
@@ -852,7 +852,7 @@
 
 .numeroDeLogro {
   line-height: 48px;
-  font-weight: 600;
+  font-weight: 550;
   color: var(--tinta3);
   font-variant-numeric: tabular-nums;
 }
@@ -870,7 +870,7 @@
 
 .etiqueta {
   font-size: var(--t-apoyo);
-  font-weight: 600;
+  font-weight: 550;
 }
 
 .ayuda {
@@ -1044,8 +1044,8 @@
 .subtitulo {
   margin: var(--e5) 0 var(--e3);
   font-size: var(--t-micro);
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  font-weight: 500;
+  letter-spacing: var(--tracking-etiqueta);
   text-transform: uppercase;
   color: var(--tinta3);
 }
@@ -1053,13 +1053,11 @@
 /*
  * La pretensión, apartada del resto.
  *
- * En bruma ámbar porque `--duda` está definido como «lo que cambia tu decisión»
- * y esto es exactamente eso: un dato que no todo el mundo ve y que quien lo
- * escribe tiene que saber que existe. No es un error ni un aviso rojo.
- *
- * Desde que las filas sin confirmar pasaron al violeta, **este es el único
- * ámbar de la pantalla** — que es como debía haber sido desde el principio: un
- * token de estado con un solo sitio donde significa algo.
+ * En la bruma azul del mundo Northstar (13/11/2026). Hasta entonces iba en la
+ * bruma ámbar de `--duda`, que en este mundo de azul marino y neutros era la
+ * única mancha cálida de la pantalla y se leía como advertencia. Lo que dice
+ * —«esto solo lo ve quien tiene permiso»— es un dato reservado, no un problema:
+ * le toca el color de lo activo, con la cifra en tinta para que se lea primero.
  */
 .pretension {
   display: flex;
@@ -1069,20 +1067,23 @@
   margin: var(--e5) 0 0;
   padding: var(--e3) var(--e4);
   border-radius: var(--radio-menor);
-  background: var(--duda-bruma);
+  border: 1px solid rgb(30 58 138 / 0.14);
+  background: var(--activo-bruma, #e9edff);
   font-size: var(--t-apoyo);
-  color: var(--duda-tinta);
+  color: var(--tinta);
 }
 
 .etiquetaPretension {
+  color: var(--activo, #1e3a8a);
   font-size: var(--t-micro);
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  font-weight: 500;
+  letter-spacing: var(--tracking-etiqueta);
   text-transform: uppercase;
 }
 
 .notaPretension {
   flex-basis: 100%;
+  color: var(--tinta2);
   font-size: var(--t-menor);
   line-height: 1.45;
 }
@@ -1155,8 +1156,8 @@
   gap: var(--e2);
   margin-bottom: 2px;
   font-size: var(--t-micro);
-  font-weight: 700;
-  letter-spacing: 0.06em;
+  font-weight: 500;
+  letter-spacing: var(--tracking-etiqueta);
   text-transform: uppercase;
   color: var(--tinta3);
 }

@@ -70,7 +70,7 @@
   font-size: var(--t-destacado);
   line-height: 1.2;
   letter-spacing: -0.02em;
-  font-weight: 600;
+  font-weight: 550;
 }
 
 .sinPlazo {
@@ -111,7 +111,7 @@
 .nombreMedida {
   display: block;
   font-size: var(--t-prosa);
-  font-weight: 600;
+  font-weight: 550;
 }
 
 .comoSeMide {
@@ -137,8 +137,8 @@
   border: 1px solid var(--regla2);
   border-radius: var(--radio-control);
   font-size: var(--t-micro);
-  font-weight: 600;
-  letter-spacing: 0.04em;
+  font-weight: 500;
+  letter-spacing: var(--tracking-etiqueta);
   text-transform: uppercase;
   color: var(--tinta2);
 }

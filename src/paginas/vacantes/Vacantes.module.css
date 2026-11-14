@@ -1,536 +1,1025 @@
-/* Cielo fotografico en la entrada y el cierre; entre ambos, blanco y gris claro.
-   La procedencia de la imagen vive en herramientas/cielo/GENERACION.md. */
+/*
+ * La portada.
+ *
+ * ⚠️ **13/11/2026 · estilo «Northstar».** Reescrita entera para replicar el
+ * ritmo de northstar-template-demo.vercel.app. Lo que se copio, con sus
+ * valores medidos en la referencia:
+ *
+ *   - Titular: Onest 400, `clamp(36px, 6.1vw, 88px)`, interlinea 0,98,
+ *     tracking -0,055em; la segunda mitad en el azul `--activo`.
+ *   - Entradilla: 20 px / 1,5 en `--tinta3`, `max-width: 44rem`, equilibrada.
+ *   - Botones: 14 px en mayusculas, 12 × 20 de relleno, 44 de alto minimo,
+ *     radio 8, filete negro al 10 %.
+ *   - Fondo: el campo de columnas punteadas (`FondoDeLaPortada`) al 64 %, una
+ *     luz blanca radial y lineal encima —los mismos dos degradados de la
+ *     referencia— y un grano `feTurbulence` al 7 %.
+ *   - La ventana: `max-width: 64rem`, 38rem de alto (28 en el telefono), radio
+ *     28, la sombra doble y fria de la referencia.
+ *   - Secciones numeradas con la etiqueta de 11 px y 0,16em, celdas a filete
+ *     sin radio, la banda oscura con tarjetas #141416 de radio 16.
+ *
+ * Los botones no se escriben aqui: componen las piezas de `piezas.module.css`.
+ */
 
 .pagina {
-  width: 100%;
-  max-width: var(--ancho);
-  margin-inline: auto;
-  padding-inline: var(--e5);
+  overflow-x: clip;
 }
 
-/* ---------- portada ---------- */
+/* ---------- La portada ---------- */
 
 .portada {
   position: relative;
-  isolation: isolate;
-  padding-block: var(--e8) var(--e6);
-  text-align: center;
+  z-index: 1;
+  height: 170vh;
 }
 
-/* El fondo sigue el alto real del contenido, tambien cuando las etapas se
-   apilan. Sube detras de la cabecera y se funde a blanco antes de la cinta. */
-.portada::before {
-  content: '';
+@media (max-width: 767px) {
+  .portada {
+    height: 160vh;
+  }
+}
+
+.portadaQuieta {
+  height: auto;
+}
+
+.portadaPegada {
+  position: sticky;
+  top: var(--alto-cabecera);
+  /* Mide lo que su contenido, como en la referencia (~1107 px a 1440): más
+     alto que la pantalla, así que la ventana nunca se corta contra su borde y
+     lo que queda pegado son los ~420 px que sobran de los 170 vh. */
+  min-height: calc(100svh - var(--alto-cabecera));
+  overflow: hidden;
+  padding: 0 10px;
+}
+
+.portadaQuieta .portadaPegada {
+  position: relative;
+  top: 0;
+  height: auto;
+  padding-bottom: var(--e7);
+}
+
+.campo {
   position: absolute;
-  z-index: -1;
-  top: calc(-1 * var(--alto-cabecera));
-  bottom: 0;
-  left: 50%;
-  width: 100vw;
-  transform: translateX(-50%);
+  inset: 0;
+  z-index: 0;
+  background: #ffffff;
+}
+
+/* El 64 % y las rayas los pone `FondoDeLaPortada.module.css`. */
+.lienzo {
+  z-index: 0;
+}
+
+/* Los dos degradados de la referencia, tal cual. */
+.luz {
+  position: absolute;
+  inset: 0;
   background:
-    linear-gradient(to bottom, transparent 72%, var(--nube) 100%),
-    url('/cielo-portada-v2.webp') center top / cover no-repeat;
-  pointer-events: none;
+    radial-gradient(68% 48% at 50% 24%, #ffffff 0%, rgb(255 255 255 / 0.9) 28%, rgb(255 255 255 / 0.4) 48%, transparent 70%),
+    linear-gradient(#ffffff 0%, rgb(255 255 255 / 0.88) 44%, rgb(255 255 255 / 0.28) 78%, transparent 96%);
+}
+
+.grano {
+  position: absolute;
+  inset: 0;
+  opacity: 0.073;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.25' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.portadaDentro {
+  position: relative;
+  z-index: 1;
+  max-width: 72rem;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: min(5svh, 1.75rem);
+}
+
+.capaTitular {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 64rem;
+  margin-top: 5rem;
+  padding: 0 16px;
+  flex-shrink: 0;
+  text-align: center;
+  will-change: transform, opacity;
+}
+
+.titularYAcciones {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
 }
 
 .entrada {
-  margin: 0 auto;
-  max-width: 15ch;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0;
+  max-width: 72rem;
+  font-size: var(--t-portada);
+  font-weight: 400;
+  line-height: 0.98;
+  letter-spacing: var(--tracking-titular);
   color: var(--tinta);
 }
 
-/*
- * ⚠️ **Aquí vivía `.pieza`, la loseta del maletín incrustada en el titular, y
- * se borró el 25/09/2026.** Eran cuarenta líneas de notas sobre cómo alinearla
- * —`vertical-align: middle` más un margen negativo, y la fracción del PNG que
- * ocupa el dibujo, que había que volver a medir cada vez que cambiaba el
- * archivo—. Todo eso deja de aplicar: el titular ya no lleva imagen.
- */
+.entrada > span {
+  display: block;
+  text-wrap: balance;
+}
+
+.resalte {
+  color: var(--activo);
+}
+
+.bajada {
+  max-width: 44rem;
+  margin: 0 auto;
+  font-size: 20px;
+  line-height: 1.5;
+  color: var(--tinta3);
+  text-wrap: balance;
+}
 
 .acciones {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--e3);
   justify-content: center;
-  margin-top: var(--e6);
+  gap: 12px;
+  margin-bottom: 8px;
 }
 
 .accionPrincipal {
   composes: acentoGrande from '../../estilos/piezas.module.css';
 }
 
-/*
- * ⚠️ **Lleva contorno, y antes no.** Se sostenia con una sombra de 0,05 de
- * alfa, que no da contraste medible: el limite del control desaparecia para
- * quien no distingue matices claros. El contorno de `--borde-control` da 3,45:1
- * y es lo que WCAG 1.4.11 pide al limite visible de un control.
- */
 .accionSecundaria {
   composes: secundarioGrande from '../../estilos/piezas.module.css';
 }
 
-/* ---------- el escaparate ---------- */
-
-/*
- * El marco de cristal, copiado de la referencia del cliente capa por capa:
- * **borde blanco de 1 px, 12 px de relleno con un blanco al 25 % que se
- * desvanece hacia abajo, y radio de 26 px solo arriba.** Medido en su pagina el
- * 25/09/2026, no a ojo. Por el relleno se ve el cielo de detras, que es lo que
- * lo hace leerse como vidrio y no como una tarjeta con borde grueso.
- *
- * ⚠️ **Sin sombra y sin resplandor, y los dos existian.** Aqui hubo un neon de
- * tres capas en `::before` —coral y rosa, y luego indigo y celeste— con un mando
- * `--luz` y una larga historia sobre como ponerlo detras del blanco sin
- * enterrarlo. El marco de la referencia no lleva ni sombra ni luz: lo separa del
- * cielo el propio contraste entre el blanco de la ventana y el azul. Se fue
- * entero.
- *
- * ⚠️ **El borde de abajo no existe, y los radios de abajo son cero.** La ventana
- * no termina: se desvanece. Un filete blanco cerrando por debajo contradiria
- * justo eso. Por debajo de 900 px, donde la ventana SI termina —ver el `@media`
- * del final—, recupera el borde y los cuatro radios.
- */
-.escaparate {
-  position: relative;
-  margin: var(--e7) auto 0;
-  max-width: 1100px;
-  padding: 12px;
-  border: 1px solid var(--nube);
-  border-bottom: 0;
-  border-radius: var(--radio-cristal) var(--radio-cristal) 0 0;
-  background-image: linear-gradient(rgb(255 255 255 / 0.25), rgb(255 255 255 / 0));
-  /*
-   * ⚠️ **El desvanecido va en los ultimos 120 px, no en un porcentaje.** Con un
-   * porcentaje, en pantallas estrechas el fundido subia hasta el recorrido y se
-   * comia sus ultimas lineas, que son contenido de verdad. En px, lo que se
-   * funde es siempre la franja de abajo, donde solo vive la ficha que asoma.
-   */
-  /* impeccable-disable-next-line design-system-color -- es una mascara: solo cuenta el alfa, el color no se pinta */
-  mask-image: linear-gradient(to bottom, #000 calc(100% - 120px), transparent);
+.accionSoloAncha {
+  composes: secundarioGrande from '../../estilos/piezas.module.css';
 }
 
-/*
- * El marco que recorta: es lo que hace que la ventana se corte abajo en vez de
- * terminar.
- *
- * ⚠️ **El alto es el que decide donde corta.** Sin el, la ficha de abajo se veria
- * entera y no habria corte ninguno. Va en `clamp` contra el ancho de la ventana
- * para que el trozo que asoma sea parecido en cualquier pantalla; en un telefono
- * el recorrido se apila y ocupa mas, asi que alli se suelta —ver el `@media` del
- * final— o cortaria por encima de la ultima etapa.
- */
-.marcoVentana {
+/* Con un selector más fuerte: el `display` del `composes` de otra hoja gana a
+   uno de esta con la misma fuerza, se escriba donde se escriba. */
+@media (max-width: 767px) {
+  .acciones .accionSoloAncha {
+    display: none;
+  }
+}
+
+.capaVentana {
   position: relative;
+  z-index: 20;
+  width: 100%;
+  max-width: 64rem;
+  height: 38rem;
+  margin-top: 3.5rem;
+  flex-shrink: 0;
+  border-radius: var(--radio-cristal);
   overflow: hidden;
-  /*
-   * ⚠️ **El minimo es 23rem y no 21, y sale de una medida.** Con 21, entre 901 y
-   * ~1100 px de ancho el fundido de `.escaparate` se comia los ultimos 17 px del
-   * recorrido: a esos anchos las descripciones de las etapas se parten en mas
-   * lineas y el recorrido crece, pero el recorte seguia en su minimo. Medido a
-   * 901, 1000, 1100, 1280, 1440 y 1920 contra el borde superior del fundido.
-   */
-  max-height: clamp(23rem, 30vw, 27rem);
-  background-color: var(--nube);
-  /* Solo arriba: el radio de la captura en la referencia. */
-  border-radius: var(--radio-ventana) var(--radio-ventana) 0 0;
+  box-shadow: var(--sombra-nube);
+  will-change: transform;
 }
+
+.portadaQuieta .capaVentana {
+  height: 30rem;
+}
+
+/* La entrada de la ventana: 64 px y 94 %, 1,2 s, la curva de salida. */
+.entradaVentana {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background: var(--cielo);
+  animation: ventanaEntra 1.2s var(--salida) 0.1s both;
+}
+
+@keyframes ventanaEntra {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 64px, 0) scale(0.94);
+  }
+}
+
+@media (max-width: 767px) {
+  .capaTitular {
+    margin-top: 4rem;
+  }
+
+  .titularYAcciones {
+    gap: 30px;
+  }
+
+  .bajada {
+    font-size: 18px;
+  }
+
+  .acciones {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    max-width: 22rem;
+  }
+
+  .capaVentana {
+    height: 28rem;
+    margin-top: 3rem;
+    border-radius: 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .entradaVentana {
+    animation: none;
+  }
+}
+
+/* ---------- La ventana del portal ---------- */
 
 .ventana {
+  height: 100%;
   display: flex;
   flex-direction: column;
+  background: #ffffff;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--tinta);
+  text-align: left;
 }
 
-/* ---------- la barra de la ventana ---------- */
-
-/*
- * El retrato de la cabecera del portal: marca, tres destinos y el avatar. No
- * son enlaces ni llevan texto — es un dibujo de la barra, y por eso todo el
- * bloque va `aria-hidden` desde el TSX.
- */
 .ventanaBarra {
-  display: flex;
+  flex: none;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--e4);
-  padding: var(--e3) var(--e5);
-  border-bottom: 1px solid var(--regla);
-  background: var(--nube);
+  height: 1.55rem;
+  padding: 0 0.6rem;
+  border-bottom: 1px solid rgb(17 19 18 / 0.1);
+  background: linear-gradient(#fbfbfc, #f5f5f7);
 }
 
-.ventanaMarca {
-  width: 26px;
-  height: 10px;
-  border-radius: var(--radio-control);
-  background: var(--tinta);
-}
-
-.ventanaDestinos {
+.semaforo {
   display: flex;
-  gap: var(--e3);
+  gap: 5px;
 }
 
-.ventanaDestinos span {
-  width: 34px;
+.semaforo i {
+  width: 7px;
   height: 7px;
-  border-radius: var(--radio-barra);
-  background: var(--regla2);
-}
-
-/* El destino actual, del indigo que lo marca en la barra de verdad. */
-.ventanaDestinoVivo {
-  background: var(--activo-regla) !important;
-}
-
-.ventanaAvatar {
-  width: 20px;
-  height: 20px;
   border-radius: 50%;
-  background: var(--nube-honda);
+  /* Neutros: ni rastro de color cálido, tampoco en el adorno de la ventana. */
+  background: #d4d6d3;
 }
 
-.escaparateDentro {
-  position: relative;
-  /* Menos aire que cuando era una tarjeta suelta: ahora lo de arriba lo pone la
-     barra de la ventana, y abajo tiene que caber la ficha que asoma. */
-  padding: var(--e6) var(--e6) var(--e5);
-  background-color: var(--nube);
-}
-
-/* ---------- la ficha que asoma por debajo ---------- */
-
-/*
- * Lo que se corta contra el borde del marco. Decoracion: sin texto, sin
- * enlaces y con `aria-hidden` desde el TSX.
- */
-.fichaQueAsoma {
-  display: flex;
-  flex-direction: column;
-  gap: var(--e2);
-  margin: 0 var(--e6);
-  padding: var(--e5) var(--e5) var(--e7);
-  border: 1px solid var(--regla);
-  border-radius: var(--radio-menor);
-  border-bottom: 0;
-  border-end-start-radius: 0;
-  border-end-end-radius: 0;
-  background: var(--nube);
-}
-
-.fichaLinea {
-  height: 10px;
-  border-radius: var(--radio-control);
-  background: var(--regla2);
-}
-
-.fichaLineaMenor {
-  height: 7px;
-  border-radius: var(--radio-control);
-  background: var(--regla);
-}
-
-.fichaBarras {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: var(--e2);
-  margin-top: var(--e3);
-}
-
-.fichaBarras span {
-  height: 6px;
-  border-radius: var(--radio-barra);
-  background: var(--regla);
-}
-
-.fichaBarraViva {
-  background: var(--activo) !important;
-}
-
-.pieEscaparate {
-  position: relative;
-  margin: 0 0 var(--e5);
-  font-size: var(--t-menor);
-  color: var(--tinta3);
-}
-
-.recorrido {
-  position: relative;
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: var(--e3);
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 0;
-  list-style: none;
-}
-
-.tramo {
-  text-align: center;
-}
-
-/*
- * La barra dice el estado en la FORMA y no en el color: la primera va maciza en
- * tinta porque es la que empieza, y las otras cuatro en regla. Con la pantalla
- * en gris se distinguen igual, que es la comprobacion.
- */
-.barraTramo,
-.barraViva {
-  height: 6px;
-  border-radius: var(--radio-barra);
-  margin-bottom: var(--e3);
-}
-
-.barraTramo {
-  background-color: var(--regla);
-}
-
-.barraViva {
-  background-color: var(--activo);
-}
-
-.numeroEtapa {
-  margin: 0;
-  font-size: var(--t-micro);
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  color: var(--tinta3);
-}
-
-.nombreEtapa {
-  margin: var(--e1) 0;
-  font-size: var(--t-base);
-  font-weight: 600;
-  letter-spacing: -0.015em;
-  color: var(--tinta);
-}
-
-.queEsEtapa {
-  margin: 0;
-  font-size: var(--t-menor);
-  line-height: 1.45;
-  color: var(--tinta3);
-}
-
-/* ---------- la cinta de cifras ---------- */
-
-.cinta {
-  display: flex;
-  flex-wrap: wrap;
+.ventanaTitulo {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: var(--e3) var(--e7);
-  padding: var(--e7) var(--e5);
-  background-color: var(--nube);
-  font-size: var(--t-apoyo);
-  color: var(--tinta2);
+  gap: 6px;
+  font-size: 10px;
+  letter-spacing: 0.02em;
+  color: var(--tinta3);
 }
 
-.cinta b {
-  color: var(--tinta);
-  font-weight: 600;
-}
-
-/* ---------- secciones ---------- */
-
-/* Vacantes y preguntas separan los bloques con un gris muy claro. */
-.seccion,
-.seccionVacantes {
-  padding-block: clamp(var(--e8), 7vw, 112px);
-  margin-inline: calc(50% - 50vw);
-  padding-inline: max(var(--e5), calc((100vw - var(--ancho)) / 2 + var(--e5)));
-  background: var(--cielo);
-}
-
-/*
- * La forma vive en el kit. Lo que se queda aqui es el centrado, que es la voz
- * de la portada —es una landing— y no la del resto del portal, donde las
- * pantallas son documentos alineados a la izquierda.
- */
-.cabeceraSeccion {
-  composes: cabeceraDeSeccion from '../../estilos/piezas.module.css';
-  max-width: 40rem;
-  margin: 0 auto var(--e7);
-  text-align: center;
-}
-
-.cabeceraSeccion p {
-  margin-inline: auto;
-}
-
-/*
- * El aire que se deja arriba al llegar por el ancla `#vacantes-abiertas`.
- *
- * La cabecera flota encima del contenido, asi que un salto al titulo lo deja
- * justo debajo de ella, medio tapado. `scroll-margin-top` no mueve nada en
- * reposo: solo le dice al navegador donde parar al desplazarse hasta aqui.
- *
- * Son los 70 px medidos de la barra mas un respiro, para que el titulo no
- * quede pegado a su borde inferior.
- */
-.cabeceraSeccion h2 {
-  scroll-margin-top: calc(var(--alto-cabecera) + var(--e5));
-}
-
-/* ---------- «Por qué este proceso es distinto» ---------- */
-
-/* Las secciones intermedias usan superficies planas; el cielo reaparece en el cierre. */
-.banda {
-  margin-inline: calc(50% - 50vw);
-  padding-block: clamp(var(--e8), 7vw, 112px);
-  background: var(--nube);
-}
-
-.banda .cabeceraSeccion p {
-  color: var(--tinta2);
-}
-
-/* Dentro de la banda vuelve el carril, o el texto correría de borde a borde. */
-.bandaDentro {
-  max-width: var(--ancho);
-  margin-inline: auto;
-  padding-inline: var(--e5);
-}
-
-.rejillaTres {
+.ventanaApp {
+  flex: 1;
+  min-height: 0;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--e5);
-  list-style: none;
-  margin: 0;
-  padding: 0;
+  grid-template-columns: 12.75rem minmax(0, 1fr);
 }
 
-/* Las tarjetas conservan una superficie blanca con un borde sutil. */
-.tarjetaNuestra {
+.lateral {
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--regla);
-  border-radius: var(--radio);
-  background: var(--nube);
-  padding: var(--e5);
+  gap: 4px;
+  padding: 0.6rem;
+  border-right: 1px solid rgb(17 19 18 / 0.08);
+  background: #fbfbfa;
 }
 
-.tituloNuestra {
-  margin: var(--e5) 0 0;
-  font-size: var(--t-entradilla);
-  font-weight: 600;
-  letter-spacing: -0.014em;
-  color: var(--tinta);
-}
-
-.textoNuestra {
-  margin: var(--e3) 0 0;
-  font-size: var(--t-apoyo);
-  line-height: 1.55;
-  color: var(--tinta2);
-}
-
-/* ---------- las maquetas que coronan cada tarjeta ---------- */
-
-/*
- * Cada una es un trozo del portal dibujado con divs. No son imágenes a
- * propósito: una captura habría que rehacerla cada vez que cambie la pantalla
- * que retrata, y estas se repintan solas el día que cambie `mundo.css`.
- */
-.maqueta {
-  position: relative;
+.lateralMarca {
   display: flex;
   align-items: center;
-  justify-content: center;
-  height: 8.5rem;
-  border-radius: var(--radio-menor);
-  /* Hundido DENTRO de la tarjeta blanca: es la mesa sobre la que se apoya la
-     ficha, y por eso baja un escalón en vez de repetir el blanco de su padre. */
-  background: var(--nube-hundida);
-  overflow: hidden;
+  gap: 8px;
+  padding: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
 }
 
-.maquetaFicha {
-  display: flex;
-  flex-direction: column;
-  gap: var(--e2);
-  width: 72%;
-  padding: var(--e4);
-  border: 1px solid var(--regla);
-  border-radius: var(--radio-menor);
-  background: var(--nube);
-  box-shadow: var(--sombra-nube);
-}
-
-.maquetaLinea {
-  height: 7px;
-  border-radius: var(--radio-control);
-  background: var(--regla);
-}
-
-.maquetaTitulo {
-  height: 11px;
-  width: 84%;
-  border-radius: var(--radio-control);
-  background: var(--regla2);
-}
-
-.maquetaEtiqueta {
-  align-self: flex-start;
-  /* impeccable-disable-next-line design-system-font-size -- rotulo de una maqueta decorativa y aria-hidden: retrata en miniatura una etiqueta de 12 px */
+.lateralFlecha {
+  margin-left: auto;
   font-size: 9px;
+  color: var(--tinta3);
+}
+
+.lateralBuscar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  padding: 5px 8px;
+  border: 1px solid rgb(17 19 18 / 0.1);
+  border-radius: 6px;
+  background: #ffffff;
+  color: var(--tinta3);
+}
+
+.lateralBuscar kbd {
+  margin-left: auto;
+  padding: 0 4px;
+  border: 1px solid rgb(17 19 18 / 0.1);
+  border-radius: 3px;
+  font: inherit;
+  font-size: 9px;
+}
+
+.lateralLista {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.lateralLista li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  color: var(--tinta2);
+  letter-spacing: 0.02em;
+}
+
+
+
+.lateralVivo {
+  background: var(--activo-bruma);
+}
+
+.lateral .lateralVivo {
+  color: var(--activo);
   font-weight: 600;
-  letter-spacing: 0.08em;
+}
+
+.lateralGrupo {
+  margin: 10px 0 2px;
+  padding: 0 8px;
+  font-size: 9px;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--tinta3);
 }
 
-.maquetaFila {
+.ventanaCuerpo {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+}
+
+.cuenta {
+  margin-left: auto;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: rgb(17 19 18 / 0.06);
+  color: var(--tinta2);
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.puntoVerde,
+.puntoAzul,
+.puntoGris {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #0b9f6e;
+}
+
+.lateralLista li .puntoVerde:last-child {
+  margin-left: auto;
+}
+
+.puntoAzul {
+  background: var(--activo);
+}
+
+.puntoGris {
+  background: rgb(17 19 18 / 0.25);
+}
+
+.ventanaCabecera {
   display: flex;
   align-items: center;
-  gap: var(--e2);
+  gap: 8px;
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid rgb(17 19 18 / 0.08);
+  font-size: 12.5px;
 }
 
-.maquetaCara {
-  flex: none;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: var(--regla2);
+.ventanaCabecera span {
+  color: var(--tinta3);
 }
 
-/*
- * El sello, abajo a la derecha y ligeramente salido de la ficha.
- *
- * ⚠️ **Va en tinta y no en coral.** El coral significa «te toca a ti» en todo
- * el portal, y aquí no le toca nada a nadie: es una maqueta.
- */
-.maquetaSello {
-  position: absolute;
-  right: var(--e3);
-  bottom: var(--e3);
-  padding: 4px var(--e2);
-  border: 1px solid var(--regla);
-  border-radius: 999px;
-  background: var(--nube);
-  font-size: var(--t-micro);
-  font-weight: 600;
-  color: var(--tinta2);
+.ventanaCabecera em {
+  margin-left: auto;
+  font-style: normal;
+  font-size: 10px;
+  letter-spacing: 0.02em;
+  color: var(--tinta3);
+}
+
+/* Las cuatro métricas de la referencia («3 LIVE AGENTS»…). */
+.metricas {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(7.5rem, 1fr));
+  gap: 0.45rem;
+  padding: 0.5rem 0.75rem;
+}
+
+.metricas span {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid rgb(17 19 18 / 0.1);
+  border-radius: 6px;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--tinta3);
   white-space: nowrap;
 }
 
-@media (max-width: 900px) {
-  .rejillaTres {
-    grid-template-columns: 1fr;
-    gap: var(--e4);
+.metricas b {
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--tinta);
+}
+
+.metricas .metricaViva {
+  border-color: rgb(30 58 138 / 0.45);
+  box-shadow: 0 0 0 3px var(--activo-bruma);
+}
+
+.metricaViva b {
+  color: var(--activo);
+}
+
+.ventanaTurno {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.5rem 0.75rem;
+  border-block: 1px solid rgb(17 19 18 / 0.08);
+  background: #f5f7fb;
+  color: var(--activo);
+  font-size: 11.5px;
+  letter-spacing: 0.02em;
+}
+
+.ventanaTurno b {
+  font-weight: 600;
+}
+
+.punto {
+  width: 7px;
+  height: 7px;
+  margin-right: 4px;
+  border-radius: 50%;
+  background: #0b9f6e;
+  animation: latido 2s ease-out infinite;
+}
+
+/* El pulso del punto verde de la referencia: solo box-shadow, sin mover nada. */
+@keyframes latido {
+  0% {
+    box-shadow: 0 0 0 0 rgb(11 159 110 / 0.45);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgb(11 159 110 / 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgb(11 159 110 / 0);
   }
 }
 
-/* ---------- las vacantes ---------- */
+/* ---------- El grafo ---------- */
 
-/*
- * Las tres mas recientes. La tarjeta vive en `Tarjeta.module.css`, compartida con
- * la pantalla de busqueda; aqui solo la rejilla y la salida a todas.
- */
+.ventanaZona {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 13.5rem;
+}
+
+.grafo {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+  background-color: #f6f7f9;
+  background-image: radial-gradient(rgb(17 19 18 / 0.1) 1px, transparent 1px);
+  background-size: 14px 14px;
+}
+
+/* Un halo azul muy tenue detrás de la etapa en curso, como el de la referencia. */
+.grafo::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(40% 45% at 50% 40%, rgb(30 58 138 / 0.06), transparent 70%);
+  pointer-events: none;
+}
+
+.lineas {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+  animation: lineasAparecen 600ms var(--salida) 1400ms both;
+}
+
+.linea,
+.lineaViva {
+  fill: none;
+  stroke: rgb(17 19 18 / 0.22);
+  stroke-width: 1.25;
+  stroke-dasharray: 4 4;
+}
+
+.lineaViva {
+  stroke: rgb(30 58 138 / 0.7);
+  stroke-width: 1.5;
+  animation: trazoVivo 1s linear infinite;
+}
+
+@keyframes lineasAparecen {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Movimiento constante: lineal, como pide un flujo que no acaba. */
+@keyframes trazoVivo {
+  to {
+    stroke-dashoffset: -16;
+  }
+}
+
+.pieEscaparate {
+  position: absolute;
+  left: 0.75rem;
+  top: 0.6rem;
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--tinta3);
+}
+
+.recorrido {
+  display: contents;
+}
+
+.nodo {
+  position: absolute;
+  z-index: 1;
+  width: 23%;
+  max-width: 10.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 0.5rem 0.55rem;
+  border: 1px solid rgb(17 19 18 / 0.12);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.04), 0 4px 12px rgb(15 23 42 / 0.04);
+  transform: translateX(-50%);
+  animation: nodoAparece 500ms var(--salida) both;
+}
+
+@keyframes nodoAparece {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(8px) scale(0.94);
+  }
+}
+
+/* Dónde va cada uno: la raíz arriba, tres en medio y dos abajo. */
+.nodoRaiz {
+  left: 50%;
+  top: 9%;
+  animation-delay: 900ms;
+}
+
+.nodoPERFIL {
+  left: 16%;
+  top: 38%;
+}
+
+.nodoPRUEBA {
+  left: 50%;
+  top: 38%;
+}
+
+.nodoSIMULACION {
+  left: 84%;
+  top: 38%;
+}
+
+.nodoVALIDACION {
+  left: 33%;
+  top: 70%;
+}
+
+.nodoDECISION {
+  left: 67%;
+  top: 70%;
+}
+
+.nodoVivo {
+  border-color: rgb(30 58 138 / 0.5);
+  box-shadow: 0 0 0 3px var(--activo-bruma), 0 6px 18px rgb(30 58 138 / 0.1);
+}
+
+.nodoCabeza {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.nodoCabeza b {
+  overflow: hidden;
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--tinta);
+}
+
+.nodoIcono {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border: 1px solid rgb(17 19 18 / 0.14);
+  border-radius: 50%;
+  background: #ffffff;
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--tinta2);
+}
+
+.nodoVivo .nodoIcono {
+  border-color: var(--activo);
+  background: var(--activo);
+  color: #ffffff;
+}
+
+.nodoQue,
+.queEsEtapa {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  font-size: 9.5px;
+  line-height: 1.35;
+  color: var(--tinta3);
+}
+
+.nombreEtapa {
+  margin: 0;
+}
+
+.estado {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  font-size: 8.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--tinta3);
+}
+
+.estado::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgb(17 19 18 / 0.25);
+}
+
+.estadoHecho {
+  color: #08714f;
+}
+
+.estadoHecho::before {
+  background: #0b9f6e;
+}
+
+.estadoCurso {
+  color: var(--activo);
+}
+
+.estadoCurso::before {
+  background: var(--activo);
+  animation: puntoVivo 1.6s ease-in-out infinite;
+}
+
+@keyframes puntoVivo {
+  50% {
+    opacity: 0.45;
+    transform: scale(0.85);
+  }
+}
+
+/* ---------- La actividad ---------- */
+
+.actividad {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0.6rem;
+  border-left: 1px solid rgb(17 19 18 / 0.08);
+  background: rgb(255 255 255 / 0.6);
+}
+
+.actividad p {
+  margin-bottom: 2px;
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--tinta3);
+}
+
+.actividad span {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 6px;
+  padding: 6px 7px;
+  border: 1px solid rgb(17 19 18 / 0.08);
+  border-radius: 5px;
+  background: #ffffff;
+  font-size: 10.5px;
+  line-height: 1.35;
+  color: var(--tinta2);
+  animation: llegaActividad 400ms var(--salida) both;
+}
+
+@keyframes llegaActividad {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+.actividad em {
+  width: 2.6rem;
+  font-style: normal;
+  color: var(--tinta3);
+}
+
+.actividad b {
+  color: var(--tinta);
+  font-weight: 600;
+}
+
+.actividad .actividadSiguiente {
+  margin-top: auto;
+  padding-top: 8px;
+}
+
+.actividad .siguiente {
+  border-style: dashed;
+  border-color: rgb(17 19 18 / 0.18);
+  background: transparent;
+  animation-delay: 4200ms;
+}
+
+.actividad .actividadViva {
+  border-color: rgb(30 58 138 / 0.4);
+  background: #f5f7fb;
+}
+
+/* ---------- En el teléfono: el recorrido en vertical ---------- */
+
+@media (max-width: 767px) {
+  .ventanaApp,
+  .ventanaZona {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .lateral,
+  .actividad,
+  .lineas,
+  .ventanaCabecera em {
+    display: none;
+  }
+
+  .metricas {
+    grid-template-columns: repeat(4, minmax(6.75rem, 1fr));
+  }
+
+  .grafo {
+    padding: 1.9rem 0.75rem 0.75rem;
+  }
+
+  .recorrido {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .recorrido {
+    margin-top: 10px;
+  }
+
+  /* El tramo de línea que une cada nodo con el siguiente, punteado como las
+     del grafo; el que sale de la etapa en curso, en azul. */
+  .nodo:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: calc(0.4rem + 7.5px);
+    top: 100%;
+    height: 11px;
+    border-left: 1.5px dashed rgb(17 19 18 / 0.3);
+  }
+
+  .nodoPERFIL::after {
+    border-left-color: rgb(30 58 138 / 0.7) !important;
+  }
+
+  .nodo {
+    position: relative;
+    left: auto;
+    top: auto;
+    width: auto;
+    max-width: none;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 8px;
+    padding: 0.45rem 0.6rem 0.45rem 0.4rem;
+    transform: none;
+    animation-name: nodoApareceMovil;
+  }
+
+  .nodoCabeza {
+    grid-column: 1;
+  }
+
+  .queEsEtapa,
+  .nodoQue {
+    grid-column: 1;
+    padding-left: 22px;
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+  }
+
+  .estado {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    margin-top: 0;
+  }
+}
+
+@keyframes nodoApareceMovil {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .punto,
+  .nodo,
+  .lineas,
+  .lineaViva,
+  .estadoCurso::before,
+  .actividad span {
+    animation: none;
+  }
+}
+
+/* ---------- Las secciones ---------- */
+
+.seccion {
+  position: relative;
+  z-index: 2;
+  width: min(95vw, 100% - 32px);
+  max-width: 1308px;
+  margin: 0 auto;
+  padding: 96px 0 0;
+  background: var(--cielo);
+}
+
+/* «01 / VACANTES». */
+.etiqueta {
+  margin: 0 0 16px;
+  font-size: var(--t-etiqueta);
+  line-height: 1.2;
+  letter-spacing: var(--tracking-etiqueta);
+  text-transform: uppercase;
+  color: var(--tinta-etiqueta);
+}
+
+.cabeceraSeccion {
+  margin-bottom: 32px;
+}
+
+.cabeceraSeccion h2 {
+  margin: 0;
+  max-width: 22ch;
+  font-size: var(--t-encabezado);
+  font-weight: 400;
+  line-height: 1.05;
+  letter-spacing: var(--tracking-titular);
+  color: var(--tinta);
+}
+
+.cabeceraSeccion p:not(.etiqueta) {
+  margin: 16px 0 0;
+  max-width: 40rem;
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--tinta3);
+}
+
+/* La cinta: cuatro celdas a filete, como la rejilla de «Projects». */
+.cinta {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border-top: 1px solid rgb(0 0 0 / 0.1);
+  border-left: 1px solid rgb(0 0 0 / 0.1);
+}
+
+.cinta li {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 160px;
+  padding: 18px 16px 16px;
+  border-right: 1px solid rgb(0 0 0 / 0.1);
+  border-bottom: 1px solid rgb(0 0 0 / 0.1);
+}
+
+.cintaIndice {
+  margin-bottom: auto;
+  font-size: 16px;
+  letter-spacing: 0.06em;
+  color: var(--tinta3);
+}
+
+.cinta b {
+  font-size: clamp(28px, 3vw, 40px);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  color: var(--tinta);
+}
+
+.cinta li > span:last-child {
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  color: var(--tinta2);
+}
+
+@media (max-width: 767px) {
+  .seccion {
+    padding-top: 64px;
+  }
+
+  .cinta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cinta li {
+    min-height: 120px;
+  }
+}
+
+/* Las vacantes: celdas que comparten filete, sin hueco entre ellas. */
 .lista {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--e3);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   margin: 0;
   padding: 0;
   list-style: none;
@@ -538,38 +1027,41 @@
 
 .lista > li {
   min-width: 0;
+  margin: 0 -1px -1px 0;
 }
 
 .verTodasLasVacantes {
   display: flex;
   justify-content: center;
-  margin-top: var(--e6);
+  margin-top: 32px;
 }
 
 .verTodas {
   composes: secundarioGrande from '../../estilos/piezas.module.css';
 }
 
-/* ---------- los estados de carga, error y vacio ---------- */
+@media (max-width: 900px) {
+  .lista {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 
 .marco {
-  padding: var(--e6);
-  border: 1px solid var(--regla);
-  border-radius: var(--radio);
-  background-color: var(--nube);
+  padding: 48px 24px;
+  border: 1px solid rgb(0 0 0 / 0.1);
   text-align: center;
 }
 
 .marco h3 {
   margin: 0;
   font-size: var(--t-titulo);
-  font-weight: 600;
-  letter-spacing: -0.02em;
+  font-weight: 550;
+  letter-spacing: -0.03em;
   color: var(--tinta);
 }
 
 .marcoTexto {
-  margin: var(--e3) auto 0;
+  margin: 12px auto 0;
   max-width: var(--medida);
   font-size: var(--t-prosa);
   color: var(--tinta3);
@@ -577,9 +1069,8 @@
 
 .barra {
   height: 12px;
-  margin: var(--e4) auto 0;
+  margin: 16px auto 0;
   max-width: 28rem;
-  border-radius: var(--radio-marca);
   background-color: var(--nube-honda);
 }
 
@@ -593,167 +1084,314 @@
 
 .reintentar {
   composes: acentoMenor from '../../estilos/piezas.module.css';
-  margin-top: var(--e5);
+  margin-top: 24px;
 }
 
-/* ---------- las preguntas ---------- */
+/* ---------- La banda oscura («03 / BLOG» de la referencia) ---------- */
+
+.banda {
+  position: relative;
+  z-index: 2;
+  margin-top: 120px;
+  padding: 32px 0 120px;
+  background: var(--noche);
+  background-image: radial-gradient(90% 60% at 50% 0%, #1b1d1c 0%, var(--noche) 55%, #0b0c0c 100%);
+  color: var(--noche-tinta);
+}
+
+.bandaDentro {
+  width: min(95vw, 100% - 32px);
+  max-width: 1040px;
+  margin: 0 auto;
+  padding-top: 24px;
+  border-top: 1px solid rgb(255 255 255 / 0.1);
+}
+
+.banda .etiqueta {
+  /* 6,2:1 sobre la banda; al 42 % no llegaba a 4,5:1. */
+  color: rgb(246 247 243 / 0.66);
+}
+
+.banda .cabeceraSeccion h2 {
+  color: #ffffff;
+}
+
+.banda .cabeceraSeccion p:not(.etiqueta) {
+  color: var(--noche-tinta2);
+}
+
+.rejillaTres {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 28px;
+}
+
+.rejillaTres > li {
+  min-width: 0;
+}
+
+.tarjetaNuestra {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--noche-regla);
+  border-radius: var(--radio-escaparate);
+  background: var(--noche-tarjeta);
+  transition:
+    border-color 260ms var(--salida),
+    background-color 260ms var(--salida),
+    transform 550ms var(--salida);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .tarjetaNuestra:hover {
+    border-color: rgb(255 255 255 / 0.14);
+    background: #18181b;
+    transform: translateY(-3px);
+  }
+}
+
+.textosNuestra {
+  padding: 0 18px 18px;
+}
+
+.tituloNuestra {
+  margin: 0 0 6px;
+  font-family: var(--fuente-ui);
+  font-size: clamp(15.2px, 1.1vw, 15.84px);
+  font-weight: 520;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+  color: var(--noche-tinta);
+}
+
+.textoNuestra {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--noche-tinta2);
+}
+
+/* Las maquetas, en la noche. */
+.maqueta {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 10rem;
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.maquetaFicha {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 68%;
+  padding: 14px;
+  border: 1px solid rgb(255 255 255 / 0.1);
+  border-radius: 8px;
+  background: #1b1b1f;
+  transition: transform 550ms var(--salida);
+}
+
+.tarjetaNuestra:hover .maquetaFicha {
+  transform: translateY(-4px);
+}
+
+.maquetaLinea {
+  height: 6px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.1);
+}
+
+.maquetaTitulo {
+  height: 10px;
+  width: 84%;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.2);
+}
+
+.maquetaEtiqueta {
+  align-self: flex-start;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgb(240 240 242 / 0.5);
+}
+
+.maquetaFila {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.maquetaCara {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.2);
+}
+
+.maquetaSello {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  padding: 3px 9px;
+  border: 1px solid rgb(30 58 138 / 0.9);
+  border-radius: 999px;
+  background: rgb(30 58 138 / 0.35);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: #dfe6ff;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .rejillaTres {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+
+  .banda {
+    margin-top: 96px;
+    padding-bottom: 96px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tarjetaNuestra,
+  .maquetaFicha {
+    transition: none;
+  }
+
+  .tarjetaNuestra:hover,
+  .tarjetaNuestra:hover .maquetaFicha {
+    transform: none;
+  }
+}
+
+/* ---------- Las preguntas: la lista numerada de «About» ---------- */
+
+.seccionPreguntas {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 32px 64px;
+  padding-top: 120px;
+}
 
 .preguntas {
-  max-width: 48rem;
-  margin-inline: auto;
+  min-width: 0;
 }
 
 .pregunta {
   composes: plegable from '../../estilos/piezas.module.css';
 }
 
+.pregunta:first-child {
+  border-top: 1px solid var(--regla);
+}
+
+.pregunta summary {
+  justify-content: flex-start;
+  padding-block: 18px;
+  font-size: 18px;
+  line-height: 1.35;
+}
+
+.indicePregunta {
+  flex: none;
+  width: 32px;
+  font-size: 11px;
+  letter-spacing: var(--tracking-etiqueta);
+  color: var(--tinta-etiqueta);
+}
+
+.textoPregunta {
+  flex: 1;
+  transition: opacity 150ms var(--curva-control);
+}
+
+.pregunta summary:hover .textoPregunta {
+  opacity: 0.6;
+}
+
 .mas {
   composes: signoMas from '../../estilos/piezas.module.css';
 }
 
-/*
- * ⚠️ **La respuesta llega hasta donde llega su pregunta, y antes no.** Tenía el
- * tope de `--medida` —50ch— dentro de un carril de 48rem, así que cortaba a poco
- * más de media anchura y se leía como un texto desalineado bajo un título que sí
- * cruzaba entero.
- *
- * El relleno de la derecha es la columna del signo «+»: 16 px de signo más los
- * 16 del hueco que le deja el `summary`. Sin él la respuesta pasaría por debajo
- * del signo y las dos líneas dejarían de terminar en el mismo sitio.
- */
 .pregunta p {
   margin: 0;
-  padding-bottom: var(--e5);
-  padding-right: calc(16px + var(--e4));
+  padding: 0 calc(16px + var(--e4)) 20px 32px;
   font-size: var(--t-prosa);
-  line-height: 1.55;
+  line-height: 1.6;
   color: var(--tinta3);
 }
 
-/* ---------- el cierre ---------- */
-
-.cierre {
-  scroll-margin-top: var(--alto-cabecera);
-  margin-inline: calc(50% - 50vw);
-  padding: clamp(var(--e8), 7vw, 112px) var(--e5) var(--e7);
-  background:
-    linear-gradient(to bottom, rgb(255 255 255 / 0.08), var(--nube) 94%),
-    url('/cielo-portada-v2.webp') center 52% / cover no-repeat;
+@media (max-width: 900px) {
+  .seccionPreguntas {
+    grid-template-columns: minmax(0, 1fr);
+    padding-top: 96px;
+  }
 }
 
-.cajaCierre {
-  max-width: 48rem;
-  margin-inline: auto;
+/* ---------- El cierre ---------- */
+
+.cierre {
+  position: relative;
+  z-index: 2;
+  scroll-margin-top: var(--alto-cabecera);
+  margin-top: 120px;
+  padding: 120px 16px 96px;
+  overflow: hidden;
+  background: #ffffff;
+  border-top: 1px solid rgb(0 0 0 / 0.1);
   text-align: center;
 }
 
-.cajaCierre h2 {
+.campoCierre {
+  z-index: 0;
+}
+
+.veloCierre {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(#ffffff 0%, rgb(255 255 255 / 0.92) 40%, rgb(255 255 255 / 0.4) 85%, transparent 100%);
+}
+
+.cajaCierre {
   position: relative;
+  max-width: 44rem;
+  margin: 0 auto;
+}
+
+.cajaCierre h2 {
   margin: 0;
-  font-size: clamp(36px, 4vw, 48px);
-  font-weight: 500;
-  letter-spacing: -0.03em;
-  line-height: 1.1;
+  font-size: clamp(36px, 5vw, 72px);
+  font-weight: 400;
+  line-height: 0.98;
+  letter-spacing: var(--tracking-titular);
   color: var(--tinta);
 }
 
 .cajaCierre p {
-  position: relative;
-  margin: var(--e4) auto 0;
-  max-width: 44rem;
-  color: var(--tinta2);
+  margin: 24px auto 32px;
+  max-width: 36rem;
+  font-size: 18px;
+  line-height: 1.5;
+  color: var(--tinta3);
+  text-wrap: balance;
 }
 
-.cierre .acciones {
-  margin-top: 36px;
-  gap: var(--e4);
-}
-
-.cierre .accionPrincipal,
-.cierre .accionSecundaria {
-  font-size: var(--t-base);
-}
-
-.cierre .accionSecundaria {
-  border: 1px solid var(--regla);
-  background: transparent;
-  box-shadow: none;
-}
-
-.cierre .accionSecundaria:hover {
-  background: var(--cielo);
-  border-color: var(--regla2);
-}
-
-/* ---------- adaptacion ---------- */
-
-@media (max-width: 900px) {
-  .lista {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .recorrido {
-    grid-template-columns: repeat(3, 1fr);
-    gap: var(--e5);
-  }
-
-  /*
-   * ⚠️ **Se suelta el alto del marco, y hace falta.** Por debajo de 900 px el
-   * recorrido pasa a tres columnas y luego a dos: ocupa mucho mas alto, y el
-   * recorte fijo cortaria por encima de la última etapa — es decir, se comería
-   * contenido de verdad en vez de decoración. Aquí la ventana termina donde
-   * termina lo que tiene dentro, y lo que asoma deja de asomar.
-   */
-  .marcoVentana {
-    max-height: none;
-    border-radius: var(--radio-ventana);
-  }
-
-  /* Aqui la ventana termina, asi que el marco la cierra entero y no se funde. */
-  .escaparate {
-    border-bottom: 1px solid var(--nube);
-    border-radius: var(--radio-cristal);
-    mask-image: none;
-  }
-
-  .fichaQueAsoma {
-    display: none;
-  }
-}
-
-@media (max-width: 640px) {
-  .pagina,
-  .bandaDentro {
-    padding-inline: var(--e4);
-  }
-
-  .seccion,
-  .seccionVacantes,
+@media (max-width: 767px) {
   .cierre {
-    padding-inline: var(--e4);
+    margin-top: 96px;
+    padding-top: 96px;
   }
 
-  .portada {
-    padding-top: var(--e7);
-  }
-
-  .lista {
-    grid-template-columns: 1fr;
-  }
-
-  .recorrido {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .escaparate {
-    border-width: 8px;
-  }
-
-  .escaparateDentro {
-    padding: var(--e6) var(--e4) var(--e7);
-  }
-
-  .cinta {
-    gap: var(--e2) var(--e5);
+  .cajaCierre .acciones {
+    margin-inline: auto;
   }
 }

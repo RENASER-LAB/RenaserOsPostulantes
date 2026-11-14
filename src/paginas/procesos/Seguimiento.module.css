@@ -129,14 +129,14 @@
 .nombre {
   margin-top: var(--e3);
   font-size: var(--t-prosa);
-  font-weight: 600;
+  font-weight: 550;
   letter-spacing: -0.008em;
   color: var(--tinta);
   text-wrap: balance;
 }
 
 .viva .nombre {
-  font-weight: 700;
+  font-weight: 550;
 }
 
 .pendiente .nombre,
@@ -183,7 +183,7 @@
 .abiertoTitulo {
   margin: 0;
   font-size: var(--t-entradilla);
-  font-weight: 700;
+  font-weight: 550;
   letter-spacing: -0.014em;
   color: var(--tinta);
 }
@@ -227,7 +227,7 @@
 .esperaTitulo {
   margin: 0;
   font-size: var(--t-base);
-  font-weight: 600;
+  font-weight: 550;
   letter-spacing: -0.008em;
 }
 

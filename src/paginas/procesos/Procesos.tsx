@@ -125,7 +125,7 @@ export function Procesos() {
         {resumenParaLectores(ordenados)}
       </p>
 
-      <h1 className={estilos.titular}>{titularDe(pendientes, vivos, procesos.length)}</h1>
+      <h1 className={estilos.titular} data-seccion="Mis procesos">{titularDe(pendientes, vivos, procesos.length)}</h1>
       <p className={estilos.entrada}>{entradaDe(pendientes, vivos, procesos.length)}</p>
 
       {procesos.length === 0 ? (

@@ -33,6 +33,7 @@ import { enfocarPrimerCampoConError } from '@/ui/campos/enfocarSinTapar'
 import { useSesionPanel } from '../Sesion'
 import { useTituloDelPanel } from '../titulo'
 import estilos from './Entrar.module.css'
+import { usarMundoDelPanel } from '../mundoDelPanel'
 
 /** El mismo mínimo que aplica el backend. Ver la cabecera. */
 const MINIMO_CONTRASENA = 12
@@ -60,6 +61,8 @@ type Errores = Partial<Record<keyof Campos, string>>
 const VACIO: Campos = { nombre: '', apellidos: '', contrasena: '', repetir: '' }
 
 export function InvitacionPanel() {
+  // Fuera del armazón del portal: conserva el mundo del panel, como antes.
+  usarMundoDelPanel()
   useTituloDelPanel('Crear mi acceso')
   const [parametros] = useSearchParams()
   const token = parametros.get('token') ?? ''

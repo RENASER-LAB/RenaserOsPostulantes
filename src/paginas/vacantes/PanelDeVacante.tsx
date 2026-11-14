@@ -74,7 +74,7 @@ export function PanelDeVacante({
     // (05/10/2026): sin él, el texto de la anterior se cambiaba de golpe y parecía un parpadeo.
     // Solo opacidad: se elige vacante muchas veces seguidas y un desplazamiento cansaría.
     // Como las tarjetas de la lista (06/10/2026): sin borde y con su misma sombra, al mismo nivel.
-    <div className={cn('animate-in fade-in-0 duration-150 ease-out rounded-2xl bg-card text-card-foreground', SOMBRA_DE_SUPERFICIE)}>
+    <div className={cn('animate-in fade-in-0 duration-150 ease-out rounded bg-card text-card-foreground', SOMBRA_DE_SUPERFICIE)}>
       {/*
         Pegada arriba con alto cero, y la barra encima del contenido: así
         aparecer no empuja el texto. Entra deslizándose 8 px desde arriba y se

@@ -38,7 +38,7 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme inline {
-  --font-sans: Geist, system-ui, sans-serif;
+  --font-sans: var(--fuente);
 
   --color-background: var(--cielo);
   --color-foreground: var(--tinta);
@@ -64,7 +64,7 @@
   --color-input: var(--borde-control);
   --color-ring: var(--activo);
   --color-tinta2: var(--tinta2);
-  /* El ámbar de «esto te cambia la decisión»: los requisitos indispensables. */
+  /* «Esto te cambia la decisión» (los requisitos indispensables), en la familia azul de `--duda`. */
   --color-duda: var(--duda);
   --color-duda-bruma: var(--duda-bruma);
   --color-duda-tinta: var(--duda-tinta);
@@ -86,7 +86,8 @@
   --radius-sm: var(--radio-marca);
   --radius-md: var(--radio-control);
   --radius-lg: var(--radio-control);
-  --radius-xl: var(--radio);
+  /* Northstar: las tarjetas de /vacantes van casi rectas, como las celdas. */
+  --radius-xl: var(--radio-menor);
 }
 
 /*

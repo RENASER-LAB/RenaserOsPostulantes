@@ -150,7 +150,7 @@ export function Vacante() {
     <div className={estilos.pagina}>
       <Volver />
 
-      <div className={estilos.encabezado}>
+      <div className={estilos.encabezado} data-seccion="Vacante / Ficha del puesto">
         {/* B · el otro extremo del titulo que viaja desde la tarjeta. */}
         <TituloQueViaja id={v.id} como="h1" className={estilos.titular}>
           {v.titulo}

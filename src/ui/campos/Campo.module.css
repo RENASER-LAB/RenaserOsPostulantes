@@ -314,3 +314,65 @@
   color: var(--mal);
   font-weight: 600;
 }
+
+/* ==================================================================
+ * EL MUNDO NORTHSTAR (13/11/2026) — los campos, para el portal.
+ *
+ * Lo de arriba es lo que ve el panel y no se toca; esto solo se aplica cuando
+ * `<html>` no lleva `mundo-panel`. Los campos de la referencia: blancos, filete
+ * gris de control que se oscurece al pasar, esquinas de 4 px y un anillo azul
+ * claro al enfocar —el mismo halo de la métrica viva de la portada—. La
+ * etiqueta, en 500: la jerarquía la hace el tamaño, no el peso.
+ * ================================================================== */
+
+:global(html:not(.mundo-panel)) .etiqueta,
+:global(html:not(.mundo-panel)) .tituloConsentimiento {
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+:global(html:not(.mundo-panel)) .entrada,
+:global(html:not(.mundo-panel)) .seleccion {
+  /* El filete de la referencia (negro al 18 %) da 1,5:1 y WCAG pide 3:1 al
+     límite de un campo: se queda el gris de control, 3,9:1. */
+  border-color: var(--borde-control);
+  border-radius: var(--radio-menor);
+  transition:
+    border-color 150ms var(--curva-control),
+    box-shadow 150ms var(--curva-control);
+}
+
+:global(html:not(.mundo-panel)) .entrada:hover,
+:global(html:not(.mundo-panel)) .seleccion:hover:not(:disabled) {
+  border-color: var(--tinta);
+}
+
+:global(html:not(.mundo-panel)) .entrada:focus-visible,
+:global(html:not(.mundo-panel)) .seleccion:focus-visible {
+  outline: none;
+  border-color: var(--activo);
+  box-shadow: 0 0 0 3px var(--activo-bruma);
+}
+
+:global(html:not(.mundo-panel)) .entrada[aria-invalid='true'],
+:global(html:not(.mundo-panel)) .seleccion[aria-invalid='true'] {
+  border-color: var(--mal);
+}
+
+:global(html:not(.mundo-panel)) .consentimiento {
+  border-color: rgb(0 0 0 / 0.1);
+  border-radius: var(--radio-menor);
+  transition: border-color 150ms var(--curva-control);
+}
+
+:global(html:not(.mundo-panel)) .consentimiento.marcado {
+  border-color: var(--activo);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :global(html:not(.mundo-panel)) .entrada,
+  :global(html:not(.mundo-panel)) .seleccion,
+  :global(html:not(.mundo-panel)) .consentimiento {
+    transition: none;
+  }
+}

@@ -392,7 +392,7 @@ function FormularioDePostular({ vacanteId }: { vacanteId: string }) {
         ← Volver al puesto
       </Link>
 
-      <div className={estilos.encabezado}>
+      <div className={estilos.encabezado} data-seccion="Postular / Tu postulación">
         <h1 className={estilos.titular}>Postula a este puesto.</h1>
         <span className={estilos.puesto}>
           {v.titulo}

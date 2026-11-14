@@ -33,7 +33,7 @@
 
 .seccion h2 {
   font-size: var(--t-titulo);
-  font-weight: 600;
+  font-weight: 550;
   margin: 0 0 var(--e3);
 }
 
@@ -60,7 +60,7 @@
 
 .lista li strong {
   color: var(--tinta);
-  font-weight: 600;
+  font-weight: 550;
 }
 
 .contacto {
@@ -102,7 +102,7 @@
 
 .identidad dt {
   font-size: var(--t-menor);
-  font-weight: 600;
+  font-weight: 550;
   color: var(--tinta);
 }
 
@@ -150,13 +150,13 @@
 }
 
 .tabla thead th {
-  font-weight: 600;
+  font-weight: 550;
   color: var(--tinta);
   border-bottom-width: 2px;
 }
 
 .tabla tbody th {
-  font-weight: 600;
+  font-weight: 550;
   color: var(--tinta);
   white-space: nowrap;
 }
@@ -172,7 +172,7 @@
 
 .textoLegal h3 {
   font-size: var(--t-base);
-  font-weight: 600;
+  font-weight: 550;
   margin: 0 0 var(--e3);
 }
 

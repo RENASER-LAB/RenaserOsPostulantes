@@ -270,7 +270,15 @@ const VARIANTES = {
   fadeInRight: { hidden: { opacity: 0, x: 50 }, visible: { opacity: 1, x: 0 } },
   scaleUp: { hidden: { opacity: 0, scale: 0.8 }, visible: { opacity: 1, scale: 1 } },
   ninguna: { hidden: {}, visible: {} },
+  /**
+   * La entrada de la referencia «Northstar» (13/11/2026): 16 px y un fundido,
+   * con la curva de salida del mundo. Corta a propósito: tiene que notarse apenas.
+   */
+  subir: { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0 } },
 } as const
+
+/** La curva de salida del mundo (`--salida`), para la variante `subir`. */
+const CURVA_SALIDA = [0.16, 1, 0.3, 1] as const
 
 export type Variante = keyof typeof VARIANTES
 
@@ -304,7 +312,11 @@ export function AlAsomarse({
       whileInView="visible"
       viewport={{ once: unaVez, amount: 0.2 }}
       variants={VARIANTES[variante]}
-      transition={{ duration: duracion, delay: retraso, ease: CURVA_ORIGINX }}
+      transition={
+        variante === 'subir'
+          ? { duration: 0.7, delay: retraso, ease: CURVA_SALIDA }
+          : { duration: duracion, delay: retraso, ease: CURVA_ORIGINX }
+      }
     >
       {children}
     </motion.div>

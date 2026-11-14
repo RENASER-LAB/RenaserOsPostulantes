@@ -766,3 +766,183 @@
 .plegable[open] .signoMas {
   transform: rotate(45deg);
 }
+
+/* ==================================================================
+ * EL MUNDO NORTHSTAR (13/11/2026) — las mismas piezas, para el portal.
+ *
+ * ⚠️ **Todo lo de arriba es lo que ve el panel** y no se toca. Lo de aquí
+ * abajo solo se aplica cuando `<html>` no lleva `mundo-panel` (la pone el
+ * armazón del panel): es el estilo de northstar-template-demo para quien
+ * postula. Mismo nombre de pieza, así que ninguna pantalla cambia su `composes`.
+ *
+ * Los valores, medidos en la referencia:
+ *   - Botones: 14 px en MAYÚSCULAS, peso 400, relleno 12 × 20 (o 12 × 16),
+ *     radio 8, filete negro al 10 %. Al pasar solo cambia el color (150 ms);
+ *     al pulsar cede a 0,97. Sin el rótulo que rueda.
+ *   - Paneles y celdas: esquinas casi rectas (4 px), filete negro al 10 %,
+ *     ninguna sombra en reposo. El turno se marca con el borde azul y un halo
+ *     claro, no con sombra.
+ * ================================================================== */
+
+:global(html:not(.mundo-panel)) .acentoGrande,
+:global(html:not(.mundo-panel)) .acentoMenor,
+:global(html:not(.mundo-panel)) .secundarioGrande,
+:global(html:not(.mundo-panel)) .secundario {
+  font-family: var(--fuente);
+  font-weight: 400;
+  line-height: 21px;
+  text-transform: uppercase;
+  transition:
+    color 150ms var(--curva-control),
+    background-color 150ms var(--curva-control),
+    border-color 150ms var(--curva-control),
+    transform 160ms var(--salida);
+}
+
+:global(html:not(.mundo-panel)) .acentoGrande,
+:global(html:not(.mundo-panel)) .acentoMenor {
+  border: 1px solid rgb(0 0 0 / 0.1);
+}
+
+:global(html:not(.mundo-panel)) .secundarioGrande,
+:global(html:not(.mundo-panel)) .secundario {
+  background: var(--cielo);
+  border: 1px solid #e5e7eb;
+  box-shadow: none;
+}
+
+:global(html:not(.mundo-panel)) .acentoGrande:hover:not(:disabled),
+:global(html:not(.mundo-panel)) .acentoMenor:hover:not(:disabled) {
+  box-shadow: none;
+}
+
+:global(html:not(.mundo-panel)) .secundarioGrande:hover:not(:disabled),
+:global(html:not(.mundo-panel)) .secundario:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--tinta) 3%, var(--cielo));
+  box-shadow: none;
+}
+
+:global(html:not(.mundo-panel)) .secundarioGrande:disabled,
+:global(html:not(.mundo-panel)) .secundario:disabled,
+:global(html:not(.mundo-panel)) .acentoGrande:disabled,
+:global(html:not(.mundo-panel)) .acentoMenor:disabled {
+  border-color: transparent;
+}
+
+:global(html:not(.mundo-panel)) .acentoGrande:active:not(:disabled),
+:global(html:not(.mundo-panel)) .acentoMenor:active:not(:disabled),
+:global(html:not(.mundo-panel)) .secundarioGrande:active:not(:disabled),
+:global(html:not(.mundo-panel)) .secundario:active:not(:disabled),
+:global(html:not(.mundo-panel)) .solido:active:not(:disabled),
+:global(html:not(.mundo-panel)) .peligroso:active:not(:disabled),
+:global(html:not(.mundo-panel)) .peligrosoMenor:active:not(:disabled),
+:global(html:not(.mundo-panel)) .peligrosoContorno:active:not(:disabled),
+:global(html:not(.mundo-panel)) .whatsapp:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* Sin el rótulo que rueda: la referencia solo cambia el color. */
+:global(html:not(.mundo-panel)) .acentoGrande[data-rotulo],
+:global(html:not(.mundo-panel)) .acentoMenor[data-rotulo],
+:global(html:not(.mundo-panel)) .secundarioGrande[data-rotulo],
+:global(html:not(.mundo-panel)) .secundario[data-rotulo] {
+  color: var(--rotulo-tinta);
+  -webkit-text-fill-color: currentColor;
+}
+
+:global(html:not(.mundo-panel)) .acentoGrande[data-rotulo]::before,
+:global(html:not(.mundo-panel)) .acentoMenor[data-rotulo]::before,
+:global(html:not(.mundo-panel)) .secundarioGrande[data-rotulo]::before,
+:global(html:not(.mundo-panel)) .secundario[data-rotulo]::before,
+:global(html:not(.mundo-panel)) .acentoGrande[data-rotulo]::after,
+:global(html:not(.mundo-panel)) .acentoMenor[data-rotulo]::after,
+:global(html:not(.mundo-panel)) .secundarioGrande[data-rotulo]::after,
+:global(html:not(.mundo-panel)) .secundario[data-rotulo]::after {
+  content: none;
+}
+
+:global(html:not(.mundo-panel)) .solido,
+:global(html:not(.mundo-panel)) .peligroso,
+:global(html:not(.mundo-panel)) .peligrosoMenor,
+:global(html:not(.mundo-panel)) .peligrosoContorno,
+:global(html:not(.mundo-panel)) .whatsapp {
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  transition:
+    background-color 150ms var(--curva-control),
+    border-color 150ms var(--curva-control),
+    transform 160ms var(--salida);
+}
+
+:global(html:not(.mundo-panel)) .whatsapp {
+  border: 1px solid rgb(0 0 0 / 0.1);
+}
+
+:global(html:not(.mundo-panel)) .volver {
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--tinta2);
+  transition: opacity 150ms var(--curva-control);
+}
+
+:global(html:not(.mundo-panel)) .volver:hover {
+  opacity: 0.6;
+}
+
+/* Los paneles: celdas de filete, sin sombra. */
+:global(html:not(.mundo-panel)) .turno {
+  border: 1px solid rgb(30 58 138 / 0.5);
+  border-radius: var(--radio-menor);
+  box-shadow: 0 0 0 4px var(--activo-bruma);
+}
+
+:global(html:not(.mundo-panel)) .panelDeEspera {
+  border: 1px solid rgb(0 0 0 / 0.1);
+  border-radius: var(--radio-menor);
+  background: var(--cielo-hundido);
+}
+
+:global(html:not(.mundo-panel)) .ofrecimiento,
+:global(html:not(.mundo-panel)) .enDuda {
+  border-radius: var(--radio-menor);
+}
+
+:global(html:not(.mundo-panel)) .cabeceraDeSeccion h2 {
+  font-size: var(--t-encabezado);
+  font-weight: 400;
+  line-height: 1.05;
+  letter-spacing: var(--tracking-titular);
+}
+
+:global(html:not(.mundo-panel)) .plegable summary {
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  transition: opacity 150ms var(--curva-control);
+}
+
+:global(html:not(.mundo-panel)) .plegable summary:hover {
+  opacity: 0.7;
+}
+
+:global(html:not(.mundo-panel)) .signoMas::before,
+:global(html:not(.mundo-panel)) .signoMas::after {
+  height: 1.5px;
+  background-color: var(--tinta);
+}
+
+:global(html:not(.mundo-panel)) .signoMas::after {
+  width: 1.5px;
+  height: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :global(html:not(.mundo-panel)) .acentoGrande:active:not(:disabled),
+  :global(html:not(.mundo-panel)) .acentoMenor:active:not(:disabled),
+  :global(html:not(.mundo-panel)) .secundarioGrande:active:not(:disabled),
+  :global(html:not(.mundo-panel)) .secundario:active:not(:disabled) {
+    transform: none;
+  }
+}

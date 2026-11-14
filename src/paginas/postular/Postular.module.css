@@ -94,7 +94,7 @@
 
 .zonaTexto {
   font-size: var(--t-prosa);
-  font-weight: 600;
+  font-weight: 550;
 }
 
 .zonaDetalle {
@@ -142,7 +142,7 @@
 
 .nombreArchivo {
   font-size: var(--t-prosa);
-  font-weight: 600;
+  font-weight: 550;
   min-width: 0;
   overflow-wrap: anywhere;
 }
@@ -257,7 +257,7 @@
   border: 1px solid var(--borde-control);
   background: var(--nube);
   font-size: var(--t-prosa);
-  font-weight: 600;
+  font-weight: 550;
   cursor: pointer;
   border-radius: var(--radio-menor);
 }

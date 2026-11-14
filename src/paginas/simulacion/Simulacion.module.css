@@ -125,7 +125,7 @@
 .dia {
   display: block;
   font-size: var(--t-base);
-  font-weight: 600;
+  font-weight: 550;
   letter-spacing: -0.012em;
 }
 
@@ -150,7 +150,7 @@
   border: 1px solid var(--regla2);
   background: var(--nube);
   font-size: var(--t-menor);
-  font-weight: 600;
+  font-weight: 550;
   color: var(--tinta2);
   font-variant-numeric: tabular-nums;
   border-radius: var(--radio);
@@ -219,7 +219,7 @@
   font-size: var(--t-destacado);
   line-height: 1.2;
   letter-spacing: -0.02em;
-  font-weight: 600;
+  font-weight: 550;
   margin: 0;
   min-width: 0;
 }
@@ -237,7 +237,7 @@
   padding: 0 var(--e3);
   border: 1px solid var(--bien);
   font-size: var(--t-menor);
-  font-weight: 600;
+  font-weight: 550;
   color: var(--bien);
   border-radius: var(--radio);
 }
@@ -312,7 +312,7 @@
   flex: none;
   width: 4rem;
   font-size: var(--t-apoyo);
-  font-weight: 600;
+  font-weight: 550;
   font-variant-numeric: tabular-nums;
 }
 

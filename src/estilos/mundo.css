@@ -97,6 +97,10 @@
 }
 
 :root {
+  /* Las voces de la letra. En el panel, Geist para todo; el portal las cambia
+     abajo, en «El mundo Northstar». */
+  --fuente: Geist, system-ui, sans-serif;
+  --fuente-ui: Geist, system-ui, sans-serif;
   /*
    * Superficies. El fondo es un pastel calido y las superficies son nube blanca:
    * asi lo que se pone encima —la cabecera, las tarjetas, el escaparate— se lee
@@ -236,20 +240,22 @@
    */
   --bien: #0b7a63;        /* 5,3:1 — lo confirmado */
   --bien-bruma: #e6f5f0;
-  --duda: #8f5a0a;        /* 5,8:1 — lo que cambia tu decision */
-  --duda-bruma: #fbf2e4;
-  /* Sobre `--duda-bruma` el propio `--duda` se queda corto; este llega a 7,9:1
-     y se sigue leyendo como el mismo ambar. */
-  --duda-tinta: #6d4406;
-  /* El secundario del ámbar. Sobre un fondo con color, el texto de apoyo se tiñe
-     de ese mismo tono; un gris encima del ámbar no llega al contraste y además
-     se lee como suciedad. 4,91:1 sobre `--duda-bruma`. */
-  --duda-tinta2: #87632e;
-  /* El punto ámbar de «Qué buscar en el CV» (V80): «lo menciona, sin detalle». Un
-     relleno de 10 px, no un texto: el `--duda` de la prosa se leía casi marrón a
-     ese tamaño junto al verde de «lo tiene». Nunca va solo: el punto lleva su
-     texto para lectores y la ficha dice la etiqueta. */
-  --duda-punto: #d4972a;
+  /* Sin ámbar en ninguna parte desde el 14/11/2026: `--duda` pasó a la familia
+     índigo del panel. El portal la redefine en azul marino bajo
+     `:root:not(.mundo-panel)`. El estado se distingue por la forma (bruma,
+     punto, etiqueta), no por un color cálido que se leía como advertencia. */
+  --duda: #4338ca;        /* 7,9:1 — lo que cambia tu decision */
+  --duda-bruma: #eef0ff;
+  /* Sobre `--duda-bruma`, el texto fuerte. 11,8:1. */
+  --duda-tinta: #312e81;
+  /* El secundario sobre la bruma: un gris encima de un fondo con color se lee
+     como suciedad, así que se tiñe del mismo tono. 5,6:1 sobre `--duda-bruma`. */
+  --duda-tinta2: #4f46e5;
+  /* El punto de «Qué buscar en el CV» (V80): «lo menciona, sin detalle». Un
+     relleno de 10 px, no un texto; más claro que el verde de «lo tiene» para
+     que se distingan también por luminosidad. Nunca va solo: lleva su texto
+     para lectores y la ficha dice la etiqueta. */
+  --duda-punto: #818cf8;
   --mal: #c22a3f;         /* 5,4:1 — el error real y lo que borra */
   --mal-pulsado: #9e2134;
   --mal-bruma: #fdedf0;
@@ -506,7 +512,7 @@ body {
   margin: 0;
   background: var(--cielo);
   color: var(--tinta);
-  font-family: Geist, system-ui, sans-serif;
+  font-family: var(--fuente);
   font-size: 16px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -758,3 +764,206 @@ time,
     background-color: CanvasText;
   }
 }
+
+
+/* ==================================================================
+ * EL MUNDO NORTHSTAR (13/11/2026) — todo lo que ve quien postula.
+ *
+ * El portal replica el estilo de northstar-template-demo.vercel.app: papel
+ * #FCFCFA, tinta #111312, azul #1E3A8A, Onest + Syne, filetes negros al 10 %,
+ * esquinas rectas en las celdas. El detalle y el porqué, en DESIGN.md.
+ *
+ * ⚠️ **El panel del equipo NO entra.** Todo lo de arriba de esta línea es «El
+ * cielo despejado» y es lo que ve el panel; lo de abajo se aplica solo cuando
+ * `<html>` NO lleva la clase `mundo-panel`, que pone y quita el armazón del
+ * panel (`usarMundoDelPanel`, en `src/panel/mundoDelPanel.ts`). Así el panel se
+ * ve exactamente como antes sin tocar ninguna de sus hojas, y lo que se cambie
+ * aquí no le llega. Las piezas compartidas (`piezas.module.css`, `ui/`) siguen
+ * la misma regla: su base es la del panel y la versión del portal va bajo
+ * `:global(html:not(.mundo-panel))`.
+ * ================================================================== */
+
+/*
+ * Desde el 13/11/2026 el estilo es el de northstar-template-demo.vercel.app:
+ * Onest para todo (cuerpo y titulares, peso 400 y tracking muy cerrado en el
+ * titular) y Syne para la voz de interfaz —el boton de la cabecera, el pie,
+ * los titulos de tarjeta oscura—. Las dos son libres (Google Fonts, OFL) y se
+ * sirven desde el propio sitio, variables, latin y latin-ext.
+ */
+@font-face {
+  font-family: Onest;
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/tipografia/onest-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
+    U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: Onest;
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/tipografia/onest-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4,
+    U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: Syne;
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url('/tipografia/syne-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
+    U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: Syne;
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url('/tipografia/syne-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4,
+    U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+
+:root:not(.mundo-panel) {
+  --fuente: Onest, system-ui, sans-serif;
+  --fuente-ui: Syne, Onest, system-ui, sans-serif;
+  --t-etiqueta: 11px;
+  --tracking-etiqueta: 0.16em;
+  /* 4,9:1 sobre #FCFCFA. Era el negro al 42 % de la referencia, 2,7:1: no llegaba
+     al mínimo para un texto de 11 px (QA del 14/11/2026). */
+  --tinta-etiqueta: #656d6c;
+  --tracking-titular: -0.055em;
+  --noche: #111312;
+  --noche-tarjeta: #141416;
+  --noche-regla: rgb(255 255 255 / 0.07);
+  --noche-tinta: #f0f0f2;
+  --noche-tinta2: rgb(240 240 242 / 0.56);
+  --cielo: #fcfcfa;
+  --cielo-hundido: #f5f7fb;
+  --nube-hundida: #f5f7fb;
+  --nube-honda: #e5e5e7;
+  --tinta: #111312;
+  --tinta2: #4a5251;
+  --tinta3: #687170;
+  --regla: #e6e7e4;
+  --regla2: #d4d6d3;
+  --borde-control: #7b8382;
+  --tinta-pulsado: #000000;
+  --activo: #1e3a8a;
+  --activo-pulsado: #172a66;
+  --activo-bruma: #e9edff;
+  --activo-regla: #1e3a8a;
+  /*
+   * Sin ámbar en el portal (13/11/2026). `--duda` —«lo que cambia tu
+   * decisión»— era la única familia cálida, y en un mundo de azul marino y
+   * neutros se leía como advertencia. Pasa a la familia azul: el estado sigue
+   * distinguiéndose por la forma (bruma, punto, etiqueta), no por el color.
+   * El panel tampoco lleva ámbar: su `--duda` base es índigo (14/11/2026).
+   */
+  --duda: #1e3a8a;        /* 10,4:1 sobre blanco */
+  --duda-bruma: #e9edff;
+  --duda-tinta: #172a66;  /* 11,5:1 sobre la bruma */
+  --duda-tinta2: #3b4f8f; /* 6,7:1 sobre la bruma */
+  --duda-punto: #527ada;
+  --accion-fuerte: #111312;
+  --accion-fuerte-pulsado: #2b2f2d;
+  --canto: linear-gradient(90deg, #93a5d8 0%, #5b73b8 40%, #1e3a8a 100%);
+  --t-encabezado: clamp(2rem, 3.2vw, 3rem);
+  --t-portada: clamp(36px, 6.1vw, 88px);
+  --t-pagina: clamp(2.25rem, 4vw, 3.5rem);
+  --radio: 8px;
+  --radio-menor: 4px;
+  --radio-pildora: 0px;
+  --radio-cristal: 28px;
+  --radio-ventana: 0px;
+  --radio-escaparate: 16px;
+  --alto-cabecera: 69px;
+  --sombra-nube: 0 8px 24px rgb(15 23 42 / 0.08), 0 2px 8px rgb(15 23 42 / 0.04);
+  --sombra-aviso: 0 24px 80px rgb(15 23 42 / 0.12), 0 2px 8px rgb(15 23 42 / 0.06);
+  --sombra-control: 0 0 0 1px rgb(17 19 18 / 0.12);
+  --sombra-control-alta: none;
+  --velo: rgb(0 0 0 / 0.4);
+}
+
+:root:not(.mundo-panel),
+:root:not(.mundo-panel) body {
+  background: var(--cielo);
+}
+
+/* El titular en Onest 400, interlínea 0,98 y -0,055em; los títulos de bloque
+   en 550 con -0,03em, que es el `panelHeadline` de la referencia. */
+:root:not(.mundo-panel) h1 {
+  font-size: var(--t-pagina);
+  line-height: 0.98;
+  letter-spacing: var(--tracking-titular);
+  font-weight: 400;
+}
+
+:root:not(.mundo-panel) h2 {
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+  font-weight: 550;
+}
+
+:root:not(.mundo-panel) h3 {
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  font-weight: 550;
+}
+
+:root:not(.mundo-panel) a {
+  transition: text-decoration-color 150ms var(--curva-control);
+}
+
+/* La etiqueta de sección de la referencia, «01 / SECCIÓN», como clase global
+   para las pantallas que la usan sin importar una hoja. */
+:root:not(.mundo-panel) .etiqueta-seccion {
+  margin: 0 0 var(--e3);
+  font-size: var(--t-etiqueta);
+  line-height: 1.2;
+  font-weight: 400;
+  letter-spacing: var(--tracking-etiqueta);
+  text-transform: uppercase;
+  color: var(--tinta-etiqueta);
+}
+
+/*
+ * La misma etiqueta encima de un titular o de un encabezado que la pide con
+ * `data-seccion="Mis procesos / Detalle"`. Es un pseudoelemento con texto
+ * alternativo vacío: decora, y así ni el lector de pantalla ni las pruebas la
+ * leen dos veces junto al titular.
+ */
+:root:not(.mundo-panel) [data-seccion]::before {
+  content: attr(data-seccion);
+  content: attr(data-seccion) / '';
+  display: block;
+  margin-bottom: var(--e4);
+  font-family: var(--fuente);
+  font-size: var(--t-etiqueta);
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: var(--tracking-etiqueta);
+  text-transform: uppercase;
+  color: var(--tinta3);
+}
+
+/* El anillo de foco de los campos sueltos de las pantallas: el halo azul claro
+   de los campos compartidos, en vez del contorno. */
+:root:not(.mundo-panel) textarea:focus-visible,
+:root:not(.mundo-panel) input:not([type='checkbox'], [type='radio'], [type='file'], [type='range']):focus-visible {
+  outline: none;
+  border-color: var(--activo);
+  box-shadow: 0 0 0 3px var(--activo-bruma);
+}
+

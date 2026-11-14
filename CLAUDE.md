@@ -32,35 +32,35 @@ Solo commitea si te lo pido explícitamente.
 
 ## Antes de tocar nada
 
-Tres avisos que no se ponen detrás de un enlace, porque llegan tarde:
+Los avisos que no se ponen detrás de un enlace, porque llegan tarde:
 
-⚠️ **El mundo visual es «El cielo despejado» desde el 25/09/2026**, y sustituyó entero a «El
-escaparate». Sale de una referencia que trajo el cliente (saasly.demos.tailgrids.com): la
-escala gris fría de Tailwind v4 —página `#F9FAFB`, superficies en nube blanca encima, que es lo
-que las separa—, **acción en índigo `#615FFF`** con radio **8 px**, `--accion-fuerte` casi negro
-`#030712` solo para el botón de la cabecera y el «Filtros» de `/vacantes` (641–1023 px), y
-**Geist** servida por el sitio. **El coral y el
-crema ya no existen**, y con el coral se perdió el color propio de «te toca a ti»: es el mismo
-índigo de la acción, y lo distingue la forma. **La fuente de verdad son los tokens de
-[`mundo.css`](src/estilos/mundo.css)**, y [DESIGN.md](DESIGN.md) los describe con su porqué.
+⚠️ **El mundo visual del portal es «Northstar» desde el 13/11/2026**, y sustituyó a «El cielo
+despejado». Es una réplica medida de northstar-template-demo.vercel.app —su estilo, no su
+contenido—: papel `#FCFCFA`, tinta `#111312`, **un solo azul `#1E3A8A`** para acción, ubicación
+y turno, **Onest** para todo y **Syne** para la voz de interfaz (servidas por el sitio),
+titulares en peso 400 con -0,055em, botones en MAYÚSCULAS, celdas de filete negro al 10 % con
+esquinas de 0–4 px y, en la portada, el campo de puntos del sombreador de la referencia en
+WebGL2. **La fuente de verdad son los tokens de [`mundo.css`](src/estilos/mundo.css)**, bloque
+«EL MUNDO NORTHSTAR», y [DESIGN.md](DESIGN.md) los describe con su porqué.
 
-Las **dieciocho** pantallas del candidato están compuestas —la número dieciocho es
-`/restablecer`, que llegó de main el 23/09/2026 junto con la reescritura de `/clave`—; **el
-panel sigue fuera de alcance, salvo sus tres puertas**, aunque `mundo.css` es global y el
-cambio de paleta también lo repintó.
+Las **dieciocho** pantallas del candidato llevan Northstar, y también las tres puertas del panel
+que viven en el armazón del portal (`/admin/entrar`, `/admin/clave`, `/admin/restablecer`).
 
-⚠️ **`/admin/entrar`, `/admin/clave` y `/admin/restablecer` entraron al escaparate el
-25/09/2026 y ya no viven sueltas: van DENTRO del armazón del portal**, así que llevan su
-cabecera y su pie. Lo que sigue fuera es `ArmazonPanel` —el candado—, y por eso no hay bucle.
-`/admin/invitacion` no entró: a esa se llega desde un enlace del correo, no desde el portal.
-El resto de `/admin` conserva la disposición anterior.
+⚠️ **El panel conserva «El cielo despejado»** (índigo `#615FFF`, Geist, página `#F9FAFB`, radio
+8). `mundo.css` y `piezas.module.css` son globales, así que **todo lo Northstar está escrito bajo
+`html:not(.mundo-panel)`**, y `usarMundoDelPanel()` ([`src/panel/mundoDelPanel.ts`](src/panel/mundoDelPanel.ts))
+pone esa clase en `<html>` mientras el panel está montado. **En una pieza compartida
+(`piezas.module.css`, `ui/campos`, `ui/Modal`, `ui/Estados`…), la base es la del panel y lo del
+portal va al final bajo `:global(html:not(.mundo-panel))`**: tocar la base repinta el panel.
+`/admin/invitacion` va suelta y también conserva el mundo del panel.
 
-⚠️ **La cabecera se ve desde el primer píxel.** Es una píldora blanca flotante a 16 px del
-borde, **sin filete ni sombra** en reposo ni al bajar, como la de la referencia; sobre el gris
-claro de más abajo casi no se distingue, y es a sabiendas. `--alto-cabecera` son **84 px medidos**, y
-ha pasado por 61, 76, 68 y 70: si tocas su relleno **o el alto del botón «Iniciar sesión»**,
-vuelve a medirlo en el navegador. El 25/09/2026 se olvidó y el token se quedó en 70 con la barra
-midiendo 84.
+⚠️ **La cabecera es una banda pegada arriba**, del papel de la página, con un filete negro al
+10 % debajo y la marca centrada. `--alto-cabecera` son **69 px medidos** en el portal (12 + 44 de
+la campana + 12, y el filete; en el panel siguen siendo 84): si tocas su relleno **o el alto de
+la campana**, vuelve a medirlo en el navegador.
+
+⚠️ **Si un cambio en `piezas.module.css` no se ve en una pantalla, reinicia Vite**: las clases
+que otra hoja trae con `composes` se quedan en caché con la versión vieja.
 
 Lo que se toca al componer una pantalla nueva vive en tres sitios y **ninguno se escribe a
 mano en la hoja de la pantalla**: los tokens en [`mundo.css`](src/estilos/mundo.css), los
@@ -103,7 +103,7 @@ El detalle, en [docs/TRABAJAR-EN-LOCAL.md](docs/TRABAJAR-EN-LOCAL.md).
 | Seguir el proceso entero, los dos lados, con lo que desbloquea cada paso | [06-FLUJO-COMPLETO](docs/06-FLUJO-COMPLETO.md) |
 | Tocar el panel: entrar y recuperar la contraseña, las tres pestañas, el ranking por etapas, qué exige publicar una vacante, corregirla en su modal, archivarla y dónde queda, eliminarla por borrado lógico, el plazo de su prueba, los huecos del backend | [PANEL](docs/PANEL.md) |
 | Saber qué falta, qué está a medias y qué promesa hoy no se cumple | [PENDIENTES](docs/PENDIENTES.md), [03-ESTADO-DEL-REDISENO](docs/03-ESTADO-DEL-REDISENO.md) |
-| Saber por qué algo quedó así, qué se probó al construirlo o qué se hizo un día concreto | [BITACORA-2026-10](docs/BITACORA-2026-10.md), [BITACORA-2026-09](docs/BITACORA-2026-09.md), [BITACORA-2026-08](docs/BITACORA-2026-08.md) |
+| Saber por qué algo quedó así, qué se probó al construirlo o qué se hizo un día concreto | [BITACORA-2026-11](docs/BITACORA-2026-11.md), [BITACORA-2026-10](docs/BITACORA-2026-10.md), [BITACORA-2026-09](docs/BITACORA-2026-09.md), [BITACORA-2026-08](docs/BITACORA-2026-08.md) |
 | Las 17 pantallas del maquetado, que es lo que se lee para construir | [maquetado/LEEME.md](maquetado/LEEME.md) |
 | El backend: sus endpoints, sus reglas y sus documentos | `~/Documentos/RENASER-RECLUTAMIENTO` — su `CLAUDE.MD` y su `docs/` |
 

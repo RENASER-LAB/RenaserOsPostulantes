@@ -87,7 +87,7 @@ export function Ingresar() {
         quedaba flotando debajo sin pertenecer a nada.
       */}
       <div className={estilos.tarjetaEntrar}>
-        <h1 className={estilos.titularEntrar}>Entra a tu proceso.</h1>
+        <h1 className={estilos.titularEntrar} data-seccion="Cuenta / Entrar">Entra a tu proceso.</h1>
         <p className={estilos.bajadaEntrar}>Sigue donde lo dejaste.</p>
 
         {/*

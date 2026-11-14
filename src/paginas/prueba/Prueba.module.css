@@ -61,7 +61,7 @@
 
 .tiempo {
   font-size: var(--t-cifra);
-  font-weight: 600;
+  font-weight: 550;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
 }
@@ -84,7 +84,7 @@
   flex-basis: 100%;
   margin: 0;
   font-size: var(--t-apoyo);
-  font-weight: 600;
+  font-weight: 550;
   color: var(--mal);
 }
 
@@ -121,8 +121,8 @@
 
 .tituloCambio {
   font-size: var(--t-menor);
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  font-weight: 500;
+  letter-spacing: var(--tracking-etiqueta);
   text-transform: uppercase;
   color: var(--tinta2);
 }
@@ -201,7 +201,7 @@
 .enunciado {
   font-size: var(--t-entradilla);
   line-height: 1.45;
-  font-weight: 600;
+  font-weight: 550;
   letter-spacing: -0.012em;
   margin-bottom: var(--e3);
   max-width: var(--medida);
@@ -262,7 +262,7 @@
 
 .nombreEntregable {
   font-size: var(--t-base);
-  font-weight: 600;
+  font-weight: 550;
   letter-spacing: -0.01em;
 }
 
@@ -271,7 +271,7 @@
   align-items: center;
   gap: var(--e2);
   font-size: var(--t-menor);
-  font-weight: 600;
+  font-weight: 550;
   color: var(--tinta);
 }
 
@@ -539,7 +539,7 @@
 /* El reloj, dentro de la barra fija. */
 .numeroReloj {
   font-size: var(--t-entradilla);
-  font-weight: 600;
+  font-weight: 550;
   font-variant-numeric: tabular-nums;
   color: var(--tinta);
 }
@@ -569,7 +569,7 @@
 .faltaElArchivo {
   margin-top: var(--e2);
   font-size: var(--t-apoyo);
-  font-weight: 600;
+  font-weight: 550;
   color: var(--duda-tinta);
 }
 
@@ -632,7 +632,7 @@
 .tituloParte {
   margin: 0;
   font-size: var(--t-apoyo);
-  font-weight: 600;
+  font-weight: 550;
   color: var(--tinta);
 }
 
@@ -763,7 +763,7 @@
 
 .etiquetaDeCelda {
   font-size: var(--t-micro);
-  font-weight: 600;
+  font-weight: 550;
   line-height: 1.5;
   color: var(--tinta2);
 }
@@ -775,7 +775,7 @@
 .valorDeCelda {
   margin: var(--e1) 0 0;
   font-size: var(--t-titulo);
-  font-weight: 600;
+  font-weight: 550;
   line-height: 1.3;
   letter-spacing: -0.01em;
   color: var(--tinta);
@@ -870,7 +870,7 @@
 
 .nombreDelArchivo {
   font-size: var(--t-base);
-  font-weight: 600;
+  font-weight: 550;
   line-height: 1.4;
   overflow-wrap: anywhere;
 }
@@ -1020,7 +1020,7 @@
 
 .nombrePorEntregar {
   font-size: var(--t-apoyo);
-  font-weight: 600;
+  font-weight: 550;
   overflow-wrap: anywhere;
 }
 
@@ -1038,7 +1038,7 @@
   border-radius: var(--radio-control);
   font: inherit;
   font-size: var(--t-apoyo);
-  font-weight: 600;
+  font-weight: 550;
   color: var(--activo);
   cursor: pointer;
 }
@@ -1062,7 +1062,7 @@
   border-radius: var(--radio);
   font: inherit;
   font-size: var(--t-base);
-  font-weight: 600;
+  font-weight: 550;
   color: var(--tinta);
   cursor: pointer;
 }

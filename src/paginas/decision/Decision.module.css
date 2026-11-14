@@ -66,8 +66,8 @@
 .eti {
   display: block;
   font-size: var(--t-micro);
-  font-weight: 600;
-  letter-spacing: 0.09em;
+  font-weight: 500;
+  letter-spacing: var(--tracking-etiqueta);
   text-transform: uppercase;
   color: var(--tinta3);
   margin-bottom: var(--e3);
@@ -109,7 +109,7 @@
 .numeroPaso {
   flex: none;
   width: 1.4rem;
-  font-weight: 700;
+  font-weight: 550;
   color: var(--tinta);
   font-variant-numeric: tabular-nums;
 }
@@ -152,7 +152,7 @@
 
 .etiqueta {
   font-size: var(--t-apoyo);
-  font-weight: 600;
+  font-weight: 550;
 }
 
 .pista {

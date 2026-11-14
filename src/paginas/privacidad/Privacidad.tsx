@@ -88,7 +88,7 @@ export function Privacidad() {
         ← Volver a mis procesos
       </Link>
 
-      <div className={estilos.encabezado}>
+      <div className={estilos.encabezado} data-seccion="Privacidad / Tus datos">
         <h1 className={estilos.titular}>Tus datos, tus decisiones.</h1>
         <p className={estilos.bajada}>
           Son tres cosas distintas y se parecen mucho. Léelas antes de elegir:{' '}

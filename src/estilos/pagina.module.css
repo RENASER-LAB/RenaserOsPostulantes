@@ -67,6 +67,13 @@
   margin-top: calc(var(--e5) * -1);
 }
 
+/* Un titular con su etiqueta de sección encima no come aire: se pegaba a la
+   cabecera cuando no había enlace de vuelta (QA del 14/11/2026). */
+.hoja > [data-seccion]:first-child,
+.hoja > :first-child:has([data-seccion]:first-child) {
+  margin-top: 0;
+}
+
 @media (max-width: 640px) {
   .hoja {
     padding: var(--e6) var(--e4) var(--e7);
@@ -97,10 +104,13 @@
   max-width: 22ch;
 }
 
+/* La etiqueta «01 / SECCIÓN» del encabezado sale de `data-seccion`: ver
+   `[data-seccion]` en `mundo.css`. */
+
 .bajada {
-  margin: var(--e3) 0 0;
-  font-size: var(--t-base);
-  line-height: 1.55;
+  margin: var(--e4) 0 0;
+  font-size: var(--t-entradilla);
+  line-height: 1.5;
   color: var(--tinta2);
   max-width: var(--medida);
 }
@@ -169,8 +179,9 @@
  * no hace falta.
  */
 .bloque {
-  border: 1px solid var(--regla);
-  border-radius: var(--radio);
+  border: 1px solid rgb(0 0 0 / 0.1);
+  border-radius: var(--radio-menor);
+  background: var(--nube);
   padding: var(--e5);
 }
 
@@ -240,8 +251,8 @@
  * prohibida en este mundo**, y ademas un hueco no es una alarma.
  */
 .hueco {
-  border: 1px solid var(--regla2);
-  border-radius: var(--radio);
+  border: 1px dashed rgb(17 19 18 / 0.2);
+  border-radius: var(--radio-menor);
   background: var(--nube-hundida);
   padding: var(--e4);
   font-size: var(--t-apoyo);

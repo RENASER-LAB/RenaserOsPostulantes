@@ -16,7 +16,7 @@
 .titulo {
   margin: 0;
   font-size: var(--t-apoyo);
-  font-weight: 600;
+  font-weight: 550;
   letter-spacing: -0.006em;
   color: var(--tinta);
 }
@@ -31,7 +31,7 @@
 
 .texto b,
 .conectado b {
-  font-weight: 600;
+  font-weight: 550;
   color: var(--tinta);
   font-variant-numeric: tabular-nums;
 }
@@ -182,7 +182,7 @@
 .escribirTexto {
   composes: dejar;
   margin-top: 0;
-  font-weight: 600;
+  font-weight: 550;
   color: var(--tinta);
   text-decoration-color: var(--tinta3);
 }

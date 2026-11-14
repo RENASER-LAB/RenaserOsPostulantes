@@ -9,113 +9,108 @@ código.
 
 ---
 
-## El mundo visual: «El cielo despejado» (desde el 25/09/2026)
+## El mundo visual: «Northstar» (desde el 13/11/2026)
 
-Gris muy claro y frío de fondo, superficies blancas que se apoyan en él por tono, tinta casi
-negra con un matiz azul, y **un solo color con intención**: el índigo `#615FFF`, que marca lo
-que se pulsa, dónde estás y lo que te toca. Tipografía **Geist**. Esquina de 8 px en los
-controles. La portada es la única pantalla con atmósfera —un cielo azul con nubes y el
-recorrido dentro de una ventana de cristal—; dentro del portal, el cielo se queda en su gris.
+Papel casi blanco `#FCFCFA`, tinta casi negra `#111312` y **un solo color con intención**: el
+azul `#1E3A8A`, que marca lo que se pulsa, dónde estás y lo que te toca. **Onest** para todo y
+**Syne** para la voz de interfaz. Titulares enormes y ligeros (peso 400, -0,055em), etiquetas
+en mayúsculas pequeñas y espaciadas («01 / VACANTES»), y superficies que son **celdas de filete
+negro al 10 %** de esquinas casi rectas, sin sombra en reposo. La portada es la única pantalla
+con atmósfera: el campo de puntos que ondula, la ventana del producto que se asienta al bajar,
+la banda oscura y el pie en noche.
 
-La metáfora es la de un cielo despejado porque quien postula pasa semanas esperando: la mayor
-parte de los dieciocho estados no le piden nada. El portal es el sitio al que vuelve a mirar, y
-tiene que estar despejado — nada compitiendo con la única pregunta que importa, en qué punto
-está su candidatura.
+**El panel del equipo no entró**: conserva «El cielo despejado» (ver más abajo y
+[DESIGN.md](../DESIGN.md) › «Lo que queda fuera»).
 
 ### De dónde sale
 
-De una referencia que trajo el cliente: la plantilla SaaS
-[saasly.demos.tailgrids.com](https://saasly.demos.tailgrids.com/). Se replicó **midiendo su
-página**, no mirando capturas: los `oklch` de su hoja convertidos a hex pintándolos en un
-canvas, sus radios, sus pesos y el marco de su captura de producto capa por capa. Es la escala
-gris de Tailwind v4 con índigo, Geist, el radio de 8 px y la cabecera en píldora blanca.
+De la plantilla [northstar-template-demo.vercel.app](https://northstar-template-demo.vercel.app/),
+elegida por el usuario el 13/11/2026 para que el portal adoptara **su estilo y no su
+contenido**. Se replicó **midiendo su página con Playwright**: estilos computados (familias,
+tamaños, interlineados, tracking, colores, radios, sombras, rellenos, anchos de carril), sus
+`@font-face`, sus `@keyframes` y transiciones, las transformaciones de su portada al bajar
+—muestreadas cada 100 px de scroll— y, del fondo, **el código del sombreador sacado de su
+bundle** y los uniformes con los que lo llama.
 
 **Lo que no se copió, y por qué:**
 
 | De la referencia | Aquí | Motivo |
 |---|---|---|
-| El cielo es una foto de su servidor | Degradados, y nubes generadas con ruido fractal y pintadas de antemano en `public/cielo-nubes.webp` (40 KB) | Es un recurso de una plantilla comercial. Las nubes salen de `herramientas/cielo/`, y el script que las pinta explica por qué no se calculan en el navegador |
-| El borde de sus botones da 1,24:1 contra blanco | El borde de un campo usa el gris de texto, 4,83:1 | WCAG 1.4.11 pide 3:1 al límite visible de un control |
-| Su verde de acierto da 3,22:1 | Los colores de estado se quedaron como estaban | Texto pide 4,5:1 |
-| Precios, integraciones, testimonios | No existen | Los dos primeros no aplican a un portal de empleo gratuito; los testimonios la portada se niega a inventarlos |
+| El borde de sus campos, negro al 18 % (1,5:1) | El gris de control, 3,9:1 | WCAG 1.4.11 pide 3:1 al límite visible de un control |
+| Su etiqueta de sección al 42 % en todas partes | Al 42 % solo en la portada; en el resto, `tinta3` (4,9:1) | En la portada repite el titular; en una pantalla puede ser lo único que nombra el bloque |
+| La librería Paper Shaders | El mismo sombreador portado a WebGL2, con respaldo en 2D | Una dependencia entera para un efecto; y aquí se para fuera de pantalla, baja a 30 cuadros en teléfonos y respeta el movimiento reducido |
+| Su contenido: proyectos, blog, agentes, testimonios | No existe | Se copió el estilo, no la marca; la ventana de la portada enseña una postulación de ejemplo genérica |
+| El selector de idioma | No existe | El portal es solo en español |
+| El rótulo que rodaba en los botones del mundo anterior | Quitado | La referencia solo cambia el color al pasar |
 
 ### Las reglas de forma
 
-- **Plano por tono.** Una superficie se separa de la página porque es más clara que ella, no
-  porque flote. En reposo casi nada lleva sombra, ni siquiera la cabecera.
-- **Una sola voz.** Si algo es índigo, se pulsa, es donde estás, o te toca. Nada decorativo va
-  en índigo. **Con una excepción, el verde de WhatsApp** (13/10/2026, ver abajo).
-- **El estado se lee en la forma antes que en el color** —franja maciza, borde de 2 px,
-  filete—, porque quien no distingue colores lee el mismo recorrido. **Es la regla que sostiene
-  el sistema** desde que el turno perdió su color propio (ver abajo).
-- **Verde, ámbar y rojo significan hecho, duda y error**, y nunca jerarquía ni categoría. Esto
-  viene del 23/08 y es lo único de la paleta que ha sobrevivido a todos los mundos.
-- **La tipografía hace la jerarquía.** Una sola familia; un titular de portada por pantalla.
-- **El movimiento sirve a la continuidad y al cambio de estado**, respeta
-  `prefers-reduced-motion`, y **con el reloj corriendo —evaluación, prueba, cuestionario— no se
-  mueve nada**.
+- **Plano por filete.** Una superficie se separa por su filete negro al 10 %, no por sombra.
+  Lo único que flota en reposo es la ventana de la portada.
+- **Una sola voz.** Si algo es azul, se pulsa, es donde estás, o te toca. **Con una excepción,
+  el verde de WhatsApp** (13/10/2026, ver abajo).
+- **El estado se lee en la forma antes que en el color** —franja maciza, filete azul con halo—.
+- **Verde, azul en bruma y rojo significan hecho, duda y error** (no hay ámbar en ninguna parte: el portal lo quitó el 13/11/2026 —`--duda` en azul marino— y el panel el 14/11/2026 —`--duda` en índigo—), y nunca jerarquía ni categoría. Viene
+  del 23/08 y es lo único de la paleta que ha sobrevivido a todos los mundos.
+- **La tipografía hace la jerarquía**, con el tamaño y el tracking y no con el peso: nada pasa
+  de 600.
+- **El movimiento** sigue a Emil Kowalski —solo `transform` y `opacity`, curvas fuertes de
+  salida, corto en la interfaz—, respeta `prefers-reduced-motion`, y **con el reloj corriendo
+  —evaluación, prueba, cuestionario— no se mueve nada**.
 
-### Lo que se perdió al cambiar de mundo
+### El panel conserva «El cielo despejado»
 
-**«Te toca a ti» ya no tiene color propio.** En el mundo anterior era el coral, y era un
-discriminador: servía para encontrar tu turno entre cosas que no lo son. La referencia no tiene
-un segundo acento, así que el turno se pinta del mismo índigo que la acción, y lo distingue la
-forma —el borde de 2 px del panel que reclama—. **Se decidió dejarlo así** el 25/09/2026. El
-token `--activo-regla` conserva su nombre para que, si algún día vuelve un color propio, se
-separe en un solo sitio.
+`mundo.css` y `piezas.module.css` son globales. Para que el panel no se repintara, **todo lo
+Northstar está escrito bajo `html:not(.mundo-panel)`** y la base de cada archivo compartido es la
+del panel. `usarMundoDelPanel()` (`src/panel/mundoDelPanel.ts`) pone `mundo-panel` en `<html>`
+mientras el panel está montado. Las tres puertas del panel que viven en el armazón del portal
+(`/admin/entrar`, `/admin/clave`, `/admin/restablecer`) llevan Northstar; `/admin/invitacion`, no.
+Se comprobó contra `main` píxel a píxel (ver la [bitácora de noviembre](BITACORA-2026-11.md)).
 
 ### La excepción verde: «Escribir por WhatsApp» (13/10/2026)
 
-**El único botón del portal que no es índigo ni tinta**, decidido por el usuario el 12/10/2026.
+**El único botón del portal que no es azul ni tinta**, decidido por el usuario el 12/10/2026.
 Va relleno del verde de WhatsApp, `--whatsapp` `#25D366` (`--whatsapp-pulsado` `#1FBF5A` al pasar
-por encima), con **la tinta oscura encima y no blanca** —el blanco sobre ese verde da 1,98:1 y no
-llega al mínimo; `--tinta` da 8,3:1— y el logotipo de WhatsApp delante, en el mismo color del
-texto (`IconoWhatsapp`). El verde dice «WhatsApp» y nada más: no es el verde de «hecho» (`--bien`)
-y no le compite al índigo de lo que te toca, porque **la tarjeta solo sale cuando al candidato no
-le toca nada**. Ningún otro elemento lo usa, tampoco el estado «Conectado», que va en tinta.
+por encima), con **la tinta oscura encima y no blanca** —el blanco sobre ese verde da 1,98:1;
+`--tinta` da 8,3:1— y el logotipo de WhatsApp delante. El verde dice «WhatsApp» y nada más, y
+**la tarjeta solo sale cuando al candidato no le toca nada**. Desde el 13/11 lleva el filete negro
+al 10 % y sus mayúsculas, como el resto de botones.
 
-La tarjeta que lo lleva es **`.ofrecimiento`**: nube blanca con filete gris y sin sombra, sobre el
-gris hundido del panel de espera. Se separa por superficie, no por relieve, y no reclama —ofrecer
-no es pedir—. La forma de los dos vive en `piezas.module.css`; el porqué del token, en
-`mundo.css`. ⚠️ **`DESIGN.md` todavía no la describe**: ver [PENDIENTES](PENDIENTES.md).
+La tarjeta que lo lleva es **`.ofrecimiento`**: nube con filete y sin sombra, sobre el papel
+hundido del panel de espera. No reclama —ofrecer no es pedir—.
 
-### El punto ámbar de «Qué buscar en el CV» (13/11/2026)
+### El punto de «Qué buscar en el CV» (14/11/2026)
 
-`--duda-punto` (`#d4972a`) es **solo el relleno del punto de 10 px que dice «lo menciona, sin
-detalle»** en el ranking del panel, junto al verde de «lo tiene» (`--bien`), el blanco con borde de
-«no aparece» y el punteado de «pendiente». A ese tamaño, el `--duda` de la prosa se leía casi
-marrón al lado del verde. Sigue siendo el ámbar de la duda, no una categoría, y **nunca va solo**:
-el blanco con borde y el punteado se distinguen por la forma, el verde y el ámbar por el color y la
-luz, cada grupo lleva su texto para lectores de pantalla y la ficha dice la etiqueta. No se usa
-para texto. El porqué, en `mundo.css`; dónde sale,
-en [PANEL](PANEL.md) › «Qué buscar en el CV». ⚠️ **`DESIGN.md` todavía no lo describe**: ver
-[PENDIENTES](PENDIENTES.md).
+`--duda-punto` es **solo el relleno del punto de 10 px que dice «lo menciona, sin detalle»** en
+el ranking del panel. Era ámbar (`#d4972a`); desde el 14/11/2026 es índigo claro (`#818CF8`),
+más claro que el verde de «lo tiene» para que se distingan también por luminosidad. El porqué,
+en `mundo.css`; dónde sale, en [PANEL](PANEL.md) › «Qué buscar en el CV».
 
 ### La tipografía
 
-**Geist**, fuente variable 400–700, **servida por el propio sitio** desde
-`public/tipografia/`: una aplicación instalada no puede quedarse sin titulares por falta de
-cobertura. Se precarga el subconjunto latino desde `index.html`. Los archivos de Figtree siguen
-en la misma carpeta por si hay que volver.
+**Onest** (variable 100–900) y **Syne** (variable 400–800), de Google Fonts con licencia OFL,
+**servidas por el propio sitio** desde `public/tipografia/`: una aplicación instalada no puede
+quedarse sin letra por falta de cobertura. **Geist sigue en la misma carpeta y en `mundo.css`
+porque es la del panel**; Figtree y Mulish, por si hay que volver.
 
-⚠️ **El detector de `impeccable` marca Geist como «fuente sobreexpuesta»**, igual que Inter o
-Roboto. Es una decisión del cliente, y la excepción está registrada en
-`.impeccable/config.json` con su motivo: **no la cambies para callar el aviso**.
+⚠️ La excepción de Geist en `.impeccable/config.json` («fuente sobreexpuesta») se queda: el panel
+la sigue usando.
 
 ### Los mundos anteriores
 
-Este portal ha tenido cuatro mundos visuales. Si encuentras alguno de estos nombrado como
-vigente en `docs/`, está viejo:
+Este portal ha tenido cinco mundos visuales. Si encuentras alguno de estos nombrado como vigente
+en el portal, está viejo:
 
 | Mundo | Cuándo | Qué era |
 |---|---|---|
 | «El seguimiento» | agosto | Hitos impresos, cero radios, Libre Franklin |
 | «El canto» | hasta el 10/09 | Nube difractando luz, espectro irisado, violeta `#5638d6`, Mulish |
 | «El escaparate» | 10/09 – 25/09 | Pastel cálido `#FBF1E9`, acción negra `#0A0A0A` con radio 4, coral `#FF7C61` para el turno, Figtree |
-| **«El cielo despejado»** | **desde el 25/09** | El de este documento |
+| «El cielo despejado» | 25/09 – 13/11 (**y sigue en el panel**) | Gris frío de Tailwind v4, índigo `#615FFF`, Geist, cabecera en píldora, cielo con nubes en la portada |
+| **«Northstar»** | **desde el 13/11** | El de este documento |
 
-La historia de cada cambio está en las bitácoras de [agosto](BITACORA-2026-08.md) y
-[septiembre](BITACORA-2026-09.md).
+La historia de cada cambio está en las bitácoras de [agosto](BITACORA-2026-08.md),
+[septiembre](BITACORA-2026-09.md) y [noviembre](BITACORA-2026-11.md).
 
 ---
 
@@ -140,12 +135,12 @@ cómo se ve: eso es DESIGN.md.
 
 | Pieza | Qué es |
 |---|---|
-| `src/estilos/mundo.css` | **La hoja global del mundo.** Los tokens, las fuentes y los estilos base. Todo lo demás son CSS Modules, salvo la prueba de shadcn de la fila siguiente |
+| `src/estilos/mundo.css` | **La hoja global del mundo.** Los tokens, las fuentes y los estilos base: arriba los del panel («El cielo despejado»), abajo el bloque «EL MUNDO NORTHSTAR» bajo `:root:not(.mundo-panel)`, que es lo del portal. Todo lo demás son CSS Modules, salvo la prueba de shadcn de la fila siguiente |
 | `src/estilos/tailwind.css` y `src/ui/shadcn/` | **La prueba piloto de shadcn/ui, solo en `/vacantes` (01/10/2026).** Tailwind v4 **sin preflight** y con las utilidades en `!important`, para no tocar las otras pantallas; su tema son los tokens de `mundo.css`. Los componentes de shadcn viven en `src/ui/shadcn/` (se añaden con `npx shadcn add`, y la CLI mete por error un paquete `cn`: quitarlo). Sin lucide: la casilla y el radio usan los iconos de la casa |
-| `src/estilos/piezas.module.css` | **La única especificación de botón del portal**, más los tres paneles (`.turno`, `.panelDeEspera`, `.indispensable`), la cabecera de sección y el plegable. Desde el 13/10/2026, también `.ofrecimiento` (lo que se ofrece mientras se espera) y `.whatsapp` (el botón verde, misma silueta y altura que `.acentoMenor`). Se trae con `composes` desde la hoja de cada pantalla. Si hace falta una forma que no está ahí, se añade ahí — ninguna pantalla se dibuja la suya |
+| `src/estilos/piezas.module.css` | **La única especificación de botón del portal**, más los tres paneles (`.turno`, `.panelDeEspera`, `.indispensable`), la cabecera de sección y el plegable. Desde el 13/10/2026, también `.ofrecimiento` (lo que se ofrece mientras se espera) y `.whatsapp` (el botón verde, misma silueta y altura que `.acentoMenor`). Se trae con `composes` desde la hoja de cada pantalla. Si hace falta una forma que no está ahí, se añade ahí — ninguna pantalla se dibuja la suya. **Su base es la del panel; la versión del portal va al final bajo `:global(html:not(.mundo-panel))`** |
 | `src/estilos/pagina.module.css` | **El esqueleto de una pantalla**: el carril, el encabezado, el reparto en columnas, el bloque y el hueco declarado |
-| `src/app/Armazon.tsx` | La cabecera en píldora, los dos pies —en columnas y corto—, y **el cielo de la portada**, que vive aquí porque tiene que pasar por detrás de la cabecera. También decide qué pantallas son una tarjeta centrada en la ventana (`CENTRADAS`: `/ingresar`, `/clave`, `/restablecer` y sus tres del panel), cuáles llevan el pie corto y cómo sube «Inicio» |
-| `src/paginas/vacantes/` | La portada —cielo, ventana de cristal, cinta, las tres vacantes más recientes, «Por qué este proceso es distinto», preguntas—, **`/vacantes`**, la búsqueda con sus filtros (`BuscarVacantes`, llegó de main el 25/09/2026 y se pasó a este mundo al juntarla), la tarjeta de pie de la portada (`Tarjeta`), la tarjeta «Expresiva» y el panel de `/vacantes` con shadcn (`FilaDeVacante`, `PanelDeVacante`; la columna de filtros vive en `BuscarVacantes`) y la ficha. **Públicas** |
+| `src/app/Armazon.tsx` | La barra pegada de 69 px, los dos pies en noche —en columnas, con el saludo que cambia de idioma, y corto—. También decide qué pantallas son una tarjeta centrada en la ventana (`CENTRADAS`: `/ingresar`, `/clave`, `/restablecer` y sus tres del panel), cuáles llevan el pie corto y cómo sube «Inicio» |
+| `src/paginas/vacantes/` | La portada —el campo de puntos (`FondoDeLaPortada`, WebGL2), la ventana del producto, cinta, las tres vacantes más recientes, «Por qué este proceso es distinto», preguntas—, **`/vacantes`**, la búsqueda con sus filtros (`BuscarVacantes`, llegó de main el 25/09/2026 y se pasó a este mundo al juntarla), la tarjeta de pie de la portada (`Tarjeta`), la tarjeta «Expresiva» y el panel de `/vacantes` con shadcn (`FilaDeVacante`, `PanelDeVacante`; la columna de filtros vive en `BuscarVacantes`) y la ficha. **Públicas** |
 | `src/paginas/cuenta/` | Entrar, crear cuenta, canjear el enlace del correo y la contraseña olvidada. Comparten `Cuenta.module.css` |
 | `src/paginas/postular/` | Postular. **Aquí vive el único descarte automático del sistema** |
 | `src/paginas/procesos/` | «Mis procesos», el detalle de una postulación y la línea de hitos. `TarjetaWhatsapp` (13/10/2026) es la tarjeta de WhatsApp del recuadro de espera, la misma en los dos sitios |
@@ -155,7 +150,7 @@ cómo se ve: eso es DESIGN.md.
 | `src/paginas/prueba/` | La prueba del puesto, en sus dos formas. `Prueba.tsx` decide y pinta la de plantilla en curso; `PruebaDelEditor.tsx`, la del editor en curso, sobre el marco; `FichaPrevia.tsx` es la pantalla previa de las dos, con sus textos en `loQueDiceLaPrevia.ts`; `ElCaso.tsx`, el lateral del caso y su vista de lectura; `Entregable.tsx`, subir un archivo o un enlace |
 | `src/paginas/simulacion/` | Elegir fecha, y la sesión ya reservada con su agenda |
 | `src/paginas/validacion/` | El periodo trabajando. Ver más abajo por qué no se enlaza |
-| `src/paginas/decision/` | El caso ámbar. El formulario va entero y **apagado** |
+| `src/paginas/decision/` | El caso en duda (antes «ámbar»). El formulario va entero y **apagado** |
 | `src/paginas/privacidad/` | La política pública y las tres acciones sobre los datos |
 | `src/panel/entrar/` | Las tres puertas del panel —entrar, pedir el enlace y elegir contraseña—, **dentro del armazón del portal** y con su aspecto. El resto de `/admin` va con su propia disposición |
 | `src/ui/recuperacion/` | La contraseña olvidada —pedir el enlace y elegir la nueva—, **la misma pieza en el portal y en el panel**. Se pinta para ir dentro de una tarjeta, que pone cada pantalla |
@@ -165,7 +160,7 @@ cómo se ve: eso es DESIGN.md.
 | `src/ui/Modal.tsx` | El aviso compartido: entregas y confirmaciones. Con `aPruebaDeDobleClic` (10/10/2026) ignora el puntero que sigue a la pulsación que lo abrió; ver [REGLAS-DEL-CODIGO.md](REGLAS-DEL-CODIGO.md) |
 | `src/ui/TextoPlano.tsx` | Texto libre con sus párrafos y sus direcciones convertidas en enlaces. `enlacesTabulables={false}` saca los enlaces del Tab (el extracto recortado del caso) y `listas` (09/10/2026, en el caso, los materiales y las herramientas de la prueba) pinta como `ul` las líneas que empiezan por «- », «• » o «* », y como `ol` las que empiezan por «1. », «2. »… |
 | `src/ui/campos/` | Campo, Seleccion, AreaTexto y Consentimiento: etiqueta y error atados al campo. La marca de obligatorio está en [REGLAS-DEL-CODIGO.md](REGLAS-DEL-CODIGO.md). `Campo` admite **`prefijo`** (13/10/2026): un texto que no se escribe, como el «+51» del celular, dibujado dentro de la caja a la izquierda y en el gris de la ayuda; el lector de pantalla lo oye como parte de la descripción del campo («Con el prefijo +51 delante.»). **`prefijo=""` no es lo mismo que no darlo**: esconde el prefijo sin volver a montar el `<input>`, y es lo que usa el celular mientras el número empieza por «+»; quitarlo con `undefined` haría perder el foco y el cursor. `CampoCelular` y `mascaraCelular` (12/11/2026) son el campo del celular con su máscara: ver [REGLAS-DEL-CODIGO.md](REGLAS-DEL-CODIGO.md). `enfocarSinTapar` lleva el foco a un campo con error sin dejarlo bajo la cabecera: ver «Dependencias» |
-| `public/tipografia/` | Geist (y Figtree, por si se vuelve) |
+| `public/tipografia/` | Onest y Syne (el portal), Geist (el panel), y Figtree y Mulish por si se vuelve |
 
 `src/dominio/estados.ts` lleva cuatro funciones que usa el recorrido:
 
@@ -214,7 +209,7 @@ Tres avisos por si se retoca:
 
 Ninguna finge tener datos que no tiene.
 
-**Decisión ámbar** (`/procesos/:uuid/decision`). El formulario está entero y
+**Decisión en duda** (`/procesos/:uuid/decision`, antes «decisión ámbar»). El formulario está entero y
 **deshabilitado**, con un `fieldset disabled`, y se dice por qué antes de que nadie escriba. La
 acción que sí funciona —escribirle al equipo— es la que lleva el índigo. Los endpoints que
 hacen falta están en la cabecera de `Decision.tsx`.
@@ -239,8 +234,10 @@ La skill de diseño lee cuatro cosas de aquí, y las cuatro tienen que decir la 
 | `.impeccable/config.json` | La configuración del detector, con la excepción de Geist |
 
 **DESIGN.md y `design.json` se regeneran juntos, nunca uno solo.** La última vez fue el
-25/09/2026, con `/impeccable document`, al cambiar de mundo: `DESIGN.md` se reescribió de cero y
-la narrativa del sidecar se copia literal de él.
+13/11/2026, al pasar a «Northstar»: `DESIGN.md` se reescribió de cero y `design.json` se rehízo
+**a mano** a juego —colores, tipografía, sombras, movimiento, cortes, diez piezas y la
+narrativa—, porque `/impeccable document` no se pudo correr desde la sesión. La próxima vez que
+se corra, que compare contra estos dos.
 
 ⚠️ **Si cambias los tokens de `mundo.css`, DESIGN.md miente hasta que lo regeneres.** Y si un
 valor nuevo —un radio, un tamaño— no está en la escala, **se nombra como token**, no se silencia:
@@ -262,6 +259,7 @@ Lo que se corrió sobre el portal y cuándo:
 |---|---|
 | `extract`, `document`, `audit` (17/20), `critique` (27/40), `polish` | 24/08, sobre el mundo de entonces. El registro, en la [bitácora de agosto](BITACORA-2026-08.md) |
 | `document` | 25/09, al pasar a «El cielo despejado» |
+| (a mano, sin el comando) | 13/11, al pasar a «Northstar» |
 
 **No usar `craft`**: está deprecado.
 
@@ -269,7 +267,7 @@ Lo que se corrió sobre el portal y cuándo:
 
 ## Dependencias
 
-Instaladas y en uso: `motion` (**solo fuera del examen**) y `zod`. Estilos con **CSS
+Instaladas y en uso: `motion` (**solo fuera del examen**; también mueve la portada al bajar y el saludo del pie) y `zod`. El fondo de la portada es WebGL2 propio, sin librería. Estilos con **CSS
 Modules** — aunque la paleta salga de la escala de Tailwind, aquí son tokens propios —, salvo
 **`/vacantes`, que desde el 01/10/2026 es la prueba piloto de shadcn/ui**: Tailwind v4,
 `radix-ui`, `class-variance-authority`, `clsx` y `tailwind-merge`. Si la prueba convence, se

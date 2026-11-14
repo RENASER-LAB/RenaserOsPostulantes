@@ -560,7 +560,7 @@ export function Evaluacion() {
         </Link>
 
         <div className={estilos.portada}>
-          <h1>Tu evaluación está lista.</h1>
+          <h1 data-seccion="Etapa 1 / Evaluación">Tu evaluación está lista.</h1>
           <p className={estilos.presentacion}>
             Son preguntas sobre cómo trabajas, no sobre lo que memorizaste. Van de una en
             una, no hay respuestas de manual, y nadie las responde de una sentada.

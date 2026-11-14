@@ -89,7 +89,7 @@
 
 .letra {
   flex: none;
-  font-weight: 600;
+  font-weight: 550;
   color: var(--tinta2);
   font-variant-numeric: tabular-nums;
 }
@@ -139,7 +139,7 @@
 
 .etiquetaParte {
   font-size: var(--t-apoyo);
-  font-weight: 600;
+  font-weight: 550;
 }
 
 .campoParte {
@@ -196,8 +196,8 @@
   border: 1px solid var(--borde-control);
   background: var(--nube);
   font-size: var(--t-menor);
-  font-weight: 600;
-  letter-spacing: 0.04em;
+  font-weight: 500;
+  letter-spacing: var(--tracking-etiqueta);
   text-transform: uppercase;
   cursor: pointer;
   border-radius: var(--radio-control);
@@ -257,7 +257,7 @@
   border: 1px solid var(--borde-control);
   background: var(--nube);
   font-size: var(--t-prosa);
-  font-weight: 600;
+  font-weight: 550;
   font-variant-numeric: tabular-nums;
   cursor: pointer;
   border-radius: var(--radio-control);
@@ -340,7 +340,7 @@
   background: var(--tinta);
   color: var(--nube);
   font-size: var(--t-apoyo);
-  font-weight: 700;
+  font-weight: 550;
   font-variant-numeric: tabular-nums;
 }
 
@@ -472,7 +472,7 @@
 
 .numeroNivel {
   font-size: var(--t-prosa);
-  font-weight: 600;
+  font-weight: 550;
   font-variant-numeric: tabular-nums;
 }
 

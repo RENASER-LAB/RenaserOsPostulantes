@@ -44,8 +44,8 @@
 .titulo {
   margin: 0;
   font-size: var(--t-micro);
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  font-weight: 500;
+  letter-spacing: var(--tracking-etiqueta);
   text-transform: uppercase;
   color: var(--tinta3);
 }
@@ -53,7 +53,7 @@
 .cifra {
   margin: var(--e3) 0 0;
   font-size: var(--t-cifra);
-  font-weight: 600;
+  font-weight: 550;
   line-height: 1.1;
   letter-spacing: -0.02em;
   color: var(--tinta);
@@ -108,7 +108,7 @@
 }
 
 .texto b {
-  font-weight: 600;
+  font-weight: 550;
   color: var(--tinta);
 }
 
@@ -163,7 +163,7 @@
   margin: 0;
   overflow: hidden;
   font-size: var(--t-apoyo);
-  font-weight: 600;
+  font-weight: 550;
   color: var(--tinta);
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -310,7 +310,7 @@
 .aqui {
   border-left-color: var(--tinta) !important;
   color: var(--tinta) !important;
-  font-weight: 600;
+  font-weight: 550;
 }
 
 .nombreSeccion {
@@ -343,7 +343,7 @@
   background: var(--nube-hundida);
   color: var(--tinta2);
   font-size: var(--t-micro);
-  font-weight: 700;
+  font-weight: 550;
   white-space: nowrap;
 }
 

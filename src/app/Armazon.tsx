@@ -7,6 +7,7 @@
 
 import { Link, NavLink, Outlet, matchPath, useLocation, useNavigationType } from 'react-router-dom'
 import { useEffect, useRef, useState } from 'react'
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { patrones, rutas } from '@/rutas'
 import { useSesion } from './Sesion'
 import { Campana } from '@/ui/Campana'
@@ -440,11 +441,8 @@ export function Armazon() {
               aria-label={menu.abierto ? 'Cerrar el menú' : 'Abrir el menú'}
               onClick={() => menu.setAbierto(!menu.abierto)}
             >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
-                <path className={estilos.raya} d="M4 7h16" />
-                <path className={estilos.raya} d="M4 12h16" />
-                <path className={estilos.raya} d="M4 17h16" />
-              </svg>
+              <span className={estilos.raya} aria-hidden="true">/</span>
+              <span className={estilos.raya} aria-hidden="true">/</span>
             </button>
           </div>
 
@@ -500,7 +498,7 @@ export function Armazon() {
             estan arriba, a un palmo.
           */
           <div className={estilos.pieLinea}>
-            <span>© 2026 Renaser Consulting</span>
+            <span>Renaser Consulting · EX · 2026</span>
             <nav className={estilos.pieLineaEnlaces} aria-label="Enlaces del pie">
               <Link to={rutas.politica()}>Política de privacidad</Link>
               <Link to={rutas.privacidad()}>Privacidad y control</Link>
@@ -526,73 +524,106 @@ export function Armazon() {
  * cabecera.** Aqui no se invento ningun sitio nuevo: un pie con enlaces que no
  * llevan a nada es peor que un pie corto.
  */
+/**
+ * Los saludos del pie. La referencia cambia «hola» de idioma cada pocos
+ * segundos; aquí son los de las lenguas que se hablan donde se postula.
+ */
+const SALUDOS = ['Hola', 'Allillanchu', 'Kamisaraki', 'Olá', 'Hello']
+
+/**
+ * El saludo que cambia, la pieza grande del pie. Decorativo (`aria-hidden`) y
+ * quieto en el primero si se pide menos movimiento.
+ *
+ * Sale hacia arriba y entra desde abajo, solo `transform` y `opacity`, con la
+ * curva de salida del mundo. Se ve una vez por visita: puede tomarse 600 ms.
+ */
+function Saludo() {
+  const quieto = useReducedMotion()
+  const [indice, setIndice] = useState(0)
+  useEffect(() => {
+    if (quieto) return
+    const reloj = window.setInterval(() => setIndice((i) => (i + 1) % SALUDOS.length), 2600)
+    return () => window.clearInterval(reloj)
+  }, [quieto])
+  return (
+    <div className={estilos.saludo} aria-hidden="true">
+      <AnimatePresence initial={false}>
+        <motion.span
+          key={indice}
+          className={estilos.saludoPalabra}
+          initial={{ opacity: 0, y: '60%' }}
+          animate={{ opacity: 1, y: '0%' }}
+          exit={{ opacity: 0, y: '-60%' }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        >
+          {SALUDOS[indice]}
+        </motion.span>
+      </AnimatePresence>
+    </div>
+  )
+}
+
 function PieEnColumnas({ portada = false }: { portada?: boolean }) {
   return (
     <>
-        <div className={estilos.pieDentro}>
-          <div className={estilos.pieMarca}>
-            <Link className={estilos.marcaDelPie} to={rutas.inicio()} aria-label="EX, inicio">
-              <Marca tamano={portada ? 56 : 24} />
-            </Link>
+      <div className={estilos.pieLlamada}>
+        <Link className={estilos.llamada} to={rutas.vacantes()}>
+          Ver vacantes
+        </Link>
+      </div>
+      <div className={estilos.pieDentro}>
+        <div className={estilos.pieMarca}>
+          <Saludo />
+          <Link className={estilos.marcaDelPie} to={rutas.inicio()} aria-label="EX, inicio">
+            <Marca tamano={portada ? 40 : 28} />
+          </Link>
+        </div>
+        <nav className={estilos.pieColumnas} aria-label="Enlaces del pie">
+          <div className={estilos.pieColumna}>
+            <h2 className={estilos.pieTitulo}>El portal</h2>
+            <Link to={rutas.inicio()}>Inicio</Link>
+            <Link to={rutas.vacantes()}>Vacantes abiertas</Link>
+            <Link to={rutas.procesos()}>Mis procesos</Link>
           </div>
-
-          <nav className={estilos.pieColumnas} aria-label="Enlaces del pie">
-            <div className={estilos.pieColumna}>
-              <h2 className={estilos.pieTitulo}>El portal</h2>
-              <Link to={rutas.inicio()}>Inicio</Link>
-              <Link to={rutas.vacantes()}>Vacantes abiertas</Link>
-              <Link to={rutas.procesos()}>Mis procesos</Link>
-            </div>
-
-            <div className={estilos.pieColumna}>
-              <h2 className={estilos.pieTitulo}>Tus datos</h2>
-              {/*
-                Son dos y se llaman distinto a proposito. «Privacidad y control»
-                es el panel de acciones y necesita sesion; la politica es el
-                documento y se lee sin cuenta — Google Play exige poder enlazarla
-                asi. Con el mismo nombre, la que pide sesion pareceria un error.
-              */}
-              <Link to={rutas.politica()}>Política de privacidad</Link>
-              <Link to={rutas.privacidad()}>Privacidad y control</Link>
-            </div>
-
-            <div className={estilos.pieColumna}>
-              <h2 className={estilos.pieTitulo}>Empresas</h2>
-              {/*
-                La entrada de las empresas vive en el pie y no en la barra de
-                arriba, y es una decision, no una rebaja. Los tres destinos de
-                arriba son el camino de quien postula; un cuarto para otro
-                publico distinto los diluye justo cuando quien busca trabajo mas
-                los necesita.
-
-                Y dice «Entrar», nunca «Crear cuenta»: las cuentas del panel
-                nacen solo por invitacion. Un enlace que prometa registrarse
-                lleva a una pantalla que no puede cumplirlo.
-              */}
-              <Link to={rutas.adminEntrar()}>Entrar al panel de empresas</Link>
-            </div>
-          </nav>
-        </div>
-
-        <div className={estilos.pieAbajo}>
-          <span>© 2026 Renaser Consulting</span>
-          {portada && (
-            <Link className={estilos.volverArriba} to="#inicio-pagina">
-              Volver arriba
-              <span className={estilos.flechaArriba} aria-hidden="true">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M12 19V5m-6 6 6-6 6 6"
-                    stroke="currentColor"
-                    strokeWidth="1.75"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </span>
-            </Link>
-          )}
-        </div>
+          <div className={estilos.pieColumna}>
+            <h2 className={estilos.pieTitulo}>Tus datos</h2>
+            {/*
+              Son dos y se llaman distinto a proposito. «Privacidad y control»
+              es el panel de acciones y necesita sesion; la politica es el
+              documento y se lee sin cuenta — Google Play exige poder enlazarla
+              asi.
+            */}
+            <Link to={rutas.politica()}>Política de privacidad</Link>
+            <Link to={rutas.privacidad()}>Privacidad y control</Link>
+          </div>
+          <div className={estilos.pieColumna}>
+            <h2 className={estilos.pieTitulo}>Empresas</h2>
+            {/* «Entrar», nunca «Crear cuenta»: las cuentas del panel nacen por invitacion. */}
+            <Link to={rutas.adminEntrar()}>Entrar al panel de empresas</Link>
+          </div>
+        </nav>
+      </div>
+      <div className={estilos.pieAbajo}>
+        {portada ? (
+          <Link className={estilos.volverArriba} to="#inicio-pagina">
+            <span className={estilos.flechaArriba} aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M12 19V5m-6 6 6-6 6 6"
+                  stroke="currentColor"
+                  strokeWidth="1.75"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </span>
+            Volver arriba
+          </Link>
+        ) : (
+          <span />
+        )}
+        <span>Renaser Consulting · EX · 2026</span>
+      </div>
     </>
   )
 }

@@ -167,3 +167,64 @@
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+
+/* ==================================================================
+ * EL MUNDO NORTHSTAR (13/11/2026) — los estados (cargando, vacío, error,
+ * acceso necesario), para el portal. Lo de arriba es lo del panel.
+ *
+ * Una celda de filete como las de la referencia: esquinas de 4 px, filete
+ * negro al 10 %, sin sombra; la etiqueta en 11 px y 0,16em; el titular hereda
+ * el de la pantalla (Onest 400, -0,055em) a un tamaño de bloque.
+ * ================================================================== */
+
+:global(html:not(.mundo-panel)) .marco {
+  border-color: rgb(0 0 0 / 0.1);
+  border-radius: var(--radio-menor);
+  padding: var(--e7) var(--e6);
+}
+
+:global(html:not(.mundo-panel)) .eti,
+:global(html:not(.mundo-panel)) .tituloDetalle {
+  font-size: var(--t-etiqueta);
+  font-weight: 400;
+  letter-spacing: var(--tracking-etiqueta);
+}
+
+:global(html:not(.mundo-panel)) .titulo {
+  font-size: var(--t-encabezado);
+}
+
+:global(html:not(.mundo-panel)) .tituloVacio {
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+:global(html:not(.mundo-panel)) .barra {
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--nube-honda) 0%, var(--cielo-hundido) 50%, var(--nube-honda) 100%);
+  background-size: 200% 100%;
+  animation: barraCargando 1.4s linear infinite;
+}
+
+@keyframes barraCargando {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+:global(html:not(.mundo-panel)) .detalle {
+  border-color: rgb(0 0 0 / 0.1);
+  border-radius: var(--radio-menor);
+}
+
+@media (max-width: 640px) {
+  :global(html:not(.mundo-panel)) .marco {
+    padding: var(--e6) var(--e5);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :global(html:not(.mundo-panel)) .barra {
+    animation: none;
+  }
+}

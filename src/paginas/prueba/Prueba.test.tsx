@@ -319,6 +319,17 @@ describe('cuando la empresa retiró la vacante', () => {
     expect(screen.queryByRole('heading', { name: /Esta vacante ya no está disponible/ })).toBeNull()
   })
 
+  it('un 404 de la prueba con su proceso vivo se explica en castellano, no con el texto del servidor', async () => {
+    vi.mocked(verPrueba).mockRejectedValueOnce(
+      new ErrorApi(404, "Prueba del puesto not found with postulación: 'x1'", { status: 404 }),
+    )
+    vi.mocked(verPostulacion).mockResolvedValueOnce({} as MiPostulacionDetalle)
+    montar()
+
+    expect(await screen.findByText(/Todavía no hay una prueba abierta para esta postulación\./)).toBeTruthy()
+    expect(screen.queryByText(/not found/)).toBeNull()
+  })
+
   it('con la prueba abierta desde antes, un 404 al entregar lo dice fuera del diálogo', async () => {
     respuesta = pruebaEnCurso(enUnaHora(), 'CUALQUIERA')
     montar()
