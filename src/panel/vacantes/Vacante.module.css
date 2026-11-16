@@ -2433,3 +2433,25 @@ th.columnaCifra {
   border-color: transparent;
   box-shadow: none;
 }
+
+/* ---------- «Ver informes» (spec informe-pdf-por-etapa) ---------- */
+
+/* Encima de la tabla y a la derecha: abre el visor con los informes de la tanda. */
+.verInformes {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: var(--e3);
+}
+
+.botonVerInformes {
+  composes: secundario from '../../estilos/piezas.module.css';
+  text-transform: uppercase;
+}
+
+/*
+ * La fila que «Abrir ficha» del visor trae arriba de la pantalla (F-6): queda
+ * debajo de la barra fija del panel (`--alto-barra`, de `.armazon`), no tapada.
+ */
+.filaQueSeAbre {
+  scroll-margin-top: calc(var(--alto-barra, 58px) + var(--e3));
+}

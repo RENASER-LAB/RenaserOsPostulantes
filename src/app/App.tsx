@@ -40,6 +40,7 @@ import { RestablecerPanel } from '@/panel/entrar/RestablecerPanel'
 import { VacantesPanel } from '@/panel/vacantes/Vacantes'
 import { VacantesArchivadas } from '@/panel/vacantes/VacantesArchivadas'
 import { VacantePanelDetalle } from '@/panel/vacantes/Vacante'
+import { VisorDeInformes } from '@/panel/vacantes/informes/VisorDeInformes'
 import { PruebaTecnica } from '@/panel/vacantes/prueba-tecnica/PruebaTecnica'
 import { EditorDePreguntas } from '@/panel/vacantes/preguntas/EditorDePreguntas'
 import { EditorDeLaPrueba } from '@/panel/vacantes/preguntas/EditorDeLaPrueba'
@@ -111,6 +112,7 @@ export function App() {
                     />
                     <Route path={patrones.adminVacante} element={<VacantePanelDetalle />} />
                     <Route path={patrones.adminPruebaTecnica} element={<PruebaTecnica />} />
+                    <Route path={patrones.adminInformes} element={<VisorDeInformes />} />
                     <Route
                       path={patrones.adminPreguntasPropias}
                       element={<EditorDePreguntas />}

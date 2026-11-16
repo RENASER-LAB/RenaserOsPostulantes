@@ -179,6 +179,19 @@ export function filtrar(filas: FilaRanking[], etapa: EtapaPanel, vista: Vista): 
 }
 
 /**
+ * El corte en el que se ve a esa persona en esa pestaña: «Pendiente» si espera
+ * una decisión, «Le toca al candidato» si espera algo suyo y, si no está en
+ * ninguno de los dos, «Toda la tanda». Lo usa «Abrir ficha» del visor de
+ * informes, que tiene que abrir la ficha aunque la persona no esté en el corte
+ * por defecto.
+ */
+export function corteDondeSeVe(estado: string, etapa: EtapaPanel): Vista {
+  if (esperaALaEmpresa(estado, etapa)) return 'por-revisar'
+  if (leTocaAlCandidato(estado, etapa)) return 'le-toca'
+  return 'toda'
+}
+
+/**
  * Como se llama cada corte, en un solo sitio.
  *
  * Lo leen los tres botones Y la descripcion que viaja al Excel. Escrito dos

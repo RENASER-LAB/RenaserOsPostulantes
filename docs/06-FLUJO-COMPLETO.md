@@ -828,6 +828,25 @@ vacía— por qué. Es donde más falta hace: la hoja se descarga, se reenvía y
 abre lejos del panel, donde ya no hay ninguna pantalla que pueda explicar que un
 blanco ahí puede ser un permiso y no un candidato que no pidió sueldo.
 
+### Los informes de cada etapa (16/11/2026)
+
+**Panel · la ficha del ranking → «CV», «Evaluación» o «Prueba»; o «Ver informes»**
+
+El Excel sirve para comparar a todos; el informe, para leer a una persona. En
+cuanto la IA termina de calificar una etapa, esa persona tiene su informe: el
+del CV y el de la evaluación en «Perfil integral», el de la prueba en «Prueba del
+puesto». Cada uno dice qué se evaluó, qué nota tuvo, en qué es fuerte, qué
+debilidades tiene y qué queda por verificar, y eso último **pasa al informe
+siguiente**: lo que el CV deja en duda se mira en la evaluación, lo que queda de
+la evaluación, en la prueba, y lo que queda al final, en la entrevista.
+
+Quien lleva la vacante lo baja en PDF desde la ficha, o abre «Ver informes» y
+pasa de un postulante al siguiente sin salir, para leer antes de entrevistar o
+bajar los de toda la vacante de una vez. El visor solo lee: para ajustar una
+nota, mover o descartar, «Abrir ficha» lo lleva de vuelta a la ficha. Si una
+etapa todavía no tiene nota, su botón sale gris y dice por qué. El detalle, en
+[PANEL.md](PANEL.md) › Los informes por etapa.
+
 ---
 
 ## Configuración
