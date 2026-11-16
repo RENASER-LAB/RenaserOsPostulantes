@@ -89,6 +89,13 @@ export const patrones = {
   adminPreguntasPropias: '/admin/vacantes/:id/preguntas',
   /** La prueba técnica de una vacante nueva, escrita en el editor (V67). */
   adminPruebaPropia: '/admin/vacantes/:id/prueba',
+  /**
+   * El visor de los informes por etapa (spec informe-pdf-por-etapa): la lista de
+   * postulantes en el orden del ranking y el informe del que se elija. Quién y qué
+   * pestaña van en la query (`?postulante=12&etapa=cv`), para que «Ver informes»
+   * desde la ficha abra el visor en esa persona.
+   */
+  adminInformes: '/admin/vacantes/:id/informes',
   adminSesiones: '/admin/simulacion',
   /**
    * «Pruebas»: el índice de las preguntas y pruebas que la empresa escribió en
@@ -180,6 +187,16 @@ export const rutas = {
   adminPruebaTecnica: (id: number | string) => `/admin/vacantes/${id}/prueba-tecnica`,
   adminPreguntasPropias: (id: number | string) => `/admin/vacantes/${id}/preguntas`,
   adminPruebaPropia: (id: number | string) => `/admin/vacantes/${id}/prueba`,
+  adminInformes: (id: number | string, postulante?: number, etapa?: string) => {
+    const query = new URLSearchParams()
+    if (postulante != null) query.set('postulante', String(postulante))
+    if (etapa) query.set('etapa', etapa)
+    const cola = query.toString()
+    return `/admin/vacantes/${id}/informes${cola ? `?${cola}` : ''}`
+  },
+  /** La vacante con la ficha de una persona abierta en su pestaña: «Abrir ficha» del visor. */
+  adminFichaEnLaVacante: (id: number | string, postulante: number, etapa: string) =>
+    `/admin/vacantes/${id}?etapa=${encodeURIComponent(etapa)}&postulante=${postulante}`,
   /** Con `busqueda`, la pestaña y los filtros tal como estaban (`?tipo=prueba&…`). */
   adminPruebas: (busqueda?: string) =>
     busqueda === undefined || busqueda === '' || busqueda === '?'

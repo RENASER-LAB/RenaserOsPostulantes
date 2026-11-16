@@ -7,8 +7,9 @@ reseñas de empresas —escribirlas, leerlas y moderarlas—, la gestión de per
 sedes y cargos, y contratar desde la ficha; las preguntas propias de cada vacante: de dónde
 salen, el editor y su nota en la ficha; la prueba técnica de cada vacante nueva, escrita en ese
 mismo editor; la nota mínima con la que una vacante pasa sola a la prueba; «Qué buscar en el
-CV», lo que cada vacante busca en los currículums; y «Pruebas», el índice de lo que la empresa
-escribió en esos editores, con su copia a otra vacante. El recorrido de los dos lados —equipo y candidato— está en
+CV», lo que cada vacante busca en los currículums; «Pruebas», el índice de lo que la empresa
+escribió en esos editores, con su copia a otra vacante; y los informes por etapa de cada
+candidato, en PDF desde la ficha y en un visor. El recorrido de los dos lados —equipo y candidato— está en
 [06-FLUJO-COMPLETO.md](06-FLUJO-COMPLETO.md).
 
 ---
@@ -1473,6 +1474,84 @@ tokens:
 familia de `--salida` y local a esa hoja de estilos, no a `mundo.css`: la hoja sube en 340 ms y baja
 en 200. Lo que se abre con el teclado no se anima, y con `prefers-reduced-motion` solo quedan
 fundidos.
+
+### Los informes por etapa: la barra de la ficha y el visor (16/11)
+
+De cada persona, tres informes cortos —el del CV, el de la evaluación y el de la prueba del
+puesto— para leer antes de una entrevista o mandar a quien decide: qué se evaluó, qué nota tuvo,
+en qué es fuerte, qué debilidades tiene y qué queda **por verificar**, que pasa de un informe al
+siguiente hasta «Por verificar en la entrevista». El backend los arma en el momento con lo que ya
+está guardado y los da de dos formas con los mismos datos: como página para el visor y como PDF.
+Las rutas, los permisos y qué lleva cada informe están en `docs/` del backend, `09-APIS.md`, «Los
+informes por etapa»; quién escribe sus textos, en `CALIFICACION-CON-IA.md`, «El redactor del
+informe». Todo vive en `src/panel/vacantes/informes/` (`BarraDeInformes`, `VisorDeInformes` y
+`CuerpoDelInforme`), y la API, en `src/panel/api/informes.ts`.
+
+- **En la ficha, junto al nombre**, una barra con un botón por informe de la pestaña: «CV» y
+  «Evaluación» en «Perfil integral», «Prueba» en «Prueba del puesto»; en las demás pestañas no
+  sale. Botones de 44 px en mayúsculas con su icono, en tres estados: **listo**, azul macizo con
+  la flecha, que baja el PDF al pulsarlo —«Informe CV - Nombre Apellido - Vacante.pdf»—;
+  **generando**, contorno con halo, un círculo que gira y «Generando…», sin poder pulsarse otra
+  vez; y **sin informe**, gris con un reloj y el motivo en el `title` y en el `aria-label`:
+  «Todavía no tiene calificación», «La IA está calificando» o «La calificación falló». Mientras
+  la IA califica, la barra vuelve a preguntar cada 15 s y el botón se enciende solo. Debajo, una
+  leyenda con los tres estados. **Sin permiso para una etapa, su botón no sale**: el backend no la
+  devuelve. Al lado, «Ver informes» abre el visor en esa persona.
+- **«Ver informes» encima de la tabla del ranking** abre el visor de la vacante en el primero de
+  la lista, en `/admin/vacantes/{id}/informes`. La persona y la pestaña van en la dirección
+  (`?postulante=12&etapa=cv`): recargar o enlazar las conserva.
+- **El visor** tiene a la izquierda la lista de postulantes **en el orden del ranking**, con
+  buscador, su puesto, su grupo y sus tres notas en pequeño, redondeadas («—» si falta, o si
+  quien mira no puede ver esa etapa); a la derecha, el informe del elegido. «← Anterior» y «Siguiente →», con
+  «3 de 13», cambian de persona sin recargar. La cabecera de la persona lleva el nombre, el grupo,
+  los enlaces —«Currículum» y sus redes— y tres acciones: «✎ Abrir ficha», «Descargar PDF» (el de
+  la pestaña abierta) y «Descargar sus 3 informes» (un `.zip`; si falta alguno, la línea de estado
+  dice cuál y por qué). Las tres etapas van como pestañas con su nota; una sin informe sale
+  apagada, con su motivo en el `title`. En la cabecera de la página, **«Descargar los de toda la
+  vacante»** baja un `.zip` con una carpeta por postulante y un aviso con lo que falta: mientras
+  se prepara dice «Preparando…» y no se puede pulsar otra vez, la pantalla sigue usable, y al
+  terminar la línea de estado dice «Listo: se descargaron los informes de toda la vacante.».
+- **El cuerpo del informe** es el del PDF, organizado para leer rápido: arriba el resumen; «Qué se
+  evaluó» con barras, y al pulsar un criterio se despliega su texto; los bloques en tarjetas con su
+  icono; lo pendiente con chips de origen (CV, Evaluación o Prueba); y el anexo en acordeón
+  cerrado, con el título y la línea «lo que demostró» de cada pregunta y la respuesta completa al
+  abrirla. En el de la prueba, «Por verificar en la entrevista» va en tres grupos: «De la prueba»
+  y «De la evaluación» abiertos, y «Del CV (N)» plegado, que suele ser el más largo. **Nada se
+  recorta: lo largo se despliega.** Mientras el redactor escribe los textos, el visor enseña las
+  explicaciones completas de la IA y vuelve a pedir el informe cada 20 s, así que los textos
+  llegan sin recargar.
+- **El visor solo lee.** Ajustar notas, calificar con IA, mover de etapa, descartar y contratar
+  siguen en la ficha. «✎ Abrir ficha» lleva al ranking con `?etapa=…&postulante=…`: abre la
+  pestaña de ese informe, elige el corte donde se ve a la persona —«Pendiente», «Le toca al
+  candidato» o «Toda la tanda» (`corteDondeSeVe` de `ranking.ts`)— aunque no sea el de por defecto,
+  abre su ficha y la deja arriba, con la fila y la barra de informes a la vista (`scrollIntoView`
+  con `block: 'start'` y el `scroll-margin-top` de la fila, que salva la barra fija del panel).
+  Quien ajusta una nota en la ficha y vuelve al visor ve la nota nueva con ✎ y su motivo.
+- **En el teléfono (390 px)** la lista pasa a ser un selector arriba con anterior y siguiente, las
+  pestañas se desplazan en horizontal y «✎ Abrir ficha» es un enlace junto a Currículum y las
+  redes.
+
+⚠️ **«Descargar los de toda la vacante» puede gastar IA.** A cada persona y etapa a la que le
+falten textos le encarga los suyos al redactor —una llamada por cada una—, aunque el `.zip` sale
+en el momento con las explicaciones completas donde falten. Lo mismo, de uno en uno, al abrir un
+informe sin textos.
+
+**Limitaciones conocidas.** En el informe de la evaluación, «Lo que pidió el CV» muestra cada duda
+con «Por contrastar»: decir si se resolvió es de la spec de seguimiento de pendientes, y hasta
+entonces no se inventan estados. El enlace «Perfil en EX» de la maqueta no existe: la ficha no tiene
+dirección propia. Y `DESIGN.md` todavía no describe la barra ni el visor (ver
+[PENDIENTES](PENDIENTES.md)).
+
+Comprobarlo: `npx playwright test herramientas/e2e/43-informes-por-etapa.spec.ts
+herramientas/e2e/60-informes-por-etapa-qa.spec.ts`. El primero solo lee: el botón gris con su
+motivo y el que no sale sin permiso. El segundo **escribe** en el clon —siembra su vacante con
+candidatos calificados, con la marca `QA-INF-84`— y la retira al terminar; baja los tres PDF desde
+la ficha y comprueba el nombre, la persona, la nota y que «Por verificar en la entrevista» solo
+sale en el de la prueba. Para dejar una vacante a la vista de una revisión a mano,
+`npx vite-node herramientas/e2e/sembrar-informes-qa.ts` (marca `REV-INF-84`, y `-- --retirar` con
+los correos que imprime para quitarla). Las unitarias, en `BarraDeInformes.test.tsx`,
+`VisorDeInformes.test.tsx` y `Vacante.test.tsx`; en el backend, `FlujoInformesPorEtapaIT`,
+`PdfDelInformeTest`, `RedaccionDelInformeTest` y `AgenteRedactorInformeTest`.
 
 ### La sección «Pruebas» se retiró (05/10)
 

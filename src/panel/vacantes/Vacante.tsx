@@ -15,7 +15,7 @@
 
 import { Fragment, useEffect, useRef, useState } from 'react'
 import type { ReactNode, RefObject } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   activarCalificacionAutomatica,
@@ -131,6 +131,7 @@ import {
   claveDelCriterio,
   notaEscrita,
   tonoDelCriterio,
+  corteDondeSeVe,
   type CiudadDelRanking,
   type EstadoDeLaIa,
   type EtapaPanel,
@@ -139,6 +140,7 @@ import {
   type QueTraeLaTanda,
   type Vista,
 } from './ranking'
+import { BarraDeInformes } from './informes/BarraDeInformes'
 import { RemuneracionDeLaVacante } from './Remuneracion'
 import { ResenasDeLaFicha } from './ResenasDeLaFicha'
 import { IconoEstrella, IconoFiltros } from '@/ui/Iconos'
@@ -298,7 +300,15 @@ export function VacantePanelDetalle() {
   const cuestionarioPublicado = useCuestionarioPublicado(vacanteId)
   // La etapa elegida manda sobre la query: cambiar de pestana pide el ranking
   // con la nota de esa etapa, no reordena en el navegador una nota vieja.
-  const [etapa, setEtapa] = useState<EtapaPanel>('PERFIL_INTEGRAL')
+  /*
+    «Abrir ficha» desde el visor de informes llega con `?etapa=…&postulante=…`:
+    la pestaña y la fila abierta salen de ahí. Sin query, Perfil Integral y nadie
+    abierto, como siempre.
+  */
+  const [query] = useSearchParams()
+  const etapaDeLaQuery = ETAPAS_PANEL.find((e) => e.codigo === query.get('etapa'))?.codigo
+  const postulanteDeLaQuery = Number(query.get('postulante')) || null
+  const [etapa, setEtapa] = useState<EtapaPanel>(etapaDeLaQuery ?? 'PERFIL_INTEGRAL')
   /*
     La tabla trae a toda la tanda y se mira por uno de tres cortes. Sin ninguno,
     una vacante con treinta postulaciones repetía las treinta cinco veces y
@@ -338,6 +348,21 @@ export function VacantePanelDetalle() {
     queryFn: () => verRanking(vacanteId, etapa),
     enabled: Number.isFinite(vacanteId),
   })
+  /*
+    «Abrir ficha» desde el visor tiene que abrir la ficha aunque la persona no
+    esté en «Pendiente» (F-4): en cuanto llega la tanda de esa pestaña, el corte
+    pasa al que la enseña. Se ajusta una sola vez y durante el pintado, no en un
+    efecto: así la tabla ya se monta con la fila a la vista y la ficha abierta
+    puede traerse a la pantalla. Después, el corte es de quien lo pulsa.
+  */
+  const [corteDeLaQuery, setCorteDeLaQuery] = useState<'pendiente' | 'puesto'>(
+    postulanteDeLaQuery != null && etapaDeLaQuery ? 'pendiente' : 'puesto',
+  )
+  if (corteDeLaQuery === 'pendiente' && ranking.data && etapa === etapaDeLaQuery) {
+    setCorteDeLaQuery('puesto')
+    const suya = ranking.data.filas.find((f) => f.postulacionId === postulanteDeLaQuery)
+    if (suya) setVista(corteDondeSeVe(suya.estado, etapa))
+  }
 
   const [fallo, setFallo] = useState<string | null>(null)
 
@@ -779,11 +804,19 @@ export function VacantePanelDetalle() {
             }}
           />
         )}
+        {ranking.data && ranking.data.filas.length > 0 && (
+          <div className={estilos.verInformes}>
+            <Link className={estilos.botonVerInformes} to={rutas.adminInformes(vacanteId)}>
+              Ver informes
+            </Link>
+          </div>
+        )}
         {ranking.data && (
           <Ranking
             key={etapa}
             vacanteId={vacanteId}
             etapa={etapa}
+            abrirAlEntrar={etapa === etapaDeLaQuery ? postulanteDeLaQuery : null}
             pruebaPropia={rindeLaPruebaPropia(v)}
             filas={ranking.data.filas}
             cabeceraDelCv={ranking.data}
@@ -900,9 +933,12 @@ function Ranking({
   alCambiarFiltros,
   pruebaPropia = false,
   cerrada = false,
+  abrirAlEntrar = null,
 }: {
   vacanteId: number
   etapa: EtapaPanel
+  /** La ficha que se abre al llegar desde el visor de informes («Abrir ficha»). */
+  abrirAlEntrar?: number | null
   /** Cerrada (no archivada): lo buscado se sigue viendo, pero no se vuelve a buscar (V80). */
   cerrada?: boolean
   /** La vacante rinde la prueba escrita en su editor (V67). */
@@ -926,7 +962,19 @@ function Ranking({
   alCambiarFiltros: (f: Filtros) => void
 }) {
   const [marcados, setMarcados] = useState<Set<number>>(new Set())
-  const [abierta, setAbierta] = useState<number | null>(null)
+  const [abierta, setAbierta] = useState<number | null>(abrirAlEntrar)
+  /*
+    Llegando desde el visor, se trae a la vista el COMIENZO de la ficha —su fila,
+    con el nombre, y debajo la barra de informes—, una sola vez (F-6). Arriba y no
+    al centro: la ficha abierta mide más que la pantalla, y centrarla dejaba la
+    fila y la barra por encima. La fila ya se monta con su ficha desplegada debajo,
+    y lo que la ficha carga después crece hacia abajo sin moverla. El hueco de la
+    barra fija del panel lo pone `.filaQueSeAbre` en la hoja.
+  */
+  const filaAlEntrar = useRef<HTMLTableRowElement>(null)
+  useEffect(() => {
+    if (abrirAlEntrar != null) filaAlEntrar.current?.scrollIntoView?.({ block: 'start' })
+  }, [abrirAlEntrar])
   /*
     El botón «Filtros», aquí y no en la barra: los dos «Borrar filtros» —el de
     la barra y el de la tabla vacía— desaparecen al pulsarlos, y el foco tiene
@@ -1660,7 +1708,12 @@ function Ranking({
             {visibles.map((fila) => (
               <Fragment key={fila.postulacionId}>
                 <tr
-                  className={tabla.pulsable}
+                  ref={fila.postulacionId === abrirAlEntrar ? filaAlEntrar : undefined}
+                  className={
+                    fila.postulacionId === abrirAlEntrar
+                      ? `${tabla.pulsable} ${estilos.filaQueSeAbre}`
+                      : tabla.pulsable
+                  }
                   onClick={() =>
                     setAbierta(abierta === fila.postulacionId ? null : fila.postulacionId)
                   }
@@ -1951,6 +2004,7 @@ function Ranking({
                     <td id={`ficha-${fila.postulacionId}`} colSpan={columnas} className={estilos.celdaDetalle}>
                       <DetalleDelPostulante
                         fila={fila}
+                        vacanteId={vacanteId}
                         etapa={etapa}
                         pruebaPropia={pruebaPropia}
                         pesoDeLoBuscado={cabeceraDelCv.pesoQueBuscarEnElCv}
@@ -2356,12 +2410,15 @@ function etapaDeLaFicha(estado: string, estadoNombre: string, catalogos: Catalog
 
 function DetalleDelPostulante({
   fila,
+  vacanteId,
   etapa,
   pruebaPropia = false,
   pesoDeLoBuscado,
   puedeVolverABuscar = false,
 }: {
   fila: FilaRanking
+  /** Para «Ver informes», que abre el visor de la vacante en esta persona. */
+  vacanteId: number
   etapa: EtapaPanel
   /** La vacante rinde la prueba escrita en su editor (V67): otra pestaña «Prueba». */
   pruebaPropia?: boolean
@@ -2417,6 +2474,12 @@ function DetalleDelPostulante({
               Postuló el {formatearFechaCorta(ficha.data.creadoEn)} ·{' '}
               {ficha.data.estadoNombre}
             </p>
+            {/*
+              Los informes en PDF de la etapa, junto al nombre (spec
+              informe-pdf-por-etapa): CV y Evaluación en Perfil Integral, Prueba
+              en Prueba del puesto. Sin permiso para una etapa, su botón no sale.
+            */}
+            <BarraDeInformes postulacionId={fila.postulacionId} vacanteId={vacanteId} etapa={etapa} />
             {/*
               Por qué espera en «por confirmar» en vez de haber pasado sola a la prueba,
               cuando la razón es su nota (V72). Junto al estado, porque es lo que lo

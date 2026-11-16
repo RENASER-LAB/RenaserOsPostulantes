@@ -1,0 +1,129 @@
+/*
+ * La barra de informes de la ficha (spec informe-pdf-por-etapa, maqueta
+ * ficha-del-panel): botones de 44 px en mayúsculas, uno por informe de la etapa.
+ * Azul macizo si está listo, contorno con halo mientras se genera y gris con un
+ * reloj si todavía no hay informe. Los tokens son los de Northstar.
+ */
+
+.barra {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+  margin: var(--e3) 0;
+}
+
+.fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e2);
+}
+
+.boton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: var(--radio-control);
+  font: inherit;
+  font-size: var(--t-apoyo);
+  text-transform: uppercase;
+  cursor: pointer;
+  background: var(--activo);
+  color: #ffffff;
+}
+
+.boton:hover:not(:disabled) {
+  background: var(--activo-pulsado);
+}
+
+.boton:focus-visible,
+.verInformes:focus-visible {
+  outline: 2px solid var(--activo);
+  outline-offset: 3px;
+}
+
+.generando {
+  composes: boton;
+  background: #ffffff;
+  color: var(--activo);
+  box-shadow:
+    inset 0 0 0 1px var(--activo),
+    0 0 0 3px var(--activo-bruma);
+  cursor: progress;
+}
+
+.sinInforme {
+  composes: boton;
+  background: var(--nube-honda);
+  color: var(--tinta3);
+  cursor: not-allowed;
+}
+
+.gira {
+  animation: girar 0.9s linear infinite;
+}
+
+@keyframes girar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gira {
+    animation: none;
+  }
+}
+
+.verInformes {
+  composes: secundario from '../../../estilos/piezas.module.css';
+  text-transform: uppercase;
+}
+
+.leyenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e2) var(--e5);
+  font-size: 13px;
+  color: var(--tinta2);
+  border-top: 1px solid var(--regla);
+  padding-top: var(--e3);
+}
+
+.clave {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.muestraLista,
+.muestraGenerando,
+.muestraSinInforme {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex: none;
+}
+
+.muestraLista {
+  background: var(--activo);
+}
+
+.muestraGenerando {
+  box-shadow:
+    inset 0 0 0 1.5px var(--activo),
+    0 0 0 2px var(--activo-bruma);
+}
+
+.muestraSinInforme {
+  background: var(--nube-honda);
+}
+
+.fallo {
+  font-size: var(--t-apoyo);
+  color: #c22a3f;
+  margin: 0;
+}

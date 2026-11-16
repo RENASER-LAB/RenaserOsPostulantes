@@ -21,6 +21,7 @@ import { describe, expect, it } from 'vitest'
 import { ESTADOS, momentoDe } from '../../dominio/estados'
 import {
   ETAPAS_PANEL,
+  corteDondeSeVe,
   esperaALaEmpresa,
   leTocaAlCandidato,
   type EtapaPanel,
@@ -584,6 +585,32 @@ describe('los tres cortes', () => {
   copie aquí no lo ve nadie: se caería de los dos cortes en silencio. La fuente
   de verdad es `V9__semillas.sql` en el repositorio del backend.
 */
+describe('el corte donde se ve a una persona («Abrir ficha» del visor)', () => {
+  it('quien espera una decisión se ve en «Pendiente»', () => {
+    expect(corteDondeSeVe('PERFIL_POR_CONFIRMAR', 'PERFIL_INTEGRAL')).toBe('por-revisar')
+  })
+  it('quien tiene algo que hacer se ve en «Le toca al candidato»', () => {
+    expect(corteDondeSeVe('PERFIL_TURNO_CANDIDATO', 'PERFIL_INTEGRAL')).toBe('le-toca')
+  })
+  it('quien ya pasó de largo, espera al sistema o terminó solo se ve en «Toda la tanda»', () => {
+    expect(corteDondeSeVe('PRUEBA_TURNO_CANDIDATO', 'PERFIL_INTEGRAL')).toBe('toda')
+    expect(corteDondeSeVe('PERFIL_CALIFICANDO', 'PERFIL_INTEGRAL')).toBe('toda')
+    expect(corteDondeSeVe('NO_CONTINUA', 'PERFIL_INTEGRAL')).toBe('toda')
+  })
+  it('cuadra con el corte que lo pinta, en todas las etapas y estados', () => {
+    for (const { codigo } of ETAPAS_PANEL) {
+      for (const estado of ESTADOS) {
+        const corte = corteDondeSeVe(estado, codigo)
+        if (corte === 'por-revisar') expect(esperaALaEmpresa(estado, codigo)).toBe(true)
+        if (corte === 'le-toca') expect(leTocaAlCandidato(estado, codigo)).toBe(true)
+        if (corte === 'toda') {
+          expect(esperaALaEmpresa(estado, codigo) || leTocaAlCandidato(estado, codigo)).toBe(false)
+        }
+      }
+    }
+  })
+})
+
 describe('los cortes cuadran con el catálogo de estados', () => {
   /** De la etapa del portal a la pestaña del panel. */
   const LA_PESTANA: Record<string, EtapaPanel> = {

@@ -500,6 +500,8 @@ async function pintar(
   puedeVerPretension = true,
   /** Lo que la tanda trae además: `puedeVerResenas`, por ejemplo. */
   extra: Record<string, unknown> = {},
+  /** La dirección con la que se entra: «Abrir ficha» del visor llega con `?etapa=…&postulante=…`. */
+  ruta = '/admin/vacantes/1',
 ) {
   verRanking.mockImplementation((_id: number, etapa = 'PERFIL_INTEGRAL') => {
     const notas = NOTAS_POR_ETAPA[etapa] ?? {}
@@ -516,7 +518,7 @@ async function pintar(
   const cliente = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   render(
     <QueryClientProvider client={cliente}>
-      <MemoryRouter initialEntries={['/admin/vacantes/1']}>
+      <MemoryRouter initialEntries={[ruta]}>
         <Routes>
           <Route path="/admin/vacantes/:id" element={<VacantePanelDetalle />} />
         </Routes>
@@ -796,6 +798,80 @@ describe('el escape a la tanda entera', () => {
     irA('Decisión')
     await waitFor(() => expect(elCorte('Toda la tanda')).toHaveProperty('ariaPressed', 'true'))
     expect(within(laTabla()).queryByText('Lucía Ferrer')).toBeTruthy()
+  })
+})
+
+/*
+ * «Abrir ficha» del visor de informes llega con `?etapa=…&postulante=…` (F-4).
+ * La ficha tiene que abrirse aunque la persona no espere una decisión: con el
+ * corte por defecto su fila no existía y la pantalla decía «Nadie espera tu
+ * decisión…».
+ */
+describe('«Abrir ficha» desde el visor de informes', () => {
+  const desdeElVisor = (postulante: number, etapa = 'PERFIL_INTEGRAL') =>
+    pintar(TANDA, true, {}, `/admin/vacantes/1?etapa=${etapa}&postulante=${postulante}`)
+
+  it('a quien espera una decisión lo abre en «Pendiente»', async () => {
+    await desdeElVisor(91)
+    await waitFor(() => expect(document.getElementById('ficha-91')).toBeTruthy())
+    expect(elCorte('Pendiente')).toHaveProperty('ariaPressed', 'true')
+  })
+
+  it('a quien le toca algo lo abre en «Le toca al candidato», con su ficha abierta', async () => {
+    await desdeElVisor(92)
+    await waitFor(() => expect(document.getElementById('ficha-92')).toBeTruthy())
+    expect(elCorte('Le toca al candidato')).toHaveProperty('ariaPressed', 'true')
+    expect(screen.queryByText(/Nadie espera tu decisión/)).toBeNull()
+  })
+
+  it('a quien no está en ninguno de los dos lo abre en «Toda la tanda»', async () => {
+    await desdeElVisor(94)
+    await waitFor(() => expect(document.getElementById('ficha-94')).toBeTruthy())
+    expect(elCorte('Toda la tanda')).toHaveProperty('ariaPressed', 'true')
+  })
+
+  /*
+   * F-6: la ficha abierta mide más que la pantalla, y centrarla dejaba la fila
+   * con el nombre y la barra de informes por encima. Se trae arriba la FILA de
+   * la persona, que tiene la ficha justo debajo, y una sola vez.
+   */
+  const filasLlevadas = () => {
+    const llevadas: { fila: Element; opciones: unknown }[] = []
+    vi.spyOn(Element.prototype, 'scrollIntoView').mockImplementation(function (
+      this: Element,
+      opciones?: boolean | ScrollIntoViewOptions,
+    ) {
+      if (this.tagName === 'TR') llevadas.push({ fila: this, opciones })
+    })
+    return llevadas
+  }
+
+  it('trae arriba de la pantalla la fila de la persona, con su ficha debajo (F-6)', async () => {
+    const llevadas = filasLlevadas()
+    await desdeElVisor(94)
+    await waitFor(() => expect(llevadas).toHaveLength(1))
+    const { fila, opciones } = llevadas[0]!
+    expect(opciones).toEqual({ block: 'start' })
+    expect(within(fila as HTMLElement).getByText('Lucía Ferrer')).toBeTruthy()
+    expect(fila.nextElementSibling?.querySelector('#ficha-94')).toBeTruthy()
+    // Cuando la ficha termina de cargar no se vuelve a mover la pantalla.
+    await within(document.getElementById('ficha-94')!).findByText(/Postuló el/)
+    expect(llevadas).toHaveLength(1)
+  })
+
+  it('sin venir del visor no mueve la pantalla', async () => {
+    const llevadas = filasLlevadas()
+    await pintar(TANDA)
+    await waitFor(() => expect(within(laTabla()).getByText('Rodrigo Ayala')).toBeTruthy())
+    expect(llevadas).toHaveLength(0)
+  })
+
+  it('después, el corte es de quien lo pulsa', async () => {
+    await desdeElVisor(94)
+    await waitFor(() => expect(elCorte('Toda la tanda')).toHaveProperty('ariaPressed', 'true'))
+    verCorte('Pendiente')
+    await waitFor(() => expect(elCorte('Pendiente')).toHaveProperty('ariaPressed', 'true'))
+    expect(within(laTabla()).queryByText('Lucía Ferrer')).toBeNull()
   })
 })
 
