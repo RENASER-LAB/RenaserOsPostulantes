@@ -364,9 +364,9 @@ tamaño y el tracking, no el negro.
 etiqueta «Sección / Lo que es» con `data-seccion="…"` en el titular o el encabezado. La pinta
 `[data-seccion]::before` en `mundo.css`, **como pseudoelemento con texto alternativo vacío**:
 decora, y así ni el lector de pantalla ni las pruebas la leen junto al titular. Hoy la llevan
-Mis procesos, el detalle de un proceso, la ficha de una vacante, postular, registro, entrar,
-la contraseña (pedir y elegir), la evaluación, la prueba, la prueba técnica, la simulación,
-la validación, privacidad y la política.
+Mis procesos, el detalle de un proceso, postular, registro, entrar, la contraseña (pedir y
+elegir), la evaluación, la prueba, la prueba técnica, la simulación, la validación, privacidad y
+la política. La ficha de una vacante ya no la lleva (16/11/2026): el titular va solo.
 
 ## Layout
 

@@ -1,0 +1,170 @@
+/*
+ * El perfil público de una empresa (V85). La cabecera copia la del perfil del
+ * candidato —`.portada`, `.identidad`, `.zonaFoto` y `.disco` de
+ * `paginas/perfil/Cabecera.module.css`, que se importan tal cual— y el cuerpo en
+ * dos columnas copia `Perfil.module.css` (`.pagina`, `.cuerpo` con columna de
+ * 20rem) y `Lateral.module.css`. Aquí solo va lo que es de esta pantalla.
+ */
+
+/* El logo lleva radio 8, no círculo (el disco del candidato es redondo). */
+.discoLogo {
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.cabeceraDatos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--e3) var(--e5);
+}
+
+.linea {
+  margin: var(--e2) 0 0;
+  font-size: var(--t-entradilla);
+  line-height: 1.4;
+  color: var(--tinta2);
+}
+
+.ciudad {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  margin: var(--e2) 0 0;
+  font-size: var(--t-apoyo);
+  color: var(--tinta3);
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e2);
+}
+
+.verVacantes {
+  composes: acentoMenor from '../../estilos/piezas.module.css';
+  text-decoration: none;
+}
+
+.visitarWeb {
+  composes: secundario from '../../estilos/piezas.module.css';
+  text-decoration: none;
+}
+
+.seccion {
+  padding: var(--e5);
+  border: 1px solid var(--regla);
+  border-radius: var(--radio);
+  background: var(--nube);
+  min-width: 0;
+}
+
+.seccion > * + * {
+  margin-top: var(--e4);
+}
+
+.tituloSeccion {
+  margin: 0;
+}
+
+.texto {
+  margin: 0;
+  font-size: var(--t-base);
+  line-height: 1.65;
+  color: var(--tinta2);
+  white-space: pre-line;
+  overflow-wrap: break-word;
+  max-width: 68ch;
+}
+
+.beneficios {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.beneficio {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  min-height: 36px;
+  padding: 0 var(--e3);
+  border: 1px solid rgb(0 0 0 / 0.1);
+  border-radius: var(--radio-menor);
+  font-size: var(--t-apoyo);
+  color: var(--tinta);
+}
+
+.beneficio svg {
+  color: var(--bien);
+}
+
+/* Las vacantes con la tarjeta real del tablón, en rejilla. */
+.vacantes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(20rem, 100%), 1fr));
+  gap: var(--e3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sinVacantes {
+  margin: 0;
+  font-size: var(--t-apoyo);
+  color: var(--tinta3);
+}
+
+/* La ficha lateral: filas de dato y los chips de la web y las redes. */
+.ficha {
+  display: flex;
+  flex-direction: column;
+  margin: var(--e3) 0 0;
+}
+
+.fila {
+  display: grid;
+  grid-template-columns: 7rem minmax(0, 1fr);
+  column-gap: var(--e3);
+  padding: var(--e3) 0;
+  border-bottom: 1px solid var(--regla);
+}
+
+.fila dt {
+  font-size: var(--t-micro);
+  font-weight: 500;
+  letter-spacing: var(--tracking-etiqueta);
+  text-transform: uppercase;
+  color: var(--tinta3);
+  padding-top: 2px;
+}
+
+.fila dd {
+  margin: 0;
+  font-size: var(--t-apoyo);
+  line-height: 1.5;
+  color: var(--tinta);
+  overflow-wrap: anywhere;
+}
+
+.enlacesDeLaFicha {
+  margin-top: var(--e4);
+}
+
+.noEncontrada {
+  composes: bloque from '../../estilos/pagina.module.css';
+  margin-top: var(--e5);
+}
+
+.noEncontrada > * + * {
+  margin-top: var(--e3);
+}
+
+.reintentar {
+  composes: secundario from '../../estilos/piezas.module.css';
+  text-decoration: none;
+}

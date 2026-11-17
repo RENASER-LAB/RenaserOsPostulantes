@@ -31,6 +31,7 @@ const TITULOS: Array<[string, string]> = [
   [patrones.inicio, 'Inicio'],
   [patrones.vacantes, 'Vacantes abiertas'],
   [patrones.vacante, 'Detalle de la vacante'],
+  [patrones.empresa, 'Perfil de la empresa'],
   [patrones.postular, 'Postular'],
   [patrones.ingresar, 'Entrar'],
   [patrones.acceso, 'Entrando'],
@@ -93,6 +94,8 @@ const PUBLICAS_CON_CONTENIDO = [
   { path: patrones.inicio, end: true },
   patrones.vacantes,
   patrones.vacante,
+  // El perfil público de una empresa (V85): se lee sin cuenta, como la vacante.
+  patrones.empresa,
   patrones.politica,
 ]
 

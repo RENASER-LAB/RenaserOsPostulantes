@@ -12,6 +12,26 @@ cielo despejado» a «Northstar»— y el panel del equipo se quedó en el anter
 
 ---
 
+## 16/11/2026 · El perfil de la empresa, a la vista del candidato
+
+- **Qué llegó.** El módulo «Perfil de la empresa» del panel, con vista previa; el bloque «Sobre
+  {empresa}» y el video en la ficha de la vacante; el perfil público `/empresas/<código>`; y el
+  «Video del puesto» en el formulario de la vacante. Cómo funciona hoy, en
+  [PANEL.md](PANEL.md) y en [02-QUE-VE-EL-CANDIDATO](02-QUE-VE-EL-CANDIDATO.md). En el backend es
+  la V85: su spec reservaba la V81, pero la V84 ya estaba aplicada en producción y Flyway no
+  aplica migraciones fuera de orden.
+- **Decisiones del 16/11, ya dentro de la spec:** el módulo va
+  en el menú y no en Configuración; el bloque «Sobre…» va después de los requisitos; en PC el
+  video sube a la tarjeta lateral fija, encima de «Remuneración»; cada vacante puede tener su
+  video; hay perfil público; y lo editan Talento, Dirección y Administrador.
+- **De paso**, la ficha de la vacante deja la etiqueta «Vacante / Ficha del puesto» (DESIGN.md ya
+  lo dice).
+- **Dos trampas que salieron al probar.** El reproductor de Vimeo cargaba y se quedaba en negro en
+  00:00: le faltaba `encrypted-media` en `allow`. Y el botón «Vista previa» salía también desde
+  1280 px, junto a la vista previa ya visible: su `display: none` perdía contra `.secundario`, y
+  se resolvió con la variante `.secundarioSinLateral` en `piezas.module.css` (ver
+  [REGLAS-DEL-CODIGO](REGLAS-DEL-CODIGO.md)).
+
 ## El portal adopta el estilo de Northstar (13/11/2026)
 
 Rama `feat/estilo-northstar`. El usuario pidió una **réplica exacta del estilo** de

@@ -13,6 +13,7 @@ import { ProveedorSesion } from './Sesion'
 import { Vacantes } from '@/paginas/vacantes/Vacantes'
 import { BuscarVacantes } from '@/paginas/vacantes/BuscarVacantes'
 import { Vacante } from '@/paginas/vacantes/Vacante'
+import { PerfilDeEmpresa } from '@/paginas/empresas/PerfilDeEmpresa'
 import { Ingresar } from '@/paginas/cuenta/Ingresar'
 import { Acceso } from '@/paginas/cuenta/Acceso'
 import { Registro } from '@/paginas/cuenta/Registro'
@@ -47,6 +48,7 @@ import { EditorDeLaPrueba } from '@/panel/vacantes/preguntas/EditorDeLaPrueba'
 import { PruebasPanel } from '@/panel/pruebas/Pruebas'
 import { SesionesPanel } from '@/panel/simulacion/Sesiones'
 import { ConfiguracionPanel } from '@/panel/configuracion/Configuracion'
+import { PerfilDeLaEmpresaPanel } from '@/panel/empresa/PerfilDeLaEmpresa'
 import { ColaboradoresPanel } from '@/panel/colaboradores/Colaboradores'
 import { NuevoColaborador } from '@/panel/colaboradores/NuevoColaborador'
 import { FichaDelColaborador } from '@/panel/colaboradores/FichaColaborador'
@@ -132,6 +134,7 @@ export function App() {
                       element={<Navigate to={patrones.adminVacantes} replace />}
                     />
                     <Route path={patrones.adminConfiguracion} element={<ConfiguracionPanel />} />
+                    <Route path={patrones.adminEmpresa} element={<PerfilDeLaEmpresaPanel />} />
                     <Route path={patrones.adminColaboradores} element={<ColaboradoresPanel />} />
                     <Route path={patrones.adminNuevoColaborador} element={<NuevoColaborador />} />
                     <Route path={patrones.adminColaborador} element={<FichaDelColaborador />} />
@@ -198,6 +201,7 @@ export function App() {
                     <Route path={patrones.inicio} element={<Vacantes />} />
                     <Route path={patrones.vacantes} element={<BuscarVacantes />} />
                     <Route path={patrones.vacante} element={<Vacante />} />
+                    <Route path={patrones.empresa} element={<PerfilDeEmpresa />} />
                     <Route path={patrones.ingresar} element={<Ingresar />} />
                     {/* La entrada por el enlace del correo: sin contrasena. */}
                     <Route path={patrones.acceso} element={<Acceso />} />

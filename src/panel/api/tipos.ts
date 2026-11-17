@@ -246,6 +246,11 @@ export interface VacantePanel {
    * backend anterior.
    */
   queBuscarEnElCv?: string[]
+  /**
+   * El «Video del puesto» guardado (V85), tal como se pegó, o vacío: entonces el
+   * portal usa el de la empresa. Ausente en un backend anterior.
+   */
+  videoPresentacion?: string | null
 }
 
 /**
@@ -435,6 +440,11 @@ export interface GuardarVacante {
    * lista vacia las quita. Una linea prohibida o de mas de 200 caracteres es un 400.
    */
   queBuscarEnElCv?: string[]
+  /**
+   * El «Video del puesto» (V85). Ausente = no se toca; vacío lo quita. Un enlace que
+   * no es de un video de YouTube o de Vimeo es un 400 con la frase del de la empresa.
+   */
+  videoPresentacion?: string
   /**
    * Si ya se confirmo volver a buscar en los CV calificados. Cambiar las lineas
    * con CV calificados sin esto es un 409.

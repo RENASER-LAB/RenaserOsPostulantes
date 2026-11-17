@@ -56,6 +56,78 @@ export interface VacantePublica {
   publicadaEn: FechaIso | null
   remuneracion: RemuneracionPublica
   requisitosObjetivos: RequisitoPublico[]
+  /**
+   * El código de la empresa, para su perfil público (`/empresas/<código en
+   * minúsculas>`). Opcional: un backend anterior a la V85 no lo manda.
+   */
+  codigoEmpresa?: string | null
+  /**
+   * Lo que la empresa cuenta de sí misma (V85): el bloque «Sobre {empresa}» y
+   * el logo junto a su nombre. `null` si no llenó nada; ausente con un backend
+   * anterior. En los dos casos la vacante se pinta como siempre.
+   */
+  empresa?: EmpresaDeLaVacante | null
+  /** El video propio del puesto (V85), o nada: entonces vale el de la empresa. */
+  videoPuesto?: VideoPublico | null
+}
+
+/**
+ * Un video de YouTube o de Vimeo, reducido a lo que hace falta para pintarlo.
+ *
+ * ⚠️ **El reproductor se construye con `servicio`, `identificador` y `clave`,
+ * nunca copiando `enlace` dentro de la página.** `enlace` es el que se pegó, y
+ * solo sirve para «Ver en YouTube» —y aun así se reconstruye—.
+ */
+export interface VideoPublico {
+  servicio: 'YOUTUBE' | 'VIMEO'
+  identificador: string
+  /** La clave de un video oculto de Vimeo, o nada. */
+  clave?: string | null
+  enlace: string
+}
+
+export type CodigoDeRed = 'FACEBOOK' | 'INSTAGRAM' | 'LINKEDIN' | 'TIKTOK' | 'YOUTUBE'
+
+export interface RedPublica {
+  red: CodigoDeRed
+  enlace: string
+}
+
+/** El propósito, el video, la web y las redes DE LA EMPRESA (no del puesto). */
+export interface EmpresaDeLaVacante {
+  proposito?: string | null
+  video?: VideoPublico | null
+  paginaWeb?: string | null
+  redes?: RedPublica[] | null
+  /** La dirección pública del logo (`/api/v1/portal/empresas/…`), o nada. */
+  logo?: string | null
+}
+
+/**
+ * El perfil público de una empresa (V85): `GET /portal/empresas/{codigo}`, sin
+ * cuenta. Solo lo público, y sus vacantes publicadas con los campos de la tarjeta.
+ */
+export interface PerfilDeEmpresa {
+  codigo: string
+  nombre: string
+  /** La provincia de su primera sede activa, como la guarda el catálogo. */
+  ciudad?: string | null
+  logo?: string | null
+  portada?: string | null
+  sector?: string | null
+  tamano?: string | null
+  /** «201–500 colaboradores», ya escrito. */
+  tamanoTexto?: string | null
+  anioFundacion?: number | null
+  /** Las provincias de sus sedes activas, sin repetir. */
+  sedes?: string[] | null
+  quienesSomos?: string | null
+  proposito?: string | null
+  video?: VideoPublico | null
+  beneficios?: string[] | null
+  paginaWeb?: string | null
+  redes?: RedPublica[] | null
+  vacantes: VacantePublica[]
 }
 
 /**
