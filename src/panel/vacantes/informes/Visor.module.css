@@ -817,6 +817,36 @@
   overflow-wrap: anywhere;
 }
 
+/* El nombre de un entregable que se puede abrir: el enlace del panel, con el icono de abrir
+   afuera. Es botón cuando es un archivo (pide su enlace firmado al pulsar) y enlace cuando es
+   una dirección; los dos se ven igual. */
+.abreEntregable {
+  all: unset;
+  box-sizing: border-box;
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  color: var(--activo);
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.abreEntregable:hover {
+  text-decoration: underline;
+}
+
+.abreEntregable:focus-visible {
+  outline: 2px solid var(--activo);
+  outline-offset: 2px;
+}
+
+.abreEntregable:disabled {
+  cursor: progress;
+  opacity: 0.7;
+}
+
 .entregado {
   composes: chip;
   color: #0b7a63;

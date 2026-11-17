@@ -2,11 +2,13 @@ import { useState, type ReactNode } from 'react'
 import type {
   BloqueDelInforme,
   CriterioDelInforme,
+  EntregableDelAnexo,
   Informe,
   PreguntaDelAnexo,
   PuntoDelInforme,
 } from '@/panel/api/informes'
-import { IconoDesplegar } from '@/ui/Iconos'
+import { IconoAbrirFuera, IconoDesplegar } from '@/ui/Iconos'
+import { abrirArchivoEntregado, esWeb } from './abrirEntregable'
 import estilos from './Visor.module.css'
 
 const ORIGEN: Record<string, string> = { CV: 'CV', EVALUACION: 'Evaluación', PRUEBA: 'Prueba' }
@@ -291,19 +293,80 @@ function ElAnexo({ informe }: { informe: Informe }) {
             {anexo.entregablesResumen && <span className={estilos.meta}>{anexo.entregablesResumen}</span>}
           </div>
           {anexo.entregables.map((e) => (
-            <div key={e.nombre} className={estilos.entregable}>
-              <span className={estilos.entregableTexto}>
-                <b>{e.nombre}</b>
-                <span className={estilos.meta}>{e.detalle}</span>
-              </span>
-              <span className={e.entregado ? estilos.entregado : estilos.noEntregado}>
-                {e.entregado ? 'Entregado' : 'No entregado'}
-              </span>
-            </div>
+            <Entregable key={e.nombre} entregable={e} />
           ))}
         </div>
       )}
     </section>
+  )
+}
+
+/**
+ * Un entregable pedido. Si se entregó y quien mira tiene `descargar_entregables`, su nombre
+ * abre lo entregado en una pestaña nueva: el archivo con su enlace firmado de siempre, el
+ * enlace con la dirección que pegó. Sin ese permiso, o sin entregar, se ve como siempre.
+ */
+function Entregable({ entregable: e }: { entregable: EntregableDelAnexo }) {
+  const [abriendo, setAbriendo] = useState(false)
+  const [fallo, setFallo] = useState<string | null>(null)
+
+  async function abrir(archivoId: number) {
+    setAbriendo(true)
+    setFallo(null)
+    try {
+      await abrirArchivoEntregado(archivoId, e.nombre)
+    } catch (causa) {
+      setFallo(causa instanceof Error ? causa.message : 'No pudimos abrir el archivo.')
+    } finally {
+      setAbriendo(false)
+    }
+  }
+
+  let nombre: ReactNode = <b>{e.nombre}</b>
+  if (e.entregado && e.archivoId != null) {
+    const archivoId = e.archivoId
+    nombre = (
+      <button
+        type="button"
+        className={estilos.abreEntregable}
+        disabled={abriendo}
+        aria-label={`Abrir «${e.nombre}» en una pestaña nueva`}
+        onClick={() => void abrir(archivoId)}
+      >
+        {e.nombre}
+        <IconoAbrirFuera tamano={14} />
+      </button>
+    )
+  } else if (e.entregado && esWeb(e.url)) {
+    nombre = (
+      <a
+        className={estilos.abreEntregable}
+        href={e.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={`Abrir «${e.nombre}» en una pestaña nueva`}
+      >
+        {e.nombre}
+        <IconoAbrirFuera tamano={14} />
+      </a>
+    )
+  }
+
+  return (
+    <div className={estilos.entregable}>
+      <span className={estilos.entregableTexto}>
+        {nombre}
+        <span className={estilos.meta}>{e.detalle}</span>
+        {fallo && (
+          <span role="alert" className={estilos.estadoFallo}>
+            {fallo}
+          </span>
+        )}
+      </span>
+      <span className={e.entregado ? estilos.entregado : estilos.noEntregado}>
+        {e.entregado ? 'Entregado' : 'No entregado'}
+      </span>
+    </div>
   )
 }
 
