@@ -165,6 +165,24 @@
   overflow-wrap: anywhere;
 }
 
+/* El grupo y el ponderado, en la segunda línea del nombre. */
+.lineaGrupo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px var(--e2);
+}
+
+.ponderado {
+  font-family: var(--fuente-ui);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--tinta);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 .ninguno {
   padding: var(--e4);
   font-size: 13px;

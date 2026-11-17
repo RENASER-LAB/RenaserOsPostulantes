@@ -293,9 +293,25 @@ export function VisorDeInformes() {
                   <span className={estilos.puesto}>{p.puesto}</span>
                   <span className={estilos.nombreFila}>
                     <span style={{ fontWeight: p === actual ? 550 : 400 }}>{p.candidato}</span>
-                    {p.grupo && (
-                      <span className={estilosVacante.grupo} title={nombreDelGrupo(p.grupo) ?? undefined}>
-                        {rotuloCortoDelGrupo(p.grupo)}
+                    {/*
+                      El ponderado va en la línea del grupo y no en una columna: la lista
+                      mide ~300 px y una cuarta cifra partía los nombres en tres líneas.
+                    */}
+                    {(p.grupo || p.ponderado != null) && (
+                      <span className={estilos.lineaGrupo}>
+                        {p.grupo && (
+                          <span className={estilosVacante.grupo} title={nombreDelGrupo(p.grupo) ?? undefined}>
+                            {rotuloCortoDelGrupo(p.grupo)}
+                          </span>
+                        )}
+                        {p.ponderado != null && (
+                          <span
+                            className={estilos.ponderado}
+                            title={`Ponderado ${redondear(p.ponderado)}: con él se ordena la lista · CV ${redondear(p.notaCv)} · EVA ${redondear(p.notaEvaluacion)} · PRU ${redondear(p.notaPrueba)}`}
+                          >
+                            Pond. {redondear(p.ponderado)}
+                          </span>
+                        )}
                       </span>
                     )}
                   </span>

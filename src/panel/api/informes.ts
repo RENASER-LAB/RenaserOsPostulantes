@@ -214,6 +214,11 @@ export interface PostulanteDelVisor {
   notaPrueba: number | null
   /** Nulo si no tiene ninguno o si la persona está anonimizada: entonces no sale nada. */
   celular?: CelularDelVisor | null
+  /**
+   * El ponderado que decide su lugar, sobre 100. Nulo si no tiene las tres notas o si quien
+   * mira no puede ver alguna de ellas. Opcional: un backend anterior no lo manda.
+   */
+  ponderado?: number | null
 }
 
 export interface VisorDeLaVacante {

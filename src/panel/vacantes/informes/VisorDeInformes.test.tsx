@@ -68,7 +68,7 @@ function montar(ruta = '/admin/vacantes/3/informes', celulares: Record<number, C
     vacanteId: 3, vacante: 'Analista de Recursos Humanos', puesto: 'Analista', etapas: ['CV', 'EVALUACION', 'PRUEBA'],
     postulantes: NOMBRES.map((candidato, i) => ({ postulacionId: 100 + i, puesto: i + 1, candidato,
       grupo: i < 3 ? 'ALTA' : 'NO_PRIORIZADO', notaCv: 80 - i, notaEvaluacion: null, notaPrueba: null,
-      celular: celulares[100 + i] ?? null })),
+      celular: celulares[100 + i] ?? null, ponderado: i === 0 ? 83.4 : null })),
   })
   vi.mocked(verInformesDelPostulante).mockImplementation(async (id) => ({
     postulacionId: id, candidato: null, informes: [
@@ -106,6 +106,13 @@ describe('El visor de informes', () => {
     expect(await screen.findByRole('heading', { level: 2, name: 'Ana Torres' })).toBeTruthy()
     expect(screen.getByText('2 de 13')).toBeTruthy()
     await waitFor(() => expect(verInforme).toHaveBeenCalledWith(101, 'cv'))
+  })
+
+  it('el ponderado sale junto al grupo de quien lo tiene, y de nadie más', async () => {
+    montar()
+    const lista = await screen.findByRole('complementary', { name: 'Postulantes de la vacante' })
+    await within(lista).findByText('Pond. 83')
+    expect(within(lista).getAllByText(/^Pond\./)).toHaveLength(1)
   })
 
   it('AC-01f · la pestaña de quien aún se califica sale desactivada con su motivo', async () => {
