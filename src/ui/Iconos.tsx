@@ -461,3 +461,79 @@ export function IconoMenos(props: PropsIcono) {
     </Icono>
   )
 }
+
+// ---------- La presentación de la empresa (V85) ----------
+
+/** Un globo: la página web de la empresa. */
+export function IconoMundo(props: PropsIcono) {
+  return (
+    <Icono {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18" />
+      <path d="M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" />
+    </Icono>
+  )
+}
+
+export function IconoFacebook(props: PropsIcono) {
+  return (
+    <Icono {...props}>
+      <path d="M14.5 21v-7.5h2.6l.4-3h-3V8.6c0-.9.3-1.6 1.6-1.6h1.6V4.3a21 21 0 0 0-2.4-.1c-2.4 0-4 1.4-4 4.1v2.2H8.6v3h2.7V21" />
+    </Icono>
+  )
+}
+
+export function IconoInstagram(props: PropsIcono) {
+  return (
+    <Icono {...props}>
+      <rect x="3.5" y="3.5" width="17" height="17" rx="4.5" />
+      <circle cx="12" cy="12" r="4" />
+      <path d="M17.2 6.8v.1" />
+    </Icono>
+  )
+}
+
+export function IconoTiktok(props: PropsIcono) {
+  return (
+    <Icono {...props}>
+      <path d="M14 3.5v11.2a3.8 3.8 0 1 1-3.8-3.8" />
+      <path d="M14 3.5a4.6 4.6 0 0 0 4.6 4.6" />
+    </Icono>
+  )
+}
+
+export function IconoYoutube(props: PropsIcono) {
+  return (
+    <Icono {...props}>
+      <rect x="2.5" y="5.5" width="19" height="13" rx="3.5" />
+      <path d="M10 9.3v5.4l4.6-2.7L10 9.3Z" />
+    </Icono>
+  )
+}
+
+/** El triángulo de reproducir, relleno: el botón del recuadro del video. */
+export function IconoReproducir(props: PropsIcono) {
+  return (
+    <Icono {...props}>
+      <path d="M8.5 5.5v13l10-6.5-10-6.5Z" fill="currentColor" />
+    </Icono>
+  )
+}
+
+/** El icono de una red de la empresa, por su código; la web, el globo. */
+export function IconoDeRed({ red, ...props }: PropsIcono & { red: string }) {
+  switch (red) {
+    case 'FACEBOOK':
+      return <IconoFacebook {...props} />
+    case 'INSTAGRAM':
+      return <IconoInstagram {...props} />
+    case 'LINKEDIN':
+      return <IconoDeEnlace tipo="LINKEDIN" {...props} />
+    case 'TIKTOK':
+      return <IconoTiktok {...props} />
+    case 'YOUTUBE':
+      return <IconoYoutube {...props} />
+    default:
+      return <IconoMundo {...props} />
+  }
+}

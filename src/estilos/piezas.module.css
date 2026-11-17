@@ -224,6 +224,23 @@
   }
 }
 
+/*
+ * El secundario que solo existe cuando la columna lateral no cabe: por debajo
+ * de 1280 px. Es para lo que desde 1280 px está a la vista al lado y por debajo
+ * se abre con un botón, como «Vista previa» de «Perfil de la empresa». Vive aquí
+ * por lo mismo que `.secundarioDelTelefono`.
+ */
+.secundarioSinLateral {
+  composes: secundario;
+  display: none;
+}
+
+@media (max-width: 1279.98px) {
+  .secundarioSinLateral {
+    display: inline-flex;
+  }
+}
+
 /* ---------- La accion firme que no abre la pantalla ---------- */
 
 /*

@@ -1,0 +1,387 @@
+/*
+ * «Perfil de la empresa» (V85): el editor a la izquierda y la vista previa en vivo
+ * del perfil público a la derecha. Por debajo de 1280 px la vista previa se abre
+ * con «Vista previa» en un cajón lateral (`Modal` con `lateral`). Los campos son
+ * los de `ui/campos`; los bloques, `.bloque` de `estilos/pagina.module.css`; y los
+ * botones, los de Configuración (`.guardar` sobre `acentoMenor`, `.chico`).
+ */
+
+.pagina {
+  max-width: 84rem;
+  margin: 0 auto;
+  padding: var(--e5) var(--e5) var(--e8);
+}
+
+.bajada {
+  font-size: var(--t-prosa);
+  line-height: 1.55;
+  color: var(--tinta2);
+  margin-top: var(--e2);
+  max-width: var(--medida);
+}
+
+.dos {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 26rem;
+  gap: var(--e6);
+  align-items: start;
+  margin-top: var(--e6);
+}
+
+.previa {
+  position: sticky;
+  top: calc(var(--alto-cabecera-panel, 64px) + var(--e4));
+}
+
+/*
+ * «Vista previa» solo existe cuando la vista previa lateral no está (por debajo de
+ * 1280 px). ⚠️ **El esconder y enseñar lo pone la pieza compartida, no esta
+ * hoja**: un `display: none` aquí sobre un botón que compone `secundario` perdía
+ * contra el de `.secundario` y el botón salía desde 1280 px junto a la vista previa
+ * ya visible (ver `.secundarioSinLateral` en `piezas.module.css`).
+ */
+.botonPrevia {
+  composes: secundarioSinLateral from '../../estilos/piezas.module.css';
+}
+
+@media (max-width: 1279.98px) {
+  .dos {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .previa {
+    display: none;
+  }
+}
+
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e5);
+  min-width: 0;
+}
+
+.seccion {
+  composes: bloque from '../../estilos/pagina.module.css';
+  display: flex;
+  flex-direction: column;
+  gap: var(--e4);
+}
+
+.tituloSeccion {
+  margin: 0;
+  font-size: var(--t-destacado, 20px);
+}
+
+.pareja {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: var(--e4);
+}
+
+/* La rejilla de los seis enlaces del formulario. */
+.enlaces {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: var(--e4);
+}
+
+/* ---------- El logo y la portada ---------- */
+
+.imagenes {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--e5);
+  align-items: start;
+}
+
+@media (max-width: 640px) {
+  .imagenes {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.zonaImagen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+  min-width: 0;
+}
+
+.rotulo {
+  font-size: var(--t-apoyo);
+  font-weight: 600;
+  color: var(--tinta);
+}
+
+.logo {
+  width: 96px;
+  height: 96px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 8px;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.1);
+  background: #ffffff;
+}
+
+.logo img,
+.portada img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.portada {
+  width: 100%;
+  aspect-ratio: 4 / 1;
+  overflow: hidden;
+  border-radius: var(--radio-menor);
+  background: var(--nube-hundida);
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.1);
+}
+
+.botonesImagen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e2);
+}
+
+.errorImagen {
+  margin: 0;
+  font-size: var(--t-menor);
+  color: var(--mal);
+}
+
+/* ---------- Sedes de solo lectura ---------- */
+
+.cabeceraSedes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--e2) var(--e4);
+}
+
+.gestionar {
+  font-size: var(--t-apoyo);
+  color: var(--activo);
+}
+
+/* ---------- Los contadores ---------- */
+
+.contador {
+  margin: calc(var(--e2) * -1) 0 0;
+  font-size: var(--t-menor);
+  color: var(--tinta3);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.contadorLleno {
+  color: var(--mal);
+}
+
+/* ---------- Los beneficios ---------- */
+
+.beneficios {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.beneficio {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e1, 4px);
+  min-height: 36px;
+  padding: 0 var(--e2) 0 var(--e3);
+  border: 1px solid rgb(0 0 0 / 0.1);
+  border-radius: var(--radio-menor);
+  background: var(--nube);
+  font-size: var(--t-apoyo);
+}
+
+.quitarBeneficio {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--tinta3);
+  cursor: pointer;
+}
+
+.quitarBeneficio:hover {
+  color: var(--tinta);
+}
+
+.anadir {
+  display: flex;
+  gap: var(--e2);
+  align-items: flex-end;
+}
+
+.anadir > :first-child {
+  flex: 1;
+}
+
+/* ---------- El pie ---------- */
+
+.pie {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e3);
+}
+
+.guardar {
+  composes: acentoMenor from '../../estilos/piezas.module.css';
+}
+
+.chico {
+  composes: secundario from '../../estilos/piezas.module.css';
+}
+
+.avisoBien {
+  font-size: var(--t-prosa);
+  color: var(--bien);
+  border-left: 2px solid var(--bien);
+  padding-left: var(--e3);
+  margin: 0;
+}
+
+.avisoMalo {
+  font-size: var(--t-prosa);
+  color: var(--mal);
+  border-left: 2px solid var(--mal);
+  padding-left: var(--e3);
+  margin: 0;
+}
+
+.sinPermiso {
+  composes: bloque from '../../estilos/pagina.module.css';
+  margin-top: var(--e5);
+}
+
+/* ---------- La vista previa ---------- */
+
+.tarjetaPrevia {
+  border: 1px solid rgb(0 0 0 / 0.1);
+  border-radius: var(--radio);
+  background: var(--nube);
+  overflow: hidden;
+}
+
+.portadaPrevia {
+  height: 96px;
+  background: var(--nube-hundida);
+  background-size: cover;
+  background-position: center;
+}
+
+.cabeceraPrevia {
+  display: flex;
+  gap: var(--e3);
+  align-items: flex-end;
+  padding: 0 var(--e4);
+  margin-top: -32px;
+}
+
+.logoPrevia {
+  flex: none;
+  width: 72px;
+  height: 72px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 3px solid var(--nube);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.1);
+}
+
+.logoPrevia img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cuerpoPrevia {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e4);
+  padding: var(--e3) var(--e4) var(--e5);
+}
+
+.nombrePrevia {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  overflow-wrap: break-word;
+}
+
+.lineaPrevia {
+  margin: var(--e1, 4px) 0 0;
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+}
+
+.tituloPrevia {
+  margin: 0 0 var(--e2);
+  font-size: var(--t-micro);
+  font-weight: 500;
+  letter-spacing: var(--tracking-etiqueta);
+  text-transform: uppercase;
+  color: var(--tinta3);
+}
+
+.textoPrevia {
+  margin: 0;
+  font-size: var(--t-apoyo);
+  line-height: 1.6;
+  color: var(--tinta2);
+  white-space: pre-line;
+  overflow-wrap: break-word;
+}
+
+.vacantesPrevia {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.vacantePrevia {
+  padding: var(--e2) var(--e3);
+  border: 1px solid rgb(0 0 0 / 0.1);
+  border-radius: var(--radio-menor);
+  font-size: var(--t-apoyo);
+}
+
+.vacantePrevia span {
+  display: block;
+  font-size: var(--t-menor);
+  color: var(--tinta3);
+}
+
+.verPerfil {
+  font-size: var(--t-apoyo);
+  color: var(--activo);
+}
+
+/* Los botones propios hablan como los de `piezas`: en MAYÚSCULAS (Northstar). */
+.chico,
+.guardar,
+.botonPrevia {
+  text-transform: uppercase;
+}

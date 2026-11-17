@@ -136,3 +136,51 @@ export function revisarDiploma(archivo: File): string | null {
   }
   return null
 }
+
+/**
+ * Recorta al centro y devuelve la imagen en el tamaño pedido.
+ *
+ * El recorte es automático y no se puede mover: arrastrar y hacer zoom sobre la
+ * foto es otra pantalla —gesto táctil, orientación, límites— y lo que devuelve
+ * no compensa. Al centro acierta con casi cualquier foto de perfil.
+ *
+ * Por defecto un JPEG (la foto y la portada del perfil). El logo de una empresa
+ * (V85) pide `image/png` cuando llega en PNG: un JPEG pintaría de negro su
+ * fondo transparente.
+ */
+export async function recortarAlCentro(
+  archivo: File,
+  ancho: number,
+  alto: number,
+  tipo: 'image/jpeg' | 'image/png' = 'image/jpeg',
+): Promise<Blob> {
+  const imagen = await createImageBitmap(archivo)
+  // El trozo más grande de la imagen que tiene la proporción pedida, centrado.
+  const proporcion = ancho / alto
+  const recorteAncho = Math.min(imagen.width, imagen.height * proporcion)
+  const recorteAlto = Math.min(imagen.height, imagen.width / proporcion)
+  const lienzo = document.createElement('canvas')
+  lienzo.width = ancho
+  lienzo.height = alto
+  const pincel = lienzo.getContext('2d')
+  if (!pincel) throw new Error('Tu navegador no pudo preparar la imagen.')
+  pincel.drawImage(
+    imagen,
+    (imagen.width - recorteAncho) / 2,
+    (imagen.height - recorteAlto) / 2,
+    recorteAncho,
+    recorteAlto,
+    0,
+    0,
+    ancho,
+    alto,
+  )
+  imagen.close()
+  return new Promise((resolver, rechazar) =>
+    lienzo.toBlob(
+      (blob) => (blob ? resolver(blob) : rechazar(new Error('No pudimos preparar la imagen.'))),
+      tipo,
+      0.85,
+    ),
+  )
+}

@@ -15,6 +15,14 @@ export const patrones = {
    */
   vacantes: '/vacantes',
   vacante: '/vacantes/:vacanteId',
+  /**
+   * El perfil público de una empresa (V85), sin cuenta como el tablón: su
+   * presentación y todas sus vacantes abiertas. El código va en minúsculas
+   * (`/empresas/molinos-del-sur`).
+   */
+  empresa: '/empresas/:codigo',
+  /** El módulo «Perfil de la empresa» del panel (V85), fuera de Configuración. */
+  adminEmpresa: '/admin/empresa',
   postular: '/vacantes/:vacanteId/postular',
   ingresar: '/ingresar',
   acceso: '/acceso',
@@ -130,6 +138,8 @@ export const rutas = {
   vacantes: (busqueda?: string) =>
     busqueda === undefined || busqueda === '' || busqueda === '?' ? '/vacantes' : `/vacantes${busqueda.startsWith('?') ? '' : '?'}${busqueda}`,
   vacante: (vacanteId: number | string) => `/vacantes/${vacanteId}`,
+  /** El perfil público de una empresa, con su código en minúsculas. */
+  empresa: (codigo: string) => `/empresas/${encodeURIComponent(codigo.toLowerCase())}`,
   postular: (vacanteId: number | string) => `/vacantes/${vacanteId}/postular`,
   /** Recuerda a que vacante se estaba postulando, para volver despues. */
   ingresar: (vacanteId?: number | string) =>
@@ -205,6 +215,7 @@ export const rutas = {
       : `/admin/pruebas${busqueda.startsWith('?') ? '' : '?'}${busqueda}`,
   adminSesiones: () => '/admin/simulacion',
   adminConfiguracion: () => '/admin/configuracion',
+  adminEmpresa: () => '/admin/empresa',
   adminColaboradores: () => '/admin/colaboradores',
   /** Con `postulacion`, el alta sale precargada con lo que se sabe del contratado. */
   adminNuevoColaborador: (postulacionId?: number) =>

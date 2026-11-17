@@ -154,3 +154,35 @@ describe('el plegado se recuerda en este navegador (AC-03)', () => {
     expect(() => guardarPlegado(true)).not.toThrow()
   })
 })
+
+describe('«Perfil de la empresa» (V85)', () => {
+  it('AC-25: con el permiso sale en Selección, después de Simulación, y lleva a /admin/empresa', () => {
+    const menu = menuDe(
+      sesion({
+        ver_vacantes: 'TODO',
+        crear_sesiones_simulacion: 'TODO',
+        editar_presentacion_empresa: 'TODO',
+      }),
+    )
+    const seleccion = menu.familias.find((f) => f.titulo === 'Selección')!
+    expect(seleccion.entradas.map((e) => e.nombre)).toEqual([
+      'Vacantes',
+      'Pruebas',
+      'Simulación',
+      'Perfil de la empresa',
+    ])
+    expect(seleccion.entradas.at(-1)!.ruta).toBe('/admin/empresa')
+    // Ya no está en Configuración: Configuración sigue al pie, sola.
+    expect(menu.pie.map((e) => e.nombre)).toEqual(['Configuración'])
+  })
+
+  it('AC-07: sin el permiso (Responsable del área) no sale', () => {
+    const menu = menuDe(sesion({ ver_vacantes: 'SUS_VACANTES' }))
+    expect(menu.familias.flatMap((f) => f.entradas.map((e) => e.clave))).not.toContain('empresa')
+  })
+
+  it('su dirección marca su entrada', () => {
+    expect(entradaActiva('/admin/empresa')).toBe('empresa')
+    expect(entradaActiva('/admin/empresa/')).toBe('empresa')
+  })
+})

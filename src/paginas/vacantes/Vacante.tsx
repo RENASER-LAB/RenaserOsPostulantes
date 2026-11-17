@@ -31,6 +31,12 @@ import { rutas } from '@/rutas'
 import { Remuneracion } from '@/ui/Remuneracion'
 import { TituloQueViaja } from '@/ui/movimiento'
 import { TextoPlano } from '@/ui/TextoPlano'
+import { direccionPublica } from '@/api/puerta'
+import { EnlacesDeLaEmpresa } from '@/ui/presentacion/EnlacesDeLaEmpresa'
+import { RecuadroDeVideo } from '@/ui/presentacion/RecuadroDeVideo'
+import presentacionEstilos from '@/ui/presentacion/Presentacion.module.css'
+import { useCorte } from '@/ui/useCorte'
+import { presentacionDeLaVacante, type PresentacionDeLaVacante } from './presentacionDeLaVacante'
 import { modalidadCanonica, normalizar } from './busqueda'
 import estilos from './Vacante.module.css'
 
@@ -63,6 +69,9 @@ function Volver() {
 export function Vacante() {
   const { vacanteId = '' } = useParams()
   const { hayCuenta } = useSesion()
+  // El video va en la tarjeta lateral desde 900 px y en la ficha por debajo: se
+  // decide aquí y no con CSS para que el reproductor nunca exista dos veces.
+  const enPc = useCorte('(min-width: 900px)')
 
   const consulta = useQuery({
     queryKey: ['vacante', vacanteId],
@@ -145,17 +154,19 @@ export function Vacante() {
     .join(' · ')
   const horario = (v.horario ?? '').trim() || null
   const sobreElPuesto = v.proposito || v.descripcion
+  const presentacion = presentacionDeLaVacante(v, enPc)
 
   return (
     <div className={estilos.pagina}>
       <Volver />
 
-      <div className={estilos.encabezado} data-seccion="Vacante / Ficha del puesto">
+      {/* Sin la etiqueta «Vacante / Ficha del puesto» desde el 16/11/2026 (V85). */}
+      <div className={estilos.encabezado}>
         {/* B · el otro extremo del titulo que viaja desde la tarjeta. */}
         <TituloQueViaja id={v.id} como="h1" className={estilos.titular}>
           {v.titulo}
         </TituloQueViaja>
-        {v.nombreEmpresa && <p className={estilos.empresa}>{v.nombreEmpresa}</p>}
+        {v.nombreEmpresa && <NombreDeLaEmpresa presentacion={presentacion} />}
       </div>
 
       {/*
@@ -167,6 +178,20 @@ export function Vacante() {
       <div className={estilos.reparto}>
         <aside className={estilos.lateral} aria-label="Lo esencial del puesto">
           <div className={estilos.tarjeta}>
+            {presentacion.enLaTarjeta && (
+              <div className={estilos.videoDeLaTarjeta}>
+                <RecuadroDeVideo
+                  video={presentacion.enLaTarjeta.video}
+                  empresa={presentacion.empresa}
+                  titulo={presentacion.enLaTarjeta.titulo}
+                />
+                {presentacion.perfil && (
+                  <Link className={presentacionEstilos.verPerfil} to={presentacion.perfil}>
+                    Ver perfil de {presentacion.empresa} →
+                  </Link>
+                )}
+              </div>
+            )}
             <Remuneracion remuneracion={v.remuneracion} />
             {(modalidad || lugar || horario) && (
               <dl className={estilos.ficha}>
@@ -210,6 +235,15 @@ export function Vacante() {
         </aside>
 
         <article className={estilos.contenido}>
+          {presentacion.arriba && (
+            <RecuadroDeVideo
+              className={estilos.videoArriba}
+              video={presentacion.arriba.video}
+              empresa={presentacion.empresa}
+              titulo={presentacion.arriba.titulo}
+            />
+          )}
+
           {sobreElPuesto && (
             <section className={estilos.bloque}>
               <h2 className={estilos.tituloBloque}>
@@ -249,6 +283,9 @@ export function Vacante() {
               </ul>
             </section>
           )}
+
+          {/* Después de toda la información del puesto, incluidos los requisitos (16/11/2026). */}
+          <SobreLaEmpresa presentacion={presentacion} />
         </article>
       </div>
     </div>
@@ -375,5 +412,61 @@ function Puntos({ texto }: { texto: string }) {
         </li>
       ))}
     </ul>
+  )
+}
+
+/**
+ * El nombre de la empresa bajo el titular, que lleva a su perfil público (V85),
+ * con su logo pequeño delante si lo tiene. Sin código —un backend anterior—, el
+ * nombre se queda como texto.
+ */
+function NombreDeLaEmpresa({ presentacion }: { presentacion: PresentacionDeLaVacante }) {
+  const logo = direccionPublica(presentacion.logo)
+  return (
+    <p className={estilos.empresa}>
+      {logo && <img className={presentacionEstilos.logoPequeno} src={logo} alt="" />}
+      {presentacion.perfil ? (
+        <Link className={estilos.enlaceEmpresa} to={presentacion.perfil}>
+          {presentacion.empresa}
+        </Link>
+      ) : (
+        presentacion.empresa
+      )}
+    </p>
+  )
+}
+
+/**
+ * «Sobre {empresa}» (V85): el propósito DE LA EMPRESA, su video cuando toca, la
+ * web y las redes, y «Ver perfil de… →». No es «El resultado que esperamos», que
+ * es el propósito del puesto. Sin nada que decir, no se pinta.
+ */
+function SobreLaEmpresa({ presentacion }: { presentacion: PresentacionDeLaVacante }) {
+  const sobre = presentacion.sobre
+  if (!sobre) return null
+  return (
+    <section className={estilos.sobreLaEmpresa} aria-labelledby="sobre-la-empresa">
+      <h2 className={estilos.tituloBloque} id="sobre-la-empresa">
+        Sobre {presentacion.empresa}
+      </h2>
+      {/* Texto, nunca HTML: si alguien escribe etiquetas, se ven tal cual. */}
+      {sobre.proposito && <p className={estilos.texto}>{sobre.proposito}</p>}
+      {sobre.video && (
+        <RecuadroDeVideo
+          className={estilos.videoDelSobre}
+          video={sobre.video.video}
+          empresa={presentacion.empresa}
+          titulo={sobre.video.titulo}
+        />
+      )}
+      <EnlacesDeLaEmpresa className={estilos.enlacesDelSobre} enlaces={sobre.enlaces} />
+      {presentacion.perfil && (
+        <p className={estilos.cierreDelSobre}>
+          <Link className={presentacionEstilos.verPerfil} to={presentacion.perfil}>
+            Ver perfil de {presentacion.empresa} →
+          </Link>
+        </p>
+      )}
+    </section>
   )
 }

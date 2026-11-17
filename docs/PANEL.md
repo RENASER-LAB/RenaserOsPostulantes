@@ -8,8 +8,9 @@ sedes y cargos, y contratar desde la ficha; las preguntas propias de cada vacant
 salen, el editor y su nota en la ficha; la prueba técnica de cada vacante nueva, escrita en ese
 mismo editor; la nota mínima con la que una vacante pasa sola a la prueba; «Qué buscar en el
 CV», lo que cada vacante busca en los currículums; «Pruebas», el índice de lo que la empresa
-escribió en esos editores, con su copia a otra vacante; y los informes por etapa de cada
-candidato, en PDF desde la ficha y en un visor. El recorrido de los dos lados —equipo y candidato— está en
+escribió en esos editores, con su copia a otra vacante; los informes por etapa de cada
+candidato, en PDF desde la ficha y en un visor; y el «Perfil de la empresa», lo que el candidato
+ve de ella en el portal. El recorrido de los dos lados —equipo y candidato— está en
 [06-FLUJO-COMPLETO.md](06-FLUJO-COMPLETO.md).
 
 ---
@@ -35,8 +36,9 @@ vacantes (modelo Indeed), el panel se construye en este repositorio, bajo `/admi
 - **Un menú lateral por familias** desde el 29/09/2026 (antes, pestañas arriba): en
   **Selección**, **Vacantes** (el CRUD, y dentro de cada una el embudo, el ranking con las notas
   de la IA, la ficha de cada postulante, avanzar de etapa y contratar), **Pruebas** (el índice de
-  las preguntas y pruebas escritas en las vacantes, desde el 13/11/2026) y **Simulación** (las
-  sesiones presenciales); en **Personas**, **Colaboradores**; y al pie
+  las preguntas y pruebas escritas en las vacantes, desde el 13/11/2026), **Simulación** (las
+  sesiones presenciales) y **Perfil de la empresa** (cómo se presenta ante el candidato, desde el
+  16/11/2026); en **Personas**, **Colaboradores**; y al pie
   **Configuración** (parámetros, banco de preguntas por Excel, usuarios y roles, áreas, sedes,
   cargos y, solo para la plataforma, las reseñas reportadas). Cada uno ve solo lo que puede usar:
   ver «Gestión de personas: el menú lateral, los colaboradores y contratar». La «Pruebas» de hoy
@@ -1552,6 +1554,52 @@ sale en el de la prueba. Para dejar una vacante a la vista de una revisión a ma
 los correos que imprime para quitarla). Las unitarias, en `BarraDeInformes.test.tsx`,
 `VisorDeInformes.test.tsx` y `Vacante.test.tsx`; en el backend, `FlujoInformesPorEtapaIT`,
 `PdfDelInformeTest`, `RedaccionDelInformeTest` y `AgenteRedactorInformeTest`.
+
+### El perfil de la empresa y el video del puesto (16/11)
+
+La empresa cuenta quién es, y el candidato lo lee en el portal junto a cada vacante y en su perfil
+público (ver [02-QUE-VE-EL-CANDIDATO](02-QUE-VE-EL-CANDIDATO.md), 2.2 y 2.2b). Las rutas y las
+reglas están en `docs/` del backend, `09-APIS.md`, «El perfil de la empresa». El módulo vive en
+`src/panel/empresa/` (`PerfilDeLaEmpresa`, `formulario.ts` e `imagenes.ts`), la API en
+`src/panel/api/presentacion.ts` y la regla de los enlaces en `src/dominio/presentacionEmpresa.ts`.
+
+- **Dónde está.** Una entrada propia del menú, «Perfil de la empresa» (`/admin/empresa`), en
+  Selección detrás de Simulación. Solo la ve quien tiene `editar_presentacion_empresa` —Talento,
+  Dirección y Administrador—; sin él, la API responde 403 y no se guarda nada. No está en
+  Configuración. Siempre es la empresa de quien ha entrado.
+- **Cómo es.** El editor a la izquierda y, a la derecha, una **vista previa en vivo del perfil
+  público** que cambia al escribir. Por debajo de 1280 px la vista previa se abre con el botón
+  «Vista previa». Un solo «Guardar», «Dejarlo» para descartar y «Ver perfil público ↗».
+- **Los campos, todos opcionales**, en tres bloques. Identidad: logo y portada (JPG o PNG de hasta
+  2 MB; se recortan en el navegador a 512 × 512 y a 1600 × 400, y el servidor las vuelve a
+  codificar sin metadatos), el nombre y las sedes de solo lectura —con «Gestionar sedes»—, sector,
+  tamaño y año de fundación. Presentación: «Quiénes somos» y «Nuestro propósito», con contador
+  «N / 1500», y los beneficios como chips, hasta 12 de 40. Video y enlaces: el video de YouTube o
+  Vimeo, la web y las cinco redes.
+- **Al guardar.** Se quitan los espacios de los bordes y a un enlace sin `https://` se le pone
+  delante. Si algo no vale, «No se guardó nada. Corrige los campos marcados.» y cada campo dice
+  su error: «Escribe una dirección web que empiece por https://», «Pega el enlace de un video de
+  YouTube o de Vimeo» o «Este enlace no es de Instagram». Si sale bien, «Guardado. Tu perfil y tus
+  vacantes publicadas ya lo muestran.»: el cambio llega a todas sus vacantes publicadas sin volver
+  a publicarlas. Si falla la red, se conserva lo escrito y dice «No se pudo guardar.».
+- **«Video del puesto»**, en el formulario de crear y editar vacante (`CamposDeLaVacante`): un
+  video propio de esa vacante, con las mismas reglas y errores. Vacío y con la empresa con video,
+  el campo enseña el chip «Se usará el video de la empresa» (lo pregunta a
+  `GET /organizacion/presentacion/video`, que basta con `ver_vacantes`). Cambiarlo con la vacante
+  publicada **no avisa a los candidatos**: es una corrección normal, y queda en la auditoría.
+
+**Limitaciones conocidas.** EX no sabe si un video es privado, se borró o no se deja incrustar: lo
+dice el propio reproductor al pulsarlo, y debajo sigue «Ver en YouTube» o «Ver en Vimeo». Dentro de
+la app de Android el reproductor puede fallar porque YouTube rechaza algunos orígenes; la salida es
+el mismo enlace. Si dos personas editan a la vez, gana el último guardado.
+
+Comprobarlo: `npx playwright test herramientas/e2e/67-proposito-de-la-empresa-qa.spec.ts
+herramientas/e2e/67-proposito-de-la-empresa-qa-movil.spec.ts
+herramientas/e2e/68-proposito-de-la-empresa-qa-regresiones.spec.ts`. **Escriben** en el clon:
+empresas `QA-PROP-8029-*` con sus vacantes y cuentas `qa-prop-8029-*`; la presentación de la
+plataforma se fotografía antes y se devuelve al terminar. Las unitarias, en
+`PerfilDeLaEmpresa.test.tsx`, `formulario.test.ts`, `VideoDelPuesto.test.tsx` y
+`presentacionEmpresa.test.ts`.
 
 ### La sección «Pruebas» se retiró (05/10)
 

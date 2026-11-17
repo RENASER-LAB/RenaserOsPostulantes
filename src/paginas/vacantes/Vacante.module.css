@@ -340,3 +340,68 @@
 .descripcion li::marker {
   color: var(--regla2);
 }
+
+/* ---------- La presentación de la empresa (V85) ---------- */
+
+/* El nombre bajo el titular: logo pequeño y enlace al perfil público. */
+.empresa {
+  display: flex;
+  align-items: center;
+  gap: var(--e2);
+  overflow-wrap: anywhere;
+}
+
+.enlaceEmpresa {
+  color: var(--tinta2);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.22em;
+  text-decoration-color: var(--regla2);
+}
+
+.enlaceEmpresa:hover {
+  color: var(--tinta);
+}
+
+/*
+ * El video arriba de la tarjeta lateral, encima de «Remuneración», y el filete de
+ * siempre debajo. Video y tarjeta caben juntos en 1440×900 con la tarjeta fija.
+ */
+.videoDeLaTarjeta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+  padding-bottom: var(--e5);
+  border-bottom: 1px solid var(--regla);
+}
+
+/* El del puesto, en el teléfono: arriba de la ficha, antes de la información. */
+.videoArriba {
+  margin-bottom: var(--e6);
+}
+
+/* Tras el recuadro de requisitos: filete superior, 48 px de margen y 32 de relleno. */
+.sobreLaEmpresa {
+  margin-top: 48px;
+  padding-top: 32px;
+  border-top: 1px solid var(--regla);
+}
+
+.sobreLaEmpresa > * + * {
+  margin-top: var(--e5);
+}
+
+.videoDelSobre {
+  max-width: 46rem;
+}
+
+.cierreDelSobre {
+  margin: 0;
+}
+
+@media (max-width: 899px) {
+  /* Que la última fila de chips no quede tapada por la barra fija de «Postular». */
+  .sobreLaEmpresa {
+    margin-bottom: var(--e7);
+  }
+}

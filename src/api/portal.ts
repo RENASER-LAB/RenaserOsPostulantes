@@ -14,6 +14,7 @@ import type {
   OpcionUbigeo,
   PedirBorrado,
   PedirRecuperacion,
+  PerfilDeEmpresa,
   QuienSoy,
   RestablecerClave,
   Sesion,
@@ -29,6 +30,16 @@ export const listarVacantes = () =>
 
 export const verVacante = (id: number | string) =>
   pedir<VacantePublica>(`/vacantes/${id}`, { sinToken: true })
+
+/**
+ * El perfil público de una empresa (V85). Sin token, como el tablón: se llega
+ * desde una vacante o por su enlace. Un 404 es una empresa que no existe o que
+ * está suspendida.
+ */
+export const verPerfilDeEmpresa = (codigo: string) =>
+  pedir<PerfilDeEmpresa>(`/empresas/${encodeURIComponent(codigo.toLowerCase())}`, {
+    sinToken: true,
+  })
 
 export const textosConsentimiento = () =>
   pedir<TextoConsentimientoPublico[]>('/consentimientos/textos', { sinToken: true })

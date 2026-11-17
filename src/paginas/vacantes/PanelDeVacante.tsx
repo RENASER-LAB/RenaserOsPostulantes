@@ -24,6 +24,10 @@ import { Separator } from '@/ui/shadcn/separator'
 import { cn } from '@/ui/shadcn/utils'
 import { puntosDe, recortado } from './busqueda'
 import { DatosDeLaVacante, Iniciales, SOMBRA_DE_SUPERFICIE } from './FilaDeVacante'
+import { direccionPublica } from '@/api/puerta'
+import { EnlacesDeLaEmpresa } from '@/ui/presentacion/EnlacesDeLaEmpresa'
+import { RecuadroDeVideo } from '@/ui/presentacion/RecuadroDeVideo'
+import { presentacionDeLaVacante } from './presentacionDeLaVacante'
 
 export function PanelDeVacante({
   vacante: v,
@@ -68,6 +72,9 @@ export function PanelDeVacante({
   const requisitos = Array.isArray(v.requisitosObjetivos) ? v.requisitosObjetivos : []
   const proposito = recortado(v.proposito)
   const descripcion = recortado(v.descripcion)
+  // La pantalla partida solo existe desde 1024 px: siempre es la disposición de PC (V85).
+  const presentacion = presentacionDeLaVacante(v, true)
+  const logo = direccionPublica(presentacion.logo)
 
   return (
     // Al cambiar de vacante el panel se monta de nuevo (`key`) y entra con un fundido de 150 ms
@@ -95,7 +102,11 @@ export function PanelDeVacante({
       </div>
       <div className="p-6 lg:p-8">
         <div className="flex items-start gap-4">
-          <Iniciales empresa={empresa} grande />
+          {logo ? (
+            <img src={logo} alt="" className="size-14 shrink-0 rounded-[8px] bg-white object-cover shadow-[0_0_0_1px_rgb(0_0_0/0.1)]" />
+          ) : (
+            <Iniciales empresa={empresa} grande />
+          )}
           <div className="min-w-0 flex-1">
             <h2
               id={idTitulo}
@@ -104,7 +115,19 @@ export function PanelDeVacante({
             >
               {v.titulo}
             </h2>
-            {empresa && <p className="mt-1 text-base text-tinta2">{empresa}</p>}
+            {empresa &&
+              (presentacion.perfil ? (
+                <p className="mt-1 text-base text-tinta2">
+                  <Link
+                    to={presentacion.perfil}
+                    className="text-tinta2 underline decoration-border-strong underline-offset-4 hover:text-foreground"
+                  >
+                    {empresa}
+                  </Link>
+                </p>
+              ) : (
+                <p className="mt-1 text-base text-tinta2">{empresa}</p>
+              ))}
             {publicada && <p className="mt-1 text-sm text-muted-foreground">{publicada}</p>}
           </div>
         </div>
@@ -121,6 +144,25 @@ export function PanelDeVacante({
               : 'Si aún no tienes cuenta, la creas en el siguiente paso.'}
           </p>
         </div>
+
+        {/*
+          El video, arriba y a la vista (V85): el del puesto si lo tiene, si no el
+          de la empresa. Hace de la tarjeta lateral de la ficha en la pantalla partida.
+        */}
+        {presentacion.enLaTarjeta && (
+          <div className="mt-6 flex max-w-[34rem] flex-col gap-3 border-t border-border pt-6">
+            <RecuadroDeVideo
+              video={presentacion.enLaTarjeta.video}
+              empresa={presentacion.empresa}
+              titulo={presentacion.enLaTarjeta.titulo}
+            />
+            {presentacion.perfil && (
+              <Link to={presentacion.perfil} className="text-sm font-medium text-primary no-underline hover:underline">
+                Ver perfil de {presentacion.empresa} →
+              </Link>
+            )}
+          </div>
+        )}
       </div>
 
       <Separator className="bg-border" />
@@ -163,6 +205,34 @@ export function PanelDeVacante({
                 </li>
               ))}
             </ul>
+          </section>
+        )}
+
+        {/* «Sobre {empresa}» (V85): después de toda la información del puesto. */}
+        {presentacion.sobre && (
+          <section aria-labelledby={`sobre-${v.id}`} className="flex flex-col gap-5 border-t border-border pt-8">
+            <h3 id={`sobre-${v.id}`} className="m-0 text-lg font-semibold tracking-tight text-foreground [overflow-wrap:anywhere]">
+              Sobre {presentacion.empresa}
+            </h3>
+            {presentacion.sobre.proposito && (
+              <p className="m-0 max-w-[65ch] whitespace-pre-line text-[15px] leading-relaxed text-tinta2">
+                {presentacion.sobre.proposito}
+              </p>
+            )}
+            {presentacion.sobre.video && (
+              <RecuadroDeVideo
+                className="max-w-[34rem]"
+                video={presentacion.sobre.video.video}
+                empresa={presentacion.empresa}
+                titulo={presentacion.sobre.video.titulo}
+              />
+            )}
+            <EnlacesDeLaEmpresa enlaces={presentacion.sobre.enlaces} />
+            {presentacion.perfil && (
+              <Link to={presentacion.perfil} className="self-start text-sm font-medium text-primary no-underline hover:underline">
+                Ver perfil de {presentacion.empresa} →
+              </Link>
+            )}
           </section>
         )}
       </div>

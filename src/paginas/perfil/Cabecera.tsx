@@ -51,7 +51,7 @@ import {
 } from '@/ui/Iconos'
 import { cuantasResenas, estrellasDichas, promedioEscrito } from '@/ui/resenas/modelo'
 import { ANCLA_RESENAS } from './Resenas'
-import { FORMATOS_IMAGEN, revisarImagen } from './archivos'
+import { FORMATOS_IMAGEN, recortarAlCentro, revisarImagen } from './archivos'
 import { ListaDeLogros } from './Logros'
 import { aniosYMeses } from './textos'
 import estilos from './Cabecera.module.css'
@@ -174,45 +174,6 @@ async function renovarLaUrl(cache: QueryClient, clave: QueryKey) {
   // Solo si de verdad hay otra: si el refresco falló, la vieja sigue pintada.
   const nueva = cache.getQueryData<string>(clave)
   if (vieja && vieja !== nueva) URL.revokeObjectURL(vieja)
-}
-
-/**
- * Recorta al centro y devuelve un JPEG.
- *
- * El recorte es automático y no se puede mover: arrastrar y hacer zoom sobre la
- * foto es otra pantalla —gesto táctil, orientación, límites— y lo que devuelve
- * no compensa. Al centro acierta con casi cualquier foto de perfil.
- */
-async function recortarAlCentro(archivo: File, ancho: number, alto: number): Promise<Blob> {
-  const imagen = await createImageBitmap(archivo)
-  // El trozo más grande de la imagen que tiene la proporción pedida, centrado.
-  const proporcion = ancho / alto
-  const recorteAncho = Math.min(imagen.width, imagen.height * proporcion)
-  const recorteAlto = Math.min(imagen.height, imagen.width / proporcion)
-  const lienzo = document.createElement('canvas')
-  lienzo.width = ancho
-  lienzo.height = alto
-  const pincel = lienzo.getContext('2d')
-  if (!pincel) throw new Error('Tu navegador no pudo preparar la imagen.')
-  pincel.drawImage(
-    imagen,
-    (imagen.width - recorteAncho) / 2,
-    (imagen.height - recorteAlto) / 2,
-    recorteAncho,
-    recorteAlto,
-    0,
-    0,
-    ancho,
-    alto,
-  )
-  imagen.close()
-  return new Promise((resolver, rechazar) =>
-    lienzo.toBlob(
-      (blob) => (blob ? resolver(blob) : rechazar(new Error('No pudimos preparar la imagen.'))),
-      'image/jpeg',
-      0.85,
-    ),
-  )
 }
 
 /** Las iniciales de quien no tiene foto. Vacío devuelve vacío, no una interrogación. */

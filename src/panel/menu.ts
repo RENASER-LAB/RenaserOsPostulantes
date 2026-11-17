@@ -21,7 +21,13 @@
 import { rutas } from '@/rutas'
 import type { SesionDelPanel } from './api/tiposPersonas'
 
-export type ClaveDeEntrada = 'vacantes' | 'pruebas' | 'simulacion' | 'colaboradores' | 'configuracion'
+export type ClaveDeEntrada =
+  | 'vacantes'
+  | 'pruebas'
+  | 'simulacion'
+  | 'empresa'
+  | 'colaboradores'
+  | 'configuracion'
 
 export interface Entrada {
   clave: ClaveDeEntrada
@@ -43,6 +49,8 @@ export interface Menu {
 const VACANTES: Entrada = { clave: 'vacantes', nombre: 'Vacantes', ruta: rutas.adminVacantes() }
 const PRUEBAS: Entrada = { clave: 'pruebas', nombre: 'Pruebas', ruta: rutas.adminPruebas() }
 const SIMULACION: Entrada = { clave: 'simulacion', nombre: 'Simulación', ruta: rutas.adminSesiones() }
+/** «Perfil de la empresa» (V85): lo que la empresa cuenta de sí misma en el portal. */
+const EMPRESA: Entrada = { clave: 'empresa', nombre: 'Perfil de la empresa', ruta: rutas.adminEmpresa() }
 const COLABORADORES: Entrada = {
   clave: 'colaboradores',
   nombre: 'Colaboradores',
@@ -73,6 +81,8 @@ export function menuDe(sesion: SesionDelPanel | null | undefined): Menu {
   if (tiene('crear_sesiones_simulacion') || tiene('ver_inscritos_simulacion')) {
     seleccion.push(SIMULACION)
   }
+  // Su propio permiso (V85), que tienen Talento, Dirección y Administrador.
+  if (tiene('editar_presentacion_empresa')) seleccion.push(EMPRESA)
 
   // Solo cuenta el alcance TODO: con otro, el backend no alcanza a nadie y la
   // entrada llevaría a una lista vacía que nadie entendería.
@@ -96,6 +106,7 @@ export function entradaActiva(ruta: string): ClaveDeEntrada | null {
   // `/admin/pruebas/versiones/:id` es de la sección retirada y lleva a Vacantes.
   if (limpia === '/admin/pruebas') return 'pruebas'
   if (limpia.startsWith('/admin/simulacion')) return 'simulacion'
+  if (limpia.startsWith('/admin/empresa')) return 'empresa'
   if (limpia.startsWith('/admin/colaboradores')) return 'colaboradores'
   if (limpia.startsWith('/admin/configuracion')) return 'configuracion'
   return null

@@ -24,6 +24,7 @@ import {
   IconoAjustes,
   IconoCruz,
   IconoDocumento,
+  IconoEdificio,
   IconoMaletin,
   IconoMenu,
   IconoPersonas,
@@ -44,6 +45,7 @@ const TITULOS: Array<[string, string]> = [
   [patrones.adminPruebas, 'Pruebas · Panel'],
   [patrones.adminSesiones, 'Simulación · Panel'],
   [patrones.adminConfiguracion, 'Configuración · Panel'],
+  [patrones.adminEmpresa, 'Perfil de la empresa · Panel'],
   [patrones.adminColaboradores, 'Colaboradores · Panel'],
   [patrones.adminNuevoColaborador, 'Nuevo colaborador · Panel'],
   [patrones.adminColaborador, 'Colaborador · Panel'],
@@ -64,6 +66,7 @@ const ICONOS: Record<ClaveDeEntrada, ReactNode> = {
   vacantes: <IconoMaletin />,
   pruebas: <IconoDocumento />,
   simulacion: <IconoReloj />,
+  empresa: <IconoEdificio />,
   colaboradores: <IconoPersonas />,
   configuracion: <IconoAjustes />,
 }
