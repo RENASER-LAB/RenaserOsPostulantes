@@ -12,6 +12,23 @@ cielo despejado» a «Northstar»— y el panel del equipo se quedó en el anter
 
 ---
 
+## 17/11/2026 · El visor de informes, por nota combinada; el celular y los entregables
+
+- **Qué llegó al panel.** El visor de informes pone arriba a quien tiene las tres notas, por la
+  nota combinada, y debajo al resto en el orden del ranking: «N postulantes, ordenados por nota
+  combinada» y «Puesto N de M». La cabecera enseña el celular con «☎» y «WhatsApp», y en el
+  informe de la prueba los entregables se abren desde su nombre con «Descargar entregables». Cómo
+  funciona hoy, en [PANEL.md](PANEL.md) › Los informes por etapa.
+- **En el backend, sin migración**, la IA recibe la fecha de hoy en cada llamada, el recorte del
+  CV deja ver los años de experiencia y un comando de una vez recalifica a los afectados que
+  siguen en curso. Todo eso, en `docs/` del backend: `CALIFICACION-CON-IA.md`.
+- **Decisiones del 16/11:** sin columna nueva para la nota combinada; el orden es el mismo para
+  todos, vea o no cada nota; el celular nunca va en un PDF ni sale de quien pidió borrar sus datos.
+- **Una trampa al abrir el archivo**: la pestaña nueva se pide antes de esperar al backend; si se
+  pide después, el navegador ya no la cuenta como parte del clic y la bloquea.
+
+---
+
 ## 16/11/2026 · El perfil de la empresa, a la vista del candidato
 
 - **Qué llegó.** El módulo «Perfil de la empresa» del panel, con vista previa; el bloque «Sobre

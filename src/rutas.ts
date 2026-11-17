@@ -99,7 +99,8 @@ export const patrones = {
   adminPruebaPropia: '/admin/vacantes/:id/prueba',
   /**
    * El visor de los informes por etapa (spec informe-pdf-por-etapa): la lista de
-   * postulantes en el orden del ranking y el informe del que se elija. Quién y qué
+   * postulantes —arriba quienes tienen las tres notas, por su nota combinada; debajo los
+   * demás, en el orden del ranking— y el informe del que se elija. Quién y qué
    * pestaña van en la query (`?postulante=12&etapa=cv`), para que «Ver informes»
    * desde la ficha abra el visor en esa persona.
    */

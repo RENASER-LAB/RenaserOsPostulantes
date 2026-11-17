@@ -1502,15 +1502,20 @@ informe». Todo vive en `src/panel/vacantes/informes/` (`BarraDeInformes`, `Viso
 - **«Ver informes» encima de la tabla del ranking** abre el visor de la vacante en el primero de
   la lista, en `/admin/vacantes/{id}/informes`. La persona y la pestaña van en la dirección
   (`?postulante=12&etapa=cv`): recargar o enlazar las conserva.
-- **El visor** tiene a la izquierda la lista de postulantes **en el orden del ranking**, con
-  buscador, su puesto, su grupo y sus tres notas en pequeño, redondeadas («—» si falta, o si
-  quien mira no puede ver esa etapa); a la derecha, el informe del elegido. «← Anterior» y «Siguiente →», con
+- **El visor** tiene a la izquierda la lista de postulantes, **«ordenados por nota combinada»**
+  (17/11): arriba quienes tienen las tres notas —CV, evaluación y prueba calificada—, de mayor a
+  menor por el ponderado de lo ya rendido; debajo los demás, en el orden del ranking. El orden lo
+  manda el backend y es el mismo para todos, aunque quien mira no pueda ver alguna nota. Con un
+  buscador encima, cada fila lleva su número en esta lista (de 1 en adelante), su grupo y sus tres
+  notas en pequeño, redondeadas («—» si falta, o si quien mira no puede ver esa etapa); no hay
+  columna con la nota combinada. A la derecha, el informe del elegido, con «Puesto N de M» en la cabecera. «← Anterior» y «Siguiente →», con
   «3 de 13», cambian de persona sin recargar. La cabecera de la persona lleva el nombre, el grupo,
-  los enlaces —«Currículum» y sus redes— y tres acciones: «✎ Abrir ficha», «Descargar PDF» (el de
+  los enlaces —«Currículum», **su celular** y sus redes— y tres acciones: «✎ Abrir ficha», «Descargar PDF» (el de
   la pestaña abierta) y «Descargar sus 3 informes» (un `.zip`; si falta alguno, la línea de estado
   dice cuál y por qué). Las tres etapas van como pestañas con su nota; una sin informe sale
   apagada, con su motivo en el `title`. En la cabecera de la página, **«Descargar los de toda la
-  vacante»** baja un `.zip` con una carpeta por postulante y un aviso con lo que falta: mientras
+  vacante»** baja un `.zip` con una carpeta por postulante, numerada en el mismo orden que la
+  lista, y un aviso con lo que falta: mientras
   se prepara dice «Preparando…» y no se puede pulsar otra vez, la pantalla sigue usable, y al
   terminar la línea de estado dice «Listo: se descargaron los informes de toda la vacante.».
 - **El cuerpo del informe** es el del PDF, organizado para leer rápido: arriba el resumen; «Qué se
@@ -1522,6 +1527,20 @@ informe». Todo vive en `src/panel/vacantes/informes/` (`BarraDeInformes`, `Viso
   recorta: lo largo se despliega.** Mientras el redactor escribe los textos, el visor enseña las
   explicaciones completas de la IA y vuelve a pedir el informe cada 20 s, así que los textos
   llegan sin recargar.
+- **El celular** (17/11), en la fila de enlaces de la cabecera, después de «Currículum» y antes de
+  las redes, con su mismo estilo: «☎ 987 654 321» llama al pulsarlo (`tel:`) y, a su lado,
+  «WhatsApp» abre la conversación en otra pestaña (`wa.me/51…`). Es el de la cuenta de la persona
+  o, si no tiene, el de su CV; WhatsApp sale solo si es un celular peruano de 9 cifras que empieza
+  por 9, y si no, solo el número para llamar. Sin ninguno, o si la persona pidió borrar sus datos,
+  no sale nada. El backend lo manda ya escrito (`celular` de cada postulante); nunca va en un PDF.
+- **Los entregables se abren desde el informe de la prueba** (17/11), solo con «Descargar
+  entregables». En «Entregables pedidos», el nombre de cada uno entregado pasa a ser un enlace con
+  el icono de abrir afuera; la pastilla «Entregado» no cambia. Un archivo se abre en una pestaña
+  nueva con su enlace firmado (`abrirArchivoEntregado`, en `informes/abrirEntregable.ts`: la
+  pestaña se pide antes de esperar al backend, o el navegador la bloquea; y si el enlace no es
+  `http`/`https`, como en local, cae a la descarga); uno de tipo enlace abre la dirección que pegó
+  el candidato. Si no se puede abrir, la línea lo dice. Sin el permiso, o sin entregar, se ve como
+  antes. El PDF lleva el mismo enlace en el nombre, con el plazo de 8 horas del currículum.
 - **El visor solo lee.** Ajustar notas, calificar con IA, mover de etapa, descartar y contratar
   siguen en la ficha. «✎ Abrir ficha» lleva al ranking con `?etapa=…&postulante=…`: abre la
   pestaña de ese informe, elige el corte donde se ve a la persona —«Pendiente», «Le toca al

@@ -132,10 +132,20 @@ export interface PreguntaDelAnexo {
   explicacion: string | null
 }
 
+/**
+ * Un entregable del anexo de la prueba: nombre, cuándo llegó y si se entregó.
+ *
+ * ⚠️ **Con qué se abre viaja solo con `descargar_entregables`** y solo si se entregó:
+ * sin ese permiso los dos vienen nulos y se pinta como siempre, sin enlace.
+ */
 export interface EntregableDelAnexo {
   nombre: string
   detalle: string
   entregado: boolean
+  /** El archivo subido: el visor pide con él el enlace firmado de siempre (`/archivos/{id}/enlace`). */
+  archivoId?: number | null
+  /** La dirección que pegó el candidato (o, en el PDF, el enlace firmado de 8 horas del archivo). */
+  url?: string | null
 }
 
 export interface AnexoDelInforme {
@@ -180,14 +190,30 @@ export interface Informe {
   nombreArchivo: string
 }
 
+/**
+ * El celular del candidato, ya listo para pintar: el de su cuenta o, si no tiene, el del CV.
+ * Nunca va en los PDF.
+ */
+export interface CelularDelVisor {
+  /** «987 654 321», o el número tal como está escrito si no es un celular peruano. */
+  texto: string
+  /** `tel:+51987654321` */
+  llamar: string
+  /** `https://wa.me/51987654321`; nulo si no es un celular peruano de 9 cifras que empiece por 9. */
+  whatsapp: string | null
+}
+
 export interface PostulanteDelVisor {
   postulacionId: number
+  /** Su lugar en esta lista (1, 2, 3…): arriba quienes tienen las tres notas, por su nota combinada. */
   puesto: number
   candidato: string
   grupo: string | null
   notaCv: number | null
   notaEvaluacion: number | null
   notaPrueba: number | null
+  /** Nulo si no tiene ninguno o si la persona está anonimizada: entonces no sale nada. */
+  celular?: CelularDelVisor | null
 }
 
 export interface VisorDeLaVacante {

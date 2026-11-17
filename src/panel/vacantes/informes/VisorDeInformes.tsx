@@ -10,6 +10,7 @@ import {
   verInforme,
   verInformesDelPostulante,
   verVisorDeLaVacante,
+  type CelularDelVisor,
   type CodigoDeEtapa,
   type EstadoDeUnInforme,
   type EtapaDelInforme,
@@ -25,6 +26,8 @@ import {
   IconoLupa,
   IconoReloj,
   IconoSiguiente,
+  IconoTelefono,
+  IconoWhatsapp,
 } from '@/ui/Iconos'
 import piezas from '@/estilos/piezas.module.css'
 import { nombreDelGrupo, rotuloCortoDelGrupo } from '../ranking'
@@ -50,7 +53,8 @@ const redondear = (n: number | null) => (n == null ? '—' : String(Math.round(n
 /**
  * El visor de informes de una vacante (paso 1b de la spec informe-pdf-por-etapa).
  *
- * A la izquierda, los postulantes en el orden del ranking, con buscador, sus tres
+ * A la izquierda, los postulantes —arriba quienes tienen las tres notas, ordenados por
+ * su nota combinada; debajo los demás, en el orden del ranking—, con buscador, sus tres
  * notas y su grupo; a la derecha, el informe del elegido en sus tres pestañas. Se
  * pasa de uno a otro sin recargar la página, y quién y qué pestaña van en la
  * dirección para que la ficha pueda abrir aquí a una persona.
@@ -205,7 +209,7 @@ export function VisorDeInformes() {
             &nbsp;{preparando ? 'Preparando…' : 'Descargar los de toda la vacante'}
           </button>
           <span className={estilos.cuantos}>
-            {postulantes.length} {postulantes.length === 1 ? 'postulante' : 'postulantes'}, en el orden del ranking
+            {postulantes.length} {postulantes.length === 1 ? 'postulante' : 'postulantes'}, ordenados por nota combinada
           </span>
         </div>
       </header>
@@ -316,7 +320,9 @@ export function VisorDeInformes() {
             {actual && (
               <section className={estilos.tarjeta} aria-label="Postulante">
                 <div className={`${estilos.entreDos} ${estilos.ocultaEnMovil}`}>
-                  <span className={estilos.etiqueta}>Puesto {actual.puesto} del ranking</span>
+                  <span className={estilos.etiqueta}>
+                    Puesto {actual.puesto} de {postulantes.length}
+                  </span>
                   <div className={estilos.navegar}>
                     <button
                       type="button"
@@ -348,12 +354,24 @@ export function VisorDeInformes() {
                     </div>
                     <div className={estilos.enlaces}>
                       {visor.data.vacante && <span>{visor.data.vacante}</span>}
-                      {(informe.data?.enlaces ?? []).map((e) => (
-                        <a key={e.url} href={e.url} target="_blank" rel="noreferrer">
-                          {e.tipo === 'CV' ? <IconoDocumento tamano={16} /> : <IconoDeEnlace tipo={e.tipo} tamano={16} />}
-                          {e.tipo === 'CV' ? 'Currículum' : e.rotulo}
-                        </a>
-                      ))}
+                      {/* Currículum, luego el celular y después las redes. */}
+                      {(informe.data?.enlaces ?? [])
+                        .filter((e) => e.tipo === 'CV')
+                        .map((e) => (
+                          <a key={e.url} href={e.url} target="_blank" rel="noreferrer">
+                            <IconoDocumento tamano={16} />
+                            Currículum
+                          </a>
+                        ))}
+                      {actual.celular && <Celular celular={actual.celular} />}
+                      {(informe.data?.enlaces ?? [])
+                        .filter((e) => e.tipo !== 'CV')
+                        .map((e) => (
+                          <a key={e.url} href={e.url} target="_blank" rel="noreferrer">
+                            <IconoDeEnlace tipo={e.tipo} tamano={16} />
+                            {e.rotulo}
+                          </a>
+                        ))}
                       {pestana && (
                         <Link
                           className={estilos.abrirFichaMovil}
@@ -443,5 +461,36 @@ export function VisorDeInformes() {
         </div>
       )}
     </div>
+  )
+}
+
+/**
+ * El celular del candidato, en la fila de enlaces de la cabecera: «☎ 987 654 321» para
+ * llamar y, si es un celular peruano, «WhatsApp» para abrir la conversación en otra pestaña.
+ * Lo arma el backend (el de su cuenta o, si no tiene, el del CV); aquí solo se pinta, y solo
+ * si los enlaces son los que se esperan.
+ */
+function Celular({ celular }: { celular: CelularDelVisor }) {
+  const llamar = celular.llamar.startsWith('tel:') ? celular.llamar : null
+  const whatsapp = celular.whatsapp?.startsWith('https://wa.me/') ? celular.whatsapp : null
+  return (
+    <>
+      {llamar ? (
+        <a href={llamar} aria-label={`Llamar al ${celular.texto}`}>
+          <IconoTelefono tamano={16} />
+          {celular.texto}
+        </a>
+      ) : (
+        <span>
+          <IconoTelefono tamano={16} /> {celular.texto}
+        </span>
+      )}
+      {whatsapp && (
+        <a href={whatsapp} target="_blank" rel="noopener noreferrer" aria-label={`Escribir por WhatsApp al ${celular.texto}`}>
+          <IconoWhatsapp tamano={16} />
+          WhatsApp
+        </a>
+      )}
+    </>
   )
 }
