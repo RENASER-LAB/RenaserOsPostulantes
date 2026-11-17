@@ -118,6 +118,12 @@
 .fila {
   all: unset;
   box-sizing: border-box;
+  /*
+   * ⚠️ Un <button> no se estira como un bloque: mide lo que su contenido. Sin
+   * este ancho, una fila de nombre corto («Rosa Baca») quedaba más estrecha que
+   * las demás y sus notas se corrían a la izquierda, fuera de su columna.
+   */
+  width: 100%;
   display: grid;
   grid-template-columns: 22px minmax(0, 1fr) 30px 30px 30px;
   column-gap: 6px;
