@@ -119,6 +119,18 @@ export interface Opciones {
 const ORIGEN = import.meta.env.VITE_ORIGEN_API ?? ''
 
 /**
+ * La dirección completa de una imagen pública del backend (V85): el logo y la
+ * portada de una empresa, que se pintan con un `<img src>` sin token.
+ *
+ * Solo admite las de `/api/v1/portal/empresas/`: es lo único que el backend
+ * sirve sin cuenta, y así un dato raro nunca acaba como `src` de nada.
+ */
+export function direccionPublica(ruta: string | null | undefined): string | null {
+  if (!ruta || !ruta.startsWith('/api/v1/portal/empresas/')) return null
+  return `${ORIGEN}${ruta}`
+}
+
+/**
  * Donde se guarda el token.
  *
  * En la web es `localStorage` y punto. Existe la costura porque el

@@ -1,0 +1,175 @@
+/*
+ * Las piezas de la presentación de una empresa (V85): el recuadro del video que
+ * no carga nada hasta pulsarlo y los chips de la web y las redes. Las usan la
+ * vacante (página y pantalla partida), el perfil público y la vista previa del
+ * panel, así que van en tokens y sin depender de Tailwind.
+ */
+
+.video {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+  margin: 0;
+  min-width: 0;
+}
+
+.tituloVideo {
+  margin: 0;
+  font-size: var(--t-micro);
+  font-weight: 500;
+  letter-spacing: var(--tracking-etiqueta);
+  text-transform: uppercase;
+  color: var(--tinta3);
+}
+
+/* El recuadro antes de pulsar: fondo noche, el nombre en Syne y el botón. */
+.recuadro {
+  position: relative;
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  aspect-ratio: 16 / 9;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radio-menor);
+  background: var(--noche-tarjeta);
+  color: var(--noche-tinta);
+  cursor: pointer;
+  overflow: hidden;
+  text-align: left;
+}
+
+.recuadro:focus-visible {
+  outline: 2px solid var(--activo);
+  outline-offset: 3px;
+}
+
+.nombreEnElRecuadro {
+  position: absolute;
+  left: 14px;
+  top: 12px;
+  right: 14px;
+  font-family: var(--fuente-ui);
+  font-size: 15.84px;
+  font-weight: 520;
+  letter-spacing: -0.025em;
+  line-height: 1.3;
+  /* Un nombre largo se parte en varias líneas, sin cortarse. */
+  overflow-wrap: break-word;
+}
+
+.circulo {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 56px;
+  height: 56px;
+  margin: -28px 0 0 -28px;
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--tinta);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 160ms var(--salida);
+}
+
+.recuadro:hover .circulo {
+  transform: scale(1.06);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .circulo {
+    transition: none;
+  }
+
+  .recuadro:hover .circulo {
+    transform: none;
+  }
+}
+
+/* El reproductor del servicio, cuando ya se pulsó. */
+.reproductor {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 0;
+  border-radius: var(--radio-menor);
+  background: #000000;
+}
+
+.verFuera {
+  align-self: flex-start;
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.22em;
+  text-decoration-color: var(--regla2);
+}
+
+.verFuera:hover {
+  color: var(--tinta);
+}
+
+/* ---------- Los enlaces: chips de 44 px que pasan a la línea siguiente ---------- */
+
+.enlaces {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  min-height: 44px;
+  padding: 0 var(--e4);
+  border: 1px solid rgb(0 0 0 / 0.1);
+  border-radius: var(--radio-menor);
+  background: var(--nube, #ffffff);
+  font-size: var(--t-apoyo);
+  color: var(--tinta);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.chip:hover {
+  border-color: var(--tinta);
+}
+
+.chip:focus-visible {
+  outline: 2px solid var(--activo);
+  outline-offset: 2px;
+}
+
+/* ---------- El logo pequeño junto al nombre ---------- */
+
+.logoPequeno {
+  flex: none;
+  display: inline-block;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radio-menor);
+  object-fit: cover;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.1);
+  background: #ffffff;
+}
+
+.verPerfil {
+  font-size: var(--t-apoyo);
+  font-weight: 500;
+  color: var(--activo);
+  text-decoration: none;
+}
+
+.verPerfil:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.22em;
+}

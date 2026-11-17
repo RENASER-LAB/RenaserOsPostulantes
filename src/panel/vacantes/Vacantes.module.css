@@ -656,3 +656,20 @@
 .accionesFila > * + * {
   margin-left: var(--e3);
 }
+
+/* ---------- El video del puesto (V85) ---------- */
+
+/* La etiqueta con el chip «Se usará el video de la empresa» a su derecha. */
+.cabeceraDelCampo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e2) var(--e3);
+}
+
+/* El borde rojo de `ui/campos/Campo.module.css`. */
+.entrada[aria-invalid='true'] {
+  border-width: 2px;
+  border-color: var(--mal);
+}

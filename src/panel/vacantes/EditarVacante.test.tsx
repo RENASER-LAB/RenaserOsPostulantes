@@ -617,3 +617,38 @@ describe('«Qué buscar en el CV» al editar (V80)', () => {
     })
   })
 })
+
+describe('«Video del puesto» al editar (V85)', () => {
+  it('QA-PROP-03 · AC-24: guardar con Enter desde el campo lo marca igual que el botón y no guarda', async () => {
+    await abrirLaEdicion()
+    const video = screen.getByLabelText('Video del puesto (opcional)')
+    video.focus()
+    fireEvent.change(video, { target: { value: 'https://www.facebook.com/renaser/videos/123' } })
+    // Enter en un campo de texto envía su formulario sin que el campo pierda el foco.
+    fireEvent.submit((video as HTMLInputElement).form!)
+
+    expect(await screen.findByText('Corrige lo marcado en «Video del puesto».')).toBeTruthy()
+    expect(document.activeElement).toBe(video)
+    expect(video.getAttribute('aria-invalid')).toBe('true')
+    const descripcion = document.getElementById(video.getAttribute('aria-describedby')!)
+    expect(descripcion?.textContent).toBe('Pega el enlace de un video de YouTube o de Vimeo')
+    expect(editarVacante).not.toHaveBeenCalled()
+  })
+
+  it('con el botón «Guardar cambios» también, y un enlace válido de Vimeo se guarda sin marcar nada', async () => {
+    await abrirLaEdicion()
+    const video = screen.getByLabelText('Video del puesto (opcional)')
+    fireEvent.change(video, { target: { value: 'https://www.facebook.com/renaser/videos/123' } })
+    fireEvent.blur(video)
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }))
+    expect(await screen.findByText('Corrige lo marcado en «Video del puesto».')).toBeTruthy()
+    expect(video.getAttribute('aria-invalid')).toBe('true')
+
+    fireEvent.change(video, { target: { value: 'vimeo.com/123456789' } })
+    expect(video.getAttribute('aria-invalid')).toBeNull()
+    fireEvent.submit((video as HTMLInputElement).form!)
+    await waitFor(() => expect(editarVacante).toHaveBeenCalledTimes(1))
+    expect(editarVacante.mock.calls[0]![1]).toMatchObject({ videoPresentacion: 'https://vimeo.com/123456789' })
+    expect(video.getAttribute('aria-invalid')).toBeNull()
+  })
+})

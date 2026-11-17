@@ -40,7 +40,7 @@
  * siguiente, porque las 23:59:59 de Lima ya son las 04:59:59 UTC del otro día.
  */
 
-import { useId, useMemo } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { catalogoUbigeo } from '@/api/portal'
 import { diaDeLima, finDelDiaEnLima } from '@/dominio/horaDeLima'
@@ -51,6 +51,9 @@ import type { VacantePanel } from '../api/tipos'
 import estilos from './Vacantes.module.css'
 import { CasillaQueBuscar } from './QueBuscarEnElCv'
 import { revisarLineas } from './reglasQueBuscar'
+import { errorDelVideo, normalizarEnlace } from '@/dominio/presentacionEmpresa'
+import { verVideoDeLaEmpresa } from '../api/presentacion'
+import areas from '../configuracion/Areas.module.css'
 
 /** Lo que el formulario tiene en la mano: texto, que es lo que hay en un input. */
 export interface DatosDeVacante {
@@ -73,6 +76,11 @@ export interface DatosDeVacante {
   cierraEn: string
   /** «Qué buscar en el CV» (V80), una línea por renglón, tal como se escribe. */
   queBuscarEnElCv: string
+  /**
+   * El «Video del puesto» (V85), tal como se escribe. Opcional en el tipo para no
+   * obligar a quien arma un formulario a medias; ausente es vacío.
+   */
+  videoPresentacion?: string
 }
 
 export const VACANTE_VACIA: DatosDeVacante = {
@@ -89,6 +97,7 @@ export const VACANTE_VACIA: DatosDeVacante = {
   tipoCierre: 'PERMANENTE',
   cierraEn: '',
   queBuscarEnElCv: '',
+  videoPresentacion: '',
 }
 
 /** Las dos formas de cierre que se ofrecen (V78). «Por plazas» ya no. */
@@ -150,6 +159,7 @@ export function vacanteComoFormulario(v: VacantePanel): DatosDeVacante {
     // de Lima, no el que sale de recortar el instante en UTC.
     cierraEn: v.cierraEn ? diaDeLima(v.cierraEn) : '',
     queBuscarEnElCv: (v.queBuscarEnElCv ?? []).join('\n'),
+    videoPresentacion: v.videoPresentacion ?? '',
   }
 }
 
@@ -185,6 +195,9 @@ export function camposParaGuardar(datos: DatosDeVacante) {
     // «Qué buscar en el CV» (V80): las que se buscarán, sin vacías ni repetidas y
     // como mucho seis. Viajan siempre: el formulario las enseña, y vacía las quita.
     queBuscarEnElCv: revisarLineas(datos.queBuscarEnElCv).seGuardan,
+    // El video del puesto (V85) viaja siempre, normalizado: vacío lo quita y la vacante
+    // vuelve a usar el de la empresa.
+    videoPresentacion: normalizarEnlace(datos.videoPresentacion),
   }
 }
 
@@ -208,6 +221,10 @@ export function loQueFaltaEnLaVacante(datos: DatosDeVacante): string | null {
   // «Qué buscar en el CV» (V80): una línea prohibida o larguísima apaga el guardado.
   if (revisarLineas(datos.queBuscarEnElCv).hayErrores) {
     return 'Corrige lo marcado en «Qué buscar en el CV».'
+  }
+  // El video del puesto (V85): las mismas reglas y errores que el de la empresa.
+  if (errorDelVideo(normalizarEnlace(datos.videoPresentacion))) {
+    return 'Corrige lo marcado en «Video del puesto».'
   }
   if (datos.tipoCierre === 'FECHA') {
     if (finDelDiaEnLima(datos.cierraEn) === null) {
@@ -320,6 +337,7 @@ export function CamposComunes({
         alCambiar={poner('requisitos')}
         ancho
       />
+      <CampoVideoDelPuesto valor={datos.videoPresentacion ?? ''} alCambiar={poner('videoPresentacion')} />
       {/* Privada (V80): la ve el equipo, nunca el candidato. */}
       <CasillaQueBuscar valor={datos.queBuscarEnElCv} alCambiar={poner('queBuscarEnElCv')} />
 
@@ -621,6 +639,72 @@ export function Selector({
       )}
       {error && (
         <span className={estilos.errorCampo} id={idError}>
+          {error}
+        </span>
+      )}
+    </div>
+  )
+}
+
+/**
+ * «Video del puesto (opcional)» (V85): un enlace de YouTube o de Vimeo, con las
+ * mismas reglas y errores que el video de la empresa. Vacío, la vacante usa el
+ * de la empresa, y si la empresa lo tiene el campo lo dice con un chip junto a
+ * la etiqueta —nunca como texto de ayuda debajo—. Se puede cambiar con la
+ * vacante publicada: es una corrección normal y no avisa a nadie.
+ *
+ * El error sale al dejar el campo o al enviar el formulario: mientras se
+ * escribe «youtu…» todavía no es un error.
+ *
+ * ⚠️ **Al enviar, y no solo al dejar el campo.** Pulsar «Guardar cambios» lo
+ * deja, pero guardar con Enter desde el propio campo no: sin escuchar el envío,
+ * salía el aviso «Corrige lo marcado en «Video del puesto».» con el campo sin
+ * marcar. Se escucha el `submit` del formulario que lo contiene (el alta y el
+ * modal de edición) para que los dos caminos lo marquen igual.
+ */
+function CampoVideoDelPuesto({ valor, alCambiar }: { valor: string; alCambiar: (valor: string) => void }) {
+  const id = useId()
+  const entrada = useRef<HTMLInputElement>(null)
+  const [tocado, setTocado] = useState(false)
+  useEffect(() => {
+    const formulario = entrada.current?.form
+    if (!formulario) return
+    const alEnviar = () => setTocado(true)
+    formulario.addEventListener('submit', alEnviar)
+    return () => formulario.removeEventListener('submit', alEnviar)
+  }, [])
+  const deLaEmpresa = useQuery({
+    queryKey: ['panel-video-de-la-empresa'],
+    queryFn: verVideoDeLaEmpresa,
+    retry: false,
+    staleTime: 60_000,
+  })
+  const vacio = valor.trim() === ''
+  const error = tocado ? errorDelVideo(normalizarEnlace(valor)) : null
+  return (
+    <div className={`${estilos.campo} ${estilos.anchoEntero}`}>
+      <div className={estilos.cabeceraDelCampo}>
+        <label className={estilos.etiqueta} htmlFor={id}>
+          Video del puesto (opcional)
+        </label>
+        {vacio && deLaEmpresa.data?.tieneVideo && (
+          <span className={`${areas.marca} ${areas.viva}`}>Se usará el video de la empresa</span>
+        )}
+      </div>
+      <input
+        ref={entrada}
+        id={id}
+        className={estilos.entrada}
+        type="text"
+        inputMode="url"
+        value={valor}
+        onChange={(e) => alCambiar(e.target.value)}
+        onBlur={() => setTocado(true)}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error ? `${id}-error` : undefined}
+      />
+      {error && (
+        <span className={estilos.errorCampo} id={`${id}-error`}>
           {error}
         </span>
       )}

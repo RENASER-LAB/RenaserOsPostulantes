@@ -88,7 +88,10 @@ Por vacante: `id`, `titulo`, `nombreEmpresa`, `descripcion`, `proposito`, `respo
 `requisitos`, `modalidad`, `horario`, `ubicacion` (desde el 25/09/2026, la **zona o
 referencia**), `ciudad` (`{codigo, nombre, departamento}` del catálogo, o nula), `publicadaEn`
 (puede venir nula en una vieja), `remuneracion` y la lista de `requisitosObjetivos` (`id` +
-`descripcion`).
+`descripcion`). Desde el 16/11/2026 (`V85`), también `codigoEmpresa` (el del perfil público),
+`empresa` (lo que la empresa cuenta de sí misma, o nulo) y `videoPuesto`; los tres son opcionales
+en el tipo, así que un backend anterior deja la vacante como antes. ⚠️ `proposito` sigue siendo
+**el del puesto**; el de la empresa viaja dentro de `empresa`.
 
 Casi todos los campos son **texto libre con saltos de línea**, y varios pueden venir en nulo. El
 maquetado tiene que aguantar tanto una vacante con tres campos llenos como una con diez.
@@ -147,6 +150,38 @@ Dónde es el puesto se pinta como **«Modalidad · Ciudad · Zona · Horario»**
 sin repetir la zona si dice lo mismo que la ciudad; sin ciudad, solo la zona.
 
 **Acción única:** postular. Si no hay cuenta, lleva a crearla recordando a qué vacante.
+
+**Quién ofrece el puesto** (16/11/2026). Primero se lee el puesto y después quién lo ofrece:
+- Sobre el titular ya no va la etiqueta «Vacante / Ficha del puesto». Debajo, el nombre de la
+  empresa lleva a su perfil público.
+- **Después de toda la información, requisitos incluidos**, el bloque «Sobre {empresa}»: su
+  propósito con sus saltos de línea, la web y las redes con su nombre, y al cierre «Ver perfil de
+  {empresa} →». Solo con lo que la empresa llenó; si no llenó nada, el bloque no sale y la ficha
+  se ve como antes.
+- **El video.** En PC (900 px o más) va arriba de la tarjeta lateral fija, encima de
+  «Remuneración»: «Conoce a {empresa}», o «Conoce el puesto» si la vacante tiene video propio, y
+  debajo «Ver perfil de {empresa} →». Con video del puesto, el de la empresa baja al bloque
+  «Sobre…»; sin él, no se repite. En el teléfono, el del puesto va arriba de la ficha y el de la
+  empresa en «Sobre…». Lo mismo en la pantalla partida de `/vacantes`.
+- **El video no carga nada de YouTube ni de Vimeo hasta que se pulsa**: es un recuadro 16:9 con
+  el nombre de la empresa y un botón de reproducir. Al pulsarlo entra el reproductor sin cookies de
+  seguimiento y empieza solo; debajo queda siempre «Ver en YouTube» o «Ver en Vimeo», que abre el
+  video fuera. Al elegir otra vacante en la pantalla partida, el que sonaba se detiene. Un video
+  privado o borrado lo avisa el propio reproductor.
+
+### 2.2b Perfil de la empresa — público, sin cuenta (16/11/2026)
+`/empresas/<código>` · `GET /portal/empresas/{codigo}`, con el código en minúsculas.
+
+Del estilo de los perfiles de empresa de los portales de empleo. Arriba, «← Volver a las
+vacantes», la portada a todo lo ancho, el logo (o sus iniciales), el nombre, «Sector · Tamaño ·
+Fundada en AAAA» con lo que haya, la provincia de su primera sede, «Ver vacantes (N)» y «Visitar
+web». En la columna principal: «Quiénes somos», «Nuestro propósito», el video, «Beneficios» y
+«Vacantes abiertas (N)» con la misma tarjeta del tablón; a la derecha, la ficha fija «Datos de la
+empresa». En el teléfono, todo en una columna con la ficha antes que lo demás.
+
+Sin datos sale igual, con el nombre y las vacantes y sin bloques vacíos; sin vacantes dice «Ahora
+no tiene vacantes abiertas». Una empresa suspendida o un código que no existe dan «no encontrada».
+Lleva la cabecera y el pie del portal también sin cuenta.
 
 ### 2.3 Crear cuenta — pública
 `POST /portal/cuentas` — `nombre`, `apellidos`, `correo`, `telefono` (obligatorio desde el
@@ -949,13 +984,14 @@ en cuanto sabe el número, y «Cancelar» no lo vuelve a abrir.
 `ConfiguracionSeguridad` deja abierto **sin token**: `GET /portal/vacantes/**`,
 `GET /portal/consentimientos/textos`, `POST /portal/cuentas`, `POST /portal/auth/login`,
 `POST /portal/auth/acceso`, y desde el 22/09/2026 `POST /portal/auth/recuperacion` y
-`POST /portal/auth/restablecer`. A esa lista se suma `GET /portal/catalogos/ubigeo`, que se pide sin
+`POST /portal/auth/restablecer`, y desde el 16/11/2026 `GET /portal/empresas/**` —el perfil
+público de cada empresa y su logo y portada—. A esa lista se suma `GET /portal/catalogos/ubigeo`, que se pide sin
 token desde crear cuenta (01/09/2026) — los otros dos catálogos del portal, niveles educativos y
 de idioma, sí van con token porque solo se usan dentro del perfil. **Todo lo demás exige token de
 candidato.**
 
-Traducido al layout: se puede navegar vacantes, leer una ficha completa y leer los textos legales
-sin cuenta. Cualquier cosa del proceso propio exige entrar.
+Traducido al layout: se puede navegar vacantes, leer una ficha completa, abrir el perfil de una
+empresa y leer los textos legales sin cuenta. Cualquier cosa del proceso propio exige entrar.
 
 Y una regla de errores que afecta a lo que se pinta: **404 también significa "esto no es tuyo"**.
 La evaluación y la prueba nunca responden 403 a propósito — decirlo ya confirmaría que existe.

@@ -173,7 +173,23 @@ hoja compartida**, no como `composes` más `display` en la hoja de la pantalla. 
 lo enseña; la pantalla compone esa variante y nada más. Ahí la regla de `display` y la pieza
 están en la misma hoja, y gana la que va después. Pasó con «Filtrar (n)» de `/vacantes`
 (25/09/2026): su `display: none` perdía contra `.secundario` y el botón salía en escritorio,
-junto a los filtros ya abiertos.
+junto a los filtros ya abiertos. Desde el 16/11/2026 hay una segunda, **`.secundarioSinLateral`**:
+la misma idea, visible por debajo de 1280 px, para el botón que abre una columna lateral cuando no
+cabe al lado —«Vista previa» de «Perfil de la empresa»—. Pasó lo mismo: el botón salía desde 1280
+px junto a la vista previa ya abierta.
+
+**El reproductor de video lleva los permisos que necesita y ni uno más** (16/11/2026,
+`src/ui/presentacion/RecuadroDeVideo.tsx`). No carga nada de YouTube ni de Vimeo hasta que se
+pulsa, y entonces monta el `<iframe>` con la dirección **reconstruida a partir del servicio, el
+identificador y la clave** que da el backend, nunca copiando el enlace guardado. Va sin cookies
+de seguimiento (`youtube-nocookie.com`, `dnt=1` en Vimeo) y con
+`allow="autoplay; fullscreen; picture-in-picture; encrypted-media"`: sin `encrypted-media`, el
+de Vimeo carga pero se queda en negro en 00:00. El `referrerPolicy` es
+`strict-origin-when-cross-origin` y **no** `no-referrer`: YouTube exige saber desde qué página se
+reproduce y, sin eso, enseña un error. Hoy el portal no declara política de seguridad de
+contenidos; si algún día la declara, `frame-src` debe admitir solo
+`https://www.youtube-nocookie.com` y `https://player.vimeo.com`. Los enlaces de la empresa (web y
+redes) se vuelven a comprobar al pintarlos: lo que no sea `http` o `https` no se pinta.
 
 **`whileTap` de `motion` convierte en parada de Tab lo que no es un control.** Le pone
 `tabindex="0"` a todo elemento con gesto de pulsar que no sea botón, campo o enlace y no traiga

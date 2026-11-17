@@ -375,6 +375,13 @@ que se puede compartir, y al volver de una ficha la lista sigue a la misma
 altura. Cómo es cada pantalla está en
 [02-QUE-VE-EL-CANDIDATO.md](02-QUE-VE-EL-CANDIDATO.md).
 
+**Desde el 16/11/2026 la ficha dice también quién ofrece el puesto**: tras los
+requisitos, el bloque «Sobre {empresa}» con su propósito, su web y sus redes, y
+el video de la empresa —o el del puesto— en la tarjeta lateral. Desde ahí se
+abre el perfil público de la empresa, `/empresas/<código>`, con todas sus
+vacantes abiertas. Lo llena la empresa en el panel, en «Perfil de la empresa»
+([PANEL.md](PANEL.md)); si no lo llenó, la ficha se ve como antes.
+
 ⚠️ **Crear la cuenta pide la ciudad, desde el 01/09/2026.** Un desplegable
 obligatorio con las 196 provincias del Perú agrupadas por departamento, y «Fuera
 del Perú» suelto al final. Se pregunta ahí y en ningún otro sitio: a quien ya
@@ -866,6 +873,9 @@ etapa todavía no tiene nota, su botón sale gris y dice por qué. El detalle, e
 Las áreas van justo antes del equipo, y no es cosmética: un área es dónde
 trabaja alguien, así que la tabla del equipo no se entiende sin haber visto esa
 lista.
+
+⚠️ **El perfil de la empresa tampoco está aquí** (16/11/2026): es una entrada
+propia del menú, «Perfil de la empresa», para Talento, Dirección y Administrador.
 
 ⚠️ **Las pruebas del puesto NO están aquí**, aunque suenen a configuración:
 cada vacante nueva escribe la suya en su editor (paso 3e), y la sección propia

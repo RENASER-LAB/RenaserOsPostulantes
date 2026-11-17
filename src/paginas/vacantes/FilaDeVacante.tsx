@@ -44,6 +44,7 @@ export function FilaDeVacante({
   alAbrir,
   alElegir,
   elegida = false,
+  sinEmpresa = false,
 }: {
   vacante: VacantePublica
   /** «Publicada hace 3 días», ya escrito, o nada. */
@@ -60,6 +61,11 @@ export function FilaDeVacante({
   alElegir?: (porTeclado: boolean) => void
   /** La que se lee en el panel. */
   elegida?: boolean
+  /**
+   * En el perfil público de la empresa (V85): no repite su nombre, que ya está
+   * arriba, y abrir la ficha no cuenta como venir de la lista de `/vacantes`.
+   */
+  sinEmpresa?: boolean
 }) {
   const empresa = recortado(vacante.nombreEmpresa)
   const resumen = resumenDe(vacante)
@@ -82,7 +88,7 @@ export function FilaDeVacante({
       to={rutas.vacante(vacante.id)}
       aria-labelledby={idTitulo}
       aria-current={elegida ? 'true' : undefined}
-      state={alElegir ? undefined : { desdeLaLista: true }}
+      state={alElegir || sinEmpresa ? undefined : { desdeLaLista: true }}
       onClick={alPulsar}
       className={cn(
         'relative block rounded bg-card p-4 text-card-foreground no-underline [-webkit-tap-highlight-color:transparent]',
@@ -115,7 +121,7 @@ export function FilaDeVacante({
               </span>
             )}
           </div>
-          {empresa && <p className="m-0 mt-0.5 text-sm text-tinta2 [overflow-wrap:anywhere]">{empresa}</p>}
+          {empresa && !sinEmpresa && <p className="m-0 mt-0.5 text-sm text-tinta2 [overflow-wrap:anywhere]">{empresa}</p>}
           {/* En su línea: detrás de «RENASER CONSULTING S.A.C.» se partía en «hace 4 / semanas». */}
           {publicada && <p className="m-0 mt-0.5 text-xs text-muted-foreground">{publicada}</p>}
           {!alElegir && resumen && (
@@ -174,7 +180,16 @@ function tonoDe(empresa: string | null): string {
  * El avatar de la empresa: redondo y con su tono. Decorativo: el nombre ya va
  * escrito al lado. Si un día el backend trae el logotipo, va aquí.
  */
-export function Iniciales({ empresa, grande = false }: { empresa: string | null; grande?: boolean }) {
+export function Iniciales({
+  empresa,
+  grande = false,
+  className,
+}: {
+  empresa: string | null
+  grande?: boolean
+  /** Para ocupar otro hueco: el disco del perfil público de la empresa (V85). */
+  className?: string
+}) {
   return (
     <span
       aria-hidden="true"
@@ -182,6 +197,7 @@ export function Iniciales({ empresa, grande = false }: { empresa: string | null;
         'grid shrink-0 place-items-center rounded-full font-semibold',
         tonoDe(empresa),
         grande ? 'size-14 text-lg' : 'size-11 text-sm',
+        className,
       )}
     >
       {inicialesDe(empresa) || '·'}
