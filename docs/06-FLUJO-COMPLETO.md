@@ -854,6 +854,13 @@ nota, mover o descartar, «Abrir ficha» lo lleva de vuelta a la ficha. Si una
 etapa todavía no tiene nota, su botón sale gris y dice por qué. El detalle, en
 [PANEL.md](PANEL.md) › Los informes por etapa.
 
+Desde el 17/11/2026, el visor pone **arriba a quien ya tiene las tres notas**
+—CV, evaluación y prueba—, de la nota combinada más alta a la más baja, y
+debajo a los demás en el orden del ranking; el `.zip` de la vacante numera sus
+carpetas igual. Junto al currículum sale **el celular** del candidato, para
+llamarlo o escribirle por WhatsApp, y quien puede descargar entregables **abre
+lo que entregó** desde el informe de la prueba, en el visor y en el PDF.
+
 ---
 
 ## Configuración
