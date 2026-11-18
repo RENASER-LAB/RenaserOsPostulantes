@@ -18,6 +18,7 @@ import { useState, type FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { z } from 'zod'
 import { useSesion } from '@/app/Sesion'
+import { textoDeDemasiadosIntentos } from '@/api/demasiadosIntentos'
 import { rutas } from '@/rutas'
 import { Campo } from '@/ui/campos/Campo'
 import { enfocarPrimerCampoConError } from '@/ui/campos/enfocarSinTapar'
@@ -69,10 +70,12 @@ export function Ingresar() {
       // en la portada buscándola otra vez.
       navegar(vacante ? rutas.postular(vacante) : rutas.procesos())
     } catch (causa) {
+      // El 429, con cuánto falta para volver a probar (el mismo texto que el panel).
       setFallo(
-        causa instanceof Error
-          ? causa.message
-          : 'No pudimos entrar. Vuelve a intentarlo en un momento.',
+        textoDeDemasiadosIntentos(causa) ??
+          (causa instanceof Error
+            ? causa.message
+            : 'No pudimos entrar. Vuelve a intentarlo en un momento.'),
       )
     } finally {
       setEntrando(false)
