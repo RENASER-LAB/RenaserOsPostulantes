@@ -52,6 +52,20 @@
   text-decoration: none;
 }
 
+/* «Descargar brochure (PDF)» (V86): el secundario con el icono de descarga. */
+.descargarBrochure {
+  composes: secundario from '../../estilos/piezas.module.css';
+  gap: var(--e2);
+  text-decoration: none;
+}
+
+/* En el teléfono los botones van bajo el nombre y pasan de línea si no caben. */
+@media (max-width: 640px) {
+  .acciones {
+    width: 100%;
+  }
+}
+
 .seccion {
   padding: var(--e5);
   border: 1px solid var(--regla);
@@ -66,6 +80,27 @@
 
 .tituloSeccion {
   margin: 0;
+}
+
+/* «Misión y visión» (V86): dos columnas; en el teléfono, una debajo de otra. */
+.misionVision {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--e5);
+}
+
+.subtitulo {
+  margin: 0 0 6px;
+  font-size: 15px;
+  font-weight: 550;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+@media (max-width: 700px) {
+  .misionVision {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .texto {

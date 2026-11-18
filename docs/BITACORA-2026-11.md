@@ -12,6 +12,31 @@ cielo despejado» a «Northstar»— y el panel del equipo se quedó en el anter
 
 ---
 
+## 18/11/2026 · El brochure de la empresa, armado solo
+
+- **Qué llegó.** La misión y la visión en «Perfil de la empresa», en su vista previa y en el perfil
+  público; la pestaña «Brochure» del módulo, con tres plantillas, seis colores y «Descargar brochure
+  (PDF)»; y el mismo botón, sin cuenta, en el perfil público `/empresas/<código>`. El PDF lo arma el
+  backend con lo guardado y no lo guarda en ningún sitio: es la V86, con cuatro columnas en
+  `organizacion` y sin permiso nuevo. Cómo funciona hoy, en [PANEL.md](PANEL.md) y en
+  [02-QUE-VE-EL-CANDIDATO](02-QUE-VE-EL-CANDIDATO.md), 2.2b.
+- **Decisión del usuario tras la QA, que cambia la spec.** La spec ponía el brochure como cuarta
+  sección del formulario, con la plantilla y el color guardados por el «Guardar» de siempre. Quedó
+  en dos pestañas, «Perfil» y «Brochure» (`?pestana=brochure`), sin la palabra «opcional», y la
+  plantilla y el color **se guardan solos al elegirlos** con una ruta propia
+  (`PUT …/presentacion/brochure`); si falla, vuelve la elección anterior.
+- **Una trampa al descargar.** Abrir el PDF desde un `blob:` daba un nombre aleatorio al guardarlo
+  y, al soltar la dirección, el visor ya no dejaba guardarlo ni volver tras pulsar un enlace. El
+  botón pide el PDF al panel —permiso y «Quiénes somos»— y luego lleva la pestaña a la dirección
+  pública del brochure, que el backend sirve del recuerdo con su nombre.
+- **De paso**, a 390 px con barra de desplazamiento clásica «Añadir» de los beneficios se salía 9 px:
+  el campo ahora encoge (`min-width: 0`) y un beneficio largo se parte.
+- **Fuera de la entrega**, anotado en PANEL.md: el anillo de foco recortado de `Pestanas`, el 404 de
+  `/favicon.ico` en la pestaña del PDF, y sin comprobar la app de Android y el diálogo de impresión.
+  En el backend, un cuerpo que no es JSON en los dos PUT del módulo da 500 (su defecto conocido 5).
+
+---
+
 ## 17/11/2026 · El visor de informes, por nota combinada; el celular y los entregables
 
 - **Qué llegó al panel.** El visor de informes pone arriba a quien tiene las tres notas, por la

@@ -6,7 +6,8 @@
  * entero no tienen por qué saber que existe.
  */
 
-import { pedir } from './cliente'
+import type { Archivo } from '@/api/puerta'
+import { pedir, pedirArchivo } from './cliente'
 
 export interface SedeDeLaPresentacion {
   nombre: string
@@ -34,9 +35,21 @@ export interface PresentacionPanel {
   sedes?: SedeDeLaPresentacion[] | null
   /** La provincia de la primera sede activa, como la dice el perfil público. */
   ciudad?: string | null
+  /** Misión y visión (V86). Opcionales: un backend anterior no las manda. */
+  mision?: string | null
+  vision?: string | null
+  /** La plantilla y el color del brochure (V86): `CLASICA`, `AZUL`… */
+  plantillaBrochure?: string | null
+  colorBrochure?: string | null
 }
 
-/** Lo que manda «Guardar»: todo junto. Vacío es «sin dato». */
+/**
+ * Lo que manda «Guardar» de la pestaña «Perfil»: todo junto. Vacío es «sin dato».
+ *
+ * ⚠️ **Sin la plantilla ni el color del brochure.** Se guardan solos al elegirlos en la pestaña
+ * «Brochure» (`guardarBrochure`); sin ellos en el cuerpo, el backend deja los que había, y así un
+ * «Guardar» del perfil nunca pisa con lo de antes una elección recién guardada.
+ */
 export interface GuardarPresentacion {
   sector: string | null
   tamano: string | null
@@ -47,6 +60,14 @@ export interface GuardarPresentacion {
   videoPresentacion: string | null
   paginaWeb: string | null
   redes: Record<string, string>
+  mision: string | null
+  vision: string | null
+}
+
+/** Lo que guarda la pestaña «Brochure» al elegir: los dos, siempre del catálogo. */
+export interface GuardarBrochure {
+  plantillaBrochure: string
+  colorBrochure: string
 }
 
 const BASE = '/organizacion/presentacion'
@@ -55,6 +76,10 @@ export const verPresentacion = () => pedir<PresentacionPanel>(BASE)
 
 export const guardarPresentacion = (datos: GuardarPresentacion) =>
   pedir<PresentacionPanel>(BASE, { metodo: 'PUT', cuerpo: datos })
+
+/** La plantilla y el color del brochure, sin tocar lo demás. Fuera del catálogo, 400. */
+export const guardarBrochure = (eleccion: GuardarBrochure) =>
+  pedir<PresentacionPanel>(`${BASE}/brochure`, { metodo: 'PUT', cuerpo: eleccion })
 
 export type CualImagen = 'logo' | 'portada'
 
@@ -66,6 +91,12 @@ export function subirImagenDeLaEmpresa(cual: CualImagen, archivo: File) {
 
 export const quitarImagenDeLaEmpresa = (cual: CualImagen) =>
   pedir<PresentacionPanel>(`${BASE}/imagenes/${cual}`, { metodo: 'DELETE' })
+
+/**
+ * El brochure en PDF (V86), armado con lo guardado —no con lo escrito sin guardar—.
+ * Sin «Quiénes somos» guardado, 409.
+ */
+export const descargarBrochure = (): Promise<Archivo> => pedirArchivo(`${BASE}/brochure`)
 
 /** Si la empresa tiene video: el chip «Se usará el video de la empresa» de la vacante. */
 export const verVideoDeLaEmpresa = () => pedir<{ tieneVideo: boolean }>(`${BASE}/video`)

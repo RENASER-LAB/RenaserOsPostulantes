@@ -380,7 +380,10 @@ requisitos, el bloque «Sobre {empresa}» con su propósito, su web y sus redes,
 el video de la empresa —o el del puesto— en la tarjeta lateral. Desde ahí se
 abre el perfil público de la empresa, `/empresas/<código>`, con todas sus
 vacantes abiertas. Lo llena la empresa en el panel, en «Perfil de la empresa»
-([PANEL.md](PANEL.md)); si no lo llenó, la ficha se ve como antes.
+([PANEL.md](PANEL.md)); si no lo llenó, la ficha se ve como antes. Desde el
+18/11/2026 ese perfil enseña también su misión y su visión, y si la empresa
+escribió «Quiénes somos», «Descargar brochure (PDF)»: el mismo perfil en papel,
+en la plantilla y el color que ella eligió, sin cuenta.
 
 ⚠️ **Crear la cuenta pide la ciudad, desde el 01/09/2026.** Un desplegable
 obligatorio con las 196 provincias del Perú agrupadas por departamento, y «Fuera
@@ -881,6 +884,7 @@ lista.
 
 ⚠️ **El perfil de la empresa tampoco está aquí** (16/11/2026): es una entrada
 propia del menú, «Perfil de la empresa», para Talento, Dirección y Administrador.
+Tampoco el brochure (18/11/2026): va en la pestaña «Brochure» de ese módulo.
 
 ⚠️ **Las pruebas del puesto NO están aquí**, aunque suenen a configuración:
 cada vacante nueva escribe la suya en su editor (paso 3e), y la sección propia

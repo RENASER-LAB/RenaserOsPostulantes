@@ -174,14 +174,28 @@ sin repetir la zona si dice lo mismo que la ciudad; sin ciudad, solo la zona.
 
 Del estilo de los perfiles de empresa de los portales de empleo. Arriba, «← Volver a las
 vacantes», la portada a todo lo ancho, el logo (o sus iniciales), el nombre, «Sector · Tamaño ·
-Fundada en AAAA» con lo que haya, la provincia de su primera sede, «Ver vacantes (N)» y «Visitar
-web». En la columna principal: «Quiénes somos», «Nuestro propósito», el video, «Beneficios» y
-«Vacantes abiertas (N)» con la misma tarjeta del tablón; a la derecha, la ficha fija «Datos de la
-empresa». En el teléfono, todo en una columna con la ficha antes que lo demás.
+Fundada en AAAA» con lo que haya, la provincia de su primera sede, «Ver vacantes (N)», «Visitar
+web» y, desde el 18/11/2026 (`V86`), «Descargar brochure (PDF)». En la columna principal: «Quiénes
+somos», «Nuestro propósito», «Misión y visión», el video, «Beneficios» y «Vacantes abiertas (N)»
+con la misma tarjeta del tablón; a la derecha, la ficha fija «Datos de la empresa». En el teléfono,
+todo en una columna con la ficha antes que lo demás, y los botones bajo el nombre, pasando a la
+línea siguiente cuando no caben.
+
+**«Misión y visión»** (18/11/2026) va con el estilo de «Quiénes somos»: las dos en dos columnas,
+cada una con su subtítulo; en el teléfono, una debajo de otra. Si la empresa solo escribió una, el
+bloque lleva solo esa y se titula «Misión» o «Visión»; sin ninguna, no hay bloque.
+
+**«Descargar brochure (PDF)»** (18/11/2026), con el estilo secundario y el icono de descarga, abre
+en otra pestaña y sin cuenta el brochure de la empresa: su perfil pasado a papel en un PDF A4, en
+la plantilla y el color que ella eligió, que el navegador deja ver, guardar o imprimir con el
+nombre «Brochure - {empresa}.pdf». Siempre lleva lo último que la empresa guardó. El perfil trae su
+dirección en `brochure` (`GET /portal/empresas/{codigo}/brochure`); si la empresa no tiene «Quiénes
+somos», no hay brochure y el botón no sale.
 
 Sin datos sale igual, con el nombre y las vacantes y sin bloques vacíos; sin vacantes dice «Ahora
 no tiene vacantes abiertas». Una empresa suspendida o un código que no existe dan «no encontrada».
-Lleva la cabecera y el pie del portal también sin cuenta.
+Lleva la cabecera y el pie del portal también sin cuenta. Un backend anterior a la `V86` no manda
+`mision`, `vision` ni `brochure`, y el perfil se pinta como antes.
 
 ### 2.3 Crear cuenta — pública
 `POST /portal/cuentas` — `nombre`, `apellidos`, `correo`, `telefono` (obligatorio desde el

@@ -21,10 +21,14 @@ export const MAXIMO_SECTOR = 60
 export const MAXIMO_BENEFICIOS = 12
 export const MAXIMO_BENEFICIO = 40
 export const ANIO_MINIMO = 1800
+/** Misión y visión (V86). */
+export const MAXIMO_MISION = 400
 
 export const MENSAJE_ENLACE = 'Escribe una dirección web que empiece por https://'
 export const MENSAJE_VIDEO = 'Pega el enlace de un video de YouTube o de Vimeo'
 export const MENSAJE_PROPOSITO = 'El propósito admite hasta 1500 caracteres'
+export const MENSAJE_MISION = 'La misión admite hasta 400 caracteres'
+export const MENSAJE_VISION = 'La visión admite hasta 400 caracteres'
 
 export function mensajeAnio(anioActual: number): string {
   return `Escribe un año entre ${ANIO_MINIMO} y ${anioActual}`

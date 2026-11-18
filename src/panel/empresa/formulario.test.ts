@@ -22,6 +22,8 @@ describe('el formulario de «Perfil de la empresa»', () => {
       videoPresentacion: null,
       paginaWeb: null,
       redes: {},
+      mision: null,
+      vision: null,
     })
   })
 
@@ -93,5 +95,41 @@ describe('el formulario de «Perfil de la empresa»', () => {
     expect(guardado.redes.TIKTOK).toBe('')
     expect(hayCambios(guardado, desdeLoGuardado({ codigo: 'ACME', nombre: 'Acme', anioFundacion: 1987, redes: { FACEBOOK: 'https://facebook.com/acme' }, beneficios: ['Comedor'] }))).toBe(false)
     expect(hayCambios({ ...guardado, sector: 'Construcción' }, guardado)).toBe(true)
+  })
+
+  it('V86: misión y visión hasta 400; con solo espacios se mandan vacías', () => {
+    expect(erroresDelFormulario({ ...VACIO, mision: 'm'.repeat(400), vision: 'v'.repeat(400) }, 2026)).toEqual({})
+    expect(erroresDelFormulario({ ...VACIO, mision: 'm'.repeat(401), vision: 'v'.repeat(401) }, 2026)).toEqual({
+      mision: 'La misión admite hasta 400 caracteres',
+      vision: 'La visión admite hasta 400 caracteres',
+    })
+    const cuerpo = comoCuerpo({ ...VACIO, mision: '  Moler bien.  ', vision: '   ' })
+    expect(cuerpo.mision).toBe('Moler bien.')
+    expect(cuerpo.vision).toBeNull()
+  })
+
+  it('V86: la plantilla y el color no son del formulario: «Guardar» no los manda y elegirlos no es un cambio sin guardar', () => {
+    const guardado = desdeLoGuardado({
+      codigo: 'ACME',
+      nombre: 'Acme',
+      mision: 'Moler bien.',
+      plantillaBrochure: 'COLUMNAS',
+      colorBrochure: 'PETROLEO',
+    })
+    expect(guardado.mision).toBe('Moler bien.')
+    expect(guardado).not.toHaveProperty('plantillaBrochure')
+    expect(guardado).not.toHaveProperty('colorBrochure')
+    // Sin ellos en el cuerpo el backend deja los que había: un «Guardar» no pisa la pestaña «Brochure».
+    expect(comoCuerpo(guardado)).not.toHaveProperty('plantillaBrochure')
+    expect(comoCuerpo(guardado)).not.toHaveProperty('colorBrochure')
+    // La pestaña «Brochure» guardó otra elección: el formulario del perfil sigue sin cambios.
+    const tras = desdeLoGuardado({
+      codigo: 'ACME',
+      nombre: 'Acme',
+      mision: 'Moler bien.',
+      plantillaBrochure: 'CLASICA',
+      colorBrochure: 'VERDE',
+    })
+    expect(hayCambios(tras, guardado)).toBe(false)
   })
 })

@@ -4,9 +4,18 @@
  * existe. Lo que se guarda aquí lo ve el candidato junto a cada vacante y en el
  * perfil público de la empresa, en cuanto se guarda y sin volver a publicar.
  *
- * A la izquierda el editor —Identidad, Presentación, Video y enlaces— con un
- * solo «Guardar»; a la derecha la vista previa en vivo del perfil público. Por
- * debajo de 1280 px la vista previa se abre con «Vista previa».
+ * Dos pestañas, reflejadas en la dirección (`?pestana=brochure`; sin nada,
+ * «Perfil»):
+ * - **Perfil**: a la izquierda el editor —Identidad, Presentación y Video y
+ *   enlaces— con un solo «Guardar»; a la derecha la vista previa en vivo del
+ *   perfil público. Por debajo de 1280 px la vista previa se abre con «Vista
+ *   previa».
+ * - **Brochure** (V86, `PestanaBrochure`): la plantilla y el color, que se
+ *   guardan solos al elegirlos, y la descarga del PDF, que el backend arma con lo
+ *   guardado.
+ *
+ * Cambiar de pestaña no pierde lo escrito: todo vive en `Editor`, que no se
+ * desmonta.
  *
  * ⚠️ **Ningún texto de ayuda bajo los campos**: etiquetas, contadores, chips y
  * errores sí. Los errores son los del backend, con las mismas palabras y en el
@@ -16,9 +25,9 @@
  * el backend contesta 403 y aquí no se enseña el editor.
  */
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { ErrorApi, direccionPublica } from '@/api/puerta'
 import { verPerfilDeEmpresa } from '@/api/portal'
 import type { CodigoDeRed } from '@/api/tipos'
@@ -26,6 +35,7 @@ import { diaDeLima } from '@/dominio/horaDeLima'
 import {
   MAXIMO_BENEFICIO,
   MAXIMO_BENEFICIOS,
+  MAXIMO_MISION,
   MAXIMO_SECTOR,
   MAXIMO_TEXTO_LARGO,
   REDES,
@@ -55,6 +65,7 @@ import {
 } from '../api/presentacion'
 import { useRetenerLaSesion } from '../Sesion'
 import { useTituloDelPanel } from '../titulo'
+import { Pestanas, type Pestana } from '../ui/Pestanas'
 import {
   MENSAJE_CORRIGE,
   MENSAJE_GUARDADO,
@@ -67,9 +78,17 @@ import {
   type Formulario,
 } from './formulario'
 import { FORMATOS_IMAGEN_EMPRESA, prepararImagen } from './imagenes'
+import { PestanaBrochure, useBrochure } from './PestanaBrochure'
 import estilos from './PerfilDeLaEmpresa.module.css'
 
 const CLAVE = ['panel-presentacion']
+
+type PestanaDelModulo = 'perfil' | 'brochure'
+
+const PESTANAS: Pestana<PestanaDelModulo>[] = [
+  { clave: 'perfil', nombre: 'Perfil' },
+  { clave: 'brochure', nombre: 'Brochure' },
+]
 
 /** Lo que se hará con una imagen al guardar: subir otra, quitarla o nada. */
 type Pendiente = { archivo: File; vista: string } | 'quitar' | null
@@ -111,7 +130,12 @@ export function PerfilDeLaEmpresaPanel() {
 
 function Editor({ guardado }: { guardado: PresentacionPanel }) {
   const cache = useQueryClient()
-  const inicial = useMemo(() => desdeLoGuardado(guardado), [guardado])
+  const [query, setQuery] = useSearchParams()
+  const pestana: PestanaDelModulo = query.get('pestana') === 'brochure' ? 'brochure' : 'perfil'
+  // Por su contenido y no por el objeto: guardar la plantilla o el color cambia lo
+  // guardado, pero no el formulario del perfil, y no debe borrar lo escrito.
+  const huella = JSON.stringify(desdeLoGuardado(guardado))
+  const inicial = useMemo<Formulario>(() => JSON.parse(huella), [huella])
   const [datos, setDatos] = useState<Formulario>(inicial)
   const [logo, setLogo] = useState<Pendiente>(null)
   const [portada, setPortada] = useState<Pendiente>(null)
@@ -130,6 +154,31 @@ function Editor({ guardado }: { guardado: PresentacionPanel }) {
   const cambiado = hayCambios(datos, inicial) || logo !== null || portada !== null
   useRetenerLaSesion(cambiado)
 
+  // La pestaña «Brochure» solo toca la plantilla y el color de lo guardado.
+  const alGuardarElBrochure = useCallback(
+    (respuesta: PresentacionPanel) =>
+      cache.setQueryData<PresentacionPanel>(CLAVE, (antes) =>
+        antes
+          ? { ...antes, plantillaBrochure: respuesta.plantillaBrochure, colorBrochure: respuesta.colorBrochure }
+          : respuesta,
+      ),
+    [cache],
+  )
+  const brochure = useBrochure({ guardado, alGuardar: alGuardarElBrochure })
+
+  function cambiarPestana(otra: PestanaDelModulo) {
+    setPreviaAbierta(false)
+    setQuery(
+      (antes) => {
+        const q = new URLSearchParams(antes)
+        if (otra === 'perfil') q.delete('pestana')
+        else q.set('pestana', otra)
+        return q
+      },
+      { replace: true },
+    )
+  }
+
   const guardar = useMutation({
     mutationFn: async () => {
       let ultimo = await guardarPresentacion(comoCuerpo(datos))
@@ -147,6 +196,8 @@ function Editor({ guardado }: { guardado: PresentacionPanel }) {
       return ultimo
     },
     onSuccess: (respuesta) => {
+      // Lo guardado, ya limpio («renaser.pe» → https://renaser.pe), aunque la huella no cambie.
+      setDatos(desdeLoGuardado(respuesta))
       setLogo(null)
       setPortada(null)
       setErrores({})
@@ -242,246 +293,292 @@ function Editor({ guardado }: { guardado: PresentacionPanel }) {
   )
 
   return (
-    <div className={estilos.dos}>
-      <form className={estilos.editor} noValidate onSubmit={enviar} aria-label="Perfil de la empresa">
-        <section className={estilos.seccion} aria-labelledby="sec-identidad">
-          <h2 className={estilos.tituloSeccion} id="sec-identidad">
-            Identidad
-          </h2>
-          <div className={estilos.imagenes}>
-            <ZonaDeImagen
-              cual="logo"
-              rotulo="Logo"
-              vista={vistaLogo}
-              error={errores.logo}
-              nombre={guardado.nombre}
-              alElegir={(a) => void elegirImagen('logo', a)}
-              alQuitar={() => setLogo(guardado.logo ? 'quitar' : null)}
-            />
-            <ZonaDeImagen
-              cual="portada"
-              rotulo="Foto de portada"
-              vista={vistaPortada}
-              error={errores.portada}
-              nombre={guardado.nombre}
-              alElegir={(a) => void elegirImagen('portada', a)}
-              alQuitar={() => setPortada(guardado.portada ? 'quitar' : null)}
-            />
-          </div>
-          <Campo etiqueta="Nombre de la empresa" value={guardado.nombre} readOnly />
-          <div className={estilos.pareja}>
-            <Campo
-              etiqueta="Sector"
-              value={datos.sector}
-              maxLength={MAXIMO_SECTOR}
-              error={errores.sector}
-              onChange={(e) => poner('sector', e.target.value)}
-            />
-            <Seleccion
-              etiqueta="Tamaño"
-              value={datos.tamano}
-              error={errores.tamano}
-              onChange={(e) => poner('tamano', e.target.value)}
-            >
-              <option value="">Sin indicar</option>
-              {TAMANOS.map((t) => (
-                <option key={t.codigo} value={t.codigo}>
-                  {t.texto}
-                </option>
-              ))}
-            </Seleccion>
-            <Campo
-              etiqueta="Año de fundación"
-              value={datos.anioFundacion}
-              inputMode="numeric"
-              maxLength={4}
-              error={errores.anioFundacion}
-              onChange={(e) => poner('anioFundacion', e.target.value.replace(/\D/g, '').slice(0, 4))}
-            />
-          </div>
-          <div>
-            <div className={estilos.cabeceraSedes}>
-              <span className={estilos.rotulo}>Sedes</span>
-              <Link className={estilos.gestionar} to={rutas.adminConfiguracion()}>
-                Gestionar sedes
-              </Link>
-            </div>
-            {sedes.length === 0 ? (
-              <p className={areas.vacio}>Todavía no hay ninguna sede.</p>
-            ) : (
-              <ul className={areas.filas} role="list" aria-label="Sedes">
-                {sedes.map((s, i) => (
-                  <li className={areas.fila} key={`${s.nombre}-${i}`}>
-                    <div className={areas.queEs}>
-                      <span className={areas.nombre}>{s.nombre}</span>
-                    </div>
-                    {s.provincia && <span className={areas.explica}>{s.provincia}</span>}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </section>
+    <>
+      <div className={estilos.envolturaPestanas}>
+        <Pestanas
+          pestanas={PESTANAS}
+          actual={pestana}
+          alCambiar={cambiarPestana}
+          etiqueta="Secciones del perfil de la empresa"
+          prefijo="empresa-"
+        />
+      </div>
 
-        <section className={estilos.seccion} aria-labelledby="sec-presentacion">
-          <h2 className={estilos.tituloSeccion} id="sec-presentacion">
-            Presentación
-          </h2>
-          <AreaTexto
-            etiqueta="Quiénes somos"
-            value={datos.quienesSomos}
-            maxLength={MAXIMO_TEXTO_LARGO}
-            rows={5}
-            error={errores.quienesSomos}
-            onChange={(e) => poner('quienesSomos', e.target.value)}
+      {pestana === 'brochure' ? (
+        <div
+          className={estilos.dosBrochure}
+          role="tabpanel"
+          id="empresa-panel-brochure"
+          aria-labelledby="empresa-pestana-brochure"
+        >
+          <PestanaBrochure
+            brochure={brochure}
+            portada={direccionPublica(guardado.portada)}
+            hayLoMinimo={Boolean(guardado.quienesSomos?.trim())}
+            cambiado={cambiado}
           />
-          <Contador escrito={datos.quienesSomos.length} maximo={MAXIMO_TEXTO_LARGO} />
-          <AreaTexto
-            etiqueta="Nuestro propósito"
-            value={datos.propositoEmpresa}
-            maxLength={MAXIMO_TEXTO_LARGO}
-            rows={6}
-            error={errores.propositoEmpresa}
-            onChange={(e) => poner('propositoEmpresa', e.target.value)}
-          />
-          <Contador escrito={datos.propositoEmpresa.length} maximo={MAXIMO_TEXTO_LARGO} />
-          <div>
-            <div className={estilos.cabeceraSedes}>
-              <span className={estilos.rotulo} id="rotulo-beneficios">
-                Beneficios
-              </span>
-              <span className={estilos.contador}>
-                {datos.beneficios.length} / {MAXIMO_BENEFICIOS}
-              </span>
-            </div>
-            {datos.beneficios.length > 0 && (
-              <ul className={estilos.beneficios} role="list" aria-labelledby="rotulo-beneficios">
-                {datos.beneficios.map((b, i) => (
-                  <li className={estilos.beneficio} key={`${b}-${i}`}>
-                    {b}
-                    <button
-                      type="button"
-                      className={estilos.quitarBeneficio}
-                      aria-label={`Quitar ${b}`}
-                      onClick={() =>
-                        poner(
-                          'beneficios',
-                          datos.beneficios.filter((_, j) => j !== i),
-                        )
-                      }
-                    >
-                      <IconoCruz tamano={14} />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-            <div className={estilos.anadir}>
-              <Campo
-                etiqueta="Nuevo beneficio"
-                etiquetaOculta
-                value={nuevo}
-                maxLength={MAXIMO_BENEFICIO}
-                placeholder="Seguro EPS"
-                disabled={datos.beneficios.length >= MAXIMO_BENEFICIOS}
-                error={errores.beneficios}
-                onChange={(e) => setNuevo(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault()
-                    poner('beneficios', anadirBeneficio(datos.beneficios, nuevo))
-                    setNuevo('')
-                  }
-                }}
-              />
-              <button
-                type="button"
-                className={estilos.chico}
-                disabled={datos.beneficios.length >= MAXIMO_BENEFICIOS || nuevo.trim() === ''}
-                onClick={() => {
-                  poner('beneficios', anadirBeneficio(datos.beneficios, nuevo))
-                  setNuevo('')
-                }}
-              >
-                Añadir
-              </button>
-            </div>
-          </div>
-        </section>
-
-        <section className={estilos.seccion} aria-labelledby="sec-video">
-          <h2 className={estilos.tituloSeccion} id="sec-video">
-            Video y enlaces
-          </h2>
-          <Campo
-            etiqueta="Video de presentación"
-            value={datos.videoPresentacion}
-            inputMode="url"
-            error={errores.videoPresentacion}
-            onChange={(e) => poner('videoPresentacion', e.target.value)}
-          />
-          <div className={estilos.enlaces}>
-            <Campo
-              etiqueta="Página web"
-              value={datos.paginaWeb}
-              inputMode="url"
-              error={errores.paginaWeb}
-              onChange={(e) => poner('paginaWeb', e.target.value)}
-            />
-            {REDES.map((red) => (
-              <Campo
-                key={red.codigo}
-                etiqueta={red.nombre}
-                value={datos.redes[red.codigo]}
-                inputMode="url"
-                error={errores[red.codigo]}
-                onChange={(e) => ponerRed(red.codigo, e.target.value)}
-              />
-            ))}
-          </div>
-        </section>
-
-        <div className={estilos.pie}>
-          <button className={estilos.guardar} type="submit" disabled={guardar.isPending}>
-            {guardar.isPending ? 'Guardando…' : 'Guardar'}
-          </button>
-          {cambiado && (
-            <button className={estilos.chico} type="button" onClick={dejarlo} disabled={guardar.isPending}>
-              Dejarlo
-            </button>
-          )}
-          <button className={estilos.botonPrevia} type="button" onClick={() => setPreviaAbierta(true)}>
-            Vista previa
-          </button>
-          <a className={estilos.verPerfil} href={rutas.empresa(guardado.codigo)} target="_blank" rel="noopener noreferrer">
-            Ver perfil público ↗
-          </a>
         </div>
-        {aviso === 'bien' && (
-          <p className={estilos.avisoBien} role="status">
-            {MENSAJE_GUARDADO}
-          </p>
-        )}
-        {aviso === 'corrige' && (
-          <p className={estilos.avisoMalo} role="alert">
-            {MENSAJE_CORRIGE}
-          </p>
-        )}
-        {aviso === 'red' && (
-          <p className={estilos.avisoMalo} role="alert">
-            {MENSAJE_SIN_RED}
-          </p>
-        )}
-      </form>
+      ) : (
+        <div className={estilos.dos} role="tabpanel" id="empresa-panel-perfil" aria-labelledby="empresa-pestana-perfil">
+          <form className={estilos.editor} noValidate onSubmit={enviar} aria-label="Perfil de la empresa">
+            <section className={estilos.seccion} aria-labelledby="sec-identidad">
+              <h2 className={estilos.tituloSeccion} id="sec-identidad">
+                Identidad
+              </h2>
+              <div className={estilos.imagenes}>
+                <ZonaDeImagen
+                  cual="logo"
+                  rotulo="Logo"
+                  vista={vistaLogo}
+                  error={errores.logo}
+                  nombre={guardado.nombre}
+                  alElegir={(a) => void elegirImagen('logo', a)}
+                  alQuitar={() => setLogo(guardado.logo ? 'quitar' : null)}
+                />
+                <ZonaDeImagen
+                  cual="portada"
+                  rotulo="Foto de portada"
+                  vista={vistaPortada}
+                  error={errores.portada}
+                  nombre={guardado.nombre}
+                  alElegir={(a) => void elegirImagen('portada', a)}
+                  alQuitar={() => setPortada(guardado.portada ? 'quitar' : null)}
+                />
+              </div>
+              <Campo etiqueta="Nombre de la empresa" value={guardado.nombre} readOnly />
+              <div className={estilos.pareja}>
+                <Campo
+                  etiqueta="Sector"
+                  value={datos.sector}
+                  maxLength={MAXIMO_SECTOR}
+                  error={errores.sector}
+                  onChange={(e) => poner('sector', e.target.value)}
+                />
+                <Seleccion
+                  etiqueta="Tamaño"
+                  value={datos.tamano}
+                  error={errores.tamano}
+                  onChange={(e) => poner('tamano', e.target.value)}
+                >
+                  <option value="">Sin indicar</option>
+                  {TAMANOS.map((t) => (
+                    <option key={t.codigo} value={t.codigo}>
+                      {t.texto}
+                    </option>
+                  ))}
+                </Seleccion>
+                <Campo
+                  etiqueta="Año de fundación"
+                  value={datos.anioFundacion}
+                  inputMode="numeric"
+                  maxLength={4}
+                  error={errores.anioFundacion}
+                  onChange={(e) => poner('anioFundacion', e.target.value.replace(/\D/g, '').slice(0, 4))}
+                />
+              </div>
+              <div>
+                <div className={estilos.cabeceraSedes}>
+                  <span className={estilos.rotulo}>Sedes</span>
+                  <Link className={estilos.gestionar} to={rutas.adminConfiguracion()}>
+                    Gestionar sedes
+                  </Link>
+                </div>
+                {sedes.length === 0 ? (
+                  <p className={areas.vacio}>Todavía no hay ninguna sede.</p>
+                ) : (
+                  <ul className={areas.filas} role="list" aria-label="Sedes">
+                    {sedes.map((s, i) => (
+                      <li className={areas.fila} key={`${s.nombre}-${i}`}>
+                        <div className={areas.queEs}>
+                          <span className={areas.nombre}>{s.nombre}</span>
+                        </div>
+                        {s.provincia && <span className={areas.explica}>{s.provincia}</span>}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </section>
 
-      <aside className={estilos.previa} aria-label="Vista previa del perfil público">
-        {previa}
-      </aside>
+            <section className={estilos.seccion} aria-labelledby="sec-presentacion">
+              <h2 className={estilos.tituloSeccion} id="sec-presentacion">
+                Presentación
+              </h2>
+              <AreaTexto
+                etiqueta="Quiénes somos"
+                value={datos.quienesSomos}
+                maxLength={MAXIMO_TEXTO_LARGO}
+                rows={5}
+                error={errores.quienesSomos}
+                onChange={(e) => poner('quienesSomos', e.target.value)}
+              />
+              <Contador escrito={datos.quienesSomos.length} maximo={MAXIMO_TEXTO_LARGO} />
+              <AreaTexto
+                etiqueta="Nuestro propósito"
+                value={datos.propositoEmpresa}
+                maxLength={MAXIMO_TEXTO_LARGO}
+                rows={6}
+                error={errores.propositoEmpresa}
+                onChange={(e) => poner('propositoEmpresa', e.target.value)}
+              />
+              <Contador escrito={datos.propositoEmpresa.length} maximo={MAXIMO_TEXTO_LARGO} />
+              <AreaTexto
+                etiqueta="Misión"
+                value={datos.mision}
+                maxLength={MAXIMO_MISION}
+                rows={4}
+                error={errores.mision}
+                onChange={(e) => poner('mision', e.target.value)}
+              />
+              <Contador escrito={datos.mision.length} maximo={MAXIMO_MISION} />
+              <AreaTexto
+                etiqueta="Visión"
+                value={datos.vision}
+                maxLength={MAXIMO_MISION}
+                rows={4}
+                error={errores.vision}
+                onChange={(e) => poner('vision', e.target.value)}
+              />
+              <Contador escrito={datos.vision.length} maximo={MAXIMO_MISION} />
+              <div>
+                <div className={estilos.cabeceraSedes}>
+                  <span className={estilos.rotulo} id="rotulo-beneficios">
+                    Beneficios
+                  </span>
+                  <span className={estilos.contador}>
+                    {datos.beneficios.length} / {MAXIMO_BENEFICIOS}
+                  </span>
+                </div>
+                {datos.beneficios.length > 0 && (
+                  <ul className={estilos.beneficios} role="list" aria-labelledby="rotulo-beneficios">
+                    {datos.beneficios.map((b, i) => (
+                      <li className={estilos.beneficio} key={`${b}-${i}`}>
+                        {b}
+                        <button
+                          type="button"
+                          className={estilos.quitarBeneficio}
+                          aria-label={`Quitar ${b}`}
+                          onClick={() =>
+                            poner(
+                              'beneficios',
+                              datos.beneficios.filter((_, j) => j !== i),
+                            )
+                          }
+                        >
+                          <IconoCruz tamano={14} />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <div className={estilos.anadir}>
+                  <Campo
+                    etiqueta="Nuevo beneficio"
+                    etiquetaOculta
+                    value={nuevo}
+                    maxLength={MAXIMO_BENEFICIO}
+                    placeholder="Seguro EPS"
+                    disabled={datos.beneficios.length >= MAXIMO_BENEFICIOS}
+                    error={errores.beneficios}
+                    onChange={(e) => setNuevo(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        poner('beneficios', anadirBeneficio(datos.beneficios, nuevo))
+                        setNuevo('')
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className={estilos.chico}
+                    disabled={datos.beneficios.length >= MAXIMO_BENEFICIOS || nuevo.trim() === ''}
+                    onClick={() => {
+                      poner('beneficios', anadirBeneficio(datos.beneficios, nuevo))
+                      setNuevo('')
+                    }}
+                  >
+                    Añadir
+                  </button>
+                </div>
+              </div>
+            </section>
 
-      <Modal abierto={previaAbierta} titulo="Vista previa" lateral onCerrar={() => setPreviaAbierta(false)}>
-        {previa}
-      </Modal>
-    </div>
+            <section className={estilos.seccion} aria-labelledby="sec-video">
+              <h2 className={estilos.tituloSeccion} id="sec-video">
+                Video y enlaces
+              </h2>
+              <Campo
+                etiqueta="Video de presentación"
+                value={datos.videoPresentacion}
+                inputMode="url"
+                error={errores.videoPresentacion}
+                onChange={(e) => poner('videoPresentacion', e.target.value)}
+              />
+              <div className={estilos.enlaces}>
+                <Campo
+                  etiqueta="Página web"
+                  value={datos.paginaWeb}
+                  inputMode="url"
+                  error={errores.paginaWeb}
+                  onChange={(e) => poner('paginaWeb', e.target.value)}
+                />
+                {REDES.map((red) => (
+                  <Campo
+                    key={red.codigo}
+                    etiqueta={red.nombre}
+                    value={datos.redes[red.codigo]}
+                    inputMode="url"
+                    error={errores[red.codigo]}
+                    onChange={(e) => ponerRed(red.codigo, e.target.value)}
+                  />
+                ))}
+              </div>
+            </section>
+
+            <div className={estilos.pie}>
+              <button className={estilos.guardar} type="submit" disabled={guardar.isPending}>
+                {guardar.isPending ? 'Guardando…' : 'Guardar'}
+              </button>
+              {cambiado && (
+                <button className={estilos.chico} type="button" onClick={dejarlo} disabled={guardar.isPending}>
+                  Dejarlo
+                </button>
+              )}
+              <button className={estilos.botonPrevia} type="button" onClick={() => setPreviaAbierta(true)}>
+                Vista previa
+              </button>
+              <a className={estilos.verPerfil} href={rutas.empresa(guardado.codigo)} target="_blank" rel="noopener noreferrer">
+                Ver perfil público ↗
+              </a>
+            </div>
+            {aviso === 'bien' && (
+              <p className={estilos.avisoBien} role="status">
+                {MENSAJE_GUARDADO}
+              </p>
+            )}
+            {aviso === 'corrige' && (
+              <p className={estilos.avisoMalo} role="alert">
+                {MENSAJE_CORRIGE}
+              </p>
+            )}
+            {aviso === 'red' && (
+              <p className={estilos.avisoMalo} role="alert">
+                {MENSAJE_SIN_RED}
+              </p>
+            )}
+          </form>
+
+          <aside className={estilos.previa} aria-label="Vista previa del perfil público">
+            {previa}
+          </aside>
+
+          <Modal abierto={previaAbierta} titulo="Vista previa" lateral onCerrar={() => setPreviaAbierta(false)}>
+            {previa}
+          </Modal>
+        </div>
+      )}
+    </>
   )
 }
 
@@ -641,6 +738,18 @@ function VistaPrevia({
           <div>
             <p className={estilos.tituloPrevia}>Nuestro propósito</p>
             <p className={estilos.textoPrevia}>{datos.propositoEmpresa.trim()}</p>
+          </div>
+        )}
+        {datos.mision.trim() && (
+          <div>
+            <p className={estilos.tituloPrevia}>Misión</p>
+            <p className={estilos.textoPrevia}>{datos.mision.trim()}</p>
+          </div>
+        )}
+        {datos.vision.trim() && (
+          <div>
+            <p className={estilos.tituloPrevia}>Visión</p>
+            <p className={estilos.textoPrevia}>{datos.vision.trim()}</p>
           </div>
         )}
         {video && <RecuadroDeVideo video={video} empresa={nombre} />}
