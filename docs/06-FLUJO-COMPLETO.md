@@ -177,10 +177,14 @@ la complete; **hasta que esté publicada, la vacante no se publica**. Quien
 postula ve antes de empezar la fecha límite, el tiempo y cuántas preguntas y
 archivos hay; la rinde con los cuatro tipos de pregunta, sube cada archivo en su
 pregunta, y **solo puede entregar con todo respondido**: si el tiempo vence con algo pendiente,
-queda sin completar, no se califica y el equipo la ve en «No completaron la
-prueba», desde donde cierra su proceso. El detalle, en [PANEL.md](PANEL.md) ›
-La prueba técnica de cada vacante nueva y Un editor de la prueba más simple, y
-en [02-QUE-VE-EL-CANDIDATO.md](02-QUE-VE-EL-CANDIDATO.md) › 2.9.
+queda sin completar y no se califica. Desde el 18/11/2026 el equipo la ve en
+el ranking como «No la completó», solo en «Toda la tanda», y desde su ficha le
+**da más tiempo** —una fecha nueva con su motivo; la persona sigue con lo que
+tenía y recibe el aviso— o cierra su proceso. Lo mismo con quien no la abrió
+antes de su fecha. El detalle, en [PANEL.md](PANEL.md) › La prueba técnica de
+cada vacante nueva, Un editor de la prueba más simple y Las pruebas sin
+completar, en la tabla, y «Darle más tiempo», y en
+[02-QUE-VE-EL-CANDIDATO.md](02-QUE-VE-EL-CANDIDATO.md) › 2.9.
 
 ### 3b · La prueba técnica del puesto
 
@@ -571,6 +575,12 @@ A quién se mira lo eligen **tres cortes** con su cifra al lado, y desde el
 Los dos primeros **son disjuntos**: un estado espera a la empresa o al candidato,
 nunca a los dos, así que nadie sale en los dos botones.
 
+⚠️ **Quien no completó la prueba del puesto sale solo en «Toda la tanda»**
+(18/11/2026). Su estado sigue siendo «le toca al candidato», pero no tiene nada
+que hacer hasta que alguien le dé más tiempo: si saliera en «Le toca al
+candidato», el equipo tendría que perseguir cada prueba que se quedó sin
+completar. Se le consulta en «Toda la tanda», con el filtro «Prueba».
+
 ⚠️ **Sumados NO dan la tanda entera, y se aceptó a propósito.** Quien está siendo
 calificado por la IA y quien acaba de postular no esperan a ninguna persona:
 esperan al sistema. No salen en ninguno de los dos primeros y se les encuentra en
@@ -591,7 +601,9 @@ tres: los que ya la hicieron y esperan la calificación, los que no la han hecho
 todavía y los que están parados en otra etapa. Hasta el 07/09/2026 quien acababa
 de postular caía en el primer grupo —se anunciaba que «ya la hicieron» sin que
 nadie hubiera contestado una sola pregunta—; ahora cuenta donde le corresponde,
-entre los que no la han hecho.
+entre los que no la han hecho. En la pestaña de la prueba la línea añade, desde
+el 18/11/2026, «· N no la completaron» cuando hay alguno, y esos no cuentan
+además entre los que no la han hecho.
 
 Al abrir una fila, la ficha es de la etapa: en Perfil integral (y en Decisión)
 salen **las dos tablas** —el CV criterio a criterio y la evaluación del banco
@@ -706,29 +718,38 @@ ordenar, «Ordenar por Ponderado».
 ### Por qué esa prueba no tiene nota (18/09/2026)
 
 En la pestaña **Prueba del puesto**, una celda sin cifra decía «sin cerrar»
-pasara lo que pasara. Detrás había tres cosas distintas, y solo una era
-trabajo del equipo:
+pasara lo que pasara. Detrás había cosas distintas, y solo una era trabajo del
+equipo. Desde el 18/11/2026 son estas, y «Prueba incompleta», que se le decía
+también a quien aún tenía tiempo, desapareció:
 
 | Lo que pasó con su prueba | Lo que dice la celda |
 |---|---|
 | Ya tiene nota | La nota. **Un cero es una nota** y se pinta como número |
-| No llegó a entregarla, o se le cerró sola al vencer el plazo | **«Prueba incompleta»** |
-| La entregó y su rúbrica todavía no tiene nota | **«Pendiente de calificación»** |
+| La entregó —a mano, o sola al vencer con todo respondido— y su rúbrica todavía no tiene nota | **«Pendiente de calificación»** |
+| Se le acabó el tiempo con algo sin responder o sin subir, o se le pasó la fecha sin abrirla | **«No la completó»**, y sale solo en «Toda la tanda» |
+| La abrió y su tiempo sigue corriendo | **«En curso»** |
+| La tiene y no la ha abierto | **«Sin empezar»** |
 | No hay prueba suya de la que hablar | El motivo de siempre, que dice dónde está parada: «sin cerrar» a quien está justo ahí |
 
-Al pasar el ratón por encima, la frase entera explica el porqué.
+Al pasar el ratón por encima, la frase entera explica el porqué: cuándo la
+entregó, cuándo se le acabó el tiempo y qué le faltó, o hasta cuándo tiene.
 
-«Pendiente de calificación» es el único de los cuatro en que **la pelota es del
+«Pendiente de calificación» es el único caso en que **la pelota es del
 equipo**: esa persona ya hizo lo suyo y falta poner las notas que la IA no puede
 poner —un video, un enlace, un criterio de los que mira alguien—. Antes se leía
 igual que «no la ha hecho», y se salía a perseguir a quien ya había entregado.
+A quien no la completó se le puede **dar más tiempo** desde su ficha: ver
+[PANEL.md](PANEL.md) › Las pruebas sin completar, en la tabla, y «Darle más
+tiempo».
 
 **Se calcula al abrir el ranking**, con lo que hay en ese momento: no se guarda
-nada, y quien entregue o califique hoy ve el texto nuevo al recargar.
+nada, y quien entregue, califique o vea pasar su fecha hoy ve el texto nuevo al
+recargar.
 
 ⚠️ **Quién decide esto es el backend**, mirando el intento de esa persona: si
-hubo entrega y si la hizo ella o el reloj. Desde el navegador los tres casos se
-ven igual —una nota que no está— y el estado de la postulación no los separa.
+la abrió, si hubo entrega, si se cerró sin completar y si su fecha ya pasó.
+Desde el navegador esos casos se ven igual —una nota que no está— y el estado de
+la postulación no los separa.
 
 ⚠️ **Sin intento no se dice nada nuevo, y se decidió así.** Ahí caen quien
 todavía no llegó a la etapa técnica **y las vacantes que rinden el cuestionario
@@ -736,9 +757,9 @@ técnico**, que no crean intentos: todas sus filas sin nota siguen diciendo «si
 cerrar», también las de quien ya entregó. Es un pendiente conocido, no un fallo
 abierto.
 
-⚠️ **El Excel no lo hereda.** En la hoja, la nota de la prueba que falta sigue
-diciendo «rúbrica incompleta» pase lo que pase. Lo único que cambió allí es la
-descripción del recorte, que ahora dice «Pendiente».
+⚠️ **El Excel lo hereda solo a medias.** En la hoja, quien no la completó va
+con la nota en blanco (18/11/2026); cualquier otra nota de la prueba que falta
+sigue diciendo «rúbrica incompleta». La descripción del recorte dice «Pendiente».
 
 ### Ordenar la mesa (01/09/2026)
 

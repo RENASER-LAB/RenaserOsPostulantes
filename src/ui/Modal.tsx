@@ -13,6 +13,7 @@
  */
 
 import { useEffect, useRef, useState, type MouseEvent, type ReactNode, type SyntheticEvent } from 'react'
+import { createPortal } from 'react-dom'
 import estilos from './Modal.module.css'
 
 /** El elemento con el foco ahora mismo, si es uno al que se puede volver. */
@@ -93,6 +94,16 @@ interface Props {
    * segundo; el teclado, si: ver `GRACIA_TRAS_ABRIR_MS`.
    */
   aPruebaDeDobleClic?: boolean
+  /**
+   * Se pinta al final de `<body>` (un portal) y no donde se monta. Para el modal que se abre
+   * desde dentro de algo que hace de techo: la ficha de una fila vive en la envoltura de la tabla,
+   * cuyo `clip-path` abre su propio contexto de apilamiento, y ahi dentro el `z-index` del modal
+   * no pasa de la barra del panel (z 20). En el telefono, a pantalla completa, la barra tapaba su
+   * titulo y su aspa, y tocar la aspa pulsaba «Salir» (F-2, V89).
+   *
+   * Los eventos de React siguen subiendo por el arbol de quien lo monta, como sin portal.
+   */
+  enElCuerpo?: boolean
 }
 
 const ENFOCABLES =
@@ -108,6 +119,7 @@ export function Modal({
   lateral,
   sinPie,
   aPruebaDeDobleClic,
+  enElCuerpo,
 }: Props) {
   const caja = useRef<HTMLElement>(null)
 
@@ -253,7 +265,7 @@ export function Modal({
 
   if (!abierto) return null
 
-  return (
+  const ventana = (
     <>
       <div className={estilos.fondo} onClick={() => onCerrar('fondo')} {...guarda} />
       <section
@@ -304,4 +316,5 @@ export function Modal({
       )}
     </>
   )
+  return enElCuerpo ? createPortal(ventana, document.body) : ventana
 }

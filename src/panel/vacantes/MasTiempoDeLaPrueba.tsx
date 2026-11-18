@@ -214,6 +214,9 @@ export function ElTiempoDeLaPrueba({
           onCerrar={cerrarSiSePuede}
           pantallaCompleta
           aPruebaDeDobleClic
+          // Fuera de la tabla: dentro de su envoltura la barra del panel le tapaba el título y la
+          // «×» en el teléfono (F-2). Ver `enElCuerpo` en el modal.
+          enElCuerpo
           pie={
             <div className={estilos.pie}>
               <button

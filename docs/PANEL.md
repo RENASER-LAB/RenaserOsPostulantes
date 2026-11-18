@@ -154,6 +154,7 @@ de Y» y tiene «Borrar filtros» y «Listo».
 |---|---|
 | Fecha de postulación | Un día, o un rango con «Desde» y «Hasta» (los dos incluidos, cada uno opcional), y los atajos Hoy, Últimos 7 días y Últimos 30 días. El día es el del navegador de quien mira. Si «Desde» es posterior a «Hasta», avisa y no filtra. Quien no tiene fecha queda fuera, y la ayuda lo dice |
 | Calificación con IA | Calificada, en curso o fallida, con cuántas hay de cada una. Es la de la cola del currículum, así que después de la primera etapa lo aclara: «Es la calificación del currículum» |
+| Prueba (18/11/2026) | **Solo en la pestaña «Prueba del puesto»**, antes de «Ciudad»: «Calificada», «Pendiente de calificación», «No la completó», «En curso» y «Sin empezar», con cuántas hay de cada una **en el corte**. Se combina con el corte y no lo cambia: «No la completó» solo trae filas en «Toda la tanda». Al pasar a otra pestaña ni sale ni filtra. Ver «Las pruebas sin completar, en la tabla, y «Darle más tiempo»» |
 | Ciudad, Nota de la etapa, Pretensión | Como antes. Si la vacante no publica su remuneración, la ayuda de Pretensión dice «La vacante no publicó pretensión» |
 
 Cada filtro puesto sale como una **etiqueta con «×»** debajo de la barra. Los filtros **se
@@ -519,6 +520,7 @@ permiso de leer: quien no puede mover el plazo igualmente lo ve.
 | No ha abierto la prueba | Cuándo le cierra, o «su plazo empieza a contar cuando la abra» |
 | En curso | «Le cierra el …» y **de dónde sale**: la de la vacante, la que calculó el reloj al abrirla, o una puesta a mano |
 | Ya entregó | «Entregó el …. El plazo ya no cambia». Sin control: moverlo no cambiaría nada de lo que hizo |
+| No la completó (18/11/2026) | Este bloque no se pinta: en su sitio va «No la completó · se le acabó el tiempo el …» con «Darle más tiempo» (ver «Las pruebas sin completar, en la tabla, y «Darle más tiempo»») |
 | Su vacante rinde el cuestionario técnico | No hay fecha por persona; el tiempo son los minutos de la vacante |
 
 Los tres casos sin control son los que el servidor rechazaba **después** de escribir el motivo,
@@ -534,7 +536,8 @@ dice «sin dato» en vez de afirmar que no hay plazo, que es lo contrario de lo 
 Los errores del servidor se leen en castellano y pegados a lo que hay que corregir: lo que
 rechaza la fecha —«Esa fecha ya pasó…»— va en el campo, y un 403 nombra el permiso que falta
 (`elegir_plantilla_prueba` en la vacante, `mover_postulacion` en la persona). El motivo sigue
-siendo obligatorio en las dos llamadas y queda en la auditoría.
+siendo obligatorio en las dos llamadas y queda en la auditoría. Desde el 18/11/2026 el de la
+persona responde 409 con la vacante archivada, y ese motivo del servidor se lee tal cual.
 
 Comprobarlo: `npx playwright test herramientas/e2e/29-plazo-de-la-prueba.spec.ts` ⚠️ **escribe**:
 siembra en el clon sus propias vacantes, una plantilla de prueba, los candidatos de cada estado
@@ -980,11 +983,10 @@ columna por criterio de su banco junto a las del currículum. Mientras dure una 
 fila dice «Recalificando con la guía nueva», en las dos pestañas. «Las notas de la prueba, para la
 tanda entera» (`LaTandaDeLaPrueba`) es solo de las plantillas y no sale en una vacante nueva.
 
-**«No completaron la prueba (N)».** Quien dejó vencer el tiempo con algo sin responder o sin subir
-no sale en el ranking ni en el Excel. Debajo del ranking de la prueba, una lista plegada
-(`NoCompletaron.tsx`, por su propio endpoint) los nombra con lo que les faltó y el botón «Cerrar su
-proceso», que es el descarte de siempre con su motivo. Si la lista falla —un permiso—, no sale y el
-ranking sigue.
+**Quien dejó vencer el tiempo con algo sin responder o sin subir** sale desde el 18/11/2026 en la
+tabla como «No la completó», solo en «Toda la tanda», y en el Excel con la nota en blanco; desde su
+ficha se le da más tiempo o se descarta. La lista plegada «No completaron la prueba (N)» que había
+debajo del ranking se retiró. Ver «Las pruebas sin completar, en la tabla, y «Darle más tiempo»».
 
 **La personalización de las pruebas ya no existe**, y desde el 05/10/2026 tampoco la pantalla de
 pruebas que la ofrecía: las vacantes nuevas escriben la suya en «Armar la prueba». Ver «La sección
@@ -997,7 +999,7 @@ notas, no en el preview.
 
 Dónde está: `src/panel/vacantes/preguntas/` —`PruebaDeLaVacante.tsx`, `EditorDeLaPrueba.tsx`,
 `CriterioDePrueba.tsx`, `modo.tsx`—, `src/panel/vacantes/PruebaDelCandidato.tsx`,
-`src/panel/vacantes/NoCompletaron.tsx`, `src/panel/api/pruebaPropia.ts` y la clave en
+`src/panel/vacantes/MasTiempoDeLaPrueba.tsx`, `src/panel/api/pruebaPropia.ts` y la clave en
 `src/panel/vacantes/ranking.ts`. El portal, en [02-QUE-VE-EL-CANDIDATO.md](02-QUE-VE-EL-CANDIDATO.md),
 «2.9 Prueba del puesto».
 
@@ -1551,6 +1553,8 @@ informe». Todo vive en `src/panel/vacantes/informes/` (`BarraDeInformes`, `Viso
   candidato» o «Toda la tanda» (`corteDondeSeVe` de `ranking.ts`)— aunque no sea el de por defecto,
   abre su ficha y la deja arriba, con la fila y la barra de informes a la vista (`scrollIntoView`
   con `block: 'start'` y el `scroll-margin-top` de la fila, que salva la barra fija del panel).
+  Desde el 18/11/2026 el corte mira también su prueba: a quien no la completó lo abre en «Toda la
+  tanda», que es donde está.
   Quien ajusta una nota en la ficha y vuelve al visor ve la nota nueva con ✎ y su motivo.
 - **En el teléfono (390 px)** la lista pasa a ser un selector arriba con anterior y siguiente, las
   pestañas se desplazan en horizontal y «✎ Abrir ficha» es un enlace junto a Currículum y las
@@ -1669,6 +1673,94 @@ el clon: empresas `QA-BROCH-08DB-*`, sedes `QA-BROCH-08DB …` y cuentas `qa-bro
 presentación de la plataforma, con sus cuatro columnas de la `V86`, se fotografía antes y se
 devuelve al terminar, pero la auditoría de lo guardado se queda. Sus unitarias, en `brochure.test.ts`
 y `PerfilDeEmpresa.test.tsx`, además de las de arriba.
+
+### Las pruebas sin completar, en la tabla, y «Darle más tiempo» (18/11)
+
+Hasta ahora, a quien se le acababa el tiempo de la prueba del puesto con algo sin responder se le
+sacaba de la tabla y se le veía en una lista aparte, desde donde solo se podía cerrar su proceso; y
+a quien seguía haciéndola, la tabla le decía «Prueba incompleta». Ahora la tabla cuenta en qué va
+cada prueba, y quien no la completó se puede consultar y recibir más tiempo. El backend trae la
+`V89`; las reglas, en su `docs/PRUEBA-DEL-PUESTO.md`, «Darle más tiempo a quien no la completó».
+
+**La tabla.** En «Prueba del puesto», la celda de la nota dice la nota o, si no la hay, «—» con
+uno de estos rótulos debajo, en este orden de prioridad (lo decide el backend en `estadoPrueba`):
+
+| Rótulo | Qué le pasó | Al pasar el ratón |
+|---|---|---|
+| «Pendiente de calificación» | La entregó —a mano, o sola al vencer con todo respondido— y falta la nota | «… la entregó el 18 nov y su rúbrica todavía no tiene nota» |
+| **«No la completó»**, en tinta | Se le acabó el tiempo con algo sin responder o sin subir, o se le pasó la fecha sin abrirla | «Se le acabó el tiempo el 18 nov: le faltaron 4 preguntas y «Tablero.xlsx»», o «… sin abrirla» |
+| «En curso» | La abrió y su tiempo sigue corriendo | Cuándo la abrió |
+| «Sin empezar» | La tiene y no la ha abierto, con plazo vigente o sin fecha | «Sin empezar: tiene hasta el …» |
+
+«Prueba incompleta» ya no sale en ninguna parte. Quienes no la completaron van al final, como toda
+fila sin nota, y cuentan en el total, en «Se ven X de Y» y en la línea de cifras, que añade «· N no
+la completaron» («1 no la completó») cuando hay alguna.
+
+**Solo en «Toda la tanda»** (decisión del 23/10/2026). Quien no la completó no sale en «Pendiente»
+ni en «Le toca al candidato», tenga el proceso abierto o cerrado: el equipo lo consulta cuando hace
+falta, por ejemplo si el candidato escribe, y no tiene que gestionar cada prueba que se quedó sin
+completar. Lo deciden `filtrar` y `corteDondeSeVe` (`ranking.ts`), que miran también la prueba;
+por eso «✎ Abrir ficha» del visor de informes lo abre en «Toda la tanda».
+
+**El filtro «Prueba»** del panel «Filtros» (ver «Filtrar la tanda y actuar sobre muchas a la
+vez») lo aísla: en «Toda la tanda», «No la completó», «Marcar todas las que se ven» y
+«Descartar…» cierran a varias a la vez con la ventana y el motivo de siempre. La etiqueta se lee
+«Prueba: No la completó ×».
+
+**«Avanzar» no lo mueve**, ni en lote ni desde la ficha. La barra dice «No avanzaron: Beto Gil (no
+completó la prueba)» y avanza a los demás marcados; el backend también lo rechaza con un 409.
+
+**La ficha.** En la pestaña «Prueba del puesto» de quien no la completó se lee arriba «No la
+completó · se le acabó el tiempo el 18 nov, 16:40» y, debajo, lo que le faltó o «No la abrió». La
+ficha es la de siempre —sus respuestas, lo que subió con «Descargar entregables», sus informes—, y
+abrirla no la califica. Debajo va **«Darle más tiempo»**, en el sitio de «El plazo de esta
+persona», que mientras tanto no se pinta. El botón abre una ventana con:
+
+- **«Hasta»**: fecha y hora en la hora de Lima, vacía y futura.
+- **«Motivo»**, obligatorio.
+- **«Avisar a {nombre}»**, marcada: correo, campana y WhatsApp.
+- «Darle más tiempo» y «Cancelar». El botón se bloquea mientras guarda.
+
+Lo que se escribe mal se dice junto al campo («Esa fecha ya pasó: elige una futura», «Escribe por
+qué se le da más tiempo») y no se manda nada. Al guardar, la prueba vuelve a «En curso» con lo que
+tenía —o a «Sin empezar» si no la había abierto— y la fila cambia sin recargar: vuelve a «Le toca
+al candidato», y con el filtro «No la completó» puesto deja de verse. La ficha dice «Volvió a «Le
+toca al candidato»» y por dónde se le avisó, y luego «En curso · le cierra el jue 20 nov, 18:00» con
+«Más tiempo dado el 18 nov por Ana: {motivo}». El informe de la prueba vuelve a «sin calificar»
+hasta que entregue.
+
+| Situación | El botón |
+|---|---|
+| Sin `mover_postulacion` | No sale; la API respondería 403. Con `ver_embudo` se ven la tabla y el filtro |
+| Vacante **cerrada** | Se puede: la prueba tiene su propia fecha |
+| Vacante **archivada** | Apagado, con el chip «Vacante archivada» al lado (y 409 si se llega por otro lado) |
+| Proceso cerrado | Apagado, con el chip «Proceso cerrado»: un proceso cerrado no se reabre |
+
+**La ventana va fuera de la tabla**: se pinta en `<body>` (`enElCuerpo` de `Modal`), porque dentro
+de la envoltura de la fila la barra del panel le tapaba el título y la «×» en el teléfono.
+
+**En el portal**, quien recibe más tiempo deja de ver «Tu tiempo terminó…» y sigue con lo que tenía
+hasta la fecha nueva; si nunca la abrió, su cronómetro arranca al pulsar «Empezar», con la fecha
+nueva como tope. Ver [02-QUE-VE-EL-CANDIDATO.md](02-QUE-VE-EL-CANDIDATO.md), 2.9.
+
+**El Excel** de esa pestaña los incluye, con la nota en blanco.
+
+**Queda fuera**: darle más tiempo a varias personas a la vez, empezar de cero y reabrir un proceso
+cerrado. En las vacantes con plantilla solo cambian los rótulos, y «No la completó» es solo quien
+no la abrió a tiempo. ⚠️ **El aviso por WhatsApp espera al bot**: hasta que el bot del CRM acepte
+el tipo nuevo, solo salen el correo y la campana (ver [PENDIENTES.md](PENDIENTES.md)).
+
+Dónde está: `src/panel/vacantes/MasTiempoDeLaPrueba.tsx` (el bloque de la ficha y la ventana),
+`ranking.ts` (`noLaCompleto`, los cortes, las cifras, el rótulo y el filtro «Prueba»),
+`FiltrosDelRanking.tsx`, `Vacante.tsx` (la barra de «Avanzar») y `horaDeLima.ts`; la ruta, en
+`darMasTiempoDePrueba` de `src/panel/api/panel.ts`. `NoCompletaron.tsx` se retiró.
+
+Comprobarlo: `npx playwright test herramientas/e2e/72-incompletas-y-mas-tiempo-qa.spec.ts`
+(siete candidatas en una vacante cronometrada y cerrada: la tabla, el filtro, el Excel, «Avanzar»,
+el descarte en lote, los rechazos y darle más tiempo a quien la empezó y a quien nunca la abrió) y
+la 48, puesta al día. ⚠️ **Escriben** en el clon y retiran lo sembrado al terminar (marca
+`QA-MT-0089`); esperan al barrido de 60 s del backend. Las unitarias, en
+`MasTiempoDeLaPrueba.test.tsx`, `ranking.test.ts`, `Vacante.test.tsx` y `Modal.test.tsx`.
 
 ### La sección «Pruebas» se retiró (05/10)
 

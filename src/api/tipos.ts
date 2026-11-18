@@ -710,6 +710,13 @@ export interface MiPrueba {
    * la dieron a mano). Nula si no hay.
    */
   fechaLimite?: FechaIso | null
+  /**
+   * Solo antes de empezar (V89): su fecha límite se la pusieron a mano («El plazo de esta
+   * persona»), así que al empezar el reloj llega hasta ella y los minutos no cuentan. Lo decide
+   * el servidor con la misma regla que al empezar; la fecha de «Darle más tiempo» a quien no la
+   * abrió no cuenta, es solo el tope de sus minutos. Opcional: un backend anterior no lo manda.
+   */
+  fechaConcedidaAMano?: boolean
 }
 
 export interface EntregaPrueba {

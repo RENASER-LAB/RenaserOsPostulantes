@@ -557,6 +557,49 @@ describe('la prueba del editor en el portal', () => {
       expect(laFranja()[0]).toEqual({ etiqueta: 'Tiempo', valor: '3 días', matices: ['desde que pulses Empezar'] })
     })
 
+    /*
+     * Lo que dice la ficha es lo que hará el reloj (revisión del 18/11/2026). Con la fecha puesta a
+     * mano («El plazo de esta persona», también la que se pone después de «Darle más tiempo») el
+     * reloj llega hasta esa fecha y los minutos no cuentan: prometer «90 min desde que pulses
+     * Empezar» era mentir. Lo dice el servidor (`fechaConcedidaAMano`) con la regla de empezar.
+     */
+    it('con su fecha puesta a mano: hasta esa fecha, en hora de Lima, y nada de minutos ni cronómetro', async () => {
+      respuesta = sinEmpezar({ fechaLimite: '2026-10-10T04:59:00Z', fechaConcedidaAMano: true })
+      montar()
+      await screen.findByRole('button', { name: 'Empezar prueba' })
+      expect(laFranja()).toEqual([
+        { etiqueta: 'Tiempo', valor: 'Hasta la fecha límite', matices: [] },
+        { etiqueta: 'Fecha límite', valor: 'viernes 09/10 a las 23:59', matices: ['hora de Lima'] },
+        { etiqueta: 'Preguntas', valor: '4', matices: [] },
+        { etiqueta: 'Archivos', valor: '1', matices: ['1 obligatorio'] },
+      ])
+      expect(document.body.textContent).not.toMatch(/90 min|desde que pulses Empezar|si llega antes/)
+      expect(document.body.textContent).toContain('El contenido y las preguntas se abren al empezar, y desde ahí tienes hasta la fecha límite.')
+      expect(laCondicion().textContent).toBe(
+        'Una vez empezada no se puede pausar, ni para leer. Para entregar hay que responder las 4 preguntas y subir el archivo obligatorio; si llega la fecha límite con algo pendiente, queda sin completar.',
+      )
+      // Y «¿Empezar ahora?» tampoco habla de un cronómetro que no correrá.
+      fireEvent.click(screen.getByRole('button', { name: 'Empezar prueba' }))
+      const dialogo = await screen.findByRole('dialog')
+      expect(dialogo.textContent).toContain('Desde ese momento tienes hasta la fecha límite, también para leer')
+      expect(dialogo.textContent).not.toMatch(/cronómetro|empieza a correr el tiempo/)
+    })
+
+    it('tras «Darle más tiempo» a quien no la abrió: sus minutos desde Empezar, con la fecha nueva de tope', async () => {
+      respuesta = sinEmpezar({ fechaLimite: '2026-10-10T04:59:00Z', fechaConcedidaAMano: false })
+      montar()
+      await screen.findByRole('button', { name: 'Empezar prueba' })
+      expect(laFranja().slice(0, 2)).toEqual([
+        {
+          etiqueta: 'Tiempo',
+          valor: '90 min',
+          matices: ['desde que pulses Empezar', 'o hasta la fecha límite, si llega antes'],
+        },
+        { etiqueta: 'Fecha límite', valor: 'viernes 09/10 a las 23:59', matices: [] },
+      ])
+      expect(document.querySelector('b')?.textContent).toBe('desde ahí corre el tiempo')
+    })
+
     it('las herramientas, con sus listas de verdad; con lo que entregarás, lado a lado y sin tarjetas dentro', async () => {
       respuesta = sinEmpezar({
         herramientasPermitidas: 'Puedes usar:\n- Excel\n- una calculadora',

@@ -500,7 +500,11 @@ test.describe('La prueba del puesto escrita en el editor', () => {
     await page.getByRole('button', { name: /Le toca al candidato/ }).first().click()
     await expect(page.getByRole('row').filter({ hasText: 'Beto Prueba Editor QA' })).toHaveCount(0)
     await page.getByRole('button', { name: /Toda la tanda/ }).first().click()
-    const suFila = page.getByRole('row').filter({ hasText: 'Beto Prueba Editor QA' })
+    // Su fila de la tabla, la del botón con su nombre: con la ficha abierta, la fila de la ficha
+    // también lleva su nombre en el texto, y `hasText` casaba con las dos.
+    const suFila = page.getByRole('row').filter({
+      has: page.getByRole('button', { name: 'Beto Prueba Editor QA', exact: true }),
+    })
     await expect(suFila).toContainText('No la completó')
     await expect(page.locator('details').filter({ hasText: 'No completaron la prueba' })).toHaveCount(0)
     // El filtro «Prueba» la aísla (AC-05)

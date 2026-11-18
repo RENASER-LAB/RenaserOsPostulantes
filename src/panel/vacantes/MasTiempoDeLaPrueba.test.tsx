@@ -136,6 +136,11 @@ describe('la ventana «Darle más tiempo» (AC-07, AC-08, AC-11)', () => {
     return screen.getByRole('dialog', { name: 'Darle más tiempo a Beto Gil' })
   }
 
+  it('se pinta al final de <body>, fuera de la ficha: en el teléfono la barra del panel no la tapa (F-2, AC-14)', async () => {
+    const ventana = await abrir()
+    expect(ventana.parentElement).toBe(document.body)
+  })
+
   it('trae «Hasta» vacía, «Motivo», «Avisar a Beto» marcada y sus dos botones', async () => {
     const ventana = await abrir()
     expect((within(ventana).getByLabelText('Hasta') as HTMLInputElement).value).toBe('')
