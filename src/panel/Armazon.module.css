@@ -1,17 +1,17 @@
 /*
  * El armazon del panel: una barra fina arriba y el menu lateral a la izquierda.
  *
- * El mismo mundo que el portal y ninguna paleta inventada. Lo que cambia es la
- * DENSIDAD y el aire, porque el publico es otro: esto lo habita el equipo de
- * Talento la jornada entera.
+ * El mismo mundo que el portal —Northstar, desde el 14/11/2026— y ninguna
+ * paleta inventada. Lo que cambia es la DENSIDAD y el aire, porque el publico es
+ * otro: esto lo habita el equipo de Talento la jornada entera.
  *
- * De todo el mundo se queda **un filete del espectro** cruzando la barra: la
- * firma de la casa reducida a lo que cabe en una herramienta.
+ * La barra y el lateral son del papel de la pagina (`--cielo`), separados por un
+ * filete negro al 10 %, como las celdas de Northstar.
  *
  * Desde la V64 la navegacion no cabe en una fila de pestañas y vive en un menu
- * lateral, agrupado por familias. El lateral es la segunda capa neutra —la nube
- * hundida— para que la pagina, en nube, se lea encima de él; y no lleva color
- * de accion: el indigo ya es de los botones.
+ * lateral, agrupado por familias con la etiqueta «/ FAMILIA». La entrada activa
+ * lleva el azul de ubicacion (`--activo`) y su bruma, el mismo de la pagina en
+ * que estas en Northstar.
  */
 
 .armazon {

@@ -178,3 +178,23 @@ de estilo del mundo anterior. Se hizo en tres tandas.
 - De paso, incoherencias que quedaron al pasar el panel: el `--duda` del panel dicho índigo, el
   punto de CV en `#818CF8`, la base de las piezas dicha «del panel», el halo del foco, `--canto`
   sin consumidor y el encabezado de `mundo.css`, que aún presentaba «El escaparate».
+
+## 17/11/2026 · La documentación, contrastada con el código
+
+- **El backend de producción es `34-196-100-108.nip.io`** desde el 08/09/2026 (`0dfce4a`, la
+  cuenta de AWS nueva), pero `CLAUDE.md`, `README.md` y `TRABAJAR-EN-LOCAL.md` seguían dando
+  `18-204-177-210.nip.io`, que ya no responde. El aviso de «apuntando ahí escribes en
+  producción» señalaba una máquina muerta. Manda `vercel.json`. El backend tenía lo mismo en
+  cinco scripts y en `despliegue/RECUPERAR-CUENTA.md`, y se corrigió en su repositorio.
+- **El proxy de Vite caía al 8080 sin `API_URL`**, que es donde vive Adminer: el error que los
+  documentos avisaban de no cometer era el valor por defecto. Ahora cae al 8081.
+- **Lo que decían los documentos y el código ya no hacía:** el tanteo de ids de
+  `listarVersionesPrueba` (la ruta de versiones existe desde el 31/08), «no hay endpoint de mis
+  permisos» (`GET /panel/sesion` los trae), «el panel no enseña quiénes se inscribieron», «una
+  vacante publicada no se puede borrar», el nombre del candidato perdido en otro navegador,
+  `react-hook-form` «en uso», radix y Tailwind «no se instalaron», las dos excepciones de
+  `impeccable`, `.arrastrando`, la decisión ámbar «sin formulario» y «Perfil de la empresa»
+  ausente del menú. `PENDIENTES.md` pierde las dos filas ya resueltas.
+- **Quedan dudosos, sin tocar:** si las «dieciocho pantallas» del candidato siguen siendo
+  dieciocho con el perfil público de la empresa, y si la entrada del portal debe pintar el 429
+  con `segundosDeEspera` como ya hace la del panel.

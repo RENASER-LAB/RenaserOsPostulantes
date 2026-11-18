@@ -233,7 +233,7 @@ quita:
   la continuación de la serie que lo abrió (`detail > 1`) y toda pulsación que empiece en los
   primeros 500 ms, con un escudo transparente de 550 ms; el teclado y Escape van al instante. Hoy
   lo llevan «¿Empezar ahora?», los «Entregar» de la prueba de plantilla, la del editor y la
-  evaluación, y la vista de lectura del caso. Si además arranca algo que no se deshace, su foco
+  evaluación, la vista de lectura del caso y, en el panel, `PesosDeLaDecision`. Si además arranca algo que no se deshace, su foco
   inicial va a la opción que no hace nada: el de «¿Empezar ahora?» va a «Aún no».
 - **Una pantalla que cambia de contenido bajo el puntero** usa `useUnaSolaPulsacion`
   (`src/paginas/unaPorPantalla/useRecorrido.ts`): la segunda pulsación de una serie que cae sobre

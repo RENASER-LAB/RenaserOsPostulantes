@@ -37,7 +37,7 @@ no lo está.
 Y contra el backend desplegado, sin levantar nada más:
 
 ```bash
-echo "API_URL=https://18-204-177-210.nip.io" > .env.local
+echo "API_URL=https://34-196-100-108.nip.io" > .env.local
 ```
 
 ⚠️ **Apuntando ahí escribes en la base de producción**, junto a candidatos reales, aunque
@@ -147,7 +147,8 @@ En local, Vite reenvía `/api` al backend. Ese reenvío **solo existe en desarro
 build de producción, `fetch('/api/...')` pegaría contra el dominio de Vercel, donde no hay
 nada. Por eso está [vercel.json](vercel.json), que hace lo mismo en producción.
 
-- **`/api/*` → `https://18-204-177-210.nip.io`**, el Spring en una EC2 con IP fija. El
+- **`/api/*` → `https://34-196-100-108.nip.io`**, el Spring en una EC2 con IP fija (desde el
+  08/09/2026, en la cuenta de AWS nueva). El
   navegador solo habla con el dominio de Vercel, así que para él todo es el mismo origen y
   **no hace falta CORS en el backend** — que no lo tiene, y no debe tenerlo: añadirlo lo
   abriría a otros orígenes sin motivo.
