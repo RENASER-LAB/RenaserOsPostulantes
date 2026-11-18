@@ -63,6 +63,7 @@ import type {
   CierrePruebaAplicado,
   ElegirInstrumentoTecnico,
   PlazoDePrueba,
+  MasTiempoAplicado,
   PlazoVigenteDePrueba,
   FichaDelPuesto,
   GuardarFichaDelPuesto,
@@ -831,6 +832,23 @@ export const definirPlazoDePrueba = (
   pedir<PlazoDePrueba>(`/postulaciones/${postulacionId}/prueba/plazo`, {
     metodo: 'POST',
     cuerpo: { venceEn, motivo },
+  })
+
+/**
+ * «Darle más tiempo» a quien no completó la prueba (V89): la fecha nueva —ya en
+ * UTC—, el motivo obligatorio y si se le avisa por correo, campana y WhatsApp.
+ * Pide `mover_postulacion`; 409 con la vacante archivada, el proceso cerrado o si
+ * ya no está sin completar.
+ */
+export const darMasTiempoDePrueba = (
+  postulacionId: number,
+  venceEn: string,
+  motivo: string,
+  avisar: boolean,
+) =>
+  pedir<MasTiempoAplicado>(`/postulaciones/${postulacionId}/prueba/mas-tiempo`, {
+    metodo: 'POST',
+    cuerpo: { venceEn, motivo, avisar },
   })
 
 // ---------- La prueba tecnica del puesto ----------

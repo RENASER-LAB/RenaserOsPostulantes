@@ -456,3 +456,64 @@ describe('aPruebaDeDobleClic: nada del modal responde al puntero que sigue al cl
     expect(abierto()).toBe(false)
   })
 })
+
+describe('enElCuerpo: el modal sale de lo que lo contiene (F-2, V89)', () => {
+  /*
+   * La ficha de una fila vive en la envoltura de la tabla, que con su `clip-path` abre un contexto
+   * de apilamiento: ahí dentro el modal no pasa de la barra del panel. Con la marca se pinta al
+   * final de `<body>`; sin ella, donde se monta, como siempre.
+   */
+  function EnUnaCaja({ enElCuerpo, alCerrar = () => {} }: { enElCuerpo?: boolean; alCerrar?: () => void }) {
+    const [abierto, setAbierto] = useState(false)
+    return (
+      <div data-testid="caja">
+        <button type="button" onClick={() => setAbierto(true)}>
+          Abrir
+        </button>
+        <Modal
+          abierto={abierto}
+          titulo="Fuera de la tabla"
+          onCerrar={() => {
+            alCerrar()
+            setAbierto(false)
+          }}
+          enElCuerpo={enElCuerpo}
+        >
+          <p>Contenido</p>
+        </Modal>
+      </div>
+    )
+  }
+
+  it('con la marca, la ventana y su fondo son hijos de <body>, fuera de la caja', () => {
+    render(<EnUnaCaja enElCuerpo />)
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir' }))
+    const ventana = screen.getByRole('dialog', { name: 'Fuera de la tabla' })
+    expect(ventana.parentElement).toBe(document.body)
+    expect(within(screen.getByTestId('caja')).queryByRole('dialog')).toBeNull()
+    expect(ventana.contains(document.activeElement)).toBe(true)
+  })
+
+  it('con la marca, Escape y el aspa cierran y el foco vuelve al botón que abrió', () => {
+    const alCerrar = vi.fn()
+    render(<EnUnaCaja enElCuerpo alCerrar={alCerrar} />)
+    const abrir = screen.getByRole('button', { name: 'Abrir' })
+    abrir.focus()
+    fireEvent.click(abrir)
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(document.activeElement).toBe(abrir)
+
+    fireEvent.click(abrir)
+    // El aspa es el primer «Cerrar»; el segundo es el del pie por defecto.
+    fireEvent.click(within(screen.getByRole('dialog')).getAllByRole('button', { name: 'Cerrar' })[0]!)
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(alCerrar).toHaveBeenCalledTimes(2)
+  })
+
+  it('sin la marca, se queda donde se monta: lo de siempre', () => {
+    render(<EnUnaCaja />)
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir' }))
+    expect(within(screen.getByTestId('caja')).getByRole('dialog', { name: 'Fuera de la tabla' })).toBeTruthy()
+  })
+})

@@ -12,6 +12,11 @@
  *
  * Sin reloj, ni días, ni fecha no se habla del tiempo: ni «corre», ni «no se puede pausar», ni
  * «si el tiempo termina».
+ *
+ * **Con su fecha puesta a mano, el tiempo es la fecha aunque la prueba tenga minutos**
+ * (`fechaConcedidaAMano`, revisión del 18/11/2026): al empezar el reloj llega hasta ella, así que
+ * prometer «30 min desde que pulses Empezar» o «el cronómetro sigue corriendo» sería mentir. Lo
+ * decide el servidor con la regla de empezar; aquí no se adivina.
  */
 
 import type { MiPrueba } from '@/api/tipos'
@@ -30,10 +35,15 @@ export const fechaLimiteDe = (prueba: MiPrueba): string | null =>
 /** Cuántas preguntas son. Antes de empezar las preguntas no llegan: lo dice `totalPreguntas`. */
 export const cuantasPreguntas = (prueba: MiPrueba): number => prueba.totalPreguntas ?? prueba.preguntas.length
 
-/** Con reloj, el reloj (la fecha puede acortarlo); sin él, la fecha; sin fecha, los días. */
+/**
+ * Con reloj, el reloj (la fecha puede acortarlo); sin él, la fecha; sin fecha, los días. Con la
+ * fecha puesta a mano, la fecha, tenga o no reloj.
+ */
 export function comoCorreElTiempo(prueba: MiPrueba): ComoCorre {
+  const fecha = fechaLimiteDe(prueba)
+  if (fecha && prueba.fechaConcedidaAMano) return 'fecha'
   if (prueba.duracionMinutos) return 'reloj'
-  if (fechaLimiteDe(prueba)) return 'fecha'
+  if (fecha) return 'fecha'
   if (prueba.plazoDias) return 'dias'
   return null
 }

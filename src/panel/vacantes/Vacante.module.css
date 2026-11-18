@@ -1114,10 +1114,10 @@ thead .celdaCandidato {
    * es lo que mide el mas largo de los siete rotulos —«no la ha hecho»— y por
    * eso ninguno se parte.
    *
-   * ⚠️ **Los dos textos de la prueba del puesto son mas largos y se parten en
-   * dos lineas a proposito**: «Prueba incompleta» y «Pendiente de calificación»
-   * son la respuesta entera y no un resumen. Ninguna de sus palabras pasa de
-   * doce caracteres, asi que el ancho de la columna no se mueve.
+   * ⚠️ **Los textos de la prueba del puesto son mas largos y se parten en dos
+   * lineas a proposito**: «Pendiente de calificación» y «No la completó» son la
+   * respuesta entera y no un resumen. Ninguna de sus palabras pasa de doce
+   * caracteres, asi que el ancho de la columna no se mueve.
    */
   max-width: 13ch;
   margin-left: auto;
@@ -1128,6 +1128,15 @@ thead .celdaCandidato {
   color: var(--tinta3);
   font-variant-numeric: normal;
   text-wrap: balance;
+}
+
+/*
+ * «No la completó» (V89) se lee en tinta y no en gris: es la única de las
+ * etiquetas de la prueba que dice que ya no hay nada que esperar sin que alguien
+ * decida algo. Sin color de estado, como el resto de la celda.
+ */
+.porQueMarcado {
+  color: var(--tinta);
 }
 
 /*

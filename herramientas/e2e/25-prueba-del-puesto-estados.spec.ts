@@ -22,7 +22,7 @@ import { correoDePrueba, literal, sql } from './base-de-datos'
 /**
  * El corte «Pendiente» y en qué punto está la prueba del puesto de cada quien.
  *
- * ⚠️ **ESCRIBE**: crea ocho cuentas `e2e.prueba.<uuid>@example.com` con su
+ * ⚠️ **ESCRIBE**: crea nueve cuentas `e2e.prueba.<uuid>@example.com` con su
  * postulación en la vacante LLENA, y los intentos y notas de etapa que ninguna
  * pantalla sabe dejar a medias. Todo eso se borra en `afterAll` por los correos
  * completos —nunca por prefijo— con la misma limpieza que usan `12` y `24`.
@@ -61,7 +61,7 @@ const SEMBRADOS = [
     estado: 'PRUEBA_TURNO_CANDIDATO',
     intento: { iniciado: false, entregado: false, automatica: false },
     nota: null,
-    estadoPrueba: 'INCOMPLETA',
+    estadoPrueba: 'SIN_EMPEZAR',
   },
   {
     clave: 'enCurso',
@@ -70,16 +70,27 @@ const SEMBRADOS = [
     estado: 'PRUEBA_TURNO_CANDIDATO',
     intento: { iniciado: true, entregado: false, automatica: false },
     nota: null,
-    estadoPrueba: 'INCOMPLETA',
+    estadoPrueba: 'EN_CURSO',
   },
   {
+    // V89: no la abrió y se le pasó la fecha. «No la completó», solo en «Toda la tanda».
+    clave: 'vencidaSinAbrir',
+    nombre: 'Zqa Se Le',
+    apellidos: 'Paso',
+    estado: 'PRUEBA_TURNO_CANDIDATO',
+    intento: { iniciado: false, entregado: false, automatica: false, vencida: true },
+    nota: null,
+    estadoPrueba: 'NO_COMPLETADA',
+  },
+  {
+    // V89: la de plantilla que se entregó sola al vencer espera nota, como la entregada a mano.
     clave: 'automatica',
     nombre: 'Zqa Entrega',
     apellidos: 'Automatica',
     estado: 'PRUEBA_POR_CONFIRMAR',
     intento: { iniciado: true, entregado: true, automatica: true },
     nota: null,
-    estadoPrueba: 'INCOMPLETA',
+    estadoPrueba: 'PENDIENTE_CALIFICACION',
   },
   {
     clave: 'manual',
@@ -136,23 +147,16 @@ type Sembrado = (typeof SEMBRADOS)[number]
 type Clave = Sembrado['clave']
 
 /** Lo que la celda de la Nota tiene que decir, y lo que explica su título. */
+/*
+  `titulo` es el COMIENZO del texto al pasar el ratón (V89): lleva la fecha, que
+  sale de cuándo corre la prueba y no se escribe a mano.
+*/
 const TEXTO_EN_LA_CELDA: Partial<Record<Clave, { celda: string; titulo: string | null }>> = {
-  pendiente: {
-    celda: 'Prueba incompleta',
-    titulo: 'Prueba incompleta: no llegó a entregarla, o el sistema la cerró al vencer el plazo',
-  },
-  enCurso: {
-    celda: 'Prueba incompleta',
-    titulo: 'Prueba incompleta: no llegó a entregarla, o el sistema la cerró al vencer el plazo',
-  },
-  automatica: {
-    celda: 'Prueba incompleta',
-    titulo: 'Prueba incompleta: no llegó a entregarla, o el sistema la cerró al vencer el plazo',
-  },
-  manual: {
-    celda: 'Pendiente de calificación',
-    titulo: 'Pendiente de calificación: la entregó y su rúbrica todavía no tiene nota',
-  },
+  pendiente: { celda: 'Sin empezar', titulo: 'Sin empezar: tiene hasta el ' },
+  enCurso: { celda: 'En curso', titulo: 'En curso: la abrió el ' },
+  vencidaSinAbrir: { celda: 'No la completó', titulo: 'Se le acabó el tiempo el ' },
+  automatica: { celda: 'Pendiente de calificación', titulo: 'Pendiente de calificación: la entregó el ' },
+  manual: { celda: 'Pendiente de calificación', titulo: 'Pendiente de calificación: la entregó el ' },
   calificada: { celda: '72.5', titulo: null },
   cero: { celda: '0', titulo: null },
   antesDeLaTecnica: { celda: 'en otra etapa', titulo: null },
@@ -340,7 +344,8 @@ async function sembrar() {
         `insert into intento_prueba (postulacion_id, version_plantilla_prueba_id, iniciado_en,
                                      vence_en, entregado_en, es_entrega_automatica)
            select p.id, ${version}, ${cuando(caso.intento.iniciado, '2 hours')},
-                  now() + interval '1 day', ${cuando(caso.intento.entregado, '1 hour')},
+                  ${'vencida' in caso.intento ? "now() - interval '1 day'" : "now() + interval '1 day'"},
+                  ${cuando(caso.intento.entregado, '1 hour')},
                   ${caso.intento.automatica}
            from postulacion p join usuario u on u.id = p.usuario_id
            where u.correo = ${correo};`,
@@ -396,7 +401,12 @@ test.describe('Nuevo · «Pendiente» y en qué punto está la prueba del puesto
       await corte(page, 'Pendiente').click()
 
       const suyas = (await rankingPorApi(etapa.codigo))
-        .filter((f) => (etapa.porRevisar as readonly string[]).includes(f.estado))
+        // V89: quien no completó la prueba solo sale en «Toda la tanda».
+        .filter(
+          (f) =>
+            (etapa.porRevisar as readonly string[]).includes(f.estado) &&
+            !(etapa.codigo === 'PRUEBA_PUESTO' && f.estadoPrueba === 'NO_COMPLETADA'),
+        )
         .map((f) => f.candidato)
         .sort()
 
@@ -424,18 +434,17 @@ test.describe('Nuevo · «Pendiente» y en qué punto está la prueba del puesto
       )
       if (esperado!.titulo) {
         await expect(
-          celda.locator(`[title=${JSON.stringify(esperado!.titulo)}]`),
+          celda.locator(`[title^=${JSON.stringify(esperado!.titulo)}]`),
           `${nombre}: el título de la celda no explica el estado`,
         ).toHaveCount(1)
       }
     }
 
-    // AC-05 al revés: una entrega automática sin nota NO puede leerse como una
-    // entrega de persona esperando calificación, que es lo que mandaría al
-    // equipo a calificar lo que nadie terminó.
-    await expect(await celdaDeLaNota(page, quien('automatica'))).not.toContainText(
-      'Pendiente de calificación',
-    )
+    // V89: «Prueba incompleta» ya no existe. Ninguna fila llama incompleta a una
+    // prueba que alguien sigue haciendo, y quien no la abrió a tiempo «no la completó».
+    for (const clave of ['pendiente', 'enCurso', 'automatica', 'vencidaSinAbrir'] as const) {
+      await expect(await celdaDeLaNota(page, quien(clave))).not.toContainText('Prueba incompleta')
+    }
 
     // AC-08: quien no llegó a la etapa técnica conserva su indicador de siempre
     // y nunca se etiqueta como una entrega pendiente de calificar.
@@ -500,7 +509,7 @@ test.describe('Nuevo · «Pendiente» y en qué punto está la prueba del puesto
     await irALaPruebaDelPuesto(page, 'Toda la tanda')
     const antes = await loQueDiceCadaFila(page)
     const suyo = quien('pendiente')
-    expect(antes.get(suyo)).toContain('Prueba incompleta')
+    expect(antes.get(suyo)).toContain('Sin empezar')
 
     // Entrega a mano lo que tenía sin empezar: el trabajo pasa a ser del equipo.
     sql(`update intento_prueba i

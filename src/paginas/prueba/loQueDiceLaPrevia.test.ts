@@ -65,6 +65,25 @@ describe('cómo corre el tiempo, con la precedencia de la celda «Tiempo»', () 
     // La de plantilla toma su fecha de `venceEn`, no de `fechaLimite`.
     expect(comoCorreElTiempo(prueba({ delEditor: false, duracionMinutos: null, fechaLimite: null, venceEn: EN_UNA_SEMANA }))).toBe('fecha')
   })
+
+  it('con la fecha puesta a mano, la fecha manda aunque haya reloj: el servidor no aplicará los minutos', () => {
+    expect(comoCorreElTiempo(prueba({ fechaConcedidaAMano: true }))).toBe('fecha')
+    expect(comoCorreElTiempo(prueba({ delEditor: false, fechaLimite: null, venceEn: EN_UNA_SEMANA, fechaConcedidaAMano: true }))).toBe('fecha')
+    // Tras «Darle más tiempo» a quien no la abrió, la fecha nueva es solo el tope del reloj.
+    expect(comoCorreElTiempo(prueba({ fechaConcedidaAMano: false }))).toBe('reloj')
+    // Sin fecha que enseñar no hay nada que prometer en su lugar: se queda el reloj.
+    expect(comoCorreElTiempo(prueba({ fechaLimite: null, fechaConcedidaAMano: true }))).toBe('reloj')
+  })
+
+  it('con la fecha puesta a mano, los tres textos hablan de la fecha y no del cronómetro', () => {
+    const p = prueba({ fechaConcedidaAMano: true })
+    expect(entradilla(p)).toBe('El contenido y las preguntas se abren al empezar, y desde ahí tienes hasta la fecha límite.')
+    expect(condicionDe(p)).toBe(
+      'Una vez empezada no se puede pausar, ni para leer. Para entregar hay que responder las 6 preguntas y subir los 3 archivos obligatorios; si llega la fecha límite con algo pendiente, queda sin completar.',
+    )
+    expect(dialogo(p)).toContain('Desde ese momento tienes hasta la fecha límite')
+    expect(dialogo(p)).not.toMatch(/cronómetro|correr el tiempo/)
+  })
 })
 
 describe('la prueba del editor', () => {

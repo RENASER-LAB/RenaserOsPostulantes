@@ -12,6 +12,30 @@ cielo despejado» a «Northstar»— y el panel del equipo se quedó en el anter
 
 ---
 
+## 18/11/2026 · Las pruebas sin completar, dentro del ranking, y «Darle más tiempo»
+
+- **Qué llegó.** En «Prueba del puesto» cada fila dice en qué va su prueba —la nota, «Pendiente de
+  calificación», «No la completó», «En curso» o «Sin empezar»— y «Prueba incompleta» desaparece:
+  se le decía también a quien seguía en plazo (#49). Quien no la completó vuelve a la tabla y al
+  Excel, solo en «Toda la tanda», con un filtro «Prueba» y «· N no la completaron» en la línea de
+  cifras; la lista «No completaron la prueba» se retiró. «Avanzar» no lo mueve. Desde su ficha se le
+  da más tiempo con fecha, motivo y aviso. Es la V89 del backend. Cómo funciona hoy, en
+  [PANEL.md](PANEL.md) › Las pruebas sin completar, en la tabla, y «Darle más tiempo», y en
+  [02-QUE-VE-EL-CANDIDATO](02-QUE-VE-EL-CANDIDATO.md), 2.9.
+- **Decisión del usuario tras la QA.** La pantalla previa a «Empezar» prometía «30 min desde que
+  pulses Empezar» a quien tenía la fecha puesta a mano, y al empezar el reloj llegaba hasta esa
+  fecha. Ahora le dice «Hasta la fecha límite» (hora de Lima) con «El plazo de esta persona»,
+  también si se puso después de darle más tiempo; en los demás casos, y para quien recibió más
+  tiempo sin haberla abierto, sigue «N min · desde que pulses Empezar · o hasta la fecha límite,
+  si llega antes». Lo decide el backend en `fechaConcedidaAMano`.
+- **Una trampa en el teléfono.** La ventana «Darle más tiempo», montada dentro de la ficha de la
+  fila, quedaba bajo la barra del panel, que le tapaba el título y la «×»: tocar la «×» pulsaba
+  «Salir». Se pinta ahora al final de `<body>` con la prop nueva `enElCuerpo` de `Modal`.
+- **Fuera de la entrega**: el bot de WhatsApp del CRM tiene que aceptar el aviso nuevo y Meta
+  aprobar su plantilla (ver [PENDIENTES.md](PENDIENTES.md)).
+
+---
+
 ## 18/11/2026 · El brochure de la empresa, armado solo
 
 - **Qué llegó.** La misión y la visión en «Perfil de la empresa», en su vista previa y en el perfil

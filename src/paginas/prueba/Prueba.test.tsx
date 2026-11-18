@@ -220,6 +220,26 @@ describe('la consigna', () => {
     expect(screen.getByText('Fecha límite')).toBeTruthy()
   })
 
+  it('con su fecha puesta a mano, dice hasta esa fecha en hora de Lima y no los minutos', async () => {
+    // El reloj de la plantilla tampoco aplica los minutos a una fecha puesta a mano (`iniciar`):
+    // la ficha no puede prometerlos (revisión del 18/11/2026).
+    respuesta = {
+      ...pruebaEnCurso('2026-08-20T18:00:00Z', 'ARCHIVO'),
+      estadoIntento: 'PENDIENTE',
+      iniciadoEn: null,
+      fechaConcedidaAMano: true,
+    }
+    montar()
+
+    const tiempo = (await screen.findByText('Hasta la fecha límite')).closest('div')!
+    expect(tiempo.querySelectorAll('dd')).toHaveLength(1)
+    const fecha = screen.getByText('Fecha límite').closest('div')!
+    expect(fecha.textContent).toContain('hora de Lima')
+    expect(screen.queryByText('90 min')).toBeNull()
+    expect(screen.queryByText(/si llega antes/i)).toBeNull()
+    expect(document.body.textContent).toContain('Si llega la fecha límite, se entrega lo que hayas guardado.')
+  })
+
   it('sin fecha de cierre no inventa ninguna', async () => {
     respuesta = {
       ...pruebaEnCurso('2026-08-20T18:00:00Z', 'ARCHIVO'),

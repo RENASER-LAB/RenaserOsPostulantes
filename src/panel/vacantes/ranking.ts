@@ -38,6 +38,7 @@
  */
 
 import type { FilaRanking, NotaCriterio, RespuestaAbiertaVista } from '../api/tipos'
+import { conDiaDeLaSemanaEnLima, diaCortoEnLima } from './horaDeLima'
 
 export const ETAPAS_PANEL = [
   {
@@ -172,10 +173,37 @@ export const esperaALaEmpresa = (estado: string, etapa: EtapaPanel) =>
 export const leTocaAlCandidato = (estado: string, etapa: EtapaPanel) =>
   laEtapaDe(etapa).leToca.some((e) => e === estado)
 
+/**
+ * «No la completó» (V89): en la pestaña de la prueba, a quien se le acabó el
+ * tiempo con algo sin responder o se le pasó la fecha sin abrirla. Lo decide el
+ * backend en `estadoPrueba`; aquí solo se lee.
+ *
+ * ⚠️ **Sale solo en «Toda la tanda»**, tenga el proceso abierto o cerrado
+ * (decisión del 23/10/2026). Su estado sigue siendo «le toca al candidato», pero
+ * no se le pone en ese corte ni en «Pendiente»: el equipo la consulta cuando lo
+ * necesita —si el candidato escribe— y no tiene que gestionar cada prueba que
+ * quedó sin completar.
+ */
+export const noLaCompleto = (
+  fila: Pick<FilaRanking, 'estadoPrueba'>,
+  etapa: EtapaPanel,
+): boolean => etapa === 'PRUEBA_PUESTO' && fila.estadoPrueba === 'NO_COMPLETADA'
+
+/** Lo que basta de una fila para decir en qué corte se ve: su estado y el de su prueba. */
+export type FilaDelCorte = Pick<FilaRanking, 'estado' | 'estadoPrueba'>
+
+/** Si espera a la empresa en esta pestaña: «Pendiente», menos quien no la completó. */
+const enPendiente = (f: FilaDelCorte, etapa: EtapaPanel) =>
+  esperaALaEmpresa(f.estado, etapa) && !noLaCompleto(f, etapa)
+
+/** Si le toca a la persona en esta pestaña: «Le toca al candidato», menos quien no la completó. */
+const enLeToca = (f: FilaDelCorte, etapa: EtapaPanel) =>
+  leTocaAlCandidato(f.estado, etapa) && !noLaCompleto(f, etapa)
+
 export function filtrar(filas: FilaRanking[], etapa: EtapaPanel, vista: Vista): FilaRanking[] {
   if (vista === 'toda') return filas
-  if (vista === 'por-revisar') return filas.filter((f) => esperaALaEmpresa(f.estado, etapa))
-  return filas.filter((f) => leTocaAlCandidato(f.estado, etapa))
+  if (vista === 'por-revisar') return filas.filter((f) => enPendiente(f, etapa))
+  return filas.filter((f) => enLeToca(f, etapa))
 }
 
 /**
@@ -184,10 +212,13 @@ export function filtrar(filas: FilaRanking[], etapa: EtapaPanel, vista: Vista): 
  * ninguno de los dos, «Toda la tanda». Lo usa «Abrir ficha» del visor de
  * informes, que tiene que abrir la ficha aunque la persona no esté en el corte
  * por defecto.
+ *
+ * ⚠️ **Mira también su prueba (V89)**: quien no la completó solo está en «Toda
+ * la tanda», y abrirle la ficha en «Le toca al candidato» la dejaría fuera.
  */
-export function corteDondeSeVe(estado: string, etapa: EtapaPanel): Vista {
-  if (esperaALaEmpresa(estado, etapa)) return 'por-revisar'
-  if (leTocaAlCandidato(estado, etapa)) return 'le-toca'
+export function corteDondeSeVe(fila: FilaDelCorte, etapa: EtapaPanel): Vista {
+  if (enPendiente(fila, etapa)) return 'por-revisar'
+  if (enLeToca(fila, etapa)) return 'le-toca'
   return 'toda'
 }
 
@@ -225,8 +256,8 @@ export const rotuloDeVista = (vista: Vista): string =>
  * Sumados tampoco dan la tanda: quien espera a la IA no es de nadie.
  */
 export const recuentos = (filas: FilaRanking[], etapa: EtapaPanel) => ({
-  'por-revisar': filas.filter((f) => esperaALaEmpresa(f.estado, etapa)).length,
-  'le-toca': filas.filter((f) => leTocaAlCandidato(f.estado, etapa)).length,
+  'por-revisar': filas.filter((f) => enPendiente(f, etapa)).length,
+  'le-toca': filas.filter((f) => enLeToca(f, etapa)).length,
   toda: filas.length,
 })
 
@@ -323,53 +354,86 @@ export function desgloseDelPonderado(fila: FilaRanking): string {
 
 // ---------- Por que esa nota esta vacia ----------
 
-/** Los dos textos de cada caso: el de la celda y el del titulo, juntos para que no se separen. */
-const LO_DE_LA_PRUEBA = {
-  INCOMPLETA: {
-    corto: 'Prueba incompleta',
-    entero:
-      'Prueba incompleta: no llegó a entregarla, o el sistema la cerró al vencer el plazo',
-  },
-  PENDIENTE_CALIFICACION: {
-    corto: 'Pendiente de calificación',
-    entero: 'Pendiente de calificación: la entregó y su rúbrica todavía no tiene nota',
-  },
+/** Las etiquetas de la prueba en la celda, en un solo sitio: la tabla, el filtro y sus etiquetas. */
+export const NOMBRE_DEL_ESTADO_DE_LA_PRUEBA = {
+  CALIFICADA: 'Calificada',
+  PENDIENTE_CALIFICACION: 'Pendiente de calificación',
+  NO_COMPLETADA: 'No la completó',
+  EN_CURSO: 'En curso',
+  SIN_EMPEZAR: 'Sin empezar',
 } as const
 
 /**
- * Lo que dice la celda de la prueba del puesto cuando no hay nota, y por que.
+ * Lo que dice la celda de la prueba del puesto cuando no hay nota, y por que (V89).
  *
  * ⚠️ **Sale de `estadoPrueba`, que manda el backend, y NUNCA del estado de la
- * postulacion.** Hasta ahora las tres situaciones se escribian igual —«sin
- * cerrar»— y no se parecen en nada:
+ * postulacion.** Con el orden de prioridad de la spec:
  *
- * - **«Prueba incompleta»**: no llego a haber entrega del candidato. Entra
- *   quien no la ha abierto, quien la tiene a medias y **quien la vio cerrada
- *   por el sistema al vencer el plazo** —eso es el reloj, no un «ya esta»—.
- * - **«Pendiente de calificacion»**: la entrego una persona y su rubrica
- *   todavia no tiene nota. **Es el unico caso en que el trabajo es del
- *   equipo**, y por eso hay que poder distinguirlo de un vistazo.
+ * - **«Pendiente de calificación»**: se entregó —a mano o sola al vencer con
+ *   todo respondido— y su rúbrica todavía no tiene nota. **Es el unico caso en
+ *   que el trabajo es del equipo.**
+ * - **«No la completó»**: se le acabó el tiempo con algo sin responder o sin
+ *   subir, o se le pasó la fecha sin abrirla. Va `marcado`: se lee en tinta.
+ * - **«En curso»**: la empezó y su tiempo sigue corriendo.
+ * - **«Sin empezar»**: la tiene y no la ha abierto.
  *
- * Los otros dos valores no producen texto: con nota se pinta la nota, y sin
- * intento la fila conserva el motivo de siempre —que dice donde esta parada esa
- * persona— porque no hay prueba de la que hablar.
+ * ⚠️ **«Prueba incompleta» ya no existe.** Juntaba a quien no había empezado, a
+ * quien la estaba haciendo y a quien se le entregó sola: ningún texto llama
+ * incompleta a una prueba que alguien sigue haciendo.
  *
- * ⚠️ **Fuera de la pestaña de la prueba devuelve `null` aunque el campo
- * llegara**: ahi la columna Nota es de otra etapa, y este texto se leeria como
- * suyo.
- *
- * ⚠️ **Y `null` tambien si la fila no trae el campo** —un backend anterior a
- * este cambio—: entonces manda el motivo de siempre. Vale mas un texto viejo
- * que un hueco.
+ * Con nota se pinta la nota, y sin intento la fila conserva el motivo de
+ * siempre —que dice donde esta parada esa persona— porque no hay prueba de la
+ * que hablar. **Fuera de la pestaña de la prueba devuelve `null`** aunque el
+ * campo llegara, y también si la fila no lo trae —un backend anterior—.
  */
 export function loDeLaPrueba(
   fila: FilaRanking,
   etapa: EtapaPanel,
-): { corto: string; entero: string } | null {
+  ahora?: number,
+): { corto: string; entero: string; marcado: boolean } | null {
   if (etapa !== 'PRUEBA_PUESTO') return null
   const suyo = fila.estadoPrueba
-  if (suyo !== 'INCOMPLETA' && suyo !== 'PENDIENTE_CALIFICACION') return null
-  return LO_DE_LA_PRUEBA[suyo]
+  const d = fila.detallePrueba ?? null
+  const dia = (iso: string | null | undefined) => (iso ? diaCortoEnLima(iso, ahora) : null)
+  switch (suyo) {
+    case 'PENDIENTE_CALIFICACION': {
+      const cuando = dia(d?.entregadaEn)
+      return {
+        corto: NOMBRE_DEL_ESTADO_DE_LA_PRUEBA.PENDIENTE_CALIFICACION,
+        entero: `Pendiente de calificación: la entregó${cuando ? ` el ${cuando}` : ''} y su rúbrica todavía no tiene nota`,
+        marcado: false,
+      }
+    }
+    case 'NO_COMPLETADA': {
+      const cuando = dia(d?.venceEn ?? d?.entregadaEn)
+      const seAcabo = `Se le acabó el tiempo${cuando ? ` el ${cuando}` : ''}`
+      const entero =
+        d?.abiertaEn == null
+          ? `${seAcabo} sin abrirla`
+          : d.queFalto
+            ? `${seAcabo}: ${d.queFalto}`
+            : seAcabo
+      return { corto: NOMBRE_DEL_ESTADO_DE_LA_PRUEBA.NO_COMPLETADA, entero, marcado: true }
+    }
+    case 'EN_CURSO': {
+      const cuando = dia(d?.abiertaEn)
+      return {
+        corto: NOMBRE_DEL_ESTADO_DE_LA_PRUEBA.EN_CURSO,
+        entero: `En curso: la abrió${cuando ? ` el ${cuando}` : ''} y su tiempo sigue corriendo`,
+        marcado: false,
+      }
+    }
+    case 'SIN_EMPEZAR':
+      return {
+        corto: NOMBRE_DEL_ESTADO_DE_LA_PRUEBA.SIN_EMPEZAR,
+        entero: d?.venceEn
+          ? `Sin empezar: tiene hasta el ${conDiaDeLaSemanaEnLima(d.venceEn, ahora)}`
+          : 'Sin empezar: todavía no la ha abierto',
+        marcado: false,
+      }
+    default:
+      return null
+  }
 }
 
 /** La frase entera de la nota del Perfil Integral que todavía no llega (V70). */
@@ -412,8 +476,8 @@ export function notaEnCamino(fila: FilaRanking, etapa: EtapaPanel): boolean {
  * estado. De ahi los cinco motivos.
  *
  * ⚠️ **En la prueba del puesto manda `loDeLaPrueba`**, que sabe del intento lo
- * que el estado de la postulacion no puede saber: si hubo entrega y si la hizo
- * una persona o el reloj.
+ * que el estado de la postulacion no puede saber: si hubo entrega, si la está
+ * haciendo o si se le acabó el tiempo sin completarla.
  */
 export function porQueNoHayNota(fila: FilaRanking, etapa: EtapaPanel): string {
   // En la prueba del puesto manda lo que dice el backend de SU intento: el
@@ -480,10 +544,11 @@ export function porQueNoHayNota(fila: FilaRanking, etapa: EtapaPanel): string {
  * Estado, dos celdas más allá, lo dice con todas sus letras. Repetirlo aquí era
  * gastar el ancho de la tabla en decir dos veces lo mismo.
  *
- * ⚠️ **Los dos textos de la prueba del puesto son la excepcion al «dos
- * palabras»**, y a proposito: «Prueba incompleta» y «Pendiente de calificación»
- * se escriben enteros en la celda porque son la respuesta, no un resumen de
- * ella. Caben: la palabra mas larga mide doce y la celda deja trece.
+ * ⚠️ **Los textos de la prueba del puesto son la excepcion al «dos
+ * palabras»**, y a proposito: «Pendiente de calificación», «No la completó»,
+ * «En curso» y «Sin empezar» se escriben enteros en la celda porque son la
+ * respuesta, no un resumen de ella. Caben: la palabra mas larga mide doce y la
+ * celda deja trece.
  */
 export function porQueNoHayNotaCorto(fila: FilaRanking, etapa: EtapaPanel): string {
   // La misma regla que el titulo, o la celda diria una cosa y su titulo otra.
@@ -533,6 +598,13 @@ export interface CifrasDeLaEtapa {
   hechasSinNota: number
   /** Ni una cosa ni la otra: su proceso está parado en otra etapa. */
   enOtraEtapa: number
+  /**
+   * **No la completaron** (V89): se les acabó el tiempo de la prueba con algo
+   * sin responder, o se les pasó la fecha sin abrirla. Solo en la pestaña de la
+   * prueba; sale de «sin hacerla» —su estado es «le toca al candidato»— para que
+   * las categorías sigan sumando `sinNota`.
+   */
+  noLaCompletaron: number
 }
 
 /**
@@ -563,15 +635,24 @@ export function cifrasDeLaEtapa(filas: FilaRanking[], etapa: EtapaPanel): Cifras
     y aun así no ha hecho nada —el sistema está comprobando sus requisitos—.
     Sin ella, caía por descarte en «ya la hicieron».
   */
-  const sinHacerla = aqui.filter(
+  const noLaCompletaron = sinNota.filter((f) => noLaCompleto(f, etapa))
+  const aquiSinLasQueNo = aqui.filter((f) => !noLaCompleto(f, etapa))
+  const sinHacerla = aquiSinLasQueNo.filter(
     (f) => f.estado.endsWith('TURNO_CANDIDATO') || f.estado === 'POSTULADA',
   ).length
+  /*
+    Quien no la completó cuenta una sola vez, en lo suyo, esté su proceso aquí
+    o ya cerrado: las cuatro siguen sumando `sinNota`.
+  */
+  const fueraSinLasQueNo = sinNota.length - aqui.length -
+    noLaCompletaron.filter((f) => !estaAhoraEn(f.estado, etapa)).length
   return {
     conNota: filas.length - sinNota.length,
     sinNota: sinNota.length,
     sinHacerla,
-    hechasSinNota: aqui.length - sinHacerla,
-    enOtraEtapa: sinNota.length - aqui.length,
+    hechasSinNota: aquiSinLasQueNo.length - sinHacerla,
+    enOtraEtapa: fueraSinLasQueNo,
+    noLaCompletaron: noLaCompletaron.length,
   }
 }
 
@@ -1463,6 +1544,27 @@ export const ESTADOS_DE_LA_IA = [
 
 export type EstadoDeLaIa = (typeof ESTADOS_DE_LA_IA)[number]['codigo']
 
+/**
+ * Las cinco casillas de la sección «Prueba» del panel «Filtros» (V89), en el
+ * orden de la maqueta. Solo en la pestaña «Prueba del puesto».
+ *
+ * Es el estado que manda el backend en `estadoPrueba`; `NO_APLICA` no se ofrece
+ * —sin prueba no hay nada que filtrar— y con cualquier casilla marcada esas
+ * filas quedan fuera, como en «Calificación con IA».
+ */
+export const ESTADOS_DE_LA_PRUEBA = [
+  { codigo: 'CALIFICADA', nombre: NOMBRE_DEL_ESTADO_DE_LA_PRUEBA.CALIFICADA },
+  { codigo: 'PENDIENTE_CALIFICACION', nombre: NOMBRE_DEL_ESTADO_DE_LA_PRUEBA.PENDIENTE_CALIFICACION },
+  { codigo: 'NO_COMPLETADA', nombre: NOMBRE_DEL_ESTADO_DE_LA_PRUEBA.NO_COMPLETADA },
+  { codigo: 'EN_CURSO', nombre: NOMBRE_DEL_ESTADO_DE_LA_PRUEBA.EN_CURSO },
+  { codigo: 'SIN_EMPEZAR', nombre: NOMBRE_DEL_ESTADO_DE_LA_PRUEBA.SIN_EMPEZAR },
+] as const
+
+export type EstadoDelFiltroDePrueba = (typeof ESTADOS_DE_LA_PRUEBA)[number]['codigo']
+
+/** El filtro «Prueba» solo existe en la pestaña de la prueba: en las demás ni se aplica ni sale. */
+export const filtraLaPrueba = (etapa: EtapaPanel | undefined): boolean => etapa === 'PRUEBA_PUESTO'
+
 /** «Un día» o «Rango»: los dos modos del filtro de fecha. */
 export type ModoDeFecha = 'dia' | 'rango'
 
@@ -1490,6 +1592,11 @@ export interface Filtros {
   fechaHasta: string | null
   /** Estados de la IA marcados. Vacío significa «todos», no «ninguno». */
   calificacion: EstadoDeLaIa[]
+  /**
+   * Estados de la prueba marcados (V89). Vacío es «todos». Se guarda al cambiar
+   * de pestaña, como los demás, pero **solo se aplica en «Prueba del puesto»**.
+   */
+  prueba: EstadoDelFiltroDePrueba[]
 }
 
 export const SIN_FILTROS: Filtros = {
@@ -1504,6 +1611,7 @@ export const SIN_FILTROS: Filtros = {
   fechaDesde: null,
   fechaHasta: null,
   calificacion: [],
+  prueba: [],
 }
 
 // ---------- La fecha, en días del calendario ----------
@@ -1585,7 +1693,13 @@ export const hayFiltroDeFecha = (f: Filtros): boolean =>
     ? f.fechaDia != null
     : (f.fechaDesde != null || f.fechaHasta != null) && !rangoDeFechaAlReves(f)
 
-export const hayFiltroPuesto = (f: Filtros): boolean =>
+/**
+ * ⚠️ **`etapa` decide si cuenta el filtro «Prueba»**: fuera de la pestaña de la
+ * prueba no se aplica, así que tampoco cuenta como puesto. Sin `etapa` —quien
+ * llama no la sabe— no cuenta.
+ */
+export const hayFiltroPuesto = (f: Filtros, etapa?: EtapaPanel): boolean =>
+  (filtraLaPrueba(etapa) && (f.prueba ?? []).length > 0) ||
   f.texto.trim() !== '' ||
   f.ciudades.length > 0 ||
   f.notaMin != null ||
@@ -1600,8 +1714,8 @@ export const hayFiltroPuesto = (f: Filtros): boolean =>
  * que no filtra —un rango al revés, o las fechas del modo que no está elegido—.
  * Un botón que no borra nada estaría encendido para nada.
  */
-export const hayAlgoQueBorrar = (f: Filtros): boolean =>
-  hayFiltroPuesto(f) ||
+export const hayAlgoQueBorrar = (f: Filtros, etapa?: EtapaPanel): boolean =>
+  hayFiltroPuesto(f, etapa) ||
   f.fechaDia != null ||
   f.fechaDesde != null ||
   f.fechaHasta != null
@@ -1626,10 +1740,16 @@ export const hayAlgoQueBorrar = (f: Filtros): boolean =>
  *
  * Todos se combinan con «y».
  */
-export function filtrarFino(filas: FilaRanking[], filtros: Filtros): FilaRanking[] {
+export function filtrarFino(
+  filas: FilaRanking[],
+  filtros: Filtros,
+  etapa?: EtapaPanel,
+): FilaRanking[] {
   const buscado = paraBuscar(filtros.texto)
   const porCiudad = new Set(filtros.ciudades)
   const porIa = new Set<string>(filtros.calificacion)
+  // Solo en la pestaña de la prueba (V89): en las demás, marcado o no, no recorta.
+  const porPrueba = new Set<string>(filtraLaPrueba(etapa) ? (filtros.prueba ?? []) : [])
   const conFecha = hayFiltroDeFecha(filtros)
 
   return filas.filter((fila) => {
@@ -1670,8 +1790,35 @@ export function filtrarFino(filas: FilaRanking[], filtros: Filtros): FilaRanking
 
     if (porIa.size > 0 && !porIa.has(fila.estadoCalificacion)) return false
 
+    if (porPrueba.size > 0 && (fila.estadoPrueba == null || !porPrueba.has(fila.estadoPrueba))) {
+      return false
+    }
+
     return true
   })
+}
+
+/**
+ * Cuántas filas hay en cada estado de la prueba, para la cifra de cada casilla
+ * de la sección «Prueba» (V89).
+ *
+ * ⚠️ **De las filas DEL CORTE, sin los filtros finos**: la spec pide «cuántas
+ * hay en el corte». Así, en «Pendiente» la casilla «No la completó» dice 0 —ahí
+ * no salen— y marcarla no promete filas que el corte no tiene.
+ */
+export function cuantasPorPrueba(filas: FilaRanking[]): Record<EstadoDelFiltroDePrueba, number> {
+  const cuenta: Record<EstadoDelFiltroDePrueba, number> = {
+    CALIFICADA: 0,
+    PENDIENTE_CALIFICACION: 0,
+    NO_COMPLETADA: 0,
+    EN_CURSO: 0,
+    SIN_EMPEZAR: 0,
+  }
+  for (const fila of filas) {
+    const estado = fila.estadoPrueba as EstadoDelFiltroDePrueba | null | undefined
+    if (estado != null && estado in cuenta) cuenta[estado] += 1
+  }
+  return cuenta
 }
 
 /**
@@ -1757,7 +1904,24 @@ export function calificacionDicha(f: Filtros): string | null {
   return `IA: ${lista}`
 }
 
-export type ClaveDeFiltro = 'fecha' | 'calificacion' | 'ciudad' | 'nota' | 'pretension'
+/**
+ * «Prueba: No la completó», «Prueba: Calificada o En curso» (V89). Con los
+ * nombres tal cual se leen en la tabla y en las casillas.
+ */
+export function pruebaDicha(f: Filtros): string | null {
+  const marcadas = f.prueba ?? []
+  if (marcadas.length === 0) return null
+  const nombres = ESTADOS_DE_LA_PRUEBA.filter((e) => marcadas.includes(e.codigo)).map(
+    (e) => e.nombre as string,
+  )
+  const lista =
+    nombres.length === 1
+      ? nombres[0]!
+      : `${nombres.slice(0, -1).join(', ')} o ${nombres[nombres.length - 1]!}`
+  return `Prueba: ${lista}`
+}
+
+export type ClaveDeFiltro = 'fecha' | 'calificacion' | 'prueba' | 'ciudad' | 'nota' | 'pretension'
 
 export interface FiltroActivo {
   clave: ClaveDeFiltro
@@ -1795,10 +1959,13 @@ export function filtrosActivos(
     ciudades.find((c) => c.codigo === codigo)?.nombre ?? codigo
   const fecha = fechaDicha(f, anioActual)
   const ia = calificacionDicha(f)
+  // Solo en la pestaña de la prueba (V89): fuera de ella no recorta, y no se dice.
+  const prueba = filtraLaPrueba(etapa) ? pruebaDicha(f) : null
 
   const activos: (FiltroActivo | null)[] = [
     fecha ? { clave: 'fecha', texto: fecha } : null,
     ia ? { clave: 'calificacion', texto: ia } : null,
+    prueba ? { clave: 'prueba', texto: prueba } : null,
     f.ciudades.length > 0
       ? { clave: 'ciudad', texto: `Ciudad: ${f.ciudades.map(nombreDeCiudad).join(', ')}` }
       : null,
@@ -1824,6 +1991,8 @@ export function quitarFiltro(f: Filtros, clave: ClaveDeFiltro): Filtros {
       return { ...f, fechaDia: null, fechaDesde: null, fechaHasta: null }
     case 'calificacion':
       return { ...f, calificacion: [] }
+    case 'prueba':
+      return { ...f, prueba: [] }
     case 'ciudad':
       return { ...f, ciudades: [] }
     case 'nota':
@@ -2399,6 +2568,8 @@ export function describirFiltro(
     // La fecha y la IA, con las mismas palabras que su etiqueta en la pantalla.
     fechaDicha(filtros, anioActual),
     calificacionDicha(filtros),
+    // V89: solo en la pestaña de la prueba, que es donde recorta.
+    filtraLaPrueba(etapa) ? pruebaDicha(filtros) : null,
     filtros.ciudades.length > 0
       ? `Ciudad: ${filtros.ciudades.map(nombreDeCiudad).join(', ')}`
       : null,

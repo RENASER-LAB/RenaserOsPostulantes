@@ -32,7 +32,7 @@ cinco acciones y el candidato no distingue "tengo que hacer algo" de "no tengo q
 | `PERFIL_TURNO_CANDIDATO` | Perfil | **Sí** | Evaluación |
 | `PERFIL_CALIFICANDO` | Perfil | No (sistema) | — |
 | `PERFIL_POR_CONFIRMAR` | Perfil | No (equipo) | — |
-| `PRUEBA_TURNO_CANDIDATO` | Prueba | **Sí**, salvo con `pruebaSinCompletar` | Prueba del puesto (también la escrita en el editor de una vacante nueva) **o** cuestionario técnico — lo dice la vacante, ver 2.9 y 2.9b. Si su prueba del editor quedó sin completar, ya no le toca: ver 2.9 |
+| `PRUEBA_TURNO_CANDIDATO` | Prueba | **Sí**, salvo con `pruebaSinCompletar` | Prueba del puesto (también la escrita en el editor de una vacante nueva) **o** cuestionario técnico — lo dice la vacante, ver 2.9 y 2.9b. Si su prueba del editor quedó sin completar, ya no le toca, salvo que el equipo le dé más tiempo: ver 2.9 |
 | `PRUEBA_CALIFICANDO` | Prueba | No (sistema) | — |
 | `PRUEBA_POR_CONFIRMAR` | Prueba | No (equipo) | — |
 | `SIMULACION_POR_HABILITAR` | Simulación | No (equipo) | — |
@@ -436,10 +436,12 @@ refresca en el mismo momento, porque postular puede dejar ya un aviso.
 
 ⚠️ **`pruebaSinCompletar` cambia lo que dice una fila en `PRUEBA_TURNO_CANDIDATO`.** Su prueba del
 editor venció con algo pendiente, el intento se cerró y la postulación sigue en ese estado hasta
-que el equipo cierre su proceso: sin este dato, el portal le seguiría diciendo que abra una prueba
-que ya no puede rendir. Con él, la fila dice «Tu tiempo terminó y la prueba quedó sin completar»,
-sin botón, y no cuenta como algo que le toca. Lo resuelven `momentoDeLaEtapa` y
-`leTocaAlCandidatoEn` en `src/dominio/estados.ts`, para «Mis procesos» y el seguimiento.
+que el equipo le dé más tiempo o cierre su proceso: sin este dato, el portal le seguiría diciendo
+que abra una prueba que ya no puede rendir. Con él, la fila dice «Tu tiempo terminó y la prueba
+quedó sin completar», sin botón, y no cuenta como algo que le toca. Lo resuelven
+`momentoDeLaEtapa` y `leTocaAlCandidatoEn` en `src/dominio/estados.ts`, para «Mis procesos» y el
+seguimiento. **Si el equipo le da más tiempo** (18/11/2026), `pruebaSinCompletar` vuelve a llegar
+falso: ese texto deja de verse y la fila vuelve a ofrecerle su prueba, sin cambiar nada del portal.
 
 🚫 **`grupoPrioridad` llega en la respuesta y NUNCA debe pintarse aquí.** Es la clasificación
 interna del equipo, y esta es la pantalla del candidato: nadie tiene que enterarse por su propio
@@ -459,7 +461,9 @@ candidato entienda `diasSinCambio` sin que parezca abandono.
 algo, la prueba está disponible, no continúa, se cerró, confirmamos tu retiro— le deja también un
 aviso en la campana ligado a su proceso, que suma en `avisosSinLeer` de esa fila y al pulsarlo
 abre ese proceso. Lo mismo los recordatorios de la evaluación sin entregar —desde la `V78`, solo
-el primero, porque el Perfil Integral no tiene fecha— y de la prueba sin empezar. Si el equipo lo movió sin avisarle, no aparece nada. La campana se vuelve a pedir al
+el primero, porque el Perfil Integral no tiene fecha— y de la prueba sin empezar. Desde el
+18/11/2026, también «Tienes más tiempo para tu prueba» cuando el equipo le da una fecha nueva para
+una prueba que no completó, con el mismo texto que el correo y el WhatsApp. Si el equipo lo movió sin avisarle, no aparece nada. La campana se vuelve a pedir al
 abrirla y después de entregar la evaluación, postular o retirarse, sin esperar a recargar la
 página.
 
@@ -678,7 +682,8 @@ dos pestañas entregan a la vez, la segunda recibe un 409 («Esta evaluación ya
 ### 2.9 Prueba del puesto — **dos formas incompatibles en una sola pantalla**
 `GET /portal/prueba/{uuid}` → `estadoIntento` (`PENDIENTE`|`EN_CURSO`|`ENTREGADA`), `modalidad`,
 `iniciadoEn`, `venceEn`, `duracionMinutos`, `enunciado`, `materiales`, `herramientasPermitidas`,
-`cambioTexto`, `preguntas[]`, `entregables[]`, y desde el 10/10/2026 `totalPreguntas`.
+`cambioTexto`, `preguntas[]`, `entregables[]`, desde el 10/10/2026 `totalPreguntas` y desde el
+18/11/2026 `fechaConcedidaAMano` (ver «Con su fecha puesta a mano», más abajo).
 
 ⚠️ **Antes de «Empezar» no llega el contenido** (decisión del 10/10/2026, «nada antes del
 reloj»), en las dos pruebas: `preguntas` llega vacía, y `enunciado`, `materiales`, `consigna` y el
@@ -736,6 +741,16 @@ entrega lo que hayas guardado.». El diálogo lleva `aPruebaDeDobleClic` y su fo
 «Aún no»: un doble clic en «Empezar prueba» no arranca el reloj, y uno en «Sí, empezar» manda un
 solo `POST /inicio`. **La de plantilla, en curso, sigue toda en vertical.**
 
+**Con su fecha puesta a mano, el tiempo es esa fecha** (18/11/2026). Si el equipo le fijó la fecha
+con «El plazo de esta persona» —también si lo hizo después de darle más tiempo—, al empezar el
+reloj llega hasta ella y los minutos no cuentan, así que la celda «Tiempo» dice **«Hasta la fecha
+límite»** y la de «Fecha límite» añade «hora de Lima»; la entradilla dice «desde ahí tienes hasta la
+fecha límite», y la condición y el diálogo hablan de la fecha, no del cronómetro. En los demás
+casos sigue «N min · desde que pulses Empezar · o hasta la fecha límite, si llega antes», también
+para quien recibió más tiempo sin haberla abierto: su cronómetro arranca al pulsar «Empezar» y la
+fecha nueva es solo el tope. Lo decide el servidor en `fechaConcedidaAMano`, con la misma regla con
+que arranca el reloj; `loQueDiceLaPrevia.ts` solo lo lee.
+
 **La prueba escrita en el editor de la vacante (01/10/2026).** Es la de toda vacante nueva y entra
 por la misma pantalla (`src/paginas/prueba/Prueba.tsx`), con `delEditor: true`; en curso la pinta
 `PruebaDelEditor.tsx`. **Desde el 05/10/2026 es una sola prueba**, haya o no entregables:
@@ -771,7 +786,13 @@ Diferencias con la de plantilla:
   termina con algo pendiente queda sin completar y no se califica.
 - **Al vencer**, con todo completo se entrega sola; si falta algo, `estadoIntento` llega
   `NO_COMPLETADA` y la pantalla dice **«Tu tiempo terminó y la prueba quedó sin completar»**, sin
-  nada que hacer. Su proceso no cambia de etapa: el equipo lo ve y lo cierra.
+  nada que hacer. Su proceso no cambia de etapa: el equipo lo ve y, desde el 18/11/2026, le da más
+  tiempo o lo cierra.
+- **Si le dan más tiempo**, le llega el aviso por correo, campana y, si escribió al bot, WhatsApp:
+  «Tienes más tiempo para la prueba de {vacante}, hasta el {fecha} (hora de Lima). Entra a Mis
+  procesos para continuarla.». La prueba vuelve a `EN_CURSO` con lo que había respondido y subido y
+  el reloj cuenta hasta la fecha nueva; si nunca la abrió, vuelve a la pantalla previa, sin ver nada
+  antes de «Empezar». Para reabrirla el portal no necesitó cambios: lee el estado de siempre.
 
 
 ### 2.9b Cuestionario técnico — la OTRA forma de esa misma etapa (30/08/2026)

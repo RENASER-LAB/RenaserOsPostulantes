@@ -24,7 +24,7 @@ import type { MiPrueba } from '@/api/tipos'
 import { fechaLargaDeLima } from '@/dominio/horaDeLima'
 import { TextoPlano } from '@/ui/TextoPlano'
 import { comoSeEntrega } from './Entregable'
-import { condicionDe, cuantasPreguntas, fechaLimiteDe } from './loQueDiceLaPrevia'
+import { comoCorreElTiempo, condicionDe, cuantasPreguntas, fechaLimiteDe } from './loQueDiceLaPrevia'
 import estilos from './Prueba.module.css'
 
 interface Celda {
@@ -52,17 +52,20 @@ function FechaEnDosLineas({ instante }: { instante: string }) {
 /**
  * Las celdas que tienen algo que decir, en su orden.
  *
- * El tiempo: con reloj, sus minutos, y si además hay fecha límite, que la fecha puede acortarlos
- * —gana la que llegue antes, y lo decide el servidor al empezar—. Sin reloj y con fecha, hasta la
- * fecha. Sin reloj ni fecha, sus días desde que se empiece.
+ * El tiempo, como lo cuenta `comoCorreElTiempo`: con reloj, sus minutos, y si además hay fecha
+ * límite, que la fecha puede acortarlos —gana la que llegue antes, y lo decide el servidor al
+ * empezar—. Sin reloj y con fecha, hasta la fecha. Sin reloj ni fecha, sus días desde que se
+ * empiece. **Con la fecha puesta a mano, hasta esa fecha aunque haya minutos**: el reloj no los
+ * aplicará (revisión del 18/11/2026), y la fecha dice que es la hora de Lima.
  */
 function celdasDe(prueba: MiPrueba): Celda[] {
   const celdas: Celda[] = []
   const fecha = fechaLimiteDe(prueba)
+  const tiempo = comoCorreElTiempo(prueba)
   const preguntas = cuantasPreguntas(prueba)
   const obligatorios = prueba.entregables.filter((e) => e.esObligatorio).length
 
-  if (prueba.duracionMinutos) {
+  if (tiempo === 'reloj') {
     celdas.push({
       etiqueta: 'Tiempo',
       valor: `${prueba.duracionMinutos} min`,
@@ -71,9 +74,9 @@ function celdasDe(prueba: MiPrueba): Celda[] {
         ...(fecha ? ['o hasta la fecha límite, si llega antes'] : []),
       ],
     })
-  } else if (fecha) {
+  } else if (tiempo === 'fecha') {
     celdas.push({ etiqueta: 'Tiempo', valor: 'Hasta la fecha límite', matices: [] })
-  } else if (prueba.plazoDias) {
+  } else if (tiempo === 'dias') {
     celdas.push({
       etiqueta: 'Tiempo',
       valor: `${prueba.plazoDias} ${prueba.plazoDias === 1 ? 'día' : 'días'}`,
@@ -81,7 +84,11 @@ function celdasDe(prueba: MiPrueba): Celda[] {
     })
   }
   if (fecha) {
-    celdas.push({ etiqueta: 'Fecha límite', valor: <FechaEnDosLineas instante={fecha} />, matices: [] })
+    celdas.push({
+      etiqueta: 'Fecha límite',
+      valor: <FechaEnDosLineas instante={fecha} />,
+      matices: prueba.fechaConcedidaAMano ? ['hora de Lima'] : [],
+    })
   }
   if (preguntas > 0) {
     celdas.push({ etiqueta: 'Preguntas', valor: String(preguntas), matices: [] })
