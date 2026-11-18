@@ -41,7 +41,7 @@ cinco acciones y el candidato no distingue "tengo que hacer algo" de "no tengo q
 | `VALIDACION_POR_HABILITAR` | Validación | No (equipo) | — |
 | `VALIDACION_TURNO_CANDIDATO` | Validación | **Sí, pero sin pantalla** | ⚠️ hoy lleva al detalle del proceso |
 | `VALIDACION_POR_CONFIRMAR` | Validación | No (responsable) | — |
-| `DECISION_TURNO_CANDIDATO` | Decisión | **Sí, pero sin API** | ⚠️ pantalla informativa, sin formulario |
+| `DECISION_TURNO_CANDIDATO` | Decisión | **Sí, pero sin API** | ⚠️ formulario entero y apagado (`fieldset disabled`), hasta que haya ruta |
 | `DECISION_POR_CONFIRMAR` | Decisión | No (responsable) | — |
 | `CONTRATADO` | — final | No | Resultado |
 | `NO_CONTINUA` | — final | No | Resultado |
@@ -1012,7 +1012,7 @@ falla, pero el 403 es posible y las pantallas de simulación deberían saber pin
 | 4 | Validación y Decisión con botones que no llevan a nada | Prometen una acción que no existe |
 | 5 | Tres acciones de privacidad que suenan iguales | Riesgo de borrar datos por error |
 | 6 | "Te avisaremos por correo" | ⚠️ El correo sale con `transporte: log` **por defecto**: hoy no sale. Es una promesa que el sistema puede no cumplir. Desde el 07/10/2026 el texto dice «por correo y en la campana», y la campana sí recibe cada cambio de etapa; que el correo llegue en producción **falta comprobarlo** |
-| 7 | El saludo depende de un nombre que puede no existir | Se degrada en silencio en otro navegador |
+| 7 | El saludo depende de un nombre que puede no existir | **Resuelto**: al entrar, el portal pide `GET /auth/sesion` (`quienSoy`), que trae el nombre, también desde otro navegador |
 | 8 | Consentimientos con poco sitio | **Resuelto de otra manera** (15/09/2026): el texto ya no se pinta dentro del formulario. Las casillas llevan un título corto y un enlace a la política, que los enseña enteros. Lo que hay que vigilar ahora es el enlace: si se rompe, el consentimiento deja de estar informado |
 
 ---

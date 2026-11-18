@@ -44,9 +44,10 @@ vacantes (modelo Indeed), el panel se construye en este repositorio, bajo `/admi
   ver «Gestión de personas: el menú lateral, los colaboradores y contratar». La «Pruebas» de hoy
   no es la sección de plantillas que se retiró el 05/10/2026: ver ««Pruebas»: el índice de lo
   escrito en el editor» y «La sección «Pruebas» se retiró», al final.
-- ⚠️ **Huecos del backend, comprobados el 27/08**: `GET /panel/bandeja` devuelve 500; y **no hay
-  forma de listar las versiones de una plantilla de prueba**, solo de pedir una suelta por su
-  id. Se enseña lo que existe, como hizo el portal con la decisión ámbar.
+- ⚠️ **Hueco del backend, comprobado el 27/08**: `GET /panel/bandeja` devuelve 500. Se enseña
+  lo que existe, como hizo el portal con la decisión ámbar.
+  (Lo de listar las versiones de una plantilla se cerró el 31/08: existe
+  `GET /plantillas-prueba/{id}/versiones` — ver más abajo.)
   (Lo de `POST /vacantes/{id}/cierre-prueba` en inglés se cerró: hoy contesta en castellano
   que esa vacante no rinde una prueba del puesto, y el panel ni ofrece el control ahí — ver
   «El plazo de la prueba se ve antes de cambiarlo».)
@@ -96,7 +97,7 @@ escrito, obligatorio. Manda `NO_CONTINUA` a `POST /postulaciones/{id}/transicion
 
 | Qué | Cómo se decide |
 |---|---|
-| Si el botón se ve | `puedeMoverPostulacion` de la ficha, no una lista de roles en el navegador. El login solo devuelve token e id: no hay endpoint de «mis permisos» |
+| Si el botón se ve | `puedeMoverPostulacion` de la ficha, no una lista de roles en el navegador. `GET /panel/sesion` sí trae los permisos, pero su alcance se decide vacante a vacante, y eso solo lo sabe el backend |
 | Si la postulación ya terminó | `esFinal` del estado en `GET /panel/catalogos`. El botón no sale y una línea lo explica |
 | Qué se manda | Solo `estadoDestino` y `motivo`; el `motivoCierre` lo rellena el backend |
 
@@ -249,10 +250,12 @@ empresa cliente solo ve sus propias pruebas**: las de RENASER ya no se le listan
 La que su vacante de antes ya tenía asignada sí sale, como una opción más, con el nombre que trae
 `pruebaPrestada` del detalle (decisión del usuario); las demás de RENASER no se ofrecen.
 
-⚠️ **`listarVersionesPrueba` tantea ids y deja 404 en la consola.** No es un fallo: es el hueco
-del backend. Va por tandas de ocho en paralelo, sembrado con la versión que la vacante ya tiene
-—ver «La prueba por dentro, y la entrada de las empresas» en la [bitácora de agosto](BITACORA-2026-08.md)—, y el día que exista
-`GET /plantillas-prueba/{id}/versiones` esa función se borra entera.
+**`listarVersionesPrueba` pide `GET /plantillas-prueba/{id}/versiones`** (desde el 31/08), que
+devuelve **todas** las versiones, borradores incluidos: quien elige necesita distinguir «no hay
+ninguna» de «hay una sin publicar», y el `estado` dice cuál se puede usar. Antes tanteaba ids de
+ocho en ocho —ver «La prueba por dentro, y la entrada de las empresas» en la
+[bitácora de agosto](BITACORA-2026-08.md)—: si vuelve a aparecer código que adivina ids, alguien
+deshizo esto.
 
 ⚠️ **Un `<form>` dentro de otro `<form>` lo descarta el navegador**, y su botón de enviar acaba
 enviando el de fuera. Pasó con el formulario de solicitud dentro del de alta: se veía bien y no
@@ -268,7 +271,8 @@ publicada en el portal. ⚠️ Escribe en la base local.
 Cada fila en **borrador o publicada** lleva un lápiz, con el nombre accesible «Editar la vacante
 {título}»: con veinte filas, «Editar» a secas no dice cuál es cuál. En una cerrada no sale.
 Tampoco sale si quien mira no tiene `editar_vacante` o su alcance no llega a esa vacante; lo
-decide el backend fila a fila con `puedeEditar`, porque no hay endpoint de «mis permisos».
+decide el backend fila a fila con `puedeEditar`: `GET /panel/sesion` trae los permisos, pero si el
+alcance llega a una vacante concreta solo lo sabe el backend.
 
 Al pulsarlo se abre **el mismo formulario del alta en un modal** (21/09), con el título «Editar
 vacante» y los datos de ahora, sueldo incluido. Antes se insertaba encima de la tabla y empujaba
@@ -700,9 +704,9 @@ empresa y el de la persona con «Salir». A la izquierda, el menú:
 
 | Qué | Cómo es |
 |---|---|
-| Familias | **Selección** (Vacantes, Pruebas, Simulación), **Personas** (Colaboradores) y, al pie y separada, **Configuración**. Una familia sin entradas no sale, y no hay entradas de módulos futuros. La «Pruebas» de plantillas se quitó el 05/10/2026; la de hoy, el índice, entró el 13/11/2026 con `ver_vacantes` y no sale en el menú de respaldo |
+| Familias | **Selección** (Vacantes, Pruebas, Simulación y, con `editar_presentacion_empresa`, Perfil de la empresa), **Personas** (Colaboradores) y, al pie y separada, **Configuración**. Una familia sin entradas no sale, y no hay entradas de módulos futuros. La «Pruebas» de plantillas se quitó el 05/10/2026; la de hoy, el índice, entró el 13/11/2026 con `ver_vacantes` y no sale en el menú de respaldo |
 | Quién ve qué | Al entrar, el panel pide `GET /panel/sesion` (nombre, correo, empresa y permisos con su alcance) y pinta solo lo que cada uno puede usar, con los permisos que ya exigía cada pantalla. «Colaboradores» pide `ver_colaboradores` con alcance `TODO`. **El Administrador no ve «Vacantes»**, porque esas pantallas ya le daban 403. Si la sesión no carga, salen las tres entradas de siempre —Vacantes, Simulación y Configuración— y el panel sigue funcionando. Es solo para pintar: quien decide sigue siendo el backend |
-| Entrada activa | También en las rutas hijas: `/admin/vacantes/:id` y `/admin/archivadas` marcan «Vacantes»; `/admin/colaboradores/:id`, «Colaboradores». `/admin/pruebas` marca «Pruebas», pero `/admin/pruebas/versiones/:id` no: es de la sección retirada y lleva a Vacantes |
+| Entrada activa | También en las rutas hijas: `/admin/vacantes/:id` y `/admin/archivadas` marcan «Vacantes»; `/admin/colaboradores/:id`, «Colaboradores»; `/admin/empresa`, «Perfil de la empresa». `/admin/pruebas` marca «Pruebas», pero `/admin/pruebas/versiones/:id` no: es de la sección retirada y lleva a Vacantes |
 | Plegar | «Plegar menú» deja una columna de iconos; cada uno conserva su nombre accesible y lo enseña como tooltip. Se recuerda en ese navegador (`renaser_panel_menu_plegado`); sin almacenamiento, sale desplegado |
 | Menos de 1024 px | El menú se oculta y «Menú», en la barra, lo abre como un cajón. Se cierra al elegir una entrada, con Escape o al tocar fuera; el foco no sale de él mientras está abierto y vuelve a «Menú» al cerrarlo |
 

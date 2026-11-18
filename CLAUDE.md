@@ -79,7 +79,7 @@ después**: si necesitas una variante, se declara con nombre en la hoja comparti
 una pantalla, **actualiza DESIGN.md en la misma tanda**.
 
 ⚠️ **A qué base escribes depende de a dónde apunte `API_URL` en `.env.local`.** Con
-`https://18-204-177-210.nip.io` el portal habla con el Spring de AWS y **registrarse o postular
+`https://34-196-100-108.nip.io` el portal habla con el Spring de AWS y **registrarse o postular
 escribe junto a candidatos reales, aunque el portal corra en tu máquina**. Con
 `http://localhost:8081` no toca nada de producción.
 
@@ -101,7 +101,7 @@ El detalle, en [docs/TRABAJAR-EN-LOCAL.md](docs/TRABAJAR-EN-LOCAL.md).
 | Saber dónde está cada carpeta de `src/`, qué lee `impeccable` y qué dependencias hay (y cuáles sobran) | [MAPA-DEL-CODIGO](docs/MAPA-DEL-CODIGO.md) |
 | Entender qué ve y qué hace quien postula, pantalla por pantalla | [02-QUE-VE-EL-CANDIDATO](docs/02-QUE-VE-EL-CANDIDATO.md) |
 | Seguir el proceso entero, los dos lados, con lo que desbloquea cada paso | [06-FLUJO-COMPLETO](docs/06-FLUJO-COMPLETO.md) |
-| Tocar el panel: entrar y recuperar la contraseña, las tres pestañas, el ranking por etapas, qué exige publicar una vacante, corregirla en su modal, archivarla y dónde queda, eliminarla por borrado lógico, el plazo de su prueba, los huecos del backend | [PANEL](docs/PANEL.md) |
+| Tocar el panel: entrar y recuperar la contraseña, el menú lateral, el ranking por etapas, qué exige publicar una vacante, corregirla en su modal, archivarla y dónde queda, eliminarla por borrado lógico, el plazo de su prueba, los huecos del backend | [PANEL](docs/PANEL.md) |
 | Saber qué falta, qué está a medias y qué promesa hoy no se cumple | [PENDIENTES](docs/PENDIENTES.md), [03-ESTADO-DEL-REDISENO](docs/03-ESTADO-DEL-REDISENO.md) |
 | Saber por qué algo quedó así, qué se probó al construirlo o qué se hizo un día concreto | [BITACORA-2026-11](docs/BITACORA-2026-11.md), [BITACORA-2026-10](docs/BITACORA-2026-10.md), [BITACORA-2026-09](docs/BITACORA-2026-09.md), [BITACORA-2026-08](docs/BITACORA-2026-08.md) |
 | Las 17 pantallas del maquetado, que es lo que se lee para construir | [maquetado/LEEME.md](maquetado/LEEME.md) |

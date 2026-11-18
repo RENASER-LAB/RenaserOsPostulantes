@@ -101,15 +101,17 @@ Se acordaron cuatro. Al construir, dos sobraron:
 | Paquete | En qué quedó |
 |---|---|
 | `motion` (import `motion/react`) | **En uso.** ~31 KB, ~15 KB con `LazyMotion`. **Solo fuera del examen**: esa ruta pinta 50-85 preguntas de golpe |
-| `react-hook-form` + `zod` | **En uso.** Registro y postulación. `zod` deja escribir en un sitio los límites del backend (el `@Size(max = 20_000)`) |
-| `@dnd-kit/core` + `@dnd-kit/sortable` | **Instalado y no lo importa nadie.** El `SEC` se resolvió con flechas: arrastrar va mal en un teléfono, y desde el teléfono responde casi todo el mundo. `Formatos.module.css` conserva `.asa` y `.arrastrando` de ese intento: es CSS muerto |
-| `@radix-ui/react-*` | **No se instaló y no hace falta.** Los tres sitios que lo pedían los resuelve el HTML: el aviso de postular es un `dialog` nativo, el recorrido plegable un `details`, y apagar el formulario de la decisión un `fieldset disabled`. Foco atrapado, escape y teclado vienen gratis |
+| `react-hook-form` + `zod` | **`zod` en uso**: deja escribir en un sitio los límites del backend (el `@Size(max = 20_000)`). **`react-hook-form` está instalado y no lo importa nadie** |
+| `@dnd-kit/core` + `@dnd-kit/sortable` | **Instalado y no lo importa nadie.** El `SEC` se resolvió con flechas: arrastrar va mal en un teléfono, y desde el teléfono responde casi todo el mundo. `Formatos.module.css` conserva `.asa` de ese intento: es CSS muerto |
+| `radix-ui` | **Entró con shadcn/ui el 01/10/2026, y solo en `/vacantes`** (`src/ui/shadcn/`). En el resto no hace falta: los tres sitios que lo pedían los resuelve el HTML: el aviso de postular es un `dialog` nativo, el recorrido plegable un `details`, y apagar el formulario de la decisión un `fieldset disabled`. Foco atrapado, escape y teclado vienen gratis |
 
 **Antes de traer nada nuevo, mira si el HTML ya lo resuelve.** Una librería es para lo que
 la plataforma no cubre.
 
 **Estilos: CSS Modules**, no Tailwind. Cero configuración en Vite, nombres de clase en
-español, CSS normal que cualquiera lee.
+español, CSS normal que cualquiera lee. **La excepción es `/vacantes`** desde el 01/10/2026: la
+prueba piloto de shadcn/ui lleva Tailwind v4, sin preflight y con `!important`
+([`tailwind.css`](../src/estilos/tailwind.css)), para no tocar las demás pantallas.
 
 **Lo que NO se añade**, y por qué: ninguna librería de fechas —`src/dominio/reloj.ts` hace
 el cálculo contra el reloj del servidor y es crítico—, ningún gestor de estado —TanStack
