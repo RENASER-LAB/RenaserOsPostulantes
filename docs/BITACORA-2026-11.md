@@ -223,3 +223,13 @@ de estilo del mundo anterior. Se hizo en tres tandas.
 - **Quedan dudosos, sin tocar:** si las «dieciocho pantallas» del candidato siguen siendo
   dieciocho con el perfil público de la empresa, y si la entrada del portal debe pintar el 429
   con `segundosDeEspera` como ya hace la del panel.
+
+## 18/11/2026 · El 429 en la entrada del portal, y las pantallas sin número
+
+- **La entrada del portal no decía cuánto esperar.** Tras cinco intentos fallidos el backend
+  responde 429 con `segundosDeEspera`; el panel lo convertía en «Vuelve a probar en N minutos»
+  y el portal pintaba el texto genérico del backend. Los dos usan ahora
+  `src/api/demasiadosIntentos.ts`.
+- **«Las dieciocho pantallas» del candidato dejó de ser una cifra** en `CLAUDE.md`: con el perfil
+  público de la empresa son 21 rutas, y una cuenta que hay que mantener a mano se queda vieja.
+  Dice «todas», con el enlace a las rutas.

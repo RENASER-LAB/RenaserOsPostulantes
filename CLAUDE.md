@@ -43,7 +43,7 @@ esquinas de 0–4 px y, en la portada, el campo de puntos del sombreador de la r
 WebGL2. **La fuente de verdad son los tokens de [`mundo.css`](src/estilos/mundo.css)**, bloque
 «EL MUNDO NORTHSTAR», y [DESIGN.md](DESIGN.md) los describe con su porqué.
 
-Las **dieciocho** pantallas del candidato y **todo el panel** (`/admin/**`) llevan Northstar.
+**Todas** las pantallas del candidato —las 21 rutas del portal en [`src/app/App.tsx`](src/app/App.tsx), el perfil público de la empresa incluido— y **todo el panel** (`/admin/**`) llevan Northstar.
 
 ⚠️ **Desde el 14/11/2026 el panel también es Northstar.** Ya nadie pone la clase `mundo-panel`
 en `<html>`, así que **los selectores `html:not(.mundo-panel)` / `:root:not(.mundo-panel)` que
