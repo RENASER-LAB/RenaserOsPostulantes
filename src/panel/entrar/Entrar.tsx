@@ -24,7 +24,7 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { z } from 'zod'
-import { ErrorApi } from '@/panel/api/cliente'
+import { textoDeDemasiadosIntentos } from '@/api/demasiadosIntentos'
 import { rutas } from '@/rutas'
 import { IconoAviso } from '@/ui/Iconos'
 import { Campo } from '@/ui/campos/Campo'
@@ -48,23 +48,11 @@ type Errores = Partial<Record<keyof Campos, string>>
 const VACIO: Campos = { correo: '', contrasena: '' }
 
 /**
- * Traduce el fallo del backend.
- *
- * Un 429 trae `segundosDeEspera` en el cuerpo: decir cuánto falta es la
- * diferencia entre esperar y volver a probar cada dos segundos.
+ * Traduce el fallo del backend. El 429, con cuánto falta: el mismo texto que el portal.
  */
 function leerFallo(causa: unknown): string {
-  if (causa instanceof ErrorApi && causa.estado === 429) {
-    const cuerpo = causa.cuerpo as { segundosDeEspera?: number } | null
-    const segundos = cuerpo?.segundosDeEspera
-    if (typeof segundos === 'number' && segundos > 0) {
-      const minutos = Math.ceil(segundos / 60)
-      return minutos <= 1
-        ? 'Demasiados intentos fallidos. Vuelve a probar en un minuto.'
-        : `Demasiados intentos fallidos. Vuelve a probar en ${minutos} minutos.`
-    }
-    return 'Demasiados intentos fallidos. Espera un momento antes de volver a probar.'
-  }
+  const frenado = textoDeDemasiadosIntentos(causa)
+  if (frenado) return frenado
   // El 401 llega con su propio texto: genérico si las credenciales no cuadran
   // —igual exista o no el correo— y explicado si la empresa está suspendida.
   return causa instanceof Error ? causa.message : 'No pudimos entrar.'

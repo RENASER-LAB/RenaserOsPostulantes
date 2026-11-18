@@ -322,8 +322,10 @@ de guiones.
 El segundo no es un caso raro: es la vía normal para toda una tanda de candidatos. Cualquier
 diseño cuya historia de entrada sea solo "correo y contraseña" deja fuera a ese grupo.
 
-Errores que la pantalla tiene que saber pintar: **401** (mismo texto si el correo no existe o si
-la contraseña es otra) y **429** con `Retry-After` y `segundosDeEspera` tras 5 intentos.
+Errores que la pantalla pinta: **401** (mismo texto si el correo no existe o si la contraseña
+es otra) y **429** tras 5 intentos, con cuántos minutos faltan sacados de `segundosDeEspera`
+—«Vuelve a probar en 11 minutos.»—. Desde el 18/11/2026 lo pinta igual que el panel:
+`src/api/demasiadosIntentos.ts`, compartido por los dos.
 
 El login devuelve `{ token, usuarioId, nombre, apellidos }` desde el 05/09/2026, y lo mismo el
 acceso por enlace. Los dos nombres pueden venir vacíos —`persona` los admite en null—, así que
