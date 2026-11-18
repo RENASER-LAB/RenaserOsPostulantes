@@ -10,7 +10,7 @@ mismo editor; la nota mínima con la que una vacante pasa sola a la prueba; «Qu
 CV», lo que cada vacante busca en los currículums; «Pruebas», el índice de lo que la empresa
 escribió en esos editores, con su copia a otra vacante; los informes por etapa de cada
 candidato, en PDF desde la ficha y en un visor; y el «Perfil de la empresa», lo que el candidato
-ve de ella en el portal. El recorrido de los dos lados —equipo y candidato— está en
+ve de ella en el portal, con su brochure en PDF. El recorrido de los dos lados —equipo y candidato— está en
 [06-FLUJO-COMPLETO.md](06-FLUJO-COMPLETO.md).
 
 ---
@@ -38,7 +38,7 @@ vacantes (modelo Indeed), el panel se construye en este repositorio, bajo `/admi
   de la IA, la ficha de cada postulante, avanzar de etapa y contratar), **Pruebas** (el índice de
   las preguntas y pruebas escritas en las vacantes, desde el 13/11/2026), **Simulación** (las
   sesiones presenciales) y **Perfil de la empresa** (cómo se presenta ante el candidato, desde el
-  16/11/2026); en **Personas**, **Colaboradores**; y al pie
+  16/11/2026, y su brochure en PDF, desde el 18/11/2026); en **Personas**, **Colaboradores**; y al pie
   **Configuración** (parámetros, banco de preguntas por Excel, usuarios y roles, áreas, sedes,
   cargos y, solo para la plataforma, las reseñas reportadas). Cada uno ve solo lo que puede usar:
   ver «Gestión de personas: el menú lateral, los colaboradores y contratar». La «Pruebas» de hoy
@@ -1436,7 +1436,7 @@ editor». Todo vive en `src/panel/pruebas/`; las reglas sin pintar, en `indice.t
   para distinguirlo de un enlace del menú, que llega de fuera con su propia búsqueda.
 - **`Pestanas` es común desde esta entrega**: salió de `FichaColaborador.tsx` a
   `src/panel/ui/Pestanas.tsx`. No guarda cuál está elegida: la ficha del colaborador la lleva en su
-  estado y «Pruebas», en la dirección.
+  estado, y «Pruebas» y, desde el 18/11, «Perfil de la empresa», en la dirección.
 
 **Limitaciones conocidas**, anotadas por la QA sin contarlas como defecto: abrir o cerrar la vista
 previa **reemplaza** la entrada del historial, así que Atrás vuelve a la página anterior a
@@ -1578,33 +1578,68 @@ los correos que imprime para quitarla). Las unitarias, en `BarraDeInformes.test.
 `VisorDeInformes.test.tsx` y `Vacante.test.tsx`; en el backend, `FlujoInformesPorEtapaIT`,
 `PdfDelInformeTest`, `RedaccionDelInformeTest` y `AgenteRedactorInformeTest`.
 
-### El perfil de la empresa y el video del puesto (16/11)
+### El perfil de la empresa, su brochure y el video del puesto (16/11 y 18/11)
 
 La empresa cuenta quién es, y el candidato lo lee en el portal junto a cada vacante y en su perfil
-público (ver [02-QUE-VE-EL-CANDIDATO](02-QUE-VE-EL-CANDIDATO.md), 2.2 y 2.2b). Las rutas y las
-reglas están en `docs/` del backend, `09-APIS.md`, «El perfil de la empresa». El módulo vive en
-`src/panel/empresa/` (`PerfilDeLaEmpresa`, `formulario.ts` e `imagenes.ts`), la API en
-`src/panel/api/presentacion.ts` y la regla de los enlaces en `src/dominio/presentacionEmpresa.ts`.
+público (ver [02-QUE-VE-EL-CANDIDATO](02-QUE-VE-EL-CANDIDATO.md), 2.2 y 2.2b); desde el 18/11
+(`V86`) también lo descarga en un brochure en PDF. Las rutas y las reglas están en `docs/` del
+backend, `09-APIS.md`, «El perfil de la empresa». El módulo vive en `src/panel/empresa/`
+(`PerfilDeLaEmpresa`, `formulario.ts`, `imagenes.ts` y, para el brochure, `PestanaBrochure`,
+`brochure.ts` y `MiniaturaDelBrochure`), la API en `src/panel/api/presentacion.ts` y la regla de los
+enlaces en `src/dominio/presentacionEmpresa.ts`.
 
 - **Dónde está.** Una entrada propia del menú, «Perfil de la empresa» (`/admin/empresa`), en
   Selección detrás de Simulación. Solo la ve quien tiene `editar_presentacion_empresa` —Talento,
   Dirección y Administrador—; sin él, la API responde 403 y no se guarda nada. No está en
   Configuración. Siempre es la empresa de quien ha entrado.
-- **Cómo es.** El editor a la izquierda y, a la derecha, una **vista previa en vivo del perfil
-  público** que cambia al escribir. Por debajo de 1280 px la vista previa se abre con el botón
-  «Vista previa». Un solo «Guardar», «Dejarlo» para descartar y «Ver perfil público ↗».
+- **Dos pestañas** (18/11): **«Perfil»**, la de por defecto, y **«Brochure»**, que se recuerda en
+  la dirección (`/admin/empresa?pestana=brochure`). Cambiar de pestaña no pierde lo escrito ni una
+  descarga a medias. Ningún campo ni título dice «opcional».
+- **La pestaña «Perfil».** El editor a la izquierda y, a la derecha, una **vista previa en vivo del
+  perfil público** que cambia al escribir. Por debajo de 1280 px la vista previa se abre con el
+  botón «Vista previa». Un solo «Guardar», «Dejarlo» para descartar y «Ver perfil público ↗».
 - **Los campos, todos opcionales**, en tres bloques. Identidad: logo y portada (JPG o PNG de hasta
   2 MB; se recortan en el navegador a 512 × 512 y a 1600 × 400, y el servidor las vuelve a
   codificar sin metadatos), el nombre y las sedes de solo lectura —con «Gestionar sedes»—, sector,
   tamaño y año de fundación. Presentación: «Quiénes somos» y «Nuestro propósito», con contador
-  «N / 1500», y los beneficios como chips, hasta 12 de 40. Video y enlaces: el video de YouTube o
-  Vimeo, la web y las cinco redes.
+  «N / 1500»; desde el 18/11, «Misión» y «Visión», con contador «N / 400», que no dejan escribir
+  más y, vacías, no salen en la vista previa, ni en el perfil público, ni en el PDF; y los
+  beneficios como chips, hasta 12 de 40. Video y enlaces: el video de YouTube o Vimeo, la web y las
+  cinco redes.
 - **Al guardar.** Se quitan los espacios de los bordes y a un enlace sin `https://` se le pone
   delante. Si algo no vale, «No se guardó nada. Corrige los campos marcados.» y cada campo dice
   su error: «Escribe una dirección web que empiece por https://», «Pega el enlace de un video de
   YouTube o de Vimeo» o «Este enlace no es de Instagram». Si sale bien, «Guardado. Tu perfil y tus
   vacantes publicadas ya lo muestran.»: el cambio llega a todas sus vacantes publicadas sin volver
   a publicarlas. Si falla la red, se conserva lo escrito y dice «No se pudo guardar.».
+- **A 390 px** (18/11). El campo de añadir un beneficio encoge para que «Añadir» quepa —con barra
+  de desplazamiento clásica se salía 9 px y la página se desplazaba de lado—, y un beneficio largo
+  sin espacios se parte dentro de su chip.
+- **La pestaña «Brochure»** (18/11). «Plantilla del brochure», con tres tarjetas —«Clásica», la de
+  por defecto, «Portada» y «Columnas»—, cada una con un dibujo de su primera hoja; «Color», con seis
+  círculos —Azul, Verde, Rojo, Noche, Petróleo y Ciruela, Azul por defecto— que dicen su nombre al
+  lector de pantalla; y «Descargar brochure (PDF)». A la derecha, la miniatura de la primera hoja
+  con lo elegido y la portada guardada: es un dibujo que copia la maqueta, no el PDF. Las tarjetas
+  y los círculos se eligen también con las flechas del teclado.
+- **La plantilla y el color se guardan solos al elegirlos**, sin «Guardar»
+  (`PUT /organizacion/presentacion/brochure`). Si no se guarda, vuelve la elección anterior y dice
+  «No se guardó la elección.». El «Guardar» de «Perfil» ya no los manda, y «Dejarlo» no los
+  descarta. Es una decisión del usuario tras la QA del 18/11, que cambió lo que pedía la spec: una
+  cuarta sección «Brochure» dentro del formulario, guardada con lo demás.
+- **Descargar.** El PDF se arma en el backend con lo **guardado**. Sin «Quiénes somos» guardado,
+  el botón sale desactivado con el chip «Falta «Quiénes somos»»; con cambios sin guardar en
+  «Perfil», sale el chip «Usa lo último guardado». Mientras se arma dice «Generando…» y no se puede
+  volver a pulsar; si falla, «No se pudo armar el brochure.» y se puede repetir. Se abre en otra
+  pestaña, donde el navegador deja verlo, guardarlo o imprimirlo, con el nombre
+  «Brochure - {empresa}.pdf». Si se acaba de elegir una plantilla o un color, espera a que se
+  guarden.
+- **Por qué la pestaña va a la dirección pública.** El botón pide primero el PDF al panel
+  (`GET /organizacion/presentacion/brochure`: comprueba el permiso y que haya «Quiénes somos», y lo
+  deja recordado en el backend) y luego lleva la pestaña a `/api/v1/portal/empresas/{código}/brochure`,
+  el mismo PDF ya armado. Con un `blob:` el visor proponía un nombre aleatorio y, al soltar la
+  dirección, ya no dejaba guardarlo ni volver a él tras pulsar un enlace del PDF. ⚠️ **La pestaña se
+  pide antes de esperar al backend**, como en los informes; si el navegador la bloquea igual, el PDF
+  que trajo el panel se guarda como archivo con su nombre.
 - **«Video del puesto»**, en el formulario de crear y editar vacante (`CamposDeLaVacante`): un
   video propio de esa vacante, con las mismas reglas y errores. Vacío y con la empresa con video,
   el campo enseña el chip «Se usará el video de la empresa» (lo pregunta a
@@ -1614,7 +1649,12 @@ reglas están en `docs/` del backend, `09-APIS.md`, «El perfil de la empresa».
 **Limitaciones conocidas.** EX no sabe si un video es privado, se borró o no se deja incrustar: lo
 dice el propio reproductor al pulsarlo, y debajo sigue «Ver en YouTube» o «Ver en Vimeo». Dentro de
 la app de Android el reproductor puede fallar porque YouTube rechaza algunos orígenes; la salida es
-el mismo enlace. Si dos personas editan a la vez, gana el último guardado.
+el mismo enlace. Si dos personas editan a la vez, gana el último guardado, también con la plantilla
+y el color. Del brochure, la QA del 18/11 dejó fuera tres detalles: en las pestañas «Perfil» y
+«Brochure» el anillo de foco sale recortado (viene del componente común
+`src/panel/ui/Pestanas.tsx`, que usan también la ficha del colaborador y «Pruebas»); la pestaña del PDF pide `/favicon.ico` al
+backend y recibe un 404, sin efecto visible; y **no se comprobó** abrir el brochure dentro de la app
+de Android ni el diálogo de impresión del sistema.
 
 Comprobarlo: `npx playwright test herramientas/e2e/67-proposito-de-la-empresa-qa.spec.ts
 herramientas/e2e/67-proposito-de-la-empresa-qa-movil.spec.ts
@@ -1622,7 +1662,13 @@ herramientas/e2e/68-proposito-de-la-empresa-qa-regresiones.spec.ts`. **Escriben*
 empresas `QA-PROP-8029-*` con sus vacantes y cuentas `qa-prop-8029-*`; la presentación de la
 plataforma se fotografía antes y se devuelve al terminar. Las unitarias, en
 `PerfilDeLaEmpresa.test.tsx`, `formulario.test.ts`, `VideoDelPuesto.test.tsx` y
-`presentacionEmpresa.test.ts`.
+`presentacionEmpresa.test.ts`. El brochure, con `herramientas/e2e/70-brochure-de-la-empresa-qa.spec.ts`,
+`70-brochure-de-la-empresa-qa-movil.spec.ts` y `71-brochure-de-la-empresa-qa-regresiones.spec.ts`,
+que leen el PDF con `pdftotext`, `pdfinfo`, `pdfimages` y `pdftoppm` (de poppler) y **escriben** en
+el clon: empresas `QA-BROCH-08DB-*`, sedes `QA-BROCH-08DB …` y cuentas `qa-broch-08db-*`; la
+presentación de la plataforma, con sus cuatro columnas de la `V86`, se fotografía antes y se
+devuelve al terminar, pero la auditoría de lo guardado se queda. Sus unitarias, en `brochure.test.ts`
+y `PerfilDeEmpresa.test.tsx`, además de las de arriba.
 
 ### La sección «Pruebas» se retiró (05/10)
 

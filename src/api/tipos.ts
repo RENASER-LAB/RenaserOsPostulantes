@@ -128,6 +128,14 @@ export interface PerfilDeEmpresa {
   paginaWeb?: string | null
   redes?: RedPublica[] | null
   vacantes: VacantePublica[]
+  /** Misión y visión (V86). Opcionales: un backend anterior no las manda. */
+  mision?: string | null
+  vision?: string | null
+  /**
+   * La dirección de su brochure en PDF (`/api/v1/portal/empresas/…/brochure`),
+   * o nada si le falta lo mínimo («Quiénes somos») o el backend es anterior.
+   */
+  brochure?: string | null
 }
 
 /**

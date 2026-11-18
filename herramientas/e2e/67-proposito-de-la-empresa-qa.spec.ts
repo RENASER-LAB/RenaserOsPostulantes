@@ -827,8 +827,9 @@ test('AC-17 · AC-21: el perfil de Molinos sin cuenta: nombre, video sin pedir n
   const r = await pedir(`/portal/empresas/${e.molinos.codigo.toLowerCase()}`)
   expect(r.estado).toBe(200)
   expect((r.cuerpo.vacantes as Array<{ id: number }>).map((x) => x.id).sort()).toEqual([v.operario, v.jefe, v.calidad].sort())
-  expect(Object.keys(r.cuerpo).sort()).toEqual(['anioFundacion', 'beneficios', 'ciudad', 'codigo', 'logo', 'nombre', 'paginaWeb',
-    'portada', 'proposito', 'quienesSomos', 'redes', 'sector', 'sedes', 'tamano', 'tamanoTexto', 'vacantes', 'video'])
+  // La V86 (brochure-de-la-empresa) suma `mision`, `vision` y `brochure`, también públicos.
+  expect(Object.keys(r.cuerpo).sort()).toEqual(['anioFundacion', 'beneficios', 'brochure', 'ciudad', 'codigo', 'logo', 'mision', 'nombre',
+    'paginaWeb', 'portada', 'proposito', 'quienesSomos', 'redes', 'sector', 'sedes', 'tamano', 'tamanoTexto', 'vacantes', 'video', 'vision'])
   const crudo = JSON.stringify(r.cuerpo).toLowerCase()
   for (const prohibido of ['pretension', 'postulacion', 'candidato', 'correo', 'responsable', 'nota', 'solicitud']) {
     expect(crudo, `el perfil no trae «${prohibido}»`).not.toContain(prohibido)

@@ -4,10 +4,11 @@
  *
  * Arriba la portada a todo lo ancho, el logo superpuesto (o sus iniciales), el
  * nombre, «Sector · Tamaño · Fundada en AAAA» con lo que haya, la provincia de
- * su primera sede, «Ver vacantes (N)» y «Visitar web». Debajo, en la columna
- * principal: «Quiénes somos», «Nuestro propósito», el video, «Beneficios» y
- * «Vacantes abiertas (N)» con la tarjeta real del tablón; y a la derecha la
- * ficha fija «Datos de la empresa». En el teléfono, todo en una columna con la
+ * su primera sede, «Ver vacantes (N)», «Visitar web» y, desde la V86,
+ * «Descargar brochure (PDF)». Debajo, en la columna principal: «Quiénes somos»,
+ * «Nuestro propósito», «Misión y visión», el video, «Beneficios» y «Vacantes
+ * abiertas (N)» con la tarjeta real del tablón; y a la derecha la ficha fija
+ * «Datos de la empresa». En el teléfono, todo en una columna con la
  * ficha antes que lo demás.
  *
  * **Sin datos no hay bloques vacíos**: sale el nombre con sus vacantes. Una
@@ -23,7 +24,7 @@ import { verPerfilDeEmpresa } from '@/api/portal'
 import type { PerfilDeEmpresa as Perfil } from '@/api/tipos'
 import { esVideoReproducible, lineaDeDatos } from '@/dominio/presentacionEmpresa'
 import { rutas } from '@/rutas'
-import { IconoUbicacion, IconoVisto } from '@/ui/Iconos'
+import { IconoDescargar, IconoUbicacion, IconoVisto } from '@/ui/Iconos'
 import { EnlacesDeLaEmpresa, enlacesDeLaEmpresa } from '@/ui/presentacion/EnlacesDeLaEmpresa'
 import { RecuadroDeVideo } from '@/ui/presentacion/RecuadroDeVideo'
 import { FilaDeVacante, Iniciales } from '@/paginas/vacantes/FilaDeVacante'
@@ -92,6 +93,9 @@ export function ElPerfil({ datos }: { datos: Perfil }) {
   const web = enlaces.find((e) => e.clave === 'WEB')?.href ?? null
   const quienes = recortado(datos.quienesSomos)
   const proposito = recortado(datos.proposito)
+  const mision = recortado(datos.mision)
+  const vision = recortado(datos.vision)
+  const brochure = direccionPublica(datos.brochure)
   const video = esVideoReproducible(datos.video) ? datos.video! : null
   const beneficios = (datos.beneficios ?? []).filter((b) => recortado(b))
   const sedes = (datos.sedes ?? []).filter((s) => recortado(s))
@@ -145,6 +149,12 @@ export function ElPerfil({ datos }: { datos: Perfil }) {
                     Visitar web
                   </a>
                 )}
+                {brochure && (
+                  <a className={estilos.descargarBrochure} href={brochure} target="_blank" rel="noopener noreferrer">
+                    <IconoDescargar tamano={16} />
+                    Descargar brochure (PDF)
+                  </a>
+                )}
               </div>
             </div>
           </div>
@@ -170,6 +180,7 @@ export function ElPerfil({ datos }: { datos: Perfil }) {
               <p className={estilos.texto}>{proposito}</p>
             </section>
           )}
+          <MisionYVision mision={mision} vision={vision} />
           {video && (
             <section className={estilos.seccion} aria-label={`Video de ${datos.nombre}`}>
               <RecuadroDeVideo video={video} empresa={datos.nombre} titulo={`Conoce a ${datos.nombre}`} />
@@ -244,5 +255,42 @@ export function ElPerfil({ datos }: { datos: Perfil }) {
         )}
       </div>
     </div>
+  )
+}
+
+/**
+ * «Misión y visión» (V86), con el estilo de «Quiénes somos»: las dos en dos
+ * columnas, cada una con su subtítulo. Si solo hay una, ocupa el bloque y el
+ * título es el suyo; sin ninguna, no hay bloque.
+ */
+function MisionYVision({ mision, vision }: { mision: string | null; vision: string | null }) {
+  if (!mision && !vision) return null
+  if (!mision || !vision) {
+    const titulo = mision ? 'Misión' : 'Visión'
+    return (
+      <section className={estilos.seccion} aria-labelledby="mision-vision">
+        <h2 className={estilos.tituloSeccion} id="mision-vision">
+          {titulo}
+        </h2>
+        <p className={estilos.texto}>{mision ?? vision}</p>
+      </section>
+    )
+  }
+  return (
+    <section className={estilos.seccion} aria-labelledby="mision-vision">
+      <h2 className={estilos.tituloSeccion} id="mision-vision">
+        Misión y visión
+      </h2>
+      <div className={estilos.misionVision}>
+        <div>
+          <h3 className={estilos.subtitulo}>Misión</h3>
+          <p className={estilos.texto}>{mision}</p>
+        </div>
+        <div>
+          <h3 className={estilos.subtitulo}>Visión</h3>
+          <p className={estilos.texto}>{vision}</p>
+        </div>
+      </div>
+    </section>
   )
 }
