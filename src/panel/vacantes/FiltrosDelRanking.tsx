@@ -24,10 +24,12 @@ import { ahora } from '@/dominio/reloj'
 import {
   ATAJOS_DE_FECHA,
   ESTADOS_DE_LA_IA,
+  ESTADOS_DE_LA_PRUEBA,
   POR_QUE_NO_HAY_CIUDAD,
   SIN_FILTROS,
   atajoDeFecha,
   diaDeHoy,
+  filtraLaPrueba,
   hayAlgoQueBorrar,
   hayFiltroDeFecha,
   laEtapaDe,
@@ -36,6 +38,7 @@ import {
   type CiudadDelRanking,
   type ClaveDeFiltro,
   type EstadoDeLaIa,
+  type EstadoDelFiltroDePrueba,
   type EtapaPanel,
   type FiltroActivo,
   type Filtros,
@@ -149,6 +152,11 @@ interface Props {
   trae: QueTraeLaTanda
   /** Cuántas filas hay en cada estado de la IA, de la tanda sin filtrar. */
   calificaciones: Record<EstadoDeLaIa, number>
+  /**
+   * Cuántas hay en cada estado de la prueba, en el corte (V89). Solo se pinta
+   * en la pestaña «Prueba del puesto».
+   */
+  pruebas?: Record<EstadoDelFiltroDePrueba, number>
   cuantasSeVen: number
   cuantasHabia: number
   /** La cifra de la insignia: cuántas etiquetas hay debajo de la barra. */
@@ -167,6 +175,7 @@ export function FiltrosDelRanking({
   ciudades,
   trae,
   calificaciones,
+  pruebas,
   cuantasSeVen,
   cuantasHabia,
   cuantosPuestos,
@@ -553,6 +562,40 @@ export function FiltrosDelRanking({
                 )}
               </fieldset>
 
+              {/* ---------- Prueba (V89), solo en la pestaña de la prueba ---------- */}
+              {filtraLaPrueba(etapa) && (
+                <fieldset className={estilos.seccion}>
+                  <legend className={estilos.tituloSeccion}>
+                    Prueba
+                    <Puesto si={filtros.prueba.length > 0} />
+                  </legend>
+                  <div className={estilos.casillas}>
+                    {ESTADOS_DE_LA_PRUEBA.map((estado) => {
+                      const marcada = filtros.prueba.includes(estado.codigo)
+                      return (
+                        <label key={estado.codigo} className={estilos.opcion}>
+                          <input
+                            type="checkbox"
+                            checked={marcada}
+                            onChange={() =>
+                              cambiar({
+                                prueba: marcada
+                                  ? filtros.prueba.filter((c) => c !== estado.codigo)
+                                  : [...filtros.prueba, estado.codigo],
+                              })
+                            }
+                          />
+                          {estado.nombre}
+                          <span className={estilos.cuenta} data-cifra>
+                            {pruebas?.[estado.codigo] ?? 0}
+                          </span>
+                        </label>
+                      )
+                    })}
+                  </div>
+                </fieldset>
+              )}
+
               {/* ---------- Ciudad ---------- */}
               <fieldset className={estilos.seccion}>
                 <legend className={estilos.tituloSeccion}>
@@ -696,9 +739,9 @@ export function FiltrosDelRanking({
               <button
                 type="button"
                 className={estilos.borrar}
-                aria-disabled={!hayAlgoQueBorrar(filtros)}
+                aria-disabled={!hayAlgoQueBorrar(filtros, etapa)}
                 onClick={() => {
-                  if (hayAlgoQueBorrar(filtros)) alCambiar(SIN_FILTROS)
+                  if (hayAlgoQueBorrar(filtros, etapa)) alCambiar(SIN_FILTROS)
                 }}
               >
                 Borrar filtros

@@ -53,7 +53,7 @@ export function deDondeSale(c: CriterioDelCandidato): string {
 
 const num = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(2).replace(/\.?0+$/, ''))
 
-function estadoDe(p: Prueba): string {
+function estadoDe(p: Prueba): string | null {
   // Una sola prueba, con o sin entregables (V68): ya no se llama «cuestionario».
   const nombre = 'la prueba'
   const pronombre = 'la'
@@ -67,9 +67,10 @@ function estadoDe(p: Prueba): string {
     case 'EN_CURSO':
       return `Está rindiendo ${nombre}${p.iniciadoEn ? `: ${pronombre} abrió el ${formatearFechaCorta(p.iniciadoEn)}` : ''}.`
     case 'NO_COMPLETADA':
-      return `Su tiempo terminó y ${nombre} quedó sin completar${
-        p.loQueFalta.length > 0 ? `: ${p.loQueFalta.join('; ')}` : ''
-      }. No tiene nota ni sale en el ranking; su proceso espera a que alguien lo cierre.`
+      // V89: lo dice el bloque de arriba de la ficha —«No la completó · se le
+      // acabó el tiempo…» y qué le faltó— junto a «Darle más tiempo». Aquí no se
+      // repite; lo que alcanzó a responder y subir se sigue viendo debajo.
+      return null
     case 'ENTREGADA':
       return `${entregada}${p.entregadoEn ? ` el ${formatearFechaCorta(p.entregadoEn)}` : ''}${
         p.entregaAutomatica ? `, ${sola}, al vencer el tiempo` : ''
@@ -109,7 +110,7 @@ function Contenido({ prueba: p }: { prueba: Prueba }) {
   const seVenLasEntregas = p.estado !== 'SIN_PRUEBA' && p.estado !== 'SIN_EMPEZAR'
   return (
     <>
-      <p className={estilos.dato}>{estadoDe(p)}</p>
+      {estadoDe(p) !== null && <p className={estilos.dato}>{estadoDe(p)}</p>}
       {entregada && (
         <p className={estilos.dato}>
           {p.nota !== null ? (

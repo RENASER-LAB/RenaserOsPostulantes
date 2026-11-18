@@ -1,0 +1,129 @@
+/*
+ * «Darle más tiempo» (V89), arriba de la pestaña de la prueba en la ficha.
+ *
+ * Son las piezas de «El plazo de esta persona» (`CierreDePrueba.module.css`): la
+ * línea de lo que rige en nube hundida, el botón de acento menor y el resultado
+ * sin color. Lo único propio es el chip del motivo junto al botón apagado
+ * —«Vacante archivada»— y el pie de la ventana, que en el teléfono apila los dos
+ * botones.
+ */
+
+.bloque {
+  composes: bloque from './CierreDePrueba.module.css';
+  margin-top: 0;
+  margin-bottom: var(--e5);
+}
+
+.rigeHoy {
+  composes: rigeHoy from './CierreDePrueba.module.css';
+}
+
+/* La segunda línea —qué le faltó, quién le dio más tiempo— en tinta de apoyo. */
+.rigeHoy span {
+  display: block;
+  font-weight: 400;
+  color: var(--tinta2);
+}
+
+.acciones {
+  composes: acciones from './CierreDePrueba.module.css';
+}
+
+.principal {
+  composes: principal from './CierreDePrueba.module.css';
+}
+
+.secundaria {
+  composes: secundaria from './CierreDePrueba.module.css';
+}
+
+/*
+ * El motivo del botón apagado, al lado y no debajo: es una etiqueta, no una
+ * línea de ayuda. Neutro, con su punto, como el resto de chips del panel.
+ */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  min-height: 32px;
+  padding: 0 var(--e3);
+  border: 1px solid var(--regla2);
+  border-radius: var(--radio-menor);
+  background: var(--nube-hundida);
+  color: var(--tinta2);
+  font-size: var(--t-menor);
+  white-space: nowrap;
+}
+
+.chip::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--tinta3);
+}
+
+.resultado {
+  composes: resultado from './CierreDePrueba.module.css';
+  max-width: var(--medida);
+}
+
+.loQueQueda {
+  composes: loQueQueda from './CierreDePrueba.module.css';
+}
+
+.detalle {
+  composes: detalle from './CierreDePrueba.module.css';
+}
+
+.avisoMalo {
+  composes: avisoMalo from './CierreDePrueba.module.css';
+}
+
+/* ---------- La ventana ---------- */
+
+.campos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e4);
+}
+
+.campos input[type='datetime-local'] {
+  max-width: 18rem;
+}
+
+.casilla {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  min-height: 44px;
+  font-size: var(--t-apoyo);
+  cursor: pointer;
+}
+
+.casilla input {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--tinta);
+}
+
+.pie {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--e3);
+  width: 100%;
+}
+
+/* En el teléfono la ventana ocupa la pantalla y los botones se apilan: el principal arriba. */
+@media (max-width: 640px) {
+  .pie {
+    flex-direction: column-reverse;
+  }
+
+  .pie > button {
+    align-self: stretch;
+    width: 100%;
+  }
+}

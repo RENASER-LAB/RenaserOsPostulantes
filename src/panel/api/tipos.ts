@@ -690,6 +690,46 @@ export interface PlazoVigenteDePrueba {
   iniciadoEn: FechaIso | null
   entregadoEn: FechaIso | null
   instrumento: InstrumentoTecnico | null
+  /**
+   * Si no la completó (V89): se le acabó el tiempo con huecos o se le pasó la
+   * fecha sin abrirla. Nulo —o ausente, con un backend anterior— en cualquier
+   * otro caso. Con esto la ficha cambia «El plazo de esta persona» por «Darle
+   * más tiempo».
+   */
+  sinCompletar?: SinCompletarLaPrueba | null
+  /** La última vez que se le dio más tiempo, mientras la prueba siga abierta (V89). */
+  masTiempo?: MasTiempoDado | null
+}
+
+/** Quien no completó la prueba, como lo cuenta su ficha (V89). */
+export interface SinCompletarLaPrueba {
+  /** Su fecha límite: cuándo se le acabó el tiempo. */
+  seAcaboEn: FechaIso | null
+  /** Si nunca la abrió («No la abrió»). */
+  sinAbrir: boolean
+  /** «le faltaron 4 preguntas y «Tablero.xlsx»»; nulo si no la abrió. */
+  queFalto: string | null
+  /** `mover_postulacion`: sin él, «Darle más tiempo» no sale. */
+  puedeMover: boolean
+  /** Por qué el botón sale apagado —«Vacante archivada», «Proceso cerrado»—, o nulo. */
+  bloqueo: string | null
+}
+
+/** Quién, cuándo y por qué se le dio más tiempo (V89). */
+export interface MasTiempoDado {
+  dadoEn: FechaIso
+  dadoPor: string
+  motivo: string
+}
+
+/** Lo que devuelve «Darle más tiempo» (V89). */
+export interface MasTiempoAplicado {
+  postulacionId: number
+  venceEn: FechaIso
+  /** `EN_CURSO` si ya la había abierto; `SIN_EMPEZAR` si no. */
+  estadoPrueba: 'EN_CURSO' | 'SIN_EMPEZAR'
+  /** «correo», «campana» y, con vínculo activo, «WhatsApp». Vacío si no se le avisó. */
+  avisadoPor: string[]
 }
 
 // ---------- Postulaciones ----------
@@ -835,6 +875,14 @@ export interface FilaRanking {
    */
   estadoPrueba?: EstadoPrueba | null
   /**
+   * Las fechas de su prueba del puesto y lo que le faltó (V89), para lo que la celda de la
+   * Nota dice al pasar el ratón: «Se le acabó el tiempo el 18 nov: le faltaron 4 preguntas y
+   * «Tablero.xlsx»», «Sin empezar: tiene hasta el vie 20 nov, 23:59».
+   *
+   * Viaja solo en la pestaña de la prueba y con intento; opcional por un backend anterior.
+   */
+  detallePrueba?: DetalleDeLaPrueba | null
+  /**
    * Cuando se postulo: `postulacion.creado_en`, tal cual. Es lo que filtra la
    * tabla por fecha de postulacion.
    *
@@ -908,18 +956,38 @@ export interface PromedioResenas {
 }
 
 /**
- * Los cuatro puntos en los que puede estar una prueba del puesto.
+ * Los puntos en los que puede estar una prueba del puesto (V89).
  *
- * `NO_APLICA` es que no hay intento del que hablar: la postulacion todavia no
- * llego a la etapa tecnica, o la vacante rinde el cuestionario tecnico. **No es
- * lo mismo que una entrega esperando calificacion**, y confundirlos llena la
- * bandeja del equipo de gente a la que no hay que mirar.
+ * - `NO_COMPLETADA` es «No la completó»: se le acabó el tiempo con algo sin
+ *   responder o sin subir, o se le pasó la fecha sin abrirla. Hasta la V89 se
+ *   llamaba `INCOMPLETA` y juntaba también a quien no había empezado y a quien
+ *   la estaba haciendo; ya no existe.
+ * - `EN_CURSO`: la empezó y su tiempo sigue corriendo.
+ * - `SIN_EMPEZAR`: la tiene y no la ha abierto, con plazo vigente o sin fecha.
+ * - `NO_APLICA` es que no hay intento del que hablar: la postulacion todavia no
+ *   llego a la etapa tecnica, o la vacante rinde el cuestionario tecnico. **No es
+ *   lo mismo que una entrega esperando calificacion**, y confundirlos llena la
+ *   bandeja del equipo de gente a la que no hay que mirar.
  */
 export type EstadoPrueba =
   | 'CALIFICADA'
   | 'PENDIENTE_CALIFICACION'
-  | 'INCOMPLETA'
+  | 'NO_COMPLETADA'
+  | 'EN_CURSO'
+  | 'SIN_EMPEZAR'
   | 'NO_APLICA'
+
+/** Las fechas de la prueba de una fila y lo que le faltó (V89). Todas pueden venir vacías. */
+export interface DetalleDeLaPrueba {
+  /** Cuándo la empezó. */
+  abiertaEn: FechaIso | null
+  /** Cuándo se entregó, o cuándo se cerró sin completar. */
+  entregadaEn: FechaIso | null
+  /** La fecha que rige: la que tiene para hacerla, o la que se le pasó. */
+  venceEn: FechaIso | null
+  /** «le faltaron 4 preguntas y «Tablero.xlsx»»; solo si no la completó con algo respondido. */
+  queFalto: string | null
+}
 
 /**
  * Lo ya rendido: las dos etapas que existen, reescaladas sobre 100.

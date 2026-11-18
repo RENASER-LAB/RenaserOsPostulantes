@@ -75,6 +75,7 @@ import {
   estadoDeMarcarTodo,
   fechaDicha,
   filtrosActivos,
+  cuantasPorPrueba,
   hayAlgoQueBorrar,
   hayFiltroDeFecha,
   hayFiltroPuesto,
@@ -307,32 +308,100 @@ describe('el motivo del guion, en dos palabras', () => {
 
 describe('lo que dice la celda de la prueba del puesto', () => {
   /*
-    ⚠️ **El hueco de la nota tenía tres causas y la tabla escribía una sola
-    frase: «sin cerrar».** No se parecen en nada:
-
-      1. No la terminó —ni la abrió, o la dejó a medias—.
-      2. El sistema la cerró al vencer el plazo, con lo que hubiera.
-      3. La entregó una persona y su rúbrica todavía no tiene nota.
-
-    Solo la tercera es trabajo del equipo. Las dos primeras son la misma cosa
-    —no hubo entrega— y por eso comparten texto.
+    ⚠️ **El hueco de la nota tiene cuatro causas con nombre propio (V89)**:
+    «Pendiente de calificación», «No la completó», «En curso» y «Sin empezar».
+    «Prueba incompleta» ya no existe: juntaba a quien la estaba haciendo con
+    quien se le acabó el tiempo.
 
     ⚠️ **Y no se deduce aquí**: llega decidido en `estadoPrueba`, porque desde
-    el navegador los tres casos se ven idénticos —una nota vacía—.
+    el navegador los casos se ven idénticos —una nota vacía—.
   */
-  const enLaPrueba = (estadoPrueba: FilaRanking['estadoPrueba']) =>
-    fila('PRUEBA_POR_CONFIRMAR', null, { estadoPrueba })
+  const enLaPrueba = (
+    estadoPrueba: FilaRanking['estadoPrueba'],
+    detallePrueba: FilaRanking['detallePrueba'] = null,
+  ) => fila('PRUEBA_TURNO_CANDIDATO', null, { estadoPrueba, detallePrueba })
 
-  it('sin entrega del candidato, la prueba está incompleta', () => {
-    expect(porQueNoHayNotaCorto(enLaPrueba('INCOMPLETA'), 'PRUEBA_PUESTO')).toBe(
-      'Prueba incompleta',
-    )
-  })
+  // 23:00 UTC del 18/11 son las 18:00 de Lima del mismo día; el «ahora» va fijo para el año.
+  const AHORA = Date.parse('2026-11-18T15:00:00Z')
 
-  it('entregada por una persona y todavía sin nota, espera al equipo', () => {
+  it('cada estado tiene su etiqueta, y ninguna dice «Prueba incompleta» (AC-03, AC-04)', () => {
+    expect(porQueNoHayNotaCorto(enLaPrueba('SIN_EMPEZAR'), 'PRUEBA_PUESTO')).toBe('Sin empezar')
+    expect(porQueNoHayNotaCorto(enLaPrueba('EN_CURSO'), 'PRUEBA_PUESTO')).toBe('En curso')
+    expect(porQueNoHayNotaCorto(enLaPrueba('NO_COMPLETADA'), 'PRUEBA_PUESTO')).toBe('No la completó')
     expect(porQueNoHayNotaCorto(enLaPrueba('PENDIENTE_CALIFICACION'), 'PRUEBA_PUESTO')).toBe(
       'Pendiente de calificación',
     )
+    for (const estado of ['SIN_EMPEZAR', 'EN_CURSO', 'NO_COMPLETADA', 'PENDIENTE_CALIFICACION'] as const) {
+      expect(porQueNoHayNota(enLaPrueba(estado), 'PRUEBA_PUESTO')).not.toMatch(/incompleta/i)
+    }
+  })
+
+  it('«No la completó» al pasar el ratón: cuándo se le acabó y qué le faltó (AC-01)', () => {
+    const suya = enLaPrueba('NO_COMPLETADA', {
+      abiertaEn: '2026-11-18T20:00:00Z',
+      entregadaEn: '2026-11-18T21:41:00Z',
+      venceEn: '2026-11-18T21:40:00Z',
+      queFalto: 'le faltaron 4 preguntas y «Tablero.xlsx»',
+    })
+    expect(loDeLaPrueba(suya, 'PRUEBA_PUESTO', AHORA)?.entero).toBe(
+      'Se le acabó el tiempo el 18 nov: le faltaron 4 preguntas y «Tablero.xlsx»',
+    )
+    expect(loDeLaPrueba(suya, 'PRUEBA_PUESTO', AHORA)?.marcado).toBe(true)
+  })
+
+  it('a quien no la abrió: «sin abrirla» (AC-02)', () => {
+    const suya = enLaPrueba('NO_COMPLETADA', {
+      abiertaEn: null,
+      entregadaEn: null,
+      venceEn: '2026-11-17T23:00:00Z',
+      queFalto: null,
+    })
+    expect(loDeLaPrueba(suya, 'PRUEBA_PUESTO', AHORA)?.entero).toBe(
+      'Se le acabó el tiempo el 17 nov sin abrirla',
+    )
+  })
+
+  /* El día es el de Lima: las 03:00 UTC del 19 todavía son el 18 allí. */
+  it('la fecha se dice en hora de Lima, no en UTC', () => {
+    const suya = enLaPrueba('NO_COMPLETADA', {
+      abiertaEn: null,
+      entregadaEn: null,
+      venceEn: '2026-11-19T03:00:00Z',
+      queFalto: null,
+    })
+    expect(loDeLaPrueba(suya, 'PRUEBA_PUESTO', AHORA)?.entero).toContain('el 18 nov')
+  })
+
+  it('en curso, sin empezar y pendiente dicen su fecha al pasar el ratón', () => {
+    expect(
+      loDeLaPrueba(
+        enLaPrueba('EN_CURSO', { abiertaEn: '2026-11-18T16:00:00Z', entregadaEn: null, venceEn: null, queFalto: null }),
+        'PRUEBA_PUESTO',
+        AHORA,
+      )?.entero,
+    ).toBe('En curso: la abrió el 18 nov y su tiempo sigue corriendo')
+    expect(
+      loDeLaPrueba(
+        enLaPrueba('SIN_EMPEZAR', { abiertaEn: null, entregadaEn: null, venceEn: '2026-11-21T04:59:00Z', queFalto: null }),
+        'PRUEBA_PUESTO',
+        AHORA,
+      )?.entero,
+    ).toBe('Sin empezar: tiene hasta el vie 20 nov, 23:59')
+    expect(loDeLaPrueba(enLaPrueba('SIN_EMPEZAR'), 'PRUEBA_PUESTO', AHORA)?.entero).toBe(
+      'Sin empezar: todavía no la ha abierto',
+    )
+    expect(
+      loDeLaPrueba(
+        enLaPrueba('PENDIENTE_CALIFICACION', {
+          abiertaEn: null,
+          entregadaEn: '2026-11-16T17:00:00Z',
+          venceEn: null,
+          queFalto: null,
+        }),
+        'PRUEBA_PUESTO',
+        AHORA,
+      )?.entero,
+    ).toBe('Pendiente de calificación: la entregó el 16 nov y su rúbrica todavía no tiene nota')
   })
 
   /*
@@ -341,7 +410,7 @@ describe('lo que dice la celda de la prueba del puesto', () => {
     de siempre —el que dice dónde está parada esa persona—.
   */
   it('quien no llegó a la etapa técnica conserva su indicador y nunca espera al equipo', () => {
-    const suya = enLaPrueba('NO_APLICA')
+    const suya = fila('PRUEBA_POR_CONFIRMAR', null, { estadoPrueba: 'NO_APLICA' })
     expect(loDeLaPrueba(suya, 'PRUEBA_PUESTO')).toBeNull()
     expect(porQueNoHayNotaCorto(suya, 'PRUEBA_PUESTO')).toBe('sin cerrar')
     expect(porQueNoHayNotaCorto(suya, 'PRUEBA_PUESTO')).not.toBe('Pendiente de calificación')
@@ -365,6 +434,7 @@ describe('lo que dice la celda de la prueba del puesto', () => {
   it('en las otras pestañas el estado de la prueba no dice nada', () => {
     for (const etapa of ['PERFIL_INTEGRAL', 'SIMULACION', 'DECISION'] as const) {
       expect(loDeLaPrueba(enLaPrueba('PENDIENTE_CALIFICACION'), etapa)).toBeNull()
+      expect(loDeLaPrueba(enLaPrueba('NO_COMPLETADA'), etapa)).toBeNull()
     }
   })
 
@@ -382,13 +452,101 @@ describe('lo que dice la celda de la prueba del puesto', () => {
     arrastrar la copia vieja.
   */
   it('el título explica el mismo caso, sin rastro del texto viejo', () => {
-    for (const estado of ['INCOMPLETA', 'PENDIENTE_CALIFICACION'] as const) {
+    for (const estado of ['EN_CURSO', 'SIN_EMPEZAR', 'PENDIENTE_CALIFICACION'] as const) {
       const corto = porQueNoHayNotaCorto(enLaPrueba(estado), 'PRUEBA_PUESTO')
       const entero = porQueNoHayNota(enLaPrueba(estado), 'PRUEBA_PUESTO')
       expect(entero.startsWith(corto)).toBe(true)
       expect(entero.length).toBeGreaterThan(corto.length)
       expect(entero).not.toContain('sin cerrar')
     }
+  })
+})
+
+describe('quien no la completó solo sale en «Toda la tanda» (V89, AC-01, AC-02)', () => {
+  const noLaCompleto = (estado: string) =>
+    fila(estado, null, { estadoPrueba: 'NO_COMPLETADA' })
+  const tanda = [
+    fila('PRUEBA_POR_CONFIRMAR', 80, { estadoPrueba: 'CALIFICADA' }),
+    fila('PRUEBA_TURNO_CANDIDATO', null, { estadoPrueba: 'EN_CURSO' }),
+    fila('PRUEBA_TURNO_CANDIDATO', null, { estadoPrueba: 'SIN_EMPEZAR' }),
+    noLaCompleto('PRUEBA_TURNO_CANDIDATO'),
+    noLaCompleto('NO_CONTINUA'),
+  ]
+
+  it('no está en «Pendiente» ni en «Le toca al candidato», y sí en el total', () => {
+    expect(filtrar(tanda, 'PRUEBA_PUESTO', 'le-toca')).toHaveLength(2)
+    expect(filtrar(tanda, 'PRUEBA_PUESTO', 'por-revisar')).toHaveLength(1)
+    expect(filtrar(tanda, 'PRUEBA_PUESTO', 'toda')).toHaveLength(5)
+    expect(recuentos(tanda, 'PRUEBA_PUESTO')).toEqual({ 'por-revisar': 1, 'le-toca': 2, toda: 5 })
+  })
+
+  it('marcar «No la completó» en «Le toca al candidato» no devuelve filas ni cambia el corte (AC-05)', () => {
+    const filtros = { ...SIN_FILTROS, prueba: ['NO_COMPLETADA' as const] }
+    expect(filtrarFino(filtrar(tanda, 'PRUEBA_PUESTO', 'le-toca'), filtros, 'PRUEBA_PUESTO')).toHaveLength(0)
+    expect(filtrarFino(filtrar(tanda, 'PRUEBA_PUESTO', 'por-revisar'), filtros, 'PRUEBA_PUESTO')).toHaveLength(0)
+    expect(filtrarFino(filtrar(tanda, 'PRUEBA_PUESTO', 'toda'), filtros, 'PRUEBA_PUESTO')).toHaveLength(2)
+  })
+
+  it('«Abrir ficha» del visor la abre en «Toda la tanda» (AC-19)', () => {
+    expect(corteDondeSeVe(noLaCompleto('PRUEBA_TURNO_CANDIDATO'), 'PRUEBA_PUESTO')).toBe('toda')
+    expect(
+      corteDondeSeVe(fila('PRUEBA_TURNO_CANDIDATO', null, { estadoPrueba: 'EN_CURSO' }), 'PRUEBA_PUESTO'),
+    ).toBe('le-toca')
+  })
+
+  it('en las otras pestañas su estado de prueba no mueve el corte', () => {
+    expect(corteDondeSeVe(noLaCompleto('PERFIL_TURNO_CANDIDATO'), 'PERFIL_INTEGRAL')).toBe('le-toca')
+  })
+
+  it('la línea de cifras la cuenta aparte y las categorías siguen sumando (AC-01)', () => {
+    const c = cifrasDeLaEtapa(tanda, 'PRUEBA_PUESTO')
+    expect(c.noLaCompletaron).toBe(2)
+    expect(c.sinHacerla).toBe(2)
+    expect(c.sinHacerla + c.hechasSinNota + c.enOtraEtapa + c.noLaCompletaron).toBe(c.sinNota)
+  })
+})
+
+describe('el filtro «Prueba» (V89, AC-05)', () => {
+  const tanda = [
+    fila('PRUEBA_POR_CONFIRMAR', 80, { estadoPrueba: 'CALIFICADA' }),
+    fila('PRUEBA_CALIFICANDO', null, { estadoPrueba: 'PENDIENTE_CALIFICACION' }),
+    fila('PRUEBA_TURNO_CANDIDATO', null, { estadoPrueba: 'NO_COMPLETADA' }),
+    fila('PRUEBA_TURNO_CANDIDATO', null, { estadoPrueba: 'EN_CURSO' }),
+    fila('PERFIL_POR_CONFIRMAR', null, { estadoPrueba: 'NO_APLICA' }),
+  ]
+
+  it('cada casilla cuenta las del corte que le llega', () => {
+    expect(cuantasPorPrueba(tanda)).toEqual({
+      CALIFICADA: 1,
+      PENDIENTE_CALIFICACION: 1,
+      NO_COMPLETADA: 1,
+      EN_CURSO: 1,
+      SIN_EMPEZAR: 0,
+    })
+  })
+
+  it('se pueden marcar varias, y vacío es todas', () => {
+    expect(filtrarFino(tanda, SIN_FILTROS, 'PRUEBA_PUESTO')).toHaveLength(5)
+    const dos = { ...SIN_FILTROS, prueba: ['CALIFICADA' as const, 'EN_CURSO' as const] }
+    expect(filtrarFino(tanda, dos, 'PRUEBA_PUESTO').map((f) => f.estadoPrueba)).toEqual([
+      'CALIFICADA',
+      'EN_CURSO',
+    ])
+  })
+
+  it('deja su etiqueta con su «×» y «Borrar filtros» la quita', () => {
+    const filtros = { ...SIN_FILTROS, prueba: ['NO_COMPLETADA' as const] }
+    const puestos = filtrosActivos(filtros, 'PRUEBA_PUESTO', [], 2026)
+    expect(puestos).toEqual([{ clave: 'prueba', texto: 'Prueba: No la completó' }])
+    expect(quitarFiltro(filtros, 'prueba').prueba).toEqual([])
+    expect(hayFiltroPuesto(filtros, 'PRUEBA_PUESTO')).toBe(true)
+  })
+
+  it('en otra pestaña ni se aplica ni se dice', () => {
+    const filtros = { ...SIN_FILTROS, prueba: ['NO_COMPLETADA' as const] }
+    expect(filtrarFino(tanda, filtros, 'PERFIL_INTEGRAL')).toHaveLength(5)
+    expect(filtrosActivos(filtros, 'PERFIL_INTEGRAL', [], 2026)).toEqual([])
+    expect(hayFiltroPuesto(filtros, 'PERFIL_INTEGRAL')).toBe(false)
   })
 })
 
@@ -586,21 +744,22 @@ describe('los tres cortes', () => {
   de verdad es `V9__semillas.sql` en el repositorio del backend.
 */
 describe('el corte donde se ve a una persona («Abrir ficha» del visor)', () => {
+  const en = (estado: string) => ({ estado, estadoPrueba: null })
   it('quien espera una decisión se ve en «Pendiente»', () => {
-    expect(corteDondeSeVe('PERFIL_POR_CONFIRMAR', 'PERFIL_INTEGRAL')).toBe('por-revisar')
+    expect(corteDondeSeVe(en('PERFIL_POR_CONFIRMAR'), 'PERFIL_INTEGRAL')).toBe('por-revisar')
   })
   it('quien tiene algo que hacer se ve en «Le toca al candidato»', () => {
-    expect(corteDondeSeVe('PERFIL_TURNO_CANDIDATO', 'PERFIL_INTEGRAL')).toBe('le-toca')
+    expect(corteDondeSeVe(en('PERFIL_TURNO_CANDIDATO'), 'PERFIL_INTEGRAL')).toBe('le-toca')
   })
   it('quien ya pasó de largo, espera al sistema o terminó solo se ve en «Toda la tanda»', () => {
-    expect(corteDondeSeVe('PRUEBA_TURNO_CANDIDATO', 'PERFIL_INTEGRAL')).toBe('toda')
-    expect(corteDondeSeVe('PERFIL_CALIFICANDO', 'PERFIL_INTEGRAL')).toBe('toda')
-    expect(corteDondeSeVe('NO_CONTINUA', 'PERFIL_INTEGRAL')).toBe('toda')
+    expect(corteDondeSeVe(en('PRUEBA_TURNO_CANDIDATO'), 'PERFIL_INTEGRAL')).toBe('toda')
+    expect(corteDondeSeVe(en('PERFIL_CALIFICANDO'), 'PERFIL_INTEGRAL')).toBe('toda')
+    expect(corteDondeSeVe(en('NO_CONTINUA'), 'PERFIL_INTEGRAL')).toBe('toda')
   })
   it('cuadra con el corte que lo pinta, en todas las etapas y estados', () => {
     for (const { codigo } of ETAPAS_PANEL) {
       for (const estado of ESTADOS) {
-        const corte = corteDondeSeVe(estado, codigo)
+        const corte = corteDondeSeVe(en(estado), codigo)
         if (corte === 'por-revisar') expect(esperaALaEmpresa(estado, codigo)).toBe(true)
         if (corte === 'le-toca') expect(leTocaAlCandidato(estado, codigo)).toBe(true)
         if (corte === 'toda') {
@@ -690,6 +849,7 @@ describe('las cifras de la etapa', () => {
       sinHacerla: 1,
       hechasSinNota: 1,
       enOtraEtapa: 0,
+      noLaCompletaron: 0,
     })
   })
 
@@ -2478,6 +2638,12 @@ describe('de qué recorte salió la hoja', () => {
     expect(describirFiltro('PERFIL_INTEGRAL', 'toda', SIN_FILTROS, null, [])).toContain(
       'Orden del ranking',
     )
+  })
+
+  it('el filtro «Prueba» viaja con su etiqueta, solo en la pestaña de la prueba (V89)', () => {
+    const filtros = { ...SIN_FILTROS, prueba: ['NO_COMPLETADA' as const] }
+    expect(describirFiltro('PRUEBA_PUESTO', 'toda', filtros, null, [])).toContain('Prueba: No la completó')
+    expect(describirFiltro('PERFIL_INTEGRAL', 'toda', filtros, null, [])).not.toContain('Prueba:')
   })
 
   it('la ciudad va por su nombre y no por su código de ubigeo', () => {

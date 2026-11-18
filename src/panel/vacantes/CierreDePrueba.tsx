@@ -705,6 +705,13 @@ export function PlazoDeUnaPersona({
   const sinControl =
     plazo.data !== undefined && (!plazo.data.existeIntento || plazo.data.entregadoEn !== null)
 
+  /*
+    V89: a quien no completó la prueba se le da más tiempo con su propio bloque,
+    arriba de la ficha («Darle más tiempo»). Aquí no se pinta nada: este bloque
+    decía «Entregó el … El plazo ya no cambia», falso para quien no entregó.
+  */
+  if (plazo.data?.sinCompletar) return null
+
   if (plazo.isPending) {
     return (
       <div className={estilos.bloque}>

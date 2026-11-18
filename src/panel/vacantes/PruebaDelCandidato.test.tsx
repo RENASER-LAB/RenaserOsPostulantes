@@ -260,7 +260,7 @@ describe('la prueba de un candidato, criterio a criterio (AC-25)', () => {
     expect(linea.textContent).toContain(': El tablero estaba completo')
   })
 
-  it('sin completar: lo que le faltó, sin nota ni ajuste (AC-11)', async () => {
+  it('sin completar: se ve lo que respondió, sin nota ni ajuste ni la frase de «no sale en el ranking» (V89, AC-15)', async () => {
     ver.mockResolvedValue(
       prueba({
         estado: 'NO_COMPLETADA',
@@ -271,11 +271,12 @@ describe('la prueba de un candidato, criterio a criterio (AC-25)', () => {
       }),
     )
     pintar()
-    const estado = await screen.findByText(/quedó sin completar/)
-    expect(estado.textContent).toContain('le faltaron 2 preguntas')
-    expect(screen.queryByText(/Nota de la prueba/)).toBeNull()
-    const criterios = screen.getAllByRole('list')[0]!
+    const criterios = (await screen.findAllByRole('list'))[0]!
     expect(within(criterios).getAllByText('—').length).toBeGreaterThan(0)
+    expect(screen.queryByText(/Nota de la prueba/)).toBeNull()
+    // Lo de arriba de la ficha lo dice «Darle más tiempo»: aquí ya no se repite.
+    expect(screen.queryByText(/No tiene nota ni sale en el ranking/)).toBeNull()
+    expect(screen.queryByText(/quedó sin completar/)).toBeNull()
   })
 
   it('sin entregables ya no es «cuestionario» (V68): es la prueba, en femenino', async () => {

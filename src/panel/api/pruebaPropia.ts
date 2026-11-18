@@ -117,25 +117,6 @@ export const moverEntregable = (vacanteId: number, entregableId: number, direcci
 export const fijarFechaLimite = (vacanteId: number, datos: { cierraEn: string; motivo: string | null }) =>
   pedir<EditorDePreguntas>(`${base(vacanteId)}/fecha-limite`, { metodo: 'PUT', cuerpo: datos })
 
-// ---------- Quienes no la completaron ----------
-
-/**
- * Quien dejó vencer el tiempo con algo sin responder: no sale en el ranking de
- * la prueba y su proceso espera a que alguien lo cierre.
- */
-export interface NoCompleto {
-  postulacionId: number
-  candidato: string
-  estado: string
-  /** «le faltaron 3 preguntas», «le faltó «Tablero.xlsx»». */
-  queFalto: string
-  cerradaEn: string | null
-  procesoCerrado: boolean
-}
-
-export const verQuienesNoCompletaron = (vacanteId: number) =>
-  pedir<NoCompleto[]>(`${base(vacanteId)}/no-completaron`)
-
 // ---------- La ficha: la prueba de un candidato ----------
 
 export interface OpcionDelCandidato {

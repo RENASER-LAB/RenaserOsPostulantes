@@ -96,12 +96,14 @@ import {
   cuantasApagadas,
   criteriosQueSePintan,
   cuantasPorCalificacion,
+  cuantasPorPrueba,
   cuantoCubre,
   describirFiltro,
   esDelCurriculum,
   estadoDeMarcarTodo,
   filtrar,
   filtrarFino,
+  noLaCompleto,
   filtrosActivos,
   hayFiltroPuesto,
   laEtapaDe,
@@ -149,7 +151,7 @@ import { OrigenDeLasPreguntas, usePreguntasListas } from './preguntas/OrigenDeLa
 import { PruebaDeLaVacante, rindeLaPruebaPropia, usePruebaLista } from './preguntas/PruebaDeLaVacante'
 import { PesosDeLaDecision } from './PesosDeLaDecision'
 import { PruebaDelCandidato } from './PruebaDelCandidato'
-import { NoCompletaron } from './NoCompletaron'
+import { ElTiempoDeLaPrueba } from './MasTiempoDeLaPrueba'
 import { NotaMinimaDelPase } from './NotaMinimaDelPase'
 import { turnoDeLaVacante } from './turnoDeLaVacante'
 import { loQueFaltaParaPublicar } from './loQueFaltaParaPublicar'
@@ -361,7 +363,7 @@ export function VacantePanelDetalle() {
   if (corteDeLaQuery === 'pendiente' && ranking.data && etapa === etapaDeLaQuery) {
     setCorteDeLaQuery('puesto')
     const suya = ranking.data.filas.find((f) => f.postulacionId === postulanteDeLaQuery)
-    if (suya) setVista(corteDondeSeVe(suya.estado, etapa))
+    if (suya) setVista(corteDondeSeVe(suya, etapa))
   }
 
   const [fallo, setFallo] = useState<string | null>(null)
@@ -833,13 +835,6 @@ export function VacantePanelDetalle() {
             }}
           />
         )}
-        {/* V67: quien dejó vencer la prueba del editor con huecos no sale en la tabla. */}
-        {etapa === 'PRUEBA_PUESTO' && rindeLaPruebaPropia(v) && ranking.data && (
-          <NoCompletaron
-            vacanteId={vacanteId}
-            puedeMover={!archivada && ranking.data.puedeMoverPostulacion}
-          />
-        )}
         </div>
       </section>
 
@@ -1039,7 +1034,8 @@ function Ranking({
     la pantalla desde la que se pidió.
   */
   const delCorte = filtrar(filas, etapa, vista)
-  const filtradas = filtrarFino(delCorte, filtros)
+  // El filtro «Prueba» solo recorta en su pestaña (V89): por eso viaja la etapa.
+  const filtradas = filtrarFino(delCorte, filtros, etapa)
   const visibles =
     buscaAlgo && porLoBuscado ? ordenarPorLoBuscado(filtradas) : ordenar(filtradas, orden)
 
@@ -1229,6 +1225,15 @@ function Ranking({
     // Uno a uno, no en paralelo: si el backend rechaza a alguien, el mensaje
     // dice a quien, y los demas no se pierden por ello.
     for (const fila of marcadosVisibles) {
+      /*
+        V89: quien no completó la prueba no se avanza —no tiene nada que
+        calificar—. El backend también lo impide; aquí no se llega a pedirlo y la
+        barra dice por qué con las palabras de la tabla. A los demás sí.
+      */
+      if (noLaCompleto(fila, etapa)) {
+        fallaron.push(`${fila.candidato} (no completó la prueba)`)
+        continue
+      }
       try {
         await confirmarAvance(fila.postulacionId, motivo.trim())
         avanzaron.push(fila.candidato)
@@ -1336,6 +1341,10 @@ function Ranking({
                     ? `${cifras.sinHacerla} sin hacerla todavía`
                     : null,
                   cifras.enOtraEtapa > 0 ? `${cifras.enOtraEtapa} en otra etapa` : null,
+                  // V89: quienes no completaron la prueba, que solo salen en «Toda la tanda».
+                  cifras.noLaCompletaron > 0
+                    ? `${cifras.noLaCompletaron} no la ${cifras.noLaCompletaron === 1 ? 'completó' : 'completaron'}`
+                    : null,
                 ]
                   .filter(Boolean)
                   .join(' · ')}
@@ -1494,6 +1503,8 @@ function Ranking({
         trae={trae}
         // De la tanda SIN filtrar, como las ciudades: ver `cuantasPorCalificacion`.
         calificaciones={cuantasPorCalificacion(filas)}
+        // Las de la prueba, en el corte (V89): «cuántas hay en el corte».
+        pruebas={cuantasPorPrueba(delCorte)}
         cuantasSeVen={visibles.length}
         cuantasHabia={delCorte.length}
         puedeDescargar={seExportaAExcel(etapa)}
@@ -1802,7 +1813,11 @@ function Ranking({
                         Estado al lado diciendo cuál.
                       */
                       <span
-                        className={estilos.porQue}
+                        className={
+                          noLaCompleto(fila, etapa)
+                            ? `${estilos.porQue} ${estilos.porQueMarcado}`
+                            : estilos.porQue
+                        }
                         title={porQueNoHayNota(fila, etapa)}
                       >
                         {porQueNoHayNotaCorto(fila, etapa)}
@@ -2238,6 +2253,7 @@ function BarraDeFiltros({
   ciudades,
   trae,
   calificaciones,
+  pruebas,
   cuantasSeVen,
   cuantasHabia,
   puedeDescargar,
@@ -2261,6 +2277,8 @@ function BarraDeFiltros({
   trae: QueTraeLaTanda
   /** Cuántas hay en cada estado de la IA, de la tanda sin filtrar. */
   calificaciones: Record<EstadoDeLaIa, number>
+  /** Cuántas hay en cada estado de la prueba, en el corte (V89). */
+  pruebas: ReturnType<typeof cuantasPorPrueba>
   cuantasSeVen: number
   cuantasHabia: number
   puedeDescargar: boolean
@@ -2278,7 +2296,7 @@ function BarraDeFiltros({
   const [masAbierto, setMasAbierto] = useState(false)
   const idMas = `mas-acciones-${etapa}`
 
-  const puesto = hayFiltroPuesto(filtros)
+  const puesto = hayFiltroPuesto(filtros, etapa)
   /*
     La insignia y las etiquetas salen de la MISMA lista: contadas en dos sitios,
     la cifra del botón y las etiquetas de debajo acabarían discrepando.
@@ -2311,6 +2329,7 @@ function BarraDeFiltros({
           ciudades={ciudades}
           trae={trae}
           calificaciones={calificaciones}
+          pruebas={pruebas}
           cuantasSeVen={cuantasSeVen}
           cuantasHabia={cuantasHabia}
           cuantosPuestos={puestos.length}
@@ -2630,6 +2649,14 @@ function DetalleDelPostulante({
       </div>
 
       <div className={estilos.columnaDetalle}>
+        {/*
+          V89: arriba, si no la completó —«No la completó · se le acabó el
+          tiempo…» y «Darle más tiempo»— o quién le dio más tiempo. En las dos
+          pruebas: la del editor y la de plantilla (que solo puede no abrirse).
+        */}
+        {etapa === 'PRUEBA_PUESTO' && (
+          <ElTiempoDeLaPrueba postulacionId={fila.postulacionId} candidato={fila.candidato} />
+        )}
         {etapa === 'PRUEBA_PUESTO' && pruebaPropia ? (
           <>
             {/*

@@ -906,29 +906,67 @@ describe('la celda de la prueba del puesto dice en qué punto está', () => {
     return within(laTabla())
   }
 
-  it('separa la que nadie terminó de la que espera al equipo', async () => {
+  it('cada fila dice en qué va su prueba, y ninguna «Prueba incompleta» (V89, AC-03, AC-04)', async () => {
     const tabla = await laPestanaDeLaPrueba([
-      enLaPrueba(95, 'Sin Terminar', 'PRUEBA_TURNO_CANDIDATO', 'INCOMPLETA'),
+      enLaPrueba(95, 'Sin Abrir', 'PRUEBA_TURNO_CANDIDATO', 'SIN_EMPEZAR'),
       enLaPrueba(96, 'Entregada A Mano', 'PRUEBA_POR_CONFIRMAR', 'PENDIENTE_CALIFICACION'),
+      enLaPrueba(97, 'La Está Haciendo', 'PRUEBA_TURNO_CANDIDATO', 'EN_CURSO'),
     ])
 
-    expect(tabla.getByText('Prueba incompleta')).toBeTruthy()
+    expect(tabla.getByText('Sin empezar')).toBeTruthy()
+    expect(tabla.getByText('En curso')).toBeTruthy()
     expect(tabla.getByText('Pendiente de calificación')).toBeTruthy()
-    // Y la copia anterior no sobrevive en ninguna fila.
+    // Y las copias anteriores no sobreviven en ninguna fila.
     expect(tabla.queryByText('sin cerrar')).toBeNull()
+    expect(tabla.queryByText('Prueba incompleta')).toBeNull()
   })
 
   /*
-    La que cerró el sistema al vencer el plazo NO es una entrega: mientras no
-    tenga nota se lee igual que una prueba a medias, que es lo que es.
+    Quien no la completó sale en la tabla, solo en «Toda la tanda» (V89): con
+    «No la completó» en tinta y qué le faltó al pasar el ratón.
   */
-  it('la que cerró el sistema al vencer el plazo no pasa por entrega', async () => {
+  it('quien no la completó sale en «Toda la tanda» y no en «Le toca al candidato» (AC-01)', async () => {
     const tabla = await laPestanaDeLaPrueba([
-      enLaPrueba(95, 'Se Le Acabó', 'PRUEBA_POR_CONFIRMAR', 'INCOMPLETA'),
+      fila(95, 'Beto Gil', 'PRUEBA_TURNO_CANDIDATO', null, {
+        estadoPrueba: 'NO_COMPLETADA',
+        detallePrueba: {
+          abiertaEn: '2026-11-18T20:00:00Z',
+          entregadaEn: '2026-11-18T21:41:00Z',
+          venceEn: '2026-11-18T21:40:00Z',
+          queFalto: 'le faltaron 4 preguntas y «Tablero.xlsx»',
+        },
+      }),
+      enLaPrueba(96, 'La Está Haciendo', 'PRUEBA_TURNO_CANDIDATO', 'EN_CURSO'),
     ])
 
-    expect(tabla.getByText('Prueba incompleta')).toBeTruthy()
-    expect(tabla.queryByText('Pendiente de calificación')).toBeNull()
+    const etiqueta = tabla.getByText('No la completó')
+    expect(etiqueta.getAttribute('title')).toMatch(
+      /^Se le acabó el tiempo el 18 nov.*: le faltaron 4 preguntas y «Tablero\.xlsx»$/,
+    )
+    expect(screen.getByText(/1 no la completó/)).toBeTruthy()
+
+    verCorte('Le toca al candidato')
+    await waitFor(() => expect(within(laTabla()).queryByText('La Está Haciendo')).toBeTruthy())
+    expect(within(laTabla()).queryByText('Beto Gil')).toBeNull()
+  })
+
+  /* «Avanzar» no la mueve (V89, AC-06): a los demás marcados sí. */
+  it('«Avanzar» no mueve a quien no la completó y la barra dice por qué', async () => {
+    avanzar.mockResolvedValue({})
+    await laPestanaDeLaPrueba([
+      fila(95, 'Beto Gil', 'PRUEBA_TURNO_CANDIDATO', null, { estadoPrueba: 'NO_COMPLETADA' }),
+      enLaPrueba(96, 'Ana Calificada', 'PRUEBA_POR_CONFIRMAR', 'CALIFICADA', 80),
+    ])
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Avanza Beto Gil' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Avanza Ana Calificada' }))
+    fireEvent.change(screen.getByLabelText('Motivo (obligatorio)'), { target: { value: 'Pasan' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Avanzar a 2 personas' }))
+
+    await waitFor(() =>
+      expect(screen.getByText(/No avanzaron: Beto Gil \(no completó la prueba\)/)).toBeTruthy(),
+    )
+    expect(avanzar.mock.calls.map((c) => c[0])).toEqual([96])
+    expect(screen.getByText(/Avanzaron: Ana Calificada\./)).toBeTruthy()
   })
 
   /*
@@ -4522,12 +4560,6 @@ vi.mock('../api/preguntasPropias', async (original) => ({
   verPreguntasPropias: (id: number, ruta?: string) => verLaPruebaPropia(id, ruta),
   elegirOrigenDePreguntas: (id: number, origen: string) => elegirOrigen(id, origen),
 }))
-// «No completaron la prueba»: solo la pide una vacante con la prueba del editor.
-const verNoCompletaron = vi.fn(() => Promise.resolve([] as unknown[]))
-vi.mock('../api/pruebaPropia', async (original) => ({
-  ...(await original<typeof import('../api/pruebaPropia')>()),
-  verQuienesNoCompletaron: () => verNoCompletaron(),
-}))
 
 describe('una vacante nueva rinde la prueba de su editor (V67)', () => {
   const conLaPrueba = (estado: 'BORRADOR' | 'PUBLICADA', vacante: Record<string, unknown> = {}) => {
@@ -4590,22 +4622,13 @@ describe('una vacante nueva rinde la prueba de su editor (V67)', () => {
   */
   it('la pestaña de la prueba no monta el lote de la plantilla (AC-15)', async () => {
     conLaPrueba('PUBLICADA', { estado: 'PUBLICADA' })
-    verNoCompletaron.mockResolvedValueOnce([
-      {
-        postulacionId: 77,
-        candidato: 'Saúl Vence',
-        estado: 'PRUEBA_TURNO_CANDIDATO',
-        queFalto: 'le faltó 1 pregunta',
-        cerradaEn: null,
-        procesoCerrado: false,
-      },
-    ])
     // Rita entregó y espera a la persona que califica: con la plantilla, el lote la contaría.
     await pintar([...TANDA, fila(97, 'Rita Entregó', 'PRUEBA_CALIFICANDO', null)])
     irA('Prueba del puesto')
 
-    // La pestaña es la de la prueba del editor: su lista aparte sí está.
-    expect(await screen.findByText(/No completaron la prueba \(1\)/)).toBeTruthy()
+    // La pestaña es la de la prueba del editor, y la lista aparte ya no existe (V89).
+    await waitFor(() => expect(losCortes()).toBeTruthy())
+    expect(screen.queryByText(/No completaron la prueba/)).toBeNull()
     expect(screen.queryByRole('heading', { name: 'Las notas de la prueba' })).toBeNull()
     expect(screen.queryByRole('button', { name: /Ver qué le falta/ })).toBeNull()
   })

@@ -82,6 +82,16 @@ const filaDe = async (vacante: number, postulacion: number) =>
     (f: any) => f.postulacionId === postulacion,
   )
 
+/** El texto de un `datetime-local` en hora de Lima, dentro de `dias` días (V89: «Hasta» es hora de Lima). */
+function enLimaDentroDeDias(dias: number): string {
+  const partes = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Lima',
+    year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+  }).formatToParts(new Date(Date.now() + dias * 86_400_000))
+  const de = (t: string) => partes.find((p) => p.type === t)!.value
+  return `${de('year')}-${de('month')}-${de('day')}T${de('hour')}:${de('minute')}`
+}
+
 /** Espera al barrido de vencimientos (cada 60 s en el backend). */
 async function esperarAlBarrido(postulaciones: number[]) {
   await expect
@@ -436,7 +446,7 @@ test.describe('La prueba del puesto escrita en el editor', () => {
     expect(estadoDe(quien.ana.postulacion)).toBe('PRUEBA_POR_CONFIRMAR')
   })
 
-  test('recorrido 6: vencer con huecos deja la prueba sin completar; con todo, se entrega sola (AC-11)', async ({ page }) => {
+  test('recorrido 6: vencer con huecos deja la prueba sin completar, en la tabla y con «Darle más tiempo»; con todo, se entrega sola (AC-11, V89)', async ({ page }) => {
     // El barrido de vencimientos pasa cada 60 s: esperarlo no cabe en los 60 s por defecto.
     test.setTimeout(180_000)
     quien.beto = await candidataEnLaPrueba(equipo, vacanteA, 'Beto', correos)
@@ -461,36 +471,68 @@ test.describe('La prueba del puesto escrita en el editor', () => {
     expect(trabajosDeIaDe([quien.beto.postulacion])).toBe(0)
     expect((await entregarLaPrueba(quien.beto)).estado).toBe(409)
 
-    // No sale en el ranking ni en su Excel
-    const ranking = await exigir<any>(`/panel/vacantes/${vacanteA}/ranking?etapa=PRUEBA_PUESTO`, equipo)
-    expect(ranking.filas.map((f: any) => f.postulacionId)).not.toContain(quien.beto.postulacion)
+    // V89: sale en el ranking, sin nota y con lo que le faltó; y en su Excel, con la nota en blanco
+    const suFilaPorApi = await filaDe(vacanteA, quien.beto.postulacion)
+    expect(suFilaPorApi.estadoPrueba).toBe('NO_COMPLETADA')
+    expect(suFilaPorApi.notaEtapa).toBeNull()
+    expect(suFilaPorApi.detallePrueba.queFalto).toBe('le faltaron 4 preguntas y «Tablero.xlsx»')
     const ruta = test.info().outputPath('ranking-prueba.xlsx')
     writeFileSync(ruta, await excelPorLaApi(vacanteA, 'PRUEBA_PUESTO',
       [quien.ana.postulacion, quien.beto.postulacion, quien.carla.postulacion]))
     const libro = leerElLibro(ruta)
-    expect(libro.filas.flat().join(' ')).not.toContain('Beto')
+    expect(libro.filas.flat().join(' ')).toContain('Beto')
     expect(libro.filas.flat().join(' ')).toContain('Ana')
+    // «Avanzar» no la mueve, tampoco llamando a la API (AC-06)
+    expect((await pedir(`/panel/postulaciones/${quien.beto.postulacion}/confirmacion-avance`, equipo, 'POST',
+      { motivo: 'Avanza' })).estado).toBe(409)
+    expect(estadoDe(quien.beto.postulacion)).toBe('PRUEBA_TURNO_CANDIDATO')
 
     // El portal se lo dice
     await entrarAlPortalCon(page, quien.beto.token)
     await page.goto(`/procesos/${quien.beto.uuid}/prueba`)
     await expect(page.getByRole('heading', { name: 'Tu tiempo terminó y la prueba quedó sin completar.' })).toBeVisible({ timeout: 20_000 })
 
-    // La lista «No completaron la prueba» y el cierre de su proceso desde ahí
+    // En el panel: no está en «Le toca al candidato»; sí en «Toda la tanda», con «No la completó».
+    // La lista aparte «No completaron la prueba» ya no existe (AC-01).
     await entrarAlPanel(page)
     await page.goto(`/admin/vacantes/${vacanteA}`)
     await page.getByRole('tab', { name: /Prueba del puesto/ }).click()
-    await page.getByRole('button', { name: /Toda la tanda/ }).first().click()
+    await page.getByRole('button', { name: /Le toca al candidato/ }).first().click()
     await expect(page.getByRole('row').filter({ hasText: 'Beto Prueba Editor QA' })).toHaveCount(0)
-    const lista = page.locator('details').filter({ hasText: 'No completaron la prueba (1)' })
-    await lista.locator('summary').click()
-    await expect(lista).toContainText('Beto Prueba Editor QA · le faltaron 4 preguntas y «Tablero.xlsx»')
-    await lista.getByRole('button', { name: 'Cerrar su proceso' }).click()
-    const dialogo = page.getByRole('dialog')
-    await dialogo.getByRole('checkbox').uncheck()
-    await dialogo.getByRole('textbox', { name: 'Por qué no continúa' }).fill('No completó la prueba técnica en su tiempo.')
-    await dialogo.getByRole('button', { name: 'Descartar sin avisar' }).click()
-    await expect(lista).toContainText('Descartada, sin avisar', { timeout: 20_000 })
+    await page.getByRole('button', { name: /Toda la tanda/ }).first().click()
+    const suFila = page.getByRole('row').filter({ hasText: 'Beto Prueba Editor QA' })
+    await expect(suFila).toContainText('No la completó')
+    await expect(page.locator('details').filter({ hasText: 'No completaron la prueba' })).toHaveCount(0)
+    // El filtro «Prueba» la aísla (AC-05)
+    await page.getByRole('button', { name: /^Filtros/ }).click()
+    const panelDeFiltros = page.getByRole('dialog', { name: 'Filtros' })
+    await panelDeFiltros.getByRole('checkbox', { name: /^No la completó/ }).check()
+    await panelDeFiltros.getByRole('button', { name: 'Listo' }).click()
+    await expect(page.getByRole('button', { name: /Prueba: No la completó/ })).toBeVisible()
+    await expect(suFila).toBeVisible()
+    await expect(page.getByRole('row').filter({ hasText: 'Carla Prueba Editor QA' })).toHaveCount(0)
+    await page.getByRole('button', { name: /Prueba: No la completó/ }).click()
+
+    // «Darle más tiempo» desde su ficha: vuelve a «En curso» con lo suyo (AC-07)
+    await page.getByRole('button', { name: 'Beto Prueba Editor QA', exact: true }).click()
+    await expect(page.getByText(/No la completó · se le acabó el tiempo el/)).toBeVisible({ timeout: 20_000 })
+    await page.getByRole('button', { name: 'Darle más tiempo' }).click()
+    const ventana = page.getByRole('dialog', { name: 'Darle más tiempo a Beto Prueba Editor QA' })
+    await ventana.getByLabel('Hasta').fill(enLimaDentroDeDias(2))
+    await ventana.getByLabel('Motivo').fill('Se le cortó la luz a mitad de la prueba.')
+    await ventana.getByRole('button', { name: 'Darle más tiempo' }).click()
+    await expect(page.getByText('Volvió a «Le toca al candidato».')).toBeVisible({ timeout: 20_000 })
+    expect(uno(`select no_completada, entregado_en is null as abierta, plazo_propio
+                  from intento_prueba where postulacion_id = ${quien.beto.postulacion}`))
+      .toEqual({ no_completada: false, abierta: true, plazo_propio: true })
+    await expect(suFila).toContainText('En curso')
+    // En el portal sigue con lo que había respondido
+    expect((await verLaPrueba(quien.beto)).cuerpo.estadoIntento).toBe('EN_CURSO')
+
+    // Su proceso se cierra, como antes de esta prueba, para que los recorridos siguientes no cambien
+    expect((await pedir(`/panel/postulaciones/${quien.beto.postulacion}/transiciones`, equipo, 'POST', {
+      estadoDestino: 'NO_CONTINUA', motivo: 'No completó la prueba técnica en su tiempo.', avisar: false,
+    })).estado).toBe(200)
     expect(estadoDe(quien.beto.postulacion)).toBe('NO_CONTINUA')
   })
 
