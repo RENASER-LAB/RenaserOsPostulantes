@@ -99,8 +99,8 @@ Tres avisos por si se retoca:
   de 4» rompió cuatro tests, y por la misma razón que rompe a un lector de pantalla: la frase
   deja de leerse de una pieza.
 - **El SEC se ordena solo con flechas, no arrastrando.** Arrastrar va mal en un teléfono, y
-  desde el teléfono responde casi todo el mundo. `Formatos.module.css` conserva `.asa` y
-  `.arrastrando` de ese intento: es CSS muerto.
+  desde el teléfono responde casi todo el mundo. `Formatos.module.css` conserva `.asa` de ese
+  intento: es CSS muerto.
 - **`.letra` también es CSS muerto, y a propósito.** Separar la letra de una opción en su
   propio `<span>` deja el nombre accesible como «a.Aviso antes de mover nada», sin espacio.
 
@@ -141,10 +141,9 @@ valor nuevo —un radio, un tamaño— no está en la escala, **se nombra como t
 el 25/09 el detector marcó los radios de la cabecera y del marco de cristal, y se convirtieron en
 `--radio-pildora`, `--radio-cristal` y `--radio-ventana`.
 
-**El hook del detector está activo**: corre tras cada edición de UI y avisa. Las excepciones que
-hay son dos, con su motivo escrito: dos marcas en línea en
-`Vacantes.module.css` —la máscara del fundido, que solo lee el alfa, y el rótulo en miniatura de
-una maqueta decorativa—.
+**El hook del detector está activo**: corre tras cada edición de UI y avisa. **No hay
+excepciones** desde el 14/11/2026: `.impeccable/config.json` tiene vacías sus listas de reglas,
+archivos y valores ignorados, y ninguna hoja lleva marcas en línea.
 
 `/impeccable doctor` no encuentra desfases. **La plataforma de `PRODUCT.md` es `adaptive`**
 desde el 25/09/2026 —era `web`—, porque el portal también se empaqueta como aplicación de

@@ -11,11 +11,15 @@ equipo nuevo.
 |---|---|
 | Este portal | `github.com/RENASER-LAB/RenaserOsPostulantes` · desplegado en Vercel |
 | Backend | `github.com/RENASER-LAB/ai-agents--spring-ai` · Spring Boot, Java 25 |
-| Backend desplegado | `https://18-204-177-210.nip.io` · EC2 en AWS, con IP fija |
+| Backend desplegado | `https://34-196-100-108.nip.io` · EC2 en la cuenta de AWS nueva, con IP fija; la fuente de verdad es [`vercel.json`](../vercel.json) |
 
 La dirección del backend es una IP con `nip.io`, que resuelve cualquier `IP.nip.io` a esa IP
 y por eso permite sacar un certificado de Let's Encrypt sin dominio registrado. **Es
 provisional**: cuando Renaser tenga dominio propio se cambia la línea de `vercel.json` y ya.
+
+⚠️ **La IP cambió el 08/09/2026** (`0dfce4a`, «El backend vive en la cuenta de AWS nueva»): la
+de antes, `18-204-177-210.nip.io`, ya no responde, ni por HTTPS ni por SSH. Si esta tabla y
+`vercel.json` no dicen lo mismo, manda `vercel.json`: es lo que usa producción.
 
 Render quedó atrás en el commit `089e8df`. No vuelvas a apuntar ahí: los endpoints nuevos
 —entre ellos `POST /portal/auth/acceso`, el que canjea el enlace del correo— solo existen en
@@ -25,7 +29,7 @@ AWS.
 
 | `API_URL` | El portal habla con | Y eso escribe en |
 |---|---|---|
-| `https://18-204-177-210.nip.io` | El Spring de AWS | **La base de producción, junto a candidatos reales** |
+| `https://34-196-100-108.nip.io` | El Spring de AWS | **La base de producción, junto a candidatos reales** |
 | `http://localhost:8081` | Tu Spring local | `renaser-postgres`, un Postgres en Docker, solo tuyo |
 
 Apuntando a AWS, **registrarse o postular escribe junto a candidatos reales aunque el portal
@@ -71,7 +75,7 @@ echo "API_URL=http://localhost:8081" > .env.local
 Y para trabajar contra el backend desplegado sin levantar nada más:
 
 ```bash
-echo "API_URL=https://18-204-177-210.nip.io" > .env.local
+echo "API_URL=https://34-196-100-108.nip.io" > .env.local
 ```
 
 ```bash

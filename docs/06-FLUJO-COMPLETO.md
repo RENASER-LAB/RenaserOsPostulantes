@@ -512,10 +512,8 @@ además del correo y la campana. Nunca recordatorios ni cierres. Ver
 El equipo crea sesiones con su fecha, duración, modalidad y cupo. Quien llega a
 esa etapa elige la que le convenga.
 
-⚠️ **El panel enseña cuántos se inscribieron, no quiénes.** El backend expone
-solo el conteo; falta una ruta tipo
-`GET /panel/sesiones-simulacion/{id}/inscripciones`. Inventar la lista sería
-peor que no enseñarla.
+El panel enseña también **quiénes** se inscribieron: `Inscritos.tsx` pide
+`GET /panel/sesiones-simulacion/{id}/inscritos`. El detalle, en [PANEL.md](PANEL.md).
 
 ### 10 · La validación
 
@@ -896,7 +894,6 @@ que todavía no está en el panel.
 
 | Qué falta | Dónde se nota |
 |---|---|
-| `GET /panel/sesiones-simulacion/{id}/inscripciones` | Simulación enseña el conteo, no los nombres |
 | Las rutas de la decisión ámbar y de la validación | Las dos pantallas del portal están completas y no se pueden conectar |
 
 Y uno más, que no es una ruta: `GET /panel/bandeja` devuelve 500 en el backend
@@ -912,7 +909,8 @@ npx playwright test herramientas/e2e/14-vacante.spec.ts
 
 Abre un Chrome de verdad y recorre los pasos 1 a 5, comprueba que la vacante
 sale en la portada del portal, y **la cierra al terminar**: una vacante
-publicada la ve cualquiera que entre, y no hay forma de borrarla. Deja las
+publicada la ve cualquiera que entre (se puede eliminar desde el panel, por borrado
+lógico, pero la prueba no debe dejar rastro). Deja las
 capturas en `capturas/`.
 
 ```bash
@@ -952,9 +950,9 @@ siempre —el Spring en `localhost:8081` y este portal en el 5174— y entonces
 `PORTAL` sobra. Lo que no cambia de un sitio a otro son tres reglas:
 
 - **`API_URL` de `.env.local` tiene que apuntar a donde esté el backend de
-  verdad**, sea el puerto que sea. El proxy de Vite se va al **8080** por
-  defecto, y ahí suele estar **Adminer**, que contesta 200 a todo: apuntar mal
-  no da un error, da una e2e que pasa sin probar nada.
+  verdad**, sea el puerto que sea. Sin `API_URL`, el proxy de Vite va al
+  **8081**; si lo apuntas al **8080**, ahí suele estar **Adminer**, que contesta
+  200 a todo: apuntar mal no da un error, da una e2e que pasa sin probar nada.
 - **`PORTAL` tiene que ser el puerto de este portal**, no el del backend.
 - **La base tiene que ser propia del worktree** cuando hay más de uno vivo.
   `renaser_db` la comparten todos, y dos ramas pueden traer migraciones con el
