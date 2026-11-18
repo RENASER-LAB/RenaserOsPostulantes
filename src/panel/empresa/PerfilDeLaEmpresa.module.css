@@ -1,8 +1,10 @@
 /*
- * «Perfil de la empresa» (V85): el editor a la izquierda y la vista previa en vivo
- * del perfil público a la derecha. Por debajo de 1280 px la vista previa se abre
- * con «Vista previa» en un cajón lateral (`Modal` con `lateral`). Los campos son
- * los de `ui/campos`; los bloques, `.bloque` de `estilos/pagina.module.css`; y los
+ * «Perfil de la empresa» (V85): dos pestañas, las de `panel/ui/Pestanas`. En
+ * «Perfil», el editor a la izquierda y la vista previa en vivo del perfil público
+ * a la derecha; por debajo de 1280 px la vista previa se abre con «Vista previa»
+ * en un cajón lateral (`Modal` con `lateral`). En «Brochure» (V86), la elección a
+ * la izquierda y la primera hoja a la derecha. Los campos son los de
+ * `ui/campos`; los bloques, `.bloque` de `estilos/pagina.module.css`; y los
  * botones, los de Configuración (`.guardar` sobre `acentoMenor`, `.chico`).
  */
 
@@ -18,6 +20,10 @@
   color: var(--tinta2);
   margin-top: var(--e2);
   max-width: var(--medida);
+}
+
+.envolturaPestanas {
+  margin-top: var(--e5);
 }
 
 .dos {
@@ -73,16 +79,20 @@
   font-size: var(--t-destacado, 20px);
 }
 
+/*
+ * El `min(…, 100%)` deja una sola columna más estrecha que el mínimo cuando el
+ * bloque no llega a él (un teléfono de 320 px), en vez de salirse por la derecha.
+ */
 .pareja {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr));
   gap: var(--e4);
 }
 
 /* La rejilla de los seis enlaces del formulario. */
 .enlaces {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr));
   gap: var(--e4);
 }
 
@@ -203,9 +213,14 @@
   border-radius: var(--radio-menor);
   background: var(--nube);
   font-size: var(--t-apoyo);
+  /* Un beneficio de 40 letras sin espacios no cabe a 390 px: parte la palabra. */
+  max-width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .quitarBeneficio {
+  flex: none;
   display: inline-grid;
   place-items: center;
   width: 28px;
@@ -221,6 +236,12 @@
   color: var(--tinta);
 }
 
+/*
+ * ⚠️ **El `min-width: 0` es lo que la hace caber.** Sin él, el campo no encoge
+ * por debajo del ancho propio del `<input>` (sus 20 caracteres) y, a 390 px con
+ * barra de desplazamiento clásica, «Añadir» se salía del bloque y la página se
+ * desplazaba 9 px de lado.
+ */
 .anadir {
   display: flex;
   gap: var(--e2);
@@ -228,7 +249,12 @@
 }
 
 .anadir > :first-child {
-  flex: 1;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.anadir > button {
+  flex: none;
 }
 
 /* ---------- El pie ---------- */
@@ -379,9 +405,176 @@
   color: var(--activo);
 }
 
+/* ---------- La pestaña «Brochure» (V86) ---------- */
+
+/*
+ * La elección a la izquierda y, al lado, la primera hoja con la plantilla y el
+ * color elegidos, quieta al desplazar. Sin el menú lateral (por debajo de
+ * 1024 px), la hoja pasa debajo, más pequeña.
+ */
+.dosBrochure {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 20rem;
+  gap: var(--e6);
+  align-items: start;
+  margin-top: var(--e6);
+}
+
+.hoja {
+  position: sticky;
+  top: calc(var(--alto-cabecera-panel, 64px) + var(--e4));
+  aspect-ratio: 210 / 297;
+  overflow: hidden;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.1);
+  background: #ffffff;
+}
+
+.hoja svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+@media (max-width: 1023.98px) {
+  .dosBrochure {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .hoja {
+    position: static;
+    width: min(16rem, 100%);
+  }
+}
+
+/*
+ * Las tres plantillas, cada una con la miniatura de su primera hoja. La elegida
+ * lleva el borde azul, como el consentimiento marcado de los campos compartidos.
+ */
+.plantillas {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--e3);
+  margin: var(--e2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.plantilla {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+  width: 100%;
+  padding: var(--e3);
+  border: 1px solid rgb(0 0 0 / 0.1);
+  border-radius: var(--radio-menor);
+  background: var(--nube);
+  color: var(--tinta);
+  font: inherit;
+  font-size: var(--t-apoyo);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 150ms;
+}
+
+.plantilla:hover {
+  border-color: var(--tinta);
+}
+
+.plantilla[aria-checked='true'] {
+  border-color: var(--activo);
+  box-shadow: 0 0 0 1px var(--activo);
+}
+
+.plantilla[aria-checked='true'] .nombrePlantilla {
+  color: var(--activo);
+  font-weight: 550;
+}
+
+.muestra {
+  display: block;
+  aspect-ratio: 210 / 297;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.1);
+  background: #ffffff;
+}
+
+.muestra svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.nombrePlantilla {
+  display: block;
+}
+
+@media (max-width: 640px) {
+  .plantillas {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+/* Los seis colores en círculo; el elegido lleva un anillo azul. */
+.colores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e2);
+  margin: var(--e2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.color {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  cursor: pointer;
+}
+
+.color span {
+  display: block;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.12);
+}
+
+.color[aria-checked='true'] {
+  box-shadow: 0 0 0 2px var(--activo);
+}
+
+/* La fila de la descarga, con su chip al lado. */
+.filaPdf {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e3);
+  padding-top: var(--e4);
+  border-top: 1px solid var(--regla);
+}
+
+.descargar {
+  composes: secundario from '../../estilos/piezas.module.css';
+  gap: var(--e2);
+}
+
+.falloPdf {
+  font-size: var(--t-apoyo);
+  color: var(--mal);
+}
+
 /* Los botones propios hablan como los de `piezas`: en MAYÚSCULAS (Northstar). */
 .chico,
 .guardar,
-.botonPrevia {
+.botonPrevia,
+.descargar {
   text-transform: uppercase;
 }

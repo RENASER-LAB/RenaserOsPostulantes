@@ -1,6 +1,10 @@
 /**
- * El formulario de «Perfil de la empresa» (V85): lo que hay en la mano, cómo se
- * comprueba antes de enviar y qué se manda.
+ * El formulario de la pestaña «Perfil» de «Perfil de la empresa» (V85): lo que
+ * hay en la mano, cómo se comprueba antes de enviar y qué se manda.
+ *
+ * La plantilla y el color del brochure no van aquí: la pestaña «Brochure» los
+ * guarda solos al elegirlos, y ni cuentan como cambio sin guardar ni viajan con
+ * «Guardar».
  *
  * Las reglas y las frases son las del backend (`ReglasDeLaPresentacion`), y las
  * claves de los errores también —`paginaWeb`, `videoPresentacion`, `INSTAGRAM`…—
@@ -12,9 +16,12 @@ import {
   ANIO_MINIMO,
   MAXIMO_BENEFICIO,
   MAXIMO_BENEFICIOS,
+  MAXIMO_MISION,
   MAXIMO_SECTOR,
   MAXIMO_TEXTO_LARGO,
+  MENSAJE_MISION,
   MENSAJE_PROPOSITO,
+  MENSAJE_VISION,
   REDES,
   errorDeLaRed,
   errorDelEnlace,
@@ -39,6 +46,9 @@ export interface Formulario {
   videoPresentacion: string
   paginaWeb: string
   redes: Record<CodigoDeRed, string>
+  /** Misión y visión (V86): hasta 400 caracteres; vacías no salen en ningún sitio. */
+  mision: string
+  vision: string
 }
 
 const SIN_REDES: Record<CodigoDeRed, string> = {
@@ -63,6 +73,8 @@ export function desdeLoGuardado(p: PresentacionPanel | null | undefined): Formul
     videoPresentacion: p?.videoPresentacion ?? '',
     paginaWeb: p?.paginaWeb ?? '',
     redes,
+    mision: p?.mision ?? '',
+    vision: p?.vision ?? '',
   }
 }
 
@@ -78,6 +90,8 @@ export function erroresDelFormulario(f: Formulario, anioActual: number): Record<
     errores.quienesSomos = '«Quiénes somos» admite hasta 1500 caracteres'
   }
   if (f.propositoEmpresa.trim().length > MAXIMO_TEXTO_LARGO) errores.propositoEmpresa = MENSAJE_PROPOSITO
+  if (f.mision.trim().length > MAXIMO_MISION) errores.mision = MENSAJE_MISION
+  if (f.vision.trim().length > MAXIMO_MISION) errores.vision = MENSAJE_VISION
   const beneficios = beneficiosLimpios(f.beneficios)
   if (beneficios.length > MAXIMO_BENEFICIOS) errores.beneficios = 'Puedes añadir hasta 12 beneficios'
   else if (beneficios.some((b) => b.length > MAXIMO_BENEFICIO)) {
@@ -137,6 +151,8 @@ export function comoCuerpo(f: Formulario): GuardarPresentacion {
     videoPresentacion: normalizarEnlace(f.videoPresentacion) || null,
     paginaWeb: normalizarEnlace(f.paginaWeb) || null,
     redes,
+    mision: oNulo(f.mision),
+    vision: oNulo(f.vision),
   }
 }
 

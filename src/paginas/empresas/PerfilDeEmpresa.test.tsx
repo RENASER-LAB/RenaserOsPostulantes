@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, within } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { ErrorApi } from '@/api/puerta'
@@ -97,5 +97,78 @@ describe('el perfil público de una empresa', () => {
     await abrir(new ErrorApi(404, 'No encontrada'))
     expect(screen.getByRole('heading', { level: 1, name: 'No encontramos esta empresa.' })).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Ver los puestos abiertos' })).toBeTruthy()
+  })
+
+  it('AC-07 · AC-09: con brochure, «Descargar brochure (PDF)» después de «Visitar web», en otra pestaña y sin cuenta', async () => {
+    await abrir({
+      codigo: 'MOLINOS-DEL-SUR',
+      nombre: 'Molinos del Sur',
+      quienesSomos: 'Molemos trigo.',
+      paginaWeb: 'https://molinosdelsur.pe',
+      brochure: '/api/v1/portal/empresas/molinos-del-sur/brochure',
+      vacantes: [],
+    })
+    const boton = screen.getByRole('link', { name: 'Descargar brochure (PDF)' })
+    expect(boton.getAttribute('href')).toMatch(/\/api\/v1\/portal\/empresas\/molinos-del-sur\/brochure$/)
+    expect(boton.getAttribute('target')).toBe('_blank')
+    expect(boton.getAttribute('rel')).toBe('noopener noreferrer')
+    const acciones = Array.from(boton.parentElement!.querySelectorAll('a')).map((a) => a.textContent)
+    expect(acciones).toEqual(['Ver vacantes (0)', 'Visitar web', 'Descargar brochure (PDF)'])
+  })
+
+  it('AC-07: sin brochure (falta «Quiénes somos» o backend anterior) el botón no sale; una dirección ajena tampoco', async () => {
+    await abrir({ codigo: 'VACIA', nombre: 'Vacía S.A.C.', vacantes: [] })
+    expect(screen.queryByRole('link', { name: 'Descargar brochure (PDF)' })).toBeNull()
+    cleanup()
+    await abrir({ codigo: 'VACIA', nombre: 'Vacía S.A.C.', vacantes: [], brochure: 'javascript:alert(1)' })
+    expect(screen.queryByRole('link', { name: 'Descargar brochure (PDF)' })).toBeNull()
+  })
+
+  it('AC-09 del perfil: con las dos, «Misión y visión» en dos columnas entre el propósito y el video', async () => {
+    await abrir({
+      codigo: 'MOLINOS-DEL-SUR',
+      nombre: 'Molinos del Sur',
+      proposito: 'Que ninguna familia se quede sin pan.',
+      mision: 'Moler el mejor trigo del sur.',
+      vision: 'Ser el molino del sur.',
+      video: { servicio: 'YOUTUBE', identificador: 'abc123DEF45', enlace: 'x' },
+      vacantes: [],
+    })
+    const bloque = screen.getByRole('heading', { level: 2, name: 'Misión y visión' }).closest('section')!
+    expect(within(bloque).getByRole('heading', { level: 3, name: 'Misión' })).toBeTruthy()
+    expect(within(bloque).getByRole('heading', { level: 3, name: 'Visión' })).toBeTruthy()
+    expect(within(bloque).getByText('Moler el mejor trigo del sur.')).toBeTruthy()
+    const secciones = Array.from(document.querySelectorAll('section'))
+    const proposito = secciones.findIndex((x) => x.getAttribute('aria-labelledby') === 'nuestro-proposito')
+    const video = secciones.findIndex((x) => x.getAttribute('aria-label') === 'Video de Molinos del Sur')
+    expect(secciones.indexOf(bloque)).toBe(proposito + 1)
+    expect(video).toBe(proposito + 2)
+  })
+
+  it('AC-04: solo con misión, el bloque se titula «Misión» y «Visión» no sale; sin las dos, no hay bloque', async () => {
+    await abrir({ codigo: 'M', nombre: 'Molinos del Sur', mision: 'Moler bien.', vision: '   ', vacantes: [] })
+    expect(screen.getByRole('heading', { level: 2, name: 'Misión' })).toBeTruthy()
+    expect(screen.queryByText(/Visión/)).toBeNull()
+    expect(screen.queryByRole('heading', { name: 'Misión y visión' })).toBeNull()
+    cleanup()
+
+    await abrir({ codigo: 'M', nombre: 'Molinos del Sur', vision: 'Ser del sur.', vacantes: [] })
+    expect(screen.getByRole('heading', { level: 2, name: 'Visión' })).toBeTruthy()
+    expect(screen.queryByText(/Misión/)).toBeNull()
+    cleanup()
+
+    await abrir({ codigo: 'M', nombre: 'Molinos del Sur', vacantes: [] })
+    expect(screen.queryByText(/Misión|Visión/)).toBeNull()
+  })
+
+  it('AC-13: lo que parece HTML en la misión se lee tal cual, sin interpretarse', async () => {
+    const { container } = await abrir({
+      codigo: 'M',
+      nombre: 'Molinos del Sur',
+      mision: '<b>Moler</b> «bien» & ñandú',
+      vacantes: [],
+    })
+    expect(screen.getByText('<b>Moler</b> «bien» & ñandú')).toBeTruthy()
+    expect(container.querySelector('section b')).toBeNull()
   })
 })
