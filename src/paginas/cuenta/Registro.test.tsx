@@ -52,6 +52,8 @@ const CATALOGO = [
 ]
 let fallaElCatalogo = false
 let vecesPedido = 0
+// El backend contesta 409 TELEFONO_EN_USO: el celular ya es de otra cuenta (V92).
+let celularDeOtraCuenta = false
 
 vi.mock('@/api/portal', () => ({
   catalogoUbigeo: () => {
@@ -60,9 +62,14 @@ vi.mock('@/api/portal', () => ({
       ? Promise.reject(new Error('no se pudo cargar el catálogo'))
       : Promise.resolve(CATALOGO)
   },
-  crearCuenta: (datos: unknown) => {
+  crearCuenta: async (datos: unknown) => {
+    if (celularDeOtraCuenta) {
+      const { ErrorApi } = await import('@/api/cliente')
+      throw new ErrorApi(409, 'Ese número ya está en otra cuenta. Usa otro o entra con esa cuenta.', {
+        codigo: 'TELEFONO_EN_USO',
+      })
+    }
     enviados.push(datos)
-    return Promise.resolve()
   },
   ingresar: () => Promise.resolve({ token: 't', usuarioId: 1, nombre: 'Camila', apellidos: 'Reyes' }),
   quienSoy: () => Promise.resolve({ usuarioId: 1, nombre: 'Camila', apellidos: 'Reyes' }),
@@ -72,6 +79,7 @@ afterEach(() => {
   enviados.length = 0
   fallaElCatalogo = false
   vecesPedido = 0
+  celularDeOtraCuenta = false
   cleanup()
 })
 
@@ -427,6 +435,19 @@ describe('el celular (WhatsApp) al crear la cuenta', () => {
     const descripcion = suCelular.getAttribute('aria-describedby') ?? ''
     expect(descripcion.split(' ').map((id) => document.getElementById(id)?.textContent).join(' '))
       .toContain('+51')
+  })
+
+  it('AC-11 · un celular que ya usa otra cuenta: el aviso sale junto al campo, no arriba', async () => {
+    celularDeOtraCuenta = true
+    montar()
+    await rellenarCon('987 654 321')
+
+    crearCuenta()
+
+    const mensaje = await screen.findByText('Ese número ya está en otra cuenta. Usa otro o entra con esa cuenta.')
+    expect(celular().getAttribute('aria-invalid')).toBe('true')
+    expect(celular().getAttribute('aria-describedby')?.split(' ')).toContain(mensaje.id)
+    expect(screen.queryByRole('alert', { name: /otra cuenta/ })).toBeNull()
   })
 
   it('sin celular no se crea la cuenta y el error sale junto al campo', async () => {

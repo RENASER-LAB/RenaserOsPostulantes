@@ -150,6 +150,24 @@ const POSTULACIONES = [
  * —el punto de cada fila de «Mis procesos» se apaga con el—, y con una constante
  * el boton no haria nada y pareceria roto.
  */
+/** Las preferencias de aviso de la cuenta simulada (V92). Cambian mientras corre el simulado. */
+const NOTIFICACIONES = {
+  whatsapp: {
+    disponible: true,
+    estado: 'APAGADO',
+    numero: '+51 987 654 321',
+    comprobado: true,
+    porBaja: true,
+    bajaEn: '2026-11-12',
+    cambioDeNumero: false,
+  },
+  correo: { activo: true, destino: 'nando.perez@correo.com' },
+  portal: { activo: true },
+  mensaje: { mostrar: true, situacion: 'TRAS_BAJA' },
+  // La guía de los avisos (V93): sale la primera vez que se entra en «Mis procesos».
+  guiaVista: false,
+}
+
 let AVISOS = [
   {
     id: 1,
@@ -519,6 +537,36 @@ const servidor = createServer(async (req, res) => {
     ]
     return responder(res, 200, { resumen, historial })
   }
+  // Notificaciones (V92): los ajustes de la tuerca de la campana. WhatsApp apagado por BAJA y
+  // con el número comprobado, para ver el puntito de la tuerca y la activación con un clic; y
+  // la guía de la primera vez (V93), que sale una vez por arranque del simulador.
+  if (ruta === '/notificaciones' && metodo === 'GET') return responder(res, 200, NOTIFICACIONES)
+  if (ruta === '/notificaciones' && metodo === 'PATCH') {
+    const cambios = cuerpo && typeof cuerpo === 'object' ? cuerpo : {}
+    if (typeof cambios.correo === 'boolean') NOTIFICACIONES.correo.activo = cambios.correo
+    if (typeof cambios.portal === 'boolean') NOTIFICACIONES.portal.activo = cambios.portal
+    return responder(res, 200, NOTIFICACIONES)
+  }
+  if (ruta === '/notificaciones/whatsapp' && metodo === 'POST') {
+    Object.assign(NOTIFICACIONES.whatsapp, { estado: 'ACTIVO', porBaja: false, numero: '+51 9•• ••• 321' })
+    NOTIFICACIONES.mensaje.mostrar = false
+    return responder(res, 200, {
+      resultado: 'ACTIVADO',
+      enlace: null,
+      confirmacionEnviada: true,
+      notificaciones: NOTIFICACIONES,
+    })
+  }
+  if (ruta === '/notificaciones/whatsapp' && metodo === 'DELETE') {
+    Object.assign(NOTIFICACIONES.whatsapp, { estado: 'APAGADO', numero: '+51 987 654 321' })
+    return responder(res, 200, NOTIFICACIONES)
+  }
+  if (ruta === '/notificaciones/mensaje-visto' && metodo === 'POST') return responder(res, 204)
+  if (ruta === '/notificaciones/guia-vista' && metodo === 'POST') {
+    NOTIFICACIONES.guiaVista = true
+    return responder(res, 204)
+  }
+
   // Avisos (la campana)
   if (ruta === '/avisos' && metodo === 'GET') {
     return responder(res, 200, {

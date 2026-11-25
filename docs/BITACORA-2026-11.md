@@ -12,6 +12,40 @@ cielo despejado» a «Northstar»— y el panel del equipo se quedó en el anter
 
 ---
 
+## 24–25/11/2026 · Los avisos de la cuenta: WhatsApp, correo y portal en un solo ajuste
+
+- **Qué llegó.** La tarjeta de WhatsApp de cada proceso desaparece: WhatsApp se enciende una vez
+  para toda la cuenta y vale para los procesos de hoy y los que vengan; con el número ya comprobado,
+  con un clic, también tras escribir BAJA. El correo y la campana de sus procesos se pueden apagar.
+  Un celular es de una sola cuenta. Es la V92 del backend, más la V93 de la guía. Cómo funciona hoy,
+  en [02-QUE-VE-EL-CANDIDATO](02-QUE-VE-EL-CANDIDATO.md), 2.6b, y en
+  [DESIGN.md](../DESIGN.md) › Navigation (la campana), La excepción verde y La guía de los avisos.
+- **Decisión del usuario tras la QA, que cambia la spec.** La spec ponía un botón «Notificaciones»
+  junto al título de «Mis procesos», con una línea debajo que decía en qué estaba WhatsApp, y un
+  mensaje flotante que invitaba a activarlo tras postular. Los tres se retiraron antes de publicarse.
+  La ventana se llama «Ajustes de avisos» y se abre con una tuerca dentro del panel de la campana,
+  que pasa de 20 a 22rem para que quepan la tuerca y «Marcar todos como leídos»; un puntito verde en
+  la tuerca dice que WhatsApp se puede activar. En el teléfono la campana es una hoja inferior y los
+  ajustes, una segunda hoja con «Volver a tus avisos». La invitación pasa a ser el paso 3 de una guía
+  de tres pasos sobre la campana, que sale una vez por cuenta y se guarda en el servidor (V93,
+  `guiaVista`), con sus variantes según WhatsApp: apagado, esperando su mensaje (con el número
+  enmascarado), activo, sin número o sin WhatsApp disponible. El texto del bot para un número sin
+  anuncio remite ahora a la campana y la tuerca, y no al botón. `mensaje` y `mensaje-visto` siguen
+  en el backend sin uso.
+- **Dos trampas que encontró la QA.** La ventana vive en la cabecera y no se iba con la pantalla:
+  al cambiar de ruta con ella abierta —«Cámbialo en Mi cuenta», un aviso, el «atrás»— se quedaba
+  encima del destino con todo lo de debajo inerte; ahora el panel y la ventana se cierran al
+  navegar. Y cerrar con Esc o con la × los ajustes abiertos desde la guía dejaba el foco en el
+  `<body>`: vuelve a la tuerca o, sin panel, a la campana.
+- **De paso** sale de [PENDIENTES.md](PENDIENTES.md) la fila «El panel de la campana mide 20 px a
+  375 px» (07/10/2026): a ese ancho la campana ya es la hoja inferior, a todo lo ancho.
+- **Fuera de la entrega**, anotado en [PENDIENTES.md](PENDIENTES.md): la V92 y la V93 se despliegan
+  juntas, contando antes los celulares repetidos en producción; la activación con un clic necesita
+  el CRM con la spec 034 desplegada (sus PR #119 y #120 ya están fusionados) y la plantilla
+  `avisos_activados` aprobada en Meta.
+
+---
+
 ## 18/11/2026 · Las pruebas sin completar, dentro del ranking, y «Darle más tiempo»
 
 - **Qué llegó.** En «Prueba del puesto» cada fila dice en qué va su prueba —la nota, «Pendiente de

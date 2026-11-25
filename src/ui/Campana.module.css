@@ -90,7 +90,8 @@
   top: calc(100% + var(--e2));
   right: 0;
   z-index: 40;
-  width: min(20rem, calc(100vw - var(--e5) * 2));
+  /* 22rem desde el 25/11/2026: en 20 no cabían «Marcar todos como leídos» y la tuerca. */
+  width: min(22rem, calc(100vw - var(--e5) * 2));
   max-height: 25rem;
   overflow-y: auto;
   overflow-x: hidden;
@@ -154,6 +155,98 @@
 .marcarTodos:disabled {
   opacity: 0.5;
   cursor: default;
+}
+
+/* «Marcar todos como leídos» y la tuerca, juntos a la derecha de la cabecera. */
+.herramientas {
+  display: flex;
+  align-items: center;
+  gap: var(--e3);
+}
+
+/*
+ * La tuerca: «Ajustes de avisos» (25/11/2026). Un cuadrado de 32 px con filete, como un
+ * control más; al pasar, la bruma azul de la acción. En el teléfono mide 44 (ver abajo).
+ */
+.tuerca {
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--regla2);
+  border-radius: var(--radio-menor);
+  background: var(--cielo);
+  color: var(--tinta);
+  cursor: pointer;
+  transition:
+    background-color 150ms var(--curva-control),
+    border-color 150ms var(--curva-control),
+    color 150ms var(--curva-control),
+    transform 160ms var(--salida);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .tuerca:hover {
+    border-color: var(--activo);
+    background: var(--activo-bruma);
+    color: var(--activo);
+  }
+}
+
+.tuerca:active {
+  transform: scale(0.94);
+}
+
+/* El puntito verde: WhatsApp se puede activar. Nunca va con texto. */
+.puntito {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 9px;
+  height: 9px;
+  border: 2px solid var(--nube);
+  border-radius: 50%;
+  background: var(--whatsapp);
+}
+
+/* El globito con el nombre, para el ratón y el teclado. El lector oye el `aria-label`. */
+.globito {
+  position: absolute;
+  top: calc(100% + var(--e2));
+  right: -6px;
+  z-index: 1;
+  padding: 6px 10px;
+  border-radius: var(--radio-menor);
+  background: var(--tinta);
+  color: var(--tinta-invertida);
+  font-size: var(--t-micro);
+  line-height: 1.2;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-2px);
+  transition: opacity 120ms var(--curva-control), transform 120ms var(--curva-control);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .tuerca:hover .globito {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.tuerca:focus-visible .globito {
+  opacity: 1;
+  transform: none;
+}
+
+/* El asa y el velo son de la hoja del teléfono. */
+.asa,
+.veloDeLaHoja {
+  display: none;
 }
 
 .vacio {
@@ -284,15 +377,65 @@
  * la mitad de cada aviso queda fuera.
  */
 @media (max-width: 30rem) {
+  /*
+   * Desde el 25/11/2026 es una hoja inferior a todo el ancho, con su asa y un velo
+   * detrás: el pulgar la alcanza, y los ajustes se abren como la misma hoja. Hasta
+   * entonces colgaba de la cabecera (`top: var(--alto-cabecera)`).
+   */
   .panel {
     position: fixed;
-    /* ⚠️ **Llego con `56px` a mano y ya era falso.** La cabecera mide lo que diga
-       `--alto-cabecera`, que el 15/09/2026 paso de 68 a 70: escrito a mano, el
-       panel se le metia debajo. */
-    top: var(--alto-cabecera);
-    right: var(--e3);
-    left: var(--e3);
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
     width: auto;
+    max-height: min(70dvh, calc(100dvh - var(--alto-cabecera) - var(--e5)));
+    padding-bottom: env(safe-area-inset-bottom);
+    border-width: 1px 0 0;
+    transform-origin: bottom center;
+  }
+
+  .asa {
+    display: block;
+    width: 36px;
+    height: 4px;
+    margin: var(--e2) auto 0;
+    border-radius: 2px;
+    background: var(--regla2);
+  }
+
+  .veloDeLaHoja {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 39;
+    background: var(--velo);
+    animation: entraElVelo 200ms var(--curva-control);
+  }
+
+  .cabecera {
+    padding: var(--e1) var(--e3) var(--e2) var(--e5);
+  }
+
+  .marcarTodos {
+    padding: var(--e3) var(--e2);
+  }
+
+  /* 44 px en el teléfono: el mínimo con el que un pulgar acierta. */
+  .tuerca {
+    width: 44px;
+    height: 44px;
+  }
+
+  .puntito {
+    width: 10px;
+    height: 10px;
+  }
+}
+
+@keyframes entraElVelo {
+  from {
+    opacity: 0;
   }
 }
 
@@ -341,9 +484,21 @@
   border-radius: var(--radio-menor);
 }
 
+@media (max-width: 30rem) {
+  .panel {
+    border-radius: var(--radio) var(--radio) 0 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .boton {
+  .boton,
+  .tuerca,
+  .globito {
     transition: none;
+  }
+
+  .tuerca:active {
+    transform: none;
   }
 }
 

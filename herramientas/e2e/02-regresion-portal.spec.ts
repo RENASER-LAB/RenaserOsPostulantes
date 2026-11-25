@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { API, entrarAlPortal } from './ayuda'
+import { saltarLaGuiaDeAvisos } from './ayuda-candidato'
 
 /**
  * Lo que YA existía del portal y no puede haberse roto.
@@ -11,6 +12,10 @@ import { API, entrarAlPortal } from './ayuda'
  * y `23-movimiento`.
  */
 test.describe('Regresión · el portal del candidato', () => {
+  // La guía de los avisos (V93) no es de esta prueba: se salta, como en el `test` de
+  // `ayuda-candidato`.
+  test.beforeEach(({ context }) => saltarLaGuiaDeAvisos(context))
+
   test('entra, ve «Mis procesos» y abre el detalle de una postulación', async ({ page }) => {
     await entrarAlPortal(page, 'camila.torres@ejemplo.pe')
     await page.goto('/procesos')

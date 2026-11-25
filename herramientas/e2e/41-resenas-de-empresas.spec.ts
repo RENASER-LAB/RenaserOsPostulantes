@@ -1,6 +1,6 @@
 import { expect, type Page } from '@playwright/test'
 import { API, corte, entrarAlPanel } from './ayuda'
-import { CLAVE_DE_CANDIDATO, crearCuentaDeCandidato, test, tokenDelCandidato } from './ayuda-candidato'
+import { CLAVE_DE_CANDIDATO, crearCuentaDeCandidato, saltarLaGuiaDeAvisos, test, tokenDelCandidato } from './ayuda-candidato'
 import {
   asegurarQueModera,
   correoDeCandidata,
@@ -123,6 +123,8 @@ test('1 · la empresa publica y edita; la persona recibe el aviso y la ve en su 
 
   // AC-11: el aviso en la campana lleva a la sección de reseñas del perfil.
   const portal = await browser.newPage()
+  // Una página propia, fuera del contexto de la prueba: la guía de los avisos se salta a mano.
+  await saltarLaGuiaDeAvisos(portal)
   await entrarComoCandidata(portal)
   await portal.goto('/procesos')
   await portal.getByRole('button', { name: /^Avisos/ }).click()

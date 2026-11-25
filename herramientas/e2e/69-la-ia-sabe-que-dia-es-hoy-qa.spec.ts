@@ -168,27 +168,30 @@ test.describe('QA · la IA sabe qué día es hoy, el visor ordenado, entregables
 
   test('AC-14 a AC-16 · API: el celular de la cuenta, el del CV, ninguno, un fijo y uno corto', async () => {
     const visor = await visorDe(equipo)
+    // Los de las cuentas son nuevos en cada siembra (V92: un número es de una sola cuenta).
+    const robert = e.celularDeRobert
     expect(del(visor, e.robert).celular).toEqual({
-      texto: '987 111 222', llamar: 'tel:+51987111222', whatsapp: 'https://wa.me/51987111222',
+      texto: robert.escrito, llamar: `tel:${robert.e164}`, whatsapp: `https://wa.me/${robert.e164.slice(1)}`,
     })
     expect(del(visor, e.mayra).celular).toEqual({
       texto: '923 456 789', llamar: 'tel:+51923456789', whatsapp: 'https://wa.me/51923456789',
     })
     expect(del(visor, e.ruth).celular).toBeNull()
     expect(del(visor, e.ximena).celular?.whatsapp).toBeNull()
-    expect(del(visor, e.ximena).celular?.llamar).toBe('tel:+5114567890')
+    expect(del(visor, e.ximena).celular?.llamar).toBe(`tel:${e.fijoDeXimena}`)
     expect(del(visor, e.alex).celular?.whatsapp).toBeNull()
     expect(del(visor, e.alex).celular?.llamar).toBe('tel:98765432')
   })
 
-  test('AC-14 a AC-16 · pantalla: «☎ 987 111 222» llama, «WhatsApp» abre otra pestaña; sin número nada; fijo sin WhatsApp; nunca en el PDF', async ({ page }) => {
+  test('AC-14 a AC-16 · pantalla: «☎ 9xx xxx xxx» llama, «WhatsApp» abre otra pestaña; sin número nada; fijo sin WhatsApp; nunca en el PDF', async ({ page }) => {
+    const robert = e.celularDeRobert
     await abrirElVisor(page, equipo, e.robert)
     const tarjeta = page.getByRole('region', { name: 'Postulante' })
-    const llamar = tarjeta.getByRole('link', { name: 'Llamar al 987 111 222' })
-    await expect(llamar).toHaveAttribute('href', 'tel:+51987111222')
-    await expect(llamar).toContainText('987 111 222')
-    const wa = tarjeta.getByRole('link', { name: 'Escribir por WhatsApp al 987 111 222' })
-    await expect(wa).toHaveAttribute('href', 'https://wa.me/51987111222')
+    const llamar = tarjeta.getByRole('link', { name: `Llamar al ${robert.escrito}` })
+    await expect(llamar).toHaveAttribute('href', `tel:${robert.e164}`)
+    await expect(llamar).toContainText(robert.escrito)
+    const wa = tarjeta.getByRole('link', { name: `Escribir por WhatsApp al ${robert.escrito}` })
+    await expect(wa).toHaveAttribute('href', `https://wa.me/${robert.e164.slice(1)}`)
     await expect(wa).toHaveAttribute('target', '_blank')
     await expect(wa).toHaveAttribute('rel', /noopener/)
     await expect(tarjeta.getByText('912 345 678')).toHaveCount(0)
@@ -200,12 +203,13 @@ test.describe('QA · la IA sabe qué día es hoy, el visor ordenado, entregables
     await expect(page.getByRole('region', { name: 'Postulante' }).locator('a[href^="https://www.linkedin.com/"]')).toBeVisible()
     const hrefs = await page.getByRole('region', { name: 'Postulante' }).locator('a[href]').evaluateAll((as) =>
       as.map((a) => a.getAttribute('href') ?? ''))
-    const tel = hrefs.indexOf('tel:+51987654321')
+    // El de su cuenta, que desde la V92 es único y ya no coincide con el del CV.
+    const tel = hrefs.indexOf(`tel:${e.informes.maria.celular.e164}`)
     expect(tel, hrefs.join(' | ')).toBeGreaterThanOrEqual(0)
     const red = hrefs.findIndex((h) => h.startsWith('https://www.linkedin.com/'))
     expect(red).toBeGreaterThan(tel)
 
-    for (const [quien, conWhatsapp, numero] of [[e.ruth, false, null], [e.ximena, false, '+5114567890'], [e.alex, false, '98765432']] as const) {
+    for (const [quien, conWhatsapp, numero] of [[e.ruth, false, null], [e.ximena, false, e.fijoDeXimena], [e.alex, false, '98765432']] as const) {
       await page.goto(`/admin/vacantes/${e.vacante}/informes?postulante=${quien.postulacion}&etapa=cv`)
       await expect(page.getByRole('heading', { level: 2, name: quien.nombre })).toBeVisible()
       const t = page.getByRole('region', { name: 'Postulante' })
@@ -218,7 +222,7 @@ test.describe('QA · la IA sabe qué día es hoy, el visor ordenado, entregables
     const pdf = await bajar(`/panel/postulaciones/${e.robert.postulacion}/informes/cv/pdf`)
     expect(pdf.estado).toBe(200)
     const todo = texto(pdf.archivo)
-    for (const p of ['987 111 222', '987111222', '912 345 678']) expect(todo).not.toContain(p)
+    for (const p of [robert.escrito, robert.e164.slice(3), '912 345 678']) expect(todo).not.toContain(p)
     expect(enlacesDelPdf(pdf.archivo).some((u) => u.startsWith('tel:') || u.includes('wa.me'))).toBe(false)
   })
 
@@ -238,7 +242,8 @@ test.describe('QA · la IA sabe qué día es hoy, el visor ordenado, entregables
       expect(del(visor, e.mayra), 'Mayra sigue en el visor').toBeTruthy()
       expect(del(visor, e.robert).celular ?? null).toBeNull()
       expect(del(visor, e.mayra).celular ?? null).toBeNull()
-      expect(JSON.stringify(visor)).not.toMatch(/987111222|912 345 678|923-456-789|923456789/)
+      const delVisor = JSON.stringify(visor)
+      for (const n of [e.celularDeRobert.e164.slice(3), '912 345 678', '923-456-789', '923456789']) expect(delVisor).not.toContain(n)
       // La de al lado, sin anonimizar, sigue con el del CV (8 cifras: sin WhatsApp).
       expect(del(visor, e.alex).celular?.llamar).toBe('tel:98765432')
 
@@ -256,12 +261,12 @@ test.describe('QA · la IA sabe qué día es hoy, el visor ordenado, entregables
         await expect(t.getByRole('link', { name: /^Llamar al/ })).toHaveCount(0)
         await expect(t.getByRole('link', { name: /WhatsApp/ })).toHaveCount(0)
         await expect(t.locator('a[href^="tel:"], a[href*="wa.me"]')).toHaveCount(0)
-        for (const n of ['987 111 222', '912 345 678', '923 456 789']) await expect(page.getByText(n)).toHaveCount(0)
+        for (const n of [e.celularDeRobert.escrito, '912 345 678', '923 456 789']) await expect(page.getByText(n)).toHaveCount(0)
       }
     } finally {
       sql(`update persona set anonimizado_en = null where id in (${ids.join(',')});`)
     }
-    expect(del(await visorDe(equipo), e.robert).celular?.texto).toBe('987 111 222')
+    expect(del(await visorDe(equipo), e.robert).celular?.texto).toBe(e.celularDeRobert.escrito)
   })
 
   test('AC-12 · con «descargar_entregables»: el archivo y el enlace se abren desde el visor; el PDF enlaza la dirección', async ({ page }) => {

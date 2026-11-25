@@ -460,7 +460,14 @@ cambia su relleno o el alto de la campana, se vuelve a medir.
 - Al cargar, los destinos y las acciones entran en cascada (4 px y fundido, 420 ms, de 50 en
   50 ms).
 - **La campana** (`ui/Campana`): sin fondo al pasar, baja a 0,6; el número en un cuadrado azul
-  de 16 px; el panel de avisos es una celda de filete con «AVISOS» como etiqueta.
+  de 16 px; el panel de avisos es una celda de filete de **22rem** (20 hasta el 25/11/2026) con
+  «TUS AVISOS» como etiqueta y, a la derecha de su cabecera, «Marcar todos como leídos» y **la
+  tuerca** «Ajustes de avisos»: un cuadrado de 32 px con filete `--regla2` y esquinas de 4 px
+  sobre el papel; al pasar, la bruma azul (`--activo-bruma`) con el filete y el icono en azul, y un
+  globito en tinta con su nombre (también con el foco del teclado). Lleva **un puntito verde**
+  (`--whatsapp`, 9 px, con un anillo de nube) solo cuando WhatsApp se puede activar; nunca texto.
+  En el teléfono (≤ 30rem) el panel es **una hoja inferior** a todo el ancho, con asa, esquinas de
+  8 px arriba y el velo de siempre detrás, y la tuerca mide 44 px.
 
 ### El pie (`app/Armazon.tsx`)
 
@@ -561,17 +568,63 @@ margen), **usado tal cual**: no se vectorizó ni se redibujó.
   pantalla de arranque salen de `python3 herramientas/derivados-del-logotipo.py`, que parte
   siempre del PNG original: si el logotipo cambia, se sustituye el archivo y se corre otra vez.
 
-### La excepción verde: «Escribir por WhatsApp» (`.whatsapp`, 13/10/2026)
+### La excepción verde: WhatsApp (`.whatsapp`, 13/10/2026; en los ajustes de avisos desde el 24/11/2026)
 
 **El único botón del portal que no es azul ni tinta**, decidido por el usuario el 12/10/2026.
 Va relleno del verde de WhatsApp, `--whatsapp` `#25D366` (`--whatsapp-pulsado` `#1FBF5A` al pasar
 por encima), con **la tinta oscura encima y no blanca** —el blanco sobre ese verde da 1,98:1;
-`--tinta` da 8,3:1— y el logotipo de WhatsApp delante. El verde dice «WhatsApp» y nada más, y
-**la tarjeta solo sale cuando al candidato no le toca nada**. Desde el 13/11 lleva el filete negro
-al 10 % y sus mayúsculas, como el resto de botones.
+`--tinta` da 8,3:1— y el logotipo de WhatsApp delante. El verde dice «WhatsApp» y nada más, y no
+le compite a la acción: no sale dentro de ningún proceso. Desde el 13/11 lleva el filete negro al
+10 % y sus mayúsculas, como el resto de botones.
 
-La tarjeta que lo lleva es **`.ofrecimiento`**: nube con filete y sin sombra, sobre el papel
-hundido del panel de espera. No reclama —ofrecer no es pedir—.
+**Desde la V92 ya no hay tarjeta por proceso** (la pieza `.ofrecimiento` se queda sin uso), y
+**desde el 25/11/2026 tampoco botón en «Mis procesos»**: el botón «Notificaciones» con su línea de
+estado y su mensaje flotante se quitaron. El verde vive solo en los avisos de la campana
+(`src/ui/notificaciones/`, `src/ui/Campana.module.css`) y siempre dice WhatsApp:
+
+- **El puntito de la tuerca** (ver «La campana», arriba): WhatsApp se puede activar.
+- **La ventana «Ajustes de avisos»** (`Ajustes.module.css`) es un `<dialog>` nativo de 480 px con
+  el velo de siempre: cabecera «Ajustes de avisos» (22 px, 400) con «Para todos tus procesos.»,
+  tres filas separadas por filetes —sello de 40 px, nombre, detalle y el interruptor— y un pie en
+  letra menor. El sello de un canal encendido pasa a tinta maciza. **El interruptor** es tinta
+  encendido; **solo el de WhatsApp es verde**. Su bolita se mueve con `transform`, se ensancha al
+  pulsar y late mientras se activa. La chapa «Recomendado» va en Syne, mayúsculas espaciadas, con
+  filete. Sin número, el campo del celular y «Guardar» comparten fila mientras el campo tenga
+  12rem; en el teléfono «Guardar» baja debajo y el número de nueve cifras se ve entero. El error
+  del campo va debajo de la fila: «Guardar» sigue a la altura del campo. **En el teléfono** es la
+  misma hoja inferior que la campana —pegada abajo, asa, esquinas de 8 px arriba—, con la flecha
+  «Volver a tus avisos» (44 px) a la izquierda del título en vez de la ×, y los interruptores de
+  48 × 28.
+- **«Activar WhatsApp»** (y «Abrir WhatsApp», esperando su mensaje) del paso 3 de la guía (abajo): `.whatsapp` a todo lo ancho.
+
+Con movimiento reducido la ventana y las notas solo se funden, y los interruptores cambian sin
+transición.
+
+### La guía de los avisos (`ui/notificaciones/Guia`, 25/11/2026)
+
+La primera vez que una cuenta entra en «Mis procesos» con alguna postulación, tres pasos con
+**foco** sobre la campana y luego sobre la tuerca (la campana se abre en el paso 2). Es la única
+pantalla del portal con este recurso:
+
+- **El foco**: un agujero con las esquinas de 8 px que sobra 6 px alrededor de lo señalado, hecho
+  con una sombra enorme en `--velo-guia` (negro al 55 %, más hondo que el velo de una ventana para
+  que lo señalado salte), y un anillo de 2 px en azul aclarado al 40 % sobre la nube, a 5 px.
+- **La burbuja**: nube, esquinas de 8 px, `--sombra-aviso`, 360 px y un pico de 14 px que mira a
+  lo señalado (arriba en el paso 1; a la derecha, hacia el panel, en los pasos 2 y 3). Arriba, «1
+  DE 3» como etiqueta (Syne 11 px, mayúsculas espaciadas) y tantas rayas de 20 × 3 como pasos,
+  azules las hechas. Título de 20 px y 400 con -0,03em, texto en tinta segunda, y abajo los
+  botones: el principal en tinta (`.solido`) y los demás —«Saltar guía», «Atrás», «Ahora no»— sin
+  caja, en mayúsculas grises. En el paso 2, las chapas de los canales (papel hundido, 13 px, el
+  icono de WhatsApp en su verde oscurecido y los otros en azul); en el 3, «Activar WhatsApp» verde
+  a lo ancho con el consentimiento debajo en letra menor. Esperando su mensaje, el 3 es «Termina de
+  activar WhatsApp»: el número en cifras tabulares dentro del texto, «Abrir WhatsApp» verde a lo
+  ancho sin consentimiento y, 8 px debajo, «Ahora no» sin caja a la derecha. Con WhatsApp activo,
+  «Todo listo» con «Entendido» en tinta a la derecha.
+- **En el teléfono** la burbuja va a todo el ancho (16 px de margen) bajo la cabecera y, en los
+  pasos 2 y 3, encima de la hoja de la campana con el pico hacia abajo.
+- **Movimiento**: el foco se desliza de la campana a la tuerca (350 ms, curva de salida) y cada
+  paso entra 4 px con fundido (220 ms). Con movimiento reducido el foco cambia de sitio de golpe y
+  el paso solo se funde.
 
 ### Movimiento
 

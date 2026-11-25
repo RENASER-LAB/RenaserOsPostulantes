@@ -19,6 +19,13 @@ export const MENSAJE_CELULAR =
   'Escribe un celular de 9 cifras que empiece por 9, o el número completo con su prefijo'
 
 /**
+ * Lo que se dice junto al campo cuando el celular ya es de otra cuenta (409
+ * `TELEFONO_EN_USO`, V92): en el registro, en «Mi cuenta» y en «Notificaciones». Es la misma
+ * frase que manda el backend.
+ */
+export const MENSAJE_TELEFONO_EN_USO = 'Ese número ya está en otra cuenta. Usa otro o entra con esa cuenta.'
+
+/**
  * Los separadores que no cuentan, uno por uno los de `sinSeparadores` del backend:
  * espacio, tabulador, espacio duro, guion, punto y paréntesis. Un `\s` dejaba pasar
  * un salto de línea o un espacio largo que la API rechaza.
@@ -67,6 +74,24 @@ function esInternacional(cifras: string): boolean {
 export function paraMostrar(e164: string): string {
   const peruano = /^\+51(\d{3})(\d{3})(\d{3})$/.exec(e164)
   return peruano ? `+51 ${peruano[1]} ${peruano[2]} ${peruano[3]}` : e164
+}
+
+/**
+ * «+51 9•• ••• 321»: el número sin dejarlo entero, como lo pinta el backend con WhatsApp
+ * activo (`Celular.enmascarado`): el prefijo y la primera cifra, y las tres últimas. Otro
+ * país, «+346•••••678». Vale con el número para mostrar («+51 987 654 321») o en E.164; si
+ * ya viene enmascarado, tal cual. Lo que no se reconoce como celular no se enseña: `null`.
+ */
+export function enmascarado(numero: string | null | undefined): string | null {
+  if (!numero) return null
+  if (numero.includes('•')) return numero
+  const e164 = comoE164(numero)
+  if (!e164) return null
+  const peruano = /^\+51(\d)\d{5}(\d{3})$/.exec(e164)
+  if (peruano) return `+51 ${peruano[1]}•• ••• ${peruano[2]}`
+  const cifras = e164.slice(1)
+  const alPrincipio = Math.min(3, cifras.length - 3)
+  return `+${cifras.slice(0, alPrincipio)}${'•'.repeat(cifras.length - alPrincipio - 3)}${cifras.slice(-3)}`
 }
 
 /**

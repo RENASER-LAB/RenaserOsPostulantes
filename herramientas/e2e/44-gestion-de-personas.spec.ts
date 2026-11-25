@@ -3,7 +3,7 @@ import { expect, type Page } from '@playwright/test'
 
 import { API, entrarAlPanel, corte } from './ayuda'
 import { apiPanel } from './ayuda-configuracion'
-import { borrarCuentasDePrueba, correoDePrueba, crearCuentaDeCandidato, test } from './ayuda-candidato'
+import { borrarCuentasDePrueba, celularUnico, correoDePrueba, crearCuentaDeCandidato, test } from './ayuda-candidato'
 import {
   altaPorLaApi,
   comoSeVe,
@@ -214,7 +214,9 @@ test('2 · una sede nueva en Configuración, el alta manual y el documento dupli
 test('3 · contratar desde la ficha y dar de alta precargado, con la ficha enlazada (AC-11, AC-13)', async ({ page }) => {
   const correo = correoDePrueba('qa.personas.3e62')
   cuentas.push(correo)
-  await crearCuentaDeCandidato({ nombre: 'Carla', apellidos: `De la Cruz ${SUFIJO}`, correo })
+  // El de su cuenta, único (V92) y distinto del que leyó el CV: así se ve cuál de los dos trae.
+  const celular = celularUnico()
+  await crearCuentaDeCandidato({ nombre: 'Carla', apellidos: `De la Cruz ${SUFIJO}`, correo, telefono: celular })
   const vacante = sembrarVacante(e!, `Asistente ${SUFIJO}`)
   vacantes.push(vacante)
   const postulacion = sembrarPostulacion(vacante, correo, 'PRUEBA_TURNO_CANDIDATO', '987654321')
@@ -248,7 +250,7 @@ test('3 · contratar desde la ficha y dar de alta precargado, con la ficha enlaz
   await expect(page.getByLabel('Apellido paterno')).toHaveValue(`De la Cruz ${SUFIJO}`)
   await expect(page.getByLabel('Correo personal')).toHaveValue(correo)
   // El de su cuenta, con la forma del campo (spec celular-con-formato-999-999-999, AC-11).
-  await expect(page.getByLabel('Celular')).toHaveValue('987 654 321')
+  await expect(page.getByLabel('Celular')).toHaveValue(celular)
   await expect(page.getByLabel('Cargo')).toHaveValue(String(e!.cargoAnalista.id))
   await expect(page.getByLabel('Área')).toHaveValue(String(e!.area.id))
   await expect(page.getByLabel('Fecha de ingreso')).toHaveValue('')

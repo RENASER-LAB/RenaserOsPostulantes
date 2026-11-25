@@ -1,6 +1,7 @@
 import { expect, type Locator, type Page } from '@playwright/test'
 import {
   borrarCuentasDePrueba,
+  celularUnico,
   CLAVE_DE_CANDIDATO,
   correoDePrueba,
   crearCuentaDeCandidato,
@@ -46,7 +47,8 @@ async function rellenarTodoMenosLaCiudad(page: Page, correo: string) {
   await page.getByLabel(/^Nombre/).fill('Camila')
   await page.getByLabel(/^Apellidos/).fill('Ramos Vega')
   await page.getByLabel(/^Correo/).fill(correo)
-  await page.getByLabel(/^Celular \(WhatsApp\)/).fill('987 654 321')
+  // Un celular es de una sola cuenta (V92): cada registro lleva uno nuevo.
+  await page.getByLabel(/^Celular \(WhatsApp\)/).fill(celularUnico())
   await page.getByLabel(/^Contraseña/).fill(CLAVE_DE_CANDIDATO)
   await page.getByLabel('Repite la contraseña').fill(CLAVE_DE_CANDIDATO)
   await page.locator('input[type="checkbox"]').first().check()

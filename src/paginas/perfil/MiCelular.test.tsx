@@ -44,6 +44,24 @@ describe('el celular en «Mi cuenta»', () => {
     expect(screen.getByRole('button', { name: 'Cambiar' })).toBeTruthy()
   })
 
+  it('AC-11 · un número que ya usa otra cuenta: 409 y el aviso junto al campo, sin cambiar nada', async () => {
+    api.quienSoy.mockResolvedValue({ usuarioId: 1, nombre: 'Ana', apellidos: 'Pérez', telefono: '+51987654321' })
+    const { ErrorApi } = await import('@/api/cliente')
+    api.cambiarCelular.mockRejectedValue(
+      new ErrorApi(409, 'Ese número ya está en otra cuenta. Usa otro o entra con esa cuenta.', {
+        codigo: 'TELEFONO_EN_USO',
+      }),
+    )
+    montar()
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Cambiar' }))
+    fireEvent.change(screen.getByLabelText(/^Celular \(WhatsApp\)/), { target: { value: '912 345 678' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+
+    expect(await screen.findByText('Ese número ya está en otra cuenta. Usa otro o entra con esa cuenta.')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Guardar' })).toBeTruthy()
+  })
+
   it('una cuenta anterior sin celular puede añadirlo, sin que se le obligue', async () => {
     api.quienSoy.mockResolvedValue({ usuarioId: 1, nombre: 'Ana', apellidos: 'Pérez', telefono: null })
     montar()

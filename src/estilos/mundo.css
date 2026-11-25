@@ -897,6 +897,9 @@ time,
   --sombra-control: 0 0 0 1px rgb(17 19 18 / 0.12);
   --sombra-control-alta: none;
   --velo: rgb(0 0 0 / 0.4);
+  /* El velo de la guía de los avisos (25/11/2026), con el agujero del foco: más hondo que
+     el de una ventana para que lo señalado salte a la vista. Solo lo usa la guía. */
+  --velo-guia: rgb(0 0 0 / 0.55);
 }
 
 :root:not(.mundo-panel),

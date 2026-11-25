@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { API, corte, entrarAlPanel, entrarAlPortal, filasDelRanking, IA_REAL, pestana, SIN_IA_REAL } from './ayuda'
+import { celularUnico, saltarLaGuiaDeAvisos } from './ayuda-candidato'
 import {
   crearVacanteEnBorrador,
   escribirLaFicha,
@@ -56,6 +57,9 @@ const recorrido = {
 
 test.describe('El ciclo 2 · la vacante elige el cuestionario y la candidata lo rinde', () => {
   test.describe.configure({ mode: 'serial' })
+  // La guía de los avisos (V93) no es de esta prueba: se salta, como en el `test` de
+  // `ayuda-candidato`.
+  test.beforeEach(({ context }) => saltarLaGuiaDeAvisos(context))
 
   test.beforeAll(async () => {
     recorrido.vacanteId = await crearVacanteEnBorrador(recorrido.titulo)
@@ -228,7 +232,8 @@ test.describe('El ciclo 2 · la vacante elige el cuestionario y la candidata lo 
     await page.getByLabel(/^Nombre/).fill('Camila')
     await page.getByLabel(/^Apellidos/).fill('Reyes Quispe')
     await page.getByLabel(/^Correo/).fill(recorrido.correo)
-    await page.getByLabel(/^Celular \(WhatsApp\)/).fill('987 654 321')
+    // Un celular es de una sola cuenta (V92): uno nuevo en cada ejecución.
+    await page.getByLabel(/^Celular \(WhatsApp\)/).fill(celularUnico())
     await page.getByLabel(/^Contraseña/).fill(CLAVE)
     await page.getByLabel('Repite la contraseña').fill(CLAVE)
     // El alta exige ciudad desde que existe el filtro por ciudad del ranking.

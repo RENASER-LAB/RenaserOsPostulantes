@@ -22,21 +22,28 @@ import {
   NUMERO_DEL_BOT,
   ponerLaBeta,
 } from './ayuda-whatsapp'
+import { abrirLosAjustes, cerrarLosAjustes, interruptorDeWhatsapp, ventanaDeAjustes, whatsappEsta } from './ayuda-ajustes-de-avisos'
 
 /**
  * Las novedades de la postulación por WhatsApp (V73), los recorridos de la Verificación de
  * `specs/novedades-por-whatsapp.md` en EX, con el bot falso del backend del clon:
  *
  *   1. Registrarse sin celular (error) y con celular.
- *   2. Ver la tarjeta, pulsar «Escribir por WhatsApp» y comprobar el enlace, el mensaje y el
- *      anuncio que le llega al bot.
- *   3. Hacer de bot: la llamada firmada a `/vinculos` desde el número anunciado, y el portal
- *      pasa a «Conectado».
+ *   2. Activar WhatsApp en la ventana «Ajustes de avisos» y comprobar el enlace, el mensaje y
+ *      el anuncio que le llega al bot.
+ *   3. Hacer de bot: la llamada firmada a `/vinculos` desde el número anunciado, y la ventana
+ *      lo da por activo.
  *   4. Pasar la postulación a la prueba: un solo aviso para el bot.
- *   5. «Dejar de recibir»: le llega la revocación.
+ *   5. Apagarlo en la ventana: le llega la revocación.
  *   6. Cambiar el celular en «Mi cuenta»: le llega la revocación del anterior.
- *   7. La cuenta sin celular lo da desde la tarjeta.
- *   8. Una vacante de otra empresa no tiene tarjeta.
+ *   7. La cuenta sin celular lo da en la ventana.
+ *   8. Una vacante de otra empresa no entra en WhatsApp.
+ *
+ * Desde la V92 (spec notificaciones-del-candidato) WhatsApp es un ajuste de la cuenta: la
+ * tarjeta de cada proceso, su «Escribir por WhatsApp» y su «Dejar de recibir» ya no existen, y
+ * estos recorridos pasan por la ventana de ajustes, que desde el 25/11/2026 se abre con la
+ * tuerca de la campana (ya no con un botón «Notificaciones» en «Mis procesos»). Lo propio de la
+ * ventana —la guía de la primera vez, la BAJA, correo y campana…— vive en `73-…-qa`.
  *
  * El enlace `wa.me` no sale a internet: la pestaña que se abre se queda con una página de
  * mentira. La beta se enciende desde el panel y se deja como estaba al terminar.
@@ -79,8 +86,23 @@ async function postuladaYEsperando(cuenta: Cuenta, aVacante = vacante): Promise<
   return uuid
 }
 
-/** La tarjeta de WhatsApp de la única postulación en «Mis procesos». */
-const tarjeta = (page: Page) => page.getByRole('region', { name: /novedades por WhatsApp/i }).first()
+/** La ventana «Ajustes de avisos» (la tuerca de la campana) y su interruptor de WhatsApp. */
+const ventana = ventanaDeAjustes
+const interruptor = interruptorDeWhatsapp
+
+/** El texto de consentimiento de WhatsApp para la cuenta (V92): el que se lee y se firma. */
+const CONSENTIMIENTO_DE_LA_CUENTA =
+  'Al activarlo aceptas recibir por WhatsApp las novedades de tus procesos. Escribe BAJA cuando quieras dejarlo.'
+
+const personaDe = (cuenta: Cuenta): number =>
+  Number(uno(`select persona_id as p from usuario where correo = ${literal(cuenta.correo)}`).p)
+
+/** El chat no sale a internet: la pestaña que se abre se queda con una página de mentira. */
+async function chatDeMentira(page: Page) {
+  await page.context().route('https://wa.me/**', (ruta) =>
+    ruta.fulfill({ status: 200, contentType: 'text/html', body: '<p>WhatsApp de mentira</p>' }),
+  )
+}
 
 /** Espera a que el bot falso haya recibido algo de ese tipo para ese número. */
 async function hastaQueLlegue(e164: string, tipo: string, cuantas = 1) {
@@ -192,30 +214,23 @@ test.describe('Las novedades de la postulación por WhatsApp', () => {
     ).toBe(celular.e164)
   })
 
-  test('2-5 · la tarjeta, el botón, el bot que vincula, el aviso de la prueba y dejar de recibir', async ({ page }) => {
+  test('2-5 · activar en la ventana, el bot que vincula, el aviso de la prueba y apagarlo', async ({ page }) => {
     const ana = await cuentaCon('Ana')
     const uuid = await postuladaYEsperando(ana)
     await entrarAlPortalCon(page, ana.token)
-    // El enlace no sale a internet: la pestaña que se abre se queda con una página de mentira.
-    await page.context().route('https://wa.me/**', (ruta) =>
-      ruta.fulfill({ status: 200, contentType: 'text/html', body: '<p>WhatsApp de mentira</p>' }),
-    )
+    await chatDeMentira(page)
 
-    // AC-03 · la tarjeta en «Mis procesos», con su número, el botón y el consentimiento
+    // AC-03 · ninguna tarjeta en el proceso: la ventana, con su número y el consentimiento
     await page.goto('/procesos')
-    const suya = tarjeta(page)
-    await expect(suya).toBeVisible()
-    await expect(suya.getByText('Recibe tus novedades por WhatsApp')).toBeVisible()
-    await expect(suya.getByText(ana.celular.mostrado)).toBeVisible()
-    await expect(
-      suya.getByText('Al escribirnos aceptas recibir por WhatsApp las novedades de este proceso. Puedes dejarlo cuando quieras.'),
-    ).toBeVisible()
+    await expect(page.getByRole('region', { name: /novedades por WhatsApp/i })).toHaveCount(0)
+    await abrirLosAjustes(page)
+    await whatsappEsta(page, 'apagado')
+    await expect(ventana(page).getByText(ana.celular.mostrado)).toBeVisible()
+    await expect(ventana(page).getByText(CONSENTIMIENTO_DE_LA_CUENTA)).toBeVisible()
+    await expect(interruptor(page)).toHaveAttribute('aria-checked', 'false')
 
-    // AC-06 · pulsar: se abre el chat del bot con el mensaje ya escrito, y el bot recibe el anuncio
-    const [pestana] = await Promise.all([
-      page.waitForEvent('popup'),
-      suya.getByRole('button', { name: 'Escribir por WhatsApp' }).click(),
-    ])
+    // AC-06 · encender: se abre el chat del bot con el mensaje ya escrito, y el bot recibe el anuncio
+    const [pestana] = await Promise.all([page.waitForEvent('popup'), interruptor(page).click()])
     await pestana.waitForURL(/wa\.me/)
     const enlace = new URL(pestana.url())
     expect(enlace.pathname).toBe(`/${NUMERO_DEL_BOT}`)
@@ -223,25 +238,27 @@ test.describe('Las novedades de la postulación por WhatsApp', () => {
       `Hola, soy Ana Prueba. Quiero saber cómo va mi postulación a ${MARCA} ${TITULO}.`,
     )
     await pestana.close()
-    await expect(suya.getByText(/Aún no recibimos tu mensaje/)).toBeVisible()
-    await expect(suya.getByText(/¿Usas otro número\?/)).toBeVisible()
+    await whatsappEsta(page, 'esperando')
+    await expect(ventana(page).getByText(`Te abrimos WhatsApp. Envía el mensaje desde el ${ana.celular.mostrado} para terminar.`)).toBeVisible()
+    await expect.poll(async () => (await loQueRecibioElBot(ana.celular.e164)).length, { timeout: 30_000 }).toBe(1)
     const anuncios = await loQueRecibioElBot(ana.celular.e164)
     expect(anuncios.map((l) => l.tipo)).toEqual(['ESPERA'])
     const referencia = anuncios[0]!.cuerpo.postulacionRef
     expect(referencia).toMatch(/^pw_/)
     expect(referencia).not.toContain(uuid)
-    // El anuncio lleva el consentimiento que acaba de aceptar: tipo, versión, texto exacto y fecha.
+    // El anuncio lleva el consentimiento que acaba de aceptar: el de la cuenta viaja como el tipo
+    // WHATSAPP del contrato, con su versión, el texto exacto y la fecha.
     expect(anuncios[0]!.cuerpo.consentimiento).toMatchObject({
       tipo: 'WHATSAPP',
       version: '1.0',
-      texto: 'Al escribirnos aceptas recibir por WhatsApp las novedades de este proceso. Puedes dejarlo cuando quieras.',
+      texto: CONSENTIMIENTO_DE_LA_CUENTA,
     })
     expect(Date.parse(anuncios[0]!.cuerpo.consentimiento!.aceptadoEn)).not.toBeNaN()
     expect(Date.parse(anuncios[0]!.cuerpo.caducaEn!)).toBeGreaterThan(Date.now())
     const postulacion = postulacionPorUuid(uuid)
     expect(
       Number(uno(`select count(*) as n from consentimiento c join texto_consentimiento t on t.id = c.texto_consentimiento_id
-                   where t.tipo = 'WHATSAPP' and c.postulacion_id = ${postulacion}`).n),
+                   where t.tipo = 'WHATSAPP_CUENTA' and c.persona_id = ${personaDe(ana)} and c.postulacion_id is null`).n),
     ).toBe(1)
 
     // AC-14 · sin firma, el bot no entra
@@ -272,7 +289,9 @@ test.describe('Las novedades de la postulación por WhatsApp', () => {
     expect(novedades.cuerpo).toEqual({ novedades: vinculo.cuerpo.novedades })
     await page.reload()
     await expect(page.getByText('Estamos calificando tus respuestas').first()).toBeVisible()
-    await expect(tarjeta(page).getByText(/Conectado por WhatsApp \(\+51 9•• ••• \d{3}\)\./)).toBeVisible()
+    await abrirLosAjustes(page)
+    await whatsappEsta(page, 'activo')
+    await cerrarLosAjustes(page)
 
     // AC-08 · pasa a la prueba: correo, campana y UN aviso para el bot
     await exigir(`/panel/postulaciones/${postulacion}/transiciones`, equipo, 'POST', {
@@ -292,54 +311,44 @@ test.describe('Las novedades de la postulación por WhatsApp', () => {
     expect(avisos[0]!.cuerpo.texto).toContain(`¡Felicidades, Ana! 🎉\n\n📌 *${MARCA} ${TITULO}*\nTu *prueba del puesto* ya está disponible.`)
     expect(avisos[0]!.cuerpo.texto).toContain('Inicia sesión con tu correo y contraseña y abre «Mis procesos».')
     expect(avisos[0]!.cuerpo.texto).not.toContain('token')
-    // Le toca algo: la tarjeta no sale, manda la acción; conectada, una línea debajo de ella
+    // Le toca algo: manda la acción, y WhatsApp sigue activo para la cuenta sin tarjeta alguna
     await page.goto('/procesos')
     await expect(page.getByRole('link', { name: /Abrir prueba/ }).first()).toBeVisible()
-    await expect(page.getByText('Recibe tus novedades por WhatsApp')).toHaveCount(0)
-    await expect(tarjeta(page).getByText(/Conectado por WhatsApp \(\+51 9•• ••• \d{3}\)\./)).toBeVisible()
-    await expect(tarjeta(page).getByRole('button', { name: 'Escribir por WhatsApp' })).toHaveCount(0)
+    await expect(page.getByRole('region', { name: /novedades por WhatsApp/i })).toHaveCount(0)
+    await abrirLosAjustes(page)
+    await whatsappEsta(page, 'activo')
 
-    // AC-12 · «Dejar de recibir» desde esa línea, con la prueba abierta, y la revocación
-    await tarjeta(page).getByRole('button', { name: 'Dejar de recibir' }).click()
-    await expect(tarjeta(page).getByText('Listo: ya no recibirás por WhatsApp las novedades de este proceso.')).toBeVisible()
+    // AC-12 · apagarlo en la ventana, con la prueba abierta, y la revocación
+    await expect(interruptor(page)).toHaveAttribute('aria-checked', 'true')
+    await interruptor(page).click()
+    await expect(interruptor(page)).toHaveAttribute('aria-checked', 'false')
+    await whatsappEsta(page, 'apagado')
     await hastaQueLlegue(ana.celular.e164, 'REVOCACION')
     const revocacion = (await loQueRecibioElBot(ana.celular.e164)).find((l) => l.tipo === 'REVOCACION')
     expect(revocacion?.cuerpo).toMatchObject({ postulacionRef: referencia, motivo: 'DEJAR_DE_RECIBIR' })
   })
 
-  test('5b · AC-12 · «Dejar de recibir» desde la tarjeta conectada', async ({ page }) => {
-    const beto = await cuentaCon('Beto')
-    const uuid = await postuladaYEsperando(beto)
-    await exigir(`/portal/postulaciones/${uuid}/whatsapp`, beto.token, 'POST')
-    const vinculo = await comoElBot('/vinculos', 'POST', { telefono: beto.celular.e164, wamid: 'w-beto', texto: 'hola' })
-    expect(vinculo.estado).toBe(200)
-
-    await entrarAlPortalCon(page, beto.token)
-    await page.goto('/procesos')
-    await tarjeta(page).getByRole('button', { name: 'Dejar de recibir' }).click()
-
-    await expect(tarjeta(page).getByRole('button', { name: 'Escribir por WhatsApp' })).toBeVisible()
-    await hastaQueLlegue(beto.celular.e164, 'REVOCACION')
-  })
-
   test('6 · AC-02 · cambiar el celular en «Mi cuenta» revoca el anterior', async ({ page }) => {
     const carla = await cuentaCon('Carla')
-    const uuid = await postuladaYEsperando(carla)
-    await exigir(`/portal/postulaciones/${uuid}/whatsapp`, carla.token, 'POST')
-    await hastaQueLlegue(carla.celular.e164, 'ESPERA')
+    await postuladaYEsperando(carla)
     const nuevo = celularUnico()
     celulares.push(nuevo.e164)
 
     await entrarAlPortalCon(page, carla.token)
-    // Desde la tarjeta, «Cámbialo en Mi cuenta» lleva al campo del celular: ya abierto con
+    // Desde la ventana, «Cámbialo en Mi cuenta» lleva al campo del celular: ya abierto con
     // el número de ahora, a la vista y con el foco dentro, no al principio del perfil.
     await page.goto('/procesos')
-    await tarjeta(page).getByRole('link', { name: 'Cámbialo en Mi cuenta' }).click()
+    await abrirLosAjustes(page)
+    await ventana(page).getByRole('link', { name: 'Cámbialo en Mi cuenta' }).click()
     await expect(page).toHaveURL(/\/perfil#celular$/)
     const campo = page.getByLabel(/^Celular \(WhatsApp\)/)
     await expect(campo).toBeFocused()
     await expect(campo).toBeInViewport()
     await expect(campo).toHaveValue(carla.celular.escrito)
+
+    // Activado por la API (sin comprobar, espera su mensaje) antes de cambiarlo.
+    expect((await exigir('/portal/notificaciones/whatsapp', carla.token, 'POST')).resultado).toBe('POR_MENSAJE')
+    await hastaQueLlegue(carla.celular.e164, 'ESPERA')
     await campo.fill('54 123456')
     await page.getByRole('button', { name: 'Guardar', exact: true }).click()
     await expect(
@@ -353,45 +362,50 @@ test.describe('Las novedades de la postulación por WhatsApp', () => {
     const revocacion = (await loQueRecibioElBot(carla.celular.e164)).find((l) => l.tipo === 'REVOCACION')
     expect(revocacion?.cuerpo.motivo).toBe('CAMBIO_CELULAR')
 
-    // En su proceso en espera, la tarjeta vuelve a ofrecer el botón con el número nuevo
+    // Ya no espera ningún mensaje: la ventana enseña el número nuevo, apagado, para activarlo de
+    // nuevo. (El anterior nunca se comprobó, así que no es «Cambiaste tu número»: eso es de quien
+    // lo tenía activo, en `73-…-qa`, AC-12.)
     await page.goto('/procesos')
-    await expect(tarjeta(page).getByText(nuevo.mostrado)).toBeVisible()
-    await expect(tarjeta(page).getByRole('button', { name: 'Escribir por WhatsApp' })).toBeVisible()
+    await abrirLosAjustes(page)
+    await whatsappEsta(page, 'apagado')
+    await expect(ventana(page).getByText(nuevo.mostrado)).toBeVisible()
+    await expect(ventana(page).getByText(CONSENTIMIENTO_DE_LA_CUENTA)).toBeVisible()
+    await expect(interruptor(page)).toHaveAttribute('aria-checked', 'false')
   })
 
-  test('7 · AC-05 · la cuenta sin celular lo da desde la tarjeta', async ({ page }) => {
+  test('7 · AC-05 · la cuenta sin celular lo da en la ventana', async ({ page }) => {
     const dora = await cuentaCon('Dora')
     await postuladaYEsperando(dora)
     // Una cuenta anterior a la V73: sin celular.
     sql(`update persona set telefono = null
           where id = (select persona_id from usuario where correo = ${literal(dora.correo)});`)
-    await page.context().route('https://wa.me/**', (ruta) =>
-      ruta.fulfill({ status: 200, contentType: 'text/html', body: '<p>WhatsApp de mentira</p>' }),
-    )
+    await chatDeMentira(page)
 
     await entrarAlPortalCon(page, dora.token)
-    // WhatsApp vive solo en «Mis procesos» (#86): el detalle ya no enseña la tarjeta.
+    // WhatsApp vive solo en «Mis procesos»: en la ventana, el campo y «Guardar».
     await page.goto('/procesos')
-    const suya = tarjeta(page)
-    const campo = suya.getByLabel(/^Tu celular \(WhatsApp\)/)
-    await expect(campo).toBeVisible()
+    await abrirLosAjustes(page)
+    await whatsappEsta(page, 'sin número')
+    await expect(interruptor(page)).toHaveCount(0)
+    const campo = ventana(page).getByLabel('Agrega tu celular para recibir avisos por WhatsApp.')
     await campo.fill(dora.celular.escrito)
-    const [pestana] = await Promise.all([
-      page.waitForEvent('popup'),
-      suya.getByRole('button', { name: 'Guardar y escribir por WhatsApp' }).click(),
-    ])
-    await pestana.waitForURL(/wa\.me/)
-    await pestana.close()
-
-    await expect(suya.getByText(/Aún no recibimos tu mensaje/)).toBeVisible()
+    await ventana(page).getByRole('button', { name: 'Guardar', exact: true }).click()
+    await expect(ventana(page).getByText(dora.celular.mostrado)).toBeVisible()
     expect(
       uno(`select p.telefono from persona p join usuario u on u.persona_id = p.id
             where u.correo = ${literal(dora.correo)}`).telefono,
     ).toBe(dora.celular.e164)
-    expect((await loQueRecibioElBot(dora.celular.e164)).map((l) => l.tipo)).toEqual(['ESPERA'])
+
+    // Con el número ya guardado, el interruptor abre el chat.
+    const [pestana] = await Promise.all([page.waitForEvent('popup'), interruptor(page).click()])
+    await pestana.waitForURL(/wa\.me/)
+    await pestana.close()
+    await whatsappEsta(page, 'esperando')
+    await expect.poll(async () => (await loQueRecibioElBot(dora.celular.e164)).map((l) => l.tipo), { timeout: 30_000 })
+      .toEqual(['ESPERA'])
   })
 
-  test('8 · AC-04 · una vacante de otra empresa no tiene tarjeta', async ({ page }) => {
+  test('8 · AC-04 · una vacante de otra empresa no entra en WhatsApp', async ({ page }) => {
     const eva = await cuentaCon('Eva')
     const uuid = await postular(eva.token, otraVacante)
     // Se postula mientras es de RENASER y después pasa, con su postulación, a la otra empresa.
@@ -404,12 +418,17 @@ test.describe('Las novedades de la postulación por WhatsApp', () => {
     await entrarAlPortalCon(page, eva.token)
     await page.goto(`/procesos/${uuid}`)
     await expect(page.getByText('Estamos calificando tus respuestas').first()).toBeVisible()
-    await expect(page.getByText('Recibe tus novedades por WhatsApp')).toHaveCount(0)
-    const boton = await fetch(`${API}/portal/postulaciones/${uuid}/whatsapp`, {
+    await expect(page.getByRole('region', { name: /novedades por WhatsApp/i })).toHaveCount(0)
+    // El botón por proceso, que se conserva una versión, sigue diciendo que no.
+    const delProceso = await fetch(`${API}/portal/postulaciones/${uuid}/whatsapp`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${eva.token}` },
     })
-    expect(boton.status).toBe(409)
+    expect(delProceso.status).toBe(409)
     expect(await loQueRecibioElBot(eva.celular.e164)).toEqual([])
+    // Y encender WhatsApp para la cuenta no la anuncia: solo cuentan los procesos de la beta.
+    expect((await exigir('/portal/notificaciones/whatsapp', eva.token, 'POST')).resultado).toBe('POR_MENSAJE')
+    const postulacion = postulacionPorUuid(uuid)
+    expect(Number(uno(`select count(*) as n from vinculo_whatsapp where postulacion_id = ${postulacion}`).n)).toBe(0)
   })
 })

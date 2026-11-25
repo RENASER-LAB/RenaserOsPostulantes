@@ -24,27 +24,33 @@ import {
   novedadesDe,
   ponerLaBeta,
 } from './ayuda-whatsapp'
+import { abrirLosAjustes, interruptorDeWhatsapp, ventanaDeAjustes, whatsappEsta } from './ayuda-ajustes-de-avisos'
 
 /**
  * QA de las novedades por WhatsApp (V73): los bordes que el recorrido principal
  * (`58-novedades-por-whatsapp.spec.ts`) no pisa.
  *
- *   - AC-04 · con la beta apagada no hay tarjeta, ni anuncio, ni vínculo.
+ *   - AC-04 · con la beta apagada no hay fila de WhatsApp, ni puntito en la tuerca, ni anuncio,
+ *     ni vínculo.
  *   - AC-07 / AC-14 · un número no anunciado da 404 SIN_ANUNCIO; firma mala, marca vieja, de
  *     otra ruta o con el cuerpo cambiado dan 401 {codigo: FIRMA_INVALIDA} y no vinculan.
  *   - Contrato · sin teléfono o con uno que no vale, /vinculos, /novedades y /bajas dan
  *     400 {codigo: VALIDACION}, nunca 500.
- *   - AC-13 · la baja del bot (204, también repetida) deja «Este número se dio de baja de
- *     nuestros mensajes», sin botón, y el botón ya no anuncia ese número.
+ *   - AC-13 · la baja del bot (204, también repetida) deja la ventana en «Lo apagaste escribiendo
+ *     BAJA…», y el botón por proceso ya no anuncia ese número.
  *   - AC-17 · «Estamos revisando tu postulación» dice «No tienes que hacer nada.» una vez.
- *   - Doble clic: un solo anuncio vivo y un solo consentimiento.
+ *   - Doble clic en el interruptor: un solo anuncio vivo, una sola firma y una pestaña.
  *   - Dueño: la postulación de otra persona es 404.
  *   - Proceso terminado entre el botón y el mensaje: 409 PROCESO_TERMINADO y revocación.
- *   - Dos cuentas con el mismo celular: /vinculos devuelve todas las activas del número,
- *     también las ya vinculadas, y repetido da lo mismo; cambiar el celular de una no toca la
- *     otra.
- *   - Móvil: el botón ocupa el ancho de la tarjeta, el número no se parte (375 y 320 px) y no
- *     hay desplazamiento lateral.
+ *   - Un número, una cuenta: /vinculos devuelve todas las activas del número, también las ya
+ *     vinculadas, y repetido da lo mismo; otra cuenta no puede registrarse con él (409).
+ *   - Móvil: en la ventana el número no se parte (375 y 320 px) y no hay desplazamiento lateral.
+ *
+ * Desde la V92 (spec notificaciones-del-candidato) la tarjeta de WhatsApp de cada proceso ya no
+ * existe: lo que se miraba en ella se mira en la ventana «Ajustes de avisos», que desde el
+ * 25/11/2026 se abre con la tuerca de la campana (antes, un botón «Notificaciones»). Los
+ * endpoints del botón por proceso (`/portal/postulaciones/{uuid}/whatsapp`) se conservan una
+ * versión y sus bordes se siguen probando por la API. Dos cuentas ya no pueden compartir celular.
  *
  * El backend del clon corre con el bot falso (perfil local). ⚠️ **ESCRIBE** en el clon del
  * trabajo; `afterAll` lo retira (marca QA-WAQ-0073) y deja la beta como estaba.
@@ -81,7 +87,10 @@ async function postuladaYEsperando(cuenta: Cuenta, estado = 'PERFIL_CALIFICANDO'
   return uuid
 }
 
-const tarjeta = (page: Page) => page.getByRole('region', { name: /novedades por WhatsApp/i }).first()
+/** La tarjeta por proceso que la V92 retiró: no debe salir en ninguna pantalla. */
+const tarjetas = (page: Page) => page.getByRole('region', { name: /novedades por WhatsApp/i })
+const ventana = ventanaDeAjustes
+const interruptor = interruptorDeWhatsapp
 
 const VINCULOS = direccionDelBot('/vinculos')
 
@@ -105,10 +114,12 @@ const vivos = (postulacion: number) =>
           where postulacion_id = ${postulacion} and estado in ('PENDIENTE', 'ACTIVO')`).n,
   )
 
-const firmasWhatsapp = (postulacion: number) =>
+/** Las firmas del consentimiento de WhatsApp para la cuenta (V92): una por persona y versión. */
+const firmasDeLaCuenta = (cuenta: Cuenta) =>
   Number(
     uno(`select count(*) as n from consentimiento c join texto_consentimiento t on t.id = c.texto_consentimiento_id
-          where t.tipo = 'WHATSAPP' and c.postulacion_id = ${postulacion}`).n,
+          join usuario u on u.persona_id = c.persona_id
+          where t.tipo = 'WHATSAPP_CUENTA' and c.postulacion_id is null and u.correo = ${literal(cuenta.correo)}`).n,
   )
 
 test.describe('Novedades por WhatsApp · bordes de QA', () => {
@@ -158,7 +169,7 @@ test.describe('Novedades por WhatsApp · bordes de QA', () => {
     ])
   })
 
-  test('AC-04 · con la beta apagada no hay tarjeta, ni anuncio, ni vínculo', async ({ page }) => {
+  test('AC-04 · con la beta apagada no hay fila de WhatsApp, ni mensaje, ni anuncio, ni vínculo', async ({ page }) => {
     const fer = await cuentaCon('Fernanda')
     const uuid = await postuladaYEsperando(fer)
     await entrarAlPortalCon(page, fer.token)
@@ -166,14 +177,20 @@ test.describe('Novedades por WhatsApp · bordes de QA', () => {
     try {
       await page.goto('/procesos')
       await expect(page.getByText('Estamos calificando tus respuestas').first()).toBeVisible()
-      await expect(page.getByText('Recibe tus novedades por WhatsApp')).toHaveCount(0)
+      await expect(tarjetas(page)).toHaveCount(0)
+      // Ni el puntito de la tuerca ni la fila de WhatsApp en la ventana: correo y portal siguen.
+      await abrirLosAjustes(page)
+      await whatsappEsta(page, 'sin WhatsApp')
       await page.goto(`/procesos/${uuid}`)
       await expect(page.getByText('Estamos calificando tus respuestas').first()).toBeVisible()
-      await expect(page.getByText('Recibe tus novedades por WhatsApp')).toHaveCount(0)
+      await expect(tarjetas(page)).toHaveCount(0)
 
-      const boton = await pedir(`/portal/postulaciones/${uuid}/whatsapp`, fer.token, 'POST')
-      expect(boton.estado).toBe(409)
-      expect(boton.cuerpo.codigo).toBe('NO_DISPONIBLE')
+      const delProceso = await pedir(`/portal/postulaciones/${uuid}/whatsapp`, fer.token, 'POST')
+      expect(delProceso.estado).toBe(409)
+      expect(delProceso.cuerpo.codigo).toBe('NO_DISPONIBLE')
+      const deLaCuenta = await pedir('/portal/notificaciones/whatsapp', fer.token, 'POST')
+      expect(deLaCuenta.estado).toBe(409)
+      expect(deLaCuenta.cuerpo.codigo).toBe('NO_DISPONIBLE')
       const bot = await comoElBot('/vinculos', 'POST', { telefono: fer.celular.e164, wamid: 'w-fer', texto: 'hola' })
       expect(bot.estado).toBe(409)
       expect(bot.cuerpo.codigo).toBe('BETA_APAGADA')
@@ -183,9 +200,10 @@ test.describe('Novedades por WhatsApp · bordes de QA', () => {
     } finally {
       await ponerLaBeta(equipo, true)
     }
-    // Encendida otra vez, la misma postulación sí la ofrece: en «Mis procesos», que es donde vive.
+    // Encendida otra vez, la ventana sí lo ofrece, con el puntito en la tuerca.
     await page.goto('/procesos')
-    await expect(tarjeta(page).getByRole('button', { name: 'Escribir por WhatsApp' })).toBeVisible()
+    await abrirLosAjustes(page)
+    await whatsappEsta(page, 'apagado')
   })
 
   test('AC-07 / AC-14 · sin anuncio es 404; firma mala, marca vieja, de otra ruta o cuerpo cambiado son 401 y no vinculan', async () => {
@@ -194,7 +212,11 @@ test.describe('Novedades por WhatsApp · bordes de QA', () => {
     const sinAnuncio = await comoElBot('/vinculos', 'POST', { telefono: gabi.celular.e164, wamid: 'w-gabi-0', texto: 'hola' })
     expect(sinAnuncio.estado).toBe(404)
     expect(sinAnuncio.cuerpo.codigo).toBe('SIN_ANUNCIO')
-    expect(sinAnuncio.cuerpo.texto).toContain('Escribir por WhatsApp')
+    // Desde la V92 se activa para toda la cuenta, y desde el 25/11/2026 en la tuerca de la
+    // campana: ni el botón de cada proceso ni el de «Notificaciones» existen ya.
+    expect(sinAnuncio.cuerpo.texto).toContain('«Ajustes de avisos»')
+    expect(sinAnuncio.cuerpo.texto).not.toContain('«Notificaciones»')
+    expect(sinAnuncio.cuerpo.texto).not.toContain('Escribir por WhatsApp')
 
     await exigir(`/portal/postulaciones/${uuid}/whatsapp`, gabi.token, 'POST')
     const cuerpo = JSON.stringify({ telefono: gabi.celular.e164, wamid: 'w-gabi-1', texto: 'hola' })
@@ -233,7 +255,7 @@ test.describe('Novedades por WhatsApp · bordes de QA', () => {
     }
   })
 
-  test('AC-13 · la baja del bot deja el número suprimido en el portal, sin botón', async ({ page }) => {
+  test('AC-13 · la baja del bot deja el número suprimido: «WhatsApp apagado por BAJA» y el botón por proceso no lo anuncia', async ({ page }) => {
     const hugo = await cuentaCon('Hugo')
     const uuid = await postuladaYEsperando(hugo)
     await exigir(`/portal/postulaciones/${uuid}/whatsapp`, hugo.token, 'POST')
@@ -248,15 +270,19 @@ test.describe('Novedades por WhatsApp · bordes de QA', () => {
 
     await entrarAlPortalCon(page, hugo.token)
     await page.goto('/procesos')
-    await expect(tarjeta(page).getByText('Este número se dio de baja de nuestros mensajes')).toBeVisible()
-    await expect(tarjeta(page).getByRole('button')).toHaveCount(0)
-    // WhatsApp vive solo en «Mis procesos»: el detalle no lo enseña.
+    // Desde la V92 la BAJA se ve en la ventana de ajustes (la tuerca de la campana), y volver
+    // es cosa de la ventana (`73-…-qa`, AC-05); en el proceso no queda ninguna tarjeta ni botón.
+    await expect(tarjetas(page)).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'Escribir por WhatsApp' })).toHaveCount(0)
+    await abrirLosAjustes(page)
+    await whatsappEsta(page, 'apagado por BAJA')
+    // El detalle tampoco lleva tarjeta: WhatsApp se ajusta para toda la cuenta en la tuerca.
     await page.goto(`/procesos/${uuid}`)
     await expect(page.getByText('Estamos calificando tus respuestas').first()).toBeVisible()
-    await expect(page.getByRole('region', { name: /novedades por WhatsApp/i })).toHaveCount(0)
-    const boton = await pedir(`/portal/postulaciones/${uuid}/whatsapp`, hugo.token, 'POST')
-    expect(boton.estado).toBe(409)
-    expect(boton.cuerpo.codigo).toBe('SUPRIMIDO')
+    await expect(tarjetas(page)).toHaveCount(0)
+    const delProceso = await pedir(`/portal/postulaciones/${uuid}/whatsapp`, hugo.token, 'POST')
+    expect(delProceso.estado).toBe(409)
+    expect(delProceso.cuerpo.codigo).toBe('SUPRIMIDO')
     expect((await novedadesDe(hugo.celular.e164)).cuerpo.novedades).toEqual([])
     expect((await loQueRecibioElBot(hugo.celular.e164)).filter((l) => l.tipo === 'ESPERA')).toHaveLength(1)
   })
@@ -268,15 +294,15 @@ test.describe('Novedades por WhatsApp · bordes de QA', () => {
     for (const ruta of ['/procesos', `/procesos/${uuid}`]) {
       await page.goto(ruta)
       await expect(page.getByText('Estamos revisando tu postulación').first()).toBeVisible()
-      // La tarjeta, solo en «Mis procesos».
-      await expect(page.getByRole('region', { name: /novedades por WhatsApp/i })).toHaveCount(ruta === '/procesos' ? 1 : 0)
+      // Desde la V92 no hay tarjeta de WhatsApp en ningún proceso.
+      await expect(tarjetas(page)).toHaveCount(0)
       const visible = await page.locator('main').innerText()
       expect(visible.match(/No tienes que hacer nada\./g) ?? [], ruta).toHaveLength(1)
       expect(visible).toContain('Comprobamos los requisitos indispensables del puesto. No tienes que hacer nada.')
     }
   })
 
-  test('doble clic en «Escribir por WhatsApp»: un anuncio vivo, un consentimiento, una pestaña', async ({ page }) => {
+  test('doble clic en el interruptor de WhatsApp: un anuncio vivo, una firma, una pestaña', async ({ page }) => {
     const juan = await cuentaCon('Juan')
     const uuid = await postuladaYEsperando(juan)
     await entrarAlPortalCon(page, juan.token)
@@ -286,16 +312,17 @@ test.describe('Novedades por WhatsApp · bordes de QA', () => {
     const pestanas: Page[] = []
     page.context().on('page', (p) => pestanas.push(p))
     await page.goto('/procesos')
-    await tarjeta(page).getByRole('button', { name: 'Escribir por WhatsApp' }).dblclick()
-    await expect(tarjeta(page).getByText(/Aún no recibimos tu mensaje/)).toBeVisible()
+    await abrirLosAjustes(page)
+    await interruptor(page).dblclick()
+    await whatsappEsta(page, 'esperando')
     await expect.poll(() => pestanas.length).toBe(1)
     const postulacion = postulacionPorUuid(uuid)
     expect(vivos(postulacion)).toBe(1)
-    expect(firmasWhatsapp(postulacion)).toBe(1)
-    // Volver a pulsar renueva el mismo anuncio: ni otro vínculo ni otra firma.
-    await exigir(`/portal/postulaciones/${uuid}/whatsapp`, juan.token, 'POST')
+    expect(firmasDeLaCuenta(juan)).toBe(1)
+    // Volver a activarlo renueva el mismo anuncio: ni otro vínculo ni otra firma.
+    expect((await exigir('/portal/notificaciones/whatsapp', juan.token, 'POST')).resultado).toBe('POR_MENSAJE')
     expect(vivos(postulacion)).toBe(1)
-    expect(firmasWhatsapp(postulacion)).toBe(1)
+    expect(firmasDeLaCuenta(juan)).toBe(1)
   })
 
   test('dueño · la postulación de otra persona es 404, y sin token 401', async () => {
@@ -334,64 +361,60 @@ test.describe('Novedades por WhatsApp · bordes de QA', () => {
     expect((await loQueRecibioElBot(mia.celular.e164)).filter((l) => l.tipo === 'AVISO')).toEqual([])
   })
 
-  test('dos cuentas con el mismo celular: /vinculos devuelve también lo ya vinculado; cambiar el de una no toca la otra', async () => {
-    const compartido = celularUnico()
-    const nora = await cuentaCon('Nora', compartido)
-    const omar = await cuentaCon('Omar', compartido)
-    const deNora = await postuladaYEsperando(nora)
-    const deOmar = await postuladaYEsperando(omar)
+  test('un número, una cuenta: /vinculos devuelve también lo ya vinculado, y otra cuenta no puede registrarse con él', async () => {
+    // Desde la V92 dos cuentas no comparten celular: lo que antes eran dos cuentas con el mismo
+    // número son ahora dos procesos de la misma cuenta, y la segunda cuenta choca con un 409.
+    const otraVacante = await crearVacante(equipo, `${TITULO} de noche`, await lugarDe(equipo), undefined, MARCA)
+    sql(`update vacante set estado = 'PUBLICADA', publicada_en = now(), aplica_evaluacion = false where id = ${otraVacante};`)
+    const nora = await cuentaCon('Nora')
+    const primera = await postuladaYEsperando(nora)
+    const segunda = await postular(nora.token, otraVacante)
+    sql(`update postulacion set estado_codigo = 'PERFIL_CALIFICANDO' where uuid = ${literal(segunda)};`)
 
-    // Omar pulsa y el número escribe primero, con el texto vacío (un adjunto o un Flow).
-    await exigir(`/portal/postulaciones/${deOmar}/whatsapp`, omar.token, 'POST')
-    const primero = await comoElBot('/vinculos', 'POST', { telefono: compartido.e164, wamid: 'w-familia-1', texto: '' })
+    // Se anuncia la primera y el número escribe, con el texto vacío (un adjunto o un Flow).
+    await exigir(`/portal/postulaciones/${primera}/whatsapp`, nora.token, 'POST')
+    const primero = await comoElBot('/vinculos', 'POST', { telefono: nora.celular.e164, wamid: 'w-nora-1', texto: '' })
     expect(primero.estado).toBe(200)
     expect(primero.cuerpo.postulaciones).toHaveLength(1)
-    const refDeOmar: string = primero.cuerpo.postulaciones[0].postulacionRef
+    const refDeLaPrimera: string = primero.cuerpo.postulaciones[0].postulacionRef
 
-    // Después pulsa Nora y el número vuelve a escribir: vincula lo de Nora y devuelve todas las
-    // activas de ese número, también la de Omar, que ya lo estaba (contrato idempotente).
-    await exigir(`/portal/postulaciones/${deNora}/whatsapp`, nora.token, 'POST')
-    const v = await comoElBot('/vinculos', 'POST', { telefono: compartido.e164, wamid: 'w-familia-2', texto: 'hola' })
+    // Después se anuncia la segunda y el número vuelve a escribir: la vincula y devuelve todas las
+    // activas de ese número, también la primera, que ya lo estaba (contrato idempotente).
+    await exigir(`/portal/postulaciones/${segunda}/whatsapp`, nora.token, 'POST')
+    const v = await comoElBot('/vinculos', 'POST', { telefono: nora.celular.e164, wamid: 'w-nora-2', texto: 'hola' })
     expect(v.estado).toBe(200)
     expect(v.cuerpo.postulaciones).toHaveLength(2)
-    expect(v.cuerpo.postulaciones.map((p: { postulacionRef: string }) => p.postulacionRef)).toContain(refDeOmar)
+    expect(v.cuerpo.postulaciones.map((p: { postulacionRef: string }) => p.postulacionRef)).toContain(refDeLaPrimera)
     expect(v.cuerpo.novedades).toHaveLength(2)
     // Repetida, devuelve lo mismo; y /novedades cuenta esos mismos procesos.
-    const repetida = await comoElBot('/vinculos', 'POST', { telefono: compartido.e164, wamid: 'w-familia-2', texto: 'hola' })
+    const repetida = await comoElBot('/vinculos', 'POST', { telefono: nora.celular.e164, wamid: 'w-nora-2', texto: 'hola' })
     expect(repetida.estado).toBe(200)
     expect(repetida.cuerpo).toEqual(v.cuerpo)
-    expect((await novedadesDe(compartido.e164)).cuerpo).toEqual({ novedades: v.cuerpo.novedades })
+    expect((await novedadesDe(nora.celular.e164)).cuerpo).toEqual({ novedades: v.cuerpo.novedades })
 
-    const nuevo = celularUnico()
-    celulares.push(nuevo.e164)
-    await exigir('/portal/cuenta/telefono', nora.token, 'PUT', { telefono: nuevo.escrito })
-    const estadoDe = async (c: Cuenta, uuid: string) =>
-      (await exigir<any[]>('/portal/postulaciones', c.token)).find((p) => p.uuid === uuid)?.whatsapp?.estado
-    expect(await estadoDe(nora, deNora)).toBe('SIN_VINCULAR')
-    expect(await estadoDe(omar, deOmar)).toBe('ACTIVO')
-    const novedades = await novedadesDe(compartido.e164)
-    expect(novedades.cuerpo.novedades).toHaveLength(1)
-    // /vinculos es idempotente: repetido, devuelve lo que queda vinculado a ese número (lo de Omar).
-    const queda = await comoElBot('/vinculos', 'POST', { telefono: compartido.e164, wamid: 'w-familia', texto: 'hola' })
-    expect(queda.estado).toBe(200)
-    expect(queda.cuerpo.postulaciones).toHaveLength(1)
-    expect(queda.cuerpo.nombre).toBe('Omar')
+    // Otra cuenta con ese mismo número no nace: 409 TELEFONO_EN_USO, y lo de Nora sigue igual.
+    const omar = correoDePrueba(PREFIJO)
+    correos.push(omar)
+    await expect(crearCuentaDeCandidato({ nombre: 'Omar', apellidos: 'Borde', correo: omar, telefono: nora.celular.escrito }))
+      .rejects.toThrow(/\(409\)[\s\S]*TELEFONO_EN_USO/)
+    expect(Number(uno(`select count(*) as n from usuario where correo = ${literal(omar)}`).n)).toBe(0)
+    expect((await novedadesDe(nora.celular.e164)).cuerpo.novedades).toHaveLength(2)
   })
 
-  test('móvil · el botón ocupa el ancho de la tarjeta, el número no se parte y la página no se desplaza a lo ancho', async ({ page }) => {
+  test('móvil · en la ventana el número no se parte, el interruptor cabe y la página no se desplaza a lo ancho', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 })
     const pia = await cuentaCon('Pía')
     await postuladaYEsperando(pia)
     await entrarAlPortalCon(page, pia.token)
     await page.goto('/procesos')
-    const suya = tarjeta(page)
+    await expect(tarjetas(page)).toHaveCount(0)
+    await abrirLosAjustes(page)
+    const suya = ventana(page)
     await expect(suya).toBeVisible()
-    const boton = suya.getByRole('button', { name: 'Escribir por WhatsApp' })
+    // El interruptor, entero dentro de la ventana.
     const caja = (await suya.boundingBox())!
-    const ancho = (await boton.boundingBox())!
-    // La tarjeta tiene su relleno a cada lado: el botón llena todo lo que queda.
-    expect(ancho.width).toBeGreaterThan(caja.width * 0.8)
-    expect(ancho.height).toBeGreaterThanOrEqual(44)
+    const elInterruptor = (await interruptor(page).boundingBox())!
+    expect(elInterruptor.x + elInterruptor.width).toBeLessThanOrEqual(caja.x + caja.width)
     // El número va entero en una línea («+51 900…» no se separa del resto), también a 320 px.
     const numero = suya.getByText(pia.celular.mostrado, { exact: true })
     for (const anchoDeLaVentana of [375, 320]) {

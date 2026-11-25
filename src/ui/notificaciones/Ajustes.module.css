@@ -1,0 +1,457 @@
+/*
+ * «Ajustes de avisos» (V92; desde el 25/11/2026 se abre con la tuerca de la campana): la
+ * ventana con los tres canales. Hasta ese día vivía aquí también el botón «Notificaciones» de
+ * «Mis procesos» y su mensaje flotante; se quitaron.
+ *
+ * Northstar: papel, tinta, el filete negro al 10 % y esquinas de 4–8 px. El verde es solo de
+ * WhatsApp —su interruptor encendido—, como en la tarjeta que sustituyó (ver «La excepción de
+ * WhatsApp» en DESIGN.md). El resto de interruptores, en tinta.
+ *
+ * En el teléfono (≤ 30rem, el mismo corte que la hoja de la campana) la ventana es una hoja
+ * inferior con su asa y la flecha «Volver a tus avisos» en lugar de la ×.
+ *
+ * Con movimiento reducido solo queda la opacidad.
+ */
+
+/* ---------- La ventana ---------- */
+
+.ventana {
+  width: min(480px, calc(100vw - 32px));
+  max-height: calc(100dvh - 48px);
+  padding: 0;
+  border: 1px solid rgb(0 0 0 / 0.1);
+  border-radius: var(--radio);
+  background: var(--nube);
+  color: var(--tinta);
+  box-shadow: var(--sombra-aviso);
+}
+
+.ventana[open] {
+  animation: entraLaVentana 200ms var(--salida);
+}
+
+.ventana::backdrop {
+  background: var(--velo);
+}
+
+@keyframes entraLaVentana {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+.cabeza {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--e3);
+  padding: var(--e5) var(--e5) var(--e3);
+}
+
+.cabezaTextos {
+  flex: 1;
+  min-width: 0;
+}
+
+/* El asa y la flecha son del teléfono: en la ventana de escritorio no existen. */
+.asa,
+.volver {
+  display: none;
+}
+
+.cargando {
+  margin: 0;
+  padding: var(--e3) var(--e5) var(--e5);
+  font-size: var(--t-apoyo);
+  color: var(--tinta3);
+}
+
+.titulo {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 400;
+  letter-spacing: -0.035em;
+  line-height: 1.15;
+}
+
+.subtitulo {
+  margin: 4px 0 0;
+  font-size: var(--t-menor);
+  color: var(--tinta3);
+}
+
+.cerrar {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: var(--radio-menor);
+  background: none;
+  color: var(--tinta2);
+  cursor: pointer;
+  transition: background-color 150ms var(--curva-control), transform 160ms var(--salida);
+}
+
+.cerrar:hover {
+  background: var(--cielo-hundido);
+}
+
+.cerrar:active {
+  transform: scale(0.94);
+}
+
+.canales {
+  padding: 0 var(--e5) var(--e2);
+}
+
+.canal {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  gap: var(--e1) var(--e3);
+  align-items: center;
+  padding: var(--e4) 0;
+  border-top: 1px solid var(--regla);
+}
+
+.canalWhatsapp {
+  border-top: 0;
+}
+
+.sello {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--regla);
+  border-radius: var(--radio-menor);
+  background: var(--cielo-hundido);
+  color: var(--tinta2);
+  transition:
+    background-color 260ms var(--salida),
+    color 260ms var(--salida),
+    border-color 260ms var(--salida);
+}
+
+.canal[data-encendido] .sello {
+  background: var(--tinta);
+  border-color: var(--tinta);
+  color: var(--cielo);
+}
+
+.nombre {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--e2);
+  font-size: var(--t-prosa);
+  font-weight: 550;
+}
+
+.recomendado {
+  padding: 1px 5px;
+  border: 1px solid var(--regla2);
+  border-radius: 3px;
+  font-family: var(--fuente-ui);
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--tinta2);
+}
+
+.detalle {
+  margin: 1px 0 0;
+  font-size: var(--t-menor);
+  color: var(--tinta3);
+  overflow-wrap: anywhere;
+}
+
+.numero {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.nota {
+  grid-column: 2 / -1;
+  margin: var(--e1) 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--tinta3);
+  animation: entraLaNota 220ms var(--salida);
+}
+
+@keyframes entraLaNota {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+}
+
+.notaAviso {
+  color: var(--tinta2);
+}
+
+.notaFallo {
+  color: var(--mal);
+}
+
+.nota a {
+  color: var(--tinta2);
+}
+
+/* «Reintentar»: un botón que se lee como un enlace dentro de la frase. */
+.enlace {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 550;
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.22em;
+  cursor: pointer;
+}
+
+.altaNumero {
+  color: var(--tinta2);
+}
+
+/*
+ * El campo y «Guardar» comparten fila mientras el celular quepa entero. En el teléfono la
+ * columna de la fila mide unos 240 px y, al lado de «Guardar», un número de nueve cifras se
+ * cortaba («952 693»): por debajo de 12rem el campo se queda con la fila entera y «Guardar»
+ * baja debajo de él.
+ *
+ * El envoltorio de `CampoCelular` se disuelve (`display: contents`) y sus piezas entran en esta
+ * fila: la etiqueta ocupa la suya, la caja comparte la siguiente con «Guardar», y el error va al
+ * final, debajo de los dos, como en la maqueta. Dentro del envoltorio, el error alargaba la caja y
+ * `flex-end` bajaba «Guardar» hasta su última línea. Los selectores siguen el orden de `Campo`:
+ * `label`, el `div` del «+51» con el `<input>`, y el `<p>` del error.
+ */
+.filaNumero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--e2);
+}
+
+.filaNumero > :first-child {
+  display: contents;
+}
+
+.filaNumero > :first-child > label {
+  flex: 1 1 100%;
+}
+
+.filaNumero > :first-child > div {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+.filaNumero > :first-child > p {
+  flex: 1 1 100%;
+  order: 1;
+}
+
+.guardar {
+  composes: acentoMenor from '../../estilos/piezas.module.css';
+  flex: none;
+  text-transform: uppercase;
+}
+
+/* El interruptor: la bolita se mueve con transform y al pulsar se ensancha un poco. */
+.interruptor {
+  position: relative;
+  flex: none;
+  width: 44px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: var(--regla2);
+  cursor: pointer;
+  transition: background-color 200ms var(--salida);
+}
+
+.interruptor::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.2);
+  transition: transform 200ms var(--salida), width 160ms var(--salida);
+}
+
+.interruptor[aria-checked='true'] {
+  background: var(--tinta);
+}
+
+.interruptorVerde[aria-checked='true'] {
+  background: var(--whatsapp);
+}
+
+.interruptor[aria-checked='true']::after {
+  transform: translateX(18px);
+}
+
+.interruptor:active:not(:disabled)::after {
+  width: 24px;
+}
+
+.interruptor[aria-checked='true']:active:not(:disabled)::after {
+  transform: translateX(14px);
+}
+
+.interruptor[aria-busy='true']::after {
+  animation: latido 1s ease-in-out infinite;
+}
+
+.interruptor:disabled {
+  cursor: default;
+}
+
+@keyframes latido {
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.pie {
+  margin: 0;
+  padding: var(--e3) var(--e5) var(--e5);
+  border-top: 1px solid var(--regla);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--tinta3);
+}
+
+/*
+ * En el teléfono, la hoja inferior de la campana: pegada abajo, a todo el ancho, con el asa
+ * arriba y la flecha «Volver a tus avisos» a la izquierda del título. La × se va: volver a los
+ * avisos es lo que se espera de una hoja que cambió de contenido.
+ */
+@media (max-width: 30rem) {
+  .ventana {
+    width: 100%;
+    max-width: 100%;
+    max-height: calc(100dvh - var(--alto-cabecera) - var(--e5));
+    margin: auto 0 0;
+    border-width: 1px 0 0;
+    border-radius: var(--radio) var(--radio) 0 0;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .ventana[open] {
+    animation: subeLaHoja 240ms var(--salida);
+  }
+
+  .asa {
+    display: block;
+    width: 36px;
+    height: 4px;
+    margin: var(--e2) auto var(--e1);
+    border-radius: 2px;
+    background: var(--regla2);
+  }
+
+  .cabeza {
+    align-items: center;
+    gap: var(--e1);
+    padding: 0 var(--e4) var(--e3) var(--e2);
+  }
+
+  .volver {
+    flex: none;
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-radius: var(--radio-menor);
+    background: none;
+    color: var(--tinta);
+    cursor: pointer;
+  }
+
+  .cerrar {
+    display: none;
+  }
+
+  .titulo {
+    font-size: var(--t-titulo);
+  }
+
+  .canales {
+    padding: 0 var(--e4) var(--e2);
+  }
+
+  .pie {
+    padding: var(--e3) var(--e4) var(--e5);
+  }
+
+  /* Interruptores de 48 × 28: el pulgar acierta sin mirar. */
+  .interruptor {
+    width: 48px;
+    height: 28px;
+  }
+
+  .interruptor::after {
+    width: 22px;
+    height: 22px;
+  }
+
+  .interruptor[aria-checked='true']::after {
+    transform: translateX(20px);
+  }
+
+  .interruptor:active:not(:disabled)::after {
+    width: 26px;
+  }
+
+  .interruptor[aria-checked='true']:active:not(:disabled)::after {
+    transform: translateX(16px);
+  }
+}
+
+@keyframes subeLaHoja {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ventana[open] {
+    animation: soloOpacidad 160ms ease;
+  }
+
+  .nota {
+    animation: soloOpacidad 160ms ease;
+  }
+
+  .cerrar:active {
+    transform: none;
+  }
+
+  .interruptor,
+  .interruptor::after {
+    transition: none;
+  }
+
+  .interruptor[aria-busy='true']::after {
+    animation: none;
+  }
+}
+
+@keyframes soloOpacidad {
+  from {
+    opacity: 0;
+  }
+}

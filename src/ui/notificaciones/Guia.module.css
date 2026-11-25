@@ -1,0 +1,280 @@
+/*
+ * La guía de los avisos (25/11/2026): el foco con su velo y la burbuja de cada paso.
+ *
+ * El `<dialog>` cubre la pantalla y es transparente: lo que oscurece es la sombra enorme de
+ * `.foco`, que deja un agujero sobre lo señalado (la campana o la tuerca) con un anillo azul
+ * claro. La burbuja es una celda de papel con la sombra de lo que flota y su pico hacia lo
+ * señalado. Los botones: el principal en tinta (`solido`), los otros sin caja, y el de
+ * WhatsApp en su verde, la única excepción a la voz única (ver DESIGN.md).
+ *
+ * Sin movimiento: el foco cambia de sitio de golpe y la burbuja solo aparece.
+ */
+
+.guia {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  overflow: hidden;
+  color: var(--tinta);
+}
+
+.guia::backdrop {
+  background: transparent;
+}
+
+.foco {
+  position: fixed;
+  border-radius: var(--radio);
+  box-shadow: 0 0 0 200vmax var(--velo-guia);
+  pointer-events: none;
+}
+
+.foco::after {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border: 2px solid color-mix(in srgb, var(--activo) 40%, var(--nube));
+  border-radius: calc(var(--radio) + 5px);
+}
+
+/* Solo cuando ya está en su sitio: lo primero no se desliza desde la esquina. */
+.guia[data-colocada] .foco {
+  transition:
+    left 350ms var(--salida),
+    top 350ms var(--salida),
+    width 350ms var(--salida),
+    height 350ms var(--salida);
+}
+
+.burbuja {
+  position: fixed;
+  padding: var(--e5) var(--e5) var(--e4);
+  border-radius: var(--radio);
+  background: var(--nube);
+  box-shadow: var(--sombra-aviso);
+}
+
+/* Hasta que se mide, invisible: no aparece un instante en la esquina. */
+.guia:not([data-colocada]) .burbuja {
+  visibility: hidden;
+}
+
+/* El pico: un cuadrado girado del color de la burbuja, en el lado que mira a lo señalado. */
+.pico {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  background: var(--nube);
+  transform: rotate(45deg);
+}
+
+.pico[data-lado=''] {
+  display: none;
+}
+
+.pico[data-lado='arriba'] {
+  top: -7px;
+  left: var(--a);
+}
+
+.pico[data-lado='abajo'] {
+  bottom: -7px;
+  left: var(--a);
+}
+
+.pico[data-lado='derecha'] {
+  right: -7px;
+  top: var(--a);
+}
+
+.cabeza {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--e3);
+}
+
+.cuenta {
+  font-family: var(--fuente-ui);
+  font-size: var(--t-etiqueta);
+  letter-spacing: var(--tracking-etiqueta);
+  text-transform: uppercase;
+  color: var(--tinta-etiqueta);
+}
+
+.barras {
+  display: flex;
+  gap: var(--e1);
+}
+
+.barra {
+  width: 20px;
+  height: 3px;
+  background: var(--regla);
+  transition: background-color 200ms var(--salida);
+}
+
+.barra[data-hecha] {
+  background: var(--activo);
+}
+
+.paso {
+  animation: entraElPaso 220ms var(--salida);
+}
+
+@keyframes entraElPaso {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+.titulo {
+  margin: 0 0 6px;
+  font-size: var(--t-titulo);
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+}
+
+.texto {
+  margin: 0 0 var(--e5);
+  font-size: var(--t-apoyo);
+  line-height: 1.55;
+  color: var(--tinta2);
+}
+
+.numero {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: calc(var(--e5) * -1 + var(--e3)) 0 var(--e5);
+  padding: 0;
+  list-style: none;
+}
+
+.chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: var(--radio-menor);
+  background: var(--cielo-hundido);
+  font-size: var(--t-menor);
+  color: var(--tinta);
+}
+
+.iconoCanal {
+  display: inline-flex;
+  color: var(--activo);
+}
+
+/* El verde de WhatsApp, oscurecido para que el trazo se lea sobre la bruma. */
+.iconoWhatsapp {
+  display: inline-flex;
+  color: color-mix(in srgb, var(--whatsapp) 60%, var(--tinta));
+}
+
+.botones {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e2);
+}
+
+.botonesAlFinal {
+  justify-content: flex-end;
+}
+
+/* Los botones de la casa: en MAYÚSCULAS, como todos los de Northstar. */
+.principal {
+  composes: solido from '../../estilos/piezas.module.css';
+  padding: 0 var(--e4);
+  font-size: var(--t-apoyo);
+}
+
+/* «Saltar guía», «Atrás», «Ahora no»: sin caja, la misma voz en gris. */
+.secundario {
+  min-height: 44px;
+  padding: 0 var(--e3);
+  border: 0;
+  border-radius: var(--radio-menor);
+  background: none;
+  font: inherit;
+  font-size: var(--t-apoyo);
+  text-transform: uppercase;
+  color: var(--tinta2);
+  cursor: pointer;
+  transition: background-color 150ms var(--curva-control), color 150ms var(--curva-control);
+}
+
+.secundario:first-child {
+  margin-left: calc(var(--e3) * -1);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .secundario:hover {
+    background: var(--cielo-hundido);
+    color: var(--tinta);
+  }
+}
+
+.activar {
+  composes: whatsapp from '../../estilos/piezas.module.css';
+  width: 100%;
+}
+
+.consentimiento {
+  margin: 10px 0 var(--e1);
+  font-size: var(--t-micro);
+  line-height: 1.5;
+  color: var(--tinta3);
+}
+
+/* «Abrir WhatsApp», esperando su mensaje: sin consentimiento debajo, «Ahora no» se aparta un poco. */
+.activar + .botones {
+  margin-top: var(--e2);
+}
+
+@media (max-width: 30rem) {
+  .burbuja {
+    padding: var(--e5) 18px var(--e3);
+  }
+
+  .texto {
+    font-size: var(--t-prosa);
+  }
+
+  .activar {
+    min-height: 48px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .guia[data-colocada] .foco,
+  .barra {
+    transition: none;
+  }
+
+  .paso {
+    animation: soloOpacidad 160ms ease;
+  }
+}
+
+@keyframes soloOpacidad {
+  from {
+    opacity: 0;
+  }
+}

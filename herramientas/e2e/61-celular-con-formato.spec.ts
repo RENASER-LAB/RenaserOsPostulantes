@@ -25,7 +25,8 @@ import {
   uno,
   type Estructura,
 } from './ayuda-personas'
-import { ponerLaBeta } from './ayuda-whatsapp'
+import { celularUnico, ponerLaBeta } from './ayuda-whatsapp'
+import { abrirLosAjustes } from './ayuda-ajustes-de-avisos'
 import { limpiarSiempre, literal, sql } from './base-de-datos'
 import { libroDeUnaHoja } from './xlsx-minimo'
 
@@ -39,16 +40,19 @@ import { libroDeUnaHoja } from './xlsx-minimo'
  *   2. Registro: el número de otro país («+34»), el «+51» que se va y vuelve.
  *   3. Pegar «51987654321» y «987-654-321», «12345678901234567» y «hola».
  *   4. «Mi cuenta»: cambiar el celular.
- *   5. La tarjeta de WhatsApp de una cuenta sin celular: la misma máscara.
+ *   5. La ventana «Ajustes de avisos» de una cuenta sin celular: la misma máscara (desde la V92;
+ *      antes era la tarjeta de WhatsApp de cada proceso, que ya no existe).
  *   6. Panel: alta de un colaborador con celular y sin él.
  *   7. Panel: editar un colaborador con un celular antiguo sin tocarlo; tocado, la regla.
  *      Y la petición directa con «abc» (AC-13).
  *   8. Panel: alta desde un contratado, con el celular de su cuenta y no el del CV.
  *   9. Panel: carga por Excel con un celular inválido y después con uno válido.
  *
- * ⚠️ **ESCRIBE** en el clon del trabajo. Las cuentas llevan correos únicos `qa.cel.999.*`;
- * lo del panel, la marca de `ayuda-personas` y DNI al azar. `afterAll` lo retira y deja la
- * beta de WhatsApp como estaba.
+ * ⚠️ **ESCRIBE** en el clon del trabajo. Las cuentas llevan correos únicos `qa.cel.999.*` y,
+ * como desde la V92 un celular es de una sola cuenta, el número que se guarda en cada una es
+ * nuevo en cada ejecución (`celularUnico`); los que solo se teclean para mirar la máscara siguen
+ * siendo «987 654 321». Lo del panel, la marca de `ayuda-personas` y DNI al azar. `afterAll` lo
+ * retira y deja la beta de WhatsApp como estaba.
  */
 
 test.describe.configure({ mode: 'serial' })
@@ -83,8 +87,8 @@ test.afterAll(async () => {
 /**
  * Las cuentas de la prueba, fuera. Cambiar el celular en «Mi cuenta» deja `cambiar_celular` en
  * la auditoría, que es inmutable: esa cuenta no se puede borrar y se retira del camino como
- * hace `limpieza-cuentas` con el historial (sin sesión y con un correo que nadie vuelve a
- * pedir). Las demás se borran.
+ * hace `limpieza-cuentas` con el historial (sin sesión, con un correo que nadie vuelve a
+ * pedir y sin su celular, que desde la V92 es de una sola cuenta). Las demás se borran.
  */
 function retirarCuentas(lista: readonly string[]) {
   if (!lista.length) return
@@ -95,8 +99,13 @@ function retirarCuentas(lista: readonly string[]) {
   ) as string[]
   borrarCuentasDePrueba(lista.filter((c) => !conAuditoria.includes(c)))
   if (conAuditoria.length) {
-    sql(`update usuario set es_activo = false, correo = 'e2e.retirada.' || gen_random_uuid() || '@example.com'
-          where correo in (${conAuditoria.map((c) => literal(c)).join(', ')});`)
+    const retiradas = conAuditoria.map((c) => literal(c)).join(', ')
+    sql(`begin;
+         update persona set telefono = null
+          where id in (select persona_id from usuario where correo in (${retiradas}));
+         update usuario set es_activo = false, correo = 'e2e.retirada.' || gen_random_uuid() || '@example.com'
+          where correo in (${retiradas});
+         commit;`)
   }
 }
 
@@ -190,14 +199,16 @@ test('1 · registro: tecla a tecla, sin letras ni décima, incompleto avisado y 
   await expect(page).toHaveURL(/\/registro/)
   expect(cuentas(correo)).toBe(0)
 
-  // AC-03: pegado con su «+51» sobre lo que había: queda «987 654 321» y la cuenta se crea.
+  // AC-03: pegado con su «+51» sobre lo que había: queda «999 999 999» y la cuenta se crea. Con
+  // un número nuevo: desde la V92 un celular es de una sola cuenta.
+  const suyo = celularUnico()
   await campo.selectText()
-  await pegar(page, campo, '+51 987 654 321')
-  await expect(campo).toHaveValue('987 654 321')
+  await pegar(page, campo, suyo.mostrado)
+  await expect(campo).toHaveValue(suyo.escrito)
   expect(await prefijoDe(campo)).toBe('+51')
   await page.getByRole('button', { name: /Crear cuenta/ }).click()
   await expect(page).toHaveURL(/\/procesos/, { timeout: 20_000 })
-  expect(telefonoDe(correo)).toBe('+51987654321')
+  expect(telefonoDe(correo)).toBe(suyo.e164)
 })
 
 test('2 · registro con un número de otro país: el «+51» se va con el «+» y vuelve sin él (AC-05)', async ({ page }) => {
@@ -226,13 +237,15 @@ test('2 · registro con un número de otro país: el «+51» se va con el «+» 
   await campo.press('+')
   expect(await prefijoDe(campo)).toBeNull()
 
-  // «00» delante se vuelve «+».
+  // «00» delante se vuelve «+». El que se guarda es nuevo en cada ejecución (V92).
+  const espanol = `6${String(Date.now()).slice(-8)}`
+  const conEspacios = `${espanol.slice(0, 3)} ${espanol.slice(3, 6)} ${espanol.slice(6)}`
   await campo.fill('')
-  await campo.pressSequentially('0034 612 345 678')
-  await expect(campo).toHaveValue('+34 612 345 678')
+  await campo.pressSequentially(`0034 ${conEspacios}`)
+  await expect(campo).toHaveValue(`+34 ${conEspacios}`)
   await page.getByRole('button', { name: /Crear cuenta/ }).click()
   await expect(page).toHaveURL(/\/procesos/, { timeout: 20_000 })
-  expect(telefonoDe(correo)).toBe('+34612345678')
+  expect(telefonoDe(correo)).toBe(`+34${espanol}`)
 })
 
 test('3 · pegar: se limpia entero lo que es un celular y lo demás no entra (AC-03, AC-04)', async ({ page }) => {
@@ -257,51 +270,55 @@ test('3 · pegar: se limpia entero lo que es un celular y lo demás no entra (AC
   await expect(page.getByText(REGLA)).toHaveCount(0)
 })
 
-// ---------- 4-5 · «Mi cuenta» y la tarjeta de WhatsApp ----------
+// ---------- 4-5 · «Mi cuenta» y la ventana «Ajustes de avisos» ----------
 
 test('4 · «Mi cuenta» abre el guardado con su forma y guarda el nuevo (AC-07, AC-02)', async ({ page }) => {
   const correo = correoDePrueba(PREFIJO_CORREO)
   correos.push(correo)
-  await crearCuentaDeCandidato({ nombre: 'Marta', apellidos: `Cuenta ${SUFIJO}`, correo, telefono: '+51987654321' })
+  // Los dos números, nuevos en cada ejecución: desde la V92 un celular es de una sola cuenta.
+  const antes = celularUnico()
+  const despues = celularUnico()
+  await crearCuentaDeCandidato({ nombre: 'Marta', apellidos: `Cuenta ${SUFIJO}`, correo, telefono: antes.e164 })
   await entrarAlPortal(page, correo, CLAVE_DE_CANDIDATO)
   await page.goto('/perfil')
   const bloque = page.locator('#celular')
-  await expect(bloque.getByText('+51 987 654 321')).toBeVisible()
+  await expect(bloque.getByText(antes.mostrado)).toBeVisible()
   await bloque.getByRole('button', { name: 'Cambiar' }).click()
   const campo = bloque.getByLabel(/^Celular \(WhatsApp\)/)
-  await expect(campo).toHaveValue('987 654 321')
+  await expect(campo).toHaveValue(antes.escrito)
   expect(await prefijoDe(campo)).toBe('+51')
 
   await campo.press('End')
   await campo.pressSequentially('a-.() 5')
-  await expect(campo).toHaveValue('987 654 321')
+  await expect(campo).toHaveValue(antes.escrito)
   await campo.selectText()
-  await campo.pressSequentially('912345678')
-  await expect(campo).toHaveValue('912 345 678')
+  await campo.pressSequentially(despues.e164.slice(3))
+  await expect(campo).toHaveValue(despues.escrito)
   await bloque.getByRole('button', { name: 'Guardar', exact: true }).click()
-  await expect(bloque.getByText('+51 912 345 678')).toBeVisible()
-  expect(telefonoDe(correo)).toBe('+51912345678')
+  await expect(bloque.getByText(despues.mostrado)).toBeVisible()
+  expect(telefonoDe(correo)).toBe(despues.e164)
   await page.reload()
-  await expect(page.locator('#celular').getByText('+51 912 345 678')).toBeVisible()
+  await expect(page.locator('#celular').getByText(despues.mostrado)).toBeVisible()
 })
 
-test('5 · la tarjeta de WhatsApp de una cuenta sin celular usa la misma máscara (AC-08)', async ({ page }) => {
+test('5 · la ventana «Ajustes de avisos» de una cuenta sin celular usa la misma máscara (AC-08)', async ({ page }) => {
+  // Desde la V92 el celular que falta se da en la ventana de ajustes y no en una tarjeta de
+  // WhatsApp por proceso, que ya no existe. Desde el 25/11/2026 la abre la tuerca de la campana.
   const correo = correoDePrueba(PREFIJO_CORREO)
   correos.push(correo)
-  await crearCuentaDeCandidato({ nombre: 'Nora', apellidos: `Tarjeta ${SUFIJO}`, correo })
+  await crearCuentaDeCandidato({ nombre: 'Nora', apellidos: `Ventana ${SUFIJO}`, correo })
   sql(`update persona set telefono = null
         where id = (select persona_id from usuario where correo = ${literal(correo)});`)
-  const vacante = sembrarVacante(e!, `Tarjeta ${SUFIJO}`)
+  const vacante = sembrarVacante(e!, `Ventana ${SUFIJO}`)
   vacantes.push(vacante)
   sembrarPostulacion(vacante, correo, 'PERFIL_CALIFICANDO')
   betaAntes = await ponerLaBeta(equipo, true)
 
   await entrarAlPortalCon(page, await tokenDelCandidato(correo))
   await page.goto('/procesos')
-  const campo = page
-    .getByRole('region', { name: /novedades por WhatsApp/i })
-    .first()
-    .getByLabel(/^Tu celular \(WhatsApp\)/)
+  await expect(page.getByRole('region', { name: /novedades por WhatsApp/i })).toHaveCount(0)
+  const ventana = await abrirLosAjustes(page)
+  const campo = ventana.getByLabel('Agrega tu celular para recibir avisos por WhatsApp.')
   await expect(campo).toBeVisible()
   expect(await prefijoDe(campo)).toBe('+51')
   await campo.pressSequentially('9a8-7.6(5)4 3210')
@@ -318,7 +335,7 @@ test('5 · la tarjeta de WhatsApp de una cuenta sin celular usa la misma máscar
   // Incompleto: al enviar se avisa junto al campo y no se guarda nada.
   await campo.fill('')
   await campo.pressSequentially('98765')
-  await page.getByRole('button', { name: 'Guardar y escribir por WhatsApp' }).click()
+  await ventana.getByRole('button', { name: 'Guardar', exact: true }).click()
   await expect(page.getByText(REGLA)).toBeVisible()
   expect(telefonoDe(correo)).toBeNull()
 })
@@ -445,7 +462,9 @@ test('8 · el alta desde un contratado trae el celular de su cuenta y no el del 
   const conCuenta = correoDePrueba(PREFIJO_CORREO)
   const sinCelular = correoDePrueba(PREFIJO_CORREO)
   correos.push(conCuenta, sinCelular)
-  await crearCuentaDeCandidato({ nombre: 'Lía', apellidos: `Contratada ${SUFIJO}`, correo: conCuenta, telefono: '+51987654321' })
+  // El de su cuenta, nuevo en cada ejecución (V92: un celular es de una sola cuenta).
+  const suyo = celularUnico()
+  await crearCuentaDeCandidato({ nombre: 'Lía', apellidos: `Contratada ${SUFIJO}`, correo: conCuenta, telefono: suyo.e164 })
   await crearCuentaDeCandidato({ nombre: 'Ada', apellidos: `Sin celular ${SUFIJO}`, correo: sinCelular })
   sql(`update persona set telefono = null
         where id = (select persona_id from usuario where correo = ${literal(sinCelular)});`)
@@ -455,7 +474,7 @@ test('8 · el alta desde un contratado trae el celular de su cuenta y no el del 
   await entrarAlPanel(page)
   await page.goto(`/admin/colaboradores/nuevo?postulacion=${contratada}`)
   await expect(page.getByLabel('Nombres')).toHaveValue('Lía')
-  await expect(page.getByLabel(/^Celular/)).toHaveValue('987 654 321')
+  await expect(page.getByLabel(/^Celular/)).toHaveValue(suyo.escrito)
 
   // Paso 8: sin celular en la cuenta, el del CV que cumple la regla, con la forma del campo.
   await page.goto(`/admin/colaboradores/nuevo?postulacion=${delCv}`)
