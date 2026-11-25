@@ -10,18 +10,24 @@
  *      hubiera leido nada. Ahora lo decide la persona: el que pulsa, o todos con
  *      el boton de la cabecera.
  *   3. **Marcar leido lo que ya lo estaba**: trafico por un clic que no apaga nada.
+ *
+ * Y desde el 25/11/2026, la tuerca de la cabecera: abre «Ajustes de avisos», lleva el
+ * puntito verde solo cuando WhatsApp se puede activar, y su Escape no cierra el panel.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { MemoryRouter } from 'react-router-dom'
-import { Campana } from './Campana'
+import { MemoryRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Campana, focoALaVista } from './Campana'
 
 let hayCuenta = true
 let avisos: { sinLeer: number; avisos: unknown[] } = { sinLeer: 0, avisos: [] }
 let vecesQueSeMarco = 0
 let vecesQueSePidio = 0
+let estadoDeWhatsapp = 'APAGADO'
+let pedidasDeNotificaciones = 0
 
 vi.mock('@/app/Sesion', () => ({
   useSesion: () => ({ hayCuenta }),
@@ -42,6 +48,29 @@ vi.mock('@/api/portal', () => ({
     marcadosUnoAUno.push(id)
     return Promise.resolve()
   },
+  misNotificaciones: () => {
+    pedidasDeNotificaciones += 1
+    return Promise.resolve({
+      whatsapp: {
+        disponible: true,
+        estado: estadoDeWhatsapp,
+        numero: '+51 987 654 321',
+        comprobado: false,
+        porBaja: false,
+        bajaEn: null,
+        cambioDeNumero: false,
+      },
+      correo: { activo: true, destino: 'ana@correo.pe' },
+      portal: { activo: true },
+      mensaje: { mostrar: false, situacion: 'PRIMERA_VEZ' },
+      guiaVista: true,
+    })
+  },
+  marcarGuiaVista: () => Promise.resolve(),
+  activarWhatsapp: () => Promise.reject(new Error('no se usa aquí')),
+  apagarWhatsapp: () => Promise.reject(new Error('no se usa aquí')),
+  cambiarNotificaciones: () => Promise.reject(new Error('no se usa aquí')),
+  cambiarCelular: () => Promise.reject(new Error('no se usa aquí')),
 }))
 
 const UN_AVISO = {
@@ -68,12 +97,69 @@ function montar() {
   )
 }
 
+/** Si al pintarse «Mi cuenta» quedaba alguna ventana abierta encima (y lo de debajo, inerte). */
+let ventanaAbiertaAlLlegar: boolean | null = null
+
+function MiCuenta() {
+  useEffect(() => {
+    ventanaAbiertaAlLlegar = document.querySelector('dialog[open]') !== null
+  }, [])
+  return <p>Mi cuenta</p>
+}
+
+/** Otro camino para cambiar de ruta: el «atrás» del navegador o una redirección. */
+function OtraRuta() {
+  const navegar = useNavigate()
+  const { pathname, hash } = useLocation()
+  return (
+    <>
+      <output aria-label="Dónde estoy">{pathname + hash}</output>
+      <button type="button" onClick={() => navegar('/vacantes')}>
+        Ir a otra pantalla
+      </button>
+    </>
+  )
+}
+
+/** La campana en una cabecera de verdad: con rutas debajo, como en el armazón. */
+function montarConRutas() {
+  const datos = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  })
+  return render(
+    <QueryClientProvider client={datos}>
+      <MemoryRouter initialEntries={['/procesos']}>
+        <Campana />
+        <OtraRuta />
+        <Routes>
+          <Route path="/procesos" element={<p>Mis procesos</p>} />
+          <Route path="/perfil" element={<MiCuenta />} />
+          <Route path="/vacantes" element={<p>Vacantes</p>} />
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>,
+  )
+}
+
 beforeEach(() => {
   hayCuenta = true
   avisos = { sinLeer: 0, avisos: [] }
   vecesQueSeMarco = 0
   vecesQueSePidio = 0
+  estadoDeWhatsapp = 'APAGADO'
+  pedidasDeNotificaciones = 0
   marcadosUnoAUno.length = 0
+  // jsdom todavía no implementa `showModal` ni `close` de `<dialog>`.
+  const prototipo = window.HTMLDialogElement.prototype
+  if (typeof prototipo.showModal !== 'function') {
+    prototipo.showModal = function abrir(this: HTMLDialogElement) {
+      this.open = true
+    }
+    prototipo.close = function cerrar(this: HTMLDialogElement) {
+      this.open = false
+      this.dispatchEvent(new Event('close'))
+    }
+  }
 })
 afterEach(cleanup)
 
@@ -286,4 +372,172 @@ describe('la campana', () => {
 
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
   })
+
+  it('la cabecera se llama «Tus avisos»', async () => {
+    montar()
+    fireEvent.click(await screen.findByRole('button', { name: 'Avisos' }))
+
+    expect(await screen.findByRole('heading', { name: 'Tus avisos' })).toBeTruthy()
+  })
 })
+
+describe('la tuerca de los ajustes', () => {
+  it('va en la cabecera del panel, junto a «Marcar todos como leídos», y abre «Ajustes de avisos»', async () => {
+    avisos = { sinLeer: 1, avisos: [UN_AVISO] }
+    montar()
+    fireEvent.click(await screen.findByRole('button', { name: /1 sin leer/ }))
+    const panel = await screen.findByRole('dialog', { name: 'Tus avisos' })
+    expect(within(panel).getByRole('button', { name: /marcar todos como leídos/i })).toBeTruthy()
+
+    fireEvent.click(within(panel).getByRole('button', { name: 'Ajustes de avisos' }))
+
+    const ventana = await screen.findByRole('dialog', { name: 'Ajustes de avisos' })
+    expect((ventana as HTMLDialogElement).open).toBe(true)
+    expect(await within(ventana).findByRole('switch', { name: 'Notificaciones por WhatsApp' })).toBeTruthy()
+  })
+
+  it('con la campana cerrada no hay tuerca ni se piden los ajustes', async () => {
+    montar()
+    await waitFor(() => expect(vecesQueSePidio).toBe(1))
+    expect(pedidasDeNotificaciones).toBe(0)
+    expect(screen.queryByRole('button', { name: 'Ajustes de avisos' })).toBeNull()
+  })
+
+  it('el puntito verde sale con WhatsApp por activar y nunca con texto', async () => {
+    montar()
+    fireEvent.click(await screen.findByRole('button', { name: 'Avisos' }))
+    const tuerca = await screen.findByRole('button', { name: 'Ajustes de avisos' })
+
+    await waitFor(() => expect(tuerca.querySelector('[data-puntito]')).not.toBeNull())
+    // El nombre sigue siendo el mismo: el puntito no dice nada en palabras.
+    expect(tuerca.getAttribute('aria-label')).toBe('Ajustes de avisos')
+  })
+
+  it('con WhatsApp activo, la tuerca va limpia', async () => {
+    estadoDeWhatsapp = 'ACTIVO'
+    montar()
+    fireEvent.click(await screen.findByRole('button', { name: 'Avisos' }))
+    const tuerca = await screen.findByRole('button', { name: 'Ajustes de avisos' })
+
+    await waitFor(() => expect(pedidasDeNotificaciones).toBe(1))
+    expect(tuerca.querySelector('[data-puntito]')).toBeNull()
+  })
+
+  it('QA-05 · «Cámbialo en Mi cuenta» cierra los ajustes y el panel antes de que «Mi cuenta» se pinte', async () => {
+    ventanaAbiertaAlLlegar = null
+    montarConRutas()
+    fireEvent.click(await screen.findByRole('button', { name: 'Avisos' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Ajustes de avisos' }))
+    const ventana = await screen.findByRole('dialog', { name: 'Ajustes de avisos' })
+
+    fireEvent.click(await within(ventana).findByRole('link', { name: 'Cámbialo en Mi cuenta' }))
+
+    await screen.findByText('Mi cuenta')
+    expect(screen.getByLabelText('Dónde estoy').textContent).toBe('/perfil#celular')
+    // Cerrada ya cuando el destino se monta y pide el foco para su campo.
+    expect(ventanaAbiertaAlLlegar).toBe(false)
+    expect((ventana as HTMLDialogElement).open).toBe(false)
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Tus avisos' })).toBeNull())
+  })
+
+  it('QA-05 · al cambiar de ruta por cualquier otro camino, panel y ajustes se cierran', async () => {
+    montarConRutas()
+    fireEvent.click(await screen.findByRole('button', { name: 'Avisos' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Ajustes de avisos' }))
+    const ventana = await screen.findByRole('dialog', { name: 'Ajustes de avisos' })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ir a otra pantalla' }))
+
+    await screen.findByText('Vacantes')
+    await waitFor(() => expect((ventana as HTMLDialogElement).open).toBe(false))
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Tus avisos' })).toBeNull())
+
+    // Y solo el panel, sin los ajustes abiertos.
+    fireEvent.click(screen.getByRole('button', { name: 'Avisos' }))
+    await screen.findByRole('dialog', { name: 'Tus avisos' })
+    fireEvent.click(screen.getByRole('button', { name: 'Ir a otra pantalla' }))
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Tus avisos' })).toBeNull())
+  })
+
+  it('con los ajustes abiertos, Escape no cierra el panel de debajo', async () => {
+    montar()
+    fireEvent.click(await screen.findByRole('button', { name: 'Avisos' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Ajustes de avisos' }))
+    await screen.findByRole('dialog', { name: 'Ajustes de avisos' })
+
+    fireEvent.keyDown(document, { key: 'Escape' })
+
+    expect(screen.getByRole('dialog', { name: 'Tus avisos' })).toBeTruthy()
+  })
+
+  it('QA-08 · al cerrar los ajustes con el foco en la × ya oculta, vuelve a la tuerca si el panel sigue abierto', async () => {
+    montar()
+    fireEvent.click(await screen.findByRole('button', { name: 'Avisos' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Ajustes de avisos' }))
+    const ventana = (await screen.findByRole('dialog', { name: 'Ajustes de avisos' })) as HTMLDialogElement
+    const cruz = within(ventana).getByRole('button', { name: 'Cerrar' })
+    cruz.focus()
+
+    fireEvent.click(cruz)
+
+    expect(ventana.open).toBe(false)
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Ajustes de avisos' })))
+    expect(screen.getByRole('dialog', { name: 'Tus avisos' })).toBeTruthy()
+  })
+
+  it('QA-08 · si al cerrarse el foco ya está en algo a la vista (el campo de otra pantalla), no se lo quita', async () => {
+    montar()
+    fireEvent.click(await screen.findByRole('button', { name: 'Avisos' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Ajustes de avisos' }))
+    const ventana = (await screen.findByRole('dialog', { name: 'Ajustes de avisos' })) as HTMLDialogElement
+    const fuera = document.createElement('input')
+    document.body.appendChild(fuera)
+    try {
+      act(() => {
+        ventana.close()
+        fuera.focus()
+      })
+      await new Promise((listo) => requestAnimationFrame(() => setTimeout(listo, 0)))
+      expect(document.activeElement).toBe(fuera)
+    } finally {
+      fuera.remove()
+    }
+  })
+})
+
+describe('focoALaVista (QA-08)', () => {
+  it('no cuenta el <body>, lo desmontado ni lo que queda dentro de un <dialog> cerrado', () => {
+    const dialogo = document.createElement('dialog')
+    const dentro = document.createElement('button')
+    dialogo.appendChild(dentro)
+    const suelto = document.createElement('button')
+    document.body.append(dialogo, suelto)
+    try {
+      expect(focoALaVista(null)).toBe(false)
+      expect(focoALaVista(document.body)).toBe(false)
+      expect(focoALaVista(document.createElement('button'))).toBe(false)
+      expect(focoALaVista(dentro)).toBe(false)
+      dialogo.setAttribute('open', '')
+      expect(focoALaVista(dentro)).toBe(true)
+      expect(focoALaVista(suelto)).toBe(true)
+    } finally {
+      dialogo.remove()
+      suelto.remove()
+    }
+  })
+
+  it('con el navegador que sabe si se pinta, tampoco cuenta lo oculto por estilo', () => {
+    const oculto = document.createElement('button')
+    document.body.appendChild(oculto)
+    const conVisibilidad = oculto as HTMLButtonElement & { checkVisibility: () => boolean }
+    try {
+      conVisibilidad.checkVisibility = () => false
+      expect(focoALaVista(oculto)).toBe(false)
+      conVisibilidad.checkVisibility = () => true
+      expect(focoALaVista(oculto)).toBe(true)
+    } finally {
+      oculto.remove()
+    }
+  })
+})
+

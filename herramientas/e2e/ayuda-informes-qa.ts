@@ -39,13 +39,17 @@ import {
   uno,
 } from './ayuda-preguntas-propias'
 import { crearVacante, criterioDe, escribirPrueba, lugarDe, publicarPrueba } from './ayuda-prueba-propia'
+import { celularUnico } from './ayuda-whatsapp'
 
 export const MARCA = 'QA-INF-84'
 export const PUESTO = 'Analista de Recursos Humanos'
 export const PRETENSION = 4750
 const PREFIJO_CORREO = 'qa.inf.84'
 
-/** Lo que nunca debe salir en un informe: la pretensión y el celular, en todas sus formas. */
+/**
+ * Lo que nunca debe salir en un informe: la pretensión y el celular, en todas sus formas. El
+ * del CV es fijo; el de cada cuenta es único desde la V92 y `persona` lo añade al sembrarla.
+ */
 export const PROHIBIDOS = ['4750', '4 750', '4.750', '4,750', '987654321', '987 654 321', CELULAR_DE_PRUEBA]
 /** El contenido del entregable subido: el informe nombra el archivo, nunca lo de dentro. */
 export const CONTENIDO_DEL_ENTREGABLE = 'CONTENIDO-SECRETO-QA-INF-84'
@@ -115,6 +119,8 @@ export interface Persona {
   token: string
   uuid: string
   postulacion: number
+  /** El celular de su cuenta: nuevo en cada siembra (V92) y entre los PROHIBIDOS. */
+  celular: ReturnType<typeof celularUnico>
 }
 
 export interface Escenario {
@@ -138,7 +144,11 @@ function insertarId(consulta: string): number {
 async function persona(vacante: number, nombre: string, apellidos: string, correos: string[]): Promise<Persona> {
   const correo = correoDePrueba(PREFIJO_CORREO)
   correos.push(correo)
-  await crearCuentaDeCandidato({ nombre, apellidos, correo })
+  // Desde la V92 un celular es de una sola cuenta: cada persona lleva uno nuevo y, como el de la
+  // cuenta tampoco puede salir en un informe, entra en los prohibidos con sus dos formas.
+  const celular = celularUnico()
+  PROHIBIDOS.push(celular.e164.slice(3), celular.escrito)
+  await crearCuentaDeCandidato({ nombre, apellidos, correo, telefono: celular.escrito })
   const r = await fetch(`${API}/portal/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -147,7 +157,7 @@ async function persona(vacante: number, nombre: string, apellidos: string, corre
   if (!r.ok) throw new Error(`login portal de ${correo} falló: ${r.status}`)
   const token = (await r.json()).token as string
   const uuid = await postular(token, vacante)
-  return { nombre: `${nombre} ${apellidos}`, correo, token, uuid, postulacion: postulacionPorUuid(uuid) }
+  return { nombre: `${nombre} ${apellidos}`, correo, token, uuid, postulacion: postulacionPorUuid(uuid), celular }
 }
 
 /** Lo que la IA habría dejado al leer el currículum: notas, datos, afirmaciones. */

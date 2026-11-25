@@ -1,6 +1,6 @@
 import { expect, type Page } from '@playwright/test'
 import { API, entrarAlPortal, VACANTES } from './ayuda'
-import { borrarCuentasDePrueba, CLAVE_DE_CANDIDATO, correoDePrueba, test } from './ayuda-candidato'
+import { borrarCuentasDePrueba, celularUnico, CLAVE_DE_CANDIDATO, correoDePrueba, test } from './ayuda-candidato'
 
 /**
  * Postular de punta a punta, contra el backend de verdad.
@@ -107,7 +107,8 @@ test.describe('Regresión · postular de punta a punta', () => {
     await page.getByLabel(/^Nombre/).fill('Prueba')
     await page.getByLabel('Apellidos').fill('De Punta a Punta')
     await page.getByLabel('Correo').fill(CORREO)
-    await page.getByLabel(/^Celular \(WhatsApp\)/).fill('987 654 321')
+    // Un celular es de una sola cuenta (V92): uno nuevo en cada ejecución.
+    await page.getByLabel(/^Celular \(WhatsApp\)/).fill(celularUnico())
     await page.getByLabel(/^Contraseña/).fill(CLAVE_DE_CANDIDATO)
     await page.getByLabel('Repite la contraseña').fill(CLAVE_DE_CANDIDATO)
     // El registro exige ciudad desde que la pide el alta (ver `02-regresion-portal`).

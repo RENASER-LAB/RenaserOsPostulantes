@@ -25,6 +25,7 @@ import { correoDePrueba, literal, sql } from './base-de-datos'
 import { consultar, postular, postulacionPorUuid, uno } from './ayuda-preguntas-propias'
 import { equipoSin, pesosDeRenaser, soloPostula, vacanteConPreguntasYPrueba } from './ayuda-pesos-con-candidatos'
 import { ENTREGABLES, retirarLoDeLaQa, sembrarInformes, type Escenario as DeLosInformes } from './ayuda-informes-qa'
+import { celularUnico } from './ayuda-whatsapp'
 
 export const MARCA = 'QA-FECHA-87'
 const PREFIJO_CORREO = 'qa.fecha.87'
@@ -65,6 +66,12 @@ export interface EscenarioFecha {
   sinCv: string
   /** Talento sin «descargar_entregables». */
   sinEntregables: string
+  /**
+   * El celular de la cuenta de Robert y el fijo de la de Ximena (AC-14 a AC-16): nuevos en cada
+   * siembra, porque desde la V92 un número es de una sola cuenta.
+   */
+  celularDeRobert: ReturnType<typeof celularUnico>
+  fijoDeXimena: string
 }
 
 async function persona(vacante: number, nombre: string, apellidos: string, correos: string[]): Promise<Sembrada> {
@@ -152,11 +159,14 @@ export async function sembrarLaFecha(equipo: string, correos: string[], marca: s
   notas(ximena.postulacion, { cv: 75, pi: 90, prueba: null, grupo: 'ALTA' })
   notas(alex.postulacion, { cv: 40, pi: 45, prueba: null, grupo: 'ALTA' })
 
-  // El celular (AC-14 a AC-16)
-  celulares(robert.postulacion, '+51987111222', '912 345 678')
+  // El celular (AC-14 a AC-16). Los de las cuentas, nuevos en cada siembra: desde la V92 un
+  // número es de una sola cuenta, y el de una siembra anterior puede seguir guardado.
+  const celularDeRobert = celularUnico()
+  const fijoDeXimena = `+511${String(Date.now()).slice(-7)}`
+  celulares(robert.postulacion, celularDeRobert.e164, '912 345 678')
   celulares(mayra.postulacion, null, '+51 923-456-789')
   celulares(ruth.postulacion, null, null)
-  celulares(ximena.postulacion, '+5114567890', null)
+  celulares(ximena.postulacion, fijoDeXimena, null)
   celulares(alex.postulacion, null, '98765432')
 
   // El entregable de tipo enlace de María (el archivo ya lo subió en sembrarInformes)
@@ -221,6 +231,8 @@ export async function sembrarLaFecha(equipo: string, correos: string[], marca: s
     vacanteCerrada,
     sinCv: equipoSin(marca, 'sin-cv', ['ver_perfil_integral']),
     sinEntregables: equipoSin(marca, 'sin-entregables', ['descargar_entregables']),
+    celularDeRobert,
+    fijoDeXimena,
   }
 }
 

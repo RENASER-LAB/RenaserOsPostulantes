@@ -103,6 +103,12 @@ describe('limpieza exacta', () => {
     expect(consulta).toContain('create temporary table qa_retenidas')
     expect(consulta).toMatch(/update usuario[\s\S]*es_activo = false[\s\S]*qa_retenidas/)
   })
+  it('una cuenta retenida suelta su celular: desde la V92 un número es de una sola cuenta', () => {
+    const ejecutar = vi.fn((_consulta: string) => '')
+    borrarCuentasDePrueba(['e2e.retenida.celular@example.com'], ejecutar)
+    const consulta = ejecutar.mock.calls[0]![0]
+    expect(consulta).toMatch(/update persona set telefono = null where id in \(select persona_id from qa_retenidas\);[\s\S]*commit;\s*$/)
+  })
   it('no ejecuta SQL con una lista vacía', () => {
     const consultar = vi.fn(); borrarCuentasDePrueba([], consultar); expect(consultar).not.toHaveBeenCalled()
   })

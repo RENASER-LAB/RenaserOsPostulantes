@@ -31,7 +31,8 @@ cosas distintas. La ayuda de un momento de espera **no lleva «No tienes que hac
 añade el recuadro de espera.
 
 **Un celular se valida con `src/dominio/celular.ts`** (13/10/2026), en el registro, en «Mi
-cuenta», en la tarjeta de WhatsApp y, desde el 12/11/2026, en la ficha del colaborador del panel,
+cuenta», en la ventana «Ajustes de avisos» (hasta la V92, en la tarjeta de WhatsApp de cada
+proceso) y, desde el 12/11/2026, en la ficha del colaborador del panel,
 donde vacío vale. Es copia de `Celular` del backend, con el mismo mensaje: si las dos reglas se
 separan, el formulario deja pasar un número que la API rechaza. Están amarradas a un contrato
 igual en los dos repositorios —`src/dominio/celularCasos.json` aquí,

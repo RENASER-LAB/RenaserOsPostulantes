@@ -6,15 +6,38 @@
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
 import type { MiPostulacion } from '@/api/tipos'
+import { olvidarLaGuia, useGuiaPedida } from '@/ui/notificaciones/guiaPedida'
 import { Procesos } from './Procesos'
 import { Seguimiento } from './Seguimiento'
 
 let lista: MiPostulacion[] = []
-vi.mock('@/api/portal', () => ({ misPostulaciones: vi.fn(async () => lista) }))
+/** `undefined`: un backend sin la V93, que no manda el campo. */
+let guiaVista: boolean | undefined = true
+// La guía de los avisos (V93) pregunta si ya se vio: aquí, todo por defecto.
+vi.mock('@/api/portal', () => ({
+  misPostulaciones: vi.fn(async () => lista),
+  misNotificaciones: vi.fn(async () => ({
+    whatsapp: {
+      disponible: true, estado: 'APAGADO', numero: '+51 987 654 321', comprobado: false,
+      porBaja: false, bajaEn: null, cambioDeNumero: false,
+    },
+    correo: { activo: true, destino: 'ana@correo.pe' },
+    portal: { activo: true },
+    mensaje: { mostrar: false, situacion: 'PRIMERA_VEZ' },
+    ...(guiaVista === undefined ? {} : { guiaVista }),
+  })),
+}))
+
+import { misNotificaciones } from '@/api/portal'
+
+/** Lo que mira la campana: si «Mis procesos» pidió la guía. */
+function Testigo() {
+  return <p data-testid="guia">{useGuiaPedida() ? 'pedida' : 'no'}</p>
+}
 
 const enLaPrueba = (pruebaSinCompletar?: boolean): MiPostulacion => ({
   uuid: 'p1',
@@ -38,12 +61,71 @@ function montarLista() {
     <QueryClientProvider client={datos}>
       <MemoryRouter>
         <Procesos />
+        <Testigo />
       </MemoryRouter>
     </QueryClientProvider>,
   )
 }
 
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  olvidarLaGuia()
+  guiaVista = true
+})
+
+describe('los avisos, fuera de «Mis procesos» (25/11/2026)', () => {
+  it('ni botón «Notificaciones», ni línea de estado, ni mensaje flotante, ni tarjeta de WhatsApp en ningún proceso', async () => {
+    lista = [enLaPrueba(false)]
+    montarLista()
+
+    expect(await screen.findByRole('heading', { level: 1 })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /Notificaciones/ })).toBeNull()
+    expect(screen.queryByText(/WhatsApp (activo|apagado)|Correo y portal|Esperando tu mensaje/)).toBeNull()
+    expect(screen.queryByRole('dialog', { name: 'Avisos por WhatsApp' })).toBeNull()
+    expect(screen.queryByText(/Recibe tus (novedades|avisos) por WhatsApp/)).toBeNull()
+    expect(screen.queryByRole('button', { name: /Escribir por WhatsApp/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Dejar de recibir' })).toBeNull()
+  })
+})
+
+describe('la guía de los avisos (V93)', () => {
+  it('con alguna postulación y la guía sin ver, «Mis procesos» la pide', async () => {
+    guiaVista = false
+    lista = [enLaPrueba(false)]
+    montarLista()
+
+    await waitFor(() => expect(screen.getByTestId('guia').textContent).toBe('pedida'))
+  })
+
+  it('ya vista, no la pide', async () => {
+    lista = [enLaPrueba(false)]
+    montarLista()
+
+    await waitFor(() => expect(misNotificaciones).toHaveBeenCalled())
+    await screen.findByRole('heading', { level: 1 })
+    expect(screen.getByTestId('guia').textContent).toBe('no')
+  })
+
+  it('sin postulaciones no pregunta ni la pide', async () => {
+    guiaVista = false
+    lista = []
+    montarLista()
+
+    expect(await screen.findByRole('heading', { level: 1 })).toBeTruthy()
+    expect(misNotificaciones).not.toHaveBeenCalled()
+    expect(screen.getByTestId('guia').textContent).toBe('no')
+  })
+
+  it('contra un backend sin la V93 (sin el campo), no sale', async () => {
+    guiaVista = undefined
+    lista = [enLaPrueba(false)]
+    montarLista()
+
+    await waitFor(() => expect(misNotificaciones).toHaveBeenCalled())
+    await screen.findByRole('heading', { level: 1 })
+    expect(screen.getByTestId('guia').textContent).toBe('no')
+  })
+})
 
 describe('la prueba del editor que quedó sin completar', () => {
   it('la lista no la cuenta como pendiente ni ofrece abrirla', async () => {

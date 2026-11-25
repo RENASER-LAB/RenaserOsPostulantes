@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { comoE164, MENSAJE_CELULAR, paraEditar, paraMostrar } from './celular'
+import { comoE164, enmascarado, MENSAJE_CELULAR, paraEditar, paraMostrar } from './celular'
 import contrato from './celularCasos.json'
 
 /**
@@ -65,5 +65,19 @@ describe('el celular de la cuenta (V73)', () => {
     expect(paraEditar('+51987654321')).toBe('987 654 321')
     expect(paraEditar('+34612345678')).toBe('+34612345678')
     expect(paraEditar(null)).toBe('')
+  })
+
+  // QA-09: el que pinta la guía esperando su mensaje, igual que `Celular.enmascarado` en ACTIVO.
+  it('se enmascara como el backend: el prefijo y la primera cifra, y las tres últimas', () => {
+    expect(enmascarado('+51 987 654 321')).toBe('+51 9•• ••• 321')
+    expect(enmascarado('+51952696434')).toBe('+51 9•• ••• 434')
+    expect(enmascarado('+34612345678')).toBe('+346•••••678')
+    expect(enmascarado('+14155552671')).toBe('+141•••••671')
+    // Ya enmascarado (WhatsApp activo), tal cual.
+    expect(enmascarado('+51 9•• ••• 321')).toBe('+51 9•• ••• 321')
+    // Sin número, o lo que no es un celular, no se enseña.
+    expect(enmascarado(null)).toBeNull()
+    expect(enmascarado('')).toBeNull()
+    expect(enmascarado('uno dos tres')).toBeNull()
   })
 })

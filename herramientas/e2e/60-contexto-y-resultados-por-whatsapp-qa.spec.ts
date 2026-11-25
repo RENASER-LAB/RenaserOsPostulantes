@@ -503,7 +503,9 @@ test.describe('El contexto y los resultados por WhatsApp (v2), haciendo de bot c
     })
     const evaluacion = consultar(`select e.iniciada_en, (extract(epoch from date_trunc('milliseconds', e.vence_en)) * 1000)::bigint as vence
                                     from evaluacion e join postulacion p on p.evaluacion_id = e.id where p.id = ${deAna.id}`)
-    const vence = evaluacion.length ? Number(evaluacion[0]!.vence) : null
+    // Sin vencimiento propio (desde la V78 el Perfil Integral dura hasta el cierre de la vacante)
+    // la base da null, y Number(null) sería 0: se compara null con null.
+    const vence = evaluacion.length && evaluacion[0]!.vence !== null ? Number(evaluacion[0]!.vence) : null
     expect(c.accion).toMatchObject({
       tipo: 'EVALUACION_INICIAL', estado: 'HABILITADA', modalidad: 'PLAZO_ABIERTO', duracionMinutos: null,
       plazoDias: null, iniciadaEn: null, zonaHoraria: 'America/Lima',
@@ -642,6 +644,10 @@ test.describe('El contexto y los resultados por WhatsApp (v2), haciendo de bot c
 
   test('AC-10 · la convocatoria cierra con la prueba en curso: la consulta lo separa y nada se cierra por eso', async () => {
     const antes = await detalleOk(ana, deAna.ref)
+    // Desde la V78 el Perfil Integral dura hasta el cierre: cerrar la vacante cierra a quien aún
+    // tenía pendiente su evaluación inicial. Beto pasa antes a la revisión de su perfil, otra
+    // etapa viva que el cierre no toca, para seguir mirando a alguien que no está en la prueba.
+    await mover(deBeto.id, 'PERFIL_POR_CONFIRMAR', false, `${MARCA}: perfil de Beto en revisión`)
     const estadoDeBeto = String(uno(`select estado_codigo from postulacion where id = ${deBeto.id}`).estado_codigo)
     await exigir(`/panel/vacantes/${principal}/cierre`, equipo, 'POST', { motivo: `${MARCA}: cierre de la convocatoria` })
 

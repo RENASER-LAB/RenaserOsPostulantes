@@ -385,38 +385,67 @@ export interface MiPostulacion {
    * permiso `ver_pretension`.
    */
   miPretension: PretensionDeclarada | null
-  /**
-   * La tarjeta de WhatsApp de este proceso (V73). Puede faltar contra un backend
-   * anterior: entonces no hay tarjeta.
-   */
-  whatsapp?: WhatsappDelProceso | null
+}
+
+// ---------- Notificaciones (V92) ----------
+
+/**
+ * En qué está WhatsApp para toda la cuenta, en el orden en que lo decide el backend:
+ *
+ *   SIN_NUMERO  la cuenta no tiene celular.
+ *   ACTIVO      el interruptor está encendido: recibe los avisos de todos sus procesos.
+ *   ESPERANDO   se le abrió el chat y todavía no escribió desde su número.
+ *   NO_LLEGO    pasaron 24 horas y el mensaje nunca llegó.
+ *   APAGADO     lo demás; `porBaja` dice si fue por escribir BAJA.
+ */
+export type EstadoWhatsapp = 'SIN_NUMERO' | 'APAGADO' | 'ESPERANDO' | 'NO_LLEGO' | 'ACTIVO'
+
+export interface WhatsappDeLaCuenta {
+  /** Sin beta (o sin bot) no hay fila de WhatsApp, ni puntito en la tuerca, ni paso 3 en la guía. */
+  disponible: boolean
+  estado: EstadoWhatsapp
+  /** «+51 987 654 321»; enmascarado en `ACTIVO`; `null` sin número. */
+  numero: string | null
+  /** Esta cuenta ya escribió desde ese número: se activa con un clic. */
+  comprobado: boolean
+  porBaja: boolean
+  /** El día de la BAJA en Lima, «2026-11-12». */
+  bajaEn: string | null
+  /** Tuvo WhatsApp en otro número y el de ahora está sin comprobar. */
+  cambioDeNumero: boolean
 }
 
 /**
- * En que esta la tarjeta «Recibe tus novedades por WhatsApp» de un proceso.
- *
- * `disponible` es la vacante de RENASER, la beta encendida y el proceso sin
- * terminar; sin eso `estado` y `numero` van vacios. El numero va completo
- * («+51 987 654 321», el de su cuenta) salvo en `ACTIVO`, que va enmascarado.
+ * Las tres situaciones del mensaje flotante. El backend las sigue mandando, pero el portal ya
+ * no pinta el mensaje desde el 25/11/2026: lo sustituyó el paso 3 de la guía de los avisos.
  */
-export interface WhatsappDelProceso {
-  disponible: boolean
-  estado: EstadoWhatsapp | null
-  numero: string | null
+export type SituacionDelMensaje = 'PRIMERA_VEZ' | 'TRAS_BAJA' | 'CAMBIO_DE_NUMERO'
+
+/** `GET /notificaciones`: los tres canales de la cuenta y si ya vio la guía de los avisos. */
+export interface Notificaciones {
+  whatsapp: WhatsappDeLaCuenta
+  correo: { activo: boolean; destino: string | null }
+  portal: { activo: boolean }
+  /** Sin uso en el portal desde el 25/11/2026 (ver `SituacionDelMensaje`). */
+  mensaje: { mostrar: boolean; situacion: SituacionDelMensaje }
+  /**
+   * Ya dio por vista la guía de los avisos (V93): sale una vez por cuenta, la primera vez que
+   * entra en «Mis procesos» con alguna postulación. Puede faltar contra un backend anterior:
+   * entonces no sale.
+   */
+  guiaVista?: boolean
 }
 
-export type EstadoWhatsapp =
-  | 'SIN_CELULAR'
-  | 'SIN_VINCULAR'
-  | 'PENDIENTE'
-  | 'ACTIVO'
-  | 'REVOCADO'
-  | 'SUPRIMIDO'
-
-/** Lo que devuelve «Escribir por WhatsApp»: el enlace ya escrito y como queda la tarjeta. */
-export interface EnlaceWhatsapp {
-  enlace: string
-  whatsapp: WhatsappDelProceso
+/**
+ * Lo que contesta encender WhatsApp: `ACTIVADO` (con un clic, ya recibe) o
+ * `POR_MENSAJE` (tiene que escribir desde su número, y `enlace` es el chat).
+ */
+export interface ActivacionWhatsapp {
+  resultado: 'ACTIVADO' | 'POR_MENSAJE'
+  enlace: string | null
+  /** El bot le manda un mensaje para confirmarlo. */
+  confirmacionEnviada: boolean
+  notificaciones: Notificaciones
 }
 
 /** Un monto con su moneda, y la frase ya escrita para pintarla sin traducir. */

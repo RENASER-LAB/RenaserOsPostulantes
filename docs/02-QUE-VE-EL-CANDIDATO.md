@@ -205,10 +205,11 @@ Lleva la cabecera y el pie del portal también sin cuenta. Un backend anterior a
 **El celular (13/10/2026).** «Celular (WhatsApp)» va justo después del correo, con el **+51
 dibujado dentro de la caja**: nueve cifras que empiezan por 9, o el número entero con su prefijo
 si es de otro país («+34 612 345 678» o «0034…»). Es el número desde el que escribirá al bot de
-WhatsApp (2.6b), y por eso lo dice la etiqueta.
+WhatsApp (2.6b), y por eso lo dice la etiqueta. **Desde la V92 es de una sola cuenta**: si ya lo usa
+otra, «Ese número ya está en otra cuenta. Usa otro o entra con esa cuenta.» junto al campo.
 
 **El campo no deja escribirlo mal** (12/11/2026, `src/ui/campos/CampoCelular.tsx`, el mismo en
-«Mi cuenta», en la tarjeta de WhatsApp y en la ficha del colaborador del panel):
+«Mi cuenta», en la ventana «Ajustes de avisos» y en la ficha del colaborador del panel):
 
 - Solo entran cifras, y se agrupan solas de tres en tres —«987 654 321»—; **una décima cifra no
   se escribe**. Letras, guiones, puntos, paréntesis y espacios tampoco.
@@ -432,7 +433,8 @@ refresca en el mismo momento, porque postular puede dejar ya un aviso.
 ### 2.6 Mis procesos — el centro del portal
 `GET /portal/postulaciones` → por postulación: `uuid`, `vacante`, `estado`, `estadoNombre`,
 `grupoPrioridad`, `diasSinCambio`, `creadoEn`, `instrumentoEtapaTecnica`, desde el 01/10/2026
-`pruebaSinCompletar` y, desde el 13/10/2026, `whatsapp` (ver 2.6b).
+`pruebaSinCompletar` y, desde el 13/10/2026, `whatsapp` —la tarjeta de cada proceso, que el portal
+ya no pinta desde la V92: WhatsApp se ajusta para toda la cuenta en «Ajustes de avisos», la tuerca de la campana (ver 2.6b)—.
 
 ⚠️ **`pruebaSinCompletar` cambia lo que dice una fila en `PRUEBA_TURNO_CANDIDATO`.** Su prueba del
 editor venció con algo pendiente, el intento se cerró y la postulación sigue en ese estado hasta
@@ -471,67 +473,102 @@ página.
 revisando tu postulación» salía dos veces, porque el texto del momento ya la traía y el recuadro
 la añade: ahora la pone solo el recuadro.
 
-### 2.6b Recibe tus novedades por WhatsApp (13/10/2026, beta)
+### 2.6b Ajustes de avisos: WhatsApp, correo y portal en un solo ajuste (24–25/11/2026, V92 y V93)
 
-Mientras espera, el recuadro de espera ofrece una tarjeta para que el bot de RENASER le cuente
-cómo va su proceso por WhatsApp. **El candidato escribe primero**: el botón abre el chat con un
-mensaje ya escrito, y el bot lo reconoce **solo por el número** —puede cambiar o borrar el
-mensaje—. Desde entonces, cuando le toque algo (la prueba disponible, elegir fecha, empezar su
-validación), también se lo dice el bot. El contrato con el bot es del backend: su
-`CONTRATO-NOVEDADES-POR-WHATSAPP.md`.
+En la cabecera del panel de la campana, junto a «Marcar todos como leídos», hay una **tuerca**
+(«Ajustes de avisos», con su globito al pasar). Abre una ventana con tres interruptores para
+**toda la cuenta**: **WhatsApp** (primero, con la etiqueta «Recomendado»), **Correo** y **En el
+portal**. Sustituye a la tarjeta de WhatsApp que llevaba cada proceso, su línea al pie de la
+acción y «Dejar de recibir», que ya no existen: WhatsApp vale para todos sus procesos, los de hoy y
+los que vengan, y quien ya no quiere saber de un proceso se retira de él. Spec:
+`notificaciones-del-candidato`, en `specs/` del backend, con su maqueta.
+Lo pintan `src/ui/Campana.tsx` (la tuerca) y `src/ui/notificaciones/Ajustes.tsx` (la ventana), con
+`GET /portal/notificaciones`. Solo existe con sesión de candidato, como la campana.
 
-**Dónde sale.** **Solo en «Mis procesos»** (`/procesos`), desde el 14/10/2026: ni en el detalle
-de una postulación ni en ninguna otra pantalla. `Seguimiento` no la pinta si no se le pide
-(`conWhatsapp`), y solo la lista se la pide. En los once momentos de espera va en el recuadro de
-espera: con la tarjeta, el recuadro deja su tope de 44rem y pasa a todo lo ancho, el estado
-(«…No tienes que hacer nada.») a la izquierda y la tarjeta a la derecha; si el recuadro no mide
-46rem —el teléfono— se apilan, la tarjeta debajo.
+⚠️ **«Mis procesos» no lleva entrada propia a los ajustes, ni línea de estado de WhatsApp, ni
+mensaje flotante**, aunque la spec y su maqueta los dibujan: se cambiaron tras la QA del
+25/11/2026, antes de publicarse. La entrada es la tuerca, el estado se ve en la ventana y la
+invitación es el paso 3 de la guía de la primera vez (abajo). El porqué, en
+[BITACORA-2026-11](BITACORA-2026-11.md).
 
-**Cuando le toca algo no sale la tarjeta**: manda la acción. En su lugar, al pie del panel de la
-acción y bajo un filete, sale **una línea en tinta, sin el botón verde** —el texto a la izquierda,
-la acción en texto a la derecha; en el teléfono, una debajo de otra—. Conectarse y dejarlo tienen
-que poder hacerse siempre, y la conexión es **por proceso**: sin esto, un proceso con la acción
-pendiente no se podía conectar hasta la espera siguiente.
+**El puntito verde de la tuerca** sale cuando WhatsApp está disponible y se puede activar —apagado,
+sin número, no llegó, por BAJA o con un número nuevo— y nunca con WhatsApp activo o esperando su
+mensaje. No lleva texto: el nombre de la tuerca no cambia.
 
-| `whatsapp.estado` | La línea al pie de la acción |
-|---|---|
-| `SIN_VINCULAR` y `REVOCADO` | «Recibe las novedades de este proceso por WhatsApp (+51 987 654 321).» · «Escribir por WhatsApp», y debajo, en letra menor, el consentimiento y «¿No es tu número? Cámbialo en Mi cuenta.». Pulsar hace lo mismo que el botón de la tarjeta |
-| `PENDIENTE` | «Aún no recibimos tu mensaje. Escríbenos desde el +51 987 654 321.» · «Escribir por WhatsApp» y «¿Usas otro número? Cámbialo en Mi cuenta.» |
-| `ACTIVO` | «Conectado por WhatsApp (+51 9•• ••• 321).» · «Dejar de recibir». Al pulsarlo: «Listo: ya no recibirás por WhatsApp las novedades de este proceso.» |
-| `SIN_CELULAR` | «Para recibir las novedades de este proceso por WhatsApp, añade tu celular en Mi cuenta.»: el campo no cabe ahí |
-| `SUPRIMIDO` | Nada |
-
-En la espera va en el resumen y no se repite en «Ver el recorrido completo». Solo si `whatsapp.disponible` llega
-verdadero: vacante de RENASER, beta encendida (`whatsapp_novedades_activo`, **apagada de
-salida**) y proceso sin terminar. Con la beta apagada no se ve en ningún sitio.
-
-| `whatsapp.estado` | Qué dice | Qué se puede hacer |
+| `whatsapp.estado` | Tuerca | Fila de WhatsApp en la ventana |
 |---|---|---|
-| `SIN_VINCULAR` y `REVOCADO` | «Recibe tus novedades por WhatsApp» · «Escríbenos desde tu celular **+51 987 654 321** y te contaremos cómo va tu proceso.» y, debajo, el consentimiento: «Al escribirnos aceptas recibir por WhatsApp las novedades de este proceso. Puedes dejarlo cuando quieras.» | «Escribir por WhatsApp» y «¿No es tu número? Cámbialo en Mi cuenta.» |
-| `SIN_CELULAR` (cuenta anterior al 13/10/2026) | «Déjanos tu celular y escríbenos desde él: te contaremos cómo va tu proceso.», el campo «Tu celular (WhatsApp)» con el +51 y la misma máscara que el registro (2.3), y el consentimiento | «Guardar y escribir por WhatsApp»: guarda el número en la cuenta y sigue igual. Un número que no vale se dice junto al campo |
-| `PENDIENTE` | «Aún no recibimos tu mensaje. Escríbenos desde el **+51 987 654 321**, el celular de tu cuenta.» | «Escribir por WhatsApp» y «¿Usas otro número? Cámbialo en Mi cuenta.» |
-| `ACTIVO` | El logotipo y «**Conectado por WhatsApp (+51 9•• ••• 321).** Escríbenos cuando quieras para saber cómo va tu proceso.» | «Dejar de recibir», un enlace subrayado en tinta, no un botón |
-| `SUPRIMIDO` | «Este número se dio de baja de nuestros mensajes» | Nada: escribió BAJA al bot y no se le vuelve a ofrecer con ese número |
+| `SIN_NUMERO` | Con puntito | Sin interruptor: «Agrega tu celular para recibir avisos por WhatsApp.», el campo y «Guardar» (el mismo guardado que «Mi cuenta») |
+| `APAGADO` | Con puntito | Interruptor apagado y el consentimiento: «Al activarlo aceptas recibir por WhatsApp las novedades de tus procesos. Escribe BAJA cuando quieras dejarlo.» (con el número sin comprobar, también «¿No es tu número? Cámbialo en Mi cuenta.»). Por BAJA: «Lo apagaste escribiendo BAJA el 12 nov. Actívalo y vuelves a recibir…». Tras cambiar el número: «Cambiaste tu número. Actívalo y envía un mensaje desde el nuevo para comprobarlo.» |
+| `ESPERANDO` | Limpia | Interruptor encendido y «Te abrimos WhatsApp. Envía el mensaje desde el +51 … para terminar.» |
+| `NO_LLEGO` | Con puntito | Interruptor apagado y «No nos llegó tu mensaje desde el +51 …. Reintentar» |
+| `ACTIVO` | Limpia | Interruptor verde, el número enmascarado y «Te avisamos de todos tus procesos y puedes escribirnos tus dudas.» (recién activado con un clic, antes: «Te enviamos un mensaje para confirmarlo.») |
 
-**Al pulsar** el botón se desactiva con «Preparando el enlace…», y `POST
-/portal/postulaciones/{uuid}/whatsapp` guarda su consentimiento, anuncia el número al bot y
-devuelve el enlace `wa.me/51928439930` con «Hola, soy Ana Pérez. Quiero saber cómo va mi
-postulación a Asistente Contable.». Se abre en una pestaña nueva —la app de WhatsApp en el
-teléfono, WhatsApp Web en el escritorio— y la tarjeta pasa a `PENDIENTE`. Si falla, «No pudimos
-preparar el enlace. Inténtalo de nuevo.».
+**En el teléfono** (≤ 30rem) la campana abre una hoja inferior a todo el ancho, con su asa y un
+velo detrás; la tuerca mide 44 px. Los ajustes se pintan como la misma hoja, con una flecha
+«Volver a tus avisos» en lugar de la ×, que devuelve a la hoja de avisos con el foco en la tuerca.
 
-⚠️ **La pestaña se pide antes de esperar al servidor.** Pedida después, el navegador ya no la
-cuenta como parte del clic y la bloquea —Safari siempre— sin dar error. Se abre en blanco y se
-lleva al chat cuando llega el enlace; si el navegador no la dio, la tarjeta enseña «Tu navegador
-no abrió WhatsApp. Ábrelo desde aquí.». En la aplicación de Android no hay pestañas: se navega y
-el sistema se lo da a WhatsApp.
+**Al cerrar** la ventana, el foco vuelve a la tuerca si el panel sigue abierto, o a la campana.
+**Al cambiar de ruta** —un aviso, «Cámbialo en Mi cuenta» o el «atrás» del navegador— el panel y
+la ventana se cierran: si no, se quedarían encima del destino con todo lo de debajo inerte.
 
-**Al volver a la pestaña** con la tarjeta en `PENDIENTE`, se vuelve a pedir la lista: así sale
-«Conectado» sin recargar. «Dejar de recibir» (`DELETE` en la misma ruta) cierra ese vínculo y la
-tarjeta vuelve a ofrecer el botón. «Cámbialo en Mi cuenta» lleva a `/perfil#celular` (2.17).
+**Encenderlo** tiene dos caminos, y los elige el backend:
 
-En el teléfono el botón ocupa todo el ancho. El verde del botón es la única excepción a la voz
-única del portal: ver [DESIGN.md](../DESIGN.md).
+- **Con un clic**, si esta cuenta ya escribió alguna vez desde ese número (también tras escribir
+  BAJA): «Activando…» y queda activo sin abrir nada; al candidato le llega un mensaje de
+  confirmación.
+- **Con mensaje**, si el número está sin comprobar: se abre el chat del bot con el mensaje ya
+  escrito y queda activo cuando lo envía. ⚠️ La pestaña se pide antes de esperar al servidor —si
+  no, el navegador la bloquea—; si no la dio, «Tu navegador no abrió WhatsApp. Ábrelo desde aquí.».
+  En la aplicación de Android se navega. Al volver a la pestaña se vuelve a pedir el estado.
+
+Si el bot falla: «No pudimos activarlo. Vuelve a intentarlo en un momento.», y no cambia nada.
+**Apagarlo** cierra todos sus vínculos; volver a encenderlo es con un clic.
+
+**Correo y En el portal** vienen encendidos. Al apagarlos se dice debajo qué deja de llegar: «No te
+llegarán por correo los plazos de tus pruebas. Los verás aquí, en el portal.» y «La campana dejará
+de marcar novedades. Tus procesos siguen mostrando su estado.». Los correos de la cuenta (crearla,
+recuperar la clave, el borrado) salen siempre. Con la beta apagada (`whatsapp.disponible` falso) no
+hay fila de WhatsApp, ni puntito en la tuerca, ni paso 3 en la guía; correo y portal siguen.
+
+**La guía de la primera vez** (V93). La primera vez que una cuenta entra en «Mis procesos» con al
+menos una postulación sale una guía de tres pasos con foco sobre la campana (un velo con un agujero
+y un anillo azul claro alrededor de lo señalado, y una burbuja con su pico):
+
+1. Foco en la campana: «Aquí te avisamos de todo» / «Cada vez que tu proceso avanza, la campana se
+   marca con un número.» [Saltar guía] [Siguiente].
+2. La campana se abre y el foco pasa a la tuerca: «Con la tuerca eliges por dónde» / «Enciende o
+   apaga cada canal cuando quieras.», con las chapas WhatsApp, Correo y En el portal. [Atrás]
+   [Siguiente].
+3. «Recibe tus avisos por WhatsApp» / «Y pregúntanos tus dudas. Correo y portal ya están
+   encendidos.», el botón verde «Activar WhatsApp» con el consentimiento debajo, y [Atrás]
+   [Ahora no]. «Activar WhatsApp» abre los ajustes y lo enciende como el interruptor (sin número,
+   abre los ajustes con el foco en el campo del celular).
+
+Variantes: con WhatsApp ya activo, el paso 3 es «Todo listo» / «Te avisamos de todos tus procesos y
+puedes escribirnos tus dudas.» con un solo «Entendido». **Esperando su mensaje** (lo activó y aún
+no escribió), el paso 3 es «Termina de activar WhatsApp» / «Envía el mensaje desde tu número +51 9•• ••• 434.»
+(enmascarado como el de WhatsApp activo; la ventana lo sigue enseñando entero), el botón verde «Abrir WhatsApp» y [Ahora no], sin
+consentimiento (ya firmó). «Abrir WhatsApp» repite la activación de la ventana: abre los ajustes,
+el backend renueva la espera y vuelve a dar el chat, que se abre en la pestaña pedida en el mismo
+clic; si no hay chat que abrir (el navegador bloqueó la pestaña, o el número ya estaba comprobado y
+se enciende con un clic), quedan los ajustes a la vista con «Ábrelo desde aquí» o el resultado. Sin
+WhatsApp disponible hay solo dos pasos y el segundo termina en «Entendido».
+
+**Sale una vez por cuenta**, en cualquier dispositivo: «Saltar guía», «Ahora no», «Activar
+WhatsApp», «Abrir WhatsApp», «Entendido» o Esc la dan por vista (`POST /portal/notificaciones/guia-vista`, y
+`guiaVista` en el GET). Es un diálogo modal: el foco empieza en el botón principal de cada paso, no
+sale de la burbuja y al terminar vuelve a la campana. En el teléfono la burbuja va a todo el ancho
+bajo la cabecera y, en los pasos 2 y 3, encima de la hoja. Con movimiento reducido el foco cambia de
+sitio sin deslizarse. La pide `Procesos.tsx` (`usePedirLaGuiaAlEntrar`) y la pinta la campana
+(`src/ui/notificaciones/Guia.tsx`), una sola vez por visita aunque llegue otra respuesta del
+servidor.
+
+El mensaje flotante que pedía la spec y su contador (`mensaje` en el GET, `POST …/mensaje-visto`)
+están en el backend, pero el portal no los usa.
+
+**Un número, una cuenta.** Un celular que ya usa otra cuenta se rechaza con 409
+`TELEFONO_EN_USO`, en el registro, en «Mi cuenta» y en la ventana, y se dice junto al campo: «Ese
+número ya está en otra cuenta. Usa otro o entra con esa cuenta.».
 
 ### 2.7 Detalle de una postulación
 `GET /portal/postulaciones/{uuid}` → el resumen anterior más `historial`: una lista de
@@ -1006,11 +1043,12 @@ del pie de la página: es un dato de la cuenta y no del perfil que ven las empre
 
 Debajo, siempre: «Es el número desde el que nos escribes por WhatsApp. Si lo cambias, dejas de
 recibir las novedades en el anterior.». **Es literal**: `PUT /portal/cuenta/telefono` cierra los
-vínculos de WhatsApp del número anterior y se lo cuenta al bot; las tarjetas de sus procesos
-se vuelven a pedir y ofrecen otra vez el botón con el número nuevo.
+vínculos de WhatsApp del número anterior, se lo cuenta al bot y apaga WhatsApp en «Ajustes de avisos»
+(V92): el número nuevo se comprueba con un mensaje. Uno que ya usa otra cuenta se rechaza junto al
+campo con «Ese número ya está en otra cuenta. Usa otro o entra con esa cuenta.».
 
 **`/perfil#celular` llega con el campo ya abierto** y el foco dentro. Es a donde lleva «Cámbialo
-en Mi cuenta» de la tarjeta de WhatsApp (`rutas.celularDeLaCuenta`). El ancla no la puede
+en Mi cuenta» de la ventana «Ajustes de avisos» (`rutas.celularDeLaCuenta`). El ancla no la puede
 resolver el armazón, porque al navegar el perfil todavía se está cargando: la resuelve el bloque
 en cuanto sabe el número, y «Cancelar» no lo vuelve a abrir.
 

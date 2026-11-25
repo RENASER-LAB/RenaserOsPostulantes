@@ -192,6 +192,9 @@ update usuario
    set es_activo = false,
        correo = 'e2e.retirada.' || gen_random_uuid() || '@example.com'
  where id in (select usuario_id from qa_retenidas);
+-- Y su celular, por lo mismo que el correo: desde la V92 un número es de una sola cuenta, y
+-- una retenida que lo conservara se lo quitaría para siempre a la siguiente ejecución.
+update persona set telefono = null where id in (select persona_id from qa_retenidas);
 
 commit;
 `)

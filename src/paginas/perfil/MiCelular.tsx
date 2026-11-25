@@ -8,7 +8,7 @@
  * Las cuentas anteriores a la V73 no lo tienen: se ofrece «Añadir» en vez de
  * «Cambiar», sin obligar a nada (la spec no obliga a darlo al entrar).
  *
- * Se llega aquí desde «Cámbialo en Mi cuenta», en la tarjeta de WhatsApp, por
+ * Se llega aquí desde «Cámbialo en Mi cuenta», en la ventana «Notificaciones», por
  * `/perfil#celular`: el campo sale ya abierto, el bloque a la vista y el foco dentro.
  */
 
@@ -44,13 +44,16 @@ export function MiCelular() {
         antes ? { ...antes, telefono: celular.telefono } : antes,
       )
       setEditando(false)
-      // Las tarjetas de WhatsApp de sus procesos enseñan este número: se vuelven a pedir.
+      // «Notificaciones» enseña este número, y cambiarlo apaga WhatsApp (V92): se vuelve a pedir.
       await Promise.all([
+        cache.invalidateQueries({ queryKey: ['notificaciones'] }),
         cache.invalidateQueries({ queryKey: ['postulaciones'] }),
         cache.invalidateQueries({ queryKey: ['postulacion'] }),
       ])
     },
     onError: (causa) => {
+      // Un 409 TELEFONO_EN_USO trae su frase («Ese número ya está en otra cuenta…»), y va
+      // junto al campo como cualquier otro error del número (V92).
       setError(causa instanceof Error && causa.message ? causa.message : MENSAJE_CELULAR)
     },
   })

@@ -9,9 +9,26 @@
  * ## De donde sale la forma
  *
  * Sigue el `NotificationPopover`: boton de icono con el contador en circulo
- * sobre la esquina, panel de 20rem que entra con escala, cabecera con
- * «Marcar todos como leidos», y una lista con divisores donde cada aviso lleva
- * su punto a la izquierda del titulo, la hora a la derecha y el detalle debajo.
+ * sobre la esquina, panel que entra con escala (22rem desde el 25/11/2026, para
+ * que quepan «Marcar todos como leidos» y la tuerca), cabecera con «Marcar
+ * todos como leidos», y una lista con divisores donde cada aviso lleva su punto
+ * a la izquierda del titulo, la hora a la derecha y el detalle debajo.
+ *
+ * ## La tuerca y la guia (25/11/2026)
+ *
+ * En la cabecera del panel, junto a «Marcar todos como leidos», va la tuerca
+ * «Ajustes de avisos»: abre la ventana de WhatsApp, correo y campana
+ * (`notificaciones/Ajustes.tsx`), que antes colgaba de un boton en «Mis
+ * procesos». Lleva un puntito verde, nunca un texto, cuando WhatsApp se puede
+ * activar y no esta encendido ni esperando.
+ *
+ * La primera vez que alguien entra en «Mis procesos» con alguna postulacion,
+ * esa pantalla pide la guia (`notificaciones/guiaPedida.ts`) y aqui se pinta
+ * (`notificaciones/Guia.tsx`): la campana es la duena del boton, la tuerca y la
+ * ventana sobre los que se pone el foco, y abre el panel en el paso 2.
+ *
+ * En el telefono (≤ 30rem) el panel es una hoja inferior con velo, y los
+ * ajustes se pintan como la misma hoja, con la flecha «Volver a tus avisos».
  *
  * Los avisos entran **escalonados y desenfocandose**: `x: 20, blur(10px)` con
  * un retraso por posicion. Es la unica animacion del portal que dibuja una
@@ -44,11 +61,21 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link } from 'react-router-dom'
-import { marcarAvisoLeido, marcarAvisosLeidos, misAvisos } from '@/api/portal'
+import { Link, useLocation } from 'react-router-dom'
+import { marcarAvisoLeido, marcarAvisosLeidos, marcarGuiaVista, misAvisos } from '@/api/portal'
 import { useSesion } from '@/app/Sesion'
 import { rutas } from '@/rutas'
-import type { AvisoDelPortal } from '@/api/tipos'
+import type { AvisoDelPortal, Notificaciones } from '@/api/tipos'
+import { IconoTuerca } from './Iconos'
+import {
+  CLAVE_NOTIFICACIONES,
+  useNotificaciones,
+  VentanaDeAjustes,
+  whatsappPorActivar,
+  type ManejoDeAjustes,
+} from './notificaciones/Ajustes'
+import { GuiaDeAvisos, type PasoDeLaGuia } from './notificaciones/Guia'
+import { guiaHecha, olvidarLaGuia, useGuiaPedida } from './notificaciones/guiaPedida'
 import estilos from './Campana.module.css'
 
 /**
@@ -78,6 +105,11 @@ export function Campana() {
   const [abierta, setAbierta] = useState(false)
   const contenedor = useRef<HTMLDivElement>(null)
   const boton = useRef<HTMLButtonElement>(null)
+  const panel = useRef<HTMLDivElement>(null)
+  const tuerca = useRef<HTMLButtonElement>(null)
+  const ajustes = useRef<ManejoDeAjustes>(null)
+  const guiaPedida = useGuiaPedida()
+  const [paso, setPaso] = useState<PasoDeLaGuia | null>(null)
   /*
     Quien pidio menos movimiento no recibe ninguno.
 
@@ -93,6 +125,38 @@ export function Campana() {
     queryFn: misAvisos,
     enabled: hayCuenta,
   })
+
+  /*
+    Los canales de la cuenta, para el puntito de la tuerca y la guía: solo con el
+    panel abierto o la guía pedida. La tuerca no se ve con el panel cerrado, y
+    pedirlo en cada pantalla sería una petición más por visita para nada.
+  */
+  const notificaciones = useNotificaciones(hayCuenta && (abierta || guiaPedida))
+  const datos = notificaciones.data
+  const enGuia = guiaPedida && paso !== null && datos !== undefined
+
+  /*
+    Al cambiar de ruta, el panel se cierra: vale para un aviso, para «Cámbialo en Mi cuenta»
+    de los ajustes y para cualquier otro camino. La guía no: ella decide cuándo se abre.
+  */
+  const { key: laRuta } = useLocation()
+  const [rutaDelPanel, setRutaDelPanel] = useState(laRuta)
+  if (rutaDelPanel !== laRuta) {
+    setRutaDelPanel(laRuta)
+    if (paso === null) setAbierta(false)
+  }
+
+  // Al salir de la cuenta, la guía vuelve a empezar para quien entre después.
+  useEffect(() => {
+    if (!hayCuenta) olvidarLaGuia()
+  }, [hayCuenta])
+
+  // La guía empieza cuando «Mis procesos» la pide y ya se sabe qué tiene la cuenta.
+  useEffect(() => {
+    if (!guiaPedida || paso !== null || !datos) return
+    setAbierta(false)
+    setPaso(1)
+  }, [guiaPedida, paso, datos])
 
   /*
     Las dos invalidan lo mismo: la campana y la lista de procesos, que pinta el
@@ -122,13 +186,20 @@ export function Campana() {
   useEffect(() => {
     if (!abierta) return
 
+    /*
+      Con la ventana de ajustes o la guía abiertas, el clic y el Escape son suyos:
+      cierran la ventana o saltan la guía, y el panel se queda donde estaba.
+    */
+    const hayUnaVentana = () => Boolean(contenedor.current?.querySelector('dialog[open]'))
+
     function fuera(evento: MouseEvent) {
+      if (hayUnaVentana()) return
       if (!contenedor.current?.contains(evento.target as Node)) {
         setAbierta(false)
       }
     }
     function escape(evento: KeyboardEvent) {
-      if (evento.key === 'Escape') {
+      if (evento.key === 'Escape' && !hayUnaVentana()) {
         setAbierta(false)
         // El foco vuelve al boton: dejarlo en el aire manda al tabulador al
         // principio de la pagina, que para quien no ve la pantalla es perderse.
@@ -142,6 +213,61 @@ export function Campana() {
       document.removeEventListener('keydown', escape)
     }
   }, [abierta])
+
+  /** La guía pasa de paso: en el 2 y el 3 el panel está abierto, con el foco en la tuerca. */
+  function irAlPaso(siguiente: PasoDeLaGuia) {
+    setPaso(siguiente)
+    setAbierta(siguiente >= 2)
+  }
+
+  /** Saltada, «Ahora no», «Entendido», Esc, «Activar WhatsApp» o «Abrir WhatsApp»: vista, aquí y en el servidor. */
+  function darLaGuiaPorVista() {
+    // Que no se guarde no es para tanto: saldría otra vez en la próxima visita.
+    marcarGuiaVista().catch(() => undefined)
+    cache.setQueryData<Notificaciones>(CLAVE_NOTIFICACIONES, (antes) => (antes ? { ...antes, guiaVista: true } : antes))
+    guiaHecha()
+    setPaso(null)
+    setAbierta(false)
+  }
+
+  function terminarLaGuia() {
+    darLaGuiaPorVista()
+    // El foco vuelve a la campana, que es de lo que iba la guía.
+    requestAnimationFrame(() => boton.current?.focus())
+  }
+
+  /*
+    «Activar WhatsApp» del paso 3: abre los ajustes y lo enciende como el
+    interruptor, en el mismo clic (la pestaña del chat se pide antes de esperar a
+    nadie). Sin celular, los ajustes se abren en su campo. Esperando su mensaje,
+    «Abrir WhatsApp» pasa por aquí igual: el backend renueva la espera y vuelve a
+    dar el chat; si no hay chat que abrir, quedan los ajustes a la vista.
+  */
+  function activarDesdeLaGuia() {
+    const sinNumero = datos?.whatsapp.estado === 'SIN_NUMERO'
+    darLaGuiaPorVista()
+    if (sinNumero) ajustes.current?.abrirEnElNumero()
+    else ajustes.current?.abrirYActivar()
+  }
+
+  /**
+   * Al cerrar los ajustes, el foco vuelve a la tuerca si el panel sigue abierto, o a la campana.
+   *
+   * Abierta desde la tuerca, el propio `<dialog>` se lo devuelve y aquí no hay nada que hacer.
+   * Abierta desde la guía (QA-08), lo que tenía el foco antes era su botón, ya desmontado: el
+   * navegador deja un instante el foco en la × o el campo de la ventana cerrada —conectados,
+   * pero sin pintar— y luego lo suelta en el `<body>`. Eso no cuenta como un foco que respetar.
+   * El panel se mira al cerrarse y no por la tuerca: mientras el panel sale (200 ms), la tuerca
+   * sigue montada.
+   */
+  function devolverElFoco() {
+    const conPanel = abierta
+    requestAnimationFrame(() => {
+      if (focoALaVista(document.activeElement)) return
+      const destino = conPanel && tuerca.current?.isConnected ? tuerca.current : boton.current
+      destino?.focus()
+    })
+  }
 
   if (!hayCuenta) return null
 
@@ -171,9 +297,13 @@ export function Campana() {
         )}
       </button>
 
+      {/* En el teléfono el panel es una hoja inferior: el velo apaga la página y tocarlo la cierra. */}
+      {abierta && <div className={estilos.veloDeLaHoja} aria-hidden="true" onClick={() => setAbierta(false)} />}
+
       <AnimatePresence>
         {abierta && (
           <motion.div
+            ref={panel}
             className={estilos.panel}
             role="dialog"
             aria-label="Tus avisos"
@@ -182,18 +312,40 @@ export function Campana() {
             exit={sinMovimiento ? { opacity: 1 } : { opacity: 0, y: 10, scale: 0.95 }}
             transition={{ duration: sinMovimiento ? 0 : 0.2 }}
           >
+            <span className={estilos.asa} aria-hidden="true" />
             <div className={estilos.cabecera}>
-              <h3 className={estilos.tituloPanel}>Avisos</h3>
-              {sinLeer > 0 && (
+              <h3 className={estilos.tituloPanel}>Tus avisos</h3>
+              <div className={estilos.herramientas}>
+                {sinLeer > 0 && (
+                  <button
+                    type="button"
+                    className={estilos.marcarTodos}
+                    onClick={() => marcarTodos.mutate()}
+                    disabled={marcarTodos.isPending}
+                  >
+                    Marcar todos como leídos
+                  </button>
+                )}
+                {/*
+                  La tuerca: los ajustes de WhatsApp, correo y campana. El puntito
+                  verde dice «WhatsApp se puede activar» sin una palabra; el nombre
+                  lo lleva `aria-label`, y el globito es para el ratón y el teclado.
+                */}
                 <button
+                  ref={tuerca}
                   type="button"
-                  className={estilos.marcarTodos}
-                  onClick={() => marcarTodos.mutate()}
-                  disabled={marcarTodos.isPending}
+                  className={estilos.tuerca}
+                  aria-label="Ajustes de avisos"
+                  aria-haspopup="dialog"
+                  onClick={() => ajustes.current?.abrir()}
                 >
-                  Marcar todos como leídos
+                  <IconoTuerca tamano={17} />
+                  {whatsappPorActivar(datos) && <span className={estilos.puntito} data-puntito="" aria-hidden="true" />}
+                  <span className={estilos.globito} aria-hidden="true">
+                    Ajustes de avisos
+                  </span>
                 </button>
-              )}
+              </div>
             </div>
 
             {consulta.isPending && <p className={estilos.vacio}>Buscando…</p>}
@@ -228,8 +380,41 @@ export function Campana() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <VentanaDeAjustes
+        ref={ajustes}
+        alVolverALosAvisos={() => {
+          setAbierta(true)
+          requestAnimationFrame(() => tuerca.current?.focus())
+        }}
+        alCerrar={devolverElFoco}
+      />
+
+      {enGuia && (
+        <GuiaDeAvisos
+          datos={datos}
+          paso={paso}
+          campana={boton}
+          tuerca={tuerca}
+          panel={panel}
+          alIrA={irAlPaso}
+          alTerminar={terminarLaGuia}
+          alActivar={activarDesdeLaGuia}
+        />
+      )}
     </div>
   )
+}
+
+/**
+ * Si el foco está en algo vivo y a la vista: ni el `<body>`, ni algo ya desmontado, ni lo que
+ * queda dentro de un `<dialog>` cerrado o sin pintar.
+ */
+export function focoALaVista(activo: Element | null): boolean {
+  if (!activo || activo === document.body || !activo.isConnected) return false
+  if (activo.closest('dialog:not([open])')) return false
+  // jsdom no lo implementa; el navegador sí, y mira también lo oculto por estilo.
+  return typeof activo.checkVisibility === 'function' ? activo.checkVisibility() : true
 }
 
 /**

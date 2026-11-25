@@ -414,7 +414,9 @@ una décima; y si empieza por «+» o «00», un número de otro país sin el +5
 detalle, en [02-QUE-VE-EL-CANDIDATO](02-QUE-VE-EL-CANDIDATO.md), 2.3). Es el número desde el que
 podrá escribir al bot de WhatsApp de RENASER, y se cambia en «Mi cuenta». A quien
 ya tenía cuenta no se le exige: se le pide solo si quiere recibir sus novedades
-por WhatsApp.
+por WhatsApp. **Desde el 24/11/2026 (V92) un número es de una sola cuenta**: si ya
+lo usa otra, el campo dice «Ese número ya está en otra cuenta. Usa otro o entra
+con esa cuenta.».
 
 ⚠️ **Al crear la cuenta se marcan dos casillas, y desde el 15/09/2026 llevan solo
 un título corto y un enlace** a la política de privacidad, que enseña los textos
@@ -504,12 +506,20 @@ empieces, hasta el vie 10/10 a las 23:59»—, y ya no «desde este correo». El
 aviso llega también a la campana. **Si no la empieza, se le recuerda**: a las
 24 horas y 24 horas antes de su plazo. Quien ya la empezó no recibe nada.
 
-**Y por WhatsApp, si escribió antes** (13/10/2026, beta solo de RENASER y
-apagada). Mientras espera, el recuadro de espera le ofrece «Escribir por
-WhatsApp»; si escribe al bot desde el celular de su cuenta, el bot le cuenta en
-qué va con las mismas palabras del portal y, cuando le toca algo —la prueba
-disponible, elegir fecha, empezar la validación—, se lo dice también por ahí,
-además del correo y la campana. Nunca recordatorios ni cierres. Ver
+**Y por WhatsApp, si lo encendió** (beta solo de RENASER y apagada). Desde el
+24/11/2026 (V92) se enciende una vez para toda la cuenta en «Ajustes de avisos» —la
+tuerca del panel de la campana— y vale para todos sus procesos, también los que
+vengan: postular con WhatsApp encendido vincula la postulación sola. Con el
+número ya comprobado se activa con un clic —también tras escribir BAJA—; si no,
+se le abre el chat y queda activo cuando escribe desde él. Cuando le toca algo
+—la prueba disponible, elegir fecha, empezar la validación— se lo dice también
+por ahí, además del correo y la campana. Nunca recordatorios ni cierres.
+
+**Y puede apagar el correo y la campana** en la misma ventana: entonces no le
+llegan los de sus procesos (los de la cuenta, como recuperar la clave, sí). La
+primera vez que entra en «Mis procesos» con alguna postulación, una guía de tres
+pasos sobre la campana le enseña dónde están sus avisos y la tuerca, y en el
+último le invita a activar WhatsApp; sale una vez por cuenta (V93). Ver
 [02-QUE-VE-EL-CANDIDATO](02-QUE-VE-EL-CANDIDATO.md), 2.6b.
 
 ### 9 · La simulación

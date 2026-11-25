@@ -4,13 +4,14 @@ import { pedir } from './cliente'
 import type {
   ConsentimientoDeVacante,
   CrearCuenta,
+  ActivacionWhatsapp,
   DatosPostulacion,
-  EnlaceWhatsapp,
   Login,
   MiCelular,
   MiPostulacion,
   MiPostulacionDetalle,
   MisAvisos,
+  Notificaciones,
   OpcionUbigeo,
   PedirBorrado,
   PedirRecuperacion,
@@ -20,7 +21,6 @@ import type {
   Sesion,
   TextoConsentimientoPublico,
   VacantePublica,
-  WhatsappDelProceso,
 } from './tipos'
 
 // ---------- Publico ----------
@@ -151,28 +151,45 @@ export const verPostulacion = (uuid: string) =>
 export const retirarPostulacion = (uuid: string) =>
   pedir<void>(`/postulaciones/${uuid}/retiro`, { metodo: 'POST' })
 
-// ---------- WhatsApp (V73) ----------
+// ---------- El celular de la cuenta (V73) ----------
 
 /**
- * Cambiar el celular de la cuenta. 400 con el mensaje de la regla si no vale; si
- * cambia, lo vinculado a WhatsApp con el anterior se cierra.
+ * Cambiar el celular de la cuenta. 400 con el mensaje de la regla si no vale; 409
+ * con `codigo: 'TELEFONO_EN_USO'` si ya es de otra cuenta (V92); si cambia, lo
+ * vinculado a WhatsApp con el anterior se cierra y WhatsApp queda apagado.
  */
 export const cambiarCelular = (telefono: string) =>
   pedir<MiCelular>('/cuenta/telefono', { metodo: 'PUT', cuerpo: { telefono } })
 
-/**
- * «Escribir por WhatsApp»: guarda el consentimiento, anuncia el celular de la cuenta
- * al bot para esta postulacion y devuelve el enlace `wa.me` ya escrito.
- *
- * 409 con `codigo` si no se puede: `SIN_CELULAR` (pedirlo en la tarjeta),
- * `SUPRIMIDO`, `PROCESO_TERMINADO` o `NO_DISPONIBLE`.
- */
-export const escribirPorWhatsapp = (uuid: string) =>
-  pedir<EnlaceWhatsapp>(`/postulaciones/${uuid}/whatsapp`, { metodo: 'POST' })
+// ---------- Notificaciones (V92) ----------
 
-/** «Dejar de recibir»: cierra el vinculo de esta postulacion. */
-export const dejarDeRecibirPorWhatsapp = (uuid: string) =>
-  pedir<WhatsappDelProceso>(`/postulaciones/${uuid}/whatsapp`, { metodo: 'DELETE' })
+/** WhatsApp, correo y la campana de toda la cuenta, y si ya vio la guía de los avisos (V93). */
+export const misNotificaciones = () => pedir<Notificaciones>('/notificaciones')
+
+/** Encender o apagar el correo y la campana. Lo que no se manda se queda como estaba. */
+export const cambiarNotificaciones = (cambios: { correo?: boolean; portal?: boolean }) =>
+  pedir<Notificaciones>('/notificaciones', { metodo: 'PATCH', cuerpo: cambios })
+
+/**
+ * Encender WhatsApp para todos sus procesos. 409 `SIN_CELULAR` o `NO_DISPONIBLE`;
+ * 503 `NO_SE_PUDO_ACTIVAR` si el bot falla (no cambió nada).
+ */
+export const activarWhatsapp = () =>
+  pedir<ActivacionWhatsapp>('/notificaciones/whatsapp', { metodo: 'POST' })
+
+/** Apagar WhatsApp: deja de recibir los avisos de todos sus procesos. */
+export const apagarWhatsapp = () =>
+  pedir<Notificaciones>('/notificaciones/whatsapp', { metodo: 'DELETE' })
+
+/**
+ * La guía de los avisos se dio por vista (V93): no vuelve a salir en esta cuenta, en ningún
+ * dispositivo. Idempotente, 204.
+ *
+ * (`POST /notificaciones/mensaje-visto`, el del mensaje flotante, sigue en el backend pero el
+ * portal ya no lo llama: el mensaje lo sustituyó el paso 3 de la guía, el 25/11/2026.)
+ */
+export const marcarGuiaVista = () =>
+  pedir<void>('/notificaciones/guia-vista', { metodo: 'POST' })
 
 // ---------- La campana ----------
 

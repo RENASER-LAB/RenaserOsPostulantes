@@ -27,7 +27,6 @@ import {
   type Hito,
 } from '@/dominio/estados'
 import { describirAntiguedad, formatearFechaCorta } from '@/dominio/reloj'
-import { hayTarjetaDeWhatsapp, TarjetaWhatsapp } from './TarjetaWhatsapp'
 import estilos from './Seguimiento.module.css'
 
 /** Como suena cada estado de tramo para quien no ve la pantalla. */
@@ -66,15 +65,9 @@ interface Props {
   fechas?: Partial<Record<Etapa, string>>
   /** Donde se detuvo una postulacion terminada, si se sabe. */
   etapaDeCorte?: Etapa
-  /**
-   * La línea de WhatsApp al pie de la acción (V73). WhatsApp vive solo en «Mis
-   * procesos», y es lo único que la pide: el detalle y el recorrido plegado no la
-   * llevan. La tarjeta de la espera no pasa por aquí: la pinta la lista en su recuadro.
-   */
-  conWhatsapp?: boolean
 }
 
-export function Seguimiento({ postulacion, fechas, etapaDeCorte, conWhatsapp }: Props) {
+export function Seguimiento({ postulacion, fechas, etapaDeCorte }: Props) {
   const hitos = recorridoDe(postulacion.estado, etapaDeCorte)
   const momento = momentoDeLaEtapa(
     postulacion.estado,
@@ -126,10 +119,6 @@ export function Seguimiento({ postulacion, fechas, etapaDeCorte, conWhatsapp }: 
               {describirAntiguedad(postulacion.diasSinCambio)}
             </span>
           </div>
-          {/* Le toca algo: WhatsApp en una línea, sin la tarjeta (V73). Solo en «Mis procesos». */}
-          {conWhatsapp && hayTarjetaDeWhatsapp(postulacion) && (
-            <TarjetaWhatsapp postulacion={postulacion} compacta />
-          )}
         </div>
       )}
 

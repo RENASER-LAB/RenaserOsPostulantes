@@ -40,12 +40,13 @@ import { useMemo, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { z } from 'zod'
+import { ErrorApi } from '@/api/cliente'
 import { catalogoUbigeo } from '@/api/portal'
 import { useSesion } from '@/app/Sesion'
 // Las provincias por departamento, con `EXT` suelto al final: la misma regla que
 // el desplegable de ciudad del panel, escrita una vez en `dominio/ubigeo`.
 import { agrupadasPorDepartamento } from '@/dominio/ubigeo'
-import { comoE164, MENSAJE_CELULAR } from '@/dominio/celular'
+import { comoE164, MENSAJE_CELULAR, MENSAJE_TELEFONO_EN_USO } from '@/dominio/celular'
 import { rutas } from '@/rutas'
 import { Campo, Consentimiento, Seleccion } from '@/ui/campos/Campo'
 import { CampoCelular } from '@/ui/campos/CampoCelular'
@@ -219,6 +220,18 @@ export function Registro() {
       })
       navegar(vacante ? rutas.postular(vacante) : rutas.procesos())
     } catch (causa) {
+      // Un celular que ya es de otra cuenta (V92) va junto a su campo, no arriba: es lo que
+      // hay que corregir, y el resumen de arriba lo cuenta como un dato pendiente.
+      if (
+        causa instanceof ErrorApi &&
+        typeof causa.cuerpo === 'object' &&
+        causa.cuerpo !== null &&
+        (causa.cuerpo as { codigo?: string }).codigo === 'TELEFONO_EN_USO'
+      ) {
+        setErrores({ telefono: causa.message || MENSAJE_TELEFONO_EN_USO })
+        requestAnimationFrame(() => enfocarPrimerCampoConError())
+        return
+      }
       setFallo(
         causa instanceof Error
           ? causa.message

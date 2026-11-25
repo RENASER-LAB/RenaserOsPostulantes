@@ -19,8 +19,8 @@ import type { MiPostulacion } from '@/api/tipos'
 import { esFinal, estaCalificando, leTocaAlCandidatoEn, momentoDeLaEtapa } from '@/dominio/estados'
 import { formatearFechaCorta } from '@/dominio/reloj'
 import { rutas } from '@/rutas'
+import { usePedirLaGuiaAlEntrar } from '@/ui/notificaciones/guiaPedida'
 import { Seguimiento } from './Seguimiento'
-import { hayTarjetaDeWhatsapp, TarjetaWhatsapp } from './TarjetaWhatsapp'
 import estilos from './Procesos.module.css'
 
 const CADA_15_SEGUNDOS = 15_000
@@ -59,6 +59,13 @@ export function Procesos() {
         ? CADA_15_SEGUNDOS
         : false,
   })
+
+  /*
+    La guía de los avisos (25/11/2026): la primera vez que entra aquí con alguna
+    postulación, la campana enseña dónde están sus avisos y la tuerca de los ajustes.
+    Esta pantalla solo la pide; la pinta la campana, que es la que tiene lo señalado.
+  */
+  usePedirLaGuiaAlEntrar(Array.isArray(consulta.data) && consulta.data.length > 0)
 
   if (consulta.isPending) {
     return (
@@ -267,7 +274,7 @@ function Proceso({ postulacion }: { postulacion: MiPostulacion }) {
     return (
       <article className={estilos.proceso} aria-labelledby={idTitulo}>
         {cabecera}
-        <Seguimiento postulacion={postulacion} conWhatsapp />
+        <Seguimiento postulacion={postulacion} />
         {enlaceDetalle}
       </article>
     )
@@ -287,22 +294,10 @@ function Proceso({ postulacion }: { postulacion: MiPostulacion }) {
   return (
     <article className={estilos.proceso} aria-labelledby={idTitulo}>
       {cabecera}
-      {/* Mientras espera, recibir las novedades por WhatsApp (V73): al lado del estado,
-          con el panel a todo lo ancho; sin ella, el panel sigue con su tope de línea. */}
-      {hayTarjetaDeWhatsapp(postulacion) ? (
-        <div className={`${estilos.espera} ${estilos.esperaConWhatsapp}`}>
-          <div className={estilos.repartoEspera}>
-            <div>{loQueEspera}</div>
-            <TarjetaWhatsapp postulacion={postulacion} nivelDelTitulo={3} />
-          </div>
-        </div>
-      ) : (
-        <div className={estilos.espera}>{loQueEspera}</div>
-      )}
+      <div className={estilos.espera}>{loQueEspera}</div>
       <details className={estilos.plegable}>
         <summary className={estilos.resumen}>Ver el recorrido completo</summary>
         <div className={estilos.desplegado}>
-          {/* Sin WhatsApp: la tarjeta ya está en el recuadro de arriba, y dos serían dos botones iguales. */}
           <Seguimiento postulacion={postulacion} />
         </div>
       </details>
