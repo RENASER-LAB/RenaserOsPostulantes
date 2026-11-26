@@ -394,6 +394,10 @@ async function leerCuerpo(req) {
  * El dev-login acepta cualquier id: aquí no hay usuarios que validar.
  */
 function atenderPanel(ruta, metodo, res, cuerpo) {
+  // Cualquier correo y contraseña entran: aquí no hay usuarios que validar.
+  if (ruta === '/auth/login' && metodo === 'POST') {
+    return responder(res, 200, { token: 'panel-de-mentira', usuarioId: 1, roles: ['TALENTO'] })
+  }
   if (ruta === '/auth/dev-login') {
     return responder(res, 200, { token: 'panel-de-mentira', usuarioId: 1, roles: ['TALENTO'] })
   }

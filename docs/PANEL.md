@@ -53,6 +53,29 @@ vacantes (modelo Indeed), el panel se construye en este repositorio, bajo `/admi
   «El plazo de la prueba se ve antes de cambiarlo».)
   (El hueco de «quiénes se inscribieron» se cerró: ver «Los inscritos de una sesión, y quién puede qué» en la [bitácora de agosto](BITACORA-2026-08.md).)
 
+### La lista de vacantes: el anillo de postulantes (26/11)
+
+`/admin` dejó de ser una tabla de cinco columnas. Arriba, cuatro cifras de todas las
+vacantes (postulantes, esperan tu decisión, publicadas, en decisión); debajo, filtros por estado y
+una búsqueda sin tildes; y una fila por vacante con un **anillo**: el total en el centro, un
+tramo por cada etapa del panel, y por fuera un arco verde con
+los que esperan al equipo. Al lado, las cinco etapas con su número; pasar por una resalta su
+tramo. **Quien ya terminó (contratado, no continúa, cerrada) no cuenta**: el total es de la
+gente que sigue en proceso. Vive en `src/panel/vacantes/ListaDeVacantes.tsx`; el reparto, en `repartoDelEmbudo.ts`.
+
+- **Los números salen de `GET /vacantes/{id}/embudo`, uno por fila**: la lista no trae
+  conteos. Con muchas vacantes son muchas llamadas; el arreglo es que la lista los mande.
+  Sin el permiso `ver_embudo` la fila dice que no se pudo contar.
+- **«Esperan tu decisión» no es «nuevo».** Son los estados `porRevisar` de `ETAPAS_PANEL` (el
+  corte «Pendiente» del ranking): el candidato ya hizo su parte y falta que alguien del equipo
+  lo mueva. Contar las no vistas pide que el backend registre quién abrió qué.
+- **Lo que se pulsa va en Onest** (filtros, «Ver postulantes», «Archivadas»), como los botones
+  de `piezas`; Syne queda para las etiquetas que no se pulsan. La evaluación no tiene columna:
+  va bajo la fecha de cada vacante, para que las cinco etapas quepan sin cortarse.
+- **Sigue siendo una tabla para el lector de pantalla**: rejilla con `role="table"`, `row`,
+  `cell` y `columnheader`. Los e2e que buscan `getByRole('row')` por el título siguen valiendo,
+  y el enlace conserva el nombre «Ver postulantes y gestionar».
+
 ### El ranking es por etapas (25/08)
 
 Cinco pestañas sobre la misma tabla: las cuatro etapas que puntúan y Decisión. La tabla

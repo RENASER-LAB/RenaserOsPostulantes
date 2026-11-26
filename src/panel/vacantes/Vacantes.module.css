@@ -11,8 +11,27 @@
   flex-wrap: wrap;
   align-items: flex-end;
   justify-content: space-between;
-  gap: var(--e4);
+  gap: var(--e5);
   margin-bottom: var(--e6);
+}
+
+/* «Selección · 4 vacantes»: dónde se está y cuánto hay, antes del titular. */
+.ojo {
+  margin: 0 0 var(--e2);
+  font-family: var(--fuente-ui);
+  font-size: var(--t-etiqueta);
+  font-weight: 600;
+  letter-spacing: var(--tracking-etiqueta);
+  text-transform: uppercase;
+  color: var(--tinta-etiqueta);
+}
+
+.mas {
+  font-family: var(--fuente);
+  font-size: 1.35em;
+  font-weight: 400;
+  line-height: 0;
+  margin-right: 2px;
 }
 
 .bajada {
@@ -45,6 +64,7 @@
 .acciones {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: var(--e3);
 }
 
@@ -358,6 +378,14 @@
 
   .acciones > * {
     flex: 1;
+    white-space: nowrap;
+  }
+
+  /* El enlace a lo archivado, en su propio renglón: los dos botones caben juntos. */
+  .acciones > .archivadas {
+    flex: 1 1 100%;
+    order: 3;
+    justify-content: center;
   }
 
   .crear,
@@ -430,6 +458,14 @@
   background: none;
   color: var(--tinta2);
   cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.16s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.lapiz:active:not(:disabled) {
+  transform: scale(0.95);
 }
 
 .lapiz:hover {
@@ -543,11 +579,37 @@
  * crear una vacante, que es lo que se hace todos los dias. Es un enlace y no un
  * boton porque lleva a otra direccion — y eso permite abrirla en otra pestaña.
  */
+/*
+ * Lo archivado es otra pantalla, y la puerta pesa menos que las dos acciones:
+ * un enlace con su número, sin caja, que no compite con «Crear vacante».
+ */
 .archivadas {
-  composes: secundario from '../../estilos/piezas.module.css';
-  /* Explicito: `.secundario` no fija color porque se escribio para botones, y
-     un enlace sin el se pinta del azul de los enlaces al lado de dos botones. */
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 var(--e2);
   color: var(--tinta);
+  font-family: var(--fuente);
+  font-size: var(--t-apoyo);
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-decoration: underline;
+  text-decoration-color: var(--regla2);
+  text-underline-offset: 5px;
+  transition: text-decoration-color 0.2s;
+}
+
+.archivadas:hover {
+  text-decoration-color: var(--tinta);
+}
+
+.cuantasArchivadas {
+  font-family: var(--fuente);
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--tinta3);
 }
 
 /* La fecha de archivo de cada fila, y el «Archivada el …» del detalle. */
