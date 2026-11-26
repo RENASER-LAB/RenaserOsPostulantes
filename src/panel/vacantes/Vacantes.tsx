@@ -15,7 +15,7 @@
 
 import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   aprobarSolicitud,
   contarVacantesArchivadas,
@@ -27,6 +27,7 @@ import {
   listarSolicitudes,
   listarVacantes,
   verCatalogos,
+  verEmbudo,
 } from '../api/panel'
 import type {
   Catalogos,
@@ -37,8 +38,6 @@ import type {
   VacantePanel,
 } from '../api/tipos'
 import { rutas } from '@/rutas'
-import { formatearFechaCorta } from '@/dominio/reloj'
-import tabla from '../ui/Tabla.module.css'
 import {
   CamposDeRemuneracion,
   REMUNERACION_VACIA,
@@ -60,15 +59,9 @@ import { FormularioDeEdicion } from './EditarVacante'
 import { ModalDeArchivo } from './ArchivarVacante'
 import { ModalDeEliminacion } from './EliminarVacante'
 import { IconoArchivo, IconoLapiz, IconoPapelera } from './IconosDeLaFila'
+import { ListaDeVacantes } from './ListaDeVacantes'
 import estilos from './Vacantes.module.css'
 import { revisarLineas } from './reglasQueBuscar'
-
-/** Como se dice cada estado de vacante. Los codigos son del backend. */
-const ESTADO_VACANTE: Record<string, string> = {
-  BORRADOR: 'Borrador',
-  PUBLICADA: 'Publicada',
-  CERRADA: 'Cerrada',
-}
 
 /** Las mismas palabras que el estado de las propias en la configuración de la vacante. */
 const ESTADO_DE_LAS_PROPIAS: Record<string, string> = {
@@ -171,6 +164,20 @@ export function VacantesPanel() {
   })
 
   /*
+   * Cuánta gente tiene cada vacante y dónde está: el anillo de cada fila y el
+   * resumen de arriba. Un conteo por fila con `GET /vacantes/{id}/embudo`, porque
+   * la lista no lo trae. Con muchas vacantes son muchas llamadas: si pesa, el
+   * arreglo es que la lista mande el conteo, no quitar el anillo.
+   */
+  const embudos = useQueries({
+    queries: (vacantes.data ?? []).map((v) => ({
+      queryKey: ['panel-embudo', v.id],
+      queryFn: () => verEmbudo(v.id),
+      staleTime: 30_000,
+    })),
+  })
+
+  /*
    * La vacante que se edita se busca en la lista recien traida, no se copia al
    * abrir: asi, cuando el guardado refresca la tabla, el formulario que siga
    * abierto lo hace sobre los datos de ahora.
@@ -207,17 +214,45 @@ export function VacantesPanel() {
 
   return (
     <div className={estilos.pagina}>
-      <div className={estilos.cabecera}>
+      <header className={estilos.cabecera}>
         <div>
+          <p className={estilos.ojo}>
+            Selección
+            {vacantes.data && (
+              <>
+                {' · '}
+                {vacantes.data.length} {vacantes.data.length === 1 ? 'vacante' : 'vacantes'}
+              </>
+            )}
+          </p>
           <h1 ref={tituloDeLaPagina} tabIndex={-1}>
             Vacantes.
           </h1>
           <p className={estilos.bajada}>
-            Cada una con su estado. Dentro están los postulantes, el ranking y el avance
-            de etapa.
+            Cuánta gente tiene cada una, por qué etapa va y qué espera que el equipo lo
+            revise.
           </p>
         </div>
         <div className={estilos.acciones}>
+          {/*
+            La tercera puerta, y no un selector «Activas / Archivadas» encima de
+            la tabla: lo guardado es otra pantalla, no otro filtro de esta. Un
+            selector deja dudando si lo que se mira son todas o la mitad; un
+            botón que lleva a otro sitio, con su vuelta, no.
+
+            El número se enseña aunque sea cero: «Archivadas» a secas obliga a
+            entrar para descubrir que no hay nada.
+          */}
+          <Link
+            ref={botonDeArchivadas}
+            className={estilos.archivadas}
+            to={rutas.adminVacantesArchivadas()}
+          >
+            Archivadas{' '}
+            <span className={estilos.cuantasArchivadas}>
+              ({archivadas.data?.archivadas ?? 0})
+            </span>
+          </Link>
           {/*
             ⚠️ Vive aqui arriba y no dentro del alta a proposito. El backend
             admite varias solicitudes ABIERTA a la vez —comprobado: aprueba dos
@@ -247,26 +282,19 @@ export function VacantesPanel() {
               setConfirmacion(null)
             }}
           >
-            {creando ? 'Cerrar el formulario' : 'Crear vacante'}
+            {creando ? (
+              'Cerrar el formulario'
+            ) : (
+              <>
+                <span className={estilos.mas} aria-hidden="true">
+                  +
+                </span>
+                Crear vacante
+              </>
+            )}
           </button>
-          {/*
-            La tercera puerta, y no un selector «Activas / Archivadas» encima de
-            la tabla: lo guardado es otra pantalla, no otro filtro de esta. Un
-            selector deja dudando si lo que se mira son todas o la mitad; un
-            botón que lleva a otro sitio, con su vuelta, no.
-
-            El número se enseña aunque sea cero: «Archivadas» a secas obliga a
-            entrar para descubrir que no hay nada.
-          */}
-          <Link
-            ref={botonDeArchivadas}
-            className={estilos.archivadas}
-            to={rutas.adminVacantesArchivadas()}
-          >
-            Archivadas ({archivadas.data?.archivadas ?? 0})
-          </Link>
         </div>
-      </div>
+      </header>
 
       {escribiendoSolicitud && (
         <div className={estilos.alta}>
@@ -384,125 +412,104 @@ export function VacantesPanel() {
       )}
 
       {vacantes.data && (
-        <div className={tabla.envoltura}>
-          <table className={tabla.tabla}>
-            <thead>
-              <tr>
-                <th>Vacante</th>
-                <th>Estado</th>
-                <th>Evaluación</th>
-                <th>Publicada</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {vacantes.data.map((v) => (
-                <tr key={v.id}>
-                  <td className={estilos.titulo}>{v.titulo}</td>
-                  <td>{ESTADO_VACANTE[v.estado] ?? v.estado}</td>
-                  <td>{evaluacionDeLaFila(v)}</td>
-                  <td>{v.publicadaEn ? formatearFechaCorta(v.publicadaEn) : '—'}</td>
-                  <td className={estilos.accionesFila}>
-                    <Link to={rutas.adminVacante(v.id)}>Ver postulantes y gestionar</Link>
-                    {/*
-                      El lapiz solo donde de verdad se puede editar: el backend lo
-                      decide por vacante —con «sus vacantes» solo alcanzas las que
-                      diriges, y una cerrada no se toca— y la fila lo trae dicho.
-                      Un boton que siempre contesta 409 es una promesa rota.
-                    */}
-                    {v.puedeEditar && (
-                      <button
-                        type="button"
-                        className={estilos.lapiz}
-                        // El nombre lleva el titulo: con veinte filas, «Editar» a
-                        // secas repetido veinte veces no dice cual es cual a quien
-                        // navega con lector de pantalla.
-                        aria-label={`Editar la vacante ${v.titulo}`}
-                        aria-expanded={editando === v.id}
-                        onClick={() => {
-                          setEditando((actual) => (actual === v.id ? null : v.id))
-                          setArchivando(null)
-                          setEliminando(null)
-                          setCreando(false)
-                          setEscribiendoSolicitud(false)
-                          setConfirmacion(null)
-                          setFalloDeLaEdicion(null)
-                        }}
-                      >
-                        <IconoLapiz />
-                      </button>
-                    )}
-                    {/*
-                      El archivo, en el mismo sitio que el lapiz y con su misma
-                      regla de estados al reves: el lapiz esta en las que se
-                      pueden corregir —borrador y publicada— y esto en las que ya
-                      terminaron. Nunca los dos en la misma fila.
+        <ListaDeVacantes
+          vacantes={vacantes.data}
+          embudos={embudos}
+          evaluacionDe={evaluacionDeLaFila}
+          accionesDe={(v) => (
+            <>
+      {/*
+        El lapiz solo donde de verdad se puede editar: el backend lo
+        decide por vacante —con «sus vacantes» solo alcanzas las que
+        diriges, y una cerrada no se toca— y la fila lo trae dicho.
+        Un boton que siempre contesta 409 es una promesa rota.
+      */}
+      {v.puedeEditar && (
+        <button
+          type="button"
+          className={estilos.lapiz}
+          title="Editar"
+          // El nombre lleva el titulo: con veinte filas, «Editar» a
+          // secas repetido veinte veces no dice cual es cual a quien
+          // navega con lector de pantalla.
+          aria-label={`Editar la vacante ${v.titulo}`}
+          aria-expanded={editando === v.id}
+          onClick={() => {
+            setEditando((actual) => (actual === v.id ? null : v.id))
+            setArchivando(null)
+            setEliminando(null)
+            setCreando(false)
+            setEscribiendoSolicitud(false)
+            setConfirmacion(null)
+            setFalloDeLaEdicion(null)
+          }}
+        >
+          <IconoLapiz />
+        </button>
+      )}
+      {/*
+        El archivo, en el mismo sitio que el lapiz y con su misma
+        regla de estados al reves: el lapiz esta en las que se
+        pueden corregir —borrador y publicada— y esto en las que ya
+        terminaron. Nunca los dos en la misma fila.
 
-                      ⚠️ Aparece aunque queden postulantes en carrera: es su modal
-                      el que dice cuantos son y donde se decide cada uno.
-                    */}
-                    {v.puedeArchivar && (
-                      <button
-                        type="button"
-                        className={estilos.archivar}
-                        aria-label={`Archivar la vacante ${v.titulo}`}
-                        aria-expanded={archivando === v.id}
-                        onClick={() => {
-                          setArchivando((actual) => (actual === v.id ? null : v.id))
-                          setEditando(null)
-                          setEliminando(null)
-                          setCreando(false)
-                          setEscribiendoSolicitud(false)
-                          setConfirmacion(null)
-                        }}
-                      >
-                        <IconoArchivo />
-                      </button>
-                    )}
-                    {/*
-                      La papelera, **la ultima de la fila y en cualquier estado**.
+        ⚠️ Aparece aunque queden postulantes en carrera: es su modal
+        el que dice cuantos son y donde se decide cada uno.
+      */}
+      {v.puedeArchivar && (
+        <button
+          type="button"
+          className={estilos.archivar}
+          title="Archivar"
+          aria-label={`Archivar la vacante ${v.titulo}`}
+          aria-expanded={archivando === v.id}
+          onClick={() => {
+            setArchivando((actual) => (actual === v.id ? null : v.id))
+            setEditando(null)
+            setEliminando(null)
+            setCreando(false)
+            setEscribiendoSolicitud(false)
+            setConfirmacion(null)
+          }}
+        >
+          <IconoArchivo />
+        </button>
+      )}
+      {/*
+        La papelera, **la ultima de la fila y en cualquier estado**.
 
-                      Lo ultimo porque es lo unico que no se deshace: el orden
-                      de las acciones es editar, archivar y eliminar, y una
-                      accion destructiva en medio se pulsa por inercia.
+        Lo ultimo porque es lo unico que no se deshace: el orden
+        de las acciones es editar, archivar y eliminar, y una
+        accion destructiva en medio se pulsa por inercia.
 
-                      Y en cualquier estado porque una vacante mal creada se
-                      retira este donde este — la mas comun es justo el borrador
-                      que nadie llego a ver. Pulsarla no elimina nada: abre el
-                      modal, que es donde se cuentan las consecuencias y se pide
-                      el motivo.
-                    */}
-                    {v.puedeEliminar && (
-                      <button
-                        type="button"
-                        className={estilos.eliminar}
-                        aria-label={`Eliminar la vacante ${v.titulo}`}
-                        aria-expanded={eliminando === v.id}
-                        onClick={() => {
-                          setEliminando((actual) => (actual === v.id ? null : v.id))
-                          setEditando(null)
-                          setArchivando(null)
-                          setCreando(false)
-                          setEscribiendoSolicitud(false)
-                          setConfirmacion(null)
-                        }}
-                      >
-                        <IconoPapelera />
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-              {vacantes.data.length === 0 && (
-                <tr>
-                  <td colSpan={5} className={tabla.vacia}>
-                    <p>Todavía no hay vacantes. Crea la primera con el botón de arriba.</p>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        Y en cualquier estado porque una vacante mal creada se
+        retira este donde este — la mas comun es justo el borrador
+        que nadie llego a ver. Pulsarla no elimina nada: abre el
+        modal, que es donde se cuentan las consecuencias y se pide
+        el motivo.
+      */}
+      {v.puedeEliminar && (
+        <button
+          type="button"
+          className={estilos.eliminar}
+          title="Eliminar"
+          aria-label={`Eliminar la vacante ${v.titulo}`}
+          aria-expanded={eliminando === v.id}
+          onClick={() => {
+            setEliminando((actual) => (actual === v.id ? null : v.id))
+            setEditando(null)
+            setArchivando(null)
+            setCreando(false)
+            setEscribiendoSolicitud(false)
+            setConfirmacion(null)
+          }}
+        >
+          <IconoPapelera />
+        </button>
+      )}
+            </>
+          )}
+        />
       )}
     </div>
   )
