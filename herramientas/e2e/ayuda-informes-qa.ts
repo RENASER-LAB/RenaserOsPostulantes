@@ -141,7 +141,7 @@ function insertarId(consulta: string): number {
   return Number(filas[0]!.id)
 }
 
-async function persona(vacante: number, nombre: string, apellidos: string, correos: string[]): Promise<Persona> {
+export async function persona(vacante: number, nombre: string, apellidos: string, correos: string[]): Promise<Persona> {
   const correo = correoDePrueba(PREFIJO_CORREO)
   correos.push(correo)
   // Desde la V92 un celular es de una sola cuenta: cada persona lleva uno nuevo y, como el de la
@@ -161,7 +161,7 @@ async function persona(vacante: number, nombre: string, apellidos: string, corre
 }
 
 /** Lo que la IA habría dejado al leer el currículum: notas, datos, afirmaciones. */
-function curriculumCalificado(p: number, conAfirmaciones: boolean): void {
+export function curriculumCalificado(p: number, conAfirmaciones: boolean): void {
   const ajusta = Number(uno("select id from usuario where usuario_renaser_os_id = 'dev-equipo'").id)
   const criterios = consultar(`select id from criterio where etapa_codigo = 'PERFIL_INTEGRAL'
                                   and version_plantilla_prueba_id is null order by orden`).map((f) => Number(f.id))
@@ -195,7 +195,7 @@ function curriculumCalificado(p: number, conAfirmaciones: boolean): void {
 }
 
 /** El retrato con sus hallazgos, como lo cierra la IA al acabar el Perfil Integral. */
-function retrato(p: number): void {
+export function retrato(p: number): void {
   const perfil = insertarId(`insert into perfil_talento (postulacion_id, confianza_evidencia, resumen, version_pesos_id,
                                                          actualizado_en, creado_en)
                              select p.id, 70, ${literal(RESUMEN_DEL_RETRATO)}, v.version_pesos_id, now(), now()
@@ -228,7 +228,7 @@ function enlacesDelPerfil(correo: string): void {
        ${enlaces.map(([t, u]) => `(${perfil}, ${literal(t)}, ${literal(u)})`).join(', ')};`)
 }
 
-const respuestaDe = (p: number, enunciado: string): number =>
+export const respuestaDe = (p: number, enunciado: string): number =>
   Number(
     uno(`select r.id from respuesta r join postulacion p on p.evaluacion_id = r.evaluacion_id
            join pregunta q on q.id = r.pregunta_id
@@ -236,7 +236,7 @@ const respuestaDe = (p: number, enunciado: string): number =>
   )
 
 /** Responde y entrega la evaluación de preguntas propias por el portal. */
-async function rendirLaEvaluacion(c: Persona): Promise<void> {
+export async function rendirLaEvaluacion(c: Persona): Promise<void> {
   await empezarEvaluacion(c.token, c.uuid)
   const preguntas = consultar(`select q.id, q.enunciado from orden_pregunta o
                                  join postulacion p on p.evaluacion_id = o.evaluacion_id

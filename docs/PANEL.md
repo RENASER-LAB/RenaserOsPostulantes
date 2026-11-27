@@ -1588,9 +1588,26 @@ falten textos le encarga los suyos al redactor —una llamada por cada una—, a
 en el momento con las explicaciones completas donde falten. Lo mismo, de uno en uno, al abrir un
 informe sin textos.
 
-**Limitaciones conocidas.** En el informe de la evaluación, «Lo que pidió el CV» muestra cada duda
-con «Por contrastar»: decir si se resolvió es de la spec de seguimiento de pendientes, y hasta
-entonces no se inventan estados. El enlace «Perfil en EX» de la maqueta no existe: la ficha no tiene
+**Lo que quedó por verificar, seguido de una etapa a la siguiente** (V94 del backend, 27/11). Lo
+decide el backend con su agente de seguimiento de pendientes, y **el panel no cambió de código**:
+llegan otras etiquetas y otros detalles en puntos que ya existían, y un bloque más, que el visor y el
+PDF pintan como cualquier otro, con el estado en el chip de siempre junto al origen (sin colores por
+estado ni recuentos). Con el seguimiento al día:
+
+- en el informe de la evaluación, «Lo que pidió el CV» lleva cada duda con «Resuelto», «Sigue
+  pendiente» o «Empeoró» en vez de «Por contrastar», con la cita y su explicación o la pregunta de
+  validación; y «Por verificar en la prueba del puesto» suma delante, con chip «CV», lo que empeoró
+  y lo que sigue pendiente, nunca lo resuelto;
+- en el de la prueba aparece «Lo que aclaró la prueba» justo antes de «Por verificar en la
+  entrevista», cuyos grupos «Del CV» y «De la evaluación» pierden lo ya aclarado.
+
+Sin seguimiento al día —no ha llegado, falló o cambiaron los datos— el informe sale como antes, con
+«Por contrastar». Mientras viene en camino, el visor vuelve a pedir el informe cada 20 s, igual que
+con los textos del redactor, y «Descargar los de toda la vacante» también lo encarga para cada
+persona y etapa a la que le falte. El detalle, en `docs/09-APIS.md` del backend, «Los informes por
+etapa».
+
+**Limitaciones conocidas.** El enlace «Perfil en EX» de la maqueta no existe: la ficha no tiene
 dirección propia. Y `DESIGN.md` todavía no describe la barra ni el visor (ver
 [PENDIENTES](PENDIENTES.md)).
 
@@ -1604,6 +1621,13 @@ sale en el de la prueba. Para dejar una vacante a la vista de una revisión a ma
 los correos que imprime para quitarla). Las unitarias, en `BarraDeInformes.test.tsx`,
 `VisorDeInformes.test.tsx` y `Vacante.test.tsx`; en el backend, `FlujoInformesPorEtapaIT`,
 `PdfDelInformeTest`, `RedaccionDelInformeTest` y `AgenteRedactorInformeTest`.
+
+El seguimiento de pendientes lo comprueba `herramientas/e2e/73-seguimiento-de-pendientes-qa.spec.ts`,
+que también **escribe** en el clon —siembra su vacante con la marca `QA-SEG-94` y la retira al
+terminar—, con la IA apagada: siembra el seguimiento por el mismo camino que la plataforma y mira
+cuándo vale, qué se pide y cómo cambian los cuatro bloques en el informe y en el PDF. No juzga si la
+IA acierta. En el backend, `PendientesEntreEtapasTest`, `LoQueSigueAbiertoTest`,
+`SeguimientosDelInformeTest`, `AgenteSeguimientoPendientesTest` y `ColaSeguimientoPendientesTest`.
 
 ### El perfil de la empresa, su brochure y el video del puesto (16/11 y 18/11)
 
