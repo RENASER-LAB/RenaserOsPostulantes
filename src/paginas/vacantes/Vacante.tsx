@@ -304,10 +304,13 @@ function esTitulo(linea: string): boolean {
   return letras.length >= 3 && letras === letras.toLocaleUpperCase('es') && letras !== letras.toLocaleLowerCase('es')
 }
 
-/** «LO QUE OFRECEMOS» → «Lo que ofrecemos». */
+/**
+ * «LO QUE OFRECEMOS» → «Lo que ofrecemos». La mayúscula va en la primera letra,
+ * no en el primer carácter: «¿QUÉ OFRECEMOS?» → «¿Qué ofrecemos?».
+ */
 function enFrase(linea: string): string {
   const t = linea.trim().replace(/:$/, '').toLocaleLowerCase('es')
-  return t.charAt(0).toLocaleUpperCase('es') + t.slice(1)
+  return t.replace(/\p{L}/u, (letra) => letra.toLocaleUpperCase('es'))
 }
 
 /** Lo que la tarjeta lateral ya dice, para no repetirlo en la descripcion. */

@@ -23,20 +23,23 @@ export const VACANTES = [
   { id: 1, titulo: 'Desarrollador web', estado: 'PUBLICADA', tipoCierre: 'MANUAL',
     puestoId: 1, solicitudTalentoId: 7, responsableUsuarioId: 1,
     publicadaEn: '2026-07-02T09:00:00Z', cerradaEn: null, aplicaEvaluacion: true,
-    plantillaEvaluacionId: 1, versionPlantillaPruebaId: 1, versionPesosId: 2 },
+    plantillaEvaluacionId: 1, versionPlantillaPruebaId: 1, versionPesosId: 2,
+    puedeEditar: true, puedeArchivar: false, puedeEliminar: false },
   { id: 2, titulo: 'Líder de operaciones', estado: 'PUBLICADA', tipoCierre: 'MANUAL',
     puestoId: 2, solicitudTalentoId: 8, responsableUsuarioId: 1,
     publicadaEn: '2026-07-19T09:00:00Z', cerradaEn: null, aplicaEvaluacion: true,
-    plantillaEvaluacionId: 1, versionPlantillaPruebaId: 1, versionPesosId: 2 },
+    plantillaEvaluacionId: 1, versionPlantillaPruebaId: 1, versionPesosId: 2,
+    puedeEditar: true, puedeArchivar: false, puedeEliminar: false },
   { id: 3, titulo: 'Analista de experiencia del cliente', estado: 'BORRADOR', tipoCierre: 'MANUAL',
     puestoId: 3, solicitudTalentoId: 9, responsableUsuarioId: 1,
     publicadaEn: null, cerradaEn: null, aplicaEvaluacion: false,
-    plantillaEvaluacionId: null, versionPlantillaPruebaId: null, versionPesosId: null },
+    plantillaEvaluacionId: null, versionPlantillaPruebaId: null, versionPesosId: null,
+    puedeEditar: true, puedeArchivar: false, puedeEliminar: true },
   { id: 4, titulo: 'Coordinador de Proyectos', estado: 'CERRADA', tipoCierre: 'MANUAL',
     puestoId: 4, solicitudTalentoId: 10, responsableUsuarioId: 1,
     publicadaEn: '2026-05-04T09:00:00Z', cerradaEn: '2026-08-01T09:00:00Z',
     aplicaEvaluacion: true, plantillaEvaluacionId: 1, versionPlantillaPruebaId: 1,
-    versionPesosId: 2 },
+    versionPesosId: 2, puedeEditar: false, puedeArchivar: true, puedeEliminar: false },
 ]
 
 export const SESIONES = [
@@ -427,6 +430,19 @@ const PREGUNTAS_DEL_BANCO = [
 ]
 
 export const RESPUESTAS = {
+  // La sesion de quien entra: sin ella el menu cae a su version minima y no
+  // enseña Colaboradores ni Empresa.
+  '/sesion': {
+    usuarioId: 1, nombre: 'Equipo de Talento', correo: null, organizacionId: 1,
+    empresa: 'Renaser',
+    permisos: [
+      { codigo: 'ver_vacantes', alcance: 'TODO' },
+      { codigo: 'ver_embudo', alcance: 'TODO' },
+      { codigo: 'crear_sesiones_simulacion', alcance: 'TODO' },
+      { codigo: 'editar_presentacion_empresa', alcance: 'TODO' },
+      { codigo: 'ver_colaboradores', alcance: 'TODO' },
+    ],
+  },
   '/vacantes': VACANTES,
   '/sesiones-simulacion': SESIONES,
   '/sesiones-simulacion/1/inscritos': INSCRITOS,
@@ -773,6 +789,14 @@ export const RESPUESTAS = {
     PRUEBA_TURNO_CANDIDATO: 1, PRUEBA_POR_CONFIRMAR: 1, SIMULACION_POR_CONFIRMAR: 1,
     DECISION_POR_CONFIRMAR: 1, NO_CONTINUA: 1 } },
   '/vacantes/1/ranking': rankingDeLaEtapa(),
+  // El anillo de la lista de vacantes pide un embudo por fila.
+  '/vacantes/2/embudo': { porEstado: {
+    POSTULADA: 9, PERFIL_CALIFICANDO: 4, PERFIL_POR_CONFIRMAR: 6, PRUEBA_TURNO_CANDIDATO: 5,
+    PRUEBA_POR_CONFIRMAR: 3, SIMULACION_POR_HABILITAR: 2, VALIDACION_TURNO_CANDIDATO: 2,
+    DECISION_POR_CONFIRMAR: 1, NO_CONTINUA: 7 } },
+  '/vacantes/3/embudo': { porEstado: {} },
+  '/vacantes/4/embudo': { porEstado: {
+    PRUEBA_POR_CONFIRMAR: 1, NO_CONTINUA: 11, CONTRATADO: 1 } },
   '/postulaciones/91/evaluacion': EVALUACION,
   '/postulaciones/91': {
     id: 91, uuid: 'p1', candidato: 'Camila Reyes Ortiz', correo: 'camila@example.com',

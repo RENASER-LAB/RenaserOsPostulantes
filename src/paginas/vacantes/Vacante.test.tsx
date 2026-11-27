@@ -58,6 +58,11 @@ describe('la vacante del portal con la presentación de su empresa', () => {
     expect(container.querySelector('[data-seccion="Vacante / Ficha del puesto"]')).toBeNull()
   })
 
+  it('un subtítulo que empieza con «¿» lleva la mayúscula en su primera letra', async () => {
+    await abrir(vacante({ proposito: null, descripcion: 'Intro.\n\n¿QUÉ OFRECEMOS?\n• Bonos por metas.\n• Línea de carrera.' }))
+    expect(screen.getByRole('heading', { level: 3, name: '¿Qué ofrecemos?' })).toBeTruthy()
+  })
+
   it('AC-12: sin datos de la empresa no hay bloque «Sobre…» y el resto se ve igual', async () => {
     await abrir(vacante({ empresa: null }))
     expect(screen.queryByRole('heading', { name: /^Sobre / })).toBeNull()

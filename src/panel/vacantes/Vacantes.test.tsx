@@ -393,7 +393,11 @@ describe('la lista dice de dónde salen las preguntas de cada vacante', () => {
 
   /** La celda de la columna «Evaluación» en la fila de esa vacante. */
   const celdaDeEvaluacion = (titulo: string) => {
-    const celdas = screen.getByRole('cell', { name: titulo }).closest('tr')!.querySelectorAll('td')
+    // La lista es una rejilla con roles de tabla: fila `row`, celdas `cell`.
+    const celdas = screen
+      .getByRole('cell', { name: titulo })
+      .closest('[role="row"]')!
+      .querySelectorAll('[role="cell"]')
     const columna = screen.getAllByRole('columnheader').findIndex((c) => c.textContent === 'Evaluación')
     return celdas[columna]
   }

@@ -1,0 +1,781 @@
+/*
+ * La lista de vacantes del panel (Northstar).
+ *
+ * Una sola superficie blanca con filetes negros al 10 %: el resumen arriba, la
+ * barra de filtros y las filas. Las etapas son una escala del azul de la acción
+ * —del claro del perfil al casi negro de la decisión—, no cinco colores; el
+ * verde es lo único fuera de esa escala y solo marca lo que espera al equipo.
+ */
+
+.lista {
+  --etapa-0: #c3cdea;
+  --etapa-1: #8c9fd4;
+  --etapa-2: #5370b8;
+  --etapa-3: var(--activo);
+  --etapa-4: var(--tinta);
+  --verde: var(--bien);
+  --filete: rgb(17 19 18 / 0.1);
+  --curva: cubic-bezier(0.23, 1, 0.32, 1);
+
+  background: var(--nube);
+  border: 1px solid var(--filete);
+  border-radius: var(--radio-menor);
+  overflow: hidden;
+}
+
+.oculto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ---------- El resumen ---------- */
+
+.resumen {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+  border-bottom: 1px solid var(--filete);
+}
+
+.dato {
+  display: grid;
+  gap: 2px;
+  align-content: start;
+  padding: var(--e5) var(--e5) var(--e4);
+  border-right: 1px solid var(--filete);
+}
+
+.dato:last-child {
+  border-right: 0;
+}
+
+.dato dt {
+  display: flex;
+  align-items: center;
+  gap: var(--e2);
+  font-family: var(--fuente-ui);
+  font-size: var(--t-etiqueta);
+  font-weight: 600;
+  letter-spacing: var(--tracking-etiqueta);
+  text-transform: uppercase;
+  color: var(--tinta-etiqueta);
+}
+
+.dato dd {
+  margin: var(--e1) 0 0;
+  font-size: clamp(2rem, 3vw, 2.75rem);
+  font-weight: 400;
+  letter-spacing: -0.06em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.dato > span {
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+}
+
+.datoVerde dd {
+  color: var(--verde);
+}
+
+/* ---------- Filtros y búsqueda ---------- */
+
+.barra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e3);
+  padding: var(--e3) var(--e5);
+  border-bottom: 1px solid var(--filete);
+  background: var(--cielo);
+}
+
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  border: 1px solid var(--regla2);
+  border-radius: var(--radio-menor);
+  overflow: hidden;
+}
+
+.filtro {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  padding: 9px 14px;
+  border: 0;
+  border-right: 1px solid var(--regla2);
+  background: var(--nube);
+  color: var(--tinta);
+  font-family: var(--fuente);
+  font-size: var(--t-menor);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.16s var(--curva);
+}
+
+.filtro:active {
+  transform: scale(0.97);
+}
+
+.filtro:last-child {
+  border-right: 0;
+}
+
+.filtro:hover {
+  background: var(--cielo-hundido);
+}
+
+.filtro[aria-pressed='true'] {
+  background: var(--activo);
+  color: var(--tinta-invertida);
+}
+
+.filtro:focus-visible {
+  outline: 2px solid var(--activo);
+  outline-offset: -2px;
+}
+
+.cuantas {
+  font-family: var(--fuente);
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--tinta3);
+}
+
+.filtro[aria-pressed='true'] .cuantas {
+  color: rgb(255 255 255 / 0.7);
+}
+
+.buscar {
+  display: flex;
+  align-items: center;
+  gap: var(--e2);
+  min-width: min(100%, 260px);
+  padding: 0 var(--e3);
+  border: 1px solid var(--regla2);
+  border-radius: var(--radio-menor);
+  background: var(--nube);
+  transition: border-color 0.2s;
+}
+
+.buscar:focus-within {
+  border-color: var(--activo);
+  box-shadow: 0 0 0 3px var(--activo-bruma);
+}
+
+.buscar svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: var(--tinta3);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+
+.buscar input {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 0;
+  border: 0;
+  outline: 0;
+  background: none;
+  font: inherit;
+  font-size: var(--t-apoyo);
+  color: var(--tinta);
+}
+
+/* ---------- La leyenda ---------- */
+
+.leyenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e2) var(--e4);
+  padding: var(--e3) var(--e5);
+  border-bottom: 1px solid var(--filete);
+  font-size: var(--t-menor);
+  color: var(--tinta);
+}
+
+.leyenda span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.leyenda i,
+.etapa i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex: none;
+}
+
+.leyenda i[data-etapa='0'],
+.etapa[data-etapa='0'] i { background: var(--etapa-0); }
+.leyenda i[data-etapa='1'],
+.etapa[data-etapa='1'] i { background: var(--etapa-1); }
+.leyenda i[data-etapa='2'],
+.etapa[data-etapa='2'] i { background: var(--etapa-2); }
+.leyenda i[data-etapa='3'],
+.etapa[data-etapa='3'] i { background: var(--etapa-3); }
+.leyenda i[data-etapa='4'],
+.etapa[data-etapa='4'] i { background: var(--etapa-4); }
+
+.leyenda .aroVerde {
+  background: none;
+  border: 2px solid var(--verde);
+}
+
+/* ---------- La rejilla de filas ---------- */
+
+.tabla {
+  display: grid;
+}
+
+.filaCabecera,
+.fila {
+  display: grid;
+  grid-template-columns: 88px minmax(180px, 1fr) minmax(460px, 2.2fr) auto;
+  grid-template-areas:
+    'anillo titulo     etapas acciones'
+    'anillo meta       etapas acciones'
+    'anillo evaluacion etapas acciones';
+  column-gap: var(--e5);
+  padding: 0 var(--e5);
+}
+
+.filaCabecera {
+  padding-block: var(--e3);
+  border-bottom: 1px solid var(--filete);
+  font-family: var(--fuente-ui);
+  font-size: var(--t-etiqueta);
+  font-weight: 600;
+  letter-spacing: var(--tracking-etiqueta);
+  text-transform: uppercase;
+  color: var(--tinta-etiqueta);
+  grid-template-areas: 'anillo titulo etapas acciones';
+}
+
+.fila {
+  row-gap: var(--e1);
+  align-items: center;
+  padding-block: var(--e4);
+  border-bottom: 1px solid var(--filete);
+  transition: background-color 0.15s ease;
+  animation: entrar 0.25s var(--curva) both;
+  animation-delay: calc(min(var(--orden, 0), 8) * 30ms);
+}
+
+.fila:last-child {
+  border-bottom: 0;
+}
+
+.fila:hover {
+  background: #f8f9fb;
+}
+
+@keyframes entrar {
+  from {
+    opacity: 0.001;
+    transform: translateY(4px);
+  }
+}
+
+.titulo {
+  align-self: end;
+  font-size: var(--t-base);
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  line-height: 1.25;
+  text-wrap: balance;
+}
+
+.meta {
+  align-self: start;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px var(--e3);
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+}
+
+.estado {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--tinta2);
+}
+
+.estado i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.estado[data-estado='PUBLICADA'] i { background: var(--activo); }
+.estado[data-estado='BORRADOR'] i { border: 1.5px dashed var(--tinta3); }
+.estado[data-estado='CERRADA'] i { background: var(--tinta3); border-radius: 1px; }
+
+.urge {
+  color: var(--mal);
+  font-weight: 500;
+}
+
+.evaluacion {
+  align-self: start;
+  font-size: var(--t-apoyo);
+  color: var(--tinta2);
+  line-height: 1.4;
+}
+
+/* La evaluación va bajo la fecha, ya sin columna propia: la palabra la nombra. */
+.evaluacion::before {
+  content: 'Evaluación: ';
+  color: var(--tinta3);
+}
+
+/* ---------- El anillo ---------- */
+
+.anillo {
+  position: relative;
+  display: block;
+  width: 84px;
+  height: 84px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.anillo svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  transform: rotate(-90deg);
+}
+
+.anillo circle {
+  fill: none;
+}
+
+.pista {
+  stroke: #eef0ec;
+  stroke-width: 7;
+}
+
+.pistaVacia {
+  stroke: var(--regla2);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 3;
+}
+
+.tramo {
+  stroke-width: 7;
+  transition:
+    stroke-dasharray 0.4s var(--curva),
+    stroke-width 0.2s,
+    opacity 0.2s;
+}
+
+.tramo[data-etapa='0'] { stroke: var(--etapa-0); }
+.tramo[data-etapa='1'] { stroke: var(--etapa-1); }
+.tramo[data-etapa='2'] { stroke: var(--etapa-2); }
+.tramo[data-etapa='3'] { stroke: var(--etapa-3); }
+.tramo[data-etapa='4'] { stroke: var(--etapa-4); }
+
+.tramo[data-apagado] {
+  opacity: 0.2;
+}
+
+.fila[data-resaltada] .tramo:not([data-apagado]) {
+  stroke-width: 10;
+}
+
+.arcoVerde {
+  stroke: var(--verde);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  transition: stroke-dasharray 0.3s 0.25s var(--curva);
+}
+
+.centro {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.centro b {
+  font-size: 28px;
+  font-weight: 500;
+  letter-spacing: -0.05em;
+  font-variant-numeric: tabular-nums;
+}
+
+
+.anillo[data-vacio] .centro b {
+  color: var(--tinta3);
+}
+
+.anilloCargando,
+.etapasCargando {
+  display: block;
+  background: var(--cielo-hundido);
+  animation: respirar 1.2s ease-in-out infinite alternate;
+}
+
+.anilloCargando {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  background: none;
+  border: 7px solid var(--cielo-hundido);
+}
+
+.etapasCargando {
+  height: 52px;
+  border-radius: var(--radio-menor);
+}
+
+@keyframes respirar {
+  to {
+    opacity: 0.4;
+  }
+}
+
+/* ---------- Las etapas ---------- */
+
+.celdaEtapas {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.etapas {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--filete);
+  border-radius: 2px;
+}
+
+.etapa {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 7px 8px 8px;
+  border-right: 1px solid var(--filete);
+  cursor: default;
+  transition: background-color 0.15s;
+}
+
+.etapa:last-child {
+  border-right: 0;
+}
+
+.etapa:hover {
+  background: var(--activo-bruma);
+}
+
+.etapa span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--t-menor);
+  font-weight: 500;
+  color: var(--tinta);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.etapa b {
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.etapa[data-vacia] b {
+  color: var(--tinta3);
+  font-weight: 400;
+}
+
+.apoyo {
+  font-size: var(--t-menor);
+  color: var(--tinta2);
+}
+
+/* ---------- Lo que se puede hacer ---------- */
+
+.acciones {
+  display: grid;
+  grid-template-columns: auto 32px;
+  align-items: center;
+  gap: var(--e3);
+}
+
+.principal {
+  display: grid;
+  gap: var(--e2);
+  justify-items: end;
+}
+
+/* Los íconos uno bajo otro, tras un filete; el ancho queda reservado aunque falten. */
+.herramientas {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--e1);
+  align-self: stretch;
+  justify-content: center;
+  padding-left: var(--e2);
+  border-left: 1px solid var(--filete);
+  box-sizing: content-box;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border-radius: 2px;
+  background: var(--bien-bruma);
+  color: var(--verde);
+  font-size: var(--t-menor);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.chipQuieto {
+  background: var(--cielo-hundido);
+  color: var(--tinta3);
+  font-weight: 500;
+}
+
+.latido {
+  position: relative;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--verde);
+}
+
+.latido::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--verde);
+  animation: latir 1.2s var(--curva) 0.3s 2 both;
+}
+
+@keyframes latir {
+  from {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  to {
+    transform: scale(3);
+    opacity: 0;
+  }
+}
+
+.ver {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 1px solid var(--activo);
+  border-radius: 2px;
+  color: var(--activo);
+  font-family: var(--fuente);
+  font-size: var(--t-menor);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.16s var(--curva);
+}
+
+.ver:active {
+  transform: scale(0.97);
+}
+
+.ver span {
+  transition: transform 0.2s var(--curva);
+}
+
+.ver:hover {
+  background: var(--activo);
+  color: var(--tinta-invertida);
+}
+
+.ver:hover span {
+  transform: translateX(3px);
+}
+
+.ver:focus-visible {
+  outline: 2px solid var(--activo);
+  outline-offset: 2px;
+}
+
+/* ---------- Vacíos ---------- */
+
+.vacio {
+  padding: var(--e7) var(--e5);
+  text-align: center;
+  color: var(--tinta2);
+}
+
+.vacio p {
+  margin: 0;
+}
+
+.limpiar {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: var(--activo);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+/* ---------- Más estrecho ---------- */
+
+@media (max-width: 1439px) {
+  .fila {
+    grid-template-columns: 88px minmax(0, 1fr) auto;
+    grid-template-areas:
+      'anillo titulo     acciones'
+      'anillo meta       acciones'
+      'anillo etapas     etapas'
+      'anillo evaluacion evaluacion';
+    row-gap: var(--e2);
+  }
+
+  .filaCabecera {
+    display: none;
+  }
+}
+
+@media (max-width: 720px) {
+  .resumen {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dato:nth-child(2) {
+    border-right: 0;
+  }
+
+  .dato:nth-child(-n + 2) {
+    border-bottom: 1px solid var(--filete);
+  }
+
+  .barra,
+  .leyenda {
+    padding-inline: var(--e4);
+  }
+
+  .buscar {
+    flex: 1 1 100%;
+  }
+
+  /* Los cuatro filtros en una sola tira que se desliza, no en dos renglones cojos. */
+  .filtros {
+    flex: 1 1 100%;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .filtro {
+    flex: 1 0 auto;
+    justify-content: center;
+  }
+
+  .fila {
+    grid-template-columns: 72px minmax(0, 1fr);
+    grid-template-areas:
+      'anillo titulo'
+      'anillo meta'
+      'etapas etapas'
+      'evaluacion evaluacion'
+      'acciones acciones';
+    padding-inline: var(--e4);
+  }
+
+  .anillo,
+  .anilloCargando {
+    width: 72px;
+    height: 72px;
+  }
+
+  .principal {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .acciones {
+    grid-template-columns: 1fr auto;
+  }
+
+  .herramientas {
+    flex-direction: row;
+  }
+
+  .etapas {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .etapa:nth-child(3) {
+    border-right: 0;
+  }
+
+  .etapa:nth-child(-n + 3) {
+    border-bottom: 1px solid var(--filete);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fila,
+  .anilloCargando,
+  .etapasCargando,
+  .latido::after {
+    animation: none;
+  }
+
+  .tramo,
+  .arcoVerde,
+  .filtro,
+  .ver {
+    transition: none;
+  }
+}
